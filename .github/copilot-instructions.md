@@ -28,6 +28,7 @@ This project orchestrates a pipeline for parsing architectural design rules into
 - **Validation types**: Rules are tagged as `geometric`, `semantic`, or `topological`.
 - **n8n workflow**: All environment/config values are set via workflow node defaults or Docker env vars.
 - **Graph viewer proxies**: Nginx proxies `/neo4j/` to Neo4j HTTP and `/n8n/` to n8n. The web UI uses these paths to avoid CORS.
+- **Graph viewer filtering**: UI toggles OntoGraph vs MetaGraph; queries filter by `graph` property to show only the selected dataset.
 
 ## Integration Points
 - **n8n <-> Ollama**: HTTP POST to `/api/generate` with prompt and model.
@@ -47,6 +48,7 @@ This project orchestrates a pipeline for parsing architectural design rules into
 - `data-service/app.py`: FastAPI service for Neo4j
 - `graph-viewer/index.html`: UI (rules prompt, progress, graph, node/edge details)
 - `graph-viewer/nginx.conf`: Proxy routes for `/neo4j` and `/n8n`
+- `graph-viewer/config.template.js`: Viewer configuration injected at startup (Neo4j, n8n, labels, styling)
 - `README.md`: End-to-end usage, test, and troubleshooting
 
 ## Examples

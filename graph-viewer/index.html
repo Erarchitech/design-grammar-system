@@ -9,7 +9,7 @@
       body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--fg); }
       #app { display: flex; height: 100vh; }
       #left { width: 360px; padding: 16px; background: var(--panel); box-sizing: border-box; border-right: 1px solid #2a2f3a; overflow: auto; }
-      #viz { flex: 1; }
+      #viz { flex: 1; margin-right: 380px; }
       #right {
         width: 380px;
         padding: 16px;
@@ -18,6 +18,10 @@
         box-sizing: border-box;
         border-left: 1px solid #e5e7eb;
         overflow: auto;
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
         transform: translateX(100%);
         transition: transform 200ms ease-out;
       }
@@ -33,10 +37,20 @@
       .table th { color: #6b7280; font-weight: 600; }
       .value { font-family: "Courier New", monospace; font-size: 12px; color: #111827; word-break: break-all; }
       .empty { color: #6b7280; font-size: 13px; }
+      .edit-btn { margin-right: 4px; background: #e5e7eb; border: none; border-radius: 4px; padding: 1px 2px; cursor: pointer; font-size: 9px; line-height: 1; width: 16px; }
+      .edit-btn:hover { background: #d1d5db; }
+      .add-btn { margin-top: 10px; background: #111827; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+      .edit-wrap { position: relative; width: 100%; display: flex; align-items: center; }
+      .edit-input { width: 100%; padding-right: 32px; box-sizing: border-box; background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 28px 6px 8px; font-family: "Courier New", monospace; font-size: 12px; }
+      .save-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: #e5e7eb; border: none; border-radius: 4px; padding: 0 4px; height: 20px; line-height: 20px; cursor: pointer; font-size: 10px; }
       .progress { margin-top: 12px; height: 8px; background: #0f1117; border: 1px solid #2a2f3a; border-radius: 999px; overflow: hidden; }
       .progress > div { height: 100%; background: #5fd0ff; width: 0%; transition: width 250ms ease; }
       .steps { margin-top: 8px; font-size: 12px; color: var(--muted); }
       .steps div.active { color: #e6e6e6; }
+      .danger-btn { margin-top: 8px; background: #b91c1c; color: #ffffff; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+      .context-menu { position: fixed; z-index: 1000; background: #ffffff; color: #111827; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+      .context-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: transparent; text-align: left; cursor: pointer; }
+      .context-menu button:hover { background: #f3f4f6; }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -72,13 +86,8 @@
         return out;
       }
 
-      function buildDetails(label, id, props) {
-        const entries = [];
-        entries.push(["<id>", String(id)]);
-        for (const key of Object.keys(props || {}).sort()) {
-          entries.push([key, JSON.stringify(props[key])]);
-        }
-        return { label, entries };
+      function buildDetails(type, label, id, props) {
+        return { type, label, id, props };
       }
 
       function App() {
@@ -102,8 +111,11 @@
         const [rulesText, setRulesText] = React.useState("");
         const [status, setStatus] = React.useState("Ready");
         const [selected, setSelected] = React.useState(null);
+        const [editingKey, setEditingKey] = React.useState(null);
+        const [editingValue, setEditingValue] = React.useState("");
         const [progress, setProgress] = React.useState(0);
         const [step, setStep] = React.useState(0);
+        const [contextMenu, setContextMenu] = React.useState(null);
 
         const vizRef = React.useRef(null);
 
@@ -173,6 +185,74 @@
           return { props: normalizeValue(row[0] || {}), type: row[1] || "Relationship" };
         };
 
+        const parseInputValue = (input) => {
+          const trimmed = (input || "").trim();
+          if (trimmed.length === 0) return "";
+          try {
+            return JSON.parse(trimmed);
+          } catch (_) {
+            if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
+            if (trimmed.toLowerCase() === "true") return true;
+            if (trimmed.toLowerCase() === "false") return false;
+            return trimmed;
+          }
+        };
+
+        const updateNodeProp = async (id, key, value) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = {
+            statements: [
+              {
+                statement: "MATCH (n) WHERE id(n) = $id SET n[$key] = $value RETURN properties(n) AS props, labels(n) AS labels",
+                parameters: { id: Number(id), key, value }
+              }
+            ]
+          };
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+          const json = await res.json();
+          const row = json?.results?.[0]?.data?.[0]?.row;
+          if (!row) return null;
+          return { props: normalizeValue(row[0] || {}), labels: row[1] || [] };
+        };
+
+        const deleteNode = async (id) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = {
+            statements: [
+              { statement: "MATCH (n) WHERE id(n) = $id DETACH DELETE n", parameters: { id: Number(id) } }
+            ]
+          };
+          await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+        };
+
+        const clearGraph = async (graphName) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = {
+            statements: [
+              { statement: "MATCH (n {graph: $graph}) DETACH DELETE n", parameters: { graph: graphName } }
+            ]
+          };
+          await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+        };
+
         const bindEvents = () => {
           const viz = vizRef.current;
           if (!viz) return false;
@@ -180,7 +260,9 @@
           if (!net) return false;
 
           net.off("click");
+          net.off("oncontext");
           net.on("click", async (params) => {
+            setContextMenu(null);
             if (params.nodes && params.nodes.length) {
               const nodeId = params.nodes[0];
               const node = getNode(nodeId);
@@ -193,7 +275,9 @@
                   label = fetched.labels?.[0] || label;
                 }
               }
-              setSelected(buildDetails(label, nodeId, props));
+              setSelected(buildDetails("node", label, nodeId, props));
+              setEditingKey(null);
+              setEditingValue("");
               return;
             }
             if (params.edges && params.edges.length) {
@@ -208,10 +292,22 @@
                   label = fetched.type || label;
                 }
               }
-              setSelected(buildDetails(label, edgeId, props));
+              setSelected(buildDetails("edge", label, edgeId, props));
+              setEditingKey(null);
+              setEditingValue("");
               return;
             }
             setSelected(null);
+          });
+
+          net.on("oncontext", (params) => {
+            params.event.preventDefault();
+            if (params.nodes && params.nodes.length) {
+              const nodeId = params.nodes[0];
+              setContextMenu({ x: params.event.clientX, y: params.event.clientY, nodeId });
+            } else {
+              setContextMenu(null);
+            }
           });
 
           return true;
@@ -324,7 +420,54 @@
           }
         };
 
+        const handleClearGraph = async () => {
+          const graphName = graphView === "MetaGraph" ? "Metagraph" : "OntoGraph";
+          if (!confirm(`Delete ALL nodes with graph: ${graphName}?`)) return;
+          await clearGraph(graphName);
+          run();
+        };
+
+        const handleDeleteNode = async (nodeId) => {
+          if (!confirm("Delete this node?")) return;
+          await deleteNode(nodeId);
+          setContextMenu(null);
+          setSelected(null);
+          run();
+        };
+
+        const editProperty = (key) => {
+          if (!selected || selected.type !== "node") return;
+          const current = selected.props ? selected.props[key] : undefined;
+          setEditingKey(key);
+          setEditingValue(JSON.stringify(current ?? ""));
+        };
+
+        const saveEdit = async () => {
+          if (!selected || selected.type !== "node" || !editingKey) return;
+          const value = parseInputValue(editingValue);
+          const updated = await updateNodeProp(selected.id, editingKey, value);
+          if (updated) {
+            const label = updated.labels?.[0] || selected.label;
+            setSelected(buildDetails("node", label, selected.id, updated.props));
+          }
+          setEditingKey(null);
+          setEditingValue("");
+        };
+
+        const addProperty = async () => {
+          if (!selected || selected.type !== "node") return;
+          const key = prompt("Property name");
+          if (!key) return;
+          setEditingKey(key);
+          setEditingValue("");
+        };
+
         React.useEffect(() => { run(); }, []);
+
+        const propEntries = selected?.props || {};
+        const keySet = new Set(Object.keys(propEntries));
+        if (editingKey) keySet.add(editingKey);
+        const propKeys = Array.from(keySet).sort();
 
         const rightPanel = selected
           ? e("div", null,
@@ -335,14 +478,36 @@
                   e("tr", null, e("th", null, "Key"), e("th", null, "Value"))
                 ),
                 e("tbody", null,
-                  selected.entries.map(([k, v]) =>
+                  e("tr", { key: "<id>" },
+                    e("td", null, "<id>"),
+                    e("td", { className: "value" }, String(selected.id))
+                  ),
+                  propKeys.map((k) =>
                     e("tr", { key: k },
-                      e("td", null, k),
-                      e("td", { className: "value" }, v)
+                      e("td", null,
+                        selected.type === "node" ? e("button", { className: "edit-btn", onClick: () => editProperty(k) }, "✎") : null,
+                        k
+                      ),
+                      e("td", { className: "value" },
+                        (selected.type === "node" && editingKey === k)
+                          ? e("div", { className: "edit-wrap" },
+                              e("input", {
+                                className: "edit-input",
+                                value: editingValue,
+                                onChange: (ev) => setEditingValue(ev.target.value),
+                                onKeyDown: (ev) => { if (ev.key === "Enter") saveEdit(); }
+                              }),
+                              e("button", { className: "save-btn", onClick: saveEdit }, "✔")
+                            )
+                          : JSON.stringify(propEntries[k])
+                      )
                     )
                   )
                 )
-              )
+              ),
+              selected.type === "node"
+                ? e("button", { className: "add-btn", onClick: addProperty }, "Add property")
+                : null
             )
           : e("div", { className: "empty" }, "Click a node or edge to see its properties");
 
@@ -372,6 +537,7 @@
               onChange: (ev) => setRulesText(ev.target.value)
             }),
             e("button", { onClick: sendRules }, "Send Rules"),
+            e("button", { className: "danger-btn", onClick: handleClearGraph }, "Clear the Graph"),
             e("div", { className: "progress" },
               e("div", { style: { width: progress + "%" } })
             ),
@@ -389,7 +555,12 @@
             e("div", { className: "status" }, status)
           ),
           e("div", { id: "viz" }),
-          e("div", { id: "right", className: selected ? "open" : "" }, rightPanel)
+          e("div", { id: "right", className: selected ? "open" : "" }, rightPanel),
+          contextMenu
+            ? e("div", { className: "context-menu", style: { left: contextMenu.x, top: contextMenu.y } },
+                e("button", { onClick: () => handleDeleteNode(contextMenu.nodeId) }, "Delete")
+              )
+            : null
         );
       }
 
