@@ -3,6 +3,9 @@ window.GRAPH_CONFIG = {
   neo4jHttp: "/neo4j",
   neo4jUser: "neo4j",
   neo4jPassword: "12345678",
+  n8nWebhook: "/n8n/webhook/dg/rules-ingest",
+  n8nUser: "erarchitech@gmail.com",
+  n8nPassword: "Ermolenko#^4538!",
   driverConfig: {
     encrypted: "ENCRYPTION_OFF"
   },
