@@ -8,6 +8,9 @@ services:
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/12345678
+      NEO4J_dbms_connector_bolt_listen__address: "0.0.0.0:7687"
+      NEO4J_dbms_connector_bolt_advertised__address: "localhost:7687"
+      NEO4J_dbms_connector_bolt_tls__level: "DISABLED"
     volumes:
       - neo4j_data:/data
 
@@ -32,8 +35,38 @@ services:
       N8N_BASIC_AUTH_ACTIVE: "true"
       N8N_BASIC_AUTH_USER: erarchitech@gmail.com
       N8N_BASIC_AUTH_PASSWORD: Ermolenko#^4538!
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.1
+      NEO4J_URL: http://neo4j:7474
     depends_on:
       - data-service
+      - ollama
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n:/files
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama:/root/.ollama
+
+  graph-viewer:
+    build: ./graph-viewer
+    container_name: graph-viewer
+    ports:
+      - "8080:80"
+    environment:
+      NEO4J_URI: bolt://localhost:7687
+      NEO4J_HTTP: /neo4j
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: 12345678
+    depends_on:
+      - neo4j
 
 volumes:
   neo4j_data:
+  n8n_data:
+  ollama:

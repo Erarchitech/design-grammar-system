@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neo4j Graph Viewer</title>
+    <style>
+      :root { --bg: #0f1117; --fg: #e6e6e6; --panel: #171a22; --accent: #5fd0ff; --muted: #9aa4b2; }
+      body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--fg); }
+      #app { display: flex; height: 100vh; }
+      #left { width: 320px; padding: 16px; background: var(--panel); box-sizing: border-box; border-right: 1px solid #2a2f3a; overflow: auto; }
+      #viz { flex: 1; }
+      #right {
+        width: 380px;
+        padding: 16px;
+        background: #ffffff;
+        color: #1a1a1a;
+        box-sizing: border-box;
+        border-left: 1px solid #e5e7eb;
+        overflow: auto;
+        transform: translateX(100%);
+        transition: transform 200ms ease-out;
+      }
+      #right.open { transform: translateX(0); }
+      label { display: block; margin-top: 12px; font-size: 12px; color: var(--muted); }
+      input, textarea { width: 100%; margin-top: 6px; background: #0f1117; color: var(--fg); border: 1px solid #2a2f3a; padding: 8px; border-radius: 6px; }
+      button { margin-top: 12px; width: 100%; background: var(--accent); color: #0f1117; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+      .hint, .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+      .panel-title { font-size: 18px; font-weight: 700; margin: 0 0 12px 0; }
+      .chip { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #ffb36b; color: #1a1a1a; font-weight: 600; font-size: 12px; margin-bottom: 12px; }
+      .table { width: 100%; border-collapse: collapse; }
+      .table th, .table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+      .table th { color: #6b7280; font-weight: 600; }
+      .value { font-family: "Courier New", monospace; font-size: 12px; color: #111827; word-break: break-all; }
+      .empty { color: #6b7280; font-size: 13px; }
+    </style>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/neovis.js/dist/neovis.js"></script>
+    <script src="/config.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      const e = React.createElement;
+
+      function normalizeValue(v) {
+        if (Array.isArray(v)) return v.map(normalizeValue);
+        if (v && typeof v === "object") {
+          if (Object.prototype.hasOwnProperty.call(v, "low") && Object.prototype.hasOwnProperty.call(v, "high")) {
+            return typeof v.toString === "function" ? v.toString() : v.low;
+          }
+          const out = {};
+          for (const k in v) out[k] = normalizeValue(v[k]);
+          return out;
+        }
+        return v;
+      }
+
+      function extractProps(item) {
+        if (!item) return {};
+        if (item.raw && item.raw.properties) return normalizeValue(item.raw.properties);
+        if (item.properties) return normalizeValue(item.properties);
+        const out = {};
+        for (const k in item) {
+          if (typeof item[k] !== "function") out[k] = normalizeValue(item[k]);
+        }
+        return out;
+      }
+
+      function buildDetails(label, id, props) {
+        const entries = [];
+        entries.push(["<id>", String(id)]);
+        for (const key of Object.keys(props || {}).sort()) {
+          entries.push([key, JSON.stringify(props[key])]);
+        }
+        return { label, entries };
+      }
+
+      function App() {
+        const [cypher, setCypher] = React.useState(
+          "MATCH (r:Rule {graph:'Metagraph'}) " +
+          "OPTIONAL MATCH (r)-[ha:HAS_ATOM]->(a:Atom {graph:'Metagraph'}) " +
+          "OPTIONAL MATCH (a)-[ref:REFERS_TO]->(x) " +
+          "WHERE x:Class OR x:DataProperty OR x:ObjectProperty " +
+          "RETURN r,ha,a,ref,x, null AS c, null AS hp, null AS p " +
+          "UNION " +
+          "MATCH (c:Class {graph:'OntoGraph'}) " +
+          "OPTIONAL MATCH (c)-[hp:HAS_DATA_PROPERTY|HAS_OBJECT_PROPERTY]->(p) " +
+          "RETURN null AS r, null AS ha, null AS a, null AS ref, null AS x, c, hp, p"
+        );
+        const [status, setStatus] = React.useState("Ready");
+        const [selected, setSelected] = React.useState(null);
+
+        const vizRef = React.useRef(null);
+
+        const getNode = (id) => {
+          const data = vizRef.current?._data?.nodes;
+          if (!data) return null;
+          return data.get(id) || data.get(String(id)) || data.get(Number(id));
+        };
+
+        const getEdge = (id) => {
+          const data = vizRef.current?._data?.edges;
+          if (!data) return null;
+          return data.get(id) || data.get(String(id)) || data.get(Number(id));
+        };
+
+        const fetchNodeProps = async (id) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = {
+            statements: [
+              {
+                statement: "MATCH (n) WHERE id(n) = $id RETURN properties(n) AS props, labels(n) AS labels",
+                parameters: { id: Number(id) }
+              }
+            ]
+          };
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+          const json = await res.json();
+          const row = json?.results?.[0]?.data?.[0]?.row;
+          if (!row) return null;
+          return { props: normalizeValue(row[0] || {}), labels: row[1] || [] };
+        };
+
+        const fetchEdgeProps = async (id) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = {
+            statements: [
+              {
+                statement: "MATCH ()-[r]->() WHERE id(r) = $id RETURN properties(r) AS props, type(r) AS type",
+                parameters: { id: Number(id) }
+              }
+            ]
+          };
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+          const json = await res.json();
+          const row = json?.results?.[0]?.data?.[0]?.row;
+          if (!row) return null;
+          return { props: normalizeValue(row[0] || {}), type: row[1] || "Relationship" };
+        };
+
+        const bindEvents = () => {
+          const viz = vizRef.current;
+          if (!viz) return false;
+          const net = viz._network || viz.network;
+          if (!net) return false;
+
+          net.off("click");
+          net.on("click", async (params) => {
+            if (params.nodes && params.nodes.length) {
+              const nodeId = params.nodes[0];
+              const node = getNode(nodeId);
+              let props = extractProps(node);
+              let label = node?.label || node?.group || "Node";
+              if (Object.keys(props || {}).length === 0) {
+                const fetched = await fetchNodeProps(nodeId);
+                if (fetched) {
+                  props = fetched.props;
+                  label = fetched.labels?.[0] || label;
+                }
+              }
+              setSelected(buildDetails(label, nodeId, props));
+              return;
+            }
+            if (params.edges && params.edges.length) {
+              const edgeId = params.edges[0];
+              const edge = getEdge(edgeId);
+              let props = extractProps(edge);
+              let label = edge?.label || edge?.type || edge?.raw?.type || "Relationship";
+              if (Object.keys(props || {}).length === 0) {
+                const fetched = await fetchEdgeProps(edgeId);
+                if (fetched) {
+                  props = fetched.props;
+                  label = fetched.type || label;
+                }
+              }
+              setSelected(buildDetails(label, edgeId, props));
+              return;
+            }
+            setSelected(null);
+          });
+
+          return true;
+        };
+
+        const applyEdgeLabels = () => {
+          const rels = vizRef.current?._data?.edges;
+          if (!rels) return false;
+          rels.forEach((edge, id) => {
+            const label = edge.label || edge.type || edge.raw?.type;
+            if (label && edge.label !== label) {
+              rels.update({ id, label });
+            }
+          });
+          return true;
+        };
+
+        const run = () => {
+          const cfg = window.GRAPH_CONFIG || {};
+          if (!cfg.neo4jUri || !cfg.neo4jUser) {
+            setStatus("Missing NEO4J config. Check config.js");
+            return;
+          }
+          try {
+            const config = {
+              containerId: "viz",
+              neo4j: {
+                serverUrl: cfg.neo4jUri,
+                serverUser: cfg.neo4jUser,
+                serverPassword: cfg.neo4jPassword,
+                driverConfig: cfg.driverConfig || {}
+              },
+              visConfig: {
+                nodes: {
+                  shape: "dot",
+                  size: 18,
+                  font: { color: "#8fd3ff", size: 12, strokeWidth: 0 }
+                },
+                edges: {
+                  arrows: { to: { enabled: true } },
+                  font: { align: "middle", color: "#9fb6c9", size: 11, strokeWidth: 0, vadjust: -5 },
+                  smooth: { type: "dynamic" }
+                },
+                physics: { stabilization: false },
+                groups: cfg.visGroups || {}
+              },
+              labels: cfg.labels || {},
+              relationships: cfg.relationships || {},
+              initialCypher: cypher
+            };
+
+            if (vizRef.current) {
+              vizRef.current.clearNetwork();
+            }
+            vizRef.current = new NeoVis.default(config);
+
+            vizRef.current.registerOnEvent("completed", () => {
+              applyEdgeLabels();
+              bindEvents();
+              setStatus("Query executed");
+            });
+
+            vizRef.current.registerOnEvent("error", (e) => {
+              try { console.error("NeoVis error", e); } catch (_) {}
+              const msg = e?.message || e?.error || (() => { try { return JSON.stringify(e); } catch { return "unknown"; } })();
+              setStatus("Neo4j error: " + msg);
+            });
+
+            vizRef.current.render();
+          } catch (err) {
+            setStatus("Error: " + err.message);
+          }
+        };
+
+        React.useEffect(() => { run(); }, []);
+
+        const rightPanel = selected
+          ? e("div", null,
+              e("div", { className: "panel-title" }, "Node details"),
+              e("div", { className: "chip" }, selected.label || "Node"),
+              e("table", { className: "table" },
+                e("thead", null,
+                  e("tr", null, e("th", null, "Key"), e("th", null, "Value"))
+                ),
+                e("tbody", null,
+                  selected.entries.map(([k, v]) =>
+                    e("tr", { key: k },
+                      e("td", null, k),
+                      e("td", { className: "value" }, v)
+                    )
+                  )
+                )
+              )
+            )
+          : e("div", { className: "empty" }, "Click a node or edge to see its properties");
+
+        return e("div", { id: "app" },
+          e("div", { id: "left" },
+            e("h3", null, "Graph Viewer"),
+            e("label", null, "Cypher Query"),
+            e("textarea", {
+              rows: 8,
+              value: cypher,
+              onChange: (ev) => setCypher(ev.target.value)
+            }),
+            e("button", { onClick: run }, "Run Query"),
+            e("div", { className: "hint" }, "Using ", (window.GRAPH_CONFIG || {}).neo4jUri || "(no uri)"),
+            e("div", { className: "status" }, status)
+          ),
+          e("div", { id: "viz" }),
+          e("div", { id: "right", className: selected ? "open" : "" }, rightPanel)
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("app"));
+      root.render(e(App));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,331 @@
+{
+  "name": "DG Rules -> Metagraph",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dg/rules-ingest",
+        "responseMode": "responseNode"
+      },
+      "id": "1",
+      "name": "Ingest Rules",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        0
+      ],
+      "webhookId": "dg-rules-ingest"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "rules_text",
+              "value": "={{$json.rules_text || ($json.body && $json.body.rules_text) || ($json.query && $json.query.rules_text) || $json.rules || ''}}"
+            },
+            {
+              "name": "neo4j_user",
+              "value": "={{$json.neo4j_user || 'neo4j'}}"
+            },
+            {
+              "name": "neo4j_password",
+              "value": "={{$json.neo4j_password || '12345678'}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.project_name || $json.project || 'default-project'}}"
+            },
+            {
+              "name": "ollama_model",
+              "value": "={{$json.ollama_model || 'llama3.1'}}"
+            },
+            {
+              "name": "ollama_url",
+              "value": "={{$json.ollama_url || 'http://ollama:11434'}}"
+            },
+            {
+              "name": "neo4j_url",
+              "value": "={{$json.neo4j_url || ($json.body && $json.body.neo4j_url) || ($json.query && $json.query.neo4j_url) || 'http://neo4j:7474'}}"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const rulesText = ($json.rules_text || '').trim();\nif (!rulesText) {\n  throw new Error('rules_text is required');\n}\nconst prompt = `You are an expert in SWRL and architectural design grammars. Convert the following design rules into a JSON structure.\n\nReturn ONLY valid JSON with the exact schema below, no extra text.\n\nSchema:\n{\n  \"ontology\": {\n    \"classes\": [{\"name\": \"ClassName\", \"description\": \"\"}],\n    \"data_properties\": [{\"name\": \"height\", \"domain\": \"Building\", \"range\": \"float\", \"units\": \"m\", \"description\": \"\"}],\n    \"object_properties\": [{\"name\": \"adjacentTo\", \"domain\": \"Building\", \"range\": \"Building\", \"description\": \"\"}]\n  },\n  \"rules\": [\n    {\n      \"id\": \"R1\",\n      \"name\": \"Short title\",\n      \"text\": \"original rule text\",\n      \"validationType\": \"geometric|semantic|topological\",\n      \"swrl\": \"SWRL rule\",\n      \"atoms\": {\n        \"body\": [{\"atomType\": \"ClassAtom\", \"predicate\": \"Building\", \"args\": [\"?b\"], \"notes\": \"\"}],\n        \"head\": [{\"atomType\": \"ClassAtom\", \"predicate\": \"HeightCompliant\", \"args\": [\"?b\"], \"notes\": \"\"}]\n      }\n    }\n  ]\n}\n\nRules text:\n${rulesText}\n`;\nreturn [{ json: { ...$json, prompt } }];"
+      },
+      "id": "3",
+      "name": "Build LLM Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.ollama_url}}/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": $json.ollama_model, \"prompt\": $json.prompt, \"stream\": false, \"format\": \"json\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "4",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const base = $items(\"Build LLM Prompt\")[0].json;\nconst raw = $json.response !== undefined ? $json.response : ($json.body !== undefined ? $json.body : $json);\nlet parsed;\ntry {\n  parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (e) {\n  throw new Error('Ollama did not return valid JSON: ' + e.message);\n}\nreturn [{ json: { ...base, llm: parsed } }];"
+      },
+      "id": "5",
+      "name": "Parse LLM Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const llm = $json.llm || {};\nconst ontology = llm.ontology || {};\nconst rules = Array.isArray(llm.rules) ? llm.rules : [];\nconst classes = Array.isArray(ontology.classes) ? ontology.classes : [];\nconst dataProps = Array.isArray(ontology.data_properties) ? ontology.data_properties : [];\nconst objectProps = Array.isArray(ontology.object_properties) ? ontology.object_properties : [];\n\nconst atoms = [];\nfor (const rule of rules) {\n  const body = (rule.atoms && Array.isArray(rule.atoms.body)) ? rule.atoms.body : [];\n  const head = (rule.atoms && Array.isArray(rule.atoms.head)) ? rule.atoms.head : [];\n  body.forEach((a, i) => {\n    atoms.push({\n      atomId: `${rule.id}:body:${i}`,\n      ruleId: rule.id,\n      side: \"body\",\n      atomType: a.atomType || a.type || \"ClassAtom\",\n      predicate: a.predicate || a.class || a.property || \"\",\n      args: a.args || [],\n      notes: a.notes || \"\"\n    });\n  });\n  head.forEach((a, i) => {\n    atoms.push({\n      atomId: `${rule.id}:head:${i}`,\n      ruleId: rule.id,\n      side: \"head\",\n      atomType: a.atomType || a.type || \"ClassAtom\",\n      predicate: a.predicate || a.class || a.property || \"\",\n      args: a.args || [],\n      notes: a.notes || \"\"\n    });\n  });\n}\nreturn [{ json: { ...$json, classes, dataProps, objectProps, rules, atoms } }];"
+      },
+      "id": "6",
+      "name": "Prepare Graph Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "={{ ($json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $classes AS c\\nMERGE (cl:Class {name: c.name, project: $project, graph: 'OntoGraph'})\\nSET cl.description = coalesce(c.description, '')\\nWITH $dataProps AS dataProps, $objectProps AS objectProps, $project AS project\\nUNWIND dataProps AS p\\nMERGE (dp:DataProperty {name: p.name, project: project, graph: 'OntoGraph'})\\nSET dp.domain = p.domain, dp.range = p.range, dp.units = p.units, dp.description = coalesce(p.description, '')\\nWITH dp, p, project, objectProps\\nMATCH (cl:Class {name: p.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_DATA_PROPERTY]->(dp)\\nWITH objectProps, project\\nUNWIND objectProps AS r\\nMERGE (op:ObjectProperty {name: r.name, project: project, graph: 'OntoGraph'})\\nSET op.domain = r.domain, op.range = r.range, op.description = coalesce(r.description, '')\\nWITH op, r, project\\nMATCH (cl:Class {name: r.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_OBJECT_PROPERTY]->(op)\", \"parameters\": { \"project\": $json.project_name, \"classes\": $json.classes, \"dataProps\": $json.dataProps, \"objectProps\": $json.objectProps } } ] } }}",
+        "basicAuthUser": "={{$json.neo4j_user}}",
+        "basicAuthPassword": "={{$json.neo4j_password}}",
+        "requestMethod": "POST"
+      },
+      "id": "8",
+      "name": "Upsert Ontology",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1010,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "={{ ($json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $rules AS r\\nMERGE (rule:Rule {id: r.id, project: $project, graph: 'Metagraph'})\\nSET rule.name = r.name, rule.text = r.text, rule.swrl = r.swrl, rule.validationType = r.validationType, rule.source = coalesce(r.source, '')\\nWITH $atoms AS atoms, $project AS project\\nUNWIND atoms AS a\\nMERGE (atom:Atom {id: a.atomId, project: project, graph: 'Metagraph'})\\nSET atom.atomType = a.atomType, atom.predicate = a.predicate, atom.args = a.args, atom.side = a.side, atom.ruleId = a.ruleId, atom.notes = a.notes\\nWITH atom, a, project\\nMATCH (rule:Rule {id: a.ruleId, project: project, graph: 'Metagraph'})\\nMERGE (rule)-[:HAS_ATOM {side: a.side}]->(atom)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ClassAtom' THEN [1] ELSE [] END |\\n  MERGE (cls:Class {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(cls)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'DataPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (dp:DataProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(dp)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ObjectPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (op:ObjectProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(op)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'BuiltinAtom' THEN [1] ELSE [] END |\\n  MERGE (bi:Builtin {name: a.predicate, project: project, graph: 'Metagraph'})\\n  MERGE (atom)-[:REFERS_TO]->(bi)\\n)\", \"parameters\": { \"project\": $json.project_name, \"rules\": $json.rules, \"atoms\": $json.atoms } } ] } }}",
+        "basicAuthUser": "={{$json.neo4j_user}}",
+        "basicAuthPassword": "={{$json.neo4j_password}}",
+        "requestMethod": "POST"
+      },
+      "id": "9",
+      "name": "Upsert Rules",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $items(\"Prepare Graph Payload\")[0].json;\nreturn [{\n  json: {\n    status: \"ok\",\n    project: payload.project_name,\n    database: \"neo4j\",\n    graphs: { ontology: \"OntoGraph\", rules: \"Metagraph\" },\n    counts: {\n      rules: (payload.rules || []).length,\n      atoms: (payload.atoms || []).length,\n      classes: (payload.classes || []).length,\n      data_properties: (payload.dataProps || []).length,\n      object_properties: (payload.objectProps || []).length\n    }\n  }\n}];"
+      },
+      "id": "10",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1510,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "responseData": "={{$json}}"
+      },
+      "id": "11",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "passThrough"
+      },
+      "id": "12",
+      "name": "Pass Payload",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        1135,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Ingest Rules": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Output": {
+      "main": [
+        [
+          {
+            "node": "Prepare Graph Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Graph Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Ontology",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pass Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Ontology": {
+      "main": [
+        [
+          {
+            "node": "Pass Payload",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Upsert Rules": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pass Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
