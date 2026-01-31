@@ -9,6 +9,9 @@ NEO4J_URI=${NEO4J_URI:-bolt://localhost:7687}
 NEO4J_HTTP=${NEO4J_HTTP:-/neo4j}
 NEO4J_USER=${NEO4J_USER:-neo4j}
 NEO4J_PASSWORD=${NEO4J_PASSWORD:-12345678}
+N8N_WEBHOOK=${N8N_WEBHOOK:-/n8n/webhook/dg/rules-ingest}
+N8N_USER=${N8N_USER:-erarchitech@gmail.com}
+N8N_PASSWORD=${N8N_PASSWORD:-Ermolenko#^4538!}
 
 # Basic replacement to keep it simple
 sed \
@@ -16,6 +19,9 @@ sed \
   -e "s|/neo4j|${NEO4J_HTTP}|" \
   -e "s|neo4j|${NEO4J_USER}|" \
   -e "s|12345678|${NEO4J_PASSWORD}|" \
+  -e "s|/n8n/webhook/dg/rules-ingest|${N8N_WEBHOOK}|" \
+  -e "s|erarchitech@gmail.com|${N8N_USER}|" \
+  -e "s|Ermolenko#^4538!|${N8N_PASSWORD}|" \
   "$tmpl" > "$out"
 
 exec nginx -g 'daemon off;'

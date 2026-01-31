@@ -8,7 +8,7 @@
       :root { --bg: #0f1117; --fg: #e6e6e6; --panel: #171a22; --accent: #5fd0ff; --muted: #9aa4b2; }
       body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--fg); }
       #app { display: flex; height: 100vh; }
-      #left { width: 320px; padding: 16px; background: var(--panel); box-sizing: border-box; border-right: 1px solid #2a2f3a; overflow: auto; }
+      #left { width: 360px; padding: 16px; background: var(--panel); box-sizing: border-box; border-right: 1px solid #2a2f3a; overflow: auto; }
       #viz { flex: 1; }
       #right {
         width: 380px;
@@ -33,6 +33,10 @@
       .table th { color: #6b7280; font-weight: 600; }
       .value { font-family: "Courier New", monospace; font-size: 12px; color: #111827; word-break: break-all; }
       .empty { color: #6b7280; font-size: 13px; }
+      .progress { margin-top: 12px; height: 8px; background: #0f1117; border: 1px solid #2a2f3a; border-radius: 999px; overflow: hidden; }
+      .progress > div { height: 100%; background: #5fd0ff; width: 0%; transition: width 250ms ease; }
+      .steps { margin-top: 8px; font-size: 12px; color: var(--muted); }
+      .steps div.active { color: #e6e6e6; }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -78,21 +82,38 @@
       }
 
       function App() {
-        const [cypher, setCypher] = React.useState(
-          "MATCH (r:Rule {graph:'Metagraph'}) " +
-          "OPTIONAL MATCH (r)-[ha:HAS_ATOM]->(a:Atom {graph:'Metagraph'}) " +
-          "OPTIONAL MATCH (a)-[ref:REFERS_TO]->(x) " +
-          "WHERE x:Class OR x:DataProperty OR x:ObjectProperty " +
-          "RETURN r,ha,a,ref,x, null AS c, null AS hp, null AS p " +
-          "UNION " +
-          "MATCH (c:Class {graph:'OntoGraph'}) " +
-          "OPTIONAL MATCH (c)-[hp:HAS_DATA_PROPERTY|HAS_OBJECT_PROPERTY]->(p) " +
-          "RETURN null AS r, null AS ha, null AS a, null AS ref, null AS x, c, hp, p"
-        );
+        const [graphView, setGraphView] = React.useState("OntoGraph");
+        const buildCypher = (view) => {
+          if (view === "MetaGraph") {
+            return (
+              "MATCH (r:Rule {graph:'Metagraph'}) " +
+              "OPTIONAL MATCH (r)-[ha:HAS_ATOM]->(a:Atom {graph:'Metagraph'}) " +
+              "OPTIONAL MATCH (a)-[ref:REFERS_TO]->(x {graph:'Metagraph'}) " +
+              "RETURN r,ha,a,ref,x"
+            );
+          }
+          return (
+            "MATCH (c:Class {graph:'OntoGraph'}) " +
+            "OPTIONAL MATCH (c)-[hp:HAS_DATA_PROPERTY|HAS_OBJECT_PROPERTY]->(p {graph:'OntoGraph'}) " +
+            "RETURN c,hp,p"
+          );
+        };
+        const [cypher, setCypher] = React.useState(buildCypher("OntoGraph"));
+        const [rulesText, setRulesText] = React.useState("");
         const [status, setStatus] = React.useState("Ready");
         const [selected, setSelected] = React.useState(null);
+        const [progress, setProgress] = React.useState(0);
+        const [step, setStep] = React.useState(0);
 
         const vizRef = React.useRef(null);
+
+        const steps = [
+          "Send rules",
+          "LLM parse",
+          "Write ontology",
+          "Write rules",
+          "Reload graph"
+        ];
 
         const getNode = (id) => {
           const data = vizRef.current?._data?.nodes;
@@ -208,13 +229,14 @@
           return true;
         };
 
-        const run = () => {
+        const run = (overrideCypher) => {
           const cfg = window.GRAPH_CONFIG || {};
           if (!cfg.neo4jUri || !cfg.neo4jUser) {
             setStatus("Missing NEO4J config. Check config.js");
             return;
           }
           try {
+            const query = overrideCypher || cypher;
             const config = {
               containerId: "viz",
               neo4j: {
@@ -239,7 +261,7 @@
               },
               labels: cfg.labels || {},
               relationships: cfg.relationships || {},
-              initialCypher: cypher
+              initialCypher: query
             };
 
             if (vizRef.current) {
@@ -262,6 +284,43 @@
             vizRef.current.render();
           } catch (err) {
             setStatus("Error: " + err.message);
+          }
+        };
+
+        const sendRules = async () => {
+          const cfg = window.GRAPH_CONFIG || {};
+          if (!rulesText.trim()) {
+            setStatus("Rules text is required");
+            return;
+          }
+          setProgress(0);
+          setStep(0);
+          setStatus("Sending rules...");
+
+          try {
+            setStep(1); setProgress(20);
+            const headers = { "Content-Type": "application/json" };
+            if (cfg.n8nUser && cfg.n8nPassword) {
+              headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
+            }
+            const res = await fetch(cfg.n8nWebhook || "/n8n/webhook/dg/rules-ingest", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ rules_text: rulesText })
+            });
+            setStep(2); setProgress(45);
+            const data = await res.json();
+            setStep(3); setProgress(70);
+            if (!res.ok) {
+              setStatus("Workflow error: " + (data?.message || res.status));
+              return;
+            }
+            setStep(4); setProgress(85);
+            run();
+            setProgress(100);
+            setStatus("Workflow completed");
+          } catch (err) {
+            setStatus("Request failed: " + err.message);
           }
         };
 
@@ -290,6 +349,35 @@
         return e("div", { id: "app" },
           e("div", { id: "left" },
             e("h3", null, "Graph Viewer"),
+            e("label", null, "Graph View"),
+            e("select", {
+              value: graphView,
+              onChange: (ev) => {
+                const v = ev.target.value;
+                setGraphView(v);
+                const q = buildCypher(v);
+                setCypher(q);
+                run(q);
+              },
+              style: { width: "100%", marginTop: "6px", background: "#0f1117", color: "#e6e6e6", border: "1px solid #2a2f3a", padding: "8px", borderRadius: "6px" }
+            },
+              e("option", { value: "OntoGraph" }, "OntoGraph"),
+              e("option", { value: "MetaGraph" }, "MetaGraph")
+            ),
+            e("label", null, "Rules Prompt"),
+            e("textarea", {
+              rows: 6,
+              value: rulesText,
+              placeholder: "Enter design rules here...",
+              onChange: (ev) => setRulesText(ev.target.value)
+            }),
+            e("button", { onClick: sendRules }, "Send Rules"),
+            e("div", { className: "progress" },
+              e("div", { style: { width: progress + "%" } })
+            ),
+            e("div", { className: "steps" },
+              steps.map((s, i) => e("div", { key: s, className: i + 1 === step ? "active" : "" }, s))
+            ),
             e("label", null, "Cypher Query"),
             e("textarea", {
               rows: 8,
