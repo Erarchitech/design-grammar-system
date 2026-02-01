@@ -108,8 +108,13 @@
           );
         };
         const [cypher, setCypher] = React.useState(buildCypher("OntoGraph"));
+        const [mode, setMode] = React.useState("ingest");
         const [rulesText, setRulesText] = React.useState("");
+        const [queryText, setQueryText] = React.useState("");
+        const [responseText, setResponseText] = React.useState("");
+        const [responseCypher, setResponseCypher] = React.useState("");
         const [status, setStatus] = React.useState("Ready");
+        const [isRunning, setIsRunning] = React.useState(false);
         const [selected, setSelected] = React.useState(null);
         const [editingKey, setEditingKey] = React.useState(null);
         const [editingValue, setEditingValue] = React.useState("");
@@ -122,18 +127,41 @@
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
         const stepStartedAtRef = React.useRef(null);
+        const pollRef = React.useRef(null);
 
-        const steps = [
+        const ingestSteps = [
           "Send rules",
           "LLM parse",
           "Write ontology",
           "Write rules",
           "Reload graph"
         ];
+        const querySteps = [
+          "Send prompt",
+          "Generate cypher",
+          "Query graph",
+          "Generate response",
+          "Complete"
+        ];
+        const steps = mode === "query" ? querySteps : ingestSteps;
 
         React.useEffect(() => {
           stepRef.current = step;
         }, [step]);
+
+        React.useEffect(() => {
+          setProgress(0);
+          setWorkflowStep(0);
+          setStepTimes(Array(steps.length).fill(null));
+          setStatus("Ready");
+          setResponseText("");
+          setResponseCypher("");
+          setIsRunning(false);
+          if (pollRef.current) {
+            clearTimeout(pollRef.current);
+            pollRef.current = null;
+          }
+        }, [mode]);
 
         React.useEffect(() => {
           if (step <= 0) return;
@@ -175,6 +203,152 @@
             });
           }
           stepStartedAtRef.current = null;
+        };
+
+        const clearPoll = () => {
+          if (pollRef.current) {
+            clearTimeout(pollRef.current);
+            pollRef.current = null;
+          }
+        };
+
+        const normalizeBaseUrl = (base) => {
+          if (!base) return "";
+          return base.endsWith("/") ? base.slice(0, -1) : base;
+        };
+
+        const applyProgressUpdate = (data, modeType) => {
+          if (!data) return;
+          const stepValue = Number(data.step ?? data.payload?.step);
+          if (Number.isFinite(stepValue) && stepValue > 0 && stepValue <= steps.length && stepValue !== stepRef.current) {
+            setWorkflowStep(stepValue);
+          }
+          const progressValue = data.progress ?? data.payload?.progress;
+          if (typeof progressValue === "number" && Number.isFinite(progressValue)) {
+            const clamped = Math.max(0, Math.min(100, progressValue));
+            setProgress(clamped);
+          }
+          const message = data.message ?? data.payload?.message;
+          if (typeof message === "string" && message.trim()) {
+            setStatus(message);
+          } else if (data.status === "running") {
+            setStatus("Workflow running...");
+          }
+        };
+
+        const startPollingResult = (executionId, modeType) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const base = normalizeBaseUrl(cfg.dataServiceUrl || "/data-service");
+          const poll = async () => {
+            try {
+              const res = await fetch(`${base}/execution-result/${executionId}`);
+              if (!res.ok) {
+                setStatus(`Polling error: ${res.status}`);
+              } else {
+                const data = await res.json();
+                const status = data?.status || "running";
+                if (status !== "completed" && status !== "cancelled" && status !== "failed") {
+                  applyProgressUpdate(data, modeType);
+                }
+                if (status === "completed") {
+                  const payload = data?.payload || {};
+                  if (modeType === "query") {
+                    setResponseText(payload.answer || payload.response || "");
+                    setResponseCypher(payload.cypher || "");
+                  } else {
+                    setResponseText("The Rule ingesting completed successfully");
+                    const cypherValue = Array.isArray(payload.cypher)
+                      ? payload.cypher.join("\n\n")
+                      : (payload.cypher || "");
+                    setResponseCypher(cypherValue);
+                  }
+                  setWorkflowStep(5); setProgress(100);
+                  setStatus("Workflow completed");
+                  finalizeWorkflowStep();
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+                if (status === "cancelled") {
+                  setStatus("Workflow cancelled");
+                  finalizeWorkflowStep();
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+                if (status === "failed") {
+                  setStatus("Workflow failed");
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+              }
+            } catch (err) {
+              setStatus("Polling failed: " + err.message);
+            }
+            pollRef.current = setTimeout(poll, 1500);
+          };
+          clearPoll();
+          poll();
+        };
+
+        const startPollingLatest = (workflowKey, modeType) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const base = normalizeBaseUrl(cfg.dataServiceUrl || "/data-service");
+          const poll = async () => {
+            try {
+              const res = await fetch(`${base}/execution-result/latest/${workflowKey}`);
+              if (!res.ok) {
+                setStatus(`Polling error: ${res.status}`);
+              } else {
+                const data = await res.json();
+                const status = data?.status || "running";
+                if (status !== "completed" && status !== "cancelled" && status !== "failed") {
+                  applyProgressUpdate(data, modeType);
+                }
+                if (status === "completed") {
+                  const payload = data?.payload || {};
+                  if (modeType === "query") {
+                    setResponseText(payload.answer || payload.response || "");
+                    setResponseCypher(payload.cypher || "");
+                  } else {
+                    setResponseText("The Rule ingesting completed successfully");
+                    const cypherValue = Array.isArray(payload.cypher)
+                      ? payload.cypher.join("\n\n")
+                      : (payload.cypher || "");
+                    setResponseCypher(cypherValue);
+                  }
+                  setWorkflowStep(5); setProgress(100);
+                  setStatus("Workflow completed");
+                  finalizeWorkflowStep();
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+                if (status === "cancelled") {
+                  setStatus("Workflow cancelled");
+                  finalizeWorkflowStep();
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+                if (status === "failed") {
+                  setStatus("Workflow failed");
+                  setIsRunning(false);
+                  clearPoll();
+                  return;
+                }
+                if (status === "unknown") {
+                  setStatus("Workflow running...");
+                }
+              }
+            } catch (err) {
+              setStatus("Polling failed: " + err.message);
+            }
+            pollRef.current = setTimeout(poll, 1500);
+          };
+          clearPoll();
+          poll();
         };
 
         const getNode = (id) => {
@@ -459,13 +633,18 @@
             setStatus("Rules text is required");
             return;
           }
+          if (isRunning) return;
+          let asyncMode = false;
           setProgress(0);
           setWorkflowStep(0);
-          setStepTimes(Array(steps.length).fill(null));
+          setStepTimes(Array(ingestSteps.length).fill(null));
+          setResponseText("");
+          setResponseCypher("");
           setStatus("Sending rules...");
+          setIsRunning(true);
 
           try {
-            setWorkflowStep(1); setProgress(15);
+            setWorkflowStep(1); setProgress(20);
             const headers = { "Content-Type": "application/json" };
             if (cfg.n8nUser && cfg.n8nPassword) {
               headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
@@ -475,9 +654,7 @@
               headers,
               body: JSON.stringify({ rules_text: rulesText })
             });
-            setWorkflowStep(2); setProgress(35);
             const res = await resPromise;
-            setWorkflowStep(3); setProgress(60);
             const rawText = await res.text();
             let data = null;
             if (rawText) {
@@ -488,15 +665,155 @@
               finalizeWorkflowStep();
               return;
             }
+            if (data?.status === "accepted" && data?.executionId) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingResult(data.executionId, "ingest");
+              return;
+            }
+            if (data?.status === "accepted" && !data?.executionId) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingLatest("rules-ingest", "ingest");
+              return;
+            }
+            const isIntermediateResponse = data &&
+              !data.answer &&
+              !data.response &&
+              !data.cypher &&
+              (data.rules_text || data.ollama_model || data.neo4j_url);
+            if (isIntermediateResponse) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingLatest("rules-ingest", "ingest");
+              return;
+            }
             setWorkflowStep(4); setProgress(80);
             setStatus("Reloading graph...");
             await run(undefined, { silentStatus: true });
             setWorkflowStep(5); setProgress(100);
+            setResponseText("The Rule ingesting completed successfully");
+            const cypherValue = Array.isArray(data?.cypher)
+              ? data.cypher.join("\n\n")
+              : (data?.cypher || "");
+            setResponseCypher(cypherValue);
             setStatus("Workflow completed");
             finalizeWorkflowStep();
           } catch (err) {
             setStatus("Request failed: " + err.message);
             finalizeWorkflowStep();
+          } finally {
+            if (!asyncMode) {
+              setIsRunning(false);
+            }
+          }
+        };
+
+        const requestGrammar = async () => {
+          const cfg = window.GRAPH_CONFIG || {};
+          if (!queryText.trim()) {
+            setStatus("Prompt is required");
+            return;
+          }
+          if (isRunning) return;
+          let asyncMode = false;
+          setProgress(0);
+          setWorkflowStep(0);
+          setStepTimes(Array(querySteps.length).fill(null));
+          setResponseText("");
+          setResponseCypher("");
+          setStatus("Sending prompt...");
+          setIsRunning(true);
+
+          try {
+            setWorkflowStep(1); setProgress(20);
+            const headers = { "Content-Type": "application/json" };
+            if (cfg.n8nUser && cfg.n8nPassword) {
+              headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
+            }
+            const primaryUrl = cfg.n8nQueryWebhook || "/n8n/webhook/dg/graph-query";
+            const fallbackUrl = primaryUrl.includes("/webhook/")
+              ? primaryUrl.replace("/webhook/", "/webhook-test/")
+              : null;
+            const callWebhook = async (url) => {
+              const res = await fetch(url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ prompt: queryText })
+              });
+              const rawText = await res.text();
+              return { res, rawText, url };
+            };
+            const primaryPromise = callWebhook(primaryUrl);
+            let result = await primaryPromise;
+            if (
+              fallbackUrl &&
+              fallbackUrl !== primaryUrl &&
+              (result.res.status === 404 || result.res.status === 405 || (result.res.ok && !result.rawText.trim()))
+            ) {
+              setStatus("Retrying via test webhook...");
+              result = await callWebhook(fallbackUrl);
+            }
+            let data = null;
+            if (result.rawText) {
+              try { data = JSON.parse(result.rawText); } catch (_) {}
+            }
+            if (!result.res.ok) {
+              const errMsg = data?.message || result.rawText || result.res.status;
+              setStatus("Workflow error: " + errMsg);
+              setResponseText(`Webhook ${result.url} failed (HTTP ${result.res.status}).\n\n${result.rawText || "No response body"}`);
+              finalizeWorkflowStep();
+              return;
+            }
+            if (!result.rawText.trim()) {
+              setStatus("Empty response from webhook");
+              setResponseText(`Empty response from ${result.url}.\nEnsure the workflow is activated or run in test mode.`);
+              finalizeWorkflowStep();
+              return;
+            }
+            if (data?.status === "accepted" && data?.executionId) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingResult(data.executionId, "query");
+              return;
+            }
+            if (data?.status === "accepted" && !data?.executionId) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingLatest("graph-query", "query");
+              return;
+            }
+            if (typeof data?.message === "string" && data.message.toLowerCase().includes("started")) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingLatest("graph-query", "query");
+              return;
+            }
+            const isIntermediateResponse = data &&
+              !data.answer &&
+              !data.response &&
+              !data.cypher &&
+              (data.prompt_text || data.ollama_model || data.mcp_url);
+            if (isIntermediateResponse) {
+              asyncMode = true;
+              setStatus("Workflow running...");
+              startPollingLatest("graph-query", "query");
+              return;
+            }
+            setWorkflowStep(4); setProgress(85);
+            const answer = data?.answer || data?.response || result.rawText || "";
+            setResponseText(answer);
+            setResponseCypher(data?.cypher || "");
+            setWorkflowStep(5); setProgress(100);
+            setStatus("Request completed");
+            finalizeWorkflowStep();
+          } catch (err) {
+            setStatus("Request failed: " + err.message);
+            finalizeWorkflowStep();
+          } finally {
+            if (!asyncMode) {
+              setIsRunning(false);
+            }
           }
         };
 
@@ -594,6 +911,15 @@
         return e("div", { id: "app" },
           e("div", { id: "left" },
             e("h3", null, "Graph Viewer"),
+            e("label", null, "Mode"),
+            e("select", {
+              value: mode,
+              onChange: (ev) => setMode(ev.target.value),
+              style: { width: "100%", marginTop: "6px", background: "#0f1117", color: "#e6e6e6", border: "1px solid #2a2f3a", padding: "8px", borderRadius: "6px" }
+            },
+              e("option", { value: "ingest" }, "Ingest Rules"),
+              e("option", { value: "query" }, "Request Grammar")
+            ),
             e("label", null, "Graph View"),
             e("select", {
               value: graphView,
@@ -609,15 +935,28 @@
               e("option", { value: "OntoGraph" }, "OntoGraph"),
               e("option", { value: "MetaGraph" }, "MetaGraph")
             ),
-            e("label", null, "Rules Prompt"),
-            e("textarea", {
-              rows: 6,
-              value: rulesText,
-              placeholder: "Enter design rules here...",
-              onChange: (ev) => setRulesText(ev.target.value)
-            }),
-            e("button", { onClick: sendRules }, "Send Rules"),
-            e("button", { className: "danger-btn", onClick: handleClearGraph }, "Clear the Graph"),
+            mode === "ingest"
+              ? e("div", null,
+                  e("label", null, "Rules Prompt"),
+                  e("textarea", {
+                    rows: 6,
+                    value: rulesText,
+                    placeholder: "Enter design rules here...",
+                    onChange: (ev) => setRulesText(ev.target.value)
+                  }),
+                  e("button", { onClick: sendRules, disabled: isRunning }, "Send Rules")
+                )
+              : e("div", null,
+                  e("label", null, "Natural Language Prompt"),
+                  e("textarea", {
+                    rows: 6,
+                    value: queryText,
+                    placeholder: "Ask about the graph (e.g., list rules for project X)...",
+                    onChange: (ev) => setQueryText(ev.target.value)
+                  }),
+                  e("button", { onClick: requestGrammar, disabled: isRunning }, "Request Grammar")
+                ),
+            e("button", { className: "danger-btn", onClick: handleClearGraph, disabled: isRunning }, "Clear the Graph"),
             e("div", { className: "progress" },
               e("div", { style: { width: progress + "%" } })
             ),
@@ -634,13 +973,30 @@
                 return e("div", { key: s, className: isActive ? "active" : "" }, s + suffix);
               })
             ),
-            e("label", null, "Cypher Query"),
+            e("label", null, "Response"),
             e("textarea", {
-              rows: 8,
-              value: cypher,
-              onChange: (ev) => setCypher(ev.target.value)
+              rows: 6,
+              value: responseText,
+              readOnly: true,
+              placeholder: mode === "query" ? "Response will appear here..." : "Workflow response will appear here..."
             }),
-            e("button", { onClick: run }, "Run Query"),
+            responseCypher
+              ? e("div", null,
+                  e("label", null, "Generated Cypher"),
+                  e("textarea", { rows: 4, value: responseCypher, readOnly: true })
+                )
+              : null,
+            mode === "query"
+              ? e("div", null,
+                  e("label", null, "Cypher Query"),
+                  e("textarea", {
+                    rows: 8,
+                    value: cypher,
+                    onChange: (ev) => setCypher(ev.target.value)
+                  }),
+                  e("button", { onClick: run }, "Run Query")
+                )
+              : null,
             e("div", { className: "hint" }, "Using ", (window.GRAPH_CONFIG || {}).neo4jUri || "(no uri)"),
             e("div", { className: "status" }, status)
           ),

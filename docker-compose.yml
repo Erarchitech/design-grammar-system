@@ -64,6 +64,8 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: 12345678
       N8N_WEBHOOK: /n8n/webhook/dg/rules-ingest
+      N8N_QUERY_WEBHOOK: /n8n/webhook/dg/graph-query
+      DATA_SERVICE_URL: /data-service
       N8N_USER: erarchitech@gmail.com
       N8N_PASSWORD: Ermolenko#^4538!
     depends_on:

@@ -1,0 +1,63 @@
+{
+  "id": "string_unique",
+  "layer": "DesignGrammar.Communication | DesignGrammar.Validation",
+  "task": "nl_to_swrl_and_metagraph",
+  "rule_kind": "violation | compliance",
+  "domain": "string",
+
+  "input_nl": {
+    "text": "natural language rule",
+    "controlled_terms": [
+      {
+        "surface": "term as written in NL",
+        "iri": "curie_or_iri",
+        "owl_type": "owl:Class | owl:DatatypeProperty | owl:ObjectProperty | owl:NamedIndividual | rdfs:Datatype",
+        "range": "xsd:decimal | ex:SomeClass | null",
+        "notes": "optional"
+      }
+    ]
+  },
+
+  "output_formal": {
+    "language": "SWRL",
+    "expression": "single-line SWRL"
+  },
+
+  "metagraph": {
+    "rule_node": {
+      "label": "Rule",
+      "key": {"id": "same_as_dataset_id"},
+      "props": {"name": "...", "rule_kind": "...", "domain": "..."}
+    },
+
+    "atoms": [
+      {
+        "atom_id": "A1",
+        "atom_type": "ClassAtom | DataPropertyAtom | ObjectPropertyAtom | BuiltinAtom",
+        "predicate_ref": {"iri": "ex:Building", "owl_type": "owl:Class"},
+        "args": [
+          {"pos": 1, "type": "Var", "value": "?b"},
+          {"pos": 2, "type": "Var|Literal", "value": "?h", "datatype": null}
+        ]
+      }
+    ],
+
+    "connections": [
+      {"type": "HAS_BODY", "from": "RULE", "to": "A1", "order": 1},
+      {"type": "HAS_HEAD", "from": "RULE", "to": "H1", "order": 1},
+
+      {"type": "REFERS_TO", "from": "A1", "to_onto_iri": "ex:Building"},
+      {"type": "ARG", "from": "A1", "to": {"type": "Var", "value": "?b"}, "pos": 1}
+    ]
+  },
+
+  "metadata": {
+    "entity_scope": "ex:Building",
+    "constraint_semantics": "minimum | maximum | range | implication | equality | cardinality",
+    "unit": "m | hours_per_day | null",
+    "numeric_type": "xsd:decimal | xsd:integer | xsd:boolean | null",
+    "thresholds": {"min": 0, "max": 0},
+    "assumptions": ["..."],
+    "version": "v2"
+  }
+}

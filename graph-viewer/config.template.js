@@ -4,6 +4,9 @@ window.GRAPH_CONFIG = {
   neo4jUser: "neo4j",
   neo4jPassword: "12345678",
   n8nWebhook: "/n8n/webhook/dg/rules-ingest",
+  n8nQueryWebhook: "/n8n/webhook/dg/graph-query",
+  dataServiceUrl: "/data-service",
+  n8nRestBase: "/n8n/rest",
   n8nUser: "erarchitech@gmail.com",
   n8nPassword: "Ermolenko#^4538!",
   driverConfig: {

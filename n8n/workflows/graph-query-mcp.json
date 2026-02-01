@@ -1,0 +1,452 @@
+{
+  "name": "DG Graph Query (MCP)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dg/graph-query",
+        "responseMode": "responseNode"
+      },
+      "id": "1",
+      "name": "Ingest Prompt",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        0
+      ],
+      "webhookId": "dg-graph-query"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt_text",
+              "value": "={{$json.prompt || ($json.body && $json.body.prompt) || ($json.query && $json.query.prompt) || $json.question || ''}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.project_name || $json.project || ''}}"
+            },
+            {
+              "name": "ollama_model",
+              "value": "={{$json.ollama_model || 'llama3.1'}}"
+            },
+            {
+              "name": "ollama_url",
+              "value": "={{$json.ollama_url || 'http://ollama:11434'}}"
+            },
+            {
+              "name": "mcp_url",
+              "value": "={{$json.mcp_url || 'http://data-service:8000/mcp'}}"
+            },
+            {
+              "name": "data_service_url",
+              "value": "={{$json.data_service_url || 'http://data-service:8000'}}"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Set Input Defaults\")[0].json.mcp_url}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"jsonrpc\": \"2.0\", \"id\": \"schema\", \"method\": \"tools/call\", \"params\": { \"name\": \"neo4j_schema\", \"arguments\": { \"project\": $items(\"Set Input Defaults\")[0].json.project_name } } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "3",
+      "name": "Fetch Graph Context (MCP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst promptText = (input.prompt_text || '').trim();\nif (!promptText) {\n  throw new Error('prompt is required');\n}\nconst schema = $json?.result?.data || {};\nconst labels = Array.isArray(schema.labels) ? schema.labels : [];\nconst rels = Array.isArray(schema.relationship_types) ? schema.relationship_types : [];\nconst props = Array.isArray(schema.property_keys) ? schema.property_keys : [];\nconst graphs = Array.isArray(schema.graphs) ? schema.graphs : [];\nconst projects = Array.isArray(schema.projects) ? schema.projects : [];\nconst projectNote = input.project_name\n  ? `Use $project parameter to filter project = \\\"${input.project_name}\\\" when relevant.`\n  : 'Only add a project filter if the user explicitly mentions a project.';\nconst prompt = [\n  'You are a Neo4j Cypher expert.',\n  'Generate a single read-only Cypher query that answers the user question.',\n  'Return JSON only: {\"cypher\":\"...\"}.',\n  'STRICT RULE: Use ONLY the labels, relationship types, and property keys listed below. If the answer cannot be expressed using these, return {\"cypher\":\"\"}.',\n  'Data model hints:',\n  \"- Rules are (:Rule {graph:'Metagraph'}) with properties id, name, text, swrl, validationType, project.\",\n  \"- Numeric constraints (e.g., max height 75 m) are stored in Rule.text and/or Rule.swrl.\",\n  \"- Ontology concepts are :Class, :DataProperty, :ObjectProperty with graph:'OntoGraph'.\",\n  \"- Use graph property to target OntoGraph vs Metagraph.\",\n  'Guidance:',\n  '- If the question asks for a numeric limit, query Rule.text and Rule.swrl and return them.',\n  '- Use toLower(r.text) CONTAINS <keyword> for matching.',\n  '- For list-all rules, return r.id, r.name, r.text, r.swrl.',\n  '- Always include LIMIT 50 unless the user explicitly asks for all results.',\n  `- ${projectNote}`,\n  \"Example (height question): MATCH (r:Rule {graph:'Metagraph'}) WHERE toLower(r.text) CONTAINS 'height' RETURN r.text AS text, r.swrl AS swrl, r.id AS id LIMIT 50\",\n  'Schema context (allowed):',\n  'Labels: ' + (labels.length ? labels.join(', ') : '(none)'),\n  'Relationship types: ' + (rels.length ? rels.join(', ') : '(none)'),\n  'Property keys: ' + (props.length ? props.join(', ') : '(none)'),\n  'Known graphs: ' + (graphs.length ? graphs.join(', ') : '(none)'),\n  'Known projects: ' + (projects.length ? projects.join(', ') : '(none)'),\n  'Question:',\n  promptText\n].join('\\\\n');\nreturn [{ json: { ...input, cypher_prompt: prompt, schema_labels: labels, schema_rels: rels, schema_props: props } }];\n"
+      },
+      "id": "4",
+      "name": "Build Cypher Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Build Cypher Prompt\")[0].json.ollama_url}}/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": $items(\"Build Cypher Prompt\")[0].json.ollama_model, \"prompt\": $items(\"Build Cypher Prompt\")[0].json.cypher_prompt, \"stream\": false, \"format\": \"json\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "5",
+      "name": "Generate Cypher",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const base = $items(\"Build Cypher Prompt\")[0].json;\nconst raw = $json.response !== undefined ? $json.response : ($json.body !== undefined ? $json.body : $json);\nlet parsed = raw;\ntry {\n  if (typeof raw === 'string') {\n    const trimmed = raw.trim();\n    const start = trimmed.indexOf('{');\n    const end = trimmed.lastIndexOf('}');\n    const jsonText = (start !== -1 && end !== -1) ? trimmed.slice(start, end + 1) : trimmed;\n    parsed = JSON.parse(jsonText);\n  }\n} catch (e) {\n  throw new Error('LLM did not return valid JSON: ' + e.message);\n}\nlet cypher = '';\nif (parsed && typeof parsed === 'object') {\n  cypher = parsed.cypher || parsed.query || parsed.cypher_query || '';\n} else if (typeof parsed === 'string') {\n  cypher = parsed;\n}\ncypher = (cypher || '').trim();\nif (!cypher) {\n  throw new Error('cypher is empty');\n}\n\nconst allowedLabels = Array.isArray(base.schema_labels) ? base.schema_labels : [];\nconst allowedRels = Array.isArray(base.schema_rels) ? base.schema_rels : [];\nconst allowedProps = Array.isArray(base.schema_props) ? base.schema_props : [];\nconst allowPropsExtra = new Set(['id', 'elementId']);\n\nconst foundLabels = new Set();\nconst foundRels = new Set();\nconst foundProps = new Set();\n\nconst labelRegex = /\\(\\s*[^\\)]*:\\s*([A-Za-z_][A-Za-z0-9_]*)/g;\nlet match;\nwhile ((match = labelRegex.exec(cypher)) !== null) {\n  const labelsPart = match[1];\n  if (!labelsPart) continue;\n  labelsPart.split(':').forEach((label) => {\n    const cleaned = label.trim();\n    if (cleaned) foundLabels.add(cleaned);\n  });\n}\n\nconst relRegex = /-\\s*\\[[^\\]]*:\\s*([A-Za-z_][A-Za-z0-9_|]*)/g;\nwhile ((match = relRegex.exec(cypher)) !== null) {\n  const relPart = match[1];\n  if (!relPart) continue;\n  relPart.split('|').forEach((rel) => {\n    const cleaned = rel.trim();\n    if (cleaned) foundRels.add(cleaned);\n  });\n}\n\nconst propRegex = /\\.([A-Za-z_][A-Za-z0-9_]*)\\b/g;\nwhile ((match = propRegex.exec(cypher)) !== null) {\n  const prop = match[1];\n  if (prop) foundProps.add(prop);\n}\n\nconst unknownLabels = allowedLabels.length\n  ? Array.from(foundLabels).filter((l) => !allowedLabels.includes(l))\n  : [];\nconst unknownRels = allowedRels.length\n  ? Array.from(foundRels).filter((r) => !allowedRels.includes(r))\n  : [];\nconst unknownProps = allowedProps.length\n  ? Array.from(foundProps).filter((p) => !allowedProps.includes(p) && !allowPropsExtra.has(p))\n  : [];\n\nif (unknownLabels.length || unknownRels.length || unknownProps.length) {\n  const parts = [];\n  if (unknownLabels.length) parts.push('labels: ' + unknownLabels.join(', '));\n  if (unknownRels.length) parts.push('relationships: ' + unknownRels.join(', '));\n  if (unknownProps.length) parts.push('properties: ' + unknownProps.join(', '));\n  throw new Error('Cypher uses schema elements not in graph: ' + parts.join(' | '));\n}\n\nconst question = (base.prompt_text || '').toLowerCase();\nconst listAll = /\\blist\\b/.test(question) && /\\brules\\b/.test(question);\nif (listAll) {\n  const projectFilter = base.project_name ? ' AND r.project = $project' : '';\n  cypher = `MATCH (r:Rule {graph:'Metagraph'}) WHERE 1=1${projectFilter} RETURN r.id AS id, r.name AS name, r.text AS text, r.swrl AS swrl ORDER BY r.id LIMIT 50`;\n}\n\nconst keywordMatch = question.match(/\\b(height|width|area|coverage|distance|sunlight|floor)\\b/);\nconst keyword = keywordMatch ? keywordMatch[1] : '';\nconst needsNumeric = /\\b(maximum|max|min|minimal|minimum|limit|at least|at most|no more than|no less than)\\b/.test(question);\nconst mentionsRuleText = /\\bRule\\b/.test(cypher) || /\\.text\\b/.test(cypher) || /\\.swrl\\b/.test(cypher);\nif ((needsNumeric || keyword) && keyword && !mentionsRuleText) {\n  const safe = keyword.replace(/'/g, '');\n  const projectFilter = base.project_name ? ' AND r.project = $project' : '';\n  cypher = `MATCH (r:Rule {graph:'Metagraph'}) WHERE toLower(r.text) CONTAINS '${safe}'${projectFilter} RETURN r.text AS text, r.swrl AS swrl, r.id AS id, r.name AS name LIMIT 50`;\n}\n\nif (!/\\bLIMIT\\b/i.test(cypher)) {\n  cypher = cypher + ' LIMIT 50';\n}\n\nreturn [{ json: { ...base, cypher } }];\n"
+      },
+      "id": "6",
+      "name": "Parse Cypher",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Set Input Defaults\")[0].json.mcp_url}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"jsonrpc\": \"2.0\", \"id\": \"query\", \"method\": \"tools/call\", \"params\": { \"name\": \"neo4j_query\", \"arguments\": { \"cypher\": $items(\"Parse Cypher\")[0].json.cypher, \"parameters\": ($items(\"Set Input Defaults\")[0].json.project_name ? { \"project\": $items(\"Set Input Defaults\")[0].json.project_name } : {}) } } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "7",
+      "name": "Run Cypher (MCP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst cypher = $items(\"Parse Cypher\")[0].json.cypher;\nconst result = $json?.result?.data || {};\nconst records = Array.isArray(result.records) ? result.records : [];\nconst sample = records.slice(0, 30);\nconst prompt = [\n  'You are a concise assistant answering questions about a Neo4j graph.',\n  'Use the query results to answer. If results are empty, say no data found.',\n  'If results include rule text with numeric values, extract the most relevant number and unit.',\n  'Respond in plain language, 1-3 sentences.',\n  'Question:',\n  input.prompt_text,\n  'Cypher:',\n  cypher,\n  'Results (JSON):',\n  JSON.stringify(sample)\n].join('\\\\n');\nreturn [{ json: { ...input, cypher, records: sample, answer_prompt: prompt } }];\n"
+      },
+      "id": "8",
+      "name": "Build Answer Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1010,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Build Answer Prompt\")[0].json.ollama_url}}/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": $items(\"Build Answer Prompt\")[0].json.ollama_model, \"prompt\": $items(\"Build Answer Prompt\")[0].json.answer_prompt, \"stream\": false } }}",
+        "requestMethod": "POST"
+      },
+      "id": "9",
+      "name": "Generate Answer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const base = $items(\"Build Answer Prompt\")[0].json;\nconst raw = $json.response !== undefined ? $json.response : ($json.body !== undefined ? $json.body : $json);\nlet parsed = raw;\ntry {\n  if (typeof raw === 'string') {\n    const trimmed = raw.trim();\n    const start = trimmed.indexOf('{');\n    const end = trimmed.lastIndexOf('}');\n    const jsonText = (start !== -1 && end !== -1) ? trimmed.slice(start, end + 1) : trimmed;\n    parsed = JSON.parse(jsonText);\n  }\n} catch (_) {}\nlet answer = '';\nif (parsed && typeof parsed === 'object') {\n  answer = parsed.answer || parsed.response || parsed.text || '';\n} else if (typeof parsed === 'string') {\n  answer = parsed;\n}\nanswer = (answer || '').trim();\n\nconst question = (base.prompt_text || '').toLowerCase();\nconst records = Array.isArray(base.records) ? base.records : [];\n\nconst findNumericSnippet = (text) => {\n  if (!text || typeof text !== 'string') return '';\n  const match = text.match(/(\\d+(?:\\.\\d+)?)\\s*(m|meter|meters|metre|metres|cm|mm|km|hours?|hrs?|days?)\\b/i);\n  if (match) return `${match[1]} ${match[2]}`;\n  const paren = text.match(/\\(([^\\)]*\\d+[^\\)]*)\\)/);\n  if (paren) return paren[1];\n  return '';\n};\n\nif (records.length && /\\blist\\b/.test(question) && /\\brules\\b/.test(question)) {\n  const lines = [];\n  for (const rec of records) {\n    if (!rec || typeof rec !== 'object') continue;\n    const id = rec.id || rec.ruleId || '';\n    const name = rec.name || '';\n    const text = rec.text || '';\n    const swrl = rec.swrl || '';\n    const snippet = findNumericSnippet(text) || findNumericSnippet(swrl);\n    const label = [id, name].filter(Boolean).join(' - ');\n    const tail = snippet ? ` (${snippet})` : (text ? ` (${text})` : '');\n    lines.push(`${label}${tail}`.trim());\n  }\n  if (lines.length && (!answer || !/\\d/.test(answer))) {\n    answer = lines.join('\\n');\n  }\n}\n\nif (!answer) {\n  let textValue = '';\n  for (const rec of records) {\n    if (!rec || typeof rec !== 'object') continue;\n    if (typeof rec.text === 'string') {\n      textValue = rec.text;\n      break;\n    }\n    for (const key of Object.keys(rec)) {\n      const val = rec[key];\n      if (typeof val === 'string' && /\\d/.test(val)) {\n        textValue = val;\n        break;\n      }\n      if (val && typeof val === 'object' && typeof val.properties === 'object') {\n        const propText = val.properties.text;\n        if (typeof propText === 'string' && /\\d/.test(propText)) {\n          textValue = propText;\n          break;\n        }\n      }\n    }\n    if (textValue) break;\n  }\n  if (textValue) {\n    const match = textValue.match(/(\\d+(?:\\.\\d+)?)\\s*(m|meter|meters|metre|metres|cm|mm|km|hours?|hrs?|days?)\\b/i);\n    if (match && question.includes('height')) {\n      answer = `The maximum height of buildings is ${match[1]} ${match[2]}.`;\n    } else {\n      answer = textValue;\n    }\n  }\n}\n\nreturn [{\n  json: {\n    status: 'ok',\n    answer,\n    cypher: base.cypher,\n    records: base.records || []\n  }\n}];\n"
+      },
+      "id": "10",
+      "name": "Parse Answer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1510,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"graph-query\", \"payload\": $json } }}",
+        "requestMethod": "POST"
+      },
+      "id": "store",
+      "name": "Store Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1710,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "responseData": "={{ { \"status\": \"accepted\", \"executionId\": $execution.id } }}"
+      },
+      "id": "ack",
+      "name": "Respond Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 1, \"progress\": 20, \"message\": \"Workflow started\", \"payload\": {} } }}",
+        "requestMethod": "POST"
+      },
+      "id": "mark",
+      "name": "Mark Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 2, \"progress\": 40, \"message\": \"Generating cypher\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step2",
+      "name": "Mark Step 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 3, \"progress\": 60, \"message\": \"Querying graph\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step3",
+      "name": "Mark Step 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 4, \"progress\": 80, \"message\": \"Generating answer\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step4",
+      "name": "Mark Step 4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "Ingest Prompt": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Respond Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Graph Context (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Build Cypher Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cypher Prompt": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Cypher": {
+      "main": [
+        [
+          {
+            "node": "Parse Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Cypher": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Cypher (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Answer Prompt": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Answer": {
+      "main": [
+        [
+          {
+            "node": "Parse Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Answer": {
+      "main": [
+        [
+          {
+            "node": "Store Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Result": {
+      "main": []
+    },
+    "Respond Ack": {
+      "main": [
+        [
+          {
+            "node": "Mark Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Running": {
+      "main": [
+        [
+          {
+            "node": "Fetch Graph Context (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 2": {
+      "main": [
+        [
+          {
+            "node": "Generate Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 3": {
+      "main": [
+        [
+          {
+            "node": "Run Cypher (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 4": {
+      "main": [
+        [
+          {
+            "node": "Generate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

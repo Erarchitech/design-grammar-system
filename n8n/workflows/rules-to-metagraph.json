@@ -53,6 +53,10 @@
             {
               "name": "neo4j_url",
               "value": "={{$json.neo4j_url || ($json.body && $json.body.neo4j_url) || ($json.query && $json.query.neo4j_url) || 'http://neo4j:7474'}}"
+            },
+            {
+              "name": "data_service_url",
+              "value": "={{$json.data_service_url || 'http://data-service:8000'}}"
             }
           ]
         }
@@ -68,7 +72,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const rulesText = ($json.rules_text || '')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nif (!rulesText) {\n  throw new Error('rules_text is required');\n}\nconst prompt = [\n  'Convert design rules into compact JSON. Output JSON only (no markdown, no commentary).',\n  'Schema (all keys required unless noted):',\n  '{\"ontology\":{\"classes\":[{\"name\":\"ClassName\",\"description\":\"\"}],\"data_properties\":[{\"name\":\"height\",\"domain\":\"Building\",\"range\":\"float\",\"units\":\"m\",\"description\":\"\"}],\"object_properties\":[{\"name\":\"adjacentTo\",\"domain\":\"Building\",\"range\":\"Building\",\"description\":\"\"}]},\"rules\":[{\"id\":\"R1\",\"name\":\"Short title\",\"text\":\"original rule text\",\"validationType\":\"geometric|semantic|topological\",\"swrl\":\"SWRL rule\",\"atoms\":{\"body\":[{\"atomType\":\"ClassAtom\",\"predicate\":\"Building\",\"args\":[\"?b\"],\"notes\":\"\"}],\"head\":[{\"atomType\":\"ClassAtom\",\"predicate\":\"HeightCompliant\",\"args\":[\"?b\"],\"notes\":\"\"}]}}]}',\n  'Optional fields: description, units, notes (omit if empty).',\n  'Rules text:',\n  rulesText\n].join(\"\\n\");\nreturn [{ json: { ...$json, prompt } }];"
+        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst rulesText = (input.rules_text || '')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nif (!rulesText) {\n  throw new Error('rules_text is required');\n}\nconst prompt = [\n  'Convert design rules into compact JSON. Output JSON only (no markdown, no commentary).',\n  'Schema (all keys required unless noted):',\n  '{\"ontology\":{\"classes\":[{\"name\":\"ClassName\",\"description\":\"\"}],\"data_properties\":[{\"name\":\"height\",\"domain\":\"Building\",\"range\":\"float\",\"units\":\"m\",\"description\":\"\"}],\"object_properties\":[{\"name\":\"adjacentTo\",\"domain\":\"Building\",\"range\":\"Building\",\"description\":\"\"}]},\"rules\":[{\"id\":\"R1\",\"name\":\"Short title\",\"text\":\"original rule text\",\"validationType\":\"geometric|semantic|topological\",\"swrl\":\"SWRL rule\",\"atoms\":{\"body\":[{\"atomType\":\"ClassAtom\",\"predicate\":\"Building\",\"args\":[\"?b\"],\"notes\":\"\"}],\"head\":[{\"atomType\":\"ClassAtom\",\"predicate\":\"HeightCompliant\",\"args\":[\"?b\"],\"notes\":\"\"}]}}]}',\n  'Optional fields: description, units, notes (omit if empty).',\n  'Rules text:',\n  rulesText\n].join(\"\\n\");\nreturn [{ json: { ...input, prompt } }];"
       },
       "id": "3",
       "name": "Build LLM Prompt",
@@ -81,12 +85,12 @@
     },
     {
       "parameters": {
-        "url": "={{$json.ollama_url}}/api/generate",
+        "url": "={{$items(\"Build LLM Prompt\")[0].json.ollama_url}}/api/generate",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"model\": $json.ollama_model, \"prompt\": $json.prompt, \"stream\": false, \"format\": \"json\", \"keep_alive\": $json.ollama_keep_alive } }}",
+        "bodyParametersJson": "={{ { \"model\": $items(\"Build LLM Prompt\")[0].json.ollama_model, \"prompt\": $items(\"Build LLM Prompt\")[0].json.prompt, \"stream\": false, \"format\": \"json\", \"keep_alive\": $items(\"Build LLM Prompt\")[0].json.ollama_keep_alive } }}",
         "requestMethod": "POST"
       },
       "id": "4",
@@ -127,15 +131,15 @@
     {
       "parameters": {
         "authentication": "basicAuth",
-        "url": "={{ ($json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
         "options": {
           "ignoreSslIssues": true,
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $classes AS c\\nMERGE (cl:Class {name: c.name, project: $project, graph: 'OntoGraph'})\\nSET cl.description = coalesce(c.description, '')\\nWITH $dataProps AS dataProps, $objectProps AS objectProps, $project AS project\\nUNWIND dataProps AS p\\nMERGE (dp:DataProperty {name: p.name, project: project, graph: 'OntoGraph'})\\nSET dp.domain = p.domain, dp.range = p.range, dp.units = p.units, dp.description = coalesce(p.description, '')\\nWITH dp, p, project, objectProps\\nMATCH (cl:Class {name: p.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_DATA_PROPERTY]->(dp)\\nWITH objectProps, project\\nUNWIND objectProps AS r\\nMERGE (op:ObjectProperty {name: r.name, project: project, graph: 'OntoGraph'})\\nSET op.domain = r.domain, op.range = r.range, op.description = coalesce(r.description, '')\\nWITH op, r, project\\nMATCH (cl:Class {name: r.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_OBJECT_PROPERTY]->(op)\", \"parameters\": { \"project\": $json.project_name, \"classes\": $json.classes, \"dataProps\": $json.dataProps, \"objectProps\": $json.objectProps } } ] } }}",
-        "basicAuthUser": "={{$json.neo4j_user}}",
-        "basicAuthPassword": "={{$json.neo4j_password}}",
+        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $classes AS c\\nMERGE (cl:Class {name: c.name, project: $project, graph: 'OntoGraph'})\\nSET cl.description = coalesce(c.description, '')\\nWITH $dataProps AS dataProps, $objectProps AS objectProps, $project AS project\\nUNWIND dataProps AS p\\nMERGE (dp:DataProperty {name: p.name, project: project, graph: 'OntoGraph'})\\nSET dp.domain = p.domain, dp.range = p.range, dp.units = p.units, dp.description = coalesce(p.description, '')\\nWITH dp, p, project, objectProps\\nMATCH (cl:Class {name: p.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_DATA_PROPERTY]->(dp)\\nWITH objectProps, project\\nUNWIND objectProps AS r\\nMERGE (op:ObjectProperty {name: r.name, project: project, graph: 'OntoGraph'})\\nSET op.domain = r.domain, op.range = r.range, op.description = coalesce(r.description, '')\\nWITH op, r, project\\nMATCH (cl:Class {name: r.domain, project: project, graph: 'OntoGraph'})\\nMERGE (cl)-[:HAS_OBJECT_PROPERTY]->(op)\", \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name, \"classes\": $items('Prepare Graph Payload')[0].json.classes, \"dataProps\": $items('Prepare Graph Payload')[0].json.dataProps, \"objectProps\": $items('Prepare Graph Payload')[0].json.objectProps } } ] } }}",
+        "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
+        "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
         "requestMethod": "POST"
       },
       "id": "8",
@@ -150,15 +154,15 @@
     {
       "parameters": {
         "authentication": "basicAuth",
-        "url": "={{ ($json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
         "options": {
           "ignoreSslIssues": true,
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $rules AS r\\nMERGE (rule:Rule {id: r.id, project: $project, graph: 'Metagraph'})\\nSET rule.name = r.name, rule.text = r.text, rule.swrl = r.swrl, rule.validationType = r.validationType, rule.source = coalesce(r.source, '')\\nWITH $atoms AS atoms, $project AS project\\nUNWIND atoms AS a\\nMERGE (atom:Atom {id: a.atomId, project: project, graph: 'Metagraph'})\\nSET atom.atomType = a.atomType, atom.predicate = a.predicate, atom.args = a.args, atom.side = a.side, atom.ruleId = a.ruleId, atom.notes = a.notes\\nWITH atom, a, project\\nMATCH (rule:Rule {id: a.ruleId, project: project, graph: 'Metagraph'})\\nMERGE (rule)-[:HAS_ATOM {side: a.side}]->(atom)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ClassAtom' THEN [1] ELSE [] END |\\n  MERGE (cls:Class {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(cls)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'DataPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (dp:DataProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(dp)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ObjectPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (op:ObjectProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(op)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'BuiltinAtom' THEN [1] ELSE [] END |\\n  MERGE (bi:Builtin {name: a.predicate, project: project, graph: 'Metagraph'})\\n  MERGE (atom)-[:REFERS_TO]->(bi)\\n)\", \"parameters\": { \"project\": $json.project_name, \"rules\": $json.rules, \"atoms\": $json.atoms } } ] } }}",
-        "basicAuthUser": "={{$json.neo4j_user}}",
-        "basicAuthPassword": "={{$json.neo4j_password}}",
+        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": \"UNWIND $rules AS r\\nMERGE (rule:Rule {id: r.id, project: $project, graph: 'Metagraph'})\\nSET rule.name = r.name, rule.text = r.text, rule.swrl = r.swrl, rule.validationType = r.validationType, rule.source = coalesce(r.source, '')\\nWITH $atoms AS atoms, $project AS project\\nUNWIND atoms AS a\\nMERGE (atom:Atom {id: a.atomId, project: project, graph: 'Metagraph'})\\nSET atom.atomType = a.atomType, atom.predicate = a.predicate, atom.args = a.args, atom.side = a.side, atom.ruleId = a.ruleId, atom.notes = a.notes\\nWITH atom, a, project\\nMATCH (rule:Rule {id: a.ruleId, project: project, graph: 'Metagraph'})\\nMERGE (rule)-[:HAS_ATOM {side: a.side}]->(atom)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ClassAtom' THEN [1] ELSE [] END |\\n  MERGE (cls:Class {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(cls)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'DataPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (dp:DataProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(dp)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'ObjectPropertyAtom' THEN [1] ELSE [] END |\\n  MERGE (op:ObjectProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\n  MERGE (atom)-[:REFERS_TO]->(op)\\n)\\nFOREACH (_ IN CASE WHEN a.atomType = 'BuiltinAtom' THEN [1] ELSE [] END |\\n  MERGE (bi:Builtin {name: a.predicate, project: project, graph: 'Metagraph'})\\n  MERGE (atom)-[:REFERS_TO]->(bi)\\n)\", \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name, \"rules\": $items('Prepare Graph Payload')[0].json.rules, \"atoms\": $items('Prepare Graph Payload')[0].json.atoms } } ] } }}",
+        "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
+        "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
         "requestMethod": "POST"
       },
       "id": "9",
@@ -172,7 +176,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const payload = $items(\"Prepare Graph Payload\")[0].json;\nreturn [{\n  json: {\n    status: \"ok\",\n    project: payload.project_name,\n    database: \"neo4j\",\n    graphs: { ontology: \"OntoGraph\", rules: \"Metagraph\" },\n    counts: {\n      rules: (payload.rules || []).length,\n      atoms: (payload.atoms || []).length,\n      classes: (payload.classes || []).length,\n      data_properties: (payload.dataProps || []).length,\n      object_properties: (payload.objectProps || []).length\n    }\n  }\n}];"
+        "functionCode": "const payload = $items(\"Prepare Graph Payload\")[0].json;\nconst cypherStatements = [\n  \"UNWIND $classes AS c\\\\nMERGE (cl:Class {name: c.name, project: $project, graph: 'OntoGraph'})\\\\nSET cl.description = coalesce(c.description, '')\\\\nWITH $dataProps AS dataProps, $objectProps AS objectProps, $project AS project\\\\nUNWIND dataProps AS p\\\\nMERGE (dp:DataProperty {name: p.name, project: project, graph: 'OntoGraph'})\\\\nSET dp.domain = p.domain, dp.range = p.range, dp.units = p.units, dp.description = coalesce(p.description, '')\\\\nWITH dp, p, project, objectProps\\\\nMATCH (cl:Class {name: p.domain, project: project, graph: 'OntoGraph'})\\\\nMERGE (cl)-[:HAS_DATA_PROPERTY]->(dp)\\\\nWITH objectProps, project\\\\nUNWIND objectProps AS r\\\\nMERGE (op:ObjectProperty {name: r.name, project: project, graph: 'OntoGraph'})\\\\nSET op.domain = r.domain, op.range = r.range, op.description = coalesce(r.description, '')\\\\nWITH op, r, project\\\\nMATCH (cl:Class {name: r.domain, project: project, graph: 'OntoGraph'})\\\\nMERGE (cl)-[:HAS_OBJECT_PROPERTY]->(op)\",\n  \"UNWIND $rules AS r\\\\nMERGE (rule:Rule {id: r.id, project: $project, graph: 'Metagraph'})\\\\nSET rule.name = r.name, rule.text = r.text, rule.swrl = r.swrl, rule.validationType = r.validationType, rule.source = coalesce(r.source, '')\\\\nWITH $atoms AS atoms, $project AS project\\\\nUNWIND atoms AS a\\\\nMERGE (atom:Atom {id: a.atomId, project: project, graph: 'Metagraph'})\\\\nSET atom.atomType = a.atomType, atom.predicate = a.predicate, atom.args = a.args, atom.side = a.side, atom.ruleId = a.ruleId, atom.notes = a.notes\\\\nWITH atom, a, project\\\\nMATCH (rule:Rule {id: a.ruleId, project: project, graph: 'Metagraph'})\\\\nMERGE (rule)-[:HAS_ATOM {side: a.side}]->(atom)\\\\nFOREACH (_ IN CASE WHEN a.atomType = 'ClassAtom' THEN [1] ELSE [] END |\\\\n  MERGE (cls:Class {name: a.predicate, project: project, graph: 'OntoGraph'})\\\\n  MERGE (atom)-[:REFERS_TO]->(cls)\\\\n)\\\\nFOREACH (_ IN CASE WHEN a.atomType = 'DataPropertyAtom' THEN [1] ELSE [] END |\\\\n  MERGE (dp:DataProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\\\n  MERGE (atom)-[:REFERS_TO]->(dp)\\\\n)\\\\nFOREACH (_ IN CASE WHEN a.atomType = 'ObjectPropertyAtom' THEN [1] ELSE [] END |\\\\n  MERGE (op:ObjectProperty {name: a.predicate, project: project, graph: 'OntoGraph'})\\\\n  MERGE (atom)-[:REFERS_TO]->(op)\\\\n)\\\\nFOREACH (_ IN CASE WHEN a.atomType = 'BuiltinAtom' THEN [1] ELSE [] END |\\\\n  MERGE (bi:Builtin {name: a.predicate, project: project, graph: 'Metagraph'})\\\\n  MERGE (atom)-[:REFERS_TO]->(bi)\\\\n)\"\n];\nreturn [{\n  json: {\n    status: \"ok\",\n    project: payload.project_name,\n    database: \"neo4j\",\n    graphs: { ontology: \"OntoGraph\", rules: \"Metagraph\" },\n    counts: {\n      rules: (payload.rules || []).length,\n      atoms: (payload.atoms || []).length,\n      classes: (payload.classes || []).length,\n      data_properties: (payload.dataProps || []).length,\n      object_properties: (payload.objectProps || []).length\n    },\n    cypher: cypherStatements\n  }\n}];"
       },
       "id": "10",
       "name": "Build Response",
@@ -180,20 +184,6 @@
       "typeVersion": 1,
       "position": [
         1510,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "responseCode": 200,
-        "responseData": "={{$json}}"
-      },
-      "id": "11",
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1750,
         0
       ]
     },
@@ -208,6 +198,100 @@
       "position": [
         1135,
         0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"rules-ingest\", \"payload\": $json } }}",
+        "requestMethod": "POST"
+      },
+      "id": "store",
+      "name": "Store Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "responseData": "={{ { \"status\": \"accepted\", \"executionId\": $execution.id } }}"
+      },
+      "id": "ack",
+      "name": "Respond Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 1, \"progress\": 20, \"message\": \"Workflow started\", \"payload\": {} } }}",
+        "requestMethod": "POST"
+      },
+      "id": "mark",
+      "name": "Mark Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 2, \"progress\": 40, \"message\": \"Parsing rules\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step2",
+      "name": "Mark Step 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 3, \"progress\": 60, \"message\": \"Writing ontology\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step3",
+      "name": "Mark Step 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        760,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 4, \"progress\": 80, \"message\": \"Writing rules\" } }}",
+        "requestMethod": "POST"
+      },
+      "id": "step4",
+      "name": "Mark Step 4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        -120
       ]
     }
   ],
@@ -227,7 +311,7 @@
       "main": [
         [
           {
-            "node": "Build LLM Prompt",
+            "node": "Respond Ack",
             "type": "main",
             "index": 0
           }
@@ -238,7 +322,7 @@
       "main": [
         [
           {
-            "node": "Ollama Generate",
+            "node": "Mark Step 2",
             "type": "main",
             "index": 0
           }
@@ -271,7 +355,7 @@
       "main": [
         [
           {
-            "node": "Upsert Ontology",
+            "node": "Mark Step 3",
             "type": "main",
             "index": 0
           },
@@ -309,7 +393,7 @@
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Store Result",
             "type": "main",
             "index": 0
           }
@@ -317,6 +401,64 @@
       ]
     },
     "Pass Payload": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Result": {
+      "main": []
+    },
+    "Respond Ack": {
+      "main": [
+        [
+          {
+            "node": "Mark Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Running": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 2": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 3": {
+      "main": [
+        [
+          {
+            "node": "Upsert Ontology",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 4": {
       "main": [
         [
           {
