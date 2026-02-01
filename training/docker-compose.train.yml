@@ -1,0 +1,21 @@
+services:
+  trainer:
+    build:
+      context: ../training
+      dockerfile: Dockerfile
+    gpus: all
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      HF_HOME: /workspace/.cache/hf
+      TRANSFORMERS_CACHE: /workspace/.cache/hf
+      HF_HUB_DISABLE_XET: "1"
+      HF_HUB_ENABLE_HF_TRANSFER: "0"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    volumes:
+      - ../training:/workspace/training
+      - ../training/.cache:/workspace/.cache
+    command:
+      ["python", "/workspace/training/train_lora.py",
+       "--dataset", "/workspace/training/training_dataset.json",
+       "--output-dir", "/workspace/training/output/adapter",
+       "--model-id", "meta-llama/Llama-3.1-8B-Instruct"]
