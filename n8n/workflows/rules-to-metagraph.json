@@ -40,7 +40,7 @@
             },
             {
               "name": "ollama_model",
-              "value": "={{$json.ollama_model || 'llama3.1'}}"
+              "value": "={{$json.ollama_model || 'llama3.1-dg:latest'}}"
             },
             {
               "name": "ollama_url",

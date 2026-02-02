@@ -36,7 +36,8 @@ services:
       N8N_BASIC_AUTH_USER: erarchitech@gmail.com
       N8N_BASIC_AUTH_PASSWORD: Ermolenko#^4538!
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.1
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: llama3.1-dg:latest
       NEO4J_URL: http://neo4j:7474
     depends_on:
       - data-service
@@ -52,6 +53,7 @@ services:
       - "11435:11434"
     volumes:
       - ollama:/root/.ollama
+      - ./training/output/merged_hf:/merged_hf
 
   graph-viewer:
     build: ./graph-viewer

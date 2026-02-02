@@ -980,12 +980,17 @@
               readOnly: true,
               placeholder: mode === "query" ? "Response will appear here..." : "Workflow response will appear here..."
             }),
-            responseCypher
-              ? e("div", null,
-                  e("label", null, "Generated Cypher"),
-                  e("textarea", { rows: 4, value: responseCypher, readOnly: true })
-                )
-              : null,
+            e("div", null,
+              e("label", null, "Workflow Cypher"),
+              e("textarea", {
+                rows: 6,
+                value: responseCypher,
+                readOnly: true,
+                placeholder: mode === "query"
+                  ? "Cypher used to query the graph will appear here..."
+                  : "Cypher used to build the graph will appear here..."
+              })
+            ),
             mode === "query"
               ? e("div", null,
                   e("label", null, "Cypher Query"),
