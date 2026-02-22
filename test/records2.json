@@ -1,0 +1,65 @@
+﻿[
+  {
+    "n": {
+      "identity": 27,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "validationType": "geometric|semantic|topological",
+        "name": "Short title",
+        "swrl": "SWRL rule",
+        "project": "default-project",
+        "source": "",
+        "id": "R1",
+        "text": "original rule text",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:27"
+    }
+  },
+  {
+    "n": {
+      "identity": 28,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "args": [
+          "?h"
+        ],
+        "predicate": "hasMax",
+        "side": "body",
+        "notes": "",
+        "project": "default-project",
+        "id": "R1:body:0",
+        "ruleId": "R1",
+        "atomType": "DataPropertyAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:28"
+    }
+  },
+  {
+    "n": {
+      "identity": 29,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "args": [
+          "?b"
+        ],
+        "predicate": "HeightCompliant",
+        "side": "head",
+        "notes": "",
+        "project": "default-project",
+        "id": "R1:head:0",
+        "ruleId": "R1",
+        "atomType": "ClassAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:29"
+    }
+  }
+]

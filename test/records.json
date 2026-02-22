@@ -1,0 +1,172 @@
+﻿[
+  {
+    "n": {
+      "identity": 10,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:VentilationUnit",
+        "label": "VentilationUnit"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:10"
+    }
+  },
+  {
+    "n": {
+      "identity": 11,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasFilterEfficiency",
+        "range": "xsd:decimal",
+        "label": "hasFilterEfficiency"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:11"
+    }
+  },
+  {
+    "n": {
+      "identity": 12,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "label": "lessThan"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:12"
+    }
+  },
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesFilterEfficiencyMin",
+        "range": "xsd:boolean",
+        "label": "violatesFilterEfficiencyMin"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 14,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "text": "VentilationUnit(?u)^hasFilterEfficiency(?u,?e)^swrlb:lessThan(?e,0.80)->violatesFilterEfficiencyMin(?u,true)",
+        "id": "R_MEP_FILTER_EFF_MIN_0p80_V"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:14"
+    }
+  },
+  {
+    "n": {
+      "identity": 15,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?u"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:15"
+    }
+  },
+  {
+    "n": {
+      "identity": 16,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?e"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:16"
+    }
+  },
+  {
+    "n": {
+      "identity": 17,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:decimal",
+        "lex": "0.80"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:17"
+    }
+  },
+  {
+    "n": {
+      "identity": 18,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:18"
+    }
+  },
+  {
+    "n": {
+      "identity": 19,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_MEP_FILTER_EFF_MIN_0p80_V_A1",
+        "type": "ClassAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:19"
+    }
+  },
+  {
+    "n": {
+      "identity": 20,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_MEP_FILTER_EFF_MIN_0p80_V_A2",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:20"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_MEP_FILTER_EFF_MIN_0p80_V_A3",
+        "type": "BuiltinAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 22,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_MEP_FILTER_EFF_MIN_0p80_V_H1",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:22"
+    }
+  }
+]
