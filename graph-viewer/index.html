@@ -48,6 +48,11 @@
       .steps { margin-top: 8px; font-size: 12px; color: var(--muted); }
       .steps div.active { color: #e6e6e6; }
       .danger-btn { margin-top: 8px; background: #b91c1c; color: #ffffff; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+      .prompt-tabs { display: flex; margin-top: 12px; border: 1px solid #2a2f3a; border-bottom: none; border-radius: 6px 6px 0 0; overflow: hidden; }
+      .prompt-tab { background: #0f1117; color: #e6e6e6; border: none; border-right: 1px solid #2a2f3a; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+      .prompt-tab:last-child { border-right: none; }
+      .prompt-tab.active { background: #1f2430; color: #5fd0ff; font-weight: 600; }
+      .prompt-input { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
       .context-menu { position: fixed; z-index: 1000; background: #ffffff; color: #111827; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
       .context-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: transparent; text-align: left; cursor: pointer; }
       .context-menu button:hover { background: #f3f4f6; }
@@ -96,9 +101,13 @@
           if (view === "MetaGraph") {
             return (
               "MATCH (r:Rule {graph:'Metagraph'}) " +
-              "OPTIONAL MATCH (r)-[ha:HAS_ATOM]->(a:Atom {graph:'Metagraph'}) " +
-              "OPTIONAL MATCH (a)-[ref:REFERS_TO]->(x {graph:'Metagraph'}) " +
-              "RETURN r,ha,a,ref,x"
+              "OPTIONAL MATCH (r)-[hb:HAS_BODY]->(ab:Atom {graph:'Metagraph'}) " +
+              "OPTIONAL MATCH (r)-[hh:HAS_HEAD]->(ah:Atom {graph:'Metagraph'}) " +
+              "OPTIONAL MATCH (ab)-[ref1:REFERS_TO]->(x1) " +
+              "OPTIONAL MATCH (ah)-[ref2:REFERS_TO]->(x2) " +
+              "OPTIONAL MATCH (ab)-[arg1:ARG]->(v1) " +
+              "OPTIONAL MATCH (ah)-[arg2:ARG]->(v2) " +
+              "RETURN r,hb,ab,hh,ah,ref1,x1,ref2,x2,arg1,v1,arg2,v2"
             );
           }
           return (
@@ -109,8 +118,8 @@
         };
         const [cypher, setCypher] = React.useState(buildCypher("OntoGraph"));
         const [mode, setMode] = React.useState("ingest");
-        const [rulesText, setRulesText] = React.useState("");
-        const [queryText, setQueryText] = React.useState("");
+        const [promptText, setPromptText] = React.useState("");
+        const [isCypherPrompt, setIsCypherPrompt] = React.useState(false);
         const [responseText, setResponseText] = React.useState("");
         const [responseCypher, setResponseCypher] = React.useState("");
         const [status, setStatus] = React.useState("Ready");
@@ -132,8 +141,8 @@
         const ingestSteps = [
           "Send rules",
           "LLM parse",
-          "Write ontology",
-          "Write rules",
+          "Write graph",
+          "Annotate properties",
           "Reload graph"
         ];
         const querySteps = [
@@ -215,6 +224,37 @@
         const normalizeBaseUrl = (base) => {
           if (!base) return "";
           return base.endsWith("/") ? base.slice(0, -1) : base;
+        };
+
+        const executeCypher = async (statement) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const url = (cfg.neo4jHttp || "/neo4j") + "/db/neo4j/tx/commit";
+          const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
+          const body = { statements: [{ statement }] };
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Basic " + auth },
+            body: JSON.stringify(body)
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            const msg = json?.errors?.[0]?.message || res.statusText || "Neo4j error";
+            throw new Error(msg);
+          }
+          if (Array.isArray(json?.errors) && json.errors.length) {
+            throw new Error(json.errors[0]?.message || "Neo4j error");
+          }
+          return json;
+        };
+
+        const formatCypherResult = (json) => {
+          const rows = json?.results?.[0]?.data?.map((d) => d.row) || [];
+          if (rows.length) return JSON.stringify(rows, null, 2);
+          if (json?.results?.[0]?.data?.length) {
+            return JSON.stringify(json.results[0].data, null, 2);
+          }
+          if (json?.errors?.length) return JSON.stringify(json.errors, null, 2);
+          return JSON.stringify(json, null, 2);
         };
 
         const applyProgressUpdate = (data, modeType) => {
@@ -467,7 +507,8 @@
           const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
           const body = {
             statements: [
-              { statement: "MATCH (n {graph: $graph}) DETACH DELETE n", parameters: { graph: graphName } }
+              { statement: "MATCH (n {graph: $graph}) DETACH DELETE n", parameters: { graph: graphName } },
+              { statement: "MATCH (n) WHERE n.graph IS NULL DETACH DELETE n" }
             ]
           };
           await fetch(url, {
@@ -629,8 +670,8 @@
 
         const sendRules = async () => {
           const cfg = window.GRAPH_CONFIG || {};
-          if (!rulesText.trim()) {
-            setStatus("Rules text is required");
+          if (!promptText.trim()) {
+            setStatus("Prompt is required");
             return;
           }
           if (isRunning) return;
@@ -640,11 +681,24 @@
           setStepTimes(Array(ingestSteps.length).fill(null));
           setResponseText("");
           setResponseCypher("");
-          setStatus("Sending rules...");
+          setStatus(isCypherPrompt ? "Executing cypher..." : "Sending rules...");
           setIsRunning(true);
 
           try {
             setWorkflowStep(1); setProgress(20);
+            if (isCypherPrompt) {
+              setResponseCypher(promptText);
+              const result = await executeCypher(promptText);
+              setWorkflowStep(4); setProgress(85);
+              setStatus("Reloading graph...");
+              await run(undefined, { silentStatus: true });
+              setWorkflowStep(5); setProgress(100);
+              setResponseText("Cypher executed successfully");
+              setStatus("Workflow completed");
+              finalizeWorkflowStep();
+              setIsRunning(false);
+              return;
+            }
             const headers = { "Content-Type": "application/json" };
             if (cfg.n8nUser && cfg.n8nPassword) {
               headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
@@ -652,7 +706,7 @@
             const resPromise = fetch(cfg.n8nWebhook || "/n8n/webhook/dg/rules-ingest", {
               method: "POST",
               headers,
-              body: JSON.stringify({ rules_text: rulesText })
+              body: JSON.stringify({ rules_text: promptText, cypher_prompt: isCypherPrompt })
             });
             const res = await resPromise;
             const rawText = await res.text();
@@ -700,7 +754,7 @@
             setStatus("Workflow completed");
             finalizeWorkflowStep();
           } catch (err) {
-            setStatus("Request failed: " + err.message);
+            setStatus((isCypherPrompt ? "Cypher failed: " : "Request failed: ") + err.message);
             finalizeWorkflowStep();
           } finally {
             if (!asyncMode) {
@@ -711,7 +765,7 @@
 
         const requestGrammar = async () => {
           const cfg = window.GRAPH_CONFIG || {};
-          if (!queryText.trim()) {
+          if (!promptText.trim()) {
             setStatus("Prompt is required");
             return;
           }
@@ -722,11 +776,21 @@
           setStepTimes(Array(querySteps.length).fill(null));
           setResponseText("");
           setResponseCypher("");
-          setStatus("Sending prompt...");
+          setStatus(isCypherPrompt ? "Executing cypher..." : "Sending prompt...");
           setIsRunning(true);
 
           try {
             setWorkflowStep(1); setProgress(20);
+            if (isCypherPrompt) {
+              setResponseCypher(promptText);
+              const result = await executeCypher(promptText);
+              setResponseText(formatCypherResult(result));
+              setWorkflowStep(5); setProgress(100);
+              setStatus("Request completed");
+              finalizeWorkflowStep();
+              setIsRunning(false);
+              return;
+            }
             const headers = { "Content-Type": "application/json" };
             if (cfg.n8nUser && cfg.n8nPassword) {
               headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
@@ -739,7 +803,7 @@
               const res = await fetch(url, {
                 method: "POST",
                 headers,
-                body: JSON.stringify({ prompt: queryText })
+                body: JSON.stringify({ prompt: promptText, cypher_prompt: isCypherPrompt })
               });
               const rawText = await res.text();
               return { res, rawText, url };
@@ -808,7 +872,7 @@
             setStatus("Request completed");
             finalizeWorkflowStep();
           } catch (err) {
-            setStatus("Request failed: " + err.message);
+            setStatus((isCypherPrompt ? "Cypher failed: " : "Request failed: ") + err.message);
             finalizeWorkflowStep();
           } finally {
             if (!asyncMode) {
@@ -935,27 +999,32 @@
               e("option", { value: "OntoGraph" }, "OntoGraph"),
               e("option", { value: "MetaGraph" }, "MetaGraph")
             ),
-            mode === "ingest"
-              ? e("div", null,
-                  e("label", null, "Rules Prompt"),
-                  e("textarea", {
-                    rows: 6,
-                    value: rulesText,
-                    placeholder: "Enter design rules here...",
-                    onChange: (ev) => setRulesText(ev.target.value)
-                  }),
-                  e("button", { onClick: sendRules, disabled: isRunning }, "Send Rules")
-                )
-              : e("div", null,
-                  e("label", null, "Natural Language Prompt"),
-                  e("textarea", {
-                    rows: 6,
-                    value: queryText,
-                    placeholder: "Ask about the graph (e.g., list rules for project X)...",
-                    onChange: (ev) => setQueryText(ev.target.value)
-                  }),
-                  e("button", { onClick: requestGrammar, disabled: isRunning }, "Request Grammar")
-                ),
+            e("div", null,
+              e("div", { className: "prompt-tabs" },
+                e("button", {
+                  type: "button",
+                  className: isCypherPrompt ? "prompt-tab" : "prompt-tab active",
+                  onClick: () => setIsCypherPrompt(false)
+                }, "Rules Prompt"),
+                e("button", {
+                  type: "button",
+                  className: isCypherPrompt ? "prompt-tab active" : "prompt-tab",
+                  onClick: () => setIsCypherPrompt(true)
+                }, "Cypher Expression")
+              ),
+              e("textarea", {
+                rows: 6,
+                value: promptText,
+                className: "prompt-input",
+                placeholder: isCypherPrompt
+                  ? "Enter Design Rules in Cypher expression here"
+                  : "Enter Design Rules in NL text",
+                onChange: (ev) => setPromptText(ev.target.value)
+              }),
+              mode === "ingest"
+                ? e("button", { onClick: sendRules, disabled: isRunning }, "Send Rules")
+                : e("button", { onClick: requestGrammar, disabled: isRunning }, "Request Grammar")
+            ),
             e("button", { className: "danger-btn", onClick: handleClearGraph, disabled: isRunning }, "Clear the Graph"),
             e("div", { className: "progress" },
               e("div", { style: { width: progress + "%" } })

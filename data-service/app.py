@@ -77,7 +77,7 @@ def read_root():
 @app.post("/create_node/")
 def create_node(label: str, name: str):
     with driver.session() as session:
-        session.run(f"CREATE (n:{label} {{name: $name}})", name=name)
+        session.run(f"CREATE (n:{label} {{label: $name}})", name=name)
     return {"status": f"Node {name} with label {label} created"}
 
 @app.post("/mcp")

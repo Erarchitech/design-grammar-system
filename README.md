@@ -1,181 +1,211 @@
 # design-grammar-system
 
-This repo provides a Docker-based environment plus an n8n workflow that:
-- parses text design rules into SWRL + atomic rule atoms using Ollama,
-- derives a custom ontology from the same rules,
-- writes ontology to nodes tagged with `graph = "OntoGraph"`,
-- writes rules + atoms to nodes tagged with `graph = "Metagraph"`.
+This repo provides a Docker-based pipeline for:
+- converting natural-language design rules into SWRL + atomic rule atoms with Ollama,
+- generating a domain ontology from the same rules,
+- storing the ontology and rules in Neo4j,
+- querying the graph via a natural-language MCP workflow,
+- visualizing and interacting through a lightweight graph viewer UI.
 
-## Services
-- Neo4j 5 Community (single database, graphs separated by `graph` property)
-- n8n
-- Ollama
-- data-service (existing FastAPI service)
-- graph-viewer (React + Neovis.js)
+## Services and ports
+- Neo4j 5 Community: http://localhost:7474 (Bolt 7687)
+- n8n: http://localhost:5678
+- Ollama: http://localhost:11435 (container 11434)
+- data-service (FastAPI + MCP + execution tracking): http://localhost:8000
+- graph-viewer (UI + reverse proxy): http://localhost:8080
 
-## Start
+## Quick start
 1) Start containers:
 ```
 docker compose up -d
-```
-
-2) Pull an Ollama model inside the container (example):
-```
-docker exec -it ollama ollama pull llama3.1
-```
-Note: the Ollama container is exposed on host port `11435` to avoid clashing with Ollama Desktop (`11434`).
-
-3) Confirm services are up:
-```
 docker compose ps
 ```
 
-4) Open n8n UI:
+2) Ensure an Ollama model exists:
+```
+docker exec -it ollama ollama pull llama3.1
+```
+The workflows default to `llama3.1-dg:latest`. Either create that model (see `training/README.md`), override `ollama_model` per request, or change `OLLAMA_MODEL` in `docker-compose.yml`.
+
+3) Import n8n workflows:
+```
+docker exec -it n8n n8n import:workflow --input=/files/workflows/rules-to-metagraph.json
+docker exec -it n8n n8n import:workflow --input=/files/workflows/graph-query-mcp.json
+```
+
+4) Activate workflows in n8n:
 ```
 http://localhost:5678
 ```
 Login with the credentials in `docker-compose.yml`.
 
-## Import the workflow
-The workflow JSON is stored at:
-`n8n/workflows/rules-to-metagraph.json`
-
-Import via CLI:
+5) Open the graph viewer UI:
 ```
-docker exec -it n8n n8n import:workflow --input=/files/workflows/rules-to-metagraph.json
+http://localhost:8080
 ```
-Or import from the n8n UI (Workflow > Import).
+Use "Ingest Rules" or "Request Grammar". The UI handles polling and shows responses and generated Cypher.
 
-Activate the workflow to enable the production webhook.
+## Webhook APIs
 
-## Webhook request
-Endpoint (after activation):
+### Auth
+n8n Basic Auth is enabled by default. Use the same credentials as the n8n UI.
+
+PowerShell helper:
+```powershell
+$user = "<n8n_user>"
+$pass = "<n8n_password>"
+$token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${user}:$pass"))
+$headers = @{ Authorization = "Basic $token" }
+```
+
+### Rules ingest
+Endpoint:
 ```
 http://localhost:5678/webhook/dg/rules-ingest
 ```
 
-Request body example:
-```json
-{
-  "rules_text": "grid size of urban block is between 12 and 48 m; maximum height of buildings in the block is 75 m; minimum hours of direct sunlight for each building is 2.8 hours per day; minimum dimension for each building is 12 m; site coverage ratio allowed range is between 0.45 and 0.60; minimum floor area of the building is 8000 square meters; all residential buildings must be at least 10 meters apart; commercial buildings must be at least 6 meters apart.",
-  "neo4j_user": "neo4j",
-  "neo4j_password": "12345678",
-  "project_name": "urban-block-case-study",
-  "ollama_model": "llama3.1"
-}
-```
+Required:
+- `rules_text`
 
-## End-to-end test (step-by-step)
-1) Import the workflow (UI or CLI) and activate it.
+Optional (defaults shown):
+- `project_name` (`default-project`)
+- `neo4j_user` (`neo4j`)
+- `neo4j_password` (`12345678`)
+- `neo4j_url` (`http://neo4j:7474`)
+- `ollama_model` (`llama3.1-dg:latest`)
+- `ollama_url` (`http://ollama:11434`)
+- `ollama_keep_alive` (`30m`)
+- `data_service_url` (`http://data-service:8000`)
 
-2) Send a test request from PowerShell:
-```
+Example:
+```powershell
 $body = @{
   rules_text = "grid size of urban block is between 12 and 48 m; maximum height of buildings in the block is 75 m; minimum hours of direct sunlight for each building is 2.8 hours per day; minimum dimension for each building is 12 m; site coverage ratio allowed range is between 0.45 and 0.60; minimum floor area of the building is 8000 square meters; all residential buildings must be at least 10 meters apart; commercial buildings must be at least 6 meters apart."
-  neo4j_user = "neo4j"
-  neo4j_password = "12345678"
   project_name = "urban-block-case-study"
   ollama_model = "llama3.1"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/dg/rules-ingest" -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/dg/rules-ingest" `
+  -Headers $headers -ContentType "application/json" -Body $body
 ```
 
-Expected response includes counts for rules/atoms/classes and confirms write to `neo4j` with graphs `OntoGraph` and `Metagraph`.
-
-3) Verify data in Neo4j Browser:
+### Graph query
+Endpoint:
 ```
-http://localhost:7474
+http://localhost:5678/webhook/dg/graph-query
 ```
-Login with `neo4j / 12345678`.
 
-Useful queries:
+Required:
+- `prompt` (or `question`)
+
+Optional:
+- `project_name` (adds a project filter when provided)
+- `ollama_model` (`llama3.1-dg:latest`)
+- `ollama_url` (`http://ollama:11434`)
+- `mcp_url` (`http://data-service:8000/mcp`)
+- `data_service_url` (`http://data-service:8000`)
+
+Example:
+```powershell
+$body = @{
+  prompt = "What is the maximum height for buildings?"
+  project_name = "urban-block-case-study"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/dg/graph-query" `
+  -Headers $headers -ContentType "application/json" -Body $body
+```
+
+## Async results (execution-result)
+Both webhooks respond immediately with an acknowledgment:
+```
+{ "status": "accepted", "executionId": "<id>" }
+```
+
+Poll status via data-service:
+- `GET http://localhost:8000/execution-result/<id>`
+- `GET http://localhost:8000/execution-result/latest/rules-ingest`
+- `GET http://localhost:8000/execution-result/latest/graph-query`
+
+Example:
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:8000/execution-result/<id>"
+```
+
+## Neo4j validation
+Open `http://localhost:7474` and run:
 ```
 MATCH (r:Rule {graph:'Metagraph'}) RETURN r LIMIT 25;
 MATCH (c:Class {graph:'OntoGraph'}) RETURN c LIMIT 25;
-MATCH (r:Rule {graph:'Metagraph'})-[:HAS_ATOM]->(a:Atom) RETURN r, a LIMIT 25;
+MATCH (r:Rule {graph:'Metagraph'})-[:HAS_BODY]->(a:Atom) RETURN r, a LIMIT 25;
+MATCH (a:Atom)-[:ARG]->(v:Var) RETURN a, v LIMIT 25;
+```
+Login with `neo4j / 12345678` unless changed.
+
+## Data model conventions
+- Nodes:
+  - OntoGraph: `Class`, `DatatypeProperty`, `ObjectProperty`
+  - Metagraph: `Rule`, `Atom`, `Builtin`, `Var`, `Literal`
+- Relationships:
+  - `HAS_DATA_PROPERTY`, `HAS_OBJECT_PROPERTY`
+  - `HAS_BODY` (property: `order`), `HAS_HEAD` (property: `order`)
+  - `REFERS_TO`
+  - `ARG` (property: `pos`)
+- Key properties:
+  - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
+  - Rule: `id`, `text` (SWRL expression), `kind` (violation)
+  - Atom: `id`, `type` (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom)
+  - Var: `name` (e.g. `?b`), Literal: `lex`, `datatype`
+- All nodes include `graph` (`OntoGraph` or `Metagraph`) and `project` (from `project_name`).
+
+## Machine learning (LoRA) and training dataset
+This repo includes a complete LoRA fine-tuning pipeline to create a custom Ollama model for rule parsing.
+
+### Dataset
+- Location: `training/training_dataset.json`
+- Schema reference: `training/dataset_schema.json`
+- Format: JSON Lines (one JSON object per line)
+- Required fields: `prompt`, `cypher`
+
+### Train (Docker + GPU)
+From the repo root:
+```powershell
+$env:HF_TOKEN = "<your_hf_token>"
+docker compose -f training/docker-compose.train.yml build
+docker compose -f training/docker-compose.train.yml run --rm trainer
+```
+This runs `training/train_lora.py`, which reads `training/training_dataset.json` and writes the adapter to:
+```
+training/output/adapter
 ```
 
-## Test the framework (clear checklist)
-Use this section as a practical validation checklist after the containers are running.
-
-### A) Verify containers and ports
-1) Check all containers are up:
+### Create an Ollama model from the adapter
+```powershell
+$env:HF_TOKEN = "<your_hf_token>"
+\training\scripts\create_ollama_model.ps1 `
+  -AdapterDir .\training\output\adapter `
+  -BaseModel llama3.1 `
+  -ModelName llama3.1-dg
 ```
-docker compose ps
-```
-You should see `neo4j`, `n8n`, `ollama`, and `data-service` in `running`.
-
-2) Confirm ports:
-- n8n UI: `http://localhost:5678`
-- Neo4j Browser: `http://localhost:7474`
-- Ollama (host): `http://localhost:11435`
-- Graph Viewer: `http://localhost:8080`
-
-### B) Verify Ollama is ready
-1) List models:
-```
+Then verify:
+```powershell
 docker exec -it ollama ollama list
 ```
-2) Pull a model if missing (example):
-```
-docker exec -it ollama ollama pull llama3.1
-```
 
-### C) Verify n8n workflow is loaded
-1) Import the workflow from `n8n/workflows/rules-to-metagraph.json`.
-2) Activate the workflow.
-3) Confirm the production webhook URL is visible in n8n.
+### Use the trained model
+- Update `OLLAMA_MODEL` in `docker-compose.yml`, or
+- Pass `ollama_model` in the webhook payloads.
 
-### D) Run a full rule ingestion test
-Send a request:
-```
-$body = @{
-  rules_text = "grid size of urban block is between 12 and 48 m; maximum height of buildings in the block is 75 m; minimum hours of direct sunlight for each building is 2.8 hours per day; minimum dimension for each building is 12 m; site coverage ratio allowed range is between 0.45 and 0.60; minimum floor area of the building is 8000 square meters; all residential buildings must be at least 10 meters apart; commercial buildings must be at least 6 meters apart."
-  neo4j_user = "neo4j"
-  neo4j_password = "12345678"
-  project_name = "urban-block-case-study"
-  ollama_model = "llama3.1"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/dg/rules-ingest" -ContentType "application/json" -Body $body
-```
-Expected: JSON response with counts for rules/atoms/classes.
-
-### E) Validate data in Neo4j
-Open `http://localhost:7474` and run:
-```
-MATCH (r:Rule {graph:'Metagraph'}) RETURN r LIMIT 10;
-MATCH (c:Class {graph:'OntoGraph'}) RETURN c LIMIT 10;
-MATCH (r:Rule {graph:'Metagraph'})-[:HAS_ATOM]->(a:Atom) RETURN r, a LIMIT 10;
-```
-
-### F) Common failure points
-- Ollama timeout: check `docker logs -f ollama`
-- n8n errors: check `docker logs -f n8n`
-- Neo4j auth: verify `neo4j / 12345678`
+See `training/README.md` for advanced options (4-bit, max samples, smoke tests).
 
 ## Troubleshooting
-- If the webhook errors, check n8n logs:
-```
-docker logs -f n8n
-```
-- If Ollama does not respond, confirm the model exists:
-```
-docker exec -it ollama ollama list
-```
-- If Neo4j rejects the query, confirm credentials and that `neo4j` is healthy:
-```
-docker logs -f neo4j
-```
-
-## Notes
-- Neo4j Community only supports a single database (`neo4j`). The workflow stores ontology and rules in the same DB and separates them by the `graph` property (`OntoGraph`, `Metagraph`).
-- You can edit the ontology and rules manually later in Neo4j Browser or by Cypher.
-- Validation types are tagged as `geometric`, `semantic`, or `topological` per rule.
+- n8n: `docker logs -f n8n`
+- Ollama: `docker exec -it ollama ollama list`
+- Neo4j: `docker logs -f neo4j`
+- data-service: `docker logs -f data-service`
 
 ## Persistence
-All services run locally in dedicated Docker containers with data stored in named Docker volumes:
-- `neo4j_data` → Neo4j database files
-- `n8n_data` → n8n SQLite + workflows/credentials
-- `ollama` → Ollama models
+Named volumes:
+- `neo4j_data` -> Neo4j database files
+- `n8n_data` -> n8n SQLite, workflows, credentials
+- `ollama` -> Ollama models
