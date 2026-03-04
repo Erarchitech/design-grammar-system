@@ -32,7 +32,7 @@ public sealed class ValidatorComponent : GH_Component
         pManager.AddTextParameter("RuleName", "RuleName", "Rule names", GH_ParamAccess.list);
         pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule descriptions", GH_ParamAccess.list);
         pManager.AddTextParameter("Report", "Report", "Per-rule report lines", GH_ParamAccess.list);
-        pManager.AddGenericParameter("FailingBindings", "FailingBindings", "Failing bindings as dictionaries: variable name -> value", GH_ParamAccess.list);
+        pManager.AddTextParameter("FailingBindings", "FailingBindings", "Failing bindings in format: b(building32): h(83), w(54)", GH_ParamAccess.list);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -82,9 +82,22 @@ public sealed class ValidatorComponent : GH_Component
         var names = results.Select(result => result.RuleName).ToList();
         var descriptions = results.Select(result => result.RuleDescription).ToList();
         var reports = results.Select(ValidationReportFormatter.ToReportLine).ToList();
-        var failing = results
-            .SelectMany(ToFailingBindingDictionaries)
-            .ToList();
+        var ruleById = rules
+            .GroupBy(rule => rule.Id)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var failing = new List<string>();
+        foreach (var result in results)
+        {
+            if (!ruleById.TryGetValue(result.RuleId, out var rule))
+            {
+                continue;
+            }
+
+            foreach (var binding in result.FailingBindings)
+            {
+                failing.Add(FailingBindingFormatter.Format(rule, binding));
+            }
+        }
 
         da.SetDataList(0, pass);
         da.SetDataList(1, names);
@@ -92,31 +105,6 @@ public sealed class ValidatorComponent : GH_Component
         da.SetDataList(3, reports);
         da.SetDataList(4, failing);
         Message = $"{pass.Count(value => value)} / {pass.Count} pass";
-    }
-
-    private static IEnumerable<Dictionary<string, object?>> ToFailingBindingDictionaries(RuleEvaluationResult result)
-    {
-        foreach (var binding in result.FailingBindings)
-        {
-            var output = new Dictionary<string, object?>(StringComparer.Ordinal);
-            foreach (var pair in binding.ValuesByVar)
-            {
-                if (string.IsNullOrWhiteSpace(pair.Key))
-                {
-                    continue;
-                }
-
-                var key = pair.Key.StartsWith("?", StringComparison.Ordinal)
-                    ? pair.Key[1..]
-                    : pair.Key;
-                if (!output.ContainsKey(key))
-                {
-                    output[key] = pair.Value;
-                }
-            }
-
-            yield return output;
-        }
     }
 }
 #else
