@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DG.Core\DG.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\*.png" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RhinoInstallDir Condition="'$(RhinoInstallDir)' == ''">C:\Program Files\Rhino 8</RhinoInstallDir>
+    <RhinoCommonPath>$(RhinoInstallDir)\System\RhinoCommon.dll</RhinoCommonPath>
+    <GrasshopperPath>$(RhinoInstallDir)\Plug-ins\Grasshopper\Grasshopper.dll</GrasshopperPath>
+    <GhIoPath>$(RhinoInstallDir)\Plug-ins\Grasshopper\GH_IO.dll</GhIoPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('$(RhinoCommonPath)') and Exists('$(GrasshopperPath)') and Exists('$(GhIoPath)')">
+    <DefineConstants>$(DefineConstants);GRASSHOPPER_SDK</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(RhinoCommonPath)') and Exists('$(GrasshopperPath)') and Exists('$(GhIoPath)')">
+    <Reference Include="RhinoCommon">
+      <HintPath>$(RhinoCommonPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Grasshopper">
+      <HintPath>$(GrasshopperPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="GH_IO">
+      <HintPath>$(GhIoPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

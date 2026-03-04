@@ -1,0 +1,15 @@
+[
+  {
+    "status": "ok",
+    "project": "default-project",
+    "database": "neo4j",
+    "graphs": {
+      "ontology": "OntoGraph",
+      "rules": "Metagraph"
+    },
+    "counts": {
+      "merge_statements": 40
+    },
+    "cypher": "MERGE (r:Rule {id:'R_URB_HEIGHT_MAX_75_V'}) SET r.text='Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)', r.kind='violation'\nMERGE (C_Building:Class {iri:'ex:Building'}) SET C_Building.label='Building'\nMERGE (DP_H:DatatypeProperty {iri:'ex:hasHeightM'}) SET DP_H.label='hasHeightM', DP_H.range='xsd:decimal'\nMERGE (B_gt:Builtin {iri:'swrlb:greaterThan'}) SET B_gt.label='greaterThan'\nMERGE (lit75:Literal {lex:'75', datatype:'xsd:decimal'}) SET lit75.lex='75', lit75.datatype='xsd:decimal'\nMERGE (litT:Literal {lex:'true', datatype:'xsd:boolean'}) SET litT.lex='true', litT.datatype='xsd:boolean'\nMERGE (r)-[:HAS_BODY {order:1}]->(a1)\nMERGE (r)-[:HAS_BODY {order:2}]->(a2)\nMERGE (r)-[:HAS_HEAD {order:1}]->(h1)\nMERGE (a1)-[:ARG {pos:1}]->(lit75)\nMERGE (a2)-[:ARG {pos:1}]->(litT)\nMERGE (h1)-[:ARG {pos:1}]->(lit75)\nMERGE (r:Rule {id:'R_URB_HEIGHT_MAX_75_V'}) SET r.text='Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)', r.kind='violation'\nMERGE (C_Building:Class {iri:'ex:Building'}) SET C_Building.label='Building'\nMERGE (DP_H:DatatypeProperty {iri:'ex:hasHeightM'}) SET DP_H.label='hasHeightM', DP_H.range='xsd:decimal'\nMERGE (B_gt:Builtin {iri:'swrlb:greaterThan'}) SET B_gt.label='greaterThan'\nMERGE (lit75:Literal {lex:'75', datatype:'xsd:integer'}) SET lit75.lex='75', lit75.datatype='xsd:integer'\nMERGE (a1)-[:ARG {pos:1}]\nMERGE (lit75)-[:LLEX {id:MERGE_R_URB_HEIGHT_MAX_75_V}\nMERGE (litT)-[:LLEX {id:MERGEMINUS_R_URB_HEIGHT_MIN_V}\nMERGE (litV)-[:LLEX {id:MERGE_R_URB_HEIGHT_MIN_V}\nMERGE (litT)-[:LLEX {id:MERGEMINUS_R_URB_HEIGHT_MIN_V}\nMERGE (r)-[:HAS_BODY {order:1}]\nMERGE (litV)-[:MERGE_V:at most N]\nMERGE (litT)-[:MERGE_T:violates at most T]\nMERGE (litM:BVar {id:MERGE_M:at most M})\nMERGE (litV:Lex {id:MERGE_V:at most N})\nMERGE (r)-[:HAS_BODY {order:1}]\nMERGE (litV:Var {MERGE_V:at most V})\nMERGE (r)-[:MERGE_D:hasHead {DEP}]"
+  }
+]

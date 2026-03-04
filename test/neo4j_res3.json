@@ -1,0 +1,15 @@
+[
+  {
+    "status": "ok",
+    "project": "default-project",
+    "database": "neo4j",
+    "graphs": {
+      "ontology": "OntoGraph",
+      "rules": "Metagraph"
+    },
+    "counts": {
+      "merge_statements": 24
+    },
+    "cypher": "MERGE (r:Rule {id:'R_URB_HEIGHT_MAX_75_V', kind:'violation'})\nMERGE (a1:Atom {id:'R_URB_HEIGHT_MAX_75_V_A1', type:'ClassAtom'})\nMERGE (a2:Atom {id:'R_URB_HEIGHT_MAX_75_V_A2', type:'DataPropertyAtom'})\nMERGE (a3:Atom {id:'R_URB_HEIGHT_MAX_75_V_A3', type:'BuiltinAtom'})\nMERGE (h1:Atom {id:'R_URB_HEIGHT_MAX_75_V_H1', type:'DataPropertyAtom'})\nMERGE (r)-[:HAS_BODY {order:1}]->(a1)\nMERGE (r)-[:HAS_BODY {order:2}]->(a2)\nMERGE (r)-[:HAS_HEAD {order:1}]->(h1)\nMERGE (a1)-[:ARG {pos:1}]->(litM)\nMERGE (a2)-[:ARG {pos:1}]->(lit75)\nMERGE (a3)-[:ARG {pos:2}]->(litT)\nMERGE (r:Rule {id:'R_URB_HEIGHT_MAX_75_V', kind:'violation'})\nMERGE (a1:Atom {id:'R_URB_HEIGHT_MAX_75_V_A1', type:'ClassAtom'})\nMERGE (a2:Atom {id:'R_URB_HEIGHT_MAX_75_V_A2', type:'DataPropertyAtom'})\nMERGE (a3:Atom {id:'R_URB_HEIGHT_MAX_75_V_A3', type:'BuiltinAtom'})\nMERGE (h1:Atom {id:'R_URB_HEIGHT_MAX_75_V_H1', type:'DataPropertyAtom'})\nMERGE (r)-[:HAS_BODY {order:1}]->(a1)\nMERGE (r)-[:HAS_BODY {order:2}]->(a2)\nMERGE (r)-[:HAS_HEAD {order:1}]->(h1)\nMERGE (R_V:Class {iri:'ex:Building'}) SET R_V.label='Building'\nMERGE (DP_H:DatatypeProperty {iri:'ex:hasHeightM'}) SET DP_H.label='hasHeightM'\nMERGE (DP_V:DatatypeProperty {iri:'ex:violatesMaxHeightM'}) SET DP_V.label='violatesMaxHeightM'\nMERGE (DP_H_A:DatatypeProperty {iri:'ex:hasHeightM_Ax')}\nMERGE (DP_V:DatatypeProperty {iri:'ex:violatesMaxHeightM'}) SET DP_V.label='violatesMaxHead'"
+  }
+]

@@ -1,0 +1,81 @@
+DG CYPHER TEMPLATE FOR LLM (v1)
+
+TASK
+Convert natural-language design rules into Neo4j Cypher MERGE statements for OntoGraph + Metagraph.
+
+OUTPUT RULES
+- Output Cypher only.
+- Use only MERGE and SET.
+- Allowed node labels: Rule, Atom, Builtin, Var, Literal, Class, DatatypeProperty, ObjectProperty.
+- Allowed relationships: HAS_BODY, HAS_HEAD, REFERS_TO, ARG, HAS_DATA_PROPERTY, HAS_OBJECT_PROPERTY.
+- Every node must include graph and project properties.
+- Rule must include id, name, description, kind, text, swrl, graph, project.
+
+SEMANTIC MAPPING
+- Maximum/at most/no more than X: use swrlb:greaterThan(valueVar, X) in body.
+- Minimum/at least/no less than X: use swrlb:lessThan(valueVar, X) in body.
+- Equality to X: use swrlb:notEqual(valueVar, X) in body.
+- Between min and max: emit two violation rules (min and max).
+
+IDENTIFIERS
+- Rule id format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V
+- Body atom ids: <RULE_ID>_A1, _A2, ...
+- Head atom ids: <RULE_ID>_H1, _H2, ...
+
+IRI PREFIXES
+- ex: for domain terms
+- swrlb: for builtins
+
+CYPHER TEMPLATE BLOCK
+MERGE (C_Main:Class {iri:'ex:<CLASS_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
+SET C_Main.label='<CLASS_LABEL>'
+
+MERGE (DP_Main:DatatypeProperty {iri:'ex:<DATA_PROPERTY_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
+SET DP_Main.label='<DATA_PROPERTY_LABEL>', DP_Main.range='<xsd:decimal|xsd:integer|xsd:boolean>'
+
+MERGE (B_Cmp:Builtin {iri:'swrlb:<BUILTIN_NAME>', graph:'Metagraph', project:'<PROJECT_NAME>'})
+SET B_Cmp.label='<BUILTIN_LABEL>'
+
+MERGE (DP_V:DatatypeProperty {iri:'ex:<VIOLATION_PREDICATE_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
+SET DP_V.label='<VIOLATION_PREDICATE_LABEL>', DP_V.range='xsd:boolean'
+
+MERGE (r:Rule {id:'<RULE_ID>', graph:'Metagraph', project:'<PROJECT_NAME>'})
+SET r.name='<RULE_NAME>',
+    r.description='<RULE_DESCRIPTION>',
+    r.kind='violation',
+    r.text='<SWRL_EXPRESSION>',
+    r.swrl='<SWRL_EXPRESSION>'
+
+MERGE (vEntity:Var {name:'?<ENTITY_VAR>', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (vValue:Var {name:'?<VALUE_VAR>', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (litX:Literal {lex:'<THRESHOLD_LEX>', datatype:'<xsd:decimal|xsd:integer|xsd:boolean>', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (litT:Literal {lex:'true', datatype:'xsd:boolean', graph:'Metagraph', project:'<PROJECT_NAME>'})
+
+MERGE (a1:Atom {id:'<RULE_ID>_A1', type:'ClassAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (a2:Atom {id:'<RULE_ID>_A2', type:'DataPropertyAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (a3:Atom {id:'<RULE_ID>_A3', type:'BuiltinAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
+MERGE (h1:Atom {id:'<RULE_ID>_H1', type:'DataPropertyAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
+
+MERGE (r)-[:HAS_BODY {order:1}]->(a1)
+MERGE (r)-[:HAS_BODY {order:2}]->(a2)
+MERGE (r)-[:HAS_BODY {order:3}]->(a3)
+MERGE (r)-[:HAS_HEAD {order:1}]->(h1)
+
+MERGE (a1)-[:REFERS_TO]->(C_Main)
+MERGE (a2)-[:REFERS_TO]->(DP_Main)
+MERGE (a3)-[:REFERS_TO]->(B_Cmp)
+MERGE (h1)-[:REFERS_TO]->(DP_V)
+
+MERGE (a1)-[:ARG {pos:1}]->(vEntity)
+MERGE (a2)-[:ARG {pos:1}]->(vEntity)
+MERGE (a2)-[:ARG {pos:2}]->(vValue)
+MERGE (a3)-[:ARG {pos:1}]->(vValue)
+MERGE (a3)-[:ARG {pos:2}]->(litX)
+MERGE (h1)-[:ARG {pos:1}]->(vEntity)
+MERGE (h1)-[:ARG {pos:2}]->(litT)
+
+QUALITY CHECKS
+- No malformed MERGE syntax.
+- Every atom has REFERS_TO.
+- ARG relations include pos.
+- Cypher must execute in Neo4j 5.

@@ -209,3 +209,15 @@ Named volumes:
 - `neo4j_data` -> Neo4j database files
 - `n8n_data` -> n8n SQLite, workflows, credentials
 - `ollama` -> Ollama models
+
+## Grasshopper add-in scaffold (DG)
+A new folder `DG/` contains an initial implementation of the Design Grammars Grasshopper add-in:
+- `DG/src/DG.Core` -> Neo4j connector, rule repository, SWRL parser, validator engine
+- `DG/src/DG.Grasshopper` -> components: `CONNECTOR`, `METAGRAPH`, `RULE DECONSTRUCT`, `CLASSIFICATOR`, `VALIDATOR`
+- `DG/tests/DG.Tests` -> parser/evaluator/classificator tests
+
+Build and test:
+```powershell
+dotnet build .\DG\DG.sln
+dotnet test .\DG\DG.sln
+```

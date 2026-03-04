@@ -1,0 +1,198 @@
+﻿[
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:Building",
+        "project": "default-project",
+        "label": "Building",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 14,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasHeightM",
+        "range": "xsd:decimal",
+        "project": "default-project",
+        "label": "hasHeightM",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:14"
+    }
+  },
+  {
+    "n": {
+      "identity": 15,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:greaterThan",
+        "project": "default-project",
+        "label": "greaterThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:15"
+    }
+  },
+  {
+    "n": {
+      "identity": 16,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMaxHeight",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "label": "violatesMaxHeight",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:16"
+    }
+  },
+  {
+    "n": {
+      "identity": 17,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V",
+        "text": "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:17"
+    }
+  },
+  {
+    "n": {
+      "identity": 18,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?b",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:18"
+    }
+  },
+  {
+    "n": {
+      "identity": 19,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?h",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:19"
+    }
+  },
+  {
+    "n": {
+      "identity": 20,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:decimal",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "75"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:20"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 22,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A1",
+        "type": "ClassAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:22"
+    }
+  },
+  {
+    "n": {
+      "identity": 23,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A2",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:23"
+    }
+  },
+  {
+    "n": {
+      "identity": 24,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A3",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:24"
+    }
+  },
+  {
+    "n": {
+      "identity": 25,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_H1",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:25"
+    }
+  }
+]

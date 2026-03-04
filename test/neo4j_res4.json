@@ -1,0 +1,11 @@
+[
+  {
+    "results": [],
+    "errors": [
+      {
+        "code": "Neo.ClientError.Statement.SyntaxError",
+        "message": "Variable `R_R` already declared (line 10, column 8 (offset: 844))\n\"MERGE (R_R:Rule {id:'R_URB_HEIGHT_MAX_75_V'}) SET R_R.text='Building(?b)^hasHeadM(?b,?h)^swrlb:greaterThan(?h,75)->violation(?b,true)', R_R.kind='violation'\"\n        ^"
+      }
+    ]
+  }
+]

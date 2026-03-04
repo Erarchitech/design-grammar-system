@@ -1,0 +1,476 @@
+﻿[
+  {
+    "n": {
+      "identity": 0,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:directSunlightHoursPerDay",
+        "range": "xsd:decimal",
+        "label": "directSunlightHoursPerDay"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:0"
+    }
+  },
+  {
+    "n": {
+      "identity": 1,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "label": "lessThan"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:1"
+    }
+  },
+  {
+    "n": {
+      "identity": 2,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinDirectSunlight",
+        "range": "xsd:boolean",
+        "label": "violatesMinDirectSunlight"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:2"
+    }
+  },
+  {
+    "n": {
+      "identity": 3,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "id": "R_SUNLIGHT_MIN_2_8H_V",
+        "text": "Building(?b)^directSunlightHoursPerDay(?b,?s)^swrlb:lessThan(?s,2.8)->violatesMinDirectSunlight(?b,true)",
+        "title": "Minimum Hours of Direct Sunlight for Each Building must be at least 2.8 hours/day"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:3"
+    }
+  },
+  {
+    "n": {
+      "identity": 4,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?s"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:4"
+    }
+  },
+  {
+    "n": {
+      "identity": 5,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:decimal",
+        "lex": "2.8"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:5"
+    }
+  },
+  {
+    "n": {
+      "identity": 6,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_SUNLIGHT_MIN_2_8H_V_A1",
+        "type": "ClassAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:6"
+    }
+  },
+  {
+    "n": {
+      "identity": 7,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_SUNLIGHT_MIN_2_8H_V_A2",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:7"
+    }
+  },
+  {
+    "n": {
+      "identity": 8,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_SUNLIGHT_MIN_2_8H_V_A3",
+        "type": "BuiltinAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:8"
+    }
+  },
+  {
+    "n": {
+      "identity": 9,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_SUNLIGHT_MIN_2_8H_V_H1",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:9"
+    }
+  },
+  {
+    "n": {
+      "identity": 10,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:UrbanBlock",
+        "label": "UrbanBlock"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:10"
+    }
+  },
+  {
+    "n": {
+      "identity": 11,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:blockGridSizeM",
+        "range": "xsd:decimal",
+        "label": "blockGridSizeM"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:11"
+    }
+  },
+  {
+    "n": {
+      "identity": 12,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinUrbanBlockGridSize",
+        "range": "xsd:boolean",
+        "label": "violateMinUrbanBlockGridSize"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:12"
+    }
+  },
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:Building",
+        "project": "default-project",
+        "label": "Building",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 14,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasHeightM",
+        "range": "xsd:decimal",
+        "project": "default-project",
+        "label": "hasHeightM",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:14"
+    }
+  },
+  {
+    "n": {
+      "identity": 15,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:greaterThan",
+        "project": "default-project",
+        "label": "greaterThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:15"
+    }
+  },
+  {
+    "n": {
+      "identity": 16,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMaxHeight",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "label": "violatesMaxHeight",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:16"
+    }
+  },
+  {
+    "n": {
+      "identity": 17,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V",
+        "text": "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:17"
+    }
+  },
+  {
+    "n": {
+      "identity": 18,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?b",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:18"
+    }
+  },
+  {
+    "n": {
+      "identity": 19,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?h",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:19"
+    }
+  },
+  {
+    "n": {
+      "identity": 20,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:decimal",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "75"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:20"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 22,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A1",
+        "type": "ClassAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:22"
+    }
+  },
+  {
+    "n": {
+      "identity": 23,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A2",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:23"
+    }
+  },
+  {
+    "n": {
+      "identity": 24,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_A3",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:24"
+    }
+  },
+  {
+    "n": {
+      "identity": 25,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "project": "default-project",
+        "id": "R_URB_HEIGHT_MAX_75_V_H1",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:25"
+    }
+  },
+  {
+    "n": {
+      "identity": 26,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "text": "UrbanBlock(?ub)^blockGridSizeM(?ub,?g)^swrlb:lessThan(?g,12)->violatesMinUrbanBlockGridSize(?ub,true)",
+        "id": "R_URBANBLOCK_GRID_MIN_12M_V",
+        "title": "Urban block grid size must be at least 12 m (violation if less than 12 m)"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:26"
+    }
+  },
+  {
+    "n": {
+      "identity": 27,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?ub"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:27"
+    }
+  },
+  {
+    "n": {
+      "identity": 28,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?g"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:28"
+    }
+  },
+  {
+    "n": {
+      "identity": 29,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:decimal",
+        "lex": "12"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:29"
+    }
+  },
+  {
+    "n": {
+      "identity": 30,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_URBANBLOCK_GRID_MIN_12M_V_A1",
+        "type": "ClassAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:30"
+    }
+  },
+  {
+    "n": {
+      "identity": 31,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_URBANBLOCK_GRID_MIN_12M_V_A2",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:31"
+    }
+  },
+  {
+    "n": {
+      "identity": 32,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_URBANBLOCK_GRID_MIN_12M_V_A3",
+        "type": "BuiltinAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:32"
+    }
+  },
+  {
+    "n": {
+      "identity": 33,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "id": "R_URBANBLOCK_GRID_MIN_12M_V_H1",
+        "type": "DataPropertyAtom"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:33"
+    }
+  }
+]
