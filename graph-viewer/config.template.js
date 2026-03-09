@@ -13,10 +13,11 @@ window.GRAPH_CONFIG = {
     encrypted: "ENCRYPTION_OFF"
   },
   labels: {
-    Rule: { label: "id" },
-    Atom: { label: "id" },
+    Rule: { label: "Rule_Id" },
+    Atom: { label: "Atom_Id", secondaryLabel: "SWRL_label" },
     Class: { label: "label" },
-    DatatypeProperty: { label: "label" },
+    DatatypeProperty: { label: "SWRL_label" },
+    DataProperty: { label: "SWRL_label" },
     ObjectProperty: { label: "label" },
     Builtin: { label: "label" },
     Var: { label: "name" },
@@ -26,18 +27,17 @@ window.GRAPH_CONFIG = {
     HAS_BODY: { caption: true, thickness: 2 },
     HAS_HEAD: { caption: true, thickness: 2 },
     REFERS_TO: { caption: true, thickness: 2 },
-    ARG: { caption: true, thickness: 2 },
-    HAS_DATA_PROPERTY: { caption: true, thickness: 2 },
-    HAS_OBJECT_PROPERTY: { caption: true, thickness: 2 }
+    ARG: { caption: true, thickness: 2 }
   },
   visGroups: {
     Class: { color: { background: "#78c38a", border: "#5aa46c" } },
     DatatypeProperty: { color: { background: "#ffb36b", border: "#e5923a" } },
+    DataProperty: { color: { background: "#ffb36b", border: "#e5923a" } },
     ObjectProperty: { color: { background: "#ff8f3a", border: "#d86d1f" } },
     Builtin: { color: { background: "#9aa4b2", border: "#6f7884" } },
     Rule: { color: { background: "#6da7ff", border: "#3f7ed9" } },
     Atom: { color: { background: "#b7c0cc", border: "#8c96a3" } },
-    Var: { color: { background: "#d4a5f5", border: "#b07ed1" } },
-    Literal: { color: { background: "#f5e680", border: "#d4c44e" } }
+    Var: { color: { background: "#c6b5ff", border: "#9278d9" } },
+    Literal: { color: { background: "#ffd6a5", border: "#d9a36a" } }
   }
 };
