@@ -4,7 +4,6 @@
   "task": "nl_to_swrl_and_metagraph",
   "rule_kind": "violation | compliance",
   "domain": "string",
-
   "input_nl": {
     "text": "natural language rule",
     "controlled_terms": [
@@ -17,47 +16,160 @@
       }
     ]
   },
-
   "output_formal": {
     "language": "SWRL",
     "expression": "single-line SWRL"
   },
-
   "metagraph": {
     "rule_node": {
       "label": "Rule",
-      "key": {"id": "same_as_dataset_id"},
-      "props": {"name": "...", "rule_kind": "...", "domain": "..."}
+      "key": {
+        "Rule_Id": "same_as_dataset_id"
+      },
+      "props": {
+        "text": "SWRL expression string",
+        "kind": "violation | compliance",
+        "title": "optional human-readable title",
+        "project": "default-project",
+        "graph": "Metagraph"
+      }
     },
-
+    "nodes": [
+      {
+        "label": "Class",
+        "key": {
+          "iri": "ex:<ClassName>"
+        },
+        "props": {
+          "label": "<ClassName>",
+          "project": "default-project",
+          "graph": "OntoGraph"
+        }
+      },
+      {
+        "label": "DatatypeProperty",
+        "key": {
+          "iri": "ex:<propertyName>"
+        },
+        "props": {
+          "SWRL_label": "<propertyName>",
+          "range": "xsd:decimal | xsd:integer | xsd:boolean | xsd:string",
+          "project": "default-project",
+          "graph": "OntoGraph"
+        }
+      },
+      {
+        "label": "Builtin",
+        "key": {
+          "iri": "swrlb:<builtinName>"
+        },
+        "props": {
+          "label": "<builtinName>",
+          "project": "default-project",
+          "graph": "Metagraph"
+        }
+      },
+      {
+        "label": "Atom",
+        "key": {
+          "Atom_Id": "{Rule_Id}_A{n} | {Rule_Id}_H{n}"
+        },
+        "props": {
+          "Atom_Id": "{Rule_Id}_A{n} | {Rule_Id}_H{n}",
+          "type": "ClassAtom | DataPropertyAtom | ObjectPropertyAtom | BuiltinAtom",
+          "iri": "ex:<ClassName> | ex:<propertyName> | swrlb:<builtinName>",
+          "SWRL_label": "<ClassName> | <propertyName> | <builtinName>",
+          "project": "default-project",
+          "graph": "Metagraph"
+        }
+      },
+      {
+        "label": "Var",
+        "key": {
+          "name": "?<varName>"
+        },
+        "props": {
+          "project": "default-project",
+          "graph": "Metagraph"
+        }
+      },
+      {
+        "label": "Literal",
+        "key": {
+          "lex": "<value>",
+          "datatype": "xsd:decimal | xsd:integer | xsd:boolean | xsd:string"
+        },
+        "props": {
+          "project": "default-project",
+          "graph": "Metagraph"
+        }
+      }
+    ],
     "atoms": [
       {
-        "atom_id": "A1",
+        "Atom_Id": "{Rule_Id}_A{n} | {Rule_Id}_H{n}",
         "atom_type": "ClassAtom | DataPropertyAtom | ObjectPropertyAtom | BuiltinAtom",
-        "predicate_ref": {"iri": "ex:Building", "owl_type": "owl:Class"},
+        "predicate_ref": {
+          "iri": "ex:<ClassName> | ex:<propertyName> | swrlb:<builtinName>",
+          "SWRL_label": "<ClassName> | <propertyName> | <builtinName>",
+          "owl_type": "owl:Class | owl:DatatypeProperty | owl:ObjectProperty | swrl:Builtin"
+        },
         "args": [
-          {"pos": 1, "type": "Var", "value": "?b"},
-          {"pos": 2, "type": "Var|Literal", "value": "?h", "datatype": null}
+          {
+            "pos": 1,
+            "type": "Var",
+            "value": "?<varName>"
+          },
+          {
+            "pos": 2,
+            "type": "Var | Literal",
+            "value": "?<varName> | <literalValue>",
+            "datatype": "null | xsd:decimal | xsd:integer | xsd:boolean | xsd:string"
+          }
         ]
       }
     ],
-
     "connections": [
-      {"type": "HAS_BODY", "from": "RULE", "to": "A1", "order": 1},
-      {"type": "HAS_HEAD", "from": "RULE", "to": "H1", "order": 1},
-
-      {"type": "REFERS_TO", "from": "A1", "to_onto_iri": "ex:Building"},
-      {"type": "ARG", "from": "A1", "to": {"type": "Var", "value": "?b"}, "pos": 1}
+      {
+        "type": "HAS_BODY",
+        "from": "{Rule_Id}",
+        "to": "{Rule_Id}_A{n}",
+        "order": 1
+      },
+      {
+        "type": "HAS_HEAD",
+        "from": "{Rule_Id}",
+        "to": "{Rule_Id}_H{n}",
+        "order": 1
+      },
+      {
+        "type": "REFERS_TO",
+        "from": "{Atom_Id}",
+        "to_onto_iri": "<iri of Class | DatatypeProperty | Builtin>"
+      },
+      {
+        "type": "ARG",
+        "from": "{Atom_Id}",
+        "to": {
+          "type": "Var | Literal",
+          "value": "?<varName> | <literalValue>"
+        },
+        "pos": 1
+      }
     ]
   },
-
   "metadata": {
-    "entity_scope": "ex:Building",
+    "entity_scope": "ex:<ClassName>",
     "constraint_semantics": "minimum | maximum | range | implication | equality | cardinality",
     "unit": "m | hours_per_day | null",
     "numeric_type": "xsd:decimal | xsd:integer | xsd:boolean | null",
-    "thresholds": {"min": 0, "max": 0},
-    "assumptions": ["..."],
-    "version": "v2"
+    "thresholds": {
+      "min": 0,
+      "max": 0
+    },
+    "assumptions": [
+      "..."
+    ],
+    "version": "v3"
   }
 }
