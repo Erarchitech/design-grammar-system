@@ -11,8 +11,8 @@ public sealed class Neo4jRuleRepository : IRuleRepository
     private const string RulesQuery = """
         MATCH (r:Rule {graph:'Metagraph', project:$project})
         RETURN
-            r.id AS id,
-            coalesce(r.name, r.id) AS name,
+            r.Rule_Id AS id,
+            coalesce(r.title, r.name, r.Rule_Id) AS name,
             coalesce(r.description, '') AS description,
             coalesce(r.kind, 'violation') AS kind,
             coalesce(r.text, '') AS text,
@@ -27,14 +27,14 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         OPTIONAL MATCH (a)-[:REFERS_TO]->(p)
         OPTIONAL MATCH (a)-[arg:ARG]->(av)
         RETURN
-            r.id AS ruleId,
+            r.Rule_Id AS ruleId,
             type(rel) AS relationType,
-            coalesce(rel.order, 0) AS atomOrder,
-            a.id AS atomId,
+            coalesce(rel.`order`, 0) AS atomOrder,
+            a.Atom_Id AS atomId,
             coalesce(a.type, '') AS atomType,
-            p.iri AS predicateIri,
-            p.label AS predicateLabel,
-            coalesce(arg.pos, 0) AS argPos,
+            coalesce(p.iri, a.iri) AS predicateIri,
+            coalesce(p.label, p.SWRL_label, a.SWRL_label) AS predicateLabel,
+            coalesce(arg.`pos`, 0) AS argPos,
             labels(av) AS argLabels,
             av.name AS varName,
             av.lex AS litLex,
