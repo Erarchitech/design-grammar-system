@@ -1,0 +1,18 @@
+How to rebuild release
+
+From repo root:
+
+dotnet clean .\DG\DG.sln -c Release
+dotnet build .\DG\DG.sln -c Release -p:RhinoInstallDir="C:\Program Files\Rhino 8"
+Release output:
+
+.\DG\src\DG.Grasshopper\bin\Release\net7.0-windows\DG.Grasshopper.dll
+To load in Grasshopper, copy DLLs and rename plugin DLL to .gha:
+
+$src = ".\DG\src\DG.Grasshopper\bin\Release\net7.0-windows"
+$dst = "$env:APPDATA\Grasshopper\Libraries\DG"
+New-Item -ItemType Directory -Force $dst | Out-Null
+Copy-Item "$src\*.dll" $dst -Force
+if (Test-Path "$dst\DG.Grasshopper.gha") { Remove-Item "$dst\DG.Grasshopper.gha" -Force }
+Rename-Item "$dst\DG.Grasshopper.dll" "DG.Grasshopper.gha"
+Restart Rhino/Grasshopper after copying.

@@ -1,0 +1,89 @@
+{
+  "dataset_version": "v3",
+  "description": "Training dataset for NL → Cypher conversion of SWRL rules in Neo4j Ontology Graph",
+  "records": [
+    {
+      "input_nl": "Building height must not exceed 75 meters",
+      "cypher": "
+MERGE (r:Rule {Rule_Id:'rule_building_height_max'})
+SET r.description='Building height must not exceed 75 meters'
+
+MERGE (b:Class {iri:'Building'})
+SET b.label='Building'
+
+MERGE (dp:DatatypeProperty {iri:'hasHeightM'})
+SET dp.SWRL_label='hasHeightM'
+
+MERGE (a1:Atom {Atom_Id:'atom_b'})
+SET a1.iri='Building'
+SET a1.SWRL_label='ClassAtom'
+
+MERGE (a2:Atom {Atom_Id:'atom_height'})
+SET a2.iri='hasHeightM'
+SET a2.SWRL_label='DatatypePropertyAtom'
+
+MERGE (r)-[:HAS_BODY]->(a1)
+MERGE (r)-[:HAS_BODY]->(a2)
+
+MERGE (a1)-[:REFERS_TO]->(b)
+MERGE (a2)-[:REFERS_TO]->(dp)
+"
+    },
+
+    {
+      "input_nl": "Minimum hours of direct sunlight for each building must be at least 2.8 hours per day",
+      "cypher": "
+MERGE (r:Rule {Rule_Id:'rule_min_sunlight'})
+SET r.description='Minimum hours of direct sunlight must be at least 2.8'
+
+MERGE (b:Class {iri:'Building'})
+SET b.label='Building'
+
+MERGE (dp:DatatypeProperty {iri:'directSunlightHoursPerDay'})
+SET dp.SWRL_label='directSunlightHoursPerDay'
+
+MERGE (a1:Atom {Atom_Id:'atom_b'})
+SET a1.iri='Building'
+SET a1.SWRL_label='ClassAtom'
+
+MERGE (a2:Atom {Atom_Id:'atom_sun'})
+SET a2.iri='directSunlightHoursPerDay'
+SET a2.SWRL_label='DatatypePropertyAtom'
+
+MERGE (r)-[:HAS_BODY]->(a1)
+MERGE (r)-[:HAS_BODY]->(a2)
+
+MERGE (a1)-[:REFERS_TO]->(b)
+MERGE (a2)-[:REFERS_TO]->(dp)
+"
+    },
+
+    {
+      "input_nl": "Urban block grid size must be between 12 and 48 meters",
+      "cypher": "
+MERGE (r:Rule {Rule_Id:'rule_block_grid_size'})
+SET r.description='Urban block grid size must be between 12 and 48 meters'
+
+MERGE (ub:Class {iri:'UrbanBlock'})
+SET ub.label='UrbanBlock'
+
+MERGE (dp:DatatypeProperty {iri:'blockGridSizeM'})
+SET dp.SWRL_label='blockGridSizeM'
+
+MERGE (a1:Atom {Atom_Id:'atom_block'})
+SET a1.iri='UrbanBlock'
+SET a1.SWRL_label='ClassAtom'
+
+MERGE (a2:Atom {Atom_Id:'atom_grid'})
+SET a2.iri='blockGridSizeM'
+SET a2.SWRL_label='DatatypePropertyAtom'
+
+MERGE (r)-[:HAS_BODY]->(a1)
+MERGE (r)-[:HAS_BODY]->(a2)
+
+MERGE (a1)-[:REFERS_TO]->(ub)
+MERGE (a2)-[:REFERS_TO]->(dp)
+"
+    }
+  ]
+}

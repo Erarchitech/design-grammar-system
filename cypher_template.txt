@@ -1,81 +1,171 @@
-DG CYPHER TEMPLATE FOR LLM (v1)
+DG CYPHER TEMPLATE FOR LLM (v3)
 
 TASK
-Convert natural-language design rules into Neo4j Cypher MERGE statements for OntoGraph + Metagraph.
+Convert natural-language design rules into Neo4j Cypher MERGE + SET
+statements that populate OntoGraph (ontology terms) and Metagraph
+(rules, atoms, variables, literals, builtins).
 
 OUTPUT RULES
-- Output Cypher only.
+- Output Cypher only — no JSON, no markdown fences, no commentary.
 - Use only MERGE and SET.
-- Allowed node labels: Rule, Atom, Builtin, Var, Literal, Class, DatatypeProperty, ObjectProperty.
-- Allowed relationships: HAS_BODY, HAS_HEAD, REFERS_TO, ARG, HAS_DATA_PROPERTY, HAS_OBJECT_PROPERTY.
-- Every node must include graph and project properties.
-- Rule must include id, name, description, kind, text, swrl, graph, project.
+- Allowed node labels: Class, DatatypeProperty, ObjectProperty, Builtin,
+  Rule, Atom, Var, Literal.
+- Allowed relationship types: HAS_BODY, HAS_HEAD, REFERS_TO, ARG.
+- Every persisted node MUST include `project` and `graph` properties.
+- graph values: 'OntoGraph' for Class / DatatypeProperty / ObjectProperty;
+  'Metagraph' for Rule / Atom / Builtin / Var / Literal.
 
-SEMANTIC MAPPING
-- Maximum/at most/no more than X: use swrlb:greaterThan(valueVar, X) in body.
-- Minimum/at least/no less than X: use swrlb:lessThan(valueVar, X) in body.
-- Equality to X: use swrlb:notEqual(valueVar, X) in body.
-- Between min and max: emit two violation rules (min and max).
+GRAPH SCHEMA (from dataset_schema v3)
+
+  Rule   — key: Rule_Id
+           props: text (SWRL string), kind (violation|compliance),
+                  title (optional), project, graph='Metagraph'
+
+  Class  — key: iri (ex:<ClassName>)
+           props: label, project, graph='OntoGraph'
+
+  DatatypeProperty — key: iri (ex:<propertyName>)
+           props: SWRL_label, range (xsd:decimal|xsd:integer|…),
+                  project, graph='OntoGraph'
+
+  ObjectProperty — key: iri (ex:<propertyName>)
+           props: label, range, project, graph='OntoGraph'
+
+  Builtin — key: iri (swrlb:<builtinName>)
+           props: label, project, graph='Metagraph'
+
+  Atom   — key: Atom_Id ({Rule_Id}_A{n} for body, {Rule_Id}_H{n} for head)
+           props: type (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom),
+                  iri, SWRL_label, project, graph='Metagraph'
+
+  Var    — key: name (?<varName>)
+           props: project, graph='Metagraph'
+
+  Literal — key: lex + datatype
+           props: project, graph='Metagraph'
+
+SEMANTIC MAPPING (violation pattern)
+- "Maximum / at most / no more than X" → body uses swrlb:greaterThan(?val, X)
+- "Minimum / at least / no less than X" → body uses swrlb:lessThan(?val, X)
+- "Equal to X"               → body uses swrlb:notEqual(?val, X)
+- "Between min and max"      → emit TWO separate violation rules (one for min, one for max)
+Body checks the condition that *breaks* the rule; head sets the violation flag to true.
 
 IDENTIFIERS
-- Rule id format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V
-- Body atom ids: <RULE_ID>_A1, _A2, ...
-- Head atom ids: <RULE_ID>_H1, _H2, ...
+- Rule_Id format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V
+                  (e.g. R_URB_HEIGHT_MAX_75_V)
+- Body atom ids:  {Rule_Id}_A1, _A2, _A3, …
+- Head atom ids:  {Rule_Id}_H1, _H2, …
 
 IRI PREFIXES
-- ex: for domain terms
-- swrlb: for builtins
+- ex:    for domain terms (classes, properties, violation predicates)
+- swrlb: for SWRL builtins
 
 CYPHER TEMPLATE BLOCK
-MERGE (C_Main:Class {iri:'ex:<CLASS_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
-SET C_Main.label='<CLASS_LABEL>'
 
-MERGE (DP_Main:DatatypeProperty {iri:'ex:<DATA_PROPERTY_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
-SET DP_Main.label='<DATA_PROPERTY_LABEL>', DP_Main.range='<xsd:decimal|xsd:integer|xsd:boolean>'
+// 1. OntoGraph — ontology terms
+MERGE (C_Main:Class {iri: 'ex:<CLASS_NAME>'})
+SET C_Main.label = '<CLASS_NAME>',
+    C_Main.project = '<PROJECT>',
+    C_Main.graph = 'OntoGraph'
 
-MERGE (B_Cmp:Builtin {iri:'swrlb:<BUILTIN_NAME>', graph:'Metagraph', project:'<PROJECT_NAME>'})
-SET B_Cmp.label='<BUILTIN_LABEL>'
+MERGE (DP_Main:DatatypeProperty {iri: 'ex:<PROPERTY_NAME>'})
+SET DP_Main.SWRL_label = '<PROPERTY_NAME>',
+    DP_Main.range = '<xsd:decimal|xsd:integer|xsd:boolean>',
+    DP_Main.project = '<PROJECT>',
+    DP_Main.graph = 'OntoGraph'
 
-MERGE (DP_V:DatatypeProperty {iri:'ex:<VIOLATION_PREDICATE_IRI_LOCAL>', graph:'OntoGraph', project:'<PROJECT_NAME>'})
-SET DP_V.label='<VIOLATION_PREDICATE_LABEL>', DP_V.range='xsd:boolean'
+MERGE (B_Cmp:Builtin {iri: 'swrlb:<BUILTIN_NAME>'})
+SET B_Cmp.label = '<BUILTIN_NAME>',
+    B_Cmp.project = '<PROJECT>',
+    B_Cmp.graph = 'Metagraph'
 
-MERGE (r:Rule {id:'<RULE_ID>', graph:'Metagraph', project:'<PROJECT_NAME>'})
-SET r.name='<RULE_NAME>',
-    r.description='<RULE_DESCRIPTION>',
-    r.kind='violation',
-    r.text='<SWRL_EXPRESSION>',
-    r.swrl='<SWRL_EXPRESSION>'
+MERGE (DP_V:DatatypeProperty {iri: 'ex:<VIOLATION_PROPERTY>'})
+SET DP_V.SWRL_label = '<VIOLATION_PROPERTY>',
+    DP_V.range = 'xsd:boolean',
+    DP_V.project = '<PROJECT>',
+    DP_V.graph = 'OntoGraph'
 
-MERGE (vEntity:Var {name:'?<ENTITY_VAR>', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (vValue:Var {name:'?<VALUE_VAR>', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (litX:Literal {lex:'<THRESHOLD_LEX>', datatype:'<xsd:decimal|xsd:integer|xsd:boolean>', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (litT:Literal {lex:'true', datatype:'xsd:boolean', graph:'Metagraph', project:'<PROJECT_NAME>'})
+// 2. Metagraph — rule node
+MERGE (r:Rule {Rule_Id: '<RULE_ID>'})
+SET r.text = '<SWRL_EXPRESSION>',
+    r.kind = 'violation',
+    r.project = '<PROJECT>',
+    r.graph = 'Metagraph'
 
-MERGE (a1:Atom {id:'<RULE_ID>_A1', type:'ClassAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (a2:Atom {id:'<RULE_ID>_A2', type:'DataPropertyAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (a3:Atom {id:'<RULE_ID>_A3', type:'BuiltinAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
-MERGE (h1:Atom {id:'<RULE_ID>_H1', type:'DataPropertyAtom', graph:'Metagraph', project:'<PROJECT_NAME>'})
+// 3. Metagraph — variables, literals
+MERGE (vEntity:Var {name: '?<ENTITY_VAR>'})
+SET vEntity.project = '<PROJECT>',
+    vEntity.graph = 'Metagraph'
 
-MERGE (r)-[:HAS_BODY {order:1}]->(a1)
-MERGE (r)-[:HAS_BODY {order:2}]->(a2)
-MERGE (r)-[:HAS_BODY {order:3}]->(a3)
-MERGE (r)-[:HAS_HEAD {order:1}]->(h1)
+MERGE (vValue:Var {name: '?<VALUE_VAR>'})
+SET vValue.project = '<PROJECT>',
+    vValue.graph = 'Metagraph'
 
+MERGE (litX:Literal {lex: '<THRESHOLD>', datatype: '<xsd:decimal|xsd:integer>'})
+SET litX.project = '<PROJECT>',
+    litX.graph = 'Metagraph'
+
+MERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'})
+SET litT.project = '<PROJECT>',
+    litT.graph = 'Metagraph'
+
+// 4. Metagraph — atom nodes
+MERGE (a1:Atom {Atom_Id: '<RULE_ID>_A1'})
+SET a1.type = 'ClassAtom',
+    a1.iri = 'ex:<CLASS_NAME>',
+    a1.SWRL_label = '<CLASS_NAME>',
+    a1.project = '<PROJECT>',
+    a1.graph = 'Metagraph'
+
+MERGE (a2:Atom {Atom_Id: '<RULE_ID>_A2'})
+SET a2.type = 'DataPropertyAtom',
+    a2.iri = 'ex:<PROPERTY_NAME>',
+    a2.SWRL_label = '<PROPERTY_NAME>',
+    a2.project = '<PROJECT>',
+    a2.graph = 'Metagraph'
+
+MERGE (a3:Atom {Atom_Id: '<RULE_ID>_A3'})
+SET a3.type = 'BuiltinAtom',
+    a3.iri = 'swrlb:<BUILTIN_NAME>',
+    a3.SWRL_label = '<BUILTIN_NAME>',
+    a3.project = '<PROJECT>',
+    a3.graph = 'Metagraph'
+
+MERGE (h1:Atom {Atom_Id: '<RULE_ID>_H1'})
+SET h1.type = 'DataPropertyAtom',
+    h1.iri = 'ex:<VIOLATION_PROPERTY>',
+    h1.SWRL_label = '<VIOLATION_PROPERTY>',
+    h1.project = '<PROJECT>',
+    h1.graph = 'Metagraph'
+
+// 5. Relationships — rule ↔ atoms
+MERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)
+MERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)
+MERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)
+MERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)
+
+// 6. Relationships — atoms → ontology terms (REFERS_TO)
 MERGE (a1)-[:REFERS_TO]->(C_Main)
 MERGE (a2)-[:REFERS_TO]->(DP_Main)
 MERGE (a3)-[:REFERS_TO]->(B_Cmp)
 MERGE (h1)-[:REFERS_TO]->(DP_V)
 
-MERGE (a1)-[:ARG {pos:1}]->(vEntity)
-MERGE (a2)-[:ARG {pos:1}]->(vEntity)
-MERGE (a2)-[:ARG {pos:2}]->(vValue)
-MERGE (a3)-[:ARG {pos:1}]->(vValue)
-MERGE (a3)-[:ARG {pos:2}]->(litX)
-MERGE (h1)-[:ARG {pos:1}]->(vEntity)
-MERGE (h1)-[:ARG {pos:2}]->(litT)
+// 7. Relationships — atoms → arguments (ARG)
+MERGE (a1)-[:ARG {`pos`: 1}]->(vEntity)
+MERGE (a2)-[:ARG {`pos`: 1}]->(vEntity)
+MERGE (a2)-[:ARG {`pos`: 2}]->(vValue)
+MERGE (a3)-[:ARG {`pos`: 1}]->(vValue)
+MERGE (a3)-[:ARG {`pos`: 2}]->(litX)
+MERGE (h1)-[:ARG {`pos`: 1}]->(vEntity)
+MERGE (h1)-[:ARG {`pos`: 2}]->(litT);
 
 QUALITY CHECKS
 - No malformed MERGE syntax.
-- Every atom has REFERS_TO.
-- ARG relations include pos.
+- Every Atom has exactly one REFERS_TO pointing to a Class, DatatypeProperty, ObjectProperty, or Builtin.
+- Every ARG relationship includes `pos`.
+- Rule key is Rule_Id (not id).
+- Atom key is Atom_Id (not id).
+- DatatypeProperty display property is SWRL_label (not label).
+- Backtick-quote reserved words in relationship properties: `order`, `pos`.
 - Cypher must execute in Neo4j 5.
