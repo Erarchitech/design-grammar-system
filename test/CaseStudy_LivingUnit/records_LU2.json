@@ -1,0 +1,511 @@
+﻿[
+  {
+    "n": {
+      "identity": 1,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:Kitchen",
+        "project": "default-project",
+        "label": "Kitchen",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:1"
+    }
+  },
+  {
+    "n": {
+      "identity": 2,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasKitchens",
+        "SWRL_label": "hasKitchens",
+        "range": "xsd:integer",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:2"
+    }
+  },
+  {
+    "n": {
+      "identity": 4,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinKitchens",
+        "SWRL_label": "violatesMinKitchens",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:4"
+    }
+  },
+  {
+    "n": {
+      "identity": 5,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?k",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:5"
+    }
+  },
+  {
+    "n": {
+      "identity": 6,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_KITCHENS_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:6"
+    }
+  },
+  {
+    "n": {
+      "identity": 11,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "project": "default-project",
+        "label": "LeavingUnit",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:11"
+    }
+  },
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasToiletCount",
+        "SWRL_label": "hasToiletCount",
+        "range": "xsd:integer",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 17,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "project": "default-project",
+        "label": "lessThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:17"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToiletCount",
+        "SWRL_label": "violatesMinToiletCount",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 25,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "Rule_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V",
+        "project": "default-project",
+        "text": "LeavingUnit(?l)^hasToiletCount(?l,?c)^swrlb:lessThan(?c,1)->violatesMinToiletCount(?l,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:25"
+    }
+  },
+  {
+    "n": {
+      "identity": 26,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?l",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:26"
+    }
+  },
+  {
+    "n": {
+      "identity": 27,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?c",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:27"
+    }
+  },
+  {
+    "n": {
+      "identity": 28,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:integer",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:28"
+    }
+  },
+  {
+    "n": {
+      "identity": 29,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:29"
+    }
+  },
+  {
+    "n": {
+      "identity": 30,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:30"
+    }
+  },
+  {
+    "n": {
+      "identity": 32,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasKitchens",
+        "SWRL_label": "hasKitchens",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_KITCHENS_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:32"
+    }
+  },
+  {
+    "n": {
+      "identity": 33,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasToiletCount",
+        "SWRL_label": "hasToiletCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:33"
+    }
+  },
+  {
+    "n": {
+      "identity": 34,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "SWRL_label": "lessThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:34"
+    }
+  },
+  {
+    "n": {
+      "identity": 35,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToiletCount",
+        "SWRL_label": "violatesMinToiletCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:35"
+    }
+  },
+  {
+    "n": {
+      "identity": 36,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasToilets",
+        "SWRL_label": "hasToilets",
+        "range": "xsd:integer",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:36"
+    }
+  },
+  {
+    "n": {
+      "identity": 37,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:greaterThan",
+        "SWRL_label": "greaterThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_KITCHENS_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:37"
+    }
+  },
+  {
+    "n": {
+      "identity": 38,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinKitchens",
+        "SWRL_label": "violatesMinKitchens",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_KITCHENS_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:38"
+    }
+  },
+  {
+    "n": {
+      "identity": 39,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "Rule_Id": "R_LEAVING_UNIT_MIN_KITCHENS_1_V",
+        "project": "default-project",
+        "text": "LeavingUnit(?l)^hasKitchens(?l,?k)^swrlb:greaterThan(?k,1)->violatesMinKitchens(?l,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:39"
+    }
+  },
+  {
+    "n": {
+      "identity": 40,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:greaterThan",
+        "project": "default-project",
+        "label": "greaterThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:40"
+    }
+  },
+  {
+    "n": {
+      "identity": 44,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToilets",
+        "SWRL_label": "violatesMinToilets",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:44"
+    }
+  },
+  {
+    "n": {
+      "identity": 45,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "Rule_Id": "R_LEAVING_UNIT_MIN_TOILETS_2_KITCHENS_1_V",
+        "project": "default-project",
+        "text": "LeavingUnit(?l)^hasToilets(?l,?t)^swrlb:greaterThan(?t,2)->violatesMinToilets(?l,false)^LeavingUnit(?l)^hasKitchens(?l,?k)^swrlb:greaterThan(?k,1)->violatesMinToilets(?l,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:45"
+    }
+  },
+  {
+    "n": {
+      "identity": 46,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?t",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:46"
+    }
+  },
+  {
+    "n": {
+      "identity": 47,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:integer",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:47"
+    }
+  },
+  {
+    "n": {
+      "identity": 48,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILETS_2_KITCHENS_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:48"
+    }
+  },
+  {
+    "n": {
+      "identity": 49,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasToilets",
+        "SWRL_label": "hasToilets",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILETS_2_KITCHENS_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:49"
+    }
+  },
+  {
+    "n": {
+      "identity": 50,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:greaterThan",
+        "SWRL_label": "greaterThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILETS_2_KITCHENS_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:50"
+    }
+  },
+  {
+    "n": {
+      "identity": 51,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToilets",
+        "SWRL_label": "violatesMinToilets",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILETS_2_KITCHENS_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:51"
+    }
+  }
+]

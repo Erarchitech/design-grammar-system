@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using DG.Core.Models;
 using DG.Core.Parsing;
 using Neo4j.Driver;
@@ -6,6 +7,17 @@ namespace DG.Core.Data;
 
 public sealed class Neo4jRuleRepository : IRuleRepository
 {
+    private static readonly Regex EditPrefixPattern = new(
+        @"^edit\s+Rule_Id:\s*\S+\s*[\u2014—-]\s*",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static string CleanDescription(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+        return EditPrefixPattern.Replace(raw, string.Empty).Trim();
+    }
+
     private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
 
     private const string RulesQuery = """
@@ -76,7 +88,7 @@ public sealed class Neo4jRuleRepository : IRuleRepository
                 {
                     Id = id,
                     Name = record["name"].As<string>(),
-                    Description = record["description"].As<string>(),
+                    Description = CleanDescription(record["description"].As<string>()),
                     Kind = record["kind"].As<string>(),
                     Text = record["text"].As<string>(),
                     Swrl = record["swrl"].As<string>(),

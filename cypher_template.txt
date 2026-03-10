@@ -51,6 +51,18 @@ SEMANTIC MAPPING (violation pattern)
 - "Between min and max"      → emit TWO separate violation rules (one for min, one for max)
 Body checks the condition that *breaks* the rule; head sets the violation flag to true.
 
+RULE SEPARATION PRINCIPLE
+- Each distinct constraint MUST be a separate Rule node with its own Atom subgraph.
+- NEVER combine multiple constraints (e.g. "at least 2 toilets AND at least 1 kitchen")
+  into a single Rule.
+- If the prompt contains N constraints, output N separate Rule subgraphs.
+- Shared Class / DatatypeProperty / ObjectProperty nodes are reused via MERGE (same iri).
+- Each Rule gets its own violation DatatypeProperty.
+
+PROPERTY REUSE ON EDIT
+- When editing an existing rule, preserve the same DatatypeProperty iri and SWRL_label
+  that the original rule used. Only change Literal lex values for numeric threshold changes.
+
 IDENTIFIERS
 - Rule_Id format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V
                   (e.g. R_URB_HEIGHT_MAX_75_V)

@@ -1,0 +1,399 @@
+﻿[
+  {
+    "n": {
+      "identity": 0,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_KITCHEN_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:0"
+    }
+  },
+  {
+    "n": {
+      "identity": 1,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "project": "default-project",
+        "label": "lessThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:1"
+    }
+  },
+  {
+    "n": {
+      "identity": 2,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinWindowCount",
+        "SWRL_label": "violatesMinWindowCount",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:2"
+    }
+  },
+  {
+    "n": {
+      "identity": 3,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasWindowCount",
+        "SWRL_label": "hasWindowCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:3"
+    }
+  },
+  {
+    "n": {
+      "identity": 4,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "project": "default-project",
+        "Rule_Id": "R_LU_MIN_WINDOW_1_V",
+        "text": "LeavingUnit(?lu)^hasWindowCount(?lu,?w)^swrlb:lessThan(?w,1)->violatesMinWindowCount(?lu,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:4"
+    }
+  },
+  {
+    "n": {
+      "identity": 7,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinKitchenCount",
+        "SWRL_label": "violatesMinKitchenCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_KITCHEN_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:7"
+    }
+  },
+  {
+    "n": {
+      "identity": 9,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "SWRL_label": "lessThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:9"
+    }
+  },
+  {
+    "n": {
+      "identity": 10,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinWindowCount",
+        "SWRL_label": "violatesMinWindowCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:10"
+    }
+  },
+  {
+    "n": {
+      "identity": 11,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?lu",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:11"
+    }
+  },
+  {
+    "n": {
+      "identity": 12,
+      "labels": [],
+      "properties": {
+
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:12"
+    }
+  },
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?w",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 14,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "project": "default-project",
+        "Rule_Id": "R_LU_MIN_WINDOW_2_V",
+        "text": "LeavingUnit(?lu)^hasWindowCount(?lu,?w)^swrlb:lessThan(?w,2)->violatesMinWindowCount(?lu,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:14"
+    }
+  },
+  {
+    "n": {
+      "identity": 15,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "project": "default-project",
+        "Rule_Id": "R_LU_MIN_KITCHEN_1_V",
+        "text": "LeavingUnit(?lu)^hasWindowCount(?lu,?w)^swrlb:notEqual(?w,1)->violatesMinKitchenCount(?lu,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:15"
+    }
+  },
+  {
+    "n": {
+      "identity": 16,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:integer",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:16"
+    }
+  },
+  {
+    "n": {
+      "identity": 18,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_2_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:18"
+    }
+  },
+  {
+    "n": {
+      "identity": 19,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasWindowCount",
+        "SWRL_label": "hasWindowCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_2_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:19"
+    }
+  },
+  {
+    "n": {
+      "identity": 20,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "SWRL_label": "lessThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_2_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:20"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:integer",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 36,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:36"
+    }
+  },
+  {
+    "n": {
+      "identity": 41,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasWindowCount",
+        "SWRL_label": "hasWindowCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_KITCHEN_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:41"
+    }
+  },
+  {
+    "n": {
+      "identity": 42,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:notEqual",
+        "SWRL_label": "notEqual",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_KITCHEN_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:42"
+    }
+  },
+  {
+    "n": {
+      "identity": 43,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinWindowCount",
+        "SWRL_label": "violatesMinWindowCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_2_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:43"
+    }
+  },
+  {
+    "n": {
+      "identity": 44,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LU_MIN_WINDOW_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:44"
+    }
+  },
+  {
+    "n": {
+      "identity": 50,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "project": "default-project",
+        "label": "LeavingUnit",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:50"
+    }
+  },
+  {
+    "n": {
+      "identity": 51,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasWindowCount",
+        "SWRL_label": "hasWindowCount",
+        "range": "xsd:integer",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:51"
+    }
+  }
+]

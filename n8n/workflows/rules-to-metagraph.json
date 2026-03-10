@@ -11,7 +11,10 @@
       "name": "Ingest Rules",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [-700, 0],
+      "position": [
+        -700,
+        0
+      ],
       "webhookId": "dg-rules-ingest"
     },
     {
@@ -19,15 +22,42 @@
         "keepOnlySet": true,
         "values": {
           "string": [
-            { "name": "rules_text", "value": "={{$json.rules_text || ($json.body && $json.body.rules_text) || ($json.query && $json.query.rules_text) || $json.rules || ''}}" },
-            { "name": "neo4j_user", "value": "={{$json.neo4j_user || 'neo4j'}}" },
-            { "name": "neo4j_password", "value": "={{$json.neo4j_password || '12345678'}}" },
-            { "name": "project_name", "value": "={{$json.project_name || $json.project || 'default-project'}}" },
-            { "name": "ollama_model", "value": "={{$json.ollama_model || 'llama3.1:latest'}}" },
-            { "name": "ollama_url", "value": "={{$json.ollama_url || 'http://ollama:11434'}}" },
-            { "name": "ollama_keep_alive", "value": "={{$json.ollama_keep_alive || '30m'}}" },
-            { "name": "neo4j_url", "value": "={{$json.neo4j_url || ($json.body && $json.body.neo4j_url) || ($json.query && $json.query.neo4j_url) || 'http://neo4j:7474'}}" },
-            { "name": "data_service_url", "value": "={{$json.data_service_url || 'http://data-service:8000'}}" }
+            {
+              "name": "rules_text",
+              "value": "={{$json.rules_text || ($json.body && $json.body.rules_text) || ($json.query && $json.query.rules_text) || $json.rules || ''}}"
+            },
+            {
+              "name": "neo4j_user",
+              "value": "={{$json.neo4j_user || 'neo4j'}}"
+            },
+            {
+              "name": "neo4j_password",
+              "value": "={{$json.neo4j_password || '12345678'}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.project_name || $json.project || 'default-project'}}"
+            },
+            {
+              "name": "ollama_model",
+              "value": "={{$json.ollama_model || 'llama3.1:latest'}}"
+            },
+            {
+              "name": "ollama_url",
+              "value": "={{$json.ollama_url || 'http://ollama:11434'}}"
+            },
+            {
+              "name": "ollama_keep_alive",
+              "value": "={{$json.ollama_keep_alive || '30m'}}"
+            },
+            {
+              "name": "neo4j_url",
+              "value": "={{$json.neo4j_url || ($json.body && $json.body.neo4j_url) || ($json.query && $json.query.neo4j_url) || 'http://neo4j:7474'}}"
+            },
+            {
+              "name": "data_service_url",
+              "value": "={{$json.data_service_url || 'http://data-service:8000'}}"
+            }
           ]
         }
       },
@@ -35,59 +65,79 @@
       "name": "Set Input Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [-460, 0]
+      "position": [
+        -460,
+        0
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst rulesText = (input.rules_text || '')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nif (!rulesText) {\n  throw new Error('rules_text is required');\n}\nconst project = input.project_name || 'default-project';\nconst fewShot = [\n  'Example input: \"Maximum height of each building must be at most 75 m.\"',\n  'Example output:',\n  '',\n  \"MERGE (C_Building:Class {iri: 'ex:Building'})\",\n  \"SET C_Building.label = 'Building', C_Building.project = '\" + project + \"', C_Building.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (DP_H:DatatypeProperty {iri: 'ex:hasHeightM'})\",\n  \"SET DP_H.SWRL_label = 'hasHeightM', DP_H.range = 'xsd:decimal', DP_H.project = '\" + project + \"', DP_H.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (B_gt:Builtin {iri: 'swrlb:greaterThan'})\",\n  \"SET B_gt.label = 'greaterThan', B_gt.project = '\" + project + \"', B_gt.graph = 'Metagraph'\",\n  '',\n  \"MERGE (DP_V:DatatypeProperty {iri: 'ex:violatesMaxHeight'})\",\n  \"SET DP_V.SWRL_label = 'violatesMaxHeight', DP_V.range = 'xsd:boolean', DP_V.project = '\" + project + \"', DP_V.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (r:Rule {Rule_Id: 'R_URB_HEIGHT_MAX_75_V'})\",\n  \"SET r.text = 'Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)', r.kind = 'violation', r.project = '\" + project + \"', r.graph = 'Metagraph'\",\n  '',\n  \"MERGE (vb:Var {name: '?b'}) SET vb.project = '\" + project + \"', vb.graph = 'Metagraph'\",\n  \"MERGE (vh:Var {name: '?h'}) SET vh.project = '\" + project + \"', vh.graph = 'Metagraph'\",\n  \"MERGE (lit75:Literal {lex: '75', datatype: 'xsd:decimal'}) SET lit75.project = '\" + project + \"', lit75.graph = 'Metagraph'\",\n  \"MERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'}) SET litT.project = '\" + project + \"', litT.graph = 'Metagraph'\",\n  '',\n  \"MERGE (a1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A1'})\",\n  \"SET a1.type = 'ClassAtom', a1.iri = 'ex:Building', a1.SWRL_label = 'Building', a1.project = '\" + project + \"', a1.graph = 'Metagraph'\",\n  \"MERGE (a2:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A2'})\",\n  \"SET a2.type = 'DataPropertyAtom', a2.iri = 'ex:hasHeightM', a2.SWRL_label = 'hasHeightM', a2.project = '\" + project + \"', a2.graph = 'Metagraph'\",\n  \"MERGE (a3:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A3'})\",\n  \"SET a3.type = 'BuiltinAtom', a3.iri = 'swrlb:greaterThan', a3.SWRL_label = 'greaterThan', a3.project = '\" + project + \"', a3.graph = 'Metagraph'\",\n  \"MERGE (h1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_H1'})\",\n  \"SET h1.type = 'DataPropertyAtom', h1.iri = 'ex:violatesMaxHeight', h1.SWRL_label = 'violatesMaxHeight', h1.project = '\" + project + \"', h1.graph = 'Metagraph'\",\n  '',\n  \"MERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)\",\n  \"MERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)\",\n  \"MERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)\",\n  \"MERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)\",\n  '',\n  'MERGE (a1)-[:REFERS_TO]->(C_Building)',\n  'MERGE (a2)-[:REFERS_TO]->(DP_H)',\n  'MERGE (a3)-[:REFERS_TO]->(B_gt)',\n  'MERGE (h1)-[:REFERS_TO]->(DP_V)',\n  '',\n  \"MERGE (a1)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (a2)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (a2)-[:ARG {`pos`: 2}]->(vh)\",\n  \"MERGE (a3)-[:ARG {`pos`: 1}]->(vh)\",\n  \"MERGE (a3)-[:ARG {`pos`: 2}]->(lit75)\",\n  \"MERGE (h1)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (h1)-[:ARG {`pos`: 2}]->(litT);\"\n].join('\\n');\nconst prompt = [\n  'Convert design rules into Neo4j Cypher MERGE + SET statements. Output Cypher only, no JSON, no markdown fences.',\n  '',\n  'SCHEMA CONSTRAINTS (v3):',\n  '- Allowed node labels: Class, DatatypeProperty, ObjectProperty, Builtin, Rule, Atom, Var, Literal.',\n  '- Allowed relationships: HAS_BODY, HAS_HEAD, REFERS_TO, ARG.',\n  '- Every node MUST include project and graph properties.',\n  '- graph = OntoGraph for Class, DatatypeProperty, ObjectProperty.',\n  '- graph = Metagraph for Rule, Atom, Builtin, Var, Literal.',\n  '',\n  'NODE KEY PROPERTIES:',\n  '- Rule key: Rule_Id (format R_<DOMAIN>_<PROPERTY>_<LIMIT>_V).',\n  '- Atom key: Atom_Id (format {Rule_Id}_A{n} for body, {Rule_Id}_H{n} for head).',\n  '- Class key: iri (prefix ex:).',\n  '- DatatypeProperty key: iri (prefix ex:). Display property: SWRL_label (NOT label).',\n  '- Builtin key: iri (prefix swrlb:).',\n  '- Var key: name (?<varName>).',\n  '- Literal key: lex + datatype.',\n  '',\n  'ATOM REQUIRED PROPERTIES: Atom_Id, type, iri, SWRL_label, project, graph.',\n  'Atom types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom.',\n  '',\n  'SEMANTIC MAPPING (violation pattern):',\n  '- \"at most / maximum X\" -> body uses swrlb:greaterThan(?val, X)',\n  '- \"at least / minimum X\" -> body uses swrlb:lessThan(?val, X)',\n  '- \"equal to X\" -> body uses swrlb:notEqual(?val, X)',\n  '- \"between min and max\" -> emit TWO separate violation rules',\n  'Body checks condition that BREAKS the rule; head sets violation flag to true.',\n  '',\n  'RELATIONSHIP PROPERTIES: backtick-quote reserved words: `order`, `pos`.',\n  'IRI prefixes: ex: for domain terms, swrlb: for builtins.',\n  'project = \\'' + project + '\\'',\n  '',\n  fewShot,\n  '',\n  'Now convert this rule (output ONLY the Cypher MERGE+SET statements, then stop):',\n  rulesText\n].join('\\n');\nreturn [{ json: { ...input, prompt } }];"
+        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst fetchRes = $items(\"Fetch Existing Entities\")[0].json;\nlet existingClasses = [];\nlet existingProperties = [];\nlet existingRules = [];\ntry {\n  const results = fetchRes.results || [];\n  if (results[0] && results[0].data) {\n    for (const d of results[0].data) {\n      const row = d.row;\n      if (row[0] === 'Class') {\n        existingClasses.push({ iri: row[1], label: row[2] });\n      } else {\n        existingProperties.push({ type: row[0], iri: row[1], swrl_label: row[3] || row[2], range: row[4] });\n      }\n    }\n  }\n  if (results[1] && results[1].data) {\n    for (const d of results[1].data) {\n      existingRules.push({ rule_id: d.row[0], text: d.row[1], kind: d.row[2] });\n    }\n  }\n} catch (e) {}\nconst entityLines = [];\nif (existingClasses.length || existingProperties.length || existingRules.length) {\n  entityLines.push('EXISTING ENTITIES IN THE GRAPH (you MUST reuse these, do NOT create duplicates):');\n  if (existingClasses.length) {\n    entityLines.push('Classes:');\n    existingClasses.forEach(c => entityLines.push('  - ' + c.label + ' (iri: ' + c.iri + ')'));\n  }\n  if (existingProperties.length) {\n    entityLines.push('Properties:');\n    existingProperties.forEach(p => entityLines.push('  - ' + p.swrl_label + ' [' + p.type + '] (iri: ' + p.iri + ', range: ' + p.range + ')'));\n  }\n  if (existingRules.length) {\n    entityLines.push('Existing Rules:');\n    existingRules.forEach(r => entityLines.push('  - ' + r.rule_id + ' (' + r.kind + '): ' + r.text));\n  }\n}\nconst existingEntitiesSection = entityLines.join('\\n');\nconst rulesText = (input.rules_text || '')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nif (!rulesText) {\n  throw new Error('rules_text is required');\n}\nconst editPat = /\\b(?:edit|update|change|modify|set|increase|decrease|raise|lower|adjust)\\b/i;\nconst ruleIdPat = /(?:Rule_Id|rule[_ ]?id)\\s*[:=\\s]*\\W*([A-Z_][A-Z0-9_]+)/gi;\nconst isEditPrompt = editPat.test(rulesText);\nconst editRuleIds = [];\nlet ruleIdMatch;\nwhile ((ruleIdMatch = ruleIdPat.exec(rulesText)) !== null) { editRuleIds.push(ruleIdMatch[1]); }\n\n// Smart edit detection: match prompt keywords against existing rules\nif (isEditPrompt && editRuleIds.length === 0 && existingRules.length > 0) {\n  const stopWords = new Set(['the','a','an','to','of','in','for','and','or','is','are','be','must','should','each','every','all','at','least','most','with','have','has','it','that','this','from','by','on','not','also','rule','rules','new','minimum','maximum','edit','update','change','modify','set','increase','decrease','raise','lower','adjust','now','per','need','needs','make','no','more','than','less','into']);\n  const promptWords = rulesText.toLowerCase().replace(/[^a-z0-9\\s]/g, ' ').split(/\\s+/).filter(w => w.length > 2 && !stopWords.has(w));\n  const scored = [];\n  for (const rule of existingRules) {\n    const haystack = (rule.rule_id + ' ' + rule.text).toLowerCase();\n    let hits = 0;\n    for (const w of promptWords) {\n      if (haystack.includes(w)) hits++;\n    }\n    if (hits > 0) scored.push({ id: rule.rule_id, hits });\n  }\n  scored.sort((a, b) => b.hits - a.hits);\n  if (scored.length > 0) {\n    const best = scored[0].hits;\n    scored.filter(s => s.hits === best).forEach(s => editRuleIds.push(s.id));\n  }\n}\nconst editRuleId = isEditPrompt && editRuleIds.length ? editRuleIds[0] : null;\nconst project = input.project_name || 'default-project';\nconst fewShot = [\n  'Example input: \"Maximum height of each building must be at most 75 m.\"',\n  'Example output:',\n  '',\n  \"MERGE (C_Building:Class {iri: 'ex:Building'})\",\n  \"SET C_Building.label = 'Building', C_Building.project = '\" + project + \"', C_Building.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (DP_H:DatatypeProperty {iri: 'ex:hasHeightM'})\",\n  \"SET DP_H.SWRL_label = 'hasHeightM', DP_H.range = 'xsd:decimal', DP_H.project = '\" + project + \"', DP_H.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (B_gt:Builtin {iri: 'swrlb:greaterThan'})\",\n  \"SET B_gt.label = 'greaterThan', B_gt.project = '\" + project + \"', B_gt.graph = 'Metagraph'\",\n  '',\n  \"MERGE (DP_V:DatatypeProperty {iri: 'ex:violatesMaxHeight'})\",\n  \"SET DP_V.SWRL_label = 'violatesMaxHeight', DP_V.range = 'xsd:boolean', DP_V.project = '\" + project + \"', DP_V.graph = 'OntoGraph'\",\n  '',\n  \"MERGE (r:Rule {Rule_Id: 'R_URB_HEIGHT_MAX_75_V'})\",\n  \"SET r.text = 'Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)', r.kind = 'violation', r.project = '\" + project + \"', r.graph = 'Metagraph'\",\n  '',\n  \"MERGE (vb:Var {name: '?b'}) SET vb.project = '\" + project + \"', vb.graph = 'Metagraph'\",\n  \"MERGE (vh:Var {name: '?h'}) SET vh.project = '\" + project + \"', vh.graph = 'Metagraph'\",\n  \"MERGE (lit75:Literal {lex: '75', datatype: 'xsd:decimal'}) SET lit75.project = '\" + project + \"', lit75.graph = 'Metagraph'\",\n  \"MERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'}) SET litT.project = '\" + project + \"', litT.graph = 'Metagraph'\",\n  '',\n  \"MERGE (a1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A1'})\",\n  \"SET a1.type = 'ClassAtom', a1.iri = 'ex:Building', a1.SWRL_label = 'Building', a1.project = '\" + project + \"', a1.graph = 'Metagraph'\",\n  \"MERGE (a2:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A2'})\",\n  \"SET a2.type = 'DataPropertyAtom', a2.iri = 'ex:hasHeightM', a2.SWRL_label = 'hasHeightM', a2.project = '\" + project + \"', a2.graph = 'Metagraph'\",\n  \"MERGE (a3:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A3'})\",\n  \"SET a3.type = 'BuiltinAtom', a3.iri = 'swrlb:greaterThan', a3.SWRL_label = 'greaterThan', a3.project = '\" + project + \"', a3.graph = 'Metagraph'\",\n  \"MERGE (h1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_H1'})\",\n  \"SET h1.type = 'DataPropertyAtom', h1.iri = 'ex:violatesMaxHeight', h1.SWRL_label = 'violatesMaxHeight', h1.project = '\" + project + \"', h1.graph = 'Metagraph'\",\n  '',\n  \"MERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)\",\n  \"MERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)\",\n  \"MERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)\",\n  \"MERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)\",\n  '',\n  'MERGE (a1)-[:REFERS_TO]->(C_Building)',\n  'MERGE (a2)-[:REFERS_TO]->(DP_H)',\n  'MERGE (a3)-[:REFERS_TO]->(B_gt)',\n  'MERGE (h1)-[:REFERS_TO]->(DP_V)',\n  '',\n  \"MERGE (a1)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (a2)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (a2)-[:ARG {`pos`: 2}]->(vh)\",\n  \"MERGE (a3)-[:ARG {`pos`: 1}]->(vh)\",\n  \"MERGE (a3)-[:ARG {`pos`: 2}]->(lit75)\",\n  \"MERGE (h1)-[:ARG {`pos`: 1}]->(vb)\",\n  \"MERGE (h1)-[:ARG {`pos`: 2}]->(litT);\",\n  '',\n  'Example 2 (multi-constraint produces separate rules):',\n  'Input: \"Each apartment must have at least 2 bedrooms and at least 1 bathroom.\"',\n  'Output: TWO separate Rule subgraphs sharing the same Class node via MERGE (C_Apt:Class {iri: ex:Apartment}):',\n  '  Rule 1: R_APARTMENT_MIN_BEDROOM_2_V with body builtin swrlb:lessThan(?numBed,2)',\n  '  Rule 2: R_APARTMENT_MIN_BATHROOM_1_V with body builtin swrlb:lessThan(?numBath,1)',\n  'Each rule has its own Atoms, Vars, Literals, and violation DatatypeProperty. They share Class and can share Var nodes via MERGE.'\n].join('\\n');\nconst prompt = [\n  'Convert design rules into Neo4j Cypher MERGE + SET statements. Output Cypher only, no JSON, no markdown fences.',\n  '',\n  'SCHEMA CONSTRAINTS (v3):',\n  '- Allowed node labels: Class, DatatypeProperty, ObjectProperty, Builtin, Rule, Atom, Var, Literal.',\n  '- Allowed relationships: HAS_BODY, HAS_HEAD, REFERS_TO, ARG.',\n  '- Every node MUST include project and graph properties.',\n  '- graph = OntoGraph for Class, DatatypeProperty, ObjectProperty.',\n  '- graph = Metagraph for Rule, Atom, Builtin, Var, Literal.',\n  '',\n  'NODE KEY PROPERTIES:',\n  '- Rule key: Rule_Id (format R_<DOMAIN>_<PROPERTY>_<LIMIT>_V).',\n  '- Atom key: Atom_Id (format {Rule_Id}_A{n} for body, {Rule_Id}_H{n} for head).',\n  '- Class key: iri (prefix ex:).',\n  '- DatatypeProperty key: iri (prefix ex:). Display property: SWRL_label (NOT label).',\n  '- Builtin key: iri (prefix swrlb:).',\n  '- Var key: name (?<varName>).',\n  '- Literal key: lex + datatype.',\n  '',\n  'ATOM REQUIRED PROPERTIES: Atom_Id, type, iri, SWRL_label, project, graph.',\n  'Atom types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom.',\n  '',\n  'ARG COMPLETENESS (CRITICAL):',\n  '- Every Atom MUST have ARG relationships to ALL its arguments.',\n  '- ClassAtom: ARG {pos:1} -> Var (the instance variable).',\n  '- DataPropertyAtom: ARG {pos:1} -> Var (subject), ARG {pos:2} -> Var (value).',\n  '- BuiltinAtom (e.g. lessThan, greaterThan): ARG {pos:1} -> Var, ARG {pos:2} -> Literal (the threshold).',\n  '- Head DataPropertyAtom (violation): ARG {pos:1} -> Var (subject), ARG {pos:2} -> Literal (true).',\n  '- NEVER create a Literal node without connecting it via ARG. Every Literal MUST be an ARG target.',\n  '',\n  'SEMANTIC MAPPING (violation pattern):',\n  '- \"at most / maximum X\" -> body uses swrlb:greaterThan(?val, X)',\n  '- \"at least / minimum X\" -> body uses swrlb:lessThan(?val, X)',\n  '- \"equal to X\" -> body uses swrlb:notEqual(?val, X)',\n  '- \"between min and max\" -> emit TWO separate violation rules',\n  'Body checks condition that BREAKS the rule; head sets violation flag to true.',\n  '',\n  'RULE SEPARATION PRINCIPLE (CRITICAL):',\n  '- Each distinct constraint MUST be a separate Rule node with its own Atom subgraph.',\n  '- NEVER combine multiple constraints (e.g. \"at least 2 toilets AND at least 1 kitchen\") into one Rule.',\n  '- If the prompt contains N constraints, output N separate Rule subgraphs.',\n  '- Shared Class / DatatypeProperty / ObjectProperty nodes are reused via MERGE (same iri).',\n  '- Each Rule gets its own violation DatatypeProperty (e.g. violatesMinToiletCount, violatesMinKitchenCount).',\n  '- Example: \"at least 2 toilets and 1 kitchen\" => Rule 1 for toilets + Rule 2 for kitchens.',\n  '',\n  'PROPERTY REUSE: When editing, keep the same DatatypeProperty iri and SWRL_label that the original rule used. Only change the Literal lex value for numeric threshold changes.',\n  '',\n  'ENTITY REUSE (CRITICAL):',\n  '- Before creating any Class, DatatypeProperty, or ObjectProperty, check the EXISTING ENTITIES list below.',\n  '- If a concept from the prompt matches or is semantically equivalent to an existing entity, you MUST reuse that exact iri.',\n  '- Match by semantic meaning: e.g. \"living unit\" matches existing Class \"LeavingUnit\", \"toilet\" matches \"hasToiletCount\".',\n  '- NEVER create a new Class or Property with a different iri when an existing one covers the same concept.',\n  '- Only create a brand-new entity when there is genuinely no existing match.',\n  '- When adding new rules for the same domain class, reuse the existing Class iri.',\n  '',\n  'RELATIONSHIP PROPERTIES: backtick-quote reserved words: `order`, `pos`.',\n  'IRI prefixes: ex: for domain terms, swrlb: for builtins.',\n  'project = \\'' + project + '\\'',\n  '',\n  fewShot,\n  '',\n  editRuleId ? (\n  (() => {\n    const matched = existingRules.filter(r => editRuleIds.indexOf(r.rule_id) >= 0);\n    const ruleDetails = matched.map(r => r.rule_id + ': ' + r.text).join('; ');\n    return 'EDIT MODE: You are EDITING existing rule(s). The following rules will be deleted and re-created from your output: ' + editRuleIds.join(', ') + '.\\n'\n      + 'Current rule definitions: ' + ruleDetails + '\\n'\n      + 'INSTRUCTIONS FOR EDIT:\\n'\n      + '- Output the COMPLETE updated rule(s) with ALL nodes and relationships (MERGE+SET) from scratch.\\n'\n      + '- Keep the same DatatypeProperty iris from the original rule. Only change the Literal lex value for numeric threshold edits.\\n'\n      + '- Keep the same Class iri as the original.\\n'\n      + '- Update Rule_Id to reflect the new numeric limit (e.g. R_..._1_V becomes R_..._2_V).\\n'\n      + '- If the prompt adds new constraints, create those as SEPARATE new Rules.\\n'\n      + '- NEVER output rules that were not mentioned in the edit prompt.';\n  })()\n) : '',\n  '',\n  existingEntitiesSection,\n  '',\n  'Now convert these rules (output ONLY the Cypher MERGE+SET statements, then stop):',\n  rulesText\n].join('\\n');\nreturn [{ json: { ...input, prompt, isEdit: !!editRuleId, editRuleIds: editRuleIds } }];"
       },
       "id": "3",
       "name": "Build LLM Prompt",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-220, 0]
+      "position": [
+        -220,
+        0
+      ]
     },
     {
       "parameters": {
         "url": "={{$items(\"Build LLM Prompt\")[0].json.ollama_url}}/api/generate",
         "jsonParameters": true,
-        "options": { "timeout": 900000 },
-        "bodyParametersJson": "={{ { \"model\": $items(\"Build LLM Prompt\")[0].json.ollama_model, \"prompt\": $items(\"Build LLM Prompt\")[0].json.prompt, \"stream\": false, \"keep_alive\": $items(\"Build LLM Prompt\")[0].json.ollama_keep_alive, \"options\": { \"num_predict\": 2048, \"temperature\": 0.1 }, \"stop\": [\"Now convert\", \"Example input\", \"\\n\\n\\n\"] } }}",
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": $items(\"Build LLM Prompt\")[0].json.ollama_model, \"prompt\": $items(\"Build LLM Prompt\")[0].json.prompt, \"stream\": false, \"keep_alive\": $items(\"Build LLM Prompt\")[0].json.ollama_keep_alive, \"options\": { \"num_predict\": 4096, \"temperature\": 0.1 }, \"stop\": [\"Now convert\", \"Example input\", \"\\n\\n\\n\"] } }}",
         "requestMethod": "POST"
       },
       "id": "4",
       "name": "Ollama Generate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [20, 0]
+      "position": [
+        20,
+        0
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst base = {\n  project_name: input.project_name,\n  neo4j_user: input.neo4j_user,\n  neo4j_password: input.neo4j_password,\n  neo4j_url: input.neo4j_url\n};\nconst raw = $json.response !== undefined ? $json.response : ($json.body !== undefined ? $json.body : $json);\nlet cypherText = '';\nif (typeof raw === 'string') {\n  cypherText = raw;\n} else if (raw && typeof raw === 'object' && typeof raw.response === 'string') {\n  cypherText = raw.response;\n} else {\n  cypherText = JSON.stringify(raw);\n}\ncypherText = cypherText.replace(/```(?:cypher)?\\s*/gi, '').replace(/```/g, '').trim();\n\nfunction fixOutsideQuotes(str) {\n  const parts = str.split(\"'\");\n  for (let i = 0; i < parts.length; i += 2) {\n    parts[i] = parts[i].replace(/\\)\\)+/g, ')');\n    parts[i] = parts[i].replace(/\\}\\}+/g, '}');\n    parts[i] = parts[i].replace(/\\]\\}/g, ']');\n  }\n  return parts.join(\"'\");\n}\n\nfunction hasValidNesting(str) {\n  const u = str.replace(/'[^']*'/g, '');\n  const stack = [];\n  const opn = {'(':')','{':'}','[':']'};\n  for (const c of u) {\n    if (opn[c]) stack.push(c);\n    else if (c === ')' || c === '}' || c === ']') {\n      if (!stack.length || opn[stack.pop()] !== c) return false;\n    }\n  }\n  return !stack.length;\n}\n\nconst mergeChunks = cypherText.split(/(?=MERGE\\s)/i).map(s => s.trim()).filter(s => /^MERGE\\s/i.test(s));\nconst cleaned = [];\nfor (const chunk of mergeChunks) {\n  let s = chunk;\n  if (/MERME|MERX|MER:|MER\\s*\\{|LexicalForm|LexicalBody|LexicalHead|LexicalRule|LLEX|MERGEMINUS|BVar|:Lex\\s/i.test(s)) break;\n  const sq = (s.match(/'/g) || []).length;\n  if (sq % 2 !== 0) continue;\n  s = fixOutsideQuotes(s);\n  if (!/^MERGE\\s*\\(/i.test(s)) continue;\n  if (!hasValidNesting(s)) continue;\n  const unquoted = s.replace(/'[^']*'/g, '');\n  if (/-\\[/.test(unquoted) && !/\\]->\\(\\w+/.test(unquoted)) continue;\n  cleaned.push(s);\n}\nif (!cleaned.length) {\n  throw new Error('No valid MERGE after cleanup. Raw (first 500): ' + cypherText.slice(0, 500));\n}\nconst unique = [...new Set(cleaned)];\nconst varDefs = new Map();\nconst otherNodes = [];\nconst relMerges = [];\nfor (const stmt of unique) {\n  const stripped = stmt.replace(/'[^']*'/g, '');\n  if (/-\\[/.test(stripped)) { relMerges.push(stmt); continue; }\n  const m = stmt.match(/^MERGE\\s*\\((\\w+)(:\\w+)\\s*(\\{[^}]+\\})\\)\\s*(.*)/);\n  if (m) {\n    const vn = m[1], label = m[2], props = m[3], rest = (m[4] || '').trim();\n    if (!varDefs.has(vn)) { varDefs.set(vn, { label, props, sets: new Set() }); }\n    if (/^SET\\s+/i.test(rest)) {\n      const setPart = rest.replace(/^SET\\s+/i, '').trim();\n      const assigns = setPart.split(/,(?=(?:[^']*'[^']*')*[^']*$)/);\n      for (const a of assigns) { if (a.trim()) varDefs.get(vn).sets.add(a.trim()); }\n    }\n  } else { otherNodes.push(stmt); }\n}\nconst consolidated = [];\nfor (const [vn, info] of varDefs) {\n  let line = 'MERGE (' + vn + info.label + ' ' + info.props + ')';\n  if (info.sets.size > 0) { line += ' SET ' + [...info.sets].join(', '); }\n  consolidated.push(line);\n}\nconst finalCypher = [...consolidated, ...otherNodes, ...relMerges].join('\\n');\nreturn [{ json: { ...base, cypher: finalCypher } }];"
+        "functionCode": "const input = $items(\"Set Input Defaults\")[0].json;\nconst llmBuild = $items(\"Build LLM Prompt\")[0].json;\nconst base = {\n  project_name: input.project_name,\n  neo4j_user: input.neo4j_user,\n  neo4j_password: input.neo4j_password,\n  neo4j_url: input.neo4j_url,\n  rules_text: input.rules_text || '',\n  isEdit: llmBuild.isEdit || false,\n  editRuleIds: llmBuild.editRuleIds || []\n};\nconst raw = $json.response !== undefined ? $json.response : ($json.body !== undefined ? $json.body : $json);\nlet cypherText = '';\nif (typeof raw === 'string') {\n  cypherText = raw;\n} else if (raw && typeof raw === 'object' && typeof raw.response === 'string') {\n  cypherText = raw.response;\n} else {\n  cypherText = JSON.stringify(raw);\n}\ncypherText = cypherText.replace(/```(?:cypher)?\\s*/gi, '').replace(/```/g, '').trim();\n\nfunction fixOutsideQuotes(str) {\n  const parts = str.split(\"'\");\n  for (let i = 0; i < parts.length; i += 2) {\n    parts[i] = parts[i].replace(/\\)\\)+/g, ')');\n    parts[i] = parts[i].replace(/\\}\\}+/g, '}');\n    parts[i] = parts[i].replace(/\\]\\}/g, ']');\n  }\n  return parts.join(\"'\");\n}\n\nfunction hasValidNesting(str) {\n  const u = str.replace(/'[^']*'/g, '');\n  const stack = [];\n  const opn = {'(':')','{':'}','[':']'};\n  for (const c of u) {\n    if (opn[c]) stack.push(c);\n    else if (c === ')' || c === '}' || c === ']') {\n      if (!stack.length || opn[stack.pop()] !== c) return false;\n    }\n  }\n  return !stack.length;\n}\n\nconst mergeChunks = cypherText.split(/(?=MERGE\\s)/i).map(s => s.trim()).filter(s => /^MERGE\\s/i.test(s));\nconst cleaned = [];\nfor (const chunk of mergeChunks) {\n  let s = chunk;\n  if (/MERME|MERX|MER:|MER\\s*\\{|LexicalForm|LexicalBody|LexicalHead|LexicalRule|LLEX|MERGEMINUS|BVar|:Lex\\s/i.test(s)) break;\n  const sq = (s.match(/'/g) || []).length;\n  if (sq % 2 !== 0) continue;\n  s = fixOutsideQuotes(s);\n  if (!/^MERGE\\s*\\(/i.test(s)) continue;\n  if (!hasValidNesting(s)) continue;\n  const unquoted = s.replace(/'[^']*'/g, '');\n  if (/-\\[/.test(unquoted) && !/\\]->\\(\\w+/.test(unquoted)) continue;\n  cleaned.push(s);\n}\nif (!cleaned.length) {\n  throw new Error('No valid MERGE after cleanup. Raw (first 500): ' + cypherText.slice(0, 500));\n}\nconst unique = [...new Set(cleaned)];\nconst varDefs = new Map();\nconst otherNodes = [];\nconst relMerges = [];\nfor (const stmt of unique) {\n  const stripped = stmt.replace(/'[^']*'/g, '');\n  if (/-\\[/.test(stripped)) { relMerges.push(stmt); continue; }\n  const m = stmt.match(/^MERGE\\s*\\((\\w+)(:\\w+)\\s*(\\{[^}]+\\})\\)\\s*(.*)/);\n  if (m) {\n    const vn = m[1], label = m[2], props = m[3], rest = (m[4] || '').trim();\n    if (!varDefs.has(vn)) { varDefs.set(vn, { label, props, sets: new Set() }); }\n    if (/^SET\\s+/i.test(rest)) {\n      const setPart = rest.replace(/^SET\\s+/i, '').trim();\n      const assigns = setPart.split(/,(?=(?:[^']*'[^']*')*[^']*$)/);\n      for (const a of assigns) { if (a.trim()) varDefs.get(vn).sets.add(a.trim()); }\n    }\n  } else { otherNodes.push(stmt); }\n}\nconst consolidated = [];\nfor (const [vn, info] of varDefs) {\n  let line = 'MERGE (' + vn + info.label + ' ' + info.props + ')';\n  if (info.sets.size > 0) { line += ' SET ' + [...info.sets].join(', '); }\n  consolidated.push(line);\n}\nconst finalCypher = [...consolidated, ...otherNodes, ...relMerges].join('\\n');\nreturn [{ json: { ...base, cypher: finalCypher } }];"
       },
       "id": "5",
       "name": "Parse LLM Output",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [260, 0]
+      "position": [
+        260,
+        0
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\nreturn [{\n  json: {\n    project_name: $json.project_name,\n    neo4j_user: $json.neo4j_user,\n    neo4j_password: $json.neo4j_password,\n    neo4j_url: $json.neo4j_url,\n    cypher: cypher,\n    postProcess: postProcess\n  }\n}];"
+        "functionCode": "const cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\nconst isEdit = $json.isEdit || false;\nconst editRuleIds = $json.editRuleIds || [];\nlet cleanupStatements = [];\nif (isEdit && editRuleIds.length) {\n  for (const rid of editRuleIds) {\n    const safeId = rid.replace(/[^A-Za-z0-9_]/g, '');\n    cleanupStatements.push(\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[arg:ARG]->() DELETE arg\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[ref:REFERS_TO]->() DELETE ref\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) DELETE rel, a\",\n      \"MATCH (r:Rule {Rule_Id: '\" + safeId + \"'}) DELETE r\"\n    );\n  }\n  cleanupStatements.push(\"MATCH (n) WHERE (n:Var OR n:Literal) AND n.graph = 'Metagraph' AND NOT (n)<-[:ARG]-() DELETE n\");\n}\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\nreturn [{\n  json: {\n    project_name: $json.project_name,\n    neo4j_user: $json.neo4j_user,\n    neo4j_password: $json.neo4j_password,\n    neo4j_url: $json.neo4j_url,\n    rules_text: $json.rules_text || '',\n    cypher: cypher,\n    cleanupStatements: cleanupStatements,\n    postProcess: postProcess\n  }\n}];"
       },
       "id": "6",
       "name": "Prepare Graph Payload",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [520, 0]
+      "position": [
+        520,
+        0
+      ]
     },
     {
       "parameters": {
         "authentication": "basicAuth",
         "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
-        "options": { "ignoreSslIssues": true, "timeout": 900000 },
-        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": $items('Prepare Graph Payload')[0].json.cypher } ] } }}",
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ (() => { const p = $items('Prepare Graph Payload')[0].json; const stmts = (p.cleanupStatements || []).map(s => ({ statement: s })); stmts.push({ statement: p.cypher }); return { statements: stmts }; })() }}",
         "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
         "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
         "requestMethod": "POST"
@@ -96,15 +146,21 @@
       "name": "Execute LLM Cypher",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1010, 0]
+      "position": [
+        1010,
+        0
+      ]
     },
     {
       "parameters": {
         "authentication": "basicAuth",
         "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
-        "options": { "ignoreSslIssues": true, "timeout": 900000 },
-        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": $items('Prepare Graph Payload')[0].json.postProcess, \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name } } ] } }}",
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": $items('Prepare Graph Payload')[0].json.postProcess, \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name } }, { \"statement\": \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' AND (r.description IS NULL OR r.description = '') SET r.description = $description\", \"parameters\": { \"description\": $items('Prepare Graph Payload')[0].json.rules_text || '' } } ] } }}",
         "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
         "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
         "requestMethod": "POST"
@@ -113,7 +169,10 @@
       "name": "Annotate Graph Props",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1260, 0]
+      "position": [
+        1260,
+        0
+      ]
     },
     {
       "parameters": {
@@ -123,7 +182,10 @@
       "name": "Build Response",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [1510, 0]
+      "position": [
+        1510,
+        0
+      ]
     },
     {
       "parameters": {
@@ -136,7 +198,10 @@
       "name": "Store Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1680, 0]
+      "position": [
+        1680,
+        0
+      ]
     },
     {
       "parameters": {
@@ -146,7 +211,10 @@
       "name": "Format Ack",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-400, -120]
+      "position": [
+        -400,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -156,7 +224,10 @@
       "name": "Respond Ack",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-340, -120]
+      "position": [
+        -340,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -169,7 +240,10 @@
       "name": "Mark Running",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [-120, -120]
+      "position": [
+        -120,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -182,7 +256,10 @@
       "name": "Mark Step 2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [-100, -120]
+      "position": [
+        -100,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -195,7 +272,10 @@
       "name": "Mark Step 3",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [760, -120]
+      "position": [
+        760,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -208,27 +288,218 @@
       "name": "Mark Step 4",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1180, -120]
+      "position": [
+        1180,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "={{ ($items('Set Input Defaults')[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{ (() => { return { statements: [{ statement: \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph = 'OntoGraph' RETURN labels(n)[0] AS nodeLabel, n.iri AS iri, coalesce(n.label, '') AS label, coalesce(n.SWRL_label, '') AS swrl_label, coalesce(n.range, '') AS range ORDER BY nodeLabel, iri\" }, { statement: \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id\" }] }; })() }}",
+        "basicAuthUser": "={{ $items('Set Input Defaults')[0].json.neo4j_user }}",
+        "basicAuthPassword": "={{ $items('Set Input Defaults')[0].json.neo4j_password }}",
+        "requestMethod": "POST"
+      },
+      "id": "fetch-entities",
+      "name": "Fetch Existing Entities",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -350,
+        0
+      ]
     }
   ],
   "connections": {
-    "Ingest Rules": { "main": [[{ "node": "Set Input Defaults", "type": "main", "index": 0 }]] },
-    "Set Input Defaults": { "main": [[{ "node": "Format Ack", "type": "main", "index": 0 }]] },
-    "Format Ack": { "main": [[{ "node": "Respond Ack", "type": "main", "index": 0 }]] },
-    "Build LLM Prompt": { "main": [[{ "node": "Mark Step 2", "type": "main", "index": 0 }]] },
-    "Ollama Generate": { "main": [[{ "node": "Parse LLM Output", "type": "main", "index": 0 }]] },
-    "Parse LLM Output": { "main": [[{ "node": "Prepare Graph Payload", "type": "main", "index": 0 }]] },
-    "Prepare Graph Payload": { "main": [[{ "node": "Mark Step 3", "type": "main", "index": 0 }]] },
-    "Execute LLM Cypher": { "main": [[{ "node": "Mark Step 4", "type": "main", "index": 0 }]] },
-    "Annotate Graph Props": { "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]] },
-    "Build Response": { "main": [[{ "node": "Store Result", "type": "main", "index": 0 }]] },
-    "Store Result": { "main": [] },
-    "Respond Ack": { "main": [[{ "node": "Mark Running", "type": "main", "index": 0 }]] },
-    "Mark Running": { "main": [[{ "node": "Build LLM Prompt", "type": "main", "index": 0 }]] },
-    "Mark Step 2": { "main": [[{ "node": "Ollama Generate", "type": "main", "index": 0 }]] },
-    "Mark Step 3": { "main": [[{ "node": "Execute LLM Cypher", "type": "main", "index": 0 }]] },
-    "Mark Step 4": { "main": [[{ "node": "Annotate Graph Props", "type": "main", "index": 0 }]] }
+    "Ingest Rules": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Format Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ack": {
+      "main": [
+        [
+          {
+            "node": "Respond Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Prompt": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Output": {
+      "main": [
+        [
+          {
+            "node": "Prepare Graph Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Graph Payload": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute LLM Cypher": {
+      "main": [
+        [
+          {
+            "node": "Mark Step 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Annotate Graph Props": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Store Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Result": {
+      "main": []
+    },
+    "Respond Ack": {
+      "main": [
+        [
+          {
+            "node": "Mark Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Running": {
+      "main": [
+        [
+          {
+            "node": "Fetch Existing Entities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 2": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 3": {
+      "main": [
+        [
+          {
+            "node": "Execute LLM Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Step 4": {
+      "main": [
+        [
+          {
+            "node": "Annotate Graph Props",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Existing Entities": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

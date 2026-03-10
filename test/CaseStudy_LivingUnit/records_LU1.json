@@ -1,0 +1,206 @@
+﻿[
+  {
+    "n": {
+      "identity": 11,
+      "labels": [
+        "Class"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "project": "default-project",
+        "label": "LeavingUnit",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:11"
+    }
+  },
+  {
+    "n": {
+      "identity": 13,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:hasToiletCount",
+        "SWRL_label": "hasToiletCount",
+        "range": "xsd:integer",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:13"
+    }
+  },
+  {
+    "n": {
+      "identity": 17,
+      "labels": [
+        "Builtin"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "project": "default-project",
+        "label": "lessThan",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:17"
+    }
+  },
+  {
+    "n": {
+      "identity": 21,
+      "labels": [
+        "DatatypeProperty"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToiletCount",
+        "SWRL_label": "violatesMinToiletCount",
+        "range": "xsd:boolean",
+        "project": "default-project",
+        "graph": "OntoGraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:21"
+    }
+  },
+  {
+    "n": {
+      "identity": 25,
+      "labels": [
+        "Rule"
+      ],
+      "properties": {
+        "kind": "violation",
+        "Rule_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V",
+        "project": "default-project",
+        "text": "LeavingUnit(?l)^hasToiletCount(?l,?c)^swrlb:lessThan(?c,1)->violatesMinToiletCount(?l,true)",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:25"
+    }
+  },
+  {
+    "n": {
+      "identity": 26,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?l",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:26"
+    }
+  },
+  {
+    "n": {
+      "identity": 27,
+      "labels": [
+        "Var"
+      ],
+      "properties": {
+        "name": "?c",
+        "project": "default-project",
+        "graph": "Metagraph"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:27"
+    }
+  },
+  {
+    "n": {
+      "identity": 28,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:integer",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:28"
+    }
+  },
+  {
+    "n": {
+      "identity": 29,
+      "labels": [
+        "Literal"
+      ],
+      "properties": {
+        "datatype": "xsd:boolean",
+        "project": "default-project",
+        "graph": "Metagraph",
+        "lex": "true"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:29"
+    }
+  },
+  {
+    "n": {
+      "identity": 30,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:LeavingUnit",
+        "SWRL_label": "LeavingUnit",
+        "project": "default-project",
+        "type": "ClassAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:30"
+    }
+  },
+  {
+    "n": {
+      "identity": 33,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:hasToiletCount",
+        "SWRL_label": "hasToiletCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A2"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:33"
+    }
+  },
+  {
+    "n": {
+      "identity": 34,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "swrlb:lessThan",
+        "SWRL_label": "lessThan",
+        "project": "default-project",
+        "type": "BuiltinAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_A3"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:34"
+    }
+  },
+  {
+    "n": {
+      "identity": 35,
+      "labels": [
+        "Atom"
+      ],
+      "properties": {
+        "iri": "ex:violatesMinToiletCount",
+        "SWRL_label": "violatesMinToiletCount",
+        "project": "default-project",
+        "type": "DataPropertyAtom",
+        "graph": "Metagraph",
+        "Atom_Id": "R_LEAVING_UNIT_MIN_TOILET_1_V_H1"
+      },
+      "elementId": "4:9a4f4102-bf91-4ed2-bdde-645aeb727923:35"
+    }
+  }
+]

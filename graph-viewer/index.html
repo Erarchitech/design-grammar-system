@@ -107,7 +107,11 @@
               "OPTIONAL MATCH (ah)-[ref2:REFERS_TO]->(x2) " +
               "OPTIONAL MATCH (ab)-[arg1:ARG]->(v1) " +
               "OPTIONAL MATCH (ah)-[arg2:ARG]->(v2) " +
-              "RETURN r,hb,ab,hh,ah,ref1,x1,ref2,x2,arg1,v1,arg2,v2"
+              "RETURN r,hb,ab,hh,ah,ref1,x1,ref2,x2,arg1,v1,arg2,v2 " +
+              "UNION " +
+              "MATCH (n {graph:'Metagraph'}) " +
+              "WHERE (n:Var OR n:Literal) AND NOT (n)<-[:ARG]-() " +
+              "RETURN n AS r, null AS hb, null AS ab, null AS hh, null AS ah, null AS ref1, null AS x1, null AS ref2, null AS x2, null AS arg1, null AS v1, null AS arg2, null AS v2"
             );
           }
           return (
@@ -119,6 +123,9 @@
         const [cypher, setCypher] = React.useState(buildCypher("OntoGraph"));
         const [mode, setMode] = React.useState("ingest");
         const [promptText, setPromptText] = React.useState("");
+        const [editRuleId, setEditRuleId] = React.useState("");
+        const [existingRules, setExistingRules] = React.useState([]);
+        const [loadingRules, setLoadingRules] = React.useState(false);
         const [isCypherPrompt, setIsCypherPrompt] = React.useState(false);
         const [responseText, setResponseText] = React.useState("");
         const [responseCypher, setResponseCypher] = React.useState("");
@@ -158,6 +165,20 @@
           stepRef.current = step;
         }, [step]);
 
+        const fetchExistingRules = async () => {
+          setLoadingRules(true);
+          try {
+            const result = await executeCypher(
+              "MATCH (r:Rule) WHERE r.graph = 'Metagraph' RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id"
+            );
+            const rows = result?.results?.[0]?.data?.map(d => d.row) || [];
+            setExistingRules(rows.map(r => ({ rule_id: r[0], text: r[1], kind: r[2] })));
+          } catch (err) {
+            setExistingRules([]);
+          }
+          setLoadingRules(false);
+        };
+
         React.useEffect(() => {
           setProgress(0);
           setWorkflowStep(0);
@@ -166,6 +187,10 @@
           setResponseText("");
           setResponseCypher("");
           setIsRunning(false);
+          setEditRuleId("");
+          if (mode === "edit") {
+            fetchExistingRules();
+          }
           if (pollRef.current) {
             clearTimeout(pollRef.current);
             pollRef.current = null;
@@ -302,11 +327,15 @@
                       : (payload.cypher || "");
                     setResponseCypher(cypherValue);
                   }
+                  clearPoll();
+                  if (modeType !== "query") {
+                    await run(undefined, { silentStatus: true });
+                    fetchExistingRules();
+                  }
                   setWorkflowStep(5); setProgress(100);
                   setStatus("Workflow completed");
                   finalizeWorkflowStep();
                   setIsRunning(false);
-                  clearPoll();
                   return;
                 }
                 if (status === "cancelled") {
@@ -358,11 +387,15 @@
                       : (payload.cypher || "");
                     setResponseCypher(cypherValue);
                   }
+                  clearPoll();
+                  if (modeType !== "query") {
+                    await run(undefined, { silentStatus: true });
+                    fetchExistingRules();
+                  }
                   setWorkflowStep(5); setProgress(100);
                   setStatus("Workflow completed");
                   finalizeWorkflowStep();
                   setIsRunning(false);
-                  clearPoll();
                   return;
                 }
                 if (status === "cancelled") {
@@ -674,6 +707,10 @@
             setStatus("Prompt is required");
             return;
           }
+          if (mode === "edit" && !editRuleId) {
+            setStatus("Please select a rule to edit");
+            return;
+          }
           if (isRunning) return;
           let asyncMode = false;
           setProgress(0);
@@ -706,7 +743,12 @@
             const resPromise = fetch(cfg.n8nWebhook || "/n8n/webhook/dg/rules-ingest", {
               method: "POST",
               headers,
-              body: JSON.stringify({ rules_text: promptText, cypher_prompt: isCypherPrompt })
+              body: JSON.stringify({
+                rules_text: mode === "edit" && editRuleId
+                  ? "edit Rule_Id: " + editRuleId + " — " + promptText
+                  : promptText,
+                cypher_prompt: isCypherPrompt
+              })
             });
             const res = await resPromise;
             const rawText = await res.text();
@@ -982,8 +1024,37 @@
               style: { width: "100%", marginTop: "6px", background: "#0f1117", color: "#e6e6e6", border: "1px solid #2a2f3a", padding: "8px", borderRadius: "6px" }
             },
               e("option", { value: "ingest" }, "Ingest Rules"),
+              e("option", { value: "edit" }, "Edit Rules"),
               e("option", { value: "query" }, "Request Grammar")
             ),
+            mode === "edit"
+              ? e("div", null,
+                  e("label", null, "Select Rule to Edit"),
+                  loadingRules
+                    ? e("div", { className: "hint" }, "Loading rules...")
+                    : existingRules.length === 0
+                      ? e("div", { className: "hint" }, "No rules found in graph")
+                      : e("select", {
+                          value: editRuleId,
+                          onChange: (ev) => setEditRuleId(ev.target.value),
+                          style: { width: "100%", marginTop: "6px", background: "#0f1117", color: "#e6e6e6", border: "1px solid #2a2f3a", padding: "8px", borderRadius: "6px" }
+                        },
+                          e("option", { value: "" }, "— select a rule —"),
+                          existingRules.map((r) =>
+                            e("option", { key: r.rule_id, value: r.rule_id }, r.rule_id)
+                          )
+                        ),
+                  editRuleId
+                    ? e("div", { className: "hint", style: { marginTop: "6px", whiteSpace: "pre-wrap", color: "#5fd0ff" } },
+                        existingRules.find(r => r.rule_id === editRuleId)?.text || ""
+                      )
+                    : null,
+                  e("button", {
+                    style: { width: "auto", marginTop: "8px", background: "transparent", color: "var(--accent)", border: "1px solid var(--accent)", padding: "4px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" },
+                    onClick: fetchExistingRules
+                  }, "Refresh")
+                )
+              : null,
             e("label", null, "Graph View"),
             e("select", {
               value: graphView,
@@ -1016,14 +1087,19 @@
                 rows: 6,
                 value: promptText,
                 className: "prompt-input",
+                disabled: mode === "edit" && !editRuleId,
                 placeholder: isCypherPrompt
                   ? "Enter Design Rules in Cypher expression here"
-                  : "Enter Design Rules in NL text",
+                  : mode === "edit"
+                    ? (editRuleId ? "Describe the changes to apply to " + editRuleId : "Select a rule above first")
+                    : "Enter Design Rules in NL text",
                 onChange: (ev) => setPromptText(ev.target.value)
               }),
-              mode === "ingest"
-                ? e("button", { onClick: sendRules, disabled: isRunning }, "Send Rules")
-                : e("button", { onClick: requestGrammar, disabled: isRunning }, "Request Grammar")
+              mode === "query"
+                ? e("button", { onClick: requestGrammar, disabled: isRunning }, "Request Grammar")
+                : mode === "edit"
+                  ? e("button", { onClick: sendRules, disabled: isRunning || !editRuleId }, "Apply Edit")
+                  : e("button", { onClick: sendRules, disabled: isRunning }, "Send Rules")
             ),
             e("button", { className: "danger-btn", onClick: handleClearGraph, disabled: isRunning }, "Clear the Graph"),
             e("div", { className: "progress" },
