@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Graph Viewer Figma Capture</title>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --panel: #171a22;
+        --panel-border: #2a2f3a;
+        --fg: #f4f7fb;
+        --muted: #9aa4b2;
+        --accent: #5fd0ff;
+        --danger: #d81f1f;
+        --detail-border: #e5e7eb;
+        --detail-text: #111827;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-width: 1913px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      .app {
+        display: flex;
+        width: 1913px;
+        height: 911px;
+        background:
+          radial-gradient(circle at 55% 38%, rgba(63, 126, 217, 0.08), transparent 24%),
+          linear-gradient(180deg, #121623 0%, #0f1117 36%);
+      }
+
+      .left-panel {
+        width: 394px;
+        height: 100%;
+        padding: 16px 14px 16px 16px;
+        background: linear-gradient(180deg, #151926 0%, #121722 100%);
+        border-right: 1px solid var(--panel-border);
+        overflow: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #a3a6af #1b202a;
+      }
+
+      .left-panel::-webkit-scrollbar {
+        width: 12px;
+      }
+
+      .left-panel::-webkit-scrollbar-track {
+        background: #1b202a;
+      }
+
+      .left-panel::-webkit-scrollbar-thumb {
+        background: #a3a6af;
+        border-radius: 999px;
+        border: 2px solid #1b202a;
+      }
+
+      .title {
+        margin: 16px 0 22px;
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .label {
+        display: block;
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: #b8c2d0;
+      }
+
+      .select-box {
+        position: relative;
+        height: 38px;
+        margin-bottom: 14px;
+        padding: 10px 16px 10px 14px;
+        background: #0b0f19;
+        border: 1px solid #273041;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      .select-box::after {
+        content: "";
+        position: absolute;
+        right: 12px;
+        top: 15px;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #dce4f1;
+        border-bottom: 2px solid #dce4f1;
+        transform: rotate(45deg);
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 8px;
+        border: 1px solid #283143;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        overflow: hidden;
+      }
+
+      .tab {
+        padding: 10px 12px;
+        background: #0d1220;
+        border-right: 1px solid #283143;
+        color: #fff8d8;
+        font-size: 13px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .tab:last-child {
+        border-right: none;
+      }
+
+      .tab.active {
+        background: #1c2435;
+        color: var(--accent);
+      }
+
+      .editor {
+        height: 124px;
+        padding: 13px 12px;
+        background: #060a15;
+        border: 1px solid #283143;
+        border-radius: 0 0 8px 8px;
+        color: #fff4de;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .primary-btn,
+      .danger-btn,
+      .add-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .primary-btn {
+        height: 38px;
+        margin-top: 18px;
+        background: #58b7e2;
+        color: #0f1117;
+      }
+
+      .danger-btn {
+        height: 34px;
+        margin-top: 10px;
+        background: var(--danger);
+        color: #ffffff;
+      }
+
+      .progress {
+        height: 11px;
+        margin-top: 12px;
+        overflow: hidden;
+        background: #0f1117;
+        border: 1px solid #2c3446;
+        border-radius: 999px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #63d6ff 0%, #54b9ed 100%);
+      }
+
+      .steps {
+        margin-top: 10px;
+        color: #d8e0eb;
+        font-size: 12px;
+        line-height: 1.18;
+      }
+
+      .section-label {
+        margin-top: 14px;
+        margin-bottom: 6px;
+        color: #c7d2df;
+        font-size: 13px;
+      }
+
+      .response-box,
+      .code-box {
+        width: 100%;
+        background: #060a15;
+        border: 1px solid #283143;
+        border-radius: 8px;
+        color: #fffce9;
+        font-family: "Courier New", monospace;
+      }
+
+      .response-box {
+        min-height: 122px;
+        padding: 12px 10px;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .code-box {
+        min-height: 280px;
+        padding: 10px;
+        font-size: 11px;
+        line-height: 1.34;
+        white-space: pre-wrap;
+      }
+
+      .graph-stage {
+        position: relative;
+        flex: 1 1 auto;
+        height: 100%;
+        margin-right: 414px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 48% 42%, rgba(93, 120, 186, 0.04), transparent 34%),
+          linear-gradient(180deg, #090d18 0%, #070b15 100%);
+      }
+
+      .graph-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .details-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 414px;
+        height: 911px;
+        padding: 14px 14px 16px 18px;
+        background: #f6f6f7;
+        color: var(--detail-text);
+        border-left: 1px solid var(--detail-border);
+        box-shadow: -20px 0 32px rgba(0, 0, 0, 0.12);
+      }
+
+      .details-title {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        height: 26px;
+        margin-top: 16px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: #ffb66f;
+        color: #20160f;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .details-table {
+        width: 100%;
+        margin-top: 16px;
+        border-collapse: collapse;
+      }
+
+      .details-table th,
+      .details-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #d8dde5;
+        vertical-align: top;
+      }
+
+      .details-table th {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+        text-align: left;
+      }
+
+      .details-table td {
+        font-size: 13px;
+      }
+
+      .key-cell {
+        width: 106px;
+        color: #0f172a;
+      }
+
+      .value-cell {
+        color: #111827;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.38;
+        word-break: break-word;
+      }
+
+      .pencil {
+        display: inline-block;
+        width: 14px;
+        margin-right: 6px;
+        color: #94a3b8;
+      }
+
+      .add-btn {
+        height: 29px;
+        margin-top: 18px;
+        background: #091126;
+        color: #ffffff;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="left-panel">
+        <div class="title">Graph Viewer</div>
+
+        <div class="label">Mode</div>
+        <div class="select-box">Ingest Rules</div>
+
+        <div class="label">Graph View</div>
+        <div class="select-box">MetaGraph</div>
+
+        <div class="tabs">
+          <div class="tab active">Rules Prompt</div>
+          <div class="tab">Cypher Expression</div>
+        </div>
+        <div class="editor">All units must have at least one door</div>
+
+        <button class="primary-btn">Send Rules</button>
+        <button class="danger-btn">Clear the Graph</button>
+
+        <div class="progress">
+          <div class="progress-bar"></div>
+        </div>
+
+        <div class="steps">
+          <div>Send rules (1.6s)</div>
+          <div>LLM parse (13.6s)</div>
+          <div>Write graph (1.5s)</div>
+          <div>Annotate properties</div>
+          <div>Reload graph (0.0s)</div>
+        </div>
+
+        <div class="section-label">Response</div>
+        <div class="response-box">The Rule ingesting completed successfully</div>
+
+        <div class="section-label">Workflow Cypher</div>
+        <div class="code-box">MERGE (C_Unit:Class {iri: 'ex:Unit'})
+SET C_Unit.label = 'Unit',
+    C_Unit.project = 'default-project',
+    C_Unit.graph = 'OntoGraph'
+MERGE (DP_D:DatatypeProperty {iri:
+'ex:hasDoorCount'}) SET DP_D.SWRL_label
+= 'hasDoorCount',
+    DP_D.project = 'default-project',
+    DP_D.graph = 'OntoGraph'
+MERGE (C_Unit)-[:HAS_DATA_PROPERTY]->
+(DP_D)
+MERGE (V_R:Rule {Rule_Id:
+'R_UNIT_MIN_DOOR_1_V'})
+SET V_R.description = 'All units must
+have at least one door',
+    V_R.kind = 'violation',
+    V_R.project = 'default-project',
+    V_R.graph = 'Metagraph'
+MERGE (A1:Atom {Atom_Id:
+'R_UNIT_MIN_DOOR_1_V_A1'})
+MERGE (H1:Atom {Atom_Id:
+'R_UNIT_MIN_DOOR_1_V_H1'})
+MERGE (V_R)-[:HAS_BODY]->(A1)
+MERGE (V_R)-[:HAS_HEAD]->(H1)
+MERGE (A1)-[:REFERS_TO]->
+(B_LT:Builtin {label: 'lessThan'})
+MERGE (A1)-[:ARG]->(:Var {name: '?dc'})
+MERGE (A1)-[:ARG]->(:Literal {lex: '1'})
+MERGE (H1)-[:REFERS_TO]->
+(DP_D)
+MERGE (H1)-[:ARG]->(:Var {name: '?u'})
+MERGE (H1)-[:ARG]->(:Literal {lex: 'true'})</div>
+      </aside>
+
+      <main class="graph-stage" aria-label="Graph canvas">
+        <svg class="graph-svg" viewBox="0 0 1105 911" role="img" aria-label="Graph network diagram">
+          <defs>
+            <marker id="arrow-grey" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" fill="#a8b4c5"></path>
+            </marker>
+            <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" fill="#3f8fff"></path>
+            </marker>
+          </defs>
+
+          <rect x="0" y="0" width="1105" height="911" fill="transparent"></rect>
+
+          <path d="M247 242 C320 290, 350 360, 404 407" fill="none" stroke="#93a2b7" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M403 407 C470 337, 544 340, 565 373" fill="none" stroke="#9fb0c6" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M561 409 C562 466, 562 538, 562 595" fill="none" stroke="#98a8bb" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M560 407 C544 330, 573 262, 665 236" fill="none" stroke="#3f8fff" stroke-width="3" marker-end="url(#arrow-blue)"></path>
+          <path d="M555 400 C581 307, 585 245, 617 180" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M620 180 C680 108, 751 97, 811 118" fill="none" stroke="#a7b2c4" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M620 180 C582 218, 560 285, 560 341" fill="none" stroke="#a7b2c4" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M405 409 C350 473, 305 521, 258 560" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M560 595 C520 672, 456 736, 412 792" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M560 595 C607 648, 669 676, 719 691" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M560 407 C667 430, 754 429, 811 487" fill="none" stroke="#3f8fff" stroke-width="3" marker-end="url(#arrow-blue)"></path>
+          <path d="M811 487 C867 417, 903 352, 962 328" fill="none" stroke="#a7b2c4" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M811 487 C863 546, 940 589, 983 628" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+          <path d="M812 487 C776 575, 738 642, 703 683" fill="none" stroke="#9cabbe" stroke-width="1.6" marker-end="url(#arrow-grey)"></path>
+
+          <circle cx="215" cy="244" r="19" fill="#ffb36b" stroke="#d58b43" stroke-width="1.5"></circle>
+          <text x="157" y="281" fill="#8ccfff" font-size="13" font-weight="700">violatesMinDoorCount</text>
+
+          <circle cx="402" cy="407" r="19" fill="#b7c0cc" stroke="#8893a0" stroke-width="1.5"></circle>
+          <text x="317" y="444" fill="#7ec6ff" font-size="13" font-weight="700">R_UNIT_MIN_DOOR_1_V_H1</text>
+
+          <circle cx="559" cy="375" r="18" fill="#c6b5ff" stroke="#9278d9" stroke-width="1.5"></circle>
+          <text x="548" y="412" fill="#dce8f8" font-size="13" font-weight="700">?u</text>
+
+          <circle cx="620" cy="180" r="18" fill="#b7c0cc" stroke="#8893a0" stroke-width="1.5"></circle>
+          <text x="538" y="217" fill="#7ec6ff" font-size="13" font-weight="700">R_UNIT_MIN_DOOR_1_V_A1</text>
+
+          <circle cx="813" cy="102" r="19" fill="#78c38a" stroke="#5aa46c" stroke-width="1.5"></circle>
+          <text x="802" y="140" fill="#8cd7ff" font-size="13" font-weight="700">Unit</text>
+
+          <circle cx="560" cy="441" r="19" fill="#8dbefb" stroke="#3f7ed9" stroke-width="3"></circle>
+          <text x="492" y="478" fill="#7cc6ff" font-size="14" font-weight="700">R_UNIT_MIN_DOOR_1_V</text>
+
+          <circle cx="560" cy="600" r="18" fill="#b7c0cc" stroke="#8893a0" stroke-width="1.5"></circle>
+          <text x="474" y="638" fill="#7ec6ff" font-size="13" font-weight="700">R_UNIT_MIN_DOOR_1_V_A2</text>
+
+          <circle cx="406" cy="779" r="19" fill="#ffb36b" stroke="#d58b43" stroke-width="1.5"></circle>
+          <text x="367" y="817" fill="#8ccfff" font-size="13" font-weight="700">hasDoorCount</text>
+
+          <circle cx="704" cy="694" r="18" fill="#c6b5ff" stroke="#9278d9" stroke-width="1.5"></circle>
+          <text x="697" y="732" fill="#8ccfff" font-size="13" font-weight="700">?dc</text>
+
+          <circle cx="812" cy="504" r="19" fill="#b7c0cc" stroke="#8893a0" stroke-width="1.5"></circle>
+          <text x="731" y="541" fill="#7ec6ff" font-size="13" font-weight="700">R_UNIT_MIN_DOOR_1_V_A3</text>
+
+          <circle cx="940" cy="330" r="19" fill="#b7c0cc" stroke="#8893a0" stroke-width="1.5"></circle>
+          <text x="913" y="369" fill="#8ccfff" font-size="13" font-weight="700">lessThan</text>
+
+          <circle cx="967" cy="640" r="19" fill="#ffd6a5" stroke="#d9a36a" stroke-width="1.5"></circle>
+          <text x="965" y="679" fill="#8ccfff" font-size="13" font-weight="700">1</text>
+
+          <circle cx="218" cy="571" r="19" fill="#ffd6a5" stroke="#d9a36a" stroke-width="1.5"></circle>
+          <text x="207" y="609" fill="#8ccfff" font-size="13" font-weight="700">true</text>
+        </svg>
+      </main>
+
+      <aside class="details-panel">
+        <h2 class="details-title">Node details</h2>
+        <div class="chip">Rule</div>
+
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="key-cell">&lt;id&gt;</td>
+              <td class="value-cell">31</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>Rule_Id</td>
+              <td class="value-cell">"R_UNIT_MIN_DOOR_1_V"</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>description</td>
+              <td class="value-cell">"All units must have at least one door"</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>graph</td>
+              <td class="value-cell">"Metagraph"</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>kind</td>
+              <td class="value-cell">"violation"</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>project</td>
+              <td class="value-cell">"default-project"</td>
+            </tr>
+            <tr>
+              <td class="key-cell"><span class="pencil">&#9998;</span>text</td>
+              <td class="value-cell">"Unit(?u)^hasDoorCount(?u,?dc)^swrlb:lessThan(?dc,1)-&gt;violatesMinDoorCount(?u,true)"</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <button class="add-btn">Add property</button>
+      </aside>
+    </div>
+  </body>
+</html>

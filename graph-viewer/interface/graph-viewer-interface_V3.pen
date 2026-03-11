@@ -1,0 +1,249 @@
+{
+  "document": {
+    "id": "graph-viewer-ui",
+    "name": "Graph Viewer Interface",
+    "pages": [
+      {
+        "id": "page1",
+        "name": "Graph Viewer",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 900,
+            "fillColor": "#171a22"
+          },
+          {
+            "type": "text",
+            "text": "Graph Viewer",
+            "x": 20,
+            "y": 20
+          },
+          {
+            "type": "text",
+            "text": "Mode",
+            "x": 20,
+            "y": 70
+          },
+          {
+            "type": "rectangle",
+            "text": "Ingest Rules",
+            "x": 20,
+            "y": 90,
+            "width": 320,
+            "height": 36
+          },
+          {
+            "type": "text",
+            "text": "Graph View",
+            "x": 20,
+            "y": 140
+          },
+          {
+            "type": "rectangle",
+            "text": "MetaGraph",
+            "x": 20,
+            "y": 160,
+            "width": 320,
+            "height": 36
+          },
+          {
+            "type": "rectangle",
+            "text": "Rules Prompt",
+            "x": 20,
+            "y": 210,
+            "width": 160,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "Cypher Expression",
+            "x": 180,
+            "y": 210,
+            "width": 160,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "All units must have at least one door",
+            "x": 20,
+            "y": 240,
+            "width": 320,
+            "height": 120
+          },
+          {
+            "type": "rectangle",
+            "text": "Send Rules",
+            "x": 20,
+            "y": 370,
+            "width": 320,
+            "height": 40
+          },
+          {
+            "type": "rectangle",
+            "text": "Clear the Graph",
+            "x": 20,
+            "y": 420,
+            "width": 320,
+            "height": 40
+          },
+          {
+            "type": "rectangle",
+            "x": 20,
+            "y": 480,
+            "width": 320,
+            "height": 10
+          },
+          {
+            "type": "text",
+            "text": "Response",
+            "x": 20,
+            "y": 510
+          },
+          {
+            "type": "rectangle",
+            "x": 20,
+            "y": 530,
+            "width": 320,
+            "height": 100
+          },
+          {
+            "type": "text",
+            "text": "Workflow Cypher",
+            "x": 20,
+            "y": 640
+          },
+          {
+            "type": "rectangle",
+            "x": 20,
+            "y": 660,
+            "width": 320,
+            "height": 160
+          },
+          {
+            "type": "rectangle",
+            "x": 360,
+            "y": 0,
+            "width": 860,
+            "height": 900,
+            "fillColor": "#0f1117"
+          },
+          {
+            "type": "text",
+            "text": "Graph Visualization",
+            "x": 700,
+            "y": 20
+          },
+          {
+            "type": "ellipse",
+            "text": "Unit",
+            "x": 760,
+            "y": 260,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "type": "ellipse",
+            "text": "?",
+            "x": 640,
+            "y": 360,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "type": "ellipse",
+            "text": "?",
+            "x": 900,
+            "y": 360,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "type": "ellipse",
+            "text": "?",
+            "x": 780,
+            "y": 470,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "type": "rectangle",
+            "x": 1220,
+            "y": 0,
+            "width": 380,
+            "height": 900,
+            "fillColor": "#ffffff"
+          },
+          {
+            "type": "text",
+            "text": "Node details",
+            "x": 1240,
+            "y": 20
+          },
+          {
+            "type": "rectangle",
+            "text": "Rule",
+            "x": 1240,
+            "y": 60,
+            "width": 80,
+            "height": 25
+          },
+          {
+            "type": "text",
+            "text": "Key",
+            "x": 1240,
+            "y": 100
+          },
+          {
+            "type": "text",
+            "text": "Value",
+            "x": 1400,
+            "y": 100
+          },
+          {
+            "type": "rectangle",
+            "text": "<id> : 31",
+            "x": 1240,
+            "y": 120,
+            "width": 320,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "Rule_Id : R_UNIT_MIN_DOOR_1_V",
+            "x": 1240,
+            "y": 160,
+            "width": 320,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "kind : violation",
+            "x": 1240,
+            "y": 200,
+            "width": 320,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "graph : Metagraph",
+            "x": 1240,
+            "y": 240,
+            "width": 320,
+            "height": 30
+          },
+          {
+            "type": "rectangle",
+            "text": "Add property",
+            "x": 1240,
+            "y": 280,
+            "width": 320,
+            "height": 40
+          }
+        ]
+      }
+    ]
+  }
+}
