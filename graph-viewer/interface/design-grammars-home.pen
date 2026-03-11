@@ -1,0 +1,400 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "jxt1h",
+      "x": 0,
+      "y": 0,
+      "name": "Design Grammars - Projects Home",
+      "width": 1440,
+      "height": 900,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mGmz3",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 64,
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "#E8E8E8"
+          },
+          "gap": 16,
+          "padding": [
+            0,
+            48
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "HIrnJ",
+              "name": "logo",
+              "fill": "#0D0D0D",
+              "content": "Design Grammars",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "nErc1",
+              "name": "Search Field",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "#FFFFFF",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E8E8E8"
+              },
+              "gap": 10,
+              "padding": [
+                0,
+                14
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "Nktny",
+                  "name": "searchIcon",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "search",
+                  "iconFontFamily": "lucide",
+                  "fill": "#B0B0B0"
+                },
+                {
+                  "type": "text",
+                  "id": "3uFys",
+                  "name": "searchText",
+                  "fill": "#B0B0B0",
+                  "content": "Search projects...",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "H9thn",
+              "name": "New Project Button",
+              "height": 40,
+              "fill": "#E42313",
+              "gap": 8,
+              "padding": [
+                0,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "2l76H",
+                  "name": "newBtnIcon",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "plus",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "VY7pT",
+                  "name": "newBtnText",
+                  "fill": "#FFFFFF",
+                  "content": "New Project",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mcvMF",
+              "name": "Profile Avatar",
+              "width": 36,
+              "height": 36,
+              "fill": "#0D0D0D",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "q01Yb",
+                  "name": "userIcon",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "user",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "FRZZZ",
+          "name": "Content Area",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 32,
+          "padding": [
+            40,
+            48
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "OI33i",
+              "name": "sectionTitle",
+              "fill": "#0D0D0D",
+              "content": "Your Projects",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 24,
+              "fontWeight": "500",
+              "letterSpacing": -0.5
+            },
+            {
+              "type": "frame",
+              "id": "w2ZQ3",
+              "name": "Row 1",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "VM75E",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t1",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Residential Tower"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 1 day ago"
+                    }
+                  }
+                },
+                {
+                  "id": "yyiW9",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t2",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Office Complex"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 3 days ago"
+                    }
+                  }
+                },
+                {
+                  "id": "6iW8G",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t3",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Bridge Design"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 1 week ago"
+                    }
+                  }
+                },
+                {
+                  "id": "67gxt",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t4",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Stadium Roof"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 2 weeks ago"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ax1vY",
+              "name": "Row 2",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "00dnz",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t5",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Facade System"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 3 weeks ago"
+                    }
+                  }
+                },
+                {
+                  "id": "GwRQM",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t6",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Pavilion Structure"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 1 month ago"
+                    }
+                  }
+                },
+                {
+                  "id": "tddRP",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t7",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Parametric Shell"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 2 months ago"
+                    }
+                  }
+                },
+                {
+                  "id": "ICDFd",
+                  "type": "ref",
+                  "ref": "3bLnf",
+                  "width": "fill_container",
+                  "height": 220,
+                  "name": "t8",
+                  "descendants": {
+                    "JEdjL": {
+                      "content": "Timber Frame"
+                    },
+                    "C3wp8": {
+                      "content": "Last edited 3 months ago"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "3bLnf",
+      "x": 1600,
+      "y": 0,
+      "name": "ProjectTile",
+      "reusable": true,
+      "width": 320,
+      "height": 220,
+      "fill": "#FFFFFF",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1,
+        "fill": "#E8E8E8"
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "WKxuS",
+          "name": "Thumbnail",
+          "width": "fill_container",
+          "height": 140,
+          "fill": "#FAFAFA",
+          "layout": "vertical",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "nVjd8",
+              "name": "thumbIcon",
+              "width": 36,
+              "height": 36,
+              "iconFontName": "network",
+              "iconFontFamily": "lucide",
+              "fill": "#D0D0D0"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "0a6Kd",
+          "name": "Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            12,
+            16
+          ],
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "JEdjL",
+              "name": "tileName",
+              "fill": "#0D0D0D",
+              "content": "Project Name",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 16,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "C3wp8",
+              "name": "tileDesc",
+              "fill": "#7A7A7A",
+              "content": "Last edited 2 days ago",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
