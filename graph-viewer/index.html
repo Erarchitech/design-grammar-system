@@ -265,6 +265,80 @@
         line-height: 1.34;
       }
       .control-select { margin-top: 0; }
+      .mode-dropdown {
+        position: relative;
+        margin-top: 0;
+      }
+      .mode-trigger {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 366px;
+        height: 38px;
+        margin-top: 0;
+        padding: 11px 17px 11px 15px;
+        background: #0b0f19;
+        border: 1px solid #273041;
+        border-radius: 8px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        color: #ffffff;
+        font: 14px/1.2 "Open Sans", Arial, sans-serif;
+        text-align: left;
+      }
+      .mode-trigger::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+      .mode-trigger:hover { border-color: #344158; }
+      .mode-trigger-label {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mode-chevron {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        color: #ffffff;
+      }
+      .mode-menu {
+        display: flex;
+        flex-direction: column;
+        width: 366px;
+        margin-top: 4px;
+        padding: 5px 0;
+        background: #0b0f19;
+        border: 1px solid #273041;
+        border-radius: 8px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.03),
+          0 12px 24px rgba(0, 0, 0, 0.28);
+        overflow: hidden;
+      }
+      .mode-item {
+        width: 100%;
+        height: 38px;
+        margin-top: 0;
+        padding: 11px 14px;
+        background: #0b0f19;
+        border: none;
+        border-radius: 0;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        color: #ffffff;
+        font: 14px/1.2 "Open Sans", Arial, sans-serif;
+        text-align: left;
+      }
+      .mode-item:hover,
+      .mode-item:focus-visible {
+        background: #131b2d;
+        outline: none;
+      }
+      .mode-item.is-selected {
+        background: #111827;
+      }
       .context-menu { position: fixed; z-index: 1000; background: #ffffff; color: #111827; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
       .context-menu button { display: block; width: 100%; margin-top: 0; padding: 6px 10px; border: none; background: transparent; text-align: left; cursor: pointer; font-size: 13px; }
       .context-menu button:hover { background: #f3f4f6; }
@@ -306,6 +380,12 @@
       function buildDetails(type, label, id, props) {
         return { type, label, id, props };
       }
+
+      const MODE_OPTIONS = [
+        { value: "ingest", label: "Insert Rules" },
+        { value: "query", label: "Query Rules" },
+        { value: "edit", label: "Edit Rules" }
+      ];
 
       function App() {
         const [graphView, setGraphView] = React.useState("MetaGraph");
@@ -351,11 +431,13 @@
         const [stepTimes, setStepTimes] = React.useState([]);
         const [tick, setTick] = React.useState(0);
         const [contextMenu, setContextMenu] = React.useState(null);
+        const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
         const stepStartedAtRef = React.useRef(null);
         const pollRef = React.useRef(null);
+        const modeDropdownRef = React.useRef(null);
 
         const ingestSteps = [
           "Send rules",
@@ -414,6 +496,17 @@
           const id = setInterval(() => setTick((t) => t + 1), 200);
           return () => clearInterval(id);
         }, [step]);
+
+        React.useEffect(() => {
+          const handlePointerDown = (event) => {
+            if (!modeDropdownRef.current) return;
+            if (!modeDropdownRef.current.contains(event.target)) {
+              setIsModeMenuOpen(false);
+            }
+          };
+          document.addEventListener("mousedown", handlePointerDown);
+          return () => document.removeEventListener("mousedown", handlePointerDown);
+        }, []);
 
         const roundSeconds = (ms) => Math.round((ms / 1000) * 10) / 10;
 
@@ -1177,6 +1270,13 @@
           setEditingValue("");
         };
 
+        const currentModeLabel = MODE_OPTIONS.find((option) => option.value === mode)?.label || "Select type of Interaction";
+
+        const handleModeChange = (nextMode) => {
+          setMode(nextMode);
+          setIsModeMenuOpen(false);
+        };
+
         React.useEffect(() => { run(); }, []);
 
         const propEntries = selected?.props || {};
@@ -1226,19 +1326,46 @@
             )
           : e("div", { className: "empty" }, "Click a node or edge to see its properties");
 
+        const modeControl = e("div", { className: "mode-dropdown", ref: modeDropdownRef },
+          e("button", {
+            type: "button",
+            className: "mode-trigger",
+            "aria-haspopup": "listbox",
+            "aria-expanded": isModeMenuOpen,
+            onClick: () => setIsModeMenuOpen((open) => !open)
+          },
+            e("svg", { className: "mode-chevron", viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true" },
+              e("path", {
+                d: "M6 9L12 15L18 9",
+                stroke: "currentColor",
+                "stroke-width": "2",
+                "stroke-linecap": "round",
+                "stroke-linejoin": "round"
+              })
+            ),
+            e("span", { className: "mode-trigger-label" }, currentModeLabel)
+          ),
+          isModeMenuOpen
+            ? e("div", { className: "mode-menu", role: "listbox", "aria-label": "Mode" },
+                MODE_OPTIONS.map((option) =>
+                  e("button", {
+                    key: option.value,
+                    type: "button",
+                    role: "option",
+                    "aria-selected": option.value === mode,
+                    className: "mode-item" + (option.value === mode ? " is-selected" : ""),
+                    onClick: () => handleModeChange(option.value)
+                  }, option.label)
+                )
+              )
+            : null
+        );
+
         return e("div", { id: "app" },
           e("div", { id: "left" },
-            e("h3", null, "Graph Viewer"),
+            e("h3", null, "Rules"),
             e("label", null, "Mode"),
-            e("select", {
-              className: "control-select",
-              value: mode,
-              onChange: (ev) => setMode(ev.target.value)
-            },
-              e("option", { value: "ingest" }, "Insert Rules"),
-              e("option", { value: "edit" }, "Edit Rules"),
-              e("option", { value: "query" }, "Request Grammar")
-            ),
+            modeControl,
             mode === "edit"
               ? e("div", null,
                   e("label", null, "Select Rule to Edit"),

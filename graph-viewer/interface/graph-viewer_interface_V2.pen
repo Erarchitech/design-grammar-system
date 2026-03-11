@@ -417,6 +417,7 @@
             40,
             48
           ],
+          "alignItems": "center",
           "children": [
             {
               "type": "frame",
