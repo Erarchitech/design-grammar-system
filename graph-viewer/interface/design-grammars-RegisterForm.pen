@@ -6,21 +6,20 @@
       "id": "bi8Au",
       "x": 0,
       "y": 0,
-      "name": "Frame",
+      "name": "Login Mode",
       "clip": true,
       "width": 800,
       "height": 600,
       "fill": "#FFFFFF",
-      "layout": "none",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "wSLHK",
-          "x": 240,
-          "y": 97.5,
-          "name": "Form Register",
+          "name": "Form Login",
           "width": 320,
-          "height": 405,
           "fill": "#ffffffff",
           "cornerRadius": 8,
           "stroke": {
@@ -35,13 +34,8 @@
             {
               "type": "frame",
               "id": "Qb53E",
-              "name": "Input Field",
+              "name": "Email Field",
               "width": "fill_container",
-              "stroke": {
-                "align": "inside",
-                "thickness": 1,
-                "cap": "round"
-              },
               "layout": "vertical",
               "gap": 8,
               "children": [
@@ -53,20 +47,6 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "Email",
-                  "lineHeight": 1.399999976158142,
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "P4qWh",
-                  "name": "Description",
-                  "enabled": false,
-                  "fill": "#757575ff",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Description",
                   "lineHeight": 1.399999976158142,
                   "fontFamily": "Inter",
                   "fontSize": 16,
@@ -95,42 +75,25 @@
                     {
                       "type": "text",
                       "id": "5gPuO",
-                      "name": "Value",
+                      "name": "Placeholder",
                       "fill": "#b3b3b3ff",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Value",
+                      "content": "Enter your email",
                       "lineHeight": 1,
                       "fontFamily": "Inter",
                       "fontSize": 16,
                       "fontWeight": "normal"
                     }
                   ]
-                },
-                {
-                  "type": "text",
-                  "id": "ZlLQm",
-                  "name": "Error",
-                  "enabled": false,
-                  "fill": "#1e1e1eff",
-                  "content": "Error",
-                  "lineHeight": 1.399999976158142,
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "normal"
                 }
               ]
             },
             {
               "type": "frame",
               "id": "ZCWxM",
-              "name": "Input Field",
+              "name": "Password Field",
               "width": "fill_container",
-              "stroke": {
-                "align": "inside",
-                "thickness": 1,
-                "cap": "round"
-              },
               "layout": "vertical",
               "gap": 8,
               "children": [
@@ -142,20 +105,6 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "Password",
-                  "lineHeight": 1.399999976158142,
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "qI8iR",
-                  "name": "Description",
-                  "enabled": false,
-                  "fill": "#757575ff",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Description",
                   "lineHeight": 1.399999976158142,
                   "fontFamily": "Inter",
                   "fontSize": 16,
@@ -184,405 +133,403 @@
                     {
                       "type": "text",
                       "id": "4BDiE",
-                      "name": "Value",
+                      "name": "Placeholder",
                       "fill": "#b3b3b3ff",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Value",
+                      "content": "Enter your password",
                       "lineHeight": 1,
                       "fontFamily": "Inter",
                       "fontSize": 16,
                       "fontWeight": "normal"
                     }
                   ]
-                },
-                {
-                  "type": "text",
-                  "id": "Xrf9G",
-                  "name": "Error",
-                  "enabled": false,
-                  "fill": "#1e1e1eff",
-                  "content": "Error",
-                  "lineHeight": 1.399999976158142,
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "wpGzF",
-              "name": "Enter your credentials to access Design Grammars",
-              "width": 272,
-              "height": 22,
-              "fill": {
-                "type": "color",
-                "color": "#ffffffff",
-                "enabled": false
-              },
-              "stroke": {
-                "align": "inside",
-                "thickness": 1
-              },
-              "layout": "none",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "K9svq",
-                  "x": 0,
-                  "y": 0,
-                  "name": "Enter your credentials to access Design Grammars",
-                  "fill": "#757575ff",
-                  "textGrowth": "fixed-width",
-                  "width": 272,
-                  "content": "Enter your credentials to access Design Grammars",
-                  "lineHeight": 1.399999976158142,
-                  "textAlignVertical": "middle",
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "VZxRm",
-              "name": "Button Group",
-              "width": "fill_container",
-              "stroke": {
-                "align": "inside",
-                "thickness": 1
-              },
-              "gap": 16,
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "uwrsp",
-                  "name": "Button",
-                  "enabled": false,
-                  "clip": true,
-                  "width": "fill_container",
-                  "cornerRadius": 8,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "cap": "round"
-                  },
-                  "gap": 8,
-                  "padding": 12,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "G5Yio",
-                      "name": "Star",
-                      "enabled": false,
-                      "clip": true,
-                      "width": 16,
-                      "height": 16,
-                      "fill": {
-                        "type": "color",
-                        "color": "#ffffffff",
-                        "enabled": false
-                      },
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "y1Mds",
-                          "x": 1.3333334922790527,
-                          "y": 1.3333334922790527,
-                          "name": "Icon",
-                          "geometry": "M8.33333 0l2.575 5.21667 5.75834 0.84166-4.16667 4.05834 0.98333 5.73333-5.15-2.70833-5.15 2.70833 0.98334-5.73333-4.16667-4.05834 5.75833-0.84166 2.575-5.21667z",
-                          "width": 13.333333015441895,
-                          "height": 12.680000305175781,
-                          "stroke": {
-                            "align": "center",
-                            "thickness": 1.600000023841858,
-                            "join": "round",
-                            "cap": "round",
-                            "fill": "#2c2c2cff"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "bagRS",
-                      "name": "Button",
-                      "fill": "#303030ff",
-                      "content": "Button",
-                      "lineHeight": 1,
-                      "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "kKi2V",
-                      "name": "X",
-                      "enabled": false,
-                      "clip": true,
-                      "width": 16,
-                      "height": 16,
-                      "fill": {
-                        "type": "color",
-                        "color": "#ffffffff",
-                        "enabled": false
-                      },
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "x53n0",
-                          "x": 4,
-                          "y": 4,
-                          "name": "Icon",
-                          "geometry": "M0 10l10-10m0 10l-10-10",
-                          "width": 8,
-                          "height": 8,
-                          "stroke": {
-                            "align": "center",
-                            "thickness": 1.600000023841858,
-                            "join": "round",
-                            "cap": "round",
-                            "fill": "#2c2c2cff"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "U5wyo",
-                  "name": "Button",
-                  "clip": true,
-                  "width": "fill_container",
-                  "fill": "#2c2c2cff",
-                  "cornerRadius": 8,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "cap": "round",
-                    "fill": "#2c2c2cff"
-                  },
-                  "gap": 8,
-                  "padding": 12,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "I9LbI",
-                      "name": "Star",
-                      "enabled": false,
-                      "clip": true,
-                      "width": 16,
-                      "height": 16,
-                      "fill": {
-                        "type": "color",
-                        "color": "#ffffffff",
-                        "enabled": false
-                      },
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "pFlci",
-                          "x": 1.3333334922790527,
-                          "y": 1.3333334922790527,
-                          "name": "Icon",
-                          "geometry": "M8.33333 0l2.575 5.21667 5.75834 0.84166-4.16667 4.05834 0.98333 5.73333-5.15-2.70833-5.15 2.70833 0.98334-5.73333-4.16667-4.05834 5.75833-0.84166 2.575-5.21667z",
-                          "width": 13.333333015441895,
-                          "height": 12.680000305175781,
-                          "stroke": {
-                            "align": "center",
-                            "thickness": 1.600000023841858,
-                            "join": "round",
-                            "cap": "round",
-                            "fill": "#434343ff"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "NYC3l",
-                      "name": "Button",
-                      "fill": "#f5f5f5ff",
-                      "content": "Login",
-                      "lineHeight": 1,
-                      "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "f3v4R",
-                      "name": "X",
-                      "enabled": false,
-                      "clip": true,
-                      "width": 16,
-                      "height": 16,
-                      "fill": {
-                        "type": "color",
-                        "color": "#ffffffff",
-                        "enabled": false
-                      },
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "U5pWc",
-                          "x": 4,
-                          "y": 4,
-                          "name": "Icon",
-                          "geometry": "M0 10l10-10m0 10l-10-10",
-                          "width": 8,
-                          "height": 8,
-                          "stroke": {
-                            "align": "center",
-                            "thickness": 1.600000023841858,
-                            "join": "round",
-                            "cap": "round",
-                            "fill": "#434343ff"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "WBoC2",
-          "x": 264,
-          "y": 431.5,
-          "name": "Button",
-          "clip": true,
-          "width": 272,
-          "fill": "#2c2c2cff",
-          "cornerRadius": 8,
-          "stroke": {
-            "align": "inside",
-            "thickness": 1,
-            "cap": "round",
-            "fill": "#2c2c2cff"
-          },
-          "gap": 8,
-          "padding": 12,
-          "justifyContent": "center",
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "dOsU2",
-              "name": "Star",
-              "enabled": false,
-              "clip": true,
-              "width": 16,
-              "height": 16,
-              "fill": {
-                "type": "color",
-                "color": "#ffffffff",
-                "enabled": false
-              },
-              "stroke": {
-                "align": "inside",
-                "thickness": 1
-              },
-              "layout": "none",
-              "children": [
-                {
-                  "type": "path",
-                  "id": "JfHCe",
-                  "x": 1.3333334922790527,
-                  "y": 1.3333334922790527,
-                  "name": "Icon",
-                  "geometry": "M8.33333 0l2.575 5.21667 5.75834 0.84166-4.16667 4.05834 0.98333 5.73333-5.15-2.70833-5.15 2.70833 0.98334-5.73333-4.16667-4.05834 5.75833-0.84166 2.575-5.21667z",
-                  "width": 13.333333015441895,
-                  "height": 12.680000305175781,
-                  "stroke": {
-                    "align": "center",
-                    "thickness": 1.600000023841858,
-                    "join": "round",
-                    "cap": "round",
-                    "fill": "#434343ff"
-                  }
                 }
               ]
             },
             {
               "type": "text",
-              "id": "N7uyl",
-              "name": "Button",
-              "fill": "#f5f5f5ff",
-              "content": "Create new",
-              "lineHeight": 1,
+              "id": "K9svq",
+              "name": "Hint",
+              "fill": "#757575ff",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Enter your credentials to access Design Grammars",
+              "lineHeight": 1.399999976158142,
               "fontFamily": "Inter",
               "fontSize": 16,
               "fontWeight": "normal"
             },
             {
               "type": "frame",
-              "id": "rEAzY",
-              "name": "X",
-              "enabled": false,
+              "id": "U5wyo",
+              "name": "Login Button",
               "clip": true,
-              "width": 16,
-              "height": 16,
-              "fill": {
-                "type": "color",
-                "color": "#ffffffff",
-                "enabled": false
-              },
+              "width": "fill_container",
+              "fill": "#2c2c2cff",
+              "cornerRadius": 8,
               "stroke": {
                 "align": "inside",
-                "thickness": 1
+                "thickness": 1,
+                "cap": "round",
+                "fill": "#2c2c2cff"
               },
-              "layout": "none",
+              "gap": 8,
+              "padding": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
               "children": [
                 {
-                  "type": "path",
-                  "id": "OSgzo",
-                  "x": 4,
-                  "y": 4,
-                  "name": "Icon",
-                  "geometry": "M0 10l10-10m0 10l-10-10",
-                  "width": 8,
-                  "height": 8,
-                  "stroke": {
-                    "align": "center",
-                    "thickness": 1.600000023841858,
-                    "join": "round",
-                    "cap": "round",
-                    "fill": "#434343ff"
-                  }
+                  "type": "text",
+                  "id": "NYC3l",
+                  "name": "Button Label",
+                  "fill": "#f5f5f5ff",
+                  "content": "Login",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
                 }
               ]
+            },
+            {
+              "type": "text",
+              "id": "tglLn",
+              "name": "Toggle Link",
+              "fill": "#2c2c2cff",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Don't have an account? Create new",
+              "lineHeight": 1.399999976158142,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "regFr",
+      "x": 900,
+      "y": 0,
+      "name": "Register Mode",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "regFm",
+          "name": "Form Register",
+          "width": 320,
+          "fill": "#ffffffff",
+          "cornerRadius": 8,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#d9d9d9ff"
+          },
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "rEmail",
+              "name": "Email Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rEmLb",
+                  "name": "Label",
+                  "fill": "#1e1e1eff",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Email",
+                  "lineHeight": 1.399999976158142,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "rEmIn",
+                  "name": "Input",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#ffffffff",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1,
+                    "cap": "round",
+                    "fill": "#d9d9d9ff"
+                  },
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rEmPh",
+                      "name": "Placeholder",
+                      "fill": "#b3b3b3ff",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Enter your email",
+                      "lineHeight": 1,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rName",
+              "name": "Name Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rNmLb",
+                  "name": "Label",
+                  "fill": "#1e1e1eff",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Name",
+                  "lineHeight": 1.399999976158142,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "rNmIn",
+                  "name": "Input",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#ffffffff",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1,
+                    "cap": "round",
+                    "fill": "#d9d9d9ff"
+                  },
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rNmPh",
+                      "name": "Placeholder",
+                      "fill": "#b3b3b3ff",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Enter your name",
+                      "lineHeight": 1,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rSurn",
+              "name": "Surname Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rSuLb",
+                  "name": "Label",
+                  "fill": "#1e1e1eff",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Surname",
+                  "lineHeight": 1.399999976158142,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "rSuIn",
+                  "name": "Input",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#ffffffff",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1,
+                    "cap": "round",
+                    "fill": "#d9d9d9ff"
+                  },
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rSuPh",
+                      "name": "Placeholder",
+                      "fill": "#b3b3b3ff",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Enter your surname",
+                      "lineHeight": 1,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rPass",
+              "name": "Create Password Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rPsLb",
+                  "name": "Label",
+                  "fill": "#1e1e1eff",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Create Password",
+                  "lineHeight": 1.399999976158142,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "rPsIn",
+                  "name": "Input",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#ffffffff",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1,
+                    "cap": "round",
+                    "fill": "#d9d9d9ff"
+                  },
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rPsPh",
+                      "name": "Placeholder",
+                      "fill": "#b3b3b3ff",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Create a password",
+                      "lineHeight": 1,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "rHint",
+              "name": "Hint",
+              "fill": "#757575ff",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Create a new account to access Design Grammars",
+              "lineHeight": 1.399999976158142,
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "rCrBt",
+              "name": "Create Account Button",
+              "clip": true,
+              "width": "fill_container",
+              "fill": "#2c2c2cff",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "cap": "round",
+                "fill": "#2c2c2cff"
+              },
+              "gap": 8,
+              "padding": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rCrLb",
+                  "name": "Button Label",
+                  "fill": "#f5f5f5ff",
+                  "content": "Create Account",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "rTgLn",
+              "name": "Toggle Link",
+              "fill": "#2c2c2cff",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Already have an account? Login",
+              "lineHeight": 1.399999976158142,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
             }
           ]
         }

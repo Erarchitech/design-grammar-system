@@ -1,0 +1,1260 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "gv001",
+      "x": 0,
+      "y": 0,
+      "name": "Design Grammars - Graph Viewer",
+      "width": 1440,
+      "height": 900,
+      "fill": "#0f1117",
+      "children": [
+        {
+          "type": "frame",
+          "id": "gvLft",
+          "name": "Left Panel",
+          "width": 394,
+          "height": 900,
+          "fill": "#151926",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "right": 1
+            },
+            "fill": "#2a2f3a"
+          },
+          "layout": "vertical",
+          "gap": 0,
+          "padding": [
+            16,
+            14,
+            16,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "gvNav",
+              "name": "Nav Bar",
+              "width": "fill_container",
+              "gap": 8,
+              "padding": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "alignItems": "center",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#2a2f3a"
+              },
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gvBck",
+                  "name": "Back Button",
+                  "height": 28,
+                  "fill": "transparent",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#5fd0ff"
+                  },
+                  "cornerRadius": 6,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gvBcT",
+                      "name": "Back Label",
+                      "fill": "#5fd0ff",
+                      "content": "\u2190 Projects",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "gvPnm",
+                  "name": "Project Name",
+                  "fill": "#f4f7fb",
+                  "content": "Residential Tower",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvH3",
+              "name": "Rules Heading",
+              "fill": "#f4f7fb",
+              "content": "Rules",
+              "fontFamily": "Inter",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "margin": [
+                16,
+                0,
+                22,
+                0
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvLbM",
+              "name": "Mode Label",
+              "fill": "#b8c2d0",
+              "content": "Mode",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal",
+              "margin": [
+                12,
+                0,
+                8,
+                0
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvMdd",
+              "name": "Mode Dropdown",
+              "width": "fill_container",
+              "height": 38,
+              "fill": "#0b0f19",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#273041"
+              },
+              "cornerRadius": 8,
+              "padding": [
+                11,
+                15
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "gvChv",
+                  "name": "Chevron",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "chevron-down",
+                  "iconFontFamily": "lucide",
+                  "fill": "#ffffff"
+                },
+                {
+                  "type": "text",
+                  "id": "gvMdL",
+                  "name": "Mode Selected",
+                  "fill": "#ffffff",
+                  "content": "Insert Rules",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvLbG",
+              "name": "Graph View Label",
+              "fill": "#b8c2d0",
+              "content": "Graph View",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal",
+              "margin": [
+                12,
+                0,
+                8,
+                0
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvGvS",
+              "name": "Graph View Select",
+              "width": "fill_container",
+              "height": 38,
+              "fill": "#0b0f19",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#273041"
+              },
+              "cornerRadius": 8,
+              "padding": [
+                10,
+                14
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvGvT",
+                  "name": "Graph View Value",
+                  "fill": "#ffffff",
+                  "content": "MetaGraph",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvTbs",
+              "name": "Prompt Tabs",
+              "width": "fill_container",
+              "margin": [
+                14,
+                0,
+                0,
+                0
+              ],
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#283143"
+              },
+              "cornerRadius": [
+                8,
+                8,
+                0,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gvTb1",
+                  "name": "Tab Rules Prompt",
+                  "width": "fill_container",
+                  "height": 38,
+                  "fill": "#1c2435",
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "right": 1
+                    },
+                    "fill": "#283143"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gvT1T",
+                      "name": "Tab 1 Text",
+                      "fill": "#5fd0ff",
+                      "content": "Rules Prompt",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTb2",
+                  "name": "Tab Cypher Expression",
+                  "width": "fill_container",
+                  "height": 38,
+                  "fill": "#0d1220",
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gvT2T",
+                      "name": "Tab 2 Text",
+                      "fill": "#fff8d8",
+                      "content": "Cypher Expression",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvTxa",
+              "name": "Prompt Textarea",
+              "width": "fill_container",
+              "height": 124,
+              "fill": "#060a15",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#283143"
+              },
+              "cornerRadius": [
+                0,
+                0,
+                8,
+                8
+              ],
+              "padding": [
+                13,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvPhd",
+                  "name": "Placeholder",
+                  "fill": "#7a8799",
+                  "content": "Enter Design Rules in NL text",
+                  "fontFamily": "Courier New",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvSnd",
+              "name": "Send Rules Button",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "#58b7e2",
+              "cornerRadius": 8,
+              "margin": [
+                12,
+                0,
+                0,
+                0
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvSnT",
+                  "name": "Send Label",
+                  "fill": "#0f1117",
+                  "content": "Send Rules",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvClr",
+              "name": "Clear Graph Button",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "#d81f1f",
+              "cornerRadius": 8,
+              "margin": [
+                10,
+                0,
+                0,
+                0
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvClT",
+                  "name": "Clear Label",
+                  "fill": "#ffffff",
+                  "content": "Clear the Graph",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvPrg",
+              "name": "Progress Bar",
+              "width": "fill_container",
+              "height": 11,
+              "fill": "#0f1117",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#2c3446"
+              },
+              "cornerRadius": 999,
+              "margin": [
+                12,
+                0,
+                0,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gvPrF",
+                  "name": "Progress Fill",
+                  "width": 120,
+                  "height": 9,
+                  "fill": "#63d6ff",
+                  "cornerRadius": 999
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvStp",
+              "name": "Steps List",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "margin": [
+                10,
+                0,
+                0,
+                0
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvS1",
+                  "name": "Step 1",
+                  "fill": "#ffffff",
+                  "content": "Send rules (1.2s)",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "gvS2",
+                  "name": "Step 2",
+                  "fill": "#ffffff",
+                  "content": "LLM parse (3.4s)",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "gvS3",
+                  "name": "Step 3",
+                  "fill": "#d8e0eb",
+                  "content": "Write graph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "gvS4",
+                  "name": "Step 4",
+                  "fill": "#d8e0eb",
+                  "content": "Annotate properties",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "gvS5",
+                  "name": "Step 5",
+                  "fill": "#d8e0eb",
+                  "content": "Reload graph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvLbR",
+              "name": "Response Label",
+              "fill": "#b8c2d0",
+              "content": "Response",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal",
+              "margin": [
+                12,
+                0,
+                8,
+                0
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvRes",
+              "name": "Response Textarea",
+              "width": "fill_container",
+              "height": 80,
+              "fill": "#060a15",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#283143"
+              },
+              "cornerRadius": 8,
+              "padding": [
+                12,
+                10
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvReT",
+                  "name": "Response Placeholder",
+                  "fill": "#7a8799",
+                  "content": "Workflow response will appear here...",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvLbW",
+              "name": "Workflow Cypher Label",
+              "fill": "#b8c2d0",
+              "content": "Workflow Cypher",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal",
+              "margin": [
+                12,
+                0,
+                8,
+                0
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvWfC",
+              "name": "Workflow Cypher Textarea",
+              "width": "fill_container",
+              "height": 60,
+              "fill": "#060a15",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#283143"
+              },
+              "cornerRadius": 8,
+              "padding": [
+                10
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvWfT",
+                  "name": "Workflow Placeholder",
+                  "fill": "#7a8799",
+                  "content": "Cypher used to build the graph will appear here...",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvHnt",
+              "name": "Hint",
+              "fill": "#9aa4b2",
+              "content": "Using bolt://localhost:7687",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal",
+              "margin": [
+                8,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gvSts",
+              "name": "Status",
+              "fill": "#9aa4b2",
+              "content": "Query executed",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal",
+              "margin": [
+                4,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "gvViz",
+          "name": "Graph Visualization Area",
+          "width": 632,
+          "height": 900,
+          "fill": "#090d18",
+          "children": [
+            {
+              "type": "frame",
+              "id": "gvNd1",
+              "name": "Node Rule",
+              "x": 280,
+              "y": 320,
+              "width": 36,
+              "height": 36,
+              "fill": "#5f8fd3",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": []
+            },
+            {
+              "type": "text",
+              "id": "gvNL1",
+              "name": "Node Rule Label",
+              "x": 266,
+              "y": 360,
+              "fill": "#8fd3ff",
+              "content": "Rule",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "gvNd2",
+              "name": "Node Atom Body",
+              "x": 160,
+              "y": 440,
+              "width": 30,
+              "height": 30,
+              "fill": "#d3845f",
+              "cornerRadius": 15,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": []
+            },
+            {
+              "type": "text",
+              "id": "gvNL2",
+              "name": "Node Atom Body Label",
+              "x": 140,
+              "y": 474,
+              "fill": "#8fd3ff",
+              "content": "Atom (body)",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "gvNd3",
+              "name": "Node Atom Head",
+              "x": 420,
+              "y": 440,
+              "width": 30,
+              "height": 30,
+              "fill": "#d3845f",
+              "cornerRadius": 15,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": []
+            },
+            {
+              "type": "text",
+              "id": "gvNL3",
+              "name": "Node Atom Head Label",
+              "x": 398,
+              "y": 474,
+              "fill": "#8fd3ff",
+              "content": "Atom (head)",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "gvNd4",
+              "name": "Node Var",
+              "x": 80,
+              "y": 560,
+              "width": 24,
+              "height": 24,
+              "fill": "#5fd0a0",
+              "cornerRadius": 12,
+              "children": []
+            },
+            {
+              "type": "text",
+              "id": "gvNL4",
+              "name": "Node Var Label",
+              "x": 74,
+              "y": 588,
+              "fill": "#8fd3ff",
+              "content": "?height",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "gvNd5",
+              "name": "Node Class",
+              "x": 500,
+              "y": 560,
+              "width": 28,
+              "height": 28,
+              "fill": "#c75fd0",
+              "cornerRadius": 14,
+              "children": []
+            },
+            {
+              "type": "text",
+              "id": "gvNL5",
+              "name": "Node Class Label",
+              "x": 488,
+              "y": 592,
+              "fill": "#8fd3ff",
+              "content": "Building",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gvEL1",
+              "name": "Edge HAS_BODY",
+              "x": 200,
+              "y": 388,
+              "fill": "#9fb6c9",
+              "content": "HAS_BODY",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gvEL2",
+              "name": "Edge HAS_HEAD",
+              "x": 360,
+              "y": 388,
+              "fill": "#9fb6c9",
+              "content": "HAS_HEAD",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gvEL3",
+              "name": "Edge ARG",
+              "x": 106,
+              "y": 508,
+              "fill": "#9fb6c9",
+              "content": "ARG",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gvEL4",
+              "name": "Edge REFERS_TO",
+              "x": 442,
+              "y": 508,
+              "fill": "#9fb6c9",
+              "content": "REFERS_TO",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "gvRgt",
+          "name": "Right Panel - Node Details",
+          "width": 414,
+          "height": 900,
+          "fill": "#f6f6f7",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "left": 1
+            },
+            "fill": "#e5e7eb"
+          },
+          "layout": "vertical",
+          "padding": [
+            14,
+            14,
+            16,
+            18
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "gvDtT",
+              "name": "Details Title",
+              "fill": "#111827",
+              "content": "Node details",
+              "fontFamily": "Inter",
+              "fontSize": 24,
+              "fontWeight": "700",
+              "margin": [
+                0,
+                0,
+                16,
+                0
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvChp",
+              "name": "Label Chip",
+              "height": 26,
+              "fill": "#ffb66f",
+              "cornerRadius": 999,
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "margin": [
+                0,
+                0,
+                16,
+                0
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvChT",
+                  "name": "Chip Text",
+                  "fill": "#20160f",
+                  "content": "Rule",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvTbl",
+              "name": "Properties Table",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gvThd",
+                  "name": "Table Header",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gvThK",
+                      "name": "Header Key",
+                      "width": 106,
+                      "fill": "#64748b",
+                      "content": "Key",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvThV",
+                      "name": "Header Value",
+                      "fill": "#64748b",
+                      "content": "Value",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTr0",
+                  "name": "Row id",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gvK0",
+                      "name": "Key id",
+                      "width": 106,
+                      "fill": "#0f172a",
+                      "content": "<id>",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvV0",
+                      "name": "Value id",
+                      "fill": "#111827",
+                      "content": "42",
+                      "fontFamily": "Courier New",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTr1",
+                  "name": "Row Rule_Id",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gvKW1",
+                      "name": "Key Wrap Rule_Id",
+                      "width": 106,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gvEd1",
+                          "name": "Edit Icon 1",
+                          "fill": "#94a3b8",
+                          "content": "\u270E",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gvK1",
+                          "name": "Key Rule_Id",
+                          "fill": "#0f172a",
+                          "content": "Rule_Id",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvV1",
+                      "name": "Value Rule_Id",
+                      "fill": "#111827",
+                      "content": "\"R_height_max\"",
+                      "fontFamily": "Courier New",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTr2",
+                  "name": "Row graph",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gvKW2",
+                      "name": "Key Wrap graph",
+                      "width": 106,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gvEd2",
+                          "name": "Edit Icon 2",
+                          "fill": "#94a3b8",
+                          "content": "\u270E",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gvK2",
+                          "name": "Key graph",
+                          "fill": "#0f172a",
+                          "content": "graph",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvV2",
+                      "name": "Value graph",
+                      "fill": "#111827",
+                      "content": "\"Metagraph\"",
+                      "fontFamily": "Courier New",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTr3",
+                  "name": "Row project",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gvKW3",
+                      "name": "Key Wrap project",
+                      "width": 106,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gvEd3",
+                          "name": "Edit Icon 3",
+                          "fill": "#94a3b8",
+                          "content": "\u270E",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gvK3",
+                          "name": "Key project",
+                          "fill": "#0f172a",
+                          "content": "project",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvV3",
+                      "name": "Value project",
+                      "fill": "#111827",
+                      "content": "\"Residential Tower\"",
+                      "fontFamily": "Courier New",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gvTr4",
+                  "name": "Row text",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#d8dde5"
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gvKW4",
+                      "name": "Key Wrap text",
+                      "width": 106,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gvEd4",
+                          "name": "Edit Icon 4",
+                          "fill": "#94a3b8",
+                          "content": "\u270E",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gvK4",
+                          "name": "Key text",
+                          "fill": "#0f172a",
+                          "content": "text",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gvV4",
+                      "name": "Value text",
+                      "fill": "#111827",
+                      "content": "\"Maximum height must not exceed 45m\"",
+                      "fontFamily": "Courier New",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "padding": [
+                        10,
+                        8
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gvAdd",
+              "name": "Add Property Button",
+              "height": 29,
+              "fill": "#091126",
+              "cornerRadius": 8,
+              "padding": [
+                7,
+                10
+              ],
+              "margin": [
+                18,
+                0,
+                0,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gvAdT",
+                  "name": "Add Property Label",
+                  "fill": "#ffffff",
+                  "content": "Add property",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

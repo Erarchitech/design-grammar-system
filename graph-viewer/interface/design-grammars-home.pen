@@ -120,25 +120,112 @@
             },
             {
               "type": "frame",
-              "id": "mcvMF",
-              "name": "Profile Avatar",
-              "width": 36,
-              "height": 36,
-              "fill": "#0D0D0D",
-              "cornerRadius": 18,
+              "id": "pDrWr",
+              "name": "Profile Dropdown Wrap",
               "layout": "vertical",
-              "justifyContent": "center",
-              "alignItems": "center",
               "children": [
                 {
-                  "type": "icon_font",
-                  "id": "q01Yb",
-                  "name": "userIcon",
-                  "width": 18,
-                  "height": 18,
-                  "iconFontName": "user",
-                  "iconFontFamily": "lucide",
-                  "fill": "#FFFFFF"
+                  "type": "frame",
+                  "id": "mcvMF",
+                  "name": "Profile Avatar",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "#0D0D0D",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "avIni",
+                      "name": "Initials",
+                      "fill": "#FFFFFF",
+                      "content": "JD",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pfDrp",
+                  "name": "Profile Dropdown",
+                  "width": 220,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E8E8E8"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pfInf",
+                      "name": "Profile Info",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": {
+                          "bottom": 1
+                        },
+                        "fill": "#E8E8E8"
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pfNam",
+                          "name": "Name",
+                          "fill": "#0D0D0D",
+                          "content": "John Doe",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "pfEml",
+                          "name": "Email",
+                          "fill": "#7A7A7A",
+                          "content": "john@example.com",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pfLgo",
+                      "name": "Log out Button",
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pfLgT",
+                          "name": "Log out",
+                          "fill": "#0D0D0D",
+                          "content": "Log out",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }

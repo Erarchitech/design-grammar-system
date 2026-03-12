@@ -3,7 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Neo4j Graph Viewer</title>
+    <title>Design Grammars</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
     <style>
       :root {
         --bg: #0f1117;
@@ -18,8 +21,11 @@
       * { box-sizing: border-box; }
       body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--fg); overflow: hidden; }
       #app {
-        display: flex;
         height: 100vh;
+      }
+      .graph-viewer-page {
+        display: flex;
+        height: 100%;
         background:
           radial-gradient(circle at 55% 38%, rgba(63, 126, 217, 0.08), transparent 24%),
           linear-gradient(180deg, #121623 0%, #0f1117 36%);
@@ -342,6 +348,316 @@
       .context-menu { position: fixed; z-index: 1000; background: #ffffff; color: #111827; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
       .context-menu button { display: block; width: 100%; margin-top: 0; padding: 6px 10px; border: none; background: transparent; text-align: left; cursor: pointer; font-size: 13px; }
       .context-menu button:hover { background: #f3f4f6; }
+      /* ─── Register Page ─── */
+      .register-page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        background: #FFFFFF;
+        font-family: 'Inter', Arial, sans-serif;
+        color: #1e1e1e;
+      }
+      .register-form {
+        width: 320px;
+        padding: 24px;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #d9d9d9;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .input-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .input-label {
+        color: #1e1e1e;
+        font-size: 16px;
+        line-height: 1.4;
+        margin: 0;
+        display: block;
+      }
+      .input-box input {
+        width: 100%;
+        padding: 12px 16px;
+        background: #ffffff;
+        border: 1px solid #d9d9d9;
+        border-radius: 8px;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 16px;
+        color: #1e1e1e;
+        margin: 0;
+      }
+      .input-box input::placeholder { color: #b3b3b3; }
+      .input-box input:focus { outline: none; border-color: #2c2c2c; }
+      .form-hint {
+        color: #757575;
+        font-size: 16px;
+        line-height: 1.4;
+        margin: 0;
+      }
+      .form-error {
+        color: #d81f1f;
+        font-size: 14px;
+        margin: 0;
+      }
+      .button-group {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .btn-primary {
+        width: 100%;
+        padding: 12px;
+        margin-top: 0;
+        background: #2c2c2c;
+        color: #f5f5f5;
+        border: 1px solid #2c2c2c;
+        border-radius: 8px;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 16px;
+        font-weight: normal;
+        cursor: pointer;
+        text-align: center;
+      }
+      .btn-primary:hover { background: #404040; }
+      /* ─── Home Page ─── */
+      .home-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: #FFFFFF;
+        font-family: 'Inter', Arial, sans-serif;
+        color: #1e1e1e;
+      }
+      .home-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 64px;
+        padding: 0 48px;
+        border-bottom: 1px solid #E8E8E8;
+        flex-shrink: 0;
+      }
+      .home-logo {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #0D0D0D;
+        white-space: nowrap;
+      }
+      .search-field {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 40px;
+        padding: 0 14px;
+        background: #FFFFFF;
+        border: 1px solid #E8E8E8;
+      }
+      .search-field input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 14px;
+        color: #0D0D0D;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        width: auto;
+      }
+      .search-field input::placeholder { color: #B0B0B0; }
+      .new-project-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 20px;
+        background: #E42313;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 0;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        width: auto;
+        margin: 0;
+      }
+      .new-project-btn:hover { background: #c91f11; }
+      .profile-avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        background: #0D0D0D;
+        border-radius: 18px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+        position: relative;
+      }
+      .profile-dropdown-wrap {
+        position: relative;
+      }
+      .profile-dropdown {
+        position: absolute;
+        top: 44px;
+        right: 0;
+        width: 220px;
+        background: #FFFFFF;
+        border: 1px solid #E8E8E8;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        z-index: 100;
+        overflow: hidden;
+      }
+      .profile-dropdown-info {
+        padding: 14px 16px;
+        border-bottom: 1px solid #E8E8E8;
+      }
+      .profile-dropdown-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: #0D0D0D;
+      }
+      .profile-dropdown-email {
+        font-size: 12px;
+        color: #7A7A7A;
+        margin-top: 2px;
+        word-break: break-all;
+      }
+      .profile-dropdown button {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 10px 16px;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        text-align: left;
+        cursor: pointer;
+        font-size: 13px;
+        color: #0D0D0D;
+      }
+      .profile-dropdown button:hover {
+        background: #F5F5F5;
+      }
+      .profile-initials {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: #FFFFFF;
+        line-height: 1;
+      }
+      .home-content {
+        flex: 1;
+        padding: 40px 48px;
+        overflow: auto;
+      }
+      .section-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 24px;
+        font-weight: 500;
+        color: #0D0D0D;
+        letter-spacing: -0.5px;
+        margin: 0 0 32px 0;
+      }
+      .project-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+      }
+      .project-tile {
+        background: #FFFFFF;
+        border: 1px solid #E8E8E8;
+        cursor: pointer;
+        overflow: hidden;
+      }
+      .project-tile:hover { border-color: #CCCCCC; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+      .tile-thumbnail {
+        height: 140px;
+        background: #FAFAFA;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tile-content {
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .tile-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0D0D0D;
+      }
+      .tile-desc {
+        font-size: 13px;
+        color: #7A7A7A;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 80px 0;
+        color: #7A7A7A;
+        font-size: 16px;
+      }
+      /* ─── Graph Viewer Nav ─── */
+      .gv-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .gv-back-btn {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 4px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        width: auto;
+        margin: 0;
+        font-weight: normal;
+      }
+      .gv-project-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--fg);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .gv-logout-btn {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--panel-border);
+        padding: 4px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        width: auto;
+        margin: 0;
+        font-weight: normal;
+      }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -387,28 +703,265 @@
         { value: "edit", label: "Edit Rules" }
       ];
 
-      function App() {
+      async function hashPassword(password) {
+        var encoder = new TextEncoder();
+        var data = encoder.encode("dg_salt_" + password);
+        var hash = await crypto.subtle.digest("SHA-256", data);
+        return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+      }
+
+      function RegisterPage(props) {
+        const onLogin = props.onLogin;
+        const [isRegister, setIsRegister] = React.useState(false);
+        const [email, setEmail] = React.useState("");
+        const [name, setName] = React.useState("");
+        const [surname, setSurname] = React.useState("");
+        const [password, setPassword] = React.useState("");
+        const [error, setError] = React.useState("");
+
+        const handleLogin = async function() {
+          if (!email || !password) { setError("Email and password are required"); return; }
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          const user = users[email];
+          if (!user) { setError("User not found"); return; }
+          const hash = await hashPassword(password);
+          if (hash !== user.passwordHash) { setError("Invalid password"); return; }
+          localStorage.setItem("dg_current_user", email);
+          onLogin(email);
+        };
+
+        const handleCreate = async function() {
+          if (!email || !password) { setError("Email and password are required"); return; }
+          if (!name.trim() || !surname.trim()) { setError("Name and surname are required"); return; }
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          if (users[email]) { setError("User already exists"); return; }
+          const hash = await hashPassword(password);
+          users[email] = { passwordHash: hash, name: name.trim(), surname: surname.trim(), projects: [] };
+          localStorage.setItem("dg_users", JSON.stringify(users));
+          localStorage.setItem("dg_current_user", email);
+          onLogin(email);
+        };
+
+        return e("div", { className: "register-page" },
+          e("div", { className: "register-form" },
+            e("div", { className: "input-field" },
+              e("label", { className: "input-label" }, "Email"),
+              e("div", { className: "input-box" },
+                e("input", {
+                  type: "email",
+                  placeholder: "Enter your email",
+                  value: email,
+                  onChange: function(ev) { setEmail(ev.target.value); }
+                })
+              )
+            ),
+            isRegister ? e("div", { className: "input-field" },
+              e("label", { className: "input-label" }, "Name"),
+              e("div", { className: "input-box" },
+                e("input", {
+                  type: "text",
+                  placeholder: "Enter your name",
+                  value: name,
+                  onChange: function(ev) { setName(ev.target.value); }
+                })
+              )
+            ) : null,
+            isRegister ? e("div", { className: "input-field" },
+              e("label", { className: "input-label" }, "Surname"),
+              e("div", { className: "input-box" },
+                e("input", {
+                  type: "text",
+                  placeholder: "Enter your surname",
+                  value: surname,
+                  onChange: function(ev) { setSurname(ev.target.value); }
+                })
+              )
+            ) : null,
+            e("div", { className: "input-field" },
+              e("label", { className: "input-label" }, isRegister ? "Create Password" : "Password"),
+              e("div", { className: "input-box" },
+                e("input", {
+                  type: "password",
+                  placeholder: isRegister ? "Create a password" : "Enter your password",
+                  value: password,
+                  onChange: function(ev) { setPassword(ev.target.value); },
+                  onKeyDown: function(ev) { if (ev.key === "Enter") { isRegister ? handleCreate() : handleLogin(); } }
+                })
+              )
+            ),
+            e("p", { className: "form-hint" }, isRegister
+              ? "Create a new account to access Design Grammars"
+              : "Enter your credentials to access Design Grammars"
+            ),
+            error ? e("p", { className: "form-error" }, error) : null,
+            isRegister
+              ? e("div", null,
+                  e("button", { className: "btn-primary", onClick: handleCreate }, "Create Account"),
+                  e("p", { className: "form-hint", style: { marginTop: 12, textAlign: "center", cursor: "pointer", color: "#2c2c2c", textDecoration: "underline" }, onClick: function() { setIsRegister(false); setError(""); } }, "Already have an account? Login")
+                )
+              : e("div", null,
+                  e("button", { className: "btn-primary", onClick: handleLogin }, "Login"),
+                  e("p", { className: "form-hint", style: { marginTop: 12, textAlign: "center", cursor: "pointer", color: "#2c2c2c", textDecoration: "underline" }, onClick: function() { setIsRegister(true); setError(""); } }, "Don't have an account? Create new")
+                )
+          )
+        );
+      }
+
+      function HomePage(props) {
+        const user = props.user;
+        const onSelectProject = props.onSelectProject;
+        const onLogout = props.onLogout;
+        const [searchQuery, setSearchQuery] = React.useState("");
+        const [projects, setProjects] = React.useState([]);
+        const [showProfileMenu, setShowProfileMenu] = React.useState(false);
+        const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
+        const profileRef = React.useRef(null);
+
+        React.useEffect(function() {
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          const userData = users[user];
+          setProjects(userData ? userData.projects || [] : []);
+          setUserProfile({ name: userData?.name || "", surname: userData?.surname || "" });
+        }, [user]);
+
+        React.useEffect(function() {
+          var handleClick = function(ev) {
+            if (profileRef.current && !profileRef.current.contains(ev.target)) {
+              setShowProfileMenu(false);
+            }
+          };
+          document.addEventListener("mousedown", handleClick);
+          return function() { document.removeEventListener("mousedown", handleClick); };
+        }, []);
+
+        var initials = ((userProfile.name || "")[0] || "").toUpperCase() + ((userProfile.surname || "")[0] || "").toUpperCase() || "?";
+        var fullName = ((userProfile.name || "") + " " + (userProfile.surname || "")).trim() || "User";
+
+        const createProject = function() {
+          const name = prompt("Enter project name:");
+          if (!name || !name.trim()) return;
+          const safeName = name.trim().replace(/[^a-zA-Z0-9 _\-]/g, "");
+          if (!safeName) { alert("Invalid project name. Use letters, numbers, spaces, hyphens, underscores."); return; }
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          const userData = users[user] || { passwordHash: "", projects: [] };
+          if (userData.projects.some(function(p) { return p.name === safeName; })) {
+            alert("Project already exists"); return;
+          }
+          userData.projects.push({ name: safeName, createdAt: new Date().toISOString(), lastEdited: new Date().toISOString() });
+          users[user] = userData;
+          localStorage.setItem("dg_users", JSON.stringify(users));
+          setProjects(userData.projects.slice());
+        };
+
+        const filtered = searchQuery
+          ? projects.filter(function(p) { return p.name.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1; })
+          : projects;
+
+        const formatDate = function(dateStr) {
+          if (!dateStr) return "";
+          const diff = Date.now() - new Date(dateStr).getTime();
+          const days = Math.floor(diff / 86400000);
+          if (days === 0) return "Last edited today";
+          if (days === 1) return "Last edited 1 day ago";
+          if (days < 7) return "Last edited " + days + " days ago";
+          const weeks = Math.floor(days / 7);
+          if (days < 30) return "Last edited " + weeks + " week" + (weeks > 1 ? "s" : "") + " ago";
+          const months = Math.floor(days / 30);
+          if (days < 365) return "Last edited " + months + " month" + (months > 1 ? "s" : "") + " ago";
+          return "Last edited over a year ago";
+        };
+
+        return e("div", { className: "home-page" },
+          e("div", { className: "home-header" },
+            e("span", { className: "home-logo" }, "Design Grammars"),
+            e("div", { className: "search-field" },
+              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+                e("circle", { cx: 11, cy: 11, r: 8 }),
+                e("path", { d: "M21 21l-4.35-4.35" })
+              ),
+              e("input", {
+                type: "text",
+                placeholder: "Search projects...",
+                value: searchQuery,
+                onChange: function(ev) { setSearchQuery(ev.target.value); }
+              })
+            ),
+            e("button", { className: "new-project-btn", onClick: createProject },
+              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "#FFFFFF", strokeWidth: 2, strokeLinecap: "round" },
+                e("path", { d: "M12 5v14M5 12h14" })
+              ),
+              "New Project"
+            ),
+            e("div", { className: "profile-dropdown-wrap", ref: profileRef },
+              e("button", { className: "profile-avatar", onClick: function() { setShowProfileMenu(!showProfileMenu); }, title: fullName },
+                e("span", { className: "profile-initials" }, initials)
+              ),
+              showProfileMenu ? e("div", { className: "profile-dropdown" },
+                e("div", { className: "profile-dropdown-info" },
+                  e("div", { className: "profile-dropdown-name" }, fullName),
+                  e("div", { className: "profile-dropdown-email" }, user)
+                ),
+                e("button", { onClick: function() { setShowProfileMenu(false); onLogout(); } }, "Log out")
+              ) : null
+            )
+          ),
+          e("div", { className: "home-content" },
+            e("h2", { className: "section-title" }, "Your Projects"),
+            filtered.length === 0
+              ? e("div", { className: "empty-state" },
+                  e("p", null, projects.length === 0
+                    ? "No projects yet. Click \"New Project\" to create one."
+                    : "No projects match your search."
+                  )
+                )
+              : e("div", { className: "project-grid" },
+                  filtered.map(function(p) {
+                    return e("div", { className: "project-tile", key: p.name, onClick: function() { onSelectProject(p.name); } },
+                      e("div", { className: "tile-thumbnail" },
+                        e("svg", { width: 36, height: 36, viewBox: "0 0 24 24", fill: "none", stroke: "#D0D0D0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                          e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
+                          e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
+                          e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
+                          e("path", { d: "M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M12 13v3" })
+                        )
+                      ),
+                      e("div", { className: "tile-content" },
+                        e("div", { className: "tile-name" }, p.name),
+                        e("div", { className: "tile-desc" }, formatDate(p.lastEdited || p.createdAt))
+                      )
+                    );
+                  })
+                )
+          )
+        );
+      }
+
+      function GraphViewerPage(props) {
+        const project = props.project;
+        const onLogout = props.onLogout;
+        const onBack = props.onBack;
         const [graphView, setGraphView] = React.useState("MetaGraph");
         const buildCypher = (view) => {
+          const pf = project ? ", project:'" + project.replace(/'/g, "") + "'" : "";
           if (view === "MetaGraph") {
             return (
-              "MATCH (r:Rule {graph:'Metagraph'}) " +
-              "OPTIONAL MATCH (r)-[hb:HAS_BODY]->(ab:Atom {graph:'Metagraph'}) " +
-              "OPTIONAL MATCH (r)-[hh:HAS_HEAD]->(ah:Atom {graph:'Metagraph'}) " +
+              "MATCH (r:Rule {graph:'Metagraph'" + pf + "}) " +
+              "OPTIONAL MATCH (r)-[hb:HAS_BODY]->(ab:Atom {graph:'Metagraph'" + pf + "}) " +
+              "OPTIONAL MATCH (r)-[hh:HAS_HEAD]->(ah:Atom {graph:'Metagraph'" + pf + "}) " +
               "OPTIONAL MATCH (ab)-[ref1:REFERS_TO]->(x1) " +
               "OPTIONAL MATCH (ah)-[ref2:REFERS_TO]->(x2) " +
               "OPTIONAL MATCH (ab)-[arg1:ARG]->(v1) " +
               "OPTIONAL MATCH (ah)-[arg2:ARG]->(v2) " +
               "RETURN r,hb,ab,hh,ah,ref1,x1,ref2,x2,arg1,v1,arg2,v2 " +
               "UNION " +
-              "MATCH (n {graph:'Metagraph'}) " +
+              "MATCH (n {graph:'Metagraph'" + pf + "}) " +
               "WHERE (n:Var OR n:Literal) AND NOT (n)<-[:ARG]-() " +
               "RETURN n AS r, null AS hb, null AS ab, null AS hh, null AS ah, null AS ref1, null AS x1, null AS ref2, null AS x2, null AS arg1, null AS v1, null AS arg2, null AS v2"
             );
           }
           return (
-            "MATCH (c:Class {graph:'OntoGraph'}) " +
-            "OPTIONAL MATCH (c)-[hp:HAS_DATA_PROPERTY|HAS_OBJECT_PROPERTY]->(p {graph:'OntoGraph'}) " +
+            "MATCH (c:Class {graph:'OntoGraph'" + pf + "}) " +
+            "OPTIONAL MATCH (c)-[hp:HAS_DATA_PROPERTY|HAS_OBJECT_PROPERTY]->(p {graph:'OntoGraph'" + pf + "}) " +
             "RETURN c,hp,p"
           );
         };
@@ -463,7 +1016,7 @@
           setLoadingRules(true);
           try {
             const result = await executeCypher(
-              "MATCH (r:Rule) WHERE r.graph = 'Metagraph' RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id"
+              "MATCH (r:Rule) WHERE r.graph = 'Metagraph'" + (project ? " AND r.project = '" + project.replace(/'/g, "") + "'" : "") + " RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id"
             );
             const rows = result?.results?.[0]?.data?.map(d => d.row) || [];
             setExistingRules(rows.map(r => ({ rule_id: r[0], text: r[1], kind: r[2] })));
@@ -587,6 +1140,14 @@
           return JSON.stringify(json, null, 2);
         };
 
+        const tagProjectNodes = async () => {
+          if (!project) return;
+          const safeProject = project.replace(/'/g, "");
+          await executeCypher(
+            "MATCH (n) WHERE n.project IS NULL OR n.project = 'default-project' SET n.project = '" + safeProject + "'"
+          );
+        };
+
         const applyProgressUpdate = (data, modeType) => {
           if (!data) return;
           const stepValue = Number(data.step ?? data.payload?.step);
@@ -634,6 +1195,7 @@
                   }
                   clearPoll();
                   if (modeType !== "query") {
+                    await tagProjectNodes();
                     await run(undefined, { silentStatus: true });
                     fetchExistingRules();
                   }
@@ -694,6 +1256,7 @@
                   }
                   clearPoll();
                   if (modeType !== "query") {
+                    await tagProjectNodes();
                     await run(undefined, { silentStatus: true });
                     fetchExistingRules();
                   }
@@ -845,8 +1408,8 @@
           const auth = btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`);
           const body = {
             statements: [
-              { statement: "MATCH (n {graph: $graph}) DETACH DELETE n", parameters: { graph: graphName } },
-              { statement: "MATCH (n) WHERE n.graph IS NULL DETACH DELETE n" }
+              { statement: "MATCH (n {graph: $graph, project: $project}) DETACH DELETE n", parameters: { graph: graphName, project: project || "" } },
+              { statement: "MATCH (n) WHERE n.graph IS NULL AND n.project = $project DETACH DELETE n", parameters: { project: project || "" } }
             ]
           };
           await fetch(url, {
@@ -1033,6 +1596,7 @@
               const result = await executeCypher(promptText);
               setWorkflowStep(4); setProgress(85);
               setStatus("Reloading graph...");
+              await tagProjectNodes();
               await run(undefined, { silentStatus: true });
               setWorkflowStep(5); setProgress(100);
               setResponseText("Cypher executed successfully");
@@ -1052,7 +1616,8 @@
                 rules_text: mode === "edit" && editRuleId
                   ? "edit Rule_Id: " + editRuleId + " — " + promptText
                   : promptText,
-                cypher_prompt: isCypherPrompt
+                cypher_prompt: isCypherPrompt,
+                project: project || "default-project"
               })
             });
             const res = await resPromise;
@@ -1091,6 +1656,7 @@
             }
             setWorkflowStep(4); setProgress(80);
             setStatus("Reloading graph...");
+            await tagProjectNodes();
             await run(undefined, { silentStatus: true });
             setWorkflowStep(5); setProgress(100);
             setResponseText("The Rule ingesting completed successfully");
@@ -1150,7 +1716,7 @@
               const res = await fetch(url, {
                 method: "POST",
                 headers,
-                body: JSON.stringify({ prompt: promptText, cypher_prompt: isCypherPrompt })
+                body: JSON.stringify({ prompt: promptText, cypher_prompt: isCypherPrompt, project: project || "default-project" })
               });
               const rawText = await res.text();
               return { res, rawText, url };
@@ -1361,8 +1927,12 @@
             : null
         );
 
-        return e("div", { id: "app" },
+        return e("div", { className: "graph-viewer-page" },
           e("div", { id: "left" },
+            e("div", { className: "gv-nav" },
+              e("button", { className: "gv-back-btn", onClick: onBack }, "\u2190 Projects"),
+              e("span", { className: "gv-project-name" }, project || "")
+            ),
             e("h3", null, "Rules"),
             e("label", null, "Mode"),
             modeControl,
@@ -1501,8 +2071,64 @@
         );
       }
 
+      function AppRouter() {
+        const [page, setPage] = React.useState("register");
+        const [currentUser, setCurrentUser] = React.useState(null);
+        const [currentProject, setCurrentProject] = React.useState(null);
+
+        React.useEffect(function() {
+          const savedUser = localStorage.getItem("dg_current_user");
+          if (savedUser) {
+            const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+            if (users[savedUser]) {
+              setCurrentUser(savedUser);
+              setPage("home");
+            }
+          }
+        }, []);
+
+        const handleLogin = function(email) {
+          setCurrentUser(email);
+          setPage("home");
+        };
+
+        const handleLogout = function() {
+          localStorage.removeItem("dg_current_user");
+          setCurrentUser(null);
+          setCurrentProject(null);
+          setPage("register");
+        };
+
+        const handleSelectProject = function(projectName) {
+          setCurrentProject(projectName);
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          const userData = users[currentUser];
+          if (userData) {
+            const proj = userData.projects.find(function(p) { return p.name === projectName; });
+            if (proj) {
+              proj.lastEdited = new Date().toISOString();
+              localStorage.setItem("dg_users", JSON.stringify(users));
+            }
+          }
+          setPage("graph");
+        };
+
+        const handleBack = function() {
+          setCurrentProject(null);
+          setPage("home");
+        };
+
+        if (page === "register") {
+          return e(RegisterPage, { onLogin: handleLogin });
+        }
+        if (page === "home") {
+          return e(HomePage, { user: currentUser, onSelectProject: handleSelectProject, onLogout: handleLogout });
+        }
+        return e(GraphViewerPage, { key: currentProject, project: currentProject, onLogout: handleLogout, onBack: handleBack });
+      }
+
       const root = ReactDOM.createRoot(document.getElementById("app"));
-      root.render(e(App));
+      root.render(e(AppRouter));
     </script>
   </body>
 </html>
