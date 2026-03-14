@@ -23,8 +23,14 @@ services:
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: 12345678
+      SPECKLE_BASE_URL: http://localhost:8090
+      SPECKLE_INTERNAL_URL: http://speckle-ingress:8080
+      SPECKLE_WRITE_TOKEN: ${SPECKLE_WRITE_TOKEN:-}
+      SPECKLE_READ_TOKEN: ${SPECKLE_READ_TOKEN:-}
+      DG_BASE_URL: http://localhost:8080
     depends_on:
       - neo4j
+      - speckle-ingress
 
   n8n:
     image: n8nio/n8n
@@ -76,11 +82,154 @@ services:
       DATA_SERVICE_URL: /data-service
       N8N_USER: erarchitech@gmail.com
       N8N_PASSWORD: Ermolenko#^4538!
+      SPECKLE_BASE_URL: http://localhost:8090
+      SPECKLE_READ_TOKEN: ${SPECKLE_READ_TOKEN:-}
     depends_on:
       - neo4j
       - n8n
+      - data-service
+
+  speckle-postgres:
+    image: postgres:16.4-alpine3.20
+    container_name: speckle-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: speckle
+      POSTGRES_USER: speckle
+      POSTGRES_PASSWORD: speckle
+    volumes:
+      - speckle_postgres_data:/var/lib/postgresql/data
+
+  speckle-redis:
+    image: valkey/valkey:8.1-alpine
+    container_name: speckle-redis
+    restart: unless-stopped
+    volumes:
+      - speckle_redis_data:/data
+
+  speckle-minio:
+    image: minio/minio
+    container_name: speckle-minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - speckle_minio_data:/data
+
+  speckle-server:
+    image: speckle/speckle-server:latest
+    container_name: speckle-server
+    restart: unless-stopped
+    environment:
+      CANONICAL_URL: http://localhost:8090
+      PRIVATE_OBJECTS_SERVER_URL: http://speckle-server:3000
+      SESSION_SECRET: ${SPECKLE_SESSION_SECRET:-change-me-speckle-session-secret}
+      STRATEGY_LOCAL: "true"
+      LOG_LEVEL: info
+      LOG_PRETTY: "true"
+      POSTGRES_URL: speckle-postgres
+      POSTGRES_USER: speckle
+      POSTGRES_PASSWORD: speckle
+      POSTGRES_DB: speckle
+      REDIS_URL: redis://speckle-redis
+      PREVIEW_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: "true"
+      PREVIEW_SERVICE_REDIS_URL: redis://speckle-redis
+      FILEIMPORT_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: "true"
+      FILEIMPORT_SERVICE_REDIS_URL: redis://speckle-redis
+      S3_ENDPOINT: http://speckle-minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET: speckle-server
+      S3_CREATE_BUCKET: "true"
+      FILE_SIZE_LIMIT_MB: 1000
+      EMAIL_FROM: no-reply@example.org
+      EMAIL_SECURE: "false"
+      EMAIL_REQUIRE_TLS: "false"
+      FRONTEND_ORIGIN: http://localhost:8090
+      ONBOARDING_STREAM_URL: https://latest.speckle.systems/projects/843d07eb10
+      FILEIMPORT_QUEUE_POSTGRES_URL: postgresql://speckle:speckle@speckle-postgres/speckle
+      FF_NEXT_GEN_FILE_IMPORTER_ENABLED: "true"
+    depends_on:
+      - speckle-postgres
+      - speckle-redis
+      - speckle-minio
+
+  speckle-frontend-2:
+    image: speckle/speckle-frontend-2:latest
+    container_name: speckle-frontend-2
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_SERVER_NAME: local
+      NUXT_PUBLIC_API_ORIGIN: http://localhost:8090
+      NUXT_PUBLIC_BASE_URL: http://localhost:8090
+      NUXT_PUBLIC_BACKEND_API_ORIGIN: http://speckle-server:3000
+      NUXT_PUBLIC_LOG_LEVEL: warn
+      NUXT_REDIS_URL: redis://speckle-redis
+      LOG_LEVEL: info
+      LOG_PRETTY: "true"
+      NUXT_PUBLIC_FF_LARGE_FILE_IMPORTS_ENABLED: "true"
+      NUXT_PUBLIC_FF_NEXT_GEN_FILE_IMPORTER_ENABLED: "true"
+    depends_on:
+      - speckle-server
+      - speckle-redis
+
+  speckle-preview-service:
+    image: speckle/speckle-preview-service:latest
+    container_name: speckle-preview-service
+    restart: unless-stopped
+    environment:
+      HOST: 127.0.0.1
+      PORT: "3001"
+      LOG_LEVEL: info
+      LOG_PRETTY: "true"
+      REDIS_URL: redis://speckle-redis
+    depends_on:
+      - speckle-redis
+
+  speckle-webhook-service:
+    image: speckle/speckle-webhook-service:latest
+    container_name: speckle-webhook-service
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: info
+      LOG_PRETTY: "true"
+      PG_CONNECTION_STRING: postgres://speckle:speckle@speckle-postgres/speckle
+    depends_on:
+      - speckle-postgres
+      - speckle-server
+
+  speckle-ifc-import-server:
+    image: speckle/ifc-import-service:latest
+    container_name: speckle-ifc-import-server
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: info
+      LOG_PRETTY: "true"
+      FILEIMPORT_QUEUE_POSTGRES_URL: postgresql://speckle:speckle@speckle-postgres/speckle
+    depends_on:
+      - speckle-postgres
+      - speckle-server
+
+  speckle-ingress:
+    image: speckle/speckle-docker-compose-ingress:latest
+    container_name: speckle-ingress
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      FILE_SIZE_LIMIT_MB: "100"
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    depends_on:
+      - speckle-server
+      - speckle-frontend-2
 
 volumes:
   neo4j_data:
   n8n_data:
   ollama:
+  speckle_postgres_data:
+  speckle_redis_data:
+  speckle_minio_data:

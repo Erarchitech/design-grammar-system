@@ -6,7 +6,8 @@ public static class VariableBinder
 {
     public static ClassificationResult BuildBindings(
         IReadOnlyList<Variable> variables,
-        IReadOnlyDictionary<string, IReadOnlyList<object?>> valuesByVariable)
+        IReadOnlyDictionary<string, IReadOnlyList<object?>> valuesByVariable,
+        IReadOnlyDictionary<string, IReadOnlyList<ElementRef?>>? elementRefsByVariable = null)
     {
         var result = new ClassificationResult();
         if (variables.Count == 0)
@@ -41,6 +42,14 @@ public static class VariableBinder
                 var values = valuesByVariable[variable.Name];
                 object? value = rowIndex < values.Count ? values[rowIndex] : null;
                 row.ValuesByVar[variable.Name] = value;
+
+                if (elementRefsByVariable is not null
+                    && elementRefsByVariable.TryGetValue(variable.Name, out var elementRefs)
+                    && rowIndex < elementRefs.Count
+                    && elementRefs[rowIndex] is ElementRef elementRef)
+                {
+                    row.ElementRefsByVar[variable.Name] = elementRef;
+                }
             }
 
             result.BoundVariables.Add(row);

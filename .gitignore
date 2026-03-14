@@ -2,3 +2,7 @@ training/HF_Token.txt
 training/HF_Tocken.txt
 **/bin/
 **/obj/
+**/__pycache__/
+**/*.pyc
+**/node_modules/
+**/dist/

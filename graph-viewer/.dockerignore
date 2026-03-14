@@ -1,0 +1,4 @@
+model-viewer/node_modules
+model-viewer/dist
+model-viewer/.vite
+npm-debug.log

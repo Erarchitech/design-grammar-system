@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Drawing;
+using CoreElementRef = DG.Core.Models.ElementRef;
 using CoreVariable = DG.Core.Models.Variable;
 
 namespace DG.Grasshopper.Components;
@@ -24,6 +25,8 @@ public sealed class ClassificatorComponent : GH_Component
     {
         pManager.AddGenericParameter("Variables", "Variables", "DG.Variable list", GH_ParamAccess.list);
         pManager.AddGenericParameter("Values", "Values", "DataTree where branch index matches variable index", GH_ParamAccess.tree);
+        pManager.AddGenericParameter("ElementRefs", "ElementRefs", "Optional DataTree where branch index matches variable index and each item carries a DG entity id plus optional geometry", GH_ParamAccess.tree);
+        pManager[2].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -48,6 +51,9 @@ public sealed class ClassificatorComponent : GH_Component
             return;
         }
 
+        GH_Structure<IGH_Goo>? elementRefTree = null;
+        var hasElementRefTree = da.GetDataTree(2, out elementRefTree) && elementRefTree is not null;
+
         var variables = variableInputs
             .Select(GhCastingHelpers.TryVariable)
             .Where(variable => variable is not null)
@@ -55,17 +61,25 @@ public sealed class ClassificatorComponent : GH_Component
             .ToList();
 
         var valuesByVariable = new Dictionary<string, IReadOnlyList<object?>>(StringComparer.Ordinal);
+        var elementRefsByVariable = new Dictionary<string, IReadOnlyList<CoreElementRef?>>(StringComparer.Ordinal);
         for (var index = 0; index < variables.Count; index++)
         {
             CoreVariable variable = variables[index];
             var branchValues = index < valueTree.Branches.Count
                 ? valueTree.Branches[index].Select(GhCastingHelpers.ToRawValue).ToList()
                 : new List<object?>();
+            var branchElementRefs = hasElementRefTree && index < elementRefTree!.Branches.Count
+                ? elementRefTree.Branches[index].Select(GhCastingHelpers.ToElementRef).ToList()
+                : new List<CoreElementRef?>();
 
             valuesByVariable[variable.Name] = branchValues;
+            elementRefsByVariable[variable.Name] = branchElementRefs;
         }
 
-        var classification = VariableBinder.BuildBindings(variables, valuesByVariable);
+        var classification = VariableBinder.BuildBindings(
+            variables,
+            valuesByVariable,
+            hasElementRefTree ? elementRefsByVariable : null);
         da.SetDataList(0, classification.BoundVariables);
         da.SetDataList(1, classification.MissingVariables);
         da.SetData(2, classification.Status);

@@ -1,6 +1,7 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Models;
 using DG.Core.Validation;
+using DG.Grasshopper.Validation;
 using Grasshopper.Kernel;
 using System.Drawing;
 
@@ -24,6 +25,8 @@ public sealed class ValidatorComponent : GH_Component
         pManager.AddGenericParameter("Rules", "Rules", "Rule list from METAGRAPH", GH_ParamAccess.list);
         pManager.AddGenericParameter("Variables", "Variables", "Binding rows from CLASSIFICATOR", GH_ParamAccess.list);
         pManager.AddBooleanParameter("Run", "Run", "Set true to validate", GH_ParamAccess.item, false);
+        pManager.AddBooleanParameter("SendRules", "SendRules", "Set true to send validation geometry and results to DG backend for Speckle publication", GH_ParamAccess.item, false);
+        pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -33,12 +36,19 @@ public sealed class ValidatorComponent : GH_Component
         pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule descriptions", GH_ParamAccess.list);
         pManager.AddTextParameter("Report", "Report", "Per-rule report lines", GH_ParamAccess.list);
         pManager.AddTextParameter("FailingBindings", "FailingBindings", "Failing bindings in format: b(building32): h(83), w(54)", GH_ParamAccess.list);
+        pManager.AddTextParameter("PublishStatus", "PublishStatus", "Speckle publish status", GH_ParamAccess.item);
+        pManager.AddTextParameter("ValidationRunId", "ValidationRunId", "Validation run identifier returned by DG backend", GH_ParamAccess.item);
+        pManager.AddTextParameter("ModelViewerUrl", "ModelViewerUrl", "Model Viewer URL returned by DG backend", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
     {
         var run = false;
         da.GetData(2, ref run);
+        var sendRules = false;
+        da.GetData(3, ref sendRules);
+        var dataServiceUrl = "http://localhost:8000";
+        da.GetData(4, ref dataServiceUrl);
         if (!run)
         {
             Message = "Idle";
@@ -99,12 +109,36 @@ public sealed class ValidatorComponent : GH_Component
             }
         }
 
+        var publishStatus = sendRules ? "Pending" : "Not requested";
+        var validationRunId = string.Empty;
+        var modelViewerUrl = string.Empty;
+        if (sendRules)
+        {
+            try
+            {
+                var response = ValidationPublishClient.Publish(rules, results, bindings, dataServiceUrl);
+                publishStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
+                validationRunId = response.RunId;
+                modelViewerUrl = response.ModelViewerUrl;
+            }
+            catch (Exception ex)
+            {
+                publishStatus = $"Publish failed: {ex.Message}";
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, publishStatus);
+            }
+        }
+
         da.SetDataList(0, pass);
         da.SetDataList(1, names);
         da.SetDataList(2, descriptions);
         da.SetDataList(3, reports);
         da.SetDataList(4, failing);
-        Message = $"{pass.Count(value => value)} / {pass.Count} pass";
+        da.SetData(5, publishStatus);
+        da.SetData(6, validationRunId);
+        da.SetData(7, modelViewerUrl);
+        Message = sendRules
+            ? $"{pass.Count(value => value)} / {pass.Count} pass | {publishStatus}"
+            : $"{pass.Count(value => value)} / {pass.Count} pass";
     }
 }
 #else

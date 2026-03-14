@@ -5,7 +5,8 @@ This repo provides a Docker-based pipeline for:
 - generating a domain ontology from the same rules,
 - storing the ontology and rules in Neo4j,
 - querying the graph via a natural-language MCP workflow,
-- visualizing and interacting through a lightweight graph viewer UI.
+- visualizing and interacting through a lightweight graph viewer UI,
+- publishing DG validation overlays to a local Speckle server and reviewing them in a dedicated model viewer.
 
 ## Services and ports
 - Neo4j 5 Community: http://localhost:7474 (Bolt 7687)
@@ -13,12 +14,22 @@ This repo provides a Docker-based pipeline for:
 - Ollama: http://localhost:11435 (container 11434)
 - data-service (FastAPI + MCP + execution tracking): http://localhost:8000
 - graph-viewer (UI + reverse proxy): http://localhost:8080
+- Speckle ingress: http://localhost:8090
+- Speckle MinIO: http://localhost:9000
+- Speckle MinIO console: http://localhost:9001
 
 ## Quick start
 1) Start containers:
 ```
 docker compose up -d
 docker compose ps
+```
+
+Set local Speckle tokens before startup if you want DG to publish validation overlays:
+```powershell
+$env:SPECKLE_WRITE_TOKEN = "<speckle_pat_with_model_write>"
+$env:SPECKLE_READ_TOKEN = "<speckle_pat_for_viewer_read>"
+docker compose up -d
 ```
 
 2) Ensure an Ollama model exists:
@@ -44,6 +55,23 @@ Login with the credentials in `docker-compose.yml`.
 http://localhost:8080
 ```
 Use "Ingest Rules" or "Request Grammar". The UI handles polling and shows responses and generated Cypher.
+
+6) Open Speckle locally:
+```
+http://localhost:8090
+```
+Create a Speckle project/model there, then configure the DG project link from the left sidebar "Model Viewer" card in the DG UI.
+
+7) Publish validation overlays from Grasshopper:
+- `CLASSIFICATOR` can attach `ElementRefs` carrying `dgEntityId` and optional geometry.
+- `VALIDATOR` keeps semantic rule evaluation local, but when `SendRules=True` it posts a validation package to `data-service`.
+- `data-service` resolves the linked Speckle base model for the DG project, publishes one DG validation version, stores run metadata in Neo4j, and returns a DG `Model Viewer` URL.
+
+8) Review rule-specific geometry overlays:
+```
+http://localhost:8080/model-viewer/?project=<dg-project>
+```
+The viewer loads the captured base Speckle model version plus the DG validation overlay, then highlights failing elements and optionally passing elements per selected rule.
 
 ## Webhook APIs
 
@@ -203,12 +231,18 @@ See `training/README.md` for advanced options (4-bit, max samples, smoke tests).
 - Ollama: `docker exec -it ollama ollama list`
 - Neo4j: `docker logs -f neo4j`
 - data-service: `docker logs -f data-service`
+- design-grammars: `docker logs -f design-grammars`
+- Speckle ingress: `docker logs -f speckle-ingress`
+- Speckle server: `docker logs -f speckle-server`
 
 ## Persistence
 Named volumes:
 - `neo4j_data` -> Neo4j database files
 - `n8n_data` -> n8n SQLite, workflows, credentials
 - `ollama` -> Ollama models
+- `speckle_postgres_data` -> Speckle metadata
+- `speckle_redis_data` -> Speckle cache/queues
+- `speckle_minio_data` -> Speckle object storage
 
 ## Grasshopper add-in scaffold (DG)
 A new folder `DG/` contains an initial implementation of the Design Grammars Grasshopper add-in:
@@ -221,3 +255,18 @@ Build and test:
 dotnet build .\DG\DG.sln
 dotnet test .\DG\DG.sln
 ```
+
+## DG Validation Viewer API
+`data-service` now exposes Speckle integration endpoints used by the Grasshopper plugin and the new model viewer page:
+- `GET /integration/speckle/project/{project}`
+- `PUT /integration/speckle/project/{project}`
+- `POST /validation/publish`
+- `GET /validation/view/{project}`
+- `GET /validation/view/{project}/{runId}`
+- `GET /validation/view/{project}/{runId}/{ruleId}`
+
+Integration config is stored in Neo4j under `graph = 'ValidationGraph'` and each published validation run stores:
+- the DG project to Speckle base model link,
+- the captured base model version id,
+- the published DG validation model version id,
+- per-rule pass/fail entity sets keyed by `dgEntityId`.

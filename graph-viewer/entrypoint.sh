@@ -12,6 +12,8 @@ NEO4J_PASSWORD=${NEO4J_PASSWORD:-12345678}
 N8N_WEBHOOK=${N8N_WEBHOOK:-/n8n/webhook/dg/rules-ingest}
 N8N_QUERY_WEBHOOK=${N8N_QUERY_WEBHOOK:-/n8n/webhook/dg/graph-query}
 DATA_SERVICE_URL=${DATA_SERVICE_URL:-/data-service}
+SPECKLE_BASE_URL=${SPECKLE_BASE_URL:-http://localhost:8090}
+SPECKLE_READ_TOKEN=${SPECKLE_READ_TOKEN:-}
 N8N_USER=${N8N_USER:-erarchitech@gmail.com}
 N8N_PASSWORD=${N8N_PASSWORD:-Ermolenko#^4538!}
 
@@ -24,6 +26,8 @@ sed \
   -e "s|/n8n/webhook/dg/rules-ingest|${N8N_WEBHOOK}|" \
   -e "s|/n8n/webhook/dg/graph-query|${N8N_QUERY_WEBHOOK}|" \
   -e "s|/data-service|${DATA_SERVICE_URL}|" \
+  -e "s|http://localhost:8090|${SPECKLE_BASE_URL}|" \
+  -e "s|speckleReadToken: \"\"|speckleReadToken: \"${SPECKLE_READ_TOKEN}\"|" \
   -e "s|erarchitech@gmail.com|${N8N_USER}|" \
   -e "s|Ermolenko#^4538!|${N8N_PASSWORD}|" \
   "$tmpl" > "$out"
