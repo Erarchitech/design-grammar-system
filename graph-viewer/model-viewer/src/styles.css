@@ -318,6 +318,66 @@ body,
   line-height: 1.6;
 }
 
+.mv-entity-list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.mv-entity-list.is-fail {
+  border-color: rgba(255, 77, 79, 0.25);
+}
+
+.mv-entity-list.is-pass {
+  border-color: rgba(47, 177, 111, 0.25);
+}
+
+.mv-entity-list-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mv-entity-list-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mv-entity-list-label.is-fail {
+  color: #ffb0b1;
+}
+
+.mv-entity-list-label.is-pass {
+  color: #8df0b7;
+}
+
+.mv-entity-items {
+  display: grid;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+
+.mv-entity-item {
+  display: grid;
+  gap: 1px;
+}
+
+.mv-entity-name {
+  font-size: 11px;
+  color: var(--text);
+}
+
+.mv-entity-id {
+  font-size: 10px;
+  color: var(--muted);
+}
+
 @media (max-width: 900px) {
   .mv-page {
     grid-template-columns: 1fr;

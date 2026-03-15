@@ -44,6 +44,7 @@ public static class ValidationPublishPackageBuilder
             var failingBindings = new HashSet<BindingRow>(result.FailingBindings);
             var statusByEntity = new Dictionary<string, bool>(StringComparer.Ordinal);
             var refByEntity = new Dictionary<string, ElementRef>(StringComparer.Ordinal);
+            var bindingByEntity = new Dictionary<string, BindingRow>(StringComparer.Ordinal);
 
             foreach (var binding in bindings)
             {
@@ -64,7 +65,13 @@ public static class ValidationPublishPackageBuilder
                     if (!statusByEntity.TryGetValue(elementRef.DgEntityId, out var currentIsFailing))
                     {
                         statusByEntity[elementRef.DgEntityId] = isFailingBinding;
+                        bindingByEntity[elementRef.DgEntityId] = binding;
                         continue;
+                    }
+
+                    if (isFailingBinding && !currentIsFailing)
+                    {
+                        bindingByEntity[elementRef.DgEntityId] = binding;
                     }
 
                     statusByEntity[elementRef.DgEntityId] = currentIsFailing || isFailingBinding;
@@ -93,10 +100,14 @@ public static class ValidationPublishPackageBuilder
                 if (!entityById.TryGetValue(dgEntityId, out var entity))
                 {
                     var elementRef = refByEntity[dgEntityId];
+                    var bindingForEntity = bindingByEntity.GetValueOrDefault(dgEntityId);
+                    var displayName = bindingForEntity is not null
+                        ? FailingBindingFormatter.Format(rule, bindingForEntity)
+                        : elementRef.DisplayName;
                     entity = new ValidationPublishEntity
                     {
                         DgEntityId = elementRef.DgEntityId,
-                        DisplayName = elementRef.DisplayName,
+                        DisplayName = displayName,
                         Geometry = elementRef.Geometry,
                     };
                     entityById[dgEntityId] = entity;
@@ -104,9 +115,12 @@ public static class ValidationPublishPackageBuilder
                 else
                 {
                     var elementRef = refByEntity[dgEntityId];
-                    if (entity.DisplayName is null && !string.IsNullOrWhiteSpace(elementRef.DisplayName))
+                    if (entity.DisplayName is null)
                     {
-                        entity.DisplayName = elementRef.DisplayName;
+                        var bindingForEntity = bindingByEntity.GetValueOrDefault(dgEntityId);
+                        entity.DisplayName = bindingForEntity is not null
+                            ? FailingBindingFormatter.Format(rule, bindingForEntity)
+                            : elementRef.DisplayName;
                     }
 
                     if (entity.Geometry is null && elementRef.Geometry is not null)

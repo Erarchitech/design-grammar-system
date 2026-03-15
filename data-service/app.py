@@ -467,30 +467,31 @@ def delete_validation_run_metadata(project: str, run_id: str) -> None:
     )
 
 
-def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = None) -> dict[str, list[str]]:
+def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = None) -> dict[str, list]:
     rows = read_many(
         """
         MATCH (ve:ValidationEntity {graph:$graph, project:$project, runId:$runId})
         WHERE $ruleId IS NULL OR ve.ruleId = $ruleId
-        RETURN ve.dgEntityId AS dgEntityId, ve.status AS status
+        RETURN ve.dgEntityId AS dgEntityId, ve.displayName AS displayName, ve.status AS status
         ORDER BY ve.dgEntityId
         """,
         {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id, "ruleId": rule_id},
     )
-    object_sets = {"failed": [], "passed": []}
+    seen_failed: dict[str, dict[str, str]] = {}
+    seen_passed: dict[str, dict[str, str]] = {}
     for row in rows:
         status = row.get("status")
         dg_entity_id = row.get("dgEntityId")
         if not dg_entity_id:
             continue
+        entry = {"dgEntityId": dg_entity_id, "displayName": row.get("displayName") or dg_entity_id}
         if status == "failed":
-            if dg_entity_id not in object_sets["failed"]:
-                object_sets["failed"].append(dg_entity_id)
-            if dg_entity_id in object_sets["passed"]:
-                object_sets["passed"].remove(dg_entity_id)
-        elif status == "passed" and dg_entity_id not in object_sets["failed"] and dg_entity_id not in object_sets["passed"]:
-            object_sets["passed"].append(dg_entity_id)
-    return object_sets
+            if dg_entity_id not in seen_failed:
+                seen_failed[dg_entity_id] = entry
+            seen_passed.pop(dg_entity_id, None)
+        elif status == "passed" and dg_entity_id not in seen_failed and dg_entity_id not in seen_passed:
+            seen_passed[dg_entity_id] = entry
+    return {"failed": list(seen_failed.values()), "passed": list(seen_passed.values())}
 
 
 def build_rules_summary(request: ValidationPublishRequest) -> list[dict[str, Any]]:

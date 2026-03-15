@@ -77,9 +77,24 @@ function collectValidationObjects(worldTree, runId) {
   };
 }
 
-function flattenObjectIds(entityMap, entityIds) {
+function extractEntityId(entry) {
+  if (typeof entry === "string") {
+    return entry;
+  }
+  return entry?.dgEntityId || "";
+}
+
+function extractEntityIds(entries) {
+  return (entries || []).map(extractEntityId).filter(Boolean);
+}
+
+function flattenObjectIds(entityMap, entries) {
   const objectIds = [];
-  for (const entityId of entityIds || []) {
+  for (const entry of entries || []) {
+    const entityId = extractEntityId(entry);
+    if (!entityId) {
+      continue;
+    }
     const mapped = entityMap.get(entityId) || [];
     objectIds.push(...mapped);
   }
@@ -124,6 +139,8 @@ export default function App() {
   const [loading, setLoading] = React.useState(true);
   const [runsLoading, setRunsLoading] = React.useState(true);
   const [deletingRunId, setDeletingRunId] = React.useState("");
+  const [failedExpanded, setFailedExpanded] = React.useState(true);
+  const [passedExpanded, setPassedExpanded] = React.useState(true);
 
   const viewerHostRef = React.useRef(null);
   const viewerRef = React.useRef(null);
@@ -524,16 +541,66 @@ export default function App() {
                 <input type="checkbox" checked={showPassed} onChange={(event) => setShowPassed(event.target.checked)} />
                 <span>Show passing elements</span>
               </label>
-              <div className="mv-counts">
-                <div>Failing: {(objectSets.failed || []).length}</div>
-                <div>Passing: {(objectSets.passed || []).length}</div>
-              </div>
               {noMappedGeometry ? (
                 <div className="mv-note">
                   No mapped geometry was published for the selected rule in this validation run.
                 </div>
               ) : null}
             </div>
+
+            {(objectSets.failed || []).length > 0 ? (
+              <div className="mv-panel mv-entity-list is-fail">
+                <button
+                  type="button"
+                  className="mv-entity-list-header"
+                  onClick={() => setFailedExpanded((prev) => !prev)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ff4d4f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: failedExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }}><path d="M6 9l6 6 6-6" /></svg>
+                  <span className="mv-entity-list-label is-fail">Failing items ({(objectSets.failed || []).length})</span>
+                </button>
+                {failedExpanded ? (
+                  <div className="mv-entity-items">
+                    {(objectSets.failed || []).map((entry) => {
+                      const entityId = extractEntityId(entry);
+                      const displayName = (typeof entry === "object" && entry?.displayName) || entityId;
+                      return (
+                        <div key={entityId} className="mv-entity-item">
+                          <div className="mv-entity-name">{displayName}</div>
+                          <div className="mv-entity-id">id: {entityId}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {(objectSets.passed || []).length > 0 ? (
+              <div className="mv-panel mv-entity-list is-pass">
+                <button
+                  type="button"
+                  className="mv-entity-list-header"
+                  onClick={() => setPassedExpanded((prev) => !prev)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2fb16f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: passedExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }}><path d="M6 9l6 6 6-6" /></svg>
+                  <span className="mv-entity-list-label is-pass">Passing items ({(objectSets.passed || []).length})</span>
+                </button>
+                {passedExpanded ? (
+                  <div className="mv-entity-items">
+                    {(objectSets.passed || []).map((entry) => {
+                      const entityId = extractEntityId(entry);
+                      const displayName = (typeof entry === "object" && entry?.displayName) || entityId;
+                      return (
+                        <div key={entityId} className="mv-entity-item">
+                          <div className="mv-entity-name">{displayName}</div>
+                          <div className="mv-entity-id">id: {entityId}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </>
         ) : null}
       </aside>
