@@ -1,0 +1,5 @@
+Created Model Viewer integrated with Speckle locally hosted.
+Next need to improve visualisation of the validation model viewport. 
+Now it shows mixed states as it would be rotated or smth else. 
+ALso need to add option to delete and rename validations (management tool). 
+Also need to rebuild model viewer to be opened from Project page parallel with Graph Viewer.

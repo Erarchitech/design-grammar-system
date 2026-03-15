@@ -598,6 +598,103 @@
         letter-spacing: -0.5px;
         margin: 0 0 32px 0;
       }
+      .home-notice {
+        margin: 0 0 24px 0;
+        padding: 16px 18px;
+        border: 1px solid #E8E8E8;
+        background: #FAFAFA;
+        color: #3F3F46;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .home-notice strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #0D0D0D;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .home-section-grid {
+        display: grid;
+        grid-template-columns: minmax(320px, 420px);
+        gap: 24px;
+        margin: 0 0 32px 0;
+      }
+      .home-card {
+        padding: 20px;
+        border: 1px solid #E8E8E8;
+        background: #FFFFFF;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .home-card-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #0D0D0D;
+        margin: 0;
+      }
+      .home-card-hint {
+        font-size: 13px;
+        color: #52525B;
+        line-height: 1.5;
+      }
+      .home-form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #3F3F46;
+        margin: 2px 0 0 0;
+      }
+      .home-form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #D4D4D8;
+        background: #FFFFFF;
+        color: #0D0D0D;
+        border-radius: 0;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 14px;
+      }
+      .home-form-input::placeholder { color: #A1A1AA; }
+      .home-form-input:focus {
+        outline: none;
+        border-color: #0D0D0D;
+      }
+      .home-token-meta {
+        font-size: 12px;
+        color: #52525B;
+        line-height: 1.4;
+      }
+      .home-card-status {
+        font-size: 12px;
+        color: #52525B;
+        line-height: 1.5;
+      }
+      .home-card-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .home-card-button {
+        width: auto;
+        margin: 0;
+        padding: 0 20px;
+        height: 40px;
+        border: 1px solid #0D0D0D;
+        border-radius: 0;
+        background: #0D0D0D;
+        color: #FFFFFF;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .home-card-button.secondary {
+        background: #FFFFFF;
+        color: #0D0D0D;
+      }
       .project-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -728,6 +825,11 @@
         { value: "edit", label: "Edit Rules" }
       ];
 
+      function getDataServiceBaseUrl() {
+        const cfg = window.GRAPH_CONFIG || {};
+        return (cfg.dataServiceUrl || "/data-service").replace(/\/+$/, "");
+      }
+
       async function hashPassword(password) {
         var encoder = new TextEncoder();
         var data = encoder.encode("dg_salt_" + password);
@@ -840,6 +942,15 @@
         const [projects, setProjects] = React.useState([]);
         const [showProfileMenu, setShowProfileMenu] = React.useState(false);
         const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
+        const [speckleSettings, setSpeckleSettings] = React.useState({ baseUrl: "http://localhost:8090", writeToken: "", readToken: "" });
+        const [speckleSettingsMeta, setSpeckleSettingsMeta] = React.useState({
+          writeTokenConfigured: false,
+          readTokenConfigured: false,
+          writeTokenPreview: "",
+          readTokenPreview: ""
+        });
+        const [speckleSettingsStatus, setSpeckleSettingsStatus] = React.useState("Loading Speckle settings...");
+        const [loadingSpeckleSettings, setLoadingSpeckleSettings] = React.useState(false);
         const profileRef = React.useRef(null);
 
         React.useEffect(function() {
@@ -848,6 +959,10 @@
           setProjects(userData ? userData.projects || [] : []);
           setUserProfile({ name: userData?.name || "", surname: userData?.surname || "" });
         }, [user]);
+
+        React.useEffect(function() {
+          loadSpeckleSettings();
+        }, []);
 
         React.useEffect(function() {
           var handleClick = function(ev) {
@@ -881,6 +996,78 @@
         const filtered = searchQuery
           ? projects.filter(function(p) { return p.name.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1; })
           : projects;
+
+        const loadSpeckleSettings = async function() {
+          setLoadingSpeckleSettings(true);
+          try {
+            const response = await fetch(getDataServiceBaseUrl() + "/settings/speckle");
+            if (!response.ok) {
+              throw new Error(await response.text() || ("HTTP " + response.status));
+            }
+            const data = await response.json();
+            setSpeckleSettings(function(current) {
+              return {
+                baseUrl: data.baseUrl || current.baseUrl || "http://localhost:8090",
+                writeToken: "",
+                readToken: ""
+              };
+            });
+            setSpeckleSettingsMeta({
+              writeTokenConfigured: !!data.writeTokenConfigured,
+              readTokenConfigured: !!data.readTokenConfigured,
+              writeTokenPreview: data.writeTokenPreview || "",
+              readTokenPreview: data.readTokenPreview || ""
+            });
+            setSpeckleSettingsStatus(
+              data.writeTokenConfigured
+                ? "Stored in data-service. VALIDATOR can publish without re-entering container environment variables."
+                : "No stored Speckle write token yet. Save it once here to enable VALIDATOR publishing."
+            );
+          } catch (err) {
+            setSpeckleSettingsStatus("Failed to load Speckle settings: " + err.message);
+          } finally {
+            setLoadingSpeckleSettings(false);
+          }
+        };
+
+        const saveSpeckleSettings = async function() {
+          setLoadingSpeckleSettings(true);
+          try {
+            const response = await fetch(getDataServiceBaseUrl() + "/settings/speckle", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                baseUrl: (speckleSettings.baseUrl || "").trim() || "http://localhost:8090",
+                writeToken: (speckleSettings.writeToken || "").trim(),
+                readToken: (speckleSettings.readToken || "").trim()
+              })
+            });
+            const rawText = await response.text();
+            let data = null;
+            if (rawText) {
+              try { data = JSON.parse(rawText); } catch (_) {}
+            }
+            if (!response.ok) {
+              throw new Error(data?.detail || rawText || ("HTTP " + response.status));
+            }
+            setSpeckleSettings({
+              baseUrl: data?.baseUrl || speckleSettings.baseUrl || "http://localhost:8090",
+              writeToken: "",
+              readToken: ""
+            });
+            setSpeckleSettingsMeta({
+              writeTokenConfigured: !!data?.writeTokenConfigured,
+              readTokenConfigured: !!data?.readTokenConfigured,
+              writeTokenPreview: data?.writeTokenPreview || "",
+              readTokenPreview: data?.readTokenPreview || ""
+            });
+            setSpeckleSettingsStatus("Speckle settings saved in data-service.");
+          } catch (err) {
+            setSpeckleSettingsStatus("Failed to save Speckle settings: " + err.message);
+          } finally {
+            setLoadingSpeckleSettings(false);
+          }
+        };
 
         const formatDate = function(dateStr) {
           if (!dateStr) return "";
@@ -932,6 +1119,66 @@
           ),
           e("div", { className: "home-content" },
             e("h2", { className: "section-title" }, "Your Projects"),
+            e("div", { className: "home-notice" },
+              e("strong", null, "Model Viewer location"),
+              "Open a project first. The Speckle configuration card is in the left sidebar of that project's graph view, not on the home page."
+            ),
+            e("div", { className: "home-section-grid" },
+              e("div", { className: "home-card" },
+                e("div", { className: "home-card-title" }, "Speckle Settings"),
+                e("div", { className: "home-card-hint" }, "Local-only backend settings. Save once here and the Grasshopper VALIDATOR publish flow will reuse them after container restarts."),
+                e("label", { className: "home-form-label" }, "Speckle Base URL"),
+                e("input", {
+                  className: "home-form-input",
+                  value: speckleSettings.baseUrl,
+                  placeholder: "http://localhost:8090",
+                  onChange: function(ev) {
+                    setSpeckleSettings(function(current) {
+                      return { baseUrl: ev.target.value, writeToken: current.writeToken, readToken: current.readToken };
+                    });
+                  }
+                }),
+                e("label", { className: "home-form-label" }, "Write Token"),
+                e("input", {
+                  className: "home-form-input",
+                  type: "password",
+                  value: speckleSettings.writeToken,
+                  placeholder: speckleSettingsMeta.writeTokenConfigured ? "Leave blank to keep the stored write token" : "Paste Speckle write token",
+                  onChange: function(ev) {
+                    setSpeckleSettings(function(current) {
+                      return { baseUrl: current.baseUrl, writeToken: ev.target.value, readToken: current.readToken };
+                    });
+                  }
+                }),
+                e("div", { className: "home-token-meta" },
+                  speckleSettingsMeta.writeTokenConfigured
+                    ? "Stored write token: " + speckleSettingsMeta.writeTokenPreview
+                    : "No write token stored yet."
+                ),
+                e("label", { className: "home-form-label" }, "Read Token"),
+                e("input", {
+                  className: "home-form-input",
+                  type: "password",
+                  value: speckleSettings.readToken,
+                  placeholder: speckleSettingsMeta.readTokenConfigured ? "Leave blank to keep the stored read token" : "Optional. Leave blank to reuse the write token in the viewer.",
+                  onChange: function(ev) {
+                    setSpeckleSettings(function(current) {
+                      return { baseUrl: current.baseUrl, writeToken: current.writeToken, readToken: ev.target.value };
+                    });
+                  }
+                }),
+                e("div", { className: "home-token-meta" },
+                  speckleSettingsMeta.readTokenConfigured
+                    ? "Stored read token: " + speckleSettingsMeta.readTokenPreview
+                    : "No separate read token stored. The viewer will use the write token if one is available."
+                ),
+                e("div", { className: "home-card-actions" },
+                  e("button", { className: "home-card-button", onClick: saveSpeckleSettings, disabled: loadingSpeckleSettings }, loadingSpeckleSettings ? "Saving..." : "Save Speckle Settings"),
+                  e("button", { className: "home-card-button secondary", onClick: loadSpeckleSettings, disabled: loadingSpeckleSettings }, "Reload")
+                ),
+                e("div", { className: "home-card-status" }, speckleSettingsStatus)
+              )
+            ),
             filtered.length === 0
               ? e("div", { className: "empty-state" },
                   e("p", null, projects.length === 0
@@ -2097,16 +2344,16 @@
             ),
             e("div", { className: "config-card" },
               e("div", { className: "config-title" }, "Model Viewer"),
-              e("label", null, "Speckle Project Id"),
+              e("label", null, "Speckle Project Id or URL"),
               e("input", {
                 value: speckleConfig.speckleProjectId,
-                placeholder: "Enter Speckle project id",
+                placeholder: "Project id or full project URL",
                 onChange: (ev) => setSpeckleConfig((current) => ({ ...current, speckleProjectId: ev.target.value }))
               }),
-              e("label", null, "Base Model Id"),
+              e("label", null, "Base Model Id or URL"),
               e("input", {
                 value: speckleConfig.baseModelId,
-                placeholder: "Enter base Revit model id",
+                placeholder: "Model id or full model URL",
                 onChange: (ev) => setSpeckleConfig((current) => ({ ...current, baseModelId: ev.target.value }))
               }),
               e("label", null, "Base Model Name"),
@@ -2115,10 +2362,10 @@
                 placeholder: "Optional display name",
                 onChange: (ev) => setSpeckleConfig((current) => ({ ...current, baseModelName: ev.target.value }))
               }),
-              e("label", null, "Validation Model Id"),
+              e("label", null, "Validation Model Id or URL"),
               e("input", {
                 value: speckleConfig.validationModelId,
-                placeholder: "Optional, backend will create if blank",
+                placeholder: "Optional id or URL, backend will create if blank",
                 onChange: (ev) => setSpeckleConfig((current) => ({ ...current, validationModelId: ev.target.value }))
               }),
               e("button", { onClick: saveSpeckleConfig, disabled: loadingSpeckleConfig }, loadingSpeckleConfig ? "Saving..." : "Save Speckle Link"),

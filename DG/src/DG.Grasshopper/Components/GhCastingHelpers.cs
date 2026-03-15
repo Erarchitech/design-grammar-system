@@ -2,6 +2,7 @@
 using DG.Core.Models;
 using Grasshopper.Kernel.Types;
 using System.Collections;
+using System.Globalization;
 using CoreElementRef = DG.Core.Models.ElementRef;
 using CoreRule = DG.Core.Models.Rule;
 using CoreVariable = DG.Core.Models.Variable;
@@ -128,9 +129,38 @@ internal static class GhCastingHelpers
         return goo.ScriptVariable();
     }
 
-    public static CoreElementRef? ToElementRef(IGH_Goo goo)
+    public static CoreElementRef? ToElementRef(IGH_Goo goo, object? fallbackEntityValue = null)
     {
-        return TryElementRef(goo.ScriptVariable());
+        var raw = goo.ScriptVariable();
+        var parsed = TryElementRef(raw);
+        if (parsed is not null)
+        {
+            if (string.IsNullOrWhiteSpace(parsed.DgEntityId)
+                && TryResolveEntityId(fallbackEntityValue, out var fallbackEntityId))
+            {
+                return new CoreElementRef
+                {
+                    DgEntityId = fallbackEntityId,
+                    Geometry = parsed.Geometry,
+                    DisplayName = string.IsNullOrWhiteSpace(parsed.DisplayName) ? fallbackEntityId : parsed.DisplayName,
+                };
+            }
+
+            return parsed;
+        }
+
+        if (raw is not null
+            && TryResolveEntityId(fallbackEntityValue, out var derivedEntityId))
+        {
+            return new CoreElementRef
+            {
+                DgEntityId = derivedEntityId,
+                Geometry = raw,
+                DisplayName = derivedEntityId,
+            };
+        }
+
+        return null;
     }
 
     private static bool TryReadElementRefMembers(
@@ -233,6 +263,37 @@ internal static class GhCastingHelpers
         }
 
         return null;
+    }
+
+    private static bool TryResolveEntityId(object? value, out string entityId)
+    {
+        entityId = string.Empty;
+        if (value is null)
+        {
+            return false;
+        }
+
+        switch (value)
+        {
+            case string text when !string.IsNullOrWhiteSpace(text):
+                entityId = text.Trim();
+                return true;
+            case Guid guid:
+                entityId = guid.ToString();
+                return true;
+            case sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal:
+                entityId = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(entityId);
+        }
+
+        if (TryReadElementRefMembers(value, out var nestedEntityId, out _, out _)
+            && !string.IsNullOrWhiteSpace(nestedEntityId))
+        {
+            entityId = nestedEntityId;
+            return true;
+        }
+
+        return false;
     }
 }
 #else

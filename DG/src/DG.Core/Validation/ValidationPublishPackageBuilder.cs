@@ -141,20 +141,49 @@ public static class ValidationPublishPackageBuilder
     private static List<ElementRef> ExtractElementRefs(BindingRow binding)
     {
         var refs = new Dictionary<string, ElementRef>(StringComparer.Ordinal);
-        foreach (var elementRef in binding.ElementRefsByVar.Values)
+        foreach (var pair in binding.ElementRefsByVar)
         {
-            if (string.IsNullOrWhiteSpace(elementRef.DgEntityId))
+            var variableName = pair.Key;
+            var elementRef = pair.Value;
+            var dgEntityId = ResolveEntityId(binding, variableName, elementRef);
+            if (string.IsNullOrWhiteSpace(dgEntityId))
             {
                 continue;
             }
 
-            if (!refs.ContainsKey(elementRef.DgEntityId))
+            if (!refs.ContainsKey(dgEntityId))
             {
-                refs[elementRef.DgEntityId] = elementRef;
+                refs[dgEntityId] = new ElementRef
+                {
+                    DgEntityId = dgEntityId,
+                    Geometry = elementRef.Geometry,
+                    DisplayName = string.IsNullOrWhiteSpace(elementRef.DisplayName) ? dgEntityId : elementRef.DisplayName,
+                };
             }
         }
 
         return refs.Values.ToList();
+    }
+
+    private static string ResolveEntityId(BindingRow binding, string variableName, ElementRef elementRef)
+    {
+        if (!string.IsNullOrWhiteSpace(elementRef.DgEntityId))
+        {
+            return elementRef.DgEntityId;
+        }
+
+        if (!binding.ValuesByVar.TryGetValue(variableName, out var value) || value is null)
+        {
+            return string.Empty;
+        }
+
+        return value switch
+        {
+            string text when !string.IsNullOrWhiteSpace(text) => text.Trim(),
+            Guid guid => guid.ToString(),
+            sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            _ => string.Empty,
+        };
     }
 
     private static string ResolveProject(IReadOnlyList<Rule> rules)

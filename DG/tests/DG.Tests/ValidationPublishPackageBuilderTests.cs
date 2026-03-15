@@ -95,6 +95,49 @@ public sealed class ValidationPublishPackageBuilderTests
     }
 
     [Fact]
+    public void Build_ShouldUseBoundVariableValueAsFallbackEntityIdWhenElementRefIdIsMissing()
+    {
+        var rule = new Rule
+        {
+            Id = "R_HEIGHT",
+            Name = "Height",
+            Description = "Max height",
+            Project = "project-a",
+        };
+        var binding = new BindingRow();
+        binding.ValuesByVar["?b"] = "building32";
+        binding.ElementRefsByVar["?b"] = new ElementRef
+        {
+            Geometry = "mesh-data",
+            DisplayName = "Building 32",
+        };
+
+        var result = new RuleEvaluationResult
+        {
+            RuleId = "R_HEIGHT",
+            RuleName = "Height",
+            RuleDescription = "Max height",
+            Passed = false,
+        };
+        result.FailingBindings.Add(binding);
+
+        var package = ValidationPublishPackageBuilder.Build(
+            new[] { rule },
+            new[] { result },
+            new[] { binding });
+
+        Assert.Single(package.RuleResults);
+        Assert.Equal(new[] { "building32" }, package.RuleResults[0].FailedEntityIds);
+        Assert.Empty(package.RuleResults[0].PassedEntityIds);
+
+        var entity = Assert.Single(package.Entities);
+        Assert.Equal("building32", entity.DgEntityId);
+        Assert.Equal("mesh-data", entity.Geometry);
+        Assert.Equal(new[] { "R_HEIGHT" }, entity.RuleIds);
+        Assert.Equal(new[] { "R_HEIGHT" }, entity.FailedRuleIds);
+    }
+
+    [Fact]
     public void Build_ShouldRejectMixedProjects()
     {
         var rules = new[]

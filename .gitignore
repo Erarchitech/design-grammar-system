@@ -6,3 +6,4 @@ training/HF_Tocken.txt
 **/*.pyc
 **/node_modules/
 **/dist/
+data-service/data/*.json

@@ -2,6 +2,16 @@
 
 This folder contains the initial implementation of the **DG** Grasshopper add-in.
 
+Close Rhino and Grasshopper first, then run this from the repo root. It builds the updated plugin and mirrors the release output into %AppData%\Grasshopper\Libraries\DG:
+
+$src = (Resolve-Path ".\DG\src\DG.Grasshopper\bin\Release\net7.0-windows").Path
+$dst = Join-Path $env:APPDATA "Grasshopper\Libraries\DG"
+
+dotnet build .\DG\DG.sln -c Release
+New-Item -ItemType Directory -Force -Path $dst | Out-Null
+robocopy $src $dst /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS /NP
+if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+
 ## Structure
 - `src/DG.Core`: rule models, Neo4j access, SWRL parser, classifier, validator
 - `src/DG.Grasshopper`: Grasshopper components (`CONNECTOR`, `METAGRAPH`, `RULE DECONSTRUCT`, `CLASSIFICATOR`, `VALIDATOR`)
@@ -40,6 +50,7 @@ When SDK DLLs are not found, `DG.Grasshopper` still compiles as a placeholder as
 ## Validation Publish Flow
 - `BindingRow.ValuesByVar` remains the only source for semantic rule evaluation.
 - `BindingRow.ElementRefsByVar` is a sidecar map used only for downstream visualization/export.
+- `ElementRefs` accepts either explicit `DG.ElementRef` objects or plain geometry items. When plain geometry is provided, DG derives the `dgEntityId` from the paired variable value in the same branch/row when possible.
 - `VALIDATOR` accepts:
   - `Rules`
   - `Variables`

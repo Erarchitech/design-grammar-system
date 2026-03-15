@@ -40,4 +40,8 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="CreateGrasshopperAssembly" AfterTargets="Build" Condition="Exists('$(GrasshopperPath)')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)DG.gha" OverwriteReadOnlyFiles="true" />
+  </Target>
+
 </Project>

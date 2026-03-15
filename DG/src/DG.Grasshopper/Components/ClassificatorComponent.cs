@@ -68,9 +68,16 @@ public sealed class ClassificatorComponent : GH_Component
             var branchValues = index < valueTree.Branches.Count
                 ? valueTree.Branches[index].Select(GhCastingHelpers.ToRawValue).ToList()
                 : new List<object?>();
-            var branchElementRefs = hasElementRefTree && index < elementRefTree!.Branches.Count
-                ? elementRefTree.Branches[index].Select(GhCastingHelpers.ToElementRef).ToList()
-                : new List<CoreElementRef?>();
+            var branchElementRefs = new List<CoreElementRef?>();
+            if (hasElementRefTree && index < elementRefTree!.Branches.Count)
+            {
+                var branch = elementRefTree.Branches[index];
+                for (var rowIndex = 0; rowIndex < branch.Count; rowIndex++)
+                {
+                    var fallbackEntityValue = rowIndex < branchValues.Count ? branchValues[rowIndex] : null;
+                    branchElementRefs.Add(GhCastingHelpers.ToElementRef(branch[rowIndex], fallbackEntityValue));
+                }
+            }
 
             valuesByVariable[variable.Name] = branchValues;
             elementRefsByVariable[variable.Name] = branchElementRefs;

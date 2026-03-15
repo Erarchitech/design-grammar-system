@@ -19,6 +19,10 @@ This repo provides a Docker-based pipeline for:
 - Speckle MinIO console: http://localhost:9001
 
 ## Quick start
+For the full local setup, Speckle wiring, Grasshopper publish flow, and validation test checklist, see:
+
+- `docs/UPDATED_SYSTEM_SETUP_AND_TEST.md`
+
 1) Start containers:
 ```
 docker compose up -d
@@ -31,6 +35,7 @@ $env:SPECKLE_WRITE_TOKEN = "<speckle_pat_with_model_write>"
 $env:SPECKLE_READ_TOKEN = "<speckle_pat_for_viewer_read>"
 docker compose up -d
 ```
+Or save them once in the DG home page `Speckle Settings` card. `data-service` persists those local-only settings and reuses them after restarts.
 
 2) Ensure an Ollama model exists:
 ```
@@ -60,12 +65,13 @@ Use "Ingest Rules" or "Request Grammar". The UI handles polling and shows respon
 ```
 http://localhost:8090
 ```
-Create a Speckle project/model there, then configure the DG project link from the left sidebar "Model Viewer" card in the DG UI.
+Create a Speckle project/model there, then open a DG project in the graph view and configure the DG project link from the left sidebar "Model Viewer" card there. The card is not shown on the DG home page. The mapping fields accept either raw Speckle ids or full Speckle URLs; the backend normalizes URLs automatically.
 
 7) Publish validation overlays from Grasshopper:
 - `CLASSIFICATOR` can attach `ElementRefs` carrying `dgEntityId` and optional geometry.
 - `VALIDATOR` keeps semantic rule evaluation local, but when `SendRules=True` it posts a validation package to `data-service`.
 - `data-service` resolves the linked Speckle base model for the DG project, publishes one DG validation version, stores run metadata in Neo4j, and returns a DG `Model Viewer` URL.
+- If publish fails with a missing token error, open `http://localhost:8080`, save the tokens in the home page `Speckle Settings` card, then run `VALIDATOR` again.
 
 8) Review rule-specific geometry overlays:
 ```
@@ -260,6 +266,8 @@ dotnet test .\DG\DG.sln
 `data-service` now exposes Speckle integration endpoints used by the Grasshopper plugin and the new model viewer page:
 - `GET /integration/speckle/project/{project}`
 - `PUT /integration/speckle/project/{project}`
+- `GET /settings/speckle`
+- `PUT /settings/speckle`
 - `POST /validation/publish`
 - `GET /validation/view/{project}`
 - `GET /validation/view/{project}/{runId}`

@@ -1,0 +1,5 @@
+SPECKLE_WRITE_TOKEN: 31df8a9e0d172f8e26170a4bd3082381fa281f1beb
+SPECKLE_READ_TOKEN: 40bfcd23e349f33a5fc9f074bf65decba0fcce5d33
+
+Project URL:http://localhost:8090/projects/44088eefc6
+Base model URL: http://localhost:8090/projects/44088eefc6/models/4c546c0771

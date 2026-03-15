@@ -5,7 +5,10 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path as FilePath
 from typing import Any
+from urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from neo4j import GraphDatabase
@@ -33,6 +36,8 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
 WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
 VALIDATION_GRAPH = "ValidationGraph"
+DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
+SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
 
 
 class ExecutionResult(BaseModel):
@@ -50,6 +55,12 @@ class SpeckleProjectConfigPayload(BaseModel):
     baseModelId: str = Field(default="")
     baseModelName: str | None = None
     validationModelId: str | None = None
+
+
+class SpeckleSettingsPayload(BaseModel):
+    baseUrl: str | None = None
+    writeToken: str | None = None
+    readToken: str | None = None
 
 
 class ValidationPublishRulePayload(BaseModel):
@@ -151,10 +162,11 @@ def write_query(query: str, parameters: dict[str, Any] | None = None) -> None:
 
 
 def get_speckle_settings() -> SpeckleConnectionSettings:
-    base_url = os.getenv("SPECKLE_BASE_URL", "http://localhost:8090").strip()
-    internal_url = os.getenv("SPECKLE_INTERNAL_URL", base_url).strip()
-    write_token = os.getenv("SPECKLE_WRITE_TOKEN", "").strip()
-    read_token = os.getenv("SPECKLE_READ_TOKEN", "").strip()
+    persisted = load_persisted_speckle_settings()
+    base_url = os.getenv("SPECKLE_BASE_URL", "").strip() or persisted.get("baseUrl") or "http://localhost:8090"
+    internal_url = os.getenv("SPECKLE_INTERNAL_URL", "").strip() or base_url
+    write_token = os.getenv("SPECKLE_WRITE_TOKEN", "").strip() or persisted.get("writeToken", "")
+    read_token = os.getenv("SPECKLE_READ_TOKEN", "").strip() or persisted.get("readToken", "") or write_token
     dg_base_url = os.getenv("DG_BASE_URL", "http://localhost:8080").strip()
     return SpeckleConnectionSettings(
         base_url=normalize_url(base_url),
@@ -162,6 +174,86 @@ def get_speckle_settings() -> SpeckleConnectionSettings:
         write_token=write_token,
         read_token=read_token,
         dg_base_url=normalize_url(dg_base_url),
+    )
+
+
+def load_persisted_speckle_settings() -> dict[str, str]:
+    if not SPECKLE_SETTINGS_FILE.exists():
+        return {}
+
+    try:
+        payload = json.loads(SPECKLE_SETTINGS_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    if not isinstance(payload, dict):
+        return {}
+
+    settings: dict[str, str] = {}
+    for key in ("baseUrl", "writeToken", "readToken"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            settings[key] = value.strip()
+    return settings
+
+
+def save_persisted_speckle_settings(settings: dict[str, str]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {key: value for key, value in settings.items() if value}
+    SPECKLE_SETTINGS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def mask_token(token: str) -> str:
+    normalized = (token or "").strip()
+    if not normalized:
+        return ""
+    if len(normalized) <= 10:
+        return normalized[0:2] + ("*" * max(0, len(normalized) - 4)) + normalized[-2:]
+    return normalized[:6] + "..." + normalized[-6:]
+
+
+def get_speckle_settings_response() -> dict[str, Any]:
+    settings = get_speckle_settings()
+    return {
+        "baseUrl": settings.base_url,
+        "writeTokenConfigured": bool(settings.write_token),
+        "readTokenConfigured": bool(settings.read_token),
+        "writeTokenPreview": mask_token(settings.write_token),
+        "readTokenPreview": mask_token(settings.read_token),
+    }
+
+
+def normalize_speckle_project_id(value: str | None) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return ""
+    parsed = urlparse(normalized)
+    if parsed.scheme and parsed.netloc:
+        parts = [part for part in parsed.path.split("/") if part]
+        if len(parts) >= 2 and parts[0] in {"projects", "streams"}:
+            return parts[1]
+    return normalized
+
+
+def normalize_speckle_model_id(value: str | None) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return ""
+    parsed = urlparse(normalized)
+    if parsed.scheme and parsed.netloc:
+        parts = [part for part in parsed.path.split("/") if part]
+        if len(parts) >= 4 and parts[0] in {"projects", "streams"} and parts[2] in {"models", "branches"}:
+            model_part = parts[3]
+            return model_part.split("@", 1)[0]
+    return normalized.split("@", 1)[0]
+
+
+def normalize_speckle_project_config_payload(payload: SpeckleProjectConfigPayload) -> SpeckleProjectConfigPayload:
+    return SpeckleProjectConfigPayload(
+        speckleProjectId=normalize_speckle_project_id(payload.speckleProjectId),
+        baseModelId=normalize_speckle_model_id(payload.baseModelId),
+        baseModelName=(payload.baseModelName or "").strip() or None,
+        validationModelId=normalize_speckle_model_id(payload.validationModelId),
     )
 
 
@@ -177,10 +269,11 @@ def get_integration_config(project: str) -> SpeckleProjectConfigPayload | None:
         """,
         {"graph": VALIDATION_GRAPH, "project": project},
     )
-    return None if row is None else SpeckleProjectConfigPayload(**row)
+    return None if row is None else normalize_speckle_project_config_payload(SpeckleProjectConfigPayload(**row))
 
 
 def upsert_integration_config(project: str, payload: SpeckleProjectConfigPayload) -> SpeckleProjectConfigPayload:
+    payload = normalize_speckle_project_config_payload(payload)
     write_query(
         """
         MERGE (cfg:IntegrationConfig {graph:$graph, provider:'Speckle', project:$project})
@@ -402,8 +495,38 @@ def get_speckle_project_config(project: str):
     return config.model_dump()
 
 
+@app.get("/settings/speckle")
+def get_speckle_runtime_settings():
+    return get_speckle_settings_response()
+
+
+@app.put("/settings/speckle")
+def put_speckle_runtime_settings(payload: SpeckleSettingsPayload):
+    persisted = load_persisted_speckle_settings()
+
+    base_url = (payload.baseUrl or "").strip()
+    if base_url:
+        persisted["baseUrl"] = base_url
+    elif "baseUrl" not in persisted:
+        env_base_url = os.getenv("SPECKLE_BASE_URL", "").strip()
+        if env_base_url:
+            persisted["baseUrl"] = env_base_url
+
+    write_token = (payload.writeToken or "").strip()
+    if write_token:
+        persisted["writeToken"] = write_token
+
+    read_token = (payload.readToken or "").strip()
+    if read_token:
+        persisted["readToken"] = read_token
+
+    save_persisted_speckle_settings(persisted)
+    return get_speckle_settings_response()
+
+
 @app.put("/integration/speckle/project/{project}")
 def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayload):
+    payload = normalize_speckle_project_config_payload(payload)
     if not payload.speckleProjectId or not payload.baseModelId:
         raise HTTPException(status_code=400, detail="speckleProjectId and baseModelId are required.")
     config = upsert_integration_config(project, payload)
@@ -415,10 +538,14 @@ def publish_validation(payload: ValidationPublishRequest):
     config = get_integration_config(payload.project)
     if config is None:
         raise HTTPException(status_code=404, detail="No Speckle integration config found for this DG project.")
+    config = normalize_speckle_project_config_payload(config)
 
     settings = get_speckle_settings()
     if not settings.write_token:
-        raise HTTPException(status_code=500, detail="SPECKLE_WRITE_TOKEN is not configured on data-service.")
+        raise HTTPException(
+            status_code=500,
+            detail="Speckle write token is not configured. Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+        )
 
     try:
         client = build_client(settings.internal_url, settings.write_token)
