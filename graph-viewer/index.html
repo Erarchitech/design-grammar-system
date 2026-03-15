@@ -736,6 +736,113 @@
         color: #7A7A7A;
         font-size: 16px;
       }
+      /* ─── Project Page ─── */
+      .project-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: #FFFFFF;
+        font-family: 'Inter', Arial, sans-serif;
+        color: #1e1e1e;
+      }
+      .project-page-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 64px;
+        padding: 0 48px;
+        border-bottom: 1px solid #E8E8E8;
+        flex-shrink: 0;
+      }
+      .project-page-back {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 16px;
+        background: transparent;
+        border: 1px solid #E8E8E8;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #0D0D0D;
+        white-space: nowrap;
+        width: auto;
+        margin: 0;
+        border-radius: 0;
+      }
+      .project-page-back:hover { border-color: #CCCCCC; }
+      .project-page-content {
+        flex: 1;
+        padding: 48px 48px;
+        overflow: auto;
+      }
+      .project-page-info {
+        margin-bottom: 40px;
+      }
+      .project-page-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 32px;
+        font-weight: 600;
+        color: #0D0D0D;
+        letter-spacing: -0.5px;
+        margin: 0;
+      }
+      .project-page-meta {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-top: 8px;
+        color: #7A7A7A;
+        font-size: 14px;
+      }
+      .project-page-meta-dot {
+        width: 4px;
+        height: 4px;
+        background: #D0D0D0;
+        border-radius: 2px;
+      }
+      .project-page-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+      }
+      .project-action-tile {
+        background: #FFFFFF;
+        border: 1px solid #E8E8E8;
+        cursor: pointer;
+        overflow: hidden;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .project-action-tile:hover {
+        border-color: #CCCCCC;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      }
+      .project-action-thumb {
+        height: 160px;
+        background: #FAFAFA;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .project-action-body {
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .project-action-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #0D0D0D;
+      }
+      .project-action-desc {
+        font-size: 13px;
+        color: #7A7A7A;
+        line-height: 1.4;
+      }
       /* ─── Graph Viewer Nav ─── */
       .gv-nav {
         display: flex;
@@ -1204,6 +1311,104 @@
                     );
                   })
                 )
+          )
+        );
+      }
+
+      function ProjectPage(props) {
+        const project = props.project;
+        const onBack = props.onBack;
+        const onOpenGraphViewer = props.onOpenGraphViewer;
+        const onOpenModelViewer = props.onOpenModelViewer;
+        const user = props.user;
+
+        const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
+        const [projectData, setProjectData] = React.useState(null);
+
+        React.useEffect(function() {
+          const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+          const userData = users[user];
+          if (userData) {
+            setUserProfile({ name: userData.name || "", surname: userData.surname || "" });
+            const proj = userData.projects.find(function(p) { return p.name === project; });
+            setProjectData(proj || null);
+          }
+        }, [user, project]);
+
+        const formatProjectDate = function(dateStr) {
+          if (!dateStr) return "";
+          return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+        };
+
+        const formatRelative = function(dateStr) {
+          if (!dateStr) return "";
+          var diff = Date.now() - new Date(dateStr).getTime();
+          var days = Math.floor(diff / 86400000);
+          if (days === 0) return "Last edited today";
+          if (days === 1) return "Last edited 1 day ago";
+          if (days < 7) return "Last edited " + days + " days ago";
+          var weeks = Math.floor(days / 7);
+          if (days < 30) return "Last edited " + weeks + " week" + (weeks > 1 ? "s" : "") + " ago";
+          var months = Math.floor(days / 30);
+          if (days < 365) return "Last edited " + months + " month" + (months > 1 ? "s" : "") + " ago";
+          return "Last edited over a year ago";
+        };
+
+        var initials = ((userProfile.name || "").charAt(0) + (userProfile.surname || "").charAt(0)).toUpperCase() || "?";
+
+        return e("div", { className: "project-page" },
+          e("div", { className: "project-page-header" },
+            e("span", { className: "home-logo" }, "Design Grammars"),
+            e("div", { style: { flex: 1 } }),
+            e("button", { className: "project-page-back", onClick: onBack },
+              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+                e("path", { d: "M19 12H5" }),
+                e("path", { d: "M12 19l-7-7 7-7" })
+              ),
+              "All Projects"
+            ),
+            e("div", { className: "profile-avatar", style: { cursor: "default" } },
+              e("span", { className: "profile-initials" }, initials)
+            )
+          ),
+          e("div", { className: "project-page-content" },
+            e("div", { className: "project-page-info" },
+              e("h1", { className: "project-page-name" }, project),
+              projectData ? e("div", { className: "project-page-meta" },
+                e("span", null, "Created " + formatProjectDate(projectData.createdAt)),
+                e("span", { className: "project-page-meta-dot" }),
+                e("span", null, formatRelative(projectData.lastEdited || projectData.createdAt))
+              ) : null
+            ),
+            e("div", { className: "project-page-grid" },
+              e("div", { className: "project-action-tile", onClick: onOpenGraphViewer },
+                e("div", { className: "project-action-thumb" },
+                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                    e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
+                    e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
+                    e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
+                    e("path", { d: "M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M12 13v3" })
+                  )
+                ),
+                e("div", { className: "project-action-body" },
+                  e("div", { className: "project-action-name" }, "Graph Viewer"),
+                  e("div", { className: "project-action-desc" }, "View and manage design rules, ontology graph, and Cypher queries")
+                )
+              ),
+              e("div", { className: "project-action-tile", onClick: onOpenModelViewer },
+                e("div", { className: "project-action-thumb" },
+                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                    e("path", { d: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" }),
+                    e("polyline", { points: "3.27 6.96 12 12.01 20.73 6.96" }),
+                    e("line", { x1: 12, y1: 22.08, x2: 12, y2: 12 })
+                  )
+                ),
+                e("div", { className: "project-action-body" },
+                  e("div", { className: "project-action-name" }, "Model Viewer"),
+                  e("div", { className: "project-action-desc" }, "Visualize and inspect 3D models from Speckle streams")
+                )
+              )
+            )
           )
         );
       }
@@ -2293,7 +2498,7 @@
         return e("div", { className: "graph-viewer-page" },
           e("div", { id: "left" },
             e("div", { className: "gv-nav" },
-              e("button", { className: "gv-back-btn", onClick: onBack }, "\u2190 Projects"),
+              e("button", { className: "gv-back-btn", onClick: onBack }, "\u2190 Project"),
               e("span", { className: "gv-project-name" }, project || "")
             ),
             e("h3", null, "Rules"),
@@ -2470,11 +2675,23 @@
         const [currentProject, setCurrentProject] = React.useState(null);
 
         React.useEffect(function() {
-          const savedUser = localStorage.getItem("dg_current_user");
+          var savedUser = localStorage.getItem("dg_current_user");
           if (savedUser) {
-            const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
+            var users = JSON.parse(localStorage.getItem("dg_users") || "{}");
             if (users[savedUser]) {
               setCurrentUser(savedUser);
+              var urlParams = new URLSearchParams(window.location.search);
+              var projectParam = urlParams.get("project");
+              if (projectParam) {
+                var userData = users[savedUser];
+                var proj = userData.projects && userData.projects.find(function(p) { return p.name === projectParam; });
+                if (proj) {
+                  setCurrentProject(projectParam);
+                  setPage("project");
+                  window.history.replaceState({}, "", window.location.pathname);
+                  return;
+                }
+              }
               setPage("home");
             }
           }
@@ -2503,12 +2720,26 @@
               localStorage.setItem("dg_users", JSON.stringify(users));
             }
           }
+          setPage("project");
+        };
+
+        const handleOpenGraphViewer = function() {
           setPage("graph");
         };
 
-        const handleBack = function() {
+        const handleOpenModelViewer = function() {
+          var params = new URLSearchParams();
+          params.set("project", currentProject || "");
+          window.location.href = "/model-viewer/?" + params.toString();
+        };
+
+        const handleBackToHome = function() {
           setCurrentProject(null);
           setPage("home");
+        };
+
+        const handleBackToProject = function() {
+          setPage("project");
         };
 
         if (page === "register") {
@@ -2517,7 +2748,10 @@
         if (page === "home") {
           return e(HomePage, { user: currentUser, onSelectProject: handleSelectProject, onLogout: handleLogout });
         }
-        return e(GraphViewerPage, { key: currentProject, project: currentProject, onLogout: handleLogout, onBack: handleBack });
+        if (page === "project") {
+          return e(ProjectPage, { project: currentProject, user: currentUser, onBack: handleBackToHome, onOpenGraphViewer: handleOpenGraphViewer, onOpenModelViewer: handleOpenModelViewer });
+        }
+        return e(GraphViewerPage, { key: currentProject, project: currentProject, onLogout: handleLogout, onBack: handleBackToProject });
       }
 
       const root = ReactDOM.createRoot(document.getElementById("app"));

@@ -1,0 +1,2038 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "mv001",
+      "x": 0,
+      "y": 0,
+      "name": "Design Grammars - Model Viewer",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "#0c1018",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mvSbr",
+          "name": "Sidebar",
+          "width": 320,
+          "height": 900,
+          "fill": "#141a26",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "right": 1
+            },
+            "fill": "#2b3550"
+          },
+          "layout": "vertical",
+          "gap": 14,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "mvHdr",
+              "name": "Header Section",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#2b3550"
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                0,
+                0,
+                10,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mvBck",
+                  "name": "Back Button",
+                  "height": 28,
+                  "fill": "transparent",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#5fd0ff"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "mvBcI",
+                      "name": "Back Arrow Icon",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "arrow-left",
+                      "iconFontFamily": "lucide",
+                      "fill": "#5fd0ff"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvBcT",
+                      "name": "Back Label",
+                      "fill": "#5fd0ff",
+                      "content": "Project",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "mvTtl",
+                  "name": "Title",
+                  "fill": "#eef3ff",
+                  "content": "Model Viewer",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "mvPrj",
+                  "name": "Project Name",
+                  "fill": "#98a4bd",
+                  "content": "Residential Tower",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mvPn2",
+              "name": "Validation Run Panel",
+              "width": "fill_container",
+              "fill": "rgba(20,26,38,0.88)",
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#2b3550"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "mvP2T",
+                  "name": "Panel Title",
+                  "fill": "#5fd0ff",
+                  "content": "VALIDATION RUN",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "mvKv1",
+                  "name": "KV Run Id",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvK1L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Run Id",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvK1V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "content": "abc12345-6789-abcd-ef01",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvKv2",
+                  "name": "KV Date Created",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvK2L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Date Created",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvK2V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "content": "3/15/2026, 10:30:00 AM",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvKv3",
+                  "name": "KV Base Model",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvK3L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Base Model",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvK3V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "content": "main",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvKv4",
+                  "name": "KV Validation Model",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvK4L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Validation Model",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvK4V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "content": "dg-validation",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvCnts",
+                  "name": "Counts Row",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "top": 1
+                    },
+                    "fill": "rgba(95,208,255,0.10)"
+                  },
+                  "gap": 16,
+                  "padding": [
+                    6,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvCntF",
+                      "name": "Failing Count",
+                      "layout": "vertical",
+                      "gap": 1,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvCFL",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Failing",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvCFV",
+                          "name": "Value",
+                          "fill": "#ff4d4f",
+                          "content": "3",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvCntP",
+                      "name": "Passing Count",
+                      "layout": "vertical",
+                      "gap": 1,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvCPL",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Passing",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvCPV",
+                          "name": "Value",
+                          "fill": "#2fb16f",
+                          "content": "12",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvFlDd",
+                  "name": "Failing Items Dropdown",
+                  "width": "fill_container",
+                  "fill": "#1a2232",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "rgba(255,77,79,0.25)"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvFlHd",
+                      "name": "Dropdown Header",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "mvFlCh",
+                          "name": "Chevron",
+                          "width": 12,
+                          "height": 12,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "#ff4d4f"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvFlLb",
+                          "name": "Label",
+                          "fill": "#ffb0b1",
+                          "content": "Failing items (3)",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvFlLs",
+                      "name": "Failing Items List",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": [
+                        0,
+                        10,
+                        8,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvFi1",
+                          "name": "Item 1",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvFi1N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Wall_04_North  (height: 32.1 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvFi1Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-8f3a1c04",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvFi2",
+                          "name": "Item 2",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvFi2N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Column_12_East  (height: 31.5 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvFi2Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-2d7e5b19",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvFi3",
+                          "name": "Item 3",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvFi3N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Slab_07_Roof  (height: 33.0 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvFi3Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-4c9f0a72",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvPsDd",
+                  "name": "Passing Items Dropdown",
+                  "width": "fill_container",
+                  "fill": "#1a2232",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "rgba(47,177,111,0.25)"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvPsHd",
+                      "name": "Dropdown Header",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "mvPsCh",
+                          "name": "Chevron",
+                          "width": 12,
+                          "height": 12,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "#2fb16f"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvPsLb",
+                          "name": "Label",
+                          "fill": "#8df0b7",
+                          "content": "Passing items (12)",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvPsLs",
+                      "name": "Passing Items List",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": [
+                        0,
+                        10,
+                        8,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvPi1",
+                          "name": "Item 1",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvPi1N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Wall_01_South  (height: 28.5 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvPi1Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-a1b2c3d4",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvPi2",
+                          "name": "Item 2",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvPi2N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Column_03_West  (height: 29.0 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvPi2Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-e5f6a7b8",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvPi3",
+                          "name": "Item 3",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvPi3N",
+                              "name": "Name",
+                              "fill": "#eef3ff",
+                              "content": "Beam_06_Central  (height: 27.8 m)",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mvPi3Id",
+                              "name": "Element Id",
+                              "fill": "#5a6a88",
+                              "content": "id: spk-obj-c9d0e1f2",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mvPn3",
+              "name": "Rule Panel",
+              "width": "fill_container",
+              "fill": "rgba(20,26,38,0.88)",
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#2b3550"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "mvP3T",
+                  "name": "Panel Title",
+                  "fill": "#5fd0ff",
+                  "content": "RULE",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "mvRKv1",
+                  "name": "KV Rule_Id",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvRK1L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Rule_Id",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvRK1V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "content": "height_max",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvRKv2",
+                  "name": "KV Description",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvRK2L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "Description",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvRK2V",
+                      "name": "Value",
+                      "fill": "#eef3ff",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Maximum building height must not exceed 30 meters",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvRKv3",
+                  "name": "KV SWRL Expression",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvRK3L",
+                      "name": "Label",
+                      "fill": "#98a4bd",
+                      "content": "SWRL Expression",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvSwrl",
+                      "name": "SWRL Code Block",
+                      "width": "fill_container",
+                      "fill": "#0a1020",
+                      "cornerRadius": 6,
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvSwrT",
+                          "name": "SWRL Text",
+                          "fill": "#c0d0e8",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Building(?b) ∧ hasHeight(?b, ?h) ∧ swrlb:greaterThan(?h, 30) → violation(?b)",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Consolas",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mvRCol",
+          "name": "Right Column",
+          "width": 1120,
+          "height": 900,
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "mvGfx",
+              "name": "Graphics Settings Bar",
+              "width": "fill_container",
+              "height": 52,
+              "fill": "#111827",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#2b3550"
+              },
+              "gap": 24,
+              "padding": [
+                0,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mvFGrp",
+                  "name": "Filter Group",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvFTg1",
+                      "name": "Toggle Failing",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvFCb1",
+                          "name": "Checkbox On",
+                          "width": 14,
+                          "height": 14,
+                          "fill": "#ff4d4f",
+                          "cornerRadius": 3,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "mvFCk1",
+                              "name": "Check",
+                              "width": 10,
+                              "height": 10,
+                              "iconFontName": "check",
+                              "iconFontFamily": "lucide",
+                              "fill": "#ffffff"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvFLb1",
+                          "name": "Label",
+                          "fill": "#eef3ff",
+                          "content": "Failing",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvFTg2",
+                      "name": "Toggle Passing",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvFCb2",
+                          "name": "Checkbox On",
+                          "width": 14,
+                          "height": 14,
+                          "fill": "#2fb16f",
+                          "cornerRadius": 3,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "mvFCk2",
+                              "name": "Check",
+                              "width": 10,
+                              "height": 10,
+                              "iconFontName": "check",
+                              "iconFontFamily": "lucide",
+                              "fill": "#ffffff"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvFLb2",
+                          "name": "Label",
+                          "fill": "#eef3ff",
+                          "content": "Passing",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvFTg3",
+                      "name": "Toggle Base Model",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvFCb3",
+                          "name": "Checkbox On",
+                          "width": 14,
+                          "height": 14,
+                          "fill": "#5a6a88",
+                          "cornerRadius": 3,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "mvFCk3",
+                              "name": "Check",
+                              "width": 10,
+                              "height": 10,
+                              "iconFontName": "check",
+                              "iconFontFamily": "lucide",
+                              "fill": "#ffffff"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvFLb3",
+                          "name": "Label",
+                          "fill": "#eef3ff",
+                          "content": "Base model",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvFSp2",
+                  "name": "Separator 2",
+                  "width": 1,
+                  "height": 28,
+                  "fill": "#2b3550"
+                },
+                {
+                  "type": "frame",
+                  "id": "mvClrGrp",
+                  "name": "Colour Settings Group",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvClr1",
+                      "name": "Failing Colour",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvCsw1",
+                          "name": "Swatch",
+                          "width": 16,
+                          "height": 16,
+                          "fill": "#ff4d4f",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "rgba(255,255,255,0.15)"
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvClL1",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Fail",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvClr2",
+                      "name": "Passing Colour",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvCsw2",
+                          "name": "Swatch",
+                          "width": 16,
+                          "height": 16,
+                          "fill": "#2fb16f",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "rgba(255,255,255,0.15)"
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvClL2",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Pass",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvClr3",
+                      "name": "Base Colour",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvCsw3",
+                          "name": "Swatch",
+                          "width": 16,
+                          "height": 16,
+                          "fill": "#5a6a88",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "rgba(255,255,255,0.15)"
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvClL3",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Base",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvFSp3",
+                  "name": "Separator 3",
+                  "width": 1,
+                  "height": 28,
+                  "fill": "#2b3550"
+                },
+                {
+                  "type": "frame",
+                  "id": "mvOpGrp",
+                  "name": "Opacity Settings Group",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvOp1",
+                      "name": "Failing Opacity",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvOpL1",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Fail α",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvOpS1",
+                          "name": "Slider Track",
+                          "width": 48,
+                          "height": 4,
+                          "fill": "#2b3550",
+                          "cornerRadius": 2,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "mvOpF1",
+                              "name": "Slider Fill",
+                              "width": 38,
+                              "height": 4,
+                              "fill": "#ff4d4f",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvOpV1",
+                          "name": "Value",
+                          "fill": "#eef3ff",
+                          "content": "80%",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvOp2",
+                      "name": "Passing Opacity",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvOpL2",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Pass α",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvOpS2",
+                          "name": "Slider Track",
+                          "width": 48,
+                          "height": 4,
+                          "fill": "#2b3550",
+                          "cornerRadius": 2,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "mvOpF2",
+                              "name": "Slider Fill",
+                              "width": 30,
+                              "height": 4,
+                              "fill": "#2fb16f",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvOpV2",
+                          "name": "Value",
+                          "fill": "#eef3ff",
+                          "content": "60%",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvOp3",
+                      "name": "Base Opacity",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvOpL3",
+                          "name": "Label",
+                          "fill": "#98a4bd",
+                          "content": "Base α",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvOpS3",
+                          "name": "Slider Track",
+                          "width": 48,
+                          "height": 4,
+                          "fill": "#2b3550",
+                          "cornerRadius": 2,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "mvOpF3",
+                              "name": "Slider Fill",
+                              "width": 14,
+                              "height": 4,
+                              "fill": "#5a6a88",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvOpV3",
+                          "name": "Value",
+                          "fill": "#eef3ff",
+                          "content": "30%",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvFSp4",
+                  "name": "Separator 4",
+                  "width": 1,
+                  "height": 28,
+                  "fill": "#2b3550"
+                },
+                {
+                  "type": "frame",
+                  "id": "mvSrch",
+                  "name": "Select by Id",
+                  "fill": "#1a2232",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "gap": 8,
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "mvSrIc",
+                      "name": "Search Icon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "search",
+                      "iconFontFamily": "lucide",
+                      "fill": "#98a4bd"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvSrTx",
+                      "name": "Placeholder",
+                      "fill": "#5a6a88",
+                      "content": "Select by Id...",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mvGfxR2",
+              "name": "Graphics Actions Bar",
+              "width": "fill_container",
+              "height": 44,
+              "fill": "#111827",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#2b3550"
+              },
+              "gap": 12,
+              "padding": [
+                0,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mvIsoBtn",
+                  "name": "Isolate Button",
+                  "fill": "rgba(95,208,255,0.10)",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "rgba(95,208,255,0.25)"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "mvIsoIc",
+                      "name": "Isolate Icon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "focus",
+                      "iconFontFamily": "lucide",
+                      "fill": "#5fd0ff"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvIsoLb",
+                      "name": "Isolate Label",
+                      "fill": "#5fd0ff",
+                      "content": "Isolate",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvHideBtn",
+                  "name": "Hide Button",
+                  "fill": "rgba(152,164,189,0.10)",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "rgba(152,164,189,0.25)"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "mvHdIc",
+                      "name": "Hide Icon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "eye-off",
+                      "iconFontFamily": "lucide",
+                      "fill": "#98a4bd"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mvHdLb",
+                      "name": "Hide Label",
+                      "fill": "#98a4bd",
+                      "content": "Hide",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mvCnv",
+              "name": "3D Viewport",
+              "width": "fill_container",
+              "height": 604,
+              "fill": "#080d14"
+            },
+            {
+              "type": "frame",
+              "id": "mvBtm",
+              "name": "Bottom Validation Runs Strip",
+              "width": "fill_container",
+              "height": 200,
+              "fill": "#111827",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "#2b3550"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                12,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mvBtHd",
+                  "name": "Strip Header",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mvBtTl",
+                      "name": "Title",
+                      "fill": "#5fd0ff",
+                      "content": "VALIDATION RUNS",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvBtBg",
+                      "name": "Count Badge",
+                      "fill": "rgba(95,208,255,0.12)",
+                      "cornerRadius": 999,
+                      "padding": [
+                        3,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mvBtCt",
+                          "name": "Count",
+                          "fill": "#5fd0ff",
+                          "content": "4",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mvTGrd",
+                  "name": "Tile Strip",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mvTl1",
+                      "name": "Tile 1 (Active)",
+                      "clip": true,
+                      "width": 160,
+                      "fill": "rgba(95,208,255,0.06)",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "rgba(95,208,255,0.4)"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvT1Hd",
+                          "name": "Tile Header",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "rgba(95,208,255,0.16)"
+                          },
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT1Ri",
+                              "name": "Rule_Id",
+                              "fill": "#eef3ff",
+                              "content": "height_max",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT1Del",
+                              "name": "Delete Button",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "rgba(255,77,79,0.15)",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "mvT1DlI",
+                                  "name": "Delete Icon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "x",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#ff4d4f"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT1Img",
+                          "name": "Viewport Thumbnail",
+                          "width": "fill_container",
+                          "height": 80,
+                          "fill": "#0a1020",
+                          "justifyContent": "center",
+                          "alignItems": "center"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT1Ft",
+                          "name": "Tile Footer",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "top": 1
+                            },
+                            "fill": "rgba(95,208,255,0.16)"
+                          },
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT1Dt",
+                              "name": "Created Date",
+                              "fill": "#98a4bd",
+                              "content": "Mar 15, 2026",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT1Kd",
+                              "name": "Kind Badge",
+                              "fill": "rgba(255,77,79,0.18)",
+                              "cornerRadius": 999,
+                              "padding": [
+                                2,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mvT1KT",
+                                  "name": "Kind Text",
+                                  "fill": "#ffb0b1",
+                                  "content": "Constraint",
+                                  "fontFamily": "Segoe UI",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvTl2",
+                      "name": "Tile 2",
+                      "clip": true,
+                      "width": 160,
+                      "fill": "rgba(255,255,255,0.02)",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "rgba(95,208,255,0.08)"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvT2Hd",
+                          "name": "Tile Header",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT2Ri",
+                              "name": "Rule_Id",
+                              "fill": "#eef3ff",
+                              "content": "setback_front",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT2Del",
+                              "name": "Delete Button",
+                              "width": 64,
+                              "height": 15,
+                              "fill": "rgba(255,77,79,0.15)",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "mcWmp",
+                                  "name": "Delete Button",
+                                  "width": 18,
+                                  "height": 18,
+                                  "fill": "rgba(255,77,79,0.15)",
+                                  "cornerRadius": 4,
+                                  "layout": "vertical",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "1DMtQ",
+                                      "name": "Delete Icon",
+                                      "width": 12,
+                                      "height": 12,
+                                      "iconFontName": "x",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "#ff4d4f"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT2Img",
+                          "name": "Viewport Thumbnail",
+                          "width": "fill_container",
+                          "height": 80,
+                          "fill": "#0a1020",
+                          "justifyContent": "center",
+                          "alignItems": "center"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT2Ft",
+                          "name": "Tile Footer",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "top": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT2Dt",
+                              "name": "Created Date",
+                              "fill": "#98a4bd",
+                              "content": "Mar 15, 2026",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT2Kd",
+                              "name": "Kind Badge",
+                              "fill": "rgba(47,177,111,0.18)",
+                              "cornerRadius": 999,
+                              "padding": [
+                                2,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mvT2KT",
+                                  "name": "Kind Text",
+                                  "fill": "#8df0b7",
+                                  "content": "Requirement",
+                                  "fontFamily": "Segoe UI",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvTl3",
+                      "name": "Tile 3",
+                      "clip": true,
+                      "width": 160,
+                      "fill": "rgba(255,255,255,0.02)",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "rgba(95,208,255,0.08)"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvT3Hd",
+                          "name": "Tile Header",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT3Ri",
+                              "name": "Rule_Id",
+                              "fill": "#eef3ff",
+                              "content": "floor_area",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT3Del",
+                              "name": "Delete Button",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "rgba(255,77,79,0.15)",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "mvT3DlI",
+                                  "name": "Delete Icon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "x",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#ff4d4f"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT3Img",
+                          "name": "Viewport Thumbnail",
+                          "width": "fill_container",
+                          "height": 80,
+                          "fill": "#0a1020",
+                          "justifyContent": "center",
+                          "alignItems": "center"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT3Ft",
+                          "name": "Tile Footer",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "top": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT3Dt",
+                              "name": "Created Date",
+                              "fill": "#98a4bd",
+                              "content": "Mar 14, 2026",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT3Kd",
+                              "name": "Kind Badge",
+                              "fill": "rgba(255,77,79,0.18)",
+                              "cornerRadius": 999,
+                              "padding": [
+                                2,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mvT3KT",
+                                  "name": "Kind Text",
+                                  "fill": "#ffb0b1",
+                                  "content": "Constraint",
+                                  "fontFamily": "Segoe UI",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mvTl4",
+                      "name": "Tile 4",
+                      "clip": true,
+                      "width": 160,
+                      "fill": "rgba(255,255,255,0.02)",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "rgba(95,208,255,0.08)"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mvT4Hd",
+                          "name": "Tile Header",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT4Ri",
+                              "name": "Rule_Id",
+                              "fill": "#eef3ff",
+                              "content": "window_ratio",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT4Del",
+                              "name": "Delete Button",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "rgba(255,77,79,0.15)",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "mvT4DlI",
+                                  "name": "Delete Icon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "x",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#ff4d4f"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT4Img",
+                          "name": "Viewport Thumbnail",
+                          "width": "fill_container",
+                          "height": 80,
+                          "fill": "#0a1020",
+                          "justifyContent": "center",
+                          "alignItems": "center"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mvT4Ft",
+                          "name": "Tile Footer",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "top": 1
+                            },
+                            "fill": "rgba(95,208,255,0.08)"
+                          },
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mvT4Dt",
+                              "name": "Created Date",
+                              "fill": "#98a4bd",
+                              "content": "Mar 14, 2026",
+                              "fontFamily": "Segoe UI",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mvT4Kd",
+                              "name": "Kind Badge",
+                              "fill": "rgba(255,183,77,0.18)",
+                              "cornerRadius": 999,
+                              "padding": [
+                                2,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mvT4KT",
+                                  "name": "Kind Text",
+                                  "fill": "#ffcf8f",
+                                  "content": "Guideline",
+                                  "fontFamily": "Segoe UI",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

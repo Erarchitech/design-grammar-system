@@ -46,10 +46,19 @@ body,
 
 .mv-back {
   display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 12px;
+  padding: 4px 12px;
   color: var(--accent);
   text-decoration: none;
   font-size: 13px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.mv-back:hover {
+  background: rgba(95, 208, 255, 0.08);
 }
 
 .mv-title {
@@ -74,10 +83,30 @@ body,
 .mv-panel-title {
   font-size: 14px;
   font-weight: 700;
-  margin-bottom: 14px;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.mv-panel > .mv-panel-title {
+  margin-bottom: 14px;
+}
+
+.mv-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mv-panel-meta {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(95, 208, 255, 0.12);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .mv-kv {
@@ -157,6 +186,74 @@ body,
   font-size: 13px;
   display: grid;
   gap: 6px;
+}
+
+.mv-runs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mv-run-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: stretch;
+  border: 1px solid rgba(95, 208, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.mv-run-row.is-active {
+  border-color: rgba(95, 208, 255, 0.34);
+  background: rgba(95, 208, 255, 0.06);
+}
+
+.mv-run-button,
+.mv-delete-button {
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.mv-run-button {
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mv-run-button:disabled,
+.mv-delete-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.mv-run-id {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.mv-run-meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mv-delete-button {
+  align-self: center;
+  margin: 10px 10px 10px 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 77, 79, 0.14);
+  color: #ffb0b1;
+  cursor: pointer;
+}
+
+.mv-delete-button:hover:not(:disabled) {
+  background: rgba(255, 77, 79, 0.22);
 }
 
 .mv-note {

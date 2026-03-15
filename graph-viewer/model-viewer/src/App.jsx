@@ -19,13 +19,34 @@ function normalizeUrl(url) {
   return (url || "").replace(/\/+$/, "");
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
+function parseJsonSafely(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
   }
-  return response.json();
+}
+
+function extractErrorMessage(text, status) {
+  const parsed = parseJsonSafely(text);
+  if (parsed && typeof parsed.detail === "string" && parsed.detail) {
+    return parsed.detail;
+  }
+  return text || `Request failed with ${status}`;
+}
+
+async function fetchJson(url, init) {
+  const response = await fetch(url, init);
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(text, response.status));
+  }
+
+  if (!text) {
+    return null;
+  }
+
+  return parseJsonSafely(text) || text;
 }
 
 function collectValidationObjects(worldTree, runId) {
@@ -65,10 +86,35 @@ function flattenObjectIds(entityMap, entityIds) {
   return Array.from(new Set(objectIds));
 }
 
+function shortId(value) {
+  if (!value) {
+    return "Unknown";
+  }
+  if (value.length <= 16) {
+    return value;
+  }
+  return `${value.slice(0, 8)}...${value.slice(-4)}`;
+}
+
+function formatTimestamp(value) {
+  if (!value) {
+    return "Unknown time";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
 export default function App() {
+  const dataServiceUrl = normalizeUrl(config.dataServiceUrl || "/data-service");
   const [project] = React.useState(initialProject);
   const [runId, setRunId] = React.useState(initialRunId);
   const [manifest, setManifest] = React.useState(null);
+  const [validationRuns, setValidationRuns] = React.useState([]);
   const [selectedRuleId, setSelectedRuleId] = React.useState(initialRuleId);
   const [objectSets, setObjectSets] = React.useState({ failed: [], passed: [] });
   const [showFailed, setShowFailed] = React.useState(true);
@@ -76,6 +122,8 @@ export default function App() {
   const [status, setStatus] = React.useState("Loading validation viewer...");
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(true);
+  const [runsLoading, setRunsLoading] = React.useState(true);
+  const [deletingRunId, setDeletingRunId] = React.useState("");
 
   const viewerHostRef = React.useRef(null);
   const viewerRef = React.useRef(null);
@@ -83,6 +131,31 @@ export default function App() {
   const entityMapRef = React.useRef(new Map());
   const allValidationObjectIdsRef = React.useRef([]);
   const loadedRunIdRef = React.useRef("");
+  const activeRunId = runId || manifest?.runId || "";
+
+  const loadRuns = React.useCallback(async () => {
+    if (!project) {
+      setValidationRuns([]);
+      setRunsLoading(false);
+      return [];
+    }
+
+    const runsUrl = `${dataServiceUrl}/validation/runs/${encodeURIComponent(project)}`;
+
+    try {
+      setRunsLoading(true);
+      const response = await fetchJson(runsUrl);
+      const runs = Array.isArray(response?.runs) ? response.runs : [];
+      setValidationRuns(runs);
+      return runs;
+    } catch (err) {
+      setValidationRuns([]);
+      setError(err.message || "Failed to load validation runs.");
+      return [];
+    } finally {
+      setRunsLoading(false);
+    }
+  }, [dataServiceUrl, project]);
 
   const loadManifest = React.useCallback(async () => {
     if (!project) {
@@ -91,7 +164,16 @@ export default function App() {
       return;
     }
 
-    const dataServiceUrl = normalizeUrl(config.dataServiceUrl || "/data-service");
+    if (!runId && !runsLoading && validationRuns.length === 0) {
+      setManifest(null);
+      setObjectSets({ failed: [], passed: [] });
+      setSelectedRuleId("");
+      setLoading(false);
+      setError("");
+      setStatus("No validation runs found for this project.");
+      return;
+    }
+
     const manifestUrl = runId
       ? `${dataServiceUrl}/validation/view/${encodeURIComponent(project)}/${encodeURIComponent(runId)}`
       : `${dataServiceUrl}/validation/view/${encodeURIComponent(project)}`;
@@ -99,23 +181,38 @@ export default function App() {
     try {
       setLoading(true);
       setError("");
+      setObjectSets({ failed: [], passed: [] });
       const response = await fetchJson(manifestUrl);
       setManifest(response);
       setRunId(response.runId || "");
-      if (!selectedRuleId) {
-        const firstRule = (response.rules || [])[0];
-        if (firstRule?.ruleId) {
-          setSelectedRuleId(firstRule.ruleId);
+      setSelectedRuleId((currentRuleId) => {
+        const nextRules = response.rules || [];
+        if (currentRuleId && nextRules.some((rule) => rule.ruleId === currentRuleId)) {
+          return currentRuleId;
         }
-      }
+        return nextRules[0]?.ruleId || "";
+      });
       setStatus("Validation manifest loaded.");
     } catch (err) {
-      setError(err.message || "Failed to load validation manifest.");
-      setStatus("Validation manifest is unavailable.");
+      const message = err.message || "Failed to load validation manifest.";
+      if (message.includes("No validation run found") || message.includes("Validation run not found")) {
+        setManifest(null);
+        setObjectSets({ failed: [], passed: [] });
+        setSelectedRuleId("");
+        setError("");
+        setStatus("No validation manifest found for this project.");
+      } else {
+        setError(message);
+        setStatus("Validation manifest is unavailable.");
+      }
     } finally {
       setLoading(false);
     }
-  }, [project, runId, selectedRuleId]);
+  }, [dataServiceUrl, project, runId, runsLoading, validationRuns.length]);
+
+  React.useEffect(() => {
+    void loadRuns();
+  }, [loadRuns]);
 
   React.useEffect(() => {
     void loadManifest();
@@ -189,7 +286,6 @@ export default function App() {
       return undefined;
     }
 
-    const dataServiceUrl = normalizeUrl(config.dataServiceUrl || "/data-service");
     const url = `${dataServiceUrl}/validation/view/${encodeURIComponent(project)}/${encodeURIComponent(manifest.runId)}/${encodeURIComponent(selectedRuleId)}`;
     let cancelled = false;
 
@@ -215,7 +311,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [manifest, project, selectedRuleId]);
+  }, [dataServiceUrl, manifest, project, selectedRuleId]);
 
   React.useEffect(() => {
     const filtering = filteringRef.current;
@@ -253,6 +349,61 @@ export default function App() {
     }
   }, [objectSets, selectedRuleId, showFailed, showPassed]);
 
+  const handleSelectRun = React.useCallback((nextRunId) => {
+    if (!nextRunId || nextRunId === manifest?.runId) {
+      return;
+    }
+
+    setError("");
+    setStatus("Loading validation run...");
+    setObjectSets({ failed: [], passed: [] });
+    setRunId(nextRunId);
+  }, [manifest?.runId]);
+
+  const handleDeleteRun = React.useCallback(async (targetRunId) => {
+    if (!project || !targetRunId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete validation run ${shortId(targetRunId)} from both Design Grammars and Speckle?`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingRunId(targetRunId);
+      setError("");
+      setStatus("Deleting validation run...");
+      await fetchJson(
+        `${dataServiceUrl}/validation/run/${encodeURIComponent(project)}/${encodeURIComponent(targetRunId)}`,
+        { method: "DELETE" }
+      );
+
+      const nextRuns = await loadRuns();
+      if (activeRunId === targetRunId) {
+        const fallbackRunId = nextRuns[0]?.runId || "";
+        setManifest(null);
+        setObjectSets({ failed: [], passed: [] });
+        setSelectedRuleId("");
+        setRunId(fallbackRunId);
+        if (fallbackRunId) {
+          setStatus("Validation run deleted. Loading the next available run...");
+        } else {
+          setStatus("Validation run deleted. No runs remain for this project.");
+        }
+      } else {
+        setStatus("Validation run deleted.");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to delete the validation run.");
+      setStatus("Validation delete failed.");
+    } finally {
+      setDeletingRunId("");
+    }
+  }, [activeRunId, dataServiceUrl, loadRuns, project]);
+
   const rules = manifest?.rules || [];
   const selectedRule = rules.find((rule) => rule.ruleId === selectedRuleId) || null;
   const noSetup = !loading && !error && !manifest;
@@ -262,8 +413,9 @@ export default function App() {
     <div className="mv-page">
       <aside className="mv-sidebar">
         <div className="mv-header">
-          <a className="mv-back" href="/">
-            Back To DG
+          <a className="mv-back" href={project ? `/?project=${encodeURIComponent(project)}` : "/"}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+            Project
           </a>
           <div className="mv-title">Model Viewer</div>
           <div className="mv-project">{project || "No project selected"}</div>
@@ -273,6 +425,49 @@ export default function App() {
         {loading ? <div className="mv-status">{status}</div> : null}
         {noSetup ? <div className="mv-status">No validation manifest found for this project.</div> : null}
 
+        <div className="mv-panel">
+          <div className="mv-panel-header">
+            <div className="mv-panel-title">Validation Runs</div>
+            <div className="mv-panel-meta">{validationRuns.length}</div>
+          </div>
+          {runsLoading ? <div className="mv-empty-copy">Loading validation runs...</div> : null}
+          {!runsLoading && validationRuns.length === 0 ? (
+            <div className="mv-empty-copy">No validation runs have been published for this project yet.</div>
+          ) : null}
+          {!runsLoading && validationRuns.length > 0 ? (
+            <div className="mv-runs-list">
+              {validationRuns.map((run) => {
+                const isActive = run.runId === activeRunId;
+                const isDeleting = deletingRunId === run.runId;
+                return (
+                  <div key={run.runId} className={`mv-run-row ${isActive ? "is-active" : ""}`}>
+                    <button
+                      type="button"
+                      className="mv-run-button"
+                      onClick={() => handleSelectRun(run.runId)}
+                      disabled={isDeleting}
+                    >
+                      <div className="mv-run-id">{shortId(run.runId)}</div>
+                      <div className="mv-run-meta">{formatTimestamp(run.createdAt)}</div>
+                      <div className="mv-run-meta">
+                        {run.entityCount} mapped entities • {run.failedRuleCount}/{run.ruleCount} failing rules
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className="mv-delete-button"
+                      onClick={() => void handleDeleteRun(run.runId)}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
         {manifest ? (
           <>
             <div className="mv-panel">
@@ -280,6 +475,10 @@ export default function App() {
               <div className="mv-kv">
                 <span>Run</span>
                 <strong>{manifest.runId}</strong>
+              </div>
+              <div className="mv-kv">
+                <span>Created</span>
+                <strong>{formatTimestamp(manifest.createdAt)}</strong>
               </div>
               <div className="mv-kv">
                 <span>Base Model</span>

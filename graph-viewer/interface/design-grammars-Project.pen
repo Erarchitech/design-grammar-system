@@ -1,0 +1,319 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "pj001",
+      "x": 0,
+      "y": 0,
+      "name": "Design Grammars - Project Page",
+      "width": 1440,
+      "height": 900,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "pjHdr",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 64,
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "#E8E8E8"
+          },
+          "gap": 16,
+          "padding": [
+            0,
+            48
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "pjLgo",
+              "name": "logo",
+              "fill": "#0D0D0D",
+              "content": "Design Grammars",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "pjSpc",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "pjBck",
+              "name": "Back Button",
+              "height": 40,
+              "gap": 6,
+              "padding": [
+                0,
+                16
+              ],
+              "alignItems": "center",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E8E8E8"
+              },
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "pjBkI",
+                  "name": "backIcon",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "arrow-left",
+                  "iconFontFamily": "lucide",
+                  "fill": "#0D0D0D"
+                },
+                {
+                  "type": "text",
+                  "id": "pjBkT",
+                  "name": "backText",
+                  "fill": "#0D0D0D",
+                  "content": "All Projects",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pjPrf",
+              "name": "Profile Avatar",
+              "width": 36,
+              "height": 36,
+              "fill": "#0D0D0D",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pjIni",
+                  "name": "Initials",
+                  "fill": "#FFFFFF",
+                  "content": "JD",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "pjCnt",
+          "name": "Content Area",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            48,
+            48
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "pjInf",
+              "name": "Project Info",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pjNam",
+                  "name": "projectName",
+                  "fill": "#0D0D0D",
+                  "content": "Residential Tower",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 32,
+                  "fontWeight": "600",
+                  "letterSpacing": -0.5
+                },
+                {
+                  "type": "frame",
+                  "id": "pjMta",
+                  "name": "Project Metadata",
+                  "gap": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pjCrt",
+                      "name": "createdDate",
+                      "fill": "#7A7A7A",
+                      "content": "Created Jan 15, 2026",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pjDot",
+                      "name": "Separator",
+                      "width": 4,
+                      "height": 4,
+                      "fill": "#D0D0D0",
+                      "cornerRadius": 2
+                    },
+                    {
+                      "type": "text",
+                      "id": "pjEdt",
+                      "name": "lastEdited",
+                      "fill": "#7A7A7A",
+                      "content": "Last edited 1 day ago",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pjGrd",
+              "name": "Tile Grid",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "pjTg1",
+                  "type": "ref",
+                  "ref": "pjTlC",
+                  "width": "fill_container",
+                  "height": 260,
+                  "name": "Graph Viewer Tile",
+                  "descendants": {
+                    "tIcon": {
+                      "iconFontName": "network"
+                    },
+                    "tName": {
+                      "content": "Graph Viewer"
+                    },
+                    "tDesc": {
+                      "content": "View and manage design rules, ontology graph, and Cypher queries"
+                    }
+                  }
+                },
+                {
+                  "id": "pjTm1",
+                  "type": "ref",
+                  "ref": "pjTlC",
+                  "width": "fill_container",
+                  "height": 260,
+                  "name": "Model Viewer Tile",
+                  "descendants": {
+                    "tIcon": {
+                      "iconFontName": "box"
+                    },
+                    "tName": {
+                      "content": "Model Viewer"
+                    },
+                    "tDesc": {
+                      "content": "Visualize and inspect 3D models from Speckle streams"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "pjTlC",
+      "x": 1600,
+      "y": 0,
+      "name": "ProjectActionTile",
+      "reusable": true,
+      "width": 420,
+      "height": 260,
+      "fill": "#FFFFFF",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1,
+        "fill": "#E8E8E8"
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "tThum",
+          "name": "Thumbnail",
+          "width": "fill_container",
+          "height": 160,
+          "fill": "#FAFAFA",
+          "layout": "vertical",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "tIcon",
+              "name": "tileIcon",
+              "width": 48,
+              "height": 48,
+              "iconFontName": "network",
+              "iconFontFamily": "lucide",
+              "fill": "#B0B0B0"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "tCont",
+          "name": "Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            16,
+            20
+          ],
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "tName",
+              "name": "tileName",
+              "fill": "#0D0D0D",
+              "content": "Tile Name",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "tDesc",
+              "name": "tileDescription",
+              "fill": "#7A7A7A",
+              "content": "Description of what this tile does",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

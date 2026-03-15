@@ -7,7 +7,7 @@ from urllib.parse import quote, urlparse
 from specklepy.api import operations
 from specklepy.api.client import SpeckleClient
 from specklepy.core.api.inputs.model_inputs import CreateModelInput
-from specklepy.core.api.inputs.version_inputs import CreateVersionInput
+from specklepy.core.api.inputs.version_inputs import CreateVersionInput, DeleteVersionsInput
 from specklepy.objects import Base
 from specklepy.objects.geometry import Line, Mesh, Point, Polyline
 from specklepy.transports.server import ServerTransport
@@ -137,6 +137,26 @@ def publish_validation_version(
             base_version_id,
         ),
     }
+
+
+def delete_validation_version(
+    settings: SpeckleConnectionSettings,
+    *,
+    speckle_project_id: str,
+    validation_version_id: str,
+) -> bool:
+    client = build_client(settings.internal_url, settings.write_token)
+    deleted = client.version.delete(
+        DeleteVersionsInput(
+            versionIds=[validation_version_id],
+            projectId=speckle_project_id,
+        )
+    )
+    if not deleted:
+        raise SpeckleValidationError(
+            f"Speckle did not confirm deletion of validation version '{validation_version_id}' in project '{speckle_project_id}'."
+        )
+    return True
 
 
 def build_validation_entity(entity: dict[str, Any]) -> Base:

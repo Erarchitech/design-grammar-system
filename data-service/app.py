@@ -19,6 +19,7 @@ from speckle_validation import (
     SpeckleConnectionSettings,
     SpeckleValidationError,
     build_client,
+    delete_validation_version,
     get_latest_model_version_id,
     get_or_create_validation_model_id,
     normalize_url,
@@ -411,6 +412,61 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
     return read_single(query, {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id})
 
 
+def list_validation_runs(project: str) -> list[dict[str, Any]]:
+    rows = read_many(
+        """
+        MATCH (run:ValidationRun {graph:$graph, project:$project})
+        OPTIONAL MATCH (run)-[:HAS_ENTITY]->(ve:ValidationEntity)
+        RETURN
+            run.runId AS runId,
+            run.speckleProjectId AS speckleProjectId,
+            run.baseModelId AS baseModelId,
+            run.baseVersionId AS baseVersionId,
+            run.validationModelId AS validationModelId,
+            run.validationVersionId AS validationVersionId,
+            run.modelViewerUrl AS modelViewerUrl,
+            run.createdAt AS createdAt,
+            run.rulesJson AS rulesJson,
+            count(DISTINCT ve) AS entityCount
+        ORDER BY run.createdAt DESC
+        """,
+        {"graph": VALIDATION_GRAPH, "project": project},
+    )
+
+    runs: list[dict[str, Any]] = []
+    for row in rows:
+        rules = json.loads(row["rulesJson"]) if row.get("rulesJson") else []
+        runs.append(
+            {
+                "runId": row["runId"],
+                "speckleProjectId": row.get("speckleProjectId"),
+                "baseModelId": row.get("baseModelId"),
+                "baseVersionId": row.get("baseVersionId"),
+                "validationModelId": row.get("validationModelId"),
+                "validationVersionId": row.get("validationVersionId"),
+                "modelViewerUrl": row.get("modelViewerUrl"),
+                "createdAt": row.get("createdAt"),
+                "ruleCount": len(rules),
+                "failedRuleCount": sum(1 for rule in rules if not rule.get("passed")),
+                "entityCount": int(row.get("entityCount") or 0),
+            }
+        )
+    return runs
+
+
+def delete_validation_run_metadata(project: str, run_id: str) -> None:
+    write_query(
+        """
+        OPTIONAL MATCH (ve:ValidationEntity {graph:$graph, project:$project, runId:$runId})
+        DETACH DELETE ve
+        WITH 1 AS keepGoing
+        OPTIONAL MATCH (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
+        DETACH DELETE run
+        """,
+        {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id},
+    )
+
+
 def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = None) -> dict[str, list[str]]:
     rows = read_many(
         """
@@ -470,6 +526,7 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
         "baseResourceUrl": run["baseResourceUrl"],
         "validationResourceUrl": run["validationResourceUrl"],
         "modelViewerUrl": run["modelViewerUrl"],
+        "createdAt": run.get("createdAt"),
         "rules": rules,
         "objectSets": object_sets,
     }
@@ -606,6 +663,49 @@ def publish_validation(payload: ValidationPublishRequest):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Validation publish failed: {exc}") from exc
+
+
+@app.get("/validation/runs/{project}")
+def get_validation_runs(project: str):
+    return {"project": project, "runs": list_validation_runs(project)}
+
+
+@app.delete("/validation/run/{project}/{run_id}")
+def delete_validation_run(project: str, run_id: str):
+    run = get_validation_run(project, run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Validation run not found.")
+
+    settings = get_speckle_settings()
+    if not settings.write_token:
+        raise HTTPException(
+            status_code=500,
+            detail="Speckle write token is not configured. Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+        )
+
+    validation_version_id = (run.get("validationVersionId") or "").strip()
+    speckle_project_id = (run.get("speckleProjectId") or "").strip()
+    if not validation_version_id or not speckle_project_id:
+        raise HTTPException(status_code=500, detail="Validation run is missing Speckle identifiers required for deletion.")
+
+    try:
+        delete_validation_version(
+            settings,
+            speckle_project_id=speckle_project_id,
+            validation_version_id=validation_version_id,
+        )
+        delete_validation_run_metadata(project, run_id)
+        return {
+            "status": "deleted",
+            "project": project,
+            "runId": run_id,
+            "validationModelId": run.get("validationModelId"),
+            "validationVersionId": validation_version_id,
+        }
+    except SpeckleValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Validation delete failed: {exc}") from exc
 
 
 @app.get("/validation/view/{project}")
