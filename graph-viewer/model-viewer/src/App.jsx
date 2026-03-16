@@ -150,11 +150,6 @@ function flattenObjectIds(entityMap, ids) {
   return Array.from(new Set(objectIds));
 }
 
-function hexWithAlpha(hex, opacityPercent) {
-  const alpha = Math.round((opacityPercent / 100) * 255);
-  return hex + alpha.toString(16).padStart(2, "0");
-}
-
 function shortId(value) {
   if (!value) {
     return "Unknown";
@@ -585,10 +580,10 @@ export default function App() {
     // Apply colours + opacity from the graphics bar settings
     const colorGroups = [];
     if (failedObjectIds.length > 0) {
-      colorGroups.push({ objectIds: failedObjectIds, color: hexWithAlpha(failColor, failOpacity) });
+      colorGroups.push({ objectIds: failedObjectIds, color: failColor });
     }
     if (passedObjectIds.length > 0) {
-      colorGroups.push({ objectIds: passedObjectIds, color: hexWithAlpha(passColor, passOpacity) });
+      colorGroups.push({ objectIds: passedObjectIds, color: passColor });
     }
 
     console.log("[DG-Debug] Filtering effect:", {
@@ -610,13 +605,49 @@ export default function App() {
       filtering.setUserObjectColors(colorGroups);
     }
 
-    // Force the viewer to re-render after filter changes
+    // Apply per-group opacity via renderer material overrides.
+    // setUserObjectColors only handles RGB (Speckle ramp texture has no alpha),
+    // so we resolve each group's objectIds to NodeRenderViews and call
+    // renderer.setMaterial with a RenderMaterial that includes opacity.
     const viewer = viewerRef.current;
     if (viewer) {
+      const renderer = viewer.getRenderer();
+      const worldTree = viewer.getWorldTree();
+      const renderTree = worldTree.getRenderTree();
+
+      const applyGroupMaterial = (objectIds, hexColor, opacityPercent) => {
+        if (objectIds.length === 0) return;
+        const rvs = [];
+        for (const id of objectIds) {
+          const nodes = worldTree.findId(id);
+          if (nodes) {
+            for (const node of nodes) {
+              const views = renderTree.getRenderViewsForNode(node);
+              if (views) rvs.push(...views);
+            }
+          }
+        }
+        if (rvs.length === 0) return;
+        const colorInt = parseInt(hexColor.slice(1), 16);
+        renderer.setMaterial(rvs, {
+          id: `dg-${hexColor}-${opacityPercent}`,
+          color: colorInt,
+          emissive: 0,
+          opacity: opacityPercent / 100,
+          roughness: 0.6,
+          metalness: 0,
+          vertexColors: false,
+          lineWeight: 1,
+        });
+      };
+
+      applyGroupMaterial(failedObjectIds, failColor, failOpacity);
+      applyGroupMaterial(passedObjectIds, passColor, passOpacity);
+
       viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
     }
   }, [viewerReady, objectSets, selectedRuleId, showFailed, showPassed, showBase,
-      failColor, passColor, failOpacity, passOpacity, baseOpacity, isolatedIds, hiddenIds]);
+      failColor, passColor, failOpacity, passOpacity, baseColor, baseOpacity, isolatedIds, hiddenIds]);
 
   const handleSelectRun = React.useCallback((nextRunId) => {
     if (!nextRunId || nextRunId === manifest?.runId) {
