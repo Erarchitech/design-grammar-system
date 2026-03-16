@@ -207,6 +207,15 @@ export default function App() {
   const [loading, setLoading] = React.useState(true);
   const [runsLoading, setRunsLoading] = React.useState(true);
   const [deletingRunId, setDeletingRunId] = React.useState("");
+  const [speckleConfig, setSpeckleConfig] = React.useState({
+    speckleProjectId: "",
+    baseModelId: "",
+    baseModelName: "",
+    validationModelId: ""
+  });
+  const [speckleConfigStatus, setSpeckleConfigStatus] = React.useState("Load Speckle project mapping.");
+  const [loadingSpeckleConfig, setLoadingSpeckleConfig] = React.useState(false);
+  const [expandSpeckleConnector, setExpandSpeckleConnector] = React.useState(false);
 
   const failColorRef = React.useRef(null);
   const passColorRef = React.useRef(null);
@@ -244,6 +253,83 @@ export default function App() {
       setRunsLoading(false);
     }
   }, [dataServiceUrl, project]);
+
+  const loadSpeckleConfig = React.useCallback(async () => {
+    if (!project) {
+      setSpeckleConfigStatus("Project is required to configure Speckle connector.");
+      return;
+    }
+
+    setLoadingSpeckleConfig(true);
+    try {
+      const response = await fetch(`${dataServiceUrl}/integration/speckle/project/${encodeURIComponent(project)}`);
+      if (response.status === 404) {
+        setSpeckleConfig({
+          speckleProjectId: "",
+          baseModelId: "",
+          baseModelName: "",
+          validationModelId: ""
+        });
+        setSpeckleConfigStatus("No Speckle model link saved for this DG project yet.");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(await response.text() || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      setSpeckleConfig({
+        speckleProjectId: data.speckleProjectId || "",
+        baseModelId: data.baseModelId || "",
+        baseModelName: data.baseModelName || "",
+        validationModelId: data.validationModelId || ""
+      });
+      setSpeckleConfigStatus("Speckle model link loaded.");
+    } catch (err) {
+      setSpeckleConfigStatus(`Failed to load Speckle config: ${err.message}`);
+    } finally {
+      setLoadingSpeckleConfig(false);
+    }
+  }, [dataServiceUrl, project]);
+
+  const saveSpeckleConfig = React.useCallback(async () => {
+    if (!project) {
+      setSpeckleConfigStatus("Project is required to configure Speckle connector.");
+      return;
+    }
+
+    setLoadingSpeckleConfig(true);
+    try {
+      const response = await fetch(`${dataServiceUrl}/integration/speckle/project/${encodeURIComponent(project)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          speckleProjectId: (speckleConfig.speckleProjectId || "").trim(),
+          baseModelId: (speckleConfig.baseModelId || "").trim(),
+          baseModelName: (speckleConfig.baseModelName || "").trim() || null,
+          validationModelId: (speckleConfig.validationModelId || "").trim() || null
+        })
+      });
+
+      const rawText = await response.text();
+      const data = rawText ? (parseJsonSafely(rawText) || null) : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || rawText || `HTTP ${response.status}`);
+      }
+
+      setSpeckleConfig({
+        speckleProjectId: data?.speckleProjectId || "",
+        baseModelId: data?.baseModelId || "",
+        baseModelName: data?.baseModelName || "",
+        validationModelId: data?.validationModelId || ""
+      });
+      setSpeckleConfigStatus("Speckle model link saved.");
+    } catch (err) {
+      setSpeckleConfigStatus(`Failed to save Speckle config: ${err.message}`);
+    } finally {
+      setLoadingSpeckleConfig(false);
+    }
+  }, [dataServiceUrl, project, speckleConfig]);
 
   const loadManifest = React.useCallback(async (signal) => {
     if (!project) {
@@ -319,6 +405,10 @@ export default function App() {
   React.useEffect(() => {
     void loadRuns();
   }, [loadRuns]);
+
+  React.useEffect(() => {
+    void loadSpeckleConfig();
+  }, [loadSpeckleConfig]);
 
   React.useEffect(() => {
     const ac = new AbortController();
@@ -626,12 +716,66 @@ export default function App() {
     <div className="mv-page">
       <aside className="mv-sidebar">
         <div className="mv-header">
-          <a className="mv-back" href={project ? `/?project=${encodeURIComponent(project)}` : "/"}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
-            Project
-          </a>
+          <div className="mv-header-row">
+            <a className="mv-back" href={project ? `/?project=${encodeURIComponent(project)}` : "/"}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+              Project
+            </a>
+            <button type="button" className="mv-back mv-header-connector" onClick={() => setExpandSpeckleConnector(!expandSpeckleConnector)}>
+              <span>Speckle connector</span>
+              <svg className={`mv-chevron ${expandSpeckleConnector ? "is-open" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+          </div>
           <div className="mv-title">Model Viewer</div>
           <div className="mv-project">{project || "No project selected"}</div>
+          {expandSpeckleConnector ? (
+            <div className="mv-speckle-panel">
+              <div className="mv-speckle-form">
+                <label className="mv-speckle-label">Speckle Project Id or URL</label>
+                <input
+                  className="mv-speckle-input"
+                  value={speckleConfig.speckleProjectId}
+                  placeholder="Project id or full project URL"
+                  onChange={(ev) => setSpeckleConfig((current) => ({ ...current, speckleProjectId: ev.target.value }))}
+                />
+
+                <label className="mv-speckle-label">Base Model Id or URL</label>
+                <input
+                  className="mv-speckle-input"
+                  value={speckleConfig.baseModelId}
+                  placeholder="Model id or full model URL"
+                  onChange={(ev) => setSpeckleConfig((current) => ({ ...current, baseModelId: ev.target.value }))}
+                />
+
+                <label className="mv-speckle-label">Base Model Name</label>
+                <input
+                  className="mv-speckle-input"
+                  value={speckleConfig.baseModelName}
+                  placeholder="Optional display name"
+                  onChange={(ev) => setSpeckleConfig((current) => ({ ...current, baseModelName: ev.target.value }))}
+                />
+
+                <label className="mv-speckle-label">Validation Model Id or URL</label>
+                <input
+                  className="mv-speckle-input"
+                  value={speckleConfig.validationModelId}
+                  placeholder="Optional id or URL, backend will create if blank"
+                  onChange={(ev) => setSpeckleConfig((current) => ({ ...current, validationModelId: ev.target.value }))}
+                />
+
+                <div className="mv-speckle-actions">
+                  <button type="button" className="mv-speckle-btn" onClick={() => void saveSpeckleConfig()} disabled={loadingSpeckleConfig}>
+                    {loadingSpeckleConfig ? "Saving..." : "Save Speckle Link"}
+                  </button>
+                  <button type="button" className="mv-speckle-btn is-secondary" onClick={() => void loadSpeckleConfig()} disabled={loadingSpeckleConfig}>
+                    Reload
+                  </button>
+                </div>
+
+                <div className="mv-speckle-status">{speckleConfigStatus}</div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {error ? <div className="mv-error">{error}</div> : null}
@@ -742,6 +886,7 @@ export default function App() {
             </div>
           </>
         ) : null}
+
       </aside>
 
       <div className="mv-right-col">

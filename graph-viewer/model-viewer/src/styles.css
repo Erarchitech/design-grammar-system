@@ -46,6 +46,14 @@ body,
   border-bottom: 1px solid var(--border);
 }
 
+.mv-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .mv-back {
   display: inline-flex;
   align-items: center;
@@ -61,6 +69,17 @@ body,
 }
 .mv-back:hover {
   background: rgba(95, 208, 255, 0.08);
+}
+
+.mv-header-row .mv-back {
+  margin-bottom: 0;
+}
+
+.mv-header-connector {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .mv-title {
@@ -251,6 +270,74 @@ body,
 .mv-dropdown-item-id {
   color: #5a6a88;
   font-size: 10px;
+}
+
+.mv-speckle-panel {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(95, 208, 255, 0.2);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.mv-speckle-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mv-speckle-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.mv-speckle-input {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #0f1625;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.mv-speckle-input:focus {
+  outline: 1px solid rgba(95, 208, 255, 0.45);
+  border-color: rgba(95, 208, 255, 0.5);
+}
+
+.mv-speckle-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mv-speckle-btn {
+  border: 1px solid rgba(95, 208, 255, 0.35);
+  background: rgba(95, 208, 255, 0.1);
+  color: var(--accent);
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mv-speckle-btn.is-secondary {
+  border-color: rgba(152, 164, 189, 0.35);
+  background: rgba(152, 164, 189, 0.12);
+  color: var(--muted);
+}
+
+.mv-speckle-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.mv-speckle-status {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 /* Status/error banners */

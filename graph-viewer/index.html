@@ -1462,14 +1462,6 @@
         const [tick, setTick] = React.useState(0);
         const [contextMenu, setContextMenu] = React.useState(null);
         const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
-        const [speckleConfig, setSpeckleConfig] = React.useState({
-          speckleProjectId: "",
-          baseModelId: "",
-          baseModelName: "",
-          validationModelId: ""
-        });
-        const [speckleConfigStatus, setSpeckleConfigStatus] = React.useState("Load Speckle project mapping to enable the Model Viewer.");
-        const [loadingSpeckleConfig, setLoadingSpeckleConfig] = React.useState(false);
 
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
@@ -1551,80 +1543,6 @@
           return (cfg.dataServiceUrl || "/data-service").replace(/\/+$/, "");
         };
 
-        const loadSpeckleConfig = async () => {
-          if (!project) return;
-          setLoadingSpeckleConfig(true);
-          try {
-            const response = await fetch(getDataServiceBaseUrl() + "/integration/speckle/project/" + encodeURIComponent(project));
-            if (response.status === 404) {
-              setSpeckleConfig({
-                speckleProjectId: "",
-                baseModelId: "",
-                baseModelName: "",
-                validationModelId: ""
-              });
-              setSpeckleConfigStatus("No Speckle model link saved for this DG project yet.");
-              return;
-            }
-            if (!response.ok) {
-              throw new Error(await response.text() || ("HTTP " + response.status));
-            }
-            const data = await response.json();
-            setSpeckleConfig({
-              speckleProjectId: data.speckleProjectId || "",
-              baseModelId: data.baseModelId || "",
-              baseModelName: data.baseModelName || "",
-              validationModelId: data.validationModelId || ""
-            });
-            setSpeckleConfigStatus("Speckle model link loaded.");
-          } catch (err) {
-            setSpeckleConfigStatus("Failed to load Speckle config: " + err.message);
-          } finally {
-            setLoadingSpeckleConfig(false);
-          }
-        };
-
-        const saveSpeckleConfig = async () => {
-          if (!project) return;
-          setLoadingSpeckleConfig(true);
-          try {
-            const response = await fetch(getDataServiceBaseUrl() + "/integration/speckle/project/" + encodeURIComponent(project), {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                speckleProjectId: (speckleConfig.speckleProjectId || "").trim(),
-                baseModelId: (speckleConfig.baseModelId || "").trim(),
-                baseModelName: (speckleConfig.baseModelName || "").trim() || null,
-                validationModelId: (speckleConfig.validationModelId || "").trim() || null
-              })
-            });
-            const rawText = await response.text();
-            let data = null;
-            if (rawText) {
-              try { data = JSON.parse(rawText); } catch (_) {}
-            }
-            if (!response.ok) {
-              throw new Error(data?.detail || rawText || ("HTTP " + response.status));
-            }
-            setSpeckleConfig({
-              speckleProjectId: data?.speckleProjectId || "",
-              baseModelId: data?.baseModelId || "",
-              baseModelName: data?.baseModelName || "",
-              validationModelId: data?.validationModelId || ""
-            });
-            setSpeckleConfigStatus("Speckle model link saved.");
-          } catch (err) {
-            setSpeckleConfigStatus("Failed to save Speckle config: " + err.message);
-          } finally {
-            setLoadingSpeckleConfig(false);
-          }
-        };
-
-        const openModelViewer = () => {
-          const params = new URLSearchParams();
-          params.set("project", project || "");
-          window.location.href = "/model-viewer/?" + params.toString();
-        };
 
         const roundSeconds = (ms) => Math.round((ms / 1000) * 10) / 10;
 
@@ -2410,7 +2328,6 @@
 
         React.useEffect(() => {
           run();
-          loadSpeckleConfig();
         }, []);
 
         const propEntries = selected?.props || {};
@@ -2546,36 +2463,6 @@
             },
               e("option", { value: "OntoGraph" }, "OntoGraph"),
               e("option", { value: "MetaGraph" }, "MetaGraph")
-            ),
-            e("div", { className: "config-card" },
-              e("div", { className: "config-title" }, "Model Viewer"),
-              e("label", null, "Speckle Project Id or URL"),
-              e("input", {
-                value: speckleConfig.speckleProjectId,
-                placeholder: "Project id or full project URL",
-                onChange: (ev) => setSpeckleConfig((current) => ({ ...current, speckleProjectId: ev.target.value }))
-              }),
-              e("label", null, "Base Model Id or URL"),
-              e("input", {
-                value: speckleConfig.baseModelId,
-                placeholder: "Model id or full model URL",
-                onChange: (ev) => setSpeckleConfig((current) => ({ ...current, baseModelId: ev.target.value }))
-              }),
-              e("label", null, "Base Model Name"),
-              e("input", {
-                value: speckleConfig.baseModelName,
-                placeholder: "Optional display name",
-                onChange: (ev) => setSpeckleConfig((current) => ({ ...current, baseModelName: ev.target.value }))
-              }),
-              e("label", null, "Validation Model Id or URL"),
-              e("input", {
-                value: speckleConfig.validationModelId,
-                placeholder: "Optional id or URL, backend will create if blank",
-                onChange: (ev) => setSpeckleConfig((current) => ({ ...current, validationModelId: ev.target.value }))
-              }),
-              e("button", { onClick: saveSpeckleConfig, disabled: loadingSpeckleConfig }, loadingSpeckleConfig ? "Saving..." : "Save Speckle Link"),
-              e("button", { className: "secondary-btn", onClick: openModelViewer }, "Open Model Viewer"),
-              e("div", { className: "hint" }, speckleConfigStatus)
             ),
             e("div", null,
               e("div", { className: "prompt-tabs" },
