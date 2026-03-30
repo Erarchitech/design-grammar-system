@@ -1049,15 +1049,6 @@
         const [projects, setProjects] = React.useState([]);
         const [showProfileMenu, setShowProfileMenu] = React.useState(false);
         const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
-        const [speckleSettings, setSpeckleSettings] = React.useState({ baseUrl: "http://localhost:8090", writeToken: "", readToken: "" });
-        const [speckleSettingsMeta, setSpeckleSettingsMeta] = React.useState({
-          writeTokenConfigured: false,
-          readTokenConfigured: false,
-          writeTokenPreview: "",
-          readTokenPreview: ""
-        });
-        const [speckleSettingsStatus, setSpeckleSettingsStatus] = React.useState("Loading Speckle settings...");
-        const [loadingSpeckleSettings, setLoadingSpeckleSettings] = React.useState(false);
         const profileRef = React.useRef(null);
 
         React.useEffect(function() {
@@ -1067,9 +1058,6 @@
           setUserProfile({ name: userData?.name || "", surname: userData?.surname || "" });
         }, [user]);
 
-        React.useEffect(function() {
-          loadSpeckleSettings();
-        }, []);
 
         React.useEffect(function() {
           var handleClick = function(ev) {
@@ -1104,77 +1092,6 @@
           ? projects.filter(function(p) { return p.name.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1; })
           : projects;
 
-        const loadSpeckleSettings = async function() {
-          setLoadingSpeckleSettings(true);
-          try {
-            const response = await fetch(getDataServiceBaseUrl() + "/settings/speckle");
-            if (!response.ok) {
-              throw new Error(await response.text() || ("HTTP " + response.status));
-            }
-            const data = await response.json();
-            setSpeckleSettings(function(current) {
-              return {
-                baseUrl: data.baseUrl || current.baseUrl || "http://localhost:8090",
-                writeToken: "",
-                readToken: ""
-              };
-            });
-            setSpeckleSettingsMeta({
-              writeTokenConfigured: !!data.writeTokenConfigured,
-              readTokenConfigured: !!data.readTokenConfigured,
-              writeTokenPreview: data.writeTokenPreview || "",
-              readTokenPreview: data.readTokenPreview || ""
-            });
-            setSpeckleSettingsStatus(
-              data.writeTokenConfigured
-                ? "Stored in data-service. VALIDATOR can publish without re-entering container environment variables."
-                : "No stored Speckle write token yet. Save it once here to enable VALIDATOR publishing."
-            );
-          } catch (err) {
-            setSpeckleSettingsStatus("Failed to load Speckle settings: " + err.message);
-          } finally {
-            setLoadingSpeckleSettings(false);
-          }
-        };
-
-        const saveSpeckleSettings = async function() {
-          setLoadingSpeckleSettings(true);
-          try {
-            const response = await fetch(getDataServiceBaseUrl() + "/settings/speckle", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                baseUrl: (speckleSettings.baseUrl || "").trim() || "http://localhost:8090",
-                writeToken: (speckleSettings.writeToken || "").trim(),
-                readToken: (speckleSettings.readToken || "").trim()
-              })
-            });
-            const rawText = await response.text();
-            let data = null;
-            if (rawText) {
-              try { data = JSON.parse(rawText); } catch (_) {}
-            }
-            if (!response.ok) {
-              throw new Error(data?.detail || rawText || ("HTTP " + response.status));
-            }
-            setSpeckleSettings({
-              baseUrl: data?.baseUrl || speckleSettings.baseUrl || "http://localhost:8090",
-              writeToken: "",
-              readToken: ""
-            });
-            setSpeckleSettingsMeta({
-              writeTokenConfigured: !!data?.writeTokenConfigured,
-              readTokenConfigured: !!data?.readTokenConfigured,
-              writeTokenPreview: data?.writeTokenPreview || "",
-              readTokenPreview: data?.readTokenPreview || ""
-            });
-            setSpeckleSettingsStatus("Speckle settings saved in data-service.");
-          } catch (err) {
-            setSpeckleSettingsStatus("Failed to save Speckle settings: " + err.message);
-          } finally {
-            setLoadingSpeckleSettings(false);
-          }
-        };
 
         const formatDate = function(dateStr) {
           if (!dateStr) return "";
@@ -1226,66 +1143,6 @@
           ),
           e("div", { className: "home-content" },
             e("h2", { className: "section-title" }, "Your Projects"),
-            e("div", { className: "home-notice" },
-              e("strong", null, "Model Viewer location"),
-              "Open a project first. The Speckle configuration card is in the left sidebar of that project's graph view, not on the home page."
-            ),
-            e("div", { className: "home-section-grid" },
-              e("div", { className: "home-card" },
-                e("div", { className: "home-card-title" }, "Speckle Settings"),
-                e("div", { className: "home-card-hint" }, "Local-only backend settings. Save once here and the Grasshopper VALIDATOR publish flow will reuse them after container restarts."),
-                e("label", { className: "home-form-label" }, "Speckle Base URL"),
-                e("input", {
-                  className: "home-form-input",
-                  value: speckleSettings.baseUrl,
-                  placeholder: "http://localhost:8090",
-                  onChange: function(ev) {
-                    setSpeckleSettings(function(current) {
-                      return { baseUrl: ev.target.value, writeToken: current.writeToken, readToken: current.readToken };
-                    });
-                  }
-                }),
-                e("label", { className: "home-form-label" }, "Write Token"),
-                e("input", {
-                  className: "home-form-input",
-                  type: "password",
-                  value: speckleSettings.writeToken,
-                  placeholder: speckleSettingsMeta.writeTokenConfigured ? "Leave blank to keep the stored write token" : "Paste Speckle write token",
-                  onChange: function(ev) {
-                    setSpeckleSettings(function(current) {
-                      return { baseUrl: current.baseUrl, writeToken: ev.target.value, readToken: current.readToken };
-                    });
-                  }
-                }),
-                e("div", { className: "home-token-meta" },
-                  speckleSettingsMeta.writeTokenConfigured
-                    ? "Stored write token: " + speckleSettingsMeta.writeTokenPreview
-                    : "No write token stored yet."
-                ),
-                e("label", { className: "home-form-label" }, "Read Token"),
-                e("input", {
-                  className: "home-form-input",
-                  type: "password",
-                  value: speckleSettings.readToken,
-                  placeholder: speckleSettingsMeta.readTokenConfigured ? "Leave blank to keep the stored read token" : "Optional. Leave blank to reuse the write token in the viewer.",
-                  onChange: function(ev) {
-                    setSpeckleSettings(function(current) {
-                      return { baseUrl: current.baseUrl, writeToken: current.writeToken, readToken: ev.target.value };
-                    });
-                  }
-                }),
-                e("div", { className: "home-token-meta" },
-                  speckleSettingsMeta.readTokenConfigured
-                    ? "Stored read token: " + speckleSettingsMeta.readTokenPreview
-                    : "No separate read token stored. The viewer will use the write token if one is available."
-                ),
-                e("div", { className: "home-card-actions" },
-                  e("button", { className: "home-card-button", onClick: saveSpeckleSettings, disabled: loadingSpeckleSettings }, loadingSpeckleSettings ? "Saving..." : "Save Speckle Settings"),
-                  e("button", { className: "home-card-button secondary", onClick: loadSpeckleSettings, disabled: loadingSpeckleSettings }, "Reload")
-                ),
-                e("div", { className: "home-card-status" }, speckleSettingsStatus)
-              )
-            ),
             filtered.length === 0
               ? e("div", { className: "empty-state" },
                   e("p", null, projects.length === 0
@@ -1391,7 +1248,7 @@
                   )
                 ),
                 e("div", { className: "project-action-body" },
-                  e("div", { className: "project-action-name" }, "Graph Viewer"),
+                  e("div", { className: "project-action-name" }, "Grammar Viewer"),
                   e("div", { className: "project-action-desc" }, "View and manage design rules, ontology graph, and Cypher queries")
                 )
               ),
@@ -2418,7 +2275,7 @@
               e("button", { className: "gv-back-btn", onClick: onBack }, "\u2190 Project"),
               e("span", { className: "gv-project-name" }, project || "")
             ),
-            e("h3", null, "Rules"),
+            e("h3", null, "Grammar Viewer"),
             e("label", null, "Mode"),
             modeControl,
             mode === "edit"

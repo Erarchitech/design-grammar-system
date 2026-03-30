@@ -211,6 +211,16 @@ export default function App() {
   const [speckleConfigStatus, setSpeckleConfigStatus] = React.useState("Load Speckle project mapping.");
   const [loadingSpeckleConfig, setLoadingSpeckleConfig] = React.useState(false);
   const [expandSpeckleConnector, setExpandSpeckleConnector] = React.useState(false);
+  const [expandSpeckleSettings, setExpandSpeckleSettings] = React.useState(false);
+  const [speckleSettings, setSpeckleSettings] = React.useState({ baseUrl: "http://localhost:8090", writeToken: "", readToken: "" });
+  const [speckleSettingsMeta, setSpeckleSettingsMeta] = React.useState({
+    writeTokenConfigured: false,
+    readTokenConfigured: false,
+    writeTokenPreview: "",
+    readTokenPreview: ""
+  });
+  const [speckleSettingsStatus, setSpeckleSettingsStatus] = React.useState("");
+  const [loadingSpeckleSettings, setLoadingSpeckleSettings] = React.useState(false);
 
   const failColorRef = React.useRef(null);
   const passColorRef = React.useRef(null);
@@ -326,6 +336,73 @@ export default function App() {
     }
   }, [dataServiceUrl, project, speckleConfig]);
 
+  const loadSpeckleSettings = React.useCallback(async () => {
+    setLoadingSpeckleSettings(true);
+    try {
+      const response = await fetch(`${dataServiceUrl}/settings/speckle`);
+      if (!response.ok) {
+        throw new Error(await response.text() || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      setSpeckleSettings((current) => ({
+        baseUrl: data.baseUrl || current.baseUrl || "http://localhost:8090",
+        writeToken: "",
+        readToken: ""
+      }));
+      setSpeckleSettingsMeta({
+        writeTokenConfigured: !!data.writeTokenConfigured,
+        readTokenConfigured: !!data.readTokenConfigured,
+        writeTokenPreview: data.writeTokenPreview || "",
+        readTokenPreview: data.readTokenPreview || ""
+      });
+      setSpeckleSettingsStatus(
+        data.writeTokenConfigured
+          ? "Stored in data-service."
+          : "No stored Speckle write token yet."
+      );
+    } catch (err) {
+      setSpeckleSettingsStatus(`Failed to load Speckle settings: ${err.message}`);
+    } finally {
+      setLoadingSpeckleSettings(false);
+    }
+  }, [dataServiceUrl]);
+
+  const saveSpeckleSettings = React.useCallback(async () => {
+    setLoadingSpeckleSettings(true);
+    try {
+      const response = await fetch(`${dataServiceUrl}/settings/speckle`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          baseUrl: (speckleSettings.baseUrl || "").trim() || "http://localhost:8090",
+          writeToken: (speckleSettings.writeToken || "").trim(),
+          readToken: (speckleSettings.readToken || "").trim()
+        })
+      });
+      const rawText = await response.text();
+      const data = rawText ? (parseJsonSafely(rawText) || null) : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || rawText || `HTTP ${response.status}`);
+      }
+      setSpeckleSettings({
+        baseUrl: data?.baseUrl || speckleSettings.baseUrl || "http://localhost:8090",
+        writeToken: "",
+        readToken: ""
+      });
+      setSpeckleSettingsMeta({
+        writeTokenConfigured: !!data?.writeTokenConfigured,
+        readTokenConfigured: !!data?.readTokenConfigured,
+        writeTokenPreview: data?.writeTokenPreview || "",
+        readTokenPreview: data?.readTokenPreview || ""
+      });
+      setSpeckleSettingsStatus("Speckle settings saved.");
+    } catch (err) {
+      setSpeckleSettingsStatus(`Failed to save: ${err.message}`);
+    } finally {
+      setLoadingSpeckleSettings(false);
+    }
+  }, [dataServiceUrl, speckleSettings]);
+
   const loadManifest = React.useCallback(async (signal) => {
     if (!project) {
       setLoading(false);
@@ -404,6 +481,10 @@ export default function App() {
   React.useEffect(() => {
     void loadSpeckleConfig();
   }, [loadSpeckleConfig]);
+
+  React.useEffect(() => {
+    void loadSpeckleSettings();
+  }, [loadSpeckleSettings]);
 
   React.useEffect(() => {
     const ac = new AbortController();
@@ -804,6 +885,81 @@ export default function App() {
                 </div>
 
                 <div className="mv-speckle-status">{speckleConfigStatus}</div>
+
+                <div className="mv-speckle-footer">
+                  <button type="button" className="mv-speckle-gear" onClick={() => setExpandSpeckleSettings(!expandSpeckleSettings)} title="Speckle settings">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                  </button>
+                </div>
+
+                {expandSpeckleSettings ? (
+                  <div className="mv-speckle-settings">
+                    <div className="mv-speckle-settings-title">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                      </svg>
+                      Speckle settings
+                    </div>
+                    <div className="mv-speckle-settings-divider" />
+
+                    <label className="mv-speckle-label">Speckle Base URL</label>
+                    <input
+                      className="mv-speckle-input"
+                      value={speckleSettings.baseUrl}
+                      placeholder="http://localhost:8090"
+                      onChange={(ev) => setSpeckleSettings((c) => ({ ...c, baseUrl: ev.target.value }))}
+                    />
+
+                    <label className="mv-speckle-label">Write Token</label>
+                    <input
+                      className="mv-speckle-input"
+                      type="password"
+                      value={speckleSettings.writeToken}
+                      placeholder={speckleSettingsMeta.writeTokenConfigured ? "Leave blank to keep stored token" : "Paste Speckle write token"}
+                      onChange={(ev) => setSpeckleSettings((c) => ({ ...c, writeToken: ev.target.value }))}
+                    />
+                    {speckleSettingsMeta.writeTokenConfigured ? (
+                      <div className="mv-speckle-token-hint is-ok">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#2fb16f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        Stored write token: {speckleSettingsMeta.writeTokenPreview}
+                      </div>
+                    ) : (
+                      <div className="mv-speckle-token-hint">No write token stored yet.</div>
+                    )}
+
+                    <label className="mv-speckle-label">Read Token (optional)</label>
+                    <input
+                      className="mv-speckle-input"
+                      type="password"
+                      value={speckleSettings.readToken}
+                      placeholder={speckleSettingsMeta.readTokenConfigured ? "Leave blank to keep stored token" : "Leave blank to use write token"}
+                      onChange={(ev) => setSpeckleSettings((c) => ({ ...c, readToken: ev.target.value }))}
+                    />
+                    {speckleSettingsMeta.readTokenConfigured ? (
+                      <div className="mv-speckle-token-hint is-ok">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#2fb16f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        Stored read token: {speckleSettingsMeta.readTokenPreview}
+                      </div>
+                    ) : (
+                      <div className="mv-speckle-token-hint">No separate read token. Viewer uses write token.</div>
+                    )}
+
+                    <div className="mv-speckle-settings-divider" />
+                    <div className="mv-speckle-actions">
+                      <button type="button" className="mv-speckle-btn" onClick={() => void saveSpeckleSettings()} disabled={loadingSpeckleSettings}>
+                        {loadingSpeckleSettings ? "Saving..." : "Save Settings"}
+                      </button>
+                      <button type="button" className="mv-speckle-btn is-secondary" onClick={() => void loadSpeckleSettings()} disabled={loadingSpeckleSettings}>
+                        Reload
+                      </button>
+                    </div>
+                    {speckleSettingsStatus ? <div className="mv-speckle-status">{speckleSettingsStatus}</div> : null}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}

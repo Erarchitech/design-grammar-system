@@ -205,7 +205,7 @@
                       "iconFontName": "network"
                     },
                     "tName": {
-                      "content": "Graph Viewer"
+                      "content": "Grammar Viewer"
                     },
                     "tDesc": {
                       "content": "View and manage design rules, ontology graph, and Cypher queries"

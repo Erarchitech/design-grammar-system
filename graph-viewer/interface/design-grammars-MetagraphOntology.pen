@@ -1,0 +1,2859 @@
+{
+  "version": "2.9",
+  "children": [
+    {
+      "type": "frame",
+      "id": "ont000",
+      "x": 0,
+      "y": 0,
+      "name": "Metagraph Ontology Schema",
+      "width": 2400,
+      "height": 3600,
+      "fill": "#0f1117",
+      "layout": "vertical",
+      "padding": 40,
+      "children": [
+        {
+          "type": "text",
+          "id": "ontTitle",
+          "name": "Schema Title",
+          "fill": "#f4f7fb",
+          "content": "Metagraph Ontology Schema",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 32,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "ontSub",
+          "name": "Schema Subtitle",
+          "fill": "#7a8799",
+          "content": "Complete class, property, relationship, and enum definitions for the Design Grammar rule system",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "secGraph",
+          "name": "Section: Graph Node Classes",
+          "fill": "#5fd0ff",
+          "content": "1  Graph Node Classes (Neo4j Labels)",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "clsRule",
+          "name": "Class: Rule",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#5f8fd3"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsRuleHdr",
+              "name": "Rule Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsRuleBdg",
+                  "name": "Rule Badge",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "#5f8fd3",
+                  "cornerRadius": 18,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsRuleIco",
+                      "fill": "#ffffff",
+                      "content": "R",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsRuleNm",
+                  "fill": "#f4f7fb",
+                  "content": "Rule",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsRuleLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Rule  |  graph: Metagraph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsRuleDesc",
+              "fill": "#b8c2d0",
+              "content": "Represents a semantic design rule expressed in SWRL. Central node of the Metagraph.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRulePH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP1",
+              "fill": "#d8e0eb",
+              "content": "  Rule_Id        string        (key) Unique identifier, e.g. \"R_height_max\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP2",
+              "fill": "#d8e0eb",
+              "content": "  title          string?       Human-readable title (fallback: name, Rule_Id)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP3",
+              "fill": "#d8e0eb",
+              "content": "  name           string        Rule name",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP4",
+              "fill": "#d8e0eb",
+              "content": "  description    string        Natural-language description of the rule",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP5",
+              "fill": "#d8e0eb",
+              "content": "  kind           RuleKind      \"violation\" | \"compliance\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP6",
+              "fill": "#d8e0eb",
+              "content": "  text           string        SWRL expression string",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP7",
+              "fill": "#d8e0eb",
+              "content": "  swrl           string        Canonical SWRL expression (fallback to text)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP8",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope, e.g. \"default-project\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsRuleP9",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"Metagraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsAtom",
+          "name": "Class: Atom",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#d3845f"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsAtomHdr",
+              "name": "Atom Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsAtomBdg",
+                  "name": "Atom Badge",
+                  "width": 30,
+                  "height": 30,
+                  "fill": "#d3845f",
+                  "cornerRadius": 15,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsAtomIco",
+                      "fill": "#ffffff",
+                      "content": "A",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsAtomNm",
+                  "fill": "#f4f7fb",
+                  "content": "Atom",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsAtomLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Atom  |  graph: Metagraph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsAtomDesc",
+              "fill": "#b8c2d0",
+              "content": "Represents a single predicate (condition or conclusion) within a SWRL rule.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP1",
+              "fill": "#d8e0eb",
+              "content": "  Atom_Id        string        (key) Format: \"{Rule_Id}_A{n}\" (body) | \"{Rule_Id}_H{n}\" (head)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP2",
+              "fill": "#d8e0eb",
+              "content": "  type           AtomType      \"ClassAtom\" | \"DataPropertyAtom\" | \"ObjectPropertyAtom\" | \"BuiltinAtom\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP3",
+              "fill": "#d8e0eb",
+              "content": "  iri            string        IRI of the predicate, e.g. \"ex:Building\" or \"swrlb:greaterThan\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP4",
+              "fill": "#d8e0eb",
+              "content": "  SWRL_label     string?       Human-readable predicate label",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP5",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsAtomP6",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"Metagraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsClass",
+          "name": "Class: Class (OWL)",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#c75fd0"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsClassHdr",
+              "name": "Class Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsClassBdg",
+                  "name": "Class Badge",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#c75fd0",
+                  "cornerRadius": 14,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsClassIco",
+                      "fill": "#ffffff",
+                      "content": "C",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsClassNm",
+                  "fill": "#f4f7fb",
+                  "content": "Class",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsClassLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Class  |  graph: OntoGraph  |  owl:Class",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsClassDesc",
+              "fill": "#b8c2d0",
+              "content": "An OWL class from the domain ontology (e.g. Building, Floor, Room).",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsClassPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsClassP1",
+              "fill": "#d8e0eb",
+              "content": "  iri            string        (key) Compact IRI, e.g. \"ex:Building\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsClassP2",
+              "fill": "#d8e0eb",
+              "content": "  label          string        Human-readable class name, e.g. \"Building\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsClassP3",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsClassP4",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"OntoGraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsDtProp",
+          "name": "Class: DatatypeProperty",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#d0c95f"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsDtPropHdr",
+              "name": "DatatypeProperty Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsDtPropBdg",
+                  "name": "DatatypeProperty Badge",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#d0c95f",
+                  "cornerRadius": 14,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsDtPropIco",
+                      "fill": "#20160f",
+                      "content": "D",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsDtPropNm",
+                  "fill": "#f4f7fb",
+                  "content": "DatatypeProperty",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsDtPropLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: DatatypeProperty  |  graph: OntoGraph  |  owl:DatatypeProperty",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropDesc",
+              "fill": "#b8c2d0",
+              "content": "An OWL datatype property mapping an individual to a literal value (e.g. hasHeightM, hasArea).",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropP1",
+              "fill": "#d8e0eb",
+              "content": "  iri            string        (key) Compact IRI, e.g. \"ex:hasHeightM\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropP2",
+              "fill": "#d8e0eb",
+              "content": "  SWRL_label     string        SWRL predicate name, e.g. \"hasHeightM\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropP3",
+              "fill": "#d8e0eb",
+              "content": "  range          XsdDatatype   \"xsd:decimal\" | \"xsd:integer\" | \"xsd:boolean\" | \"xsd:string\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropP4",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsDtPropP5",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"OntoGraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsObjProp",
+          "name": "Class: ObjectProperty",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#5fd0a0"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsObjPropHdr",
+              "name": "ObjectProperty Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsObjPropBdg",
+                  "name": "ObjectProperty Badge",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#5fd0a0",
+                  "cornerRadius": 14,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsObjPropIco",
+                      "fill": "#0f2016",
+                      "content": "O",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsObjPropNm",
+                  "fill": "#f4f7fb",
+                  "content": "ObjectProperty",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsObjPropLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: ObjectProperty  |  graph: OntoGraph  |  owl:ObjectProperty",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropDesc",
+              "fill": "#b8c2d0",
+              "content": "An OWL object property linking two individuals (e.g. violatesMaxHeight). Used in ObjectPropertyAtom.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropP1",
+              "fill": "#d8e0eb",
+              "content": "  iri            string        (key) Compact IRI, e.g. \"ex:violatesMaxHeight\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropP2",
+              "fill": "#d8e0eb",
+              "content": "  SWRL_label     string        SWRL predicate name",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropP3",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsObjPropP4",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"OntoGraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsBuiltin",
+          "name": "Class: Builtin",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#ff6b6b"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsBuiltinHdr",
+              "name": "Builtin Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsBuiltinBdg",
+                  "name": "Builtin Badge",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#ff6b6b",
+                  "cornerRadius": 14,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsBuiltinIco",
+                      "fill": "#ffffff",
+                      "content": "B",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsBuiltinNm",
+                  "fill": "#f4f7fb",
+                  "content": "Builtin",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsBuiltinLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Builtin  |  graph: Metagraph  |  swrl:Builtin",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinDesc",
+              "fill": "#b8c2d0",
+              "content": "A SWRL built-in comparison or arithmetic function (swrlb:* namespace).",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinP1",
+              "fill": "#d8e0eb",
+              "content": "  iri            string        (key) e.g. \"swrlb:greaterThan\", \"swrlb:lessThanOrEqual\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinP2",
+              "fill": "#d8e0eb",
+              "content": "  label          string        Human-readable name, e.g. \"greaterThan\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinP3",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinP4",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"Metagraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinPH2",
+              "fill": "#5fd0ff",
+              "content": "Supported Builtins",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsBuiltinB1",
+              "fill": "#d8e0eb",
+              "content": "  swrlb:lessThan  swrlb:greaterThan  swrlb:lessThanOrEqual  swrlb:greaterThanOrEqual  swrlb:equal  swrlb:notEqual",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsVar",
+          "name": "Class: Var",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#5fd0a0"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsVarHdr",
+              "name": "Var Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsVarBdg",
+                  "name": "Var Badge",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#5fd0a0",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsVarIco",
+                      "fill": "#0f2016",
+                      "content": "?",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsVarNm",
+                  "fill": "#f4f7fb",
+                  "content": "Var",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsVarLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Var  |  graph: Metagraph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsVarDesc",
+              "fill": "#b8c2d0",
+              "content": "A SWRL variable used as an argument in atoms. Prefixed with '?' in expressions.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVarPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsVarP1",
+              "fill": "#d8e0eb",
+              "content": "  name           string        (key) Variable name with '?' prefix, e.g. \"?b\", \"?h\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVarP2",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVarP3",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"Metagraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsLit",
+          "name": "Class: Literal",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#b8c2d0"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "clsLitHdr",
+              "name": "Literal Header",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "clsLitBdg",
+                  "name": "Literal Badge",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#b8c2d0",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "clsLitIco",
+                      "fill": "#0f1117",
+                      "content": "L",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "clsLitNm",
+                  "fill": "#f4f7fb",
+                  "content": "Literal",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "clsLitLbl",
+                  "fill": "#7a8799",
+                  "content": "Neo4j label: Literal  |  graph: Metagraph",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "clsLitDesc",
+              "fill": "#b8c2d0",
+              "content": "A typed literal value used as an argument in atoms (numbers, booleans, strings).",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsLitPH",
+              "fill": "#5fd0ff",
+              "content": "Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsLitP1",
+              "fill": "#d8e0eb",
+              "content": "  lex            string        (key) Lexical value, e.g. \"75\", \"true\", \"steel\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsLitP2",
+              "fill": "#d8e0eb",
+              "content": "  datatype       XsdDatatype   (key) XSD type: \"xsd:decimal\" | \"xsd:integer\" | \"xsd:boolean\" | \"xsd:string\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsLitP3",
+              "fill": "#d8e0eb",
+              "content": "  project        string        Project scope",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsLitP4",
+              "fill": "#d8e0eb",
+              "content": "  graph          string        Always \"Metagraph\"",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secRel",
+          "name": "Section: Relationships",
+          "fill": "#5fd0ff",
+          "content": "2  Relationships (Neo4j Edge Types)",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "relHasBody",
+          "name": "Relationship: HAS_BODY",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "relHBHdr",
+              "name": "HAS_BODY Header",
+              "width": "fill_container",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "relHBNm",
+                  "fill": "#f4f7fb",
+                  "content": "HAS_BODY",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "relHBDir",
+                  "fill": "#9fb6c9",
+                  "content": "Rule  ---->>  Atom",
+                  "fontFamily": "Courier New",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "relHBDesc",
+              "fill": "#b8c2d0",
+              "content": "Links a Rule to its body (antecedent/condition) atoms. A rule has 1..n body atoms.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "relHBPH",
+              "fill": "#5fd0ff",
+              "content": "Edge Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "relHBP1",
+              "fill": "#d8e0eb",
+              "content": "  order          int           Execution order within the body (1-indexed)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "relHasHead",
+          "name": "Relationship: HAS_HEAD",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "relHHHdr",
+              "name": "HAS_HEAD Header",
+              "width": "fill_container",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "relHHNm",
+                  "fill": "#f4f7fb",
+                  "content": "HAS_HEAD",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "relHHDir",
+                  "fill": "#9fb6c9",
+                  "content": "Rule  ---->>  Atom",
+                  "fontFamily": "Courier New",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "relHHDesc",
+              "fill": "#b8c2d0",
+              "content": "Links a Rule to its head (consequent/conclusion) atoms. A rule has 1..n head atoms.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "relHHPH",
+              "fill": "#5fd0ff",
+              "content": "Edge Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "relHHP1",
+              "fill": "#d8e0eb",
+              "content": "  order          int           Execution order within the head (1-indexed)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "relRefersTo",
+          "name": "Relationship: REFERS_TO",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "relRTHdr",
+              "name": "REFERS_TO Header",
+              "width": "fill_container",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "relRTNm",
+                  "fill": "#f4f7fb",
+                  "content": "REFERS_TO",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "relRTDir",
+                  "fill": "#9fb6c9",
+                  "content": "Atom  ---->>  Class | DatatypeProperty | ObjectProperty | Builtin",
+                  "fontFamily": "Courier New",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "relRTDesc",
+              "fill": "#b8c2d0",
+              "content": "Links an Atom to the ontology predicate it references. Every atom refers to exactly one predicate.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "relRTNote",
+              "fill": "#7a8799",
+              "content": "No edge properties. Target resolved by atom type: ClassAtom->Class, DataPropertyAtom->DatatypeProperty, ObjectPropertyAtom->ObjectProperty, BuiltinAtom->Builtin",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "relArg",
+          "name": "Relationship: ARG",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "relArgHdr",
+              "name": "ARG Header",
+              "width": "fill_container",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "relArgNm",
+                  "fill": "#f4f7fb",
+                  "content": "ARG",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "relArgDir",
+                  "fill": "#9fb6c9",
+                  "content": "Atom  ---->>  Var | Literal",
+                  "fontFamily": "Courier New",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "relArgDesc",
+              "fill": "#b8c2d0",
+              "content": "Links an Atom to one of its arguments (variable or literal). An atom has 1..n arguments.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "relArgPH",
+              "fill": "#5fd0ff",
+              "content": "Edge Properties",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "relArgP1",
+              "fill": "#d8e0eb",
+              "content": "  pos            int           Argument position (1-indexed). pos=1 is typically the subject variable.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secEnum",
+          "name": "Section: Enumerations",
+          "fill": "#5fd0ff",
+          "content": "3  Enumerations & Value Types",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "enumAtomType",
+          "name": "Enum: AtomType",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#d3845f"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumATNm",
+              "fill": "#f4f7fb",
+              "content": "AtomType",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumATDesc",
+              "fill": "#b8c2d0",
+              "content": "Discriminator for the type of SWRL atom predicate.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAT1",
+              "fill": "#d8e0eb",
+              "content": "  ClassAtom              Class membership test. 1 arg (the individual). REFERS_TO -> Class",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAT2",
+              "fill": "#d8e0eb",
+              "content": "  DataPropertyAtom       Data property assertion. 2 args (subject, value). REFERS_TO -> DatatypeProperty",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAT3",
+              "fill": "#d8e0eb",
+              "content": "  ObjectPropertyAtom     Object property assertion. 2 args (subject, object). REFERS_TO -> ObjectProperty",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAT4",
+              "fill": "#d8e0eb",
+              "content": "  BuiltinAtom            SWRL built-in comparison. 2+ args. REFERS_TO -> Builtin",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumAtomSide",
+          "name": "Enum: AtomSide",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumASNm",
+              "fill": "#f4f7fb",
+              "content": "AtomSide",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumASDesc",
+              "fill": "#b8c2d0",
+              "content": "Which part of the SWRL implication an atom belongs to.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAS1",
+              "fill": "#d8e0eb",
+              "content": "  Body = 0               Antecedent: conditions that must be satisfied",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAS2",
+              "fill": "#d8e0eb",
+              "content": "  Head = 1               Consequent: conclusions derived when body is satisfied",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumArgKind",
+          "name": "Enum: ArgKind",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumAKNm",
+              "fill": "#f4f7fb",
+              "content": "ArgKind",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumAKDesc",
+              "fill": "#b8c2d0",
+              "content": "Discriminator for atom argument types.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAK1",
+              "fill": "#d8e0eb",
+              "content": "  Variable = 0           A ?-prefixed SWRL variable bound at evaluation time",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumAK2",
+              "fill": "#d8e0eb",
+              "content": "  Literal  = 1           A constant value (number, boolean, or string)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumRuleKind",
+          "name": "Enum: RuleKind",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumRKNm",
+              "fill": "#f4f7fb",
+              "content": "RuleKind",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumRKDesc",
+              "fill": "#b8c2d0",
+              "content": "Semantic intent of the rule.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumRK1",
+              "fill": "#d8e0eb",
+              "content": "  violation               Rule defines a constraint that should NOT be violated",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumRK2",
+              "fill": "#d8e0eb",
+              "content": "  compliance              Rule defines a condition that SHOULD be satisfied",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumXsd",
+          "name": "Enum: XsdDatatype",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumXsdNm",
+              "fill": "#f4f7fb",
+              "content": "XsdDatatype",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumXsdDesc",
+              "fill": "#b8c2d0",
+              "content": "XML Schema datatypes used for literal values and property ranges.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumXsd1",
+              "fill": "#d8e0eb",
+              "content": "  xsd:decimal             Floating-point number (e.g. 75.5)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumXsd2",
+              "fill": "#d8e0eb",
+              "content": "  xsd:integer             Whole number (e.g. 75)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumXsd3",
+              "fill": "#d8e0eb",
+              "content": "  xsd:boolean             Boolean (true | false)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumXsd4",
+              "fill": "#d8e0eb",
+              "content": "  xsd:string              Text string",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumOwlType",
+          "name": "Enum: OwlType",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumOwlNm",
+              "fill": "#f4f7fb",
+              "content": "OwlType",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumOwlDesc",
+              "fill": "#b8c2d0",
+              "content": "OWL entity classification for controlled terms in natural-language input.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl1",
+              "fill": "#d8e0eb",
+              "content": "  owl:Class               Domain class (Building, Floor, Room...)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl2",
+              "fill": "#d8e0eb",
+              "content": "  owl:DatatypeProperty    Property mapping individual to literal",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl3",
+              "fill": "#d8e0eb",
+              "content": "  owl:ObjectProperty      Property linking two individuals",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl4",
+              "fill": "#d8e0eb",
+              "content": "  owl:NamedIndividual     Specific named instance",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl5",
+              "fill": "#d8e0eb",
+              "content": "  rdfs:Datatype           XSD datatype reference",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumOwl6",
+              "fill": "#d8e0eb",
+              "content": "  swrl:Builtin            SWRL built-in function",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "enumStatus",
+          "name": "Enum: ValidationStatus",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#9fb6c9"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "enumVSNm",
+              "fill": "#f4f7fb",
+              "content": "ValidationStatus",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "enumVSDesc",
+              "fill": "#b8c2d0",
+              "content": "Overall validation outcome for an entity. Computed: failed > passed > unknown.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumVS1",
+              "fill": "#ff6b6b",
+              "content": "  failed                  Entity violated at least one rule",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumVS2",
+              "fill": "#5fd0a0",
+              "content": "  passed                  Entity satisfied all evaluated rules",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "enumVS3",
+              "fill": "#7a8799",
+              "content": "  unknown                 No rules evaluated for this entity",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secRuntime",
+          "name": "Section: Runtime / Evaluation Classes",
+          "fill": "#5fd0ff",
+          "content": "4  Runtime & Evaluation Classes (C# Domain Model)",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "clsBindingRow",
+          "name": "Class: BindingRow",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsBRNm",
+              "fill": "#f4f7fb",
+              "content": "BindingRow",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsBRDesc",
+              "fill": "#b8c2d0",
+              "content": "A single assignment of values to SWRL variables for one evaluation pass.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBRP1",
+              "fill": "#d8e0eb",
+              "content": "  ValuesByVar            Dict<string, object?>       Variable name -> bound value",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsBRP2",
+              "fill": "#d8e0eb",
+              "content": "  ElementRefsByVar       Dict<string, ElementRef>    Variable name -> design entity reference",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsElementRef",
+          "name": "Class: ElementRef",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsERNm",
+              "fill": "#f4f7fb",
+              "content": "ElementRef",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsERDesc",
+              "fill": "#b8c2d0",
+              "content": "Reference to a design element in the host application (Revit, Rhino, etc.).",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsERP1",
+              "fill": "#d8e0eb",
+              "content": "  DgEntityId             string          Unique design entity identifier",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsERP2",
+              "fill": "#d8e0eb",
+              "content": "  Geometry               object?         Geometric representation (host-specific)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsERP3",
+              "fill": "#d8e0eb",
+              "content": "  DisplayName            string?         Human-readable element name",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsRuleEval",
+          "name": "Class: RuleEvaluationResult",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsRENm",
+              "fill": "#f4f7fb",
+              "content": "RuleEvaluationResult",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsREDesc",
+              "fill": "#b8c2d0",
+              "content": "Outcome of evaluating a single rule against a set of bindings.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP1",
+              "fill": "#d8e0eb",
+              "content": "  RuleId                 string          Reference to Rule.Id",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP2",
+              "fill": "#d8e0eb",
+              "content": "  RuleName               string          Human-readable name",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP3",
+              "fill": "#d8e0eb",
+              "content": "  RuleDescription        string          Rule description",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP4",
+              "fill": "#d8e0eb",
+              "content": "  Passed                 bool            True if all bindings satisfied the rule",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP5",
+              "fill": "#d8e0eb",
+              "content": "  Message                string          Explanation of result",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsREP6",
+              "fill": "#d8e0eb",
+              "content": "  FailingBindings        List<BindingRow>  Bindings that violated the rule",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsClassResult",
+          "name": "Class: ClassificationResult",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsCRNm",
+              "fill": "#f4f7fb",
+              "content": "ClassificationResult",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsCRDesc",
+              "fill": "#b8c2d0",
+              "content": "Result of binding SWRL variables to design entity data.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCRP1",
+              "fill": "#d8e0eb",
+              "content": "  BoundVariables         List<BindingRow>  Successfully created bindings",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCRP2",
+              "fill": "#d8e0eb",
+              "content": "  MissingVariables       List<string>      Variables that could not be bound",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCRP3",
+              "fill": "#d8e0eb",
+              "content": "  Status                 string            Summary message",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsValPkg",
+          "name": "Class: ValidationPublishPackage",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsVPNm",
+              "fill": "#f4f7fb",
+              "content": "ValidationPublishPackage",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsVPDesc",
+              "fill": "#b8c2d0",
+              "content": "Complete validation results aggregated for publishing to external consumers.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVPP1",
+              "fill": "#d8e0eb",
+              "content": "  Project                string                          Project identifier",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVPP2",
+              "fill": "#d8e0eb",
+              "content": "  Rules                  List<ValidationPublishRule>      Rules that were evaluated",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVPP3",
+              "fill": "#d8e0eb",
+              "content": "  RuleResults            List<ValidationPublishRuleResult> Per-rule outcomes",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVPP4",
+              "fill": "#d8e0eb",
+              "content": "  Entities               List<ValidationPublishEntity>    Entities with validation status",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsValEntity",
+          "name": "Class: ValidationPublishEntity",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsVENm",
+              "fill": "#f4f7fb",
+              "content": "ValidationPublishEntity",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsVEDesc",
+              "fill": "#b8c2d0",
+              "content": "A design entity with its per-rule validation outcomes.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP1",
+              "fill": "#d8e0eb",
+              "content": "  DgEntityId             string            Unique design entity identifier",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP2",
+              "fill": "#d8e0eb",
+              "content": "  DisplayName            string?           Human-readable name",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP3",
+              "fill": "#d8e0eb",
+              "content": "  Geometry               object?           Geometric representation",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP4",
+              "fill": "#d8e0eb",
+              "content": "  RuleIds                List<string>      All rules applied to this entity",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP5",
+              "fill": "#d8e0eb",
+              "content": "  FailedRuleIds          List<string>      Rules this entity violated",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP6",
+              "fill": "#d8e0eb",
+              "content": "  PassedRuleIds          List<string>      Rules this entity satisfied",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsVEP7",
+              "fill": "#d8e0eb",
+              "content": "  OverallStatus          ValidationStatus  Computed: failed > passed > unknown",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "clsConnInfo",
+          "name": "Class: ConnectionInfo",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#58b7e2"
+          },
+          "layout": "vertical",
+          "gap": 6,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "clsCINm",
+              "fill": "#f4f7fb",
+              "content": "ConnectionInfo",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "clsCIDesc",
+              "fill": "#b8c2d0",
+              "content": "Neo4j graph database connection configuration.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP1",
+              "fill": "#d8e0eb",
+              "content": "  Uri                    string            Bolt URI (default: \"bolt://localhost:7687\")",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP2",
+              "fill": "#d8e0eb",
+              "content": "  User                   string            Database user (default: \"neo4j\")",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP3",
+              "fill": "#d8e0eb",
+              "content": "  Password               string            Database password",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP4",
+              "fill": "#d8e0eb",
+              "content": "  Database               string            Database name (default: \"neo4j\")",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP5",
+              "fill": "#d8e0eb",
+              "content": "  Project                string            DG project scope (default: \"default-project\")",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP6",
+              "fill": "#d8e0eb",
+              "content": "  IsConnected            bool              Connection status",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "clsCIP7",
+              "fill": "#d8e0eb",
+              "content": "  StatusMessage          string            Connection state message",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secSwrl",
+          "name": "Section: SWRL Expression Syntax",
+          "fill": "#5fd0ff",
+          "content": "5  SWRL Expression Syntax",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "swrlSyntax",
+          "name": "SWRL Syntax Reference",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#fff8d8"
+          },
+          "layout": "vertical",
+          "gap": 8,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "swrlNm",
+              "fill": "#f4f7fb",
+              "content": "SWRL Expression Format",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "swrlFmt",
+              "fill": "#fff8d8",
+              "content": "  Body -> Head",
+              "fontFamily": "Courier New",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "swrlD1",
+              "fill": "#b8c2d0",
+              "content": "Atoms within each side separated by '^' (caret). Variables prefixed with '?'. Arguments in parentheses, comma-separated.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlEx1L",
+              "fill": "#5fd0ff",
+              "content": "Example: Maximum height violation",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "swrlEx1",
+              "fill": "#fff8d8",
+              "content": "  Building(?b) ^ hasHeightM(?b,?h) ^ swrlb:greaterThan(?h,75) -> violatesMaxHeight(?b,true)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlEx1N",
+              "fill": "#7a8799",
+              "content": "  Reads: For any Building ?b with height ?h, if ?h > 75, then ?b violates max height.",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlParsL",
+              "fill": "#5fd0ff",
+              "content": "Atom Parsing Rules",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "swrlPars1",
+              "fill": "#d8e0eb",
+              "content": "  predicate starts with \"swrlb:\"     -> BuiltinAtom",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlPars2",
+              "fill": "#d8e0eb",
+              "content": "  1 argument                         -> ClassAtom",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlPars3",
+              "fill": "#d8e0eb",
+              "content": "  2+ arguments                       -> DataPropertyAtom (default)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlLitL",
+              "fill": "#5fd0ff",
+              "content": "Literal Type Inference",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "swrlLit1",
+              "fill": "#d8e0eb",
+              "content": "  \"true\" | \"false\"                   -> xsd:boolean",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlLit2",
+              "fill": "#d8e0eb",
+              "content": "  number with '.'                    -> xsd:decimal",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlLit3",
+              "fill": "#d8e0eb",
+              "content": "  number without '.'                 -> xsd:integer",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "swrlLit4",
+              "fill": "#d8e0eb",
+              "content": "  anything else                      -> xsd:string",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secPipe",
+          "name": "Section: Processing Pipeline",
+          "fill": "#5fd0ff",
+          "content": "6  Processing Pipeline",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "pipeline",
+          "name": "Pipeline Overview",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#283143"
+          },
+          "layout": "vertical",
+          "gap": 10,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "pipeNm",
+              "fill": "#f4f7fb",
+              "content": "Rule Lifecycle: NL Text -> Graph -> Validation -> Publish",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "pipe1",
+              "fill": "#5fd0ff",
+              "content": "  1. NL Input           User enters natural-language design rule",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe2",
+              "fill": "#5fd0ff",
+              "content": "  2. LLM Parse          NL -> SWRL expression + Metagraph nodes/edges",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe3",
+              "fill": "#5fd0ff",
+              "content": "  3. Write Graph        Metagraph written to Neo4j (Rule, Atom, Class, Var, Literal nodes + edges)",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe4",
+              "fill": "#5fd0ff",
+              "content": "  4. Load Rules         Neo4jRuleRepository.GetRulesAsync() -> List<Rule> with atoms & variables",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe5",
+              "fill": "#5fd0ff",
+              "content": "  5. Classify           VariableBinder binds SWRL variables to design entity data -> ClassificationResult",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe6",
+              "fill": "#5fd0ff",
+              "content": "  6. Evaluate           RuleEvaluator checks BuiltinAtom predicates -> RuleEvaluationResult",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe7",
+              "fill": "#5fd0ff",
+              "content": "  7. Package            ValidationPublishPackageBuilder aggregates -> ValidationPublishPackage",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "pipe8",
+              "fill": "#5fd0ff",
+              "content": "  8. Publish            Package sent to host application for visualization",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "secGraphs",
+          "name": "Section: Graph Partitions",
+          "fill": "#5fd0ff",
+          "content": "7  Graph Partitions",
+          "fontFamily": "Space Grotesk",
+          "fontSize": 22,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "graphParts",
+          "name": "Graph Partitions",
+          "width": "fill_container",
+          "fill": "#151926",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#283143"
+          },
+          "layout": "vertical",
+          "gap": 8,
+          "padding": [
+            20,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "gpMeta",
+              "fill": "#5f8fd3",
+              "content": "Metagraph",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 16,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "gpMetaD",
+              "fill": "#b8c2d0",
+              "content": "Contains: Rule, Atom, Var, Literal, Builtin nodes and all HAS_BODY, HAS_HEAD, ARG edges.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gpMetaN",
+              "fill": "#7a8799",
+              "content": "The rule-structure graph. Scoped by project property. This is the primary graph for rule authoring.",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gpOnto",
+              "fill": "#c75fd0",
+              "content": "OntoGraph",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 16,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "gpOntoD",
+              "fill": "#b8c2d0",
+              "content": "Contains: Class, DatatypeProperty, ObjectProperty nodes.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gpOntoN",
+              "fill": "#7a8799",
+              "content": "The domain ontology graph. Atoms in Metagraph link to OntoGraph via REFERS_TO edges.",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

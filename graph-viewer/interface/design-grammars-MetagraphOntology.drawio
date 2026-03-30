@@ -1,0 +1,260 @@
+<mxfile host="app.diagrams.net" modified="2026-03-18T00:00:00.000Z" agent="Claude" version="24.0.0" type="device">
+  <diagram id="metagraph-ontology" name="Metagraph Ontology">
+    <mxGraphModel dx="2200" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="2400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ======================== TITLE ======================== -->
+        <mxCell id="title" value="&lt;font style=&quot;font-size:24px;font-weight:bold;&quot;&gt;Metagraph Ontology — Tree Schema&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#F4F7FB;" vertex="1" parent="1">
+          <mxGeometry x="660" y="20" width="440" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== GRAPH PARTITIONS (top) ======================== -->
+        <mxCell id="partMeta" value="&lt;b&gt;Metagraph&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Rule structure graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#5f8fd3;fontColor=#5f8fd3;strokeWidth=2;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="540" y="70" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="partOnto" value="&lt;b&gt;OntoGraph&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Domain ontology graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#c75fd0;fontColor=#c75fd0;strokeWidth=2;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="70" width="180" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== SECTION: GRAPH NODE CLASSES ======================== -->
+
+        <!-- RULE node -->
+        <mxCell id="nRule" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Rule&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Rule_Id &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;title&lt;br&gt;name&lt;br&gt;description&lt;br&gt;kind : RuleKind&lt;br&gt;text&lt;br&gt;swrl&lt;br&gt;project&lt;br&gt;graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5f8fd3;strokeColor=#3a6db0;fontColor=#ffffff;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="720" y="180" width="160" height="190" as="geometry"/>
+        </mxCell>
+
+        <!-- ATOM node -->
+        <mxCell id="nAtom" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Atom&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Atom_Id &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;type : AtomType&lt;br&gt;iri&lt;br&gt;SWRL_label&lt;br&gt;project&lt;br&gt;graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3845f;strokeColor=#b06a3a;fontColor=#ffffff;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="720" y="460" width="160" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- CLASS node -->
+        <mxCell id="nClass" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Class&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;iri &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;label&lt;br&gt;project&lt;br&gt;graph = OntoGraph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c75fd0;strokeColor=#a040b0;fontColor=#ffffff;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="690" width="150" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- DATATYPE PROPERTY node -->
+        <mxCell id="nDtProp" value="&lt;b style=&quot;font-size:13px;&quot;&gt;DatatypeProperty&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;iri &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;SWRL_label&lt;br&gt;range : XsdDatatype&lt;br&gt;project&lt;br&gt;graph = OntoGraph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0c95f;strokeColor=#b0a840;fontColor=#20160f;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="690" width="160" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- OBJECT PROPERTY node -->
+        <mxCell id="nObjProp" value="&lt;b style=&quot;font-size:13px;&quot;&gt;ObjectProperty&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;iri &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;SWRL_label&lt;br&gt;project&lt;br&gt;graph = OntoGraph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5fd0a0;strokeColor=#40b080;fontColor=#0f2016;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="690" width="150" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- BUILTIN node -->
+        <mxCell id="nBuiltin" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Builtin&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;iri &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;label&lt;br&gt;project&lt;br&gt;graph = Metagraph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff6b6b;strokeColor=#cc4444;fontColor=#ffffff;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="690" width="150" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- VAR node -->
+        <mxCell id="nVar" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Var&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;name &lt;i&gt;(key)&lt;/i&gt; &quot;?x&quot;&lt;br&gt;project&lt;br&gt;graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5fd0a0;strokeColor=#40b080;fontColor=#0f2016;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="690" width="130" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- LITERAL node -->
+        <mxCell id="nLit" value="&lt;b style=&quot;font-size:14px;&quot;&gt;Literal&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;lex &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;datatype : XsdDatatype &lt;i&gt;(key)&lt;/i&gt;&lt;br&gt;project&lt;br&gt;graph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b8c2d0;strokeColor=#8a9bb0;fontColor=#0f1117;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="560" y="690" width="160" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== RELATIONSHIPS (edges) ======================== -->
+
+        <!-- Rule --HAS_BODY--> Atom -->
+        <mxCell id="eHasBody" value="&lt;b&gt;HAS_BODY&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;&quot;&gt;{order}&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9fb6c9;fontColor=#9fb6c9;strokeWidth=2;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nRule" target="nAtom">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Rule --HAS_HEAD--> Atom -->
+        <mxCell id="eHasHead" value="&lt;b&gt;HAS_HEAD&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;&quot;&gt;{order}&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9fb6c9;fontColor=#9fb6c9;strokeWidth=2;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.7;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nRule" target="nAtom">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Atom --REFERS_TO--> Class -->
+        <mxCell id="eRefClass" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c75fd0;strokeWidth=2;dashed=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nClass">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eRefDtProp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d0c95f;strokeWidth=2;dashed=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nDtProp">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eRefObjProp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5fd0a0;strokeWidth=2;dashed=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nObjProp">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eRefBuiltin" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#ff6b6b;strokeWidth=2;dashed=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nBuiltin">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- REFERS_TO label in the middle -->
+        <mxCell id="lblRefersTo" value="&lt;b&gt;REFERS_TO&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#9fb6c9;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="630" width="80" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Atom --ARG--> Var -->
+        <mxCell id="eArgVar" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5fd0a0;strokeWidth=2;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nVar">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Atom --ARG--> Literal -->
+        <mxCell id="eArgLit" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b8c2d0;strokeWidth=2;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="nAtom" target="nLit">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ARG label -->
+        <mxCell id="lblArg" value="&lt;b&gt;ARG&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;&quot;&gt;{pos}&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#9fb6c9;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="625" width="50" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== SECTION: ENUMERATIONS ======================== -->
+
+        <!-- Section label -->
+        <mxCell id="secEnums" value="&lt;font style=&quot;font-size:16px;font-weight:bold;color:#5fd0ff;&quot;&gt;Enumerations&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- AtomType enum -->
+        <mxCell id="enumAtomType" value="&lt;b&gt;AtomType&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;ClassAtom&lt;br&gt;DataPropertyAtom&lt;br&gt;ObjectPropertyAtom&lt;br&gt;BuiltinAtom&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#d3845f;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="150" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- AtomSide enum -->
+        <mxCell id="enumAtomSide" value="&lt;b&gt;AtomSide&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Body = 0&lt;br&gt;Head = 1&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#9fb6c9;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="210" y="220" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ArgKind enum -->
+        <mxCell id="enumArgKind" value="&lt;b&gt;ArgKind&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Variable = 0&lt;br&gt;Literal = 1&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#9fb6c9;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- RuleKind enum -->
+        <mxCell id="enumRuleKind" value="&lt;b&gt;RuleKind&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;violation&lt;br&gt;compliance&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#5f8fd3;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="180" y="350" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- XsdDatatype enum -->
+        <mxCell id="enumXsd" value="&lt;b&gt;XsdDatatype&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;xsd:decimal&lt;br&gt;xsd:integer&lt;br&gt;xsd:boolean&lt;br&gt;xsd:string&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#d0c95f;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="450" width="130" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- OwlType enum -->
+        <mxCell id="enumOwl" value="&lt;b&gt;OwlType&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;owl:Class&lt;br&gt;owl:DatatypeProperty&lt;br&gt;owl:ObjectProperty&lt;br&gt;owl:NamedIndividual&lt;br&gt;rdfs:Datatype&lt;br&gt;swrl:Builtin&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#c75fd0;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="190" y="450" width="150" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ValidationStatus enum -->
+        <mxCell id="enumValStatus" value="&lt;b&gt;ValidationStatus&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;color:#ff6b6b;&quot;&gt;failed&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#5fd0a0;&quot;&gt;passed&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#7a8799;&quot;&gt;unknown&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="140" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- Supported Builtins list -->
+        <mxCell id="builtinList" value="&lt;b&gt;Supported Builtins&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;swrlb:lessThan&lt;br&gt;swrlb:greaterThan&lt;br&gt;swrlb:lessThanOrEqual&lt;br&gt;swrlb:greaterThanOrEqual&lt;br&gt;swrlb:equal&lt;br&gt;swrlb:notEqual&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a2f3a;strokeColor=#ff6b6b;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="580" width="160" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== SECTION: RUNTIME CLASSES ======================== -->
+
+        <!-- Section label -->
+        <mxCell id="secRuntime" value="&lt;font style=&quot;font-size:16px;font-weight:bold;color:#5fd0ff;&quot;&gt;Runtime / Evaluation&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="860" width="180" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- BindingRow -->
+        <mxCell id="rtBindingRow" value="&lt;b&gt;BindingRow&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;ValuesByVar&lt;br&gt;ElementRefsByVar&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="260" y="900" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ElementRef -->
+        <mxCell id="rtElementRef" value="&lt;b&gt;ElementRef&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;DgEntityId&lt;br&gt;Geometry&lt;br&gt;DisplayName&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="430" y="900" width="130" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- RuleEvaluationResult -->
+        <mxCell id="rtRuleEval" value="&lt;b&gt;RuleEvaluationResult&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;RuleId&lt;br&gt;RuleName&lt;br&gt;Passed&lt;br&gt;Message&lt;br&gt;FailingBindings&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="900" width="170" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- ClassificationResult -->
+        <mxCell id="rtClassResult" value="&lt;b&gt;ClassificationResult&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;BoundVariables&lt;br&gt;MissingVariables&lt;br&gt;Status&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1050" width="160" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ValidationPublishPackage -->
+        <mxCell id="rtValPkg" value="&lt;b&gt;ValidationPublishPackage&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Project&lt;br&gt;Rules&lt;br&gt;RuleResults&lt;br&gt;Entities&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="230" y="1050" width="180" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ValidationPublishEntity -->
+        <mxCell id="rtValEntity" value="&lt;b&gt;ValidationPublishEntity&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;DgEntityId&lt;br&gt;DisplayName&lt;br&gt;FailedRuleIds&lt;br&gt;PassedRuleIds&lt;br&gt;OverallStatus&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="440" y="1050" width="170" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- ConnectionInfo -->
+        <mxCell id="rtConnInfo" value="&lt;b&gt;ConnectionInfo&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;&quot;&gt;Uri&lt;br&gt;User / Password&lt;br&gt;Database&lt;br&gt;Project&lt;br&gt;IsConnected&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1c2435;strokeColor=#58b7e2;fontColor=#d8e0eb;arcSize=10;verticalAlign=top;spacingTop=4;spacingLeft=6;spacingRight=6;" vertex="1" parent="1">
+          <mxGeometry x="590" y="900" width="140" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== RUNTIME CONNECTIONS ======================== -->
+
+        <!-- RuleEvalResult -> BindingRow -->
+        <mxCell id="eRE_BR" value="FailingBindings" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#58b7e2;fontColor=#58b7e2;strokeWidth=1;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="rtRuleEval" target="rtBindingRow">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- BindingRow -> ElementRef -->
+        <mxCell id="eBR_ER" value="ElementRefsByVar" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#58b7e2;fontColor=#58b7e2;strokeWidth=1;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="rtBindingRow" target="rtElementRef">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ClassificationResult -> BindingRow -->
+        <mxCell id="eCR_BR" value="BoundVariables" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#58b7e2;fontColor=#58b7e2;strokeWidth=1;fontSize=9;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="rtClassResult" target="rtBindingRow">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ValPkg -> ValEntity -->
+        <mxCell id="eVP_VE" value="Entities" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#58b7e2;fontColor=#58b7e2;strokeWidth=1;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="rtValPkg" target="rtValEntity">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== SWRL SYNTAX BOX ======================== -->
+        <mxCell id="swrlBox" value="&lt;b style=&quot;font-size:13px;color:#fff8d8;&quot;&gt;SWRL Expression&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:11px;font-family:Courier New;color:#fff8d8;&quot;&gt;Body -&amp;gt; Head&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#b8c2d0;&quot;&gt;Atoms separated by &lt;b&gt;^&lt;/b&gt;&lt;br&gt;Variables prefixed with &lt;b&gt;?&lt;/b&gt;&lt;br&gt;Args in parentheses, comma-separated&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;font-family:Courier New;color:#5fd0ff;&quot;&gt;Building(?b) ^ hasHeightM(?b,?h)&lt;br&gt;^ swrlb:greaterThan(?h,75)&lt;br&gt;-&amp;gt; violatesMaxHeight(?b,true)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#151926;strokeColor=#fff8d8;fontColor=#d8e0eb;arcSize=8;verticalAlign=top;spacingTop=6;spacingLeft=10;spacingRight=10;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="180" width="280" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== PIPELINE BOX ======================== -->
+        <mxCell id="pipeBox" value="&lt;b style=&quot;font-size:13px;color:#5fd0ff;&quot;&gt;Processing Pipeline&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;font-size:10px;color:#d8e0eb;&quot;&gt;1. NL Input&lt;br&gt;2. LLM Parse → SWRL + Metagraph&lt;br&gt;3. Write Graph → Neo4j&lt;br&gt;4. Load Rules → List&amp;lt;Rule&amp;gt;&lt;br&gt;5. Classify → ClassificationResult&lt;br&gt;6. Evaluate → RuleEvaluationResult&lt;br&gt;7. Package → ValidationPublishPackage&lt;br&gt;8. Publish → Host application&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#151926;strokeColor=#283143;fontColor=#d8e0eb;arcSize=8;verticalAlign=top;spacingTop=6;spacingLeft=10;spacingRight=10;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="180" width="250" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================== DASHED ENUM LINKS ======================== -->
+
+        <!-- AtomType -> Atom.type -->
+        <mxCell id="lnkAtomType" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#d3845f;strokeWidth=1;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="enumAtomType" target="nAtom">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- RuleKind -> Rule.kind -->
+        <mxCell id="lnkRuleKind" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5f8fd3;strokeWidth=1;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="enumRuleKind" target="nRule">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Metagraph partition -> Rule -->
+        <mxCell id="lnkPartRule" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5f8fd3;strokeWidth=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="partMeta" target="nRule">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- OntoGraph partition -> Class -->
+        <mxCell id="lnkPartClass" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#c75fd0;strokeWidth=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="partOnto" target="nClass">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="150"/>
+              <mxPoint x="1075" y="150"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
