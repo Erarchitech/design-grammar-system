@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -53,42 +53,91 @@
               "children": [
                 {
                   "type": "frame",
-                  "id": "mvBck",
-                  "name": "Back Button",
-                  "height": 28,
-                  "fill": "transparent",
-                  "cornerRadius": 6,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#5fd0ff"
-                  },
-                  "gap": 6,
-                  "padding": [
-                    4,
-                    12
-                  ],
+                  "id": "K4o5f",
+                  "name": "Top Row",
+                  "width": "fill_container",
+                  "gap": 8,
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "icon_font",
-                      "id": "mvBcI",
-                      "name": "Back Arrow Icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "arrow-left",
-                      "iconFontFamily": "lucide",
-                      "fill": "#5fd0ff"
+                      "type": "frame",
+                      "id": "mvBck",
+                      "name": "Back Button",
+                      "height": 28,
+                      "fill": "transparent",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#5fd0ff"
+                      },
+                      "gap": 6,
+                      "padding": [
+                        4,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "mvBcI",
+                          "name": "Back Arrow Icon",
+                          "width": 16,
+                          "height": 16,
+                          "iconFontName": "arrow-left",
+                          "iconFontFamily": "lucide",
+                          "fill": "#5fd0ff"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvBcT",
+                          "name": "Back Label",
+                          "fill": "#5fd0ff",
+                          "content": "Project",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
                     },
                     {
-                      "type": "text",
-                      "id": "mvBcT",
-                      "name": "Back Label",
-                      "fill": "#5fd0ff",
-                      "content": "Project",
-                      "fontFamily": "Segoe UI",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "JL8kQ",
+                      "name": "Speckle Connector Button",
+                      "height": 28,
+                      "fill": "#00000000",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#5fd0ff"
+                      },
+                      "gap": 6,
+                      "padding": [
+                        4,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TbOX8",
+                          "fill": "#5fd0ff",
+                          "content": "Speckle connector",
+                          "fontFamily": "Segoe UI",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "ios6D",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "chevron-right",
+                          "iconFontFamily": "lucide",
+                          "fill": "#5fd0ff"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -2029,6 +2078,765 @@
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "3MApg",
+          "layoutPosition": "absolute",
+          "x": 10,
+          "y": 40,
+          "name": "Speckle Connector Popup",
+          "enabled": false,
+          "clip": true,
+          "width": 340,
+          "fill": "#141a26",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#2b3550"
+          },
+          "layout": "vertical",
+          "gap": 14,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "o45xD",
+              "name": "Popup Header",
+              "width": "fill_container",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "RagqI",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "plug",
+                  "iconFontFamily": "lucide",
+                  "fill": "#5fd0ff"
+                },
+                {
+                  "type": "text",
+                  "id": "VUiPx",
+                  "fill": "#eef3ff",
+                  "content": "Speckle connector",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 16,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mA2Vq",
+              "name": "Divider",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#2b3550"
+            },
+            {
+              "type": "frame",
+              "id": "nm1Rv",
+              "name": "Status Row",
+              "width": "fill_container",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "P1xhj",
+                  "width": 12,
+                  "height": 12,
+                  "iconFontName": "info",
+                  "iconFontFamily": "lucide",
+                  "fill": "#5a6a88"
+                },
+                {
+                  "type": "text",
+                  "id": "dRzSZ",
+                  "fill": "#5a6a88",
+                  "content": "Load Speckle project mapping.",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xsVOo",
+              "name": "Field: Project Id",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "DWKeP",
+                  "fill": "#98a4bd",
+                  "content": "Speckle Project Id or URL",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "SRv9P",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wghwe",
+                      "fill": "#3d4d66",
+                      "content": "e.g. project-id or full URL",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jyNxS",
+              "name": "Field: Base Model Id",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "8ZvSk",
+                  "fill": "#98a4bd",
+                  "content": "Base Model Id or URL",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "hmNmx",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Kzj1r",
+                      "fill": "#3d4d66",
+                      "content": "e.g. model-id or full URL",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "6Lagl",
+              "name": "Field: Base Model Name",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "zZtIm",
+                  "fill": "#98a4bd",
+                  "content": "Base Model Name",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "eN2Mk",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AA9On",
+                      "fill": "#3d4d66",
+                      "content": "Optional display name",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "DRuzQ",
+              "name": "Field: Validation Model Id",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ywbLQ",
+                  "fill": "#98a4bd",
+                  "content": "Validation Model Id or URL",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "m39Wn",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "oC1cM",
+                      "fill": "#3d4d66",
+                      "content": "Optional (auto-created if blank)",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U5WT0",
+              "name": "Divider 2",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#2b3550"
+            },
+            {
+              "type": "frame",
+              "id": "cVa6C",
+              "name": "Action Buttons",
+              "width": "fill_container",
+              "gap": 8,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xIAaD",
+                  "name": "Reload Button",
+                  "fill": "#98a4bd1a",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#98a4bd40"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "cwCY1",
+                      "width": 12,
+                      "height": 12,
+                      "iconFontName": "refresh-cw",
+                      "iconFontFamily": "lucide",
+                      "fill": "#98a4bd"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hMQJO",
+                      "fill": "#98a4bd",
+                      "content": "Reload",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WAyq9",
+                  "name": "Save Button",
+                  "fill": "#5fd0ff1a",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#5fd0ff40"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "PaK1p",
+                      "width": 12,
+                      "height": 12,
+                      "iconFontName": "save",
+                      "iconFontFamily": "lucide",
+                      "fill": "#5fd0ff"
+                    },
+                    {
+                      "type": "text",
+                      "id": "e8RWl",
+                      "fill": "#5fd0ff",
+                      "content": "Save Speckle Link",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TjxhR",
+              "name": "Popup Footer",
+              "width": "fill_container",
+              "justifyContent": "end",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MZFIk",
+                  "name": "Speckle Settings Gear",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#98a4bd14",
+                  "cornerRadius": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "Ply8F",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "settings",
+                      "iconFontFamily": "lucide",
+                      "fill": "#5a6a88"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "6o64X",
+          "layoutPosition": "absolute",
+          "x": 296,
+          "y": 500,
+          "name": "Speckle Settings Popup",
+          "enabled": false,
+          "clip": true,
+          "width": 320,
+          "fill": "#141a26",
+          "cornerRadius": 12,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#2b3550"
+          },
+          "layout": "vertical",
+          "gap": 14,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "ss3yj",
+              "name": "Settings Header",
+              "width": "fill_container",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "YUay7",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "settings",
+                  "iconFontFamily": "lucide",
+                  "fill": "#5fd0ff"
+                },
+                {
+                  "type": "text",
+                  "id": "4dMEV",
+                  "fill": "#eef3ff",
+                  "content": "Speckle settings",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 16,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jJO0r",
+              "name": "Divider",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#2b3550"
+            },
+            {
+              "type": "frame",
+              "id": "d8kJF",
+              "name": "Field: Base URL",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ARma5",
+                  "fill": "#98a4bd",
+                  "content": "Speckle Base URL",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "22bul",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XpRjU",
+                      "fill": "#eef3ff",
+                      "content": "http://localhost:8090",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yMBtT",
+              "name": "Field: Write Token",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "E6i84",
+                  "fill": "#98a4bd",
+                  "content": "Write Token",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "awdAC",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vbHJo",
+                      "fill": "#5a6a88",
+                      "content": "••••••••••••",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ChPdP",
+              "name": "Token Hint",
+              "width": "fill_container",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "7UVZT",
+                  "width": 11,
+                  "height": 11,
+                  "iconFontName": "circle-check",
+                  "iconFontFamily": "lucide",
+                  "fill": "#2fb16f"
+                },
+                {
+                  "type": "text",
+                  "id": "yu3rF",
+                  "fill": "#5a6a88",
+                  "content": "Stored write token: 9a2f...c7d1",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wAUhT",
+              "name": "Field: Read Token",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "D40WD",
+                  "fill": "#98a4bd",
+                  "content": "Read Token (optional)",
+                  "fontFamily": "Segoe UI",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "hhruU",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#1a2232",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2b3550"
+                  },
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kh7Ha",
+                      "fill": "#3d4d66",
+                      "content": "Leave blank to use write token",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "GNLbm",
+              "name": "Divider 3",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#2b3550"
+            },
+            {
+              "type": "frame",
+              "id": "GvuJC",
+              "name": "Settings Action Buttons",
+              "width": "fill_container",
+              "gap": 8,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zulFG",
+                  "name": "Reload Button",
+                  "fill": "#98a4bd1a",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#98a4bd40"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "Tipi9",
+                      "width": 12,
+                      "height": 12,
+                      "iconFontName": "refresh-cw",
+                      "iconFontFamily": "lucide",
+                      "fill": "#98a4bd"
+                    },
+                    {
+                      "type": "text",
+                      "id": "7An17",
+                      "fill": "#98a4bd",
+                      "content": "Reload",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OkAi0",
+                  "name": "Save Button",
+                  "fill": "#5fd0ff1a",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#5fd0ff40"
+                  },
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "JRS2z",
+                      "width": 12,
+                      "height": 12,
+                      "iconFontName": "save",
+                      "iconFontFamily": "lucide",
+                      "fill": "#5fd0ff"
+                    },
+                    {
+                      "type": "text",
+                      "id": "0QbZA",
+                      "fill": "#5fd0ff",
+                      "content": "Save Settings",
+                      "fontFamily": "Segoe UI",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "NjBZJ",
+          "layoutPosition": "absolute",
+          "x": 322,
+          "y": 480,
+          "name": "Gear Arrow Annotation",
+          "enabled": false,
+          "gap": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "A8NiD",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "corner-right-down",
+              "iconFontFamily": "lucide",
+              "fill": "#5a6a88"
             }
           ]
         }
