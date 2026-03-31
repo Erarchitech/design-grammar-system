@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"CommonProject\\\\|common-project\\\\|CommonProjects\" /c/Users/Admin/source/repos/design-grammar-system --include=*.jsx --include=*.js --include=*.tsx --include=*.ts --include=*.html)",
+      "Bash(grep -r \"ModelViewer\\\\|model-viewer\\\\|ModelViewer\" /c/Users/Admin/source/repos/design-grammar-system --include=*.jsx --include=*.js --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"export.*default\\\\|function.*Page\\\\|const.*Page\" /c/Users/Admin/source/repos/design-grammar-system/graph-viewer --include=*.jsx --include=*.js)",
+      "Bash(npx --version)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(docker compose:*)",
+      "Bash(xxd entrypoint.sh)"
+    ]
+  }
+}

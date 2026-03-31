@@ -9,12 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #0f1117;
-        --fg: #f4f7fb;
-        --panel: #171a22;
+        --bg: #0c1018;
+        --fg: #eef3ff;
+        --panel: #141a26;
+        --panel-2: #1a2232;
         --accent: #5fd0ff;
-        --muted: #9aa4b2;
-        --panel-border: #2a2f3a;
+        --muted: #98a4bd;
+        --success: #2fb16f;
+        --danger: #ff4d4f;
+        --panel-border: #2b3550;
         --control-bg: #0b0f19;
         --control-border: #273041;
       }
@@ -454,9 +457,9 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        background: #FFFFFF;
-        font-family: 'Inter', Arial, sans-serif;
-        color: #1e1e1e;
+        background: var(--bg);
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+        color: var(--fg);
       }
       .home-header {
         display: flex;
@@ -464,14 +467,15 @@
         gap: 16px;
         height: 64px;
         padding: 0 48px;
-        border-bottom: 1px solid #E8E8E8;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel);
         flex-shrink: 0;
       }
       .home-logo {
         font-family: 'Space Grotesk', sans-serif;
         font-size: 18px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
         white-space: nowrap;
       }
       .search-field {
@@ -481,32 +485,33 @@
         gap: 10px;
         height: 40px;
         padding: 0 14px;
-        background: #FFFFFF;
-        border: 1px solid #E8E8E8;
+        background: var(--panel-2);
+        border: 1px solid var(--panel-border);
+        border-radius: 8px;
       }
       .search-field input {
         flex: 1;
         border: none;
         outline: none;
-        font-family: 'Inter', Arial, sans-serif;
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
         font-size: 14px;
-        color: #0D0D0D;
+        color: var(--fg);
         background: transparent;
         padding: 0;
         margin: 0;
         width: auto;
       }
-      .search-field input::placeholder { color: #B0B0B0; }
+      .search-field input::placeholder { color: #5a6a88; }
       .new-project-btn {
         display: flex;
         align-items: center;
         gap: 8px;
         height: 40px;
         padding: 0 20px;
-        background: #E42313;
-        color: #FFFFFF;
-        border: none;
-        border-radius: 0;
+        background: rgba(95, 208, 255, 0.10);
+        color: var(--accent);
+        border: 1px solid rgba(95, 208, 255, 0.25);
+        border-radius: 6px;
         font-family: 'Space Grotesk', sans-serif;
         font-size: 13px;
         font-weight: 500;
@@ -515,14 +520,14 @@
         width: auto;
         margin: 0;
       }
-      .new-project-btn:hover { background: #c91f11; }
+      .new-project-btn:hover { background: rgba(95, 208, 255, 0.18); }
       .profile-avatar {
         width: 36px;
         height: 36px;
         min-width: 36px;
-        background: #0D0D0D;
+        background: var(--panel-2);
         border-radius: 18px;
-        border: none;
+        border: 1px solid var(--panel-border);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -539,26 +544,26 @@
         top: 44px;
         right: 0;
         width: 220px;
-        background: #FFFFFF;
-        border: 1px solid #E8E8E8;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
         border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
         z-index: 100;
         overflow: hidden;
       }
       .profile-dropdown-info {
         padding: 14px 16px;
-        border-bottom: 1px solid #E8E8E8;
+        border-bottom: 1px solid var(--panel-border);
       }
       .profile-dropdown-name {
         font-family: 'Space Grotesk', sans-serif;
         font-size: 14px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
       }
       .profile-dropdown-email {
         font-size: 12px;
-        color: #7A7A7A;
+        color: var(--muted);
         margin-top: 2px;
         word-break: break-all;
       }
@@ -573,16 +578,16 @@
         text-align: left;
         cursor: pointer;
         font-size: 13px;
-        color: #0D0D0D;
+        color: var(--fg);
       }
       .profile-dropdown button:hover {
-        background: #F5F5F5;
+        background: rgba(95, 208, 255, 0.08);
       }
       .profile-initials {
         font-family: 'Space Grotesk', sans-serif;
         font-size: 14px;
         font-weight: 600;
-        color: #FFFFFF;
+        color: var(--fg);
         line-height: 1;
       }
       .home-content {
@@ -594,23 +599,24 @@
         font-family: 'Space Grotesk', sans-serif;
         font-size: 24px;
         font-weight: 500;
-        color: #0D0D0D;
+        color: var(--fg);
         letter-spacing: -0.5px;
         margin: 0 0 32px 0;
       }
       .home-notice {
         margin: 0 0 24px 0;
         padding: 16px 18px;
-        border: 1px solid #E8E8E8;
-        background: #FAFAFA;
-        color: #3F3F46;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        color: var(--muted);
         font-size: 14px;
         line-height: 1.5;
+        border-radius: 12px;
       }
       .home-notice strong {
         display: block;
         margin-bottom: 4px;
-        color: #0D0D0D;
+        color: var(--accent);
         font-family: 'Space Grotesk', sans-serif;
         font-size: 16px;
         font-weight: 600;
@@ -623,8 +629,9 @@
       }
       .home-card {
         padding: 20px;
-        border: 1px solid #E8E8E8;
-        background: #FFFFFF;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        border-radius: 12px;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -633,43 +640,43 @@
         font-family: 'Space Grotesk', sans-serif;
         font-size: 18px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
         margin: 0;
       }
       .home-card-hint {
         font-size: 13px;
-        color: #52525B;
+        color: var(--muted);
         line-height: 1.5;
       }
       .home-form-label {
         font-size: 12px;
         font-weight: 600;
-        color: #3F3F46;
+        color: var(--muted);
         margin: 2px 0 0 0;
       }
       .home-form-input {
         width: 100%;
         padding: 12px 14px;
-        border: 1px solid #D4D4D8;
-        background: #FFFFFF;
-        color: #0D0D0D;
-        border-radius: 0;
-        font-family: 'Inter', Arial, sans-serif;
+        border: 1px solid var(--panel-border);
+        background: #0f1625;
+        color: var(--fg);
+        border-radius: 6px;
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
         font-size: 14px;
       }
-      .home-form-input::placeholder { color: #A1A1AA; }
+      .home-form-input::placeholder { color: #5a6a88; }
       .home-form-input:focus {
-        outline: none;
-        border-color: #0D0D0D;
+        outline: 1px solid rgba(95, 208, 255, 0.45);
+        border-color: rgba(95, 208, 255, 0.5);
       }
       .home-token-meta {
         font-size: 12px;
-        color: #52525B;
+        color: var(--muted);
         line-height: 1.4;
       }
       .home-card-status {
         font-size: 12px;
-        color: #52525B;
+        color: var(--muted);
         line-height: 1.5;
       }
       .home-card-actions {
@@ -683,17 +690,18 @@
         margin: 0;
         padding: 0 20px;
         height: 40px;
-        border: 1px solid #0D0D0D;
-        border-radius: 0;
-        background: #0D0D0D;
-        color: #FFFFFF;
+        border: 1px solid rgba(95, 208, 255, 0.35);
+        border-radius: 6px;
+        background: rgba(95, 208, 255, 0.1);
+        color: var(--accent);
         font-family: 'Space Grotesk', sans-serif;
         font-size: 13px;
         font-weight: 500;
       }
       .home-card-button.secondary {
-        background: #FFFFFF;
-        color: #0D0D0D;
+        background: rgba(152, 164, 189, 0.12);
+        color: var(--muted);
+        border-color: rgba(152, 164, 189, 0.35);
       }
       .project-grid {
         display: grid;
@@ -701,15 +709,17 @@
         gap: 24px;
       }
       .project-tile {
-        background: #FFFFFF;
-        border: 1px solid #E8E8E8;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
         cursor: pointer;
         overflow: hidden;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
-      .project-tile:hover { border-color: #CCCCCC; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+      .project-tile:hover { border-color: rgba(95, 208, 255, 0.3); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
       .tile-thumbnail {
         height: 140px;
-        background: #FAFAFA;
+        background: var(--panel-2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -724,16 +734,16 @@
         font-family: 'Space Grotesk', sans-serif;
         font-size: 16px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
       }
       .tile-desc {
         font-size: 13px;
-        color: #7A7A7A;
+        color: var(--muted);
       }
       .empty-state {
         text-align: center;
         padding: 80px 0;
-        color: #7A7A7A;
+        color: var(--muted);
         font-size: 16px;
       }
       /* ─── Project Page ─── */
@@ -741,9 +751,9 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        background: #FFFFFF;
-        font-family: 'Inter', Arial, sans-serif;
-        color: #1e1e1e;
+        background: var(--bg);
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+        color: var(--fg);
       }
       .project-page-header {
         display: flex;
@@ -751,7 +761,8 @@
         gap: 16px;
         height: 64px;
         padding: 0 48px;
-        border-bottom: 1px solid #E8E8E8;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel);
         flex-shrink: 0;
       }
       .project-page-back {
@@ -761,18 +772,19 @@
         height: 40px;
         padding: 0 16px;
         background: transparent;
-        border: 1px solid #E8E8E8;
+        border: 1px solid var(--accent);
         cursor: pointer;
         font-family: 'Space Grotesk', sans-serif;
         font-size: 13px;
         font-weight: 500;
-        color: #0D0D0D;
+        color: var(--accent);
         white-space: nowrap;
         width: auto;
         margin: 0;
-        border-radius: 0;
+        border-radius: 6px;
+        transition: background 0.15s;
       }
-      .project-page-back:hover { border-color: #CCCCCC; }
+      .project-page-back:hover { background: rgba(95, 208, 255, 0.08); }
       .project-page-content {
         flex: 1;
         padding: 48px 48px;
@@ -785,7 +797,7 @@
         font-family: 'Space Grotesk', sans-serif;
         font-size: 32px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
         letter-spacing: -0.5px;
         margin: 0;
       }
@@ -794,13 +806,13 @@
         align-items: center;
         gap: 24px;
         margin-top: 8px;
-        color: #7A7A7A;
+        color: var(--muted);
         font-size: 14px;
       }
       .project-page-meta-dot {
         width: 4px;
         height: 4px;
-        background: #D0D0D0;
+        background: var(--panel-border);
         border-radius: 2px;
       }
       .project-page-grid {
@@ -809,19 +821,20 @@
         gap: 24px;
       }
       .project-action-tile {
-        background: #FFFFFF;
-        border: 1px solid #E8E8E8;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
         cursor: pointer;
         overflow: hidden;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
       .project-action-tile:hover {
-        border-color: #CCCCCC;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border-color: rgba(95, 208, 255, 0.3);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
       }
       .project-action-thumb {
         height: 160px;
-        background: #FAFAFA;
+        background: var(--panel-2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -836,11 +849,11 @@
         font-family: 'Space Grotesk', sans-serif;
         font-size: 18px;
         font-weight: 600;
-        color: #0D0D0D;
+        color: var(--fg);
       }
       .project-action-desc {
         font-size: 13px;
-        color: #7A7A7A;
+        color: var(--muted);
         line-height: 1.4;
       }
       /* ─── Graph Viewer Nav ─── */
@@ -1111,7 +1124,7 @@
           e("div", { className: "home-header" },
             e("span", { className: "home-logo" }, "Design Grammars"),
             e("div", { className: "search-field" },
-              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
                 e("circle", { cx: 11, cy: 11, r: 8 }),
                 e("path", { d: "M21 21l-4.35-4.35" })
               ),
@@ -1123,7 +1136,7 @@
               })
             ),
             e("button", { className: "new-project-btn", onClick: createProject },
-              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "#FFFFFF", strokeWidth: 2, strokeLinecap: "round" },
+              e("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" },
                 e("path", { d: "M12 5v14M5 12h14" })
               ),
               "New Project"
@@ -1154,7 +1167,7 @@
                   filtered.map(function(p) {
                     return e("div", { className: "project-tile", key: p.name, onClick: function() { onSelectProject(p.name); } },
                       e("div", { className: "tile-thumbnail" },
-                        e("svg", { width: 36, height: 36, viewBox: "0 0 24 24", fill: "none", stroke: "#D0D0D0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                        e("svg", { width: 36, height: 36, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                           e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
                           e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
                           e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
@@ -1240,7 +1253,7 @@
             e("div", { className: "project-page-grid" },
               e("div", { className: "project-action-tile", onClick: onOpenGraphViewer },
                 e("div", { className: "project-action-thumb" },
-                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                     e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
                     e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
                     e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
@@ -1254,7 +1267,7 @@
               ),
               e("div", { className: "project-action-tile", onClick: onOpenModelViewer },
                 e("div", { className: "project-action-thumb" },
-                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#B0B0B0", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                     e("path", { d: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" }),
                     e("polyline", { points: "3.27 6.96 12 12.01 20.73 6.96" }),
                     e("line", { x1: 12, y1: 22.08, x2: 12, y2: 12 })
