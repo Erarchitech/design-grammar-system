@@ -446,6 +446,7 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
                 "validationVersionId": row.get("validationVersionId"),
                 "modelViewerUrl": row.get("modelViewerUrl"),
                 "createdAt": row.get("createdAt"),
+                "ruleIds": [rule.get("ruleId", "") for rule in rules if rule.get("ruleId")],
                 "ruleCount": len(rules),
                 "failedRuleCount": sum(1 for rule in rules if not rule.get("passed")),
                 "entityCount": int(row.get("entityCount") or 0),
