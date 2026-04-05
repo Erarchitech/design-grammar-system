@@ -1062,6 +1062,7 @@
         const [projects, setProjects] = React.useState([]);
         const [showProfileMenu, setShowProfileMenu] = React.useState(false);
         const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
+        const [projectScreenshots, setProjectScreenshots] = React.useState({});
         const profileRef = React.useRef(null);
 
         React.useEffect(function() {
@@ -1071,6 +1072,20 @@
           setUserProfile({ name: userData?.name || "", surname: userData?.surname || "" });
         }, [user]);
 
+
+        React.useEffect(function() {
+          var shots = {};
+          projects.forEach(function(proj) {
+            try {
+              var data = JSON.parse(localStorage.getItem("dg_run_screenshots_" + proj.name) || "{}");
+              var keys = Object.keys(data);
+              if (keys.length > 0) { shots[proj.name] = data[keys[0]]; return; }
+              var gvShot = localStorage.getItem("dg_graph_screenshot_" + proj.name);
+              if (gvShot) { shots[proj.name] = gvShot; }
+            } catch(e) { /* ignore */ }
+          });
+          setProjectScreenshots(shots);
+        }, [projects]);
 
         React.useEffect(function() {
           var handleClick = function(ev) {
@@ -1166,13 +1181,13 @@
               : e("div", { className: "project-grid" },
                   filtered.map(function(p) {
                     return e("div", { className: "project-tile", key: p.name, onClick: function() { onSelectProject(p.name); } },
-                      e("div", { className: "tile-thumbnail" },
-                        e("svg", { width: 36, height: 36, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                      e("div", { className: "tile-thumbnail", style: projectScreenshots[p.name] ? { backgroundImage: "url(" + projectScreenshots[p.name] + ")", backgroundSize: "cover", backgroundPosition: "center" } : null },
+                        !projectScreenshots[p.name] ? e("svg", { width: 36, height: 36, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                           e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
                           e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
                           e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
                           e("path", { d: "M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M12 13v3" })
-                        )
+                        ) : null
                       ),
                       e("div", { className: "tile-content" },
                         e("div", { className: "tile-name" }, p.name),
@@ -1194,6 +1209,8 @@
 
         const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
         const [projectData, setProjectData] = React.useState(null);
+        const [mvScreenshot, setMvScreenshot] = React.useState(null);
+        const [gvScreenshot, setGvScreenshot] = React.useState(null);
 
         React.useEffect(function() {
           const users = JSON.parse(localStorage.getItem("dg_users") || "{}");
@@ -1224,6 +1241,20 @@
           return "Last edited over a year ago";
         };
 
+        React.useEffect(function() {
+          try {
+            var screenshots = JSON.parse(localStorage.getItem("dg_run_screenshots_" + project) || "{}");
+            var keys = Object.keys(screenshots);
+            if (keys.length > 0) {
+              setMvScreenshot(screenshots[keys[0]]);
+            }
+          } catch(e) { /* ignore */ }
+          try {
+            var gvShot = localStorage.getItem("dg_graph_screenshot_" + project);
+            if (gvShot) { setGvScreenshot(gvShot); }
+          } catch(e) { /* ignore */ }
+        }, [project]);
+
         var initials = ((userProfile.name || "").charAt(0) + (userProfile.surname || "").charAt(0)).toUpperCase() || "?";
 
         return e("div", { className: "project-page" },
@@ -1252,13 +1283,13 @@
             ),
             e("div", { className: "project-page-grid" },
               e("div", { className: "project-action-tile", onClick: onOpenGraphViewer },
-                e("div", { className: "project-action-thumb" },
-                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                e("div", { className: "project-action-thumb", style: gvScreenshot ? { backgroundImage: "url(" + gvScreenshot + ")", backgroundSize: "cover", backgroundPosition: "center" } : null },
+                  !gvScreenshot ? e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                     e("rect", { x: 2, y: 2, width: 6, height: 6, rx: 1 }),
                     e("rect", { x: 16, y: 2, width: 6, height: 6, rx: 1 }),
                     e("rect", { x: 9, y: 16, width: 6, height: 6, rx: 1 }),
                     e("path", { d: "M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M12 13v3" })
-                  )
+                  ) : null
                 ),
                 e("div", { className: "project-action-body" },
                   e("div", { className: "project-action-name" }, "Grammar Viewer"),
@@ -1266,12 +1297,12 @@
                 )
               ),
               e("div", { className: "project-action-tile", onClick: onOpenModelViewer },
-                e("div", { className: "project-action-thumb" },
-                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                e("div", { className: "project-action-thumb", style: mvScreenshot ? { backgroundImage: "url(" + mvScreenshot + ")", backgroundSize: "cover", backgroundPosition: "center" } : null },
+                  !mvScreenshot ? e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
                     e("path", { d: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" }),
                     e("polyline", { points: "3.27 6.96 12 12.01 20.73 6.96" }),
                     e("line", { x1: 12, y1: 22.08, x2: 12, y2: 12 })
-                  )
+                  ) : null
                 ),
                 e("div", { className: "project-action-body" },
                   e("div", { className: "project-action-name" }, "Model Viewer"),
@@ -2285,7 +2316,33 @@
         return e("div", { className: "graph-viewer-page" },
           e("div", { id: "left" },
             e("div", { className: "gv-nav" },
-              e("button", { className: "gv-back-btn", onClick: onBack }, "\u2190 Project"),
+              e("button", { className: "gv-back-btn", onClick: function() {
+                try {
+                  var canvas = document.querySelector("#viz canvas");
+                  if (canvas && project) {
+                    var dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                    var img = new Image();
+                    img.onload = function() {
+                      var c = document.createElement("canvas");
+                      var tw = 320, th = 160;
+                      c.width = tw; c.height = th;
+                      var ctx = c.getContext("2d");
+                      var sr = img.width / img.height;
+                      var tr = tw / th;
+                      var sw, sh, sx, sy;
+                      if (sr > tr) { sh = img.height; sw = sh * tr; sx = (img.width - sw) / 2; sy = 0; }
+                      else { sw = img.width; sh = sw / tr; sx = 0; sy = (img.height - sh) / 2; }
+                      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tw, th);
+                      try { localStorage.setItem("dg_graph_screenshot_" + project, c.toDataURL("image/jpeg", 0.7)); } catch(e) {}
+                      onBack();
+                    };
+                    img.onerror = function() { onBack(); };
+                    img.src = dataUrl;
+                    return;
+                  }
+                } catch(e) {}
+                onBack();
+              } }, "\u2190 Project"),
               e("span", { className: "gv-project-name" }, project || "")
             ),
             e("h3", null, "Grammar Viewer"),

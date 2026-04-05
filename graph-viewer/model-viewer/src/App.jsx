@@ -222,6 +222,29 @@ export default function App() {
   const [speckleSettingsStatus, setSpeckleSettingsStatus] = React.useState("");
   const [loadingSpeckleSettings, setLoadingSpeckleSettings] = React.useState(false);
 
+  // Screenshot thumbnails per run — persisted in localStorage
+  const screenshotStorageKey = `dg_run_screenshots_${project}`;
+  const [runScreenshots, setRunScreenshots] = React.useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(screenshotStorageKey) || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  // Per-run graphics settings — persisted in localStorage
+  const gfxStorageKey = `dg_run_gfx_${project}`;
+  const [runGfxMap, setRunGfxMap] = React.useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(gfxStorageKey) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const runGfxMapRef = React.useRef(runGfxMap);
+  runGfxMapRef.current = runGfxMap;
+
+
   const failColorRef = React.useRef(null);
   const passColorRef = React.useRef(null);
   const baseColorRef = React.useRef(null);
@@ -234,6 +257,94 @@ export default function App() {
   manifestRef.current = manifest;
   const manifestRunId = manifest?.runId || "";
   const activeRunId = runId || manifestRunId;
+  const activeRunIdRef = React.useRef(activeRunId);
+  activeRunIdRef.current = activeRunId;
+  const runScreenshotsRef = React.useRef(runScreenshots);
+  runScreenshotsRef.current = runScreenshots;
+
+  // Persist screenshots to localStorage whenever they change
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(screenshotStorageKey, JSON.stringify(runScreenshots));
+    } catch {
+      // localStorage quota exceeded — silently skip
+    }
+  }, [runScreenshots, screenshotStorageKey]);
+
+  // Persist per-run graphics settings to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(gfxStorageKey, JSON.stringify(runGfxMap));
+    } catch {
+      // localStorage quota exceeded — silently skip
+    }
+  }, [runGfxMap, gfxStorageKey]);
+
+  const defaultGfx = {
+    showFailed: true, showPassed: true, showBase: true,
+    failColor: "#ff4d4f", passColor: "#2fb16f", baseColor: "#5a6a88",
+    failOpacity: 80, passOpacity: 60, baseOpacity: 30
+  };
+
+  // Save current graphics state for the active run
+  const saveGfxState = React.useCallback((targetRunId) => {
+    const rid = targetRunId || activeRunIdRef.current;
+    if (!rid) return;
+    setRunGfxMap((prev) => ({
+      ...prev,
+      [rid]: { showFailed, showPassed, showBase, failColor, passColor, baseColor, failOpacity, passOpacity, baseOpacity }
+    }));
+  }, [showFailed, showPassed, showBase, failColor, passColor, baseColor, failOpacity, passOpacity, baseOpacity]);
+
+  // Restore graphics state for a given run (or apply defaults)
+  const restoreGfxState = React.useCallback((targetRunId) => {
+    const saved = runGfxMapRef.current[targetRunId] || defaultGfx;
+    setShowFailed(saved.showFailed);
+    setShowPassed(saved.showPassed);
+    setShowBase(saved.showBase);
+    setFailColor(saved.failColor);
+    setPassColor(saved.passColor);
+    setBaseColor(saved.baseColor);
+    setFailOpacity(saved.failOpacity);
+    setPassOpacity(saved.passOpacity);
+    setBaseOpacity(saved.baseOpacity);
+  }, []);
+
+
+  // Capture a screenshot of the current 3D viewport and store it for the active run
+  const captureScreenshot = React.useCallback(async () => {
+    const viewer = viewerRef.current;
+    const currentRunId = activeRunIdRef.current;
+    if (!viewer || !currentRunId) return;
+    try {
+      const dataUrl = await viewer.screenshot();
+      // Downscale to a small thumbnail to save localStorage space
+      const thumb = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const tw = 160, th = 80;
+          canvas.width = tw;
+          canvas.height = th;
+          const ctx = canvas.getContext("2d");
+          const sr = img.width / img.height;
+          const tr = tw / th;
+          let sw, sh, sx, sy;
+          if (sr > tr) { sh = img.height; sw = sh * tr; sx = (img.width - sw) / 2; sy = 0; }
+          else { sw = img.width; sh = sw / tr; sx = 0; sy = (img.height - sh) / 2; }
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tw, th);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+      });
+      if (thumb) {
+        setRunScreenshots((prev) => ({ ...prev, [currentRunId]: thumb }));
+      }
+    } catch (err) {
+      console.warn("[DG] Failed to capture screenshot:", err.message);
+    }
+  }, []);
 
   const loadRuns = React.useCallback(async () => {
     if (!project) {
@@ -730,21 +841,61 @@ export default function App() {
   }, [viewerReady, objectSets, selectedRuleId, showFailed, showPassed, showBase,
       failColor, passColor, failOpacity, passOpacity, baseColor, baseOpacity, isolatedIds, hiddenIds]);
 
-  const handleSelectRun = React.useCallback((nextRunId) => {
+  // Restore graphics state + capture screenshot when viewer becomes ready
+  React.useEffect(() => {
+    if (!viewerReady || !activeRunId) return;
+    // Restore saved graphics state for this run (on initial load)
+    if (runGfxMapRef.current[activeRunId]) {
+      restoreGfxState(activeRunId);
+    }
+    // Small delay to let the filtering/coloring effect render first
+    const timer = setTimeout(() => void captureScreenshot(), 600);
+    return () => clearTimeout(timer);
+  }, [viewerReady, activeRunId, captureScreenshot, restoreGfxState]);
+
+  const handleSelectRun = React.useCallback(async (nextRunId) => {
     if (!nextRunId || nextRunId === manifest?.runId) {
       return;
     }
+
+    // Save current graphics state + capture screenshot before switching
+    saveGfxState();
+    await captureScreenshot();
+
+    // Restore graphics state for the target run
+    restoreGfxState(nextRunId);
 
     setError("");
     setStatus("Loading validation run...");
     setObjectSets({ failed: [], passed: [] });
     setRunId(nextRunId);
-  }, [manifest?.runId]);
+  }, [manifest?.runId, captureScreenshot, saveGfxState, restoreGfxState]);
+
+  // Handle back navigation — save state + capture screenshot before leaving
+  const handleBackClick = React.useCallback(async (e) => {
+    e.preventDefault();
+    saveGfxState();
+    await captureScreenshot();
+    const href = project ? `/?project=${encodeURIComponent(project)}` : "/";
+    window.location.href = href;
+  }, [captureScreenshot, saveGfxState, project]);
 
   const handleDeleteRun = React.useCallback(async (targetRunId) => {
     if (!project || !targetRunId) {
       return;
     }
+
+    // Remove screenshot and graphics state for deleted run
+    setRunScreenshots((prev) => {
+      const next = { ...prev };
+      delete next[targetRunId];
+      return next;
+    });
+    setRunGfxMap((prev) => {
+      const next = { ...prev };
+      delete next[targetRunId];
+      return next;
+    });
 
     const confirmed = window.confirm(
       `Delete validation run ${shortId(targetRunId)} from both Design Grammars and Speckle?`
@@ -829,7 +980,7 @@ export default function App() {
       <aside className="mv-sidebar">
         <div className="mv-header">
           <div className="mv-header-row">
-            <a className="mv-back" href={project ? `/?project=${encodeURIComponent(project)}` : "/"}>
+            <a className="mv-back" href={project ? `/?project=${encodeURIComponent(project)}` : "/"} onClick={handleBackClick}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
               Project
             </a>
@@ -1205,7 +1356,15 @@ export default function App() {
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
                   </div>
-                  <div className="mv-tile-thumb" onClick={() => handleSelectRun(run.runId)} />
+                  <div
+                    className="mv-tile-thumb"
+                    onClick={() => handleSelectRun(run.runId)}
+                    style={runScreenshots[run.runId] ? {
+                      backgroundImage: `url(${runScreenshots[run.runId]})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center"
+                    } : undefined}
+                  />
                   <div className="mv-tile-footer">
                     <div className="mv-tile-date">{formatTimestamp(run.createdAt)}</div>
                     <div className={`mv-tile-kind ${run.failedRuleCount > 0 ? "is-fail" : "is-pass"}`}>
