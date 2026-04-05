@@ -8,17 +8,20 @@ date: 2026-04-05
 ## Active
 
 1. **Model Viewer visual bugs** — rotation/mixed state in validation viewport needs fixing. See [[Model viewer needs rotation fix and validation management]].
-2. **Validation management** — add delete and rename options for validation runs in Model Viewer.
-3. **Model Viewer as parallel view** — rebuild so it opens from Project page alongside Graph Viewer.
+2. **Model Viewer as parallel view** — rebuild so it opens from Project page alongside Graph Viewer.
 
 ## Upcoming
 
 - Improve LLM Cypher generation accuracy (schema constraint adherence)
 - Add more few-shot examples to [[n8n orchestrates LLM-powered rule ingestion and graph queries|ingest prompt]]
 - Harden [[Passwords hashed client-side with SubtleCrypto SHA-256|authentication]] with server-side auth
+- Consider localStorage quota management for run screenshots/settings (prune old data)
 
 ## Completed Recently
 
+- **Per-run graphics state & screenshots** — each validation run saves/restores its own Graphics Settings Bar state and viewport thumbnail. See [[Per-run graphics state and screenshot persistence]].
+- **Screenshot tiles across all pages** — Project tiles on All Projects page, Grammar Viewer and Model Viewer tiles on Project page all show captured viewport screenshots with cover-crop aspect ratio.
+- Validation management — delete for validation runs in Model Viewer
 - Multi-page SPA with RegisterPage → HomePage → ProjectPage → GraphViewerPage
 - Speckle integration for validation overlay publishing
 - Grasshopper VALIDATOR component with optional data-service publish

@@ -37,6 +37,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Passwords hashed client-side with SubtleCrypto SHA-256]]
 - [[Validation results publish to Speckle as overlay versions]]
 - [[Violation rules invert the constraint in SWRL body]]
+- [[Per-run graphics state and screenshot persistence]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -62,4 +63,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/_template|Session log template]]
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]
 - [[sessions/2026-04-05 Obsidian vault creation|2026-04-05 Vault creation]]
+- [[sessions/2026-04-05 Model Viewer screenshot and per-run graphics state|2026-04-05 MV screenshots & per-run gfx]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
