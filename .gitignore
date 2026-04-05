@@ -7,3 +7,7 @@ training/HF_Tocken.txt
 **/node_modules/
 **/dist/
 data-service/data/*.json
+
+.claude/worktrees/epic-heyrovsky
+
+.claude/worktrees/
