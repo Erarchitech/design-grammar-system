@@ -1,0 +1,236 @@
+{
+  "main": {
+    "id": "9c8a8fd09001efc5",
+    "type": "split",
+    "children": [
+      {
+        "id": "23d6b1a17fd5a976",
+        "type": "tabs",
+        "dimension": 22.593896713615024,
+        "children": [
+          {
+            "id": "dd4f405718882300",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "Новая вкладка"
+            }
+          }
+        ]
+      },
+      {
+        "id": "d3fd08d6748125de",
+        "type": "tabs",
+        "dimension": 77.40610328638498,
+        "children": [
+          {
+            "id": "420840672061ba1e",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Граф"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e32cba9c142526d9",
+    "type": "split",
+    "children": [
+      {
+        "id": "b8975c58bd43f417",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a9e4341ba360d341",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "4c95321bd281a095",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "9b4907ff1503b12e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "796df5e9168d70a4",
+    "type": "split",
+    "children": [
+      {
+        "id": "fe1c67b66872b663",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e88d159546a9b977",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки"
+            }
+          },
+          {
+            "id": "f2961475b2e2d655",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки"
+            }
+          },
+          {
+            "id": "a220c7269813ea5a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "786fb25d175e0d4a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "f94bfaf1be28055a",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "420840672061ba1e",
+  "lastOpenFiles": [
+    "sessions/2026-04-05 Project specification and CLAUDE.md creation.md",
+    "inbox/Model viewer needs rotation fix and validation management.md",
+    "sessions/2026-04-05 Obsidian vault creation.md",
+    "sessions/_template.md",
+    "knowledge/business/Product bridges natural language rules to graph-based validation.md",
+    "knowledge/business/Target audience is architects and urban planners.md",
+    "knowledge/business/Design Grammars automates architectural compliance checking.md",
+    "knowledge/patterns/Conditional compilation guards Grasshopper SDK availability.md",
+    "knowledge/patterns/Pydantic models validate all API boundaries.md",
+    "knowledge/patterns/Grasshopper async component with ScheduleSolution polling.md",
+    "knowledge/patterns/Config injection via entrypoint.sh sed replacement.md",
+    "knowledge/patterns/Cypher MERGE idempotent node creation pattern.md",
+    "knowledge/patterns/Async polling pattern for n8n workflow execution tracking.md",
+    "knowledge/debugging/Edit mode requires cleanup of old atoms before re-creation.md",
+    "knowledge/debugging/LLM Cypher output needs bracket nesting validation.md",
+    "knowledge/debugging/Neo4j node tagging required after n8n ingestion.md",
+    "knowledge/debugging/Browser cache prevents seeing UI updates after rebuild.md",
+    "knowledge/debugging/Docker layer caching can serve stale index.html.md",
+    "knowledge/decisions/Violation rules invert the constraint in SWRL body.md",
+    "knowledge/decisions/Validation results publish to Speckle as overlay versions.md",
+    "knowledge/decisions/Passwords hashed client-side with SubtleCrypto SHA-256.md",
+    "knowledge/decisions/LLM prompts embed schema constraints instead of fine-tuning.md",
+    "knowledge/decisions/Project isolation uses property filtering not separate databases.md",
+    "knowledge/decisions/SWRL parsing is bespoke regex not vendor OWL library.md",
+    "knowledge/decisions/Single-file React SPA avoids build tooling for main UI.md",
+    "knowledge/integrations/Speckle hosts 3D BIM models for validation overlay.md",
+    "inbox",
+    "sessions",
+    "knowledge/patterns",
+    "knowledge/integrations",
+    "knowledge/decisions",
+    "knowledge/debugging",
+    "knowledge/business",
+    "knowledge",
+    "atlas",
+    "00-home"
+  ]
+}
