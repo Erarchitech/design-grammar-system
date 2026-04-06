@@ -1,0 +1,221 @@
+{
+  "name": "knowledge-update",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dg/knowledge-update",
+        "responseMode": "responseNode"
+      },
+      "id": "ku-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-700, 0],
+      "webhookId": "dg-knowledge-update"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt_text",
+              "value": "={{$json.body.prompt_text || ''}}"
+            },
+            {
+              "name": "current_content",
+              "value": "={{$json.body.current_content || ''}}"
+            },
+            {
+              "name": "note_id",
+              "value": "={{$json.body.note_id || ''}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.body.project_name || ''}}"
+            },
+            {
+              "name": "execution_id",
+              "value": "={{String($execution.id)}}"
+            }
+          ]
+        }
+      },
+      "id": "ku-set-defaults",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { status: 'accepted', executionId: String($execution.id) } }];"
+      },
+      "id": "ku-format-ack",
+      "name": "Format Ack",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-460, -160]
+    },
+    {
+      "parameters": {
+        "responseCode": 200
+      },
+      "id": "ku-respond-ack",
+      "name": "Respond Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-220, -160]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all()[0].json;\nconst currentContent = input.current_content || '';\nconst updatePrompt = input.prompt_text || '';\n\nconst prompt = [\n  'You are an architectural knowledge editor.',\n  'Revise the note content according to the update instruction.',\n  'Return ONLY the revised note text — no explanation, no JSON, no markdown fences.',\n  'Preserve the original structure and tone. Only change what the instruction requests.',\n  '',\n  'Update instruction:',\n  updatePrompt,\n  '',\n  'Current note content:',\n  currentContent,\n  '',\n  'Revised note content:'\n].join('\\n');\n\nreturn [{ json: { ...input, update_prompt: prompt } }];"
+      },
+      "id": "ku-build-prompt",
+      "name": "Build Update Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": \"llama3.1\", \"prompt\": $json.update_prompt, \"stream\": false, \"options\": { \"temperature\": 0.3 } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "ku-ollama",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [20, 0]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "proposed_text",
+              "value": "={{$json.response || ''}}"
+            },
+            {
+              "name": "execution_id",
+              "value": "={{$items('Build Update Prompt')[0].json.execution_id || ''}}"
+            },
+            {
+              "name": "note_id",
+              "value": "={{$items('Build Update Prompt')[0].json.note_id || ''}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$items('Build Update Prompt')[0].json.project_name || ''}}"
+            }
+          ]
+        }
+      },
+      "id": "ku-parse-text",
+      "name": "Parse LLM Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://data-service:8000/execution-result",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $json.execution_id, \"status\": \"completed\", \"workflow\": \"knowledge-update\", \"payload\": { \"proposedText\": $json.proposed_text } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "ku-post-result",
+      "name": "Post Execution Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Format Ack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Update Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ack": {
+      "main": [
+        [
+          {
+            "node": "Respond Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Ack": {
+      "main": []
+    },
+    "Build Update Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Text": {
+      "main": [
+        [
+          {
+            "node": "Post Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Execution Result": {
+      "main": []
+    }
+  }
+}
