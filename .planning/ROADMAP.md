@@ -34,7 +34,7 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   5. No existing `Metagraph`, `OntoGraph`, or `ValidationGraph` nodes appear in queries filtering on `graph:"KnowledgeGraph"`
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [x] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 
 ### Phase 2: data-service CRUD + Folder Ingest
 **Goal**: Architects can load local markdown files into the knowledge graph and retrieve, update, or delete notes via REST â€” all verifiable without any LLM or n8n involvement
@@ -48,7 +48,7 @@ Plans:
   5. All knowledge endpoints are reachable through the existing Nginx `/data-service/` proxy without new proxy rules
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [x] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 **UI hint**: no
 
 ### Phase 3: n8n Knowledge Workflows + LLM Ingest and Query
@@ -62,7 +62,7 @@ Plans:
   4. GET `/knowledge/sessions/{project}` returns all sessions written so far in reverse-chronological order
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 
 ### Phase 4: Update Flow Endpoints
 **Goal**: The three-step update backend is live â€” an architect can describe what to change, receive a list of matching notes, get a diff-annotated proposed edit, and confirm the write â€” with no LLM output silently overwriting Neo4j
@@ -75,7 +75,7 @@ Plans:
   4. Each confirmed update creates a `KnowledgeSession` node recording the prompt and affected nodes
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 
 ### Phase 5: UI Mode Restructuring + Insert and Query Panels
 **Goal**: The sidebar is reorganized into Validation and Project Knowledge sections; architects can insert knowledge via folder path or NL prompt and query the knowledge graph entirely from the browser
@@ -89,7 +89,7 @@ Plans:
   5. In Query Knowledge mode, the user can type a question and see a natural language answer in the Response field and the Cypher query in the Cypher panel
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 6: UI Update Panel + Inline Diff Editor
@@ -103,7 +103,7 @@ Plans:
   4. Clicking Confirm sends the final text to the backend and the sidebar shows a notification listing the updated node titles
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 7: UI Session History Panel + NeoVis Knowledge View
@@ -117,7 +117,7 @@ Plans:
   4. In the Graph Viewer, `KnowledgeNote` and `KnowledgeTag` nodes are visually distinct from SWRL metagraph nodes (different color); a NeoVis query filtered to `graph:"KnowledgeGraph"` returns only knowledge nodes
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md ï¿½ Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ## Progress
