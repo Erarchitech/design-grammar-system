@@ -114,6 +114,12 @@ class FolderIngestRequest(BaseModel):
     path: str  # relative path inside mount root (e.g. "DG_OBSIDIAN/knowledge")
 
 
+class NoteUpdateRequest(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    tags: list[str] | None = None
+
+
 def normalize_value(value: Any):
     if isinstance(value, Node):
         node_id = getattr(value, "id", None) or getattr(value, "element_id", None)
@@ -985,3 +991,82 @@ def ingest_folder(payload: FolderIngestRequest):
             skipped += 1
 
     return {"inserted": inserted, "skipped": skipped}
+
+
+# ---------------------------------------------------------------------------
+# Knowledge CRUD endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.get("/knowledge/notes/{project}")
+def list_knowledge_notes(project: str):
+    rows = read_many(
+        "MATCH (n:KnowledgeNote {project: $project, graph: $graph}) "
+        "RETURN n.noteId AS noteId, n.title AS title, n.source AS source, "
+        "       n.createdAt AS createdAt, n.updatedAt AS updatedAt "
+        "ORDER BY n.updatedAt DESC",
+        {"project": project, "graph": KNOWLEDGE_GRAPH},
+    )
+    return {"project": project, "notes": rows}
+
+
+@app.get("/knowledge/note/{note_id}")
+def get_knowledge_note(note_id: str):
+    row = read_single(
+        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+        "RETURN n.noteId AS noteId, n.title AS title, n.content AS content, "
+        "       n.source AS source, n.tags AS tags, n.project AS project, "
+        "       n.createdAt AS createdAt, n.updatedAt AS updatedAt",
+        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return row
+
+
+@app.put("/knowledge/note/{note_id}")
+def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
+    existing = read_single(
+        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
+        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+    )
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    set_clauses = ["n.updatedAt = $now"]
+    params: dict[str, Any] = {
+        "noteId": note_id,
+        "graph": KNOWLEDGE_GRAPH,
+        "now": datetime.now(timezone.utc).isoformat(),
+    }
+    if payload.title is not None:
+        set_clauses.append("n.title = $title")
+        params["title"] = payload.title
+    if payload.content is not None:
+        set_clauses.append("n.content = $content")
+        params["content"] = payload.content
+    if payload.tags is not None:
+        set_clauses.append("n.tags = $tags")
+        params["tags"] = payload.tags
+
+    write_query(
+        f"MATCH (n:KnowledgeNote {{noteId: $noteId, graph: $graph}}) SET {', '.join(set_clauses)}",
+        params,
+    )
+    return {"status": "updated", "noteId": note_id}
+
+
+@app.delete("/knowledge/note/{note_id}")
+def delete_knowledge_note(note_id: str):
+    existing = read_single(
+        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
+        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+    )
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    write_query(
+        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) DETACH DELETE n",
+        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+    )
+    return {"status": "deleted", "noteId": note_id}
