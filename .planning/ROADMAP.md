@@ -61,9 +61,10 @@ Plans:
   2. Submitting a natural language question to POST `/knowledge/query` returns a human-readable answer drawn from matching notes, plus the Cypher query used for the search
   3. Every insert-prompt and query operation automatically writes a `KnowledgeSession` node with `mode`, `prompt`, `result`, and `createdAt` populated
   4. GET `/knowledge/sessions/{project}` returns all sessions written so far in reverse-chronological order
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 03-01-PLAN.md — Test scaffold + sessions endpoint + knowledge-ingest n8n workflow
+- [ ] 03-02-PLAN.md — Knowledge-query n8n workflow + end-to-end verification
 
 ### Phase 4: Update Flow Endpoints
 **Goal**: The three-step update backend is live — an architect can describe what to change, receive a list of matching notes, get a diff-annotated proposed edit, and confirm the write — with no LLM output silently overwriting Neo4j
@@ -129,7 +130,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 1. Neo4j Schema Foundation | v1.1 | 1/1 | Complete | 2026-04-06 |
 | 2. data-service CRUD + Folder Ingest | v1.1 | 0/2 | Planning complete | - |
-| 3. n8n Knowledge Workflows | v1.1 | 0/? | Not started | - |
+| 3. n8n Knowledge Workflows | v1.1 | 0/2 | Planning complete | - |
 | 4. Update Flow Endpoints | v1.1 | 0/? | Not started | - |
 | 5. UI Mode Restructuring + Insert and Query Panels | v1.1 | 0/? | Not started | - |
 | 6. UI Update Panel + Inline Diff Editor | v1.1 | 0/? | Not started | - |
