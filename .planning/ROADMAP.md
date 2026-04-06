@@ -34,7 +34,7 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   5. No existing `Metagraph`, `OntoGraph`, or `ValidationGraph` nodes appear in queries filtering on `graph:"KnowledgeGraph"`
 **Plans**: 1 plan
 Plans:
-- [x] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [x] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 2: data-service CRUD + Folder Ingest
 **Goal**: Architects can load local markdown files into the knowledge graph and retrieve, update, or delete notes via REST — all verifiable without any LLM or n8n involvement
@@ -46,9 +46,10 @@ Plans:
   3. GET `/knowledge/notes/{project}` returns a list of note titles and IDs for the given project
   4. GET, PUT, and DELETE on `/knowledge/note/{id}` read, update, and remove individual notes from Neo4j
   5. All knowledge endpoints are reachable through the existing Nginx `/data-service/` proxy without new proxy rules
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [x] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 02-01-PLAN.md — Docker volume mount + folder ingest endpoint with path traversal protection
+- [ ] 02-02-PLAN.md — CRUD endpoints (list, get, update, delete) + verification test script
 **UI hint**: no
 
 ### Phase 3: n8n Knowledge Workflows + LLM Ingest and Query
@@ -62,7 +63,7 @@ Plans:
   4. GET `/knowledge/sessions/{project}` returns all sessions written so far in reverse-chronological order
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 4: Update Flow Endpoints
 **Goal**: The three-step update backend is live — an architect can describe what to change, receive a list of matching notes, get a diff-annotated proposed edit, and confirm the write — with no LLM output silently overwriting Neo4j
@@ -75,7 +76,7 @@ Plans:
   4. Each confirmed update creates a `KnowledgeSession` node recording the prompt and affected nodes
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 5: UI Mode Restructuring + Insert and Query Panels
 **Goal**: The sidebar is reorganized into Validation and Project Knowledge sections; architects can insert knowledge via folder path or NL prompt and query the knowledge graph entirely from the browser
@@ -89,7 +90,7 @@ Plans:
   5. In Query Knowledge mode, the user can type a question and see a natural language answer in the Response field and the Cypher query in the Cypher panel
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 6: UI Update Panel + Inline Diff Editor
@@ -103,7 +104,7 @@ Plans:
   4. Clicking Confirm sends the final text to the backend and the sidebar shows a notification listing the updated node titles
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 7: UI Session History Panel + NeoVis Knowledge View
@@ -117,7 +118,7 @@ Plans:
   4. In the Graph Viewer, `KnowledgeNote` and `KnowledgeTag` nodes are visually distinct from SWRL metagraph nodes (different color); a NeoVis query filtered to `graph:"KnowledgeGraph"` returns only knowledge nodes
 **Plans**: 1 plan
 Plans:
-- [ ] 01-01-PLAN.md � Schema foundation + full-text index + verification
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ## Progress
@@ -126,8 +127,8 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Neo4j Schema Foundation | v1.1 | 0/1 | Planning complete | - |
-| 2. data-service CRUD + Folder Ingest | v1.1 | 0/? | Not started | - |
+| 1. Neo4j Schema Foundation | v1.1 | 1/1 | Complete | 2026-04-06 |
+| 2. data-service CRUD + Folder Ingest | v1.1 | 0/2 | Planning complete | - |
 | 3. n8n Knowledge Workflows | v1.1 | 0/? | Not started | - |
 | 4. Update Flow Endpoints | v1.1 | 0/? | Not started | - |
 | 5. UI Mode Restructuring + Insert and Query Panels | v1.1 | 0/? | Not started | - |
