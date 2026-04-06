@@ -1,0 +1,272 @@
+{
+  "name": "Knowledge Ingest",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dg/knowledge-ingest",
+        "responseMode": "responseNode"
+      },
+      "id": "ki-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-700, 0],
+      "webhookId": "dg-knowledge-ingest"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt_text",
+              "value": "={{$json.body.prompt_text || $json.prompt_text || ''}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.body.project_name || $json.project_name || 'default-project'}}"
+            }
+          ]
+        }
+      },
+      "id": "ki-set-defaults",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { status: 'accepted', executionId: String($execution.id) } }];"
+      },
+      "id": "ki-format-ack",
+      "name": "Format Ack",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-460, -160]
+    },
+    {
+      "parameters": {
+        "responseCode": 200
+      },
+      "id": "ki-respond-ack",
+      "name": "Respond Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-220, -160]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items('Set Input Defaults')[0].json;\nconst promptText = input.prompt_text || '';\nconst prompt = [\n  'You are an architectural knowledge assistant.',\n  'Extract structured data from the architect\\'s note.',\n  'Return JSON only, matching this exact schema:',\n  '{\"title\": \"string\", \"tags\": [\"string\", ...], \"content\": \"string\"}',\n  '',\n  'Rules:',\n  '- title: concise noun phrase (max 10 words)',\n  '- tags: 1-5 lowercase keywords, minimum 1 tag',\n  '- content: the full note text, cleaned up',\n  '',\n  'Example input: \"The maximum floor-to-floor height in Zone A residential towers must not exceed 3.2 meters per storey for compliance with the local plan.\"',\n  'Example output:',\n  '{\"title\": \"Maximum floor-to-floor height Zone A\", \"tags\": [\"height\", \"residential\", \"zone-a\", \"compliance\"], \"content\": \"The maximum floor-to-floor height in Zone A residential towers must not exceed 3.2 meters per storey for compliance with the local plan.\"}',\n  '',\n  'Now extract from this input:',\n  promptText\n].join('\\n');\nreturn [{ json: { ...input, prompt: prompt } }];"
+      },
+      "id": "ki-build-prompt",
+      "name": "Build Insert Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": \"llama3.1:latest\", \"prompt\": $json.prompt, \"stream\": false, \"format\": \"json\", \"options\": { \"temperature\": 0.1, \"num_predict\": 2048 } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "ki-ollama",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [20, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items('Build Insert Prompt')[0].json;\nconst raw = $json.response !== undefined ? $json.response : JSON.stringify($json);\nlet parsed = null;\ntry {\n  let text = typeof raw === 'string' ? raw : JSON.stringify(raw);\n  // Strip markdown fences\n  text = text.replace(/```json?\\s*/gi, '').replace(/```/g, '');\n  // Find first { to last }\n  const start = text.indexOf('{');\n  const end = text.lastIndexOf('}');\n  if (start !== -1 && end !== -1 && end > start) {\n    parsed = JSON.parse(text.slice(start, end + 1));\n  } else {\n    parsed = JSON.parse(text.trim());\n  }\n} catch (e) {\n  parsed = null;\n}\n// Normalize or fall back\nlet title, content, tags;\nif (parsed && typeof parsed === 'object') {\n  title = (parsed.title || '').trim().slice(0, 100);\n  content = (parsed.content || '').trim();\n  tags = parsed.tags;\n  // Normalize tags\n  if (typeof tags === 'string') {\n    tags = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);\n  }\n  if (!Array.isArray(tags) || tags.length === 0) {\n    tags = ['untagged'];\n  } else {\n    tags = tags.map(t => String(t).toLowerCase().trim()).filter(Boolean);\n    if (tags.length === 0) tags = ['untagged'];\n  }\n  if (!title) title = (input.prompt_text || '').slice(0, 60);\n  if (!content) content = input.prompt_text || '';\n} else {\n  // Full fallback\n  title = (input.prompt_text || '').slice(0, 60);\n  content = input.prompt_text || '';\n  tags = ['untagged'];\n}\nconst noteId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);\nreturn [{ json: { ...input, noteId, title, content, tags } }];"
+      },
+      "id": "ki-parse-llm",
+      "name": "Parse LLM JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $json;\nconst now = new Date().toISOString();\nconst project = input.project_name;\nconst graph = 'KnowledgeGraph';\nconst noteId = input.noteId;\nconst title = input.title;\nconst content = input.content;\nconst tags = input.tags || ['untagged'];\n\n// Statement 1: MERGE KnowledgeNote\nconst noteStatement = {\n  statement: [\n    'MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph})',\n    'SET n.title = $title, n.content = $content, n.tags = $tags, n.createdAt = $now, n.updatedAt = $now'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    project: project,\n    graph: graph,\n    title: title,\n    content: content,\n    tags: tags,\n    now: now\n  }\n};\n\n// Additional statements: one per tag — MERGE KnowledgeTag + TAGGED_WITH relationship\nconst tagStatements = tags.map(tag => ({\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    'MERGE (t:KnowledgeTag {name: $tag, project: $project, graph: $graph})',\n    'MERGE (n)-[:TAGGED_WITH]->(t)'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    tag: tag,\n    project: project,\n    graph: graph\n  }\n}));\n\nconst neo4jBody = { statements: [noteStatement, ...tagStatements] };\nreturn [{ json: { ...input, neo4jBody } }];"
+      },
+      "id": "ki-build-cypher",
+      "name": "Build Cypher",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json.neo4jBody)}}",
+        "basicAuthUser": "neo4j",
+        "basicAuthPassword": "12345678",
+        "requestMethod": "POST"
+      },
+      "id": "ki-execute-neo4j",
+      "name": "Execute Neo4j Cypher",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [740, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }] }; })() }}",
+        "basicAuthUser": "neo4j",
+        "basicAuthPassword": "12345678",
+        "requestMethod": "POST"
+      },
+      "id": "ki-write-session",
+      "name": "Write KnowledgeSession",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [980, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://data-service:8000/execution-result",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"knowledge-ingest\", \"payload\": { \"noteId\": $items('Build Cypher')[0].json.noteId, \"title\": $items('Build Cypher')[0].json.title, \"tags\": $items('Build Cypher')[0].json.tags } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "ki-post-result",
+      "name": "Post Execution Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1220, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Format Ack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Insert Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ack": {
+      "main": [
+        [
+          {
+            "node": "Respond Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Ack": {
+      "main": []
+    },
+    "Build Insert Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "Build Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cypher": {
+      "main": [
+        [
+          {
+            "node": "Execute Neo4j Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Neo4j Cypher": {
+      "main": [
+        [
+          {
+            "node": "Write KnowledgeSession",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write KnowledgeSession": {
+      "main": [
+        [
+          {
+            "node": "Post Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Execution Result": {
+      "main": []
+    }
+  }
+}
