@@ -1,0 +1,275 @@
+{
+  "name": "Knowledge Query",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dg/knowledge-query",
+        "responseMode": "responseNode"
+      },
+      "id": "kq-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-700, 0],
+      "webhookId": "dg-knowledge-query"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt_text",
+              "value": "={{$json.body.prompt_text || $json.prompt_text || ''}}"
+            },
+            {
+              "name": "project_name",
+              "value": "={{$json.body.project_name || $json.project_name || 'default-project'}}"
+            }
+          ]
+        }
+      },
+      "id": "kq-set-defaults",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { status: 'accepted', executionId: String($execution.id) } }];"
+      },
+      "id": "kq-format-ack",
+      "name": "Format Ack",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-460, -160]
+    },
+    {
+      "parameters": {
+        "responseCode": 200
+      },
+      "id": "kq-respond-ack",
+      "name": "Respond Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-220, -160]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items('Set Input Defaults')[0].json;\nconst promptText = input.prompt_text || '';\nconst projectName = input.project_name || 'default-project';\n\n// Sanitize Lucene special characters from the prompt (Pitfall 2, T-3-06)\n// Strip: + - ! ( ) { } [ ] ^ \" ~ * ? : \\ /\nlet cleanedQuery = promptText.replace(/[+\\-!(){}\\[\\]^\"~*?:\\\\/]/g, ' ').trim();\n// Collapse multiple spaces\ncleanedQuery = cleanedQuery.replace(/\\s+/g, ' ').trim();\n// Fallback to match-all if empty after sanitization\nif (!cleanedQuery) {\n  cleanedQuery = '*';\n}\n\n// Deterministic full-text search Cypher — NOT LLM-generated (D-06)\nconst cypher = \"CALL db.index.fulltext.queryNodes('knowledge_note_search', $query) YIELD node, score WHERE node.project = $project AND node.graph = $graph RETURN node.noteId AS noteId, node.title AS title, node.content AS content, score ORDER BY score DESC LIMIT 5\";\n\nconst neo4jBody = {\n  statements: [\n    {\n      statement: cypher,\n      parameters: {\n        query: cleanedQuery,\n        project: projectName,\n        graph: 'KnowledgeGraph'\n      }\n    }\n  ]\n};\n\nreturn [{ json: { ...input, cypherUsed: cypher, cleanedQuery: cleanedQuery, neo4jBody: neo4jBody } }];"
+      },
+      "id": "kq-build-cypher",
+      "name": "Build Full-Text Cypher",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json.neo4jBody)}}",
+        "basicAuthUser": "neo4j",
+        "basicAuthPassword": "12345678",
+        "requestMethod": "POST"
+      },
+      "id": "kq-execute-search",
+      "name": "Execute Full-Text Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [20, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items('Build Full-Text Cypher')[0].json;\nconst promptText = input.prompt_text || '';\nconst projectName = input.project_name || 'default-project';\n\n// Extract results from Neo4j response\nconst results = $json.results;\nconst data = (results && results[0] && results[0].data) ? results[0].data : [];\nconst matchCount = data.length;\n\nlet answerPrompt;\nif (matchCount === 0) {\n  answerPrompt = \"No matching knowledge notes found for project '\" + projectName + \"'. Reply: 'No matching knowledge notes found for this project.'\";\n} else {\n  // Build notes section from top-5 results (D-05)\n  const top5 = data.slice(0, 5);\n  const noteLines = top5.map((row, idx) => {\n    const cols = row.row || [];\n    // Columns: noteId(0), title(1), content(2), score(3)\n    const title = cols[1] || '';\n    const content = cols[2] || '';\n    return (idx + 1) + '. [' + title + ']: ' + content;\n  }).join('\\n');\n\n  answerPrompt = [\n    'You are an architectural knowledge assistant. Answer the question using ONLY the provided notes.',\n    'If the notes do not contain enough information, say so.',\n    '',\n    'Question: ' + promptText,\n    '',\n    'Notes:',\n    noteLines,\n    '',\n    'Answer concisely in 1-3 sentences.'\n  ].join('\\n');\n}\n\nreturn [{ json: { ...input, matchCount: matchCount, answerPrompt: answerPrompt } }];"
+      },
+      "id": "kq-build-answer-prompt",
+      "name": "Build Answer Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={{ { \"model\": \"llama3.1:latest\", \"prompt\": $json.answerPrompt, \"stream\": false, \"options\": { \"temperature\": 0.3, \"num_predict\": 512 } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "kq-ollama",
+      "name": "Ollama Generate Answer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $items('Build Answer Prompt')[0].json;\nconst raw = $json.response !== undefined ? $json.response : '';\nlet answer = typeof raw === 'string' ? raw.trim() : String(raw).trim();\nif (!answer) {\n  answer = 'No answer could be generated.';\n}\nreturn [{ json: { ...input, answer: answer } }];"
+      },
+      "id": "kq-parse-answer",
+      "name": "Parse Answer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [740, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "jsonParameters": true,
+        "options": {
+          "ignoreSslIssues": true,
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{ (() => { const input = $items('Build Full-Text Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ answer: $json.answer, cypherUsed: input.cypherUsed, matchCount: $items('Build Answer Prompt')[0].json.matchCount }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'query', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }] }; })() }}",
+        "basicAuthUser": "neo4j",
+        "basicAuthPassword": "12345678",
+        "requestMethod": "POST"
+      },
+      "id": "kq-write-session",
+      "name": "Write KnowledgeSession",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [980, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://data-service:8000/execution-result",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"knowledge-query\", \"payload\": { \"answer\": $items('Parse Answer')[0].json.answer, \"cypher\": $items('Build Full-Text Cypher')[0].json.cypherUsed, \"matchCount\": $items('Build Answer Prompt')[0].json.matchCount } } }}",
+        "requestMethod": "POST"
+      },
+      "id": "kq-post-result",
+      "name": "Post Execution Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1220, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Format Ack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Full-Text Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ack": {
+      "main": [
+        [
+          {
+            "node": "Respond Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Ack": {
+      "main": []
+    },
+    "Build Full-Text Cypher": {
+      "main": [
+        [
+          {
+            "node": "Execute Full-Text Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Full-Text Search": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Answer Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate Answer": {
+      "main": [
+        [
+          {
+            "node": "Parse Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Answer": {
+      "main": [
+        [
+          {
+            "node": "Write KnowledgeSession",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write KnowledgeSession": {
+      "main": [
+        [
+          {
+            "node": "Post Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Execution Result": {
+      "main": []
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
