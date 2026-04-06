@@ -38,6 +38,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Validation results publish to Speckle as overlay versions]]
 - [[Violation rules invert the constraint in SWRL body]]
 - [[Per-run graphics state and screenshot persistence]]
+- [[Knowledge workflows use hybrid search-then-summarize for queries]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -65,4 +66,6 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-05 Obsidian vault creation|2026-04-05 Vault creation]]
 - [[sessions/2026-04-05 Model Viewer screenshot and per-run graphics state|2026-04-05 MV screenshots & per-run gfx]]
 - [[sessions/2026-04-06 Phase 01 KnowledgeGraph schema execution|2026-04-06 Phase 01 execution]]
+- [[sessions/2026-04-06 Phase 02 data-service CRUD and folder ingest execution|2026-04-06 Phase 02 execution]]
+- [[sessions/2026-04-06 Phase 03 context and planning|2026-04-06 Phase 03 context & planning]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
