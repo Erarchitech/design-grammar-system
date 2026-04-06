@@ -68,4 +68,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-06 Phase 01 KnowledgeGraph schema execution|2026-04-06 Phase 01 execution]]
 - [[sessions/2026-04-06 Phase 02 data-service CRUD and folder ingest execution|2026-04-06 Phase 02 execution]]
 - [[sessions/2026-04-06 Phase 03 context and planning|2026-04-06 Phase 03 context & planning]]
+- [[sessions/2026-04-06 Phase 03 n8n knowledge workflows execution|2026-04-06 Phase 03 execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

@@ -18,7 +18,12 @@
       "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: define v1.1 requirements \\(30 REQ-IDs\\)\" --files .planning/REQUIREMENTS.md .planning/research/SUMMARY.md .planning/research/STACK.md .planning/research/FEATURES.md .planning/research/ARCHITECTURE.md)",
       "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: create v1.1 roadmap \\(7 phases, 30 requirements\\)\" --files .planning/ROADMAP.md .planning/STATE.md)",
       "Skill(gsd-audit-milestone)",
-      "Skill(gsd-audit-milestone:*)"
+      "Skill(gsd-audit-milestone:*)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" roadmap get-phase \"03\" --raw)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" roadmap get-phase \"3\" --raw)",
+      "Bash(python -c \"import json; w=json.load\\(open\\(''C:/Users/Admin/source/repos/design-grammar-system/n8n/workflows/knowledge-ingest.json''\\)\\); nodes=[n[''name''] for n in w.get\\(''nodes'',[]\\)]; print\\(''Name:'', w.get\\(''name''\\)\\); print\\(''Active:'', w.get\\(''active''\\)\\); print\\(''Nodes:'', nodes\\); print\\(''Node count:'', len\\(nodes\\)\\)\")",
+      "Bash(python -c \"import json; w=json.load\\(open\\(''C:/Users/Admin/source/repos/design-grammar-system/n8n/workflows/knowledge-query.json''\\)\\); nodes=[n[''name''] for n in w.get\\(''nodes'',[]\\)]; print\\(''Name:'', w.get\\(''name''\\)\\); print\\(''Active:'', w.get\\(''active''\\)\\); print\\(''Nodes:'', nodes\\); print\\(''Node count:'', len\\(nodes\\)\\)\")",
+      "Bash(python -c \":*)"
     ]
   }
 }
