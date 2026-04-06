@@ -2,3 +2,4 @@ fastapi
 uvicorn
 neo4j
 specklepy==3.2.4
+pytest

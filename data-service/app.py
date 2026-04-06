@@ -8,6 +8,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path as FilePath
 from typing import Any
+import time
+import urllib.request
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
@@ -41,6 +43,57 @@ KNOWLEDGE_GRAPH = "KnowledgeGraph"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
 KNOWLEDGE_REPO_ROOT = FilePath(os.getenv("DG_KNOWLEDGE_REPO_ROOT", "/mnt/repo"))
+
+N8N_INTERNAL_URL = os.getenv("N8N_INTERNAL_URL", "http://n8n:5678")
+
+
+def word_diff_html(original: str, proposed: str) -> str:
+    """Word-level diff as HTML with <span class='diff-del'> and <span class='diff-ins'> markers."""
+    import difflib
+    original_words = original.split()
+    proposed_words = proposed.split()
+    matcher = difflib.SequenceMatcher(None, original_words, proposed_words, autojunk=False)
+    parts: list[str] = []
+    for op, i1, i2, j1, j2 in matcher.get_opcodes():
+        if op == "equal":
+            parts.extend(original_words[i1:i2])
+        elif op == "replace":
+            for w in original_words[i1:i2]:
+                parts.append(f'<span class="diff-del">{w}</span>')
+            for w in proposed_words[j1:j2]:
+                parts.append(f'<span class="diff-ins">{w}</span>')
+        elif op == "delete":
+            for w in original_words[i1:i2]:
+                parts.append(f'<span class="diff-del">{w}</span>')
+        elif op == "insert":
+            for w in proposed_words[j1:j2]:
+                parts.append(f'<span class="diff-ins">{w}</span>')
+    return " ".join(parts)
+
+
+def call_n8n_sync(webhook_path: str, body: dict, timeout: int = 120) -> dict:
+    """Fire n8n webhook, poll EXECUTION_RESULTS until completed or timeout."""
+    data = json.dumps(body).encode()
+    req = urllib.request.Request(
+        f"{N8N_INTERNAL_URL}/webhook/{webhook_path}",
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        ack = json.loads(resp.read())
+    execution_id = ack.get("executionId")
+    if not execution_id:
+        raise HTTPException(status_code=502, detail="n8n did not return executionId")
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        entry = EXECUTION_RESULTS.get(execution_id, {})
+        if entry.get("status") == "completed":
+            return entry.get("payload", {})
+        if entry.get("status") == "failed":
+            raise HTTPException(status_code=502, detail="LLM workflow failed")
+        time.sleep(1.5)
+    raise HTTPException(status_code=504, detail="LLM workflow timed out")
 
 
 class ExecutionResult(BaseModel):
