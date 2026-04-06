@@ -32,7 +32,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   3. A `KnowledgeSession` node can be written with `mode`, `prompt`, `result`, and `createdAt` properties
   4. Full-text search query `CALL db.index.fulltext.queryNodes('knowledge_note_search', $query)` returns scored results filtered by `project` property
   5. No existing `Metagraph`, `OntoGraph`, or `ValidationGraph` nodes appear in queries filtering on `graph:"KnowledgeGraph"`
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 2: data-service CRUD + Folder Ingest
 **Goal**: Architects can load local markdown files into the knowledge graph and retrieve, update, or delete notes via REST â€” all verifiable without any LLM or n8n involvement
@@ -44,7 +46,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   3. GET `/knowledge/notes/{project}` returns a list of note titles and IDs for the given project
   4. GET, PUT, and DELETE on `/knowledge/note/{id}` read, update, and remove individual notes from Neo4j
   5. All knowledge endpoints are reachable through the existing Nginx `/data-service/` proxy without new proxy rules
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: no
 
 ### Phase 3: n8n Knowledge Workflows + LLM Ingest and Query
@@ -56,7 +60,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   2. Submitting a natural language question to POST `/knowledge/query` returns a human-readable answer drawn from matching notes, plus the Cypher query used for the search
   3. Every insert-prompt and query operation automatically writes a `KnowledgeSession` node with `mode`, `prompt`, `result`, and `createdAt` populated
   4. GET `/knowledge/sessions/{project}` returns all sessions written so far in reverse-chronological order
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 4: Update Flow Endpoints
 **Goal**: The three-step update backend is live â€” an architect can describe what to change, receive a list of matching notes, get a diff-annotated proposed edit, and confirm the write â€” with no LLM output silently overwriting Neo4j
@@ -67,7 +73,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   2. POST `/knowledge/update/propose` with selected node IDs returns diff-annotated content per note, with additions and deletions marked as HTML spans
   3. POST `/knowledge/update/confirm` with reviewed content writes the new text to Neo4j and returns the list of affected node IDs; the original content is not overwritten until this call succeeds
   4. Each confirmed update creates a `KnowledgeSession` node recording the prompt and affected nodes
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 
 ### Phase 5: UI Mode Restructuring + Insert and Query Panels
 **Goal**: The sidebar is reorganized into Validation and Project Knowledge sections; architects can insert knowledge via folder path or NL prompt and query the knowledge graph entirely from the browser
@@ -79,7 +87,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   3. In Insert Knowledge mode, the user can enter a folder path and submit it; the panel shows the number of notes imported
   4. In Insert Knowledge mode, the user can type a natural language prompt and submit it; the panel shows the created note title via async polling
   5. In Query Knowledge mode, the user can type a question and see a natural language answer in the Response field and the Cypher query in the Cypher panel
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 6: UI Update Panel + Inline Diff Editor
@@ -91,7 +101,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   2. After selecting one or more nodes and clicking Edit, the panel renders the LLM-proposed changes with deletions shown in red strikethrough and additions in red bold â€” no confirmed write has occurred yet
   3. The diff panel sits adjacent to an editable textarea containing the proposed text; the user can modify the textarea before confirming
   4. Clicking Confirm sends the final text to the backend and the sidebar shows a notification listing the updated node titles
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ### Phase 7: UI Session History Panel + NeoVis Knowledge View
@@ -103,7 +115,9 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
   2. The session list can be filtered by mode (insert, update, query) and the list updates immediately on filter change
   3. Session history survives a browser data clear and hard refresh â€” data comes from Neo4j, not localStorage
   4. In the Graph Viewer, `KnowledgeNote` and `KnowledgeTag` nodes are visually distinct from SWRL metagraph nodes (different color); a NeoVis query filtered to `graph:"KnowledgeGraph"` returns only knowledge nodes
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
 **UI hint**: yes
 
 ## Progress
@@ -112,7 +126,7 @@ This milestone adds an Obsidian-style Project Knowledge graph to the existing De
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Neo4j Schema Foundation | v1.1 | 0/? | Not started | - |
+| 1. Neo4j Schema Foundation | v1.1 | 0/1 | Planning complete | - |
 | 2. data-service CRUD + Folder Ingest | v1.1 | 0/? | Not started | - |
 | 3. n8n Knowledge Workflows | v1.1 | 0/? | Not started | - |
 | 4. Update Flow Endpoints | v1.1 | 0/? | Not started | - |
