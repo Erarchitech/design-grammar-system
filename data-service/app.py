@@ -37,6 +37,7 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
 WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
 VALIDATION_GRAPH = "ValidationGraph"
+KNOWLEDGE_GRAPH = "KnowledgeGraph"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
 
@@ -532,6 +533,16 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
         "rules": rules,
         "objectSets": object_sets,
     }
+
+
+@app.on_event("startup")
+def ensure_knowledge_indexes():
+    """Create full-text index for KnowledgeNote search if it does not exist."""
+    with driver.session() as session:
+        session.run(
+            "CREATE FULLTEXT INDEX knowledge_note_search IF NOT EXISTS "
+            "FOR (n:KnowledgeNote) ON EACH [n.title, n.content]"
+        ).consume()
 
 
 @app.get("/")
