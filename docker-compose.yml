@@ -29,8 +29,10 @@ services:
       SPECKLE_WRITE_TOKEN: ${SPECKLE_WRITE_TOKEN:-}
       SPECKLE_READ_TOKEN: ${SPECKLE_READ_TOKEN:-}
       DG_BASE_URL: http://localhost:8080
+      DG_KNOWLEDGE_REPO_ROOT: /mnt/repo
     volumes:
       - ./data-service/data:/app/data
+      - .:/mnt/repo:ro
     depends_on:
       - neo4j
       - speckle-ingress
