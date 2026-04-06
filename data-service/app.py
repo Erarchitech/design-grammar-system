@@ -173,6 +173,29 @@ class NoteUpdateRequest(BaseModel):
     tags: list[str] | None = None
 
 
+class UpdateMatchRequest(BaseModel):
+    prompt: str
+    project: str
+
+
+class UpdateProposeRequest(BaseModel):
+    prompt: str
+    project: str
+    noteIds: list[str]
+
+
+class NoteConfirmItem(BaseModel):
+    noteId: str
+    content: str
+    updatedAt: str
+
+
+class UpdateConfirmRequest(BaseModel):
+    prompt: str
+    project: str
+    notes: list[NoteConfirmItem]
+
+
 def normalize_value(value: Any):
     if isinstance(value, Node):
         node_id = getattr(value, "id", None) or getattr(value, "element_id", None)
@@ -1135,3 +1158,101 @@ def list_knowledge_sessions(project: str):
         {"project": project, "graph": KNOWLEDGE_GRAPH},
     )
     return {"project": project, "sessions": rows}
+
+
+MAX_CONTENT_SIZE = 100 * 1024  # 100KB per D-09 / Out of Scope
+
+
+@app.post("/knowledge/update/match")
+def knowledge_update_match(payload: UpdateMatchRequest):
+    if not payload.prompt.strip():
+        raise HTTPException(status_code=400, detail="prompt is required")
+    rows = read_many(
+        "CALL db.index.fulltext.queryNodes('knowledge_note_search', $query) "
+        "YIELD node, score "
+        "WHERE node.project = $project AND node.graph = $graph "
+        "RETURN node.noteId AS noteId, node.title AS title, score "
+        "ORDER BY score DESC LIMIT 10",
+        {"query": payload.prompt, "project": payload.project, "graph": KNOWLEDGE_GRAPH},
+    )
+    return {"candidates": rows}
+
+
+@app.post("/knowledge/update/propose")
+def knowledge_update_propose(payload: UpdateProposeRequest):
+    if not payload.noteIds:
+        raise HTTPException(status_code=400, detail="noteIds must not be empty")
+    if not payload.prompt.strip():
+        raise HTTPException(status_code=400, detail="prompt is required")
+    results = []
+    for note_id in payload.noteIds:
+        note = read_single(
+            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "RETURN n.noteId AS noteId, n.title AS title, n.content AS content, n.updatedAt AS updatedAt",
+            {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+        )
+        if note is None:
+            raise HTTPException(status_code=404, detail=f"Note not found: {note_id}")
+        llm_result = call_n8n_sync(
+            webhook_path="dg/knowledge-update",
+            body={"prompt_text": payload.prompt, "note_id": note_id, "current_content": note["content"], "project_name": payload.project},
+        )
+        proposed_text = llm_result.get("proposedText", "")
+        if not proposed_text:
+            proposed_text = note["content"]  # fallback: keep original if LLM returned empty
+        diff_html = word_diff_html(note["content"], proposed_text)
+        results.append({
+            "noteId": note_id,
+            "title": note["title"],
+            "originalContent": note["content"],
+            "proposedContent": proposed_text,
+            "diffHtml": diff_html,
+            "hasChanges": proposed_text.strip() != note["content"].strip(),
+            "updatedAt": note["updatedAt"],
+        })
+    return {"diffs": results}
+
+
+@app.post("/knowledge/update/confirm")
+def knowledge_update_confirm(payload: UpdateConfirmRequest):
+    if not payload.notes:
+        raise HTTPException(status_code=400, detail="notes must not be empty")
+    for item in payload.notes:
+        if len(item.content.encode("utf-8")) > MAX_CONTENT_SIZE:
+            raise HTTPException(status_code=413, detail=f"Content for {item.noteId} exceeds 100KB limit")
+    affected = []
+    now = datetime.now(timezone.utc).isoformat()
+    for item in payload.notes:
+        existing = read_single(
+            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "RETURN n.updatedAt AS updatedAt",
+            {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH},
+        )
+        if existing is None:
+            raise HTTPException(status_code=404, detail=f"Note not found: {item.noteId}")
+        if existing["updatedAt"] != item.updatedAt:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Note {item.noteId} was modified since propose step - reload and retry",
+            )
+        write_query(
+            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "SET n.content = $content, n.updatedAt = $now",
+            {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH, "content": item.content, "now": now},
+        )
+        affected.append(item.noteId)
+    # Write KnowledgeSession per D-10 / UPDK-06
+    session_id = "ks-" + uuid.uuid4().hex[:12]
+    write_query(
+        "MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) "
+        "SET s.mode = 'update', s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt",
+        {
+            "sessionId": session_id,
+            "project": payload.project,
+            "graph": KNOWLEDGE_GRAPH,
+            "prompt": payload.prompt,
+            "result": json.dumps({"affectedNoteIds": affected})[:2000],
+            "createdAt": now,
+        },
+    )
+    return {"affectedNoteIds": affected, "sessionId": session_id}
