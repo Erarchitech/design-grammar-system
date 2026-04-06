@@ -7,7 +7,16 @@
       "Bash(npx --version)",
       "mcp__Claude_Preview__preview_start",
       "Bash(docker compose:*)",
-      "Bash(xxd entrypoint.sh)"
+      "Bash(xxd entrypoint.sh)",
+      "Skill(gsd-new-milestone)",
+      "Skill(gsd-new-milestone:*)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: start milestone v1.1 Project Knowledge Graph\" --files .planning/PROJECT.md .planning/STATE.md)",
+      "WebSearch",
+      "WebFetch(domain:neo4j.com)",
+      "WebFetch(domain:vipinpg.com)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: complete project research\" --files .planning/research/)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: define v1.1 requirements \\(30 REQ-IDs\\)\" --files .planning/REQUIREMENTS.md .planning/research/SUMMARY.md .planning/research/STACK.md .planning/research/FEATURES.md .planning/research/ARCHITECTURE.md)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: create v1.1 roadmap \\(7 phases, 30 requirements\\)\" --files .planning/ROADMAP.md .planning/STATE.md)"
     ]
   }
 }
