@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -7,7 +8,6 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path as FilePath
 from typing import Any
-from urllib.parse import urlparse
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
@@ -40,6 +40,7 @@ VALIDATION_GRAPH = "ValidationGraph"
 KNOWLEDGE_GRAPH = "KnowledgeGraph"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
+KNOWLEDGE_REPO_ROOT = FilePath(os.getenv("DG_KNOWLEDGE_REPO_ROOT", "/mnt/repo"))
 
 
 class ExecutionResult(BaseModel):
@@ -106,6 +107,11 @@ class ValidationPublishRequest(BaseModel):
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
     entities: list[ValidationPublishEntityPayload] = Field(default_factory=list)
+
+
+class FolderIngestRequest(BaseModel):
+    project: str
+    path: str  # relative path inside mount root (e.g. "DG_OBSIDIAN/knowledge")
 
 
 def normalize_value(value: Any):
@@ -535,6 +541,50 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
     }
 
 
+def validate_ingest_path(user_path: str) -> FilePath:
+    """Resolve user-provided path against mount root; reject if outside root."""
+    candidate = (KNOWLEDGE_REPO_ROOT / user_path).resolve()
+    if not str(candidate).startswith(str(KNOWLEDGE_REPO_ROOT.resolve())):
+        raise HTTPException(status_code=403, detail="Path outside allowed repository root")
+    if not candidate.is_dir():
+        raise HTTPException(status_code=400, detail="Path is not a directory")
+    return candidate
+
+
+def extract_title_from_md(file_path: FilePath) -> tuple[str, str]:
+    """Return (title, content) from a markdown file. Title from first # heading or filename."""
+    content = file_path.read_text(encoding="utf-8")
+    for line in content.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("# ") and not stripped.startswith("##"):
+            return stripped[2:].strip(), content
+    return file_path.stem.replace("-", " ").replace("_", " "), content
+
+
+def extract_frontmatter_tags(content: str) -> list[str]:
+    """Extract tags from YAML frontmatter if present. Returns empty list if no frontmatter."""
+    if not content.startswith("---"):
+        return []
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return []
+    frontmatter = parts[1]
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if line.lower().startswith("tags:"):
+            tag_value = line[5:].strip()
+            if tag_value.startswith("[") and tag_value.endswith("]"):
+                return [t.strip().strip('"').strip("'").lower() for t in tag_value[1:-1].split(",") if t.strip()]
+            elif tag_value:
+                return [t.strip().lower() for t in tag_value.split(",") if t.strip()]
+    return []
+
+
+def generate_note_id(project: str, source_path: str) -> str:
+    """Deterministic ID from project + source path for idempotent re-ingest."""
+    return hashlib.sha256(f"{project}:{source_path}".encode()).hexdigest()[:16]
+
+
 @app.on_event("startup")
 def ensure_knowledge_indexes():
     """Create full-text index for KnowledgeNote search if it does not exist."""
@@ -870,3 +920,68 @@ def get_execution_result(execution_id: str):
 @app.get("/execution-result/latest/{workflow}")
 def get_latest_workflow_result(workflow: str):
     return WORKFLOW_STATUS.get(workflow, {"status": "unknown"})
+
+
+MAX_FILE_SIZE = 100 * 1024  # 100KB
+
+
+@app.post("/knowledge/ingest/folder")
+def ingest_folder(payload: FolderIngestRequest):
+    root = validate_ingest_path(payload.path)
+    md_files = list(root.rglob("*.md"))
+
+    inserted = 0
+    skipped = 0
+    now = datetime.now(timezone.utc).isoformat()
+
+    for md_file in md_files:
+        try:
+            if md_file.stat().st_size > MAX_FILE_SIZE:
+                skipped += 1
+                continue
+
+            title, content = extract_title_from_md(md_file)
+            tags = extract_frontmatter_tags(content)
+            relative_path = str(md_file.relative_to(KNOWLEDGE_REPO_ROOT))
+            note_id = generate_note_id(payload.project, relative_path)
+
+            # MERGE note (idempotent: re-ingest updates, not duplicates)
+            write_query(
+                "MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
+                "SET n.title = $title, n.content = $content, n.source = $source, "
+                "    n.tags = $tags, "
+                "    n.createdAt = coalesce(n.createdAt, $now), n.updatedAt = $now",
+                {
+                    "noteId": note_id,
+                    "project": payload.project,
+                    "graph": KNOWLEDGE_GRAPH,
+                    "title": title,
+                    "content": content,
+                    "source": relative_path,
+                    "tags": tags,
+                    "now": now,
+                },
+            )
+
+            # Create KnowledgeTag nodes and TAGGED_WITH relationships
+            for tag in tags:
+                write_query(
+                    "MERGE (t:KnowledgeTag {name: $tagName, project: $project, graph: $graph}) "
+                    "WITH t "
+                    "MATCH (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
+                    "MERGE (n)-[:TAGGED_WITH]->(t)",
+                    {
+                        "tagName": tag,
+                        "project": payload.project,
+                        "graph": KNOWLEDGE_GRAPH,
+                        "noteId": note_id,
+                    },
+                )
+
+            inserted += 1
+        except UnicodeDecodeError:
+            skipped += 1
+        except Exception:
+            skipped += 1
+
+    return {"inserted": inserted, "skipped": skipped}
