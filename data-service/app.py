@@ -1070,3 +1070,15 @@ def delete_knowledge_note(note_id: str):
         {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
     )
     return {"status": "deleted", "noteId": note_id}
+
+
+@app.get("/knowledge/sessions/{project}")
+def list_knowledge_sessions(project: str):
+    rows = read_many(
+        "MATCH (s:KnowledgeSession {project: $project, graph: $graph}) "
+        "RETURN s.sessionId AS sessionId, s.mode AS mode, "
+        "       s.prompt AS prompt, s.result AS result, s.createdAt AS createdAt "
+        "ORDER BY s.createdAt DESC",
+        {"project": project, "graph": KNOWLEDGE_GRAPH},
+    )
+    return {"project": project, "sessions": rows}
