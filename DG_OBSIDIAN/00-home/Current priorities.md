@@ -7,11 +7,14 @@ date: 2026-04-05
 
 ## Active
 
-1. **Model Viewer visual bugs** — rotation/mixed state in validation viewport needs fixing. See [[Model viewer needs rotation fix and validation management]].
-2. **Model Viewer as parallel view** — rebuild so it opens from Project page alongside Graph Viewer.
+1. **v1.1 Phase 01 human verification** — run `python test/test_knowledge_schema.py` against live Neo4j and verify startup hook creates index. See `01-HUMAN-UAT.md`.
+2. **v1.1 Phase 02: data-service CRUD + Folder Ingest** — REST endpoints for note CRUD, folder-based .md ingest. Next phase to plan/execute.
+3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport needs fixing. See [[Model viewer needs rotation fix and validation management]].
+4. **Model Viewer as parallel view** — rebuild so it opens from Project page alongside Graph Viewer.
 
 ## Upcoming
 
+- v1.1 Phases 3–7 (LLM workflows, update flow, UI panels, session history)
 - Improve LLM Cypher generation accuracy (schema constraint adherence)
 - Add more few-shot examples to [[n8n orchestrates LLM-powered rule ingestion and graph queries|ingest prompt]]
 - Harden [[Passwords hashed client-side with SubtleCrypto SHA-256|authentication]] with server-side auth

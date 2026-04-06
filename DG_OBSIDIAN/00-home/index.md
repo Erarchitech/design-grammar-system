@@ -64,4 +64,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]
 - [[sessions/2026-04-05 Obsidian vault creation|2026-04-05 Vault creation]]
 - [[sessions/2026-04-05 Model Viewer screenshot and per-run graphics state|2026-04-05 MV screenshots & per-run gfx]]
+- [[sessions/2026-04-06 Phase 01 KnowledgeGraph schema execution|2026-04-06 Phase 01 execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
