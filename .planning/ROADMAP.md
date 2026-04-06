@@ -48,8 +48,8 @@ Plans:
   5. All knowledge endpoints are reachable through the existing Nginx `/data-service/` proxy without new proxy rules
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — Docker volume mount + folder ingest endpoint with path traversal protection
-- [ ] 02-02-PLAN.md — CRUD endpoints (list, get, update, delete) + verification test script
+- [x] 02-01-PLAN.md — Docker volume mount + folder ingest endpoint with path traversal protection
+- [x] 02-02-PLAN.md — CRUD endpoints (list, get, update, delete) + verification test script
 **UI hint**: no
 
 ### Phase 3: n8n Knowledge Workflows + LLM Ingest and Query
