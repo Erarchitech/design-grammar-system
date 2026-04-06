@@ -63,8 +63,8 @@ Plans:
   4. GET `/knowledge/sessions/{project}` returns all sessions written so far in reverse-chronological order
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — Test scaffold + sessions endpoint + knowledge-ingest n8n workflow
-- [ ] 03-02-PLAN.md — Knowledge-query n8n workflow + end-to-end verification
+- [x] 03-01-PLAN.md — Test scaffold + sessions endpoint + knowledge-ingest n8n workflow
+- [x] 03-02-PLAN.md — Knowledge-query n8n workflow + end-to-end verification
 
 ### Phase 4: Update Flow Endpoints
 **Goal**: The three-step update backend is live — an architect can describe what to change, receive a list of matching notes, get a diff-annotated proposed edit, and confirm the write — with no LLM output silently overwriting Neo4j
