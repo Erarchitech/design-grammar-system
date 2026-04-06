@@ -11,3 +11,5 @@ data-service/data/*.json
 .claude/worktrees/epic-heyrovsky
 
 .claude/worktrees/
+
+docs/
