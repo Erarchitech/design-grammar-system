@@ -12,7 +12,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [-700, 0],
+      "position": [
+        -700,
+        0
+      ],
       "webhookId": "dg-knowledge-query"
     },
     {
@@ -35,7 +38,10 @@
       "name": "Set Input Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [-460, 0]
+      "position": [
+        -460,
+        0
+      ]
     },
     {
       "parameters": {
@@ -45,7 +51,10 @@
       "name": "Format Ack",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-460, -160]
+      "position": [
+        -460,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -55,7 +64,10 @@
       "name": "Respond Ack",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-220, -160]
+      "position": [
+        -220,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -65,7 +77,10 @@
       "name": "Build Full-Text Cypher",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-220, 0]
+      "position": [
+        -220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -85,7 +100,10 @@
       "name": "Execute Full-Text Search",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [20, 0]
+      "position": [
+        20,
+        0
+      ]
     },
     {
       "parameters": {
@@ -95,7 +113,10 @@
       "name": "Build Answer Prompt",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [260, 0]
+      "position": [
+        260,
+        0
+      ]
     },
     {
       "parameters": {
@@ -111,7 +132,10 @@
       "name": "Ollama Generate Answer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [500, 0]
+      "position": [
+        500,
+        0
+      ]
     },
     {
       "parameters": {
@@ -121,7 +145,10 @@
       "name": "Parse Answer",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [740, 0]
+      "position": [
+        740,
+        0
+      ]
     },
     {
       "parameters": {
@@ -132,7 +159,7 @@
           "ignoreSslIssues": true,
           "timeout": 30000
         },
-        "bodyParametersJson": "={{ (() => { const input = $items('Build Full-Text Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ answer: $json.answer, cypherUsed: input.cypherUsed, matchCount: $items('Build Answer Prompt')[0].json.matchCount }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'query', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }] }; })() }}",
+        "bodyParametersJson": "={{ (() => { const input = $items('Build Full-Text Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ answer: $json.answer, cypherUsed: input.cypherUsed, matchCount: $items('Build Answer Prompt')[0].json.matchCount }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'query', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }, { statement: 'MATCH (s:KnowledgeSession {sessionId: $sessionId, graph: $graph}) MERGE (c:KnowledgeClass {name: \\'KnowledgeSession\\', graph: $graph}) MERGE (s)-[:INSTANCE_OF]->(c)', parameters: { sessionId: sessionId, graph: 'KnowledgeGraph' } }] }; })() }}",
         "basicAuthUser": "neo4j",
         "basicAuthPassword": "12345678",
         "requestMethod": "POST"
@@ -141,7 +168,10 @@
       "name": "Write KnowledgeSession",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [980, 0]
+      "position": [
+        980,
+        0
+      ]
     },
     {
       "parameters": {
@@ -154,7 +184,10 @@
       "name": "Post Execution Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1220, 0]
+      "position": [
+        1220,
+        0
+      ]
     }
   ],
   "connections": {

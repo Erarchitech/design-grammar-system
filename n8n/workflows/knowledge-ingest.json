@@ -12,7 +12,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [-700, 0],
+      "position": [
+        -700,
+        0
+      ],
       "webhookId": "dg-knowledge-ingest"
     },
     {
@@ -35,7 +38,10 @@
       "name": "Set Input Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [-460, 0]
+      "position": [
+        -460,
+        0
+      ]
     },
     {
       "parameters": {
@@ -45,7 +51,10 @@
       "name": "Format Ack",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-460, -160]
+      "position": [
+        -460,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -55,7 +64,10 @@
       "name": "Respond Ack",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-220, -160]
+      "position": [
+        -220,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -65,7 +77,10 @@
       "name": "Build Insert Prompt",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-220, 0]
+      "position": [
+        -220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -81,7 +96,10 @@
       "name": "Ollama Generate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [20, 0]
+      "position": [
+        20,
+        0
+      ]
     },
     {
       "parameters": {
@@ -91,17 +109,23 @@
       "name": "Parse LLM JSON",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [260, 0]
+      "position": [
+        260,
+        0
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const input = $json;\nconst now = new Date().toISOString();\nconst project = input.project_name;\nconst graph = 'KnowledgeGraph';\nconst noteId = input.noteId;\nconst title = input.title;\nconst content = input.content;\nconst tags = input.tags || ['untagged'];\n\n// Statement 1: MERGE KnowledgeNote\nconst noteStatement = {\n  statement: [\n    'MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph})',\n    'SET n.title = $title, n.content = $content, n.tags = $tags, n.createdAt = $now, n.updatedAt = $now'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    project: project,\n    graph: graph,\n    title: title,\n    content: content,\n    tags: tags,\n    now: now\n  }\n};\n\n// Additional statements: one per tag — MERGE KnowledgeTag + TAGGED_WITH relationship\nconst tagStatements = tags.map(tag => ({\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    'MERGE (t:KnowledgeTag {name: $tag, project: $project, graph: $graph})',\n    'MERGE (n)-[:TAGGED_WITH]->(t)'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    tag: tag,\n    project: project,\n    graph: graph\n  }\n}));\n\nconst neo4jBody = { statements: [noteStatement, ...tagStatements] };\nreturn [{ json: { ...input, neo4jBody } }];"
+        "functionCode": "const input = $json;\nconst now = new Date().toISOString();\nconst project = input.project_name;\nconst graph = 'KnowledgeGraph';\nconst noteId = input.noteId;\nconst title = input.title;\nconst content = input.content;\nconst tags = input.tags || ['untagged'];\n\n// Statement 1: MERGE KnowledgeNote\nconst noteStatement = {\n  statement: [\n    'MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph})',\n    'SET n.title = $title, n.content = $content, n.tags = $tags, n.createdAt = $now, n.updatedAt = $now'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    project: project,\n    graph: graph,\n    title: title,\n    content: content,\n    tags: tags,\n    now: now\n  }\n};\n\n// Additional statements: one per tag — MERGE KnowledgeTag + TAGGED_WITH relationship\nconst tagStatements = tags.map(tag => ({\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    'MERGE (t:KnowledgeTag {name: $tag, project: $project, graph: $graph})',\n    'MERGE (n)-[:TAGGED_WITH]->(t)'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    tag: tag,\n    project: project,\n    graph: graph\n  }\n}));\n\n// INSTANCE_OF link to parent class hub node\nconst noteClassStatement = {\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    \"MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: $graph})\",\n    'MERGE (n)-[:INSTANCE_OF]->(c)'\n  ].join(' '),\n  parameters: { noteId: noteId, graph: graph }\n};\nconst neo4jBody = { statements: [noteStatement, ...tagStatements, noteClassStatement] };\nreturn [{ json: { ...input, neo4jBody } }];"
       },
       "id": "ki-build-cypher",
       "name": "Build Cypher",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [500, 0]
+      "position": [
+        500,
+        0
+      ]
     },
     {
       "parameters": {
@@ -121,7 +145,10 @@
       "name": "Execute Neo4j Cypher",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [740, 0]
+      "position": [
+        740,
+        0
+      ]
     },
     {
       "parameters": {
@@ -132,7 +159,7 @@
           "ignoreSslIssues": true,
           "timeout": 30000
         },
-        "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }] }; })() }}",
+        "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }, { statement: 'MATCH (s:KnowledgeSession {sessionId: $sessionId, graph: $graph}) MERGE (c:KnowledgeClass {name: \\'KnowledgeSession\\', graph: $graph}) MERGE (s)-[:INSTANCE_OF]->(c)', parameters: { sessionId: sessionId, graph: 'KnowledgeGraph' } }] }; })() }}",
         "basicAuthUser": "neo4j",
         "basicAuthPassword": "12345678",
         "requestMethod": "POST"
@@ -141,7 +168,10 @@
       "name": "Write KnowledgeSession",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [980, 0]
+      "position": [
+        980,
+        0
+      ]
     },
     {
       "parameters": {
@@ -154,7 +184,10 @@
       "name": "Post Execution Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [1220, 0]
+      "position": [
+        1220,
+        0
+      ]
     }
   ],
   "connections": {

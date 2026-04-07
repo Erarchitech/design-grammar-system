@@ -669,11 +669,33 @@ def generate_note_id(project: str, source_path: str) -> str:
 
 @app.on_event("startup")
 def ensure_knowledge_indexes():
-    """Create full-text index for KnowledgeNote search if it does not exist."""
+    """Create full-text index and parent class hub nodes for KnowledgeGraph."""
     with driver.session() as session:
         session.run(
             "CREATE FULLTEXT INDEX knowledge_note_search IF NOT EXISTS "
             "FOR (n:KnowledgeNote) ON EACH [n.title, n.content]"
+        ).consume()
+        # Ensure parent class hub nodes exist for graph connectivity
+        session.run(
+            "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: 'KnowledgeGraph'}) "
+            "SET c.label = 'KnowledgeNote'"
+        ).consume()
+        session.run(
+            "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: 'KnowledgeGraph'}) "
+            "SET c.label = 'KnowledgeSession'"
+        ).consume()
+        # Backfill: connect any existing nodes that lack INSTANCE_OF links
+        session.run(
+            "MATCH (n:KnowledgeNote) WHERE NOT (n)-[:INSTANCE_OF]->(:KnowledgeClass) "
+            "WITH n "
+            "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: 'KnowledgeGraph'}) "
+            "MERGE (n)-[:INSTANCE_OF]->(c)"
+        ).consume()
+        session.run(
+            "MATCH (s:KnowledgeSession) WHERE NOT (s)-[:INSTANCE_OF]->(:KnowledgeClass) "
+            "WITH s "
+            "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: 'KnowledgeGraph'}) "
+            "MERGE (s)-[:INSTANCE_OF]->(c)"
         ).consume()
 
 
@@ -1045,6 +1067,18 @@ def ingest_folder(payload: FolderIngestRequest):
                 },
             )
 
+            # Connect to parent class node
+            write_query(
+                "MATCH (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
+                "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: $graph}) "
+                "MERGE (n)-[:INSTANCE_OF]->(c)",
+                {
+                    "noteId": note_id,
+                    "project": payload.project,
+                    "graph": KNOWLEDGE_GRAPH,
+                },
+            )
+
             # Create KnowledgeTag nodes and TAGGED_WITH relationships
             for tag in tags:
                 write_query(
@@ -1253,6 +1287,16 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
             "prompt": payload.prompt,
             "result": json.dumps({"affectedNoteIds": affected})[:2000],
             "createdAt": now,
+        },
+    )
+    # Connect to parent class node
+    write_query(
+        "MATCH (s:KnowledgeSession {sessionId: $sessionId, graph: $graph}) "
+        "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: $graph}) "
+        "MERGE (s)-[:INSTANCE_OF]->(c)",
+        {
+            "sessionId": session_id,
+            "graph": KNOWLEDGE_GRAPH,
         },
     )
     return {"affectedNoteIds": affected, "sessionId": session_id}

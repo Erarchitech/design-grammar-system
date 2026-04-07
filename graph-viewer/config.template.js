@@ -26,7 +26,8 @@ window.GRAPH_CONFIG = {
     Literal: { label: "lex" },
     KnowledgeNote: { label: "title" },
     KnowledgeTag: { label: "name" },
-    KnowledgeSession: { label: "mode" }
+    KnowledgeSession: { label: "mode" },
+    KnowledgeClass: { label: "label" }
   },
   relationships: {
     HAS_BODY: { caption: true, thickness: 2 },
@@ -34,7 +35,8 @@ window.GRAPH_CONFIG = {
     REFERS_TO: { caption: true, thickness: 2 },
     ARG: { caption: true, thickness: 2 },
     TAGGED_WITH: { caption: true, thickness: 2 },
-    HAS_SESSION: { caption: true, thickness: 2 }
+    HAS_SESSION: { caption: true, thickness: 2 },
+    INSTANCE_OF: { caption: true, thickness: 2 }
   },
   visGroups: {
     Class: { color: { background: "#78c38a", border: "#5aa46c" } },
@@ -48,6 +50,7 @@ window.GRAPH_CONFIG = {
     Literal: { color: { background: "#ffd6a5", border: "#d9a36a" } },
     KnowledgeNote: { color: { background: "#4ecdc4", border: "#2fa89f" } },
     KnowledgeTag: { color: { background: "#ffe66d", border: "#d4bf3a" } },
-    KnowledgeSession: { color: { background: "#a78bfa", border: "#7c5fcf" } }
+    KnowledgeSession: { color: { background: "#a78bfa", border: "#7c5fcf" } },
+    KnowledgeClass: { color: { background: "#f472b6", border: "#db2777" } }
   }
 };

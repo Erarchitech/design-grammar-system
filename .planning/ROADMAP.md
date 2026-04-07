@@ -1,4 +1,4 @@
-# Roadmap: Design Grammar System v1.1 — Project Knowledge Graph
+﻿# Roadmap: Design Grammar System v1.1 — Project Knowledge Graph
 
 ## Overview
 
@@ -89,9 +89,10 @@ Plans:
   3. In Insert Knowledge mode, the user can enter a folder path and submit it; the panel shows the number of notes imported
   4. In Insert Knowledge mode, the user can type a natural language prompt and submit it; the panel shows the created note title via async polling
   5. In Query Knowledge mode, the user can type a question and see a natural language answer in the Response field and the Cypher query in the Cypher panel
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 05-01-PLAN.md � Sidebar restructuring + knowledge state + Insert Knowledge panel
+- [ ] 05-02-PLAN.md � Query Knowledge panel + full verification checkpoint
 **UI hint**: yes
 
 ### Phase 6: UI Update Panel + Inline Diff Editor
@@ -103,9 +104,10 @@ Plans:
   2. After selecting one or more nodes and clicking Edit, the panel renders the LLM-proposed changes with deletions shown in red strikethrough and additions in red bold — no confirmed write has occurred yet
   3. The diff panel sits adjacent to an editable textarea containing the proposed text; the user can modify the textarea before confirming
   4. Clicking Confirm sends the final text to the backend and the sidebar shows a notification listing the updated node titles
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Schema foundation + full-text index + verification
+- [ ] 06-01-PLAN.md — CSS + state + Match view + Propose handler
+- [ ] 06-02-PLAN.md — Review view + Summary + Confirm + verification checkpoint
 **UI hint**: yes
 
 ### Phase 7: UI Session History Panel + NeoVis Knowledge View
@@ -132,8 +134,8 @@ Plans:
 | 2. data-service CRUD + Folder Ingest | v1.1 | 0/2 | Planning complete | - |
 | 3. n8n Knowledge Workflows | v1.1 | 0/2 | Planning complete | - |
 | 4. Update Flow Endpoints | v1.1 | 0/? | Not started | - |
-| 5. UI Mode Restructuring + Insert and Query Panels | v1.1 | 0/? | Not started | - |
-| 6. UI Update Panel + Inline Diff Editor | v1.1 | 0/? | Not started | - |
+| 5. UI Mode Restructuring + Insert and Query Panels | v1.1 | 0/2 | Planning complete | - |
+| 6. UI Update Panel + Inline Diff Editor | v1.1 | 0/2 | Planning complete | - |
 | 7. UI Session History Panel + NeoVis Knowledge View | v1.1 | 0/? | Not started | - |
 
 ---
