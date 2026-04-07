@@ -2163,6 +2163,54 @@
           }
         };
 
+        const submitConfirm = async () => {
+          const notesToConfirm = updateDiffs
+            .filter(d => !skippedNoteIds.includes(d.noteId))
+            .map(d => ({
+              noteId: d.noteId,
+              content: editedContents[d.noteId] ?? d.proposedContent,
+              updatedAt: d.updatedAt
+            }));
+          if (notesToConfirm.length === 0) {
+            setKnowledgeStatus("All notes skipped — nothing to confirm");
+            return;
+          }
+          setKnowledgeIsRunning(true);
+          setKnowledgeStatus("Saving changes...");
+          try {
+            const base = getDataServiceBaseUrl();
+            const res = await fetch(base + "/knowledge/update/confirm", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                notes: notesToConfirm,
+                project: project || "default-project",
+                prompt: knowledgePromptText.trim()
+              })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              if (res.status === 409) {
+                setKnowledgeResponseText("Conflict: " + (data?.detail || "Note was modified externally. Reload and retry."));
+              } else {
+                setKnowledgeResponseText("Error: " + (data?.detail || res.status));
+              }
+              return;
+            }
+            const titles = notesToConfirm
+              .map(n => updateDiffs.find(d => d.noteId === n.noteId)?.title || n.noteId)
+              .join(", ");
+            setKnowledgeResponseText("Updated: " + titles);
+            setKnowledgeStatus("Done");
+            resetUpdateState();
+            setKnowledgePromptText("");
+          } catch (err) {
+            setKnowledgeResponseText("Error: " + err.message);
+          } finally {
+            setKnowledgeIsRunning(false);
+          }
+        };
+
         const getNode = (id) => {
           const data = vizRef.current?._data?.nodes;
           if (!data) return null;
@@ -3318,6 +3366,38 @@
                             className: "secondary-btn"
                           }, "Skip this note")
                         )
+                      )
+                    : null,
+                  updateView === "summary"
+                    ? e(React.Fragment, null,
+                        e("button", {
+                          onClick: resetUpdateState,
+                          className: "secondary-btn",
+                          style: { marginBottom: "12px" }
+                        }, "← Back to search"),
+                        e("span", { style: { fontSize: "13px", fontWeight: 700, display: "block", marginBottom: "8px" } }, "Review Changes"),
+                        updateDiffs.map(function(d) {
+                          var isSkipped = skippedNoteIds.includes(d.noteId);
+                          return e("div", {
+                            key: d.noteId,
+                            style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }
+                          },
+                            e("span", { style: { fontSize: "13px" } }, d.title),
+                            isSkipped
+                              ? e("span", { style: { fontSize: "12px", color: "#98a4bd" } }, "skipped")
+                              : e("span", { style: { fontSize: "12px", color: "#2fb16f", fontWeight: 600 } }, "changed")
+                          );
+                        }),
+                        (function() {
+                          var confirmCount = updateDiffs.filter(function(d) { return !skippedNoteIds.includes(d.noteId); }).length;
+                          return confirmCount === 0
+                            ? e("div", { className: "hint", style: { marginTop: "8px" } }, "All notes skipped — nothing to confirm")
+                            : e("button", {
+                                onClick: submitConfirm,
+                                disabled: knowledgeIsRunning,
+                                style: { marginTop: "12px" }
+                              }, "Confirm All (" + confirmCount + " notes)");
+                        })()
                       )
                     : null,
                   e("label", { style: { marginTop: "12px", display: "block" } }, "Response"),
