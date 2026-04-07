@@ -23,13 +23,18 @@ window.GRAPH_CONFIG = {
     ObjectProperty: { label: "label" },
     Builtin: { label: "label" },
     Var: { label: "name" },
-    Literal: { label: "lex" }
+    Literal: { label: "lex" },
+    KnowledgeNote: { label: "title" },
+    KnowledgeTag: { label: "name" },
+    KnowledgeSession: { label: "mode" }
   },
   relationships: {
     HAS_BODY: { caption: true, thickness: 2 },
     HAS_HEAD: { caption: true, thickness: 2 },
     REFERS_TO: { caption: true, thickness: 2 },
-    ARG: { caption: true, thickness: 2 }
+    ARG: { caption: true, thickness: 2 },
+    TAGGED_WITH: { caption: true, thickness: 2 },
+    HAS_SESSION: { caption: true, thickness: 2 }
   },
   visGroups: {
     Class: { color: { background: "#78c38a", border: "#5aa46c" } },
@@ -40,6 +45,9 @@ window.GRAPH_CONFIG = {
     Rule: { color: { background: "#6da7ff", border: "#3f7ed9" } },
     Atom: { color: { background: "#b7c0cc", border: "#8c96a3" } },
     Var: { color: { background: "#c6b5ff", border: "#9278d9" } },
-    Literal: { color: { background: "#ffd6a5", border: "#d9a36a" } }
+    Literal: { color: { background: "#ffd6a5", border: "#d9a36a" } },
+    KnowledgeNote: { color: { background: "#4ecdc4", border: "#2fa89f" } },
+    KnowledgeTag: { color: { background: "#ffe66d", border: "#d4bf3a" } },
+    KnowledgeSession: { color: { background: "#a78bfa", border: "#7c5fcf" } }
   }
 };

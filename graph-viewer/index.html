@@ -1326,6 +1326,13 @@
         const [graphView, setGraphView] = React.useState("MetaGraph");
         const buildCypher = (view) => {
           const pf = project ? ", project:'" + project.replace(/'/g, "") + "'" : "";
+          if (view === "KnowledgeGraph") {
+            return (
+              "MATCH (n {graph:'KnowledgeGraph'" + pf + "}) " +
+              "OPTIONAL MATCH (n)-[r]-(m {graph:'KnowledgeGraph'" + pf + "}) " +
+              "RETURN n, r, m"
+            );
+          }
           if (view === "MetaGraph") {
             return (
               "MATCH (r:Rule {graph:'Metagraph'" + pf + "}) " +
@@ -2560,6 +2567,18 @@
         React.useEffect(() => {
           run();
         }, []);
+
+        React.useEffect(() => {
+          if (activeTab === "specs-notes") {
+            const q = buildCypher("KnowledgeGraph");
+            setCypher(q);
+            run(q);
+          } else {
+            const q = buildCypher(graphView);
+            setCypher(q);
+            run(q);
+          }
+        }, [activeTab]);
 
         const propEntries = selected?.props || {};
         const keySet = new Set(Object.keys(propEntries));
