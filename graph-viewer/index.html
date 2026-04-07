@@ -3235,6 +3235,91 @@
                           : null
                       )
                     : null,
+                  updateView === "review" && updateDiffs.length > 0
+                    ? e(React.Fragment, null,
+                        e("button", {
+                          onClick: resetUpdateState,
+                          className: "secondary-btn",
+                          style: { marginBottom: "12px" }
+                        }, "← Back to search"),
+                        e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" } },
+                          e("span", { style: { fontSize: "13px", fontWeight: 700 } }, updateDiffs[currentNoteIndex]?.title || ""),
+                          e("span", { style: { fontSize: "12px", color: "#98a4bd" } }, "Note " + (currentNoteIndex + 1) + " of " + updateDiffs.length)
+                        ),
+                        updateDiffs[currentNoteIndex]?.hasChanges !== false
+                          ? e(React.Fragment, null,
+                              e("button", {
+                                onClick: function() { setShowDiff(function(prev) { return !prev; }); },
+                                style: { background: "none", border: "none", color: "#5fd0ff", fontSize: "12px", cursor: "pointer", padding: 0, marginBottom: "4px" }
+                              }, showDiff ? "Hide diff" : "Show diff"),
+                              showDiff
+                                ? e("div", {
+                                    className: "diff-preview",
+                                    dangerouslySetInnerHTML: { __html: updateDiffs[currentNoteIndex]?.diffHtml || "" }
+                                  })
+                                : null,
+                              e("textarea", {
+                                className: "prompt-input",
+                                rows: 8,
+                                value: editedContents[updateDiffs[currentNoteIndex]?.noteId] || "",
+                                onChange: function(ev) {
+                                  var noteId = updateDiffs[currentNoteIndex]?.noteId;
+                                  if (noteId) setEditedContents(function(prev) {
+                                    var next = Object.assign({}, prev);
+                                    next[noteId] = ev.target.value;
+                                    return next;
+                                  });
+                                },
+                                style: { minHeight: "120px", resize: "vertical", marginTop: "8px" }
+                              })
+                            )
+                          : e(React.Fragment, null,
+                              e("div", { className: "hint", style: { fontStyle: "italic", marginBottom: "8px" } }, "No changes proposed"),
+                              e("textarea", {
+                                className: "prompt-input",
+                                rows: 8,
+                                value: editedContents[updateDiffs[currentNoteIndex]?.noteId] || "",
+                                onChange: function(ev) {
+                                  var noteId = updateDiffs[currentNoteIndex]?.noteId;
+                                  if (noteId) setEditedContents(function(prev) {
+                                    var next = Object.assign({}, prev);
+                                    next[noteId] = ev.target.value;
+                                    return next;
+                                  });
+                                },
+                                style: { minHeight: "120px", resize: "vertical", marginTop: "8px" }
+                              })
+                            ),
+                        e("div", { style: { display: "flex", gap: "8px", marginTop: "12px" } },
+                          e("button", {
+                            onClick: function() { setCurrentNoteIndex(function(prev) { return prev - 1; }); setShowDiff(true); },
+                            disabled: currentNoteIndex === 0
+                          }, "Previous note"),
+                          currentNoteIndex < updateDiffs.length - 1
+                            ? e("button", {
+                                onClick: function() { setCurrentNoteIndex(function(prev) { return prev + 1; }); setShowDiff(true); }
+                              }, "Next note")
+                            : e("button", {
+                                onClick: function() { setUpdateView("summary"); }
+                              }, "Review Summary"),
+                          e("button", {
+                            onClick: function() {
+                              var noteId = updateDiffs[currentNoteIndex]?.noteId;
+                              if (noteId && !skippedNoteIds.includes(noteId)) {
+                                setSkippedNoteIds(function(prev) { return prev.concat([noteId]); });
+                              }
+                              if (currentNoteIndex < updateDiffs.length - 1) {
+                                setCurrentNoteIndex(function(prev) { return prev + 1; });
+                                setShowDiff(true);
+                              } else {
+                                setUpdateView("summary");
+                              }
+                            },
+                            className: "secondary-btn"
+                          }, "Skip this note")
+                        )
+                      )
+                    : null,
                   e("label", { style: { marginTop: "12px", display: "block" } }, "Response"),
                   e("textarea", {
                     className: "response-output",
