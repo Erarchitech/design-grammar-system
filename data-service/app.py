@@ -50,24 +50,25 @@ N8N_INTERNAL_URL = os.getenv("N8N_INTERNAL_URL", "http://n8n:5678")
 def word_diff_html(original: str, proposed: str) -> str:
     """Word-level diff as HTML with <span class='diff-del'> and <span class='diff-ins'> markers."""
     import difflib
+    import html as html_mod
     original_words = original.split()
     proposed_words = proposed.split()
     matcher = difflib.SequenceMatcher(None, original_words, proposed_words, autojunk=False)
     parts: list[str] = []
     for op, i1, i2, j1, j2 in matcher.get_opcodes():
         if op == "equal":
-            parts.extend(original_words[i1:i2])
+            parts.extend(html_mod.escape(w) for w in original_words[i1:i2])
         elif op == "replace":
             for w in original_words[i1:i2]:
-                parts.append(f'<span class="diff-del">{w}</span>')
+                parts.append(f'<span class="diff-del">{html_mod.escape(w)}</span>')
             for w in proposed_words[j1:j2]:
-                parts.append(f'<span class="diff-ins">{w}</span>')
+                parts.append(f'<span class="diff-ins">{html_mod.escape(w)}</span>')
         elif op == "delete":
             for w in original_words[i1:i2]:
-                parts.append(f'<span class="diff-del">{w}</span>')
+                parts.append(f'<span class="diff-del">{html_mod.escape(w)}</span>')
         elif op == "insert":
             for w in proposed_words[j1:j2]:
-                parts.append(f'<span class="diff-ins">{w}</span>')
+                parts.append(f'<span class="diff-ins">{html_mod.escape(w)}</span>')
     return " ".join(parts)
 
 

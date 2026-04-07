@@ -3200,6 +3200,13 @@
                           ? e("div", { className: "hint", style: { marginTop: "12px" } }, "No matching notes found. Try a different description.")
                           : null,
                         updateView === "proposing"
+                          ? e("button", {
+                              onClick: function() { resetUpdateState(); setKnowledgeIsRunning(false); },
+                              className: "secondary-btn",
+                              style: { marginTop: "8px", marginBottom: "8px" }
+                            }, "← Back to search")
+                          : null,
+                        updateView === "proposing"
                           ? e("div", { style: { opacity: 0.4, pointerEvents: "none", marginTop: "12px" } },
                               updateCandidates.map(function(c) {
                                 return e("div", { key: c.noteId, style: { padding: "8px 0", fontSize: "13px" } }, c.title);
