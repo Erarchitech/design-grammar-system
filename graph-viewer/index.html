@@ -1902,6 +1902,40 @@
           }
         };
 
+        const requestKnowledge = async () => {
+          if (!knowledgePromptText.trim()) { setKnowledgeStatus("Question is required"); return; }
+          if (knowledgeIsRunning) return;
+          setKnowledgeIsRunning(true);
+          setKnowledgeResponseText("");
+          setKnowledgeResponseCypher("");
+          setKnowledgeProgress(0);
+          setKnowledgeWorkflowStep(1);
+          setKnowledgeStepTimes(Array(knowledgeQuerySteps.length).fill(null));
+          setKnowledgeStatus("Sending question...");
+          try {
+            const cfg = window.GRAPH_CONFIG || {};
+            const headers = { "Content-Type": "application/json" };
+            if (cfg.n8nUser && cfg.n8nPassword) {
+              headers["Authorization"] = "Basic " + btoa(cfg.n8nUser + ":" + cfg.n8nPassword);
+            }
+            const res = await fetch("/n8n/webhook/dg/knowledge-query", {
+              method: "POST",
+              headers: headers,
+              body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
+            });
+            if (res.ok) {
+              startKnowledgePollingLatest("knowledge-query", "knowledge-query");
+            } else {
+              setKnowledgeResponseText("Error: webhook returned " + res.status);
+              setKnowledgeIsRunning(false);
+            }
+          } catch (err) {
+            setKnowledgeResponseText("Error: " + err.message);
+            setKnowledgeStatus("Failed");
+            setKnowledgeIsRunning(false);
+          }
+        };
+
         const getNode = (id) => {
           const data = vizRef.current?._data?.nodes;
           if (!data) return null;
@@ -2828,7 +2862,55 @@
                 )
               : null,
             knowledgeMode === "query"
-              ? e("div", { className: "hint", style: { marginTop: "12px" } }, "Query Knowledge panel loading...")
+              ? e(React.Fragment, null,
+                  e("textarea", {
+                    rows: 6,
+                    value: knowledgePromptText,
+                    className: "prompt-input",
+                    placeholder: "Ask a question about your project knowledge...",
+                    onChange: (ev) => setKnowledgePromptText(ev.target.value),
+                    style: { marginTop: "8px" }
+                  }),
+                  e("button", {
+                    onClick: requestKnowledge,
+                    disabled: knowledgeIsRunning,
+                    style: { marginTop: "8px" }
+                  }, "Query Knowledge"),
+                  e("div", { className: "progress" },
+                    e("div", { style: { width: knowledgeProgress + "%" } })
+                  ),
+                  e("div", { className: "steps" },
+                    knowledgeQuerySteps.map(function(s, i) {
+                      var elapsed = knowledgeStepTimes[i];
+                      var isActive = i + 1 === knowledgeStep;
+                      var live = isActive && knowledgeStepStartedAtRef.current
+                        ? roundSeconds(Date.now() - knowledgeStepStartedAtRef.current)
+                        : null;
+                      var suffix = elapsed !== null && elapsed !== undefined
+                        ? " (" + elapsed.toFixed(1) + "s)"
+                        : (live !== null ? " (" + live.toFixed(1) + "s)" : "");
+                      return e("div", { key: s, className: isActive ? "active" : "" }, s + suffix);
+                    })
+                  ),
+                  e("label", { style: { marginTop: "12px", display: "block" } }, "Response"),
+                  e("textarea", {
+                    className: "response-output",
+                    rows: 6,
+                    value: knowledgeResponseText,
+                    readOnly: true,
+                    placeholder: "Response will appear here..."
+                  }),
+                  e("div", null,
+                    e("label", null, "Workflow Cypher"),
+                    e("textarea", {
+                      className: "workflow-output",
+                      rows: 6,
+                      value: knowledgeResponseCypher,
+                      readOnly: true,
+                      placeholder: "Cypher used to query the knowledge graph will appear here..."
+                    })
+                  )
+                )
               : null,
             e("div", { className: "status" }, knowledgeStatus)
             ) : null
