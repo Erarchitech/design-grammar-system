@@ -106,7 +106,7 @@ Plans:
   4. Clicking Confirm sends the final text to the backend and the sidebar shows a notification listing the updated node titles
 **Plans**: 2 plans
 Plans:
-- [ ] 06-01-PLAN.md — CSS + state + Match view + Propose handler
+- [x] 06-01-PLAN.md — CSS + state + Match view + Propose handler
 - [ ] 06-02-PLAN.md — Review view + Summary + Confirm + verification checkpoint
 **UI hint**: yes
 
