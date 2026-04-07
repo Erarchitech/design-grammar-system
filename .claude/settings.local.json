@@ -23,7 +23,8 @@
       "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" roadmap get-phase \"3\" --raw)",
       "Bash(python -c \"import json; w=json.load\\(open\\(''C:/Users/Admin/source/repos/design-grammar-system/n8n/workflows/knowledge-ingest.json''\\)\\); nodes=[n[''name''] for n in w.get\\(''nodes'',[]\\)]; print\\(''Name:'', w.get\\(''name''\\)\\); print\\(''Active:'', w.get\\(''active''\\)\\); print\\(''Nodes:'', nodes\\); print\\(''Node count:'', len\\(nodes\\)\\)\")",
       "Bash(python -c \"import json; w=json.load\\(open\\(''C:/Users/Admin/source/repos/design-grammar-system/n8n/workflows/knowledge-query.json''\\)\\); nodes=[n[''name''] for n in w.get\\(''nodes'',[]\\)]; print\\(''Name:'', w.get\\(''name''\\)\\); print\\(''Active:'', w.get\\(''active''\\)\\); print\\(''Nodes:'', nodes\\); print\\(''Node count:'', len\\(nodes\\)\\)\")",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(ls .planning/phases/04-update-flow-endpoints/*-PLAN.md)"
     ]
   }
 }

@@ -47,6 +47,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Neo4j node tagging required after n8n ingestion]]
 - [[LLM Cypher output needs bracket nesting validation]]
 - [[Edit mode requires cleanup of old atoms before re-creation]]
+- [[docker-compose depends_on cycle with n8n and data-service]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -71,4 +72,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-06 Phase 03 context and planning|2026-04-06 Phase 03 context & planning]]
 - [[sessions/2026-04-06 Phase 03 n8n knowledge workflows execution|2026-04-06 Phase 03 execution]]
 - [[sessions/2026-04-06 Phase 04 context and planning|2026-04-06 Phase 04 context & planning]]
+- [[sessions/2026-04-07 Phase 04 update-flow-endpoints execution|2026-04-07 Phase 04 execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
