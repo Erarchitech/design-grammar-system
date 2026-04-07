@@ -1939,7 +1939,7 @@
             const res = await fetch("/n8n/webhook/dg/knowledge-ingest", {
               method: "POST",
               headers: headers,
-              body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
+              body: JSON.stringify({ prompt_text: knowledgePromptText.trim(), project_name: project || "default-project" })
             });
             var rawText = await res.text();
             var data = null;
@@ -1982,7 +1982,7 @@
             const res = await fetch("/n8n/webhook/dg/knowledge-query", {
               method: "POST",
               headers: headers,
-              body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
+              body: JSON.stringify({ prompt_text: knowledgePromptText.trim(), project_name: project || "default-project" })
             });
             var rawText = await res.text();
             var data = null;
