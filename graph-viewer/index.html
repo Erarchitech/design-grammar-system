@@ -945,6 +945,11 @@
         { value: "edit", label: "Edit Rules" }
       ];
 
+      const KNOWLEDGE_OPTIONS = [
+        { value: "insert", label: "Insert Knowledge" },
+        { value: "query", label: "Query Knowledge" }
+      ];
+
       function getDataServiceBaseUrl() {
         const cfg = window.GRAPH_CONFIG || {};
         return (cfg.dataServiceUrl || "/data-service").replace(/\/+$/, "");
@@ -1364,11 +1369,29 @@
         const [contextMenu, setContextMenu] = React.useState(null);
         const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
+        const [activeTab, setActiveTab] = React.useState("design-rules");
+        const [knowledgeMode, setKnowledgeMode] = React.useState("insert");
+        const [isKnowledgeModeMenuOpen, setIsKnowledgeModeMenuOpen] = React.useState(false);
+        const [insertTab, setInsertTab] = React.useState("folder");
+        const [folderPath, setFolderPath] = React.useState("");
+        const [knowledgePromptText, setKnowledgePromptText] = React.useState("");
+        const [knowledgeResponseText, setKnowledgeResponseText] = React.useState("");
+        const [knowledgeResponseCypher, setKnowledgeResponseCypher] = React.useState("");
+        const [knowledgeIsRunning, setKnowledgeIsRunning] = React.useState(false);
+        const [knowledgeProgress, setKnowledgeProgress] = React.useState(0);
+        const [knowledgeStep, setKnowledgeStep] = React.useState(0);
+        const [knowledgeStepTimes, setKnowledgeStepTimes] = React.useState([]);
+        const [knowledgeStatus, setKnowledgeStatus] = React.useState("Ready");
+
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
         const stepStartedAtRef = React.useRef(null);
         const pollRef = React.useRef(null);
         const modeDropdownRef = React.useRef(null);
+        const knowledgeModeDropdownRef = React.useRef(null);
+        const knowledgeStepRef = React.useRef(0);
+        const knowledgeStepStartedAtRef = React.useRef(null);
+        const knowledgePollRef = React.useRef(null);
 
         const ingestSteps = [
           "Send rules",
@@ -1385,6 +1408,22 @@
           "Complete"
         ];
         const steps = mode === "query" ? querySteps : ingestSteps;
+
+        const knowledgeInsertSteps = [
+          "Send prompt",
+          "Extracting title & tags",
+          "Writing to graph",
+          "Recording session",
+          "Complete"
+        ];
+        const knowledgeQuerySteps = [
+          "Send question",
+          "Searching knowledge graph",
+          "Generating answer",
+          "Recording session",
+          "Complete"
+        ];
+        const knowledgeSteps = knowledgeMode === "query" ? knowledgeQuerySteps : knowledgeInsertSteps;
 
         React.useEffect(() => {
           stepRef.current = step;
@@ -1433,6 +1472,17 @@
             if (!modeDropdownRef.current) return;
             if (!modeDropdownRef.current.contains(event.target)) {
               setIsModeMenuOpen(false);
+            }
+          };
+          document.addEventListener("mousedown", handlePointerDown);
+          return () => document.removeEventListener("mousedown", handlePointerDown);
+        }, []);
+
+        React.useEffect(() => {
+          const handlePointerDown = (event) => {
+            if (!knowledgeModeDropdownRef.current) return;
+            if (!knowledgeModeDropdownRef.current.contains(event.target)) {
+              setIsKnowledgeModeMenuOpen(false);
             }
           };
           document.addEventListener("mousedown", handlePointerDown);
@@ -1674,6 +1724,182 @@
           };
           clearPoll();
           poll();
+        };
+
+        const clearKnowledgePoll = () => {
+          if (knowledgePollRef.current) {
+            clearTimeout(knowledgePollRef.current);
+            knowledgePollRef.current = null;
+          }
+        };
+
+        const setKnowledgeWorkflowStep = (nextStep) => {
+          const now = Date.now();
+          const currentStep = knowledgeStepRef.current;
+          if (currentStep > 0 && knowledgeStepStartedAtRef.current) {
+            const elapsed = roundSeconds(now - knowledgeStepStartedAtRef.current);
+            setKnowledgeStepTimes((times) => {
+              const next = times.length ? times.slice() : Array(knowledgeSteps.length).fill(null);
+              next[currentStep - 1] = elapsed;
+              return next;
+            });
+          }
+          knowledgeStepRef.current = nextStep;
+          setKnowledgeStep(nextStep);
+          if (nextStep > 0) {
+            knowledgeStepStartedAtRef.current = now;
+          }
+        };
+
+        const finalizeKnowledgeWorkflowStep = () => {
+          const now = Date.now();
+          const currentStep = knowledgeStepRef.current;
+          if (currentStep > 0 && knowledgeStepStartedAtRef.current) {
+            const elapsed = roundSeconds(now - knowledgeStepStartedAtRef.current);
+            setKnowledgeStepTimes((times) => {
+              const next = times.length ? times.slice() : Array(knowledgeSteps.length).fill(null);
+              next[currentStep - 1] = elapsed;
+              return next;
+            });
+          }
+        };
+
+        const applyKnowledgeProgressUpdate = (data) => {
+          const stepValue = data.step ?? data.payload?.step;
+          if (typeof stepValue === "number" && stepValue > 0) {
+            if (stepValue !== knowledgeStepRef.current) {
+              setKnowledgeWorkflowStep(stepValue);
+            }
+          }
+          const progressValue = data.progress ?? data.payload?.progress;
+          if (typeof progressValue === "number" && Number.isFinite(progressValue)) {
+            setKnowledgeProgress(Math.max(0, Math.min(100, progressValue)));
+          }
+          const message = data.message ?? data.payload?.message;
+          if (typeof message === "string" && message.trim()) {
+            setKnowledgeStatus(message);
+          } else if (data.status === "running") {
+            setKnowledgeStatus("Workflow running...");
+          }
+        };
+
+        const startKnowledgePollingLatest = (workflowKey, modeType) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const base = normalizeBaseUrl(cfg.dataServiceUrl || "/data-service");
+          const poll = async () => {
+            try {
+              const res = await fetch(base + "/execution-result/latest/" + workflowKey);
+              if (!res.ok) {
+                setKnowledgeStatus("Polling error: " + res.status);
+              } else {
+                const data = await res.json();
+                const st = data?.status || "running";
+                if (st !== "completed" && st !== "cancelled" && st !== "failed") {
+                  applyKnowledgeProgressUpdate(data);
+                }
+                if (st === "completed") {
+                  const payload = data?.payload || {};
+                  if (modeType === "knowledge-query") {
+                    setKnowledgeResponseText(payload.answer || payload.response || "");
+                    setKnowledgeResponseCypher(payload.cypher || "");
+                  } else {
+                    setKnowledgeResponseText("Created note: " + (payload.title || payload.note_title || payload.noteId || "unknown"));
+                  }
+                  clearKnowledgePoll();
+                  setKnowledgeWorkflowStep(5);
+                  setKnowledgeProgress(100);
+                  setKnowledgeStatus("Workflow completed");
+                  finalizeKnowledgeWorkflowStep();
+                  setKnowledgeIsRunning(false);
+                  return;
+                }
+                if (st === "cancelled") {
+                  setKnowledgeStatus("Workflow cancelled");
+                  finalizeKnowledgeWorkflowStep();
+                  setKnowledgeIsRunning(false);
+                  clearKnowledgePoll();
+                  return;
+                }
+                if (st === "failed") {
+                  setKnowledgeStatus("Workflow failed");
+                  setKnowledgeIsRunning(false);
+                  clearKnowledgePoll();
+                  return;
+                }
+                if (st === "unknown") {
+                  setKnowledgeStatus("Workflow running...");
+                }
+              }
+            } catch (err) {
+              setKnowledgeStatus("Polling failed: " + err.message);
+            }
+            knowledgePollRef.current = setTimeout(poll, 1500);
+          };
+          clearKnowledgePoll();
+          poll();
+        };
+
+        const submitFolderIngest = async () => {
+          if (!folderPath.trim()) { setKnowledgeStatus("Path is required"); return; }
+          if (knowledgeIsRunning) return;
+          setKnowledgeIsRunning(true);
+          setKnowledgeResponseText("");
+          setKnowledgeStatus("Importing notes...");
+          try {
+            const base = getDataServiceBaseUrl();
+            const res = await fetch(base + "/knowledge/ingest/folder", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ project: project || "default-project", path: folderPath.trim() })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              setKnowledgeResponseText("Error: " + (data?.detail || res.status));
+            } else {
+              setKnowledgeResponseText("Imported " + data.inserted + " notes" +
+                (data.skipped > 0 ? " (" + data.skipped + " skipped)" : ""));
+            }
+            setKnowledgeStatus("Done");
+          } catch (err) {
+            setKnowledgeResponseText("Error: " + err.message);
+            setKnowledgeStatus("Failed");
+          } finally {
+            setKnowledgeIsRunning(false);
+          }
+        };
+
+        const submitKnowledgeIngest = async () => {
+          if (!knowledgePromptText.trim()) { setKnowledgeStatus("Prompt is required"); return; }
+          if (knowledgeIsRunning) return;
+          setKnowledgeIsRunning(true);
+          setKnowledgeResponseText("");
+          setKnowledgeResponseCypher("");
+          setKnowledgeProgress(0);
+          setKnowledgeWorkflowStep(1);
+          setKnowledgeStepTimes(Array(knowledgeInsertSteps.length).fill(null));
+          setKnowledgeStatus("Sending prompt...");
+          try {
+            const cfg = window.GRAPH_CONFIG || {};
+            const headers = { "Content-Type": "application/json" };
+            if (cfg.n8nUser && cfg.n8nPassword) {
+              headers["Authorization"] = "Basic " + btoa(cfg.n8nUser + ":" + cfg.n8nPassword);
+            }
+            const res = await fetch("/n8n/webhook/dg/knowledge-ingest", {
+              method: "POST",
+              headers: headers,
+              body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
+            });
+            if (res.ok) {
+              startKnowledgePollingLatest("knowledge-ingest", "knowledge-ingest");
+            } else {
+              setKnowledgeResponseText("Error: webhook returned " + res.status);
+              setKnowledgeIsRunning(false);
+            }
+          } catch (err) {
+            setKnowledgeResponseText("Error: " + err.message);
+            setKnowledgeStatus("Failed");
+            setKnowledgeIsRunning(false);
+          }
         };
 
         const getNode = (id) => {
@@ -2346,6 +2572,19 @@
               e("span", { className: "gv-project-name" }, project || "")
             ),
             e("h3", null, "Grammar Viewer"),
+            e("div", { className: "prompt-tabs", style: { marginTop: "14px" } },
+              e("button", {
+                type: "button",
+                className: activeTab === "design-rules" ? "prompt-tab active" : "prompt-tab",
+                onClick: () => setActiveTab("design-rules")
+              }, "DesignRules"),
+              e("button", {
+                type: "button",
+                className: activeTab === "specs-notes" ? "prompt-tab active" : "prompt-tab",
+                onClick: () => setActiveTab("specs-notes")
+              }, "Specs\u0026Notes")
+            ),
+            activeTab === "design-rules" ? e(React.Fragment, null,
             e("label", null, "Mode"),
             modeControl,
             mode === "edit"
@@ -2472,6 +2711,127 @@
               : null,
             e("div", { className: "hint" }, "Using ", (window.GRAPH_CONFIG || {}).neo4jUri || "(no uri)"),
             e("div", { className: "status" }, status)
+            ) : null,
+            activeTab === "specs-notes" ? e(React.Fragment, null,
+            e("label", null, "Mode"),
+            e("div", { className: "mode-dropdown", ref: knowledgeModeDropdownRef },
+              e("button", {
+                type: "button",
+                className: "mode-trigger",
+                "aria-haspopup": "listbox",
+                "aria-expanded": isKnowledgeModeMenuOpen,
+                onClick: () => setIsKnowledgeModeMenuOpen((open) => !open)
+              },
+                e("svg", { className: "mode-chevron", viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true" },
+                  e("path", {
+                    d: "M6 9L12 15L18 9",
+                    stroke: "currentColor",
+                    "stroke-width": "2",
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round"
+                  })
+                ),
+                e("span", { className: "mode-trigger-label" }, KNOWLEDGE_OPTIONS.find(function(o) { return o.value === knowledgeMode; })?.label || "Insert Knowledge")
+              ),
+              isKnowledgeModeMenuOpen
+                ? e("div", { className: "mode-menu", role: "listbox", "aria-label": "Mode" },
+                    KNOWLEDGE_OPTIONS.map(function(option) {
+                      return e("button", {
+                        key: option.value,
+                        type: "button",
+                        role: "option",
+                        "aria-selected": option.value === knowledgeMode,
+                        className: "mode-item" + (option.value === knowledgeMode ? " is-selected" : ""),
+                        onClick: function() { setKnowledgeMode(option.value); setIsKnowledgeModeMenuOpen(false); }
+                      }, option.label);
+                    })
+                  )
+                : null
+            ),
+            knowledgeMode === "insert"
+              ? e(React.Fragment, null,
+                  e("div", { className: "prompt-tabs" },
+                    e("button", {
+                      type: "button",
+                      className: insertTab === "folder" ? "prompt-tab active" : "prompt-tab",
+                      onClick: () => setInsertTab("folder")
+                    }, "From Folder"),
+                    e("button", {
+                      type: "button",
+                      className: insertTab === "prompt" ? "prompt-tab active" : "prompt-tab",
+                      onClick: () => setInsertTab("prompt")
+                    }, "From Prompt")
+                  ),
+                  insertTab === "folder"
+                    ? e(React.Fragment, null,
+                        e("input", {
+                          type: "text",
+                          value: folderPath,
+                          placeholder: "/repo/docs",
+                          style: { width: "100%", boxSizing: "border-box", marginTop: "8px" },
+                          onChange: (ev) => setFolderPath(ev.target.value)
+                        }),
+                        e("div", { className: "hint" },
+                          "Accessible paths: any subfolder of the repository root. Example: DG_OBSIDIAN maps to /mnt/repo/DG_OBSIDIAN inside the service."
+                        ),
+                        e("button", {
+                          onClick: submitFolderIngest,
+                          disabled: knowledgeIsRunning,
+                          style: { marginTop: "8px" }
+                        }, "Import Notes")
+                      )
+                    : null,
+                  insertTab === "prompt"
+                    ? e(React.Fragment, null,
+                        e("textarea", {
+                          rows: 6,
+                          value: knowledgePromptText,
+                          className: "prompt-input",
+                          placeholder: "Describe what you want to record...",
+                          onChange: (ev) => setKnowledgePromptText(ev.target.value)
+                        }),
+                        e("button", {
+                          onClick: submitKnowledgeIngest,
+                          disabled: knowledgeIsRunning,
+                          style: { marginTop: "8px" }
+                        }, "Insert Knowledge")
+                      )
+                    : null,
+                  insertTab === "prompt"
+                    ? e(React.Fragment, null,
+                        e("div", { className: "progress" },
+                          e("div", { style: { width: knowledgeProgress + "%" } })
+                        ),
+                        e("div", { className: "steps" },
+                          knowledgeInsertSteps.map(function(s, i) {
+                            var elapsed = knowledgeStepTimes[i];
+                            var isActive = i + 1 === knowledgeStep;
+                            var live = isActive && knowledgeStepStartedAtRef.current
+                              ? roundSeconds(Date.now() - knowledgeStepStartedAtRef.current)
+                              : null;
+                            var suffix = elapsed !== null && elapsed !== undefined
+                              ? " (" + elapsed.toFixed(1) + "s)"
+                              : (live !== null ? " (" + live.toFixed(1) + "s)" : "");
+                            return e("div", { key: s, className: isActive ? "active" : "" }, s + suffix);
+                          })
+                        )
+                      )
+                    : null,
+                  e("label", { style: { marginTop: "12px", display: "block" } }, "Response"),
+                  e("textarea", {
+                    className: "response-output",
+                    rows: 4,
+                    value: knowledgeResponseText,
+                    readOnly: true,
+                    placeholder: "Knowledge operation result will appear here..."
+                  })
+                )
+              : null,
+            knowledgeMode === "query"
+              ? e("div", { className: "hint", style: { marginTop: "12px" } }, "Query Knowledge panel loading...")
+              : null,
+            e("div", { className: "status" }, knowledgeStatus)
+            ) : null
           ),
           e("div", { id: "viz" }),
           e("div", { id: "right", className: selected ? "open" : "" }, rightPanel),
