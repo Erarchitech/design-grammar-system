@@ -1783,12 +1783,27 @@
           }
         };
 
-        const startKnowledgePollingLatest = (workflowKey, modeType) => {
+        const handleKnowledgePollCompleted = (payload, modeType) => {
+          if (modeType === "knowledge-query") {
+            setKnowledgeResponseText(payload.answer || payload.response || "");
+            setKnowledgeResponseCypher(payload.cypher || "");
+          } else {
+            setKnowledgeResponseText("Created note: " + (payload.title || payload.note_title || payload.noteId || "unknown"));
+          }
+          clearKnowledgePoll();
+          setKnowledgeWorkflowStep(5);
+          setKnowledgeProgress(100);
+          setKnowledgeStatus("Workflow completed");
+          finalizeKnowledgeWorkflowStep();
+          setKnowledgeIsRunning(false);
+        };
+
+        const startKnowledgePollingResult = (executionId, modeType) => {
           const cfg = window.GRAPH_CONFIG || {};
           const base = normalizeBaseUrl(cfg.dataServiceUrl || "/data-service");
           const poll = async () => {
             try {
-              const res = await fetch(base + "/execution-result/latest/" + workflowKey);
+              const res = await fetch(base + "/execution-result/" + executionId);
               if (!res.ok) {
                 setKnowledgeStatus("Polling error: " + res.status);
               } else {
@@ -1798,20 +1813,57 @@
                   applyKnowledgeProgressUpdate(data);
                 }
                 if (st === "completed") {
-                  const payload = data?.payload || {};
-                  if (modeType === "knowledge-query") {
-                    setKnowledgeResponseText(payload.answer || payload.response || "");
-                    setKnowledgeResponseCypher(payload.cypher || "");
-                  } else {
-                    setKnowledgeResponseText("Created note: " + (payload.title || payload.note_title || payload.noteId || "unknown"));
-                  }
-                  clearKnowledgePoll();
-                  setKnowledgeWorkflowStep(5);
-                  setKnowledgeProgress(100);
-                  setKnowledgeStatus("Workflow completed");
+                  handleKnowledgePollCompleted(data?.payload || {}, modeType);
+                  return;
+                }
+                if (st === "cancelled") {
+                  setKnowledgeStatus("Workflow cancelled");
                   finalizeKnowledgeWorkflowStep();
                   setKnowledgeIsRunning(false);
+                  clearKnowledgePoll();
                   return;
+                }
+                if (st === "failed") {
+                  setKnowledgeStatus("Workflow failed");
+                  setKnowledgeIsRunning(false);
+                  clearKnowledgePoll();
+                  return;
+                }
+              }
+            } catch (err) {
+              setKnowledgeStatus("Polling failed: " + err.message);
+            }
+            knowledgePollRef.current = setTimeout(poll, 1500);
+          };
+          clearKnowledgePoll();
+          poll();
+        };
+
+        const startKnowledgePollingLatest = (workflowKey, modeType) => {
+          const cfg = window.GRAPH_CONFIG || {};
+          const base = normalizeBaseUrl(cfg.dataServiceUrl || "/data-service");
+          const requestedAt = Date.now();
+          const poll = async () => {
+            try {
+              const res = await fetch(base + "/execution-result/latest/" + workflowKey);
+              if (!res.ok) {
+                setKnowledgeStatus("Polling error: " + res.status);
+              } else {
+                const data = await res.json();
+                const st = data?.status || "running";
+                if (st === "completed") {
+                  var completedAt = data?.completed_at || data?.payload?.completed_at;
+                  var resultTs = completedAt ? new Date(completedAt).getTime() : 0;
+                  if (resultTs > 0 && resultTs < requestedAt) {
+                    setKnowledgeStatus("Waiting for new result...");
+                    knowledgePollRef.current = setTimeout(poll, 1500);
+                    return;
+                  }
+                  handleKnowledgePollCompleted(data?.payload || {}, modeType);
+                  return;
+                }
+                if (st !== "cancelled" && st !== "failed") {
+                  applyKnowledgeProgressUpdate(data);
                 }
                 if (st === "cancelled") {
                   setKnowledgeStatus("Workflow cancelled");
@@ -1889,12 +1941,21 @@
               headers: headers,
               body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
             });
-            if (res.ok) {
-              startKnowledgePollingLatest("knowledge-ingest", "knowledge-ingest");
-            } else {
-              setKnowledgeResponseText("Error: webhook returned " + res.status);
+            var rawText = await res.text();
+            var data = null;
+            if (rawText) { try { data = JSON.parse(rawText); } catch (_) {} }
+            if (!res.ok) {
+              setKnowledgeResponseText("Error: " + (data?.message || rawText || res.status));
               setKnowledgeIsRunning(false);
+              return;
             }
+            if (data?.status === "accepted" && data?.executionId) {
+              setKnowledgeStatus("Workflow running...");
+              startKnowledgePollingResult(data.executionId, "knowledge-ingest");
+              return;
+            }
+            setKnowledgeStatus("Workflow running...");
+            startKnowledgePollingLatest("knowledge-ingest", "knowledge-ingest");
           } catch (err) {
             setKnowledgeResponseText("Error: " + err.message);
             setKnowledgeStatus("Failed");
@@ -1923,12 +1984,21 @@
               headers: headers,
               body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
             });
-            if (res.ok) {
-              startKnowledgePollingLatest("knowledge-query", "knowledge-query");
-            } else {
-              setKnowledgeResponseText("Error: webhook returned " + res.status);
+            var rawText = await res.text();
+            var data = null;
+            if (rawText) { try { data = JSON.parse(rawText); } catch (_) {} }
+            if (!res.ok) {
+              setKnowledgeResponseText("Error: " + (data?.message || rawText || res.status));
               setKnowledgeIsRunning(false);
+              return;
             }
+            if (data?.status === "accepted" && data?.executionId) {
+              setKnowledgeStatus("Workflow running...");
+              startKnowledgePollingResult(data.executionId, "knowledge-query");
+              return;
+            }
+            setKnowledgeStatus("Workflow running...");
+            startKnowledgePollingLatest("knowledge-query", "knowledge-query");
           } catch (err) {
             setKnowledgeResponseText("Error: " + err.message);
             setKnowledgeStatus("Failed");
