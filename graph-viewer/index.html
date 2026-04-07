@@ -900,6 +900,34 @@
         margin: 0;
         font-weight: normal;
       }
+      .diff-del {
+        background: rgba(220, 38, 38, 0.18);
+        color: #fca5a5;
+        text-decoration: line-through;
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+      .diff-ins {
+        background: rgba(34, 197, 94, 0.18);
+        color: #86efac;
+        font-weight: 700;
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+      .diff-preview {
+        font-size: 13px;
+        line-height: 1.6;
+        padding: 12px;
+        background: #0b0f19;
+        border: 1px solid #283143;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "Courier New", monospace;
+        max-height: 240px;
+        overflow-y: auto;
+      }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -947,7 +975,8 @@
 
       const KNOWLEDGE_OPTIONS = [
         { value: "insert", label: "Insert Knowledge" },
-        { value: "query", label: "Query Knowledge" }
+        { value: "query", label: "Query Knowledge" },
+        { value: "update", label: "Update Knowledge" }
       ];
 
       function getDataServiceBaseUrl() {
@@ -1389,6 +1418,15 @@
         const [knowledgeStep, setKnowledgeStep] = React.useState(0);
         const [knowledgeStepTimes, setKnowledgeStepTimes] = React.useState([]);
         const [knowledgeStatus, setKnowledgeStatus] = React.useState("Ready");
+
+        const [updateView, setUpdateView] = React.useState("match");
+        const [updateCandidates, setUpdateCandidates] = React.useState([]);
+        const [selectedNoteIds, setSelectedNoteIds] = React.useState([]);
+        const [updateDiffs, setUpdateDiffs] = React.useState([]);
+        const [currentNoteIndex, setCurrentNoteIndex] = React.useState(0);
+        const [editedContents, setEditedContents] = React.useState({});
+        const [skippedNoteIds, setSkippedNoteIds] = React.useState([]);
+        const [showDiff, setShowDiff] = React.useState(true);
 
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
@@ -2009,6 +2047,118 @@
           } catch (err) {
             setKnowledgeResponseText("Error: " + err.message);
             setKnowledgeStatus("Failed");
+            setKnowledgeIsRunning(false);
+          }
+        };
+
+        const knowledgeUpdateSteps = [
+          "Fetching note content...",
+          "Generating edits...",
+          "Computing diff...",
+          "Complete"
+        ];
+
+        const resetUpdateState = () => {
+          setUpdateView("match");
+          setUpdateCandidates([]);
+          setSelectedNoteIds([]);
+          setUpdateDiffs([]);
+          setCurrentNoteIndex(0);
+          setEditedContents({});
+          setSkippedNoteIds([]);
+          setShowDiff(true);
+          setKnowledgeProgress(0);
+          setKnowledgeStep(0);
+          setKnowledgeStepTimes([]);
+        };
+
+        const submitMatch = async () => {
+          if (!knowledgePromptText.trim()) { setKnowledgeStatus("Prompt is required"); return; }
+          if (knowledgeIsRunning) return;
+          setKnowledgeIsRunning(true);
+          setUpdateCandidates([]);
+          setSelectedNoteIds([]);
+          setUpdateDiffs([]);
+          setEditedContents({});
+          setSkippedNoteIds([]);
+          setCurrentNoteIndex(0);
+          setKnowledgeStatus("Searching notes...");
+          try {
+            const base = getDataServiceBaseUrl();
+            const res = await fetch(base + "/knowledge/update/match", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prompt: knowledgePromptText.trim(), project: project || "default-project" })
+            });
+            const data = await res.json();
+            if (!res.ok) { setKnowledgeStatus("Error: " + (data?.detail || res.status)); return; }
+            setUpdateCandidates(data.candidates || []);
+            setKnowledgeStatus(data.candidates?.length ? "Select notes to edit" : "No matches found");
+          } catch (err) {
+            setKnowledgeStatus("Error: " + err.message);
+          } finally {
+            setKnowledgeIsRunning(false);
+          }
+        };
+
+        const toggleCandidate = (noteId) => {
+          setSelectedNoteIds(prev =>
+            prev.includes(noteId) ? prev.filter(id => id !== noteId) : [...prev, noteId]
+          );
+        };
+
+        const toggleSelectAll = () => {
+          setSelectedNoteIds(prev =>
+            prev.length === updateCandidates.length ? [] : updateCandidates.map(c => c.noteId)
+          );
+        };
+
+        const submitPropose = async () => {
+          if (selectedNoteIds.length === 0) return;
+          setUpdateView("proposing");
+          setKnowledgeIsRunning(true);
+          setKnowledgeProgress(25);
+          setKnowledgeWorkflowStep(1);
+          setKnowledgeStepTimes(Array(knowledgeUpdateSteps.length).fill(null));
+          setKnowledgeStatus("Fetching note content...");
+          try {
+            const base = getDataServiceBaseUrl();
+            setKnowledgeProgress(50);
+            setKnowledgeWorkflowStep(2);
+            setKnowledgeStatus("Generating edits... (may take several minutes for multiple notes)");
+            const res = await fetch(base + "/knowledge/update/propose", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                noteIds: selectedNoteIds,
+                prompt: knowledgePromptText.trim(),
+                project: project || "default-project"
+              })
+            });
+            setKnowledgeProgress(75);
+            setKnowledgeWorkflowStep(3);
+            setKnowledgeStatus("Computing diff...");
+            const data = await res.json();
+            if (!res.ok) {
+              setKnowledgeStatus("Error: " + (data?.detail || res.status));
+              setUpdateView("match");
+              return;
+            }
+            setUpdateDiffs(data.diffs || []);
+            const initial = {};
+            (data.diffs || []).forEach(d => { initial[d.noteId] = d.proposedContent; });
+            setEditedContents(initial);
+            setCurrentNoteIndex(0);
+            setSkippedNoteIds([]);
+            setShowDiff(true);
+            setKnowledgeProgress(100);
+            setKnowledgeWorkflowStep(4);
+            setKnowledgeStatus("Review proposed changes");
+            setUpdateView("review");
+          } catch (err) {
+            setKnowledgeStatus("Error: " + err.message);
+            setUpdateView("match");
+          } finally {
             setKnowledgeIsRunning(false);
           }
         };
@@ -2999,6 +3149,94 @@
                       placeholder: "Cypher used to query the knowledge graph will appear here..."
                     })
                   )
+                )
+              : null,
+            knowledgeMode === "update"
+              ? e(React.Fragment, null,
+                  updateView === "match" || updateView === "proposing"
+                    ? e(React.Fragment, null,
+                        e("textarea", {
+                          rows: 4,
+                          value: knowledgePromptText,
+                          className: "prompt-input",
+                          placeholder: "Describe what you want to change...",
+                          onChange: (ev) => setKnowledgePromptText(ev.target.value),
+                          style: { marginTop: "8px" }
+                        }),
+                        e("button", {
+                          onClick: submitMatch,
+                          disabled: knowledgeIsRunning || !knowledgePromptText.trim() || updateView === "proposing",
+                          style: { marginTop: "8px" }
+                        }, "Search Notes"),
+                        updateView === "match" && updateCandidates.length > 0
+                          ? e("div", { style: { marginTop: "12px" } },
+                              e("button", {
+                                onClick: toggleSelectAll,
+                                className: "secondary-btn",
+                                style: { fontSize: "12px", padding: "2px 8px", marginBottom: "8px" }
+                              }, selectedNoteIds.length === updateCandidates.length ? "Deselect all" : "Select all"),
+                              updateCandidates.map(function(c) {
+                                return e("label", {
+                                  key: c.noteId,
+                                  style: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 0", cursor: "pointer" }
+                                },
+                                  e("input", {
+                                    type: "checkbox",
+                                    checked: selectedNoteIds.includes(c.noteId),
+                                    onChange: function() { toggleCandidate(c.noteId); }
+                                  }),
+                                  e("span", { style: { flex: 1, fontSize: "13px" } }, c.title),
+                                  e("span", { style: { fontSize: "12px", color: "#98a4bd" } }, c.score != null ? c.score.toFixed(2) : "")
+                                );
+                              }),
+                              e("button", {
+                                onClick: submitPropose,
+                                disabled: selectedNoteIds.length === 0 || knowledgeIsRunning,
+                                style: { marginTop: "8px" }
+                              }, "Edit Selected")
+                            )
+                          : null,
+                        updateView === "match" && updateCandidates.length === 0 && knowledgeStatus === "No matches found"
+                          ? e("div", { className: "hint", style: { marginTop: "12px" } }, "No matching notes found. Try a different description.")
+                          : null,
+                        updateView === "proposing"
+                          ? e("div", { style: { opacity: 0.4, pointerEvents: "none", marginTop: "12px" } },
+                              updateCandidates.map(function(c) {
+                                return e("div", { key: c.noteId, style: { padding: "8px 0", fontSize: "13px" } }, c.title);
+                              })
+                            )
+                          : null,
+                        updateView === "proposing"
+                          ? e(React.Fragment, null,
+                              e("div", { className: "progress", style: { marginTop: "12px" } },
+                                e("div", { style: { width: knowledgeProgress + "%" } })
+                              ),
+                              e("div", { className: "steps" },
+                                knowledgeUpdateSteps.map(function(s, i) {
+                                  var elapsed = knowledgeStepTimes[i];
+                                  var isActive = i + 1 === knowledgeStep;
+                                  var live = isActive && knowledgeStepStartedAtRef.current
+                                    ? roundSeconds(Date.now() - knowledgeStepStartedAtRef.current)
+                                    : null;
+                                  var suffix = elapsed !== null && elapsed !== undefined
+                                    ? " (" + elapsed.toFixed(1) + "s)"
+                                    : (live !== null ? " (" + live.toFixed(1) + "s)" : "");
+                                  return e("div", { key: s, className: isActive ? "active" : "" }, s + suffix);
+                                })
+                              )
+                            )
+                          : null
+                      )
+                    : null,
+                  e("label", { style: { marginTop: "12px", display: "block" } }, "Response"),
+                  e("textarea", {
+                    className: "response-output",
+                    rows: 4,
+                    value: knowledgeResponseText,
+                    readOnly: true,
+                    placeholder: "Update result will appear here...",
+                    style: { color: knowledgeResponseText.startsWith("Updated:") ? "#2fb16f" : (knowledgeResponseText.startsWith("Conflict:") || knowledgeResponseText.startsWith("Error:") ? "#ff4d4f" : "inherit") }
+                  })
                 )
               : null,
             e("div", { className: "status" }, knowledgeStatus)
