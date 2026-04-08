@@ -121,7 +121,7 @@ Plans:
   4. In the Graph Viewer, `KnowledgeNote` and `KnowledgeTag` nodes are visually distinct from SWRL metagraph nodes (different color); a NeoVis query filtered to `graph:"KnowledgeGraph"` returns only knowledge nodes
 **Plans**: 2 plans
 Plans:
-- [ ] 07-01-PLAN.md — Session history state + fetch + collapsible panel + compact rows + Restore + filter
+- [x] 07-01-PLAN.md — Session history state + fetch + collapsible panel + compact rows + Restore + filter
 - [ ] 07-02-PLAN.md — NeoVis verification + end-to-end human verification checkpoint
 **UI hint**: yes
 

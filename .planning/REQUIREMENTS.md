@@ -39,8 +39,8 @@ Requirements for Project Knowledge Graph milestone. Each maps to roadmap phases.
 ### Session History
 
 - [ ] **HSTY-01**: All knowledge interactions (insert, update, query) are automatically saved with prompt, result contents, date tags, and mode identifier
-- [ ] **HSTY-02**: Session history is browsable in the UI in reverse-chronological order, filterable by mode
-- [ ] **HSTY-03**: Session history persists in Neo4j (not localStorage) and survives browser data clears
+- [x] **HSTY-02**: Session history is browsable in the UI in reverse-chronological order, filterable by mode
+- [x] **HSTY-03**: Session history persists in Neo4j (not localStorage) and survives browser data clears
 
 ### UI Structure
 
@@ -49,7 +49,7 @@ Requirements for Project Knowledge Graph milestone. Each maps to roadmap phases.
 - [ ] **UIST-03**: Insert Knowledge mode shows a folder path input field and a prompt input field
 - [ ] **UIST-04**: Update Knowledge mode shows a prompt field for node matching, a node selection area, an Edit button, an inline diff editor, and a Confirm button
 - [ ] **UIST-05**: Query Knowledge mode shows a prompt field and a Response display area
-- [ ] **UIST-06**: Session History is accessible as a browsable panel showing past interactions
+- [x] **UIST-06**: Session History is accessible as a browsable panel showing past interactions
 
 ### Backend Infrastructure
 
@@ -122,9 +122,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UIST-03 | Phase 5 | Pending |
 | UIST-05 | Phase 5 | Pending |
 | UIST-04 | Phase 6 | Pending |
-| UIST-06 | Phase 7 | Pending |
-| HSTY-02 | Phase 7 | Pending |
-| HSTY-03 | Phase 7 | Pending |
+| UIST-06 | Phase 7 | Complete |
+| HSTY-02 | Phase 7 | Complete |
+| HSTY-03 | Phase 7 | Complete |
 | INFR-04 | Phase 7 | Pending |
 
 **Coverage:**
