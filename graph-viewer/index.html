@@ -932,11 +932,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 8px;
         height: 38px;
         background: #0b0f19;
         border: 1px solid #273041;
         border-radius: 8px;
-        padding: 0 14px;
+        padding: 0 10px;
         cursor: pointer;
         margin-top: 12px;
       }
@@ -981,6 +982,8 @@
       .session-badge-insert { background: #4ecdc4; color: #0c1018; }
       .session-badge-query { background: #5fd0ff; color: #0c1018; }
       .session-badge-update { background: #ffb66f; color: #20160f; }
+      .session-badge-ingest { background: #6da7ff; color: #0c1018; }
+      .session-badge-edit { background: #c6b5ff; color: #1a1030; }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1487,6 +1490,12 @@
         const [expandedSessionId, setExpandedSessionId] = React.useState(null);
         const [sessionsDisplayCount, setSessionsDisplayCount] = React.useState(50);
 
+        const [drSessions, setDrSessions] = React.useState([]);
+        const [drSessionHistoryOpen, setDrSessionHistoryOpen] = React.useState(false);
+        const [drSessionFilter, setDrSessionFilter] = React.useState("all");
+        const [drExpandedSessionId, setDrExpandedSessionId] = React.useState(null);
+        const [drSessionsDisplayCount, setDrSessionsDisplayCount] = React.useState(50);
+
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
         const stepStartedAtRef = React.useRef(null);
@@ -1615,6 +1624,34 @@
           return isoString.slice(0, 10);
         };
 
+        const fetchDrSessions = async () => {
+          try {
+            const base = getDataServiceBaseUrl();
+            const res = await fetch(base + "/design-rule-sessions/" + encodeURIComponent(project || "default-project"));
+            if (res.ok) {
+              const data = await res.json();
+              setDrSessions(data.sessions || []);
+            }
+          } catch (_) {}
+        };
+
+        const saveDrSession = async (sessionMode, prompt, result) => {
+          try {
+            const base = getDataServiceBaseUrl();
+            await fetch(base + "/design-rule-sessions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                project: project || "default-project",
+                mode: sessionMode,
+                prompt: prompt,
+                result: result || ""
+              })
+            });
+            fetchDrSessions();
+          } catch (_) {}
+        };
+
         const setWorkflowStep = (nextStep) => {
           const now = Date.now();
           const currentStep = stepRef.current;
@@ -1738,12 +1775,14 @@
                   if (modeType === "query") {
                     setResponseText(payload.answer || payload.response || "");
                     setResponseCypher(payload.cypher || "");
+                    saveDrSession("query", promptText, payload.answer || payload.response || "");
                   } else {
                     setResponseText("The Rule ingesting completed successfully");
                     const cypherValue = Array.isArray(payload.cypher)
                       ? payload.cypher.join("\n\n")
                       : (payload.cypher || "");
                     setResponseCypher(cypherValue);
+                    saveDrSession(mode === "edit" ? "edit" : "ingest", promptText, "The Rule ingesting completed successfully");
                   }
                   clearPoll();
                   if (modeType !== "query") {
@@ -1799,12 +1838,14 @@
                   if (modeType === "query") {
                     setResponseText(payload.answer || payload.response || "");
                     setResponseCypher(payload.cypher || "");
+                    saveDrSession("query", promptText, payload.answer || payload.response || "");
                   } else {
                     setResponseText("The Rule ingesting completed successfully");
                     const cypherValue = Array.isArray(payload.cypher)
                       ? payload.cypher.join("\n\n")
                       : (payload.cypher || "");
                     setResponseCypher(cypherValue);
+                    saveDrSession(mode === "edit" ? "edit" : "ingest", promptText, "The Rule ingesting completed successfully");
                   }
                   clearPoll();
                   if (modeType !== "query") {
@@ -2592,6 +2633,7 @@
               await run(undefined, { silentStatus: true });
               setWorkflowStep(5); setProgress(100);
               setResponseText("Cypher executed successfully");
+              saveDrSession("ingest", promptText, "Cypher executed successfully");
               setStatus("Workflow completed");
               finalizeWorkflowStep();
               setIsRunning(false);
@@ -2656,6 +2698,7 @@
               ? data.cypher.join("\n\n")
               : (data?.cypher || "");
             setResponseCypher(cypherValue);
+            saveDrSession(mode === "edit" ? "edit" : "ingest", promptText, "The Rule ingesting completed successfully");
             setStatus("Workflow completed");
             finalizeWorkflowStep();
           } catch (err) {
@@ -2690,6 +2733,7 @@
               setResponseCypher(promptText);
               const result = await executeCypher(promptText);
               setResponseText(formatCypherResult(result));
+              saveDrSession("query", promptText, formatCypherResult(result));
               setWorkflowStep(5); setProgress(100);
               setStatus("Request completed");
               finalizeWorkflowStep();
@@ -2773,6 +2817,7 @@
             const answer = data?.answer || data?.response || result.rawText || "";
             setResponseText(answer);
             setResponseCypher(data?.cypher || "");
+            saveDrSession("query", promptText, answer);
             setWorkflowStep(5); setProgress(100);
             setStatus("Request completed");
             finalizeWorkflowStep();
@@ -2862,6 +2907,7 @@
             const q = buildCypher(graphView);
             setCypher(q);
             run(q);
+            fetchDrSessions();
           }
         }, [activeTab]);
 
@@ -2951,6 +2997,11 @@
           ? sessions
           : sessions.filter(function(s) { return s.mode === sessionFilter; });
         const displayedSessions = filteredSessions.slice(0, sessionsDisplayCount);
+
+        const filteredDrSessions = drSessionFilter === "all"
+          ? drSessions
+          : drSessions.filter(function(s) { return s.mode === drSessionFilter; });
+        const displayedDrSessions = filteredDrSessions.slice(0, drSessionsDisplayCount);
 
         return e("div", { className: "graph-viewer-page" },
           e("div", { id: "left" },
@@ -3123,6 +3174,126 @@
                 )
               : null,
             e("div", { className: "hint" }, "Using ", (window.GRAPH_CONFIG || {}).neo4jUri || "(no uri)"),
+            e("div", { className: "session-history-header",
+              role: "button",
+              "aria-expanded": drSessionHistoryOpen,
+              tabIndex: 0,
+              onClick: function() { setDrSessionHistoryOpen(function(prev) { return !prev; }); },
+              onKeyDown: function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setDrSessionHistoryOpen(function(prev) { return !prev; }); } }
+            },
+              e("div", { style: { display: "flex", alignItems: "center", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 auto" } },
+                e("svg", {
+                  className: "session-history-chevron",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  style: { transform: drSessionHistoryOpen ? "rotate(0deg)" : "rotate(-90deg)" }
+                },
+                  e("path", {
+                    d: "M6 9L12 15L18 9",
+                    stroke: "currentColor",
+                    strokeWidth: "2",
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round"
+                  })
+                ),
+                e("span", { style: { fontSize: "13px", fontWeight: 700, color: "#f4f7fb" } }, "Session History"),
+                e("span", { style: { fontSize: "11px", fontWeight: 400, color: "#98a4bd", marginLeft: "4px" } },
+                  "(" + filteredDrSessions.length + ")")
+              ),
+              e("select", {
+                value: drSessionFilter,
+                onChange: function(ev) { setDrSessionFilter(ev.target.value); setDrSessionsDisplayCount(50); },
+                onClick: function(ev) { ev.stopPropagation(); },
+                style: {
+                  flex: "0 0 auto",
+                  background: "transparent",
+                  border: "1px solid #273041",
+                  borderRadius: "6px",
+                  color: "#98a4bd",
+                  fontSize: "11px",
+                  padding: "2px 4px",
+                  height: "24px",
+                  width: "68px",
+                  cursor: "pointer"
+                }
+              },
+                e("option", { value: "all" }, "All"),
+                e("option", { value: "ingest" }, "Ingest"),
+                e("option", { value: "query" }, "Query"),
+                e("option", { value: "edit" }, "Edit")
+              )
+            ),
+            drSessionHistoryOpen
+              ? e("div", { className: "session-history-list" },
+                  displayedDrSessions.length === 0
+                    ? e("div", { className: "hint", style: { padding: "12px 0", textAlign: "center" } },
+                        drSessions.length === 0 ? "No design rule sessions yet" : "No sessions match this filter")
+                    : null,
+                  displayedDrSessions.map(function(session) {
+                    var badgeClass = "session-badge session-badge-" + (session.mode || "ingest");
+                    var badgeText = session.mode === "ingest" ? "ING" : (session.mode === "edit" ? "EDT" : "QRY");
+                    return e(React.Fragment, { key: session.sessionId },
+                      e("div", {
+                        className: "session-row",
+                        onClick: function() {
+                          setDrExpandedSessionId(function(prev) {
+                            return prev === session.sessionId ? null : session.sessionId;
+                          });
+                        }
+                      },
+                        e("span", { className: badgeClass }, badgeText),
+                        e("span", {
+                          style: { flex: 1, minWidth: 0, fontSize: "12px", color: "#eef3ff",
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
+                        }, session.prompt || ""),
+                        e("span", {
+                          style: { flex: "0 0 auto", fontSize: "11px", color: "#98a4bd", whiteSpace: "nowrap" }
+                        }, formatRelativeDate(session.createdAt)),
+                        e("button", {
+                          onClick: function(ev) {
+                            ev.stopPropagation();
+                            setPromptText(session.prompt || "");
+                            setResponseText(session.result || "");
+                          },
+                          style: {
+                            flex: "0 0 auto", background: "transparent", border: "none",
+                            color: "#5fd0ff", fontSize: "11px", fontWeight: 500,
+                            padding: "2px 6px", cursor: "pointer"
+                          },
+                          onMouseOver: function(ev) { ev.currentTarget.style.textDecoration = "underline"; },
+                          onMouseOut: function(ev) { ev.currentTarget.style.textDecoration = "none"; }
+                        }, "Restore")
+                      ),
+                      drExpandedSessionId === session.sessionId
+                        ? e("div", {
+                            style: {
+                              background: "rgba(9, 15, 25, 0.82)",
+                              border: "1px solid #283143",
+                              borderRadius: "8px",
+                              padding: "12px",
+                              margin: "4px 0 8px 0"
+                            }
+                          },
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Prompt"),
+                            e("div", { style: { fontSize: "13px", color: "#eef3ff", whiteSpace: "pre-wrap", marginBottom: "12px" } }, session.prompt || ""),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Result"),
+                            e("div", { style: { fontSize: "13px", color: "#fffce9", whiteSpace: "pre-wrap", marginBottom: "12px" } }, session.result || ""),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Time"),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd" } },
+                              session.createdAt ? session.createdAt.replace("T", " ").slice(0, 16) : "")
+                          )
+                        : null
+                    );
+                  }),
+                  filteredDrSessions.length > drSessionsDisplayCount
+                    ? e("button", {
+                        onClick: function() { setDrSessionsDisplayCount(function(prev) { return prev + 50; }); },
+                        className: "secondary-btn",
+                        style: { width: "100%", marginTop: "8px", fontSize: "12px", textAlign: "center" }
+                      }, "Show more")
+                    : null
+                )
+              : null,
             e("div", { className: "status" }, status)
             ) : null,
             activeTab === "specs-notes" ? e(React.Fragment, null,
@@ -3510,7 +3681,7 @@
               onClick: function() { setSessionHistoryOpen(function(prev) { return !prev; }); },
               onKeyDown: function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setSessionHistoryOpen(function(prev) { return !prev; }); } }
             },
-              e("div", { style: { display: "flex", alignItems: "center" } },
+              e("div", { style: { display: "flex", alignItems: "center", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 auto" } },
                 e("svg", {
                   className: "session-history-chevron",
                   viewBox: "0 0 24 24",
@@ -3534,17 +3705,19 @@
                 onChange: function(ev) { setSessionFilter(ev.target.value); setSessionsDisplayCount(50); },
                 onClick: function(ev) { ev.stopPropagation(); },
                 style: {
+                  flex: "0 0 auto",
                   background: "transparent",
                   border: "1px solid #273041",
                   borderRadius: "6px",
                   color: "#98a4bd",
                   fontSize: "11px",
-                  padding: "2px 6px",
+                  padding: "2px 4px",
                   height: "24px",
+                  width: "68px",
                   cursor: "pointer"
                 }
               },
-                e("option", { value: "all" }, "All modes"),
+                e("option", { value: "all" }, "All"),
                 e("option", { value: "insert" }, "Insert"),
                 e("option", { value: "query" }, "Query"),
                 e("option", { value: "update" }, "Update")

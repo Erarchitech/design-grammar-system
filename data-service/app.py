@@ -1195,6 +1195,44 @@ def list_knowledge_sessions(project: str):
     return {"project": project, "sessions": rows}
 
 
+class DesignRuleSessionPayload(BaseModel):
+    project: str
+    mode: str  # ingest, query, edit
+    prompt: str
+    result: str = ""
+
+
+@app.post("/design-rule-sessions")
+def store_design_rule_session(payload: DesignRuleSessionPayload):
+    session_id = "drs-" + uuid.uuid4().hex[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    write_query(
+        "CREATE (s:DesignRuleSession {sessionId: $sessionId, project: $project, "
+        "mode: $mode, prompt: $prompt, result: $result, createdAt: $createdAt, graph: 'Metagraph'})",
+        {
+            "sessionId": session_id,
+            "project": payload.project,
+            "mode": payload.mode,
+            "prompt": payload.prompt,
+            "result": payload.result[:2000],
+            "createdAt": now,
+        },
+    )
+    return {"sessionId": session_id}
+
+
+@app.get("/design-rule-sessions/{project}")
+def list_design_rule_sessions(project: str):
+    rows = read_many(
+        "MATCH (s:DesignRuleSession {project: $project}) "
+        "RETURN s.sessionId AS sessionId, s.mode AS mode, "
+        "       s.prompt AS prompt, s.result AS result, s.createdAt AS createdAt "
+        "ORDER BY s.createdAt DESC",
+        {"project": project},
+    )
+    return {"project": project, "sessions": rows}
+
+
 MAX_CONTENT_SIZE = 100 * 1024  # 100KB per D-09 / Out of Scope
 
 
