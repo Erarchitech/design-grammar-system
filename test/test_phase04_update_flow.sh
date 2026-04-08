@@ -86,8 +86,8 @@ if [ -n "$UPDATED_AT" ]; then
     -H "Content-Type: application/json" \
     -d "{\"prompt\": \"Change maximum height to 75 meters\", \"project\": \"$PROJECT\", \"notes\": [{\"noteId\": \"$NOTE_ID\", \"content\": \"The building has a maximum height of 75 meters and minimum setback of 5 meters.\", \"updatedAt\": \"$UPDATED_AT\"}]}")
 
-  if echo "$CONFIRM_RESP" | python -c "import sys,json; d=json.load(sys.stdin); assert '$NOTE_ID' in d['affectedNoteIds']; assert d['sessionId'].startswith('ks-')" 2>/dev/null; then
-    pass "Confirm writes and returns affectedNoteIds + sessionId"
+  if echo "$CONFIRM_RESP" | python -c "import sys,json; d=json.load(sys.stdin); assert len(d['affectedNodes']) > 0; assert d['sessionId'].startswith('ks-')" 2>/dev/null; then
+    pass "Confirm writes and returns affectedNodes + sessionId"
   else
     fail "Confirm response" "$CONFIRM_RESP"
   fi

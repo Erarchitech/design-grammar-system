@@ -1260,7 +1260,7 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
     for item in payload.notes:
         existing = read_single(
             "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
-            "RETURN n.updatedAt AS updatedAt",
+            "RETURN n.updatedAt AS updatedAt, n.title AS title",
             {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH},
         )
         if existing is None:
@@ -1275,7 +1275,7 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
             "SET n.content = $content, n.updatedAt = $now",
             {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH, "content": item.content, "now": now},
         )
-        affected.append(item.noteId)
+        affected.append(existing.get("title") or item.noteId)
     # Write KnowledgeSession per D-10 / UPDK-06
     session_id = "ks-" + uuid.uuid4().hex[:12]
     write_query(
@@ -1286,7 +1286,7 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
             "project": payload.project,
             "graph": KNOWLEDGE_GRAPH,
             "prompt": payload.prompt,
-            "result": json.dumps({"affectedNoteIds": affected})[:2000],
+            "result": json.dumps({"affectedNodes": affected})[:2000],
             "createdAt": now,
         },
     )
@@ -1300,4 +1300,4 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
             "graph": KNOWLEDGE_GRAPH,
         },
     )
-    return {"affectedNoteIds": affected, "sessionId": session_id}
+    return {"affectedNodes": affected, "sessionId": session_id}

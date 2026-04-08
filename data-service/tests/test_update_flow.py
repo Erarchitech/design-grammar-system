@@ -92,7 +92,7 @@ def test_confirm_writes_and_creates_session():
     written_queries = []
     def mock_write(cypher, params):
         written_queries.append((cypher, params))
-    with patch("app.read_single", return_value={"updatedAt": "2026-01-01T00:00:00+00:00"}), \
+    with patch("app.read_single", return_value={"updatedAt": "2026-01-01T00:00:00+00:00", "title": "Building Address"}), \
          patch("app.write_query", side_effect=mock_write):
         req = UpdateConfirmRequest(
             prompt="update prompt",
@@ -100,12 +100,13 @@ def test_confirm_writes_and_creates_session():
             notes=[NoteConfirmItem(noteId="n1", content="updated content", updatedAt="2026-01-01T00:00:00+00:00")],
         )
         result = knowledge_update_confirm(req)
-        assert "n1" in result["affectedNoteIds"]
+        assert "Building Address" in result["affectedNodes"]
         assert result["sessionId"].startswith("ks-")
-        # Two write_query calls: one SET content, one MERGE session
-        assert len(written_queries) == 2
+        # Three write_query calls: SET content, MERGE session, INSTANCE_OF
+        assert len(written_queries) == 3
         assert "SET n.content" in written_queries[0][0]
         assert "KnowledgeSession" in written_queries[1][0]
+        assert "INSTANCE_OF" in written_queries[2][0]
 
 
 def test_confirm_rejects_oversized_content():
