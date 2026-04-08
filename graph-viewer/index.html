@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -298,6 +298,31 @@
         font-size: 11px;
         line-height: 1.34;
       }
+      .workflow-cypher-header {
+        display: flex;
+        align-items: center;
+        height: 34px;
+        background: #0b0f19;
+        border: 1px solid #273041;
+        border-radius: 8px;
+        padding: 0 10px;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+      .workflow-cypher-header:hover {
+        border-color: #3a4a5e;
+      }
+      .workflow-cypher-header:hover .workflow-cypher-chevron {
+        color: #5fd0ff;
+      }
+      .workflow-cypher-chevron {
+        width: 14px;
+        height: 14px;
+        color: #98a4bd;
+        flex: 0 0 auto;
+        margin-right: 8px;
+        transition: transform 0.15s ease;
+      }
       .control-select { margin-top: 0; }
       .mode-dropdown {
         position: relative;
@@ -376,7 +401,7 @@
       .context-menu { position: fixed; z-index: 1000; background: #ffffff; color: #111827; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
       .context-menu button { display: block; width: 100%; margin-top: 0; padding: 6px 10px; border: none; background: transparent; text-align: left; cursor: pointer; font-size: 13px; }
       .context-menu button:hover { background: #f3f4f6; }
-      /* ─── Register Page ─── */
+      /* в”Ђв”Ђв”Ђ Register Page в”Ђв”Ђв”Ђ */
       .register-page {
         display: flex;
         justify-content: center;
@@ -452,7 +477,7 @@
         text-align: center;
       }
       .btn-primary:hover { background: #404040; }
-      /* ─── Home Page ─── */
+      /* в”Ђв”Ђв”Ђ Home Page в”Ђв”Ђв”Ђ */
       .home-page {
         display: flex;
         flex-direction: column;
@@ -746,7 +771,7 @@
         color: var(--muted);
         font-size: 16px;
       }
-      /* ─── Project Page ─── */
+      /* в”Ђв”Ђв”Ђ Project Page в”Ђв”Ђв”Ђ */
       .project-page {
         display: flex;
         flex-direction: column;
@@ -856,7 +881,7 @@
         color: var(--muted);
         line-height: 1.4;
       }
-      /* ─── Graph Viewer Nav ─── */
+      /* в”Ђв”Ђв”Ђ Graph Viewer Nav в”Ђв”Ђв”Ђ */
       .gv-nav {
         display: flex;
         align-items: center;
@@ -1495,6 +1520,8 @@
         const [drSessionFilter, setDrSessionFilter] = React.useState("all");
         const [drExpandedSessionId, setDrExpandedSessionId] = React.useState(null);
         const [drSessionsDisplayCount, setDrSessionsDisplayCount] = React.useState(50);
+        const [workflowCypherOpen, setWorkflowCypherOpen] = React.useState(false);
+        const [knowledgeCypherOpen, setKnowledgeCypherOpen] = React.useState(false);
 
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
@@ -2286,7 +2313,7 @@
               updatedAt: d.updatedAt
             }));
           if (notesToConfirm.length === 0) {
-            setKnowledgeStatus("All notes skipped — nothing to confirm");
+            setKnowledgeStatus("All notes skipped вЂ” nothing to confirm");
             return;
           }
           setKnowledgeIsRunning(true);
@@ -2648,7 +2675,7 @@
               headers,
               body: JSON.stringify({
                 rules_text: mode === "edit" && editRuleId
-                  ? "edit Rule_Id: " + editRuleId + " — " + promptText
+                  ? "edit Rule_Id: " + editRuleId + " вЂ” " + promptText
                   : promptText,
                 cypher_prompt: isCypherPrompt,
                 project: project || "default-project"
@@ -3150,18 +3177,40 @@
               readOnly: true,
               placeholder: mode === "query" ? "Response will appear here..." : "Workflow response will appear here..."
             }),
-            e("div", null,
-              e("label", null, "Workflow Cypher"),
-              e("textarea", {
-                className: "workflow-output",
-                rows: 6,
-                value: responseCypher,
-                readOnly: true,
-                placeholder: mode === "query"
-                  ? "Cypher used to query the graph will appear here..."
-                  : "Cypher used to build the graph will appear here..."
-              })
+            e("div", { className: "workflow-cypher-header",
+              role: "button",
+              "aria-expanded": workflowCypherOpen,
+              tabIndex: 0,
+              onClick: function() { setWorkflowCypherOpen(function(prev) { return !prev; }); },
+              onKeyDown: function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setWorkflowCypherOpen(function(prev) { return !prev; }); } }
+            },
+              e("svg", {
+                className: "workflow-cypher-chevron",
+                viewBox: "0 0 24 24",
+                fill: "none",
+                style: { transform: workflowCypherOpen ? "rotate(0deg)" : "rotate(-90deg)" }
+              },
+                e("path", {
+                  d: "M6 9L12 15L18 9",
+                  stroke: "currentColor",
+                  strokeWidth: "2",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round"
+                })
+              ),
+              e("span", { style: { fontSize: "13px", fontWeight: 600, color: "#f4f7fb" } }, "Workflow Cypher")
             ),
+            workflowCypherOpen
+              ? e("textarea", {
+                  className: "workflow-output",
+                  rows: 6,
+                  value: responseCypher,
+                  readOnly: true,
+                  placeholder: mode === "query"
+                    ? "Cypher used to query the graph will appear here..."
+                    : "Cypher used to build the graph will appear here..."
+                })
+              : null,
             mode === "query"
               ? e("div", null,
                   e("label", null, "Cypher Query"),
@@ -3450,16 +3499,38 @@
                     readOnly: true,
                     placeholder: "Response will appear here..."
                   }),
-                  e("div", null,
-                    e("label", null, "Workflow Cypher"),
-                    e("textarea", {
-                      className: "workflow-output",
-                      rows: 6,
-                      value: knowledgeResponseCypher,
-                      readOnly: true,
-                      placeholder: "Cypher used to query the knowledge graph will appear here..."
-                    })
-                  )
+                  e("div", { className: "workflow-cypher-header",
+                    role: "button",
+                    "aria-expanded": knowledgeCypherOpen,
+                    tabIndex: 0,
+                    onClick: function() { setKnowledgeCypherOpen(function(prev) { return !prev; }); },
+                    onKeyDown: function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setKnowledgeCypherOpen(function(prev) { return !prev; }); } }
+                  },
+                    e("svg", {
+                      className: "workflow-cypher-chevron",
+                      viewBox: "0 0 24 24",
+                      fill: "none",
+                      style: { transform: knowledgeCypherOpen ? "rotate(0deg)" : "rotate(-90deg)" }
+                    },
+                      e("path", {
+                        d: "M6 9L12 15L18 9",
+                        stroke: "currentColor",
+                        strokeWidth: "2",
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round"
+                      })
+                    ),
+                    e("span", { style: { fontSize: "13px", fontWeight: 600, color: "#f4f7fb" } }, "Workflow Cypher")
+                  ),
+                  knowledgeCypherOpen
+                    ? e("textarea", {
+                        className: "workflow-output",
+                        rows: 6,
+                        value: knowledgeResponseCypher,
+                        readOnly: true,
+                        placeholder: "Cypher used to query the knowledge graph will appear here..."
+                      })
+                    : null,
                 )
               : null,
             knowledgeMode === "update"
@@ -3515,7 +3586,7 @@
                               onClick: function() { resetUpdateState(); setKnowledgeIsRunning(false); },
                               className: "secondary-btn",
                               style: { marginTop: "8px", marginBottom: "8px" }
-                            }, "← Back to search")
+                            }, "в†ђ Back to search")
                           : null,
                         updateView === "proposing"
                           ? e("div", { style: { opacity: 0.4, pointerEvents: "none", marginTop: "12px" } },
@@ -3552,7 +3623,7 @@
                           onClick: resetUpdateState,
                           className: "secondary-btn",
                           style: { marginBottom: "12px" }
-                        }, "← Back to search"),
+                        }, "в†ђ Back to search"),
                         e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" } },
                           e("span", { style: { fontSize: "13px", fontWeight: 700 } }, updateDiffs[currentNoteIndex]?.title || ""),
                           e("span", { style: { fontSize: "12px", color: "#98a4bd" } }, "Note " + (currentNoteIndex + 1) + " of " + updateDiffs.length)
@@ -3637,7 +3708,7 @@
                           onClick: resetUpdateState,
                           className: "secondary-btn",
                           style: { marginBottom: "12px" }
-                        }, "← Back to search"),
+                        }, "в†ђ Back to search"),
                         e("span", { style: { fontSize: "13px", fontWeight: 700, display: "block", marginBottom: "8px" } }, "Review Changes"),
                         updateDiffs.map(function(d) {
                           var isSkipped = skippedNoteIds.includes(d.noteId);
@@ -3654,7 +3725,7 @@
                         (function() {
                           var confirmCount = updateDiffs.filter(function(d) { return !skippedNoteIds.includes(d.noteId); }).length;
                           return confirmCount === 0
-                            ? e("div", { className: "hint", style: { marginTop: "8px" } }, "All notes skipped — nothing to confirm")
+                            ? e("div", { className: "hint", style: { marginTop: "8px" } }, "All notes skipped вЂ” nothing to confirm")
                             : e("button", {
                                 onClick: submitConfirm,
                                 disabled: knowledgeIsRunning,

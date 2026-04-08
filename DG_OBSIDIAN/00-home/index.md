@@ -1,9 +1,9 @@
-﻿---
+---
 tags: [home, moc]
 date: 2026-04-05
 ---
 
-# Design Grammar System — Knowledge Vault
+# Design Grammar System � Knowledge Vault
 
 Welcome to the DG knowledge base. This vault documents architecture, decisions, integrations, patterns, and operational knowledge for the **Design Grammar System** project.
 
@@ -40,6 +40,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Per-run graphics state and screenshot persistence]]
 - [[Knowledge workflows use hybrid search-then-summarize for queries]]
 - [[Update flow uses three-step match-propose-confirm with server-side diff]]
+- [[DesignRuleSession nodes stored in Metagraph]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -75,4 +76,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-06 Phase 04 context and planning|2026-04-06 Phase 04 context & planning]]
 - [[sessions/2026-04-07 Phase 04 update-flow-endpoints execution|2026-04-07 Phase 04 execution]]
 - [[sessions/2026-04-07 Phase 05 UI mode restructuring execution|2026-04-07 Phase 05 execution]]
+- [[sessions/2026-04-08 Phase 06 execution and Phase 07 context|2026-04-08 Phase 06 execution & Phase 07 context]]
+- [[sessions/2026-04-08 Phase 07 UI-SPEC design contract|2026-04-08 Phase 07 UI-SPEC]]
+- [[sessions/2026-04-08 Phase 07 planning|2026-04-08 Phase 07 planning]]
+- [[sessions/2026-04-08 Collapsible Workflow Cypher panels|2026-04-08 Collapsible Workflow Cypher panels]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
