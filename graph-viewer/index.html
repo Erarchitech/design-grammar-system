@@ -928,6 +928,59 @@
         max-height: 240px;
         overflow-y: auto;
       }
+      .session-history-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 38px;
+        background: #0b0f19;
+        border: 1px solid #273041;
+        border-radius: 8px;
+        padding: 0 14px;
+        cursor: pointer;
+        margin-top: 12px;
+      }
+      .session-history-header:hover {
+        border-color: #3a4a5e;
+      }
+      .session-history-chevron {
+        width: 16px;
+        height: 16px;
+        color: #98a4bd;
+        flex: 0 0 auto;
+        margin-right: 8px;
+      }
+      .session-history-header:hover .session-history-chevron {
+        color: #5fd0ff;
+      }
+      .session-history-list {
+        max-height: 280px;
+        overflow-y: auto;
+        scrollbar-color: #a3a6af #1b202a;
+        padding: 4px 0;
+      }
+      .session-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(40, 49, 67, 0.5);
+        cursor: pointer;
+      }
+      .session-badge {
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        flex: 0 0 auto;
+      }
+      .session-badge-insert { background: #4ecdc4; color: #0c1018; }
+      .session-badge-query { background: #5fd0ff; color: #0c1018; }
+      .session-badge-update { background: #ffb66f; color: #20160f; }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1428,6 +1481,12 @@
         const [skippedNoteIds, setSkippedNoteIds] = React.useState([]);
         const [showDiff, setShowDiff] = React.useState(true);
 
+        const [sessionHistoryOpen, setSessionHistoryOpen] = React.useState(false);
+        const [sessions, setSessions] = React.useState([]);
+        const [sessionFilter, setSessionFilter] = React.useState("all");
+        const [expandedSessionId, setExpandedSessionId] = React.useState(null);
+        const [sessionsDisplayCount, setSessionsDisplayCount] = React.useState(50);
+
         const vizRef = React.useRef(null);
         const stepRef = React.useRef(step);
         const stepStartedAtRef = React.useRef(null);
@@ -1541,6 +1600,20 @@
 
 
         const roundSeconds = (ms) => Math.round((ms / 1000) * 10) / 10;
+
+        const formatRelativeDate = (isoString) => {
+          const now = Date.now();
+          const then = new Date(isoString).getTime();
+          const diffMs = now - then;
+          const diffMin = Math.floor(diffMs / 60000);
+          const diffHr = Math.floor(diffMs / 3600000);
+          const diffDay = Math.floor(diffMs / 86400000);
+          if (diffMin < 1) return "just now";
+          if (diffMin < 60) return diffMin + "m ago";
+          if (diffHr < 24) return diffHr + "h ago";
+          if (diffDay < 7) return diffDay + "d ago";
+          return isoString.slice(0, 10);
+        };
 
         const setWorkflowStep = (nextStep) => {
           const now = Date.now();
@@ -2771,6 +2844,20 @@
             const q = buildCypher("KnowledgeGraph");
             setCypher(q);
             run(q);
+            (async () => {
+              try {
+                const base = getDataServiceBaseUrl();
+                const res = await fetch(base + "/knowledge/sessions/" + encodeURIComponent(project || "default-project"));
+                if (res.ok) {
+                  const data = await res.json();
+                  setSessions(data.sessions || []);
+                } else {
+                  setSessions([]);
+                }
+              } catch (_) {
+                setSessions([]);
+              }
+            })();
           } else {
             const q = buildCypher(graphView);
             setCypher(q);
@@ -2859,6 +2946,11 @@
               )
             : null
         );
+
+        const filteredSessions = sessionFilter === "all"
+          ? sessions
+          : sessions.filter(function(s) { return s.mode === sessionFilter; });
+        const displayedSessions = filteredSessions.slice(0, sessionsDisplayCount);
 
         return e("div", { className: "graph-viewer-page" },
           e("div", { id: "left" },
@@ -3409,6 +3501,125 @@
                     placeholder: "Update result will appear here...",
                     style: { color: knowledgeResponseText.startsWith("Updated:") ? "#2fb16f" : (knowledgeResponseText.startsWith("Conflict:") || knowledgeResponseText.startsWith("Error:") ? "#ff4d4f" : "inherit") }
                   })
+                )
+              : null,
+            e("div", { className: "session-history-header",
+              role: "button",
+              "aria-expanded": sessionHistoryOpen,
+              tabIndex: 0,
+              onClick: function() { setSessionHistoryOpen(function(prev) { return !prev; }); },
+              onKeyDown: function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setSessionHistoryOpen(function(prev) { return !prev; }); } }
+            },
+              e("div", { style: { display: "flex", alignItems: "center" } },
+                e("svg", {
+                  className: "session-history-chevron",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  style: { transform: sessionHistoryOpen ? "rotate(0deg)" : "rotate(-90deg)" }
+                },
+                  e("path", {
+                    d: "M6 9L12 15L18 9",
+                    stroke: "currentColor",
+                    strokeWidth: "2",
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round"
+                  })
+                ),
+                e("span", { style: { fontSize: "13px", fontWeight: 700, color: "#f4f7fb" } }, "Session History"),
+                e("span", { style: { fontSize: "11px", fontWeight: 400, color: "#98a4bd", marginLeft: "4px" } },
+                  "(" + filteredSessions.length + ")")
+              ),
+              e("select", {
+                value: sessionFilter,
+                onChange: function(ev) { setSessionFilter(ev.target.value); setSessionsDisplayCount(50); },
+                onClick: function(ev) { ev.stopPropagation(); },
+                style: {
+                  background: "transparent",
+                  border: "1px solid #273041",
+                  borderRadius: "6px",
+                  color: "#98a4bd",
+                  fontSize: "11px",
+                  padding: "2px 6px",
+                  height: "24px",
+                  cursor: "pointer"
+                }
+              },
+                e("option", { value: "all" }, "All modes"),
+                e("option", { value: "insert" }, "Insert"),
+                e("option", { value: "query" }, "Query"),
+                e("option", { value: "update" }, "Update")
+              )
+            ),
+            sessionHistoryOpen
+              ? e("div", { className: "session-history-list" },
+                  displayedSessions.length === 0
+                    ? e("div", { className: "hint", style: { padding: "12px 0", textAlign: "center" } },
+                        sessions.length === 0 ? "No knowledge interactions yet" : "No sessions match this filter")
+                    : null,
+                  displayedSessions.map(function(session) {
+                    var badgeClass = "session-badge session-badge-" + (session.mode || "query");
+                    var badgeText = session.mode === "insert" ? "INS" : (session.mode === "update" ? "UPD" : "QRY");
+                    return e(React.Fragment, { key: session.sessionId },
+                      e("div", {
+                        className: "session-row",
+                        onClick: function() {
+                          setExpandedSessionId(function(prev) {
+                            return prev === session.sessionId ? null : session.sessionId;
+                          });
+                        }
+                      },
+                        e("span", { className: badgeClass }, badgeText),
+                        e("span", {
+                          style: { flex: 1, minWidth: 0, fontSize: "12px", color: "#eef3ff",
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
+                        }, session.prompt || ""),
+                        e("span", {
+                          style: { flex: "0 0 auto", fontSize: "11px", color: "#98a4bd", whiteSpace: "nowrap" }
+                        }, formatRelativeDate(session.createdAt)),
+                        e("button", {
+                          onClick: function(ev) {
+                            ev.stopPropagation();
+                            setKnowledgePromptText(session.prompt || "");
+                            setKnowledgeResponseText(session.result || "");
+                            setKnowledgeMode(session.mode || "query");
+                          },
+                          style: {
+                            flex: "0 0 auto", background: "transparent", border: "none",
+                            color: "#5fd0ff", fontSize: "11px", fontWeight: 500,
+                            padding: "2px 6px", cursor: "pointer"
+                          },
+                          onMouseOver: function(ev) { ev.currentTarget.style.textDecoration = "underline"; },
+                          onMouseOut: function(ev) { ev.currentTarget.style.textDecoration = "none"; }
+                        }, "Restore")
+                      ),
+                      expandedSessionId === session.sessionId
+                        ? e("div", {
+                            style: {
+                              background: "rgba(9, 15, 25, 0.82)",
+                              border: "1px solid #283143",
+                              borderRadius: "8px",
+                              padding: "12px",
+                              margin: "4px 0 8px 0"
+                            }
+                          },
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Prompt"),
+                            e("div", { style: { fontSize: "13px", color: "#eef3ff", whiteSpace: "pre-wrap", marginBottom: "12px" } }, session.prompt || ""),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Result"),
+                            e("div", { style: { fontSize: "13px", color: "#fffce9", whiteSpace: "pre-wrap", marginBottom: "12px" } }, session.result || ""),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" } }, "Time"),
+                            e("div", { style: { fontSize: "12px", color: "#98a4bd" } },
+                              session.createdAt ? session.createdAt.replace("T", " ").slice(0, 16) : "")
+                          )
+                        : null
+                    );
+                  }),
+                  filteredSessions.length > sessionsDisplayCount
+                    ? e("button", {
+                        onClick: function() { setSessionsDisplayCount(function(prev) { return prev + 50; }); },
+                        className: "secondary-btn",
+                        style: { width: "100%", marginTop: "8px", fontSize: "12px", textAlign: "center" }
+                      }, "Show more")
+                    : null
                 )
               : null,
             e("div", { className: "status" }, knowledgeStatus)
