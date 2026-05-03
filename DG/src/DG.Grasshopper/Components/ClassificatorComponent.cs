@@ -27,6 +27,8 @@ public sealed class ClassificatorComponent : GH_Component
         pManager.AddGenericParameter("Values", "Values", "DataTree where branch index matches variable index", GH_ParamAccess.tree);
         pManager.AddGenericParameter("ElementRefs", "ElementRefs", "Optional DataTree where branch index matches variable index and each item carries a DG entity id plus optional geometry", GH_ParamAccess.tree);
         pManager[2].Optional = true;
+        pManager.AddGenericParameter("State", "State", "Optional DG.DesignStateSnapshot to attach to this validation run", GH_ParamAccess.item);
+        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -53,6 +55,9 @@ public sealed class ClassificatorComponent : GH_Component
 
         GH_Structure<IGH_Goo>? elementRefTree = null;
         var hasElementRefTree = da.GetDataTree(2, out elementRefTree) && elementRefTree is not null;
+
+        object? stateInput = null;
+        var hasState = da.GetData(3, ref stateInput) && stateInput is not null;
 
         var variables = variableInputs
             .Select(GhCastingHelpers.TryVariable)
@@ -91,6 +96,11 @@ public sealed class ClassificatorComponent : GH_Component
         da.SetDataList(1, classification.MissingVariables);
         da.SetData(2, classification.Status);
         Message = classification.Status;
+
+        if (hasState)
+        {
+            Message += " [with state]";
+        }
     }
 }
 #else
