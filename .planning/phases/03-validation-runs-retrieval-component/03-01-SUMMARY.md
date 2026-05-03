@@ -152,6 +152,21 @@ None - no external service configuration required. The VALIDATION RUNS component
 - ValidationRunQueryResult.StatePayloadJson carries the full serialized state for reinstatement without re-serialization
 - Phase 05 (Model Viewer grouping) can use the `Results` output format (`{runId}|{ruleId}:{passed}`) for group-by-rule logic
 
+## Self-Check: PASSED
+
+- FOUND: DG/src/DG.Core/Models/ValidationRunQueryResult.cs
+- FOUND: DG/src/DG.Core/Services/ValidationRunsQueryService.cs
+- FOUND: DG/src/DG.Grasshopper/Components/ValidationRunsComponent.cs
+- FOUND: DG/tests/DG.Tests/ValidationRunsQueryTests.cs
+- FOUND: .planning/phases/03-validation-runs-retrieval-component/03-01-SUMMARY.md
+- COMMIT 5435853: feat(03-01): add DesignState models and JSON serializer — FOUND
+- COMMIT 219559d: feat(03-01): add ValidationRunPersistenceService and Classificator State input — FOUND
+- COMMIT 582e2d8: feat(03-01): add ValidationRunQueryResult model and ValidationRunsQueryService — FOUND
+- COMMIT dd8ddac: feat(03-01): add ValidationRunsComponent GH component — FOUND
+- COMMIT faf3f33: test(03-01): add ValidationRunsQueryTests for filters and schema consistency — FOUND
+- TESTS: 39/39 passed (0 failures)
+- BUILD: 0 warnings, 0 errors
+
 ---
 *Phase: 03-validation-runs-retrieval-component*
 *Completed: 2026-05-03*
