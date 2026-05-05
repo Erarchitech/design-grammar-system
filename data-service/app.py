@@ -158,6 +158,7 @@ class ValidationPublishEntityPayload(BaseModel):
 
 class ValidationPublishRequest(BaseModel):
     project: str
+    statePayloadJson: str | None = None
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
     entities: list[ValidationPublishEntityPayload] = Field(default_factory=list)
@@ -395,6 +396,7 @@ def store_validation_run(
     publish_result: dict[str, str],
     rules_summary: list[dict[str, Any]],
     entities: list[dict[str, Any]],
+    state_payload_json: str | None = None,
 ) -> None:
     created_at = datetime.now(timezone.utc).isoformat()
     write_query(
@@ -410,6 +412,7 @@ def store_validation_run(
             run.baseResourceUrl = $baseResourceUrl,
             run.validationResourceUrl = $validationResourceUrl,
             run.rulesJson = $rulesJson,
+            run.statePayloadJson = $statePayloadJson,
             run.status = 'completed',
             run.createdAt = $createdAt
         """,
@@ -426,6 +429,7 @@ def store_validation_run(
             "baseResourceUrl": publish_result["baseResourceUrl"],
             "validationResourceUrl": publish_result["validationResourceUrl"],
             "rulesJson": json.dumps(rules_summary),
+            "statePayloadJson": state_payload_json,
             "createdAt": created_at,
         },
     )
@@ -818,6 +822,7 @@ def publish_validation(payload: ValidationPublishRequest):
             publish_result,
             rules_summary,
             entity_dicts,
+            state_payload_json=payload.statePayloadJson,
         )
         return {
             "status": "published",

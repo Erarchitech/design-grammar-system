@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using DG.Core.Models;
+using DG.Core.Serialization;
 using DG.Core.Validation;
 using CoreBindingRow = DG.Core.Models.BindingRow;
 using CoreRule = DG.Core.Models.Rule;
@@ -22,10 +23,12 @@ internal static class ValidationPublishClient
         IReadOnlyList<CoreRule> rules,
         IReadOnlyList<CoreRuleEvaluationResult> results,
         IReadOnlyList<CoreBindingRow> bindings,
-        string dataServiceUrl)
+        string dataServiceUrl,
+        DesignStateSnapshot? state = null)
     {
         var package = ValidationPublishPackageBuilder.Build(rules, results, bindings);
-        var request = BuildRequest(package);
+        var statePayloadJson = SerializeState(state);
+        var request = BuildRequest(package, statePayloadJson);
         var endpoint = $"{NormalizeUrl(dataServiceUrl)}/validation/publish";
         using var response = HttpClient.PostAsJsonAsync(endpoint, request, JsonOptions).GetAwaiter().GetResult();
         var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -43,11 +46,30 @@ internal static class ValidationPublishClient
         return parsed;
     }
 
-    private static ValidationPublishRequest BuildRequest(ValidationPublishPackage package)
+    private static string? SerializeState(DesignStateSnapshot? state)
+    {
+        if (state is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return DesignStateJsonSerializer.Serialize(state);
+        }
+        catch (InvalidOperationException)
+        {
+            // Malformed state — skip rather than fail the whole publish.
+            return null;
+        }
+    }
+
+    private static ValidationPublishRequest BuildRequest(ValidationPublishPackage package, string? statePayloadJson)
     {
         var request = new ValidationPublishRequest
         {
             Project = package.Project,
+            StatePayloadJson = statePayloadJson,
         };
 
         foreach (var rule in package.Rules)

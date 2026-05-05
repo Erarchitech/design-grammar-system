@@ -5,6 +5,12 @@ internal sealed class ValidationPublishRequest
 {
     public string Project { get; init; } = "default-project";
 
+    /// <summary>
+    /// Serialized DesignStateSnapshot JSON from the DESIGN STATE component.
+    /// Null when no state was captured for this validation run.
+    /// </summary>
+    public string? StatePayloadJson { get; init; }
+
     public List<ValidationPublishRulePayload> Rules { get; } = new();
 
     public List<ValidationPublishRuleResultPayload> RuleResults { get; } = new();

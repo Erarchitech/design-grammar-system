@@ -36,6 +36,7 @@ public sealed class ClassificatorComponent : GH_Component
         pManager.AddGenericParameter("BoundVariables", "BoundVariables", "List of binding rows", GH_ParamAccess.list);
         pManager.AddTextParameter("MissingVariables", "MissingVariables", "Variables missing value branches", GH_ParamAccess.list);
         pManager.AddTextParameter("Status", "Status", "Classification status", GH_ParamAccess.item);
+        pManager.AddGenericParameter("State", "State", "Pass-through of the connected DG.DesignStateSnapshot. Wire to VALIDATOR State input to attach the state to the validation run.", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -95,12 +96,11 @@ public sealed class ClassificatorComponent : GH_Component
         da.SetDataList(0, classification.BoundVariables);
         da.SetDataList(1, classification.MissingVariables);
         da.SetData(2, classification.Status);
-        Message = classification.Status;
 
-        if (hasState)
-        {
-            Message += " [with state]";
-        }
+        // Pass the state through so it can be wired directly to VALIDATOR.State.
+        da.SetData(3, stateInput);
+
+        Message = hasState ? classification.Status + " [+state]" : classification.Status;
     }
 }
 #else

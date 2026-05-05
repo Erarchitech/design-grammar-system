@@ -27,6 +27,8 @@ public sealed class ValidatorComponent : GH_Component
         pManager.AddBooleanParameter("Run", "Run", "Set true to validate", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("SendRules", "SendRules", "Set true to send validation geometry and results to DG backend for Speckle publication", GH_ParamAccess.item, false);
         pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
+        pManager.AddGenericParameter("State", "State", "Optional DG.DesignStateSnapshot from DESIGN STATE (or Classificator.State output). Attached to the validation run so it can be retrieved and filtered in VALIDATION RUNS.", GH_ParamAccess.item);
+        pManager[5].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -49,6 +51,13 @@ public sealed class ValidatorComponent : GH_Component
         da.GetData(3, ref sendRules);
         var dataServiceUrl = "http://localhost:8000";
         da.GetData(4, ref dataServiceUrl);
+
+        // Read optional state — used when publishing to attach design context to the run.
+        object? stateInput = null;
+        da.GetData(5, ref stateInput);
+        var state = GhCastingHelpers.Unwrap<DesignStateSnapshot>(stateInput)
+                    ?? GhCastingHelpers.Unwrap<global::DG.DesignStateSnapshot>(stateInput);
+
         if (!run)
         {
             Message = "Idle";
@@ -116,7 +125,7 @@ public sealed class ValidatorComponent : GH_Component
         {
             try
             {
-                var response = ValidationPublishClient.Publish(rules, results, bindings, dataServiceUrl);
+                var response = ValidationPublishClient.Publish(rules, results, bindings, dataServiceUrl, state);
                 publishStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
                 validationRunId = response.RunId;
                 modelViewerUrl = response.ModelViewerUrl;
