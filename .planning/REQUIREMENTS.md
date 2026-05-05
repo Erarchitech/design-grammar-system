@@ -1,137 +1,103 @@
-# Requirements: Design Grammar System v1.1 — Project Knowledge Graph
+# Requirements: Design Grammar System v2.0 - DG Plugin Design State and Validation Runs
 
-**Defined:** 2026-04-05
-**Core Value:** Architects can store, update, and query project knowledge via natural language alongside their design validation rules — all within one integrated tool.
+**Defined:** 2026-04-10
+**Core Value:** Architects can save parameterized design states with each validation run and reliably reinstate those states in Grasshopper to compare alternatives quickly.
 
-## v1.1 Requirements
+## v2.0 Requirements
 
-Requirements for Project Knowledge Graph milestone. Each maps to roadmap phases.
+### Design State Capture
 
-### Schema
+- [x] **DGST-01**: Grasshopper provides a DESIGN STATE component that accepts Number, Integer, and Boolean inputs and serializes them into a reusable state object
+- [x] **DGST-02**: Serialized design state includes stable parameter identifiers, display names, typed values, and capture timestamp
+- [x] **DGST-03**: Design state payload can be attached to validation execution without breaking existing validation flow
 
-- [ ] **SCHM-01**: Neo4j stores KnowledgeNote nodes with `graph:"KnowledgeGraph"` label, project-isolated via `project` property
-- [ ] **SCHM-02**: Neo4j stores KnowledgeTag nodes linked to KnowledgeNote via TAGGED_WITH relationship
-- [ ] **SCHM-03**: Neo4j stores KnowledgeSession nodes tracking every knowledge interaction (prompt, result, mode, date)
-- [ ] **SCHM-04**: Neo4j full-text index on KnowledgeNote `title` and `content` fields is created at data-service startup
+### Classificator and Validation Persistence
 
-### Insert Knowledge
+- [x] **DGCL-01**: Classificator component accepts optional State input from DESIGN STATE
+- [x] **DGCL-02**: Validation run persistence stores design state payload alongside run metadata in Neo4j
+- [x] **DGCL-03**: Persisted validation run remains project-isolated and queryable by rule and state
 
-- [ ] **INSK-01**: User can insert knowledge via natural language prompt — LLM extracts title, tags, content and creates KnowledgeNote nodes
-- [ ] **INSK-02**: User can insert knowledge from a local repository folder — data-service reads `.md` files and creates KnowledgeNote nodes
-- [ ] **INSK-03**: Folder path input is validated server-side to prevent path traversal outside allowed root
-- [ ] **INSK-04**: Each insert operation creates a KnowledgeSession node recording prompt, result, and timestamp
+### Validation Runs Retrieval
 
-### Update Knowledge
+- [x] **DGRN-01**: VALIDATION RUNS component returns run list for selected project/stream
+- [x] **DGRN-02**: VALIDATION RUNS supports optional Rule filter and optional State filter
+- [x] **DGRN-03**: VALIDATION RUNS outputs Runs, Results, and States collections in a deterministic schema
 
-- [ ] **UPDK-01**: User types an update prompt; LLM identifies matching KnowledgeNote nodes via full-text search and returns candidate list
-- [ ] **UPDK-02**: Matching nodes are isolated in the graph view; user selects one or several nodes
-- [ ] **UPDK-03**: User clicks Edit; LLM proposes edits to selected notes with changes highlighted in red
-- [ ] **UPDK-04**: User reviews proposed changes in an inline text editor (textarea + diff panel with red-highlighted changes)
-- [ ] **UPDK-05**: User clicks Confirm to save changes to Neo4j; sidebar notification lists affected nodes
-- [ ] **UPDK-06**: Each update operation creates a KnowledgeSession node recording the interaction
+### Reinstatement
 
-### Query Knowledge
+- [ ] **REIN-01**: REINSTATE component accepts States output and applies values back to matching Grasshopper parameters
+- [ ] **REIN-02**: Reinstatement is trigger-based (button/boolean) and does not auto-apply on wire change
+- [ ] **REIN-03**: Reinstatement reports per-parameter apply status (applied, missing target, type mismatch)
 
-- [ ] **QRYK-01**: User types a natural language question; LLM searches knowledge graph via full-text index and returns NL answer in sidebar Response field
-- [ ] **QRYK-02**: Cypher query used for the search is displayed in the Cypher panel
-- [ ] **QRYK-03**: Each query operation creates a KnowledgeSession node recording the interaction
+### Model Viewer Grouping
 
-### Session History
+- [ ] **MVGP-01**: Validation Runs strip supports grouping by Rule
+- [ ] **MVGP-02**: Validation Runs strip supports grouping by Design State
+- [ ] **MVGP-03**: Grouping switch is user-selectable and preserves filter context
 
-- [ ] **HSTY-01**: All knowledge interactions (insert, update, query) are automatically saved with prompt, result contents, date tags, and mode identifier
-- [x] **HSTY-02**: Session history is browsable in the UI in reverse-chronological order, filterable by mode
-- [x] **HSTY-03**: Session history persists in Neo4j (not localStorage) and survives browser data clears
+### Integration and Safety
 
-### UI Structure
-
-- [ ] **UIST-01**: Existing modes (Insert Rules, Query Rules, Edit Rules) are grouped under a "Validation" section in the sidebar
-- [ ] **UIST-02**: New "Project Knowledge" section appears in the sidebar with Insert Knowledge, Update Knowledge, and Query Knowledge modes
-- [ ] **UIST-03**: Insert Knowledge mode shows a folder path input field and a prompt input field
-- [ ] **UIST-04**: Update Knowledge mode shows a prompt field for node matching, a node selection area, an Edit button, an inline diff editor, and a Confirm button
-- [ ] **UIST-05**: Query Knowledge mode shows a prompt field and a Response display area
-- [x] **UIST-06**: Session History is accessible as a browsable panel showing past interactions
-
-### Backend Infrastructure
-
-- [ ] **INFR-01**: data-service exposes `/knowledge/*` REST endpoint group (ingest, CRUD, update flow, query, sessions)
-- [ ] **INFR-02**: Two new n8n workflows handle knowledge-ingest and knowledge-query via existing webhook + Ollama + Neo4j pattern
-- [ ] **INFR-03**: Docker Compose mounts a read-only volume for repository folder access by data-service
-- [ ] **INFR-04**: NeoVis config supports visualizing KnowledgeGraph nodes with distinct colors/shapes from SWRL metagraph nodes
-
-## v2 Requirements
-
-Deferred to future release. Tracked but not in current roadmap.
-
-### Cross-Graph
-
-- **XGRP-01**: Knowledge nodes can be linked to SWRL Rule atoms for cross-domain queries
-- **XGRP-02**: Mixed graph view shows both Knowledge and SWRL nodes with visual distinction
-
-### Advanced Knowledge
-
-- **ADVK-01**: Versioned history of individual knowledge node content (git-like diffs per node)
-- **ADVK-02**: Obsidian vault path as live sync source (two-way sync with local `.md` files)
-- **ADVK-03**: RAG-based semantic search when vault grows beyond full-text search capacity
-
-### Collaboration
-
-- **COLB-01**: Multiple users can edit knowledge nodes with conflict resolution
-- **COLB-02**: Real-time presence indicators show who is editing which node
+- [ ] **INTG-01**: End-to-end flow works: DESIGN STATE -> Classificator validation -> Neo4j persistence -> VALIDATION RUNS retrieval -> REINSTATE apply
+- [x] **INTG-02**: Existing rule validation workflow continues to operate when no DESIGN STATE is provided
+- [ ] **INTG-03**: Serialization, persistence, and reinstatement errors are surfaced as actionable user-facing messages
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| RAG / vector embeddings | Explicitly excluded — Neo4j full-text search sufficient for note-scale data; no embedding model served |
-| Rich WYSIWYG editor (CodeMirror, Monaco) | Requires npm build step — violates no-JSX constraint for main SPA |
-| New Docker service for knowledge | data-service already has Neo4j driver and execution-result store — new container adds ops complexity for no gain |
-| LangChain / AI Agent n8n nodes | Breaks existing plain HTTP-node workflow pattern |
-| Grasshopper integration for knowledge | Knowledge is informational only — no validation path needed |
-| Mobile app for knowledge | Desktop/web-first for architect workflows |
-| Knowledge node content > 100KB | Ollama context window limitation; truncate before LLM processing |
+| Arbitrary object/geometry serialization in DESIGN STATE | v2.0 is limited to Number, Integer, Boolean primitives for deterministic reinstatement |
+| Full version history UI for state diffs | Not required for first usable reinstatement loop |
+| Cross-project state sharing | Project isolation remains mandatory |
+| Automatic periodic snapshotting | Explicit user capture keeps intent clear and payload sizes bounded |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+| Requirement | Phase | Status | Notes |
+|-------------|-------|--------|-------|
+| DGST-01 | Phase 1 (+ retro Phase 3.1) | Code Complete | Data contracts in Phase 1; **DESIGN STATE GH component added retroactively in commit `b73e8d9`** (was missing from Phase 1 task list) |
+| DGST-02 | Phase 1 | Code Complete | `DesignStateParameter` model has `ParameterId`, `DisplayName`, typed values, `CapturedAtUtc` |
+| DGST-03 | Phase 2 (+ retro Phase 3.1) | Code Complete | Persistence chain wired end-to-end in commit `d856ca4` (Classificator → Validator → data-service → Neo4j) |
+| DGCL-01 | Phase 2 | Code Complete | Optional State input on Classificator (index 3); pass-through output added in `d856ca4` |
+| DGCL-02 | Phase 2 (+ retro Phase 3.1) | Code Complete | **Original Phase 2 only built helper methods — actual Neo4j write path added in `d856ca4`** (data-service `store_validation_run` now SETs `run.statePayloadJson`) |
+| DGCL-03 | Phase 3 | Code Complete | Cypher uses `{project:$project}`; rule + state filters work |
+| DGRN-01 | Phase 3 | Code Complete | `ValidationRunsComponent` queries by project |
+| DGRN-02 | Phase 3 | Code Complete | Both Rule and State filters wired |
+| DGRN-03 | Phase 3 | Code Complete | Sorted via `StringComparer.Ordinal`; deterministic schema |
+| REIN-01 | Phase 4 | Pending | |
+| REIN-02 | Phase 4 | Pending | |
+| REIN-03 | Phase 4 | Pending | |
+| MVGP-01 | Phase 5 | Pending | |
+| MVGP-02 | Phase 5 | Pending | |
+| MVGP-03 | Phase 5 | Pending | |
+| INTG-01 | Phase 6 | Pending | Awaiting REIN component (Phase 4) |
+| INTG-02 | Phase 2/3 | Code Complete | Optional inputs preserve legacy flow |
+| INTG-03 | Phase 6 | Pending | |
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SCHM-01 | Phase 1 | Pending |
-| SCHM-02 | Phase 1 | Pending |
-| SCHM-03 | Phase 1 | Pending |
-| SCHM-04 | Phase 1 | Pending |
-| INSK-02 | Phase 2 | Pending |
-| INSK-03 | Phase 2 | Pending |
-| INFR-01 | Phase 2 | Pending |
-| INFR-03 | Phase 2 | Pending |
-| INSK-01 | Phase 3 | Pending |
-| INSK-04 | Phase 3 | Pending |
-| QRYK-01 | Phase 3 | Pending |
-| QRYK-02 | Phase 3 | Pending |
-| QRYK-03 | Phase 3 | Pending |
-| INFR-02 | Phase 3 | Pending |
-| HSTY-01 | Phase 3 | Pending |
-| UPDK-01 | Phase 4 | Pending |
-| UPDK-02 | Phase 4 | Pending |
-| UPDK-03 | Phase 4 | Pending |
-| UPDK-04 | Phase 4 | Pending |
-| UPDK-05 | Phase 4 | Pending |
-| UPDK-06 | Phase 4 | Pending |
-| UIST-01 | Phase 5 | Pending |
-| UIST-02 | Phase 5 | Pending |
-| UIST-03 | Phase 5 | Pending |
-| UIST-05 | Phase 5 | Pending |
-| UIST-04 | Phase 6 | Pending |
-| UIST-06 | Phase 7 | Complete |
-| HSTY-02 | Phase 7 | Complete |
-| HSTY-03 | Phase 7 | Complete |
-| INFR-04 | Phase 7 | Pending |
+**Status legend:**
+- `Code Complete` — implementation verified by code inspection + unit tests; live integration test still pending
+- `Validated` — code complete + live test passed
+- `Pending` — not yet implemented
 
 **Coverage:**
-- v1.1 requirements: 30 total
-- Mapped to phases: 30
-- Unmapped: 0 ✓
+- v2.0 requirements: 18 total
+- Mapped to phases: 18
+- Code complete: 11
+- Pending: 7
+- Unmapped: 0
+
+## Phase 3.1 — Gap Closure (retroactive)
+
+After Phase 3 verifier passed and during human UAT, two upstream gaps from Phase 1 and Phase 2 were discovered:
+
+1. **DGST-01 was not actually delivered** by Phase 1. Only data contracts existed; the DESIGN STATE GH component was missing from the task list.
+2. **DGCL-02 was not actually delivered** by Phase 2. `ValidationRunPersistenceService` only had helper methods; no Neo4j write existed. The Classificator received state but never persisted it.
+
+Both were closed in two commits without a formal gap-closure phase being scheduled:
+- `b73e8d9` — `feat(03): add DESIGN STATE GH component for named parameter capture`
+- `d856ca4` — `fix: wire design state through full persistence chain` (6 broken links: Classificator output, Validator input, ValidationPublishClient param, ValidationPublishContract field, data-service Pydantic field, data-service Cypher SET)
+
+See `.planning/v2.0-GAP-CLOSURE.md` for the full retrospective.
 
 ---
-*Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition*
+*Requirements defined: 2026-04-10*
+*Traceability updated: 2026-05-05 (post Phase 3 gap closure)*

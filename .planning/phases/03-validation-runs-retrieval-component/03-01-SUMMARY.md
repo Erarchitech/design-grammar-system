@@ -167,6 +167,25 @@ None - no external service configuration required. The VALIDATION RUNS component
 - TESTS: 39/39 passed (0 failures)
 - BUILD: 0 warnings, 0 errors
 
+## Postscript — Upstream gap surfaced during human UAT (2026-05-05)
+
+Phase 3 retrieval mechanism was implemented and verified correctly in isolation (4/4 must-haves verified, 14 unit tests pass). However, during human UAT for the State filter test, two upstream gaps from Phases 1 and 2 surfaced:
+
+1. **Phase 1 never built the DESIGN STATE GH component** — DGST-01 was claimed complete but only data contracts existed
+2. **Phase 2 never wired state persistence end-to-end** — Classificator received state but discarded it; no code path wrote `statePayloadJson` to Neo4j
+
+The retrieval code in this phase was correct; it just had no upstream data flow producing state-bearing runs. Both gaps were closed in commits `b73e8d9` (DESIGN STATE component) and `d856ca4` (full persistence chain wiring).
+
+After gap closure, the canvas wiring for DGRN-02's State filter is finally testable end-to-end:
+
+```
+DESIGN STATE → Classificator → Validator (SendRules=true) →
+  data-service (writes statePayloadJson) → Neo4j → VALIDATION RUNS
+```
+
+See `.planning/v2.0-GAP-CLOSURE.md` for the full retrospective.
+
 ---
 *Phase: 03-validation-runs-retrieval-component*
 *Completed: 2026-05-03*
+*Upstream gaps closed: 2026-05-05 (commits b73e8d9, d856ca4)*
