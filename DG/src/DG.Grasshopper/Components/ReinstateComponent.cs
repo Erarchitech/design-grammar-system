@@ -13,14 +13,6 @@ namespace DG.Grasshopper.Components;
 /// <summary>
 /// REINSTATE component. Applies a saved DesignStateSnapshot back to the upstream
 /// Grasshopper parameters that originally fed a DESIGN STATE component.
-///
-/// Usage:
-///   1. Wire a DesignStateSnapshot (from VALIDATION RUNS "States" output or DESIGN STATE "State") to "State".
-///   2. Wire the DESIGN STATE component's "State" output to "DesignState" input
-///      (the component is found automatically by walking the wire source).
-///   3. Connect a Button or Boolean Toggle to "Apply".
-///   4. On rising-edge of Apply, the component validates all parameters and, if all pass,
-///      writes values back to upstream sliders/toggles.
 /// </summary>
 public sealed class ReinstateComponent : GH_Component
 {
@@ -102,7 +94,7 @@ public sealed class ReinstateComponent : GH_Component
         {
             SetOutputs(da, null, "Invalid state input.");
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                $"Could not cast State input to DesignStateSnapshot. Received type: {stateInput?.GetType().FullName ?? "null"}");
+                $"Could not cast State input to DesignStateSnapshot. {DiagnoseInputType(stateInput)}");
             return;
         }
 
@@ -157,32 +149,82 @@ public sealed class ReinstateComponent : GH_Component
 
     /// <summary>
     /// Robust unwrapping of DesignStateSnapshot from GH wire data.
-    /// Handles: direct cast, GH_ObjectWrapper, and generic IGH_Goo via ScriptVariable().
+    /// Handles: direct cast, GH_ObjectWrapper (including nested wrappers and ScriptVariable),
+    /// and generic IGH_Goo via ScriptVariable().
     /// </summary>
     private static DesignStateSnapshot? UnwrapSnapshot(object? input)
     {
         if (input is null) return null;
 
-        // Direct type match
+        // Direct type match (fastest path)
         if (input is DesignStateSnapshot direct) return direct;
         if (input is global::DG.DesignStateSnapshot publicDirect) return publicDirect;
 
-        // GH_ObjectWrapper (most common for Generic params)
+        // GH_ObjectWrapper — the standard wrapper for Generic params
         if (input is GH_ObjectWrapper wrapper)
         {
-            if (wrapper.Value is DesignStateSnapshot ws) return ws;
-            if (wrapper.Value is global::DG.DesignStateSnapshot wps) return wps;
+            var val = wrapper.Value;
+            if (val is DesignStateSnapshot ws) return ws;
+            if (val is global::DG.DesignStateSnapshot wps) return wps;
+
+            // Nested wrapper (rare but possible)
+            if (val is GH_ObjectWrapper nested)
+                return UnwrapSnapshot(nested);
+
+            // Value itself might be IGH_Goo
+            if (val is IGH_Goo innerGoo)
+            {
+                var innerSv = innerGoo.ScriptVariable();
+                if (innerSv is DesignStateSnapshot isv) return isv;
+                if (innerSv is global::DG.DesignStateSnapshot ipsv) return ipsv;
+            }
+
+            // ScriptVariable() on the wrapper itself
+            var sv = wrapper.ScriptVariable();
+            if (sv is DesignStateSnapshot svs) return svs;
+            if (sv is global::DG.DesignStateSnapshot psvs) return psvs;
+
+            // Last resort: the Value might be the right type but loaded from a different
+            // assembly instance. Check by type name as fallback.
+            if (val is not null && val.GetType().FullName is "DG.Core.Models.DesignStateSnapshot" or "DG.DesignStateSnapshot")
+            {
+                // Use reflection-free cast through common base — DesignStateSnapshot is not sealed
+                // so DG.DesignStateSnapshot inherits from it. Try dynamic.
+                try { return (DesignStateSnapshot)(dynamic)val; } catch { /* fallback failed */ }
+            }
         }
 
         // Any IGH_Goo — unwrap via ScriptVariable()
         if (input is IGH_Goo goo)
         {
             var scriptVar = goo.ScriptVariable();
-            if (scriptVar is DesignStateSnapshot sv) return sv;
-            if (scriptVar is global::DG.DesignStateSnapshot psv) return psv;
+            if (scriptVar is DesignStateSnapshot gsv) return gsv;
+            if (scriptVar is global::DG.DesignStateSnapshot gpsv) return gpsv;
+
+            // Recursive for nested goo
+            if (scriptVar is GH_ObjectWrapper nestedWrapper)
+                return UnwrapSnapshot(nestedWrapper);
         }
 
         return null;
+    }
+
+    /// <summary>Diagnostic: get the inner type for error messages.</summary>
+    private static string DiagnoseInputType(object? input)
+    {
+        if (input is null) return "Input is null.";
+        if (input is GH_ObjectWrapper w)
+        {
+            var val = w.Value;
+            return $"GH_ObjectWrapper.Value type: {val?.GetType().FullName ?? "null"} " +
+                   $"(assembly: {val?.GetType().Assembly.GetName().Name ?? "?"})";
+        }
+        if (input is IGH_Goo g)
+        {
+            var sv = g.ScriptVariable();
+            return $"IGH_Goo ({g.GetType().FullName}), ScriptVariable type: {sv?.GetType().FullName ?? "null"}";
+        }
+        return $"Raw type: {input.GetType().FullName}";
     }
 
     // ── Component discovery via wire traversal ──────────────────────────────────
@@ -190,8 +232,6 @@ public sealed class ReinstateComponent : GH_Component
     /// <summary>
     /// Find the DesignStateComponent by walking upstream from Input[1] (DesignState).
     /// Falls back to Input[0] (State) if Input[1] is not connected.
-    /// The user wires the DESIGN STATE's "State" output to this input — we follow
-    /// the wire back to its source component.
     /// </summary>
     private DesignStateComponent? FindUpstreamDesignState()
     {
@@ -244,7 +284,6 @@ public sealed class ReinstateComponent : GH_Component
                 continue;
             }
 
-            // Single source — resolve type and domain
             var source = ghParam.Sources[0];
             var (targetType, domainMin, domainMax) = ResolveSourceInfo(source);
 
@@ -256,37 +295,26 @@ public sealed class ReinstateComponent : GH_Component
 
     private static (DesignStateParameterType? Type, double? DomainMin, double? DomainMax) ResolveSourceInfo(IGH_Param source)
     {
-        // Check if the source's owner is a GH_NumberSlider
         if (source.Attributes?.GetTopLevel?.DocObject is GH_NumberSlider slider)
         {
             var min = (double)slider.Slider.Minimum;
             var max = (double)slider.Slider.Maximum;
-
-            // GH_NumberSlider can be integer-mode or floating
             var type = slider.Slider.DecimalPlaces == 0
                 ? DesignStateParameterType.Integer
                 : DesignStateParameterType.Number;
-
             return (type, min, max);
         }
 
-        // Check for boolean toggle
         if (source.Attributes?.GetTopLevel?.DocObject is GH_BooleanToggle)
-        {
             return (DesignStateParameterType.Boolean, null, null);
-        }
 
-        // Fallback: try to determine type from parameter type
         if (source is Param_Number)
             return (DesignStateParameterType.Number, null, null);
-
         if (source is Param_Integer)
             return (DesignStateParameterType.Integer, null, null);
-
         if (source is Param_Boolean)
             return (DesignStateParameterType.Boolean, null, null);
 
-        // Unknown source type — cannot determine
         return (null, null, null);
     }
 
@@ -313,24 +341,20 @@ public sealed class ReinstateComponent : GH_Component
             WriteToSource(source, parameter);
         }
 
-        // Trigger re-solve after all writes
         designState.OnPingDocument()?.NewSolution(false);
     }
 
     private static void WriteToSource(IGH_Param source, CoreDesignStateParameter parameter)
     {
-        // Write to GH_NumberSlider
         if (source.Attributes?.GetTopLevel?.DocObject is GH_NumberSlider slider)
         {
             var value = parameter.Type == DesignStateParameterType.Integer
                 ? (decimal)(parameter.IntegerValue ?? 0)
                 : (decimal)(parameter.NumberValue ?? 0.0);
-
             slider.SetSliderValue(value);
             return;
         }
 
-        // Write to GH_BooleanToggle
         if (source.Attributes?.GetTopLevel?.DocObject is GH_BooleanToggle toggle)
         {
             toggle.Value = parameter.BooleanValue ?? false;
@@ -338,7 +362,6 @@ public sealed class ReinstateComponent : GH_Component
             return;
         }
 
-        // Generic fallback: clear volatile data and add new value
         source.ClearData();
         switch (parameter.Type)
         {
@@ -355,7 +378,6 @@ public sealed class ReinstateComponent : GH_Component
                     new GH_Boolean(parameter.BooleanValue ?? false));
                 break;
         }
-
         source.ExpireSolution(false);
     }
 
@@ -364,7 +386,6 @@ public sealed class ReinstateComponent : GH_Component
     private void SetOutputs(IGH_DataAccess da, ReinstatementResult? result, string status)
     {
         da.SetData(0, result);
-
         if (result is not null)
         {
             var reportLines = result.Reports
@@ -376,29 +397,22 @@ public sealed class ReinstateComponent : GH_Component
         {
             da.SetDataList(1, new List<string>());
         }
-
         da.SetData(2, status);
     }
 
     private static string FormatStatus(ReinstatementResult result)
     {
-        if (result.Applied)
-            return $"Applied {result.AppliedCount} parameters";
-        if (result.Aborted)
-            return $"Aborted: {result.BlockedCount} blocked";
-        if (result.UnchangedCount > 0)
-            return "Unchanged (same state)";
+        if (result.Applied) return $"Applied {result.AppliedCount} parameters";
+        if (result.Aborted) return $"Aborted: {result.BlockedCount} blocked";
+        if (result.UnchangedCount > 0) return "Unchanged (same state)";
         return "Idle";
     }
 
     private static string FormatMessage(ReinstatementResult result)
     {
-        if (result.Applied)
-            return $"Applied {result.AppliedCount}";
-        if (result.Aborted)
-            return "Aborted";
-        if (result.UnchangedCount > 0)
-            return "Unchanged";
+        if (result.Applied) return $"Applied {result.AppliedCount}";
+        if (result.Aborted) return "Aborted";
+        if (result.UnchangedCount > 0) return "Unchanged";
         return "Idle";
     }
 }
