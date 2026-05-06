@@ -54,15 +54,15 @@
 
 | Requirement | Phase | Status | Notes |
 |-------------|-------|--------|-------|
-| DGST-01 | Phase 1 (+ retro Phase 3.1) | Code Complete | Data contracts in Phase 1; **DESIGN STATE GH component added retroactively in commit `b73e8d9`** (was missing from Phase 1 task list) |
-| DGST-02 | Phase 1 | Code Complete | `DesignStateParameter` model has `ParameterId`, `DisplayName`, typed values, `CapturedAtUtc` |
-| DGST-03 | Phase 2 (+ retro Phase 3.1) | Code Complete | Persistence chain wired end-to-end in commit `d856ca4` (Classificator → Validator → data-service → Neo4j) |
-| DGCL-01 | Phase 2 | Code Complete | Optional State input on Classificator (index 3); pass-through output added in `d856ca4` |
-| DGCL-02 | Phase 2 (+ retro Phase 3.1) | Code Complete | **Original Phase 2 only built helper methods — actual Neo4j write path added in `d856ca4`** (data-service `store_validation_run` now SETs `run.statePayloadJson`) |
-| DGCL-03 | Phase 3 | Code Complete | Cypher uses `{project:$project}`; rule + state filters work |
-| DGRN-01 | Phase 3 | Code Complete | `ValidationRunsComponent` queries by project |
-| DGRN-02 | Phase 3 | Code Complete | Both Rule and State filters wired |
-| DGRN-03 | Phase 3 | Code Complete | Sorted via `StringComparer.Ordinal`; deterministic schema |
+| DGST-01 | Phase 1 (+ retro Phase 3.1) | Validated | Data contracts in Phase 1; **DESIGN STATE GH component added retroactively in commit `b73e8d9`**. Live UAT 2026-05-05 confirmed canvas usage. |
+| DGST-02 | Phase 1 | Validated | `DesignStateParameter` model has `ParameterId`, `DisplayName`, typed values, `CapturedAtUtc`. Live UAT confirmed serialization round-trip. |
+| DGST-03 | Phase 2 (+ retro Phase 3.1) | Validated | Persistence chain wired end-to-end in commit `d856ca4`. Live UAT 2026-05-05 confirmed state attaches to runs without breaking legacy flow. |
+| DGCL-01 | Phase 2 | Validated | Optional State input on Classificator (index 3); pass-through output added in `d856ca4`. Live UAT confirmed wiring works. |
+| DGCL-02 | Phase 2 (+ retro Phase 3.1) | Validated | **Original Phase 2 only built helper methods — actual Neo4j write path added in `d856ca4`**. Live UAT 2026-05-05 confirmed `run.statePayloadJson` populated in Neo4j. |
+| DGCL-03 | Phase 3 | Validated | Cypher uses `{project:$project}`; rule + state filters work. Live UAT confirmed filters correctly narrow result set. |
+| DGRN-01 | Phase 3 | Validated | `ValidationRunsComponent` queries by project. Live UAT confirmed run list populates. |
+| DGRN-02 | Phase 3 | Validated | Both Rule and State filters wired. Live UAT 2026-05-05 confirmed all three filter modes (unfiltered, rule, state) return correct subsets. |
+| DGRN-03 | Phase 3 | Validated | Sorted via `StringComparer.Ordinal`; deterministic schema. Live UAT confirmed `States` output is non-empty for runs with attached state. |
 | REIN-01 | Phase 4 | Pending | |
 | REIN-02 | Phase 4 | Pending | |
 | REIN-03 | Phase 4 | Pending | |
@@ -81,8 +81,9 @@
 **Coverage:**
 - v2.0 requirements: 18 total
 - Mapped to phases: 18
-- Code complete: 11
-- Pending: 7
+- Validated: 10 (DGST-01..03, DGCL-01..03, DGRN-01..03, INTG-02)
+- Code complete: 0
+- Pending: 8 (REIN-01..03, MVGP-01..03, INTG-01, INTG-03)
 - Unmapped: 0
 
 ## Phase 3.1 — Gap Closure (retroactive)
