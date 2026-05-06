@@ -4,6 +4,7 @@ using DG.Core.Services;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Types;
 using System.Drawing;
 using CoreDesignStateParameter = DG.Core.Models.DesignStateParameter;
 
@@ -14,8 +15,9 @@ namespace DG.Grasshopper.Components;
 /// Grasshopper parameters that originally fed a DESIGN STATE component.
 ///
 /// Usage:
-///   1. Wire a DesignStateSnapshot (from VALIDATION RUNS "States" output) to "State".
-///   2. Wire the DESIGN STATE component instance to "DesignState".
+///   1. Wire a DesignStateSnapshot (from VALIDATION RUNS "States" output or DESIGN STATE "State") to "State".
+///   2. Wire the DESIGN STATE component's "State" output to "DesignState" input
+///      (the component is found automatically by walking the wire source).
 ///   3. Connect a Button or Boolean Toggle to "Apply".
 ///   4. On rising-edge of Apply, the component validates all parameters and, if all pass,
 ///      writes values back to upstream sliders/toggles.
@@ -45,14 +47,15 @@ public sealed class ReinstateComponent : GH_Component
         pManager.AddGenericParameter(
             "State",
             "State",
-            "DesignStateSnapshot to apply. Wire from VALIDATION RUNS 'States' output or directly from DESIGN STATE.",
+            "DesignStateSnapshot to apply. Wire from VALIDATION RUNS 'States' output or directly from DESIGN STATE 'State' output.",
             GH_ParamAccess.item);
 
         pManager.AddGenericParameter(
             "DesignState",
             "DesignState",
-            "Reference to the DESIGN STATE component instance. Used to resolve write targets by walking its input ports' Sources.",
+            "Wire the DESIGN STATE component's 'State' output here. The component is found by walking the wire to resolve write targets.",
             GH_ParamAccess.item);
+        Params.Input[1].Optional = true;
 
         pManager.AddBooleanParameter(
             "Apply",
@@ -85,7 +88,7 @@ public sealed class ReinstateComponent : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess da)
     {
-        // Read inputs
+        // ── Read State input ────────────────────────────────────────────────────
         object? stateInput = null;
         if (!da.GetData(0, ref stateInput))
         {
@@ -94,31 +97,27 @@ public sealed class ReinstateComponent : GH_Component
             return;
         }
 
-        var snapshot = GhCastingHelpers.Unwrap<DesignStateSnapshot>(stateInput)
-                       ?? GhCastingHelpers.Unwrap<global::DG.DesignStateSnapshot>(stateInput);
+        var snapshot = UnwrapSnapshot(stateInput);
         if (snapshot is null)
         {
             SetOutputs(da, null, "Invalid state input.");
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not cast State input to DesignStateSnapshot.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                $"Could not cast State input to DesignStateSnapshot. Received type: {stateInput?.GetType().FullName ?? "null"}");
             return;
         }
 
-        object? dsInput = null;
-        if (!da.GetData(1, ref dsInput))
-        {
-            SetOutputs(da, null, "No DesignState input.");
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "DesignState component reference is required.");
-            return;
-        }
-
-        var designStateComponent = GhCastingHelpers.Unwrap<DesignStateComponent>(dsInput);
+        // ── Find DesignStateComponent by walking wire sources ────────────────────
+        var designStateComponent = FindUpstreamDesignState();
         if (designStateComponent is null)
         {
-            SetOutputs(da, null, "Invalid DesignState input.");
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not cast DesignState input to DesignStateComponent.");
+            SetOutputs(da, null, "No DESIGN STATE found.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Could not find a DESIGN STATE component upstream of the 'DesignState' input. " +
+                "Wire the 'State' output of a DESIGN STATE component to this input.");
             return;
         }
 
+        // ── Read Apply trigger ──────────────────────────────────────────────────
         bool applyInput = false;
         if (!da.GetData(2, ref applyInput))
         {
@@ -135,14 +134,14 @@ public sealed class ReinstateComponent : GH_Component
             return;
         }
 
-        // Resolve targets (D-01 through D-04)
+        // ── Resolve targets (D-01 through D-04) ────────────────────────────────
         var resolvedTargets = ResolveTargets(designStateComponent);
 
-        // Validate via Core service
+        // ── Validate via Core service ───────────────────────────────────────────
         var service = new DesignStateReinstatementService();
         var result = service.Validate(snapshot, resolvedTargets, _lastAppliedStateId);
 
-        // Write values (only if result.Applied == true)
+        // ── Write values (only if result.Applied == true) ───────────────────────
         if (result.Applied)
         {
             WriteValues(snapshot, designStateComponent, resolvedTargets);
@@ -153,6 +152,74 @@ public sealed class ReinstateComponent : GH_Component
         SetOutputs(da, result, FormatStatus(result));
         Message = FormatMessage(result);
     }
+
+    // ── Snapshot unwrapping ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Robust unwrapping of DesignStateSnapshot from GH wire data.
+    /// Handles: direct cast, GH_ObjectWrapper, and generic IGH_Goo via ScriptVariable().
+    /// </summary>
+    private static DesignStateSnapshot? UnwrapSnapshot(object? input)
+    {
+        if (input is null) return null;
+
+        // Direct type match
+        if (input is DesignStateSnapshot direct) return direct;
+        if (input is global::DG.DesignStateSnapshot publicDirect) return publicDirect;
+
+        // GH_ObjectWrapper (most common for Generic params)
+        if (input is GH_ObjectWrapper wrapper)
+        {
+            if (wrapper.Value is DesignStateSnapshot ws) return ws;
+            if (wrapper.Value is global::DG.DesignStateSnapshot wps) return wps;
+        }
+
+        // Any IGH_Goo — unwrap via ScriptVariable()
+        if (input is IGH_Goo goo)
+        {
+            var scriptVar = goo.ScriptVariable();
+            if (scriptVar is DesignStateSnapshot sv) return sv;
+            if (scriptVar is global::DG.DesignStateSnapshot psv) return psv;
+        }
+
+        return null;
+    }
+
+    // ── Component discovery via wire traversal ──────────────────────────────────
+
+    /// <summary>
+    /// Find the DesignStateComponent by walking upstream from Input[1] (DesignState).
+    /// Falls back to Input[0] (State) if Input[1] is not connected.
+    /// The user wires the DESIGN STATE's "State" output to this input — we follow
+    /// the wire back to its source component.
+    /// </summary>
+    private DesignStateComponent? FindUpstreamDesignState()
+    {
+        // Primary: walk Input[1] sources
+        var found = FindDesignStateFromInput(1);
+        if (found is not null) return found;
+
+        // Fallback: walk Input[0] sources (State input might come directly from DESIGN STATE)
+        return FindDesignStateFromInput(0);
+    }
+
+    private DesignStateComponent? FindDesignStateFromInput(int inputIndex)
+    {
+        if (inputIndex >= Params.Input.Count) return null;
+        var input = Params.Input[inputIndex];
+        if (input.Sources.Count == 0) return null;
+
+        foreach (var source in input.Sources)
+        {
+            var docObj = source.Attributes?.GetTopLevel?.DocObject;
+            if (docObj is DesignStateComponent dsc)
+                return dsc;
+        }
+
+        return null;
+    }
+
+    // ── Target resolution ───────────────────────────────────────────────────────
 
     private static List<ResolvedTarget> ResolveTargets(DesignStateComponent designState)
     {
@@ -223,6 +290,8 @@ public sealed class ReinstateComponent : GH_Component
         return (null, null, null);
     }
 
+    // ── Value writing ───────────────────────────────────────────────────────────
+
     private static void WriteValues(
         DesignStateSnapshot snapshot,
         DesignStateComponent designState,
@@ -275,20 +344,22 @@ public sealed class ReinstateComponent : GH_Component
         {
             case DesignStateParameterType.Number:
                 source.AddVolatileData(new global::Grasshopper.Kernel.Data.GH_Path(0), 0,
-                    new global::Grasshopper.Kernel.Types.GH_Number(parameter.NumberValue ?? 0.0));
+                    new GH_Number(parameter.NumberValue ?? 0.0));
                 break;
             case DesignStateParameterType.Integer:
                 source.AddVolatileData(new global::Grasshopper.Kernel.Data.GH_Path(0), 0,
-                    new global::Grasshopper.Kernel.Types.GH_Integer((int)(parameter.IntegerValue ?? 0)));
+                    new GH_Integer((int)(parameter.IntegerValue ?? 0)));
                 break;
             case DesignStateParameterType.Boolean:
                 source.AddVolatileData(new global::Grasshopper.Kernel.Data.GH_Path(0), 0,
-                    new global::Grasshopper.Kernel.Types.GH_Boolean(parameter.BooleanValue ?? false));
+                    new GH_Boolean(parameter.BooleanValue ?? false));
                 break;
         }
 
         source.ExpireSolution(false);
     }
+
+    // ── Output helpers ──────────────────────────────────────────────────────────
 
     private void SetOutputs(IGH_DataAccess da, ReinstatementResult? result, string status)
     {
