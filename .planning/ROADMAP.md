@@ -1,4 +1,4 @@
-ï»¿# Roadmap: Design Grammar System
+# Roadmap: Design Grammar System
 
 ## Milestones
 
@@ -32,7 +32,9 @@
 
 **Phase 4**
 - Requirements: REIN-01, REIN-02, REIN-03
-- Plans: 04-01-PLAN.md
+- Plans: 2 plans
+  - [ ] 04-01-PLAN.md — Core result models + validation service + tests
+  - [ ] 04-02-PLAN.md — GH ReinstateComponent with trigger and target resolution
 
 **Phase 5**
 - Requirements: MVGP-01, MVGP-02, MVGP-03
@@ -59,7 +61,7 @@
 | 1. Design State Contract and Serialization | v2.0 | 0/1 | Planned | - |
 | 2. Classificator State Input and Run Persistence | v2.0 | 1/1 | Complete   | 2026-04-30 |
 | 3. Validation Runs Retrieval Component | v2.0 | 0/1 | Planned | - |
-| 4. Reinstatement Component | v2.0 | 0/1 | Planned | - |
+| 4. Reinstatement Component | v2.0 | 0/2 | Planned | - |
 | 5. Model Viewer Grouping by Rule and State | v2.0 | 0/1 | Planned | - |
 | 6. End-to-End Hardening and Verification | v2.0 | 0/1 | Planned | - |
 
