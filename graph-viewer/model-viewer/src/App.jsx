@@ -698,6 +698,25 @@ export default function App() {
     };
   }, [manifestRunId]);
 
+  // Keep the WebGL canvas in sync with its host element. Speckle's renderer
+  // sizes itself once at init; without this observer it keeps the original
+  // pixel dimensions when the strip below grows/shrinks.
+  React.useEffect(() => {
+    const host = viewerHostRef.current;
+    if (!host || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => {
+      const viewer = viewerRef.current;
+      if (viewer && typeof viewer.resize === "function") {
+        viewer.resize();
+        if (typeof viewer.requestRender === "function") {
+          viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
+        }
+      }
+    });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
   // Load rule-specific object sets
   React.useEffect(() => {
     if (!manifest?.runId || !selectedRuleId) {
