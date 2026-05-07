@@ -5,7 +5,9 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
+using System.Collections;
 using System.Drawing;
+using System.Reflection;
 using CoreDesignStateParameter = DG.Core.Models.DesignStateParameter;
 
 namespace DG.Grasshopper.Components;
@@ -148,98 +150,172 @@ public sealed class ReinstateComponent : GH_Component
     // ── Snapshot unwrapping ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// Robust unwrapping of DesignStateSnapshot from GH wire data.
-    /// Handles: direct cast, GH_ObjectWrapper (including nested wrappers and ScriptVariable),
-    /// and generic IGH_Goo via ScriptVariable().
+    /// Extracts a DesignStateSnapshot from GH wire data.
+    /// Handles assembly-mismatch scenarios where the same type is loaded from
+    /// different assembly instances (common in GH plugin hot-reload).
     /// </summary>
     private static DesignStateSnapshot? UnwrapSnapshot(object? input)
     {
         if (input is null) return null;
 
-        // Direct type match (fastest path)
+        // Direct type match (fastest path — same assembly)
         if (input is DesignStateSnapshot direct) return direct;
         if (input is global::DG.DesignStateSnapshot publicDirect) return publicDirect;
 
-        // GH_ObjectWrapper — the standard wrapper for Generic params
-        if (input is GH_ObjectWrapper wrapper)
+        // Unwrap GH container first
+        var raw = UnwrapGhContainer(input);
+        if (raw is null) return null;
+
+        // Try direct cast on unwrapped value
+        if (raw is DesignStateSnapshot rawDirect) return rawDirect;
+        if (raw is global::DG.DesignStateSnapshot rawPublic) return rawPublic;
+
+        // Assembly mismatch fallback: type name matches but cast fails
+        // because GH loaded a different copy of DG.Core.dll.
+        // Reconstruct via reflection.
+        var typeName = raw.GetType().FullName;
+        if (typeName is "DG.Core.Models.DesignStateSnapshot" or "DG.DesignStateSnapshot")
         {
-            var val = wrapper.Value;
-            if (val is DesignStateSnapshot ws) return ws;
-            if (val is global::DG.DesignStateSnapshot wps) return wps;
-
-            // Nested wrapper (rare but possible)
-            if (val is GH_ObjectWrapper nested)
-                return UnwrapSnapshot(nested);
-
-            // Value itself might be IGH_Goo
-            if (val is IGH_Goo innerGoo)
-            {
-                var innerSv = innerGoo.ScriptVariable();
-                if (innerSv is DesignStateSnapshot isv) return isv;
-                if (innerSv is global::DG.DesignStateSnapshot ipsv) return ipsv;
-            }
-
-            // ScriptVariable() on the wrapper itself
-            var sv = wrapper.ScriptVariable();
-            if (sv is DesignStateSnapshot svs) return svs;
-            if (sv is global::DG.DesignStateSnapshot psvs) return psvs;
-
-            // Last resort: the Value might be the right type but loaded from a different
-            // assembly instance. Check by type name as fallback.
-            if (val is not null && val.GetType().FullName is "DG.Core.Models.DesignStateSnapshot" or "DG.DesignStateSnapshot")
-            {
-                // Use reflection-free cast through common base — DesignStateSnapshot is not sealed
-                // so DG.DesignStateSnapshot inherits from it. Try dynamic.
-                try { return (DesignStateSnapshot)(dynamic)val; } catch { /* fallback failed */ }
-            }
-        }
-
-        // Any IGH_Goo — unwrap via ScriptVariable()
-        if (input is IGH_Goo goo)
-        {
-            var scriptVar = goo.ScriptVariable();
-            if (scriptVar is DesignStateSnapshot gsv) return gsv;
-            if (scriptVar is global::DG.DesignStateSnapshot gpsv) return gpsv;
-
-            // Recursive for nested goo
-            if (scriptVar is GH_ObjectWrapper nestedWrapper)
-                return UnwrapSnapshot(nestedWrapper);
+            return ReconstructSnapshot(raw);
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Unwrap GH_ObjectWrapper / IGH_Goo layers to get the raw value.
+    /// </summary>
+    private static object? UnwrapGhContainer(object? input)
+    {
+        if (input is null) return null;
+
+        // Already a plain object (not GH wrapper)
+        if (input is not IGH_Goo and not GH_ObjectWrapper)
+            return input;
+
+        // GH_ObjectWrapper
+        if (input is GH_ObjectWrapper wrapper)
+        {
+            var val = wrapper.Value;
+            if (val is GH_ObjectWrapper nested)
+                return UnwrapGhContainer(nested);
+            if (val is IGH_Goo innerGoo)
+                return innerGoo.ScriptVariable();
+            return val;
+        }
+
+        // Generic IGH_Goo
+        if (input is IGH_Goo goo)
+        {
+            var sv = goo.ScriptVariable();
+            if (sv is GH_ObjectWrapper svWrapper)
+                return UnwrapGhContainer(svWrapper);
+            return sv;
+        }
+
+        return input;
+    }
+
+    /// <summary>
+    /// Reconstruct a DesignStateSnapshot from a foreign-assembly instance via reflection.
+    /// This handles the case where DG.Core.dll is loaded twice (old + new build).
+    /// </summary>
+    private static DesignStateSnapshot? ReconstructSnapshot(object foreign)
+    {
+        try
+        {
+            var foreignType = foreign.GetType();
+
+            // Read StateId
+            var stateId = foreignType.GetProperty("StateId")?.GetValue(foreign) as string ?? string.Empty;
+
+            // Read CapturedAtUtc
+            var capturedAtRaw = foreignType.GetProperty("CapturedAtUtc")?.GetValue(foreign);
+            var capturedAt = capturedAtRaw is DateTimeOffset dto ? dto : DateTimeOffset.MinValue;
+
+            // Read Parameters collection
+            var parametersRaw = foreignType.GetProperty("Parameters")?.GetValue(foreign);
+
+            var snapshot = new DesignStateSnapshot
+            {
+                StateId = stateId,
+                CapturedAtUtc = capturedAt,
+            };
+
+            if (parametersRaw is IEnumerable paramCollection)
+            {
+                foreach (var foreignParam in paramCollection)
+                {
+                    if (foreignParam is null) continue;
+                    var param = ReconstructParameter(foreignParam);
+                    if (param is not null)
+                        snapshot.Parameters.Add(param);
+                }
+            }
+
+            return snapshot;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Reconstruct a DesignStateParameter from a foreign-assembly instance via reflection.
+    /// </summary>
+    private static CoreDesignStateParameter? ReconstructParameter(object foreign)
+    {
+        try
+        {
+            var t = foreign.GetType();
+            var parameterId = t.GetProperty("ParameterId")?.GetValue(foreign) as string ?? string.Empty;
+            var displayName = t.GetProperty("DisplayName")?.GetValue(foreign) as string ?? string.Empty;
+
+            // Type enum — read as int and cast
+            var typeRaw = t.GetProperty("Type")?.GetValue(foreign);
+            var paramType = typeRaw is not null
+                ? (DesignStateParameterType)(int)typeRaw
+                : DesignStateParameterType.Number;
+
+            var numberValue = t.GetProperty("NumberValue")?.GetValue(foreign) as double?;
+            var integerValue = t.GetProperty("IntegerValue")?.GetValue(foreign) as long?;
+            var booleanValue = t.GetProperty("BooleanValue")?.GetValue(foreign) as bool?;
+
+            return new CoreDesignStateParameter
+            {
+                ParameterId = parameterId,
+                DisplayName = displayName,
+                Type = paramType,
+                NumberValue = numberValue,
+                IntegerValue = integerValue,
+                BooleanValue = booleanValue,
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>Diagnostic: get the inner type for error messages.</summary>
     private static string DiagnoseInputType(object? input)
     {
         if (input is null) return "Input is null.";
+        var raw = UnwrapGhContainer(input);
+        if (raw is not null && raw != input)
+            return $"Unwrapped type: {raw.GetType().FullName} (assembly: {raw.GetType().Assembly.GetName().Name})";
         if (input is GH_ObjectWrapper w)
-        {
-            var val = w.Value;
-            return $"GH_ObjectWrapper.Value type: {val?.GetType().FullName ?? "null"} " +
-                   $"(assembly: {val?.GetType().Assembly.GetName().Name ?? "?"})";
-        }
-        if (input is IGH_Goo g)
-        {
-            var sv = g.ScriptVariable();
-            return $"IGH_Goo ({g.GetType().FullName}), ScriptVariable type: {sv?.GetType().FullName ?? "null"}";
-        }
+            return $"GH_ObjectWrapper.Value type: {w.Value?.GetType().FullName ?? "null"} (assembly: {w.Value?.GetType().Assembly.GetName().Name ?? "?"})";
         return $"Raw type: {input.GetType().FullName}";
     }
 
     // ── Component discovery via wire traversal ──────────────────────────────────
 
-    /// <summary>
-    /// Find the DesignStateComponent by walking upstream from Input[1] (DesignState).
-    /// Falls back to Input[0] (State) if Input[1] is not connected.
-    /// </summary>
     private DesignStateComponent? FindUpstreamDesignState()
     {
-        // Primary: walk Input[1] sources
         var found = FindDesignStateFromInput(1);
         if (found is not null) return found;
-
-        // Fallback: walk Input[0] sources (State input might come directly from DESIGN STATE)
         return FindDesignStateFromInput(0);
     }
 
@@ -286,7 +362,6 @@ public sealed class ReinstateComponent : GH_Component
 
             var source = ghParam.Sources[0];
             var (targetType, domainMin, domainMax) = ResolveSourceInfo(source);
-
             targets.Add(new ResolvedTarget(parameterId, TargetResolutionStatus.Resolved, targetType, domainMin, domainMax));
         }
 
@@ -308,12 +383,9 @@ public sealed class ReinstateComponent : GH_Component
         if (source.Attributes?.GetTopLevel?.DocObject is GH_BooleanToggle)
             return (DesignStateParameterType.Boolean, null, null);
 
-        if (source is Param_Number)
-            return (DesignStateParameterType.Number, null, null);
-        if (source is Param_Integer)
-            return (DesignStateParameterType.Integer, null, null);
-        if (source is Param_Boolean)
-            return (DesignStateParameterType.Boolean, null, null);
+        if (source is Param_Number) return (DesignStateParameterType.Number, null, null);
+        if (source is Param_Integer) return (DesignStateParameterType.Integer, null, null);
+        if (source is Param_Boolean) return (DesignStateParameterType.Boolean, null, null);
 
         return (null, null, null);
     }
