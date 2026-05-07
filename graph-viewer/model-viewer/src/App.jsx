@@ -9,6 +9,7 @@ import {
   UrlHelper,
   Viewer
 } from "@speckle/viewer";
+import ValidationRunsStrip from "./ValidationRunsStrip.jsx";
 
 const config = window.GRAPH_CONFIG || {};
 const query = new URLSearchParams(window.location.search);
@@ -201,6 +202,7 @@ export default function App() {
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [runsLoading, setRunsLoading] = React.useState(true);
+  const [runsError, setRunsError] = React.useState(null);
   const [deletingRunId, setDeletingRunId] = React.useState("");
   const [speckleConfig, setSpeckleConfig] = React.useState({
     speckleProjectId: "",
@@ -357,12 +359,14 @@ export default function App() {
 
     try {
       setRunsLoading(true);
+      setRunsError(null);
       const response = await fetchJson(runsUrl);
       const runs = Array.isArray(response?.runs) ? response.runs : [];
       setValidationRuns(runs);
       return runs;
     } catch (err) {
       setValidationRuns([]);
+      setRunsError(err.message || "Could not load grouped runs. Try again.");
       setError(err.message || "Failed to load validation runs.");
       return [];
     } finally {
@@ -1323,59 +1327,18 @@ export default function App() {
           ) : null}
         </main>
 
-        <div className="mv-bottom-strip">
-          <div className="mv-strip-header">
-            <span className="mv-strip-title">VALIDATION RUNS</span>
-            <span className="mv-strip-badge">{validationRuns.length}</span>
-          </div>
-          {runsLoading ? <div className="mv-empty-copy">Loading...</div> : null}
-          {!runsLoading && validationRuns.length === 0 ? (
-            <div className="mv-empty-copy">No validation runs yet.</div>
-          ) : null}
-          <div className="mv-tile-strip">
-            {validationRuns.map((run) => {
-              const isActive = run.runId === activeRunId;
-              const isDeleting = deletingRunId === run.runId;
-              return (
-                <div key={run.runId} className={`mv-tile ${isActive ? "is-active" : ""}`}>
-                  <div className="mv-tile-header">
-                    <button
-                      type="button"
-                      className="mv-tile-rule-id"
-                      onClick={() => handleSelectRun(run.runId)}
-                      disabled={isDeleting}
-                    >
-                      {run.ruleIds?.[0] || shortId(run.runId)}
-                    </button>
-                    <button
-                      type="button"
-                      className="mv-tile-delete"
-                      onClick={() => void handleDeleteRun(run.runId)}
-                      disabled={isDeleting}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                    </button>
-                  </div>
-                  <div
-                    className="mv-tile-thumb"
-                    onClick={() => handleSelectRun(run.runId)}
-                    style={runScreenshots[run.runId] ? {
-                      backgroundImage: `url(${runScreenshots[run.runId]})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center"
-                    } : undefined}
-                  />
-                  <div className="mv-tile-footer">
-                    <div className="mv-tile-date">{formatTimestamp(run.createdAt)}</div>
-                    <div className={`mv-tile-kind ${run.failedRuleCount > 0 ? "is-fail" : "is-pass"}`}>
-                      {run.failedRuleCount > 0 ? "Constraint" : "Requirement"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <ValidationRunsStrip
+          project={project}
+          validationRuns={validationRuns}
+          runsLoading={runsLoading}
+          error={runsError}
+          onRetry={loadRuns}
+          activeRunId={activeRunId}
+          deletingRunId={deletingRunId}
+          runScreenshots={runScreenshots}
+          onSelectRun={handleSelectRun}
+          onDeleteRun={handleDeleteRun}
+        />
       </div>
     </div>
   );

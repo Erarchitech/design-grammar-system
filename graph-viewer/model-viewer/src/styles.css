@@ -787,3 +787,105 @@ body,
     max-height: 42vh;
   }
 }
+
+/* Phase 05: validation runs grouping switch */
+.mv-group-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.mv-group-switch-label {
+  font-size: 11px;
+  color: #8a96aa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mv-group-switch-opt {
+  background: transparent;
+  border: 1px solid #2a3142;
+  color: #c8d1e0;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.mv-group-switch-opt:hover {
+  border-color: #4a5878;
+  color: #ffffff;
+}
+
+.mv-group-switch-opt.is-active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.mv-run-group {
+  margin-top: 6px;
+}
+
+.mv-run-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #c8d1e0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mv-run-group-header:hover {
+  color: #ffffff;
+}
+
+.mv-run-group-label {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+}
+
+.mv-run-group-count {
+  color: #8a96aa;
+  font-weight: 400;
+}
+
+.mv-run-group-header .mv-chevron {
+  transition: transform 0.15s ease;
+}
+
+.mv-run-group-header .mv-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+/* Phase 05: error state for run loading failures */
+.mv-error-copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  color: #f87171;
+  font-size: 12px;
+}
+
+.mv-error-retry {
+  background: transparent;
+  border: 1px solid #f87171;
+  color: #f87171;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.mv-error-retry:hover {
+  background: #f87171;
+  color: #1a1f2e;
+}
