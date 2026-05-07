@@ -3,6 +3,9 @@ import { useValidationRunsGrouping } from "./useValidationRunsGrouping.js";
 
 const STORAGE_KEY_PREFIX = "dg_run_grouping_";
 const DEFAULT_MODE = "rule";
+const DEFAULT_HEIGHT = 200;
+const MIN_HEIGHT = 120;
+const MAX_HEIGHT_RATIO = 0.8;
 
 function shortId(value) {
   if (!value) return "Unknown";
@@ -17,24 +20,31 @@ function formatTimestamp(value) {
   return date.toLocaleString();
 }
 
+function clampHeight(value) {
+  const max = typeof window !== "undefined" ? Math.floor(window.innerHeight * MAX_HEIGHT_RATIO) : 800;
+  if (typeof value !== "number" || Number.isNaN(value)) return DEFAULT_HEIGHT;
+  return Math.max(MIN_HEIGHT, Math.min(max, value));
+}
+
 function loadPersistedState(project) {
-  if (!project) return { mode: DEFAULT_MODE, collapsed: {} };
+  if (!project) return { mode: DEFAULT_MODE, collapsed: {}, height: DEFAULT_HEIGHT };
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${project}`);
-    if (!raw) return { mode: DEFAULT_MODE, collapsed: {} };
+    if (!raw) return { mode: DEFAULT_MODE, collapsed: {}, height: DEFAULT_HEIGHT };
     const parsed = JSON.parse(raw);
     const mode = parsed && (parsed.mode === "state" || parsed.mode === "rule") ? parsed.mode : DEFAULT_MODE;
     const collapsed = parsed && typeof parsed.collapsed === "object" && parsed.collapsed !== null ? parsed.collapsed : {};
-    return { mode, collapsed };
+    const height = parsed && typeof parsed.height === "number" ? clampHeight(parsed.height) : DEFAULT_HEIGHT;
+    return { mode, collapsed, height };
   } catch {
-    return { mode: DEFAULT_MODE, collapsed: {} };
+    return { mode: DEFAULT_MODE, collapsed: {}, height: DEFAULT_HEIGHT };
   }
 }
 
-function persistState(project, mode, collapsed) {
+function persistState(project, mode, collapsed, height) {
   if (!project) return;
   try {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${project}`, JSON.stringify({ mode, collapsed }));
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${project}`, JSON.stringify({ mode, collapsed, height }));
   } catch {
     // localStorage quota / disabled — silent
   }
@@ -55,18 +65,67 @@ export default function ValidationRunsStrip({
   const initial = React.useMemo(() => loadPersistedState(project), [project]);
   const [mode, setMode] = React.useState(initial.mode);
   const [collapsed, setCollapsed] = React.useState(initial.collapsed);
+  const [height, setHeight] = React.useState(initial.height);
+  const dragRef = React.useRef(null);
 
   // Reload persisted state whenever project changes (different localStorage key).
   React.useEffect(() => {
     const next = loadPersistedState(project);
     setMode(next.mode);
     setCollapsed(next.collapsed);
+    setHeight(next.height);
   }, [project]);
 
   // Persist on any change.
   React.useEffect(() => {
-    persistState(project, mode, collapsed);
-  }, [project, mode, collapsed]);
+    persistState(project, mode, collapsed, height);
+  }, [project, mode, collapsed, height]);
+
+  // Re-clamp height on window resize so MAX_HEIGHT_RATIO stays honored.
+  React.useEffect(() => {
+    const handleResize = () => setHeight((h) => clampHeight(h));
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleResizeStart = (event) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = height;
+    dragRef.current = { startY, startHeight };
+
+    const onMove = (e) => {
+      if (!dragRef.current) return;
+      // Drag UP increases strip height (handle at top); drag DOWN decreases.
+      const delta = dragRef.current.startY - e.clientY;
+      setHeight(clampHeight(dragRef.current.startHeight + delta));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    document.body.style.cursor = "ns-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleResizeKey = (event) => {
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHeight((h) => clampHeight(h + 16));
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHeight((h) => clampHeight(h - 16));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setHeight(DEFAULT_HEIGHT);
+    }
+  };
 
   const groups = React.useMemo(
     () => useValidationRunsGrouping(validationRuns, mode),
@@ -92,7 +151,19 @@ export default function ValidationRunsStrip({
   const hasError = typeof error === "string" && error.length > 0;
 
   return (
-    <div className="mv-bottom-strip">
+    <div className="mv-bottom-strip" style={{ height: `${height}px` }}>
+      <div
+        className="mv-strip-resize-handle"
+        role="separator"
+        aria-label="Resize validation runs strip"
+        aria-orientation="horizontal"
+        aria-valuenow={height}
+        aria-valuemin={MIN_HEIGHT}
+        tabIndex={0}
+        onPointerDown={handleResizeStart}
+        onKeyDown={handleResizeKey}
+        title="Drag to resize. Arrow keys to adjust. Home to reset."
+      />
       <div className="mv-strip-header">
         <span className="mv-strip-title">VALIDATION RUNS</span>
         <span className="mv-strip-badge">{totalRuns}</span>
@@ -123,26 +194,27 @@ export default function ValidationRunsStrip({
         </div>
       </div>
 
-      {hasError ? (
-        <div className="mv-error-copy" role="alert">
-          <span>Could not load grouped runs. Try again.</span>
-          <button
-            type="button"
-            className="mv-error-retry"
-            onClick={() => { if (typeof onRetry === "function") onRetry(); }}
-          >
-            Try again
-          </button>
-        </div>
-      ) : null}
+      <div className="mv-strip-content">
+        {hasError ? (
+          <div className="mv-error-copy" role="alert">
+            <span>Could not load grouped runs. Try again.</span>
+            <button
+              type="button"
+              className="mv-error-retry"
+              onClick={() => { if (typeof onRetry === "function") onRetry(); }}
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
 
-      {!hasError && runsLoading ? <div className="mv-empty-copy">Loading...</div> : null}
-      {!hasError && !runsLoading && totalRuns === 0 ? (
-        <div className="mv-empty-copy">No validation runs match current filters.</div>
-      ) : null}
+        {!hasError && runsLoading ? <div className="mv-empty-copy">Loading...</div> : null}
+        {!hasError && !runsLoading && totalRuns === 0 ? (
+          <div className="mv-empty-copy">No validation runs match current filters.</div>
+        ) : null}
 
-      {!hasError && !runsLoading && totalRuns > 0
-        ? groups.map((group) => {
+        {!hasError && !runsLoading && totalRuns > 0
+          ? groups.map((group) => {
             const isCollapsed = !!collapsed[group.groupKey];
             const headerId = `mv-group-${encodeURIComponent(group.groupKey)}`;
             return (
@@ -241,6 +313,7 @@ export default function ValidationRunsStrip({
             );
           })
         : null}
+      </div>
     </div>
   );
 }

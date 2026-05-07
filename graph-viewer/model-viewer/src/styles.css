@@ -623,7 +623,7 @@ body,
 
 /* Bottom validation runs strip */
 .mv-bottom-strip {
-  height: 200px;
+  /* height set inline via React state (resizable, persisted per project) */
   background: #111827;
   border-top: 1px solid var(--border);
   padding: 12px 16px;
@@ -632,6 +632,68 @@ body,
   gap: 10px;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
+  min-height: 120px;
+}
+
+.mv-strip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.mv-strip-content::-webkit-scrollbar {
+  width: 8px;
+}
+.mv-strip-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mv-strip-content::-webkit-scrollbar-thumb {
+  background: rgba(95, 208, 255, 0.18);
+  border-radius: 4px;
+}
+.mv-strip-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(95, 208, 255, 0.32);
+}
+
+.mv-strip-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: transparent;
+  z-index: 2;
+  transition: background 0.15s ease;
+}
+
+.mv-strip-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(95, 208, 255, 0.25);
+  transition: background 0.15s ease;
+}
+
+.mv-strip-resize-handle:hover::before,
+.mv-strip-resize-handle:focus-visible::before {
+  background: rgba(95, 208, 255, 0.6);
+}
+
+.mv-strip-resize-handle:focus-visible {
+  outline: none;
+  background: rgba(95, 208, 255, 0.08);
 }
 
 .mv-strip-header {
