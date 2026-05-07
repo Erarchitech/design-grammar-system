@@ -25,9 +25,9 @@
 
 ### Reinstatement
 
-- [ ] **REIN-01**: REINSTATE component accepts States output and applies values back to matching Grasshopper parameters
-- [ ] **REIN-02**: Reinstatement is trigger-based (button/boolean) and does not auto-apply on wire change
-- [ ] **REIN-03**: Reinstatement reports per-parameter apply status (applied, missing target, type mismatch)
+- [x] **REIN-01**: REINSTATE component accepts States output and applies values back to matching Grasshopper parameters
+- [x] **REIN-02**: Reinstatement is trigger-based (button/boolean) and does not auto-apply on wire change
+- [x] **REIN-03**: Reinstatement reports per-parameter apply status (applied, missing target, type mismatch)
 
 ### Model Viewer Grouping
 
@@ -63,9 +63,9 @@
 | DGRN-01 | Phase 3 | Validated | `ValidationRunsComponent` queries by project. Live UAT confirmed run list populates. |
 | DGRN-02 | Phase 3 | Validated | Both Rule and State filters wired. Live UAT 2026-05-05 confirmed all three filter modes (unfiltered, rule, state) return correct subsets. |
 | DGRN-03 | Phase 3 | Validated | Sorted via `StringComparer.Ordinal`; deterministic schema. Live UAT confirmed `States` output is non-empty for runs with attached state. |
-| REIN-01 | Phase 4 | Pending | |
-| REIN-02 | Phase 4 | Pending | |
-| REIN-03 | Phase 4 | Pending | |
+| REIN-01 | Phase 4 | Validated | ReinstateComponent accepts State input, resolves targets via DesignStateComponent, writes values via ScheduleSolution. Manual UAT passed 2026-05-07. |
+| REIN-02 | Phase 4 | Validated | Rising-edge trigger (false>true only). Boolean Apply input with default false. |
+| REIN-03 | Phase 4 | Validated | Report output with per-parameter status lines. 7-value ReinstatementStatus enum covers Applied, MissingTarget, TypeMismatch, AmbiguousTarget, OutOfRange, Unchanged, WouldApply. |
 | MVGP-01 | Phase 5 | Pending | |
 | MVGP-02 | Phase 5 | Pending | |
 | MVGP-03 | Phase 5 | Pending | |
@@ -81,9 +81,9 @@
 **Coverage:**
 - v2.0 requirements: 18 total
 - Mapped to phases: 18
-- Validated: 10 (DGST-01..03, DGCL-01..03, DGRN-01..03, INTG-02)
+- Validated: 13 (DGST-01..03, DGCL-01..03, DGRN-01..03, REIN-01..03, INTG-02)
 - Code complete: 0
-- Pending: 8 (REIN-01..03, MVGP-01..03, INTG-01, INTG-03)
+- Pending: 5 (MVGP-01..03, INTG-01, INTG-03)
 - Unmapped: 0
 
 ## Phase 3.1 — Gap Closure (retroactive)
