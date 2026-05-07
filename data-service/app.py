@@ -506,6 +506,28 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
     return read_single(query, {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id})
 
 
+def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | None:
+    """Project a run's statePayloadJson into a compact summary for UI grouping.
+
+    Returns None for absent, empty, or malformed payloads. Never raises.
+    """
+    if not state_payload_json:
+        return None
+    try:
+        parsed = json.loads(state_payload_json)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    parameters = parsed.get("parameters")
+    parameter_count = len(parameters) if isinstance(parameters, list) else 0
+    return {
+        "stateId": parsed.get("stateId") or "",
+        "capturedAtUtc": parsed.get("capturedAtUtc"),
+        "parameterCount": parameter_count,
+    }
+
+
 def list_validation_runs(project: str) -> list[dict[str, Any]]:
     rows = read_many(
         """
@@ -521,6 +543,7 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
             run.modelViewerUrl AS modelViewerUrl,
             run.createdAt AS createdAt,
             run.rulesJson AS rulesJson,
+            run.statePayloadJson AS statePayloadJson,
             count(DISTINCT ve) AS entityCount
         ORDER BY run.createdAt DESC
         """,
@@ -544,6 +567,7 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
                 "ruleCount": len(rules),
                 "failedRuleCount": sum(1 for rule in rules if not rule.get("passed")),
                 "entityCount": int(row.get("entityCount") or 0),
+                "state": _project_state_summary(row.get("statePayloadJson")),
             }
         )
     return runs
