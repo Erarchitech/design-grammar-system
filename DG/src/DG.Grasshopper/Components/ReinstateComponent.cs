@@ -132,13 +132,16 @@ public sealed class ReinstateComponent : GH_Component
         var resolvedTargets = ResolveTargets(designStateComponent);
 
         // ── Validate via Core service ───────────────────────────────────────────
+        // Pass null for lastAppliedStateId: the rising-edge guard already prevents
+        // spurious re-fires. The StateId guard would block legitimate re-application
+        // when the user changes sliders and wants to restore the saved state.
         var service = new DesignStateReinstatementService();
-        var result = service.Validate(snapshot, resolvedTargets, _lastAppliedStateId);
+        var result = service.Validate(snapshot, resolvedTargets, lastAppliedStateId: null);
 
         // ── Write values (only if result.Applied == true) ───────────────────────
         if (result.Applied)
         {
-            WriteValues(snapshot, designStateComponent, resolvedTargets);
+            ScheduleWriteValues(snapshot, designStateComponent, resolvedTargets);
             _lastAppliedStateId = snapshot.StateId;
         }
 
@@ -149,11 +152,6 @@ public sealed class ReinstateComponent : GH_Component
 
     // ── Snapshot unwrapping ─────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Extracts a DesignStateSnapshot from GH wire data.
-    /// Handles assembly-mismatch scenarios where the same type is loaded from
-    /// different assembly instances (common in GH plugin hot-reload).
-    /// </summary>
     private static DesignStateSnapshot? UnwrapSnapshot(object? input)
     {
         if (input is null) return null;
@@ -182,18 +180,13 @@ public sealed class ReinstateComponent : GH_Component
         return null;
     }
 
-    /// <summary>
-    /// Unwrap GH_ObjectWrapper / IGH_Goo layers to get the raw value.
-    /// </summary>
     private static object? UnwrapGhContainer(object? input)
     {
         if (input is null) return null;
 
-        // Already a plain object (not GH wrapper)
         if (input is not IGH_Goo and not GH_ObjectWrapper)
             return input;
 
-        // GH_ObjectWrapper
         if (input is GH_ObjectWrapper wrapper)
         {
             var val = wrapper.Value;
@@ -204,7 +197,6 @@ public sealed class ReinstateComponent : GH_Component
             return val;
         }
 
-        // Generic IGH_Goo
         if (input is IGH_Goo goo)
         {
             var sv = goo.ScriptVariable();
@@ -216,24 +208,14 @@ public sealed class ReinstateComponent : GH_Component
         return input;
     }
 
-    /// <summary>
-    /// Reconstruct a DesignStateSnapshot from a foreign-assembly instance via reflection.
-    /// This handles the case where DG.Core.dll is loaded twice (old + new build).
-    /// </summary>
     private static DesignStateSnapshot? ReconstructSnapshot(object foreign)
     {
         try
         {
             var foreignType = foreign.GetType();
-
-            // Read StateId
             var stateId = foreignType.GetProperty("StateId")?.GetValue(foreign) as string ?? string.Empty;
-
-            // Read CapturedAtUtc
             var capturedAtRaw = foreignType.GetProperty("CapturedAtUtc")?.GetValue(foreign);
             var capturedAt = capturedAtRaw is DateTimeOffset dto ? dto : DateTimeOffset.MinValue;
-
-            // Read Parameters collection
             var parametersRaw = foreignType.GetProperty("Parameters")?.GetValue(foreign);
 
             var snapshot = new DesignStateSnapshot
@@ -261,9 +243,6 @@ public sealed class ReinstateComponent : GH_Component
         }
     }
 
-    /// <summary>
-    /// Reconstruct a DesignStateParameter from a foreign-assembly instance via reflection.
-    /// </summary>
     private static CoreDesignStateParameter? ReconstructParameter(object foreign)
     {
         try
@@ -272,7 +251,6 @@ public sealed class ReinstateComponent : GH_Component
             var parameterId = t.GetProperty("ParameterId")?.GetValue(foreign) as string ?? string.Empty;
             var displayName = t.GetProperty("DisplayName")?.GetValue(foreign) as string ?? string.Empty;
 
-            // Type enum — read as int and cast
             var typeRaw = t.GetProperty("Type")?.GetValue(foreign);
             var paramType = typeRaw is not null
                 ? (DesignStateParameterType)(int)typeRaw
@@ -298,7 +276,6 @@ public sealed class ReinstateComponent : GH_Component
         }
     }
 
-    /// <summary>Diagnostic: get the inner type for error messages.</summary>
     private static string DiagnoseInputType(object? input)
     {
         if (input is null) return "Input is null.";
@@ -368,16 +345,21 @@ public sealed class ReinstateComponent : GH_Component
         return targets;
     }
 
+    /// <summary>
+    /// Resolve the type and domain of a source parameter.
+    /// MUST match <see cref="DesignStateComponent"/> classification:
+    ///   GH_NumberSlider → always Number (ScriptVariable returns double regardless of DecimalPlaces).
+    ///   GH_BooleanToggle → Boolean.
+    /// </summary>
     private static (DesignStateParameterType? Type, double? DomainMin, double? DomainMax) ResolveSourceInfo(IGH_Param source)
     {
         if (source.Attributes?.GetTopLevel?.DocObject is GH_NumberSlider slider)
         {
             var min = (double)slider.Slider.Minimum;
             var max = (double)slider.Slider.Maximum;
-            var type = slider.Slider.DecimalPlaces == 0
-                ? DesignStateParameterType.Integer
-                : DesignStateParameterType.Number;
-            return (type, min, max);
+            // Always Number — DesignStateComponent captures slider output via
+            // ScriptVariable() which returns double regardless of DecimalPlaces.
+            return (DesignStateParameterType.Number, min, max);
         }
 
         if (source.Attributes?.GetTopLevel?.DocObject is GH_BooleanToggle)
@@ -390,13 +372,25 @@ public sealed class ReinstateComponent : GH_Component
         return (null, null, null);
     }
 
-    // ── Value writing ───────────────────────────────────────────────────────────
+    // ── Value writing (deferred via ScheduleSolution) ───────────────────────────
 
-    private static void WriteValues(
+    /// <summary>
+    /// Schedule value writes AFTER the current solution completes.
+    /// Writing sliders during an active SolveInstance can be silently dropped
+    /// because the solution is already in progress. ScheduleSolution defers
+    /// the write to a fresh solution pass.
+    /// </summary>
+    private static void ScheduleWriteValues(
         DesignStateSnapshot snapshot,
         DesignStateComponent designState,
         List<ResolvedTarget> resolvedTargets)
     {
+        var doc = designState.OnPingDocument();
+        if (doc is null) return;
+
+        // Capture the write data for the callback closure
+        var writeActions = new List<Action>();
+
         for (var i = 0; i < designState.Params.Input.Count && i < resolvedTargets.Count; i++)
         {
             var target = resolvedTargets[i];
@@ -409,20 +403,32 @@ public sealed class ReinstateComponent : GH_Component
             if (parameter is null)
                 continue;
 
-            var source = designState.Params.Input[i].Sources[0];
-            WriteToSource(source, parameter);
+            var ghInput = designState.Params.Input[i];
+            if (ghInput.Sources.Count == 0) continue;
+            var source = ghInput.Sources[0];
+
+            // Capture values for closure
+            var paramCopy = parameter;
+            var sourceCopy = source;
+            writeActions.Add(() => WriteToSource(sourceCopy, paramCopy));
         }
 
-        designState.OnPingDocument()?.NewSolution(false);
+        if (writeActions.Count == 0) return;
+
+        doc.ScheduleSolution(5, _ =>
+        {
+            foreach (var write in writeActions)
+                write();
+        });
     }
 
     private static void WriteToSource(IGH_Param source, CoreDesignStateParameter parameter)
     {
         if (source.Attributes?.GetTopLevel?.DocObject is GH_NumberSlider slider)
         {
-            var value = parameter.Type == DesignStateParameterType.Integer
-                ? (decimal)(parameter.IntegerValue ?? 0)
-                : (decimal)(parameter.NumberValue ?? 0.0);
+            // Snapshot always stores Number type for sliders (ScriptVariable → double).
+            // Use NumberValue for the write regardless of the slider's DecimalPlaces mode.
+            var value = (decimal)(parameter.NumberValue ?? 0.0);
             slider.SetSliderValue(value);
             return;
         }
