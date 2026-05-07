@@ -13,8 +13,9 @@ dependency_graph:
     - "Error state: Could not load grouped runs. Try again. with retry affordance"
   affects:
     - "graph-viewer/model-viewer/src/App.jsx: inline strip removed, delegates to ValidationRunsStrip"
-    - "graph-viewer/model-viewer/src/styles.css: new .mv-group-switch, .mv-run-group-header, .mv-error-retry classes"
+    - "graph-viewer/model-viewer/src/styles.css: new .mv-group-switch, .mv-run-group-header, .mv-error-retry, .mv-strip-content, .mv-strip-resize-handle classes"
     - "Production bundle at http://localhost:8080/model-viewer/"
+    - "Post-UAT addition: vertical scroll inside strip + draggable resize handle at top edge"
 tech_stack:
   added:
     - "vitest ^2.1.8 (devDependency): test runner for pure JS logic in model-viewer"
@@ -42,10 +43,14 @@ decisions:
   - "Task 5 (Docker rebuild + smoke) kept in same plan: tight build pipeline with no orphan plan"
   - "runsError state separate from general error state: strip needs its own error string for the retry affordance"
   - "Files copied to main repo before Docker rebuild: worktree build context not accessible from main docker-compose.yml"
+  - "Strip resizing via pointer events + inline style.height: avoids re-layout thrash and keeps the height a per-project user preference"
+  - "Resize handle at top edge: drag-up grows the strip (intuitive — it grows toward where the user's pointer is moving)"
+  - "Height clamped to [120px, 80vh] and re-clamped on window resize: prevents the strip from eating the entire viewport on small screens"
+  - "Existing dg_run_grouping_${project} localStorage entry extended with height field rather than a separate key: keeps related strip prefs together"
 metrics:
-  duration_minutes: 35
-  completed_date: "2026-05-07T13:58:00Z"
-  tasks_completed: 5
+  duration_minutes: 50
+  completed_date: "2026-05-07T18:55:00Z"
+  tasks_completed: 6
   files_changed: 9
 requirements:
   - MVGP-01
@@ -170,6 +175,26 @@ None. The grouping adapter is fully implemented and wired. The strip renders rea
 | 9794a40 | feat(05-02): build ValidationRunsStrip with grouping switch, error state, localStorage persistence |
 | 53897de | feat(05-02): wire ValidationRunsStrip into App.jsx, replace inline strip (MVGP-03) |
 
+## Post-UAT Addition: Vertical scroll + draggable resize
+
+Triggered by user feedback during UAT: "Bottom Validation Runs Strip now exceeds the size of window and tiles don't fit the window. So add scroller updown for the strip and add control to extend the strip up and down by the user if needed."
+
+Made directly on master (worktree branch reapplied to master per user direction during this session).
+
+### Changes
+- **`.mv-strip-content` wrapper** added inside `.mv-bottom-strip` below the header. `overflow-y: auto`, `min-height: 0`, `flex: 1` — vertical scroll for the group list while the header stays pinned. Custom 8px scrollbar styled to match the accent palette.
+- **Resize handle** at the strip's top edge: 6px tall, `cursor: ns-resize`, with a small visible grab indicator (32×2px bar centered).
+- **Pointer-driven drag** on the handle updates inline `style.height` via React state. Drag UP grows the strip (handle is at the top), drag DOWN shrinks it.
+- **Keyboard accessibility:** the handle is `tabIndex=0` with `role="separator"`. ArrowUp/ArrowDown change height by 16px. Home resets to 200px.
+- **Height clamp:** `[120px, floor(window.innerHeight × 0.8)]`. Re-clamped on `window.resize` so the strip can't outgrow a shrinking viewport.
+- **Persistence:** the existing `dg_run_grouping_${project}` localStorage entry now stores `{mode, collapsed, height}`. Height survives reload and is per-project.
+
+### Commits
+| Hash | Description |
+|------|-------------|
+| bd0eb4f | feat(05-02): ValidationRunsStrip with grouping switch + tests (MVGP-01/02/03) — consolidated bringup directly on master |
+| 2025cf2 | feat(05-02): vertical scroll + draggable resize for ValidationRunsStrip |
+
 ## Awaiting
 
 **Task 6 (checkpoint:human-verify):** Human UAT — verify grouping UX end-to-end.
@@ -183,6 +208,11 @@ Visit `http://localhost:8080/model-viewer/?project=<project-with-runs>` and veri
 6. Empty project → "No validation runs match current filters."
 7. Stop data-service → "Could not load grouped runs. Try again." → restart → Try again works
 8. Keyboard: Tab to Group by buttons and group headers; Space/Enter activates
+9. **Vertical scroll:** load a project with many groups → group list scrolls vertically inside the strip without clipping the header
+10. **Resize handle:** hover the top edge of the strip → cursor becomes ns-resize and a small grab bar lights up
+11. **Drag resize:** drag the handle UP → strip grows; drag DOWN → strip shrinks. Min 120px, max 80% of viewport
+12. **Resize persistence:** resize the strip, hard-refresh → height restored
+13. **Keyboard resize:** Tab to the handle, ArrowUp/Down adjusts in 16px steps, Home resets to 200px
 
 ## Self-Check: PASSED
 
