@@ -194,6 +194,13 @@ Made directly on master (worktree branch reapplied to master per user direction 
 |------|-------------|
 | bd0eb4f | feat(05-02): ValidationRunsStrip with grouping switch + tests (MVGP-01/02/03) — consolidated bringup directly on master |
 | 2025cf2 | feat(05-02): vertical scroll + draggable resize for ValidationRunsStrip |
+| e0a1250 | docs(05-02): document scroll + resize, updated UAT checklist |
+| d86c1d7 | fix(05-02): resize Speckle viewer canvas when strip height changes (ResizeObserver on host) |
+| c73825a | fix(05-02): constrain page layout so strip resize shrinks viewport above (mv-page grid-template-rows: 100% + overflow: hidden, mv-right-col min-height: 0 + overflow: hidden) |
+
+### Follow-up fixes from second-round UAT
+- **Viewport stays at old size when strip resizes** → added `ResizeObserver` on `viewerHostRef` that calls `viewer.resize()` + re-requests render (commit d86c1d7).
+- **Resize handle pinned, only inner scrollbar reacts** → grid+flex layout had no overflow guard, so the strip overflowed past the viewport rather than shrinking the canvas above. Locked grid row to 100% and gave `.mv-right-col` `min-height: 0; overflow: hidden` (commit c73825a). Strip top edge (and handle) now tracks the cursor; canvas-wrap shrinks to compensate; ResizeObserver keeps the WebGL canvas in sync.
 
 ## Awaiting
 
