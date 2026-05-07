@@ -515,7 +515,7 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
         return None
     try:
         parsed = json.loads(state_payload_json)
-    except (json.JSONDecodeError, ValueError, TypeError):
+    except (json.JSONDecodeError, ValueError, TypeError, RecursionError):
         return None
     if not isinstance(parsed, dict):
         return None
