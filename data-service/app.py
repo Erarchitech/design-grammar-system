@@ -506,6 +506,14 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
     return read_single(query, {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id})
 
 
+def _structured_error_response(error: str, hint: str, code: str, status_code: int = 500) -> HTTPException:
+    """Return an HTTPException with a structured JSON detail body (error, hint, code)."""
+    return HTTPException(
+        status_code=status_code,
+        detail={"error": error, "hint": hint, "code": code},
+    )
+
+
 def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | None:
     """Project a run's statePayloadJson into a compact summary for UI grouping.
 
@@ -790,14 +798,21 @@ def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayloa
 def publish_validation(payload: ValidationPublishRequest):
     config = get_integration_config(payload.project)
     if config is None:
-        raise HTTPException(status_code=404, detail="No Speckle integration config found for this DG project.")
+        raise _structured_error_response(
+            "No Speckle project configuration found.",
+            "Open the project's Speckle Settings card on the DG home page and save your Speckle project ID.",
+            "SPECKLE_CONFIG_MISSING",
+            404,
+        )
     config = normalize_speckle_project_config_payload(config)
 
     settings = get_speckle_settings()
     if not settings.write_token:
-        raise HTTPException(
-            status_code=500,
-            detail="Speckle write token is not configured. Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+        raise _structured_error_response(
+            "Speckle write token not configured.",
+            "Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+            "SPECKLE_TOKEN_MISSING",
+            500,
         )
 
     try:
@@ -857,9 +872,19 @@ def publish_validation(payload: ValidationPublishRequest):
             "modelViewerUrl": publish_result["modelViewerUrl"],
         }
     except SpeckleValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _structured_error_response(
+            f"Validation publish failed: {exc}",
+            "Check that Speckle server is reachable and project ID is correct.",
+            "PUBLISH_VALIDATION_ERROR",
+            400,
+        ) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Validation publish failed: {exc}") from exc
+        raise _structured_error_response(
+            f"Validation publish failed: {exc}",
+            "Check data-service logs for details.",
+            "PUBLISH_INTERNAL_ERROR",
+            500,
+        ) from exc
 
 
 @app.get("/validation/runs/{project}")
@@ -871,19 +896,31 @@ def get_validation_runs(project: str):
 def delete_validation_run(project: str, run_id: str):
     run = get_validation_run(project, run_id)
     if run is None:
-        raise HTTPException(status_code=404, detail="Validation run not found.")
+        raise _structured_error_response(
+            "Validation run not found.",
+            "Verify the run ID exists for this project.",
+            "RUN_NOT_FOUND",
+            404,
+        )
 
     settings = get_speckle_settings()
     if not settings.write_token:
-        raise HTTPException(
-            status_code=500,
-            detail="Speckle write token is not configured. Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+        raise _structured_error_response(
+            "Speckle write token not configured.",
+            "Save it in the DG home page Speckle Settings card or set SPECKLE_WRITE_TOKEN on data-service.",
+            "SPECKLE_TOKEN_MISSING",
+            500,
         )
 
     validation_version_id = (run.get("validationVersionId") or "").strip()
     speckle_project_id = (run.get("speckleProjectId") or "").strip()
     if not validation_version_id or not speckle_project_id:
-        raise HTTPException(status_code=500, detail="Validation run is missing Speckle identifiers required for deletion.")
+        raise _structured_error_response(
+            "Validation run is missing Speckle identifiers required for deletion.",
+            "This run may have been created before Speckle integration was configured.",
+            "SPECKLE_IDS_MISSING",
+            500,
+        )
 
     try:
         delete_validation_version(
@@ -900,9 +937,19 @@ def delete_validation_run(project: str, run_id: str):
             "validationVersionId": validation_version_id,
         }
     except SpeckleValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _structured_error_response(
+            f"Validation delete failed: {exc}",
+            "Check that Speckle server is reachable and project ID is correct.",
+            "DELETE_VALIDATION_ERROR",
+            400,
+        ) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Validation delete failed: {exc}") from exc
+        raise _structured_error_response(
+            f"Validation delete failed: {exc}",
+            "Check data-service logs for details.",
+            "DELETE_INTERNAL_ERROR",
+            500,
+        ) from exc
 
 
 @app.get("/validation/view/{project}")
