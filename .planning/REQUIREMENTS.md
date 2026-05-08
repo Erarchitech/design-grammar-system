@@ -37,9 +37,9 @@
 
 ### Integration and Safety
 
-- [ ] **INTG-01**: End-to-end flow works: DESIGN STATE -> Classificator validation -> Neo4j persistence -> VALIDATION RUNS retrieval -> REINSTATE apply
+- [x] **INTG-01**: End-to-end flow works: DESIGN STATE -> Classificator validation -> Neo4j persistence -> VALIDATION RUNS retrieval -> REINSTATE apply
 - [x] **INTG-02**: Existing rule validation workflow continues to operate when no DESIGN STATE is provided
-- [ ] **INTG-03**: Serialization, persistence, and reinstatement errors are surfaced as actionable user-facing messages
+- [x] **INTG-03**: Serialization, persistence, and reinstatement errors are surfaced as actionable user-facing messages
 
 ## Out of Scope
 
