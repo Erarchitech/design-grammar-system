@@ -31,8 +31,13 @@ function parseJsonSafely(text) {
 
 function extractErrorMessage(text, status) {
   const parsed = parseJsonSafely(text);
-  if (parsed && typeof parsed.detail === "string" && parsed.detail) {
-    return parsed.detail;
+  if (parsed && parsed.detail) {
+    if (typeof parsed.detail === "string") {
+      return parsed.detail;
+    }
+    if (typeof parsed.detail === "object") {
+      return parsed.detail.hint || parsed.detail.error || JSON.stringify(parsed.detail);
+    }
   }
   return text || `Request failed with ${status}`;
 }
