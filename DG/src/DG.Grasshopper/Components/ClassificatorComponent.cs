@@ -1,6 +1,7 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Classification;
 using DG.Core.Models;
+using DG.Core.Services;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -44,13 +45,13 @@ public sealed class ClassificatorComponent : GH_Component
         var variableInputs = new List<object>();
         if (!da.GetDataList(0, variableInputs))
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Variables input is required.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Variables"));
             return;
         }
 
         if (!da.GetDataTree(1, out GH_Structure<IGH_Goo>? valueTree))
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Values tree input is required.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Values tree"));
             return;
         }
 

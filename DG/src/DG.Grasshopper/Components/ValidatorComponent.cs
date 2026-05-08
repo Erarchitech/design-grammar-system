@@ -1,5 +1,6 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Models;
+using DG.Core.Services;
 using DG.Core.Validation;
 using DG.Grasshopper.Validation;
 using Grasshopper.Kernel;
@@ -68,13 +69,13 @@ public sealed class ValidatorComponent : GH_Component
         var bindingInputs = new List<object>();
         if (!da.GetDataList(0, ruleInputs))
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Rules input is required.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Rules"));
             return;
         }
 
         if (!da.GetDataList(1, bindingInputs))
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Variables (bindings) input is required.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Variables (bindings)"));
             return;
         }
 
@@ -133,7 +134,7 @@ public sealed class ValidatorComponent : GH_Component
             catch (Exception ex)
             {
                 publishStatus = $"Publish failed: {ex.Message}";
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, publishStatus);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.PublishFailed("project", ex.Message));
             }
         }
 

@@ -1,5 +1,6 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Models;
+using DG.Core.Services;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using System.Drawing;
@@ -88,7 +89,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
             {
                 AddRuntimeMessage(
                     GH_RuntimeMessageLevel.Warning,
-                    $"Input '{parameterId}' has unsupported type '{raw.GetType().Name}'. Connect a Number Slider, Integer Slider, or Boolean Toggle.");
+                    ErrorMessageTemplates.DesignStateTypeUnsupported(parameterId, raw.GetType().Name));
                 continue;
             }
 
@@ -97,7 +98,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
             {
                 AddRuntimeMessage(
                     GH_RuntimeMessageLevel.Warning,
-                    $"Input '{parameterId}': could not classify value '{scalar}' as Number, Integer, or Boolean.");
+                    ErrorMessageTemplates.DesignStateTypeUnsupported(parameterId, scalar.GetType().Name));
                 continue;
             }
 

@@ -87,7 +87,7 @@ public sealed class ReinstateComponent : GH_Component
         if (!da.GetData(0, ref stateInput))
         {
             SetOutputs(da, null, "No state input.");
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "State input is required.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ValidationInputMissing("State"));
             return;
         }
 
