@@ -44,7 +44,7 @@
 - Requirements: INTG-01, INTG-02, INTG-03
 - Plans: 3 plans
   - [x] 06-01-PLAN.md � C# error contracts + GH component hardening
-  - [ ] 06-02-PLAN.md � Data-service + model-viewer error hardening
+  - [x] 06-02-PLAN.md � Data-service + model-viewer error hardening
   - [ ] 06-03-PLAN.md � E2E integration tests + verification + UAT
 
 ### v1.1 Project Knowledge Graph (Shipped)
