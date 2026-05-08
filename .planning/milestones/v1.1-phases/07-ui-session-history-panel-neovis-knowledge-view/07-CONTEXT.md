@@ -65,8 +65,8 @@ Add a browsable session history panel to the Specs&Notes sidebar and ensure Know
 - `data-service/app.py` lines 1186-1195 — `GET /knowledge/sessions/{project}` returns `{project, sessions: [{sessionId, mode, prompt, result, createdAt}]}`
 
 ### Upstream phase context
-- `.planning/phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` — D-01 through D-07 define tab structure, mode dropdown, and Graph View visibility rules
-- `.planning/phases/06-ui-update-panel-inline-diff-editor/06-CONTEXT.md` — D-01 (vertical list pattern), D-13 (step indicators pattern)
+- `.planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` — D-01 through D-07 define tab structure, mode dropdown, and Graph View visibility rules
+- `.planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-CONTEXT.md` — D-01 (vertical list pattern), D-13 (step indicators pattern)
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` — UIST-06, HSTY-02, HSTY-03, INFR-04

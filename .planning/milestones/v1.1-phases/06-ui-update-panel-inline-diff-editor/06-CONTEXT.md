@@ -64,8 +64,8 @@ Add "Update Knowledge" mode to the Specs&Notes tab in the Graph Viewer sidebar. 
 - `data-service/app.py` lines 1250-1294 — `POST /knowledge/update/confirm` accepts `{notes: [{noteId, content, updatedAt}], project, prompt}` with optimistic locking
 
 ### Upstream phase context
-- `.planning/phases/04-update-flow-endpoints/04-CONTEXT.md` — D-04 through D-12 define the backend contract (diff computation, optimistic locking, n8n routing, session tracking)
-- `.planning/phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` — D-01 through D-15 define the sidebar tab structure, state management, and async polling patterns this phase extends
+- `.planning/milestones/v1.1-phases/04-update-flow-endpoints/04-CONTEXT.md` — D-04 through D-12 define the backend contract (diff computation, optimistic locking, n8n routing, session tracking)
+- `.planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` — D-01 through D-15 define the sidebar tab structure, state management, and async polling patterns this phase extends
 
 ### Proxy routing
 - `graph-viewer/nginx.conf` — `/data-service/` proxy already routes to FastAPI; update endpoints auto-available at `/data-service/knowledge/update/*`

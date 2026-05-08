@@ -608,8 +608,8 @@ This phase adds no authentication logic, no new secrets handling, no cryptograph
 - `graph-viewer/index.html` lines 2838-3005 — full Specs&Notes conditional rendering block
 
 ### Secondary (MEDIUM confidence)
-- `.planning/phases/05-ui-mode-restructuring-insert-and-query-panels/05-RESEARCH.md` — established patterns for Phase 5 (same codebase, same approach)
-- `.planning/phases/06-ui-update-panel-inline-diff-editor/06-CONTEXT.md` — all locked decisions
+- `.planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-RESEARCH.md` — established patterns for Phase 5 (same codebase, same approach)
+- `.planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-CONTEXT.md` — all locked decisions
 
 ### Tertiary (LOW confidence)
 - None — all critical claims were verified against source files in this session.

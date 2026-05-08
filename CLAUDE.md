@@ -103,8 +103,27 @@ design-grammar-system/
 │   └── training_dataset.json
 │
 ├── speckle/                     ← Speckle bootstrap SQL
-└── test/                        ← Test data and fixtures
+├── test/                        ← Test data and fixtures
+│
+└── .planning/                   ← GSD-managed planning artifacts
+    ├── PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md
+    ├── codebase/                ← Static codebase analysis (GSD map output)
+    ├── research/                ← Project-level research notes
+    ├── phases/                  ← **Active milestone's** phases (flat, e.g. v2.0)
+    │   └── NN-<slug>/           ← One dir per phase: PLAN, CONTEXT, RESEARCH, SUMMARY, VERIFICATION, etc.
+    └── milestones/              ← **Archived** milestones
+        └── v1.1-phases/         ← Same per-phase layout, kept for history
 ```
+
+### Planning archive convention
+
+`.planning/phases/` always holds the **currently active milestone**. When a milestone ships:
+
+1. `mv .planning/phases .planning/milestones/v<old>-phases`
+2. Recreate empty `.planning/phases/` for the next milestone
+3. Sweep refs inside the archived plans: `sed -i 's|.planning/phases/|.planning/milestones/v<old>-phases/|g'`
+
+This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserving each milestone's plans separately.
 
 ## Graph Schema v3
 

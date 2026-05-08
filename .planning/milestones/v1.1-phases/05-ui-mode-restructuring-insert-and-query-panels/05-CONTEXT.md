@@ -66,7 +66,7 @@ Reorganize the Graph Viewer sidebar from a flat mode dropdown into a tabbed layo
 - `data-service/app.py` — Execution result polling at lines 893-928
 
 ### Upstream phase context
-- `.planning/phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` — D-07/D-08 (execution result workflow keys: `knowledge-ingest`, `knowledge-query`), D-09 (webhook paths)
+- `.planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` — D-07/D-08 (execution result workflow keys: `knowledge-ingest`, `knowledge-query`), D-09 (webhook paths)
 
 ### Proxy routing
 - `graph-viewer/nginx.conf` — Reverse proxy routes; `/data-service/` and `/n8n/` already configured

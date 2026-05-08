@@ -58,7 +58,7 @@ Three-step Match -> Propose -> Confirm backend for knowledge note updates. An ar
 - `data-service/app.py` lines 595-600 — Full-text index creation (`knowledge_note_search`) used by Match endpoint
 
 ### Phase 3 context (upstream decisions)
-- `.planning/phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` — D-07 through D-11 establish n8n workflow patterns, execution-result polling, and session tracking conventions
+- `.planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` — D-07 through D-11 establish n8n workflow patterns, execution-result polling, and session tracking conventions
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` — UPDK-01, UPDK-02, UPDK-03, UPDK-04, UPDK-05, UPDK-06

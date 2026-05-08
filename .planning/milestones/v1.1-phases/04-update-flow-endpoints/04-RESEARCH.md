@@ -640,7 +640,7 @@ Note: The C# DG project uses xUnit (`dotnet test`), but data-service is Python/F
 - `docker-compose.yml` — Environment variables, service dependencies [VERIFIED]
 - `graph-viewer/nginx.conf` — Proxy paths for n8n and data-service [VERIFIED]
 - `graph-viewer/index.html` lines 1554-1613 — Client-side polling pattern (1.5s interval) [VERIFIED]
-- `.planning/phases/04-update-flow-endpoints/04-CONTEXT.md` — All locked decisions D-01 through D-13 [VERIFIED]
+- `.planning/milestones/v1.1-phases/04-update-flow-endpoints/04-CONTEXT.md` — All locked decisions D-01 through D-13 [VERIFIED]
 - Python stdlib difflib — Tested locally with `py -3` [VERIFIED]
 
 ### Secondary (MEDIUM confidence)

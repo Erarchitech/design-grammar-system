@@ -597,8 +597,8 @@ No new security concerns introduced by this phase beyond those already addressed
 - `data-service/app.py` (verified lines 969–1070) — execution-result endpoints, folder ingest endpoint
 - `graph-viewer/nginx.conf` (verified) — proxy routing for `/data-service/` and `/n8n/`
 - `docker-compose.yml` (verified lines 32–36) — `DG_KNOWLEDGE_REPO_ROOT=/mnt/repo`, `.:/mnt/repo:ro` volume mount
-- `.planning/phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` (verified) — all locked decisions
-- `.planning/phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` (verified) — workflow keys D-08, webhook paths D-09, payload schema D-11
+- `.planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md` (verified) — all locked decisions
+- `.planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md` (verified) — workflow keys D-08, webhook paths D-09, payload schema D-11
 - `CLAUDE.md` (verified) — no-JSX constraint, Docker rebuild commands, Known Gotchas
 
 ### Secondary (MEDIUM confidence)
