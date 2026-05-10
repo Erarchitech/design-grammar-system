@@ -3,7 +3,7 @@ status: partial
 phase: 06-end-to-end-hardening-and-verification
 source: [06-VERIFICATION.md]
 started: 2026-05-09T18:00:00Z
-updated: 2026-05-09T18:00:00Z
+updated: 2026-05-10T18:00:00Z
 ---
 
 # Phase 6: End-to-End Hardening and Verification — Human UAT
@@ -31,7 +31,8 @@ updated: 2026-05-09T18:00:00Z
 
 **Expected:** Run appears in both GH output and Model Viewer with state data. Design State grouping shows the run under its state group.
 
-result: [pending]
+result: passed (with note)
+note: Run appears in Model Viewer but state data not visible in sidebar. State section should show under Rule section — tracked as future improvement.
 
 ---
 
@@ -47,7 +48,7 @@ result: [pending]
 
 **Expected:** Validation works identically to pre-v2.0. No errors, no state in the run.
 
-result: [pending]
+result: passed
 
 ---
 
@@ -65,7 +66,7 @@ result: [pending]
 
 **Expected:** Sliders restored to saved values. Report shows all parameters Applied.
 
-result: [pending]
+result: passed
 
 ---
 
@@ -81,7 +82,8 @@ result: [pending]
 
 **Expected:** Messages are human-readable with parameter name, what went wrong, and how to fix.
 
-result: [pending]
+result: fixed
+note: Initial test showed Status output as "Aborted: 1 blocked" with no parameter name or error bubble. Fixed in fb8079e — blocked parameters now emit AddRuntimeMessage warnings with ErrorMessageTemplates.ReinstatementBlocked. Requires re-test after DLL update.
 
 ---
 
@@ -97,16 +99,16 @@ result: [pending]
 
 **Expected:** Grouping switch works. Resize handle works and persists across reloads.
 
-result: [pending]
+result: passed
 
 ---
 
 ## Summary
 
 total: 5
-passed: 0
-issues: 0
-pending: 5
+passed: 4
+issues: 1
+pending: 0
 skipped: 0
 blocked: 0
 
@@ -114,10 +116,10 @@ blocked: 0
 
 | # | Scenario | Status | Tester | Date | Notes |
 |---|----------|--------|--------|------|-------|
-| 1 | Full State Lifecycle | [ ] | | | |
-| 2 | Legacy No-State Flow | [ ] | | | |
-| 3 | Reinstatement Round-Trip | [ ] | | | |
-| 4 | Error Message Quality | [ ] | | | |
-| 5 | Grouping Switch + Resize Handle | [ ] | | | |
+| 1 | Full State Lifecycle | [x] | User | 2026-05-10 | Passed. State sidebar display tracked as future improvement |
+| 2 | Legacy No-State Flow | [x] | User | 2026-05-10 | Passed |
+| 3 | Reinstatement Round-Trip | [x] | User | 2026-05-10 | Passed |
+| 4 | Error Message Quality | [~] | User | 2026-05-10 | Fixed in fb8079e. Re-test needed after DLL update |
+| 5 | Grouping Switch + Resize Handle | [x] | User | 2026-05-10 | Passed |
 
 ## Gaps
