@@ -1,394 +1,585 @@
 # Architecture Research
 
-**Domain:** Project Knowledge Graph integration into existing Design Grammar System
-**Researched:** 2026-04-05
-**Confidence:** HIGH (based on direct codebase inspection)
+**Domain:** v3.0 Typed Variables and Composable Design State — integration into existing DG Architecture
+**Researched:** 2026-05-11
+**Confidence:** HIGH (based on direct codebase inspection of all named files)
 
-## Standard Architecture
+---
 
-### System Overview — Current State (v1.0)
+## Five Integration Questions — Direct Answers
 
-```
-Browser (:8080)
-  └── Nginx (design-grammars container)
-        ├── /                     → graph-viewer/index.html (React 18 SPA, no JSX)
-        ├── /model-viewer/        → model-viewer/index.html (Vite+React)
-        ├── /neo4j/*              → neo4j:7474  (direct Cypher over HTTP)
-        ├── /data-service/*       → data-service:8000  (FastAPI)
-        └── /n8n/webhook/*        → n8n:5678   (webhook workflows)
+### (a) Where Does Object/Property Type Inference Live?
 
-data-service (FastAPI)
-  ├── POST /mcp                   MCP bridge (neo4j_schema, neo4j_query)
-  ├── POST /execution-result      n8n callback store (in-memory dict)
-  ├── GET  /execution-result/*    Async polling by UI
-  ├── GET/PUT /settings/speckle   Persisted JSON file on volume
-  ├── GET/PUT /integration/...    Neo4j IntegrationConfig nodes
-  ├── POST /validation/publish    Speckle publish + ValidationRun nodes
-  ├── GET  /validation/runs/*     List ValidationRun nodes
-  └── DELETE /validation/run/*    Delete run + Speckle version
+**Read-time in Neo4j repository — not write-time in n8n.**
 
-n8n workflows
-  ├── /webhook/dg/rules-ingest    NL → Ollama → SWRL Cypher → Neo4j
-  └── /webhook/dg/graph-query     NL → Ollama → Cypher → answer
+The inference rule is: a Var that appears as arg-1 of a ClassAtom is an Object variable; a Var that appears as arg-1 of a DataPropertyAtom is a Property variable. Both atom types already exist as `Atom.type` on nodes loaded by `Neo4jRuleRepository.GetRulesAsync`. The `Atom` model (`DG/src/DG.Core/Models/Atom.cs`) carries `Type`, `PredicateIri`, and `Args` after the atoms query runs. The variables are then assembled by `PopulateVariables()` (`Neo4jRuleRepository.cs:212-256`), which currently does not classify by kind.
 
-Neo4j (single DB, property-scoped)
-  ├── graph:"OntoGraph"           Class, DatatypeProperty, ObjectProperty
-  ├── graph:"Metagraph"           Rule, Atom, Var, Literal, Builtin
-  └── graph:"ValidationGraph"    ValidationRun, ValidationEntity, IntegrationConfig
-```
+The correct insertion point is the end of `PopulateVariables()`: for each variable name, inspect the atoms it appears in and assign `VariableKind.Object` if any atom with that var is a ClassAtom, `VariableKind.Property` otherwise. This stays in `DG.Core.Data.Neo4jRuleRepository` — pure read-path, zero schema change to Neo4j.
 
-### System Overview — Target State (v1.1, Knowledge Graph added)
+n8n ingest does NOT need to know about variable kinds. The SWRL metagraph already encodes the structural fact (ClassAtom vs DataPropertyAtom) that determines the kind. Adding a `kind` property to `Var` nodes in n8n would be redundant data duplication and would require every existing Cypher template to be updated. Reject this option.
+
+The `Variable` model (`DG/src/DG.Core/Models/Variable.cs`) currently has only `Name` and `InferredDatatype`. A new `Kind` property (enum `VariableKind { Object, Property }`) is added here. The public `DG.Variable` wrapper in `DG.Grasshopper` must be updated to mirror it.
+
+**Where the inference appears in the data flow:**
 
 ```
-Browser (:8080)
-  └── Nginx (design-grammars container)
-        ├── /                     → index.html  (adds KnowledgeGraph section)
-        ├── /model-viewer/        → unchanged
-        ├── /neo4j/*              → neo4j:7474  (unchanged)
-        ├── /data-service/*       → data-service:8000  (NEW: /knowledge/* endpoints)
-        └── /n8n/webhook/*        → n8n:5678  (NEW: /dg/knowledge-ingest, /dg/knowledge-query)
-
-data-service (FastAPI) — MODIFIED
-  ├── [all existing endpoints unchanged]
-  ├── POST /knowledge/ingest/prompt   NL prompt → call n8n → KnowledgeNote nodes
-  ├── POST /knowledge/ingest/folder   Read local FS path → parse files → KnowledgeNote nodes
-  ├── GET  /knowledge/notes/{project} List KnowledgeNote nodes + tags
-  ├── GET  /knowledge/note/{id}       Get single note content
-  ├── PUT  /knowledge/note/{id}       Update note content (confirmed edits)
-  ├── DELETE /knowledge/note/{id}     Delete note + tag relationships
-  ├── POST /knowledge/update/match    NL prompt → LLM → candidate nodes list
-  ├── POST /knowledge/update/propose  Selected node IDs → LLM → diff-marked content
-  ├── POST /knowledge/update/confirm  Confirmed diff → write to Neo4j
-  ├── POST /knowledge/query           NL question → n8n → NL answer
-  ├── GET  /knowledge/sessions/{project}  List KnowledgeSession nodes
-  └── POST /knowledge/session         Store session entry (prompt, result, mode, date)
-
-n8n workflows — NEW (2 additional workflows)
-  ├── /webhook/dg/knowledge-ingest    NL → Ollama → KnowledgeNote Cypher → Neo4j
-  └── /webhook/dg/knowledge-query     NL → Ollama → full-text search → NL answer
-
-Neo4j (single DB, property-scoped) — NEW graph label
-  ├── graph:"OntoGraph"           unchanged
-  ├── graph:"Metagraph"           unchanged
-  ├── graph:"ValidationGraph"     unchanged
-  └── graph:"KnowledgeGraph"      KnowledgeNote, KnowledgeTag, KnowledgeSession
-                                  TAGGED_WITH (Note→Tag), REFERENCES (Note→Note)
-                                  PART_OF_SESSION (Session→Note)
+Neo4jRuleRepository.GetRulesAsync()
+  → LoadAtomsAsync()       ← atom type already present in DB
+  → PopulateVariables()    ← NEW: assign VariableKind per variable name
+  → Rule.Variables[]       ← now carries Kind
+  → MetagraphComponent output "Rules"
+  → RuleDeconstructComponent inputs Rule, separates into Objects list + Properties list
 ```
 
-### Component Responsibilities
+No Neo4j write, no n8n change, no schema migration.
 
-| Component | Responsibility | Status |
-|-----------|----------------|--------|
-| `graph-viewer/index.html` | Main SPA UI — adds Knowledge section to MODE_OPTIONS, renders Insert/Update/Query/Session sub-modes | MODIFIED |
-| `graph-viewer/config.template.js` | NeoVis config — add KnowledgeGraph visualization config | MODIFIED |
-| `graph-viewer/nginx.conf` | Reverse proxy — no changes needed (existing /data-service/ route covers new endpoints) | UNCHANGED |
-| `data-service/app.py` | FastAPI — add /knowledge/* endpoint group, file-system reader, LLM dispatch via n8n | MODIFIED |
-| `n8n/knowledge-ingest.json` | n8n workflow — NL → KnowledgeNote Cypher | NEW |
-| `n8n/knowledge-query.json` | n8n workflow — NL + full-text search → answer | NEW |
-| `Neo4j KnowledgeGraph` | Stores KnowledgeNote, KnowledgeTag, KnowledgeSession nodes | NEW (schema extension) |
-| `docker-compose.yml` | Mount local repo folder into data-service container for folder ingest | MODIFIED |
+---
 
-## Recommended Project Structure — Changes Only
+### (b) DesignState Class Hierarchy in Neo4j
 
-```
-design-grammar-system/
-├── graph-viewer/
-│   └── index.html               MODIFIED — add Knowledge section, session history panel
-│
-├── data-service/
-│   ├── app.py                   MODIFIED — add /knowledge/* routes
-│   └── knowledge.py             NEW — knowledge-specific helpers (note parsing, diff logic, folder reader)
-│
-└── n8n/
-    └── workflows/
-        ├── rules-to-metagraph.json      unchanged
-        ├── graph-query-mcp.json         unchanged
-        ├── knowledge-ingest.json        NEW
-        └── knowledge-query.json         NEW
-```
+**Recommendation: single label `DesignState` with `kind` property (`DefState` | `ObjectState`), not multi-label, not separate labels.**
 
-No new Docker services. No new npm packages (knowledge UI uses same React.createElement pattern as existing SPA). No new external tools.
+Rationale by criterion:
 
-## Architectural Patterns
+| Criterion | Multi-label (`:DesignState:DefState`) | Single label + `kind` | Separate labels (`DefState`, `ObjectState`) |
+|-----------|--------------------------------------|----------------------|---------------------------------------------|
+| Query pattern | `MATCH (d:DesignState)` works; `MATCH (d:DefState)` also works — two valid paths, ambiguity risk | `MATCH (d:DesignState {kind:'DefState'})` — single clear pattern | `MATCH (d:DefState)` or `MATCH (d:ObjectState)` — no parent class query without UNION |
+| NeoVis display | Renders by first label; multi-label display is inconsistent across Neo4j versions | Single label = deterministic NeoVis node type mapping | Two separate node visuals; harder to show class relationship |
+| Schema migration | MATCH-SET ADD label on existing nodes is low risk | MATCH-SET ADD `kind` property on existing nodes is lowest risk | MATCH-REMOVE + CREATE new nodes with new label = highest risk |
+| Cypher template | Extra label in every MERGE; LLM must know the compound label rule | Simple: `MERGE (d:DesignState {DesignState_Id: $id}) SET d.kind = 'DefState'` | No parent-class relationship possible without explicit relationship |
+| Backward compat | Neo4j multi-label is stable but adds complexity to existing `MATCH (d:DesignState)` queries which must continue to return both subtypes | Existing queries on `DesignState` nodes just gain a new property — zero breakage | Existing GH components output `DesignState` label; all must be updated |
 
-### Pattern 1: Separate Graph Label, Same Isolation Pattern
+Use `kind` property. This is also the pattern already established by the `Rule` node which has a `kind: "violation|compliance"` property rather than separate node labels.
 
-**What:** Knowledge nodes live in `graph:"KnowledgeGraph"` and carry the same `project` property used throughout the existing system. This mirrors how `ValidationGraph`, `Metagraph`, and `OntoGraph` already coexist in the single Neo4j database.
-
-**When to use:** Every Cypher query for knowledge nodes filters on `{graph:"KnowledgeGraph", project:$project}`.
-
-**Trade-offs:** Consistent with existing isolation pattern. No migration needed on existing data. Adding a full-text index on `KnowledgeNote.content` is the only schema change required.
-
-**Example (Cypher MERGE pattern for a note):**
-```cypher
-MERGE (n:KnowledgeNote {graph:"KnowledgeGraph", project:$project, noteId:$noteId})
-SET n.title = $title,
-    n.content = $content,
-    n.source = $source,
-    n.createdAt = $createdAt,
-    n.updatedAt = $updatedAt
-```
-
-### Pattern 2: Three-Step Update Flow (Match → Propose → Confirm)
-
-**What:** Knowledge update is a three-call interaction, not a single LLM write. This avoids silent overwrites and exposes LLM suggestions to user review before committing.
-
-Step 1 — Match: UI sends NL prompt to `POST /knowledge/update/match`. data-service calls Ollama to extract entity names, then searches KnowledgeNote nodes using Neo4j full-text index. Returns candidate list with node IDs and titles.
-
-Step 2 — Propose: UI sends selected node IDs to `POST /knowledge/update/propose`. data-service fetches full note content, sends to Ollama with "propose edits, mark changes with [DEL]...[/DEL] and [INS]...[/INS] markers". Returns diff-annotated content per note.
-
-Step 3 — Confirm: UI renders diff in inline editor (contenteditable with red/green spans from diff markers). On confirm, UI calls `POST /knowledge/update/confirm` with cleaned content. data-service writes to Neo4j and appends a KnowledgeSession entry.
-
-**When to use:** Any user-initiated update to existing knowledge nodes.
-
-**Trade-offs:** More round-trips than single-shot LLM write. Essential for trust — LLM errors are visible and correctable before persistence. Consistent with existing async polling pattern (n8n execution-result polling).
-
-### Pattern 3: Folder Ingest as data-service File Reader
-
-**What:** The "load from local repository folder" feature cannot run in the browser (no FS access). The data-service container is the correct place: it already has a writable data volume. A new env var `DG_REPO_DIR` mounts a read-only bind-mount of the local repo directory into the container. data-service reads `.md` files, extracts frontmatter and content, converts to KnowledgeNote MERGE queries.
-
-**When to use:** User selects "Insert from folder" mode, provides a relative path within the mounted directory.
-
-**Trade-offs:** Requires one new docker-compose bind-mount (`./:/repo:ro`). The path is restricted to within the mount (validated server-side). This is a one-time container config change, not a service addition.
-
-**Example (docker-compose addition):**
-```yaml
-data-service:
-  volumes:
-    - ./data-service/data:/app/data
-    - .:/repo:ro                      # NEW — read-only repo mount for folder ingest
-  environment:
-    DG_REPO_DIR: /repo                # NEW — path available to data-service
-```
-
-### Pattern 4: Neo4j Full-Text Index for Knowledge Search
-
-**What:** Knowledge query and update-match both need content-based search. Neo4j's built-in full-text index (`CREATE FULLTEXT INDEX knowledgeNoteContent FOR (n:KnowledgeNote) ON EACH [n.title, n.content]`) covers both fields with single-call Cypher. No external search engine needed.
-
-**When to use:** Any time the n8n knowledge-query workflow needs to find relevant notes before handing context to Ollama for NL answer generation.
-
-**Trade-offs:** Full-text index creation is a one-time Cypher command on startup (data-service startup hook or first-use creation). Appropriate for note-scale data (hundreds to low thousands of notes per project). Not a replacement for semantic/vector search at large scale, but the project decision is explicitly no-RAG.
-
-**Startup index creation (data-service startup):**
-```python
-# In data-service startup (lifespan or startup event)
-driver.execute_query(
-    "CREATE FULLTEXT INDEX knowledgeNoteContent IF NOT EXISTS "
-    "FOR (n:KnowledgeNote) ON EACH [n.title, n.content]"
-)
-```
-
-### Pattern 5: Session Tracking as KnowledgeSession Nodes
-
-**What:** Every knowledge interaction (insert, update, query) writes a `KnowledgeSession` node: `{graph:"KnowledgeGraph", project, sessionId, mode, prompt, result, createdAt}`. The UI Session History panel reads `GET /knowledge/sessions/{project}` and displays them in reverse-chronological order.
-
-**When to use:** Automatically on every knowledge operation completion — no separate user action needed.
-
-**Trade-offs:** Storage is bounded by project activity. No localStorage quota risk (unlike run screenshots). History is persistent across browser sessions. Querying sessions is a simple `MATCH (s:KnowledgeSession {graph:..., project:...}) RETURN s ORDER BY s.createdAt DESC` — no complexity.
-
-Replaces any localStorage-based session tracking (localStorage is already stressed by run screenshots per the known gotchas).
-
-## Data Flow
-
-### Insert Knowledge (NL Prompt path)
+**ID prefix convention:**
 
 ```
-User types prompt in "Insert Knowledge" panel
+DefState:    DS_<contentHash16>        (existing DesignStateSnapshot.StateId pattern — preserve)
+ObjectState: OS_<elementId>_<ruleId>  (new; unique per object-rule binding)
+DesignState: (parent has no standalone instances — it is a virtual group, not a separate node)
+```
+
+Wait: the v3.0 spec says `DesignState` is the parent class, with `DefState` and `ObjectState` as subclasses. In Neo4j terms, the cleanest mapping is: every DesignState-family node has label `DesignState` and `kind` property. The parent class has no concrete instances — there are only `DefState` and `ObjectState` instances.
+
+**NeoVis config impact:** `config.template.js` needs one entry for `DesignState` label with style variations driven by `kind` property (color/icon). This is a single label → single NeoVis config block, cleanest possible.
+
+---
+
+### (c) Cross-Rule Object Identity and ElementId Bindings
+
+**Where bindings are stored: on the `DesignState` node (specifically the composed `DesignState` output of the reworked DESIGN STATE component), NOT in a cross-cutting cache.**
+
+The current `BindingRow.ElementRefsByVar` holds per-run bindings in C# memory. For v3.0, the Object variable cross-rule identity means: the same Object variable instance (e.g. `?b` for Building) must resolve to the same set of ElementIds across multiple rules applied in the same run. The storage answer:
+
+```
+DESIGN STATE component (reworked)
+  inputs: DefState (from DESIGN STATE legacy behavior), ObjectState list
+  outputs: IdRefs (list of element IDs), GeoRefs (geometry), DefState
+
+IdRefs are held in the DesignState output object in C# component state
+→ wired to CLASSIFICATOR.IdRefs
+→ CLASSIFICATOR uses IdRefs as the cross-rule object binding anchor
+→ VALIDATOR receives the composed state with IdRefs attached
+→ ValidationPublishClient sends IdRefs alongside the run
+```
+
+**Regeneration trigger rule:** Element Ids (ObjectRef bindings) are recomputed only when `DefState` changes. `DefState` changes are detected by comparing `DefState.StateId` (the content hash). If `DefState.StateId` is unchanged, the cached `IdRefs` list is reused without re-querying geometry.
+
+The C# component holds a cached tuple: `(string lastDefStateId, IReadOnlyList<string> cachedIdRefs)`. On SolveInstance, if `DefState.StateId == lastDefStateId`, skip geometry re-scan and emit cached IdRefs. On change, re-scan ObjectState inputs, rebuild IdRefs list, update cache. This is local C# component state — no Neo4j involvement.
+
+**What goes into Neo4j ValidationRun:** The composed DesignState (including IdRefs and DefState parameters) is serialized as `statePayloadJson` on the `ValidationRun` node, extending the existing `statePayloadJson` field. No new Neo4j node type needed for the bindings themselves at run time. The `ObjectState` nodes in Neo4j (if persisted) serve as structural descriptors, not as runtime binding caches.
+
+---
+
+### (d) METAGRAPH Loader Changes for RULE DECONSTRUCT
+
+**The problem:** RULE DECONSTRUCT has no Neo4j connection. Currently it takes a single `Rule` item from METAGRAPH output and extracts variables. In v3.0 it must also emit `Runs` — but Runs live in `ValidationGraph` which RULE DECONSTRUCT cannot query.
+
+**Solution: METAGRAPH loads Runs in its own async query and passes them through as a new output.**
+
+The METAGRAPH component currently runs one async load task (`_ruleRepository.GetRulesAsync`). In v3.0 it runs two concurrent tasks:
+
+1. Existing: `IRuleRepository.GetRulesAsync` → Rules output
+2. New: `IValidationRunRepository.GetRunsAsync` (new interface/class) → Runs output
+
+Both tasks are awaited on the same `ScheduleSolution` callback. METAGRAPH gains four new outputs:
+
+| Output index | Name | Type | Source |
+|---|---|---|---|
+| 0 | Rules | `IReadOnlyList<DG.Rule>` | existing |
+| 1 | RuleName | `IReadOnlyList<string>` | existing |
+| 2 | Count | int | existing |
+| 3 | Objects | `IReadOnlyList<DG.Variable>` where Kind=Object | derived from rules |
+| 4 | Properties | `IReadOnlyList<DG.Variable>` where Kind=Property | derived from rules |
+| 5 | DesignStates | `IReadOnlyList<DG.DesignState>` | from ValidationGraph (new query) |
+| 6 | Runs | `IReadOnlyList<DG.ValidationRunQueryResult>` | from ValidationGraph (reuse existing query service) |
+
+The `Objects` and `Properties` outputs are derived by iterating the loaded rules' variables and partitioning by `Kind`. No second DB query needed.
+
+`ValidationRunsQueryService` already exists at `DG/src/DG.Core/Services/ValidationRunsQueryService.cs` and returns `IReadOnlyList<ValidationRunQueryResult>`. METAGRAPH creates an instance of it and calls `QueryAsync(connection, ruleId: null, stateId: null)` to get all runs. The existing service is reused without modification.
+
+**DataTree flow from METAGRAPH to RULE DECONSTRUCT:**
+
+METAGRAPH emits `Rules` as a flat list (existing). RULE DECONSTRUCT receives a single `Rule` item wired from a GH List Item or directly. The `Runs` output from METAGRAPH feeds RULE DECONSTRUCT's new `Runs` input as a list. RULE DECONSTRUCT then filters `Runs` to those referencing its input Rule's ID and emits them as the `Runs` output. No DataTree branching needed — all flat lists, consistent with existing component contracts.
+
+```
+METAGRAPH.Rules  → (List Item or split) → RULE DECONSTRUCT.Rule
+METAGRAPH.Runs   → ─────────────────────→ RULE DECONSTRUCT.Runs (filter by rule)
+```
+
+This preserves RULE DECONSTRUCT's stateless, no-Neo4j nature: it only filters and restructures data already loaded by METAGRAPH.
+
+---
+
+### (e) Build Order — Phase Dependency Graph
+
+The following dependency relationships are hard (a phase cannot start until its dependency is complete):
+
+```
+Schema changes (DG.Core models + Neo4j nodes)
+  ↓
+Neo4jRuleRepository type inference  ─────────────────────────────────┐
+  ↓                                                                   │
+METAGRAPH output expansion (Objects/Properties/Runs outputs)          │
+  ↓                                                                   │
+RULE DECONSTRUCT rework (Objects/Properties/Runs outputs)    ← parallel with ObjectState nodes (right)
+  ↓                                                                   │
+CLASSIFICATOR rework (new inputs/outputs)                ←────────────┤
+  ↓                                                                   │
+DESIGN STATE rework (new inputs/outputs) + OBJECT STATE new component─┘
+  ↓
+VALIDATOR unchanged; ValidationPublishClient extended
+  ↓
+VALIDATION RUNS → RUN DECONSTRUCT rename + output changes
+  ↓
+Schema propagation sweep (cypher_template, dataset_schema, n8n prompts, NeoVis config)
+```
+
+**What can run in parallel:**
+
+- OBJECT STATE (new component) implementation is independent of RULE DECONSTRUCT rework. Both depend only on Schema (models) being done.
+- VARIABLE NAME (new component) depends only on `Variable.Kind` being available — can be built alongside RULE DECONSTRUCT.
+- n8n workflow prompt updates (schema propagation) are independent of all GH component work and can proceed after the schema is finalized.
+- NeoVis config update is fully independent — no GH or data-service dependency.
+- data-service `statePayloadJson` format extension (to include IdRefs) depends on the DesignState model shape being final.
+
+---
+
+## System Architecture — v3.0 Grasshopper Component Graph
+
+### Current Data Flow (v2.0)
+
+```
+CONNECTOR → METAGRAPH (Rules, RuleName, Count)
+              ↓
+           RULE DECONSTRUCT (Rule, Variables, VariableName, SWRL, RuleName, RuleDescription)
+                            Variables ↓    VariableName ↓
+                         DESIGN STATE (State) ───────────────────────────┐
+                                               ↓                         │
+                           CLASSIFICATOR (BoundVariables, MissingVariables, Status, State)
+                                           ↓                     State ↓
+                                        VALIDATOR ←──────────────────────┘
+                                           ↓
+                                   data-service publish → Neo4j ValidationRun + Speckle
+
+VALIDATION RUNS (Runs, Results, States, Status) ← query Neo4j ValidationGraph
+REINSTATE ← States output
+```
+
+### Target Data Flow (v3.0)
+
+```
+CONNECTOR → METAGRAPH (Rules, RuleName, Count, Objects, Properties, DesignStates, Runs)
+              ↓              ↓             ↓
+           [Rules]        [Objects]    [Runs]
+              ↓              │             │
+           RULE DECONSTRUCT  │             │
+           (Rule, Objects,   │             │
+            Properties, Runs)│             │
+                 ↓           │             │
+           [Objects]         │             │
+           [Properties]      │             │
+           [Runs]            │             │
+                 ↓      ←────┘             │
+           CLASSIFICATOR (new inputs:      │
+             Rule, Objects, Properties,    │
+             PropValues, IdRefs, GeoRefs,  │
+             DefState)                     │
+             outputs:                      │
+             BoundVariables,              │
+             MissingVariables, Status,    │
+             Values[DataTree], Variables, │
+             DefState)                     │
+                 ↓                         │
+           VALIDATOR (unchanged inputs)    │
+                 ↓                         │
+         data-service publish             │
+                                           ↓
+           RUN DECONSTRUCT ←──── METAGRAPH.Runs
+           (passing items, failing items,
+            RunId, DateCreated, State)
+
+OBJECT STATE (new) → IdRefs, GeoRefs → DESIGN STATE (reworked) → CLASSIFICATOR
+VARIABLE NAME (new) → Variable → Name string
+```
+
+---
+
+## Component Boundaries — New vs Modified
+
+### Brand New Artifacts
+
+| Artifact | Location | Responsibility |
+|----------|----------|----------------|
+| `VariableKind` enum | `DG/src/DG.Core/Models/Variable.cs` | `Object \| Property` classification |
+| `ObjectStateComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Accepts ObjectRef + GeoRef inputs, emits `DG.ObjectState` |
+| `VariableNameComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Accepts `DG.Variable` input, emits name string |
+| `DG.ObjectState` (public type) | `DG/src/DG.Grasshopper/` public API surface | GH-wirable ObjectState wrapper |
+| `IValidationRunRepository` (optional) | `DG/src/DG.Core/Data/` | Interface for run loading (if METAGRAPH needs DI) |
+
+### Modified Artifacts — Grasshopper Components
+
+| Artifact | Location | What Changes |
+|----------|----------|--------------|
+| `Variable.cs` | `DG/src/DG.Core/Models/Variable.cs` | Add `Kind` property (VariableKind enum) |
+| `MetagraphComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Add outputs: Objects, Properties, DesignStates, Runs; second concurrent load task for Runs |
+| `Neo4jRuleRepository.cs` | `DG/src/DG.Core/Data/` | `PopulateVariables()` assigns `Kind` by inspecting atom types |
+| `RuleDeconstructComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Remove Variables+VariableName outputs; add Objects, Properties, Runs outputs; add Runs input |
+| `ClassificatorComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Add Rule/Objects/Properties/PropValues/IdRefs/GeoRefs/DefState inputs; add Values(DataTree)+Variables+DefState outputs; rename ElementRefs→GeoRefs |
+| `DesignStateComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Rework inputs to ObjectState+DefState; outputs become IdRefs, GeoRefs, DefState; add cached IdRefs regeneration logic |
+| `ValidationRunsComponent.cs` | `DG/src/DG.Grasshopper/Components/` | Rename file→`RunDeconstructComponent.cs`; update component name/GUID; change outputs to passing items, failing items, RunId, DateCreated, State |
+| `DesignStateSnapshot.cs` | `DG/src/DG.Core/Models/` | Extend serialization to include IdRefs list |
+| `ValidationPublishClient.cs` (and related) | `DG/src/DG.Core/Validation/` or adjacent | Pass IdRefs in publish payload |
+
+### Modified Artifacts — Schema Propagation
+
+| Artifact | Location | What Changes |
+|----------|----------|--------------|
+| `cypher_template.txt` | repo root | Add DesignState node shapes with `kind` property; update Var node to reflect typed classification note |
+| `training/dataset_schema.json` | `training/` | Add DesignState/DefState/ObjectState to node section; document VariableKind |
+| n8n workflow prompts | `n8n/workflows/*.json` | Update LLM system prompts to describe variable kind inference (ObjectProperty, ClassAtom distinction) |
+| `config.template.js` | `graph-viewer/` | Add NeoVis label config for DesignState nodes |
+| `data-service/app.py` | `data-service/` | Extend `statePayloadJson` format to include IdRefs; update `_project_state_summary()` if needed |
+
+---
+
+## Architectural Patterns for v3.0
+
+### Pattern 1: Read-Time Inference, Not Write-Time Storage
+
+**What:** Variable kind (Object vs Property) is inferred from atom structure at read time in `Neo4jRuleRepository.PopulateVariables()`, not stored as a `kind` property on `Var` nodes in Neo4j.
+
+**When to use:** Always — the structural information is already present (atom type tells us). Avoid duplicating it.
+
+**Trade-offs:** Cannot query "give me all Object variables" from Cypher alone; but this query is never needed server-side. GH components always receive full Rule objects. The inference is O(atoms) per rule, negligible cost.
+
+**Example sketch:**
+```csharp
+// In PopulateVariables(), after collecting atom args:
+var objectVarNames = new HashSet<string>(
+    rule.BodyAtoms
+        .Where(a => a.Type == "ClassAtom")
+        .SelectMany(a => a.Args.Where(arg => arg.Kind == ArgKind.Variable).Select(arg => arg.Value)),
+    StringComparer.Ordinal);
+
+foreach (var name in names.OrderBy(n => n, StringComparer.Ordinal))
+{
+    rule.Variables.Add(new Variable
+    {
+        Name = name,
+        Kind = objectVarNames.Contains(name) ? VariableKind.Object : VariableKind.Property,
+    });
+}
+```
+
+### Pattern 2: Composable DesignState via Input Aggregation
+
+**What:** The reworked DESIGN STATE component aggregates `ObjectState` items (each carrying ElementId + geometry) and a `DefState` item (parametric snapshot) into a single composed output. This replaces the current single-path `DesignStateSnapshot → State` output.
+
+**When to use:** DESIGN STATE is the composition point. Users wire one or more OBJECT STATE components and one (legacy) DefState capture into DESIGN STATE, which validates, deduplicates, and caches the composed state.
+
+**Trade-offs:** The reworked DESIGN STATE output signature changes. Existing canvases wired to the old single `State` output will need rewiring. This is a deliberate v3.0 breaking change on canvas wiring (not API, since the canvas is user-configured, not code-deployed).
+
+### Pattern 3: IdRef Cache Keyed on DefState Hash
+
+**What:** DESIGN STATE component holds `_cachedIdRefs` (list of element ID strings) and `_lastDefStateId` (the DefState content hash). On each SolveInstance, if DefStateId is unchanged, IdRefs are emitted from cache without re-scanning ObjectState geometry.
+
+**When to use:** This is the regeneration trigger rule: geometry re-scan only on DefState parameter change.
+
+**Trade-offs:** Cache is per-component-instance (GH component field), invalidated correctly. Geometry scans are expensive in Rhino; caching is necessary for responsive canvas.
+
+### Pattern 4: METAGRAPH as the Single Neo4j Consumer for Downstream Components
+
+**What:** METAGRAPH is the only component with a Neo4j connection in the validation pipeline reading both Metagraph and ValidationGraph data. All downstream components (RULE DECONSTRUCT, CLASSIFICATOR, DESIGN STATE) operate on data already loaded by METAGRAPH. RUN DECONSTRUCT receives pre-loaded Runs from METAGRAPH.
+
+**When to use:** Always. This keeps the component graph's network dependency surface minimal: only METAGRAPH and CONNECTOR need database credentials and network access.
+
+**Trade-offs:** METAGRAPH becomes heavier — it now runs two concurrent async queries (rules + runs). The existing `ScheduleSolution` polling pattern (`ContinueWith` on task completion) must be extended to wait for both tasks. Use `Task.WhenAll` and only fire `ExpireSolution` after both complete.
+
+---
+
+## Data Flow — v3.0 Key Paths
+
+### Validation Run with Typed Variables and ObjectState
+
+```
+[User action: canvas solve]
+CONNECTOR → connection object
+METAGRAPH (Refresh=true)
+  → Task 1: Neo4jRuleRepository.GetRulesAsync()
+      → LoadRulesAsync() + LoadAtomsAsync() + PopulateVariables() [now with Kind]
+  → Task 2: ValidationRunsQueryService.QueryAsync()
+  → Task.WhenAll → ScheduleSolution → ExpireSolution
+  → outputs: Rules[], Objects[], Properties[], Runs[]
+
+RULE DECONSTRUCT (Rule input from List Item on Rules)
+  → filters rule.Variables by Kind → Objects[], Properties[]
+  → filters Runs by rule.Id → Runs[]
+  → passthrough Rule, SWRL, RuleName, RuleDescription
+
+OBJECT STATE (one per BIM object class)
+  → user wires geometry + element ID panel
+  → outputs DG.ObjectState (elementId string + geometry object)
+
+DESIGN STATE (reworked)
+  → inputs: ObjectState list, DefState (from legacy Design State sub-component)
+  → if DefStateId changed: re-scan ObjectStates → rebuild IdRefs
+  → outputs: IdRefs[], GeoRefs[], DefState
+
+CLASSIFICATOR (reworked)
+  → inputs: Rule, Objects, Properties, PropValues (DataTree), IdRefs, GeoRefs, DefState
+  → builds BindingRows using Objects→IdRefs mapping + Properties→values
+  → outputs: BoundVariables, Values (DataTree), Variables, DefState
+
+VALIDATOR (unchanged inputs structure)
+  → inputs: Rules, Variables (bindings), Run, SendRules, DataServiceUrl, State
+  → EvaluateRules() → publish to data-service
+  → ValidationPublishClient now includes IdRefs in statePayloadJson
+
+RUN DECONSTRUCT
+  → input: ValidRun (from METAGRAPH.Runs or RULE DECONSTRUCT.Runs)
+  → outputs: passing items (element ID list), failing items, RunId, DateCreated, State
+```
+
+### Object→ElementId Binding Persistence
+
+```
+DESIGN STATE.IdRefs (in-memory list per SolveInstance)
+    ↓ wired to CLASSIFICATOR.IdRefs
+CLASSIFICATOR builds BindingRow.ElementRefsByVar with IdRefs[i] → Objects[i] mapping
     ↓
-UI: POST /data-service/knowledge/ingest/prompt  {project, prompt}
+VALIDATOR.ValidationPublishClient serializes state including IdRefs list
     ↓
-data-service: generate executionId, POST /n8n/webhook/dg/knowledge-ingest
+data-service /validation/publish receives statePayloadJson (extended to include idRefs)
     ↓
-n8n knowledge-ingest workflow:
-  1. Extract note structure via Ollama (title, tags, content from prompt)
-  2. Generate MERGE Cypher for KnowledgeNote + KnowledgeTag nodes
-  3. POST to Neo4j HTTP transaction
-  4. POST result back to data-service /execution-result
+Neo4j: ValidationRun.statePayloadJson stores full composed state
     ↓
-UI polls GET /data-service/execution-result/{executionId}  (existing async pattern)
-    ↓
-On success: data-service writes KnowledgeSession node
-UI refreshes note list
+RUN DECONSTRUCT reads ValidationRunQueryResult.StatePayloadJson → deserializes → emits passing/failing items
 ```
 
-### Insert Knowledge (Folder path)
+---
 
-```
-User selects folder path in "Insert from Folder" panel
-    ↓
-UI: POST /data-service/knowledge/ingest/folder  {project, path}
-    ↓
-data-service:
-  1. Validate path is within DG_REPO_DIR
-  2. Walk directory, collect .md files
-  3. Parse frontmatter (title, tags) + body content per file
-  4. MERGE KnowledgeNote nodes directly (no n8n needed — no LLM required)
-  5. Write KnowledgeSession node
-    ↓
-Returns {inserted: N, skipped: M}
-UI shows result inline
-```
+## Integration Points — Explicit New vs Modified
 
-### Query Knowledge
+### Hard Integration Boundaries
 
-```
-User types question in "Query Knowledge" panel
-    ↓
-UI: POST /data-service/knowledge/query  {project, question}
-    ↓
-data-service: POST /n8n/webhook/dg/knowledge-query
-    ↓
-n8n knowledge-query workflow:
-  1. Ollama extracts search terms from question
-  2. Cypher full-text search: CALL db.index.fulltext.queryNodes(...)
-  3. Top N matching notes passed as context to Ollama
-  4. Ollama generates NL answer
-  5. POST result + cypher used to data-service /execution-result
-    ↓
-UI polls, receives {answer, cypher}
-data-service writes KnowledgeSession node
-UI displays answer in Response field, cypher in Cypher panel
-```
+| Boundary | Type | Files Involved |
+|----------|------|----------------|
+| `Variable.Kind` inference | MODIFIED — pure C# | `DG.Core/Models/Variable.cs`, `DG.Core/Data/Neo4jRuleRepository.cs` |
+| METAGRAPH Runs loading | MODIFIED component | `DG.Grasshopper/Components/MetagraphComponent.cs`, `DG.Core/Services/ValidationRunsQueryService.cs` (reused as-is) |
+| RULE DECONSTRUCT signature | MODIFIED component | `DG.Grasshopper/Components/RuleDeconstructComponent.cs` (output layout rebuild via EnsureOutputLayout pattern) |
+| OBJECT STATE component | NEW file | `DG.Grasshopper/Components/ObjectStateComponent.cs` |
+| VARIABLE NAME component | NEW file | `DG.Grasshopper/Components/VariableNameComponent.cs` |
+| DESIGN STATE rework | MODIFIED component | `DG.Grasshopper/Components/DesignStateComponent.cs` |
+| CLASSIFICATOR rework | MODIFIED component | `DG.Grasshopper/Components/ClassificatorComponent.cs` |
+| ValidationRunsComponent → RunDeconstructComponent | MODIFIED (rename + rework) | `DG.Grasshopper/Components/ValidationRunsComponent.cs` → new file name |
+| statePayloadJson schema | MODIFIED | `DG.Core/Models/DesignStateSnapshot.cs`, `data-service/app.py` (`_project_state_summary`), `DG.Core/Services/ValidationRunPersistenceService.cs` |
+| Cypher/schema propagation | MODIFIED documents | `cypher_template.txt`, `training/dataset_schema.json`, `n8n/workflows/*.json`, `graph-viewer/config.template.js` |
 
-### Update Knowledge (3-step)
+### Unchanged Integration Points
 
-```
-Step 1 — Match:
-  User types "what to update" prompt
-  UI: POST /data-service/knowledge/update/match {project, prompt}
-  data-service: Ollama extracts entity names → full-text search → return candidate list
-  UI renders selectable node list
+| Component | Status | Reason |
+|-----------|--------|--------|
+| CONNECTOR component | UNCHANGED | Connection model unchanged |
+| VALIDATOR component | UNCHANGED (inputs) | Receives same Rules + BoundVariables; State input shape is same wrapper |
+| ValidationPublishClient | MINOR EXTENSION | statePayloadJson gains idRefs field; no structural change to publish endpoint |
+| data-service `/validation/publish` | MINOR EXTENSION | Reads idRefs from extended statePayloadJson; `store_validation_run()` unchanged |
+| data-service `/validation/runs/{project}` | UNCHANGED | List runs endpoint unchanged |
+| REINSTATE component | UNCHANGED | Operates on DefState parameters only; not affected by ObjectState addition |
+| Speckle stack (7 containers) | UNCHANGED | No new publish format at Speckle level |
+| n8n ingest workflow logic | UNCHANGED (Cypher template only gets doc update) | Atom-level structure unchanged; LLM prompt updated for awareness only |
+| Ollama service | UNCHANGED | No new inference patterns |
+| Model Viewer (Vite+React) | UNCHANGED | Consumes run list from data-service; format additions are backward-compatible |
 
-Step 2 — Propose:
-  User selects nodes to update
-  UI: POST /data-service/knowledge/update/propose {project, nodeIds, prompt}
-  data-service: fetch note contents → Ollama proposes diff-annotated edits
-  UI renders inline diff editor (contenteditable, red [DEL], green [INS] spans)
+---
 
-Step 3 — Confirm:
-  User reviews, accepts/rejects changes inline, clicks Confirm
-  UI: POST /data-service/knowledge/update/confirm {project, nodeId, content}
-  data-service: SET n.content = $content, n.updatedAt = now()
-               write KnowledgeSession node
-  UI: refresh note list
-```
+## Suggested Phase Decomposition (3–7 phases)
 
-## Integration Points
+This decomposition follows the dependency graph from section (e). Each phase has a clean boundary.
 
-### New vs Existing — Explicit Boundary Table
+### Phase 1: Schema Foundation — C# Models + Type Inference
 
-| Touchpoint | Status | What Changes |
-|------------|--------|--------------|
-| `graph-viewer/index.html` | MODIFIED | Add "Project Knowledge" section to MODE_OPTIONS, new sub-mode panels (Insert, Update, Query, Sessions), NeoVis config toggle for KnowledgeGraph |
-| `graph-viewer/config.template.js` | MODIFIED | Add NeoVis visualization config for KnowledgeNote and KnowledgeTag node styles |
-| `graph-viewer/nginx.conf` | UNCHANGED | Existing `/data-service/` proxy covers all new endpoints |
-| `data-service/app.py` | MODIFIED | Add `/knowledge/*` route group (~8 new endpoints) |
-| `data-service/knowledge.py` | NEW | File parsing, diff generation, note helpers |
-| `data-service/requirements.txt` | MAYBE MODIFIED | Only if markdown frontmatter parsing needs a library (python-frontmatter); alternatively handled with bespoke regex consistent with existing patterns |
-| `n8n/workflows/knowledge-ingest.json` | NEW | ~10-node workflow: Webhook → Set → HTTP(Ollama) → Function(parse) → HTTP(Neo4j) → HTTP(data-service callback) |
-| `n8n/workflows/knowledge-query.json` | NEW | ~12-node workflow: Webhook → Set → HTTP(Ollama extract terms) → HTTP(Neo4j full-text) → HTTP(Ollama answer) → HTTP(callback) |
-| `docker-compose.yml` | MODIFIED | Add read-only repo bind-mount + `DG_REPO_DIR` env var to data-service |
-| `Neo4j schema` | MODIFIED | New node labels (KnowledgeNote, KnowledgeTag, KnowledgeSession), new FULLTEXT index, new relationships (TAGGED_WITH, REFERENCES, PART_OF_SESSION) |
-| Nginx reverse proxy routes | UNCHANGED | No new routes needed |
-| Speckle stack (7 containers) | UNCHANGED | Knowledge graph has no Speckle integration |
-| Grasshopper plugin (C#) | UNCHANGED | Knowledge graph is informational only, no validation path |
-| Ollama service | UNCHANGED | Shared inference capacity; knowledge queries use same endpoint |
+**Boundary:** All downstream GH component changes depend on `Variable.Kind` being available. Nothing else can be built until this is done.
 
-### Internal Boundaries
+**New artifacts:**
+- `VariableKind` enum in `Variable.cs`
+- `Kind` property on `DG.Core.Models.Variable`
+- `PopulateVariables()` extended with kind inference logic in `Neo4jRuleRepository.cs`
+- `DG.Variable` public wrapper updated with `Kind`
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| UI → data-service (knowledge) | REST over `/data-service/knowledge/*` via Nginx proxy | Same CORS/proxy setup as existing endpoints |
-| data-service → n8n (knowledge workflows) | POST to n8n webhook + async polling via /execution-result | Same pattern as existing rules-ingest workflow |
-| n8n → Ollama (knowledge) | HTTP POST to `http://ollama:11434/api/generate` | Same internal Docker network, same model |
-| n8n → Neo4j (knowledge Cypher) | HTTP POST to `http://neo4j:7474/db/neo4j/tx/commit` | Same as existing rules-ingest workflow |
-| data-service → Neo4j (knowledge CRUD) | neo4j Python driver (existing `driver` instance) | All knowledge queries via same connection pool |
-| data-service → file system (folder ingest) | Python `pathlib.Path` reads from `/repo` mount | Path traversal validation required |
+**Modified artifacts:** `Variable.cs`, `Neo4jRuleRepository.cs`, public API surface in `DG.Grasshopper/`
 
-## Build Order (Phase Dependencies)
+**Test coverage:** Unit tests on `PopulateVariables()` with mock atom structures covering ClassAtom → Object, DataPropertyAtom → Property, mixed-atom variable (both assignments same variable → Object wins).
 
-The suggested implementation sequence, based on hard dependencies:
+**Can run in parallel with:** Nothing — this is the root dependency.
 
-**Phase 1 — Neo4j Schema Foundation**
-Create KnowledgeNote, KnowledgeTag, KnowledgeSession node shapes and the full-text index. Write startup index-creation code in data-service. This unblocks all subsequent phases.
+---
 
-**Phase 2 — data-service Knowledge Endpoints (CRUD + Folder Ingest)**
-Add `/knowledge/ingest/folder`, `/knowledge/notes/*`, `/knowledge/note/*` (GET/PUT/DELETE), `/knowledge/session` endpoints. Folder ingest can be fully tested without n8n or LLM. Session tracking write/read can be verified here.
+### Phase 2: METAGRAPH Loader Expansion + RULE DECONSTRUCT Rework
 
-**Phase 3 — n8n Knowledge Workflows**
-Build `knowledge-ingest` and `knowledge-query` n8n workflows against the Neo4j schema from Phase 1. Wire data-service `/knowledge/ingest/prompt` and `/knowledge/query` endpoints to call these webhooks and poll results via the existing execution-result pattern.
+**Boundary:** METAGRAPH must expose Runs before RULE DECONSTRUCT can emit them. Both are independent of OBJECT STATE or DESIGN STATE rework.
 
-**Phase 4 — Update Flow (Match → Propose → Confirm)**
-Add the three `/knowledge/update/*` endpoints. Requires: Phase 1 (nodes to find), Phase 3 (Ollama access via data-service calls). The diff-marking logic lives entirely in data-service (Python string manipulation + Ollama call), not in n8n.
+**New artifacts:**
+- METAGRAPH: Objects, Properties, DesignStates, Runs outputs
+- METAGRAPH: concurrent `ValidationRunsQueryService.QueryAsync` call (reuses existing service)
+- RULE DECONSTRUCT: Objects, Properties, Runs outputs (derived from Rule.Variables + filtered Runs input)
+- RULE DECONSTRUCT: remove Variables + VariableName outputs; update `EnsureOutputLayout`
+- VARIABLE NAME component (new, trivial — Variable input → Name string output)
 
-**Phase 5 — UI: Mode Restructuring + Insert/Query Panels**
-Restructure `MODE_OPTIONS` into two sections ("Validation" grouping existing 3 modes, "Project Knowledge" grouping 4 new modes). Add Insert and Query panels (simpler — single-step flows). Requires Phase 3 endpoints to be live.
+**Modified artifacts:** `MetagraphComponent.cs`, `RuleDeconstructComponent.cs`
 
-**Phase 6 — UI: Update Panel + Inline Diff Editor**
-Add the three-step Update UI with contenteditable diff rendering. Requires Phase 4. The diff rendering (red span for deletions, green for insertions) is the most complex UI work in this milestone.
+**New artifacts:** `VariableNameComponent.cs`
 
-**Phase 7 — UI: Session History Panel + NeoVis Knowledge Graph View**
-Session history list panel (read from Phase 2 endpoint). Optional NeoVis toggle to show KnowledgeGraph nodes. Lowest dependency — can be done last.
+**Can run in parallel with:** Phase 3 (ObjectState + DesignState rework) — they share no intermediate state.
 
-## Anti-Patterns
+---
 
-### Anti-Pattern 1: Mixing Knowledge and SWRL Nodes in Same Graph Label
+### Phase 3: OBJECT STATE Component + DESIGN STATE Rework
 
-**What people do:** Reuse existing `graph:"Metagraph"` or add knowledge properties directly to Rule nodes.
+**Boundary:** Depends on Phase 1 (Variable.Kind). Independent of Phase 2. Produces the IdRefs/GeoRefs contract that CLASSIFICATOR needs.
 
-**Why it's wrong:** Destroys isolation. NeoVis queries for Metagraph will return knowledge noise. Any future migration or visualization of knowledge graph becomes entangled with SWRL semantics.
+**New artifacts:**
+- `ObjectStateComponent.cs` — new GH component (ObjectRef + GeoRef inputs → DG.ObjectState output)
+- `DG.ObjectState` public type
 
-**Do this instead:** Strict `graph:"KnowledgeGraph"` on every knowledge node. Never cross-label.
+**Modified artifacts:**
+- `DesignStateComponent.cs` — reworked: inputs change to ObjectState list + DefState; outputs become IdRefs, GeoRefs, DefState; cache logic added
 
-### Anti-Pattern 2: Storing Large Note Content in n8n Workflow Memory
+**Test coverage:** Unit tests on IdRef cache invalidation (DefState hash change triggers rebuild; same hash returns cache).
 
-**What people do:** Pass full note content through n8n workflow node parameters for the update flow.
+**Can run in parallel with:** Phase 2.
 
-**Why it's wrong:** n8n workflow node parameters have size limits and are stored in n8n's internal SQLite/Postgres. Note content belongs in Neo4j where it can be queried.
+---
 
-**Do this instead:** n8n workflows operate on note IDs and short summaries. Full content fetch/write goes through data-service ↔ Neo4j directly.
+### Phase 4: CLASSIFICATOR Rework
 
-### Anti-Pattern 3: New Docker Service for Knowledge Features
+**Boundary:** Depends on Phase 1 (Variable.Kind) and Phase 3 (IdRefs/GeoRefs contract). Must precede VALIDATOR integration test.
 
-**What people do:** Add a dedicated "knowledge-service" container for the new endpoints.
+**Modified artifacts:**
+- `ClassificatorComponent.cs` — input rename (ElementRefs→GeoRefs) and addition (Rule, Objects, Properties, PropValues, IdRefs, GeoRefs, DefState); output addition (Values DataTree, Variables, DefState); pass DefState through
 
-**Why it's wrong:** Violates the project constraint "no new external services." Adds operational complexity (new Dockerfile, compose service, internal networking). The existing data-service FastAPI app already has the Neo4j driver, the execution-result store, and the Speckle settings pattern — knowledge endpoints follow the same shape.
+**Test coverage:** Unit tests on binding construction with Objects→IdRefs mapping; DataTree output shape matches variable order.
 
-**Do this instead:** Add knowledge routes as a new module imported into the existing `app.py`. Keep `knowledge.py` for helpers to avoid bloating `app.py`.
+---
 
-### Anti-Pattern 4: JSX or Vite Build for Knowledge UI
+### Phase 5: RUN DECONSTRUCT + statePayloadJson Extension
 
-**What people do:** Build the knowledge UI as a separate Vite+React app (like model-viewer) because it has complex state (diff editor, multi-step update flow).
+**Boundary:** Depends on Phase 2 (Runs data flowing from METAGRAPH). Depends on Phase 3/4 (extended DesignState shape) for complete IdRefs in statePayloadJson. Can be partially built after Phase 2 (passing/failing items from existing entity set data).
 
-**Why it's wrong:** Inconsistent with the main SPA pattern. Introduces a second build step. The diff editor complexity is manageable with `React.createElement` + `contenteditable` — no component library needed.
+**Modified artifacts:**
+- `ValidationRunsComponent.cs` → `RunDeconstructComponent.cs`: rename, new GUID, output signature change (passing items, failing items, RunId, DateCreated, State)
+- `DesignStateSnapshot.cs`: add `IdRefs` list to model
+- `data-service/app.py`: extend `statePayloadJson` deserialization; update `_project_state_summary()` if summary adds idRefs count
+- `ValidationRunPersistenceService.cs` or `ValidationPublishClient.cs`: serialize IdRefs into statePayloadJson
 
-**Do this instead:** Add knowledge panels as new branches in the existing `GraphViewerPage` component using the same `React.createElement` calls and CSS variables already established.
+---
 
-### Anti-Pattern 5: localStorage for Session History
+### Phase 6: Schema Propagation Sweep
 
-**What people do:** Store session history in localStorage to avoid database writes.
+**Boundary:** Can only finalize after Phase 1 is complete (VariableKind semantics are locked). All document updates — no code logic changes.
 
-**Why it's wrong:** localStorage is already stressed by run screenshots. Sessions accumulate indefinitely. History disappears on browser data clear, making it useless as an audit trail.
+**Modified artifacts:**
+- `cypher_template.txt` — add DesignState/DefState/ObjectState node shapes; add VariableKind note
+- `training/dataset_schema.json` — add DesignState hierarchy to nodes section
+- `n8n/workflows/rules-to-metagraph.json` — update LLM system prompt to clarify ClassAtom → Object variable distinction
+- `graph-viewer/config.template.js` — add NeoVis label config for DesignState (kind-based display)
 
-**Do this instead:** `KnowledgeSession` nodes in Neo4j. Cheap writes, persistent, queryable. The existing `ValidationRun` pattern is the direct precedent.
+**Can run in parallel with:** Phases 3, 4, 5 (document work only, no shared code state).
+
+---
+
+## Anti-Patterns to Avoid in v3.0
+
+### Anti-Pattern 1: Storing Variable Kind on Var Nodes in Neo4j
+
+**What:** Writing a `kind: "Object"` property to every `Var` node in Neo4j during ingest or as a backfill migration.
+
+**Why it's wrong:** The kind is derivable from the atom structure already stored in Neo4j. Storing it redundantly requires n8n prompt updates (error-prone with LLM), a backfill migration on existing Var nodes, and version-skew risk if atom structure and Var.kind ever disagree.
+
+**Do this instead:** Infer at read time in `PopulateVariables()`. Zero Neo4j schema change, zero n8n change.
+
+---
+
+### Anti-Pattern 2: Multi-Label Neo4j Nodes for DesignState Hierarchy
+
+**What:** Using `:DesignState:DefState` or `:DesignState:ObjectState` dual-label nodes.
+
+**Why it's wrong:** NeoVis renders by first label in a non-deterministic order across Neo4j 5 minor versions. Cypher `MATCH (d:DesignState)` is ambiguous about which subtype is returned. LLM must be taught a two-label MERGE pattern. No existing pattern in this codebase uses multi-label nodes.
+
+**Do this instead:** Single label `DesignState` with `kind: 'DefState' | 'ObjectState'` property, mirroring the established `Rule.kind` pattern.
+
+---
+
+### Anti-Pattern 3: RULE DECONSTRUCT Querying Neo4j Directly
+
+**What:** Adding a Neo4j connection to RULE DECONSTRUCT so it can fetch Runs itself.
+
+**Why it's wrong:** RULE DECONSTRUCT is a stateless unpacking component by design. Adding network I/O turns it into an async loader, requiring the same `ScheduleSolution` polling pattern as METAGRAPH. Two components now hold DB connections, doubling connection pool usage and making connection management harder to reason about.
+
+**Do this instead:** METAGRAPH loads Runs; RULE DECONSTRUCT filters the pre-loaded list by rule ID (pure C# list LINQ).
+
+---
+
+### Anti-Pattern 4: Recomputing IdRefs on Every Solve
+
+**What:** DESIGN STATE re-scans all ObjectState geometry inputs on every `SolveInstance` call.
+
+**Why it's wrong:** Geometry scanning in Rhino is expensive. In a live canvas, `SolveInstance` fires on any upstream change, including slider drag (which changes DefState constantly). Re-scanning geometry on every solve makes the canvas unresponsive.
+
+**Do this instead:** Cache `(DefStateId → IdRefs)`. Only invalidate when DefState.StateId changes. Object identity in Grasshopper is stable per solve unless geometry is explicitly changed.
+
+---
+
+### Anti-Pattern 5: New GH Component GUID Reuse
+
+**What:** Reusing the existing `ValidationRunsComponent.ComponentGuid` for `RunDeconstructComponent`.
+
+**Why it's wrong:** Existing `.gh` canvas files that contain the old VALIDATION RUNS component store the GUID in the file. If the new component reuses the GUID, Grasshopper will load it as the old component type, causing silent output mismatch (user sees wrong output port names with wires attached to wrong indices).
+
+**Do this instead:** Generate a new GUID for `RunDeconstructComponent`. Old canvases will fail to find the old GUID (expected) and show an unresolved component placeholder — this is the correct signal to the user that rewiring is needed.
+
+---
 
 ## Scaling Considerations
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Single project, hundreds of notes | Current design is correct. Full-text index handles this trivially. |
-| Multiple projects, thousands of notes | Current design holds. Neo4j full-text index scales to millions of nodes. Property-based project isolation continues to work. |
-| Very large documents (100KB+ markdown files) | Neo4j has a 4GB property value limit; not practically reachable. Only concern is Ollama context window: llama3.1 has 128K tokens. Truncate content before sending to Ollama if source files exceed ~50KB. |
-| High concurrent knowledge queries | Ollama is single-threaded per request. Contention with rule-ingest workflows is a real risk. Mitigation: document that LLM-dependent knowledge features queue behind SWRL workflows. Not a blocker for current single-user/small-team usage. |
+| Concern | Current (v2.0) | v3.0 Change | Risk |
+|---------|----------------|-------------|------|
+| METAGRAPH query count | 1 async task (rules) | 2 concurrent async tasks (rules + runs) | LOW — both queries are bounded by project; `Task.WhenAll` with existing timeout pattern |
+| Canvas solve performance | DESIGN STATE always reserializes State | DESIGN STATE caches IdRefs by DefState hash | IMPROVEMENT — reduces geometry re-scan |
+| statePayloadJson size | Scalar parameters only (~100-500 bytes) | Adds IdRefs list (strings per object variable) | LOW — IdRefs are short strings; payload remains well under Neo4j property limits |
+| RuleDeconstructComponent output count | 6 outputs | 4 outputs (Variables+VariableName removed, 3 new) | CANVAS BREAK — intentional v3.0 change; old wires must be reconnected |
+| ClassificatorComponent input count | 4 inputs | 8+ inputs | LOW — GH supports many inputs; DataTree branching unchanged |
+
+---
 
 ## Sources
 
-- Direct codebase inspection: `graph-viewer/index.html`, `data-service/app.py`, `docker-compose.yml`, `graph-viewer/nginx.conf`, `training/dataset_schema.json`, `n8n/workflows/rules-to-metagraph.json`
-- Existing patterns: ValidationRun node storage, execution-result async polling, n8n webhook + Ollama HTTP call chain, React.createElement SPA mode switching (MODE_OPTIONS pattern)
-- Project constraints: `.planning/PROJECT.md` — no new services, no JSX build, single Neo4j DB, same Ollama instance, no RAG
-- Neo4j full-text index: HIGH confidence, standard Neo4j 5 feature (`db.index.fulltext.queryNodes`)
+- Direct codebase inspection: `DG/src/DG.Core/Models/Variable.cs`, `DG/src/DG.Core/Models/DesignStateSnapshot.cs`, `DG/src/DG.Core/Data/Neo4jRuleRepository.cs`, `DG/src/DG.Core/Services/ValidationRunsQueryService.cs`, all 7 GH component files, `data-service/app.py`, `cypher_template.txt`, `training/dataset_schema.json`
+- `.planning/PROJECT.md` — v3.0 milestone requirements (active)
+- `DG_OBSIDIAN/atlas/Graph schema v3 is the canonical data model.md` — schema propagation checklist
+- `DG_OBSIDIAN/atlas/DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline.md` — component pipeline structure
+- Existing pattern precedents: `Rule.kind` property on Rule nodes (single-label-plus-property > multi-label), `EnsureOutputLayout` pattern in `RuleDeconstructComponent` (safe output restructuring), `ScheduleSolution` polling in `MetagraphComponent`, `ValidationRunsQueryService` reuse
 
 ---
-*Architecture research for: Design Grammar System v1.1 Project Knowledge Graph*
-*Researched: 2026-04-05*
+*Architecture research for: Design Grammar System v3.0 Typed Variables and Composable Design State*
+*Researched: 2026-05-11*
