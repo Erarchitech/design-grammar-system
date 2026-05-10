@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: DG Plugin - Design State and Validation Runs
-status: verified
-stopped_at: Phase 06 complete — all UAT passed
-last_updated: "2026-05-10T18:00:00.000Z"
+status: completed
+stopped_at: Phase 06 complete — all UAT passed (5/5), INTG-01/02/03 validated
+last_updated: "2026-05-10T15:56:39.635Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 6
@@ -18,16 +18,14 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-10)
+See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 06 — end-to-end-hardening-and-verification
+**Current focus:** v2.0 shipped — planning next milestone
 
 ## Current Position
 
-Phase: 06 (end-to-end-hardening-and-verification) — VERIFIED
-Plan: 3 of 3
-Status: Phase complete — all UAT passed (5/5)
+Milestone v2.0 shipped on 2026-05-10. All 6 phases, 10 plans, 18 requirements validated.
 Last activity: 2026-05-10
 
 ## Performance Metrics
@@ -51,13 +49,11 @@ Carried from v1.1:
 
 ### Pending Todos
 
-- Execute Phase 3 (03-01-PLAN.md) for validation runs retrieval and filtering
-- Implement VALIDATION RUNS component output schema
-- Wire state + rule filtering to Neo4j query component
+None — milestone complete.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ## Session Continuity
 
