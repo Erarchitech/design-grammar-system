@@ -13,8 +13,8 @@
 - [x] Phase 2: Classificator State Input and Run Persistence (completed 2026-04-30)
 - [x] Phase 3: Validation Runs Retrieval Component (completed 2026-04-30)
 - [x] Phase 4: Reinstatement Component (completed 2026-05-07)
-- [ ] Phase 5: Model Viewer Grouping by Rule and State
-- [ ] Phase 6: End-to-End Hardening and Verification
+- [x] Phase 5: Model Viewer Grouping by Rule and State
+- [x] Phase 6: End-to-End Hardening and Verification (completed 2026-05-10)
 
 #### v2.0 Planning Details
 
@@ -66,7 +66,7 @@
 | 3. Validation Runs Retrieval Component | v2.0 | 1/1 | Complete | 2026-04-30 |
 | 4. Reinstatement Component | v2.0 | 2/2 | Complete | 2026-05-07 |
 | 5. Model Viewer Grouping by Rule and State | v2.0 | 0/1 | Planned | - |
-| 6. End-to-End Hardening and Verification | v2.0 | 0/3 | Planned | - |
+| 6. End-to-End Hardening and Verification | v2.0 | 3/3 | Complete | 2026-05-10 |
 
 ---
-*Roadmap updated: 2026-05-07*
+*Roadmap updated: 2026-05-10*
