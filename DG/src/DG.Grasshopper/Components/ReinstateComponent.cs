@@ -145,6 +145,24 @@ public sealed class ReinstateComponent : GH_Component
             _lastAppliedStateId = snapshot.StateId;
         }
 
+        // ── Surface blocked parameters as error bubbles ─────────────────────────
+        if (result.Aborted)
+        {
+            foreach (var report in result.Reports)
+            {
+                if (report.Status is ReinstatementStatus.MissingTarget
+                    or ReinstatementStatus.TypeMismatch
+                    or ReinstatementStatus.AmbiguousTarget
+                    or ReinstatementStatus.OutOfRange)
+                {
+                    AddRuntimeMessage(
+                        GH_RuntimeMessageLevel.Warning,
+                        ErrorMessageTemplates.ReinstatementBlocked(
+                            report.ParameterId, report.Status, report.Detail ?? ""));
+                }
+            }
+        }
+
         _latestResult = result;
         SetOutputs(da, result, FormatStatus(result));
         Message = FormatMessage(result);
