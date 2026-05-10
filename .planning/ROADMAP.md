@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- [ ] **v2.0 DG Plugin - Design State and Validation Runs** - Phases 1-6 (in progress)
+- [x] **v2.0 DG Plugin - Design State and Validation Runs** - Phases 1-6 (all complete)
 - [x] **v1.1 Project Knowledge Graph** - Phases 1-7 (shipped 2026-04-10)
 
 ## Phases
@@ -13,7 +13,7 @@
 - [x] Phase 2: Classificator State Input and Run Persistence (completed 2026-04-30)
 - [x] Phase 3: Validation Runs Retrieval Component (completed 2026-04-30)
 - [x] Phase 4: Reinstatement Component (completed 2026-05-07)
-- [x] Phase 5: Model Viewer Grouping by Rule and State
+- [x] Phase 5: Model Viewer Grouping by Rule and State (completed 2026-05-10)
 - [x] Phase 6: End-to-End Hardening and Verification (completed 2026-05-10)
 
 #### v2.0 Planning Details
@@ -65,7 +65,7 @@
 | 2. Classificator State Input and Run Persistence | v2.0 | 1/1 | Complete   | 2026-04-30 |
 | 3. Validation Runs Retrieval Component | v2.0 | 1/1 | Complete | 2026-04-30 |
 | 4. Reinstatement Component | v2.0 | 2/2 | Complete | 2026-05-07 |
-| 5. Model Viewer Grouping by Rule and State | v2.0 | 0/1 | Planned | - |
+| 5. Model Viewer Grouping by Rule and State | v2.0 | 2/2 | Complete | 2026-05-10 |
 | 6. End-to-End Hardening and Verification | v2.0 | 3/3 | Complete | 2026-05-10 |
 
 ---

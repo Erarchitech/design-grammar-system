@@ -66,9 +66,9 @@
 | REIN-01 | Phase 4 | Validated | ReinstateComponent accepts State input, resolves targets via DesignStateComponent, writes values via ScheduleSolution. Manual UAT passed 2026-05-07. |
 | REIN-02 | Phase 4 | Validated | Rising-edge trigger (false>true only). Boolean Apply input with default false. |
 | REIN-03 | Phase 4 | Validated | Report output with per-parameter status lines. 7-value ReinstatementStatus enum covers Applied, MissingTarget, TypeMismatch, AmbiguousTarget, OutOfRange, Unchanged, WouldApply. |
-| MVGP-01 | Phase 5 | Pending | |
-| MVGP-02 | Phase 5 | Pending | |
-| MVGP-03 | Phase 5 | Pending | |
+| MVGP-01 | Phase 5 | Validated | ValidationRunsStrip groups tiles by ruleId. Human UAT 2026-05-10 approved. |
+| MVGP-02 | Phase 5 | Validated | State projection + Design State grouping by stateId. Human UAT 2026-05-10 approved. |
+| MVGP-03 | Phase 5 | Validated | Group-by switch (Rule/Design State) with localStorage persistence + resize handle. Human UAT 2026-05-10 approved. |
 | INTG-01 | Phase 6 | Validated | E2E test passes. Human UAT 2026-05-10: full state lifecycle confirmed (state sidebar display tracked as future improvement). |
 | INTG-02 | Phase 2/3/6 | Validated | E2E `LegacyNoState_FlowStillWorks` passes. Full suite regression green (61 C# + 23 pytest). |
 | INTG-03 | Phase 6 | Validated | ErrorMessageTemplateTests (12) + test_error_responses (3) pass. Human UAT 2026-05-10: warning bubbles confirmed on ReinstateComponent (fix fb8079e). |
@@ -81,9 +81,9 @@
 **Coverage:**
 - v2.0 requirements: 18 total
 - Mapped to phases: 18
-- Validated: 16 (DGST-01..03, DGCL-01..03, DGRN-01..03, REIN-01..03, INTG-01..03)
+- Validated: 18 (all v2.0 requirements)
 - Code complete: 0
-- Pending: 3 (MVGP-01..03)
+- Pending: 0
 - Unmapped: 0
 
 ## Phase 3.1 — Gap Closure (retroactive)
@@ -101,4 +101,4 @@ See `.planning/v2.0-GAP-CLOSURE.md` for the full retrospective.
 
 ---
 *Requirements defined: 2026-04-10*
-*Traceability updated: 2026-05-05 (post Phase 3 gap closure)*
+*Traceability updated: 2026-05-10 (all 18 requirements validated)*
