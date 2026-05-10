@@ -69,9 +69,9 @@
 | MVGP-01 | Phase 5 | Pending | |
 | MVGP-02 | Phase 5 | Pending | |
 | MVGP-03 | Phase 5 | Pending | |
-| INTG-01 | Phase 6 | Code Complete | E2E test `HappyPath_StatePublishAndRetrieve` passes. Human UAT pending. |
+| INTG-01 | Phase 6 | Validated | E2E test passes. Human UAT 2026-05-10: full state lifecycle confirmed (state sidebar display tracked as future improvement). |
 | INTG-02 | Phase 2/3/6 | Validated | E2E `LegacyNoState_FlowStillWorks` passes. Full suite regression green (61 C# + 23 pytest). |
-| INTG-03 | Phase 6 | Code Complete | ErrorMessageTemplateTests (12) + test_error_responses.py (3) + ReinstateFailureModes E2E pass. Human UAT pending. |
+| INTG-03 | Phase 6 | Validated | ErrorMessageTemplateTests (12) + test_error_responses (3) pass. Human UAT 2026-05-10: warning bubbles confirmed on ReinstateComponent (fix fb8079e). |
 
 **Status legend:**
 - `Code Complete` — implementation verified by code inspection + unit tests; live integration test still pending
@@ -81,8 +81,8 @@
 **Coverage:**
 - v2.0 requirements: 18 total
 - Mapped to phases: 18
-- Validated: 14 (DGST-01..03, DGCL-01..03, DGRN-01..03, REIN-01..03, INTG-02)
-- Code complete: 2 (INTG-01, INTG-03)
+- Validated: 16 (DGST-01..03, DGCL-01..03, DGRN-01..03, REIN-01..03, INTG-01..03)
+- Code complete: 0
 - Pending: 3 (MVGP-01..03)
 - Unmapped: 0
 

@@ -1,7 +1,7 @@
 ---
 phase: 06-end-to-end-hardening-and-verification
 verified: 2026-05-09T18:00:00Z
-status: pending-uat
+status: passed
 score: 4/4 must-haves verified
 gaps: []
 human_verification: [06-HUMAN-UAT.md]
@@ -10,8 +10,8 @@ human_verification: [06-HUMAN-UAT.md]
 # Phase 6: End-to-End Hardening and Verification — Verification Report
 
 **Phase Goal:** Prove the full v2.0 state lifecycle works end-to-end (INTG-01), confirm legacy no-state flow is not regressed (INTG-02), and ensure all error surfaces produce actionable messages (INTG-03).
-**Verified:** 2026-05-09
-**Status:** pending-uat
+**Verified:** 2026-05-10
+**Status:** passed — all 5 UAT scenarios approved
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
