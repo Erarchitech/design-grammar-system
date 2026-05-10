@@ -3,7 +3,7 @@ tags: [home, moc]
 date: 2026-04-05
 ---
 
-# Design Grammar System — Knowledge Vault
+# Design Grammar System ï¿½ Knowledge Vault
 
 Welcome to the DG knowledge base. This vault documents architecture, decisions, integrations, patterns, and operational knowledge for the **Design Grammar System** project.
 
@@ -41,6 +41,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Knowledge workflows use hybrid search-then-summarize for queries]]
 - [[Update flow uses three-step match-propose-confirm with server-side diff]]
 - [[DesignRuleSession nodes stored in Metagraph]]
+- [[ResizeObserver wires Speckle viewer.resize on host element]]
+- [[ValidationRunsStrip component with per-project localStorage persistence]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -50,6 +52,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Edit mode requires cleanup of old atoms before re-creation]]
 - [[docker-compose depends_on cycle with n8n and data-service]]
 - [[Knowledge webhook field name mismatch causes stale LLM output]]
+- [[Layout overflow guards required for resizable flex children]]
+- [[Worktree branch commits with spurious deletions]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -58,6 +62,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Grasshopper async component with ScheduleSolution polling]]
 - [[Pydantic models validate all API boundaries]]
 - [[Conditional compilation guards Grasshopper SDK availability]]
+- [[Pure grouping adapter testable as plain function]]
 
 ### Business
 - [[Design Grammars automates architectural compliance checking]]
@@ -80,4 +85,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-08 Phase 07 UI-SPEC design contract|2026-04-08 Phase 07 UI-SPEC]]
 - [[sessions/2026-04-08 Phase 07 planning|2026-04-08 Phase 07 planning]]
 - [[sessions/2026-04-08 Collapsible Workflow Cypher panels|2026-04-08 Collapsible Workflow Cypher panels]]
+- [[sessions/2026-05-10 Phase 05 model-viewer grouping execution|2026-05-10 Phase 05 (v2.0) execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

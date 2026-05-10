@@ -1,28 +1,25 @@
 ---
 tags: [home, priorities]
-date: 2026-04-08
+date: 2026-05-10
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **v1.1 Phase 07 human verification** - Plan 01 complete, Plan 02 Task 1 verified. Awaiting human verification of Session History panel + NeoVis Knowledge View in browser. Deploy done. After approval: create 07-02-SUMMARY, complete phase.
-2. **v1.1 Phase 05 verification** - Add parent class hub nodes to KnowledgeGraph NeoVis query, then complete verification checkpoint and mark phase done.
-3. **v1.1 Phase 04 human verification** - import + activate knowledge-update workflow in n8n, run E2E test.
-4. **Model Viewer visual bugs** - rotation/mixed state in validation viewport.
+1. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
+2. **Plan next milestone** — v2.0 is complete. Determine scope for v2.1 or v3.0.
 
 ## Upcoming
 
-- v1.1 Milestone audit and completion after Phase 07
 - Improve LLM Cypher generation accuracy
 - Harden authentication with server-side auth
+- Performance optimization for large rule sets
 
 ## Completed Recently
-- **Collapsible Workflow Cypher** — Made Workflow Cypher textarea collapsible in Design Rules and Knowledge tabs. Deployed.
 
-- **v1.1 Phase 07: Plan 01 executed** - Session History collapsible panel in Specs and Notes tab. Commit 844f6b3.
-- **v1.1 Phase 07: DR Session History** - Session History panel added to DesignRules tab. DesignRuleSession nodes in Metagraph. Commit c559825.
-- **v1.1 Phase 07: affectedNoteIds to affectedNodes** - Update confirm returns titles instead of IDs. Commit 51a0267.
-- **v1.1 Phase 06: Execution complete** - Three-step Update Knowledge UI.
-- **v1.1 Phase 05: Execution (in progress)** - DesignRules/Specs and Notes tabs, Insert, Query, KnowledgeGraph NeoVis.
+- **v2.0 milestone shipped** — 6 phases, all 18 requirements validated. Design State capture, Classificator persistence, Validation Runs retrieval, Reinstatement, Model Viewer grouping, E2E hardening.
+- **v2.0 Phase 06 complete** — End-to-End Hardening. ErrorMessageTemplates, structured error responses, E2E tests, UAT 5/5 passed.
+- **v2.0 Phase 05 complete** — Model Viewer Grouping. State projection endpoint + ValidationRunsStrip with Rule/State grouping + draggable resize.
+- **v2.0 Phase 04 complete** — Reinstatement Component. Service + GH component with rising-edge trigger, ScheduleSolution writes, assembly mismatch handling.
+- **v1.1 milestone shipped** — 7 phases, Project Knowledge Graph complete.
