@@ -82,8 +82,8 @@ result: passed
 
 **Expected:** Messages are human-readable with parameter name, what went wrong, and how to fix.
 
-result: fixed
-note: Initial test showed Status output as "Aborted: 1 blocked" with no parameter name or error bubble. Fixed in fb8079e — blocked parameters now emit AddRuntimeMessage warnings with ErrorMessageTemplates.ReinstatementBlocked. Requires re-test after DLL update.
+result: passed
+note: Fixed in fb8079e. Warning bubble appears when Boolean True is wired to Apply input. With Button wired, only report output (no warning) — acceptable behavior since Button is momentary.
 
 ---
 
@@ -106,8 +106,8 @@ result: passed
 ## Summary
 
 total: 5
-passed: 4
-issues: 1
+passed: 5
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -119,7 +119,7 @@ blocked: 0
 | 1 | Full State Lifecycle | [x] | User | 2026-05-10 | Passed. State sidebar display tracked as future improvement |
 | 2 | Legacy No-State Flow | [x] | User | 2026-05-10 | Passed |
 | 3 | Reinstatement Round-Trip | [x] | User | 2026-05-10 | Passed |
-| 4 | Error Message Quality | [~] | User | 2026-05-10 | Fixed in fb8079e. Re-test needed after DLL update |
+| 4 | Error Message Quality | [x] | User | 2026-05-10 | Passed after fix fb8079e. Warning with Bool Toggle; report-only with Button — OK |
 | 5 | Grouping Switch + Resize Handle | [x] | User | 2026-05-10 | Passed |
 
 ## Gaps
