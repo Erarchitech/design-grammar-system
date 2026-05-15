@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    OASIS XML Catalog for Protégé / OWL API.
+
+    This catalog maps owl:imports IRIs in DesignGrammar.owl to physical RDF/Turtle
+    locations Protégé can actually fetch. Without these mappings, Protégé prompts
+    "Resolve missing import?" for each external vocabulary because the namespace
+    IRIs do not directly host RDF files (notably SWRL, which is a W3C Submission
+    whose namespace URI returns HTML).
+
+    On first load Protégé will fetch each URL, parse it, and cache the result
+    in its workspace store (~/.Protege). Subsequent loads work offline as long
+    as the cache persists.
+
+    To switch to fully-offline operation, run ontology/fetch_imports.sh (if
+    present) to download each file into ontology/imports/, then replace the
+    online uri="https://..." entries below with relative uri="imports/..." paths.
+-->
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <group id="DG aligned vocabularies (v3.2)" prefer="public" xml:base="">
+
+        <!-- DG ontology itself (self-reference, kept from original auto-generated entry) -->
+        <uri id="DG-self" name="http://example.org/design-grammar" uri="DesignGrammar.owl"/>
+
+        <!-- ============================================================
+             EXTERNAL ONTOLOGY IMPORTS
+
+             Each entry redirects an owl:imports IRI (the namespace, as
+             declared in DesignGrammar.owl) to a URL that actually returns
+             RDF/XML or Turtle when Protégé fetches it.
+             ============================================================ -->
+
+        <!-- SWRL — W3C Submission (2004). Namespace IRI returns HTML; the RDF
+             schema lives at the SUBM document URL. This is the primary cause
+             of the "Resolve missing import?" dialog. -->
+        <uri id="SWRL"
+             name="http://www.w3.org/2003/11/swrl"
+             uri="http://www.w3.org/Submission/2004/SUBM-SWRL-20040521/swrl.rdf"/>
+
+        <!-- PROV-O — W3C Recommendation (2013). Namespace with trailing # is
+             the published location of the ontology. -->
+        <uri id="PROV-O"
+             name="http://www.w3.org/ns/prov-o#"
+             uri="https://www.w3.org/ns/prov.owl"/>
+
+        <!-- SOSA — W3C Recommendation (2017). Namespace IRI returns RDF via
+             content negotiation, but pinning to the published Turtle file
+             avoids ambiguity. -->
+        <uri id="SOSA"
+             name="http://www.w3.org/ns/sosa/"
+             uri="https://www.w3.org/ns/sosa.ttl"/>
+
+        <!-- SHACL — W3C Recommendation (2017). Published Turtle file. -->
+        <uri id="SHACL"
+             name="http://www.w3.org/ns/shacl#"
+             uri="https://www.w3.org/ns/shacl.ttl"/>
+
+        <!-- SKOS Core — W3C Recommendation (2009). Published RDF file. -->
+        <uri id="SKOS"
+             name="http://www.w3.org/2004/02/skos/core"
+             uri="http://www.w3.org/2009/08/skos-reference/skos.rdf"/>
+
+        <!-- Dublin Core Terms — DCMI. Published Turtle file. -->
+        <uri id="DCTERMS"
+             name="http://purl.org/dc/terms/"
+             uri="https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl"/>
+
+        <!-- GeoSPARQL — OGC standard (2012). The "vocab all" file contains the
+             complete class and property definitions. -->
+        <uri id="GEOSPARQL"
+             name="http://www.opengis.net/ont/geosparql"
+             uri="http://www.opengis.net/ont/geosparql/1.0/geosparql_vocab_all.rdf"/>
+
+    </group>
+</catalog>
