@@ -56,7 +56,7 @@
 
             Schema version: v3
         </rdfs:comment>
-        <owl:versionInfo>3.2</owl:versionInfo>
+        <owl:versionInfo>3.3</owl:versionInfo>
         <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale.</rdfs:seeAlso>
         <!-- Cross-ontology imports (v3.2). Each external vocabulary is brought in so Protégé's reasoner can verify the alignment axioms below. Local resolution via catalog-v001.xml is recommended for offline work. -->
         <owl:imports rdf:resource="http://www.w3.org/2003/11/swrl"/>
@@ -127,6 +127,50 @@
     </owl:NamedIndividual>
 
     <!-- ============================================================
+         LAYER HUB CLASSES (v3.3)
+         Explicit superclasses to group DG entities by graph layer in
+         Protégé's class hierarchy view. Without these, all DG classes
+         appear in a flat list directly under owl:Thing (or under their
+         external superclass when alignments are imported). These hubs
+         provide an OntoGraph / Metagraph / ValidationGraph /
+         KnowledgeGraph partition matching the four-layer architecture
+         described in the ontology overview.
+         ============================================================ -->
+
+    <owl:Class rdf:about="&dg;LayerEntity">
+        <rdfs:label xml:lang="en">LayerEntity</rdfs:label>
+        <rdfs:comment xml:lang="en">Abstract root for all DG entities that belong to one of the four graph layers (v3.3). Concrete top-level classes are grouped under one of: OntoGraphEntity, MetagraphEntity, ValidationGraphEntity, KnowledgeGraphEntity. Subclasses inherit layer membership transitively. Note: distinct from dg:GraphLayer, which is the enum of layer names with four NamedIndividual values.</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dg;OntoGraphEntity">
+        <rdfs:label xml:lang="en">OntoGraphEntity</rdfs:label>
+        <rdfs:comment xml:lang="en">Hub class for the OntoGraph layer (dynamic domain ontology meta-schema). Top-level subclasses: Class, DatatypeProperty, ObjectProperty.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <dg:graph>OntoGraph</dg:graph>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;MetagraphEntity">
+        <rdfs:label xml:lang="en">MetagraphEntity</rdfs:label>
+        <rdfs:comment xml:lang="en">Hub class for the Metagraph layer (SWRL rule structure). Top-level subclasses: Rule, Atom (with ClassAtom/DataPropertyAtom/ObjectPropertyAtom/BuiltinAtom children), Variable (with ObjectVariable/PropertyVariable/BuiltinVariable children), Literal, Builtin, DesignRuleSession, VariableKindValue, VariableScopeValue.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <dg:graph>Metagraph</dg:graph>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgv;ValidationGraphEntity">
+        <rdfs:label xml:lang="en">ValidationGraphEntity</rdfs:label>
+        <rdfs:comment xml:lang="en">Hub class for the ValidationGraph layer (validation runs, design state, integration config). Top-level subclasses: ValidationRun, ValidationEntity, DesignState (with DefState/ObjectState children), DesignStateParameter, IntegrationConfig, ObjectInstance, GeoRef, IdRef, and four enum value classes (DesignStateKindValue, DesignStateParameterTypeValue, ValidationStatusValue, ReinstatementStatusValue).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <dg:graph>ValidationGraph</dg:graph>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgk;KnowledgeGraphEntity">
+        <rdfs:label xml:lang="en">KnowledgeGraphEntity</rdfs:label>
+        <rdfs:comment xml:lang="en">Hub class for the KnowledgeGraph layer (project notes, tags, sessions). Top-level subclasses: KnowledgeClass, KnowledgeNote, KnowledgeTag, KnowledgeSession.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <dg:graph>KnowledgeGraph</dg:graph>
+    </owl:Class>
+
+    <!-- ============================================================
 
          LAYER 1: OntoGraph — DYNAMIC DOMAIN ONTOLOGY (meta-schema only)
          Domain classes (Class, DatatypeProperty, ObjectProperty) are
@@ -140,6 +184,7 @@
         <rdfs:comment xml:lang="en">A dynamically generated OWL class in the OntoGraph layer. Created from user prompts (e.g. Building, UrbanBlock). Key property: iri. Aligned with: owl:Class (R7, subClassOf rather than equivalentClass — DG reifies the OWL meta-schema as Neo4j data, so dg:Class instances are also conceptually owl:Class instances, but using subClassOf keeps the meta-level reification clear).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;Class"/>
         <dg:graph>OntoGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dg;DatatypeProperty">
@@ -147,6 +192,7 @@
         <rdfs:comment xml:lang="en">A dynamically generated datatype property in the OntoGraph layer. Represents measurable attributes (e.g. hasHeightM) and violation flags (e.g. violatesMaxHeight). Key property: iri. Aligned with: owl:DatatypeProperty (R7).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;DatatypeProperty"/>
         <dg:graph>OntoGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dg;ObjectProperty">
@@ -154,6 +200,7 @@
         <rdfs:comment xml:lang="en">A dynamically generated object property in the OntoGraph layer. Represents relationships between domain classes (e.g. locatedIn). Key property: iri. Aligned with: owl:ObjectProperty (R7).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;ObjectProperty"/>
         <dg:graph>OntoGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
     </owl:Class>
 
     <!-- OntoGraph node properties -->
@@ -294,6 +341,7 @@
         <rdfs:comment xml:lang="en">A design grammar rule expressed as a SWRL implication. Contains body atoms (conditions) and head atoms (conclusions). Key property: Rule_Id. Format: R_&lt;DOMAIN&gt;_&lt;PROPERTY&gt;_&lt;LIMIT&gt;_V</rdfs:comment>
         <owl:equivalentClass rdf:resource="&swrl;Imp"/>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Atom">
@@ -301,6 +349,7 @@
         <rdfs:comment xml:lang="en">An individual SWRL atom — a single predicate assertion within a rule. Types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom. Key property: Atom_Id.</rdfs:comment>
         <owl:equivalentClass rdf:resource="&swrl;Atom"/>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;ClassAtom">
@@ -340,6 +389,7 @@
         <rdfs:comment xml:lang="en">A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Variable kind (Object vs Property) is inferred at read-time from atom structure (VTYP-01). MERGE key includes project to prevent cross-project collision (SCHM-02).</rdfs:comment>
         <owl:equivalentClass rdf:resource="&swrl;Variable"/>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;ObjectVariable">
@@ -367,6 +417,7 @@
         <rdfs:label xml:lang="en">Literal</rdfs:label>
         <rdfs:comment xml:lang="en">A constant value used as an atom argument (e.g. 75, true). Key properties: lex (lexical form) + datatype (xsd type).</rdfs:comment>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Builtin">
@@ -374,12 +425,14 @@
         <rdfs:comment xml:lang="en">A SWRL builtin comparison or arithmetic operator. Referenced by BuiltinAtom via REFERS_TO. Key property: iri (swrlb: prefix).</rdfs:comment>
         <owl:equivalentClass rdf:resource="&swrl;Builtin"/>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;DesignRuleSession">
         <rdfs:label xml:lang="en">DesignRuleSession</rdfs:label>
         <rdfs:comment xml:lang="en">An interaction log for rule ingest/query/edit operations. Stores the user prompt and LLM result for audit and undo capability.</rdfs:comment>
         <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
     </owl:Class>
 
     <!-- ************************************************************
@@ -615,6 +668,7 @@
                     <owl:NamedIndividual rdf:about="&dgm;VariableKind_Property"/>
                     <owl:NamedIndividual rdf:about="&dgm;VariableKind_Builtin"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>Metagraph</dg:graph>
@@ -647,6 +701,7 @@
                     <owl:NamedIndividual rdf:about="&dgm;VariableScope_CrossRule"/>
                     <owl:NamedIndividual rdf:about="&dgm;VariableScope_RuleLocal"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>Metagraph</dg:graph>
@@ -1016,6 +1071,7 @@
         <rdfs:label xml:lang="en">IntegrationConfig</rdfs:label>
         <rdfs:comment xml:lang="en">Configuration node linking a DG project to its Speckle integration. Stores Speckle project ID, base model, and validation model references. One per project per provider.</rdfs:comment>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ValidationRun">
@@ -1024,6 +1080,7 @@
         <rdfs:subClassOf rdf:resource="&prov;Activity"/>
         <rdfs:subClassOf rdf:resource="&sh;ValidationReport"/>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ValidationEntity">
@@ -1033,12 +1090,14 @@
         <rdfs:subClassOf rdf:resource="&sosa;Observation"/>
         <rdfs:subClassOf rdf:resource="&sh;ValidationResult"/>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;DesignState">
         <rdfs:label xml:lang="en">DesignState</rdfs:label>
         <rdfs:comment xml:lang="en">A snapshot of design parameters captured from Grasshopper. Single Neo4j label :DesignState with a `kind` property discriminating between DefState and ObjectState. ID prefixes: DS_ (DefState), OS_ (ObjectState). Used as input to CLASSIFICATOR and persisted in validation runs.</rdfs:comment>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;DefState">
@@ -1066,6 +1125,7 @@
         <rdfs:label xml:lang="en">DesignStateParameter</rdfs:label>
         <rdfs:comment xml:lang="en">A single measurable parameter within a DefState snapshot. Has a parameterId, displayName, type (Number/Integer/Boolean), and the corresponding typed value.</rdfs:comment>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ObjectInstance">
@@ -1074,6 +1134,7 @@
         <rdfs:subClassOf rdf:resource="&sosa;FeatureOfInterest"/>
         <rdfs:subClassOf rdf:resource="&geo;Feature"/>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;GeoRef">
@@ -1081,12 +1142,14 @@
         <rdfs:comment xml:lang="en">Geometry reference — a handle to a geometry primitive in the source model (Speckle objectId, Rhino GUID, etc.) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&geo;Geometry"/>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;IdRef">
         <rdfs:label xml:lang="en">IdRef</rdfs:label>
         <rdfs:comment xml:lang="en">Auto-generated DesignState identifier (CMPST-08). IdRef = DesignState ID — NOT ObjectState ID. Regenerates whenever DefState changes (CMPST-05). Persisted in statePayloadJson for cross-run object identity tracking (INTG-03). Resolves to one or more ObjectInstance(s). ID prefix: IDR_.</rdfs:comment>
         <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
     </owl:Class>
 
     <!-- ValidationGraph datatype properties -->
@@ -1402,6 +1465,7 @@
                     <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_DefState"/>
                     <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_ObjectState"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>ValidationGraph</dg:graph>
@@ -1433,6 +1497,7 @@
                     <owl:NamedIndividual rdf:about="&dgv;ParameterType_Integer"/>
                     <owl:NamedIndividual rdf:about="&dgv;ParameterType_Boolean"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>ValidationGraph</dg:graph>
@@ -1474,6 +1539,7 @@
                     <owl:NamedIndividual rdf:about="&dgv;ReinstatementStatus_Unchanged"/>
                     <owl:NamedIndividual rdf:about="&dgv;ReinstatementStatus_WouldApply"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>ValidationGraph</dg:graph>
@@ -1535,6 +1601,7 @@
                     <owl:NamedIndividual rdf:about="&dgv;Status_Passed"/>
                     <owl:NamedIndividual rdf:about="&dgv;Status_Failed"/>
                 </owl:oneOf>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
         <dg:graph>ValidationGraph</dg:graph>
@@ -1741,12 +1808,14 @@
         <rdfs:label xml:lang="en">KnowledgeClass</rdfs:label>
         <rdfs:comment xml:lang="en">Parent hub node connecting all instances of a knowledge type. Acts as a type discriminator (e.g. KnowledgeNote, KnowledgeSession).</rdfs:comment>
         <dg:graph>KnowledgeGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeNote">
         <rdfs:label xml:lang="en">KnowledgeNote</rdfs:label>
         <rdfs:comment xml:lang="en">A project knowledge entry (from folder ingest or NL prompt). Contains title, content, tags, and source reference.</rdfs:comment>
         <dg:graph>KnowledgeGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeTag">
@@ -1754,6 +1823,7 @@
         <rdfs:comment xml:lang="en">A tag label shared across knowledge notes for categorization. Aligned with: skos:Concept (R5) — a Tag IS a concept in a project's tag taxonomy.</rdfs:comment>
         <owl:equivalentClass rdf:resource="&skos;Concept"/>
         <dg:graph>KnowledgeGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeSession">
@@ -1761,6 +1831,7 @@
         <rdfs:comment xml:lang="en">An interaction log for knowledge operations (insert, query, update). Records the user prompt and LLM result. Aligned with: prov:Activity (R5/R2 pattern) — each session is a recorded activity.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&prov;Activity"/>
         <dg:graph>KnowledgeGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
     </owl:Class>
 
     <!-- KnowledgeGraph datatype properties -->
