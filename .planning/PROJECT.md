@@ -8,6 +8,23 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
+## Current Milestone: v3.0 Typed Variables and Composable Design State
+
+**Goal:** Restructure DG schema and components around typed variables (Object vs Property) and a parent `DesignState` class composed of `DefState` + `ObjectState`, enabling cross-rule object identity, richer state composition, and a deconstructed run/rule data flow in Grasshopper.
+
+**Target features:**
+
+- Variable type inference (Object vs Property) from SWRL atoms (Class atom → Object; datatype property atom → Property)
+- Object variable cross-rule identity — same Object variable is shared across rules; Element Ids stored on `DesignState` node persist cross-rule and regenerate only when `DefState` changes
+- `DesignState` class hierarchy: parent class with `DefState` (parametric capture, existing) and `ObjectState` (new: `ObjectRef` + `GeoRef`) subclasses; unique ID prefixes per class
+- New components: `OBJECT STATE` (ObjectRef + GeoRef inputs), `VARIABLE NAME` (Variable in → name out)
+- Reworked `DESIGN STATE` component — inputs `ObjectState` + `DefState`; outputs `IdRefs`, `GeoRefs`, `DefState`
+- Reworked `CLASSIFICATOR` — `ElementRefs` renamed to `GeoRefs` and wired from `DESIGN STATE.GeoRefs`; add `Rule`/`Objects`/`Properties`/`PropValues`/`IdRefs`/`DefState` inputs; outputs add `DefState` (renamed from `State`), `Values` (DataTree), `Variables`
+- Updated `RULE DECONSTRUCT` — new outputs `Objects`, `Properties`, `Runs`; remove obsolete `Variables` and `VariableName` outputs
+- Renamed `VALIDATION RUNS` → `RUN DECONSTRUCT` — input `ValidRun`; outputs `passing items`, `failing items` (both element id lists), `Run Id`, `Date created`, `State`
+- `METAGRAPH` loads Runs data and gains outputs `Objects`, `Properties`, `DesignStates`, `Runs`
+- Schema-propagation updates across `cypher_template.txt`, `dataset_schema.json`, n8n prompts, NeoVis config, and any Cypher templates in Python/JS
+
 ## Requirements
 
 ### Validated
@@ -36,7 +53,18 @@ Architects can express design constraints in plain language and instantly valida
 
 <!-- Current scope. Building toward these. -->
 
-(No active milestone — planning next)
+**Milestone v3.0 — Typed Variables and Composable Design State**
+
+- [ ] Variable type inference (Object vs Property) from SWRL atoms
+- [ ] Object variable cross-rule identity (shared instance + cross-rule Element Ids)
+- [ ] `DesignState` class hierarchy with `DefState` + `ObjectState` subclasses
+- [ ] `OBJECT STATE` and `VARIABLE NAME` Grasshopper components
+- [ ] Reworked `DESIGN STATE` (IdRefs / GeoRefs / DefState outputs)
+- [ ] Reworked `CLASSIFICATOR` (Rule/Objects/Properties/PropValues/IdRefs/GeoRefs/DefState inputs; Values + Variables outputs; ElementRefs → GeoRefs rename wired from DESIGN STATE)
+- [ ] `RULE DECONSTRUCT` outputs Objects, Properties, Runs (Variables / VariableName removed)
+- [ ] `VALIDATION RUNS` renamed to `RUN DECONSTRUCT` (passing/failing items, Run Id, Date, State)
+- [ ] `METAGRAPH` loads Runs and exposes Objects / Properties / DesignStates / Runs outputs
+- [ ] Unique ID prefixes for new node classes; schema-propagation updates (Cypher template, dataset schema, n8n prompts, NeoVis config)
 
 ### Out of Scope
 
@@ -96,6 +124,14 @@ Shipped v2.0 on 2026-05-10. All 18 v2.0 requirements validated via human UAT.
 | Rising-edge trigger for reinstatement | Prevents auto-apply on wire change | ✓ Good — v2.0 |
 | Separate Vite app for Model Viewer | Complex 3D viewer needs build tooling | ✓ Good — v2.0 |
 | localStorage per-project for grouping prefs | No cross-project state leakage | ✓ Good — v2.0 |
+| Single `:DesignState` label + `kind` property | Mirrors `Rule.kind` pattern; deterministic NeoVis; lower propagation surface | — Pending — v3.0 |
+| New GUID for RUN DECONSTRUCT (no migration shim) | Clean break from VALIDATION RUNS; accept canvas breakage; release notes document re-wire | — Pending — v3.0 |
+| CLASSIFICATOR full input reset (no backward compat) | Cleanest v3.0 API; v2.0 canvases require re-wire | — Pending — v3.0 |
+| PropValues = renamed Values (same DataTree structure) | Narrower semantic scope: Property variables only | — Pending — v3.0 |
+| VALIDATOR input State → DefState | Consistency with CLASSIFICATOR output name | — Pending — v3.0 |
+| Var merge key includes `project` | Fixes latent v2.0 cross-project collision bug; prerequisite for cross-rule identity | — Pending — v3.0 |
+| Variable type inferred at read-time (not stored on Var nodes) | 100% computable from atom structure; avoids schema change on Var nodes | — Pending — v3.0 |
+| ObjectRef is user-supplied string (not geometry-hash) | Geometry regenerates on every GH solve; hash would break cross-run identity | — Pending — v3.0 |
 
 ## Evolution
 
@@ -115,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-10 after milestone v2.0*
+*Last updated: 2026-05-10 after starting milestone v3.0*
