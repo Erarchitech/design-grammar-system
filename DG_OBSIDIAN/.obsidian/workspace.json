@@ -4,26 +4,8 @@
     "type": "split",
     "children": [
       {
-        "id": "23d6b1a17fd5a976",
-        "type": "tabs",
-        "dimension": 22.593896713615024,
-        "children": [
-          {
-            "id": "dd4f405718882300",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "Новая вкладка"
-            }
-          }
-        ]
-      },
-      {
         "id": "d3fd08d6748125de",
         "type": "tabs",
-        "dimension": 77.40610328638498,
         "children": [
           {
             "id": "420840672061ba1e",
