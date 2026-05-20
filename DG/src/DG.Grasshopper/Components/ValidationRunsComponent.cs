@@ -32,7 +32,7 @@ public sealed class ValidationRunsComponent : GH_Component
 
     public override Guid ComponentGuid => new("A7F2C3E1-B849-4D6A-9F0E-3C2D1E5B8A94");
 
-    protected override Bitmap Icon => new Bitmap(24, 24);
+    protected override Bitmap Icon => DgIcons.ValidationRuns24;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

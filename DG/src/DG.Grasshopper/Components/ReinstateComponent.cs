@@ -34,7 +34,7 @@ public sealed class ReinstateComponent : GH_Component
 
     public override Guid ComponentGuid => new("D4E2F8A1-C736-4B9D-AE51-2B1F7C9D0E63");
 
-    protected override Bitmap Icon => new Bitmap(24, 24);
+    protected override Bitmap Icon => DgIcons.Reinstate24;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

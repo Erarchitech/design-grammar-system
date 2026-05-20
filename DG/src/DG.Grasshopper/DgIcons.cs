@@ -16,6 +16,12 @@ internal static class DgIcons
 
     public static Bitmap Validator24 { get; } = Load("Validator24.png");
 
+    public static Bitmap DesignState24 { get; } = Load("DesignState24.png");
+
+    public static Bitmap Reinstate24 { get; } = Load("Reinstate24.png");
+
+    public static Bitmap ValidationRuns24 { get; } = Load("ValidationRuns24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();

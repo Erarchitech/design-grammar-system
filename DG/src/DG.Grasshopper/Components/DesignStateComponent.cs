@@ -37,7 +37,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
 
     public override Guid ComponentGuid => new("B3D1E7F2-A945-4C8B-B6F0-1A0D3C4E9B72");
 
-    protected override Bitmap Icon => new Bitmap(24, 24);
+    protected override Bitmap Icon => DgIcons.DesignState24;
 
     // ── Inputs start with one placeholder. User adds more via right-click → "Add input".
     protected override void RegisterInputParams(GH_InputParamManager pManager)
