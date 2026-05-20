@@ -13,3 +13,15 @@ data-service/data/*.json
 .claude/worktrees/
 
 docs/
+
+# Build artifacts and caches
+**/*.csproj.lscache
+**/*.vfproj.lscache
+
+# Temporary workflow exports
+n8n/workflows/_active-graph-query.json
+n8n/workflows/_all-workflows-export.json
+
+# Archives (prefer source control for versioned ontology files)
+*.rar
+*.tar.gz
