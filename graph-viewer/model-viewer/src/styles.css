@@ -150,6 +150,43 @@ body,
   word-break: break-word;
 }
 
+.mv-object-properties {
+  margin-top: 4px;
+  border-top: 1px solid rgba(95, 208, 255, 0.16);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mv-object-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 110px) 1fr;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mv-object-key {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.mv-object-value {
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.mv-object-empty {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* Counts row */
 .mv-counts-row {
   display: flex;

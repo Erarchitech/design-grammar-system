@@ -67,7 +67,7 @@ function collectAllDescendantIds(node) {
   return ids;
 }
 
-function collectValidationObjects(worldTree, runId) {
+function collectValidationObjects(worldTree, runId, project) {
   const entityMap = new Map();
   const allValidationObjectIds = [];
 
@@ -81,21 +81,31 @@ function collectValidationObjects(worldTree, runId) {
     return true;
   });
 
-  // Primary search: exact match on validationRunId + dgEntityId
+  // Primary search: strict match on project + run + entity id.
   let nodes = worldTree.findAll((node) => {
     const raw = node.model?.raw;
-    return raw && raw.validationRunId === runId && raw.dgEntityId;
+    return raw && raw.validationRunId === runId && raw.dgProject === project && raw.dgEntityId;
   });
 
   console.log("[DG-Debug] collectValidationObjects: runId =", runId, "matched nodes =", nodes.length);
 
-  // Fallback: if no nodes matched, try finding any node with dgEntityId regardless of runId
+  // Legacy fallback: some historical payloads may miss validationRunId.
+  // Keep project scoping strict to avoid cross-project leakage.
   if (nodes.length === 0) {
     nodes = worldTree.findAll((node) => {
       const raw = node.model?.raw;
-      return raw && raw.dgEntityId;
+      return raw && raw.dgProject === project && raw.dgEntityId;
     });
-    console.log("[DG-Debug] Fallback search (dgEntityId only): matched nodes =", nodes.length);
+    console.log("[DG-Debug] Fallback search (project + dgEntityId): matched nodes =", nodes.length);
+  }
+
+  // Final fallback for older data where project was not persisted in object raw payload.
+  if (nodes.length === 0) {
+    nodes = worldTree.findAll((node) => {
+      const raw = node.model?.raw;
+      return raw && raw.validationRunId === runId && raw.dgEntityId;
+    });
+    console.log("[DG-Debug] Fallback search (runId + dgEntityId): matched nodes =", nodes.length);
   }
 
   for (const node of nodes) {
@@ -179,6 +189,50 @@ function formatTimestamp(value) {
   return date.toLocaleString();
 }
 
+function stringifyPropertyValue(value) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "[]";
+    }
+    const preview = value.slice(0, 8).map((item) => stringifyPropertyValue(item));
+    return value.length > 8 ? `[${preview.join(", ")}, ...]` : `[${preview.join(", ")}]`;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function buildObjectPropertyRows(raw) {
+  if (!raw || typeof raw !== "object") {
+    return [];
+  }
+
+  const hiddenKeys = new Set([
+    "displayValue",
+    "elements",
+    "geometry",
+    "displayMesh",
+    "__closure",
+    "bbox",
+  ]);
+
+  return Object.entries(raw)
+    .filter(([key]) => !hiddenKeys.has(key))
+    .slice(0, 24)
+    .map(([key, value]) => ({ key, value: stringifyPropertyValue(value) }));
+}
+
 export default function App() {
   const dataServiceUrl = normalizeUrl(config.dataServiceUrl || "/data-service");
   const [project] = React.useState(initialProject);
@@ -202,6 +256,7 @@ export default function App() {
   const [expandFailing, setExpandFailing] = React.useState(true);
   const [expandPassing, setExpandPassing] = React.useState(false);
   const [selectedEntityIds, setSelectedEntityIds] = React.useState(new Set());
+  const [clickedObject, setClickedObject] = React.useState(null);
   const [viewerReady, setViewerReady] = React.useState(false);
   const [status, setStatus] = React.useState("Loading validation viewer...");
   const [error, setError] = React.useState("");
@@ -676,7 +731,7 @@ export default function App() {
         return;
       }
 
-      const collected = collectValidationObjects(viewer.getWorldTree(), m.runId);
+      const collected = collectValidationObjects(viewer.getWorldTree(), m.runId, project);
       entityMapRef.current = collected.entityMap;
       allValidationObjectIdsRef.current = collected.allValidationObjectIds;
       setViewerReady(true);
@@ -700,8 +755,48 @@ export default function App() {
       filteringRef.current = null;
       entityMapRef.current = new Map();
       allValidationObjectIdsRef.current = [];
+      setClickedObject(null);
     };
-  }, [manifestRunId]);
+  }, [manifestRunId, project]);
+
+  // Keep selected object details synchronized with viewport clicks.
+  React.useEffect(() => {
+    if (!viewerReady || !viewerRef.current || typeof viewerRef.current.on !== "function") {
+      return undefined;
+    }
+
+    const viewer = viewerRef.current;
+    const handleObjectClick = (payload) => {
+      const hit = payload?.hits?.[0];
+      const raw = hit?.node?.model?.raw || {};
+      const objectId = hit?.node?.model?.id || "";
+      const dgEntityId = raw.dgEntityId || "";
+
+      if (!hit) {
+        setClickedObject(null);
+        return;
+      }
+
+      if (dgEntityId) {
+        setSelectedEntityIds(new Set([dgEntityId]));
+      }
+
+      setClickedObject({
+        displayName: raw.displayName || raw.name || dgEntityId || objectId || "Selected object",
+        objectId,
+        dgEntityId,
+        properties: buildObjectPropertyRows(raw),
+      });
+    };
+
+    viewer.on("object-clicked", handleObjectClick);
+
+    return () => {
+      if (typeof viewer.off === "function") {
+        viewer.off("object-clicked", handleObjectClick);
+      }
+    };
+  }, [viewerReady]);
 
   // Keep the WebGL canvas in sync with its host element. Speckle's renderer
   // sizes itself once at init; without this observer it keeps the original
@@ -896,6 +991,7 @@ export default function App() {
     setError("");
     setStatus("Loading validation run...");
     setObjectSets({ failed: [], passed: [] });
+    setClickedObject(null);
     setRunId(nextRunId);
   }, [manifest?.runId, captureScreenshot, saveGfxState, restoreGfxState]);
 
@@ -1248,6 +1344,38 @@ export default function App() {
                 </>
               ) : (
                 <div className="mv-empty-copy">Select a validation run to see rule details.</div>
+              )}
+            </div>
+
+            <div className="mv-panel">
+              <div className="mv-panel-title">Selected Object</div>
+              {clickedObject ? (
+                <>
+                  <div className="mv-kv">
+                    <span>Name</span>
+                    <strong>{clickedObject.displayName}</strong>
+                  </div>
+                  <div className="mv-kv">
+                    <span>Object Id</span>
+                    <strong>{clickedObject.objectId || "-"}</strong>
+                  </div>
+                  <div className="mv-kv">
+                    <span>Entity Id</span>
+                    <strong>{clickedObject.dgEntityId || "-"}</strong>
+                  </div>
+                  <div className="mv-object-properties">
+                    {clickedObject.properties.length === 0 ? (
+                      <div className="mv-object-empty">No object properties found.</div>
+                    ) : clickedObject.properties.map((property) => (
+                      <div className="mv-object-row" key={property.key}>
+                        <span className="mv-object-key">{property.key}</span>
+                        <span className="mv-object-value">{property.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="mv-empty-copy">Click any object in the 3D viewport to inspect its properties.</div>
               )}
             </div>
           </>
