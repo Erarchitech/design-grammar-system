@@ -19,8 +19,11 @@
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
     <group id="DG aligned vocabularies (v3.2)" prefer="public" xml:base="">
 
-        <!-- DG ontology itself (self-reference, kept from original auto-generated entry) -->
-        <uri id="DG-self" name="http://example.org/design-grammar" uri="DesignGrammar.owl"/>
+        <!-- DG core ontology (v4.0) — pure DG content, no external imports. Open this for lean Protégé view. -->
+        <uri id="DG-core" name="http://example.org/design-grammar" uri="DesignGrammar.owl"/>
+
+        <!-- DG aligned facade (v4.0) — imports DG core + 7 external vocabularies + 49 alignment axioms. Open this for cross-vocab reasoning. -->
+        <uri id="DG-aligned" name="http://example.org/design-grammar/aligned" uri="DesignGrammar-aligned.owl"/>
 
         <!-- ============================================================
              EXTERNAL ONTOLOGY IMPORTS

@@ -1,6 +1,6 @@
 # Design Grammar System — Ontology Reference
 
-**Version:** 3.1  
+**Version:** 4.1  
 **Source:** `[DesignGrammar.owl](DesignGrammar.owl)`  
 **Format:** Human-readable export for NotebookLM ingestion (mind maps, audio overviews, Q&A).  
 
@@ -48,26 +48,38 @@ The DG ontology partitions its content into four logical layers, each tagged wit
 
 #### `dg:Class` — Class
 
-A dynamically generated OWL class in the OntoGraph layer. Created from user prompts (e.g. Building, UrbanBlock). Key property: iri.
+A dynamically generated OWL class in the OntoGraph layer. Created from user prompts (e.g. Building, UrbanBlock). Key property: iri. Aligned with: owl:Class (R7, subClassOf rather than equivalentClass — DG reifies the OWL meta-schema as Neo4j data, so dg:Class instances are also conceptually owl:Class instances, but using subClassOf keeps the meta-level reification clear).
 
-- **Graph layer annotation:** OntoGraph
+- **Parent class(es):** `owl:Class`, `dg:OntoGraph`
 
 #### `dg:DatatypeProperty` — DatatypeProperty
 
-A dynamically generated datatype property in the OntoGraph layer. Represents measurable attributes (e.g. hasHeightM) and violation flags (e.g. violatesMaxHeight). Key property: iri.
+A dynamically generated datatype property in the OntoGraph layer. Represents measurable attributes (e.g. hasHeightM) and violation flags (e.g. violatesMaxHeight). Key property: iri. Aligned with: owl:DatatypeProperty (R7).
 
-- **Graph layer annotation:** OntoGraph
+- **Parent class(es):** `owl:DatatypeProperty`, `dg:OntoGraph`
 
 #### `dg:GraphLayer` — GraphLayer
 
-A logical partition of the single Neo4j database. The Design Grammar System organizes all persisted nodes into four layers: OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph. Every node carries a `graph` property identifying its layer.
+A logical partition of the single Neo4j database. The Design Grammar System organizes all persisted nodes into exactly four layers (closed enumeration via owl:oneOf below, v4.1): OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph. The four layer IRIs are punned per OWL 2 — each is both a class (parent of the layer's DG entities, under LayerEntity) and an individual (member of this GraphLayer enum). Every DG class carries a `dg:graph` annotation pointing at its layer.
+
+- **Closed enum (owl:oneOf):** `dg:OntoGraph`, `dgm:Metagraph`, `dgv:ValidationGraph`, `dgk:KnowledgeGraph`
+
+#### `dg:LayerEntity` — LayerEntity
+
+Abstract root for DG entities that belong to one of the four graph layers. Direct subclasses are the four layer hubs: dg:OntoGraph, dgm:Metagraph, dgv:ValidationGraph, dgk:KnowledgeGraph. Each hub IRI is simultaneously a class (grouping its layer's DG entities) AND a NamedIndividual of dg:GraphLayer via OWL 2 punning (v3.4 unified structure). dg:LayerEntity itself is intentionally NOT tagged with a dg:graph annotation because it is cross-cutting — it is the parent of all four layer hubs, not a member of any single layer.
 
 
 #### `dg:ObjectProperty` — ObjectProperty
 
-A dynamically generated object property in the OntoGraph layer. Represents relationships between domain classes (e.g. locatedIn). Key property: iri.
+A dynamically generated object property in the OntoGraph layer. Represents relationships between domain classes (e.g. locatedIn). Key property: iri. Aligned with: owl:ObjectProperty (R7).
 
-- **Graph layer annotation:** OntoGraph
+- **Parent class(es):** `owl:ObjectProperty`, `dg:OntoGraph`
+
+#### `dg:OntoGraph` — OntoGraph
+
+Hub class for the OntoGraph layer (dynamic domain ontology meta-schema). Top-level subclasses: Class, DatatypeProperty, ObjectProperty.
+
+- **Parent class(es):** `dg:LayerEntity`
 
 ### Layer dgm — 2. Metagraph (SWRL rule structure)
 
@@ -75,100 +87,92 @@ A dynamically generated object property in the OntoGraph layer. Represents relat
 
 An individual SWRL atom — a single predicate assertion within a rule. Types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom. Key property: Atom_Id.
 
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
 
 #### `dgm:Builtin` — Builtin
 
 A SWRL builtin comparison or arithmetic operator. Referenced by BuiltinAtom via REFERS_TO. Key property: iri (swrlb: prefix).
 
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
 
 #### `dgm:BuiltinAtom` — BuiltinAtom
 
 An atom invoking a SWRL builtin comparison operator (e.g. swrlb:greaterThan(?h, 75)). Takes two arguments for comparison.
 
 - **Parent class(es):** `dgm:Atom`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:BuiltinVariable` — BuiltinVariable
 
 A variable bound only inside BuiltinAtom arguments (e.g. an arithmetic intermediate). Not surfaced on the Grasshopper canvas — the VariableTypeInferrer recognizes this category to keep RULE DECONSTRUCT outputs clean (VTYP-01 priority chain step 3).
 
 - **Parent class(es):** `dgm:Variable`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:ClassAtom` — ClassAtom
 
 An atom asserting class membership (e.g. Building(?b)). Takes one variable argument at pos 1.
 
 - **Parent class(es):** `dgm:Atom`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:DataPropertyAtom` — DataPropertyAtom
 
 An atom asserting a datatype property value (e.g. hasHeightM(?b, ?h)). Takes two arguments: entity variable (pos 1) and value variable/literal (pos 2).
 
 - **Parent class(es):** `dgm:Atom`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:DesignRuleSession` — DesignRuleSession
 
 An interaction log for rule ingest/query/edit operations. Stores the user prompt and LLM result for audit and undo capability.
 
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
 
 #### `dgm:Literal` — Literal
 
 A constant value used as an atom argument (e.g. 75, true). Key properties: lex (lexical form) + datatype (xsd type).
 
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
+
+#### `dgm:Metagraph` — Metagraph
+
+Hub class for the Metagraph layer (SWRL rule structure). Top-level subclasses: Rule, Atom (with ClassAtom/DataPropertyAtom/ObjectPropertyAtom/BuiltinAtom children), Variable (with ObjectVariable/PropertyVariable/BuiltinVariable children), Literal, Builtin, DesignRuleSession, VariableKindValue, VariableScopeValue.
+
+- **Parent class(es):** `dg:LayerEntity`
 
 #### `dgm:ObjectPropertyAtom` — ObjectPropertyAtom
 
 An atom asserting an object property relationship (e.g. locatedIn(?b, ?block)). Takes two variable arguments.
 
 - **Parent class(es):** `dgm:Atom`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:ObjectVariable` — ObjectVariable
 
-A variable representing a domain entity instance (e.g. ?b for Building). Inferred from ClassAtom arguments (VTYP-01). Object variables are cross-rule scoped: the same variable name maps to the same entity across all rules in a project (VTYP-02). Can be wired to OBJECT STATE component to create ObjectState (CMPST-01).
+A variable representing a domain entity instance (e.g. ?b for Building). Inferred from ClassAtom arguments (VTYP-01). Object variables are cross-rule scoped: the same variable name maps to the same entity across all rules in a project (VTYP-02). Can be wired to OBJECT STATE component to create ObjectState (CMPST-01). The cross-rule scope is inferred by reasoner via the SubClassOf restriction below (v4.1).
 
 - **Parent class(es):** `dgm:Variable`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:PropertyVariable` — PropertyVariable
 
-A variable representing a datatype property value (e.g. ?h for height). Inferred from DataPropertyAtom arg-2 position (VTYP-01). Property variables are rule-scoped: the same name in different rules represents independent variables (VTYP-03).
+A variable representing a datatype property value (e.g. ?h for height). Inferred from DataPropertyAtom arg-2 position (VTYP-01). Property variables are rule-scoped: the same name in different rules represents independent variables (VTYP-03). The rule-local scope is inferred by reasoner via the SubClassOf restriction below (v4.1).
 
 - **Parent class(es):** `dgm:Variable`
-- **Graph layer annotation:** Metagraph
 
 #### `dgm:Rule` — Rule
 
 A design grammar rule expressed as a SWRL implication. Contains body atoms (conditions) and head atoms (conclusions). Key property: Rule_Id. Format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V
 
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
 
 #### `dgm:Variable` — Variable
 
-A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Variable kind (Object vs Property) is inferred at read-time from atom structure (VTYP-01). MERGE key includes project to prevent cross-project collision (SCHM-02).
+A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Every Variable individual is necessarily an ObjectVariable, PropertyVariable, OR BuiltinVariable (owl:disjointUnionOf below — VTYP-01 priority chain). MERGE key includes project to prevent cross-project collision (SCHM-02). STORAGE NOTE: In the Neo4j layer, variable kind is inferred at read time by VariableTypeInferrer.Infer() — not stored on the Var node. The OWL ontology uses rdf:type plus disjointUnionOf to discriminate; no separate kind property exists (v4.1).
 
-- **Graph layer annotation:** Metagraph
-
-#### `dgm:VariableKindValue` — VariableKind
-
-Enumeration of variable kinds inferred by VariableTypeInferrer per VTYP-01 priority chain. Corresponds to C# enum DG.Core.Models.VariableKind. Closed via owl:oneOf — the value space is fixed.
-
-- **Closed enum (owl:oneOf):** `dgm:VariableKind_Object`, `dgm:VariableKind_Property`, `dgm:VariableKind_Builtin`
-- **Graph layer annotation:** Metagraph
+- **Parent class(es):** `dgm:Metagraph`
 
 #### `dgm:VariableScopeValue` — VariableScope
 
 Enumeration of variable scoping semantics derived from VariableKind. SCHM-06: enum class mirroring DesignStateParameterTypeValue pattern. Closed via owl:oneOf.
 
+- **Parent class(es):** `dgm:Metagraph`
 - **Closed enum (owl:oneOf):** `dgm:VariableScope_CrossRule`, `dgm:VariableScope_RuleLocal`
-- **Graph layer annotation:** Metagraph
 
 ### Layer dgv — 3. ValidationGraph (validation runs, design state, integration)
 
@@ -177,57 +181,49 @@ Enumeration of variable scoping semantics derived from VariableKind. SCHM-06: en
 Definition state — a named set of Number/Integer/Boolean parameters captured from Grasshopper sliders and toggles. Represents the current parametric configuration. When DefState changes, dependent IdRefs regenerate. ID prefix: DS_.
 
 - **Parent class(es):** `dgv:DesignState`
-- **Graph layer annotation:** ValidationGraph
 
 #### `dgv:DesignState` — DesignState
 
-A snapshot of design parameters captured from Grasshopper. Single Neo4j label :DesignState with a `kind` property discriminating between DefState and ObjectState. ID prefixes: DS_ (DefState), OS_ (ObjectState). Used as input to CLASSIFICATOR and persisted in validation runs.
+A snapshot of design parameters captured from Grasshopper. Every DesignState individual is necessarily a DefState OR an ObjectState (owl:disjointUnionOf below) — never both, never neither. ID prefixes: DS_ (DefState), OS_ (ObjectState). Used as input to CLASSIFICATOR and persisted in validation runs. STORAGE NOTE: In the Neo4j layer (SCHM-01), this discrimination is materialized as a `kind` property with values "DefState" | "ObjectState" on a single :DesignState node label — a runtime convenience because Cypher does not infer subclass membership. The OWL ontology does not include the kind property because rdf:type plus disjointUnionOf already discriminate (v4.1).
 
-- **Graph layer annotation:** ValidationGraph
-
-#### `dgv:DesignStateKindValue` — DesignStateKind
-
-Enumeration of DesignState subtype discriminators per SCHM-01. Single :DesignState Neo4j label uses this enum's individuals as values of the kind property. Closed via owl:oneOf.
-
-- **Closed enum (owl:oneOf):** `dgv:DesignStateKind_DefState`, `dgv:DesignStateKind_ObjectState`
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:DesignStateParameter` — DesignStateParameter
 
 A single measurable parameter within a DefState snapshot. Has a parameterId, displayName, type (Number/Integer/Boolean), and the corresponding typed value.
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:DesignStateParameterTypeValue` — DesignStateParameterType
 
 Enumeration of supported parameter value types for DesignState snapshots. Corresponds to C# enum DG.Core.Models.DesignStateParameterType. Closed via owl:oneOf.
 
+- **Parent class(es):** `dgv:ValidationGraph`
 - **Closed enum (owl:oneOf):** `dgv:ParameterType_Number`, `dgv:ParameterType_Integer`, `dgv:ParameterType_Boolean`
-- **Graph layer annotation:** ValidationGraph
 
 #### `dgv:GeoRef` — GeoRef
 
-Geometry reference — a handle to a geometry primitive in the source model (Speckle objectId, Rhino GUID, etc.) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance).
+Geometry reference — a handle to a geometry primitive in the source model (Speckle objectId, Rhino GUID, etc.) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT).
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:IdRef` — IdRef
 
 Auto-generated DesignState identifier (CMPST-08). IdRef = DesignState ID — NOT ObjectState ID. Regenerates whenever DefState changes (CMPST-05). Persisted in statePayloadJson for cross-run object identity tracking (INTG-03). Resolves to one or more ObjectInstance(s). ID prefix: IDR_.
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:IntegrationConfig` — IntegrationConfig
 
 Configuration node linking a DG project to its Speckle integration. Stores Speckle project ID, base model, and validation model references. One per project per provider.
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:ObjectInstance` — ObjectInstance
 
-Cross-rule identity of a validated geometric element (CMPST-06). The noun — the actual thing in the model that gets validated. Stable across geometry edits. Each ObjectInstance has exactly one ObjectState (its current binding snapshot). ID prefix: OI_. Both ObjectInstance and ObjectState live above rule scope.
+Cross-rule identity of a validated geometric element (CMPST-06). The noun — the actual thing in the model that gets validated. Stable across geometry edits. Each ObjectInstance has exactly one ObjectState (its current binding snapshot). ID prefix: OI_. Both ObjectInstance and ObjectState live above rule scope. Aligned with: sosa:FeatureOfInterest (R3) and geo:Feature (R6).
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:ObjectState` — ObjectState
 
@@ -235,33 +231,38 @@ Object state — associates an Object variable reference (from SWRL ClassAtom) w
 
 - **Parent class(es):** `dgv:DesignState`
 - **Restrictions:** dgv:hasIdRef max 0 of dgv:IdRef
-- **Graph layer annotation:** ValidationGraph
 
 #### `dgv:ReinstatementStatusValue` — ReinstatementStatus
 
 Outcome status for a single parameter during design state reinstatement. Corresponds to C# enum DG.Core.Models.ReinstatementStatus. Used by the REINSTATE component to report per-parameter results. Closed via owl:oneOf.
 
+- **Parent class(es):** `dgv:ValidationGraph`
 - **Closed enum (owl:oneOf):** `dgv:ReinstatementStatus_Applied`, `dgv:ReinstatementStatus_MissingTarget`, `dgv:ReinstatementStatus_TypeMismatch`, `dgv:ReinstatementStatus_AmbiguousTarget`, `dgv:ReinstatementStatus_OutOfRange`, `dgv:ReinstatementStatus_Unchanged`, `dgv:ReinstatementStatus_WouldApply`
-- **Graph layer annotation:** ValidationGraph
 
 #### `dgv:ValidationEntity` — ValidationEntity
 
-A BIM entity evaluated in a validation run. Records the entity's DG ID, display name, and overall pass/fail status for the specific run and rule.
+A BIM entity evaluated in a validation run. Records the entity's DG ID, display name, and overall pass/fail status for the specific run and rule. Aligned with: prov:Entity (R2), sosa:Observation (R3), and sh:ValidationResult (R4) — the cell (Run × Rule × ObjectInstance) is simultaneously a provenance entity, an observation of a property on a feature, and a validation result.
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
+
+#### `dgv:ValidationGraph` — ValidationGraph
+
+Hub class for the ValidationGraph layer (validation runs, design state, integration config). Top-level subclasses: ValidationRun, ValidationEntity, DesignState (with DefState/ObjectState children), DesignStateParameter, IntegrationConfig, ObjectInstance, GeoRef, IdRef, and four enum value classes (DesignStateKindValue, DesignStateParameterTypeValue, ValidationStatusValue, ReinstatementStatusValue).
+
+- **Parent class(es):** `dg:LayerEntity`
 
 #### `dgv:ValidationRun` — ValidationRun
 
-A single execution of rule evaluation against design state. Records which rules were evaluated, the Speckle version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow.
+A single execution of rule evaluation against design state. Records which rules were evaluated, the Speckle version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow. Aligned with: prov:Activity (R2) and sh:ValidationReport (R4).
 
-- **Graph layer annotation:** ValidationGraph
+- **Parent class(es):** `dgv:ValidationGraph`
 
 #### `dgv:ValidationStatusValue` — ValidationStatus
 
 Status values for validation runs and entity results. Closed via owl:oneOf — value space is fixed at Completed, Passed, Failed.
 
+- **Parent class(es):** `dgv:ValidationGraph`
 - **Closed enum (owl:oneOf):** `dgv:Status_Completed`, `dgv:Status_Passed`, `dgv:Status_Failed`
-- **Graph layer annotation:** ValidationGraph
 
 ### Layer dgk — 4. KnowledgeGraph (project notes, tags, sessions)
 
@@ -269,25 +270,31 @@ Status values for validation runs and entity results. Closed via owl:oneOf — v
 
 Parent hub node connecting all instances of a knowledge type. Acts as a type discriminator (e.g. KnowledgeNote, KnowledgeSession).
 
-- **Graph layer annotation:** KnowledgeGraph
+- **Parent class(es):** `dgk:KnowledgeGraph`
+
+#### `dgk:KnowledgeGraph` — KnowledgeGraph
+
+Hub class for the KnowledgeGraph layer (project notes, tags, sessions). Top-level subclasses: KnowledgeClass, KnowledgeNote, KnowledgeTag, KnowledgeSession.
+
+- **Parent class(es):** `dg:LayerEntity`
 
 #### `dgk:KnowledgeNote` — KnowledgeNote
 
 A project knowledge entry (from folder ingest or NL prompt). Contains title, content, tags, and source reference.
 
-- **Graph layer annotation:** KnowledgeGraph
+- **Parent class(es):** `dgk:KnowledgeGraph`
 
 #### `dgk:KnowledgeSession` — KnowledgeSession
 
-An interaction log for knowledge operations (insert, query, update). Records the user prompt and LLM result.
+An interaction log for knowledge operations (insert, query, update). Records the user prompt and LLM result. Aligned with: prov:Activity (R5/R2 pattern) — each session is a recorded activity.
 
-- **Graph layer annotation:** KnowledgeGraph
+- **Parent class(es):** `dgk:KnowledgeGraph`
 
 #### `dgk:KnowledgeTag` — KnowledgeTag
 
-A tag label shared across knowledge notes for categorization.
+A tag label shared across knowledge notes for categorization. Aligned with: skos:Concept (R5) — a Tag IS a concept in a project's tag taxonomy.
 
-- **Graph layer annotation:** KnowledgeGraph
+- **Parent class(es):** `dgk:KnowledgeGraph`
 
 ## Object properties by layer
 
@@ -302,7 +309,7 @@ Connects an Atom to its arguments (Variable or Literal). Property: pos (integer,
 
 #### `dgm:hasBody` — HAS_BODY
 
-Connects a Rule to its body (condition) atoms. The body checks the condition that breaks the rule in violation mode. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's body. Disjoint with hasHead: no Atom may simultaneously be a body and head atom of the same Rule.
+Connects a Rule to its body (condition) atoms. The body checks the condition that breaks the rule in violation mode. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's body. Disjoint with hasHead: no Atom may simultaneously be a body and head atom of the same Rule. Equivalent to swrl:body.
 
 - **Domain:** `dgm:Rule`
 - **Range:** `dgm:Atom`
@@ -311,7 +318,7 @@ Connects a Rule to its body (condition) atoms. The body checks the condition tha
 
 #### `dgm:hasHead` — HAS_HEAD
 
-Connects a Rule to its head (conclusion) atoms. The head sets the violation flag to true when the body fires. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's head. Disjoint with hasBody (declared on hasBody side).
+Connects a Rule to its head (conclusion) atoms. The head sets the violation flag to true when the body fires. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's head. Disjoint with hasBody (declared on hasBody side). Equivalent to swrl:head.
 
 - **Domain:** `dgm:Rule`
 - **Range:** `dgm:Atom`
@@ -323,14 +330,6 @@ Connects an Atom to the ontology entity it references (Class, DatatypeProperty, 
 
 - **Domain:** `dgm:Atom`
 - **Range:** `dg:Class ∪ dg:DatatypeProperty ∪ dg:ObjectProperty ∪ dgm:Builtin`
-- **Characteristics:** Functional
-
-#### `dgm:variableKind` — variableKind
-
-Variable kind discriminator (enum-valued): VariableKind_Object (inferred from ClassAtom arg, cross-rule scoped per VTYP-02), VariableKind_Property (inferred from DataPropertyAtom arg-2, rule-scoped per VTYP-03), or VariableKind_Builtin (only in BuiltinAtom args, not exposed on canvas). Inferred at read-time by VariableTypeInferrer.Infer() — not stored on the Neo4j Var node (VTYP-01). Characteristics: Functional.
-
-- **Domain:** `dgm:Variable`
-- **Range:** `dgm:VariableKindValue`
 - **Characteristics:** Functional
 
 #### `dgm:variableScope` — variableScope
@@ -345,7 +344,7 @@ Scoping semantics (enum-valued): VariableScope_CrossRule for Object variables (s
 
 #### `dgv:hasEntity` — HAS_ENTITY
 
-Connects a ValidationRun to its evaluated ValidationEntity results. Characteristics: InverseFunctional — each ValidationEntity belongs to exactly one ValidationRun.
+Connects a ValidationRun to its evaluated ValidationEntity results. Characteristics: InverseFunctional — each ValidationEntity belongs to exactly one ValidationRun. Aligned with: prov:generated (R2) — a ValidationEntity is generated by the run.
 
 - **Domain:** `dgv:ValidationRun`
 - **Range:** `dgv:ValidationEntity`
@@ -353,7 +352,7 @@ Connects a ValidationRun to its evaluated ValidationEntity results. Characterist
 
 #### `dgv:hasGeoRef` — HAS_GEO_REF
 
-Connects an ObjectState to its geometry handles wired into the GeoRef input of OBJECT STATE (CTRCT-09). One ObjectState may have many GeoRefs (the geometry elements composing the ObjectInstance). Characteristics: InverseFunctional — each GeoRef belongs to exactly one ObjectState.
+Connects an ObjectState to its geometry handles wired into the GeoRef input of OBJECT STATE (CTRCT-09). One ObjectState may have many GeoRefs (the geometry elements composing the ObjectInstance). Characteristics: InverseFunctional — each GeoRef belongs to exactly one ObjectState. Aligned with: geo:hasGeometry (R6) — the GeoSPARQL pattern for object↔geometry linking.
 
 - **Domain:** `dgv:ObjectState`
 - **Range:** `dgv:GeoRef`
@@ -392,14 +391,6 @@ Connects a DesignState snapshot to its individual parameters. Characteristics: I
 - **Range:** `dgv:DesignStateParameter`
 - **Characteristics:** InverseFunctional
 
-#### `dgv:kind` — kind
-
-DesignState kind discriminator (enum-valued): DesignStateKind_DefState (parameter snapshot from sliders/toggles) or DesignStateKind_ObjectState (object variable + geometry association). Stored on the single :DesignState Neo4j label per SCHM-01. Characteristics: Functional.
-
-- **Domain:** `dgv:DesignState`
-- **Range:** `dgv:DesignStateKindValue`
-- **Characteristics:** Functional
-
 #### `dgv:parameterType` — parameterType
 
 Type discriminator for parameter value (enum-valued): ParameterType_Number, ParameterType_Integer, or ParameterType_Boolean. Characteristics: Functional.
@@ -410,7 +401,7 @@ Type discriminator for parameter value (enum-valued): ParameterType_Number, Para
 
 #### `dgv:propValueOf` — PROP_VALUE_OF
 
-Connects a ValidationEntity to the PropertyVariable whose value the rule checked (SCHM-05). The "main attribute being validated" — determines which property's value is shown in the Model Viewer's passing/failing list. Characteristics: Functional — one main property per ValidationEntity cell.
+Connects a ValidationEntity to the PropertyVariable whose value the rule checked (SCHM-05). The "main attribute being validated" — determines which property's value is shown in the Model Viewer's passing/failing list. Characteristics: Functional — one main property per ValidationEntity cell. Aligned with: sosa:observedProperty (R3, equivalent) and sh:resultPath (R4, subProperty).
 
 - **Domain:** `dgv:ValidationEntity`
 - **Range:** `dgm:PropertyVariable`
@@ -441,7 +432,7 @@ Status of a validation run (Status_Completed) or entity result (Status_Passed / 
 
 #### `dgv:validatesInstance` — VALIDATES_INSTANCE
 
-Connects a ValidationEntity result cell to the ObjectInstance it describes. Characteristics: Functional — each ValidationEntity describes exactly one ObjectInstance. Inverse direction is NOT functional: an ObjectInstance has many ValidationEntities (one per rule per run).
+Connects a ValidationEntity result cell to the ObjectInstance it describes. Characteristics: Functional — each ValidationEntity describes exactly one ObjectInstance. Inverse direction is NOT functional: an ObjectInstance has many ValidationEntities (one per rule per run). Aligned with: sosa:hasFeatureOfInterest (R3, equivalent) and sh:focusNode (R4, subProperty). The SOSA mapping is the stronger semantic match; SHACL is a sibling subPropertyOf to avoid asserting transitive equivalence between sosa:hasFeatureOfInterest and sh:focusNode.
 
 - **Domain:** `dgv:ValidationEntity`
 - **Range:** `dgv:ObjectInstance`
@@ -470,9 +461,9 @@ Connects a KnowledgeNote to its KnowledgeTag nodes. Characteristics: none (many-
 
 | Property | Label | Domain | Range | Characteristics | Description |
 |---|---|---|---|---|---|
-| `dg:createdAt` | createdAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of node creation. Used across all graph layers. |
-| `dg:iri` | iri | `—` | `xsd:string` | — | IRI identifier for ontology entities. Format: ex:<Name> (e.g. ex:Building, ex:hasHeightM). |
-| `dg:label` | label | `—` | `xsd:string` | — | Human-readable display label for Class and ObjectProperty nodes. |
+| `dg:createdAt` | createdAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of node creation. Used across all graph layers. Aligned with: dcterms:created (R5/R7 — cross-cutting Dublin Core creation timestamp). |
+| `dg:iri` | iri | `—` | `xsd:string` | — | IRI identifier for ontology entities. Format: ex:<Name> (e.g. ex:Building, ex:hasHeightM). Aligned with: dcterms:identifier (R7-adjacent) — the IRI IS the canonical identifier. |
+| `dg:label` | label | `—` | `xsd:string` | — | Human-readable display label for Class and ObjectProperty nodes. Aligned with: rdfs:label (R7). |
 | `dg:range` | range | `dg:DatatypeProperty` | `xsd:string` | — | XSD datatype range for DatatypeProperty nodes (e.g. xsd:decimal, xsd:integer, xsd:boolean). |
 
 ### Layer dgm — 2. Metagraph (SWRL rule structure)
@@ -507,7 +498,7 @@ Connects a KnowledgeNote to its KnowledgeTag nodes. Characteristics: none (many-
 | `dgv:baseModelId` | baseModelId | `dgv:IntegrationConfig` | `xsd:string` | — | ID of the base geometry model in Speckle. Stored on the IntegrationConfig node. |
 | `dgv:baseModelName` | baseModelName | `dgv:IntegrationConfig` | `xsd:string` | — | Display name of the base geometry model in Speckle. |
 | `dgv:baseVersionId` | baseVersionId | `dgv:ValidationRun` | `xsd:string` | — | Speckle version ID of the base model used in this validation run. |
-| `dgv:capturedAtUtc` | capturedAtUtc | `dgv:DesignState ∪ dgv:ValidationRun` | `xsd:dateTime` | Functional | UTC timestamp when a design state or validation run was captured. Characteristics: Functional — one capture time per snapshot. Domain union: DesignState ∪ ValidationRun. |
+| `dgv:capturedAtUtc` | capturedAtUtc | `dgv:DesignState ∪ dgv:ValidationRun` | `xsd:dateTime` | Functional | UTC timestamp when a design state or validation run was captured. Characteristics: Functional — one capture time per snapshot. Domain union: DesignState ∪ ValidationRun. Aligned with: prov:startedAtTime (R2) — semantically, the moment an activity started / a sample was captured. |
 | `dgv:dgEntityId` | dgEntityId | `dgv:ValidationEntity` | `xsd:string` | Functional | Unique DG identifier for a BIM entity in a validation run. Characteristics: Functional. |
 | `dgv:displayName` | displayName | `dgv:ValidationEntity` | `xsd:string` | — | Human-readable name for a validation entity. |
 | `dgv:geoRefId` | geoRefId | `dgv:GeoRef` | `xsd:string` | Functional | Source-system handle for a geometry primitive (e.g. Speckle objectId, Rhino GUID). The value wired into the GeoRef input of OBJECT STATE per CTRCT-09. Characteristics: Functional. |
@@ -516,7 +507,7 @@ Connects a KnowledgeNote to its KnowledgeTag nodes. Characteristics: none (many-
 | `dgv:modelViewerUrl` | modelViewerUrl | `dgv:ValidationRun` | `xsd:string` | — | URL to view the validation results in the Model Viewer. |
 | `dgv:objectRef` | objectRef | `dgv:ObjectState` | `xsd:string` | — | Object variable reference string for an ObjectState (e.g. the variable name from a ClassAtom). Links this ObjectState to the SWRL Object variable it represents. |
 | `dgv:parameterId` | parameterId | `dgv:DesignStateParameter` | `xsd:string` | Functional | Identifier of a design state parameter (maps to a DatatypeProperty iri in the OntoGraph). Characteristics: Functional. |
-| `dgv:propValue` | propValue | `dgv:ValidationEntity` | `xsd:string` | — | The validated property value for this ValidationEntity (SCHM-05). One value per (Run, Rule, ObjectInstance) cell — the "main attribute" the rule checked. Shown in the Model Viewer's passing/failing item list per rule. Lex form (xsd:string) for display; actual typed value lives on the DesignStateParameter. |
+| `dgv:propValue` | propValue | `dgv:ValidationEntity` | `xsd:string` | — | The validated property value for this ValidationEntity (SCHM-05). One value per (Run, Rule, ObjectInstance) cell — the "main attribute" the rule checked. Shown in the Model Viewer's passing/failing item list per rule. Lex form (xsd:string) for display; actual typed value lives on the DesignStateParameter. Aligned with: sosa:hasSimpleResult (R3) — the validated value IS the observation's simple result. |
 | `dgv:provider` | provider | `dgv:IntegrationConfig` | `xsd:string` | — | Integration provider name (e.g. 'Speckle'). |
 | `dgv:ruleId` | ruleId | `dgv:ValidationEntity` | `xsd:string` | Functional | Rule ID associated with a validation entity result. Characteristics: Functional — each ValidationEntity references exactly one rule. |
 | `dgv:rulesJson` | rulesJson | `dgv:ValidationRun` | `xsd:string` | — | JSON-serialized array of rules evaluated in this run. |
@@ -531,30 +522,20 @@ Connects a KnowledgeNote to its KnowledgeTag nodes. Characteristics: none (many-
 
 | Property | Label | Domain | Range | Characteristics | Description |
 |---|---|---|---|---|---|
-| `dgk:content` | content | `dgk:KnowledgeNote` | `xsd:string` | — | Full text content of a knowledge note. |
-| `dgk:createdAt` | createdAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of creation. |
-| `dgk:knowledgeSessionId` | sessionId | `dgk:KnowledgeSession` | `xsd:string` | Functional | Unique identifier for a knowledge session (format: ks-<hex12>). Characteristics: Functional. |
+| `dgk:content` | content | `dgk:KnowledgeNote` | `xsd:string` | — | Full text content of a knowledge note. Aligned with: skos:note (R5) — the SKOS pattern for the textual body of a concept-related artifact. |
+| `dgk:createdAt` | createdAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of creation. Aligned with: dcterms:created (R5). |
+| `dgk:knowledgeSessionId` | sessionId | `dgk:KnowledgeSession` | `xsd:string` | Functional | Unique identifier for a knowledge session (format: ks-<hex12>). Characteristics: Functional. Aligned with: dcterms:identifier (R5). |
 | `dgk:mode` | mode | `dgk:KnowledgeSession` | `xsd:string` | — | Knowledge session mode: 'insert', 'query', or 'update'. |
-| `dgk:noteId` | noteId | `dgk:KnowledgeNote` | `xsd:string` | Functional | Unique identifier for a knowledge note. Characteristics: Functional. |
-| `dgk:source` | source | `dgk:KnowledgeNote` | `xsd:string` | — | Source file path or reference for a knowledge note (e.g. notes/site.md). |
-| `dgk:tagName` | name | `dgk:KnowledgeTag` | `xsd:string` | Functional | Tag name string (e.g. "zoning", "structural"). Characteristics: Functional — one canonical name per Tag. |
+| `dgk:noteId` | noteId | `dgk:KnowledgeNote` | `xsd:string` | Functional | Unique identifier for a knowledge note. Characteristics: Functional. Aligned with: dcterms:identifier (R5). |
+| `dgk:source` | source | `dgk:KnowledgeNote` | `xsd:string` | — | Source file path or reference for a knowledge note (e.g. notes/site.md). Aligned with: dcterms:source (R5). |
+| `dgk:tagName` | name | `dgk:KnowledgeTag` | `xsd:string` | Functional | Tag name string (e.g. "zoning", "structural"). Characteristics: Functional — one canonical name per Tag. Aligned with: skos:prefLabel (R5) — the SKOS canonical label for a concept. |
 | `dgk:tags` | tags | `dgk:KnowledgeNote` | `xsd:string` | — | Array of tag names associated with a knowledge note (stored as Neo4j list property). |
-| `dgk:title` | title | `dgk:KnowledgeNote` | `xsd:string` | — | Title of a knowledge note. |
-| `dgk:updatedAt` | updatedAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of last update. |
+| `dgk:title` | title | `dgk:KnowledgeNote` | `xsd:string` | — | Title of a knowledge note. Aligned with: dcterms:title (R5). |
+| `dgk:updatedAt` | updatedAt | `—` | `xsd:dateTime` | — | ISO 8601 UTC timestamp of last update. Aligned with: dcterms:modified (R5). |
 
 ## Enumerated value classes (closed sets)
 
 Six enum classes are closed via `owl:oneOf` — their value space is fixed. Any individual asserted as a member that is not one of the listed individuals triggers an inconsistency.
-
-### `dgm:VariableKindValue` — VariableKind
-
-Enumeration of variable kinds inferred by VariableTypeInferrer per VTYP-01 priority chain. Corresponds to C# enum DG.Core.Models.VariableKind. Closed via owl:oneOf — the value space is fixed.
-
-**Allowed values:**
-
-- `dgm:VariableKind_Object` — **Object**: Variable representing a domain entity instance. Inferred from ClassAtom arg-1 (VTYP-01 step 1). Cross-rule scoped (VTYP-02).
-- `dgm:VariableKind_Property` — **Property**: Variable representing a datatype property value. Inferred from DataPropertyAtom arg-2+ (VTYP-01 step 2). Rule-scoped (VTYP-03).
-- `dgm:VariableKind_Builtin` — **Builtin**: Variable bound only inside BuiltinAtom args. Not exposed on the Grasshopper canvas (VTYP-01 step 3).
 
 ### `dgm:VariableScopeValue` — VariableScope
 
@@ -564,15 +545,6 @@ Enumeration of variable scoping semantics derived from VariableKind. SCHM-06: en
 
 - `dgm:VariableScope_CrossRule` — **cross-rule**: Shared identity across all rules in a project. Applies to Object variables (VTYP-02).
 - `dgm:VariableScope_RuleLocal` — **rule-scoped**: Independent variable per rule. Applies to Property variables (VTYP-03).
-
-### `dgv:DesignStateKindValue` — DesignStateKind
-
-Enumeration of DesignState subtype discriminators per SCHM-01. Single :DesignState Neo4j label uses this enum's individuals as values of the kind property. Closed via owl:oneOf.
-
-**Allowed values:**
-
-- `dgv:DesignStateKind_DefState` — **DefState**: Parametric capture snapshot from Grasshopper sliders/toggles. ID prefix: DS_.
-- `dgv:DesignStateKind_ObjectState` — **ObjectState**: Object variable to geometry binding snapshot. 1:1 with an ObjectInstance. ID prefix: OS_.
 
 ### `dgv:DesignStateParameterTypeValue` — DesignStateParameterType
 
@@ -620,7 +592,7 @@ Each group below is `owl:AllDisjointClasses` — no individual may simultaneousl
 6. `dgm:Rule`, `dgm:Atom`, `dgm:Variable`, `dgm:Literal`, `dgm:Builtin`, `dgm:DesignRuleSession`
 7. `dg:Class`, `dg:DatatypeProperty`, `dg:ObjectProperty`
 8. `dgk:KnowledgeClass`, `dgk:KnowledgeNote`, `dgk:KnowledgeTag`, `dgk:KnowledgeSession`
-9. `dgm:VariableKindValue`, `dgm:VariableScopeValue`, `dgv:DesignStateKindValue`, `dgv:DesignStateParameterTypeValue`, `dgv:ValidationStatusValue`, `dgv:ReinstatementStatusValue`
+9. `dgm:VariableScopeValue`, `dgv:DesignStateParameterTypeValue`, `dgv:ValidationStatusValue`, `dgv:ReinstatementStatusValue`
 
 ## Example instances (ABox)
 
@@ -631,22 +603,22 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dg:Class` (4 individuals)
 
 - **`dg:Class_Building`** — Building
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:Building"
   - `dg:label`: "Building"
   - `dg:project`: "UrbanBlock"
 - **`dg:Class_LivingUnit`** — LivingUnit
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:LivingUnit"
   - `dg:label`: "LivingUnit"
   - `dg:project`: "TestA"
 - **`dg:Class_Street`** — Street
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:Street"
   - `dg:label`: "Street"
   - `dg:project`: "TestA"
 - **`dg:Class_Unit`** — Unit
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:Unit"
   - `dg:label`: "Unit"
   - `dg:project`: "Test Project"
@@ -654,46 +626,35 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dg:DatatypeProperty` (6 individuals)
 
 - **`dg:DProp_hasHeightM`** — hasHeightM
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:hasHeightM"
   - `dg:project`: "UrbanBlock"
   - `dg:range`: "xsd:decimal"
 - **`dg:DProp_hasWidthM`** — hasWidthM
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:hasWidthM"
   - `dg:project`: "TestA"
   - `dg:range`: "xsd:decimal"
 - **`dg:DProp_hasWindowCount`** — hasWindowCount
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:hasWindowCount"
   - `dg:project`: "TestA"
   - `dg:range`: "xsd:integer"
 - **`dg:DProp_violatesMaxHeight`** — violatesMaxHeight
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:violatesMaxHeight"
   - `dg:project`: "UrbanBlock"
   - `dg:range`: "xsd:boolean"
 - **`dg:DProp_violatesMinWidth`** — violatesMinWidth
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:violatesMinWidth"
   - `dg:project`: "TestA"
   - `dg:range`: "xsd:boolean"
 - **`dg:DProp_violatesMinWindowCount`** — violatesMinWindowCount
-  - `dg:graph`: "OntoGraph"
+  - `dg:graph`: dg:OntoGraph
   - `dg:iri`: "ex:violatesMinWindowCount"
   - `dg:project`: "TestA"
   - `dg:range`: "xsd:boolean"
-
-#### Type: `dg:GraphLayer` (4 individuals)
-
-- **`dg:KnowledgeGraphLayer`** — KnowledgeGraph
-  - _Comment:_ Project knowledge storage layer. Contains KnowledgeNote, KnowledgeTag, KnowledgeSession, and KnowledgeClass nodes. Stores architectural knowledge ingested from project documentation or NL prompts.
-- **`dg:Metagraph`** — Metagraph
-  - _Comment:_ SWRL rule structure layer. Contains Rule, Atom, Variable (Object/Property), Literal, Builtin, and DesignRuleSession nodes. Rules reference OntoGraph entities via REFERS_TO. Per CTRCT-01: exposes Objects, DesignStates, and Runs as first-class outputs.
-- **`dg:OntoGraph`** — OntoGraph
-  - _Comment:_ Dynamic domain ontology layer. Contains Class, DatatypeProperty, and ObjectProperty nodes generated from user prompts via LLM. These represent the project-specific domain vocabulary (e.g. Building, hasHeightM). Domain classes are NOT part of the system ontology — they are created at runtime.
-- **`dg:ValidationGraphLayer`** — ValidationGraph
-  - _Comment:_ Validation data flow layer. Contains IntegrationConfig, ValidationRun, ValidationEntity, DesignState (DefState/ObjectState), and DesignStateParameter nodes. Manages the lifecycle from parameter capture through rule evaluation to Speckle publication.
 
 ### Layer dgm — 2. Metagraph (SWRL rule structure)
 
@@ -715,7 +676,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgm:BuiltinAtom` (2 individuals)
 
 - **`dgm:R_BUILDING_MAX_HEIGHT_75_V_A3`** — dgm:R_BUILDING_MAX_HEIGHT_75_V_A3
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:atomId`: "R_BUILDING_MAX_HEIGHT_75_V_A3"
   - `dgm:atomIri`: "swrlb:greaterThan"
@@ -724,7 +685,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgm:hasArg`: dgm:var_h, dgm:literal_75
   - `dgm:refersTo`: dgm:greaterThan
 - **`dgm:R_STREET_MIN_WIDTH_18_V_A3`** — dgm:R_STREET_MIN_WIDTH_18_V_A3
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:atomId`: "R_STREET_MIN_WIDTH_18_V_A3"
   - `dgm:atomIri`: "swrlb:lessThan"
@@ -735,7 +696,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgm:ClassAtom` (2 individuals)
 
 - **`dgm:R_BUILDING_MAX_HEIGHT_75_V_A1`** — dgm:R_BUILDING_MAX_HEIGHT_75_V_A1
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:atomId`: "R_BUILDING_MAX_HEIGHT_75_V_A1"
   - `dgm:atomIri`: "ex:Building"
@@ -743,7 +704,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgm:atomType`: "ClassAtom"
   - `dgm:hasArg`: dgm:var_b
 - **`dgm:R_STREET_MIN_WIDTH_18_V_A1`** — dgm:R_STREET_MIN_WIDTH_18_V_A1
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:atomId`: "R_STREET_MIN_WIDTH_18_V_A1"
   - `dgm:atomIri`: "ex:Street"
@@ -753,7 +714,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgm:DataPropertyAtom` (4 individuals)
 
 - **`dgm:R_BUILDING_MAX_HEIGHT_75_V_A2`** — dgm:R_BUILDING_MAX_HEIGHT_75_V_A2
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:atomId`: "R_BUILDING_MAX_HEIGHT_75_V_A2"
   - `dgm:atomIri`: "ex:hasHeightM"
@@ -761,7 +722,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgm:atomType`: "DataPropertyAtom"
   - `dgm:hasArg`: dgm:var_b, dgm:var_h
 - **`dgm:R_BUILDING_MAX_HEIGHT_75_V_H1`** — dgm:R_BUILDING_MAX_HEIGHT_75_V_H1
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:atomId`: "R_BUILDING_MAX_HEIGHT_75_V_H1"
   - `dgm:atomIri`: "ex:violatesMaxHeight"
@@ -769,14 +730,14 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgm:atomType`: "DataPropertyAtom"
   - `dgm:hasArg`: dgm:var_b, dgm:literal_true
 - **`dgm:R_STREET_MIN_WIDTH_18_V_A2`** — dgm:R_STREET_MIN_WIDTH_18_V_A2
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:atomId`: "R_STREET_MIN_WIDTH_18_V_A2"
   - `dgm:atomIri`: "ex:hasWidthM"
   - `dgm:atomSwrlLabel`: "hasWidthM"
   - `dgm:atomType`: "DataPropertyAtom"
 - **`dgm:R_STREET_MIN_WIDTH_18_V_H1`** — dgm:R_STREET_MIN_WIDTH_18_V_H1
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:atomId`: "R_STREET_MIN_WIDTH_18_V_H1"
   - `dgm:atomIri`: "ex:violatesMinWidth"
@@ -786,25 +747,25 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgm:DesignRuleSession` (4 individuals)
 
 - **`dgm:drs_4cab136231cf`** — drs-4cab136231cf
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:sessionId`: "drs-4cab136231cf"
   - `dgm:sessionMode`: "ingest"
   - `dgm:sessionPrompt`: "Street minimum width is 15 meters."
 - **`dgm:drs_79ba197cc693`** — drs-79ba197cc693
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:sessionId`: "drs-79ba197cc693"
   - `dgm:sessionMode`: "edit"
   - `dgm:sessionPrompt`: "Street minimum width is 18 meters."
 - **`dgm:drs_96d1ebd8dc8a`** — drs-96d1ebd8dc8a
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:sessionId`: "drs-96d1ebd8dc8a"
   - `dgm:sessionMode`: "ingest"
   - `dgm:sessionPrompt`: "All building must be maximum 75 meters high"
 - **`dgm:drs_ac4c176afeeb`** — drs-ac4c176afeeb
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:sessionId`: "drs-ac4c176afeeb"
   - `dgm:sessionMode`: "query"
@@ -813,27 +774,27 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgm:Literal` (5 individuals)
 
 - **`dgm:literal_18`** — 18
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:literalDatatype`: "xsd:decimal"
   - `dgm:literalLex`: "18"
 - **`dgm:literal_2`** — 2
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:literalDatatype`: "xsd:integer"
   - `dgm:literalLex`: "2"
 - **`dgm:literal_75`** — 75
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:literalDatatype`: "xsd:decimal"
   - `dgm:literalLex`: "75"
 - **`dgm:literal_80`** — 80
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:literalDatatype`: "xsd:decimal"
   - `dgm:literalLex`: "80"
 - **`dgm:literal_true`** — true
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:literalDatatype`: "xsd:boolean"
   - `dgm:literalLex`: "true"
@@ -842,48 +803,38 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgm:var_b`** — ?b
   - _Comment:_ Object variable representing a Building instance. Inferred from ClassAtom Building(?b). Cross-rule scoped (VTYP-02).
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
-  - `dgm:variableKind`: dgm:VariableKind_Object
   - `dgm:variableName`: "?b"
-  - `dgm:variableScope`: dgm:VariableScope_CrossRule
 - **`dgm:var_s`** — ?s
   - _Comment:_ Object variable representing a Street instance. Inferred from ClassAtom Street(?s). Cross-rule scoped (VTYP-02).
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
-  - `dgm:variableKind`: dgm:VariableKind_Object
   - `dgm:variableName`: "?s"
-  - `dgm:variableScope`: dgm:VariableScope_CrossRule
 - **`dgm:var_u`** — ?u
   - _Comment:_ Object variable representing a LivingUnit/Unit instance. Inferred from ClassAtom. Cross-rule scoped (VTYP-02).
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
-  - `dgm:variableKind`: dgm:VariableKind_Object
   - `dgm:variableName`: "?u"
-  - `dgm:variableScope`: dgm:VariableScope_CrossRule
 
 #### Type: `dgm:PropertyVariable` (2 individuals)
 
 - **`dgm:var_h`** — ?h
   - _Comment:_ Property variable representing height. Inferred from DataPropertyAtom hasHeightM(?b,?h) arg-2. Rule-scoped (VTYP-03).
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:inferredDatatype`: "xsd:decimal"
-  - `dgm:variableKind`: dgm:VariableKind_Property
   - `dgm:variableName`: "?h"
-  - `dgm:variableScope`: dgm:VariableScope_RuleLocal
 - **`dgm:var_w`** — ?w
   - _Comment:_ Property variable representing width/window count. Inferred from DataPropertyAtom arg-2. Rule-scoped (VTYP-03).
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
-  - `dgm:variableKind`: dgm:VariableKind_Property
   - `dgm:variableName`: "?w"
-  - `dgm:variableScope`: dgm:VariableScope_RuleLocal
 
 #### Type: `dgm:Rule` (5 individuals)
 
 - **`dgm:R_BUILDING_MAX_HEIGHT_75_V`** — R_BUILDING_MAX_HEIGHT_75_V
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "UrbanBlock"
   - `dgm:hasBody`: dgm:R_BUILDING_MAX_HEIGHT_75_V_A1, dgm:R_BUILDING_MAX_HEIGHT_75_V_A2, dgm:R_BUILDING_MAX_HEIGHT_75_V_A3
   - `dgm:hasHead`: dgm:R_BUILDING_MAX_HEIGHT_75_V_H1
@@ -891,38 +842,29 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgm:ruleKind`: "violation"
   - `dgm:ruleText`: "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)"
 - **`dgm:R_BUILDING_MAX_HEIGHT_80_V`** — R_BUILDING_MAX_HEIGHT_80_V
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:ruleId`: "R_BUILDING_MAX_HEIGHT_80_V"
   - `dgm:ruleKind`: "violation"
   - `dgm:ruleText`: "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,80)->violatesMaxHeight(?b,true)"
 - **`dgm:R_LIVINGUNIT_MIN_WINDOW_2_V`** — R_LIVINGUNIT_MIN_WINDOW_2_V
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:ruleId`: "R_LIVINGUNIT_MIN_WINDOW_2_V"
   - `dgm:ruleKind`: "violation"
   - `dgm:ruleText`: "LivingUnit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)->violatesMinWindowCount(?u,true)"
 - **`dgm:R_STREET_MIN_WIDTH_18_V`** — R_STREET_MIN_WIDTH_18_V
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "TestA"
   - `dgm:ruleId`: "R_STREET_MIN_WIDTH_18_V"
   - `dgm:ruleKind`: "violation"
   - `dgm:ruleText`: "Street(?s)^hasWidthM(?s,?w)^swrlb:lessThan(?w,18)->violatesMinWidth(?s,true)"
 - **`dgm:R_UNIT_MIN_WINDOW_2_V`** — R_UNIT_MIN_WINDOW_2_V
-  - `dg:graph`: "Metagraph"
+  - `dg:graph`: dgm:Metagraph
   - `dg:project`: "Test Project"
   - `dgm:ruleId`: "R_UNIT_MIN_WINDOW_2_V"
   - `dgm:ruleKind`: "violation"
   - `dgm:ruleText`: "Unit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)->violatesMinWindowCount(?u,true)"
-
-#### Type: `dgm:VariableKindValue` (3 individuals)
-
-- **`dgm:VariableKind_Builtin`** — Builtin
-  - _Comment:_ Variable bound only inside BuiltinAtom args. Not exposed on the Grasshopper canvas (VTYP-01 step 3).
-- **`dgm:VariableKind_Object`** — Object
-  - _Comment:_ Variable representing a domain entity instance. Inferred from ClassAtom arg-1 (VTYP-01 step 1). Cross-rule scoped (VTYP-02).
-- **`dgm:VariableKind_Property`** — Property
-  - _Comment:_ Variable representing a datatype property value. Inferred from DataPropertyAtom arg-2+ (VTYP-01 step 2). Rule-scoped (VTYP-03).
 
 #### Type: `dgm:VariableScopeValue` (2 individuals)
 
@@ -937,18 +879,10 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:DS_def_h25_w12`** — DefState: height=25, width=12
   - _Comment:_ Parametric capture of a Building configuration. Changes in this DefState regenerate the linked IdRef per CMPST-05.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:hasIdRef`: dgv:IDR_DS_def_h25_w12
-  - `dgv:kind`: dgv:DesignStateKind_DefState
   - `dgv:stateId`: "DS_def_h25_w12"
-
-#### Type: `dgv:DesignStateKindValue` (2 individuals)
-
-- **`dgv:DesignStateKind_DefState`** — DefState
-  - _Comment:_ Parametric capture snapshot from Grasshopper sliders/toggles. ID prefix: DS_.
-- **`dgv:DesignStateKind_ObjectState`** — ObjectState
-  - _Comment:_ Object variable to geometry binding snapshot. 1:1 with an ObjectInstance. ID prefix: OS_.
 
 #### Type: `dgv:DesignStateParameterTypeValue` (3 individuals)
 
@@ -963,12 +897,12 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:GR_speckle_xyz1`** — GeoRef: speckle:xyz1
   - _Comment:_ Speckle objectId handle for the primary mass geometry of Building #1.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:geoRefId`: "speckle:obj:xyz1"
 - **`dgv:GR_speckle_xyz2`** — GeoRef: speckle:xyz2
   - _Comment:_ Speckle objectId handle for the roof geometry of Building #1.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:geoRefId`: "speckle:obj:xyz2"
 
@@ -976,7 +910,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:IDR_DS_def_h25_w12`** — IdRef for DS_def_h25_w12
   - _Comment:_ Auto-generated identifier for DefState DS_def_h25_w12 (CMPST-08). Resolves to OI_Building_b1 for cross-run tracking (INTG-03). Will regenerate if any slider value in the DefState changes.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:idRefValue`: "IDR_a1b2c3d4e5f6"
   - `dgv:resolvesTo`: dgv:OI_Building_b1
@@ -985,7 +919,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:SpeckleIntegration_TestA`** — Speckle Integration (TestA)
   - _Comment:_ Integration config from Neo4j ValidationGraph. Connects project TestA to Speckle for 3D validation overlay.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:baseModelId`: "4c546c0771"
   - `dgv:provider`: "Speckle"
@@ -996,7 +930,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:OI_Building_b1`** — ObjectInstance: Building #1
   - _Comment:_ Cross-rule identity for the first Building in the TestA model. Bound to Object variable ?b via its ObjectState.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:hasObjectState`: dgv:OS_b1_var_b
   - `dgv:instanceId`: "OI_Building_b1"
@@ -1005,11 +939,10 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:OS_b1_var_b`** — ObjectState: OI_Building_b1 ↔ ?b
   - _Comment:_ Binding snapshot pairing OI_Building_b1 with Object variable ?b (var_b) and its current GeoRef set. State_Id computed as OS_<SHA256(projectId + objectInstanceId + variableName)> per CMPST-07.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:hasGeoRef`: dgv:GR_speckle_xyz1, dgv:GR_speckle_xyz2
   - `dgv:hasObjectVariable`: dgm:var_b
-  - `dgv:kind`: dgv:DesignStateKind_ObjectState
   - `dgv:objectRef`: "rhino-guid-9f3e2a"
   - `dgv:representsInstance`: dgv:OI_Building_b1
   - `dgv:stateId`: "OS_a1b2c3d4"
@@ -1035,7 +968,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgv:VEntity_a5671cb1bd30_b1_height`** — Entity: Building #1 height check (passed)
   - _Comment:_ Per-rule, per-instance validation result cell. Records that Building #1 passed R_BUILDING_MAX_HEIGHT_75_V with a measured height value of 25 (the propValue — SCHM-05). Belongs to run a5671cb1bd30.
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:dgEntityId`: "VE_a5671cb1bd30_b1_height"
   - `dgv:displayName`: "Building #1"
@@ -1046,7 +979,7 @@ The ontology ships with a representative ABox of named individuals demonstrating
   - `dgv:validatesInstance`: dgv:OI_Building_b1
 - **`dgv:VEntity_a5671cb1bd30_b1_overflow`** — Entity: Building #1 height check (failed example)
   - _Comment:_ Illustrative failing case: same ObjectInstance, different parametric run, height exceeded the 75m limit (value 80). Shows that ObjectInstance can be referenced by multiple ValidationEntities — one per (Run × Rule).
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:dgEntityId`: "VE_a5671cb1bd30_b1_overflow"
   - `dgv:displayName`: "Building #1"
@@ -1059,27 +992,27 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgv:ValidationRun` (5 individuals)
 
 - **`dgv:VRun_27b121d78c73`** — Validation Run 27b121d78c73
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:runId`: "27b121d78c73"
   - `dgv:status`: dgv:Status_Completed
 - **`dgv:VRun_63ffbff1f928`** — Validation Run 63ffbff1f928
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:runId`: "63ffbff1f928"
   - `dgv:status`: dgv:Status_Completed
 - **`dgv:VRun_a5671cb1bd30`** — Validation Run a5671cb1bd30
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:runId`: "a5671cb1bd30"
   - `dgv:status`: dgv:Status_Completed
 - **`dgv:VRun_ac0d62f1332c`** — Validation Run ac0d62f1332c
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:runId`: "ac0d62f1332c"
   - `dgv:status`: dgv:Status_Completed
 - **`dgv:VRun_f8678448d4e7`** — Validation Run f8678448d4e7
-  - `dg:graph`: "ValidationGraph"
+  - `dg:graph`: dgv:ValidationGraph
   - `dg:project`: "TestA"
   - `dgv:runId`: "f8678448d4e7"
   - `dgv:status`: dgv:Status_Completed
@@ -1099,92 +1032,92 @@ The ontology ships with a representative ABox of named individuals demonstrating
 
 - **`dgk:KC_KnowledgeNote`** — KnowledgeNote
   - _Comment:_ Hub node for knowledge notes. Neo4j KnowledgeGraph, project: UrbanBlock.
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
 - **`dgk:KC_KnowledgeSession`** — KnowledgeSession
   - _Comment:_ Hub node for knowledge sessions. Neo4j KnowledgeGraph, project: UrbanBlock.
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
 
 #### Type: `dgk:KnowledgeNote` (10 individuals)
 
 - **`dgk:Note_BIG_Architects`** — BIG Architects
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:taggedWith`: dgk:Tag_architects, dgk:Tag_studio
   - `dgk:tags`: "architects,studio"
   - `dgk:title`: "BIG Architects"
 - **`dgk:Note_BuildingAddress`** — Building Address
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:taggedWith`: dgk:Tag_portugal, dgk:Tag_guimaraes, dgk:Tag_rua_do_avelino_germano
   - `dgk:tags`: "portugal,guimaraes,rua-d0-avelino-germano"
   - `dgk:title`: "Building Address"
 - **`dgk:Note_BuildingHeightRegulations`** — Building Height Regulations
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:title`: "Building Height Regulations"
 - **`dgk:Note_BuildingStaircaseCount`** — Building Staircase Count
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:taggedWith`: dgk:Tag_building, dgk:Tag_staircase
   - `dgk:tags`: "building,staircase"
   - `dgk:title`: "Building Staircase Count"
 - **`dgk:Note_GreenAreaRatio`** — Green Area Ratio
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:title`: "Green Area Ratio"
 - **`dgk:Note_MaxFloorToFloorHeightZoneA`** — Maximum floor-to-floor height Zone A
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:taggedWith`: dgk:Tag_height, dgk:Tag_residential, dgk:Tag_zone_a, dgk:Tag_compliance
   - `dgk:tags`: "height,residential,zone-a,compliance"
   - `dgk:title`: "Maximum floor-to-floor height Zone A"
 - **`dgk:Note_ParkingCapacity`** — Parking Capacity
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:taggedWith`: dgk:Tag_parking, dgk:Tag_capacity
   - `dgk:tags`: "parking,capacity"
   - `dgk:title`: "Parking Capacity"
 - **`dgk:Note_ProjectLocation`** — Project Location
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:taggedWith`: dgk:Tag_guimaraes, dgk:Tag_braga, dgk:Tag_portugal
   - `dgk:tags`: "guimaraes,braga,portugal"
   - `dgk:title`: "Project Location"
 - **`dgk:Note_SetbackRequirements`** — Setback Requirements
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:title`: "Setback Requirements"
 - **`dgk:Note_TestUpdateNote`** — Test Update Note
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "test-update-flow"
   - `dgk:title`: "Test Update Note"
 
 #### Type: `dgk:KnowledgeSession` (5 individuals)
 
 - **`dgk:Session_ks_1d599d7a40a1`** — Update session
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:knowledgeSessionId`: "ks-1d599d7a40a1"
   - `dgk:mode`: "update"
 - **`dgk:Session_ks_mnoom0r3`** — Insert: Parking is 300 slots
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:knowledgeSessionId`: "ks-mnoom0r3"
   - `dgk:mode`: "insert"
 - **`dgk:Session_ks_mnoon96l`** — Insert: building has 3 staircases
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:knowledgeSessionId`: "ks-mnoon96l"
   - `dgk:mode`: "insert"
 - **`dgk:Session_ks_mnp1jw35`** — Insert: Address of the building is Portugal, Guimaraes...
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:knowledgeSessionId`: "ks-mnp1jw35"
   - `dgk:mode`: "insert"
 - **`dgk:Session_ks_mnq4ixld`** — Query: Where buidling is located
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:knowledgeSessionId`: "ks-mnq4ixld"
   - `dgk:mode`: "query"
@@ -1192,75 +1125,75 @@ The ontology ships with a representative ABox of named individuals demonstrating
 #### Type: `dgk:KnowledgeTag` (18 individuals)
 
 - **`dgk:Tag_architects`** — dgk:Tag_architects
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "architects"
 - **`dgk:Tag_braga`** — dgk:Tag_braga
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "braga"
 - **`dgk:Tag_building`** — dgk:Tag_building
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "building"
 - **`dgk:Tag_capacity`** — dgk:Tag_capacity
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "capacity"
 - **`dgk:Tag_compliance`** — dgk:Tag_compliance
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:tagName`: "compliance"
 - **`dgk:Tag_corridor`** — dgk:Tag_corridor
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "test-phase03"
   - `dgk:tagName`: "corridor"
 - **`dgk:Tag_evacuation`** — dgk:Tag_evacuation
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "test-phase03"
   - `dgk:tagName`: "evacuation"
 - **`dgk:Tag_guimaraes`** — dgk:Tag_guimaraes
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "guimaraes"
 - **`dgk:Tag_height`** — dgk:Tag_height
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:tagName`: "height"
 - **`dgk:Tag_parking`** — dgk:Tag_parking
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "parking"
 - **`dgk:Tag_portugal`** — dgk:Tag_portugal
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "portugal"
 - **`dgk:Tag_residential`** — dgk:Tag_residential
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:tagName`: "residential"
 - **`dgk:Tag_rua_do_avelino_germano`** — dgk:Tag_rua_do_avelino_germano
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "rua-d0-avelino-germano"
 - **`dgk:Tag_staircase`** — dgk:Tag_staircase
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "staircase"
 - **`dgk:Tag_studio`** — dgk:Tag_studio
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "TestA"
   - `dgk:tagName`: "studio"
 - **`dgk:Tag_width`** — dgk:Tag_width
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "test-phase03"
   - `dgk:tagName`: "width"
 - **`dgk:Tag_zone_a`** — dgk:Tag_zone_a
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:tagName`: "zone-a"
 - **`dgk:Tag_zone_b`** — dgk:Tag_zone_b
-  - `dg:graph`: "KnowledgeGraph"
+  - `dg:graph`: dgk:KnowledgeGraph
   - `dg:project`: "UrbanBlock"
   - `dgk:tagName`: "zone-b"
 
@@ -1279,4 +1212,4 @@ xsd  = http://www.w3.org/2001/XMLSchema#
 
 ---
 
-*Auto-generated from `[DesignGrammar.owl](DesignGrammar.owl)` v3.1. Counts: 37 classes, 21 object properties, 56 datatype properties, 116 named individuals, 9 disjointness axioms.*
+*Auto-generated from `[DesignGrammar.owl](DesignGrammar.owl)` v4.1. Counts: 40 classes, 19 object properties, 56 datatype properties, 107 named individuals, 9 disjointness axioms.*

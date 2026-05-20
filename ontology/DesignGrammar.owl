@@ -8,13 +8,6 @@
     <!ENTITY dgm     "http://example.org/design-grammar/metagraph#">
     <!ENTITY dgv     "http://example.org/design-grammar/validation#">
     <!ENTITY dgk     "http://example.org/design-grammar/knowledge#">
-    <!ENTITY swrl    "http://www.w3.org/2003/11/swrl#">
-    <!ENTITY prov    "http://www.w3.org/ns/prov#">
-    <!ENTITY sosa    "http://www.w3.org/ns/sosa/">
-    <!ENTITY sh      "http://www.w3.org/ns/shacl#">
-    <!ENTITY skos    "http://www.w3.org/2004/02/skos/core#">
-    <!ENTITY dcterms "http://purl.org/dc/terms/">
-    <!ENTITY geo     "http://www.opengis.net/ont/geosparql#">
 ]>
 
 <rdf:RDF
@@ -26,13 +19,6 @@
     xmlns:dgm="&dgm;"
     xmlns:dgv="&dgv;"
     xmlns:dgk="&dgk;"
-    xmlns:swrl="&swrl;"
-    xmlns:prov="&prov;"
-    xmlns:sosa="&sosa;"
-    xmlns:sh="&sh;"
-    xmlns:skos="&skos;"
-    xmlns:dcterms="&dcterms;"
-    xmlns:geo="&geo;"
     xml:base="http://example.org/design-grammar">
 
     <!-- ============================================================
@@ -56,16 +42,8 @@
 
             Schema version: v3
         </rdfs:comment>
-        <owl:versionInfo>3.3</owl:versionInfo>
-        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale.</rdfs:seeAlso>
-        <!-- Cross-ontology imports (v3.2). Each external vocabulary is brought in so Protégé's reasoner can verify the alignment axioms below. Local resolution via catalog-v001.xml is recommended for offline work. -->
-        <owl:imports rdf:resource="http://www.w3.org/2003/11/swrl"/>
-        <owl:imports rdf:resource="http://www.w3.org/ns/prov-o#"/>
-        <owl:imports rdf:resource="http://www.w3.org/ns/sosa/"/>
-        <owl:imports rdf:resource="http://www.w3.org/ns/shacl#"/>
-        <owl:imports rdf:resource="http://www.w3.org/2004/02/skos/core"/>
-        <owl:imports rdf:resource="http://purl.org/dc/terms/"/>
-        <owl:imports rdf:resource="http://www.opengis.net/ont/geosparql"/>
+        <owl:versionInfo>4.1</owl:versionInfo>
+        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:OntoGraph / dgm:Metagraph / dgv:ValidationGraph / dgk:KnowledgeGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties.</rdfs:seeAlso>
     </owl:Ontology>
 
     <!-- ============================================================
@@ -79,7 +57,8 @@
 
     <owl:AnnotationProperty rdf:about="&dg;graph">
         <rdfs:label xml:lang="en">graph layer</rdfs:label>
-        <rdfs:comment xml:lang="en">Logical graph partition within the single Neo4j database. Values: OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Logical graph partition within the single Neo4j database. Values are resource references to the four punned hub IRIs that are simultaneously classes (parents of layer-member entities) and NamedIndividuals of dg:GraphLayer: dg:OntoGraph, dgm:Metagraph, dgv:ValidationGraph, dgk:KnowledgeGraph. The range below documents this; OWL annotation properties do not enforce range.</rdfs:comment>
+        <rdfs:range rdf:resource="&dg;GraphLayer"/>
     </owl:AnnotationProperty>
 
     <owl:AnnotationProperty rdf:about="&dg;project">
@@ -99,32 +78,18 @@
 
     <owl:Class rdf:about="&dg;GraphLayer">
         <rdfs:label xml:lang="en">GraphLayer</rdfs:label>
-        <rdfs:comment xml:lang="en">A logical partition of the single Neo4j database. The Design Grammar System organizes all persisted nodes into four layers: OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph. Every node carries a `graph` property identifying its layer.</rdfs:comment>
+        <rdfs:comment xml:lang="en">A logical partition of the single Neo4j database. The Design Grammar System organizes all persisted nodes into exactly four layers (closed enumeration via owl:oneOf below, v4.1): OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph. The four layer IRIs are punned per OWL 2 — each is both a class (parent of the layer's DG entities, under LayerEntity) and an individual (member of this GraphLayer enum). Every DG class carries a `dg:graph` annotation pointing at its layer.</rdfs:comment>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:oneOf rdf:parseType="Collection">
+                    <owl:NamedIndividual rdf:about="&dg;OntoGraph"/>
+                    <owl:NamedIndividual rdf:about="&dgm;Metagraph"/>
+                    <owl:NamedIndividual rdf:about="&dgv;ValidationGraph"/>
+                    <owl:NamedIndividual rdf:about="&dgk;KnowledgeGraph"/>
+                </owl:oneOf>
+            </owl:Class>
+        </owl:equivalentClass>
     </owl:Class>
-
-    <owl:NamedIndividual rdf:about="&dg;OntoGraph">
-        <rdf:type rdf:resource="&dg;GraphLayer"/>
-        <rdfs:label xml:lang="en">OntoGraph</rdfs:label>
-        <rdfs:comment xml:lang="en">Dynamic domain ontology layer. Contains Class, DatatypeProperty, and ObjectProperty nodes generated from user prompts via LLM. These represent the project-specific domain vocabulary (e.g. Building, hasHeightM). Domain classes are NOT part of the system ontology — they are created at runtime.</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dg;Metagraph">
-        <rdf:type rdf:resource="&dg;GraphLayer"/>
-        <rdfs:label xml:lang="en">Metagraph</rdfs:label>
-        <rdfs:comment xml:lang="en">SWRL rule structure layer. Contains Rule, Atom, Variable (Object/Property), Literal, Builtin, and DesignRuleSession nodes. Rules reference OntoGraph entities via REFERS_TO. Per CTRCT-01: exposes Objects, DesignStates, and Runs as first-class outputs.</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dg;ValidationGraphLayer">
-        <rdf:type rdf:resource="&dg;GraphLayer"/>
-        <rdfs:label xml:lang="en">ValidationGraph</rdfs:label>
-        <rdfs:comment xml:lang="en">Validation data flow layer. Contains IntegrationConfig, ValidationRun, ValidationEntity, DesignState (DefState/ObjectState), and DesignStateParameter nodes. Manages the lifecycle from parameter capture through rule evaluation to Speckle publication.</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dg;KnowledgeGraphLayer">
-        <rdf:type rdf:resource="&dg;GraphLayer"/>
-        <rdfs:label xml:lang="en">KnowledgeGraph</rdfs:label>
-        <rdfs:comment xml:lang="en">Project knowledge storage layer. Contains KnowledgeNote, KnowledgeTag, KnowledgeSession, and KnowledgeClass nodes. Stores architectural knowledge ingested from project documentation or NL prompts.</rdfs:comment>
-    </owl:NamedIndividual>
 
     <!-- ============================================================
          LAYER HUB CLASSES (v3.3)
@@ -139,35 +104,39 @@
 
     <owl:Class rdf:about="&dg;LayerEntity">
         <rdfs:label xml:lang="en">LayerEntity</rdfs:label>
-        <rdfs:comment xml:lang="en">Abstract root for all DG entities that belong to one of the four graph layers (v3.3). Concrete top-level classes are grouped under one of: OntoGraphEntity, MetagraphEntity, ValidationGraphEntity, KnowledgeGraphEntity. Subclasses inherit layer membership transitively. Note: distinct from dg:GraphLayer, which is the enum of layer names with four NamedIndividual values.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Abstract root for DG entities that belong to one of the four graph layers. Direct subclasses are the four layer hubs: dg:OntoGraph, dgm:Metagraph, dgv:ValidationGraph, dgk:KnowledgeGraph. Each hub IRI is simultaneously a class (grouping its layer's DG entities) AND a NamedIndividual of dg:GraphLayer via OWL 2 punning (v3.4 unified structure). dg:LayerEntity itself is intentionally NOT tagged with a dg:graph annotation because it is cross-cutting — it is the parent of all four layer hubs, not a member of any single layer.</rdfs:comment>
     </owl:Class>
 
-    <owl:Class rdf:about="&dg;OntoGraphEntity">
-        <rdfs:label xml:lang="en">OntoGraphEntity</rdfs:label>
+    <owl:Class rdf:about="&dg;OntoGraph">
+        <rdf:type rdf:resource="&dg;GraphLayer"/>
+        <rdfs:label xml:lang="en">OntoGraph</rdfs:label>
         <rdfs:comment xml:lang="en">Hub class for the OntoGraph layer (dynamic domain ontology meta-schema). Top-level subclasses: Class, DatatypeProperty, ObjectProperty.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:Class>
 
-    <owl:Class rdf:about="&dgm;MetagraphEntity">
-        <rdfs:label xml:lang="en">MetagraphEntity</rdfs:label>
+    <owl:Class rdf:about="&dgm;Metagraph">
+        <rdf:type rdf:resource="&dg;GraphLayer"/>
+        <rdfs:label xml:lang="en">Metagraph</rdfs:label>
         <rdfs:comment xml:lang="en">Hub class for the Metagraph layer (SWRL rule structure). Top-level subclasses: Rule, Atom (with ClassAtom/DataPropertyAtom/ObjectPropertyAtom/BuiltinAtom children), Variable (with ObjectVariable/PropertyVariable/BuiltinVariable children), Literal, Builtin, DesignRuleSession, VariableKindValue, VariableScopeValue.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
-    <owl:Class rdf:about="&dgv;ValidationGraphEntity">
-        <rdfs:label xml:lang="en">ValidationGraphEntity</rdfs:label>
+    <owl:Class rdf:about="&dgv;ValidationGraph">
+        <rdf:type rdf:resource="&dg;GraphLayer"/>
+        <rdfs:label xml:lang="en">ValidationGraph</rdfs:label>
         <rdfs:comment xml:lang="en">Hub class for the ValidationGraph layer (validation runs, design state, integration config). Top-level subclasses: ValidationRun, ValidationEntity, DesignState (with DefState/ObjectState children), DesignStateParameter, IntegrationConfig, ObjectInstance, GeoRef, IdRef, and four enum value classes (DesignStateKindValue, DesignStateParameterTypeValue, ValidationStatusValue, ReinstatementStatusValue).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
-    <owl:Class rdf:about="&dgk;KnowledgeGraphEntity">
-        <rdfs:label xml:lang="en">KnowledgeGraphEntity</rdfs:label>
+    <owl:Class rdf:about="&dgk;KnowledgeGraph">
+        <rdf:type rdf:resource="&dg;GraphLayer"/>
+        <rdfs:label xml:lang="en">KnowledgeGraph</rdfs:label>
         <rdfs:comment xml:lang="en">Hub class for the KnowledgeGraph layer (project notes, tags, sessions). Top-level subclasses: KnowledgeClass, KnowledgeNote, KnowledgeTag, KnowledgeSession.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:Class>
 
     <!-- ============================================================
@@ -183,24 +152,24 @@
         <rdfs:label xml:lang="en">Class</rdfs:label>
         <rdfs:comment xml:lang="en">A dynamically generated OWL class in the OntoGraph layer. Created from user prompts (e.g. Building, UrbanBlock). Key property: iri. Aligned with: owl:Class (R7, subClassOf rather than equivalentClass — DG reifies the OWL meta-schema as Neo4j data, so dg:Class instances are also conceptually owl:Class instances, but using subClassOf keeps the meta-level reification clear).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;Class"/>
-        <dg:graph>OntoGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dg;DatatypeProperty">
         <rdfs:label xml:lang="en">DatatypeProperty</rdfs:label>
         <rdfs:comment xml:lang="en">A dynamically generated datatype property in the OntoGraph layer. Represents measurable attributes (e.g. hasHeightM) and violation flags (e.g. violatesMaxHeight). Key property: iri. Aligned with: owl:DatatypeProperty (R7).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;DatatypeProperty"/>
-        <dg:graph>OntoGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dg;ObjectProperty">
         <rdfs:label xml:lang="en">ObjectProperty</rdfs:label>
         <rdfs:comment xml:lang="en">A dynamically generated object property in the OntoGraph layer. Represents relationships between domain classes (e.g. locatedIn). Key property: iri. Aligned with: owl:ObjectProperty (R7).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&owl;ObjectProperty"/>
-        <dg:graph>OntoGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dg;OntoGraphEntity"/>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
+        <rdfs:subClassOf rdf:resource="&dg;OntoGraph"/>
     </owl:Class>
 
     <!-- OntoGraph node properties -->
@@ -208,7 +177,6 @@
     <owl:DatatypeProperty rdf:about="&dg;iri">
         <rdfs:label xml:lang="en">iri</rdfs:label>
         <rdfs:comment xml:lang="en">IRI identifier for ontology entities. Format: ex:&lt;Name&gt; (e.g. ex:Building, ex:hasHeightM). Aligned with: dcterms:identifier (R7-adjacent) — the IRI IS the canonical identifier.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
@@ -236,7 +204,7 @@
         <dg:iri>ex:Building</dg:iri>
         <dg:label>Building</dg:label>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;Class_LivingUnit">
@@ -245,7 +213,7 @@
         <dg:iri>ex:LivingUnit</dg:iri>
         <dg:label>LivingUnit</dg:label>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;Class_Street">
@@ -254,7 +222,7 @@
         <dg:iri>ex:Street</dg:iri>
         <dg:label>Street</dg:label>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;Class_Unit">
@@ -263,7 +231,7 @@
         <dg:iri>ex:Unit</dg:iri>
         <dg:label>Unit</dg:label>
         <dg:project>Test Project</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -276,7 +244,7 @@
         <dg:iri>ex:hasHeightM</dg:iri>
         <dg:range>xsd:decimal</dg:range>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;DProp_hasWidthM">
@@ -285,7 +253,7 @@
         <dg:iri>ex:hasWidthM</dg:iri>
         <dg:range>xsd:decimal</dg:range>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;DProp_hasWindowCount">
@@ -294,7 +262,7 @@
         <dg:iri>ex:hasWindowCount</dg:iri>
         <dg:range>xsd:integer</dg:range>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;DProp_violatesMaxHeight">
@@ -303,7 +271,7 @@
         <dg:iri>ex:violatesMaxHeight</dg:iri>
         <dg:range>xsd:boolean</dg:range>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;DProp_violatesMinWidth">
@@ -312,7 +280,7 @@
         <dg:iri>ex:violatesMinWidth</dg:iri>
         <dg:range>xsd:boolean</dg:range>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dg;DProp_violatesMinWindowCount">
@@ -321,7 +289,7 @@
         <dg:iri>ex:violatesMinWindowCount</dg:iri>
         <dg:range>xsd:boolean</dg:range>
         <dg:project>TestA</dg:project>
-        <dg:graph>OntoGraph</dg:graph>
+        <dg:graph rdf:resource="&dg;OntoGraph"/>
     </owl:NamedIndividual>
 
     <!-- ============================================================
@@ -339,100 +307,109 @@
     <owl:Class rdf:about="&dgm;Rule">
         <rdfs:label xml:lang="en">Rule</rdfs:label>
         <rdfs:comment xml:lang="en">A design grammar rule expressed as a SWRL implication. Contains body atoms (conditions) and head atoms (conclusions). Key property: Rule_Id. Format: R_&lt;DOMAIN&gt;_&lt;PROPERTY&gt;_&lt;LIMIT&gt;_V</rdfs:comment>
-        <owl:equivalentClass rdf:resource="&swrl;Imp"/>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Atom">
         <rdfs:label xml:lang="en">Atom</rdfs:label>
         <rdfs:comment xml:lang="en">An individual SWRL atom — a single predicate assertion within a rule. Types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom. Key property: Atom_Id.</rdfs:comment>
-        <owl:equivalentClass rdf:resource="&swrl;Atom"/>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;ClassAtom">
         <rdfs:label xml:lang="en">ClassAtom</rdfs:label>
         <rdfs:comment xml:lang="en">An atom asserting class membership (e.g. Building(?b)). Takes one variable argument at pos 1.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Atom"/>
-        <owl:equivalentClass rdf:resource="&swrl;ClassAtom"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;DataPropertyAtom">
         <rdfs:label xml:lang="en">DataPropertyAtom</rdfs:label>
         <rdfs:comment xml:lang="en">An atom asserting a datatype property value (e.g. hasHeightM(?b, ?h)). Takes two arguments: entity variable (pos 1) and value variable/literal (pos 2).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Atom"/>
-        <owl:equivalentClass rdf:resource="&swrl;DatavaluedPropertyAtom"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;ObjectPropertyAtom">
         <rdfs:label xml:lang="en">ObjectPropertyAtom</rdfs:label>
         <rdfs:comment xml:lang="en">An atom asserting an object property relationship (e.g. locatedIn(?b, ?block)). Takes two variable arguments.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Atom"/>
-        <owl:equivalentClass rdf:resource="&swrl;IndividualPropertyAtom"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;BuiltinAtom">
         <rdfs:label xml:lang="en">BuiltinAtom</rdfs:label>
         <rdfs:comment xml:lang="en">An atom invoking a SWRL builtin comparison operator (e.g. swrlb:greaterThan(?h, 75)). Takes two arguments for comparison.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Atom"/>
-        <owl:equivalentClass rdf:resource="&swrl;BuiltinAtom"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Variable">
         <rdfs:label xml:lang="en">Variable</rdfs:label>
-        <rdfs:comment xml:lang="en">A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Variable kind (Object vs Property) is inferred at read-time from atom structure (VTYP-01). MERGE key includes project to prevent cross-project collision (SCHM-02).</rdfs:comment>
-        <owl:equivalentClass rdf:resource="&swrl;Variable"/>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <rdfs:comment xml:lang="en">A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Every Variable individual is necessarily an ObjectVariable, PropertyVariable, OR BuiltinVariable (owl:disjointUnionOf below — VTYP-01 priority chain). MERGE key includes project to prevent cross-project collision (SCHM-02). STORAGE NOTE: In the Neo4j layer, variable kind is inferred at read time by VariableTypeInferrer.Infer() — not stored on the Var node. The OWL ontology uses rdf:type plus disjointUnionOf to discriminate; no separate kind property exists (v4.1).</rdfs:comment>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgm;ObjectVariable"/>
+            <owl:Class rdf:about="&dgm;PropertyVariable"/>
+            <owl:Class rdf:about="&dgm;BuiltinVariable"/>
+        </owl:disjointUnionOf>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;ObjectVariable">
         <rdfs:label xml:lang="en">ObjectVariable</rdfs:label>
-        <rdfs:comment xml:lang="en">A variable representing a domain entity instance (e.g. ?b for Building). Inferred from ClassAtom arguments (VTYP-01). Object variables are cross-rule scoped: the same variable name maps to the same entity across all rules in a project (VTYP-02). Can be wired to OBJECT STATE component to create ObjectState (CMPST-01).</rdfs:comment>
+        <rdfs:comment xml:lang="en">A variable representing a domain entity instance (e.g. ?b for Building). Inferred from ClassAtom arguments (VTYP-01). Object variables are cross-rule scoped: the same variable name maps to the same entity across all rules in a project (VTYP-02). Can be wired to OBJECT STATE component to create ObjectState (CMPST-01). The cross-rule scope is inferred by reasoner via the SubClassOf restriction below (v4.1).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Variable"/>
-        <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&dgm;variableScope"/>
+                <owl:hasValue rdf:resource="&dgm;VariableScope_CrossRule"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;PropertyVariable">
         <rdfs:label xml:lang="en">PropertyVariable</rdfs:label>
-        <rdfs:comment xml:lang="en">A variable representing a datatype property value (e.g. ?h for height). Inferred from DataPropertyAtom arg-2 position (VTYP-01). Property variables are rule-scoped: the same name in different rules represents independent variables (VTYP-03).</rdfs:comment>
+        <rdfs:comment xml:lang="en">A variable representing a datatype property value (e.g. ?h for height). Inferred from DataPropertyAtom arg-2 position (VTYP-01). Property variables are rule-scoped: the same name in different rules represents independent variables (VTYP-03). The rule-local scope is inferred by reasoner via the SubClassOf restriction below (v4.1).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Variable"/>
-        <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&dgm;variableScope"/>
+                <owl:hasValue rdf:resource="&dgm;VariableScope_RuleLocal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;BuiltinVariable">
         <rdfs:label xml:lang="en">BuiltinVariable</rdfs:label>
         <rdfs:comment xml:lang="en">A variable bound only inside BuiltinAtom arguments (e.g. an arithmetic intermediate). Not surfaced on the Grasshopper canvas — the VariableTypeInferrer recognizes this category to keep RULE DECONSTRUCT outputs clean (VTYP-01 priority chain step 3).</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgm;Variable"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Literal">
         <rdfs:label xml:lang="en">Literal</rdfs:label>
         <rdfs:comment xml:lang="en">A constant value used as an atom argument (e.g. 75, true). Key properties: lex (lexical form) + datatype (xsd type).</rdfs:comment>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;Builtin">
         <rdfs:label xml:lang="en">Builtin</rdfs:label>
         <rdfs:comment xml:lang="en">A SWRL builtin comparison or arithmetic operator. Referenced by BuiltinAtom via REFERS_TO. Key property: iri (swrlb: prefix).</rdfs:comment>
-        <owl:equivalentClass rdf:resource="&swrl;Builtin"/>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgm;DesignRuleSession">
         <rdfs:label xml:lang="en">DesignRuleSession</rdfs:label>
         <rdfs:comment xml:lang="en">An interaction log for rule ingest/query/edit operations. Stores the user prompt and LLM result for audit and undo capability.</rdfs:comment>
-        <dg:graph>Metagraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <!-- ************************************************************
@@ -504,14 +481,6 @@
         <rdfs:domain rdf:resource="&dgm;Variable"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
-
-    <owl:ObjectProperty rdf:about="&dgm;variableKind">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label xml:lang="en">variableKind</rdfs:label>
-        <rdfs:comment xml:lang="en">Variable kind discriminator (enum-valued): VariableKind_Object (inferred from ClassAtom arg, cross-rule scoped per VTYP-02), VariableKind_Property (inferred from DataPropertyAtom arg-2, rule-scoped per VTYP-03), or VariableKind_Builtin (only in BuiltinAtom args, not exposed on canvas). Inferred at read-time by VariableTypeInferrer.Infer() — not stored on the Neo4j Var node (VTYP-01). Characteristics: Functional.</rdfs:comment>
-        <rdfs:domain rdf:resource="&dgm;Variable"/>
-        <rdfs:range rdf:resource="&dgm;VariableKindValue"/>
-    </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="&dgm;variableScope">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
@@ -597,7 +566,6 @@
         <rdfs:domain rdf:resource="&dgm;Rule"/>
         <rdfs:range rdf:resource="&dgm;Atom"/>
         <owl:propertyDisjointWith rdf:resource="&dgm;hasHead"/>
-        <owl:equivalentProperty rdf:resource="&swrl;body"/>
     </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="&dgm;hasHead">
@@ -606,7 +574,6 @@
         <rdfs:comment xml:lang="en">Connects a Rule to its head (conclusion) atoms. The head sets the violation flag to true when the body fires. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's head. Disjoint with hasBody (declared on hasBody side). Equivalent to swrl:head.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgm;Rule"/>
         <rdfs:range rdf:resource="&dgm;Atom"/>
-        <owl:equivalentProperty rdf:resource="&swrl;head"/>
     </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="&dgm;refersTo">
@@ -655,42 +622,8 @@
     </owl:DatatypeProperty>
 
     <!-- ************************************************************
-         METAGRAPH ENUMERATIONS — VariableKind, VariableScope
+         METAGRAPH ENUMERATIONS — VariableScope
          ************************************************************ -->
-
-    <owl:Class rdf:about="&dgm;VariableKindValue">
-        <rdfs:label xml:lang="en">VariableKind</rdfs:label>
-        <rdfs:comment xml:lang="en">Enumeration of variable kinds inferred by VariableTypeInferrer per VTYP-01 priority chain. Corresponds to C# enum DG.Core.Models.VariableKind. Closed via owl:oneOf — the value space is fixed.</rdfs:comment>
-        <owl:equivalentClass>
-            <owl:Class>
-                <owl:oneOf rdf:parseType="Collection">
-                    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Object"/>
-                    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Property"/>
-                    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Builtin"/>
-                </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
-            </owl:Class>
-        </owl:equivalentClass>
-        <dg:graph>Metagraph</dg:graph>
-    </owl:Class>
-
-    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Object">
-        <rdf:type rdf:resource="&dgm;VariableKindValue"/>
-        <rdfs:label xml:lang="en">Object</rdfs:label>
-        <rdfs:comment xml:lang="en">Variable representing a domain entity instance. Inferred from ClassAtom arg-1 (VTYP-01 step 1). Cross-rule scoped (VTYP-02).</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Property">
-        <rdf:type rdf:resource="&dgm;VariableKindValue"/>
-        <rdfs:label xml:lang="en">Property</rdfs:label>
-        <rdfs:comment xml:lang="en">Variable representing a datatype property value. Inferred from DataPropertyAtom arg-2+ (VTYP-01 step 2). Rule-scoped (VTYP-03).</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dgm;VariableKind_Builtin">
-        <rdf:type rdf:resource="&dgm;VariableKindValue"/>
-        <rdfs:label xml:lang="en">Builtin</rdfs:label>
-        <rdfs:comment xml:lang="en">Variable bound only inside BuiltinAtom args. Not exposed on the Grasshopper canvas (VTYP-01 step 3).</rdfs:comment>
-    </owl:NamedIndividual>
 
     <owl:Class rdf:about="&dgm;VariableScopeValue">
         <rdfs:label xml:lang="en">VariableScope</rdfs:label>
@@ -701,10 +634,10 @@
                     <owl:NamedIndividual rdf:about="&dgm;VariableScope_CrossRule"/>
                     <owl:NamedIndividual rdf:about="&dgm;VariableScope_RuleLocal"/>
                 </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgm;MetagraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
-        <dg:graph>Metagraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
     <owl:NamedIndividual rdf:about="&dgm;VariableScope_CrossRule">
@@ -777,7 +710,7 @@
         <dgm:hasBody rdf:resource="&dgm;R_BUILDING_MAX_HEIGHT_75_V_A2"/>
         <dgm:hasBody rdf:resource="&dgm;R_BUILDING_MAX_HEIGHT_75_V_A3"/>
         <dgm:hasHead rdf:resource="&dgm;R_BUILDING_MAX_HEIGHT_75_V_H1"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -787,7 +720,7 @@
         <dgm:ruleId>R_BUILDING_MAX_HEIGHT_80_V</dgm:ruleId>
         <dgm:ruleKind>violation</dgm:ruleKind>
         <dgm:ruleText>Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,80)-&gt;violatesMaxHeight(?b,true)</dgm:ruleText>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -797,7 +730,7 @@
         <dgm:ruleId>R_LIVINGUNIT_MIN_WINDOW_2_V</dgm:ruleId>
         <dgm:ruleKind>violation</dgm:ruleKind>
         <dgm:ruleText>LivingUnit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)-&gt;violatesMinWindowCount(?u,true)</dgm:ruleText>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -807,7 +740,7 @@
         <dgm:ruleId>R_STREET_MIN_WIDTH_18_V</dgm:ruleId>
         <dgm:ruleKind>violation</dgm:ruleKind>
         <dgm:ruleText>Street(?s)^hasWidthM(?s,?w)^swrlb:lessThan(?w,18)-&gt;violatesMinWidth(?s,true)</dgm:ruleText>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -817,7 +750,7 @@
         <dgm:ruleId>R_UNIT_MIN_WINDOW_2_V</dgm:ruleId>
         <dgm:ruleKind>violation</dgm:ruleKind>
         <dgm:ruleText>Unit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)-&gt;violatesMinWindowCount(?u,true)</dgm:ruleText>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>Test Project</dg:project>
     </owl:NamedIndividual>
 
@@ -830,7 +763,7 @@
         <dgm:atomIri>ex:Building</dgm:atomIri>
         <dgm:atomSwrlLabel>Building</dgm:atomSwrlLabel>
         <dgm:hasArg rdf:resource="&dgm;var_b"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -842,7 +775,7 @@
         <dgm:atomSwrlLabel>hasHeightM</dgm:atomSwrlLabel>
         <dgm:hasArg rdf:resource="&dgm;var_b"/>
         <dgm:hasArg rdf:resource="&dgm;var_h"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -855,7 +788,7 @@
         <dgm:refersTo rdf:resource="&dgm;greaterThan"/>
         <dgm:hasArg rdf:resource="&dgm;var_h"/>
         <dgm:hasArg rdf:resource="&dgm;literal_75"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -867,7 +800,7 @@
         <dgm:atomSwrlLabel>violatesMaxHeight</dgm:atomSwrlLabel>
         <dgm:hasArg rdf:resource="&dgm;var_b"/>
         <dgm:hasArg rdf:resource="&dgm;literal_true"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -877,7 +810,7 @@
         <dgm:atomType>ClassAtom</dgm:atomType>
         <dgm:atomIri>ex:Street</dgm:atomIri>
         <dgm:atomSwrlLabel>Street</dgm:atomSwrlLabel>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -887,7 +820,7 @@
         <dgm:atomType>DataPropertyAtom</dgm:atomType>
         <dgm:atomIri>ex:hasWidthM</dgm:atomIri>
         <dgm:atomSwrlLabel>hasWidthM</dgm:atomSwrlLabel>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -898,7 +831,7 @@
         <dgm:atomIri>swrlb:lessThan</dgm:atomIri>
         <dgm:atomSwrlLabel>lessThan</dgm:atomSwrlLabel>
         <dgm:refersTo rdf:resource="&dgm;lessThan"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -908,7 +841,7 @@
         <dgm:atomType>DataPropertyAtom</dgm:atomType>
         <dgm:atomIri>ex:violatesMinWidth</dgm:atomIri>
         <dgm:atomSwrlLabel>violatesMinWidth</dgm:atomSwrlLabel>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -919,9 +852,7 @@
         <rdfs:label xml:lang="en">?b</rdfs:label>
         <rdfs:comment xml:lang="en">Object variable representing a Building instance. Inferred from ClassAtom Building(?b). Cross-rule scoped (VTYP-02).</rdfs:comment>
         <dgm:variableName>?b</dgm:variableName>
-        <dgm:variableKind rdf:resource="&dgm;VariableKind_Object"/>
-        <dgm:variableScope rdf:resource="&dgm;VariableScope_CrossRule"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -930,10 +861,8 @@
         <rdfs:label xml:lang="en">?h</rdfs:label>
         <rdfs:comment xml:lang="en">Property variable representing height. Inferred from DataPropertyAtom hasHeightM(?b,?h) arg-2. Rule-scoped (VTYP-03).</rdfs:comment>
         <dgm:variableName>?h</dgm:variableName>
-        <dgm:variableKind rdf:resource="&dgm;VariableKind_Property"/>
-        <dgm:variableScope rdf:resource="&dgm;VariableScope_RuleLocal"/>
         <dgm:inferredDatatype>xsd:decimal</dgm:inferredDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -942,9 +871,7 @@
         <rdfs:label xml:lang="en">?u</rdfs:label>
         <rdfs:comment xml:lang="en">Object variable representing a LivingUnit/Unit instance. Inferred from ClassAtom. Cross-rule scoped (VTYP-02).</rdfs:comment>
         <dgm:variableName>?u</dgm:variableName>
-        <dgm:variableKind rdf:resource="&dgm;VariableKind_Object"/>
-        <dgm:variableScope rdf:resource="&dgm;VariableScope_CrossRule"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -953,9 +880,7 @@
         <rdfs:label xml:lang="en">?s</rdfs:label>
         <rdfs:comment xml:lang="en">Object variable representing a Street instance. Inferred from ClassAtom Street(?s). Cross-rule scoped (VTYP-02).</rdfs:comment>
         <dgm:variableName>?s</dgm:variableName>
-        <dgm:variableKind rdf:resource="&dgm;VariableKind_Object"/>
-        <dgm:variableScope rdf:resource="&dgm;VariableScope_CrossRule"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -964,9 +889,7 @@
         <rdfs:label xml:lang="en">?w</rdfs:label>
         <rdfs:comment xml:lang="en">Property variable representing width/window count. Inferred from DataPropertyAtom arg-2. Rule-scoped (VTYP-03).</rdfs:comment>
         <dgm:variableName>?w</dgm:variableName>
-        <dgm:variableKind rdf:resource="&dgm;VariableKind_Property"/>
-        <dgm:variableScope rdf:resource="&dgm;VariableScope_RuleLocal"/>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -977,7 +900,7 @@
         <rdfs:label xml:lang="en">75</rdfs:label>
         <dgm:literalLex>75</dgm:literalLex>
         <dgm:literalDatatype>xsd:decimal</dgm:literalDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -986,7 +909,7 @@
         <rdfs:label xml:lang="en">80</rdfs:label>
         <dgm:literalLex>80</dgm:literalLex>
         <dgm:literalDatatype>xsd:decimal</dgm:literalDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -995,7 +918,7 @@
         <rdfs:label xml:lang="en">18</rdfs:label>
         <dgm:literalLex>18</dgm:literalLex>
         <dgm:literalDatatype>xsd:decimal</dgm:literalDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1004,7 +927,7 @@
         <rdfs:label xml:lang="en">2</rdfs:label>
         <dgm:literalLex>2</dgm:literalLex>
         <dgm:literalDatatype>xsd:integer</dgm:literalDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1013,7 +936,7 @@
         <rdfs:label xml:lang="en">true</rdfs:label>
         <dgm:literalLex>true</dgm:literalLex>
         <dgm:literalDatatype>xsd:boolean</dgm:literalDatatype>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1025,7 +948,7 @@
         <dgm:sessionId>drs-96d1ebd8dc8a</dgm:sessionId>
         <dgm:sessionMode>ingest</dgm:sessionMode>
         <dgm:sessionPrompt>All building must be maximum 75 meters high</dgm:sessionPrompt>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>UrbanBlock</dg:project>
     </owl:NamedIndividual>
 
@@ -1035,7 +958,7 @@
         <dgm:sessionId>drs-4cab136231cf</dgm:sessionId>
         <dgm:sessionMode>ingest</dgm:sessionMode>
         <dgm:sessionPrompt>Street minimum width is 15 meters.</dgm:sessionPrompt>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1045,7 +968,7 @@
         <dgm:sessionId>drs-79ba197cc693</dgm:sessionId>
         <dgm:sessionMode>edit</dgm:sessionMode>
         <dgm:sessionPrompt>Street minimum width is 18 meters.</dgm:sessionPrompt>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1055,7 +978,7 @@
         <dgm:sessionId>drs-ac4c176afeeb</dgm:sessionId>
         <dgm:sessionMode>query</dgm:sessionMode>
         <dgm:sessionPrompt>list all rules</dgm:sessionPrompt>
-        <dg:graph>Metagraph</dg:graph>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
         <dg:project>TestA</dg:project>
     </owl:NamedIndividual>
 
@@ -1070,41 +993,40 @@
     <owl:Class rdf:about="&dgv;IntegrationConfig">
         <rdfs:label xml:lang="en">IntegrationConfig</rdfs:label>
         <rdfs:comment xml:lang="en">Configuration node linking a DG project to its Speckle integration. Stores Speckle project ID, base model, and validation model references. One per project per provider.</rdfs:comment>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ValidationRun">
         <rdfs:label xml:lang="en">ValidationRun</rdfs:label>
         <rdfs:comment xml:lang="en">A single execution of rule evaluation against design state. Records which rules were evaluated, the Speckle version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow. Aligned with: prov:Activity (R2) and sh:ValidationReport (R4).</rdfs:comment>
-        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
-        <rdfs:subClassOf rdf:resource="&sh;ValidationReport"/>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ValidationEntity">
         <rdfs:label xml:lang="en">ValidationEntity</rdfs:label>
         <rdfs:comment xml:lang="en">A BIM entity evaluated in a validation run. Records the entity's DG ID, display name, and overall pass/fail status for the specific run and rule. Aligned with: prov:Entity (R2), sosa:Observation (R3), and sh:ValidationResult (R4) — the cell (Run × Rule × ObjectInstance) is simultaneously a provenance entity, an observation of a property on a feature, and a validation result.</rdfs:comment>
-        <rdfs:subClassOf rdf:resource="&prov;Entity"/>
-        <rdfs:subClassOf rdf:resource="&sosa;Observation"/>
-        <rdfs:subClassOf rdf:resource="&sh;ValidationResult"/>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;DesignState">
         <rdfs:label xml:lang="en">DesignState</rdfs:label>
-        <rdfs:comment xml:lang="en">A snapshot of design parameters captured from Grasshopper. Single Neo4j label :DesignState with a `kind` property discriminating between DefState and ObjectState. ID prefixes: DS_ (DefState), OS_ (ObjectState). Used as input to CLASSIFICATOR and persisted in validation runs.</rdfs:comment>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <rdfs:comment xml:lang="en">A snapshot of design parameters captured from Grasshopper. Every DesignState individual is necessarily a DefState OR an ObjectState (owl:disjointUnionOf below) — never both, never neither. ID prefixes: DS_ (DefState), OS_ (ObjectState). Used as input to CLASSIFICATOR and persisted in validation runs. STORAGE NOTE: In the Neo4j layer (SCHM-01), this discrimination is materialized as a `kind` property with values "DefState" | "ObjectState" on a single :DesignState node label — a runtime convenience because Cypher does not infer subclass membership. The OWL ontology does not include the kind property because rdf:type plus disjointUnionOf already discriminate (v4.1).</rdfs:comment>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgv;DefState"/>
+            <owl:Class rdf:about="&dgv;ObjectState"/>
+        </owl:disjointUnionOf>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;DefState">
         <rdfs:label xml:lang="en">DefState</rdfs:label>
         <rdfs:comment xml:lang="en">Definition state — a named set of Number/Integer/Boolean parameters captured from Grasshopper sliders and toggles. Represents the current parametric configuration. When DefState changes, dependent IdRefs regenerate. ID prefix: DS_.</rdfs:comment>
         <rdfs:subClassOf rdf:resource="&dgv;DesignState"/>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ObjectState">
@@ -1118,49 +1040,38 @@
                 <owl:onClass rdf:resource="&dgv;IdRef"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;DesignStateParameter">
         <rdfs:label xml:lang="en">DesignStateParameter</rdfs:label>
         <rdfs:comment xml:lang="en">A single measurable parameter within a DefState snapshot. Has a parameterId, displayName, type (Number/Integer/Boolean), and the corresponding typed value.</rdfs:comment>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ObjectInstance">
         <rdfs:label xml:lang="en">ObjectInstance</rdfs:label>
         <rdfs:comment xml:lang="en">Cross-rule identity of a validated geometric element (CMPST-06). The noun — the actual thing in the model that gets validated. Stable across geometry edits. Each ObjectInstance has exactly one ObjectState (its current binding snapshot). ID prefix: OI_. Both ObjectInstance and ObjectState live above rule scope. Aligned with: sosa:FeatureOfInterest (R3) and geo:Feature (R6).</rdfs:comment>
-        <rdfs:subClassOf rdf:resource="&sosa;FeatureOfInterest"/>
-        <rdfs:subClassOf rdf:resource="&geo;Feature"/>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;GeoRef">
         <rdfs:label xml:lang="en">GeoRef</rdfs:label>
         <rdfs:comment xml:lang="en">Geometry reference — a handle to a geometry primitive in the source model (Speckle objectId, Rhino GUID, etc.) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT).</rdfs:comment>
-        <rdfs:subClassOf rdf:resource="&geo;Geometry"/>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;IdRef">
         <rdfs:label xml:lang="en">IdRef</rdfs:label>
         <rdfs:comment xml:lang="en">Auto-generated DesignState identifier (CMPST-08). IdRef = DesignState ID — NOT ObjectState ID. Regenerates whenever DefState changes (CMPST-05). Persisted in statePayloadJson for cross-run object identity tracking (INTG-03). Resolves to one or more ObjectInstance(s). ID prefix: IDR_.</rdfs:comment>
-        <dg:graph>ValidationGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <!-- ValidationGraph datatype properties -->
-
-    <owl:ObjectProperty rdf:about="&dgv;kind">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label xml:lang="en">kind</rdfs:label>
-        <rdfs:comment xml:lang="en">DesignState kind discriminator (enum-valued): DesignStateKind_DefState (parameter snapshot from sliders/toggles) or DesignStateKind_ObjectState (object variable + geometry association). Stored on the single :DesignState Neo4j label per SCHM-01. Characteristics: Functional.</rdfs:comment>
-        <rdfs:domain rdf:resource="&dgv;DesignState"/>
-        <rdfs:range rdf:resource="&dgv;DesignStateKindValue"/>
-    </owl:ObjectProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;objectRef">
         <rdfs:label xml:lang="en">objectRef</rdfs:label>
@@ -1297,7 +1208,6 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">capturedAtUtc</rdfs:label>
         <rdfs:comment xml:lang="en">UTC timestamp when a design state or validation run was captured. Characteristics: Functional — one capture time per snapshot. Domain union: DesignState ∪ ValidationRun. Aligned with: prov:startedAtTime (R2) — semantically, the moment an activity started / a sample was captured.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&prov;startedAtTime"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -1354,7 +1264,6 @@
     <owl:DatatypeProperty rdf:about="&dgv;propValue">
         <rdfs:label xml:lang="en">propValue</rdfs:label>
         <rdfs:comment xml:lang="en">The validated property value for this ValidationEntity (SCHM-05). One value per (Run, Rule, ObjectInstance) cell — the "main attribute" the rule checked. Shown in the Model Viewer's passing/failing item list per rule. Lex form (xsd:string) for display; actual typed value lives on the DesignStateParameter. Aligned with: sosa:hasSimpleResult (R3) — the validated value IS the observation's simple result.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&sosa;hasSimpleResult"/>
         <rdfs:domain rdf:resource="&dgv;ValidationEntity"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1365,7 +1274,6 @@
         <rdf:type rdf:resource="&owl;InverseFunctionalProperty"/>
         <rdfs:label xml:lang="en">HAS_ENTITY</rdfs:label>
         <rdfs:comment xml:lang="en">Connects a ValidationRun to its evaluated ValidationEntity results. Characteristics: InverseFunctional — each ValidationEntity belongs to exactly one ValidationRun. Aligned with: prov:generated (R2) — a ValidationEntity is generated by the run.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&prov;generated"/>
         <rdfs:domain rdf:resource="&dgv;ValidationRun"/>
         <rdfs:range rdf:resource="&dgv;ValidationEntity"/>
     </owl:ObjectProperty>
@@ -1411,7 +1319,6 @@
         <rdf:type rdf:resource="&owl;InverseFunctionalProperty"/>
         <rdfs:label xml:lang="en">HAS_GEO_REF</rdfs:label>
         <rdfs:comment xml:lang="en">Connects an ObjectState to its geometry handles wired into the GeoRef input of OBJECT STATE (CTRCT-09). One ObjectState may have many GeoRefs (the geometry elements composing the ObjectInstance). Characteristics: InverseFunctional — each GeoRef belongs to exactly one ObjectState. Aligned with: geo:hasGeometry (R6) — the GeoSPARQL pattern for object↔geometry linking.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&geo;hasGeometry"/>
         <rdfs:domain rdf:resource="&dgv;ObjectState"/>
         <rdfs:range rdf:resource="&dgv;GeoRef"/>
     </owl:ObjectProperty>
@@ -1436,8 +1343,6 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">VALIDATES_INSTANCE</rdfs:label>
         <rdfs:comment xml:lang="en">Connects a ValidationEntity result cell to the ObjectInstance it describes. Characteristics: Functional — each ValidationEntity describes exactly one ObjectInstance. Inverse direction is NOT functional: an ObjectInstance has many ValidationEntities (one per rule per run). Aligned with: sosa:hasFeatureOfInterest (R3, equivalent) and sh:focusNode (R4, subProperty). The SOSA mapping is the stronger semantic match; SHACL is a sibling subPropertyOf to avoid asserting transitive equivalence between sosa:hasFeatureOfInterest and sh:focusNode.</rdfs:comment>
-        <owl:equivalentProperty rdf:resource="&sosa;hasFeatureOfInterest"/>
-        <rdfs:subPropertyOf rdf:resource="&sh;focusNode"/>
         <rdfs:domain rdf:resource="&dgv;ValidationEntity"/>
         <rdfs:range rdf:resource="&dgv;ObjectInstance"/>
     </owl:ObjectProperty>
@@ -1446,42 +1351,9 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">PROP_VALUE_OF</rdfs:label>
         <rdfs:comment xml:lang="en">Connects a ValidationEntity to the PropertyVariable whose value the rule checked (SCHM-05). The "main attribute being validated" — determines which property's value is shown in the Model Viewer's passing/failing list. Characteristics: Functional — one main property per ValidationEntity cell. Aligned with: sosa:observedProperty (R3, equivalent) and sh:resultPath (R4, subProperty).</rdfs:comment>
-        <owl:equivalentProperty rdf:resource="&sosa;observedProperty"/>
-        <rdfs:subPropertyOf rdf:resource="&sh;resultPath"/>
         <rdfs:domain rdf:resource="&dgv;ValidationEntity"/>
         <rdfs:range rdf:resource="&dgm;PropertyVariable"/>
     </owl:ObjectProperty>
-
-    <!-- ************************************************************
-         VALIDATION ENUMERATIONS — DesignStateKind
-         ************************************************************ -->
-
-    <owl:Class rdf:about="&dgv;DesignStateKindValue">
-        <rdfs:label xml:lang="en">DesignStateKind</rdfs:label>
-        <rdfs:comment xml:lang="en">Enumeration of DesignState subtype discriminators per SCHM-01. Single :DesignState Neo4j label uses this enum's individuals as values of the kind property. Closed via owl:oneOf.</rdfs:comment>
-        <owl:equivalentClass>
-            <owl:Class>
-                <owl:oneOf rdf:parseType="Collection">
-                    <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_DefState"/>
-                    <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_ObjectState"/>
-                </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
-            </owl:Class>
-        </owl:equivalentClass>
-        <dg:graph>ValidationGraph</dg:graph>
-    </owl:Class>
-
-    <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_DefState">
-        <rdf:type rdf:resource="&dgv;DesignStateKindValue"/>
-        <rdfs:label xml:lang="en">DefState</rdfs:label>
-        <rdfs:comment xml:lang="en">Parametric capture snapshot from Grasshopper sliders/toggles. ID prefix: DS_.</rdfs:comment>
-    </owl:NamedIndividual>
-
-    <owl:NamedIndividual rdf:about="&dgv;DesignStateKind_ObjectState">
-        <rdf:type rdf:resource="&dgv;DesignStateKindValue"/>
-        <rdfs:label xml:lang="en">ObjectState</rdfs:label>
-        <rdfs:comment xml:lang="en">Object variable to geometry binding snapshot. 1:1 with an ObjectInstance. ID prefix: OS_.</rdfs:comment>
-    </owl:NamedIndividual>
 
     <!-- ************************************************************
          VALIDATION ENUMERATIONS — DesignStateParameterType
@@ -1497,10 +1369,10 @@
                     <owl:NamedIndividual rdf:about="&dgv;ParameterType_Integer"/>
                     <owl:NamedIndividual rdf:about="&dgv;ParameterType_Boolean"/>
                 </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
-        <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:NamedIndividual rdf:about="&dgv;ParameterType_Number">
@@ -1539,10 +1411,10 @@
                     <owl:NamedIndividual rdf:about="&dgv;ReinstatementStatus_Unchanged"/>
                     <owl:NamedIndividual rdf:about="&dgv;ReinstatementStatus_WouldApply"/>
                 </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
-        <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:NamedIndividual rdf:about="&dgv;ReinstatementStatus_Applied">
@@ -1601,10 +1473,10 @@
                     <owl:NamedIndividual rdf:about="&dgv;Status_Passed"/>
                     <owl:NamedIndividual rdf:about="&dgv;Status_Failed"/>
                 </owl:oneOf>
-        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraphEntity"/>
             </owl:Class>
         </owl:equivalentClass>
-        <dg:graph>ValidationGraph</dg:graph>
+        <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:NamedIndividual rdf:about="&dgv;Status_Completed">
@@ -1638,7 +1510,7 @@
         <dgv:baseModelId>4c546c0771</dgv:baseModelId>
         <dgv:validationModelId>a6d1e0c5da</dgv:validationModelId>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -1651,7 +1523,7 @@
         <dgv:runId>a5671cb1bd30</dgv:runId>
         <dgv:status rdf:resource="&dgv;Status_Completed"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VRun_63ffbff1f928">
@@ -1660,7 +1532,7 @@
         <dgv:runId>63ffbff1f928</dgv:runId>
         <dgv:status rdf:resource="&dgv;Status_Completed"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VRun_ac0d62f1332c">
@@ -1669,7 +1541,7 @@
         <dgv:runId>ac0d62f1332c</dgv:runId>
         <dgv:status rdf:resource="&dgv;Status_Completed"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VRun_f8678448d4e7">
@@ -1678,7 +1550,7 @@
         <dgv:runId>f8678448d4e7</dgv:runId>
         <dgv:status rdf:resource="&dgv;Status_Completed"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VRun_27b121d78c73">
@@ -1687,7 +1559,7 @@
         <dgv:runId>27b121d78c73</dgv:runId>
         <dgv:status rdf:resource="&dgv;Status_Completed"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -1703,7 +1575,7 @@
         <dgv:instanceId>OI_Building_b1</dgv:instanceId>
         <dgv:hasObjectState rdf:resource="&dgv;OS_b1_var_b"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;OS_b1_var_b">
@@ -1711,14 +1583,13 @@
         <rdfs:label xml:lang="en">ObjectState: OI_Building_b1 ↔ ?b</rdfs:label>
         <rdfs:comment xml:lang="en">Binding snapshot pairing OI_Building_b1 with Object variable ?b (var_b) and its current GeoRef set. State_Id computed as OS_&lt;SHA256(projectId + objectInstanceId + variableName)&gt; per CMPST-07.</rdfs:comment>
         <dgv:stateId>OS_a1b2c3d4</dgv:stateId>
-        <dgv:kind rdf:resource="&dgv;DesignStateKind_ObjectState"/>
         <dgv:objectRef>rhino-guid-9f3e2a</dgv:objectRef>
         <dgv:representsInstance rdf:resource="&dgv;OI_Building_b1"/>
         <dgv:hasObjectVariable rdf:resource="&dgm;var_b"/>
         <dgv:hasGeoRef rdf:resource="&dgv;GR_speckle_xyz1"/>
         <dgv:hasGeoRef rdf:resource="&dgv;GR_speckle_xyz2"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;GR_speckle_xyz1">
@@ -1727,7 +1598,7 @@
         <rdfs:comment xml:lang="en">Speckle objectId handle for the primary mass geometry of Building #1.</rdfs:comment>
         <dgv:geoRefId>speckle:obj:xyz1</dgv:geoRefId>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;GR_speckle_xyz2">
@@ -1736,7 +1607,7 @@
         <rdfs:comment xml:lang="en">Speckle objectId handle for the roof geometry of Building #1.</rdfs:comment>
         <dgv:geoRefId>speckle:obj:xyz2</dgv:geoRefId>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;DS_def_h25_w12">
@@ -1744,10 +1615,9 @@
         <rdfs:label xml:lang="en">DefState: height=25, width=12</rdfs:label>
         <rdfs:comment xml:lang="en">Parametric capture of a Building configuration. Changes in this DefState regenerate the linked IdRef per CMPST-05.</rdfs:comment>
         <dgv:stateId>DS_def_h25_w12</dgv:stateId>
-        <dgv:kind rdf:resource="&dgv;DesignStateKind_DefState"/>
         <dgv:hasIdRef rdf:resource="&dgv;IDR_DS_def_h25_w12"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;IDR_DS_def_h25_w12">
@@ -1757,7 +1627,7 @@
         <dgv:idRefValue>IDR_a1b2c3d4e5f6</dgv:idRefValue>
         <dgv:resolvesTo rdf:resource="&dgv;OI_Building_b1"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VEntity_a5671cb1bd30_b1_height">
@@ -1772,7 +1642,7 @@
         <dgv:propValueOf rdf:resource="&dgm;var_h"/>
         <dgv:validatesInstance rdf:resource="&dgv;OI_Building_b1"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgv;VEntity_a5671cb1bd30_b1_overflow">
@@ -1787,7 +1657,7 @@
         <dgv:propValueOf rdf:resource="&dgm;var_h"/>
         <dgv:validatesInstance rdf:resource="&dgv;OI_Building_b1"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>ValidationGraph</dg:graph>
+        <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
     <!-- Wire the example ValidationEntities into VRun_a5671cb1bd30 (HAS_ENTITY) -->
@@ -1807,31 +1677,29 @@
     <owl:Class rdf:about="&dgk;KnowledgeClass">
         <rdfs:label xml:lang="en">KnowledgeClass</rdfs:label>
         <rdfs:comment xml:lang="en">Parent hub node connecting all instances of a knowledge type. Acts as a type discriminator (e.g. KnowledgeNote, KnowledgeSession).</rdfs:comment>
-        <dg:graph>KnowledgeGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeNote">
         <rdfs:label xml:lang="en">KnowledgeNote</rdfs:label>
         <rdfs:comment xml:lang="en">A project knowledge entry (from folder ingest or NL prompt). Contains title, content, tags, and source reference.</rdfs:comment>
-        <dg:graph>KnowledgeGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeTag">
         <rdfs:label xml:lang="en">KnowledgeTag</rdfs:label>
         <rdfs:comment xml:lang="en">A tag label shared across knowledge notes for categorization. Aligned with: skos:Concept (R5) — a Tag IS a concept in a project's tag taxonomy.</rdfs:comment>
-        <owl:equivalentClass rdf:resource="&skos;Concept"/>
-        <dg:graph>KnowledgeGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgk;KnowledgeSession">
         <rdfs:label xml:lang="en">KnowledgeSession</rdfs:label>
         <rdfs:comment xml:lang="en">An interaction log for knowledge operations (insert, query, update). Records the user prompt and LLM result. Aligned with: prov:Activity (R5/R2 pattern) — each session is a recorded activity.</rdfs:comment>
-        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
-        <dg:graph>KnowledgeGraph</dg:graph>
-        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraphEntity"/>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:Class>
 
     <!-- KnowledgeGraph datatype properties -->
@@ -1840,7 +1708,6 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">noteId</rdfs:label>
         <rdfs:comment xml:lang="en">Unique identifier for a knowledge note. Characteristics: Functional. Aligned with: dcterms:identifier (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeNote"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1848,7 +1715,6 @@
     <owl:DatatypeProperty rdf:about="&dgk;title">
         <rdfs:label xml:lang="en">title</rdfs:label>
         <rdfs:comment xml:lang="en">Title of a knowledge note. Aligned with: dcterms:title (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;title"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeNote"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1856,7 +1722,6 @@
     <owl:DatatypeProperty rdf:about="&dgk;content">
         <rdfs:label xml:lang="en">content</rdfs:label>
         <rdfs:comment xml:lang="en">Full text content of a knowledge note. Aligned with: skos:note (R5) — the SKOS pattern for the textual body of a concept-related artifact.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&skos;note"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeNote"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1864,7 +1729,6 @@
     <owl:DatatypeProperty rdf:about="&dgk;source">
         <rdfs:label xml:lang="en">source</rdfs:label>
         <rdfs:comment xml:lang="en">Source file path or reference for a knowledge note (e.g. notes/site.md). Aligned with: dcterms:source (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;source"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeNote"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1880,7 +1744,6 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">name</rdfs:label>
         <rdfs:comment xml:lang="en">Tag name string (e.g. "zoning", "structural"). Characteristics: Functional — one canonical name per Tag. Aligned with: skos:prefLabel (R5) — the SKOS canonical label for a concept.</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&skos;prefLabel"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeTag"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1889,7 +1752,6 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">sessionId</rdfs:label>
         <rdfs:comment xml:lang="en">Unique identifier for a knowledge session (format: ks-&lt;hex12&gt;). Characteristics: Functional. Aligned with: dcterms:identifier (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
         <rdfs:domain rdf:resource="&dgk;KnowledgeSession"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1904,14 +1766,12 @@
     <owl:DatatypeProperty rdf:about="&dgk;createdAt">
         <rdfs:label xml:lang="en">createdAt</rdfs:label>
         <rdfs:comment xml:lang="en">ISO 8601 UTC timestamp of creation. Aligned with: dcterms:created (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;created"/>
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgk;updatedAt">
         <rdfs:label xml:lang="en">updatedAt</rdfs:label>
         <rdfs:comment xml:lang="en">ISO 8601 UTC timestamp of last update. Aligned with: dcterms:modified (R5).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;modified"/>
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </owl:DatatypeProperty>
 
@@ -1940,7 +1800,7 @@
         <rdfs:label xml:lang="en">KnowledgeNote</rdfs:label>
         <rdfs:comment xml:lang="en">Hub node for knowledge notes. Neo4j KnowledgeGraph, project: UrbanBlock.</rdfs:comment>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;KC_KnowledgeSession">
@@ -1948,7 +1808,7 @@
         <rdfs:label xml:lang="en">KnowledgeSession</rdfs:label>
         <rdfs:comment xml:lang="en">Hub node for knowledge sessions. Neo4j KnowledgeGraph, project: UrbanBlock.</rdfs:comment>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -1959,126 +1819,126 @@
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>architects</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_braga">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>braga</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_building">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>building</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_capacity">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>capacity</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_compliance">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>compliance</dgk:tagName>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_corridor">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>corridor</dgk:tagName>
         <dg:project>test-phase03</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_evacuation">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>evacuation</dgk:tagName>
         <dg:project>test-phase03</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_guimaraes">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>guimaraes</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_height">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>height</dgk:tagName>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_parking">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>parking</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_portugal">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>portugal</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_residential">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>residential</dgk:tagName>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_rua_do_avelino_germano">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>rua-d0-avelino-germano</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_staircase">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>staircase</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_studio">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>studio</dgk:tagName>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_width">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>width</dgk:tagName>
         <dg:project>test-phase03</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_zone_a">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>zone-a</dgk:tagName>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Tag_zone_b">
         <rdf:type rdf:resource="&dgk;KnowledgeTag"/>
         <dgk:tagName>zone-b</dgk:tagName>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -2093,7 +1953,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_architects"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_studio"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_BuildingAddress">
@@ -2105,7 +1965,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_guimaraes"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_rua_do_avelino_germano"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_BuildingHeightRegulations">
@@ -2113,7 +1973,7 @@
         <rdfs:label xml:lang="en">Building Height Regulations</rdfs:label>
         <dgk:title>Building Height Regulations</dgk:title>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_BuildingStaircaseCount">
@@ -2124,7 +1984,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_building"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_staircase"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_GreenAreaRatio">
@@ -2132,7 +1992,7 @@
         <rdfs:label xml:lang="en">Green Area Ratio</rdfs:label>
         <dgk:title>Green Area Ratio</dgk:title>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_MaxFloorToFloorHeightZoneA">
@@ -2145,7 +2005,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_zone_a"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_compliance"/>
         <dg:project>UrbanBlock</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_ParkingCapacity">
@@ -2156,7 +2016,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_parking"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_capacity"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_ProjectLocation">
@@ -2168,7 +2028,7 @@
         <dgk:taggedWith rdf:resource="&dgk;Tag_braga"/>
         <dgk:taggedWith rdf:resource="&dgk;Tag_portugal"/>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_SetbackRequirements">
@@ -2176,7 +2036,7 @@
         <rdfs:label xml:lang="en">Setback Requirements</rdfs:label>
         <dgk:title>Setback Requirements</dgk:title>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Note_TestUpdateNote">
@@ -2184,7 +2044,7 @@
         <rdfs:label xml:lang="en">Test Update Note</rdfs:label>
         <dgk:title>Test Update Note</dgk:title>
         <dg:project>test-update-flow</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <!-- ************************************************************
@@ -2197,7 +2057,7 @@
         <dgk:knowledgeSessionId>ks-mnq4ixld</dgk:knowledgeSessionId>
         <dgk:mode>query</dgk:mode>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Session_ks_1d599d7a40a1">
@@ -2206,7 +2066,7 @@
         <dgk:knowledgeSessionId>ks-1d599d7a40a1</dgk:knowledgeSessionId>
         <dgk:mode>update</dgk:mode>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Session_ks_mnp1jw35">
@@ -2215,7 +2075,7 @@
         <dgk:knowledgeSessionId>ks-mnp1jw35</dgk:knowledgeSessionId>
         <dgk:mode>insert</dgk:mode>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Session_ks_mnoon96l">
@@ -2224,7 +2084,7 @@
         <dgk:knowledgeSessionId>ks-mnoon96l</dgk:knowledgeSessionId>
         <dgk:mode>insert</dgk:mode>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="&dgk;Session_ks_mnoom0r3">
@@ -2233,7 +2093,7 @@
         <dgk:knowledgeSessionId>ks-mnoom0r3</dgk:knowledgeSessionId>
         <dgk:mode>insert</dgk:mode>
         <dg:project>TestA</dg:project>
-        <dg:graph>KnowledgeGraph</dg:graph>
+        <dg:graph rdf:resource="&dgk;KnowledgeGraph"/>
     </owl:NamedIndividual>
 
     <!-- ============================================================
@@ -2333,13 +2193,11 @@
         </owl:members>
     </rdf:Description>
 
-    <!-- Enum classes are mutually exclusive -->
+    <!-- Enum classes are mutually exclusive (v4.1: VariableKindValue and DesignStateKindValue removed — their semantic role is now provided by class hierarchies + disjointUnionOf on Variable and DesignState) -->
     <rdf:Description>
         <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
         <owl:members rdf:parseType="Collection">
-            <owl:Class rdf:about="&dgm;VariableKindValue"/>
             <owl:Class rdf:about="&dgm;VariableScopeValue"/>
-            <owl:Class rdf:about="&dgv;DesignStateKindValue"/>
             <owl:Class rdf:about="&dgv;DesignStateParameterTypeValue"/>
             <owl:Class rdf:about="&dgv;ValidationStatusValue"/>
             <owl:Class rdf:about="&dgv;ReinstatementStatusValue"/>
@@ -2356,8 +2214,6 @@
     <owl:DatatypeProperty rdf:about="&dg;createdAt">
         <rdfs:label xml:lang="en">createdAt</rdfs:label>
         <rdfs:comment xml:lang="en">ISO 8601 UTC timestamp of node creation. Used across all graph layers. Aligned with: dcterms:created (R5/R7 — cross-cutting Dublin Core creation timestamp).</rdfs:comment>
-        <rdfs:subPropertyOf rdf:resource="&dcterms;created"/>
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </owl:DatatypeProperty>
-
 </rdf:RDF>

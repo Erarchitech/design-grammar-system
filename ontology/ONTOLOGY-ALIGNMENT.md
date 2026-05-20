@@ -1,8 +1,25 @@
 # Ontology Alignment Map — Design Grammar System
 
-> Cross-walk between the Design Grammar (DG) ontology in `[DesignGrammar.owl](DesignGrammar.owl)` and established public vocabularies from the [Linked Open Vocabularies (LOV)](https://lov.linkeddata.es/dataset/lov/vocabs) catalog and W3C standards. Use this document to inform `owl:equivalentClass` / `rdfs:subClassOf` / `owl:equivalentProperty` declarations when DG needs to interoperate with external linked-data tooling.
+> Cross-walk between the Design Grammar (DG) ontology and established public vocabularies from the [Linked Open Vocabularies (LOV)](https://lov.linkeddata.es/dataset/lov/vocabs) catalog and W3C standards.
 
-**Source ontology:** `[DesignGrammar.owl](DesignGrammar.owl)` v3.1 (4 layers: OntoGraph, Metagraph, ValidationGraph, KnowledgeGraph)
+## File structure (v4.0)
+
+As of v4.0 the alignments live in a **separate facade ontology** following the W3C core-plus-extension pattern (SOSA / SSN, FOAF / RDFa Core, DCAT / DCAT-AP):
+
+| File | Role | Contents |
+|---|---|---|
+| `[DesignGrammar.owl](DesignGrammar.owl)` | **Core ontology (v4.0)** | Pure DG content: 42 classes, properties, instances, internal axioms. **No `owl:imports`**, no cross-vocab alignment axioms. Open this for lean Protégé view, schema editing, fast load. |
+| `[DesignGrammar-aligned.owl](DesignGrammar-aligned.owl)` | **Aligned facade (v4.0)** | Imports DG core + 7 external vocabularies + the 38 cross-vocab alignment axioms + 17 external annotation enrichments. Open this for HermiT cross-vocab reasoning, PROV-aware tooling, SOSA-aware tooling, etc. |
+| `[catalog-v001.xml](catalog-v001.xml)` | Resolution catalog | Maps both ontology IRIs to local files + redirects 7 external imports to canonical RDF URLs. |
+
+**Pick by use case:**
+
+| Goal | File to open |
+|---|---|
+| Edit DG entities, add new classes, see clean hierarchy | `DesignGrammar.owl` |
+| Verify alignments with HermiT, query across vocabs, integrate with PROV/SHACL/etc. | `DesignGrammar-aligned.owl` |
+| Inspect just the DG ontology in NotebookLM | `[DesignGrammar.md](DesignGrammar.md)` (auto-generated from core) |
+
 **Compiled:** 2026-05-15
 **Method:** Each DG class/property was checked against canonical W3C vocabularies and the LOV catalog. Alignment strength is annotated as **≡** (semantic equivalence), **⊑** (DG entity is subclass/subproperty), **⊒** (DG entity is superclass/superproperty), or **≈** (partial / overlapping intent).
 
