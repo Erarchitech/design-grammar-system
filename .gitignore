@@ -22,6 +22,16 @@ docs/
 n8n/workflows/_active-graph-query.json
 n8n/workflows/_all-workflows-export.json
 
-# Archives (prefer source control for versioned ontology files)
+# Archives and temporary files
 *.rar
 *.tar.gz
+
+# Temporary ontology transformation scripts
+ontology/add_layer_hubs.py
+ontology/apply_v*.py
+ontology/export_to_markdown.py
+ontology/fix_v*.py
+ontology/HIERARCHY-OPTIMIZATION.md
+
+# Alternate/aligned ontology versions (keep only canonical)
+ontology/DesignGrammar-aligned.owl
