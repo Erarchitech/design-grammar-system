@@ -2,6 +2,7 @@
 
 ## Milestones
 
+- 📋 **v4.0 BOT Ontology Bridge** — Phases 1-4 (planned) → [requirements](milestones/v4.0-REQUIREMENTS.md) | [roadmap](milestones/v4.0-ROADMAP.md)
 - 🔄 **v3.0 Typed Variables and Composable Design State** — Phases 7-12 (active)
 - ✅ **v2.0 DG Plugin - Design State and Validation Runs** — Phases 1-6 (shipped 2026-05-10) → [archive](milestones/v2.0-ROADMAP.md)
 - ✅ **v1.1 Project Knowledge Graph** — Phases 1-7 (shipped 2026-04-10) → [archive](milestones/v1.1-phases/)
@@ -126,5 +127,6 @@
 
 ---
 
+*Roadmap updated: 2026-05-25 — v4.0 BOT Ontology Bridge added as planned milestone*
 *Roadmap updated: 2026-05-11 — v3.0 phases added*
 *v2.0 shipped: 2026-05-10*
