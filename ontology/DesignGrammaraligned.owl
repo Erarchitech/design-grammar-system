@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl     "http://www.w3.org/2002/07/owl#">
+    <!ENTITY rdf     "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <!ENTITY rdfs    "http://www.w3.org/2000/01/rdf-schema#">
+    <!ENTITY xsd     "http://www.w3.org/2001/XMLSchema#">
+    <!ENTITY dg      "http://example.org/design-grammar#">
+    <!ENTITY dgm     "http://example.org/design-grammar/metagraph#">
+    <!ENTITY dgv     "http://example.org/design-grammar/validation#">
+    <!ENTITY dgk     "http://example.org/design-grammar/knowledge#">
+    <!ENTITY swrl    "http://www.w3.org/2003/11/swrl#">
+    <!ENTITY prov    "http://www.w3.org/ns/prov#">
+    <!ENTITY sosa    "http://www.w3.org/ns/sosa/">
+    <!ENTITY sh      "http://www.w3.org/ns/shacl#">
+    <!ENTITY skos    "http://www.w3.org/2004/02/skos/core#">
+    <!ENTITY dcterms "http://purl.org/dc/terms/">
+    <!ENTITY geo     "http://www.opengis.net/ont/geosparql#">
+    <!ENTITY bot     "https://w3id.org/bot#">
+]>
+
+<rdf:RDF
+    xmlns:rdf="&rdf;"
+    xmlns:rdfs="&rdfs;"
+    xmlns:owl="&owl;"
+    xmlns:xsd="&xsd;"
+    xmlns:dg="&dg;"
+    xmlns:dgm="&dgm;"
+    xmlns:dgv="&dgv;"
+    xmlns:dgk="&dgk;"
+    xmlns:swrl="&swrl;"
+    xmlns:prov="&prov;"
+    xmlns:sosa="&sosa;"
+    xmlns:sh="&sh;"
+    xmlns:skos="&skos;"
+    xmlns:dcterms="&dcterms;"
+    xmlns:geo="&geo;"
+    xmlns:bot="&bot;"
+    xml:base="http://example.org/design-grammar/aligned">
+
+    <!-- ============================================================
+         DESIGN GRAMMAR — ALIGNED FACADE (v4.0)
+
+         This facade ontology imports the core DG ontology AND the eight
+         external vocabularies DG aligns with, then declares the
+         cross-vocabulary alignment axioms and annotation enrichments.
+
+         Use this file when you need:
+           - HermiT reasoning over DG + external vocabs together
+           - Cross-vocab queries (e.g. "all prov:Activity instances in DG")
+           - Tools that consume PROV-O / SOSA / SHACL / BOT / etc. natively
+
+         For DG-only work (lean Protégé view, schema editing, fast load),
+         open DesignGrammar.owl directly.
+
+         Pattern: standard W3C "core + extension" layering, same as
+         SOSA core + SSN extension.
+
+         v4.0 additions (BOT Ontology Bridge):
+           - owl:imports https://w3id.org/bot
+           - dg:alignedTo ObjectProperty (OWL counterpart of ALIGNED_TO
+             Neo4j relationship)
+           - dg:BOTClass and dg:BOTProp meta-classes (OWL counterparts
+             of :BOTClass/:BOTProp Neo4j labels in the BOTVocab graph)
+           - Instance-level dg:alignedTo assertions on existing
+             dg:Class_Building named individual
+           - Annotation enrichments for 12 BOT terms (R8)
+         ============================================================ -->
+
+    <owl:Ontology rdf:about="http://example.org/design-grammar/aligned">
+        <rdfs:label xml:lang="en">Design Grammar (aligned facade)</rdfs:label>
+        <rdfs:comment xml:lang="en">Cross-vocabulary alignment facade for the Design Grammar System ontology. Imports the DG core ontology and eight established W3C/OGC vocabularies (SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, BOT) and declares the alignment axioms that bridge them. See ONTOLOGY-ALIGNMENT.md for rationale (R1-R8). v4.0 adds BOT (Building Topology Ontology) alignment: dg:alignedTo property, dg:BOTClass/BOTProp meta-classes for the BOTVocab graph layer, instance-level alignment assertions for known OntoGraph class individuals, and annotation enrichments for all 12 BOT terms referenced by the DG concept mapper.</rdfs:comment>
+        <owl:versionInfo>4.0</owl:versionInfo>
+        <owl:imports rdf:resource="http://example.org/design-grammar"/>
+        <owl:imports rdf:resource="http://www.w3.org/2003/11/swrl"/>
+        <owl:imports rdf:resource="http://www.w3.org/ns/prov-o#"/>
+        <owl:imports rdf:resource="http://www.w3.org/ns/sosa/"/>
+        <owl:imports rdf:resource="http://www.w3.org/ns/shacl#"/>
+        <owl:imports rdf:resource="http://www.w3.org/2004/02/skos/core"/>
+        <owl:imports rdf:resource="http://purl.org/dc/terms/"/>
+        <owl:imports rdf:resource="http://www.opengis.net/ont/geosparql"/>
+        <owl:imports rdf:resource="https://w3id.org/bot"/>
+    </owl:Ontology>
+
+    <!-- ============================================================
+         CROSS-VOCABULARY ALIGNMENT AXIOMS
+
+         These axioms relate DG classes and properties to their
+         counterparts in the imported W3C/OGC vocabularies. Each
+         axiom block re-opens an existing DG class declaration (from
+         the core DesignGrammar.owl, imported above) and asserts
+         additional subClassOf / equivalentClass / equivalentProperty
+         / subPropertyOf relations.
+         ============================================================ -->
+
+
+    <rdf:Description rdf:about="&dg;createdAt">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;created"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dg;iri">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
+    </rdf:Description>
+
+    <owl:Class rdf:about="&dgk;KnowledgeSession">
+        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgk;KnowledgeTag">
+        <owl:equivalentClass rdf:resource="&skos;Concept"/>
+    </owl:Class>
+
+    <rdf:Description rdf:about="&dgk;content">
+        <rdfs:subPropertyOf rdf:resource="&skos;note"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;createdAt">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;created"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;knowledgeSessionId">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;noteId">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;identifier"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;source">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;source"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;tagName">
+        <rdfs:subPropertyOf rdf:resource="&skos;prefLabel"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;title">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;title"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgk;updatedAt">
+        <rdfs:subPropertyOf rdf:resource="&dcterms;modified"/>
+    </rdf:Description>
+
+    <owl:Class rdf:about="&dgm;Atom">
+        <owl:equivalentClass rdf:resource="&swrl;Atom"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;Builtin">
+        <owl:equivalentClass rdf:resource="&swrl;Builtin"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;BuiltinAtom">
+        <owl:equivalentClass rdf:resource="&swrl;BuiltinAtom"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;ClassAtom">
+        <owl:equivalentClass rdf:resource="&swrl;ClassAtom"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;DataPropertyAtom">
+        <owl:equivalentClass rdf:resource="&swrl;DatavaluedPropertyAtom"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;ObjectPropertyAtom">
+        <owl:equivalentClass rdf:resource="&swrl;IndividualPropertyAtom"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;Rule">
+        <owl:equivalentClass rdf:resource="&swrl;Imp"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;Variable">
+        <owl:equivalentClass rdf:resource="&swrl;Variable"/>
+    </owl:Class>
+
+    <rdf:Description rdf:about="&dgm;hasBody">
+        <owl:equivalentProperty rdf:resource="&swrl;body"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgm;hasHead">
+        <owl:equivalentProperty rdf:resource="&swrl;head"/>
+    </rdf:Description>
+
+    <owl:Class rdf:about="&dgv;GeoRef">
+        <rdfs:subClassOf rdf:resource="&geo;Geometry"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgv;ObjectInstance">
+        <rdfs:subClassOf rdf:resource="&sosa;FeatureOfInterest"/>
+        <rdfs:subClassOf rdf:resource="&geo;Feature"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgv;ValidationEntity">
+        <rdfs:subClassOf rdf:resource="&prov;Entity"/>
+        <rdfs:subClassOf rdf:resource="&sosa;Observation"/>
+        <rdfs:subClassOf rdf:resource="&sh;ValidationResult"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgv;ValidationRun">
+        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
+        <rdfs:subClassOf rdf:resource="&sh;ValidationReport"/>
+    </owl:Class>
+
+    <rdf:Description rdf:about="&dgv;capturedAtUtc">
+        <rdfs:subPropertyOf rdf:resource="&prov;startedAtTime"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgv;hasEntity">
+        <rdfs:subPropertyOf rdf:resource="&prov;generated"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgv;hasGeoRef">
+        <rdfs:subPropertyOf rdf:resource="&geo;hasGeometry"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgv;propValue">
+        <rdfs:subPropertyOf rdf:resource="&sosa;hasSimpleResult"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgv;propValueOf">
+        <owl:equivalentProperty rdf:resource="&sosa;observedProperty"/>
+        <rdfs:subPropertyOf rdf:resource="&sh;resultPath"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&dgv;validatesInstance">
+        <owl:equivalentProperty rdf:resource="&sosa;hasFeatureOfInterest"/>
+        <rdfs:subPropertyOf rdf:resource="&sh;focusNode"/>
+    </rdf:Description>
+
+    <!-- ============================================================
+         R8 — BOT ONTOLOGY BRIDGE ALIGNMENT (v4.0)
+
+         The Building Topology Ontology (BOT, https://w3id.org/bot) is a
+         W3C Community Group standard that formalises the spatial topology
+         of buildings: Site, Building, Storey, Space, Zone (abstract
+         superclass), Element, and their containment/adjacency relations.
+
+         DG OntoGraph stores domain classes (ex:Building, ex:Storey, …)
+         as named individuals of type dg:Class. When the DG pipeline
+         detects that a user-submitted rule contains a concept matching a
+         BOT class, it creates a BOT anchor node in the BOTVocab graph
+         layer and links the dg:Class individual to it via ALIGNED_TO.
+
+         This section declares:
+           1. dg:alignedTo — the OWL ObjectProperty counterpart of the
+              ALIGNED_TO Neo4j relationship.
+           2. dg:BOTClass / dg:BOTProp — OWL meta-classes corresponding to
+              the :BOTClass and :BOTProp Neo4j node labels introduced in
+              v4.0's BOTVocab graph layer.
+           3. Instance-level dg:alignedTo assertions on the dg:Class named
+              individuals already present in DesignGrammar.owl that have a
+              known BOT match (currently dg:Class_Building).
+           4. Annotation enrichments for all 12 BOT terms referenced by
+              the DG concept mapper (bot_mapper.py).
+
+         ALIGNED_TO is created on-demand — only for dg:Class individuals
+         whose label matches the mapper's BOT_CLASS_MAP or BOT_PROP_MAP.
+         Custom classes with no BOT match carry no dg:alignedTo assertion.
+         ============================================================ -->
+
+    <!-- 1. dg:alignedTo — OWL ObjectProperty for BOT concept alignment -->
+
+    <owl:ObjectProperty rdf:about="&dg;alignedTo">
+        <rdfs:label xml:lang="en">aligned to</rdfs:label>
+        <rdfs:comment xml:lang="en">Links a DG OntoGraph class node (a dg:Class named individual, e.g. dg:Class_Building) to the BOT vocabulary class it conceptually represents (e.g. bot:Building, used here as an OWL 2 individual via punning). Corresponds to the ALIGNED_TO relationship in the Neo4j BOTVocab graph layer (v4.0). Created on-demand by the n8n Auto-Align BOT post-processing node after rule ingest; not asserted for custom classes with no BOT match. Domain is dg:Class; the range is intentionally left open to accommodate future alignments to non-BOT external vocabularies via the same property.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dg;Class"/>
+        <rdfs:isDefinedBy rdf:resource="http://example.org/design-grammar/aligned"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot"/>
+    </owl:ObjectProperty>
+
+    <!-- 2. dg:BOTClass — meta-class for BOT vocabulary class anchor nodes -->
+
+    <owl:Class rdf:about="&dg;BOTClass">
+        <rdfs:label xml:lang="en">BOTClass</rdfs:label>
+        <rdfs:comment xml:lang="en">OWL meta-class corresponding to the :BOTClass Neo4j node label in the BOTVocab graph layer (v4.0). Each instance is a BOT vocabulary class anchor node created on-demand when a dg:Class individual is aligned to a BOT concept. Key properties: iri (e.g. bot:Building), label, botNamespace='bot', graph='BOTVocab'. Instances are linked FROM dg:Class individuals via dg:alignedTo. Mirrors the pattern of dg:Class (a meta-class whose instances are OWL-class individuals) — dg:BOTClass instances are OWL 2 punned individuals of the corresponding bot: OWL classes.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <rdfs:subClassOf rdf:resource="&owl;Class"/>
+        <rdfs:isDefinedBy rdf:resource="http://example.org/design-grammar/aligned"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot"/>
+    </owl:Class>
+
+    <!-- 2b. dg:BOTProp — meta-class for BOT vocabulary property anchor nodes -->
+
+    <owl:Class rdf:about="&dg;BOTProp">
+        <rdfs:label xml:lang="en">BOTProp</rdfs:label>
+        <rdfs:comment xml:lang="en">OWL meta-class corresponding to the :BOTProp Neo4j node label in the BOTVocab graph layer (v4.0). Each instance is a BOT vocabulary object property anchor node created on-demand when a dg:ObjectProperty individual is aligned to a BOT property (e.g. bot:hasStorey, bot:containsZone). Key properties: iri, label, botNamespace='bot', graph='BOTVocab'.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+        <rdfs:subClassOf rdf:resource="&owl;ObjectProperty"/>
+        <rdfs:isDefinedBy rdf:resource="http://example.org/design-grammar/aligned"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot"/>
+    </owl:Class>
+
+    <!-- 3. Instance-level dg:alignedTo assertions for known OntoGraph individuals.
+         These add BOT alignment to the named individuals already declared in
+         DesignGrammar.owl. Additional assertions are created at runtime by the
+         n8n Auto-Align BOT node as rules are ingested. -->
+
+    <rdf:Description rdf:about="&dg;Class_Building">
+        <dg:alignedTo rdf:resource="&bot;Building"/>
+    </rdf:Description>
+
+    <!-- 4. BOT class alignment: dg:BOTClass instances are subClassOf their
+         respective BOT superclasses, reflecting the BOT spatial hierarchy.
+         bot:Building, bot:Storey, bot:Space, bot:Site are all bot:Zone subtypes;
+         bot:Element is a separate physical-element branch. -->
+
+    <owl:Class rdf:about="&bot;Zone">
+        <rdfs:subClassOf rdf:resource="&dg;BOTClass"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Building">
+        <rdfs:subClassOf rdf:resource="&bot;Zone"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Storey">
+        <rdfs:subClassOf rdf:resource="&bot;Zone"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Space">
+        <rdfs:subClassOf rdf:resource="&bot;Zone"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Site">
+        <rdfs:subClassOf rdf:resource="&bot;Zone"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Element">
+        <rdfs:subClassOf rdf:resource="&dg;BOTClass"/>
+    </owl:Class>
+
+    <!-- ============================================================
+         EXTERNAL CLASS ANNOTATION ENRICHMENT
+
+         DG-perspective rdfs:label, rdfs:comment, rdfs:isDefinedBy,
+         and rdfs:seeAlso for the 17 external classes DG aligns with
+         (R1–R7) and the 12 BOT terms DG aligns with (R8).
+         Purely additive — does NOT change external-class semantics.
+         ============================================================ -->
+
+    <rdf:Description rdf:about="&swrl;Imp">
+        <rdfs:label xml:lang="en">SWRL Implication (Rule)</rdfs:label>
+        <rdfs:comment xml:lang="en">SWRL class for a rule — an implication between body atoms (conditions) and head atoms (conclusions). In DG, equivalent to dgm:Rule via R1 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.1"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;Atom">
+        <rdfs:label xml:lang="en">SWRL Atom</rdfs:label>
+        <rdfs:comment xml:lang="en">Abstract SWRL atom — base class for predicate assertions inside rule bodies and heads. In DG, equivalent to dgm:Atom. Subtypes used by DG: ClassAtom, DatavaluedPropertyAtom, IndividualPropertyAtom, BuiltinAtom.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;ClassAtom">
+        <rdfs:label xml:lang="en">SWRL Class Atom</rdfs:label>
+        <rdfs:comment xml:lang="en">SWRL atom asserting class membership of a variable, e.g. Building(?b). In DG, equivalent to dgm:ClassAtom.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;DatavaluedPropertyAtom">
+        <rdfs:label xml:lang="en">SWRL Datavalued Property Atom</rdfs:label>
+        <rdfs:comment xml:lang="en">SWRL atom asserting a datatype property value, e.g. hasHeightM(?b, ?h). In DG, equivalent to dgm:DataPropertyAtom (DG uses the shorter name).</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;IndividualPropertyAtom">
+        <rdfs:label xml:lang="en">SWRL Individual Property Atom</rdfs:label>
+        <rdfs:comment xml:lang="en">SWRL atom asserting an object property relationship between two individuals, e.g. locatedIn(?b, ?block). In DG, equivalent to dgm:ObjectPropertyAtom (DG uses the shorter name).</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;BuiltinAtom">
+        <rdfs:label xml:lang="en">SWRL Builtin Atom</rdfs:label>
+        <rdfs:comment xml:lang="en">SWRL atom invoking a builtin comparison or arithmetic operator, e.g. swrlb:greaterThan(?h, 75). In DG, equivalent to dgm:BuiltinAtom.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;Variable">
+        <rdfs:label xml:lang="en">SWRL Variable</rdfs:label>
+        <rdfs:comment xml:lang="en">A SWRL variable, e.g. ?b. In DG, equivalent to dgm:Variable. DG refines this with ObjectVariable, PropertyVariable, and BuiltinVariable subclasses per VTYP-01 typing.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&swrl;Builtin">
+        <rdfs:label xml:lang="en">SWRL Builtin</rdfs:label>
+        <rdfs:comment xml:lang="en">A SWRL builtin comparison/arithmetic operator (e.g. swrlb:greaterThan). In DG, equivalent to dgm:Builtin. DG uses six builtins: greaterThan, lessThan, greaterThanOrEqual, lessThanOrEqual, equal, notEqual.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/Submission/SWRL/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/Submission/SWRL/#3.1.2"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&prov;Activity">
+        <rdfs:label xml:lang="en">PROV Activity</rdfs:label>
+        <rdfs:comment xml:lang="en">PROV-O class for something that occurs over a period of time and acts upon or with entities. In DG, parent of dgv:ValidationRun (a validation execution) and dgk:KnowledgeSession (an LLM ingest/query/update session). Aligned via R2.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/prov-o#"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/prov-o/#Activity"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&prov;Entity">
+        <rdfs:label xml:lang="en">PROV Entity</rdfs:label>
+        <rdfs:comment xml:lang="en">PROV-O class for a physical, digital, conceptual, or other kind of thing whose provenance can be traced. In DG, parent of dgv:ValidationEntity (a BIM element evaluated in a run). Aligned via R2.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/prov-o#"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/prov-o/#Entity"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&sosa;Observation">
+        <rdfs:label xml:lang="en">SOSA Observation</rdfs:label>
+        <rdfs:comment xml:lang="en">SOSA class for the act of carrying out an observation — measurement of a property on a feature of interest. In DG, parent of dgv:ValidationEntity (a rule check is an observation of a property on an object). Aligned via R3.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/sosa/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/vocab-ssn/#SOSAObservation"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&sosa;FeatureOfInterest">
+        <rdfs:label xml:lang="en">SOSA Feature of Interest</rdfs:label>
+        <rdfs:comment xml:lang="en">SOSA class for the thing whose property is being observed. In DG, parent of dgv:ObjectInstance (the validated geometric element). Aligned via R3.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/sosa/"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/vocab-ssn/#SOSAFeatureOfInterest"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&sh;ValidationReport">
+        <rdfs:label xml:lang="en">SHACL Validation Report</rdfs:label>
+        <rdfs:comment xml:lang="en">SHACL class for the result of validating data graph against shapes — contains all validation results. In DG, parent of dgv:ValidationRun. Aligned via R4.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/shacl#"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/shacl/#results-validation-report"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&sh;ValidationResult">
+        <rdfs:label xml:lang="en">SHACL Validation Result</rdfs:label>
+        <rdfs:comment xml:lang="en">SHACL class for an individual result entry inside a validation report — records focusNode, resultPath, severity, etc. In DG, parent of dgv:ValidationEntity (the per-rule, per-instance result cell). Aligned via R4.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/ns/shacl#"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/shacl/#results-validation-result"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&skos;Concept">
+        <rdfs:label xml:lang="en">SKOS Concept</rdfs:label>
+        <rdfs:comment xml:lang="en">SKOS class for an idea or notion — a unit of thought used in a knowledge organization system. In DG, equivalent to dgk:KnowledgeTag (a tag IS a concept in a project's tag taxonomy). Aligned via R5.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.w3.org/2004/02/skos/core"/>
+        <rdfs:seeAlso rdf:resource="https://www.w3.org/TR/skos-reference/#concepts"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&geo;Feature">
+        <rdfs:label xml:lang="en">GeoSPARQL Feature</rdfs:label>
+        <rdfs:comment xml:lang="en">GeoSPARQL class for a spatial feature — anything with a discernible geometry. In DG, parent of dgv:ObjectInstance. Aligned via R6.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.opengis.net/ont/geosparql"/>
+        <rdfs:seeAlso rdf:resource="https://www.ogc.org/standards/geosparql"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&geo;Geometry">
+        <rdfs:label xml:lang="en">GeoSPARQL Geometry</rdfs:label>
+        <rdfs:comment xml:lang="en">GeoSPARQL class for a geometric primitive (point, polygon, etc.) — or, in DG's case, a reference to one. DG's dgv:GeoRef is a handle into a source-system (Speckle/Rhino) rather than serialized WKT, but the conceptual role is the same. Aligned via R6.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.opengis.net/ont/geosparql"/>
+        <rdfs:seeAlso rdf:resource="https://www.ogc.org/standards/geosparql"/>
+    </rdf:Description>
+
+    <!-- R8 — BOT annotation enrichments (DG-perspective labels and comments
+         for the 6 BOT classes and 6 BOT object properties referenced by
+         the DG concept mapper in data-service/bot_mapper.py). -->
+
+    <rdf:Description rdf:about="&bot;Zone">
+        <rdfs:label xml:lang="en">BOT Zone</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT abstract superclass for all spatial zones — buildings, storeys, spaces, and sites are all subtypes of bot:Zone. In DG, bot:Zone is the root of the BOT spatial class hierarchy. Any dg:Class individual whose label maps to a BOT spatial concept (Building, Storey, Space, Site) is transitively aligned to bot:Zone through its more specific subclass alignment. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Zone"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;Building">
+        <rdfs:label xml:lang="en">BOT Building</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT class for an independent unit of the built environment — a structure providing shelter, containment, or a defined boundary. Subtype of bot:Zone. In DG, the dg:Class_Building named individual (ex:Building) is aligned to this class via dg:alignedTo. Synonym surface forms recognised by the DG concept mapper: "building", "structure". R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Building"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;Storey">
+        <rdfs:label xml:lang="en">BOT Storey</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT class for a horizontal section of a building bounded by floor and ceiling surfaces. Subtype of bot:Zone. In DG, ex:Storey (when created by a rule ingest) is aligned to this class via dg:alignedTo. Synonym surface forms recognised by the DG concept mapper: "storey", "floor", "level", "story". R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Storey"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;Space">
+        <rdfs:label xml:lang="en">BOT Space</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT class for a three-dimensional extent within a building bounded by building elements. Subtype of bot:Zone. In DG, ex:Space / ex:Apartment / ex:Room concepts are aligned to this class via dg:alignedTo. Synonym surface forms recognised by the DG concept mapper: "space", "room", "apartment", "flat", "unit". R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Space"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;Site">
+        <rdfs:label xml:lang="en">BOT Site</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT class for a land area containing one or more buildings. Subtype of bot:Zone. In DG, ex:Site / ex:Plot concepts are aligned to this class via dg:alignedTo. Synonym surface forms recognised by the DG concept mapper: "site", "plot", "parcel", "land". R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Site"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;Element">
+        <rdfs:label xml:lang="en">BOT Element</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT class for a physical building component — walls, slabs, columns, facades, etc. Separate branch from bot:Zone (elements are not zones). In DG, ex:Element / ex:Component concepts are aligned to this class via dg:alignedTo. Synonym surface forms recognised by the DG concept mapper: "element", "component". R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#Element"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;hasBuilding">
+        <rdfs:label xml:lang="en">BOT hasBuilding</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT object property relating a bot:Site to a bot:Building it contains. In DG, ex:hasBuilding ObjectProperty individuals are aligned to this property via dg:alignedTo when detected by the DG concept mapper. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#hasBuilding"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;hasStorey">
+        <rdfs:label xml:lang="en">BOT hasStorey</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT object property relating a bot:Building (or bot:Zone) to a bot:Storey it contains. In DG, ex:hasStorey ObjectProperty individuals are aligned to this property via dg:alignedTo. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#hasStorey"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;hasSpace">
+        <rdfs:label xml:lang="en">BOT hasSpace</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT object property relating a bot:Zone to a bot:Space it directly contains. In DG, ex:hasSpace ObjectProperty individuals are aligned to this property via dg:alignedTo. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#hasSpace"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;containsZone">
+        <rdfs:label xml:lang="en">BOT containsZone</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT transitive object property for spatial containment between zones at any depth — more general than hasBuilding/hasStorey/hasSpace. In DG, ex:containsZone ObjectProperty individuals are aligned to this property via dg:alignedTo. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#containsZone"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;adjacentZone">
+        <rdfs:label xml:lang="en">BOT adjacentZone</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT symmetric object property for spatial adjacency between zones that share a boundary surface. In DG, ex:adjacentZone ObjectProperty individuals are aligned to this property via dg:alignedTo. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#adjacentZone"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="&bot;hasElement">
+        <rdfs:label xml:lang="en">BOT hasElement</rdfs:label>
+        <rdfs:comment xml:lang="en">BOT object property relating a bot:Zone to a bot:Element it contains. In DG, ex:hasElement ObjectProperty individuals are aligned to this property via dg:alignedTo. R8 alignment.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/bot"/>
+        <rdfs:seeAlso rdf:resource="https://w3id.org/bot#hasElement"/>
+    </rdf:Description>
+</rdf:RDF>
