@@ -61,3 +61,18 @@ Extended the DG ontology from v4.1 to v5.0 with a new **ComputationGraph** layer
 - Update `ONTOLOGY-ALIGNMENT.md` with BOT/Topologic extension notes
 - Future: Implement ComputationGraph in Neo4j when GH integration proceeds
 - Future: Populate with instance data from real GH definitions
+
+## Session continuation (same day)
+
+**Added ComputationGraph example individuals** based on the Grasshopper screenshot:
+- 1 Object (Frame), 1 Behavior, 1 Structure
+- 1 Algorithm (1_Algorithm)
+- 2 Procedures: 11_Proc (2D Truss), 12_Proc (2D Footer)
+- 3 Patterns: DivideLine, TopChord, FooterBottomLines
+- 4 VariableParam: SpansCount, HTotal, HFooter, FooterCount
+- 4 ConstantParam: ptZero, TrussConfig×2, IndList_1
+- 4 EmergentParam: LineSDL, UpperChord, BottomLn, FooterFrame
+- 4 Interfaces (Output): ParSplitAt, TrussConfig, MergeRes, FooterFrame
+- 1 ParametricState (default)
+
+Total: +249 lines, 26 NamedIndividuals added. XML validation passed.
