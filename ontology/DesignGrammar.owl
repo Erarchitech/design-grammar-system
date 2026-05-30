@@ -8,6 +8,7 @@
     <!ENTITY dgm     "http://example.org/design-grammar/metagraph#">
     <!ENTITY dgv     "http://example.org/design-grammar/validation#">
     <!ENTITY dgk     "http://example.org/design-grammar/knowledge#">
+    <!ENTITY dgc     "http://example.org/design-grammar/computation#">
 ]>
 
 <rdf:RDF
@@ -19,6 +20,7 @@
     xmlns:dgm="&dgm;"
     xmlns:dgv="&dgv;"
     xmlns:dgk="&dgk;"
+    xmlns:dgc="&dgc;"
     xml:base="http://example.org/design-grammar">
 
     <!-- ============================================================
@@ -39,11 +41,12 @@
             2. Metagraph — SWRL rule structure (Rule, Atom, Variable, Literal, Builtin)
             3. ValidationGraph — validation runs, entity results, integration config
             4. KnowledgeGraph — project knowledge notes, tags, sessions
+            5. ComputationGraph — DCM parametric design model (Algorithm, Procedure, Pattern, Parameter, Interface)
 
             Schema version: v3
         </rdfs:comment>
-        <owl:versionInfo>4.1</owl:versionInfo>
-        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:OntoGraph / dgm:Metagraph / dgv:ValidationGraph / dgk:KnowledgeGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties.</rdfs:seeAlso>
+        <owl:versionInfo>5.0</owl:versionInfo>
+        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:OntoGraph / dgm:Metagraph / dgv:ValidationGraph / dgk:KnowledgeGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties. v5.0 adds ComputationGraph layer (5th layer) for DCM parametric design model aligned with Grasshopper: Algorithm, Procedure, Pattern, Parameter, Interface, Geometry; adds RuleSet and Reasoner to Metagraph; introduces cross-layer bridge dgc:attributeOf (Atom→Parameter); splits external vocabulary extensions into per-vocabulary files (BOT, Topologic).</rdfs:seeAlso>
     </owl:Ontology>
 
     <!-- ============================================================
@@ -86,6 +89,7 @@
                     <owl:NamedIndividual rdf:about="&dgm;Metagraph"/>
                     <owl:NamedIndividual rdf:about="&dgv;ValidationGraph"/>
                     <owl:NamedIndividual rdf:about="&dgk;KnowledgeGraph"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ComputationGraph"/>
                 </owl:oneOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -412,6 +416,20 @@
         <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
     </owl:Class>
 
+    <owl:Class rdf:about="&dgm;RuleSet">
+        <rdfs:label xml:lang="en">RuleSet</rdfs:label>
+        <rdfs:comment xml:lang="en">A named collection of design grammar rules applied together as a regulatory package (e.g. "BuildingCode2024"). A RuleSet is NOT a sequence — rules within it have no precedence order. Rules can only host each other (nesting). Contains Rules via dgm:hasRule. Linked to a Reasoner via dgm:usesReasoner.</rdfs:comment>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgm;Reasoner">
+        <rdfs:label xml:lang="en">Reasoner</rdfs:label>
+        <rdfs:comment xml:lang="en">An evaluation engine concept representing the strategy used to apply rules to parametric state. Different reasoners may process rules differently (SWRL forward-chaining, Grasshopper constraint solver, parametric propagation). Linked from RuleSet and from dgc:Function (as the mechanism that evaluates design intent).</rdfs:comment>
+        <dg:graph rdf:resource="&dgm;Metagraph"/>
+        <rdfs:subClassOf rdf:resource="&dgm;Metagraph"/>
+    </owl:Class>
+
     <!-- ************************************************************
          METAGRAPH DATATYPE PROPERTIES
          ************************************************************ -->
@@ -619,6 +637,39 @@
         <rdfs:label xml:lang="en">pos</rdfs:label>
         <rdfs:comment xml:lang="en">Positional index of an argument within an atom (1-indexed). Stored on ARG relationships.</rdfs:comment>
         <rdfs:range rdf:resource="&xsd;integer"/>
+    </owl:DatatypeProperty>
+
+    <!-- RuleSet / Reasoner object properties (v5.0) -->
+
+    <owl:ObjectProperty rdf:about="&dgm;hasRule">
+        <rdfs:label xml:lang="en">HAS_RULE</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a RuleSet to the Rules it contains. A RuleSet groups multiple Rules as a regulatory package.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgm;RuleSet"/>
+        <rdfs:range rdf:resource="&dgm;Rule"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgm;usesReasoner">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">USES_REASONER</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a RuleSet to the Reasoner used to evaluate its rules. Characteristics: Functional — a RuleSet uses exactly one Reasoner.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgm;RuleSet"/>
+        <rdfs:range rdf:resource="&dgm;Reasoner"/>
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgm;reasonerName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a Reasoner (e.g. 'SWRLForwardChainer', 'GrasshopperSolver'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgm;Reasoner"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgm;ruleSetName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a RuleSet (e.g. 'BuildingCode2024', 'ZoningRegulation'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgm;RuleSet"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <!-- ************************************************************
@@ -2098,6 +2149,481 @@
 
     <!-- ============================================================
 
+         LAYER 5: COMPUTATION GRAPH — DCM PARAMETRIC DESIGN MODEL
+         Design Computation Model classes covering parametric design
+         definitions in Grasshopper as Object Behavior descriptions.
+         Enables bidirectional translation of design grammars into/from
+         Grasshopper definitions and future generation of GH nodes.
+
+         Based on FBS (Function-Behavior-Structure) framework (Gero 1990)
+         and Grasshopper component hierarchy:
+         Algorithm → Procedure → Pattern (component) → Interface + Parameter
+
+         ============================================================ -->
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — LAYER HUB
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;ComputationGraph">
+        <rdfs:label xml:lang="en">ComputationGraph</rdfs:label>
+        <rdfs:comment xml:lang="en">Hub class for the ComputationGraph layer (DCM parametric design model). Contains: Object, Function, Behavior, Structure, Algorithm, Procedure, Pattern, Parameter, Interface, Geometry. Conceptual layer for future Grasshopper integration — enables translation of design grammars into/from parametric definitions.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;LayerEntity"/>
+    </owl:Class>
+
+    <owl:NamedIndividual rdf:about="&dgc;ComputationGraph">
+        <rdf:type rdf:resource="&dg;GraphLayer"/>
+        <rdfs:label xml:lang="en">ComputationGraph</rdfs:label>
+        <rdfs:comment xml:lang="en">Named individual for the ComputationGraph layer (OWL 2 punning: simultaneously a class and an individual of dg:GraphLayer).</rdfs:comment>
+    </owl:NamedIndividual>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — FBS CORE CLASSES
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;Object">
+        <rdfs:label xml:lang="en">Object</rdfs:label>
+        <rdfs:comment xml:lang="en">A design entity described through its Function, Behavior, and Structure (FBS framework). Represents a parametric design object whose behavior is defined by Grasshopper algorithms. Example: a Frame object whose algorithm generates a 2D truss. Bridges to dg:Class instances (a Building IS an Object in DCM terms).</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Function">
+        <rdfs:label xml:lang="en">Function</rdfs:label>
+        <rdfs:comment xml:lang="en">What the design object is supposed to achieve — its purpose or design intent. Rules enforce Functions. A Function is realized through Behavior (the computation that achieves it). Connected to Reasoner (as the mechanism evaluating design intent).</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Behavior">
+        <rdfs:label xml:lang="en">Behavior</rdfs:label>
+        <rdfs:comment xml:lang="en">How the design achieves its function — the computational process. Described by an Algorithm (Grasshopper definition). Behavior produces Structure (geometric form). In DCM: Behavior IS the parametric definition that generates design output.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Structure">
+        <rdfs:label xml:lang="en">Structure</rdfs:label>
+        <rdfs:comment xml:lang="en">What the design IS — its physical/geometric form resulting from Behavior. Connects to Geometry (data) and Topology (spatial decomposition). Represents the output of parametric computation.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;ParametricState">
+        <rdfs:label xml:lang="en">ParametricState</rdfs:label>
+        <rdfs:comment xml:lang="en">A snapshot of an Object's parametric configuration at a point in time — the current values of all Parameters in the Algorithm. Broader than dgv:DesignState (which is validation-focused): ParametricState captures any configuration, not just those being validated.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — ALGORITHM HIERARCHY
+         Algorithm → Procedure → Pattern (maps to GH Definition → Cluster → Component)
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;Algorithm">
+        <rdfs:label xml:lang="en">Algorithm</rdfs:label>
+        <rdfs:comment xml:lang="en">A complete parametric definition — the top-level container for the computational process. Maps to a Grasshopper definition file (the whole canvas). Contains Procedures. Example: '1_Algorithm' generating a Frame object.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Procedure">
+        <rdfs:label xml:lang="en">Procedure</rdfs:label>
+        <rdfs:comment xml:lang="en">A grouped sequence of Patterns within an Algorithm — an organizational unit of computation. Maps to a Grasshopper Cluster or Group. Contains Patterns and exposes Interfaces for inter-procedure data flow. Example: '11_Proc - 2D Truss Configuration', '12_Proc - 2D Footer Configuration'.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Pattern">
+        <rdfs:label xml:lang="en">Pattern</rdfs:label>
+        <rdfs:comment xml:lang="en">The atomic unit of parametric computation — a single operation node. Maps to a Grasshopper Component (a node on the canvas). Has Interfaces (I/O ports) and receives Parameters. Patterns can host other Patterns (nesting). Example: '11_Pat_DivideLine', '11_Pat_TopChord', '12_Pat_1 - Create footer bottom lines'.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — PARAMETER CLASSES
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;Parameter">
+        <rdfs:label xml:lang="en">Parameter</rdfs:label>
+        <rdfs:comment xml:lang="en">A typed value in a parametric definition — data flowing through the computation graph. Distinct from dgm:Variable (which is a SWRL runtime binding): Parameter is a GH definition-time concept. Has ParameterType (Var/Const/Emergent) and ParamDataType. Bridge: Atoms can reference Parameters via dgc:attributeOf. Every Parameter is necessarily a VariableParam, ConstantParam, OR EmergentParam (owl:disjointUnionOf).</rdfs:comment>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgc;VariableParam"/>
+            <owl:Class rdf:about="&dgc;ConstantParam"/>
+            <owl:Class rdf:about="&dgc;EmergentParam"/>
+        </owl:disjointUnionOf>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;VariableParam">
+        <rdfs:label xml:lang="en">VariableParam</rdfs:label>
+        <rdfs:comment xml:lang="en">A user-adjustable input parameter (GH slider, number input, toggle). Value can be changed by the user at design time. Example: '11_Var_SpansCount' (Count of spans), '12_Var_HFooter' (Footer Height).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dgc;Parameter"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;ConstantParam">
+        <rdfs:label xml:lang="en">ConstantParam</rdfs:label>
+        <rdfs:comment xml:lang="en">A fixed configuration value — preset and not intended for user adjustment. Example: '11_Const_ptZero' (origin point), '11_Const_TrussConfig' (Truss Web Configuration).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dgc;Parameter"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;EmergentParam">
+        <rdfs:label xml:lang="en">EmergentParam</rdfs:label>
+        <rdfs:comment xml:lang="en">A computed output value — emerges from Pattern execution. Not directly set by user; derived from computation. Example: '11_Emg_LineSDL' (computed line), '12_Emg_FooterFrame' (generated frame geometry).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dgc;Parameter"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — INTERFACE CLASSES
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;Interface">
+        <rdfs:label xml:lang="en">Interface</rdfs:label>
+        <rdfs:comment xml:lang="en">An inter-procedure connector — exposes data between Procedures. Maps to Grasshopper connection points at procedure boundaries. Has InterfaceType (Input/Output) and optional ListStructure for data tree management. Example: '11_IntF_ParSplitAt', '11_IntF_MergeRes'. Every Interface is necessarily an Input OR an Output (owl:disjointUnionOf).</rdfs:comment>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgc;Input"/>
+            <owl:Class rdf:about="&dgc;Output"/>
+        </owl:disjointUnionOf>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Input">
+        <rdfs:label xml:lang="en">Input</rdfs:label>
+        <rdfs:comment xml:lang="en">An input port on an Interface — receives data into a Procedure or Pattern.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dgc;Interface"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Output">
+        <rdfs:label xml:lang="en">Output</rdfs:label>
+        <rdfs:comment xml:lang="en">An output port on an Interface — emits data from a Procedure or Pattern.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dgc;Interface"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — GEOMETRY AND TOPOLOGY
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;Geometry">
+        <rdfs:label xml:lang="en">Geometry</rdfs:label>
+        <rdfs:comment xml:lang="en">Typed geometric data flowing through the parametric definition. Represents GH geometry types (Line, Point, Vector, Brep, Mesh, etc.). Connected to Structure as the physical form output. Distinct from dgv:ObjectInstance (which is a validated entity in ValidationGraph).</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&dgc;Topology">
+        <rdfs:label xml:lang="en">Topology</rdfs:label>
+        <rdfs:comment xml:lang="en">Spatial topology of geometric structure — decomposition via Topologic library (Cluster, CellComplex, Cell, Shell, Face, Wire, Edge, Vertex). Used for spatial analysis of design output. Alignment with external Topologic vocabulary defined in DesignGrammar-Topologic-extension.owl.</rdfs:comment>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — ENUMERATIONS
+         ************************************************************ -->
+
+    <owl:Class rdf:about="&dgc;ParamDataTypeValue">
+        <rdfs:label xml:lang="en">ParamDataType</rdfs:label>
+        <rdfs:comment xml:lang="en">Enumeration of parameter data types in the computation graph. Maps to Grasshopper data types. Closed via owl:oneOf.</rdfs:comment>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:oneOf rdf:parseType="Collection">
+                    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Float"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Integer"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Text"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Boolean"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Geometry"/>
+                </owl:oneOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Float">
+        <rdf:type rdf:resource="&dgc;ParamDataTypeValue"/>
+        <rdfs:label xml:lang="en">Float</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Integer">
+        <rdf:type rdf:resource="&dgc;ParamDataTypeValue"/>
+        <rdfs:label xml:lang="en">Integer</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Text">
+        <rdf:type rdf:resource="&dgc;ParamDataTypeValue"/>
+        <rdfs:label xml:lang="en">Text</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Boolean">
+        <rdf:type rdf:resource="&dgc;ParamDataTypeValue"/>
+        <rdfs:label xml:lang="en">Boolean</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ParamDataType_Geometry">
+        <rdf:type rdf:resource="&dgc;ParamDataTypeValue"/>
+        <rdfs:label xml:lang="en">Geometry</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:Class rdf:about="&dgc;ListStructureValue">
+        <rdfs:label xml:lang="en">ListStructure</rdfs:label>
+        <rdfs:comment xml:lang="en">Enumeration of Grasshopper data tree management operations applicable to Interfaces. Closed via owl:oneOf.</rdfs:comment>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:oneOf rdf:parseType="Collection">
+                    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Flatten"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Graft"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Simplify"/>
+                    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Reverse"/>
+                </owl:oneOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&dgc;ComputationGraph"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:Class>
+
+    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Flatten">
+        <rdf:type rdf:resource="&dgc;ListStructureValue"/>
+        <rdfs:label xml:lang="en">Flatten</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Graft">
+        <rdf:type rdf:resource="&dgc;ListStructureValue"/>
+        <rdfs:label xml:lang="en">Graft</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Simplify">
+        <rdf:type rdf:resource="&dgc;ListStructureValue"/>
+        <rdfs:label xml:lang="en">Simplify</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;ListStructure_Reverse">
+        <rdf:type rdf:resource="&dgc;ListStructureValue"/>
+        <rdfs:label xml:lang="en">Reverse</rdfs:label>
+    </owl:NamedIndividual>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — OBJECT PROPERTIES
+         ************************************************************ -->
+
+    <!-- FBS composition -->
+
+    <owl:ObjectProperty rdf:about="&dgc;hasFunction">
+        <rdfs:label xml:lang="en">HAS_FUNCTION</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects an Object to its Function (design intent). An Object may have multiple Functions.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Object"/>
+        <rdfs:range rdf:resource="&dgc;Function"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasBehavior">
+        <rdfs:label xml:lang="en">HAS_BEHAVIOR</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects an Object to its Behavior (computational process achieving the function).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Object"/>
+        <rdfs:range rdf:resource="&dgc;Behavior"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasStructure">
+        <rdfs:label xml:lang="en">HAS_STRUCTURE</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects an Object to its Structure (physical/geometric form).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Object"/>
+        <rdfs:range rdf:resource="&dgc;Structure"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasState">
+        <rdfs:label xml:lang="en">HAS_STATE</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects an Object to its current ParametricState (snapshot of all parameter values).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Object"/>
+        <rdfs:range rdf:resource="&dgc;ParametricState"/>
+    </owl:ObjectProperty>
+
+    <!-- Behavior → Algorithm connection -->
+
+    <owl:ObjectProperty rdf:about="&dgc;hasAlgorithm">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">HAS_ALGORITHM</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Behavior to its Algorithm (the complete parametric definition describing it). Characteristics: Functional — one Behavior has one Algorithm.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Behavior"/>
+        <rdfs:range rdf:resource="&dgc;Algorithm"/>
+    </owl:ObjectProperty>
+
+    <!-- Algorithm hierarchy -->
+
+    <owl:ObjectProperty rdf:about="&dgc;hasProcedure">
+        <rdfs:label xml:lang="en">HAS_PROCEDURE</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects an Algorithm to its constituent Procedures. An Algorithm contains multiple Procedures.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Algorithm"/>
+        <rdfs:range rdf:resource="&dgc;Procedure"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasPattern">
+        <rdfs:label xml:lang="en">HAS_PATTERN</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Procedure to its constituent Patterns. A Procedure contains multiple Patterns (GH components).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Procedure"/>
+        <rdfs:range rdf:resource="&dgc;Pattern"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;patternHostTo">
+        <rdfs:label xml:lang="en">PATTERN_HOST_TO</rdfs:label>
+        <rdfs:comment xml:lang="en">Nesting relationship — a Pattern can host (contain) other Patterns. Models GH component grouping within a procedure.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Pattern"/>
+        <rdfs:range rdf:resource="&dgc;Pattern"/>
+    </owl:ObjectProperty>
+
+    <!-- Pattern → Interface and Parameter -->
+
+    <owl:ObjectProperty rdf:about="&dgc;hasInterface">
+        <rdfs:label xml:lang="en">HAS_INTERFACE</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Pattern (or Procedure) to its Interface connector. Interfaces expose data at procedure boundaries.</rdfs:comment>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <owl:Class rdf:about="&dgc;Pattern"/>
+                    <owl:Class rdf:about="&dgc;Procedure"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="&dgc;Interface"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasParameter">
+        <rdfs:label xml:lang="en">HAS_PARAMETER</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Pattern to its Parameters (input values consumed by the component).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Pattern"/>
+        <rdfs:range rdf:resource="&dgc;Parameter"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;paramLink">
+        <rdfs:label xml:lang="en">PARAM_LINK</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Parameter to the Interface it flows through. Models data wiring between Parameters and Interface connectors.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Parameter"/>
+        <rdfs:range rdf:resource="&dgc;Interface"/>
+    </owl:ObjectProperty>
+
+    <!-- Geometry and Topology -->
+
+    <owl:ObjectProperty rdf:about="&dgc;hasGeometry">
+        <rdfs:label xml:lang="en">HAS_GEOMETRY</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Structure to its Geometry data (the physical form representation).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Structure"/>
+        <rdfs:range rdf:resource="&dgc;Geometry"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;hasTopology">
+        <rdfs:label xml:lang="en">HAS_TOPOLOGY</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Structure to its Topology (spatial decomposition via Topologic).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Structure"/>
+        <rdfs:range rdf:resource="&dgc;Topology"/>
+    </owl:ObjectProperty>
+
+    <!-- Cross-layer bridge: Metagraph → ComputationGraph -->
+
+    <owl:ObjectProperty rdf:about="&dgc;attributeOf">
+        <rdfs:label xml:lang="en">ATTRIBUTE_OF</rdfs:label>
+        <rdfs:comment xml:lang="en">Cross-layer bridge connecting a Metagraph Atom to a ComputationGraph Parameter. This is the semantic link enabling bidirectional translation between SWRL rules and Grasshopper parametric definitions: a rule atom can reference a parametric parameter. Follows the same cross-layer pattern as dgm:refersTo (Metagraph → OntoGraph).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgm;Atom"/>
+        <rdfs:range rdf:resource="&dgc;Parameter"/>
+    </owl:ObjectProperty>
+
+    <!-- Function → Reasoner link -->
+
+    <owl:ObjectProperty rdf:about="&dgc;evaluatedBy">
+        <rdfs:label xml:lang="en">EVALUATED_BY</rdfs:label>
+        <rdfs:comment xml:lang="en">Connects a Function to the Reasoner that evaluates design rules against it. Links design intent (Function) to rule evaluation strategy (Reasoner).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Function"/>
+        <rdfs:range rdf:resource="&dgm;Reasoner"/>
+    </owl:ObjectProperty>
+
+    <!-- ************************************************************
+         COMPUTATION GRAPH — DATATYPE PROPERTIES
+         ************************************************************ -->
+
+    <owl:DatatypeProperty rdf:about="&dgc;objectName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a DCM Object (e.g. 'Frame', 'Truss'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Object"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;algorithmName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of an Algorithm (e.g. '1_Algorithm'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Algorithm"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;procedureName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a Procedure (e.g. '11_Proc - 2D Truss Configuration'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Procedure"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;patternName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a Pattern (e.g. '11_Pat_DivideLine'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Pattern"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;parameterName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of a Parameter (e.g. '11_Var_SpansCount', '11_Const_ptZero'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Parameter"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;parameterDisplayName">
+        <rdfs:label xml:lang="en">displayName</rdfs:label>
+        <rdfs:comment xml:lang="en">Human-readable label for a Parameter (e.g. 'Count of spans', 'Footer Height').</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Parameter"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;interfaceName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">name</rdfs:label>
+        <rdfs:comment xml:lang="en">Display name of an Interface (e.g. '11_IntF_ParSplitAt'). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Interface"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;paramDataType">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">paramDataType</rdfs:label>
+        <rdfs:comment xml:lang="en">Data type of a Parameter (Float, Integer, Text, Boolean, Geometry). Characteristics: Functional.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Parameter"/>
+        <rdfs:range rdf:resource="&dgc;ParamDataTypeValue"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&dgc;listStructure">
+        <rdfs:label xml:lang="en">listStructure</rdfs:label>
+        <rdfs:comment xml:lang="en">Data tree management operation applied to an Interface (Flatten, Graft, Simplify, Reverse).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Interface"/>
+        <rdfs:range rdf:resource="&dgc;ListStructureValue"/>
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="&dgc;procedureOrder">
+        <rdfs:label xml:lang="en">order</rdfs:label>
+        <rdfs:comment xml:lang="en">Ordinal position of a Procedure within its Algorithm (numeric prefix, e.g. 11, 12).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dgc;Procedure"/>
+        <rdfs:range rdf:resource="&xsd;integer"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================================
+
          DISJOINTNESS AXIOMS
          v3.1 — ensure key class kinds are mutually disjoint so HermiT
          can catch misclassification (e.g. a node typed as both
@@ -2169,6 +2695,8 @@
             <owl:Class rdf:about="&dgm;Literal"/>
             <owl:Class rdf:about="&dgm;Builtin"/>
             <owl:Class rdf:about="&dgm;DesignRuleSession"/>
+            <owl:Class rdf:about="&dgm;RuleSet"/>
+            <owl:Class rdf:about="&dgm;Reasoner"/>
         </owl:members>
     </rdf:Description>
 
@@ -2201,6 +2729,46 @@
             <owl:Class rdf:about="&dgv;DesignStateParameterTypeValue"/>
             <owl:Class rdf:about="&dgv;ValidationStatusValue"/>
             <owl:Class rdf:about="&dgv;ReinstatementStatusValue"/>
+            <owl:Class rdf:about="&dgc;ParamDataTypeValue"/>
+            <owl:Class rdf:about="&dgc;ListStructureValue"/>
+        </owl:members>
+    </rdf:Description>
+
+    <!-- ComputationGraph: top-level node kinds are mutually exclusive -->
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgc;Object"/>
+            <owl:Class rdf:about="&dgc;Function"/>
+            <owl:Class rdf:about="&dgc;Behavior"/>
+            <owl:Class rdf:about="&dgc;Structure"/>
+            <owl:Class rdf:about="&dgc;ParametricState"/>
+            <owl:Class rdf:about="&dgc;Algorithm"/>
+            <owl:Class rdf:about="&dgc;Procedure"/>
+            <owl:Class rdf:about="&dgc;Pattern"/>
+            <owl:Class rdf:about="&dgc;Parameter"/>
+            <owl:Class rdf:about="&dgc;Interface"/>
+            <owl:Class rdf:about="&dgc;Geometry"/>
+            <owl:Class rdf:about="&dgc;Topology"/>
+        </owl:members>
+    </rdf:Description>
+
+    <!-- ComputationGraph: parameter subtypes are mutually exclusive -->
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgc;VariableParam"/>
+            <owl:Class rdf:about="&dgc;ConstantParam"/>
+            <owl:Class rdf:about="&dgc;EmergentParam"/>
+        </owl:members>
+    </rdf:Description>
+
+    <!-- ComputationGraph: interface subtypes are mutually exclusive -->
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <owl:Class rdf:about="&dgc;Input"/>
+            <owl:Class rdf:about="&dgc;Output"/>
         </owl:members>
     </rdf:Description>
 

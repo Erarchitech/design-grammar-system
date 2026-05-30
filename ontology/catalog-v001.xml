@@ -19,11 +19,22 @@
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
     <group id="DG aligned vocabularies (v3.2)" prefer="public" xml:base="">
 
-        <!-- DG core ontology (v4.0) — pure DG content, no external imports. Open this for lean Protégé view. -->
+        <!-- DG core ontology (v5.0) — pure DG content with 5 graph layers. Open this for lean Protégé view. -->
         <uri id="DG-core" name="http://example.org/design-grammar" uri="DesignGrammar.owl"/>
 
-        <!-- DG aligned facade (v4.0) — imports DG core + 7 external vocabularies + 49 alignment axioms. Open this for cross-vocab reasoning. -->
-        <uri id="DG-aligned" name="http://example.org/design-grammar/aligned" uri="DesignGrammar-aligned.owl"/>
+        <!-- DG standards extension (v4.0) — SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL alignment axioms. Open this for cross-vocab reasoning with W3C standards. -->
+        <uri id="DG-standards" name="http://example.org/design-grammar/aligned" uri="DesignGrammar-standards-extension.owl"/>
+
+        <!-- DG BOT extension (v5.0) — Building Topology Ontology alignment. -->
+        <uri id="DG-BOT" name="http://example.org/design-grammar/bot-extension" uri="DesignGrammar-BOT-extension.owl"/>
+
+        <!-- DG Topologic extension (v5.0) — Topologic spatial analysis library alignment. -->
+        <uri id="DG-Topologic" name="http://example.org/design-grammar/topologic-extension" uri="DesignGrammar-Topologic-extension.owl"/>
+
+        <!-- BOT — W3C Linked Building Data Community Group. Building Topology Ontology. -->
+        <uri id="BOT"
+             name="https://w3id.org/bot#"
+             uri="https://w3id.org/bot/bot.ttl"/>
 
         <!-- ============================================================
              EXTERNAL ONTOLOGY IMPORTS

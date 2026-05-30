@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl     "http://www.w3.org/2002/07/owl#">
+    <!ENTITY rdf     "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <!ENTITY rdfs    "http://www.w3.org/2000/01/rdf-schema#">
+    <!ENTITY xsd     "http://www.w3.org/2001/XMLSchema#">
+    <!ENTITY dg      "http://example.org/design-grammar#">
+    <!ENTITY dgc     "http://example.org/design-grammar/computation#">
+    <!ENTITY bot     "https://w3id.org/bot#">
+]>
+
+<rdf:RDF
+    xmlns:rdf="&rdf;"
+    xmlns:rdfs="&rdfs;"
+    xmlns:owl="&owl;"
+    xmlns:xsd="&xsd;"
+    xmlns:dg="&dg;"
+    xmlns:dgc="&dgc;"
+    xmlns:bot="&bot;"
+    xml:base="http://example.org/design-grammar/bot-extension">
+
+    <!-- ============================================================
+         DESIGN GRAMMAR — BOT (Building Topology Ontology) EXTENSION (v5.0)
+
+         This extension ontology imports the DG core ontology and the
+         W3C-LBD Building Topology Ontology (BOT), then declares
+         alignment axioms bridging DG ComputationGraph topology concepts
+         to BOT's standard building spatial decomposition vocabulary.
+
+         BOT provides: Building, Storey, Space, Zone, Site, Element,
+         Interface, and spatial relationships (containsZone, hasStorey,
+         hasSpace, adjacentElement, intersectingElement).
+
+         Use case: When Topologic spatial decomposition results need to
+         be interpreted in standard architectural terms (CellComplex →
+         bot:Building, Cell → bot:Space, Shell → bot:Facade/Element).
+
+         Pattern: Per-vocabulary extension file (replaces monolithic
+         DesignGrammar-aligned.owl for new vocabulary bindings).
+         ============================================================ -->
+
+    <owl:Ontology rdf:about="http://example.org/design-grammar/bot-extension">
+        <rdfs:label xml:lang="en">Design Grammar — BOT Extension</rdfs:label>
+        <rdfs:comment xml:lang="en">Building Topology Ontology (W3C-LBD) alignment extension for the Design Grammar System. Bridges DG ComputationGraph topology concepts to BOT's standard building spatial decomposition vocabulary. Enables interpretation of Topologic analysis results in architectural terms.</rdfs:comment>
+        <owl:versionInfo>5.0</owl:versionInfo>
+        <owl:imports rdf:resource="http://example.org/design-grammar"/>
+        <owl:imports rdf:resource="https://w3id.org/bot#"/>
+    </owl:Ontology>
+
+    <!-- ============================================================
+         ALIGNMENT AXIOMS — DG Topology ↔ BOT
+
+         The DG ComputationGraph uses dgc:Topology as the abstract
+         spatial decomposition class. BOT provides concrete building
+         spatial types. These axioms declare the semantic bridge.
+         ============================================================ -->
+
+    <!-- dgc:Topology subsumes BOT spatial concepts in DG context -->
+    <owl:Class rdf:about="&bot;Building">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Building corresponds to a Topologic CellComplex — the top-level spatial container in building topology decomposition.</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Storey">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Storey represents a horizontal spatial layer within a building. Corresponds to a Topologic Cell subset filtered by elevation.</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Space">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Space corresponds to a Topologic Cell — an enclosed volumetric zone within the building.</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Zone">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Zone represents an arbitrary spatial grouping (functional, thermal, etc.).</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Site">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Site is the containing spatial context for one or more Buildings.</rdfs:comment>
+    </owl:Class>
+
+    <owl:Class rdf:about="&bot;Element">
+        <rdfs:subClassOf rdf:resource="&dgc;Topology"/>
+        <rdfs:comment xml:lang="en">DG alignment: A BOT Element corresponds to a Topologic Shell or Face — a physical building component (wall, slab, facade panel). In the ERD, Shell maps to FACADE.</rdfs:comment>
+    </owl:Class>
+
+    <!-- ============================================================
+         BOT SPATIAL RELATIONSHIPS — DG ANNOTATION ENRICHMENT
+
+         Provides DG-perspective annotations on BOT relationships for
+         documentation and reasoner guidance.
+         ============================================================ -->
+
+    <rdf:Description rdf:about="&bot;containsZone">
+        <rdfs:comment xml:lang="en">DG context: Hierarchical spatial containment — a Building/Storey contains Zones. Analogous to Topologic Cluster→CellComplex containment.</rdfs:comment>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&bot;hasStorey">
+        <rdfs:comment xml:lang="en">DG context: Building → Storey relationship. Storeys are vertical decomposition units.</rdfs:comment>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&bot;hasSpace">
+        <rdfs:comment xml:lang="en">DG context: Storey/Zone → Space relationship. Spaces are the smallest enclosed volumes.</rdfs:comment>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="&bot;adjacentElement">
+        <rdfs:comment xml:lang="en">DG context: Adjacency between Elements/Spaces. Can be derived from Topologic shared faces/edges analysis.</rdfs:comment>
+    </rdf:Description>
+
+    <!-- ============================================================
+         MAPPING NOTES (informative, from ERD 04_MAPPING)
+
+         Topologic → BOT conceptual mapping:
+         - Cluster        → (site-level grouping)
+         - CellComplex    → bot:Building
+         - Cell           → bot:Space
+         - Shell          → bot:Element (specifically: facade, wall, slab)
+         - Face           → (sub-element boundary)
+         - Wire           → (edge loop)
+         - Edge           → (geometric edge)
+         - Vertex         → (point)
+
+         These mappings are realized at runtime by the Grasshopper
+         plugin's Topologic analysis components, which classify
+         topological decomposition results into BOT terms.
+         ============================================================ -->
+
+</rdf:RDF>

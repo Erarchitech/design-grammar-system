@@ -43,6 +43,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[DesignRuleSession nodes stored in Metagraph]]
 - [[ResizeObserver wires Speckle viewer.resize on host element]]
 - [[ValidationRunsStrip component with per-project localStorage persistence]]
+- [[DCM ComputationGraph as 5th ontology layer]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -69,6 +70,14 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Target audience is architects and urban planners]]
 - [[Product bridges natural language rules to graph-based validation]]
 
+### Publications (PhD Series)
+- [[publications/index|Publications index — PhD ITcon series]]
+- [[publications/Series coherence map|Карта согласованности серии T1–T4]]
+- [[publications/T1 — Онтологический фреймворк|T1 — Онтологический фреймворк]]
+- [[publications/T2 — Кодирование правил|T2 — Кодирование правил]]
+- [[publications/T3 — Отслеживание состояний|T3 — Отслеживание состояний]]
+- [[publications/T4 — Дизайн-пространство|T4 — Дизайн-пространство]]
+
 ### Operational
 - [[sessions/_template|Session log template]]
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]
@@ -86,4 +95,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-04-08 Phase 07 planning|2026-04-08 Phase 07 planning]]
 - [[sessions/2026-04-08 Collapsible Workflow Cypher panels|2026-04-08 Collapsible Workflow Cypher panels]]
 - [[sessions/2026-05-10 Phase 05 model-viewer grouping execution|2026-05-10 Phase 05 (v2.0) execution]]
+- [[sessions/2026-05-30 PhD publications series T1-T4 drafts|2026-05-30 PhD publications T1–T4 drafts]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
