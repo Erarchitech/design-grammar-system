@@ -2622,6 +2622,255 @@
         <rdfs:range rdf:resource="&xsd;integer"/>
     </owl:DatatypeProperty>
 
+    <!-- ************************************************************
+         COMPUTATION GRAPH — EXAMPLE INDIVIDUALS
+         Grasshopper parametric definition: "Frame" object
+         (2D Truss + Footer from ERD-Mapping screenshot)
+         ************************************************************ -->
+
+    <!-- === OBJECT === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Object_Frame">
+        <rdf:type rdf:resource="&dgc;Object"/>
+        <rdfs:label xml:lang="en">Frame</rdfs:label>
+        <dgc:objectName>Frame</dgc:objectName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasBehavior rdf:resource="&dgc;Behavior_Frame"/>
+        <dgc:hasStructure rdf:resource="&dgc;Structure_Frame"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Behavior_Frame">
+        <rdf:type rdf:resource="&dgc;Behavior"/>
+        <rdfs:label xml:lang="en">Frame Behavior</rdfs:label>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasAlgorithm rdf:resource="&dgc;Algorithm_1"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Structure_Frame">
+        <rdf:type rdf:resource="&dgc;Structure"/>
+        <rdfs:label xml:lang="en">Frame Structure</rdfs:label>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <!-- === ALGORITHM === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Algorithm_1">
+        <rdf:type rdf:resource="&dgc;Algorithm"/>
+        <rdfs:label xml:lang="en">1_Algorithm</rdfs:label>
+        <dgc:algorithmName>1_Algorithm</dgc:algorithmName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasProcedure rdf:resource="&dgc;Proc_11"/>
+        <dgc:hasProcedure rdf:resource="&dgc;Proc_12"/>
+    </owl:NamedIndividual>
+
+    <!-- === PROCEDURES === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Proc_11">
+        <rdf:type rdf:resource="&dgc;Procedure"/>
+        <rdfs:label xml:lang="en">11_Proc - 2D Truss Configuration</rdfs:label>
+        <dgc:procedureName>11_Proc - 2D Truss Configuration</dgc:procedureName>
+        <dgc:procedureOrder rdf:datatype="&xsd;integer">11</dgc:procedureOrder>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasPattern rdf:resource="&dgc;Pat_11_DivideLine"/>
+        <dgc:hasPattern rdf:resource="&dgc;Pat_11_TopChord"/>
+        <dgc:hasInterface rdf:resource="&dgc;IntF_11_ParSplitAt"/>
+        <dgc:hasInterface rdf:resource="&dgc;IntF_11_TrussConfig"/>
+        <dgc:hasInterface rdf:resource="&dgc;IntF_11_MergeRes"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Proc_12">
+        <rdf:type rdf:resource="&dgc;Procedure"/>
+        <rdfs:label xml:lang="en">12_Proc - 2D Footer Configuration</rdfs:label>
+        <dgc:procedureName>12_Proc - 2D Footer Configuration</dgc:procedureName>
+        <dgc:procedureOrder rdf:datatype="&xsd;integer">12</dgc:procedureOrder>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasPattern rdf:resource="&dgc;Pat_12_FooterBottomLines"/>
+        <dgc:hasInterface rdf:resource="&dgc;IntF_12_FooterFrame"/>
+    </owl:NamedIndividual>
+
+    <!-- === PATTERNS (Procedure 11) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Pat_11_DivideLine">
+        <rdf:type rdf:resource="&dgc;Pattern"/>
+        <rdfs:label xml:lang="en">11_Pat_DivideLine</rdfs:label>
+        <dgc:patternName>11_Pat_DivideLine</dgc:patternName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasParameter rdf:resource="&dgc;Var_11_SpansCount"/>
+        <dgc:hasParameter rdf:resource="&dgc;Const_11_ptZero"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Pat_11_TopChord">
+        <rdf:type rdf:resource="&dgc;Pattern"/>
+        <rdfs:label xml:lang="en">11_Pat_TopChord</rdfs:label>
+        <dgc:patternName>11_Pat_TopChord</dgc:patternName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasParameter rdf:resource="&dgc;Var_11_HTotal"/>
+        <dgc:hasParameter rdf:resource="&dgc;Const_11_TrussConfig"/>
+    </owl:NamedIndividual>
+
+    <!-- === PATTERNS (Procedure 12) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Pat_12_FooterBottomLines">
+        <rdf:type rdf:resource="&dgc;Pattern"/>
+        <rdfs:label xml:lang="en">12_Pat_1 - Create footer bottom lines</rdfs:label>
+        <dgc:patternName>12_Pat_1 - Create footer bottom lines</dgc:patternName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+        <dgc:hasParameter rdf:resource="&dgc;Var_12_HFooter"/>
+        <dgc:hasParameter rdf:resource="&dgc;Const_12_IndList_1"/>
+    </owl:NamedIndividual>
+
+    <!-- === PARAMETERS: Variables (user-adjustable) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Var_11_SpansCount">
+        <rdf:type rdf:resource="&dgc;VariableParam"/>
+        <rdfs:label xml:lang="en">11_Var_SpansCount</rdfs:label>
+        <dgc:parameterName>11_Var_SpansCount</dgc:parameterName>
+        <dgc:parameterDisplayName>Count of spans</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Integer"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Var_11_HTotal">
+        <rdf:type rdf:resource="&dgc;VariableParam"/>
+        <rdfs:label xml:lang="en">11_Var_HTotal</rdfs:label>
+        <dgc:parameterName>11_Var_HTotal</dgc:parameterName>
+        <dgc:parameterDisplayName>Total height</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Float"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Var_12_HFooter">
+        <rdf:type rdf:resource="&dgc;VariableParam"/>
+        <rdfs:label xml:lang="en">12_Var_HFooter</rdfs:label>
+        <dgc:parameterName>12_Var_HFooter</dgc:parameterName>
+        <dgc:parameterDisplayName>Footer height</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Float"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Var_12_FooterCount">
+        <rdf:type rdf:resource="&dgc;VariableParam"/>
+        <rdfs:label xml:lang="en">12_Var_FooterCount</rdfs:label>
+        <dgc:parameterName>12_Var_FooterCount</dgc:parameterName>
+        <dgc:parameterDisplayName>Footer count</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Integer"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <!-- === PARAMETERS: Constants (fixed values) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Const_11_ptZero">
+        <rdf:type rdf:resource="&dgc;ConstantParam"/>
+        <rdfs:label xml:lang="en">11_Const_ptZero</rdfs:label>
+        <dgc:parameterName>11_Const_ptZero</dgc:parameterName>
+        <dgc:parameterDisplayName>Origin point</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Geometry"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Const_11_TrussConfig">
+        <rdf:type rdf:resource="&dgc;ConstantParam"/>
+        <rdfs:label xml:lang="en">11_Const_TrussConfig</rdfs:label>
+        <dgc:parameterName>11_Const_TrussConfig</dgc:parameterName>
+        <dgc:parameterDisplayName>Truss web configuration</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Integer"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Const_12_IndList_1">
+        <rdf:type rdf:resource="&dgc;ConstantParam"/>
+        <rdfs:label xml:lang="en">12_Const_IndList_1</rdfs:label>
+        <dgc:parameterName>12_Const_IndList_1</dgc:parameterName>
+        <dgc:parameterDisplayName>Index list 1</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Integer"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Const_12_TrussConfig">
+        <rdf:type rdf:resource="&dgc;ConstantParam"/>
+        <rdfs:label xml:lang="en">12_Const_TrussConfig</rdfs:label>
+        <dgc:parameterName>12_Const_TrussConfig</dgc:parameterName>
+        <dgc:parameterDisplayName>Truss configuration (footer)</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Integer"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <!-- === PARAMETERS: Emergent (computed outputs) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;Emg_11_LineSDL">
+        <rdf:type rdf:resource="&dgc;EmergentParam"/>
+        <rdfs:label xml:lang="en">11_Emg_LineSDL</rdfs:label>
+        <dgc:parameterName>11_Emg_LineSDL</dgc:parameterName>
+        <dgc:parameterDisplayName>Line SDL (computed)</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Geometry"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Emg_11_UpperChord">
+        <rdf:type rdf:resource="&dgc;EmergentParam"/>
+        <rdfs:label xml:lang="en">11_Emr_UpperChord</rdfs:label>
+        <dgc:parameterName>11_Emr_UpperChord</dgc:parameterName>
+        <dgc:parameterDisplayName>Upper chord geometry</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Geometry"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Emg_12_BottomLn">
+        <rdf:type rdf:resource="&dgc;EmergentParam"/>
+        <rdfs:label xml:lang="en">12_Emg_BottomLn</rdfs:label>
+        <dgc:parameterName>12_Emg_BottomLn</dgc:parameterName>
+        <dgc:parameterDisplayName>Footer bottom lines</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Geometry"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;Emg_12_FooterFrame">
+        <rdf:type rdf:resource="&dgc;EmergentParam"/>
+        <rdfs:label xml:lang="en">12_Emg_FooterFrame</rdfs:label>
+        <dgc:parameterName>12_Emg_FooterFrame</dgc:parameterName>
+        <dgc:parameterDisplayName>Footer frame geometry</dgc:parameterDisplayName>
+        <dgc:paramDataType rdf:resource="&dgc;ParamDataType_Geometry"/>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <!-- === INTERFACES (inter-procedure connectors) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;IntF_11_ParSplitAt">
+        <rdf:type rdf:resource="&dgc;Output"/>
+        <rdfs:label xml:lang="en">11_IntF_ParSplitAt</rdfs:label>
+        <dgc:interfaceName>11_IntF_ParSplitAt</dgc:interfaceName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;IntF_11_TrussConfig">
+        <rdf:type rdf:resource="&dgc;Output"/>
+        <rdfs:label xml:lang="en">11_IntF_TrussConfig</rdfs:label>
+        <dgc:interfaceName>11_IntF_TrussConfig</dgc:interfaceName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;IntF_11_MergeRes">
+        <rdf:type rdf:resource="&dgc;Output"/>
+        <rdfs:label xml:lang="en">11_IntF_MergeRes</rdfs:label>
+        <dgc:interfaceName>11_IntF_MergeRes</dgc:interfaceName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="&dgc;IntF_12_FooterFrame">
+        <rdf:type rdf:resource="&dgc;Output"/>
+        <rdfs:label xml:lang="en">12_IntF_FooterFrame</rdfs:label>
+        <dgc:interfaceName>12_IntF_FooterFrame</dgc:interfaceName>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
+    <!-- === PARAMETRIC STATE (snapshot of all parameter values) === -->
+
+    <owl:NamedIndividual rdf:about="&dgc;State_Frame_Default">
+        <rdf:type rdf:resource="&dgc;ParametricState"/>
+        <rdfs:label xml:lang="en">1_State (default configuration)</rdfs:label>
+        <dg:graph rdf:resource="&dgc;ComputationGraph"/>
+    </owl:NamedIndividual>
+
     <!-- ============================================================
 
          DISJOINTNESS AXIOMS
