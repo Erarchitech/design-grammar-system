@@ -97,4 +97,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-05-10 Phase 05 model-viewer grouping execution|2026-05-10 Phase 05 (v2.0) execution]]
 - [[sessions/2026-05-30 PhD publications series T1-T4 drafts|2026-05-30 PhD publications T1–T4 drafts]]
 - [[sessions/2026-06-01 Ontology v6.0 restructure — Core band, SpecGraph, partonomy|2026-06-01 Ontology v6.0 restructure]]
+- [[sessions/2026-06-01 Ontology v6.1 vendor-neutralization|2026-06-01 Ontology v6.1 vendor-neutralization]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

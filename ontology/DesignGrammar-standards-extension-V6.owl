@@ -320,7 +320,7 @@
     </rdf:Description>
     <rdf:Description rdf:about="&geo;Geometry">
         <rdfs:label xml:lang="en">GeoSPARQL Geometry</rdfs:label>
-        <rdfs:comment xml:lang="en">GeoSPARQL class for a geometric primitive (point, polygon, etc.) — or, in DG's case, a reference to one. DG's dgv:GeoRef is a handle into a source-system (Speckle/Rhino) rather than serialized WKT, but the conceptual role is the same. Aligned via R6.</rdfs:comment>
+        <rdfs:comment xml:lang="en">GeoSPARQL class for a geometric primitive (point, polygon, etc.) — or, in DG's case, a reference to one. DG's dgv:GeoRef is a handle into an external source-system rather than serialized WKT, but the conceptual role is the same. Aligned via R6.</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://www.opengis.net/ont/geosparql"/>
         <rdfs:seeAlso rdf:resource="https://www.ogc.org/standards/geosparql"/>
     </rdf:Description>

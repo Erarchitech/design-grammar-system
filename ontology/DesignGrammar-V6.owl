@@ -45,8 +45,8 @@
 
             Schema version: v3
         </rdfs:comment>
-        <owl:versionInfo>6.0</owl:versionInfo>
-        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:OntoGraph / dgm:Metagraph / dgv:ValidationGraph / dgs:SpecGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties. v5.0 adds ComputationGraph layer (5th layer) for DCM parametric design model aligned with Grasshopper: Algorithm, Procedure, Pattern, Parameter, Interface, Geometry; adds RuleSet and Reasoner to Metagraph; introduces cross-layer bridge dgc:attributeOf (Atom→Parameter); splits external vocabulary extensions into per-vocabulary files (BOT, Topologic). v6.0 introduces the over-layer dg:Core band (Gero FBS Object/Function/Behavior/Structure, Geometry, Topology, DesignState{ObjectState,DefState}, unified Session); shortens the layer IRIs (meta#/valid#/comp#); renames the Knowledge layer to Spec (spec#: SpecGraph/SpecClass/SpecNote/SpecTag); relocates Reasoner to the ValidationGraph (= Grasshopper 'Validator' component); drops dgc:ParametricState; and adds dg:objectRef, dg:definesFunction, dgv:refersToGeometry, dgm:validates.</rdfs:seeAlso>
+        <owl:versionInfo>6.1</owl:versionInfo>
+        <rdfs:seeAlso xml:lang="en">v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema &amp; Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:OntoGraph / dgm:Metagraph / dgv:ValidationGraph / dgs:SpecGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties. v5.0 adds ComputationGraph layer (5th layer) for DCM parametric design model aligned with Grasshopper: Algorithm, Procedure, Pattern, Parameter, Interface, Geometry; adds RuleSet and Reasoner to Metagraph; introduces cross-layer bridge dgc:attributeOf (Atom→Parameter); splits external vocabulary extensions into per-vocabulary files (BOT, Topologic). v6.0 introduces the over-layer dg:Core band (Gero FBS Object/Function/Behavior/Structure, Geometry, Topology, DesignState{ObjectState,DefState}, unified Session); shortens the layer IRIs (meta#/valid#/comp#); renames the Knowledge layer to Spec (spec#: SpecGraph/SpecClass/SpecNote/SpecTag); relocates Reasoner to the ValidationGraph (= Grasshopper 'Validator' component); drops dgc:ParametricState; and adds dg:objectRef, dg:definesFunction, dgv:refersToGeometry, dgm:validates. v6.1 vendor-neutralizes the ValidationGraph — renames dgv:speckleProjectId→dgv:externalProjectId, scrubs Speckle/Rhino vendor references from comments and example instances so the ontology models a generic external geometry/viewer integration; external-vocabulary alignments (standards, BOT, Topologic) are retained as legitimate links.</rdfs:seeAlso>
     </owl:Ontology>
 
     <!-- ============================================================
@@ -1116,20 +1116,20 @@
 
          LAYER 3: VALIDATION GRAPH
          Classes controlling validation data flow between the
-         DG Grasshopper plugin, data-service, and Speckle viewer.
+         DG Grasshopper plugin, data-service, and the external 3D viewer.
 
          ============================================================ -->
 
     <owl:Class rdf:about="&dgv;IntegrationConfig">
         <rdfs:label xml:lang="en">IntegrationConfig</rdfs:label>
-        <rdfs:comment xml:lang="en">Configuration node linking a DG project to its Speckle integration. Stores Speckle project ID, base model, and validation model references. One per project per provider.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Configuration node linking a DG project to its external geometry/viewer integration. Stores the external project ID, base model, and validation model references. One per project per provider.</rdfs:comment>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
         <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
 
     <owl:Class rdf:about="&dgv;ValidationRun">
         <rdfs:label xml:lang="en">ValidationRun</rdfs:label>
-        <rdfs:comment xml:lang="en">A single execution of rule evaluation against design state. Records which rules were evaluated, the Speckle version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow. Aligned with: prov:Activity (R2) and sh:ValidationReport (R4).</rdfs:comment>
+        <rdfs:comment xml:lang="en">A single execution of rule evaluation against design state. Records which rules were evaluated, the external model version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow. Aligned with: prov:Activity (R2) and sh:ValidationReport (R4).</rdfs:comment>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
         <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
@@ -1186,7 +1186,7 @@
 
     <owl:Class rdf:about="&dgv;GeoRef">
         <rdfs:label xml:lang="en">GeoRef</rdfs:label>
-        <rdfs:comment xml:lang="en">Geometry reference — a handle to a geometry primitive in the source model (Speckle objectId, Rhino GUID, etc.) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT).</rdfs:comment>
+        <rdfs:comment xml:lang="en">Geometry reference — a handle to a geometry primitive in the source model (an external source-system object handle) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjectState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT).</rdfs:comment>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
         <rdfs:subClassOf rdf:resource="&dgv;ValidationGraph"/>
     </owl:Class>
@@ -1215,44 +1215,44 @@
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
-    <owl:DatatypeProperty rdf:about="&dgv;speckleProjectId">
-        <rdfs:label xml:lang="en">speckleProjectId</rdfs:label>
-        <rdfs:comment xml:lang="en">ID of the linked Speckle project. Stored on the IntegrationConfig node for the project.</rdfs:comment>
+    <owl:DatatypeProperty rdf:about="&dgv;externalProjectId">
+        <rdfs:label xml:lang="en">externalProjectId</rdfs:label>
+        <rdfs:comment xml:lang="en">ID of the linked project in the external geometry/viewer platform. Stored on the IntegrationConfig node for the project.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;IntegrationConfig"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;baseModelId">
         <rdfs:label xml:lang="en">baseModelId</rdfs:label>
-        <rdfs:comment xml:lang="en">ID of the base geometry model in Speckle. Stored on the IntegrationConfig node.</rdfs:comment>
+        <rdfs:comment xml:lang="en">ID of the base geometry model in the external platform. Stored on the IntegrationConfig node.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;IntegrationConfig"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;baseModelName">
         <rdfs:label xml:lang="en">baseModelName</rdfs:label>
-        <rdfs:comment xml:lang="en">Display name of the base geometry model in Speckle.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Display name of the base geometry model in the external platform.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;IntegrationConfig"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;validationModelId">
         <rdfs:label xml:lang="en">validationModelId</rdfs:label>
-        <rdfs:comment xml:lang="en">ID of the validation overlay model in Speckle. Stored on the IntegrationConfig node.</rdfs:comment>
+        <rdfs:comment xml:lang="en">ID of the validation overlay model in the external platform. Stored on the IntegrationConfig node.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;IntegrationConfig"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;baseVersionId">
         <rdfs:label xml:lang="en">baseVersionId</rdfs:label>
-        <rdfs:comment xml:lang="en">Speckle version ID of the base model used in this validation run.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Version ID of the base model (in the external platform) used in this validation run.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;ValidationRun"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
 
     <owl:DatatypeProperty rdf:about="&dgv;validationVersionId">
         <rdfs:label xml:lang="en">validationVersionId</rdfs:label>
-        <rdfs:comment xml:lang="en">Speckle version ID of the validation overlay created by this run.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Version ID of the validation overlay (in the external platform) created by this run.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;ValidationRun"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1318,7 +1318,7 @@
 
     <owl:DatatypeProperty rdf:about="&dgv;provider">
         <rdfs:label xml:lang="en">provider</rdfs:label>
-        <rdfs:comment xml:lang="en">Integration provider name (e.g. 'Speckle').</rdfs:comment>
+        <rdfs:comment xml:lang="en">Integration provider name identifying the external geometry/viewer platform.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;IntegrationConfig"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1375,7 +1375,7 @@
     <owl:DatatypeProperty rdf:about="&dgv;geoRefId">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">geoRefId</rdfs:label>
-        <rdfs:comment xml:lang="en">Source-system handle for a geometry primitive (e.g. Speckle objectId, Rhino GUID). The value wired into the GeoRef input of OBJECT STATE per CTRCT-09. Characteristics: Functional.</rdfs:comment>
+        <rdfs:comment xml:lang="en">Source-system handle for a geometry primitive (an external source-system object handle). The value wired into the GeoRef input of OBJECT STATE per CTRCT-09. Characteristics: Functional.</rdfs:comment>
         <rdfs:domain rdf:resource="&dgv;GeoRef"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -1628,12 +1628,12 @@
          VALIDATION INSTANCES — from Neo4j ValidationGraph
          ************************************************************ -->
 
-    <owl:NamedIndividual rdf:about="&dgv;SpeckleIntegration_TestA">
+    <owl:NamedIndividual rdf:about="&dgv;Integration_TestA">
         <rdf:type rdf:resource="&dgv;IntegrationConfig"/>
-        <rdfs:label xml:lang="en">Speckle Integration (TestA)</rdfs:label>
-        <rdfs:comment xml:lang="en">Integration config from Neo4j ValidationGraph. Connects project TestA to Speckle for 3D validation overlay.</rdfs:comment>
-        <dgv:provider>Speckle</dgv:provider>
-        <dgv:speckleProjectId>44088eefc6</dgv:speckleProjectId>
+        <rdfs:label xml:lang="en">External Integration (TestA)</rdfs:label>
+        <rdfs:comment xml:lang="en">Integration config from Neo4j ValidationGraph. Connects project TestA to an external geometry/viewer platform for 3D validation overlay.</rdfs:comment>
+        <dgv:provider>ExternalViewer</dgv:provider>
+        <dgv:externalProjectId>44088eefc6</dgv:externalProjectId>
         <dgv:baseModelId>4c546c0771</dgv:baseModelId>
         <dgv:validationModelId>a6d1e0c5da</dgv:validationModelId>
         <dg:project>TestA</dg:project>
@@ -1710,29 +1710,29 @@
         <rdfs:label xml:lang="en">ObjectState: OI_Building_b1 ↔ ?b</rdfs:label>
         <rdfs:comment xml:lang="en">Binding snapshot pairing OI_Building_b1 with Object variable ?b (var_b) and its current GeoRef set. State_Id computed as OS_&lt;SHA256(projectId + objectInstanceId + variableName)&gt; per CMPST-07.</rdfs:comment>
         <dgv:stateId>OS_a1b2c3d4</dgv:stateId>
-        <dgv:objectRefName>rhino-guid-9f3e2a</dgv:objectRefName>
+        <dgv:objectRefName>obj-9f3e2a</dgv:objectRefName>
         <dgv:representsInstance rdf:resource="&dgv;OI_Building_b1"/>
         <dgv:hasObjectVariable rdf:resource="&dgm;var_b"/>
-        <dgv:hasGeoRef rdf:resource="&dgv;GR_speckle_xyz1"/>
-        <dgv:hasGeoRef rdf:resource="&dgv;GR_speckle_xyz2"/>
+        <dgv:hasGeoRef rdf:resource="&dgv;GR_geom_1"/>
+        <dgv:hasGeoRef rdf:resource="&dgv;GR_geom_2"/>
         <dg:project>TestA</dg:project>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
-    <owl:NamedIndividual rdf:about="&dgv;GR_speckle_xyz1">
+    <owl:NamedIndividual rdf:about="&dgv;GR_geom_1">
         <rdf:type rdf:resource="&dgv;GeoRef"/>
-        <rdfs:label xml:lang="en">GeoRef: speckle:xyz1</rdfs:label>
-        <rdfs:comment xml:lang="en">Speckle objectId handle for the primary mass geometry of Building #1.</rdfs:comment>
-        <dgv:geoRefId>speckle:obj:xyz1</dgv:geoRefId>
+        <rdfs:label xml:lang="en">GeoRef: obj:xyz1</rdfs:label>
+        <rdfs:comment xml:lang="en">External source-system object handle for the primary mass geometry of Building #1.</rdfs:comment>
+        <dgv:geoRefId>obj:xyz1</dgv:geoRefId>
         <dg:project>TestA</dg:project>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
 
-    <owl:NamedIndividual rdf:about="&dgv;GR_speckle_xyz2">
+    <owl:NamedIndividual rdf:about="&dgv;GR_geom_2">
         <rdf:type rdf:resource="&dgv;GeoRef"/>
-        <rdfs:label xml:lang="en">GeoRef: speckle:xyz2</rdfs:label>
-        <rdfs:comment xml:lang="en">Speckle objectId handle for the roof geometry of Building #1.</rdfs:comment>
-        <dgv:geoRefId>speckle:obj:xyz2</dgv:geoRefId>
+        <rdfs:label xml:lang="en">GeoRef: obj:xyz2</rdfs:label>
+        <rdfs:comment xml:lang="en">External source-system object handle for the roof geometry of Building #1.</rdfs:comment>
+        <dgv:geoRefId>obj:xyz2</dgv:geoRefId>
         <dg:project>TestA</dg:project>
         <dg:graph rdf:resource="&dgv;ValidationGraph"/>
     </owl:NamedIndividual>
