@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl     "http://www.w3.org/2002/07/owl#">
+    <!ENTITY rdf     "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <!ENTITY rdfs    "http://www.w3.org/2000/01/rdf-schema#">
+    <!ENTITY xsd     "http://www.w3.org/2001/XMLSchema#">
+    <!ENTITY dg      "http://example.org/design-grammar#">
+    <!ENTITY dgc     "http://example.org/design-grammar/comp#">
+    <!ENTITY topo    "https://topologic.app/ontology#">
+]>
+
+<rdf:RDF
+    xmlns:rdf="&rdf;"
+    xmlns:rdfs="&rdfs;"
+    xmlns:owl="&owl;"
+    xmlns:xsd="&xsd;"
+    xmlns:dg="&dg;"
+    xmlns:dgc="&dgc;"
+    xmlns:topo="&topo;"
+    xml:base="http://example.org/design-grammar/topologic-extension">
+
+    <!-- ============================================================
+         DESIGN GRAMMAR — TOPOLOGIC EXTENSION (v5.0)
+
+         This extension ontology imports the DG core ontology and
+         declares alignment axioms bridging DG ComputationGraph topology
+         concepts to the Topologic library's spatial decomposition
+         hierarchy.
+
+         Topologic (https://topologic.app) is a spatial analysis library
+         used in Grasshopper for decomposing BRep geometry into
+         topological elements: Cluster → CellComplex → Cell → Shell →
+         Face → Wire → Edge → Vertex.
+
+         Use case: Parametric design output (Structure/Geometry) is
+         decomposed via Topologic into spatial elements, which can then
+         be classified using BOT vocabulary (see BOT extension) or used
+         directly for spatial rule evaluation.
+
+         Pattern: Per-vocabulary extension file.
+         ============================================================ -->
+
+    <owl:Ontology rdf:about="http://example.org/design-grammar/topologic-extension">
+        <rdfs:label xml:lang="en">Design Grammar — Topologic Extension</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic spatial analysis library alignment extension for the Design Grammar System. Bridges DG ComputationGraph topology concepts to Topologic's hierarchical spatial decomposition (Cluster → CellComplex → Cell → Shell → Face → Wire → Edge → Vertex). Enables spatial analysis of parametric design output in Grasshopper.</rdfs:comment>
+        <owl:versionInfo>6.0</owl:versionInfo>
+        <owl:imports rdf:resource="http://example.org/design-grammar"/>
+    </owl:Ontology>
+
+    <!-- ============================================================
+         TOPOLOGIC CLASS HIERARCHY
+
+         Topologic defines a strict containment hierarchy of spatial
+         elements. These are declared here as subclasses of dgc:Topology
+         with the proper inter-class relationships.
+
+         Note: Topologic does not publish a formal OWL ontology, so
+         these classes are declared in the DG namespace with seeAlso
+         references to the Topologic documentation.
+         ============================================================ -->
+
+    <owl:Class rdf:about="&topo;Cluster">
+        <rdfs:label xml:lang="en">Cluster</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Cluster — the top-level container grouping multiple CellComplexes. Represents a site-level spatial grouping in architectural decomposition.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;CellComplex">
+        <rdfs:label xml:lang="en">CellComplex</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic CellComplex — a manifold collection of Cells sharing faces. In architectural context: corresponds to a Building (BOT mapping). Composed of multiple Cells.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Cell">
+        <rdfs:label xml:lang="en">Cell</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Cell — a closed volumetric region bounded by Shells/Faces. In architectural context: corresponds to a Space (BOT mapping). The fundamental 3D spatial unit.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Shell">
+        <rdfs:label xml:lang="en">Shell</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Shell — a connected collection of Faces forming a closed or open surface. In architectural context: corresponds to a Facade or building envelope element (BOT Element mapping).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Face">
+        <rdfs:label xml:lang="en">Face</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Face — a bounded 2D surface region. The fundamental surface element in spatial decomposition.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Wire">
+        <rdfs:label xml:lang="en">Wire</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Wire — a connected sequence of Edges forming a curve or loop. Bounds Faces.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Edge">
+        <rdfs:label xml:lang="en">Edge</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Edge — a 1D topological element connecting two Vertices. The fundamental curve element.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="&topo;Vertex">
+        <rdfs:label xml:lang="en">Vertex</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic Vertex — a 0D topological element (point). The atomic spatial element.</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+        <rdfs:seeAlso rdf:resource="https://topologic.app/"/>
+    </owl:Class>
+
+    <!-- ============================================================
+         TOPOLOGIC CONTAINMENT RELATIONSHIPS
+
+         These relationships model the strict hierarchy:
+         Cluster ⊃ CellComplex ⊃ Cell ⊃ Shell ⊃ Face ⊃ Wire ⊃ Edge ⊃ Vertex
+         ============================================================ -->
+
+    <owl:ObjectProperty rdf:about="&topo;contains">
+        <rdfs:label xml:lang="en">contains</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic containment — a higher-dimensional element contains lower-dimensional elements in its decomposition.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dg;Topology"/>
+        <rdfs:range rdf:resource="&dg;Topology"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&topo;isPartOf">
+        <rdfs:label xml:lang="en">isPartOf</rdfs:label>
+        <rdfs:comment xml:lang="en">Inverse of topo:contains — a lower-dimensional element is part of a higher-dimensional one.</rdfs:comment>
+        <owl:inverseOf rdf:resource="&topo;contains"/>
+        <rdfs:domain rdf:resource="&dg;Topology"/>
+        <rdfs:range rdf:resource="&dg;Topology"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="&topo;adjacentTo">
+        <rdf:type rdf:resource="&owl;SymmetricProperty"/>
+        <rdfs:label xml:lang="en">adjacentTo</rdfs:label>
+        <rdfs:comment xml:lang="en">Topologic adjacency — two elements of the same dimension that share a boundary element. Symmetric. Used for spatial analysis (adjacent spaces, touching faces).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dg;Topology"/>
+        <rdfs:range rdf:resource="&dg;Topology"/>
+    </owl:ObjectProperty>
+
+    <!-- ============================================================
+         TOPOLOGIC TYPE ENUMERATION
+
+         The TypologyType concept from the ERD — classifies topology
+         elements by their dimensional type.
+         ============================================================ -->
+
+    <owl:Class rdf:about="&topo;TypologyType">
+        <rdfs:label xml:lang="en">TypologyType</rdfs:label>
+        <rdfs:comment xml:lang="en">Classification of topological elements by spatial dimension. Values correspond to the Topologic class hierarchy levels (0D=Vertex, 1D=Edge/Wire, 2D=Face/Shell, 3D=Cell/CellComplex, group=Cluster).</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="&dg;Topology"/>
+    </owl:Class>
+
+    <owl:ObjectProperty rdf:about="&topo;hasTypologyType">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label xml:lang="en">hasTypologyType</rdfs:label>
+        <rdfs:comment xml:lang="en">Assigns a TypologyType classification to a topological element. Characteristics: Functional — each element has exactly one type.</rdfs:comment>
+        <rdfs:domain rdf:resource="&dg;Topology"/>
+        <rdfs:range rdf:resource="&topo;TypologyType"/>
+    </owl:ObjectProperty>
+
+    <!-- ============================================================
+         DISJOINTNESS — Topologic hierarchy levels are mutually exclusive
+         (an element cannot be simultaneously a Cell and an Edge)
+         ============================================================ -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <owl:Class rdf:about="&topo;Cluster"/>
+            <owl:Class rdf:about="&topo;CellComplex"/>
+            <owl:Class rdf:about="&topo;Cell"/>
+            <owl:Class rdf:about="&topo;Shell"/>
+            <owl:Class rdf:about="&topo;Face"/>
+            <owl:Class rdf:about="&topo;Wire"/>
+            <owl:Class rdf:about="&topo;Edge"/>
+            <owl:Class rdf:about="&topo;Vertex"/>
+        </owl:members>
+    </rdf:Description>
+
+</rdf:RDF>

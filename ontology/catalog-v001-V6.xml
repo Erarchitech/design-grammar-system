@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    OASIS XML Catalog for Protégé / OWL API — v6.0 bundle.
+
+    Maps the owl:imports IRIs used by the DesignGrammar v6.0 ontology files to
+    their physical "-V6" locations, plus the seven external vocabulary imports.
+    Load DesignGrammar-standards-extension-V6.owl with this catalog active to get
+    DesignGrammar-V6.owl + the W3C/OGC standards resolved for HermiT reasoning.
+
+    The five DG sub-namespaces (#core dg, /meta#, /valid#, /spec#, /comp#) all live
+    inside the single physical file DesignGrammar-V6.owl, so only the parent
+    ontology IRIs need catalog entries.
+
+    The original v5 catalog (catalog-v001.xml) is left untouched; use it for the
+    v5 files. Use only ONE catalog at a time to avoid duplicate-IRI mappings.
+-->
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <group id="DG v6.0 ontology bundle" prefer="public" xml:base="">
+
+        <!-- DG core ontology (v6.0) — Core band + 5 graph layers. Open this for lean Protégé view. -->
+        <uri id="DG-core" name="http://example.org/design-grammar" uri="DesignGrammar-V6.owl"/>
+
+        <!-- DG standards extension (v6.0, facade) — SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL alignment axioms. Open this for cross-vocab reasoning. -->
+        <uri id="DG-standards" name="http://example.org/design-grammar/standards" uri="DesignGrammar-standards-extension-V6.owl"/>
+
+        <!-- DG BOT extension (v6.0) — Building Topology Ontology alignment (now anchored on dg:Topology). -->
+        <uri id="DG-BOT" name="http://example.org/design-grammar/bot-extension" uri="DesignGrammar-BOT-extension-V6.owl"/>
+
+        <!-- DG Topologic extension (v6.0) — Topologic spatial analysis library alignment (now anchored on dg:Topology). -->
+        <uri id="DG-Topologic" name="http://example.org/design-grammar/topologic-extension" uri="DesignGrammar-Topologic-extension-V6.owl"/>
+
+        <!-- BOT — W3C Linked Building Data Community Group. Building Topology Ontology. -->
+        <uri id="BOT"
+             name="https://w3id.org/bot#"
+             uri="https://w3id.org/bot/bot.ttl"/>
+
+        <!-- ============================================================
+             EXTERNAL ONTOLOGY IMPORTS (unchanged from v5)
+             ============================================================ -->
+
+        <uri id="SWRL"
+             name="http://www.w3.org/2003/11/swrl"
+             uri="http://www.w3.org/Submission/2004/SUBM-SWRL-20040521/swrl.rdf"/>
+
+        <uri id="PROV-O"
+             name="http://www.w3.org/ns/prov-o#"
+             uri="https://www.w3.org/ns/prov.owl"/>
+
+        <uri id="SOSA"
+             name="http://www.w3.org/ns/sosa/"
+             uri="https://www.w3.org/ns/sosa.ttl"/>
+
+        <uri id="SHACL"
+             name="http://www.w3.org/ns/shacl#"
+             uri="https://www.w3.org/ns/shacl.ttl"/>
+
+        <uri id="SKOS"
+             name="http://www.w3.org/2004/02/skos/core"
+             uri="http://www.w3.org/2009/08/skos-reference/skos.rdf"/>
+
+        <uri id="DCTERMS"
+             name="http://purl.org/dc/terms/"
+             uri="https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl"/>
+
+        <uri id="GEOSPARQL"
+             name="http://www.opengis.net/ont/geosparql"
+             uri="http://www.opengis.net/ont/geosparql/1.0/geosparql_vocab_all.rdf"/>
+
+    </group>
+</catalog>

@@ -22,6 +22,7 @@ date: 2026-05-10
 
 ## Completed Recently
 
+- **Ontology v6.0 restructure** — 2026-06-01. Core band (Gero FBS over-layer: Object/Function/Behavior/Structure/Geometry/Topology, DesignState, Session); IRI shortening (meta#/valid#/comp#); KnowledgeGraph→SpecGraph (spec#); Reasoner→ValidationGraph (= GH Validator); unified Session; ParametricState dropped; ERD partonomy via `dg:hasPart` sub-property hierarchy; all V6 files pass XML + stale-token verification.
 - **Ontology v5.0 — ComputationGraph individuals** — 2026-05-30. Added Frame/Truss example instances from Grasshopper screenshot: Object, Algorithm, 2 Procedures, 3 Patterns, 12 Parameters (Var/Const/Emg), 4 Interfaces, ParametricState.
 - **Ontology v5.0 — DCM ComputationGraph** — 2026-05-30. 5th graph layer for Grasshopper parametric design (FBS: Object→Function/Behavior/Structure, Algorithm→Procedure→Pattern). BOT + Topologic extensions created. Per-vocabulary extension naming adopted.
 - **PhD ITcon series T1–T4 drafts complete** — 2026-05-30. Все четыре черновика в `Publications/`, раздел `knowledge/publications/` в Obsidian создан.
