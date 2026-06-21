@@ -1,6 +1,7 @@
 ---
 tags: [atlas, neo4j, database, schema]
 date: 2026-04-05
+graphify_communities: ["Architecture is a Microservices Docker Pipeline", "DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...", "DesignRuleSession Nodes Stored in Metagraph", "JavaScript SPA Conventions", "Metagraph (SWRL Rules Layer)", "Rule Node (Rule_Id, title, name, description, kind, text,...", "STACK.md - Technology Stack Research", "State Projection for Validation Runs"]
 ---
 
 # Neo4j Stores Ontology and Metagraph in a Single Database
@@ -52,3 +53,16 @@ Legacy → v3 renames:
 - [[Graph schema v3 is the canonical data model]]
 - [[Architecture is a microservices Docker pipeline]]
 - [[Cypher MERGE idempotent node creation pattern]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Architecture is a Microservices Docker Pipeline|Architecture is a Microservices Docker Pipeline]]
+- [[graphify/communities/DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...|DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...]]
+- [[graphify/communities/DesignRuleSession Nodes Stored in Metagraph|DesignRuleSession Nodes Stored in Metagraph]]
+- [[graphify/communities/JavaScript SPA Conventions|JavaScript SPA Conventions]]
+- [[graphify/communities/Metagraph (SWRL Rules Layer) (84)|Metagraph (SWRL Rules Layer)]]
+- [[graphify/communities/Rule Node (Rule_Id, title, name, description, kind, text,...|Rule Node (Rule_Id, title, name, description, kind, text,...]]
+- [[graphify/communities/STACK.md - Technology Stack Research|STACK.md - Technology Stack Research]]
+- [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
+<!-- graphify:connections:end -->

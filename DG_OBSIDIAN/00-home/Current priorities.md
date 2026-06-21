@@ -1,6 +1,6 @@
 ---
 tags: [home, priorities]
-date: 2026-05-10
+date: 2026-06-22
 ---
 
 # Current Priorities
@@ -10,6 +10,8 @@ date: 2026-05-10
 1. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
 2. **v3.0 implementation** — Typed Variables and Composable Design State (Phases 7–12, planned).
 3. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+
+> ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
 
 ## Upcoming
 
@@ -22,6 +24,7 @@ date: 2026-05-10
 
 ## Completed Recently
 
+- **Graphify-CGD-Obsidian integration Phases 1–4** — 2026-06-22. Полный проект интеграции: SKILL.md 34KB→1.2KB, 1772 dump-файла → 104 community notes, MCP server registered, diff-based export (`scripts/export_graphify_conceptual.py` + `refresh_graphify.sh`), `.graphifyignore` (защита от feedback loop), bidirectional linking (frontmatter + `## Graph connections`), Dataview dashboard, GSD-паттерны. См. [[sessions/2026-06-22 Graphify integration Phases 2-4|сессия Фазы 2-4]] и [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|Фаза 1]].
 - **Ontology v6.1 vendor-neutralization** — 2026-06-01. Removed Speckle/Rhino from all DG-owned ontology entities and comments. `dgv:speckleProjectId`→`dgv:externalProjectId`; ABox instances neutralized; standards/Topologic/BOT alignments retained. Runtime schema propagation pending.
 - **Ontology v6.0 restructure** — 2026-06-01. Core band (Gero FBS over-layer: Object/Function/Behavior/Structure/Geometry/Topology, DesignState, Session); IRI shortening (meta#/valid#/comp#); KnowledgeGraph→SpecGraph (spec#); Reasoner→ValidationGraph (= GH Validator); unified Session; ParametricState dropped; ERD partonomy via `dg:hasPart` sub-property hierarchy; all V6 files pass XML + stale-token verification.
 - **Ontology v5.0 — ComputationGraph individuals** — 2026-05-30. Added Frame/Truss example instances from Grasshopper screenshot: Object, Algorithm, 2 Procedures, 3 Patterns, 12 Parameters (Var/Const/Emg), 4 Interfaces, ParametricState.

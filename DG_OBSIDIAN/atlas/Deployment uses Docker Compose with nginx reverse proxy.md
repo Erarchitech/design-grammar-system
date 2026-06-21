@@ -1,6 +1,7 @@
 ---
 tags: [atlas, deployment, docker, nginx]
 date: 2026-04-05
+graphify_communities: ["Architecture is a Microservices Docker Pipeline", "Docker Compose Orchestration", "Match Step (Neo4j Full-Text Search, No LLM)", "Remove all test notes from Neo4j.", "Validation Endpoints (publish/runs/view)"]
 ---
 
 # Deployment Uses Docker Compose with Nginx Reverse Proxy
@@ -58,3 +59,13 @@ Config file: `graph-viewer/nginx.conf`. Uses DNS resolver `127.0.0.11` (Docker i
 - [[Architecture is a microservices Docker pipeline]]
 - [[Config injection via entrypoint.sh sed replacement]]
 - [[Docker layer caching can serve stale index.html]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Architecture is a Microservices Docker Pipeline|Architecture is a Microservices Docker Pipeline]]
+- [[graphify/communities/Docker Compose Orchestration|Docker Compose Orchestration]]
+- [[graphify/communities/Match Step (Neo4j Full-Text Search, No LLM)|Match Step (Neo4j Full-Text Search, No LLM)]]
+- [[graphify/communities/Remove all test notes from Neo4j.|Remove all test notes from Neo4j.]]
+- [[graphify/communities/Validation Endpoints (publishrunsview)|Validation Endpoints (publish/runs/view)]]
+<!-- graphify:connections:end -->

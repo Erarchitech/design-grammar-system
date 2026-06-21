@@ -1,0 +1,13 @@
+# graphify ignore — prevents graphify from indexing its own output (feedback loop)
+# and other noise. Read in addition to .gitignore. Patterns follow gitignore spec.
+
+# graphify's own Obsidian output — NEVER index (self-reference feedback loop)
+DG_OBSIDIAN/graphify/
+DG_OBSIDIAN/graphify_dump/
+
+# graphify working dir
+graphify-out/
+
+# GSD planning churn — hundreds of generated phase docs balloon the graph.
+# The curated DG_OBSIDIAN vault already captures the meaningful decisions.
+.planning/

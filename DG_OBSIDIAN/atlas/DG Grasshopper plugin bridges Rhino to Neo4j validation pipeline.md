@@ -1,6 +1,7 @@
 ---
 tags: [atlas, grasshopper, csharp, rhino, plugin]
 date: 2026-04-05
+graphify_communities: ["Concern: Tight Coupling to Neo4j", "DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...", "DG.Grasshopper.csproj", "Neo4jConnectorService.cs", "Ontology v5 DCM ComputationGraph", "Phase 03 Validation Runs Summary", "Product Bridges Natural Language Rules to Graph-Based Val...", "State Projection for Validation Runs", "Validation Results Publish to Speckle as Overlay Versions", "Validation Viewer API", "ValidationGeometryPayload", "ValidationPublishClient", "ValidationPublishContract.cs", "Validator Failing Bindings Output Data", "Zone A Maximum Height (75m)", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries"]
 ---
 
 # DG Grasshopper Plugin Bridges Rhino to Neo4j Validation Pipeline
@@ -59,3 +60,24 @@ Override Rhino path: `-p:RhinoInstallDir="D:\Apps\Rhino 8"`
 - [[Technology stack spans C-Sharp Grasshopper and Python FastAPI and React SPA]]
 - [[Validation results publish to Speckle as overlay versions]]
 - [[SWRL parsing is bespoke regex not vendor OWL library]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Concern Tight Coupling to Neo4j|Concern: Tight Coupling to Neo4j]]
+- [[graphify/communities/DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...|DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...]]
+- [[graphify/communities/DG.Grasshopper.csproj|DG.Grasshopper.csproj]]
+- [[graphify/communities/Neo4jConnectorService.cs|Neo4jConnectorService.cs]]
+- [[graphify/communities/Ontology v5 DCM ComputationGraph|Ontology v5 DCM ComputationGraph]]
+- [[graphify/communities/Phase 03 Validation Runs Summary|Phase 03 Validation Runs Summary]]
+- [[graphify/communities/Product Bridges Natural Language Rules to Graph-Based Val...|Product Bridges Natural Language Rules to Graph-Based Val...]]
+- [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
+- [[graphify/communities/Validation Results Publish to Speckle as Overlay Versions|Validation Results Publish to Speckle as Overlay Versions]]
+- [[graphify/communities/Validation Viewer API|Validation Viewer API]]
+- [[graphify/communities/ValidationGeometryPayload|ValidationGeometryPayload]]
+- [[graphify/communities/ValidationPublishClient|ValidationPublishClient]]
+- [[graphify/communities/ValidationPublishContract.cs|ValidationPublishContract.cs]]
+- [[graphify/communities/Validator Failing Bindings Output Data|Validator Failing Bindings Output Data]]
+- [[graphify/communities/Zone A Maximum Height (75m)|Zone A Maximum Height (75m)]]
+- [[graphify/communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries|n8n Workflow Orchestrator for LLM Rule Ingestion and Queries]]
+<!-- graphify:connections:end -->

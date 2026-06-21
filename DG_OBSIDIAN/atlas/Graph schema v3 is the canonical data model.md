@@ -1,6 +1,7 @@
 ---
 tags: [atlas, schema, v3, ontology, swrl]
 date: 2026-04-05
+graphify_communities: ["Graph Schema v3 is the Canonical Data Model", "LLM Prompt Engineering", "Match Step (Neo4j Full-Text Search, No LLM)", "Model Viewer (graph-viewer/model-viewer/)", "Phase 03 Validation Runs Summary", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Product Bridges Natural Language Rules to Graph-Based Val...", "SpeckleProjectConfigPayload", "Validation Endpoints (publish/runs/view)", "Validation Endpoints (publish/runs/view)", "Validation Results Publish to Speckle as Overlay Versions", "Worktree Branch Commits with Spurious Deletions", "code: 17 nodes", "code: rule", "extractErrorMessage()", "n8n Workflow Orchestrator", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries", "v4.0 BOT Ontology Bridge"]
 ---
 
 # Graph Schema v3 is the Canonical Data Model
@@ -60,3 +61,26 @@ When changing graph generation or query logic, update ALL:
 - [[Neo4j stores ontology and metagraph in a single database]]
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
 - [[Cypher MERGE idempotent node creation pattern]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Graph Schema v3 is the Canonical Data Model|Graph Schema v3 is the Canonical Data Model]]
+- [[graphify/communities/LLM Prompt Engineering|LLM Prompt Engineering]]
+- [[graphify/communities/Match Step (Neo4j Full-Text Search, No LLM)|Match Step (Neo4j Full-Text Search, No LLM)]]
+- [[graphify/communities/Model Viewer (graph-viewermodel-viewer)|Model Viewer (graph-viewer/model-viewer/)]]
+- [[graphify/communities/Phase 03 Validation Runs Summary|Phase 03 Validation Runs Summary]]
+- [[graphify/communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery|Phase 3: n8n Knowledge Workflows + LLM Ingest/Query]]
+- [[graphify/communities/Product Bridges Natural Language Rules to Graph-Based Val...|Product Bridges Natural Language Rules to Graph-Based Val...]]
+- [[graphify/communities/SpeckleProjectConfigPayload|SpeckleProjectConfigPayload]]
+- [[graphify/communities/Validation Endpoints (publishrunsview) (51)|Validation Endpoints (publish/runs/view)]]
+- [[graphify/communities/Validation Endpoints (publishrunsview)|Validation Endpoints (publish/runs/view)]]
+- [[graphify/communities/Validation Results Publish to Speckle as Overlay Versions|Validation Results Publish to Speckle as Overlay Versions]]
+- [[graphify/communities/Worktree Branch Commits with Spurious Deletions|Worktree Branch Commits with Spurious Deletions]]
+- [[graphify/communities/code 17 nodes|code: 17 nodes]]
+- [[graphify/communities/code rule|code: rule]]
+- [[graphify/communities/extractErrorMessage()|extractErrorMessage()]]
+- [[graphify/communities/n8n Workflow Orchestrator (197)|n8n Workflow Orchestrator]]
+- [[graphify/communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries|n8n Workflow Orchestrator for LLM Rule Ingestion and Queries]]
+- [[graphify/communities/v4.0 BOT Ontology Bridge|v4.0 BOT Ontology Bridge]]
+<!-- graphify:connections:end -->

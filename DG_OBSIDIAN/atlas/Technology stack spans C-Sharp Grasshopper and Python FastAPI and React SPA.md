@@ -1,6 +1,7 @@
 ---
 tags: [atlas, stack, technology]
 date: 2026-04-05
+graphify_communities: ["Architecture is a Microservices Docker Pipeline", "STACK.md - Technology Stack Research", "Validation Viewer API", "n8n Workflow Orchestrator"]
 ---
 
 # Technology Stack Spans C-Sharp Grasshopper and Python FastAPI and React SPA
@@ -36,3 +37,12 @@ date: 2026-04-05
 - [[Architecture is a microservices Docker pipeline]]
 - [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
 - [[UI is a single-file React 18 SPA with no build step]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Architecture is a Microservices Docker Pipeline|Architecture is a Microservices Docker Pipeline]]
+- [[graphify/communities/STACK.md - Technology Stack Research|STACK.md - Technology Stack Research]]
+- [[graphify/communities/Validation Viewer API|Validation Viewer API]]
+- [[graphify/communities/n8n Workflow Orchestrator|n8n Workflow Orchestrator]]
+<!-- graphify:connections:end -->

@@ -41,3 +41,10 @@ ontology/DesignGrammar-aligned.owl
 
 # PhD publications drafts (local only)
 Publications/
+
+# graphify knowledge-graph artifacts (regenerated locally, not committed)
+graphify-out/
+
+# graphify-generated Obsidian notes (auto-generated, not curated)
+DG_OBSIDIAN/graphify_dump/
+DG_OBSIDIAN/graphify/raw/

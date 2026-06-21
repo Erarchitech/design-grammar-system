@@ -78,6 +78,13 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[publications/T3 — Отслеживание состояний|T3 — Отслеживание состояний]]
 - [[publications/T4 — Дизайн-пространство|T4 — Дизайн-пространство]]
 
+### Tools & Infrastructure
+- [[Graphify-CGD-Obsidian integration improvement plan|Graphify ↔ CGD ↔ Obsidian — план интеграции]]
+- [[graphify/Graph Index|Graphify Knowledge Graph — индекс по сообществам]]
+- [[graphify/Graph Connections Dashboard|Graph Connections Dashboard (Dataview)]]
+- [[graphify/GSD and Neo4j integration|GSD ↔ graphify и Neo4j интеграция]]
+- `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
+
 ### Operational
 - [[sessions/_template|Session log template]]
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]
@@ -98,4 +105,6 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-05-30 PhD publications series T1-T4 drafts|2026-05-30 PhD publications T1–T4 drafts]]
 - [[sessions/2026-06-01 Ontology v6.0 restructure — Core band, SpecGraph, partonomy|2026-06-01 Ontology v6.0 restructure]]
 - [[sessions/2026-06-01 Ontology v6.1 vendor-neutralization|2026-06-01 Ontology v6.1 vendor-neutralization]]
+- [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|2026-06-22 Graphify integration Phase 1]]
+- [[sessions/2026-06-22 Graphify integration Phases 2-4|2026-06-22 Graphify integration Phases 2-4]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

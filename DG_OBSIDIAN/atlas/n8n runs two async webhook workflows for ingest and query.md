@@ -1,6 +1,7 @@
 ---
 tags: [atlas, n8n, workflow, llm]
 date: 2026-04-05
+graphify_communities: ["Build Full-Text Cypher", "Create full-text index and parent class hub nodes for Kno...", "Fetch Graph Context (MCP)", "Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Prepare Graph Payload", "SC-2: POST to knowledge-query webhook returns an NL answe...", "knowledge-ingest.json", "knowledge-update.json", "n8n Runs Two Async Webhook Workflows for Ingest and Query", "n8n Workflow Orchestrator"]
 ---
 
 # n8n Runs Two Async Webhook Workflows for Ingest and Query
@@ -60,3 +61,19 @@ Detects keywords (`edit`, `update`, `change`, `modify`), extracts Rule_Id, gener
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
 - [[Async polling pattern for n8n workflow execution tracking]]
 - [[LLM Cypher output needs bracket nesting validation]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Build Full-Text Cypher|Build Full-Text Cypher]]
+- [[graphify/communities/Create full-text index and parent class hub nodes for Kno...|Create full-text index and parent class hub nodes for Kno...]]
+- [[graphify/communities/Fetch Graph Context (MCP)|Fetch Graph Context (MCP)]]
+- [[graphify/communities/Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...|Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...]]
+- [[graphify/communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery|Phase 3: n8n Knowledge Workflows + LLM Ingest/Query]]
+- [[graphify/communities/Prepare Graph Payload|Prepare Graph Payload]]
+- [[graphify/communities/SC-2 POST to knowledge-query webhook returns an NL answe...|SC-2: POST to knowledge-query webhook returns an NL answe...]]
+- [[graphify/communities/knowledge-ingest.json|knowledge-ingest.json]]
+- [[graphify/communities/knowledge-update.json|knowledge-update.json]]
+- [[graphify/communities/n8n Runs Two Async Webhook Workflows for Ingest and Query|n8n Runs Two Async Webhook Workflows for Ingest and Query]]
+- [[graphify/communities/n8n Workflow Orchestrator (197)|n8n Workflow Orchestrator]]
+<!-- graphify:connections:end -->

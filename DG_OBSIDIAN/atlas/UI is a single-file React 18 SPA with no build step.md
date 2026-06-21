@@ -1,6 +1,7 @@
 ---
 tags: [atlas, ui, react, spa]
 date: 2026-04-05
+graphify_communities: ["Fetch Graph Context (MCP)", "Prepare Graph Payload", "Worktree Branch Commits with Spurious Deletions", "code: 17 nodes", "n8n Workflow Orchestrator"]
 ---
 
 # UI is a Single-File React 18 SPA with No Build Step
@@ -52,3 +53,13 @@ See [[Passwords hashed client-side with SubtleCrypto SHA-256]].
 - [[Single-file React SPA avoids build tooling for main UI]]
 - [[NeoVis renders interactive graph visualization in browser]]
 - [[Async polling pattern for n8n workflow execution tracking]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Fetch Graph Context (MCP)|Fetch Graph Context (MCP)]]
+- [[graphify/communities/Prepare Graph Payload|Prepare Graph Payload]]
+- [[graphify/communities/Worktree Branch Commits with Spurious Deletions|Worktree Branch Commits with Spurious Deletions]]
+- [[graphify/communities/code 17 nodes|code: 17 nodes]]
+- [[graphify/communities/n8n Workflow Orchestrator|n8n Workflow Orchestrator]]
+<!-- graphify:connections:end -->

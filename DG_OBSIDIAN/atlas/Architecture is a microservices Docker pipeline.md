@@ -1,6 +1,7 @@
 ---
 tags: [atlas, architecture, docker]
 date: 2026-04-05
+graphify_communities: ["Concern: Tight Coupling to Neo4j", "Docker Compose Orchestration", "State Projection for Validation Runs"]
 ---
 
 # Architecture is a Microservices Docker Pipeline
@@ -41,3 +42,11 @@ User (browser)
 - [[Deployment uses Docker Compose with nginx reverse proxy]]
 - [[Technology stack spans C-Sharp Grasshopper and Python FastAPI and React SPA]]
 - [[Neo4j stores ontology and metagraph in a single database]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Concern Tight Coupling to Neo4j|Concern: Tight Coupling to Neo4j]]
+- [[graphify/communities/Docker Compose Orchestration|Docker Compose Orchestration]]
+- [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
+<!-- graphify:connections:end -->
