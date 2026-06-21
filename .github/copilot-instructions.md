@@ -136,3 +136,15 @@ The `Build Cypher Prompt` node in `graph-query-mcp.json` constructs a prompt wit
 
 ---
 Always prefer the v3 schema conventions above over older examples elsewhere in the repo.
+
+## Obsidian Knowledge Vault
+Хранилище знаний: ./DG_OBSIDIAN
+### При старте сессии
+Прочитай 00-home/index.md и текущие приоритеты.md.
+Если задача касается модуля — прочитай заметку из knowledge/.
+### При завершении (пользователь: "сохрани сессию")
+1. Создай заметку в sessions/ с датой
+2. Обнови текущие приоритеты.md
+3. Если решение — создай в knowledge/decisions/
+4. Если баг — создай в knowledge/debugging/
+5. Обнови index.md если новые заметки

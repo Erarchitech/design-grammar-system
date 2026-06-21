@@ -26,6 +26,9 @@ n8n/workflows/_all-workflows-export.json
 *.rar
 *.tar.gz
 
+# Temporary ontology files
+ontology/
+
 # Temporary ontology transformation scripts
 ontology/add_layer_hubs.py
 ontology/apply_v*.py

@@ -53,7 +53,14 @@
       "WebFetch(domain:medium.com)",
       "Bash(ls \"C:\\\\Users\\\\Admin\\\\.claude\\\\get-shit-done\\\\templates\\\\research-project\\\\\")",
       "Bash(python ontology/add_layer_hubs.py)",
-      "Bash(PYTHONIOENCODING=utf-8 python ontology/export_to_markdown.py)"
+      "Bash(PYTHONIOENCODING=utf-8 python ontology/export_to_markdown.py)",
+      "Read(//c/Users/Admin/**)",
+      "Bash(pandoc --track-changes=all \"C:/Users/Admin/Downloads/README \\(1\\).docx\" -o - -t markdown)",
+      "Bash(pandoc --track-changes=all \"C:/Users/Admin/Downloads/README \\(1\\).docx\" -t markdown)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\RevitPlugins_wt_v8_2\" -Directory | Where-Object { $_.Name -match \"LOI|LOD\" } | Select-Object Name)",
+      "Bash(python scripts/office/unpack.py \"C:/Users/Admin/Downloads/README \\(1\\).docx\" \"/c/Users/Admin/Downloads/readme_template_unpacked/\")",
+      "Bash(python -c ' *)",
+      "Bash(find / -path '*docx*' -name 'SKILL.md' 2>/dev/null | grep -i docx | head; echo \"===\"; find / -type d -name 'docx' 2>/dev/null | grep -i skill | head)"
     ]
   }
 }
