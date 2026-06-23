@@ -104,4 +104,43 @@ public sealed class VariableTypeInferrerTests
 
         Assert.Null(kind);
     }
+
+    [Fact]
+    public void Infer_ShouldReturnObject_WhenVariableIsObjectPropertyAtomSubjectOnly()
+    {
+        // adjacentTo(?b1, ?b2) — ?b1 never appears as a ClassAtom subject in this rule, but
+        // ObjectPropertyAtom relates two individuals, so it should resolve to Object.
+        var rule = new Rule { Id = "R_TEST_OBJECT_PROPERTY" };
+        var objectPropertyAtom = new Atom { Id = "Body_1", Type = "ObjectPropertyAtom", PredicateIri = "adjacentTo", Side = AtomSide.Body, Order = 1 };
+        objectPropertyAtom.Args.Add(new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?b1" });
+        objectPropertyAtom.Args.Add(new AtomArg { Pos = 2, Kind = ArgKind.Variable, Value = "?b2" });
+        rule.BodyAtoms.Add(objectPropertyAtom);
+
+        var kindArg1 = VariableTypeInferrer.Infer(rule, "?b1");
+        var kindArg2 = VariableTypeInferrer.Infer(rule, "?b2");
+
+        Assert.Equal(VariableKind.Object, kindArg1);
+        Assert.Equal(VariableKind.Object, kindArg2);
+    }
+
+    [Fact]
+    public void Infer_ShouldReturnObject_WhenVariableIsClassAtomSubjectAndAlsoObjectPropertyAtomArg()
+    {
+        // Building(?b)^adjacentTo(?b,?other) — ClassAtom subject (Priority 1) wins regardless of
+        // the ObjectPropertyAtom match, consistent with the existing ClassAtom-vs-DataProperty
+        // priority test above.
+        var rule = new Rule { Id = "R_TEST_CLASS_AND_OBJECT_PROPERTY" };
+        var classAtom = new Atom { Id = "Body_1", Type = "ClassAtom", PredicateIri = "Building", Side = AtomSide.Body, Order = 1 };
+        classAtom.Args.Add(new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?b" });
+        rule.BodyAtoms.Add(classAtom);
+
+        var objectPropertyAtom = new Atom { Id = "Body_2", Type = "ObjectPropertyAtom", PredicateIri = "adjacentTo", Side = AtomSide.Body, Order = 2 };
+        objectPropertyAtom.Args.Add(new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?b" });
+        objectPropertyAtom.Args.Add(new AtomArg { Pos = 2, Kind = ArgKind.Variable, Value = "?other" });
+        rule.BodyAtoms.Add(objectPropertyAtom);
+
+        var kind = VariableTypeInferrer.Infer(rule, "?b");
+
+        Assert.Equal(VariableKind.Object, kind);
+    }
 }

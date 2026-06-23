@@ -32,6 +32,25 @@ public static class VariableTypeInferrer
 
         foreach (var atom in atoms)
         {
+            if (atom.Type != "ObjectPropertyAtom")
+            {
+                continue;
+            }
+
+            foreach (var arg in atom.Args)
+            {
+                if (arg.Kind == ArgKind.Variable && string.Equals(arg.Value, variableName, StringComparison.Ordinal))
+                {
+                    // Priority 2: ObjectPropertyAtom relates two individuals, so either argument
+                    // position (subject or object of the relation) is itself an Object — no
+                    // ClassAtom subject match was found above for this variable.
+                    return VariableKind.Object;
+                }
+            }
+        }
+
+        foreach (var atom in atoms)
+        {
             if (atom.Type != "DataPropertyAtom")
             {
                 continue;
@@ -43,8 +62,8 @@ public static class VariableTypeInferrer
                     && string.Equals(arg.Value, variableName, StringComparison.Ordinal)
                     && arg.Pos >= 2)
                 {
-                    // Priority 2: Property when only ever seen at pos-2+ of a DataPropertyAtom
-                    // (no ClassAtom subject match found above).
+                    // Priority 3: Property when only ever seen at pos-2+ of a DataPropertyAtom
+                    // (no ClassAtom subject or ObjectPropertyAtom match found above).
                     return VariableKind.Property;
                 }
             }
@@ -56,9 +75,9 @@ public static class VariableTypeInferrer
             return null;
         }
 
-        // Priority 3/4: variable appears only inside BuiltinAtom args (or only at non-qualifying
-        // positions, e.g. pos-1 of a DataPropertyAtom without a corresponding ClassAtom match) —
-        // not exposed to canvas as Object or Property. Indeterminate.
+        // Priority 4: variable appears only inside BuiltinAtom args (or only at non-qualifying
+        // positions, e.g. pos-1 of a DataPropertyAtom without a corresponding ClassAtom or
+        // ObjectPropertyAtom match) — not exposed to canvas as Object or Property. Indeterminate.
         return null;
     }
 }
