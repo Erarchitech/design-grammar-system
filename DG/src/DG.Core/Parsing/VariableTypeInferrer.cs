@@ -60,10 +60,14 @@ public static class VariableTypeInferrer
             {
                 if (arg.Kind == ArgKind.Variable
                     && string.Equals(arg.Value, variableName, StringComparison.Ordinal)
-                    && arg.Pos >= 2)
+                    && arg.Pos == 2)
                 {
-                    // Priority 3: Property when only ever seen at pos-2+ of a DataPropertyAtom
-                    // (no ClassAtom subject or ObjectPropertyAtom match found above).
+                    // Priority 3: Property when seen at pos-2 (the value position) of a
+                    // DataPropertyAtom (no ClassAtom subject or ObjectPropertyAtom match found
+                    // above). A well-formed DataPropertyAtom always has exactly 2 args — subject
+                    // at pos-1, value at pos-2 (see cypher_template.txt) — so this is pinned to
+                    // pos-2 exactly rather than ">= 2" to avoid silently accepting malformed/
+                    // legacy data with unexpected extra args as Property.
                     return VariableKind.Property;
                 }
             }
