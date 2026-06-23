@@ -117,7 +117,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\nconst isEdit = $json.isEdit || false;\nconst editRuleIds = $json.editRuleIds || [];\nlet cleanupStatements = [];\nif (isEdit && editRuleIds.length) {\n  for (const rid of editRuleIds) {\n    const safeId = rid.replace(/[^A-Za-z0-9_]/g, '');\n    cleanupStatements.push(\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[arg:ARG]->() DELETE arg\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[ref:REFERS_TO]->() DELETE ref\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) DELETE rel, a\",\n      \"MATCH (r:Rule {Rule_Id: '\" + safeId + \"'}) DELETE r\"\n    );\n  }\n  cleanupStatements.push(\"MATCH (n) WHERE (n:Var OR n:Literal) AND n.graph = 'Metagraph' AND NOT (n)<-[:ARG]-() DELETE n\");\n}\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\nreturn [{\n  json: {\n    project_name: $json.project_name,\n    neo4j_user: $json.neo4j_user,\n    neo4j_password: $json.neo4j_password,\n    neo4j_url: $json.neo4j_url,\n    rules_text: $json.rules_text || '',\n    cypher: cypher,\n    cleanupStatements: cleanupStatements,\n    postProcess: postProcess\n  }\n}];"
+        "functionCode": "const cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\nconst isEdit = $json.isEdit || false;\nconst editRuleIds = $json.editRuleIds || [];\nlet cleanupStatements = [];\nif (isEdit && editRuleIds.length) {\n  for (const rid of editRuleIds) {\n    const safeId = rid.replace(/[^A-Za-z0-9_]/g, '');\n    cleanupStatements.push(\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[arg:ARG]->() DELETE arg\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[ref:REFERS_TO]->() DELETE ref\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) DELETE rel, a\",\n      \"MATCH (r:Rule {Rule_Id: '\" + safeId + \"'}) DELETE r\"\n    );\n  }\n  cleanupStatements.push(\"MATCH (n) WHERE (n:Var OR n:Literal) AND n.graph = 'Metagraph' AND NOT (n)<-[:ARG]-() DELETE n\");\n}\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\nconst neo4j_auth_header = 'Basic ' + Buffer.from(($json.neo4j_user || 'neo4j') + ':' + ($json.neo4j_password || '12345678')).toString('base64');\nreturn [{\n  json: {\n    neo4j_auth_header: neo4j_auth_header,\n    project_name: $json.project_name,\n    neo4j_user: $json.neo4j_user,\n    neo4j_password: $json.neo4j_password,\n    neo4j_url: $json.neo4j_url,\n    rules_text: $json.rules_text || '',\n    cypher: cypher,\n    cleanupStatements: cleanupStatements,\n    postProcess: postProcess\n  }\n}];"
       },
       "id": "6",
       "name": "Prepare Graph Payload",
@@ -130,7 +130,6 @@
     },
     {
       "parameters": {
-        "authentication": "basicAuth",
         "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
         "options": {
@@ -138,9 +137,8 @@
           "timeout": 900000
         },
         "bodyParametersJson": "={{ (() => { const p = $items('Prepare Graph Payload')[0].json; const stmts = (p.cleanupStatements || []).map(s => ({ statement: s })); stmts.push({ statement: p.cypher }); return { statements: stmts }; })() }}",
-        "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
-        "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"Authorization\": $items(\"Prepare Graph Payload\")[0].json.neo4j_auth_header } }}"
       },
       "id": "8",
       "name": "Execute LLM Cypher",
@@ -153,7 +151,6 @@
     },
     {
       "parameters": {
-        "authentication": "basicAuth",
         "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
         "options": {
@@ -161,9 +158,8 @@
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": $items('Prepare Graph Payload')[0].json.postProcess, \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name } }, { \"statement\": \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' AND (r.description IS NULL OR r.description = '') SET r.description = $description\", \"parameters\": { \"description\": $items('Prepare Graph Payload')[0].json.rules_text || '' } } ] } }}",
-        "basicAuthUser": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_user}}",
-        "basicAuthPassword": "={{$items(\"Prepare Graph Payload\")[0].json.neo4j_password}}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"Authorization\": $items(\"Prepare Graph Payload\")[0].json.neo4j_auth_header } }}"
       },
       "id": "9",
       "name": "Annotate Graph Props",
@@ -295,7 +291,6 @@
     },
     {
       "parameters": {
-        "authentication": "basicAuth",
         "url": "={{ ($items('Set Input Defaults')[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
         "jsonParameters": true,
         "options": {
@@ -303,9 +298,8 @@
           "timeout": 30000
         },
         "bodyParametersJson": "={{ (() => { return { statements: [{ statement: \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph = 'OntoGraph' RETURN labels(n)[0] AS nodeLabel, n.iri AS iri, coalesce(n.label, '') AS label, coalesce(n.SWRL_label, '') AS swrl_label, coalesce(n.range, '') AS range ORDER BY nodeLabel, iri\" }, { statement: \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id\" }] }; })() }}",
-        "basicAuthUser": "={{ $items('Set Input Defaults')[0].json.neo4j_user }}",
-        "basicAuthPassword": "={{ $items('Set Input Defaults')[0].json.neo4j_password }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"Authorization\": $items(\"Compute Neo4j Auth\")[0].json.neo4j_auth_header } }}"
       },
       "id": "fetch-entities",
       "name": "Fetch Existing Entities",
@@ -313,6 +307,19 @@
       "typeVersion": 1,
       "position": [
         -350,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const user = $node[\"Set Input Defaults\"].json.neo4j_user || 'neo4j';\nconst pass = $node[\"Set Input Defaults\"].json.neo4j_password || '12345678';\nreturn [{ json: { neo4j_auth_header: 'Basic ' + Buffer.from(user + ':' + pass).toString('base64') } }];"
+      },
+      "id": "compute-neo4j-auth",
+      "name": "Compute Neo4j Auth",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -500,
         0
       ]
     }
@@ -446,7 +453,7 @@
       "main": [
         [
           {
-            "node": "Fetch Existing Entities",
+            "node": "Compute Neo4j Auth",
             "type": "main",
             "index": 0
           }
@@ -491,6 +498,17 @@
         [
           {
             "node": "Build LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Neo4j Auth": {
+      "main": [
+        [
+          {
+            "node": "Fetch Existing Entities",
             "type": "main",
             "index": 0
           }
