@@ -1,5 +1,7 @@
 DG CYPHER TEMPLATE FOR LLM (v3)
 
+SCHEMA VERSION: v3.1
+
 TASK
 Convert natural-language design rules into Neo4j Cypher MERGE + SET
 statements that populate OntoGraph (ontology terms) and Metagraph
@@ -38,11 +40,14 @@ GRAPH SCHEMA (from dataset_schema v3)
            props: type (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom),
                   iri, SWRL_label, project, graph='Metagraph'
 
-  Var    — key: name (?<varName>)
+  Var    — key: name (?<varName>) + project
            props: project, graph='Metagraph'
 
   Literal — key: lex + datatype
            props: project, graph='Metagraph'
+
+  DesignState — key: StateId + project
+           props: kind (DefState|ObjectState), project, graph='Metagraph'
 
 SEMANTIC MAPPING (violation pattern)
 - "Maximum / at most / no more than X" → body uses swrlb:greaterThan(?val, X)
@@ -105,14 +110,17 @@ SET r.text = '<SWRL_EXPRESSION>',
     r.project = '<PROJECT>',
     r.graph = 'Metagraph'
 
-// 3. Metagraph — variables, literals
-MERGE (vEntity:Var {name: '?<ENTITY_VAR>'})
-SET vEntity.project = '<PROJECT>',
-    vEntity.graph = 'Metagraph'
+// 2b. Metagraph — design state node (DefState | ObjectState, single label + kind)
+MERGE (ds:DesignState {StateId: '<STATE_ID>', project: '<PROJECT>'})
+SET ds.kind = '<DefState|ObjectState>',
+    ds.graph = 'Metagraph'
 
-MERGE (vValue:Var {name: '?<VALUE_VAR>'})
-SET vValue.project = '<PROJECT>',
-    vValue.graph = 'Metagraph'
+// 3. Metagraph — variables, literals
+MERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: '<PROJECT>'})
+SET vEntity.graph = 'Metagraph'
+
+MERGE (vValue:Var {name: '?<VALUE_VAR>', project: '<PROJECT>'})
+SET vValue.graph = 'Metagraph'
 
 MERGE (litX:Literal {lex: '<THRESHOLD>', datatype: '<xsd:decimal|xsd:integer>'})
 SET litX.project = '<PROJECT>',
