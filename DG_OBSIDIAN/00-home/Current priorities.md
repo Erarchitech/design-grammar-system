@@ -7,7 +7,8 @@ date: 2026-06-23
 
 ## Active
 
-1. **v3.0 Phase 7 (Schema Foundation)** — 3/4 plans executed (07-01 VariableKind/Inferrer, 07-02 DefState/ObjectState/ObjectInstance models, 07-03 Var merge-key fix + DesignState Cypher block). 07-04 (schema propagation across dataset_schema.json/n8n/config.template.js/data-service) remains — resume with `/gsd-execute-phase 7`. Then Phases 8–12.
+1. **Запустить pending migration** — `migrations/2026-06-23_var_project_merge_key.cypher` против live Neo4j (стек теперь работает — можно выполнить немедленно).
+2. **v3.0 Phase 7 (Schema Foundation)** — 3/4 plans executed (07-01 VariableKind/Inferrer, 07-02 DefState/ObjectState/ObjectInstance models, 07-03 Var merge-key fix + DesignState Cypher block). 07-04 (schema propagation across dataset_schema.json/n8n/config.template.js/data-service) remains — resume with `/gsd-execute-phase 7`. Then Phases 8–12.
 2. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
 3. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` needs to run against a live Neo4j once the Docker stack is up (Phase 7 follow-up).

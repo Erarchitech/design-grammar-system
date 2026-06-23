@@ -110,4 +110,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|2026-06-22 Graphify integration Phase 1]]
 - [[sessions/2026-06-22 Graphify integration Phases 2-4|2026-06-22 Graphify integration Phases 2-4]]
 - [[sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution|2026-06-23 v3.0 Phase 7 Schema Foundation execution]]
+- [[sessions/2026-06-23 New PC Docker setup and n8n workflow fix|2026-06-23 New PC setup + n8n workflow fix]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
