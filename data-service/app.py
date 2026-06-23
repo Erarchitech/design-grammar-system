@@ -158,6 +158,10 @@ class ValidationPublishEntityPayload(BaseModel):
 
 class ValidationPublishRequest(BaseModel):
     project: str
+    # statePayloadJson carries the captured DesignState snapshot as JSON. v3.0
+    # DefState payloads use DS_-prefixed stateId values (unchanged from v2.0);
+    # OS_-prefixed ObjectState references join this payload from Phase 11
+    # onward (see CLAUDE.md Graph Schema v3 / DesignState kind vocabulary).
     statePayloadJson: str | None = None
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
@@ -518,6 +522,11 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
     """Project a run's statePayloadJson into a compact summary for UI grouping.
 
     Returns None for absent, empty, or malformed payloads. Never raises.
+
+    Vocabulary note (Phase 7, no behavior change): stateId values follow the
+    DS_/OS_ ID-prefix convention established for the DesignState node hierarchy
+    (DS_ = DefState, OS_ = ObjectState). This function only summarizes whatever
+    stateId is present; OS_-prefixed payload extension lands in Phase 11.
     """
     if not state_payload_json:
         return None
