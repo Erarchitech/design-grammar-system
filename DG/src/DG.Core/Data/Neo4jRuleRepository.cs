@@ -38,6 +38,7 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         MATCH (r:Rule {graph:'Metagraph', project:$project})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom {graph:'Metagraph', project:$project})
         OPTIONAL MATCH (a)-[:REFERS_TO]->(p)
         OPTIONAL MATCH (a)-[arg:ARG]->(av)
+        WHERE av IS NULL OR av.project IS NULL OR av.project = $project
         RETURN
             r.Rule_Id AS ruleId,
             type(rel) AS relationType,
