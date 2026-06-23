@@ -10,4 +10,8 @@
     <PackageReference Include="Neo4j.Driver" Version="5.28.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DG.Tests" />
+  </ItemGroup>
+
 </Project>

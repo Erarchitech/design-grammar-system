@@ -209,6 +209,12 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         }
     }
 
+    /// <summary>
+    /// Test-only entry point exposing <see cref="PopulateVariables"/> for unit testing without
+    /// a live Neo4j connection. Not part of <see cref="IRuleRepository"/>'s public contract.
+    /// </summary>
+    internal static void PopulateVariablesForTesting(IEnumerable<Rule> rules) => PopulateVariables(rules);
+
     private static void PopulateVariables(IEnumerable<Rule> rules)
     {
         foreach (var rule in rules)
@@ -250,7 +256,7 @@ public sealed class Neo4jRuleRepository : IRuleRepository
 
             foreach (var variableName in names.OrderBy(name => name, StringComparer.Ordinal))
             {
-                rule.Variables.Add(new Variable { Name = variableName });
+                rule.Variables.Add(new Variable { Name = variableName, Kind = VariableTypeInferrer.Infer(rule, variableName) });
             }
         }
     }
