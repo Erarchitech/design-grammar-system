@@ -59,7 +59,7 @@
   3. cypher_template.txt, dataset_schema.json, n8n workflow JSON prompts, config.template.js, C# models, and data-service/app.py all reference DS_ and OS_ ID prefixes and the single-label `:DesignState` + `kind` pattern consistently
   4. NeoVis renders DefState and ObjectState nodes with distinct colors using a single `:DesignState` label config entry — no label proliferation, no non-deterministic rendering
 
-**Plans**: 2/4 plans executed
+**Plans**: 4/4 plans complete
 Plans:
 **Wave 1**
 
@@ -68,11 +68,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-03-PLAN.md — cypher_template.txt Var merge-key fix + DesignState Cypher block + migration script + Neo4jRuleRepository wiring
+- [x] 07-03-PLAN.md — cypher_template.txt Var merge-key fix + DesignState Cypher block + migration script + Neo4jRuleRepository wiring
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-04-PLAN.md — Schema propagation: dataset_schema.json, n8n prompt, config.template.js, data-service/app.py
+- [x] 07-04-PLAN.md — Schema propagation: dataset_schema.json, n8n prompt, config.template.js, data-service/app.py
 
 ### Phase 8: METAGRAPH Expansion and RULE DECONSTRUCT Rework
 
@@ -149,7 +149,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 7. Schema Foundation | 2/4 | In Progress|  |
+| 7. Schema Foundation | 4/4 | Complete   | 2026-06-23 |
 | 8. METAGRAPH Expansion and RULE DECONSTRUCT Rework | 0/? | Not started | - |
 | 9. OBJECT STATE Component and DESIGN STATE Rework | 0/? | Not started | - |
 | 10. CLASSIFICATOR Rework | 0/? | Not started | - |

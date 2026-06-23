@@ -60,7 +60,11 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\RevitPlugins_wt_v8_2\" -Directory | Where-Object { $_.Name -match \"LOI|LOD\" } | Select-Object Name)",
       "Bash(python scripts/office/unpack.py \"C:/Users/Admin/Downloads/README \\(1\\).docx\" \"/c/Users/Admin/Downloads/readme_template_unpacked/\")",
       "Bash(python -c ' *)",
-      "Bash(find / -path '*docx*' -name 'SKILL.md' 2>/dev/null | grep -i docx | head; echo \"===\"; find / -type d -name 'docx' 2>/dev/null | grep -i skill | head)"
+      "Bash(find / -path '*docx*' -name 'SKILL.md' 2>/dev/null | grep -i docx | head; echo \"===\"; find / -type d -name 'docx' 2>/dev/null | grep -i skill | head)",
+      "Skill(gsd-plan-phase)",
+      "Skill(gsd-plan-phase:*)",
+      "Skill(gsd-execute-phase)",
+      "Skill(gsd-execute-phase:*)"
     ]
   }
 }

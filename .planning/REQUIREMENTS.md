@@ -40,9 +40,9 @@
 - [x] **SCHM-01**: DesignState nodes use single label `:DesignState` with `kind` property (`DefState` | `ObjectState`)
 - [ ] **SCHM-02**: Var nodes include `project` in MERGE key (fix cross-project collision bug)
 - [x] **SCHM-03**: New node classes use unique ID prefixes (DS_ for DefState, OS_ for ObjectState, OI_ for ObjectInstance, IDR_ for IdRef)
-- [ ] **SCHM-04**: Schema changes propagate across all 6 surfaces (cypher_template, dataset_schema, n8n prompts, NeoVis config, C# models, data-service)
+- [x] **SCHM-04**: Schema changes propagate across all 6 surfaces (cypher_template, dataset_schema, n8n prompts, NeoVis config, C# models, data-service)
 - [ ] **SCHM-05**: PropValue persists per `ValidationEntity` (NOT per `ObjectInstance`). Each ValidationEntity has one `propValue` (xsd:string lex form) and one `propValueOf` → `PropertyVariable` reference. Displayed in Model Viewer's passing/failing item list as one value per item per rule — preserves multi-rule, multi-property validation semantics
-- [ ] **SCHM-06**: Enum-valued discriminator properties (`variableKind`, `variableScope`, `kind`, `status`, `parameterType`) are modeled as OWL ObjectProperties pointing at NamedIndividuals in dedicated enum classes (`VariableKindValue`, `VariableScopeValue`, `DesignStateKindValue`, `ValidationStatusValue`, `DesignStateParameterTypeValue`), mirroring the existing `DesignStateParameterTypeValue` pattern
+- [x] **SCHM-06**: Enum-valued discriminator properties (`variableKind`, `variableScope`, `kind`, `status`, `parameterType`) are modeled as OWL ObjectProperties pointing at NamedIndividuals in dedicated enum classes (`VariableKindValue`, `VariableScopeValue`, `DesignStateKindValue`, `ValidationStatusValue`, `DesignStateParameterTypeValue`), mirroring the existing `DesignStateParameterTypeValue` pattern
 
 ### Integration
 
@@ -104,9 +104,9 @@
 | SCHM-01 | Phase 7 | Complete |
 | SCHM-02 | Phase 7 | Pending |
 | SCHM-03 | Phase 7 | Complete |
-| SCHM-04 | Phase 7 | Pending |
+| SCHM-04 | Phase 7 | Complete |
 | SCHM-05 | Phase 11 | Pending |
-| SCHM-06 | Phase 7 | Pending |
+| SCHM-06 | Phase 7 | Complete |
 | INTG-01 | Phase 12 | Pending |
 | INTG-02 | Phase 12 | Pending |
 | INTG-03 | Phase 11 | Pending |
