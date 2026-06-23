@@ -27,13 +27,11 @@ SET r.text = 'Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesM
     r.project = 'default-project',
     r.graph = 'Metagraph'
 
-MERGE (vb:Var {name: '?b'})
-SET vb.project = 'default-project',
-    vb.graph = 'Metagraph'
+MERGE (vb:Var {name: '?b', project: 'default-project'})
+SET vb.graph = 'Metagraph'
 
-MERGE (vh:Var {name: '?h'})
-SET vh.project = 'default-project',
-    vh.graph = 'Metagraph'
+MERGE (vh:Var {name: '?h', project: 'default-project'})
+SET vh.graph = 'Metagraph'
 
 MERGE (lit75:Literal {lex: '75', datatype: 'xsd:decimal'})
 SET lit75.project = 'default-project',
@@ -119,13 +117,11 @@ SET r.text = 'Building(?b)^directSunlightHoursPerDay(?b,?s)^swrlb:lessThan(?s,2.
     r.project = 'default-project',
     r.graph = 'Metagraph'
 
-MERGE (vb:Var {name: '?b'})
-SET vb.project = 'default-project',
-    vb.graph = 'Metagraph'
+MERGE (vb:Var {name: '?b', project: 'default-project'})
+SET vb.graph = 'Metagraph'
 
-MERGE (vs:Var {name: '?s'})
-SET vs.project = 'default-project',
-    vs.graph = 'Metagraph'
+MERGE (vs:Var {name: '?s', project: 'default-project'})
+SET vs.graph = 'Metagraph'
 
 MERGE (lit28:Literal {lex: '2.8', datatype: 'xsd:decimal'})
 SET lit28.project = 'default-project',
@@ -210,13 +206,11 @@ SET r.text = 'UrbanBlock(?ub)^blockGridSizeM(?ub,?g)^swrlb:lessThan(?g,12)->viol
     r.project = 'default-project',
     r.graph = 'Metagraph'
 
-MERGE (vub:Var {name: '?ub'})
-SET vub.project = 'default-project',
-    vub.graph = 'Metagraph'
+MERGE (vub:Var {name: '?ub', project: 'default-project'})
+SET vub.graph = 'Metagraph'
 
-MERGE (vg:Var {name: '?g'})
-SET vg.project = 'default-project',
-    vg.graph = 'Metagraph'
+MERGE (vg:Var {name: '?g', project: 'default-project'})
+SET vg.graph = 'Metagraph'
 
 MERGE (lit12:Literal {lex: '12', datatype: 'xsd:decimal'})
 SET lit12.project = 'default-project',

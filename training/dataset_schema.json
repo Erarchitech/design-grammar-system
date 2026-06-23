@@ -86,7 +86,8 @@
       {
         "label": "Var",
         "key": {
-          "name": "?<varName>"
+          "name": "?<varName>",
+          "project": "default-project"
         },
         "props": {
           "project": "default-project",
@@ -100,6 +101,18 @@
           "datatype": "xsd:decimal | xsd:integer | xsd:boolean | xsd:string"
         },
         "props": {
+          "project": "default-project",
+          "graph": "Metagraph"
+        }
+      },
+      {
+        "label": "DesignState",
+        "key": {
+          "StateId": "DS_<hash> | OS_<hash>",
+          "project": "default-project"
+        },
+        "props": {
+          "kind": "DefState | ObjectState",
           "project": "default-project",
           "graph": "Metagraph"
         }
@@ -170,6 +183,6 @@
     "assumptions": [
       "..."
     ],
-    "version": "v3"
+    "version": "v3.1"
   }
 }
