@@ -61,6 +61,9 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "11435:11434"
     volumes:

@@ -1,0 +1,8 @@
+# Normalize line endings. Shell scripts and Docker assets MUST be LF
+# so they run inside Linux containers regardless of core.autocrlf on Windows.
+* text=auto
+
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
