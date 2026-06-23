@@ -157,6 +157,13 @@ public sealed class Neo4jRuleRepository : IRuleRepository
                 }
 
                 var isVariable = labels.Contains("Var", StringComparer.OrdinalIgnoreCase);
+                var isLiteral = labels.Contains("Literal", StringComparer.OrdinalIgnoreCase);
+                if (isVariable == isLiteral)
+                {
+                    // Both or neither — malformed ARG target, skip rather than silently misclassify.
+                    return;
+                }
+
                 var argValue = isVariable
                     ? record["varName"].As<string?>()
                     : record["litLex"].As<string?>();
