@@ -239,26 +239,37 @@ public sealed class Neo4jRuleRepository : IRuleRepository
 
             if (!string.IsNullOrWhiteSpace(rule.Swrl))
             {
-                var parsed = SwrlRuleParser.Parse(rule.Swrl);
-                foreach (var variable in parsed.Variables)
+                try
                 {
-                    names.Add(variable.Name);
-                }
-
-                if (rule.BodyAtoms.Count == 0)
-                {
-                    foreach (var atom in parsed.BodyAtoms)
+                    var parsed = SwrlRuleParser.Parse(rule.Swrl);
+                    foreach (var variable in parsed.Variables)
                     {
-                        rule.BodyAtoms.Add(atom);
+                        names.Add(variable.Name);
+                    }
+
+                    if (rule.BodyAtoms.Count == 0)
+                    {
+                        foreach (var atom in parsed.BodyAtoms)
+                        {
+                            rule.BodyAtoms.Add(atom);
+                        }
+                    }
+
+                    if (rule.HeadAtoms.Count == 0)
+                    {
+                        foreach (var atom in parsed.HeadAtoms)
+                        {
+                            rule.HeadAtoms.Add(atom);
+                        }
                     }
                 }
-
-                if (rule.HeadAtoms.Count == 0)
+                catch (Exception ex) when (ex is ArgumentException or FormatException)
                 {
-                    foreach (var atom in parsed.HeadAtoms)
-                    {
-                        rule.HeadAtoms.Add(atom);
-                    }
+                    // Malformed SWRL text (e.g. legacy/manually-edited rules) must not abort
+                    // loading the rest of the project's rules. Continue with whatever atoms
+                    // and variable names were already loaded from the graph for this rule.
+                    Console.Error.WriteLine(
+                        $"PopulateVariables: failed to parse SWRL for rule '{rule.Id}': {ex.Message}");
                 }
             }
 

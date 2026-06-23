@@ -74,4 +74,30 @@ public sealed class Neo4jRuleRepositoryVariableKindTests
         var variable = rule.Variables.Single(v => v.Name == "?h");
         Assert.Null(variable.Kind);
     }
+
+    [Fact]
+    public void PopulateVariables_ShouldNotThrow_WhenSwrlIsMalformed()
+    {
+        // Missing '->' — SwrlRuleParser.Parse throws FormatException for this input.
+        var malformedRule = new Rule { Id = "R_TEST_MALFORMED", Swrl = "Building(?b)^hasHeightM(?b,?h)" };
+
+        var exception = Record.Exception(() =>
+            Neo4jRuleRepository.PopulateVariablesForTesting(new[] { malformedRule }));
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void PopulateVariables_ShouldContinueProcessingRemainingRules_WhenOneRuleHasMalformedSwrl()
+    {
+        // A single malformed rule must not prevent variables from being populated for the
+        // other, well-formed rules in the same batch.
+        var malformedRule = new Rule { Id = "R_TEST_MALFORMED", Swrl = "Building(?b)^hasHeightM(?b,?h)" };
+        var goodRule = BuildCanonicalRule();
+
+        Neo4jRuleRepository.PopulateVariablesForTesting(new[] { malformedRule, goodRule });
+
+        var variable = goodRule.Variables.Single(v => v.Name == "?b");
+        Assert.Equal(VariableKind.Object, variable.Kind);
+    }
 }
