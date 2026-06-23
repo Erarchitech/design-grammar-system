@@ -95,6 +95,7 @@ public sealed class RuleDeconstructComponent : GH_Component
                     {
                         Name = variable.Name,
                         InferredDatatype = variable.InferredDatatype,
+                        Kind = variable.Kind,
                     };
                 }
             }
@@ -109,6 +110,7 @@ public sealed class RuleDeconstructComponent : GH_Component
             {
                 Name = variable.Name,
                 InferredDatatype = variable.InferredDatatype,
+                Kind = variable.Kind,
             })
             .ToList();
         var variableNames = publicVars
@@ -145,6 +147,7 @@ public sealed class RuleDeconstructComponent : GH_Component
             {
                 Name = variable.Name,
                 InferredDatatype = variable.InferredDatatype,
+                Kind = variable.Kind,
             });
         }
 

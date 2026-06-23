@@ -65,6 +65,7 @@ internal static class GhCastingHelpers
             {
                 Name = publicVar.Name,
                 InferredDatatype = publicVar.InferredDatatype,
+                Kind = publicVar.Kind,
             };
     }
 

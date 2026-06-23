@@ -203,6 +203,7 @@ public sealed class MetagraphComponent : GH_Component
             {
                 Name = variable.Name,
                 InferredDatatype = variable.InferredDatatype,
+                Kind = variable.Kind,
             });
         }
 
