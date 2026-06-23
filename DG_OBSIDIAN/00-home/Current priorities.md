@@ -1,17 +1,20 @@
 ---
 tags: [home, priorities]
-date: 2026-06-22
+date: 2026-06-23
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
-2. **v3.0 implementation** — Typed Variables and Composable Design State (Phases 7–12, planned).
+1. **v3.0 Phase 7 (Schema Foundation)** — 3/4 plans executed (07-01 VariableKind/Inferrer, 07-02 DefState/ObjectState/ObjectInstance models, 07-03 Var merge-key fix + DesignState Cypher block). 07-04 (schema propagation across dataset_schema.json/n8n/config.template.js/data-service) remains — resume with `/gsd-execute-phase 7`. Then Phases 8–12.
+2. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
 3. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` needs to run against a live Neo4j once the Docker stack is up (Phase 7 follow-up).
 
 > ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
+> ℹ️ **.NET SDK теперь установлен** (10.0.109) — `dotnet build`/`dotnet test` работают; `dotnet test` требует `DOTNET_ROLL_FORWARD=LatestMajor` (нет net9.0 runtime, только 7/8/10).
+> ℹ️ **`workflow.use_worktrees: false`** в `.planning/config.json` — параллельное worktree-исполнение отключено из-за конфликта с `commit_docs: false`. См. [[knowledge/decisions/Worktree execution disabled due to commit_docs conflict|решение]].
 
 ## Upcoming
 
@@ -24,6 +27,7 @@ date: 2026-06-22
 
 ## Completed Recently
 
+- **v3.0 Phase 7 plans 07-01..07-03** — 2026-06-23. VariableKind/VariableTypeInferrer, DefState/ObjectState/ObjectInstance models + ID generation, Var merge-key cross-project bug fix + DesignState Cypher block + migration script. See [[sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution|сессия]].
 - **Graphify-CGD-Obsidian integration Phases 1–4** — 2026-06-22. Полный проект интеграции: SKILL.md 34KB→1.2KB, 1772 dump-файла → 104 community notes, MCP server registered, diff-based export (`scripts/export_graphify_conceptual.py` + `refresh_graphify.sh`), `.graphifyignore` (защита от feedback loop), bidirectional linking (frontmatter + `## Graph connections`), Dataview dashboard, GSD-паттерны. См. [[sessions/2026-06-22 Graphify integration Phases 2-4|сессия Фазы 2-4]] и [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|Фаза 1]].
 - **Ontology v6.1 vendor-neutralization** — 2026-06-01. Removed Speckle/Rhino from all DG-owned ontology entities and comments. `dgv:speckleProjectId`→`dgv:externalProjectId`; ABox instances neutralized; standards/Topologic/BOT alignments retained. Runtime schema propagation pending.
 - **Ontology v6.0 restructure** — 2026-06-01. Core band (Gero FBS over-layer: Object/Function/Behavior/Structure/Geometry/Topology, DesignState, Session); IRI shortening (meta#/valid#/comp#); KnowledgeGraph→SpecGraph (spec#); Reasoner→ValidationGraph (= GH Validator); unified Session; ParametricState dropped; ERD partonomy via `dg:hasPart` sub-property hierarchy; all V6 files pass XML + stale-token verification.

@@ -44,6 +44,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[ResizeObserver wires Speckle viewer.resize on host element]]
 - [[ValidationRunsStrip component with per-project localStorage persistence]]
 - [[DCM ComputationGraph as 5th ontology layer]]
+- [[decisions/v3.0 vendor-neutral rename deferred|v3.0 vendor-neutral rename deferred]]
+- [[decisions/Worktree execution disabled due to commit_docs conflict|Worktree execution disabled due to commit_docs conflict]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -107,4 +109,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-06-01 Ontology v6.1 vendor-neutralization|2026-06-01 Ontology v6.1 vendor-neutralization]]
 - [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|2026-06-22 Graphify integration Phase 1]]
 - [[sessions/2026-06-22 Graphify integration Phases 2-4|2026-06-22 Graphify integration Phases 2-4]]
+- [[sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution|2026-06-23 v3.0 Phase 7 Schema Foundation execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

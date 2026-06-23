@@ -7,9 +7,9 @@
 
 ### Variable Typing
 
-- [ ] **VTYP-01**: Variable type (Object vs Property) is inferred at read-time from SWRL atom structure — ClassAtom arg → Object, DataPropertyAtom arg-2 → Property
-- [ ] **VTYP-02**: Object variables are cross-rule — same variable name maps to the same entity across all rules in a project
-- [ ] **VTYP-03**: Property variables are rule-scoped — same name in different rules represents independent variables
+- [x] **VTYP-01**: Variable type (Object vs Property) is inferred at read-time from SWRL atom structure — ClassAtom arg → Object, DataPropertyAtom arg-2 → Property
+- [x] **VTYP-02**: Object variables are cross-rule — same variable name maps to the same entity across all rules in a project
+- [x] **VTYP-03**: Property variables are rule-scoped — same name in different rules represents independent variables
 - [ ] **VTYP-04**: User can see Object and Property variables per rule via RULE DECONSTRUCT outputs
 
 ### Composable State
@@ -37,9 +37,9 @@
 
 ### Schema & Data
 
-- [ ] **SCHM-01**: DesignState nodes use single label `:DesignState` with `kind` property (`DefState` | `ObjectState`)
+- [x] **SCHM-01**: DesignState nodes use single label `:DesignState` with `kind` property (`DefState` | `ObjectState`)
 - [ ] **SCHM-02**: Var nodes include `project` in MERGE key (fix cross-project collision bug)
-- [ ] **SCHM-03**: New node classes use unique ID prefixes (DS_ for DefState, OS_ for ObjectState, OI_ for ObjectInstance, IDR_ for IdRef)
+- [x] **SCHM-03**: New node classes use unique ID prefixes (DS_ for DefState, OS_ for ObjectState, OI_ for ObjectInstance, IDR_ for IdRef)
 - [ ] **SCHM-04**: Schema changes propagate across all 6 surfaces (cypher_template, dataset_schema, n8n prompts, NeoVis config, C# models, data-service)
 - [ ] **SCHM-05**: PropValue persists per `ValidationEntity` (NOT per `ObjectInstance`). Each ValidationEntity has one `propValue` (xsd:string lex form) and one `propValueOf` → `PropertyVariable` reference. Displayed in Model Viewer's passing/failing item list as one value per item per rule — preserves multi-rule, multi-property validation semantics
 - [ ] **SCHM-06**: Enum-valued discriminator properties (`variableKind`, `variableScope`, `kind`, `status`, `parameterType`) are modeled as OWL ObjectProperties pointing at NamedIndividuals in dedicated enum classes (`VariableKindValue`, `VariableScopeValue`, `DesignStateKindValue`, `ValidationStatusValue`, `DesignStateParameterTypeValue`), mirroring the existing `DesignStateParameterTypeValue` pattern
@@ -80,9 +80,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VTYP-01 | Phase 7 | Pending |
-| VTYP-02 | Phase 7 | Pending |
-| VTYP-03 | Phase 7 | Pending |
+| VTYP-01 | Phase 7 | Complete |
+| VTYP-02 | Phase 7 | Complete |
+| VTYP-03 | Phase 7 | Complete |
 | VTYP-04 | Phase 8 | Pending |
 | CMPST-01 | Phase 9 | Pending |
 | CMPST-02 | Phase 9 | Pending |
@@ -101,9 +101,9 @@
 | CTRCT-07 | Phase 10 | Pending |
 | CTRCT-08 | Phase 9 | Pending |
 | CTRCT-09 | Phase 9 | Pending |
-| SCHM-01 | Phase 7 | Pending |
+| SCHM-01 | Phase 7 | Complete |
 | SCHM-02 | Phase 7 | Pending |
-| SCHM-03 | Phase 7 | Pending |
+| SCHM-03 | Phase 7 | Complete |
 | SCHM-04 | Phase 7 | Pending |
 | SCHM-05 | Phase 11 | Pending |
 | SCHM-06 | Phase 7 | Pending |
@@ -112,6 +112,7 @@
 | INTG-03 | Phase 11 | Pending |
 
 **Coverage:**
+
 - v3.0 requirements: 30 total (23 original + 7 added in v3.1 ontology pass)
 - Mapped to phases: 30
 - Unmapped: 0
