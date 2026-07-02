@@ -1,122 +1,104 @@
-# Requirements: Design Grammar System v3.0 — Typed Variables and Composable Design State
+# Requirements: Design Grammar System — Milestone v7.0
 
-**Defined:** 2026-05-11
+**Defined:** 2026-07-02
 **Core Value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
+**Milestone goal:** Rebuild the DG Grasshopper addin around the ontology-aligned component schema (`ontology/GH_DesignGrammars.pdf`), rename Ontology V6→V7 to fully match the schema, and propagate the revised graph schema across every interconnected artifact.
 
-## v3.0 Requirements
+Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14 components; CLASSIFICATOR eliminated). Prior milestone v3.0 superseded — Phase 7 foundation (VariableKind, VariableTypeInferrer, DesignStateIdGenerator, Var merge-key fix) carries forward. Archived v3.0 requirements: `.planning/milestones/v3.0-REQUIREMENTS.md` (SCHM numbering continues from there).
 
-### Variable Typing
+## v7.0 Requirements
 
-- [x] **VTYP-01**: Variable type (Object vs Property) is inferred at read-time from SWRL atom structure — ClassAtom arg → Object, DataPropertyAtom arg-2 → Property
-- [x] **VTYP-02**: Object variables are cross-rule — same variable name maps to the same entity across all rules in a project
-- [x] **VTYP-03**: Property variables are rule-scoped — same name in different rules represents independent variables
-- [ ] **VTYP-04**: User can see Object and Property variables per rule via RULE DECONSTRUCT outputs
+### Ontology V7 (ONTO)
 
-### Composable State
+- [ ] **ONTO-01**: `apply_v7_rename.py` transforms `DesignGrammar-V6.owl` into `DesignGrammar-V7.owl` with all schema-notation renames applied (layer hubs `Ontograph`/`Validgraph`/`Computgraph`, `ObjProperty`, `DataProperty`, `Run`, `ObjState`, `ReStatus`), following the `apply_v6_*.py` script pattern
+- [ ] **ONTO-02**: `V6-to-V7-mapping.md` lists every renamed IRI (old → new) as a recovery-only guard for existing publications
+- [ ] **ONTO-03**: V7 models the state trio as DesignState subclasses — `ParamState` (renamed from DefState), new `PropState` (Rule + DataProperty + PropValue, building on existing `propValue`/`propValueOf`), `ObjState` (renamed from ObjectState)
+- [ ] **ONTO-04**: V7 adds rule-level `SWRL`, `RuleName`, `RuleDescription` datatype properties (renaming ruleTitle/ruleText) and Validgraph `SendStatus`/`ValidStatus` (Boolean); the investigation note resolves the PDF-internal ValidStatus-Boolean vs Status-text conflict (proposed: `Run.ValidStatus` Boolean overall pass + `Run.Status` text enum)
+- [ ] **ONTO-05**: V7 extension facades (standards / BOT / Topologic) and `catalog-v001-V7.xml` regenerated; `DesignGrammar-V7.md` documentation regenerated; ontology passes consistency check
+- [ ] **ONTO-06**: A component-port ↔ ontology-IRI mapping is documented for all 14 components (successor of GH-mapping)
 
-- [ ] **CMPST-01**: User can create an ObjectState by wiring an Object variable reference and geometry elements to the OBJECT STATE component (ObjectRef + GeoRef inputs)
-- [ ] **CMPST-02**: User can compose a DESIGN STATE from ObjectState and DefState inputs
-- [ ] **CMPST-03**: DESIGN STATE outputs auto-generated IdRefs (element IDs) for Object instances that persist while DefState is unchanged
-- [ ] **CMPST-04**: DESIGN STATE outputs GeoRefs matching the Object instances' geometry
-- [ ] **CMPST-05**: IdRefs regenerate when DefState input changes (new parameter config = new element IDs)
-- [ ] **CMPST-06**: ObjectInstance class exists as the cross-rule identity of a validated geometric element. ObjectInstance is 1:1 with ObjectState (its current binding snapshot). Both are cross-rule. ObjectInstance carries `OI_` ID prefix; ObjectState carries `OS_` ID prefix; DefState carries `DS_` ID prefix — all three IDs are distinct
-- [ ] **CMPST-07**: ObjectState State_Id format is `OS_<SHA256(projectId + objectInstanceId + variableName)>` — cross-rule (no ruleId in hash) because ObjectVariables are cross-rule (VTYP-02)
-- [ ] **CMPST-08**: IdRef represents the DesignState's auto-regenerated identifier. IdRef = DesignState ID, NOT ObjectState ID. IdRef regenerates whenever DefState changes (CMPST-05) and resolves to one or more ObjectInstance(s) for cross-run identity tracking (INTG-03)
+### Graph Schema Propagation (SCHM — continues v3.0 numbering, which ended at SCHM-06)
 
-### Component Contracts
+- [ ] **SCHM-07**: `cypher_template.txt` v4 — DesignState `kind` ∈ {ObjState, ParamState, PropState}; Run properties (ValidStatus Boolean, SendStatus Boolean, Status text); rule-level SWRL property
+- [ ] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
+- [ ] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
+- [ ] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema
+- [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds) and `index.html` hardcoded Cypher updated
+- [ ] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
 
-- [ ] **CTRCT-01**: METAGRAPH loads Runs alongside rules and exposes Objects, DesignStates, Runs outputs
-- [ ] **CTRCT-02**: RULE DECONSTRUCT exposes Objects, Properties, and Runs outputs; Variables and VariableName outputs are removed
-- [ ] **CTRCT-03**: CLASSIFICATOR uses v3.0 input layout (full reset): Rule, Objects, Properties, PropValues, IdRefs, GeoRefs, DefState; outputs BoundVariables, MissingVariables, Status, DefState, Values, Variables
-- [ ] **CTRCT-04**: CLASSIFICATOR Values output DataTree is index-matched with BoundVariables and Variables outputs
-- [ ] **CTRCT-05**: RUN DECONSTRUCT (new GUID, replaces VALIDATION RUNS) — input ValidRun; outputs passing items, failing items, Run Id, Date created, State
-- [ ] **CTRCT-06**: VARIABLE NAME component accepts Variable input and outputs its name
-- [ ] **CTRCT-07**: VALIDATOR input State renamed to DefState
-- [ ] **CTRCT-08**: OBJECT STATE component's ObjectRef input accepts a Variable of Object kind (a `dgm:ObjectVariable` reference from RULE DECONSTRUCT or VARIABLE NAME), not a raw string
-- [ ] **CTRCT-09**: OBJECT STATE component's GeoRef input accepts a list of geometry element handles (Speckle objectId / Rhino GUID) matching the ObjectInstance — one ObjectState may carry multiple GeoRefs
+### SpecGraph Runtime Rename (SPEC)
 
-### Schema & Data
+- [ ] **SPEC-01**: A migration script renames `graph:'KnowledgeGraph'`→`'SpecGraph'` and `Knowledge*`→`Spec*` node labels (incl. fulltext index recreation) on a live Neo4j database
+- [ ] **SPEC-02**: data-service knowledge endpoints operate on `Spec*` labels (endpoint URLs preserved for UI compatibility)
+- [ ] **SPEC-03**: n8n `knowledge-*.json` workflows operate on `Spec*` labels
+- [ ] **SPEC-04**: UI knowledge view and NeoVis config render `Spec*` labels
 
-- [x] **SCHM-01**: DesignState nodes use single label `:DesignState` with `kind` property (`DefState` | `ObjectState`)
-- [ ] **SCHM-02**: Var nodes include `project` in MERGE key (fix cross-project collision bug)
-- [x] **SCHM-03**: New node classes use unique ID prefixes (DS_ for DefState, OS_ for ObjectState, OI_ for ObjectInstance, IDR_ for IdRef)
-- [x] **SCHM-04**: Schema changes propagate across all 6 surfaces (cypher_template, dataset_schema, n8n prompts, NeoVis config, C# models, data-service)
-- [ ] **SCHM-05**: PropValue persists per `ValidationEntity` (NOT per `ObjectInstance`). Each ValidationEntity has one `propValue` (xsd:string lex form) and one `propValueOf` → `PropertyVariable` reference. Displayed in Model Viewer's passing/failing item list as one value per item per rule — preserves multi-rule, multi-property validation semantics
-- [x] **SCHM-06**: Enum-valued discriminator properties (`variableKind`, `variableScope`, `kind`, `status`, `parameterType`) are modeled as OWL ObjectProperties pointing at NamedIndividuals in dedicated enum classes (`VariableKindValue`, `VariableScopeValue`, `DesignStateKindValue`, `ValidationStatusValue`, `DesignStateParameterTypeValue`), mirroring the existing `DesignStateParameterTypeValue` pattern
+### DG.Core State Models (CORE)
 
-### Integration
+- [ ] **CORE-01**: `ObjState` model (Object reference, GeoRef, Label) replaces the ObjectState scaffolding
+- [ ] **CORE-02**: `ParamState` model (typed Number/Integer/Boolean parameters, deterministic StateId) adapted from DesignStateSnapshot
+- [ ] **CORE-03**: `PropState` model (Rule reference, DataProperty reference, PropValue)
+- [ ] **CORE-04**: `DesignState` composition model aggregates many ObjState/ParamState/PropState with per-class ID prefixes via DesignStateIdGenerator
+- [ ] **CORE-05**: `statePayloadJson` v2 serializes the 3-part composition with lossless round-trip (unit-tested)
 
-- [ ] **INTG-01**: E2E flow works: OBJECT STATE → DESIGN STATE → CLASSIFICATOR → VALIDATOR → RUN DECONSTRUCT
-- [ ] **INTG-02**: Existing rule validation workflow continues when no ObjectState is provided (backward compat for rules-only flow)
-- [ ] **INTG-03**: Validation run statePayloadJson includes IdRefs list for cross-run Object instance tracking
+### Graph Access Components (GHGA)
+
+- [ ] **GHGA-01**: CONNECTOR outputs a `Database` handle (renamed from Connection); inputs aligned to Neo4jURI/Neo4jUser/Neo4jPassword/Project (keeps db-name + Connect inputs)
+- [ ] **GHGA-02**: GRAPH DECONSTRUCT splits Database into Metagraph / Ontograph / ValidGraph / SpecGraph layer handles
+- [ ] **GHGA-03**: METAGRAPH accepts the Metagraph handle and outputs Rules + Objects (index-matched lists)
+- [ ] **GHGA-04**: ONTOGRAPH outputs Class / ObjProperties / DataProperties lists read from the OntoGraph layer
+- [ ] **GHGA-05**: VALIDATION GRAPH (replaces VALIDATION RUNS, new GUID) outputs Run / Status / DesignState lists read from the ValidGraph layer
+
+### State Components (GHST)
+
+- [ ] **GHST-01**: OBJECT STATE composes Object + Geometry + Label into ObjState
+- [ ] **GHST-02**: PARAMETER STATE captures a Parameters list into ParamState (variable-input pattern and deterministic StateId preserved from v2.0 DESIGN STATE)
+- [ ] **GHST-03**: PROPERTY STATE composes Rule + DataProperty + PropValue into PropState
+- [ ] **GHST-04**: DESIGN STATE composes many ObjState + ParamState + PropState into DesignState (index-matched list contract)
+- [ ] **GHST-05**: DESIGN STATE DECONSTRUCT splits DesignState into ObjState / ParamState / PropState
+- [ ] **GHST-06**: OBJECT DECONSTRUCT splits ObjState into Object / Geometry / Label
+- [ ] **GHST-07**: PARAMETER REINSTATE (reworked REINSTATE) applies ParamState on a rising-edge Reinstate trigger and outputs Parameters + StateStatus (7-value ReStatus reporting preserved)
+
+### Rules & Validation (GHVL)
+
+- [ ] **GHVL-01**: RULE DECONSTRUCT partitions rule variables into Objects + DataProperties outputs via VariableTypeInferrer (Variables/VariableName outputs removed; Rule/SWRL/RuleName/RuleDescription kept)
+- [ ] **GHVL-02**: CLASSIFICATOR component is removed from the plugin
+- [ ] **GHVL-03**: VALIDATOR implements the new contract — inputs Rule, DesignState, SendValid, Run; outputs ValidStatus, RuleName, RuleDescription, SendStatus — keeping non-overlapping extras (DataServiceUrl input; Report, FailingBindings, ValidationRunId, ModelViewerUrl outputs)
+- [ ] **GHVL-04**: VALIDATOR binds variables from the composed DesignState (ObjState → Object variables, PropState → Property values), replacing the CLASSIFICATOR/VariableBinder path
+- [ ] **GHVL-05**: The publish path persists a Run with ValidStatus/SendStatus and the 3-part state payload; VALIDATION GRAPH reads it back intact
+
+### End-to-End & Docs (E2E)
+
+- [ ] **E2E-01**: Full live chain on Docker completes without errors: rule ingest → METAGRAPH → RULE DECONSTRUCT → OBJECT/PARAMETER/PROPERTY STATE → DESIGN STATE → VALIDATOR → publish → VALIDATION GRAPH read-back → PARAMETER REINSTATE
+- [ ] **E2E-02**: Release notes document canvas breakage and re-wiring for every changed component; port↔IRI mapping doc published; DG_OBSIDIAN knowledge notes updated
+
+## Future Requirements
+
+<!-- Deferred to later milestones. -->
+
+- v4.0 BOT Ontology Bridge (planned milestone — BOT anchor nodes + ALIGNED_TO edges; facade regenerated for V7 in this milestone keeps it compatible)
+- Cross-rule Element-Id persistence on DesignState nodes (v3.0 CMPST idea — re-evaluate once ObjState identity is live)
+- Computgraph runtime layer (ontology models Algorithm/Procedure/Pattern — no runtime consumer yet; only `Computgraph.Parameter` is referenced by PARAMETER REINSTATE)
 
 ## Out of Scope
 
+<!-- Explicit exclusions with reasoning. -->
+
 | Feature | Reason |
 |---------|--------|
-| Auto-computed geometry-hash ObjectRef | Geometry regenerates on every solve; would break cross-run identity |
-| Migration shim for v2.0 canvases | Full reset chosen — document re-wire in release notes |
-| ObjectPropertyAtom variable inference | Only ClassAtom + DataPropertyAtom used in DG's bespoke SWRL parser subset |
-| Visual diff of design states across runs | Not required for composable state foundation |
-| Auto-detection of Object variables from geometry topology | Beyond v3.0 scope |
-
-## Key Decisions (v3.0)
-
-| Decision | Rationale |
-|----------|-----------|
-| Single label `:DesignState` + `kind` property | Mirrors `Rule.kind` pattern; deterministic NeoVis rendering; lower propagation surface |
-| New GUID for RUN DECONSTRUCT | Clean break from VALIDATION RUNS; accept canvas breakage; document re-wire |
-| CLASSIFICATOR full input reset (no compat) | Cleanest API for v3.0; existing v2.0 canvases require full re-wire |
-| PropValues = renamed Values | Same DataTree structure, narrower semantic scope (Property variables only) |
-| VALIDATOR input State → DefState | Consistency with CLASSIFICATOR output name |
-| Var merge key includes `project` | Fixes latent v2.0 cross-project collision bug; prerequisite for cross-rule identity |
-| ObjectInstance separate from ObjectState | ObjectInstance = stable cross-rule identity (OI_ prefix), ObjectState = binding snapshot (OS_ prefix). 1:1 cardinality. Survives geometry edits — ObjectState gets replaced, ObjectInstance does not |
-| ObjectRef input wires Variable, not string | OBJECT STATE's ObjectRef port takes a `dgm:ObjectVariable` reference (from RULE DECONSTRUCT). The user-supplied stable string (Rhino/Speckle GUID) lives on `dgv:objectRef` datatype property of ObjectState. Two distinct concepts |
-| IdRef ≠ ObjectState ID | IdRef is the DesignState's auto-generated ID (regenerates with DefState). ObjectState carries its own State_Id (OS_ prefix). Conflating the two would break cross-run identity tracking |
-| PropValue on ValidationEntity (not ObjectInstance) | Multi-rule validation requires per-(Run, Rule, ObjectInstance) values. ValidationEntity is already that cell. Placing PropValue on ObjectInstance would force overwrites across rules and lose data |
-| Enum discriminators as ObjectProperty + NamedIndividuals | Mirrors existing DesignStateParameterTypeValue pattern. Reasoner can validate value space; LLM has explicit vocabulary to reference |
+| VARIABLE NAME and RUN DECONSTRUCT components | v3.0 plan artifacts; not present in the GH_DesignGrammars schema |
+| Neo4j label renames beyond Knowledge*→Spec* (ValidationRun→Run, DatatypeProperty→DataProperty in DB) | Ontology↔DB mapping documented instead; migration cost outweighs benefit |
+| CLASSIFICATOR backward compatibility / migration shim | Component eliminated by design; release notes cover re-wiring |
+| Arbitrary geometry serialization in ParamState | Number/Integer/Boolean limit stands (v2.0 decision) |
+| LLM fine-tuning for the v4 schema | Prompt-constrained approach continues |
 
 ## Traceability
 
+<!-- Filled by roadmap creation. -->
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VTYP-01 | Phase 7 | Complete |
-| VTYP-02 | Phase 7 | Complete |
-| VTYP-03 | Phase 7 | Complete |
-| VTYP-04 | Phase 8 | Pending |
-| CMPST-01 | Phase 9 | Pending |
-| CMPST-02 | Phase 9 | Pending |
-| CMPST-03 | Phase 9 | Pending |
-| CMPST-04 | Phase 9 | Pending |
-| CMPST-05 | Phase 9 | Pending |
-| CMPST-06 | Phase 9 | Pending |
-| CMPST-07 | Phase 9 | Pending |
-| CMPST-08 | Phase 9 | Pending |
-| CTRCT-01 | Phase 8 | Pending |
-| CTRCT-02 | Phase 8 | Pending |
-| CTRCT-03 | Phase 10 | Pending |
-| CTRCT-04 | Phase 10 | Pending |
-| CTRCT-05 | Phase 11 | Pending |
-| CTRCT-06 | Phase 8 | Pending |
-| CTRCT-07 | Phase 10 | Pending |
-| CTRCT-08 | Phase 9 | Pending |
-| CTRCT-09 | Phase 9 | Pending |
-| SCHM-01 | Phase 7 | Complete |
-| SCHM-02 | Phase 7 | Pending |
-| SCHM-03 | Phase 7 | Complete |
-| SCHM-04 | Phase 7 | Complete |
-| SCHM-05 | Phase 11 | Pending |
-| SCHM-06 | Phase 7 | Complete |
-| INTG-01 | Phase 12 | Pending |
-| INTG-02 | Phase 12 | Pending |
-| INTG-03 | Phase 11 | Pending |
-
-**Coverage:**
-
-- v3.0 requirements: 30 total (23 original + 7 added in v3.1 ontology pass)
-- Mapped to phases: 30
-- Unmapped: 0
+| (pending roadmap) | | |
 
 ---
-*Requirements defined: 2026-05-11*
-*Last updated: 2026-05-14 — added CMPST-06..08, CTRCT-08..09, SCHM-05..06 from ontology audit (ObjectInstance/GeoRef/IdRef classes, PropValue on ValidationEntity, enum discriminators)*
+*34 requirements across 8 categories. On completion they move to PROJECT.md Validated.*
