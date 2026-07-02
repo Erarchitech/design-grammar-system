@@ -94,11 +94,19 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ## Traceability
 
-<!-- Filled by roadmap creation. -->
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (pending roadmap) | | |
+| ONTO-01 … ONTO-06 | Phase 13: Ontology V7 and Contract Investigation | Pending |
+| SCHM-07 … SCHM-12 | Phase 14: Graph Schema v4 Propagation | Pending |
+| SPEC-01 … SPEC-04 | Phase 15: SpecGraph Runtime Rename | Pending |
+| CORE-01 … CORE-05 | Phase 16: DG.Core State Models and State Components | Pending |
+| GHST-01 … GHST-04 | Phase 16: DG.Core State Models and State Components | Pending |
+| GHGA-01 … GHGA-05 | Phase 17: Graph Access Components | Pending |
+| GHVL-01 … GHVL-05 | Phase 18: Rules and Validator Rework | Pending |
+| GHST-05 … GHST-07 | Phase 19: Deconstruct and Reinstate Components | Pending |
+| E2E-01 … E2E-02 | Phase 20: E2E Validation and Docs | Pending |
+
+**Coverage:** 34/34 requirements mapped to exactly one phase — no orphans.
 
 ---
 *34 requirements across 8 categories. On completion they move to PROJECT.md Validated.*
