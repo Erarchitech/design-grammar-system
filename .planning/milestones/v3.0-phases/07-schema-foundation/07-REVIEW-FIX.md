@@ -1,7 +1,7 @@
 ---
 phase: 07-schema-foundation
 fixed_at: 2026-06-23T11:45:00Z
-review_path: .planning/phases/07-schema-foundation/07-REVIEW.md
+review_path: .planning/milestones/v3.0-phases/07-schema-foundation/07-REVIEW.md
 iteration: 1
 findings_in_scope: 5
 fixed: 4
@@ -12,7 +12,7 @@ status: partial
 # Phase 07: Code Review Fix Report
 
 **Fixed at:** 2026-06-23T11:45:00Z
-**Source review:** .planning/phases/07-schema-foundation/07-REVIEW.md
+**Source review:** .planning/milestones/v3.0-phases/07-schema-foundation/07-REVIEW.md
 **Iteration:** 1
 
 **Summary:**

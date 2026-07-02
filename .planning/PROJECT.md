@@ -8,22 +8,21 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v3.0 Typed Variables and Composable Design State
+## Current Milestone: v7.0 Update of DG Addin for Grasshopper
 
-**Goal:** Restructure DG schema and components around typed variables (Object vs Property) and a parent `DesignState` class composed of `DefState` + `ObjectState`, enabling cross-rule object identity, richer state composition, and a deconstructed run/rule data flow in Grasshopper.
+**Goal:** Rebuild the DG Grasshopper addin around the ontology-aligned component schema (`ontology/GH_DesignGrammars.pdf`) — 14 components whose every output carries an explicit ontology reference — with the ontology renamed V6→V7 to fully match the schema, and all interconnected artifacts (graph schema templates, n8n prompts, NeoVis config, data-service) propagated consistently.
 
 **Target features:**
 
-- Variable type inference (Object vs Property) from SWRL atoms (Class atom → Object; datatype property atom → Property)
-- Object variable cross-rule identity — same Object variable is shared across rules; Element Ids stored on `DesignState` node persist cross-rule and regenerate only when `DefState` changes
-- `DesignState` class hierarchy: parent class with `DefState` (parametric capture, existing) and `ObjectState` (new: `ObjectRef` + `GeoRef`) subclasses; unique ID prefixes per class
-- New components: `OBJECT STATE` (ObjectRef + GeoRef inputs), `VARIABLE NAME` (Variable in → name out)
-- Reworked `DESIGN STATE` component — inputs `ObjectState` + `DefState`; outputs `IdRefs`, `GeoRefs`, `DefState`
-- Reworked `CLASSIFICATOR` — `ElementRefs` renamed to `GeoRefs` and wired from `DESIGN STATE.GeoRefs`; add `Rule`/`Objects`/`Properties`/`PropValues`/`IdRefs`/`DefState` inputs; outputs add `DefState` (renamed from `State`), `Values` (DataTree), `Variables`
-- Updated `RULE DECONSTRUCT` — new outputs `Objects`, `Properties`, `Runs`; remove obsolete `Variables` and `VariableName` outputs
-- Renamed `VALIDATION RUNS` → `RUN DECONSTRUCT` — input `ValidRun`; outputs `passing items`, `failing items` (both element id lists), `Run Id`, `Date created`, `State`
-- `METAGRAPH` loads Runs data and gains outputs `Objects`, `Properties`, `DesignStates`, `Runs`
-- Schema-propagation updates across `cypher_template.txt`, `dataset_schema.json`, n8n prompts, NeoVis config, and any Cypher templates in Python/JS
+- Ontology V7: full rename of V6 to match schema notation (V6 is publication-only, no runtime consumer); V6→V7 IRI mapping file as recovery guard; new concepts `ParamState` (renames DefState), `PropState`, `SendStatus`, rule-level `SWRL`/`RuleName`/`RuleDescription` properties; consistency investigation resolves PDF-internal conflicts (ValidStatus Boolean vs Status text)
+- State capture trio: `OBJECT STATE` (Object+Geometry+Label→ObjState), `PARAMETER STATE` (Parameters→ParamState, successor of the v2.0 DESIGN STATE capture), `PROPERTY STATE` (Rule+DataProperty+PropValue→PropState)
+- `DESIGN STATE` reworked as composition: ObjState+ParamState+PropState (each many) → DesignState; index-matched list contract
+- Graph access chain: `CONNECTOR` (→Database), new `GRAPH DECONSTRUCT` (→Metagraph/Ontograph/ValidGraph/SpecGraph), `METAGRAPH` (+Objects output), new `ONTOGRAPH` (Class/ObjProperties/DataProperties), new `VALIDATION GRAPH` (Run/Status/DesignState — replaces VALIDATION RUNS)
+- Deconstruction: new `DESIGN STATE DECONSTRUCT` (→ObjState/ParamState/PropState), new `OBJECT DECONSTRUCT` (→Object/Geometry/Label); `RULE DECONSTRUCT` partitions variables into Objects + DataProperties (via shipped VariableTypeInferrer)
+- `VALIDATOR` reworked: Rule/DesignState/SendValid/Run → ValidStatus/RuleName/RuleDescription/SendStatus (+ kept publish extras); binding driven by composed DesignState — **CLASSIFICATOR eliminated**
+- `PARAMETER REINSTATE` (reworked REINSTATE): ParamState+Reinstate → Parameters/StateStatus
+- KnowledgeGraph→SpecGraph runtime rename (data-service, n8n knowledge workflows, NeoVis, UI + DB migration) — closes ontology↔runtime drift
+- Schema propagation across `cypher_template.txt`, `dataset_schema.json`, n8n prompts, `config.template.js`, `index.html`, data-service Cypher, C# repositories, test fixtures
 
 ## Requirements
 
@@ -53,18 +52,17 @@ Architects can express design constraints in plain language and instantly valida
 
 <!-- Current scope. Building toward these. -->
 
-**Milestone v3.0 — Typed Variables and Composable Design State**
+**Milestone v7.0 — Update of DG Addin for Grasshopper** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
 
-- [ ] Variable type inference (Object vs Property) from SWRL atoms
-- [ ] Object variable cross-rule identity (shared instance + cross-rule Element Ids)
-- [ ] `DesignState` class hierarchy with `DefState` + `ObjectState` subclasses
-- [ ] `OBJECT STATE` and `VARIABLE NAME` Grasshopper components
-- [ ] Reworked `DESIGN STATE` (IdRefs / GeoRefs / DefState outputs)
-- [ ] Reworked `CLASSIFICATOR` (Rule/Objects/Properties/PropValues/IdRefs/GeoRefs/DefState inputs; Values + Variables outputs; ElementRefs → GeoRefs rename wired from DESIGN STATE)
-- [ ] `RULE DECONSTRUCT` outputs Objects, Properties, Runs (Variables / VariableName removed)
-- [ ] `VALIDATION RUNS` renamed to `RUN DECONSTRUCT` (passing/failing items, Run Id, Date, State)
-- [ ] `METAGRAPH` loads Runs and exposes Objects / Properties / DesignStates / Runs outputs
-- [ ] Unique ID prefixes for new node classes; schema-propagation updates (Cypher template, dataset schema, n8n prompts, NeoVis config)
+- [ ] Ontology V7 (full V6 rename to schema notation + ParamState/PropState/SendStatus/SWRL additions; V6→V7 recovery mapping file)
+- [ ] Graph schema propagation v4 (cypher_template, dataset_schema, n8n prompts, NeoVis, data-service)
+- [ ] SpecGraph runtime rename (KnowledgeGraph→SpecGraph + Knowledge*→Spec* labels, DB migration)
+- [ ] DG.Core state models: ObjState / ParamState / PropState / DesignState composition
+- [ ] Graph access components: CONNECTOR, GRAPH DECONSTRUCT, METAGRAPH, ONTOGRAPH, VALIDATION GRAPH
+- [ ] State components: OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE (composition)
+- [ ] Deconstruct/reinstate: DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
+- [ ] RULE DECONSTRUCT partition (Objects + DataProperties); VALIDATOR rework; CLASSIFICATOR elimination
+- [ ] E2E live chain + docs (GH-mapping regeneration, release notes for canvas breakage)
 
 ### Out of Scope
 
@@ -73,12 +71,14 @@ Architects can express design constraints in plain language and instantly valida
 - Fine-tuning LLM — using prompt-constrained approach instead
 - OAuth/SSO — client-side SHA-256 auth sufficient for current use
 - Mobile app — desktop/web-first for architect workflows
-- Arbitrary object/geometry serialization in DESIGN STATE — v2.0 limited to Number/Integer/Boolean for deterministic reinstatement
+- Arbitrary object/geometry serialization in state capture — limited to Number/Integer/Boolean for deterministic reinstatement (v2.0 decision, still holds)
 - Cross-project state sharing — project isolation remains mandatory
+- v3.0 Phases 8–12 component plan (CLASSIFICATOR rework, RUN DECONSTRUCT, VARIABLE NAME, IdRefs/GeoRefs DESIGN STATE) — superseded 2026-07-02 by the GH_DesignGrammars.pdf schema; do not re-add: CLASSIFICATOR is eliminated by design, run reading is VALIDATION GRAPH's role
+- Neo4j label renames beyond Knowledge*→Spec* (e.g. ValidationRun→Run, DatatypeProperty→DataProperty in DB) — DB keeps existing labels/graph values; ontology↔DB mapping is documented instead (propagation cost outweighs benefit)
 
 ## Current State
 
-Shipped v2.0 on 2026-05-10. All 18 v2.0 requirements validated via human UAT.
+Shipped v2.0 on 2026-05-10 (18/18 requirements validated via human UAT). v3.0 superseded on 2026-07-02 after Phase 7 (Schema Foundation) shipped: VariableKind + VariableTypeInferrer, DesignStateIdGenerator, Var merge-key fix, schema propagation v3.1 — all carried into v7.0. Starting v7.0: addin rebuild per `ontology/GH_DesignGrammars.pdf` + Ontology V7.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -124,14 +124,19 @@ Shipped v2.0 on 2026-05-10. All 18 v2.0 requirements validated via human UAT.
 | Rising-edge trigger for reinstatement | Prevents auto-apply on wire change | ✓ Good — v2.0 |
 | Separate Vite app for Model Viewer | Complex 3D viewer needs build tooling | ✓ Good — v2.0 |
 | localStorage per-project for grouping prefs | No cross-project state leakage | ✓ Good — v2.0 |
-| Single `:DesignState` label + `kind` property | Mirrors `Rule.kind` pattern; deterministic NeoVis; lower propagation surface | — Pending — v3.0 |
-| New GUID for RUN DECONSTRUCT (no migration shim) | Clean break from VALIDATION RUNS; accept canvas breakage; release notes document re-wire | — Pending — v3.0 |
-| CLASSIFICATOR full input reset (no backward compat) | Cleanest v3.0 API; v2.0 canvases require re-wire | — Pending — v3.0 |
-| PropValues = renamed Values (same DataTree structure) | Narrower semantic scope: Property variables only | — Pending — v3.0 |
-| VALIDATOR input State → DefState | Consistency with CLASSIFICATOR output name | — Pending — v3.0 |
-| Var merge key includes `project` | Fixes latent v2.0 cross-project collision bug; prerequisite for cross-rule identity | — Pending — v3.0 |
-| Variable type inferred at read-time (not stored on Var nodes) | 100% computable from atom structure; avoids schema change on Var nodes | — Pending — v3.0 |
-| ObjectRef is user-supplied string (not geometry-hash) | Geometry regenerates on every GH solve; hash would break cross-run identity | — Pending — v3.0 |
+| Single `:DesignState` label + `kind` property | Mirrors `Rule.kind` pattern; deterministic NeoVis; lower propagation surface | ✓ Carried into v7.0 (kind enum revised to ObjState/ParamState/PropState) |
+| New GUID for RUN DECONSTRUCT (no migration shim) | Clean break from VALIDATION RUNS; accept canvas breakage | ✗ Superseded — v7.0 (component dropped; VALIDATION GRAPH takes the role) |
+| CLASSIFICATOR full input reset (no backward compat) | Cleanest v3.0 API | ✗ Superseded — v7.0 (CLASSIFICATOR eliminated entirely) |
+| PropValues = renamed Values (same DataTree structure) | Narrower semantic scope | ✗ Superseded — v7.0 (PROPERTY STATE owns value binding) |
+| VALIDATOR input State → DefState | Consistency with CLASSIFICATOR output name | ✗ Superseded — v7.0 (input is DesignState composition) |
+| Var merge key includes `project` | Fixes latent v2.0 cross-project collision bug | ✓ Shipped — v3.0 Phase 7 |
+| Variable type inferred at read-time (not stored on Var nodes) | 100% computable from atom structure | ✓ Shipped — v3.0 Phase 7 (drives RULE DECONSTRUCT Objects/DataProperties partition) |
+| ObjectRef is user-supplied string (not geometry-hash) | Geometry regenerates on every GH solve; hash would break cross-run identity | ✓ Carried into v7.0 (OBJECT STATE Label input) |
+| Full ontology rename V6→V7 to match GH schema | V6 is publication-only, no runtime consumer; schema is the single source of naming | — Pending — v7.0 |
+| V6→V7 IRI mapping file (recovery-only) | Guard against rename regret; publications reference V6 names | — Pending — v7.0 |
+| KnowledgeGraph→SpecGraph runtime rename in scope | Closes pre-existing ontology↔runtime drift; GRAPH DECONSTRUCT exposes SpecGraph | — Pending — v7.0 |
+| Component ports: update where overlapping, keep where no overlap | Preserves publish extras (DataServiceUrl, Report, ValidationRunId…) without schema conflict | — Pending — v7.0 |
+| DB keeps existing labels except Knowledge*→Spec* | Ontology↔DB mapping documented; avoids invasive migrations | — Pending — v7.0 |
 
 ## Evolution
 
@@ -151,4 +156,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-10 after starting milestone v3.0*
+*Last updated: 2026-07-02 after starting milestone v7.0*

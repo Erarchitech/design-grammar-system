@@ -1,5 +1,18 @@
 # Milestones
 
+## v3.0 Typed Variables and Composable Design State (Superseded: 2026-07-02)
+
+**Status:** Superseded by v7.0 — Update of DG Addin for Grasshopper
+**Timeline:** 2026-05-11 → 2026-07-02
+
+Phase 7 (Schema Foundation) **shipped** and carries forward into v7.0: `VariableKind` enum + `VariableTypeInferrer` priority-chain classifier, `DesignStateIdGenerator` (DS_/OS_/OI_ prefixes), Var merge-key cross-project fix, DefState/ObjectState model scaffolding, schema propagation v3.1.
+
+Phases 8–12 (METAGRAPH expansion, OBJECT STATE + DESIGN STATE rework, CLASSIFICATOR rework, RUN DECONSTRUCT, E2E) **dropped** — the component plan was replaced wholesale by the `ontology/GH_DesignGrammars.pdf` schema (CLASSIFICATOR eliminated; state capture decomposed into OBJECT/PARAMETER/PROPERTY STATE; graph access decomposed into GRAPH DECONSTRUCT + ONTOGRAPH + VALIDATION GRAPH).
+
+→ [Requirements](v3.0-REQUIREMENTS.md) | [Roadmap](v3.0-ROADMAP.md) | [Phase 7 archive](v3.0-phases/)
+
+---
+
 ## v4.0 BOT Ontology Bridge (Planned)
 
 **Status:** Planned — pending v3.0 completion
