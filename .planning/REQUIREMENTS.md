@@ -13,7 +13,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **ONTO-01**: `apply_v7_rename.py` transforms `DesignGrammar-V6.owl` into `DesignGrammar-V7.owl` with all schema-notation renames applied (layer hubs `Ontograph`/`Validgraph`/`Computgraph`, `ObjProperty`, `DataProperty`, `Run`, `ObjState`, `ReStatus`), following the `apply_v6_*.py` script pattern
 - [ ] **ONTO-02**: `V6-to-V7-mapping.md` lists every renamed IRI (old → new) as a recovery-only guard for existing publications
 - [ ] **ONTO-03**: V7 models the state trio as DesignState subclasses — `ParamState` (renamed from DefState), new `PropState` (Rule + DataProperty + PropValue, building on existing `propValue`/`propValueOf`), `ObjState` (renamed from ObjectState)
-- [ ] **ONTO-04**: V7 adds rule-level `SWRL`, `RuleName`, `RuleDescription` datatype properties (renaming ruleTitle/ruleText) and Validgraph `SendStatus`/`ValidStatus` (Boolean); the investigation note resolves the PDF-internal ValidStatus-Boolean vs Status-text conflict (proposed: `Run.ValidStatus` Boolean overall pass + `Run.Status` text enum)
+- [ ] **ONTO-04**: V7 adds rule-level `SWRL`, `RuleName`, `RuleDescription` datatype properties (renaming ruleTitle/ruleText) and Validgraph `SendStatus`/`ValidStatus` (Boolean); the investigation note resolves ALL flagged conflicts: (a) PDF-internal ValidStatus-Boolean vs Status-text (proposed: `Run.ValidStatus` Boolean overall pass + `Run.Status` text enum); (b) DesignState storage layer — `cypher_template.txt` stores DesignState with `graph='Metagraph'` while the PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle (and the PDF itself says "New Design State can only pass to Metagraph through Validator"); (c) ontology version-marker policy — V6 owl carries both `versionInfo 6.1` and a stale `rdfs:comment "Schema version: v3"`
 - [ ] **ONTO-05**: V7 extension facades (standards / BOT / Topologic) and `catalog-v001-V7.xml` regenerated; `DesignGrammar-V7.md` documentation regenerated; ontology passes consistency check
 - [ ] **ONTO-06**: A component-port ↔ ontology-IRI mapping is documented for all 14 components (successor of GH-mapping)
 
@@ -23,8 +23,10 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
 - [ ] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
 - [ ] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema
-- [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds) and `index.html` hardcoded Cypher updated
+- [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds; reconcile the duplicate DatatypeProperty/DataProperty label entries) and `index.html` hardcoded Cypher updated
 - [ ] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
+- [ ] **SCHM-13**: A migration script (following `migrations/` pattern) renames existing DesignState `kind` values (DefState→ParamState, ObjectState→ObjState) and applies the Phase-13 layer-placement decision on dev databases
+- [ ] **SCHM-14**: `training/updated_cypher_reference_examples_v3.cypher` gets a v4 successor and `test/` fixtures referencing v3 state kinds are updated — no runtime or LLM few-shot artifact still teaches the old schema
 
 ### SpecGraph Runtime Rename (SPEC)
 
@@ -66,11 +68,14 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **GHVL-03**: VALIDATOR implements the new contract — inputs Rule, DesignState, SendValid, Run; outputs ValidStatus, RuleName, RuleDescription, SendStatus — keeping non-overlapping extras (DataServiceUrl input; Report, FailingBindings, ValidationRunId, ModelViewerUrl outputs)
 - [ ] **GHVL-04**: VALIDATOR binds variables from the composed DesignState (ObjState → Object variables, PropState → Property values), replacing the CLASSIFICATOR/VariableBinder path
 - [ ] **GHVL-05**: The publish path persists a Run with ValidStatus/SendStatus and the 3-part state payload; VALIDATION GRAPH reads it back intact
+- [ ] **GHVL-06**: The Model Viewer keeps working against v7.0 data — data-service `_project_state_summary` and the `/validation/runs` projection are adapted to statePayloadJson v2, and `useValidationRunsGrouping` (group-by-State via `state.stateId`) plus ValidationRunsStrip render correctly for runs with 3-part states
 
 ### End-to-End & Docs (E2E)
 
 - [ ] **E2E-01**: Full live chain on Docker completes without errors: rule ingest → METAGRAPH → RULE DECONSTRUCT → OBJECT/PARAMETER/PROPERTY STATE → DESIGN STATE → VALIDATOR → publish → VALIDATION GRAPH read-back → PARAMETER REINSTATE
-- [ ] **E2E-02**: Release notes document canvas breakage and re-wiring for every changed component; port↔IRI mapping doc published; DG_OBSIDIAN knowledge notes updated
+- [ ] **E2E-02**: Release notes document canvas breakage and re-wiring for every changed component; port↔IRI mapping doc published
+- [ ] **E2E-03**: Repo/AI-assistant docs updated to schema v4 and the v7.0 component set: `CLAUDE.md` (Graph Schema section + Schema Change Propagation list), `.github/copilot-instructions.md` (currently mandates "v3 as source of truth"), `spec/DATABASE.md`, `README.md`
+- [ ] **E2E-04**: DG_OBSIDIAN reflects v7.0: the "Graph schema v3 is the canonical data model" atlas note superseded/updated, stale component notes annotated, and the graphify knowledge graph regenerated via `scripts/refresh_graphify.sh` so community notes (e.g. CLASSIFICATOR Component, ValidationRunsComponent, v3.0-phase notes) no longer describe deleted/renamed code as current
 
 ## Future Requirements
 
@@ -97,16 +102,17 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ONTO-01 … ONTO-06 | Phase 13: Ontology V7 and Contract Investigation | Pending |
-| SCHM-07 … SCHM-12 | Phase 14: Graph Schema v4 Propagation | Pending |
+| SCHM-07 … SCHM-14 | Phase 14: Graph Schema v4 Propagation | Pending |
 | SPEC-01 … SPEC-04 | Phase 15: SpecGraph Runtime Rename | Pending |
 | CORE-01 … CORE-05 | Phase 16: DG.Core State Models and State Components | Pending |
 | GHST-01 … GHST-04 | Phase 16: DG.Core State Models and State Components | Pending |
 | GHGA-01 … GHGA-05 | Phase 17: Graph Access Components | Pending |
-| GHVL-01 … GHVL-05 | Phase 18: Rules and Validator Rework | Pending |
+| GHVL-01 … GHVL-06 | Phase 18: Rules and Validator Rework | Pending |
 | GHST-05 … GHST-07 | Phase 19: Deconstruct and Reinstate Components | Pending |
-| E2E-01 … E2E-02 | Phase 20: E2E Validation and Docs | Pending |
+| E2E-01 … E2E-04 | Phase 20: E2E Validation and Docs | Pending |
 
-**Coverage:** 34/34 requirements mapped to exactly one phase — no orphans.
+**Coverage:** 39/39 requirements mapped to exactly one phase — no orphans.
+*Amended 2026-07-02 after full-codebase audit: +SCHM-13/14 (kind migration, training/test fixtures), +GHVL-06 (Model Viewer read-side), +E2E-03/04 (repo/AI docs, DG_OBSIDIAN+graphify refresh); ONTO-04 scope extended with DesignState layer-placement and version-marker conflicts.*
 
 ---
-*34 requirements across 8 categories. On completion they move to PROJECT.md Validated.*
+*39 requirements across 8 categories. On completion they move to PROJECT.md Validated.*

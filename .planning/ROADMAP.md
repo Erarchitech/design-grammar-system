@@ -15,13 +15,13 @@
 Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 components; CLASSIFICATOR eliminated).
 
 - [ ] **Phase 13: Ontology V7 and Contract Investigation** — Critical investigation resolves PDF-internal conflicts; full V6→V7 rename to schema notation; V6→V7 recovery mapping; port↔IRI map for all 14 components
-- [ ] **Phase 14: Graph Schema v4 Propagation** — cypher_template v4, dataset_schema v4, n8n ingest+query prompts, NeoVis config, index.html, data-service Cypher
+- [ ] **Phase 14: Graph Schema v4 Propagation** — cypher_template v4, dataset_schema v4, n8n ingest+query prompts, NeoVis config, index.html, data-service Cypher, kind-migration script, training examples + test fixtures
 - [ ] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
 - [ ] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
-- [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension
+- [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation
 - [ ] **Phase 19: Deconstruct and Reinstate Components** — DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
-- [ ] **Phase 20: E2E Validation and Docs** — Live Docker E2E chain, release notes for canvas breakage, port↔IRI mapping published, DG_OBSIDIAN notes
+- [ ] **Phase 20: E2E Validation and Docs** — Live Docker E2E chain, release notes for canvas breakage, port↔IRI mapping published, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh
 
 <details>
 <summary>⛔ v3.0 Typed Variables and Composable Design State — SUPERSEDED 2026-07-02</summary>
@@ -67,7 +67,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
   1. Running `python ontology/apply_v7_rename.py` produces `DesignGrammar-V7.owl` where the state trio exists as DesignState subclasses (ObjState, ParamState, PropState), rule-level SWRL/RuleName/RuleDescription datatype properties exist, and Validgraph carries SendStatus + ValidStatus (Boolean)
   2. `V6-to-V7-mapping.md` lists every renamed IRI old→new — spot-checking any V6 publication name finds its V7 successor
-  3. The investigation note records the resolution of the PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict and the final state-kind names; every output port of the 14 schema components resolves to a V7 IRI in the port↔IRI map — zero unmapped references
+  3. The investigation note records the resolution of the PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict, the DesignState storage-layer conflict (cypher_template stores DesignState in Metagraph; the PDF's VALIDATION GRAPH reads it from ValidGraph), the ontology version-marker policy (V6 owl carries both versionInfo 6.1 and a stale "Schema version: v3" comment), and the final state-kind names; every output port of the 14 schema components resolves to a V7 IRI in the port↔IRI map — zero unmapped references
   4. V7 extension facades (standards/BOT/Topologic), `catalog-v001-V7.xml`, and regenerated `DesignGrammar-V7.md` load/parse without errors
 
 **Plans**: TBD
@@ -76,13 +76,14 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Goal**: Every artifact that hard-codes the Neo4j graph schema speaks v4 — three state kinds, Run validation properties, rule-level SWRL — so LLM ingest, querying, visualization, and the data-service agree before any component code changes
 **Depends on**: Phase 13 (final names locked)
-**Requirements**: SCHM-07, SCHM-08, SCHM-09, SCHM-10, SCHM-11, SCHM-12
+**Requirements**: SCHM-07, SCHM-08, SCHM-09, SCHM-10, SCHM-11, SCHM-12, SCHM-13, SCHM-14
 **Success Criteria** (what must be TRUE):
 
-  1. `cypher_template.txt` declares SCHEMA VERSION v4 with DesignState `kind` ∈ {ObjState, ParamState, PropState}, Run properties (ValidStatus, SendStatus, Status), and a rule-level SWRL property; `dataset_schema.json` mirrors it exactly
+  1. `cypher_template.txt` declares SCHEMA VERSION v4 with DesignState `kind` ∈ {ObjState, ParamState, PropState}, the Phase-13 layer placement, Run properties (ValidStatus, SendStatus, Status), and a rule-level SWRL property; `dataset_schema.json` mirrors it exactly
   2. A live rule ingest through the n8n webhook generates Cypher that validates against the v4 template (correct labels, kinds, and Run properties)
   3. The n8n graph-query prompt describes the v4 data model; a natural-language query about design states returns results using the new kind values
-  4. NeoVis renders all three state kinds with distinct colors from `config.template.js`; no `DefState`/`ObjectState` kind entries remain in any runtime artifact
+  4. NeoVis renders all three state kinds with distinct colors from `config.template.js` (duplicate DatatypeProperty/DataProperty entries reconciled); no `DefState`/`ObjectState` kind entries remain in any runtime artifact
+  5. Running the kind-migration script on a dev database leaves zero nodes with `kind` in {DefState, ObjectState}; the v4 successor of `updated_cypher_reference_examples_v3.cypher` and updated `test/` fixtures contain no v3 state kinds
 
 **Plans**: TBD
 
@@ -132,13 +133,14 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Goal**: Validation flows entirely through the composed DesignState — RULE DECONSTRUCT partitions typed variables, VALIDATOR evaluates and publishes runs, and CLASSIFICATOR is gone
 **Depends on**: Phase 16 (DesignState composition), Phase 17 (Rule flow via METAGRAPH)
-**Requirements**: GHVL-01, GHVL-02, GHVL-03, GHVL-04, GHVL-05
+**Requirements**: GHVL-01, GHVL-02, GHVL-03, GHVL-04, GHVL-05, GHVL-06
 **Success Criteria** (what must be TRUE):
 
   1. RULE DECONSTRUCT wired to a rule shows Objects and DataProperties as separate outputs — each variable appears in exactly one output
   2. VALIDATOR wired with Rule + DesignState and Run=true outputs ValidStatus/RuleName/RuleDescription; with SendValid=true it publishes and returns SendStatus=true
   3. CLASSIFICATOR is absent from the built plugin; opening a v2.0 canvas shows a missing-component placeholder (release notes cover re-wiring)
   4. A published Run persists ValidStatus, SendStatus, and the 3-part state payload — confirmed by direct Neo4j query and read-back through VALIDATION GRAPH
+  5. The Model Viewer lists and groups runs published with v2 payloads — group-by-State works via the adapted `_project_state_summary` projection, and pre-v7.0 runs with v1 payloads still render (read-side tolerance)
 
 **Plans**: TBD
 
@@ -159,12 +161,14 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Goal**: The full v7.0 pipeline runs end-to-end on live Docker with no data loss, and every breaking change is documented for canvas migration
 **Depends on**: Phases 13–19
-**Requirements**: E2E-01, E2E-02
+**Requirements**: E2E-01, E2E-02, E2E-03, E2E-04
 **Success Criteria** (what must be TRUE):
 
   1. On live Docker: rule ingest → METAGRAPH → RULE DECONSTRUCT → OBJECT/PARAMETER/PROPERTY STATE → DESIGN STATE → VALIDATOR (publish) → VALIDATION GRAPH read-back → PARAMETER REINSTATE completes without errors in one canvas session
-  2. Release notes document canvas breakage and re-wiring per component; the port↔IRI mapping doc is published; DG_OBSIDIAN knowledge notes and index updated
-  3. All 34 v7.0 requirements are checked off in REQUIREMENTS.md with traceability complete
+  2. Release notes document canvas breakage and re-wiring per component; the port↔IRI mapping doc is published
+  3. `grep -ri "schema v3\|v3 schema"` over CLAUDE.md, .github/copilot-instructions.md, spec/, README.md returns no hits presenting v3 as current — all repo/AI-assistant docs teach schema v4 and the 14-component set
+  4. DG_OBSIDIAN reflects v7.0: schema-v3 atlas note superseded, graphify regenerated via `scripts/refresh_graphify.sh` — no community note describes CLASSIFICATOR/VALIDATION RUNS or v3.0-phase plans as current work
+  5. All 39 v7.0 requirements are checked off in REQUIREMENTS.md with traceability complete
 
 **Plans**: TBD
 
@@ -185,6 +189,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 ---
 
+*Roadmap updated: 2026-07-02 (audit amendment) — +5 requirements from full-codebase audit: kind-migration + training/test fixtures (Phase 14), Model Viewer read-side (Phase 18), repo/AI docs + DG_OBSIDIAN/graphify refresh (Phase 20); Phase 13 investigation scope extended with DesignState layer-placement and version-marker conflicts*
 *Roadmap updated: 2026-07-02 — v7.0 phases 13-20 defined; v3.0 superseded (Phase 7 shipped, carried forward)*
 *Roadmap updated: 2026-05-25 — v4.0 BOT Ontology Bridge added as planned milestone*
 *v2.0 shipped: 2026-05-10*

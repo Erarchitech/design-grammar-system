@@ -6,6 +6,9 @@ graphify_communities: ["Graph Schema v3 is the Canonical Data Model", "LLM Promp
 
 # Graph Schema v3 is the Canonical Data Model
 
+> [!warning] Supersession scheduled — milestone v7.0 (2026-07-02)
+> Schema **v4** replaces v3 in v7.0 Phase 14: DesignState `kind` becomes {ObjState, ParamState, PropState}, Run gains ValidStatus/SendStatus, a rule-level SWRL property is added, and Knowledge*→Spec* renames land in Phase 15. v3 remains the live runtime schema until Phase 14 ships. This note gets rewritten then (E2E-04). See [[sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema|v7.0 milestone init]] and `.planning/ROADMAP.md`.
+
 The v3 schema (defined in `training/dataset_schema.json` and `cypher_template.txt`) is the single source of truth for all generated Cypher, UI labels, prompts, and validation logic.
 
 ## Schema Files
