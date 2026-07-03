@@ -1,26 +1,25 @@
 ---
 tags: [home, priorities]
-date: 2026-07-03
+date: 2026-07-04
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **v7.0 Phase 14 (Graph Schema v4 Propagation)** — **shipped 2026-07-03.** 7/7 plans executed, Nyquist-validated 18/18 green. See [[sessions/2026-07-03 Phase 14 planning - 7 plans across 3 waves|Phase 14 planning session]].
-2. **v7.0 Phase 15 (SpecGraph Runtime Rename)** — **context gathered 2026-07-03.** All 4 gray areas discussed: file renames (8 files, Knowledge*→Spec*), n8n export cleanup (delete 2 stale exports), migration approach (reuses Phase 14's D-14 ValidGraph pattern + full-text index recreation), UI naming (tab label unchanged, internal view key renamed). `15-CONTEXT.md` + `15-DISCUSSION-LOG.md` written. Next: `/gsd-plan-phase 15`. See [[sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions|Phase 15 discussion session]].
-3. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
-4. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
-5. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+1. **v7.0 Phase 16 (DG.Core State Models and State Components)** — **context gathered 2026-07-04.** Four gray areas discussed: DESIGN STATE aggregate semantics (one snapshot, independent bags, index-mismatch guards in leaf components), statePayloadJson v2 (versioned envelope, clean break from v1), PropState value model (typed Num/Int/Bool scalar, plain string refs, rule-scoped), scaffolding removal + DESIGN STATE → PARAMETER STATE rename. 15 decisions in `16-CONTEXT.md`. Next: `/gsd-plan-phase 16`. See [[sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components|Phase 16 discussion session]].
+2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
+3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
+4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
 > ℹ️ **v3.0 superseded 2026-07-02** — Phase 7 (Schema Foundation) shipped and carried forward; Phases 8–12 dropped in favor of the GH_DesignGrammars.pdf-driven v7.0 component set. Archive: `.planning/milestones/v3.0-phases/`.
 > ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
-> ℹ️ **.NET SDK статус для v7.0 не подтверждён в этой сессии** — verify `dotnet build DG/DG.sln -c Release` before Phase 16+ state-model changes land.
+> ℹ️ **.NET SDK статус для v7.0 не подтверждён** — verify `dotnet build DG/DG.sln -c Release` before Phase 16 state-model changes land.
 > ℹ️ **`workflow.use_worktrees: false`** в `.planning/config.json` — параллельное worktree-исполнение отключено из-за конфликта с `commit_docs: false`. См. [[knowledge/decisions/Worktree execution disabled due to commit_docs conflict|решение]].
 
 ## Upcoming
 
-- Phases 14–20 of v7.0: graph schema v4 propagation, SpecGraph runtime rename, DG.Core state models, graph access components, rules/validator rework, deconstruct/reinstate components, E2E validation
+- Phases 16–20 of v7.0: DG.Core state models, graph access components, rules/validator rework, deconstruct/reinstate components, E2E validation
 - Рецензирование T2–T4 соавтором или научным руководителем
 - Реализация DesignSpaceGraph (T4) as milestone after v7.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
@@ -30,6 +29,7 @@ date: 2026-07-03
 
 ## Completed Recently
 
+- **v7.0 Phase 16 context gathered** — 2026-07-04. Four gray areas discussed: DESIGN STATE aggregate semantics (one snapshot — all objs+params+props in one DesignState, three inputs as independent bags, VALIDATOR parses each separately per SWRL rule, index-mismatch guards in OBJECT STATE and PROPERTY STATE leaf components), statePayloadJson v2 (versioned envelope `{version, stateId, objStates[], paramStates[], propStates[]}`, clean break from v1), PropState value model (typed Num/Int/Bool scalar, Rule/DataProperty as plain string refs, rule-scoped, PS_ prefix via new `ComputePropStateId()`), scaffolding removal (DefState/ObjectState/ObjectInstance deleted) + DESIGN STATE → PARAMETER STATE rename now (new GUID, DesignStateSnapshot → ParamState). DesignState.StateId = hash of sorted member StateIds. `DesignStateIdGenerator` adapted: `ComputeDefStateId`→`ComputeParamStateId` (same logic, DS_ prefix), new `ComputePropStateId` (PS_ prefix). 15 decisions in `16-CONTEXT.md` + `16-DISCUSSION-LOG.md`. See [[sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components|session]].
 - **v7.0 Phase 15 context gathered** — 2026-07-03. Mechanical propagation phase — no new names to invent, just HOW to close the runtime KnowledgeGraph→SpecGraph drift left over from the v6.0 ontology restructure. Rename all 8 files with "knowledge" in the name (source + n8n workflows + tests) to "spec", delete 2 stale n8n export files and the one-off `_add_backfill.py`. Migration reuses Phase 14's D-14 `ValidGraph`-rename pattern (dated `.cypher` file, manual SET/REMOVE label rename, seed+migrate+verify) plus full-text index recreation (`knowledge_note_search`→`spec_note_search`). UI tab label "Specs&Notes" stays — it was already Spec*-aligned; only the internal NeoVis view key and 4 label/visGroup entries change. `15-CONTEXT.md` + `15-DISCUSSION-LOG.md` written. See [[sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions|session]].
 - **v7.0 Phase 14 context gathered** — 2026-07-03. Resolved a real contradiction: ROADMAP SC#1/SCHM-07 still list a `Status` text Run property that Phase 13 D-07 already removed — confirmed no `Status` field, only `ValidStatus`+`SendStatus`. Full Rule-property rename to `SWRL`/`RuleName`/`RuleDescription` (PascalCase, ontology-exact) with backward-compat coalesce patches to `Neo4jRuleRepository.cs`. kind-migration script to be delivered AND executed on dev Neo4j, deleting orphan DesignStates when moving to ValidGraph. NeoVis reconciled to `DatatypeProperty`, new PropState color. `14-CONTEXT.md` + `14-DISCUSSION-LOG.md` written. See [[sessions/2026-07-03 Phase 14 discuss - schema v4 propagation decisions|session]].
 - **v7.0 Phase 13 executed + Nyquist-validated** — 2026-07-03. 4/4 plans across 3 waves, 24/24 must-haves verified, 6/6 requirements (ONTO-01..06) satisfied. 14 deliverable files: V7-INVESTIGATION.md, apply_v7_rename.py, DesignGrammar-V7.owl, V6-to-V7-mapping.md, port-iri-map-V7.md, apply_v7_extensions.py, 3 extension OWLs, catalog-v001-V7.xml, 3 doc-gen scripts, DesignGrammar-V7.md. Nyquist-compliant (zero gaps). 17 commits. See [[sessions/2026-07-03 Phase 13 execution and Nyquist validation|session]].
