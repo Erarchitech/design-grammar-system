@@ -165,3 +165,20 @@ None - no external service configuration required.
 ---
 *Phase: 13-ontology-v7-and-contract-investigation*
 *Completed: 2026-07-03*
+
+## Self-Check: PASSED
+
+- FOUND: ontology/apply_v7_extensions.py
+- FOUND: ontology/DesignGrammar-BOT-extension-V7.owl
+- FOUND: ontology/DesignGrammar-Topologic-extension-V7.owl
+- FOUND: ontology/DesignGrammar-standards-extension-V7.owl
+- FOUND: ontology/catalog-v001-V7.xml
+- FOUND: ontology/make_export_v7.py
+- FOUND: ontology/export_to_markdown_v7.py
+- FOUND: ontology/make_docs_v7.py
+- FOUND: ontology/DesignGrammar-V7.md
+- FOUND: .planning/phases/13-ontology-v7-and-contract-investigation/13-04-SUMMARY.md
+- FOUND: commit efc8a33
+- FOUND: commit 120da9f
+- FOUND: commit db14c21
+- FOUND: commit 12da6b0
