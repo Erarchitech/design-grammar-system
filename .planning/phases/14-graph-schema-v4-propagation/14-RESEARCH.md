@@ -118,6 +118,8 @@ MATCH (n) RETURN labels(n) AS labels, n.graph AS graph, count(*) AS c ORDER BY c
 
 **Recommendation: Option A.** It matches the project's own established precedent (documented-not-enforced ontology<->DB naming gap) and keeps Phase 14 a pure propagation phase rather than introducing a new data migration into a phase whose stated goal is "no runtime code changes to DB migrations beyond the kind-migration script already scoped." If the user prefers Option B, it should be raised as a discussion amendment, not silently decided by the planner.
 
+> **RESOLVED 2026-07-03 — user chose Option B (see CONTEXT.md D-14).** The runtime literal is renamed to `'ValidGraph'` everywhere: a data migration of the 1169 live nodes (`SET n.graph='ValidGraph'` with dry-run + dev-guard), plus edits to `data-service/app.py` (`VALIDATION_GRAPH` const), `DG/src/DG.Core/Services/ValidationRunsQueryService.cs` (`ValidationGraph` const), and `DG/tests/DG.Tests/E2E/DesignStateValidationFlowTests.cs` (5 occurrences). The kind-migration layer-move targets `graph='ValidGraph'`. Node **labels** stay unchanged — only the `graph` property value literal changes. Planner: treat D-14 as locked; do not re-open.
+
 ## Artifact-by-Artifact Findings
 
 ### Artifact 1: `cypher_template.txt` (SCHM-07)

@@ -7,7 +7,7 @@ date: 2026-07-03
 
 ## Active
 
-1. **v7.0 Phase 14 (Graph Schema v4 Propagation)** — context gathered 2026-07-03, ready for planning. No `Status` text field (confirmed vs. stale roadmap wording); full Rule-property rename to `SWRL`/`RuleName`/`RuleDescription`; kind-migration script delivered AND executed on dev (deletes orphan DesignStates); NeoVis reconciled to `DatatypeProperty`. Next: `/gsd-plan-phase 14`. See [[sessions/2026-07-03 Phase 14 discuss - schema v4 propagation decisions|Phase 14 discuss session]].
+1. **v7.0 Phase 14 (Graph Schema v4 Propagation)** — **planned 2026-07-03.** 7 plans across 3 waves, 8/8 requirements + 17/17 decisions covered, STATE: Ready to execute. D-14 (user overrode researcher): runtime `'ValidationGraph'` → `'ValidGraph'` everywhere (1169-node migration + code-literal edits). 3 Wave 0 Nyquist scripts required before Wave 2/3 smoke+migration. Plan-checker hit API rate limit — accepted via fallback; re-run `/gsd-plan-phase 14 --skip-research` post-rate-limit for independent verification pass. Next: `/gsd-execute-phase 14`. See [[sessions/2026-07-03 Phase 14 planning - 7 plans across 3 waves|Phase 14 planning session]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
