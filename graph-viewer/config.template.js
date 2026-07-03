@@ -19,7 +19,6 @@ window.GRAPH_CONFIG = {
     Atom: { label: "Atom_Id", secondaryLabel: "SWRL_label" },
     Class: { label: "label" },
     DatatypeProperty: { label: "SWRL_label" },
-    DataProperty: { label: "SWRL_label" },
     ObjectProperty: { label: "label" },
     Builtin: { label: "label" },
     Var: { label: "name" },
@@ -42,16 +41,16 @@ window.GRAPH_CONFIG = {
   visGroups: {
     Class: { color: { background: "#78c38a", border: "#5aa46c" } },
     DatatypeProperty: { color: { background: "#ffb36b", border: "#e5923a" } },
-    DataProperty: { color: { background: "#ffb36b", border: "#e5923a" } },
     ObjectProperty: { color: { background: "#ff8f3a", border: "#d86d1f" } },
     Builtin: { color: { background: "#9aa4b2", border: "#6f7884" } },
     Rule: { color: { background: "#6da7ff", border: "#3f7ed9" } },
     Atom: { color: { background: "#b7c0cc", border: "#8c96a3" } },
     Var: { color: { background: "#c6b5ff", border: "#9278d9" } },
     Literal: { color: { background: "#ffd6a5", border: "#d9a36a" } },
-    // DesignState uses group: "kind" (see labels above) so visGroups is keyed by kind VALUES (DefState/ObjectState), not by the DesignState label — unlike every other entry in this file, which keys visGroups by label name directly.
-    DefState: { color: { background: "#a8d8ea", border: "#6fb3cf" } },
-    ObjectState: { color: { background: "#f4a261", border: "#d4823a" } },
+    // DesignState uses group: "kind" (see labels above) so visGroups is keyed by kind VALUES (ParamState/ObjState/PropState), not by the DesignState label — unlike every other entry in this file, which keys visGroups by label name directly.
+    ParamState: { color: { background: "#a8d8ea", border: "#6fb3cf" } },
+    ObjState: { color: { background: "#f4a261", border: "#d4823a" } },
+    PropState: { color: { background: "#7bcfc0", border: "#4fa696" } },
     KnowledgeNote: { color: { background: "#4ecdc4", border: "#2fa89f" } },
     KnowledgeTag: { color: { background: "#ffe66d", border: "#d4bf3a" } },
     KnowledgeSession: { color: { background: "#a78bfa", border: "#7c5fcf" } },
