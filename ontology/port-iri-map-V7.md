@@ -79,3 +79,17 @@ This file is consumed by Phase 14 (schema propagation), Phase 17 (graph-access c
 | VALIDATOR | DataServiceUrl | out | — (runtime publish param) | Runtime | Non-overlapping extra kept from the v2.0 VALIDATOR (PROJECT.md: "Component ports: update where overlapping with the new schema, keep where no overlap"). Not in the PDF schema — no ontology IRI |
 | VALIDATOR | Report | out | — (runtime publish param) | Runtime | Non-overlapping extra kept from the v2.0 VALIDATOR; not in the PDF schema — no ontology IRI |
 | VALIDATOR | ValidationRunId | out | — (runtime publish param) | Runtime | Non-overlapping extra kept from the v2.0 VALIDATOR; not in the PDF schema — no ontology IRI |
+
+## Resolution check
+
+Every ontology-IRI cell in the master table above was verified against `ontology/DesignGrammar-V7.owl` by grepping its local name in an `rdf:about="&prefix;LocalName"` position.
+
+**25 distinct ontology IRIs referenced — all 25 resolved** (each returns >=1 match in `DesignGrammar-V7.owl`):
+
+`dg:project`, `dg:Ontograph`, `dgm:Metagraph`, `dgv:Validgraph`, `dgs:SpecGraph`, `dgm:Rule`, `dg:Object`, `dg:Class`, `dg:ObjProperty`, `dg:DataProperty`, `dgv:Run`, `dgv:ValidStatus`, `dg:DesignState`, `dg:Geometry`, `dgv:objectRefName`, `dg:ObjState`, `dgc:Parameter`, `dg:ParamState`, `dgv:propValue`, `dg:PropState`, `dgv:ReStatusValue`, `dgm:SWRL`, `dgm:RuleName`, `dgm:RuleDescription`, `dgv:SendStatus`.
+
+One correction made during this check: the PDF's `DG.Layer.Validgraph.ReStatus` ontology path and the locked rename table's "`ReStatus` (class label)" both name the *display label*, not the OWL IRI — the actual resolvable class IRI is `dgv:ReStatusValue` (`rdfs:label` = `"ReStatus"`). The master table's PARAMETER REINSTATE `StateStatus` row uses `dgv:ReStatusValue`, the real IRI, with a note cross-referencing the PDF's display name — this is not a 13-02 gap, both names coexist by design (IRI vs. label).
+
+**10 runtime/DB ports annotated** (no ontology IRI, by design — see the ontology<->DB note in the header): CONNECTOR `Neo4jURI`/`Neo4jUser`/`Neo4jPassword` (in) and `Database` (out); GRAPH DECONSTRUCT `Database` (in); PARAMETER REINSTATE `Reinstate` (in); VALIDATOR `SendValid` (in) and `DataServiceUrl`/`Report`/`ValidationRunId` (out).
+
+**Zero unmapped references** — every output port of all 14 components, and every IRI-carrying input, resolves to either a verified ontology IRI or an explicitly annotated runtime/DB construct. This satisfies ROADMAP Phase 13 success criterion 3 and ONTO-06.
