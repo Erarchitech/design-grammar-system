@@ -14,7 +14,7 @@ TEST_PROJECT = "test_phase02_crud"
 
 
 def test_sc1_folder_ingest():
-    """SC-1: POST /knowledge/ingest/folder creates KnowledgeNote nodes from .md files."""
+    """SC-1: POST /knowledge/ingest/folder creates SpecNote nodes from .md files."""
     # Ingest the DG_OBSIDIAN directory (known to contain .md files)
     resp = requests.post(
         f"{DATA_SERVICE_URL}/knowledge/ingest/folder",

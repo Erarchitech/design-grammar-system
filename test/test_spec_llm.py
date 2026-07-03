@@ -43,7 +43,7 @@ def _poll_execution_result(workflow_key: str, timeout: int = POLL_TIMEOUT) -> di
 
 
 def test_sc1_ingest_prompt():
-    """SC-1: POST to knowledge-ingest webhook creates a KnowledgeNote in Neo4j.
+    """SC-1: POST to knowledge-ingest webhook creates a SpecNote in Neo4j.
 
     Sends a NL prompt to /n8n/webhook/dg/knowledge-ingest.
     Asserts ack response has status 'accepted'.
@@ -88,7 +88,7 @@ def test_sc2_query_answer():
     Sends a NL question to /n8n/webhook/dg/knowledge-query.
     Asserts ack response has status 'accepted'.
     Polls execution-result until completed, then asserts 'answer' and 'cypher' in payload.
-    Verifies answer is non-empty and cypher contains 'knowledge_note_search'.
+    Verifies answer is non-empty and cypher contains 'spec_note_search'.
     """
     query_url = f"{BASE_URL}/n8n/webhook/dg/knowledge-query"
     resp = requests.post(
@@ -110,8 +110,8 @@ def test_sc2_query_answer():
     assert "answer" in payload, f"Payload missing 'answer': {payload}"
     assert "cypher" in payload, f"Payload missing 'cypher': {payload}"
     assert payload["answer"], f"'answer' must be non-empty: {payload}"
-    assert "knowledge_note_search" in payload["cypher"], (
-        f"'cypher' must contain 'knowledge_note_search', got: {payload['cypher']}"
+    assert "spec_note_search" in payload["cypher"], (
+        f"'cypher' must contain 'spec_note_search', got: {payload['cypher']}"
     )
     print(f"  SC-2 PASS: query returned answer='{str(payload['answer'])[:80]}'")
 
@@ -119,7 +119,7 @@ def test_sc2_query_answer():
 def test_sc3_session_insert():
     """SC-3: After SC-1 ingest, GET /knowledge/sessions/{project} contains an insert session.
 
-    Verifies that a KnowledgeSession with mode='insert' was created during SC-1.
+    Verifies that a SpecSession with mode='insert' was created during SC-1.
     Requires SC-1 to have run first.
     """
     resp = requests.get(f"{DATA_SERVICE_URL}/knowledge/sessions/{TEST_PROJECT}", timeout=10)
@@ -178,7 +178,7 @@ def test_sc5_sessions_endpoint():
 def cleanup():
     """Remove all test nodes from Neo4j for project 'test-phase03'."""
     try:
-        # Delete all KnowledgeNote nodes (and their tags via DETACH DELETE)
+        # Delete all SpecNote nodes (and their tags via DETACH DELETE)
         notes_resp = requests.get(f"{DATA_SERVICE_URL}/knowledge/notes/{TEST_PROJECT}", timeout=10)
         if notes_resp.status_code == 200:
             for note in notes_resp.json().get("notes", []):
@@ -188,7 +188,7 @@ def cleanup():
         print(f"  Cleanup warning (notes): {e}")
 
     try:
-        # Delete KnowledgeSession and KnowledgeTag nodes directly via Neo4j HTTP
+        # Delete SpecSession and SpecTag nodes directly via Neo4j HTTP
         # Using data-service proxy — no direct Neo4j access needed from test runner
         # Sessions are cleaned up by deleting via the graph; we rely on DETACH DELETE above
         # for tags and sessions not linked to notes.
