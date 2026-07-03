@@ -10,12 +10,12 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### Ontology V7 (ONTO)
 
-- [ ] **ONTO-01**: `apply_v7_rename.py` transforms `DesignGrammar-V6.owl` into `DesignGrammar-V7.owl` with all schema-notation renames applied (layer hubs `Ontograph`/`Validgraph`/`Computgraph`, `ObjProperty`, `DataProperty`, `Run`, `ObjState`, `ReStatus`), following the `apply_v6_*.py` script pattern
-- [ ] **ONTO-02**: `V6-to-V7-mapping.md` lists every renamed IRI (old → new) as a recovery-only guard for existing publications
-- [ ] **ONTO-03**: V7 models the state trio as DesignState subclasses — `ParamState` (renamed from DefState), new `PropState` (Rule + DataProperty + PropValue, building on existing `propValue`/`propValueOf`), `ObjState` (renamed from ObjectState)
-- [ ] **ONTO-04**: V7 adds rule-level `SWRL`, `RuleName`, `RuleDescription` datatype properties (renaming ruleTitle/ruleText) and Validgraph `SendStatus`/`ValidStatus` (Boolean); the investigation note resolves ALL flagged conflicts: (a) PDF-internal ValidStatus-Boolean vs Status-text (proposed: `Run.ValidStatus` Boolean overall pass + `Run.Status` text enum); (b) DesignState storage layer — `cypher_template.txt` stores DesignState with `graph='Metagraph'` while the PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle (and the PDF itself says "New Design State can only pass to Metagraph through Validator"); (c) ontology version-marker policy — V6 owl carries both `versionInfo 6.1` and a stale `rdfs:comment "Schema version: v3"`
-- [ ] **ONTO-05**: V7 extension facades (standards / BOT / Topologic) and `catalog-v001-V7.xml` regenerated; `DesignGrammar-V7.md` documentation regenerated; ontology passes consistency check
-- [ ] **ONTO-06**: A component-port ↔ ontology-IRI mapping is documented for all 14 components (successor of GH-mapping)
+- [x] **ONTO-01**: `apply_v7_rename.py` transforms `DesignGrammar-V6.owl` into `DesignGrammar-V7.owl` with all schema-notation renames applied (layer hubs `Ontograph`/`Validgraph`/`Computgraph`, `ObjProperty`, `DataProperty`, `Run`, `ObjState`, `ReStatus`), following the `apply_v6_*.py` script pattern
+- [x] **ONTO-02**: `V6-to-V7-mapping.md` lists every renamed IRI (old → new) as a recovery-only guard for existing publications
+- [x] **ONTO-03**: V7 models the state trio as DesignState subclasses — `ParamState` (renamed from DefState), new `PropState` (Rule + DataProperty + PropValue, building on existing `propValue`/`propValueOf`), `ObjState` (renamed from ObjectState)
+- [x] **ONTO-04**: V7 adds rule-level `SWRL`, `RuleName`, `RuleDescription` datatype properties (renaming ruleTitle/ruleText) and Validgraph `SendStatus`/`ValidStatus` (Boolean); the investigation note resolves ALL flagged conflicts: (a) PDF-internal ValidStatus-Boolean vs Status-text (proposed: `Run.ValidStatus` Boolean overall pass + `Run.Status` text enum); (b) DesignState storage layer — `cypher_template.txt` stores DesignState with `graph='Metagraph'` while the PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle (and the PDF itself says "New Design State can only pass to Metagraph through Validator"); (c) ontology version-marker policy — V6 owl carries both `versionInfo 6.1` and a stale `rdfs:comment "Schema version: v3"`
+- [x] **ONTO-05**: V7 extension facades (standards / BOT / Topologic) and `catalog-v001-V7.xml` regenerated; `DesignGrammar-V7.md` documentation regenerated; ontology passes consistency check
+- [x] **ONTO-06**: A component-port ↔ ontology-IRI mapping is documented for all 14 components (successor of GH-mapping)
 
 ### Graph Schema Propagation (SCHM — continues v3.0 numbering, which ended at SCHM-06)
 

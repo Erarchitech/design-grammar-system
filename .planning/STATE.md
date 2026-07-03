@@ -2,18 +2,19 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase_name: Phase 13 — Ontology V7 and Contract Investigation
-status: phase-planned
-stopped_at: Phase 13 planned (4 plans, 3 waves)
-last_updated: "2026-07-03T00:53:54.648Z"
+current_phase: 14
+current_phase_name: Graph Schema v4 Propagation
+status: verifying
+stopped_at: Completed 13-04-PLAN.md
+last_updated: "2026-07-03T02:20:23.540Z"
 last_activity: 2026-07-03
-last_activity_desc: Phase 13 planned — 4 plans (13-01..13-04) across 3 waves, ONTO-01..06 covered
+last_activity_desc: Phase 13 complete, transitioned to Phase 14
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 13
 ---
 
 # Project State
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Milestone v7.0 initialized — ready to plan Phase 13
+**Current focus:** Phase 13 — ontology-v7-and-contract-investigation
 
 ## Current Position
 
-Phase: 13 — Ontology V7 and Contract Investigation (planned)
-Plan: 4 plans in 3 waves (13-01 → 13-02 → {13-03 ∥ 13-04}) — ready to execute
-Status: Ready for /gsd-execute-phase 13
-Last activity: 2026-07-03 — Phase 13 planned (4 PLAN.md files, ONTO-01..06 covered)
+Phase: 14 — Graph Schema v4 Propagation
+Plan: Not started
+Status: Phase complete — ready for verification
+Last activity: 2026-07-03 — Phase 13 complete, transitioned to Phase 14
 
 ## Performance Metrics
 
@@ -73,6 +74,15 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 - KnowledgeGraph→SpecGraph runtime rename is in scope (closes pre-existing ontology↔runtime drift)
 - Component ports: update where overlapping with the new schema, keep where no overlap (e.g. VALIDATOR's DataServiceUrl/Report/ValidationRunId extras)
 - DB keeps existing Neo4j labels except Knowledge*→Spec* — no wider label migration
+- [Phase 13]: Conflict (a): Run.ValidStatus unified as Boolean list index-matched to ObjState, overall pass derived (AND) not stored
+- [Phase 13]: Conflict (b): DesignState storage layer corrected to graph='ValidGraph' with no-orphan invariant enforced
+- [Phase 13]: Conflict (c): owl:versionInfo='7.0' as single source of version truth, stale v3 comment resolved
+- [Phase 13]: PropState assigned ID prefix PS_ (Claude's discretion, extends DS_/OS_ pattern) — locked in DesignGrammar-V7.owl — V7-INVESTIGATION.md left the exact PropState ID prefix unspecified
+- [Phase 13]: owl:DatatypeProperty self-check assertion uses SRC+6 (not exact parity) to account for the 3 new datatype properties this plan adds (RuleDescription, SendStatus, ValidStatus) — Exact SRC parity is mathematically impossible when new same-typed properties are added; corrupted-form detection (owl:DataProperty/owl:ObjProperty must be zero) is the real collision-hazard safety property
+- [Phase 13]: PARAMETER REINSTATE StateStatus and OBJECT DECONSTRUCT/OBJECT STATE Label ports map to the real resolvable OWL IRIs (dgv:ReStatusValue, dgv:objectRefName) rather than the PDF's display-name ontology paths — V7-INVESTIGATION.md rename table names ReStatus as the class rdfs:label, not the IRI; the actual IRI is ReStatusValue. Geometry.Label has no dedicated OWL property, so objectRefName (the user-supplied ObjectRef string per PROJECT.md) is used instead
+- [Phase 13]: Runtime/DB-only ports (credentials, driver handles, Boolean triggers, VALIDATOR publish extras) are explicitly annotated with a placeholder and note in port-iri-map-V7.md rather than omitted — Keeps the zero-unmapped-references invariant literal (every row has a non-empty IRI-column cell) while documenting the ontology<->DB gap per PROJECT.md policy
+- [Phase 13]: BOT/Topologic V7 extensions require only a version bump + prose ComputationGraph->Computgraph rename (dg:Topology anchor unchanged in V7)
+- [Phase 13]: make_docs_v6.py does not actually generate DesignGrammar-V6.md (it generates ONTOLOGY-ALIGNMENT-V6.md/HIERARCHY-OPTIMIZATION-V6.md instead) — make_docs_v7.py implemented as a purpose-built importlib driver invoking export_to_markdown_v7.main()
 
 ### Research Flags (carry into planning)
 
@@ -93,9 +103,9 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 
 ## Session Continuity
 
-Last session: 2026-07-03T00:33:47.406Z
-Stopped at: Phase 13 planned (4 plans, 3 waves)
-Resume file: .planning/phases/13-ontology-v7-and-contract-investigation/13-01-PLAN.md
+Last session: 2026-07-03T02:03:13.923Z
+Stopped at: Completed 13-04-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -105,3 +115,7 @@ Resume file: .planning/phases/13-ontology-v7-and-contract-investigation/13-01-PL
 | v3.0 Phase 07 P02 | 25min | 2 tasks | 5 files |
 | v3.0 Phase 07 P03 | 18min | 2 tasks | 5 files |
 | v3.0 Phase 07 P04 | 12min | 2 tasks | 5 files |
+| Phase 13 P01 | 15min | 2 tasks | 1 files |
+| Phase 13 P02 | 20min | 3 tasks | 3 files |
+| Phase 13 P03 | 25min | 2 tasks | 1 files |
+| Phase 13 P04 | 25min | 4 tasks | 9 files |

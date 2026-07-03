@@ -14,7 +14,7 @@
 
 Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 components; CLASSIFICATOR eliminated).
 
-- [ ] **Phase 13: Ontology V7 and Contract Investigation** — Critical investigation resolves PDF-internal conflicts; full V6→V7 rename to schema notation; V6→V7 recovery mapping; port↔IRI map for all 14 components
+- [x] **Phase 13: Ontology V7 and Contract Investigation** — Critical investigation resolves PDF-internal conflicts; full V6→V7 rename to schema notation; V6→V7 recovery mapping; port↔IRI map for all 14 components (completed 2026-07-03)
 - [ ] **Phase 14: Graph Schema v4 Propagation** — cypher_template v4, dataset_schema v4, n8n ingest+query prompts, NeoVis config, index.html, data-service Cypher, kind-migration script, training examples + test fixtures
 - [ ] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
@@ -52,6 +52,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 - [x] Phase 5: UI Mode Restructuring + Insert and Query Panels
 - [x] Phase 6: UI Update Panel + Inline Diff Editor
 - [x] Phase 7: UI Session History Panel + NeoVis Knowledge View
+
 </details>
 
 ---
@@ -71,6 +72,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   4. V7 extension facades (standards/BOT/Topologic), `catalog-v001-V7.xml`, and regenerated `DesignGrammar-V7.md` load/parse without errors
 
 **Plans** (planned 2026-07-03 — 4 plans, 3 waves):
+
   - 13-01 — Conflict investigation + V6→V7 naming contract (`V7-INVESTIGATION.md`) — *wave 1* — ONTO-04
   - 13-02 — `apply_v7_rename.py` → `DesignGrammar-V7.owl` + `V6-to-V7-mapping.md` — *wave 2, depends 13-01* — ONTO-01/02/03/04
   - 13-03 — `port-iri-map-V7.md` for all 14 components — *wave 3, depends 13-02* — ONTO-06
@@ -89,7 +91,12 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   4. NeoVis renders all three state kinds with distinct colors from `config.template.js` (duplicate DatatypeProperty/DataProperty entries reconciled); no `DefState`/`ObjectState` kind entries remain in any runtime artifact
   5. Running the kind-migration script on a dev database leaves zero nodes with `kind` in {DefState, ObjectState}; the v4 successor of `updated_cypher_reference_examples_v3.cypher` and updated `test/` fixtures contain no v3 state kinds
 
-**Plans**: TBD
+**Plans**: 4/4 plans complete
+
+- [x] 13-01-PLAN.md
+- [x] 13-02-PLAN.md
+- [x] 13-03-PLAN.md
+- [x] 13-04-PLAN.md
 
 ### Phase 15: SpecGraph Runtime Rename
 
@@ -182,7 +189,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Ontology V7 and Contract Investigation | 0/4 | Planned | - |
+| 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
 | 14. Graph Schema v4 Propagation | 0/? | Not started | - |
 | 15. SpecGraph Runtime Rename | 0/? | Not started | - |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |

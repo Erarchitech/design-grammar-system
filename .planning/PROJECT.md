@@ -47,6 +47,7 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **REIN-01..03**: Trigger-based reinstatement with per-parameter status — v2.0
 - ✓ **MVGP-01..03**: Model Viewer grouping by rule and design state — v2.0
 - ✓ **INTG-01..03**: E2E state lifecycle, backward compat, actionable errors — v2.0
+- ✓ **ONTO-01..06**: Ontology V7 baseline — V6→V7 rename table, DesignGrammar-V7.owl, extension facades, catalog, port-IRI map, markdown docs — Phase 13
 
 ### Active
 
@@ -54,7 +55,7 @@ Architects can express design constraints in plain language and instantly valida
 
 **Milestone v7.0 — Update of DG Addin for Grasshopper** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
 
-- [ ] Ontology V7 (full V6 rename to schema notation + ParamState/PropState/SendStatus/SWRL additions; V6→V7 recovery mapping file)
+- [x] Ontology V7 (full V6 rename to schema notation + ParamState/PropState/SendStatus/SWRL additions; V6→V7 recovery mapping file) — Phase 13 ✓
 - [ ] Graph schema propagation v4 (cypher_template, dataset_schema, n8n prompts, NeoVis, data-service)
 - [ ] SpecGraph runtime rename (KnowledgeGraph→SpecGraph + Knowledge*→Spec* labels, DB migration)
 - [ ] DG.Core state models: ObjState / ParamState / PropState / DesignState composition
@@ -156,4 +157,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-02 after starting milestone v7.0*
+*Last updated: 2026-07-03 after Phase 13 (ontology V7 baseline)*
