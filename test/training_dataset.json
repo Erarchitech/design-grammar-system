@@ -1,6 +1,6 @@
 {
-  "dataset_version": "v3",
-  "description": "Training dataset for NL → Cypher conversion of SWRL rules in Neo4j Ontology Graph",
+  "dataset_version": "v3 (pre-v4 — superseded)",
+  "description": "Training dataset for NL → Cypher conversion of SWRL rules in Neo4j Ontology Graph (pre-v4 schema; retained for historical/debugging reference only — see training/updated_cypher_reference_examples_v4.cypher for current schema)",
   "records": [
     {
       "input_nl": "Building height must not exceed 75 meters",
