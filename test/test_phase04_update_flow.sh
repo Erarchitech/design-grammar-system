@@ -32,7 +32,7 @@ curl -s -X POST "$NEO4J_URL" \
   -u neo4j:12345678 \
   -d "{
     \"statements\": [{
-      \"statement\": \"MERGE (n:KnowledgeNote {noteId: '$NOTE_ID', project: '$PROJECT', graph: 'KnowledgeGraph'}) SET n.title = 'Test Update Note', n.content = 'The building has a maximum height of 50 meters and minimum setback of 5 meters.', n.updatedAt = '$NOW', n.createdAt = '$NOW'\"
+      \"statement\": \"MERGE (n:SpecNote {noteId: '$NOTE_ID', project: '$PROJECT', graph: 'SpecGraph'}) SET n.title = 'Test Update Note', n.content = 'The building has a maximum height of 50 meters and minimum setback of 5 meters.', n.updatedAt = '$NOW', n.createdAt = '$NOW'\"
     }]
   }" > /dev/null 2>&1
 echo "  Created note: $NOTE_ID"
@@ -113,11 +113,11 @@ echo "[Cleanup] Removing test note..."
 curl -s -X POST "$NEO4J_URL" \
   -H "Content-Type: application/json" \
   -u neo4j:12345678 \
-  -d "{\"statements\": [{\"statement\": \"MATCH (n:KnowledgeNote {noteId: '$NOTE_ID'}) DETACH DELETE n\"}]}" > /dev/null 2>&1
+  -d "{\"statements\": [{\"statement\": \"MATCH (n:SpecNote {noteId: '$NOTE_ID'}) DETACH DELETE n\"}]}" > /dev/null 2>&1
 curl -s -X POST "$NEO4J_URL" \
   -H "Content-Type: application/json" \
   -u neo4j:12345678 \
-  -d "{\"statements\": [{\"statement\": \"MATCH (s:KnowledgeSession {project: '$PROJECT'}) DETACH DELETE s\"}]}" > /dev/null 2>&1
+  -d "{\"statements\": [{\"statement\": \"MATCH (s:SpecSession {project: '$PROJECT'}) DETACH DELETE s\"}]}" > /dev/null 2>&1
 
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
