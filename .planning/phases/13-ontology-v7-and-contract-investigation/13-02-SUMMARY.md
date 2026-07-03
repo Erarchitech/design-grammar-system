@@ -169,3 +169,14 @@ None - no external service configuration required.
 ---
 *Phase: 13-ontology-v7-and-contract-investigation*
 *Completed: 2026-07-03*
+
+## Self-Check: PASSED
+
+- FOUND: ontology/apply_v7_rename.py
+- FOUND: ontology/DesignGrammar-V7.owl
+- FOUND: ontology/V6-to-V7-mapping.md
+- FOUND: .planning/phases/13-ontology-v7-and-contract-investigation/13-02-SUMMARY.md
+- FOUND: commit 2091665
+- FOUND: commit 086c980
+- FOUND: commit a7c2f75
+- FOUND: commit 19204a7
