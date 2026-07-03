@@ -39,7 +39,7 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
 WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
 VALIDATION_GRAPH = "ValidGraph"
-KNOWLEDGE_GRAPH = "KnowledgeGraph"
+SPEC_GRAPH = "SpecGraph"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
 KNOWLEDGE_REPO_ROOT = FilePath(os.getenv("DG_KNOWLEDGE_REPO_ROOT", "/mnt/repo"))
@@ -729,33 +729,33 @@ def generate_note_id(project: str, source_path: str) -> str:
 
 
 @app.on_event("startup")
-def ensure_knowledge_indexes():
-    """Create full-text index and parent class hub nodes for KnowledgeGraph."""
+def ensure_spec_indexes():
+    """Create full-text index and parent class hub nodes for SpecGraph."""
     with driver.session() as session:
         session.run(
-            "CREATE FULLTEXT INDEX knowledge_note_search IF NOT EXISTS "
-            "FOR (n:KnowledgeNote) ON EACH [n.title, n.content]"
+            "CREATE FULLTEXT INDEX spec_note_search IF NOT EXISTS "
+            "FOR (n:SpecNote) ON EACH [n.title, n.content]"
         ).consume()
         # Ensure parent class hub nodes exist for graph connectivity
         session.run(
-            "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: 'KnowledgeGraph'}) "
-            "SET c.label = 'KnowledgeNote'"
+            "MERGE (c:SpecClass {name: 'SpecNote', graph: 'SpecGraph'}) "
+            "SET c.label = 'SpecNote'"
         ).consume()
         session.run(
-            "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: 'KnowledgeGraph'}) "
-            "SET c.label = 'KnowledgeSession'"
+            "MERGE (c:SpecClass {name: 'SpecSession', graph: 'SpecGraph'}) "
+            "SET c.label = 'SpecSession'"
         ).consume()
         # Backfill: connect any existing nodes that lack INSTANCE_OF links
         session.run(
-            "MATCH (n:KnowledgeNote) WHERE NOT (n)-[:INSTANCE_OF]->(:KnowledgeClass) "
+            "MATCH (n:SpecNote) WHERE NOT (n)-[:INSTANCE_OF]->(:SpecClass) "
             "WITH n "
-            "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: 'KnowledgeGraph'}) "
+            "MERGE (c:SpecClass {name: 'SpecNote', graph: 'SpecGraph'}) "
             "MERGE (n)-[:INSTANCE_OF]->(c)"
         ).consume()
         session.run(
-            "MATCH (s:KnowledgeSession) WHERE NOT (s)-[:INSTANCE_OF]->(:KnowledgeClass) "
+            "MATCH (s:SpecSession) WHERE NOT (s)-[:INSTANCE_OF]->(:SpecClass) "
             "WITH s "
-            "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: 'KnowledgeGraph'}) "
+            "MERGE (c:SpecClass {name: 'SpecSession', graph: 'SpecGraph'}) "
             "MERGE (s)-[:INSTANCE_OF]->(c)"
         ).consume()
 
@@ -1152,14 +1152,14 @@ def ingest_folder(payload: FolderIngestRequest):
 
             # MERGE note (idempotent: re-ingest updates, not duplicates)
             write_query(
-                "MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
+                "MERGE (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
                 "SET n.title = $title, n.content = $content, n.source = $source, "
                 "    n.tags = $tags, "
                 "    n.createdAt = coalesce(n.createdAt, $now), n.updatedAt = $now",
                 {
                     "noteId": note_id,
                     "project": payload.project,
-                    "graph": KNOWLEDGE_GRAPH,
+                    "graph": SPEC_GRAPH,
                     "title": title,
                     "content": content,
                     "source": relative_path,
@@ -1170,27 +1170,27 @@ def ingest_folder(payload: FolderIngestRequest):
 
             # Connect to parent class node
             write_query(
-                "MATCH (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
-                "MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: $graph}) "
+                "MATCH (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
+                "MERGE (c:SpecClass {name: 'SpecNote', graph: $graph}) "
                 "MERGE (n)-[:INSTANCE_OF]->(c)",
                 {
                     "noteId": note_id,
                     "project": payload.project,
-                    "graph": KNOWLEDGE_GRAPH,
+                    "graph": SPEC_GRAPH,
                 },
             )
 
-            # Create KnowledgeTag nodes and TAGGED_WITH relationships
+            # Create SpecTag nodes and TAGGED_WITH relationships
             for tag in tags:
                 write_query(
-                    "MERGE (t:KnowledgeTag {name: $tagName, project: $project, graph: $graph}) "
+                    "MERGE (t:SpecTag {name: $tagName, project: $project, graph: $graph}) "
                     "WITH t "
-                    "MATCH (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph}) "
+                    "MATCH (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
                     "MERGE (n)-[:TAGGED_WITH]->(t)",
                     {
                         "tagName": tag,
                         "project": payload.project,
-                        "graph": KNOWLEDGE_GRAPH,
+                        "graph": SPEC_GRAPH,
                         "noteId": note_id,
                     },
                 )
@@ -1212,11 +1212,11 @@ def ingest_folder(payload: FolderIngestRequest):
 @app.get("/knowledge/notes/{project}")
 def list_knowledge_notes(project: str):
     rows = read_many(
-        "MATCH (n:KnowledgeNote {project: $project, graph: $graph}) "
+        "MATCH (n:SpecNote {project: $project, graph: $graph}) "
         "RETURN n.noteId AS noteId, n.title AS title, n.source AS source, "
         "       n.createdAt AS createdAt, n.updatedAt AS updatedAt "
         "ORDER BY n.updatedAt DESC",
-        {"project": project, "graph": KNOWLEDGE_GRAPH},
+        {"project": project, "graph": SPEC_GRAPH},
     )
     return {"project": project, "notes": rows}
 
@@ -1224,11 +1224,11 @@ def list_knowledge_notes(project: str):
 @app.get("/knowledge/note/{note_id}")
 def get_knowledge_note(note_id: str):
     row = read_single(
-        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+        "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
         "RETURN n.noteId AS noteId, n.title AS title, n.content AS content, "
         "       n.source AS source, n.tags AS tags, n.project AS project, "
         "       n.createdAt AS createdAt, n.updatedAt AS updatedAt",
-        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+        {"noteId": note_id, "graph": SPEC_GRAPH},
     )
     if row is None:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -1238,8 +1238,8 @@ def get_knowledge_note(note_id: str):
 @app.put("/knowledge/note/{note_id}")
 def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
     existing = read_single(
-        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
-        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+        "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
+        {"noteId": note_id, "graph": SPEC_GRAPH},
     )
     if existing is None:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -1247,7 +1247,7 @@ def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
     set_clauses = ["n.updatedAt = $now"]
     params: dict[str, Any] = {
         "noteId": note_id,
-        "graph": KNOWLEDGE_GRAPH,
+        "graph": SPEC_GRAPH,
         "now": datetime.now(timezone.utc).isoformat(),
     }
     if payload.title is not None:
@@ -1261,7 +1261,7 @@ def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
         params["tags"] = payload.tags
 
     write_query(
-        f"MATCH (n:KnowledgeNote {{noteId: $noteId, graph: $graph}}) SET {', '.join(set_clauses)}",
+        f"MATCH (n:SpecNote {{noteId: $noteId, graph: $graph}}) SET {', '.join(set_clauses)}",
         params,
     )
     return {"status": "updated", "noteId": note_id}
@@ -1270,15 +1270,15 @@ def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
 @app.delete("/knowledge/note/{note_id}")
 def delete_knowledge_note(note_id: str):
     existing = read_single(
-        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
-        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+        "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
+        {"noteId": note_id, "graph": SPEC_GRAPH},
     )
     if existing is None:
         raise HTTPException(status_code=404, detail="Note not found")
 
     write_query(
-        "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) DETACH DELETE n",
-        {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+        "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) DETACH DELETE n",
+        {"noteId": note_id, "graph": SPEC_GRAPH},
     )
     return {"status": "deleted", "noteId": note_id}
 
@@ -1286,11 +1286,11 @@ def delete_knowledge_note(note_id: str):
 @app.get("/knowledge/sessions/{project}")
 def list_knowledge_sessions(project: str):
     rows = read_many(
-        "MATCH (s:KnowledgeSession {project: $project, graph: $graph}) "
+        "MATCH (s:SpecSession {project: $project, graph: $graph}) "
         "RETURN s.sessionId AS sessionId, s.mode AS mode, "
         "       s.prompt AS prompt, s.result AS result, s.createdAt AS createdAt "
         "ORDER BY s.createdAt DESC",
-        {"project": project, "graph": KNOWLEDGE_GRAPH},
+        {"project": project, "graph": SPEC_GRAPH},
     )
     return {"project": project, "sessions": rows}
 
@@ -1341,12 +1341,12 @@ def knowledge_update_match(payload: UpdateMatchRequest):
     if not payload.prompt.strip():
         raise HTTPException(status_code=400, detail="prompt is required")
     rows = read_many(
-        "CALL db.index.fulltext.queryNodes('knowledge_note_search', $query) "
+        "CALL db.index.fulltext.queryNodes('spec_note_search', $query) "
         "YIELD node, score "
         "WHERE node.project = $project AND node.graph = $graph "
         "RETURN node.noteId AS noteId, node.title AS title, score "
         "ORDER BY score DESC LIMIT 10",
-        {"query": payload.prompt, "project": payload.project, "graph": KNOWLEDGE_GRAPH},
+        {"query": payload.prompt, "project": payload.project, "graph": SPEC_GRAPH},
     )
     return {"candidates": rows}
 
@@ -1360,9 +1360,9 @@ def knowledge_update_propose(payload: UpdateProposeRequest):
     results = []
     for note_id in payload.noteIds:
         note = read_single(
-            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
             "RETURN n.noteId AS noteId, n.title AS title, n.content AS content, n.updatedAt AS updatedAt",
-            {"noteId": note_id, "graph": KNOWLEDGE_GRAPH},
+            {"noteId": note_id, "graph": SPEC_GRAPH},
         )
         if note is None:
             raise HTTPException(status_code=404, detail=f"Note not found: {note_id}")
@@ -1397,9 +1397,9 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
     now = datetime.now(timezone.utc).isoformat()
     for item in payload.notes:
         existing = read_single(
-            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
             "RETURN n.updatedAt AS updatedAt, n.title AS title",
-            {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH},
+            {"noteId": item.noteId, "graph": SPEC_GRAPH},
         )
         if existing is None:
             raise HTTPException(status_code=404, detail=f"Note not found: {item.noteId}")
@@ -1409,20 +1409,20 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
                 detail=f"Note {item.noteId} was modified since propose step - reload and retry",
             )
         write_query(
-            "MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
             "SET n.content = $content, n.updatedAt = $now",
-            {"noteId": item.noteId, "graph": KNOWLEDGE_GRAPH, "content": item.content, "now": now},
+            {"noteId": item.noteId, "graph": SPEC_GRAPH, "content": item.content, "now": now},
         )
         affected.append(existing.get("title") or item.noteId)
-    # Write KnowledgeSession per D-10 / UPDK-06
+    # Write SpecSession per D-10 / UPDK-06
     session_id = "ks-" + uuid.uuid4().hex[:12]
     write_query(
-        "MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) "
+        "MERGE (s:SpecSession {sessionId: $sessionId, project: $project, graph: $graph}) "
         "SET s.mode = 'update', s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt",
         {
             "sessionId": session_id,
             "project": payload.project,
-            "graph": KNOWLEDGE_GRAPH,
+            "graph": SPEC_GRAPH,
             "prompt": payload.prompt,
             "result": json.dumps({"affectedNodes": affected})[:2000],
             "createdAt": now,
@@ -1430,12 +1430,12 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
     )
     # Connect to parent class node
     write_query(
-        "MATCH (s:KnowledgeSession {sessionId: $sessionId, graph: $graph}) "
-        "MERGE (c:KnowledgeClass {name: 'KnowledgeSession', graph: $graph}) "
+        "MATCH (s:SpecSession {sessionId: $sessionId, graph: $graph}) "
+        "MERGE (c:SpecClass {name: 'SpecSession', graph: $graph}) "
         "MERGE (s)-[:INSTANCE_OF]->(c)",
         {
             "sessionId": session_id,
-            "graph": KNOWLEDGE_GRAPH,
+            "graph": SPEC_GRAPH,
         },
     )
     return {"affectedNodes": affected, "sessionId": session_id}
