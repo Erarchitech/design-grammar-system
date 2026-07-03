@@ -4,6 +4,7 @@
 
 - 📋 **v4.0 BOT Ontology Bridge** — Phases 1-4 (planned) → [requirements](milestones/v4.0-REQUIREMENTS.md) | [roadmap](milestones/v4.0-ROADMAP.md)
 - 🔄 **v7.0 Update of DG Addin for Grasshopper** — Phases 13-20 (active)
+- 📋 **v9.0 AI Workflow Intelligence** — Phases 1-8 (future, isolated; pending v7.0) → [requirements](milestones/v9.0-REQUIREMENTS.md) | [roadmap](milestones/v9.0-ROADMAP.md)
 - ⛔ **v3.0 Typed Variables and Composable Design State** — Superseded 2026-07-02 (Phase 7 shipped, carried into v7.0) → [archive](milestones/v3.0-ROADMAP.md)
 - ✅ **v2.0 DG Plugin - Design State and Validation Runs** — Phases 1-6 (shipped 2026-05-10) → [archive](milestones/v2.0-ROADMAP.md)
 - ✅ **v1.1 Project Knowledge Graph** — Phases 1-7 (shipped 2026-04-10) → [archive](milestones/v1.1-phases/)
@@ -113,7 +114,23 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. n8n knowledge workflows and the UI knowledge view (NeoVis) operate on Spec* labels — live webhook test + visual check pass
   4. `grep -ri "KnowledgeGraph\|KnowledgeNote\|KnowledgeTag\|KnowledgeSession\|KnowledgeClass"` over runtime code (data-service, n8n workflows, graph-viewer) returns only migration-script and changelog references
 
-**Plans**: 7/7 plans complete
+**Plans**: 4/5 plans executed
+
+**Wave 1** *(parallel — disjoint file sets, no inter-plan dependency)*
+
+- [x] 15-01-PLAN.md — SpecGraph migration script (4 ops) + seed/migrate/verify — *wave 1* — SPEC-01
+- [x] 15-02-PLAN.md — data-service app.py + spec_schema.cypher rename (routes preserved) — *wave 1* — SPEC-02
+- [x] 15-03-PLAN.md — n8n workflows rename + inline Cypher + export deletion (webhooks preserved) — *wave 1* — SPEC-03
+- [x] 15-04-PLAN.md — UI/NeoVis config keys + index.html SpecGraph view key — *wave 1* — SPEC-04
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 15-05-PLAN.md — test renames + _add_backfill delete + docs + phase-wide SC#4 gate — *wave 2, depends 15-01..15-04* — SPEC-01..04
+
+**Cross-cutting constraints** *(appear in 2+ plans — keep consistent):*
+
+- `SpecGraph` graph value + `SpecNote`/`SpecTag`/`SpecSession`/`SpecClass` labels + `spec_note_search` index must match 1:1 across 15-01 (DB), 15-02 (data-service), 15-03 (n8n), 15-04 (NeoVis)
+- URL-facing identifiers preserved: `/knowledge/*` routes, `dg/knowledge-*` webhook paths, UI `knowledge-*` polling keys (SPEC-02)
 
 ### Phase 16: DG.Core State Models and State Components
 
@@ -194,7 +211,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 |-------|----------------|--------|-----------|
 | 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
-| 15. SpecGraph Runtime Rename | 0/? | Not started | - |
+| 15. SpecGraph Runtime Rename | 4/5 | In Progress|  |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |
 | 17. Graph Access Components | 0/? | Not started | - |
 | 18. Rules and Validator Rework | 0/? | Not started | - |
