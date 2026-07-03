@@ -24,11 +24,11 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         MATCH (r:Rule {graph:'Metagraph', project:$project})
         RETURN
             r.Rule_Id AS id,
-            coalesce(r.title, r.name, r.Rule_Id) AS name,
-            coalesce(r.description, '') AS description,
+            coalesce(r.RuleName, r.title, r.name, r.Rule_Id) AS name,
+            coalesce(r.RuleDescription, r.description, '') AS description,
             coalesce(r.kind, 'violation') AS kind,
             coalesce(r.text, '') AS text,
-            coalesce(r.swrl, r.text, '') AS swrl,
+            coalesce(r.SWRL, r.swrl, r.text, '') AS swrl,
             coalesce(r.project, $project) AS project,
             coalesce(r.graph, 'Metagraph') AS graph
         ORDER BY id
