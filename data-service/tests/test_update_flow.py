@@ -87,7 +87,7 @@ def test_confirm_409_on_stale_updatedAt():
 
 
 def test_confirm_writes_and_creates_session():
-    """UPDK-05 + UPDK-06: confirm writes content and creates KnowledgeSession."""
+    """UPDK-05 + UPDK-06: confirm writes content and creates SpecSession."""
     from app import knowledge_update_confirm, UpdateConfirmRequest, NoteConfirmItem
     written_queries = []
     def mock_write(cypher, params):
@@ -105,7 +105,7 @@ def test_confirm_writes_and_creates_session():
         # Three write_query calls: SET content, MERGE session, INSTANCE_OF
         assert len(written_queries) == 3
         assert "SET n.content" in written_queries[0][0]
-        assert "KnowledgeSession" in written_queries[1][0]
+        assert "SpecSession" in written_queries[1][0]
         assert "INSTANCE_OF" in written_queries[2][0]
 
 
