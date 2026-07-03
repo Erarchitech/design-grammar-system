@@ -1436,10 +1436,10 @@
         const [graphView, setGraphView] = React.useState("MetaGraph");
         const buildCypher = (view) => {
           const pf = project ? ", project:'" + project.replace(/'/g, "") + "'" : "";
-          if (view === "KnowledgeGraph") {
+          if (view === "SpecGraph") {
             return (
-              "MATCH (n {graph:'KnowledgeGraph'" + pf + "}) " +
-              "OPTIONAL MATCH (n)-[r]-(m {graph:'KnowledgeGraph'" + pf + "}) " +
+              "MATCH (n {graph:'SpecGraph'" + pf + "}) " +
+              "OPTIONAL MATCH (n)-[r]-(m {graph:'SpecGraph'" + pf + "}) " +
               "RETURN n, r, m"
             );
           }
@@ -2913,7 +2913,7 @@
 
         React.useEffect(() => {
           if (activeTab === "specs-notes") {
-            const q = buildCypher("KnowledgeGraph");
+            const q = buildCypher("SpecGraph");
             setCypher(q);
             run(q);
             (async () => {
