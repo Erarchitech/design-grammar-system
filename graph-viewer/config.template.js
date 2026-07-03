@@ -24,10 +24,10 @@ window.GRAPH_CONFIG = {
     Var: { label: "name" },
     Literal: { label: "lex" },
     DesignState: { label: "StateId", group: "kind" },
-    KnowledgeNote: { label: "title" },
-    KnowledgeTag: { label: "name" },
-    KnowledgeSession: { label: "mode" },
-    KnowledgeClass: { label: "label" }
+    SpecNote: { label: "title" },
+    SpecTag: { label: "name" },
+    SpecSession: { label: "mode" },
+    SpecClass: { label: "label" }
   },
   relationships: {
     HAS_BODY: { caption: true, thickness: 2 },
@@ -51,9 +51,9 @@ window.GRAPH_CONFIG = {
     ParamState: { color: { background: "#a8d8ea", border: "#6fb3cf" } },
     ObjState: { color: { background: "#f4a261", border: "#d4823a" } },
     PropState: { color: { background: "#7bcfc0", border: "#4fa696" } },
-    KnowledgeNote: { color: { background: "#4ecdc4", border: "#2fa89f" } },
-    KnowledgeTag: { color: { background: "#ffe66d", border: "#d4bf3a" } },
-    KnowledgeSession: { color: { background: "#a78bfa", border: "#7c5fcf" } },
-    KnowledgeClass: { color: { background: "#f472b6", border: "#db2777" } }
+    SpecNote: { color: { background: "#4ecdc4", border: "#2fa89f" } },
+    SpecTag: { color: { background: "#ffe66d", border: "#d4bf3a" } },
+    SpecSession: { color: { background: "#a78bfa", border: "#7c5fcf" } },
+    SpecClass: { color: { background: "#f472b6", border: "#db2777" } }
   }
 };
