@@ -29,11 +29,11 @@
 // These simulate the v3 parameter-kind value that the migration renames
 // to ParamState.
 
-MERGE (:Run {Run_Id: 'seed-run-01', project: 'phase14-smoke', graph: 'Metagraph'})
-  SET Run.SendStatus = false, Run.ValidStatus = [];
+MERGE (r:Run {Run_Id: 'seed-run-01', project: 'phase14-smoke', graph: 'Metagraph'})
+  SET r.SendStatus = false, r.ValidStatus = [];
 
-MERGE (:Run {Run_Id: 'seed-run-02', project: 'phase14-smoke', graph: 'Metagraph'})
-  SET Run.SendStatus = false, Run.ValidStatus = [];
+MERGE (r2_run:Run {Run_Id: 'seed-run-02', project: 'phase14-smoke', graph: 'Metagraph'})
+  SET r2_run.SendStatus = false, r2_run.ValidStatus = [];
 
 // DefState #1 — linked to seed-run-01
 MERGE (ds1:DesignState {StateId: 'DS_seed_defstate_01', project: 'phase14-smoke'})
