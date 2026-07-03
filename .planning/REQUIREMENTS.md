@@ -19,7 +19,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### Graph Schema Propagation (SCHM — continues v3.0 numbering, which ended at SCHM-06)
 
-- [x] **SCHM-07**: `cypher_template.txt` v4 — DesignState `kind` ∈ {ObjState, ParamState, PropState}; Run properties (ValidStatus Boolean, SendStatus Boolean, Status text); rule-level SWRL property
+- [x] **SCHM-07**: `cypher_template.txt` v4 — DesignState `kind` ∈ {ObjState, ParamState, PropState}; Run properties (ValidStatus Boolean, SendStatus Boolean — per D-01/D-14 the prior Status-string property was removed; overall pass = AND(ValidStatus) derived at read time); rule-level SWRL property
 - [x] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
 - [x] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
 - [x] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema

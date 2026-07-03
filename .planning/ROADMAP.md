@@ -85,7 +85,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 **Requirements**: SCHM-07, SCHM-08, SCHM-09, SCHM-10, SCHM-11, SCHM-12, SCHM-13, SCHM-14
 **Success Criteria** (what must be TRUE):
 
-  1. `cypher_template.txt` declares SCHEMA VERSION v4 with DesignState `kind` ∈ {ObjState, ParamState, PropState}, the Phase-13 layer placement, Run properties (ValidStatus, SendStatus, Status), and a rule-level SWRL property; `dataset_schema.json` mirrors it exactly
+  1. `cypher_template.txt` declares SCHEMA VERSION v4 with DesignState `kind` ∈ {ObjState, ParamState, PropState}, the Phase-13 layer placement, Run properties (ValidStatus, SendStatus — no stored Status text field; overall pass = AND(ValidStatus) derived at read time per D-01/D-02), and a rule-level SWRL property; `dataset_schema.json` mirrors it exactly
   2. A live rule ingest through the n8n webhook generates Cypher that validates against the v4 template (correct labels, kinds, and Run properties)
   3. The n8n graph-query prompt describes the v4 data model; a natural-language query about design states returns results using the new kind values
   4. NeoVis renders all three state kinds with distinct colors from `config.template.js` (duplicate DatatypeProperty/DataProperty entries reconciled); no `DefState`/`ObjectState` kind entries remain in any runtime artifact
