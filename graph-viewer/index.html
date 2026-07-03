@@ -1573,7 +1573,7 @@
           setLoadingRules(true);
           try {
             const result = await executeCypher(
-              "MATCH (r:Rule) WHERE r.graph = 'Metagraph'" + (project ? " AND r.project = '" + project.replace(/'/g, "") + "'" : "") + " RETURN r.Rule_Id AS rule_id, coalesce(r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id"
+              "MATCH (r:Rule) WHERE r.graph = 'Metagraph'" + (project ? " AND r.project = '" + project.replace(/'/g, "") + "'" : "") + " RETURN r.Rule_Id AS rule_id, coalesce(r.SWRL, r.text, '') AS text, coalesce(r.kind, '') AS kind ORDER BY r.Rule_Id"
             );
             const rows = result?.results?.[0]?.data?.map(d => d.row) || [];
             setExistingRules(rows.map(r => ({ rule_id: r[0], text: r[1], kind: r[2] })));
