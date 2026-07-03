@@ -1,5 +1,5 @@
 {
-  "name": "Knowledge Ingest",
+  "name": "Spec Ingest",
   "active": true,
   "nodes": [
     {
@@ -116,7 +116,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const input = $json;\nconst now = new Date().toISOString();\nconst project = input.project_name;\nconst graph = 'KnowledgeGraph';\nconst noteId = input.noteId;\nconst title = input.title;\nconst content = input.content;\nconst tags = input.tags || ['untagged'];\n\n// Statement 1: MERGE KnowledgeNote\nconst noteStatement = {\n  statement: [\n    'MERGE (n:KnowledgeNote {noteId: $noteId, project: $project, graph: $graph})',\n    'SET n.title = $title, n.content = $content, n.tags = $tags, n.createdAt = $now, n.updatedAt = $now'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    project: project,\n    graph: graph,\n    title: title,\n    content: content,\n    tags: tags,\n    now: now\n  }\n};\n\n// Additional statements: one per tag — MERGE KnowledgeTag + TAGGED_WITH relationship\nconst tagStatements = tags.map(tag => ({\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    'MERGE (t:KnowledgeTag {name: $tag, project: $project, graph: $graph})',\n    'MERGE (n)-[:TAGGED_WITH]->(t)'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    tag: tag,\n    project: project,\n    graph: graph\n  }\n}));\n\n// INSTANCE_OF link to parent class hub node\nconst noteClassStatement = {\n  statement: [\n    'MATCH (n:KnowledgeNote {noteId: $noteId, graph: $graph})',\n    \"MERGE (c:KnowledgeClass {name: 'KnowledgeNote', graph: $graph})\",\n    'MERGE (n)-[:INSTANCE_OF]->(c)'\n  ].join(' '),\n  parameters: { noteId: noteId, graph: graph }\n};\nconst neo4jBody = { statements: [noteStatement, ...tagStatements, noteClassStatement] };\nreturn [{ json: { ...input, neo4jBody } }];"
+        "functionCode": "const input = $json;\nconst now = new Date().toISOString();\nconst project = input.project_name;\nconst graph = 'SpecGraph';\nconst noteId = input.noteId;\nconst title = input.title;\nconst content = input.content;\nconst tags = input.tags || ['untagged'];\n\n// Statement 1: MERGE SpecNote\nconst noteStatement = {\n  statement: [\n    'MERGE (n:SpecNote {noteId: $noteId, project: $project, graph: $graph})',\n    'SET n.title = $title, n.content = $content, n.tags = $tags, n.createdAt = $now, n.updatedAt = $now'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    project: project,\n    graph: graph,\n    title: title,\n    content: content,\n    tags: tags,\n    now: now\n  }\n};\n\n// Additional statements: one per tag — MERGE SpecTag + TAGGED_WITH relationship\nconst tagStatements = tags.map(tag => ({\n  statement: [\n    'MATCH (n:SpecNote {noteId: $noteId, graph: $graph})',\n    'MERGE (t:SpecTag {name: $tag, project: $project, graph: $graph})',\n    'MERGE (n)-[:TAGGED_WITH]->(t)'\n  ].join(' '),\n  parameters: {\n    noteId: noteId,\n    tag: tag,\n    project: project,\n    graph: graph\n  }\n}));\n\n// INSTANCE_OF link to parent class hub node\nconst noteClassStatement = {\n  statement: [\n    'MATCH (n:SpecNote {noteId: $noteId, graph: $graph})',\n    \"MERGE (c:SpecClass {name: 'SpecNote', graph: $graph})\",\n    'MERGE (n)-[:INSTANCE_OF]->(c)'\n  ].join(' '),\n  parameters: { noteId: noteId, graph: graph }\n};\nconst neo4jBody = { statements: [noteStatement, ...tagStatements, noteClassStatement] };\nreturn [{ json: { ...input, neo4jBody } }];"
       },
       "id": "ki-build-cypher",
       "name": "Build Cypher",
@@ -159,13 +159,13 @@
           "ignoreSslIssues": true,
           "timeout": 30000
         },
-        "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:KnowledgeSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'KnowledgeGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }, { statement: 'MATCH (s:KnowledgeSession {sessionId: $sessionId, graph: $graph}) MERGE (c:KnowledgeClass {name: \\'KnowledgeSession\\', graph: $graph}) MERGE (s)-[:INSTANCE_OF]->(c)', parameters: { sessionId: sessionId, graph: 'KnowledgeGraph' } }] }; })() }}",
+        "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:SpecSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'SpecGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }, { statement: 'MATCH (s:SpecSession {sessionId: $sessionId, graph: $graph}) MERGE (c:SpecClass {name: \\'SpecSession\\', graph: $graph}) MERGE (s)-[:INSTANCE_OF]->(c)', parameters: { sessionId: sessionId, graph: 'SpecGraph' } }] }; })() }}",
         "basicAuthUser": "neo4j",
         "basicAuthPassword": "12345678",
         "requestMethod": "POST"
       },
       "id": "ki-write-session",
-      "name": "Write KnowledgeSession",
+      "name": "Write SpecSession",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
@@ -280,14 +280,17 @@
       "main": [
         [
           {
-            "node": "Write KnowledgeSession",
+            "node": "Write SpecSession",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Write KnowledgeSession": {
+    "Post Execution Result": {
+      "main": []
+    },
+    "Write SpecSession": {
       "main": [
         [
           {
@@ -297,9 +300,6 @@
           }
         ]
       ]
-    },
-    "Post Execution Result": {
-      "main": []
     }
   }
 }
