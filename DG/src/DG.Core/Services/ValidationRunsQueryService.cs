@@ -12,7 +12,7 @@ public sealed class ValidationRunsQueryService
 {
     private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
 
-    private const string ValidationGraph = "ValidationGraph";
+    private const string ValidationGraph = "ValidGraph";
 
     private const string RunsQuery = """
         MATCH (run:ValidationRun {graph:$graph, project:$project})

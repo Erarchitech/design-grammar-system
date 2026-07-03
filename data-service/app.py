@@ -38,7 +38,7 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
 WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
-VALIDATION_GRAPH = "ValidationGraph"
+VALIDATION_GRAPH = "ValidGraph"
 KNOWLEDGE_GRAPH = "KnowledgeGraph"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"

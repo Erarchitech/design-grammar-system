@@ -75,7 +75,7 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
             CREATE (r:ValidationRun {
                 runId: $runId,
                 project: $project,
-                graph: 'ValidationGraph',
+                graph: 'ValidGraph',
                 createdAt: datetime(),
                 rulesJson: '[]',
                 statePayloadJson: $statePayloadJson
@@ -124,7 +124,7 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
             CREATE (r:ValidationRun {
                 runId: $runId,
                 project: $project,
-                graph: 'ValidationGraph',
+                graph: 'ValidGraph',
                 createdAt: datetime(),
                 rulesJson: '[]'
             })
@@ -184,7 +184,7 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
         await session.RunAsync(
             """
             CREATE (r:ValidationRun {
-                runId: $runId, project: $project, graph: 'ValidationGraph',
+                runId: $runId, project: $project, graph: 'ValidGraph',
                 createdAt: datetime(),
                 rulesJson: $rulesJson,
                 statePayloadJson: $statePayloadJson
@@ -201,7 +201,7 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
         await session.RunAsync(
             """
             CREATE (r:ValidationRun {
-                runId: $runId, project: $project, graph: 'ValidationGraph',
+                runId: $runId, project: $project, graph: 'ValidGraph',
                 createdAt: datetime(),
                 rulesJson: $rulesJson,
                 statePayloadJson: $statePayloadJson
@@ -218,7 +218,7 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
         await session.RunAsync(
             """
             CREATE (r:ValidationRun {
-                runId: $runId, project: $project, graph: 'ValidationGraph',
+                runId: $runId, project: $project, graph: 'ValidGraph',
                 createdAt: datetime(),
                 rulesJson: $rulesJson
             })
