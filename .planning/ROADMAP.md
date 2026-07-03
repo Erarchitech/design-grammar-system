@@ -114,7 +114,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. n8n knowledge workflows and the UI knowledge view (NeoVis) operate on Spec* labels — live webhook test + visual check pass
   4. `grep -ri "KnowledgeGraph\|KnowledgeNote\|KnowledgeTag\|KnowledgeSession\|KnowledgeClass"` over runtime code (data-service, n8n workflows, graph-viewer) returns only migration-script and changelog references
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans complete
 
 **Wave 1** *(parallel — disjoint file sets, no inter-plan dependency)*
 
@@ -125,7 +125,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 15-05-PLAN.md — test renames + _add_backfill delete + docs + phase-wide SC#4 gate — *wave 2, depends 15-01..15-04* — SPEC-01..04
+- [x] 15-05-PLAN.md — test renames + _add_backfill delete + docs + phase-wide SC#4 gate — *wave 2, depends 15-01..15-04* — SPEC-01..04
 
 **Cross-cutting constraints** *(appear in 2+ plans — keep consistent):*
 
@@ -211,7 +211,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 |-------|----------------|--------|-----------|
 | 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
-| 15. SpecGraph Runtime Rename | 4/5 | In Progress|  |
+| 15. SpecGraph Runtime Rename | 5/5 | Complete   | 2026-07-03 |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |
 | 17. Graph Access Components | 0/? | Not started | - |
 | 18. Rules and Validator Rework | 0/? | Not started | - |
