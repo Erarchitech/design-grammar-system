@@ -49,6 +49,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Ontology V7 full rename over incremental|Ontology V7 full rename over incremental]]
 - [[decisions/DesignState persists to ValidGraph not Metagraph|DesignState persists to ValidGraph not Metagraph]]
 - [[decisions/Run ValidStatus is a per-object boolean array|Run ValidStatus is a per-object boolean array]]
+- [[decisions/Rule properties renamed to SWRL RuleName RuleDescription in v4|Rule properties renamed to SWRL RuleName RuleDescription in v4]]
+- [[decisions/Kind migration deletes orphan DesignStates on ValidGraph move|Kind migration deletes orphan DesignStates on ValidGraph move]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
