@@ -173,7 +173,7 @@ dotnet test .\DG\tests\DG.Tests\
 ## Current Priorities
 
 1. **Phase 14: Graph Schema v4 Propagation** — propagate V7 ontology names across cypher_template.txt, dataset_schema.json, n8n prompts, NeoVis config, data-service Cypher. Start: `/gsd-discuss-phase 14`
-2. **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph rename in data-service, n8n, NeoVis, UI + DB migration
+2. **Phase 15: SpecGraph Runtime Rename** — runtime rename in data-service, n8n, NeoVis, UI + DB migration
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport
 4. **Validation management** — add delete/rename for validation runs
 

@@ -11,7 +11,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `OntoGraph` | Class, DatatypeProperty, ObjectProperty | Domain ontology terms |
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
 | `ValidationGraph` | IntegrationConfig, ValidationRun, ValidationEntity | Speckle integration + validation metadata |
-| `KnowledgeGraph` | KnowledgeNote, KnowledgeTag, KnowledgeSession, KnowledgeClass | Project knowledge storage |
+| `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
 
 ## Node Labels
 
@@ -59,27 +59,27 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 (:Builtin {iri: "swrlb:greaterThan", label: "greaterThan", graph: "Metagraph", project: "1"})
 ```
 
-### KnowledgeGraph
+### SpecGraph
 
-**KnowledgeClass** — Parent hub nodes connecting all instances of a knowledge type
+**SpecClass** — Parent hub nodes connecting all instances of a spec type
 ```
-(:KnowledgeClass {name: "KnowledgeNote", label: "KnowledgeNote", graph: "KnowledgeGraph"})
-(:KnowledgeClass {name: "KnowledgeSession", label: "KnowledgeSession", graph: "KnowledgeGraph"})
-```
-
-**KnowledgeNote** — A project knowledge entry (from folder ingest or NL prompt)
-```
-(:KnowledgeNote {noteId: "abc123", title: "Site constraints", content: "...", tags: ["zoning"], source: "notes/site.md", graph: "KnowledgeGraph", project: "1"})
+(:SpecClass {name: "SpecNote", label: "SpecNote", graph: "SpecGraph"})
+(:SpecClass {name: "SpecSession", label: "SpecSession", graph: "SpecGraph"})
 ```
 
-**KnowledgeTag** — A tag label shared across notes
+**SpecNote** — A project spec entry (from folder ingest or NL prompt)
 ```
-(:KnowledgeTag {name: "zoning", graph: "KnowledgeGraph", project: "1"})
+(:SpecNote {noteId: "abc123", title: "Site constraints", content: "...", tags: ["zoning"], source: "notes/site.md", graph: "SpecGraph", project: "1"})
 ```
 
-**KnowledgeSession** — An interaction log (insert, query, or update)
+**SpecTag** — A tag label shared across notes
 ```
-(:KnowledgeSession {sessionId: "ks-abc123", mode: "insert", prompt: "...", result: "...", createdAt: "2026-01-01T00:00:00Z", graph: "KnowledgeGraph", project: "1"})
+(:SpecTag {name: "zoning", graph: "SpecGraph", project: "1"})
+```
+
+**SpecSession** — An interaction log (insert, query, or update)
+```
+(:SpecSession {sessionId: "ks-abc123", mode: "insert", prompt: "...", result: "...", createdAt: "2026-01-01T00:00:00Z", graph: "SpecGraph", project: "1"})
 ```
 
 ## Relationships
@@ -90,8 +90,8 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `HAS_HEAD` | Rule | Atom | `order` (int) | Head atoms (conclusions) |
 | `REFERS_TO` | Atom | Class/DatatypeProperty/ObjectProperty/Builtin | — | What the atom references |
 | `ARG` | Atom | Var/Literal | `pos` (int, 1-indexed) | Atom arguments |
-| `TAGGED_WITH` | KnowledgeNote | KnowledgeTag | — | Note-to-tag association |
-| `INSTANCE_OF` | KnowledgeNote/KnowledgeSession | KnowledgeClass | — | Instance-to-parent-class link |
+| `TAGGED_WITH` | SpecNote | SpecTag | — | Note-to-tag association |
+| `INSTANCE_OF` | SpecNote/SpecSession | SpecClass | — | Instance-to-parent-class link |
 
 ## Rule ID Format
 
