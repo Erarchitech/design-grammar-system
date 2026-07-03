@@ -126,4 +126,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-03 Phase 14 planning - 7 plans across 3 waves|2026-07-03 Phase 14 planning — 7 plans across 3 waves]]
 - [[sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions|2026-07-03 Phase 15 discuss — SpecGraph rename decisions]]
 - [[sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components|2026-07-04 Phase 16 discuss — DG.Core state models and state components]]
+- [[sessions/2026-07-04 Phase 16 planning - 6 plans across 3 waves|2026-07-04 Phase 16 planning — 6 plans across 3 waves]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

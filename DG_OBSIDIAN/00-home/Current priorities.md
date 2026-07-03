@@ -7,7 +7,7 @@ date: 2026-07-04
 
 ## Active
 
-1. **v7.0 Phase 16 (DG.Core State Models and State Components)** — **context gathered 2026-07-04.** Four gray areas discussed: DESIGN STATE aggregate semantics (one snapshot, independent bags, index-mismatch guards in leaf components), statePayloadJson v2 (versioned envelope, clean break from v1), PropState value model (typed Num/Int/Bool scalar, plain string refs, rule-scoped), scaffolding removal + DESIGN STATE → PARAMETER STATE rename. 15 decisions in `16-CONTEXT.md`. Next: `/gsd-plan-phase 16`. See [[sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components|Phase 16 discussion session]].
+1. **v7.0 Phase 16 (DG.Core State Models and State Components)** — **planned 2026-07-04.** 6 plans across 3 waves (14 tasks): Wave 1 — core models + ID generator + scaffolding deletion; Wave 2 — PublicTypes + GhCastingHelpers + v2 serializer; Wave 3 — GH components (OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE). 9/9 requirements covered, 15/15 decisions, 0 blockers. Next: `/gsd-execute-phase 16`. See [[sessions/2026-07-04 Phase 16 planning - 6 plans across 3 waves|Phase 16 planning session]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
