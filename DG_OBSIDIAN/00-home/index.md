@@ -52,6 +52,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Rule properties renamed to SWRL RuleName RuleDescription in v4|Rule properties renamed to SWRL RuleName RuleDescription in v4]]
 - [[decisions/Kind migration deletes orphan DesignStates on ValidGraph move|Kind migration deletes orphan DesignStates on ValidGraph move]]
 - [[decisions/ValidationGraph runtime renamed to ValidGraph per D-14|D-14 — ValidationGraph runtime renamed to ValidGraph]]
+- [[decisions/SpecGraph migration matches ValidGraph rename pattern with full index recreation|SpecGraph migration matches ValidGraph rename pattern with full index recreation]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -122,4 +123,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-03 Phase 13 planning - 4 plans across 3 waves|2026-07-03 Phase 13 planning — 4 plans across 3 waves]]
 - [[sessions/2026-07-03 Phase 13 execution and Nyquist validation|2026-07-03 Phase 13 execution + Nyquist validation]]
 - [[sessions/2026-07-03 Phase 14 planning - 7 plans across 3 waves|2026-07-03 Phase 14 planning — 7 plans across 3 waves]]
+- [[sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions|2026-07-03 Phase 15 discuss — SpecGraph rename decisions]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
