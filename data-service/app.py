@@ -158,10 +158,10 @@ class ValidationPublishEntityPayload(BaseModel):
 
 class ValidationPublishRequest(BaseModel):
     project: str
-    # statePayloadJson carries the captured DesignState snapshot as JSON. v3.0
-    # DefState payloads use DS_-prefixed stateId values (unchanged from v2.0);
-    # OS_-prefixed ObjectState references join this payload from Phase 11
-    # onward (see CLAUDE.md Graph Schema v3 / DesignState kind vocabulary).
+    # statePayloadJson carries the captured DesignState snapshot as JSON. v4.0
+    # ParamState payloads use DS_-prefixed stateId values (unchanged from v2.0);
+    # OS_-prefixed ObjState references join this payload from Phase 11
+    # onward (see CLAUDE.md Graph Schema v4 / DesignState kind vocabulary).
     statePayloadJson: str | None = None
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
@@ -403,6 +403,14 @@ def store_validation_run(
     state_payload_json: str | None = None,
 ) -> None:
     created_at = datetime.now(timezone.utc).isoformat()
+
+    # Best-effort ValidStatus: per-entity pass/fail from currently available data.
+    # Phase 18 (GHVL-05) owns the full per-ObjState index-matched population.
+    valid_status: list[bool] = [
+        len(entity.get("failedRuleIds") or []) == 0
+        for entity in entities
+    ]
+
     write_query(
         """
         MERGE (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
@@ -418,6 +426,8 @@ def store_validation_run(
             run.rulesJson = $rulesJson,
             run.statePayloadJson = $statePayloadJson,
             run.status = 'completed',
+            run.ValidStatus = $validStatus,
+            run.SendStatus = true,
             run.createdAt = $createdAt
         """,
         {
@@ -434,6 +444,7 @@ def store_validation_run(
             "validationResourceUrl": publish_result["validationResourceUrl"],
             "rulesJson": json.dumps(rules_summary),
             "statePayloadJson": state_payload_json,
+            "validStatus": valid_status,
             "createdAt": created_at,
         },
     )
@@ -503,6 +514,8 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
             run.baseResourceUrl AS baseResourceUrl,
             run.validationResourceUrl AS validationResourceUrl,
             run.rulesJson AS rulesJson,
+            run.ValidStatus AS validStatus,
+            run.SendStatus AS sendStatus,
             run.createdAt AS createdAt
         ORDER BY run.createdAt DESC
         LIMIT 1
@@ -523,9 +536,9 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
 
     Returns None for absent, empty, or malformed payloads. Never raises.
 
-    Vocabulary note (Phase 7, no behavior change): stateId values follow the
+    Vocabulary note (Phase 14, no behavior change): stateId values follow the
     DS_/OS_ ID-prefix convention established for the DesignState node hierarchy
-    (DS_ = DefState, OS_ = ObjectState). This function only summarizes whatever
+    (DS_ = ParamState, OS_ = ObjState). This function only summarizes whatever
     stateId is present; OS_-prefixed payload extension lands in Phase 11.
     """
     if not state_payload_json:
@@ -558,6 +571,8 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
             run.validationModelId AS validationModelId,
             run.validationVersionId AS validationVersionId,
             run.modelViewerUrl AS modelViewerUrl,
+            run.ValidStatus AS validStatus,
+            run.SendStatus AS sendStatus,
             run.createdAt AS createdAt,
             run.rulesJson AS rulesJson,
             run.statePayloadJson AS statePayloadJson,
