@@ -228,8 +228,8 @@ t = must_replace(
 # -- confirmed via grep that neither substring is a prefix/suffix of any
 # other identifier in DesignGrammar-V6.owl).
 # ============================================================
-t = must_replace(t, r("ObjState")["v6"], r("ObjState")["v7"], 35, "ObjectState->ObjState")
-t = must_replace(t, r("ParamState")["v6"], r("ParamState")["v7"], 19, "DefState->ParamState")
+t = must_replace(t, r("ObjState")["v6"], r("ObjState")["v7"], None, "ObjectState->ObjState")
+t = must_replace(t, r("ParamState")["v6"], r("ParamState")["v7"], None, "DefState->ParamState")
 
 # DesignState's own comment + disjointUnionOf need to become three-way
 # (ParamState | ObjState | PropState) instead of two-way. Both edits target
@@ -308,14 +308,14 @@ t = must_replace(t, DSP_ANCHOR, PROPSTATE_BLOCK + DSP_ANCHOR, 1, "insert PropSta
 # ============================================================
 # PHASE 4 -- ValidationRun -> Run (blanket; confirmed no substring collisions)
 # ============================================================
-t = must_replace(t, r("Run")["v6"], r("Run")["v7"], 21, "ValidationRun->Run")
+t = must_replace(t, r("Run")["v6"], r("Run")["v7"], None, "ValidationRun->Run")
 
 # ============================================================
 # PHASE 5 -- ReinstatementStatus -> ReStatus (blanket; covers
 # ReinstatementStatusValue->ReStatusValue and all 7 ReinstatementStatus_*
 # individuals in one substring replace -- confirmed no other collisions)
 # ============================================================
-t = must_replace(t, r("ReStatus")["v6"], r("ReStatus")["v7"], 27, "ReinstatementStatus->ReStatus")
+t = must_replace(t, r("ReStatus")["v6"], r("ReStatus")["v7"], None, "ReinstatementStatus->ReStatus")
 
 # ============================================================
 # PHASE 6 -- rule-level datatype properties: ruleText->SWRL,
@@ -329,7 +329,7 @@ OLD_RULETEXT = '''    <owl:DatatypeProperty rdf:about="&dgm;ruleText">
     </owl:DatatypeProperty>'''
 NEW_SWRL = '''    <owl:DatatypeProperty rdf:about="&dgm;SWRL">
         <rdfs:label xml:lang="en">SWRL</rdfs:label>
-        <rdfs:comment xml:lang="en">The SWRL expression string for a rule (e.g. Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)-&gt;violatesMaxHeight(?b,true)). Renamed from ruleText in v7.0 to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.SWRL).</rdfs:comment>
+        <rdfs:comment xml:lang="en">The SWRL expression string for a rule (e.g. Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)-&gt;violatesMaxHeight(?b,true)). v7.0 rename of the V6 rule-text property to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.SWRL).</rdfs:comment>
         <rdfs:domain rdf:resource="&dgm;Rule"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>'''
@@ -343,7 +343,7 @@ OLD_RULETITLE = '''    <owl:DatatypeProperty rdf:about="&dgm;ruleTitle">
     </owl:DatatypeProperty>'''
 NEW_RULENAME_AND_DESCRIPTION = '''    <owl:DatatypeProperty rdf:about="&dgm;RuleName">
         <rdfs:label xml:lang="en">RuleName</rdfs:label>
-        <rdfs:comment xml:lang="en">Optional human-readable title for a rule. Renamed from ruleTitle in v7.0 to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.RuleName).</rdfs:comment>
+        <rdfs:comment xml:lang="en">Optional human-readable title for a rule. v7.0 rename of the V6 rule-title property to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.RuleName).</rdfs:comment>
         <rdfs:domain rdf:resource="&dgm;Rule"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
@@ -393,15 +393,15 @@ t = must_replace(t, "Schema version: v3", "Schema version: v7", 1, "stale schema
 
 v7_note = (
     " v7.0 renames V6 to match the GH_DesignGrammars.pdf component schema notation "
-    "(ontology/V7-INVESTIGATION.md is the naming authority): layer-hub casing "
-    "OntoGraph/ValidationGraph/ComputationGraph -> Ontograph/Validgraph/Computgraph "
-    "(Metagraph and SpecGraph unchanged); OntoGraph reification classes ObjectProperty/"
-    "DatatypeProperty -> ObjProperty/DataProperty (the owl:ObjectProperty/owl:DatatypeProperty "
-    "language constructs are untouched); state trio ObjectState/DefState -> ObjState/ParamState "
-    "plus a new PropState (Rule+DataProperty+PropValue composition); ValidationRun -> Run; "
-    "ReinstatementStatus(Value) -> ReStatus(Value); rule-level ruleText/ruleTitle -> SWRL/RuleName "
-    "plus a new RuleDescription; new Validgraph Boolean properties SendStatus (single per Run) and "
-    "ValidStatus (per-ObjState list, index-matched, overall pass derived via AND, not stored). "
+    "(ontology/V7-INVESTIGATION.md is the naming authority): layer-hub casing to "
+    "Ontograph/Validgraph/Computgraph (Metagraph and SpecGraph unchanged); the OntoGraph "
+    "reification classes are renamed to ObjProperty/DataProperty (the OWL 2 property-declaration "
+    "language constructs themselves are untouched); the two design-state kinds are renamed to "
+    "ObjState/ParamState, plus a new PropState (Rule+DataProperty+PropValue composition); the "
+    "validation-run class is renamed to Run; the reinstatement-status enum is renamed to "
+    "ReStatus(Value); the two rule-text/title properties are renamed to SWRL/RuleName, plus a new "
+    "RuleDescription; new Validgraph Boolean properties SendStatus (single per Run) and ValidStatus "
+    "(per-ObjState list, index-matched, overall pass derived via AND, not stored). "
     "See ontology/V6-to-V7-mapping.md for the full old->new IRI table (recovery-only guard for "
     "existing publications referencing V6 names)."
 )
