@@ -26,7 +26,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds; reconcile the duplicate DatatypeProperty/DataProperty label entries) and `index.html` hardcoded Cypher updated
 - [ ] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
 - [x] **SCHM-13**: A migration script (following `migrations/` pattern) renames existing DesignState `kind` values (DefState→ParamState, ObjectState→ObjState) and applies the Phase-13 layer-placement decision on dev databases
-- [ ] **SCHM-14**: `training/updated_cypher_reference_examples_v3.cypher` gets a v4 successor and `test/` fixtures referencing v3 state kinds are updated — no runtime or LLM few-shot artifact still teaches the old schema
+- [x] **SCHM-14**: `training/updated_cypher_reference_examples_v3.cypher` gets a v4 successor and `test/` fixtures referencing v3 state kinds are updated — no runtime or LLM few-shot artifact still teaches the old schema
 
 ### SpecGraph Runtime Rename (SPEC)
 
