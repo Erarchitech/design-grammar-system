@@ -98,7 +98,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   - [x] 14-03-PLAN.md — C# read-side coalesce patch (D-06) + Wave 0 smoke/seed harness — *wave 1* — SCHM-09/10/13
   - [x] 14-04-PLAN.md — n8n ingest + query prompts v4 + live smoke — *wave 2, depends 14-01/14-03* — SCHM-09/10
   - [x] 14-05-PLAN.md — data-service `app.py` v4 + D-14 runtime-literal rename (app.py/C#/E2E) — *wave 1* — SCHM-12
-  - [ ] 14-06-PLAN.md — DesignState kind + ValidGraph-layer migration, executed on dev — *wave 3, depends 14-03/14-04/14-05* — SCHM-13
+  - [x] 14-06-PLAN.md — DesignState kind + ValidGraph-layer migration, executed on dev — *wave 3, depends 14-03/14-04/14-05* — SCHM-13
   - [x] 14-07-PLAN.md — v4 cypher reference + test fixtures + ROADMAP/REQUIREMENTS amendment — *wave 2, depends 14-01* — SCHM-14
 
 ### Phase 15: SpecGraph Runtime Rename
@@ -113,7 +113,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. n8n knowledge workflows and the UI knowledge view (NeoVis) operate on Spec* labels — live webhook test + visual check pass
   4. `grep -ri "KnowledgeGraph\|KnowledgeNote\|KnowledgeTag\|KnowledgeSession\|KnowledgeClass"` over runtime code (data-service, n8n workflows, graph-viewer) returns only migration-script and changelog references
 
-**Plans**: 6/7 plans executed
+**Plans**: 7/7 plans complete
 
 ### Phase 16: DG.Core State Models and State Components
 
@@ -193,7 +193,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
-| 14. Graph Schema v4 Propagation | 6/7 | In Progress|  |
+| 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
 | 15. SpecGraph Runtime Rename | 0/? | Not started | - |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |
 | 17. Graph Access Components | 0/? | Not started | - |
