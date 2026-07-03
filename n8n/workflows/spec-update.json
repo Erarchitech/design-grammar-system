@@ -1,5 +1,5 @@
 {
-  "name": "knowledge-update",
+  "name": "spec-update",
   "active": false,
   "nodes": [
     {
@@ -12,7 +12,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [-700, 0],
+      "position": [
+        -700,
+        0
+      ],
       "webhookId": "dg-knowledge-update"
     },
     {
@@ -47,7 +50,10 @@
       "name": "Set Input Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [-460, 0]
+      "position": [
+        -460,
+        0
+      ]
     },
     {
       "parameters": {
@@ -57,7 +63,10 @@
       "name": "Format Ack",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [-460, -160]
+      "position": [
+        -460,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -67,7 +76,10 @@
       "name": "Respond Ack",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-220, -160]
+      "position": [
+        -220,
+        -160
+      ]
     },
     {
       "parameters": {
@@ -77,7 +89,10 @@
       "name": "Build Update Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-220, 0]
+      "position": [
+        -220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -93,7 +108,10 @@
       "name": "Ollama Generate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [20, 0]
+      "position": [
+        20,
+        0
+      ]
     },
     {
       "parameters": {
@@ -123,7 +141,10 @@
       "name": "Parse LLM Text",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [260, 0]
+      "position": [
+        260,
+        0
+      ]
     },
     {
       "parameters": {
@@ -136,7 +157,10 @@
       "name": "Post Execution Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [500, 0]
+      "position": [
+        500,
+        0
+      ]
     }
   ],
   "connections": {
