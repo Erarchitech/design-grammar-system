@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase_name: roadmap complete, ready to plan
-status: roadmap-complete
-stopped_at: Phase 13 context gathered
-last_updated: "2026-07-03T00:33:47.420Z"
-last_activity: 2026-07-02
-last_activity_desc: REQUIREMENTS.md (34 reqs) + ROADMAP.md (phases 13-20) committed
+current_phase_name: Phase 13 — Ontology V7 and Contract Investigation
+status: phase-planned
+stopped_at: Phase 13 planned (4 plans, 3 waves)
+last_updated: "2026-07-03T00:53:54.648Z"
+last_activity: 2026-07-03
+last_activity_desc: Phase 13 planned — 4 plans (13-01..13-04) across 3 waves, ONTO-01..06 covered
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: Not started (roadmap complete, ready to plan)
-Plan: —
-Status: Ready for /gsd-discuss-phase 13 or /gsd-plan-phase 13
-Last activity: 2026-07-02 — REQUIREMENTS.md (34 reqs) + ROADMAP.md (phases 13-20) committed
+Phase: 13 — Ontology V7 and Contract Investigation (planned)
+Plan: 4 plans in 3 waves (13-01 → 13-02 → {13-03 ∥ 13-04}) — ready to execute
+Status: Ready for /gsd-execute-phase 13
+Last activity: 2026-07-03 — Phase 13 planned (4 PLAN.md files, ONTO-01..06 covered)
 
 ## Performance Metrics
 
@@ -83,7 +83,7 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 
 ### Pending Todos
 
-- Start Phase 13 planning: /gsd-discuss-phase 13 (or /gsd-plan-phase 13 directly)
+- Execute Phase 13: /gsd-execute-phase 13 (4 plans, 3 waves — 13-01 locks names, 13-02 builds the V7 owl, 13-03/13-04 map ports + regenerate the bundle)
 - Phase 19 can run parallel to Phase 18 once Phase 16/17 land — see ROADMAP.md dependency notes
 
 ### Blockers/Concerns
@@ -94,8 +94,8 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 ## Session Continuity
 
 Last session: 2026-07-03T00:33:47.406Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-ontology-v7-and-contract-investigation/13-CONTEXT.md
+Stopped at: Phase 13 planned (4 plans, 3 waves)
+Resume file: .planning/phases/13-ontology-v7-and-contract-investigation/13-01-PLAN.md
 
 ## Performance Metrics
 

@@ -116,4 +116,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-06-23 New PC Docker setup and n8n workflow fix|2026-06-23 New PC setup + n8n workflow fix]]
 - [[sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema|2026-07-02 v7.0 milestone init from GH_DesignGrammars schema]]
 - [[sessions/2026-07-03 Phase 13 discuss - ValidGraph and per-object ValidStatus|2026-07-03 Phase 13 discuss — ValidGraph & per-object ValidStatus]]
+- [[sessions/2026-07-03 Phase 13 planning - 4 plans across 3 waves|2026-07-03 Phase 13 planning — 4 plans across 3 waves]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

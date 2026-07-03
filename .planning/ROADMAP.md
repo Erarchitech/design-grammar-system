@@ -70,7 +70,11 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. The investigation note records the resolution of the PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict, the DesignState storage-layer conflict (cypher_template stores DesignState in Metagraph; the PDF's VALIDATION GRAPH reads it from ValidGraph), the ontology version-marker policy (V6 owl carries both versionInfo 6.1 and a stale "Schema version: v3" comment), and the final state-kind names; every output port of the 14 schema components resolves to a V7 IRI in the port↔IRI map — zero unmapped references
   4. V7 extension facades (standards/BOT/Topologic), `catalog-v001-V7.xml`, and regenerated `DesignGrammar-V7.md` load/parse without errors
 
-**Plans**: TBD
+**Plans** (planned 2026-07-03 — 4 plans, 3 waves):
+  - 13-01 — Conflict investigation + V6→V7 naming contract (`V7-INVESTIGATION.md`) — *wave 1* — ONTO-04
+  - 13-02 — `apply_v7_rename.py` → `DesignGrammar-V7.owl` + `V6-to-V7-mapping.md` — *wave 2, depends 13-01* — ONTO-01/02/03/04
+  - 13-03 — `port-iri-map-V7.md` for all 14 components — *wave 3, depends 13-02* — ONTO-06
+  - 13-04 — V7 extension facades + `catalog-v001-V7.xml` + regenerated `DesignGrammar-V7.md` — *wave 3, depends 13-02* — ONTO-05
 
 ### Phase 14: Graph Schema v4 Propagation
 
@@ -178,7 +182,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Ontology V7 and Contract Investigation | 0/? | Not started | - |
+| 13. Ontology V7 and Contract Investigation | 0/4 | Planned | - |
 | 14. Graph Schema v4 Propagation | 0/? | Not started | - |
 | 15. SpecGraph Runtime Rename | 0/? | Not started | - |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |
