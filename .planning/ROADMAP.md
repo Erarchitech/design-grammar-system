@@ -17,7 +17,7 @@ Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 compone
 
 - [x] **Phase 13: Ontology V7 and Contract Investigation** — Critical investigation resolves PDF-internal conflicts; full V6→V7 rename to schema notation; V6→V7 recovery mapping; port↔IRI map for all 14 components (completed 2026-07-03)
 - [ ] **Phase 14: Graph Schema v4 Propagation** — cypher_template v4, dataset_schema v4, n8n ingest+query prompts, NeoVis config, index.html, data-service Cypher, kind-migration script, training examples + test fixtures
-- [ ] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis
+- [x] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis (completed 2026-07-03)
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
 - [ ] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
 - [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation
@@ -211,7 +211,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 |-------|----------------|--------|-----------|
 | 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
-| 15. SpecGraph Runtime Rename | 5/5 | Complete   | 2026-07-03 |
+| 15. SpecGraph Runtime Rename | 5/5 | Complete    | 2026-07-03 |
 | 16. DG.Core State Models and State Components | 0/? | Not started | - |
 | 17. Graph Access Components | 0/? | Not started | - |
 | 18. Rules and Validator Rework | 0/? | Not started | - |

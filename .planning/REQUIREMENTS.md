@@ -30,10 +30,10 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### SpecGraph Runtime Rename (SPEC)
 
-- [ ] **SPEC-01**: A migration script renames `graph:'KnowledgeGraph'`→`'SpecGraph'` and `Knowledge*`→`Spec*` node labels (incl. fulltext index recreation) on a live Neo4j database
-- [ ] **SPEC-02**: data-service knowledge endpoints operate on `Spec*` labels (endpoint URLs preserved for UI compatibility)
-- [ ] **SPEC-03**: n8n `knowledge-*.json` workflows operate on `Spec*` labels
-- [ ] **SPEC-04**: UI knowledge view and NeoVis config render `Spec*` labels
+- [x] **SPEC-01**: A migration script renames `graph:'KnowledgeGraph'`→`'SpecGraph'` and `Knowledge*`→`Spec*` node labels (incl. fulltext index recreation) on a live Neo4j database
+- [x] **SPEC-02**: data-service knowledge endpoints operate on `Spec*` labels (endpoint URLs preserved for UI compatibility)
+- [x] **SPEC-03**: n8n `knowledge-*.json` workflows operate on `Spec*` labels
+- [x] **SPEC-04**: UI knowledge view and NeoVis config render `Spec*` labels
 
 ### DG.Core State Models (CORE)
 
