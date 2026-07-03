@@ -5,16 +5,16 @@ milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 14
 current_phase_name: Graph Schema v4 Propagation
 status: executing
-stopped_at: Plan 14-07 complete — v4 reference, fixture hygiene, D-02 amendment
-last_updated: "2026-07-03T12:30:00.000Z"
+stopped_at: Phase 15 context gathered
+last_updated: "2026-07-03T15:12:50.459Z"
 last_activity: 2026-07-03
-last_activity_desc: Completed Plan 14-07 (v4 successor reference, test fixture markers, stale Status-text wording removed)
+last_activity_desc: Completed Plan 14-07 (v4 successor reference, test fixture markers, D-02 amendment)
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 11
+  percent: 25
 ---
 
 # Project State
@@ -109,9 +109,9 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 
 ## Session Continuity
 
-Last session: 2026-07-03T12:30:00.000Z
-Stopped at: Plan 14-07 complete — v4 reference, fixture hygiene, D-02 amendment (ready for 14-04/14-06)
-Resume file: .planning/phases/14-graph-schema-v4-propagation/14-07-SUMMARY.md
+Last session: 2026-07-03T15:12:50.446Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-specgraph-runtime-rename/15-CONTEXT.md
 
 ## Performance Metrics
 
