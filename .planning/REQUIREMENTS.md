@@ -19,13 +19,13 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### Graph Schema Propagation (SCHM — continues v3.0 numbering, which ended at SCHM-06)
 
-- [ ] **SCHM-07**: `cypher_template.txt` v4 — DesignState `kind` ∈ {ObjState, ParamState, PropState}; Run properties (ValidStatus Boolean, SendStatus Boolean, Status text); rule-level SWRL property
-- [ ] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
-- [ ] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
-- [ ] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema
+- [x] **SCHM-07**: `cypher_template.txt` v4 — DesignState `kind` ∈ {ObjState, ParamState, PropState}; Run properties (ValidStatus Boolean, SendStatus Boolean, Status text); rule-level SWRL property
+- [x] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
+- [x] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
+- [x] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema
 - [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds; reconcile the duplicate DatatypeProperty/DataProperty label entries) and `index.html` hardcoded Cypher updated
 - [ ] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
-- [ ] **SCHM-13**: A migration script (following `migrations/` pattern) renames existing DesignState `kind` values (DefState→ParamState, ObjectState→ObjState) and applies the Phase-13 layer-placement decision on dev databases
+- [x] **SCHM-13**: A migration script (following `migrations/` pattern) renames existing DesignState `kind` values (DefState→ParamState, ObjectState→ObjState) and applies the Phase-13 layer-placement decision on dev databases
 - [ ] **SCHM-14**: `training/updated_cypher_reference_examples_v3.cypher` gets a v4 successor and `test/` fixtures referencing v3 state kinds are updated — no runtime or LLM few-shot artifact still teaches the old schema
 
 ### SpecGraph Runtime Rename (SPEC)

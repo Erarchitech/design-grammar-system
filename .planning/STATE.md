@@ -5,15 +5,15 @@ milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 14
 current_phase_name: Graph Schema v4 Propagation
 status: executing
-stopped_at: Phase 14 context gathered
-last_updated: "2026-07-03T10:02:21.341Z"
+stopped_at: Plan 14-05 complete — ValidStatus/SendStatus + ValidGraph rename (ready for 14-06 migration)
+last_updated: "2026-07-03T10:46:03.497Z"
 last_activity: 2026-07-03
-last_activity_desc: Phase 13 complete, transitioned to Phase 14
+last_activity_desc: Completed Plan 14-05 (ValidStatus/SendStatus + ValidGraph rename)
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 11
+  completed_plans: 7
   percent: 13
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 13 — ontology-v7-and-contract-investigation
+**Current focus:** Phase 14 — Graph Schema v4 Propagation
 
 ## Current Position
 
-Phase: 14 — Graph Schema v4 Propagation
-Plan: Not started
+Phase: 14 (Graph Schema v4 Propagation) — EXECUTING
+Plan: 4 of 7
 Status: Ready to execute
-Last activity: 2026-07-03 — Phase 13 complete, transitioned to Phase 14
+Last activity: 2026-07-03 — Completed Plan 14-05 (ValidStatus/SendStatus + ValidGraph rename)
 
 ## Performance Metrics
 
@@ -83,6 +83,12 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 - [Phase 13]: Runtime/DB-only ports (credentials, driver handles, Boolean triggers, VALIDATOR publish extras) are explicitly annotated with a placeholder and note in port-iri-map-V7.md rather than omitted — Keeps the zero-unmapped-references invariant literal (every row has a non-empty IRI-column cell) while documenting the ontology<->DB gap per PROJECT.md policy
 - [Phase 13]: BOT/Topologic V7 extensions require only a version bump + prose ComputationGraph->Computgraph rename (dg:Topology anchor unchanged in V7)
 - [Phase 13]: make_docs_v6.py does not actually generate DesignGrammar-V6.md (it generates ONTOLOGY-ALIGNMENT-V6.md/HIERARCHY-OPTIMIZATION-V6.md instead) — make_docs_v7.py implemented as a purpose-built importlib driver invoking export_to_markdown_v7.main()
+- [Phase ?]: Rule properties renamed: text->SWRL, title->RuleName, added RuleDescription (optional) — PascalCase per D-05
+- [Phase ?]: DesignState MERGE block (//2b) removed from emitted CYPHER TEMPLATE BLOCK per D-03
+- [Phase ?]: DesignState/Run documented as document-only with graph='ValidGraph' (D-14), three kinds {ObjState,ParamState,PropState}
+- [Phase ?]: Run has only ValidStatus (Boolean list) and SendStatus (single Boolean) — no Status text field per D-01
+- [Phase 14-graph-schema-v4-propagation]: Description coalesce also extended to RuleDescription alongside D-06's two mandated lines — completes same backward-compat contract enabled by the n8n RuleDescription backfill
+- [Phase 14]: ValidStatus added as best-effort per-entity Boolean list; full per-ObjState index-matched population deferred to Phase 18 (GHVL-05) — Schema presence only per SCHM-12; binding logic is Phase 18 work
 
 ### Research Flags (carry into planning)
 
@@ -103,9 +109,9 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 
 ## Session Continuity
 
-Last session: 2026-07-03T08:28:42.016Z
-Stopped at: Phase 14 context gathered
-Resume file: .planning/phases/14-graph-schema-v4-propagation/14-CONTEXT.md
+Last session: 2026-07-03T10:46:03.484Z
+Stopped at: Plan 14-05 complete — ValidStatus/SendStatus + ValidGraph rename (ready for 14-06 migration)
+Resume file: .planning/phases/14-graph-schema-v4-propagation/14-05-SUMMARY.md
 
 ## Performance Metrics
 
@@ -119,3 +125,6 @@ Resume file: .planning/phases/14-graph-schema-v4-propagation/14-CONTEXT.md
 | Phase 13 P02 | 20min | 3 tasks | 3 files |
 | Phase 13 P03 | 25min | 2 tasks | 1 files |
 | Phase 13 P04 | 25min | 4 tasks | 9 files |
+| Phase 14 P01 | 3min | 2 tasks | 2 files |
+| Phase 14-graph-schema-v4-propagation P03 | 12min | 3 tasks | 4 files |
+| Phase 14-graph-schema-v4-propagation P05 | 18min | 2 tasks | 3 files |
