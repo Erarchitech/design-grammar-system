@@ -27,9 +27,10 @@
         "Rule_Id": "same_as_dataset_id"
       },
       "props": {
-        "text": "SWRL expression string",
+        "SWRL": "SWRL expression string",
         "kind": "violation | compliance",
-        "title": "optional human-readable title",
+        "RuleName": "optional human-readable name",
+        "RuleDescription": "optional human-readable description",
         "project": "default-project",
         "graph": "Metagraph"
       }
@@ -104,20 +105,43 @@
           "project": "default-project",
           "graph": "Metagraph"
         }
-      },
-      {
+      }
+    ],
+    "schema_reference": {
+      "note": "DesignState & Run are document-only — NOT emitted by LLM ingest. Written only by VALIDATOR-on-publish. The ingest emits OntoGraph + Metagraph nodes only. This reference documents the full schema for reader context.",
+      "DesignState": {
         "label": "DesignState",
         "key": {
-          "StateId": "DS_<hash> | OS_<hash>",
+          "StateId": "DS_<hash> | OS_<hash> | PS_<hash>",
           "project": "default-project"
         },
         "props": {
-          "kind": "DefState | ObjectState",
+          "kind": "ObjState | ParamState | PropState",
           "project": "default-project",
-          "graph": "Metagraph"
+          "graph": "ValidGraph"
         }
+      },
+      "Run": {
+        "label": "ValidationRun",
+        "key": {
+          "ValidationRunId": "<uuid>",
+          "project": "default-project"
+        },
+        "props": {
+          "ValidStatus": "per-ObjState Boolean list, index-matched",
+          "SendStatus": "single Boolean",
+          "project": "default-project",
+          "graph": "ValidGraph"
+        },
+        "note": "No stored Status text field. Overall pass = AND(ValidStatus), derived at read time."
+      },
+      "RunDesignStateRelationship": {
+        "type": "VALIDATES",
+        "from": "Run",
+        "to": "DesignState",
+        "cardinality": "many Runs to one DesignState"
       }
-    ],
+    },
     "atoms": [
       {
         "Atom_Id": "{Rule_Id}_A{n} | {Rule_Id}_H{n}",
@@ -183,6 +207,6 @@
     "assumptions": [
       "..."
     ],
-    "version": "v3.1"
+    "version": "v4.0"
   }
 }
