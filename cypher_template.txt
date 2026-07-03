@@ -1,6 +1,6 @@
-DG CYPHER TEMPLATE FOR LLM (v3)
+DG CYPHER TEMPLATE FOR LLM (v4)
 
-SCHEMA VERSION: v3.1
+SCHEMA VERSION: v4.0
 
 TASK
 Convert natural-language design rules into Neo4j Cypher MERGE + SET
@@ -20,8 +20,9 @@ OUTPUT RULES
 GRAPH SCHEMA (from dataset_schema v3)
 
   Rule   — key: Rule_Id
-           props: text (SWRL string), kind (violation|compliance),
-                  title (optional), project, graph='Metagraph'
+           props: SWRL (SWRL string), kind (violation|compliance),
+                  RuleName (optional), RuleDescription (optional),
+                  project, graph='Metagraph'
 
   Class  — key: iri (ex:<ClassName>)
            props: label, project, graph='OntoGraph'
@@ -46,8 +47,24 @@ GRAPH SCHEMA (from dataset_schema v3)
   Literal — key: lex + datatype
            props: project, graph='Metagraph'
 
+  ~~ DesignState & Run (document-only — NOT emitted by LLM ingest) ~~
+
+  These nodes are written only by VALIDATOR-on-publish, not by LLM rule-ingest.
+  The ingest emits OntoGraph + Metagraph nodes only. This subsection documents
+  the full schema for reader context.
+
   DesignState — key: StateId + project
-           props: kind (DefState|ObjectState), project, graph='Metagraph'
+           props: kind (ObjState|ParamState|PropState), project, graph='ValidGraph'
+
+  Run   — key: ValidationRunId + project
+           props: ValidStatus (per-ObjState Boolean list, index-matched),
+                  SendStatus (single Boolean),
+                  project, graph='ValidGraph'
+           NOTE: No stored Status text field. Overall pass = AND(ValidStatus),
+                 derived at read time.
+
+  Run→DesignState relationship: (:Run)-[:VALIDATES]->(:DesignState)
+           Cardinality: many Runs to one DesignState.
 
 SEMANTIC MAPPING (violation pattern)
 - "Maximum / at most / no more than X" → body uses swrlb:greaterThan(?val, X)
@@ -105,15 +122,12 @@ SET DP_V.SWRL_label = '<VIOLATION_PROPERTY>',
 
 // 2. Metagraph — rule node
 MERGE (r:Rule {Rule_Id: '<RULE_ID>'})
-SET r.text = '<SWRL_EXPRESSION>',
+SET r.SWRL = '<SWRL_EXPRESSION>',
     r.kind = 'violation',
     r.project = '<PROJECT>',
     r.graph = 'Metagraph'
-
-// 2b. Metagraph — design state node (DefState | ObjectState, single label + kind)
-MERGE (ds:DesignState {StateId: '<STATE_ID>', project: '<PROJECT>'})
-SET ds.kind = '<DefState|ObjectState>',
-    ds.graph = 'Metagraph'
+    // r.RuleName and r.RuleDescription are optional — LLM sets them when the
+    // NL rule text supplies a name/description; omit the SET clause otherwise.
 
 // 3. Metagraph — variables, literals
 MERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: '<PROJECT>'})
@@ -187,5 +201,6 @@ QUALITY CHECKS
 - Rule key is Rule_Id (not id).
 - Atom key is Atom_Id (not id).
 - DatatypeProperty display property is SWRL_label (not label).
+- Rule SWRL body property is named SWRL (not text).
 - Backtick-quote reserved words in relationship properties: `order`, `pos`.
 - Cypher must execute in Neo4j 5.
