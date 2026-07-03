@@ -1,13 +1,13 @@
 ---
 tags: [home, priorities]
-date: 2026-07-02
+date: 2026-07-03
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **v7.0 Phase 13 (Ontology V7 and Contract Investigation)** — milestone just initialized, roadmap committed. Next: `/gsd-discuss-phase 13`. Must resolve the PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict before locking the port↔IRI map. See [[sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema|session]] and [[decisions/Ontology V7 full rename over incremental|rename decision]].
+1. **v7.0 Phase 13 (Ontology V7 and Contract Investigation)** — context gathered, ready to plan. Next: `/gsd-plan-phase 13`. Both flagged conflicts resolved: DesignState now persists to `graph='ValidGraph'` (not Metagraph), and `Run.ValidStatus` is a per-object Boolean array index-matched to ObjState (not a single overall flag + text `Status`). See [[sessions/2026-07-03 Phase 13 discuss - ValidGraph and per-object ValidStatus|session]], [[decisions/DesignState persists to ValidGraph not Metagraph|ValidGraph decision]], [[decisions/Run ValidStatus is a per-object boolean array|ValidStatus decision]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
@@ -29,6 +29,7 @@ date: 2026-07-02
 
 ## Completed Recently
 
+- **v7.0 Phase 13 context gathered** — 2026-07-03. Resolved both flagged PDF-internal conflicts: DesignState layer placement (ValidGraph, not Metagraph; one DesignState can serve many Runs; no-orphan invariant) and Run status model (`ValidStatus` reshaped to a per-object Boolean array index-matched to ObjState, no separate text `Status`; `SendStatus` stays single-Boolean). Port↔IRI map format and version-marker policy auto-locked. `13-CONTEXT.md` + `13-DISCUSSION-LOG.md` written. See [[sessions/2026-07-03 Phase 13 discuss - ValidGraph and per-object ValidStatus|session]].
 - **v7.0 milestone initialized** — 2026-07-02. Analyzed `ontology/GH_DesignGrammars.pdf` (14 components, rendered via WinRT PDF API + PIL tiling since no PyMuPDF/network available), compared against Ontology V6 (61 classes/43 obj-props/64 data-props, confirmed no runtime consumer) and the current 8-component addin. v3.0 superseded — Phase 7 carried forward, Phases 8–12 dropped. REQUIREMENTS.md (34 reqs, 8 categories) + ROADMAP.md (phases 13–20) committed. Key decisions: full ontology V6→V7 rename with recovery mapping, SpecGraph runtime rename in scope, CLASSIFICATOR eliminated. See [[sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema|session]].
 - **v3.0 Phase 7 plans 07-01..07-04** — 2026-06-23. VariableKind/VariableTypeInferrer, DefState/ObjectState/ObjectInstance models + ID generation, Var merge-key cross-project bug fix + DesignState Cypher block + migration script, schema propagation. See [[sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution|сессия]]. Shipped as v7.0's foundation.
 - **Graphify-CGD-Obsidian integration Phases 1–4** — 2026-06-22. Полный проект интеграции: SKILL.md 34KB→1.2KB, 1772 dump-файла → 104 community notes, MCP server registered, diff-based export (`scripts/export_graphify_conceptual.py` + `refresh_graphify.sh`), `.graphifyignore` (защита от feedback loop), bidirectional linking (frontmatter + `## Graph connections`), Dataview dashboard, GSD-паттерны. См. [[sessions/2026-06-22 Graphify integration Phases 2-4|сессия Фазы 2-4]] и [[sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1|Фаза 1]].

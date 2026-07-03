@@ -47,6 +47,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/v3.0 vendor-neutral rename deferred|v3.0 vendor-neutral rename deferred]]
 - [[decisions/Worktree execution disabled due to commit_docs conflict|Worktree execution disabled due to commit_docs conflict]]
 - [[decisions/Ontology V7 full rename over incremental|Ontology V7 full rename over incremental]]
+- [[decisions/DesignState persists to ValidGraph not Metagraph|DesignState persists to ValidGraph not Metagraph]]
+- [[decisions/Run ValidStatus is a per-object boolean array|Run ValidStatus is a per-object boolean array]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -113,4 +115,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution|2026-06-23 v3.0 Phase 7 Schema Foundation execution]]
 - [[sessions/2026-06-23 New PC Docker setup and n8n workflow fix|2026-06-23 New PC setup + n8n workflow fix]]
 - [[sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema|2026-07-02 v7.0 milestone init from GH_DesignGrammars schema]]
+- [[sessions/2026-07-03 Phase 13 discuss - ValidGraph and per-object ValidStatus|2026-07-03 Phase 13 discuss — ValidGraph & per-object ValidStatus]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
