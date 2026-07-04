@@ -16,6 +16,18 @@ public class ParamState : DG.Core.Models.ParamState
 {
 }
 
+public class ObjState : DG.Core.Models.ObjState
+{
+}
+
+public class PropState : DG.Core.Models.PropState
+{
+}
+
+public class DesignState : DG.Core.Models.DesignState
+{
+}
+
 public class DesignStateParameter : DG.Core.Models.DesignStateParameter
 {
 }
