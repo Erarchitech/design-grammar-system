@@ -48,7 +48,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [x] **GHGA-01**: CONNECTOR outputs a `Database` handle (renamed from Connection); inputs aligned to Neo4jURI/Neo4jUser/Neo4jPassword/Project (keeps db-name + Connect inputs)
 - [x] **GHGA-02**: GRAPH DECONSTRUCT splits Database into Metagraph / Ontograph / ValidGraph / SpecGraph layer handles
 - [x] **GHGA-03**: METAGRAPH accepts the Metagraph handle and outputs Rules + Objects (index-matched lists)
-- [ ] **GHGA-04**: ONTOGRAPH outputs Class / ObjProperties / DataProperties lists read from the OntoGraph layer
+- [x] **GHGA-04**: ONTOGRAPH outputs Class / ObjProperties / DataProperties lists read from the OntoGraph layer
 - [ ] **GHGA-05**: VALIDATION GRAPH (replaces VALIDATION RUNS, new GUID) outputs Run / Status / DesignState lists read from the ValidGraph layer
 
 ### State Components (GHST)
