@@ -20,6 +20,7 @@ public static class DesignStatePayloadV2Serializer
 
         var dto = new DesignStatePayloadV2Dto
         {
+            Version = "2",
             StateId = designState.StateId,
             CapturedAtUtc = designState.CapturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
             ObjStates = designState.ObjStates
@@ -447,7 +448,7 @@ public static class DesignStatePayloadV2Serializer
 
     private sealed class DesignStatePayloadV2Dto
     {
-        public string Version { get; init; } = "2";
+        public string? Version { get; init; }
 
         public string? StateId { get; init; }
 
