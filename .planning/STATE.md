@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 16
-current_phase_name: DG.Core State Models and State Components
+current_phase_name: dg-core-state-models-and-state-components
 status: executing
-stopped_at: Phase 16 context gathered
-last_updated: "2026-07-03T22:35:27.837Z"
-last_activity: 2026-07-03
-last_activity_desc: Phase 15 complete, transitioned to Phase 16
+stopped_at: Plan 01 complete
+last_updated: "2026-07-04T01:29:08.373Z"
+last_activity: 2026-07-04
+last_activity_desc: Completed Plan 01 — state models (ObjState, ParamState, PropState, DesignState) + DesignStateSnapshot rename + scaffolding deletion
 progress:
   total_phases: 8
   completed_phases: 3
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 22
+  completed_plans: 17
   percent: 38
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 15 — specgraph-runtime-rename
+**Current focus:** Phase 16 — dg-core-state-models-and-state-components
 
 ## Current Position
 
-Phase: 16 — DG.Core State Models and State Components
-Plan: Not started
+Phase: 16 (dg-core-state-models-and-state-components) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-07-03 — Phase 15 complete, transitioned to Phase 16
+Last activity: 2026-07-04 — Completed Plan 01 — state models
 
 ## Performance Metrics
 
@@ -90,6 +90,17 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 - [Phase 14-graph-schema-v4-propagation]: Description coalesce also extended to RuleDescription alongside D-06's two mandated lines — completes same backward-compat contract enabled by the n8n RuleDescription backfill
 - [Phase 14]: ValidStatus added as best-effort per-entity Boolean list; full per-ObjState index-matched population deferred to Phase 18 (GHVL-05) — Schema presence only per SCHM-12; binding logic is Phase 18 work
 
+Shipped from Phase 16 Plan 01:
+
+- ParamState replaces DesignStateSnapshot as the canonical type — identical 3-field shape (StateId, CapturedAtUtc, Collection<DesignStateParameter>), pure rename per D-14
+- DesignState composition uses independent bag semantics per D-02 — ObjStates/ParamStates/PropStates as three separate List<> with no cross-index alignment
+- PropValue typed as DesignStateParameter? reusing the existing typed-nullable pattern (Number/Integer/Boolean) per D-08
+- DesignState internal list ordering preserves wiring order (not sorted); aggregate StateId computed from sorted member IDs independently of list order
+- All 17 DesignStateSnapshot references updated to ParamState across DG.Core, DG.Grasshopper, and DG.Tests — mechanical rename, no behavior change
+- DefState, ObjectState, ObjectInstance deleted (zero remaining type references)
+- ObjState/PropState/DesignState/ParamState all unsealed (downstream may need inheritance)
+- Geometry field on ObjState typed as object? — in-process Rhino/GH handle, excluded from serialization
+
 ### Research Flags (carry into planning)
 
 - Phase 13: resolve PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict AND the DesignState storage-layer conflict (cypher_template stores DesignState with graph='Metagraph' at line ~50; PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle) before locking the port↔IRI map
@@ -109,9 +120,9 @@ Established for v7.0 (see PROJECT.md Key Decisions):
 
 ## Session Continuity
 
-Last session: 2026-07-03T22:04:00.880Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-dg-core-state-models-and-state-components/16-CONTEXT.md
+Last session: 2026-07-04T01:29:08.358Z
+Stopped at: Plan 01 complete
+Resume file: .planning/phases/16-dg-core-state-models-and-state-components/16-01-SUMMARY.md
 
 ## Performance Metrics
 
@@ -129,3 +140,4 @@ Resume file: .planning/phases/16-dg-core-state-models-and-state-components/16-CO
 | Phase 14-graph-schema-v4-propagation P03 | 12min | 3 tasks | 4 files |
 | Phase 14-graph-schema-v4-propagation P05 | 18min | 2 tasks | 3 files |
 | Phase 14-graph-schema-v4-propagation P07 | 8min | 3 tasks | 4 files |
+| Phase 16 P01 | 10min | 3 tasks | 25 files |

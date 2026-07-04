@@ -25,6 +25,18 @@ Automatic alignment of DG Ontograph entities to the W3C Building Topology Ontolo
 
 ---
 
+## v9.0 AI Workflow Intelligence (Future)
+
+**Status:** Future — isolated planning package; pending v7.0 completion (do not activate while v7.0 phases are in flight)
+**Defined:** 2026-07-03
+
+Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user-supplied API key, Claude/OpenAI-compatible/Ollama-fallback, provider control from the UI) plus a DG-aware context layer injecting ontology V7 concepts, SWRL conventions, and a standard Cypher expression catalog with pre-execution validation; (2) AI implementation workflows — upgraded rules ingest/edit (clarification loops, atom-diff previews, validation-feedback retries), AI recognition of Grasshopper node blocks as Object Behaviour persisted to the Computgraph layer, AI-generated Grasshopper script inputs as ParamState payloads, and a DesignState auto-validation investigation. Includes an n8n→OpenClaw orchestration decision gate (spike + ADR, no committed migration).
+
+**Phases planned:** 8 (36 requirements)
+→ [Requirements](v9.0-REQUIREMENTS.md) | [Roadmap](v9.0-ROADMAP.md)
+
+---
+
 ## v2.0 DG Plugin - Design State and Validation Runs (Shipped: 2026-05-10)
 
 **Phases completed:** 6 phases, 10 plans
