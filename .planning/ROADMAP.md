@@ -173,10 +173,10 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. ONTOGRAPH lists Class/ObjProperties/DataProperties from the live OntoGraph layer
   4. VALIDATION GRAPH lists Run/Status/DesignState from the live ValidGraph layer; the VALIDATION RUNS component no longer exists in the plugin
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
   - [x] 17-01-PLAN.md — Handle types, models, icons, CONNECTOR update, GRAPH DECONSTRUCT — *wave 1* — GHGA-01/02
-  - [ ] 17-02-PLAN.md — METAGRAPH extension (Objects output via REFERS_TO->Class query) — *wave 2, depends 17-01* — GHGA-03
+  - [x] 17-02-PLAN.md — METAGRAPH extension (Objects output via REFERS_TO->Class query) — *wave 2, depends 17-01* — GHGA-03
   - [ ] 17-03-PLAN.md — ONTOGRAPH (Class/ObjProperties/DataProperties from OntoGraph) — *wave 2, depends 17-01* — GHGA-04
   - [ ] 17-04-PLAN.md — VALIDATION GRAPH (Run/Status/DesignState from ValidGraph, replaces VALIDATION RUNS) — *wave 2, depends 17-01* — GHGA-05
 
@@ -233,7 +233,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
 | 15. SpecGraph Runtime Rename | 5/5 | Complete    | 2026-07-03 |
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
-| 17. Graph Access Components | 1/4 | In Progress|  |
+| 17. Graph Access Components | 2/4 | In Progress|  |
 | 18. Rules and Validator Rework | 0/? | Not started | - |
 | 19. Deconstruct and Reinstate Components | 0/? | Not started | - |
 | 20. E2E Validation and Docs | 0/? | Not started | - |

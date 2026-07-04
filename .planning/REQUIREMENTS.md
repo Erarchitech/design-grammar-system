@@ -37,17 +37,17 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### DG.Core State Models (CORE)
 
-- [ ] **CORE-01**: `ObjState` model (Object reference, GeoRef, Label) replaces the ObjectState scaffolding
-- [ ] **CORE-02**: `ParamState` model (typed Number/Integer/Boolean parameters, deterministic StateId) adapted from DesignStateSnapshot
-- [ ] **CORE-03**: `PropState` model (Rule reference, DataProperty reference, PropValue)
-- [ ] **CORE-04**: `DesignState` composition model aggregates many ObjState/ParamState/PropState with per-class ID prefixes via DesignStateIdGenerator
+- [x] **CORE-01**: `ObjState` model (Object reference, GeoRef, Label) replaces the ObjectState scaffolding
+- [x] **CORE-02**: `ParamState` model (typed Number/Integer/Boolean parameters, deterministic StateId) adapted from DesignStateSnapshot
+- [x] **CORE-03**: `PropState` model (Rule reference, DataProperty reference, PropValue)
+- [x] **CORE-04**: `DesignState` composition model aggregates many ObjState/ParamState/PropState with per-class ID prefixes via DesignStateIdGenerator
 - [ ] **CORE-05**: `statePayloadJson` v2 serializes the 3-part composition with lossless round-trip (unit-tested)
 
 ### Graph Access Components (GHGA)
 
-- [ ] **GHGA-01**: CONNECTOR outputs a `Database` handle (renamed from Connection); inputs aligned to Neo4jURI/Neo4jUser/Neo4jPassword/Project (keeps db-name + Connect inputs)
-- [ ] **GHGA-02**: GRAPH DECONSTRUCT splits Database into Metagraph / Ontograph / ValidGraph / SpecGraph layer handles
-- [ ] **GHGA-03**: METAGRAPH accepts the Metagraph handle and outputs Rules + Objects (index-matched lists)
+- [x] **GHGA-01**: CONNECTOR outputs a `Database` handle (renamed from Connection); inputs aligned to Neo4jURI/Neo4jUser/Neo4jPassword/Project (keeps db-name + Connect inputs)
+- [x] **GHGA-02**: GRAPH DECONSTRUCT splits Database into Metagraph / Ontograph / ValidGraph / SpecGraph layer handles
+- [x] **GHGA-03**: METAGRAPH accepts the Metagraph handle and outputs Rules + Objects (index-matched lists)
 - [ ] **GHGA-04**: ONTOGRAPH outputs Class / ObjProperties / DataProperties lists read from the OntoGraph layer
 - [ ] **GHGA-05**: VALIDATION GRAPH (replaces VALIDATION RUNS, new GUID) outputs Run / Status / DesignState lists read from the ValidGraph layer
 
