@@ -48,6 +48,10 @@ public class OntographHandle : DG.Core.Models.OntographHandle
 {
 }
 
+public class RunInfo : DG.Core.Data.RunInfo
+{
+}
+
 public class ValidGraphHandle : DG.Core.Models.ValidGraphHandle
 {
 }

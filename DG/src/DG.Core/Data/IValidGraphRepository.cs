@@ -9,7 +9,7 @@ public sealed class ValidGraphQueryResult
     public IReadOnlyList<DesignState> DesignStates { get; init; } = Array.Empty<DesignState>();
 }
 
-public sealed class RunInfo
+public class RunInfo
 {
     public string RunId { get; init; } = string.Empty;
     public string Project { get; init; } = string.Empty;
