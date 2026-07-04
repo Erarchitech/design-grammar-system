@@ -64,4 +64,24 @@ public static class ErrorMessageTemplates
     {
         return "DESIGN STATE: At least one ObjState, ParamState, or PropState input must contain items. Wire at least one upstream state component.";
     }
+
+    public static string GraphDeconstructNoInput()
+    {
+        return "GRAPH DECONSTRUCT: Database input is required. Connect a CONNECTOR component to the Database input.";
+    }
+
+    public static string GraphDeconstructCastFailed()
+    {
+        return "GRAPH DECONSTRUCT: Could not cast Database input. Ensure the input is connected to a CONNECTOR component.";
+    }
+
+    public static string ConnectorProjectPassthroughFailed()
+    {
+        return "CONNECTOR: Project output passthrough failed. Ensure PROJECT NAME input is connected.";
+    }
+
+    public static string HandleTypeUnwrapped(string componentName, string handleType)
+    {
+        return $"{componentName}: Could not unwrap {handleType} input. Ensure the input is connected to GRAPH DECONSTRUCT's {handleType} output.";
+    }
 }

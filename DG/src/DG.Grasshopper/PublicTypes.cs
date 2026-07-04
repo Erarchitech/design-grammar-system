@@ -32,6 +32,22 @@ public class DesignStateParameter : DG.Core.Models.DesignStateParameter
 {
 }
 
+public class MetagraphHandle : DG.Core.Models.MetagraphHandle
+{
+}
+
+public class OntographHandle : DG.Core.Models.OntographHandle
+{
+}
+
+public class ValidGraphHandle : DG.Core.Models.ValidGraphHandle
+{
+}
+
+public class SpecGraphHandle : DG.Core.Models.SpecGraphHandle
+{
+}
+
 // ReinstatementResult, ReinstatementParameterReport, and ResolvedTarget are sealed in Core.
 // They are accessed directly via DG.Core.Models namespace — no wrapper aliases needed.
 // The REINSTATE component outputs them as generic objects that downstream consumers
