@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase: 17
-current_phase_name: graph-access-components
-status: executing
-stopped_at: Phase 18 context gathered
+current_phase: 18
+current_phase_name: rules-and-validator-rework
+status: planned
+stopped_at: Phase 18 plans created
 last_updated: "2026-07-04T10:43:30.231Z"
 last_activity: 2026-07-04
-last_activity_desc: Completed Plan 04 (VALIDATION GRAPH component)
+last_activity_desc: Completed Phase 18 planning — 5 plans, 2 waves
 progress:
   total_phases: 8
   completed_phases: 5
-  total_plans: 26
+  total_plans: 31
   completed_plans: 26
   percent: 63
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 17 — graph-access-components
+**Current focus:** Phase 18 — rules-and-validator-rework
 
 ## Current Position
 
-Phase: 17 (graph-access-components) — COMPLETE
-Plan: 4 of 4
-Status: Done — all 4 plans executed
-Last activity: 2026-07-04 — Completed Plan 04 (VALIDATION GRAPH component)
+Phase: 18 (rules-and-validator-rework) — PLANNED
+Plan: 5 plans, 2 waves
+Status: Plans created — 18-01 through 18-05
+Last activity: 2026-07-04 — Completed Phase 18 planning: 5 plans, 2 waves
 
 ## Performance Metrics
 

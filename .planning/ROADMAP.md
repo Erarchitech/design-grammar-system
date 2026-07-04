@@ -193,7 +193,13 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   4. A published Run persists ValidStatus, SendStatus, and the 3-part state payload — confirmed by direct Neo4j query and read-back through VALIDATION GRAPH
   5. The Model Viewer lists and groups runs published with v2 payloads — group-by-State works via the adapted `_project_state_summary` projection, and pre-v7.0 runs with v1 payloads still render (read-side tolerance)
 
-**Plans**: TBD
+**Plans**: 5 plans, 2 waves
+
+  - [ ] 18-01-PLAN.md — DesignStateBindingService + ErrorMessageTemplates + tests — *wave 1* — GHVL-04
+  - [ ] 18-02-PLAN.md — RULE DECONSTRUCT extension (Objects/DataProperties outputs, VariableTypeInferrer partition) — *wave 1* — GHVL-01
+  - [ ] 18-03-PLAN.md — CLASSIFICATOR full purge (component, namespace, icon, tests) — *wave 1* — GHVL-02
+  - [ ] 18-04-PLAN.md — Model Viewer read-side (_project_state_summary v2, Python tests) — *wave 1* — GHVL-06
+  - [ ] 18-05-PLAN.md — VALIDATOR rework (new contract) + publish path extension — *wave 2, depends 18-01* — GHVL-03/05
 
 ### Phase 19: Deconstruct and Reinstate Components
 
@@ -234,7 +240,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 15. SpecGraph Runtime Rename | 5/5 | Complete    | 2026-07-03 |
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
-| 18. Rules and Validator Rework | 0/? | Not started | - |
+| 18. Rules and Validator Rework | 0/5 | Not started (planned) | - |
 | 19. Deconstruct and Reinstate Components | 0/? | Not started | - |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
