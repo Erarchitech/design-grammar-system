@@ -10,7 +10,7 @@ namespace DG.Core.Services;
 public sealed class DesignStateReinstatementService
 {
     public ReinstatementResult Validate(
-        DesignStateSnapshot snapshot,
+        ParamState snapshot,
         IReadOnlyList<ResolvedTarget> resolvedTargets,
         string? lastAppliedStateId)
     {

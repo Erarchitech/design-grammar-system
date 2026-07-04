@@ -181,7 +181,7 @@ public sealed class ValidationRunsQueryService
         }
     }
 
-    private static (DesignStateSnapshot? state, string? statePayloadJson) ParseState(string? statePayloadJson)
+    private static (ParamState? state, string? statePayloadJson) ParseState(string? statePayloadJson)
     {
         if (string.IsNullOrWhiteSpace(statePayloadJson))
         {

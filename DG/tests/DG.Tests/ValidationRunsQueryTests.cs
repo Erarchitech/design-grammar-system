@@ -32,7 +32,7 @@ public sealed class ValidationRunsQueryTests
     [Fact]
     public void ValidationRunQueryResult_WithRunId_ShouldPreserveAllFields()
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-05-01T10:00:00.0000000Z"),
@@ -147,7 +147,7 @@ public sealed class ValidationRunsQueryTests
     public void StaleStateFilter_WithNonMatchingStateId_ShouldExcludeRun()
     {
         // Simulate filter behavior: run has state-1, filter asks for state-2.
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-05-01T09:00:00.0000000Z"),
@@ -178,7 +178,7 @@ public sealed class ValidationRunsQueryTests
     [Fact]
     public void StateFilter_WithMatchingStateId_ShouldIncludeRun()
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "state-42",
             CapturedAtUtc = DateTimeOffset.Parse("2026-05-01T09:00:00.0000000Z"),
@@ -241,7 +241,7 @@ public sealed class ValidationRunsQueryTests
     [Fact]
     public void StatePayloadJson_WhenPresent_ShouldRoundtripThroughDeserializer()
     {
-        var original = new DesignStateSnapshot
+        var original = new ParamState
         {
             StateId = "state-round",
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T08:00:00.0000000Z"),
@@ -292,7 +292,7 @@ public sealed class ValidationRunsQueryTests
     [Fact]
     public void ValidationRunQueryResult_MixedStatePresence_StatesOutputShouldOnlyIncludePresent()
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "s1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T09:00:00.0000000Z"),

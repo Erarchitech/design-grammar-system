@@ -48,7 +48,7 @@ public sealed class ValidationRunsComponent : GH_Component
     {
         pManager.AddGenericParameter("Runs", "Runs", "List of ValidationRunQueryResult objects — full run records.", GH_ParamAccess.list);
         pManager.AddTextParameter("Results", "Results", "Per-run result lines. Format: '{ruleId}:{passed}' per rule per run.", GH_ParamAccess.list);
-        pManager.AddGenericParameter("States", "States", "Deserialized DesignStateSnapshot objects for runs that have an attached state. Empty when no states are stored.", GH_ParamAccess.list);
+        pManager.AddGenericParameter("States", "States", "Deserialized ParamState objects for runs that have an attached state. Empty when no states are stored.", GH_ParamAccess.list);
         pManager.AddTextParameter("Status", "Status", "Query status message.", GH_ParamAccess.item);
     }
 
@@ -77,8 +77,8 @@ public sealed class ValidationRunsComponent : GH_Component
 
         object? stateInput = null;
         da.GetData(2, ref stateInput);
-        var stateFilter = GhCastingHelpers.Unwrap<DesignStateSnapshot>(stateInput)
-                          ?? GhCastingHelpers.Unwrap<global::DG.DesignStateSnapshot>(stateInput);
+        var stateFilter = GhCastingHelpers.Unwrap<ParamState>(stateInput)
+                          ?? GhCastingHelpers.Unwrap<global::DG.ParamState>(stateInput);
         var stateId = stateFilter?.StateId;
 
         var refresh = true;
@@ -207,7 +207,7 @@ public sealed class ValidationRunsComponent : GH_Component
     {
         da.SetDataList(0, new List<ValidationRunQueryResult>());
         da.SetDataList(1, new List<string>());
-        da.SetDataList(2, new List<DesignStateSnapshot>());
+        da.SetDataList(2, new List<ParamState>());
         da.SetData(3, status);
     }
 

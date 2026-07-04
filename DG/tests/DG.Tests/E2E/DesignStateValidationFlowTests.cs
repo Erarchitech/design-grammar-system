@@ -333,9 +333,9 @@ public sealed class DesignStateValidationFlowTests : IAsyncLifetime
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
 
-    private static DesignStateSnapshot CreateSnapshot(params DesignStateParameter[] parameters)
+    private static ParamState CreateSnapshot(params DesignStateParameter[] parameters)
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = $"e2e-state-{string.Join("-", parameters.Select(p => p.ParameterId))}",
             CapturedAtUtc = new DateTimeOffset(2026, 1, 15, 10, 0, 0, TimeSpan.Zero),

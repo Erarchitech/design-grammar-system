@@ -12,7 +12,7 @@ public class ElementRef : DG.Core.Models.ElementRef
 {
 }
 
-public class DesignStateSnapshot : DG.Core.Models.DesignStateSnapshot
+public class ParamState : DG.Core.Models.ParamState
 {
 }
 

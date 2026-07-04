@@ -239,9 +239,9 @@ public sealed class ReinstatementServiceTests
         Assert.Contains("No resolved target", result.Reports[0].Detail);
     }
 
-    private static DesignStateSnapshot CreateSnapshot(params DesignStateParameter[] parameters)
+    private static ParamState CreateSnapshot(params DesignStateParameter[] parameters)
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = $"test-state-{string.Join("-", parameters.Select(p => p.ParameterId))}",
             CapturedAtUtc = new DateTimeOffset(2026, 1, 15, 10, 0, 0, TimeSpan.Zero),

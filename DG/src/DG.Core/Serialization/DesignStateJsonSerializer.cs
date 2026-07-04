@@ -12,7 +12,7 @@ public static class DesignStateJsonSerializer
         WriteIndented = false,
     };
 
-    public static string Serialize(DesignStateSnapshot snapshot)
+    public static string Serialize(ParamState snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -31,7 +31,7 @@ public static class DesignStateJsonSerializer
         return JsonSerializer.Serialize(dto, Options);
     }
 
-    public static DesignStateSnapshot Deserialize(string json)
+    public static ParamState Deserialize(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -58,7 +58,7 @@ public static class DesignStateJsonSerializer
             throw new InvalidOperationException("CapturedAtUtc is required and must be a valid ISO 8601 round-trip timestamp.");
         }
 
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = dto.StateId ?? string.Empty,
             CapturedAtUtc = capturedAt.ToUniversalTime(),
@@ -137,7 +137,7 @@ public static class DesignStateJsonSerializer
         };
     }
 
-    private static void ValidateSnapshot(DesignStateSnapshot snapshot)
+    private static void ValidateSnapshot(ParamState snapshot)
     {
         if (snapshot.CapturedAtUtc == default)
         {

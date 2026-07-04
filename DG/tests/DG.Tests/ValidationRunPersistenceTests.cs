@@ -18,7 +18,7 @@ public sealed class ValidationRunPersistenceTests
         };
         record.RuleIds.Add("R_HEIGHT");
 
-        var state = new DesignStateSnapshot
+        var state = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T09:30:00.0000000Z"),
@@ -66,7 +66,7 @@ public sealed class ValidationRunPersistenceTests
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T10:00:00.0000000Z"),
         };
 
-        var invalidState = new DesignStateSnapshot
+        var invalidState = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = default,
@@ -141,7 +141,7 @@ public sealed class ValidationRunPersistenceTests
     public void ValidateRunRecord_WhenStatePayloadIsValidJson_ShouldNotThrow()
     {
         var service = new ValidationRunPersistenceService();
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T09:30:00.0000000Z"),

@@ -56,8 +56,8 @@ public sealed class ValidatorComponent : GH_Component
         // Read optional state — used when publishing to attach design context to the run.
         object? stateInput = null;
         da.GetData(5, ref stateInput);
-        var state = GhCastingHelpers.Unwrap<DesignStateSnapshot>(stateInput)
-                    ?? GhCastingHelpers.Unwrap<global::DG.DesignStateSnapshot>(stateInput);
+        var state = GhCastingHelpers.Unwrap<ParamState>(stateInput)
+                    ?? GhCastingHelpers.Unwrap<global::DG.ParamState>(stateInput);
 
         if (!run)
         {

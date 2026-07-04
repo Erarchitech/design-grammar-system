@@ -11,7 +11,7 @@ namespace DG.Grasshopper.Components;
 
 /// <summary>
 /// DESIGN STATE component. Collects named Number/Integer/Boolean inputs and serializes
-/// them into a DesignStateSnapshot for attachment to Classificator runs or filtering in
+/// them into a ParamState for attachment to Classificator runs or filtering in
 /// Validation Runs.
 ///
 /// Usage:
@@ -55,7 +55,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
         pManager.AddGenericParameter(
             "State",
             "State",
-            "DG.DesignStateSnapshot — wire to Classificator.State to attach this state to a validation run, or to Validation Runs.State to filter runs by this state.",
+            "DG.ParamState — wire to Classificator.State to attach this state to a validation run, or to Validation Runs.State to filter runs by this state.",
             GH_ParamAccess.item);
     }
 
@@ -231,9 +231,9 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
         };
     }
 
-    private static DesignStateSnapshot BuildSnapshot(List<DesignStateParameter> parameters)
+    private static ParamState BuildSnapshot(List<DesignStateParameter> parameters)
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = ComputeStateId(parameters),
             CapturedAtUtc = DateTimeOffset.UtcNow,

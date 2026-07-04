@@ -24,7 +24,7 @@ internal static class ValidationPublishClient
         IReadOnlyList<CoreRuleEvaluationResult> results,
         IReadOnlyList<CoreBindingRow> bindings,
         string dataServiceUrl,
-        DesignStateSnapshot? state = null)
+        ParamState? state = null)
     {
         var package = ValidationPublishPackageBuilder.Build(rules, results, bindings);
         var statePayloadJson = SerializeState(state);
@@ -46,7 +46,7 @@ internal static class ValidationPublishClient
         return parsed;
     }
 
-    private static string? SerializeState(DesignStateSnapshot? state)
+    private static string? SerializeState(ParamState? state)
     {
         if (state is null)
         {

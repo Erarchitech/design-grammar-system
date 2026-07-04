@@ -25,9 +25,9 @@ public sealed class ValidationRunQueryResult
     public IReadOnlyList<string> Results { get; init; } = Array.Empty<string>();
 
     /// <summary>
-    /// Deserialized design state snapshot attached to this run, or null if none was saved.
+    /// Deserialized parameter state attached to this run, or null if none was saved.
     /// </summary>
-    public DesignStateSnapshot? State { get; init; }
+    public ParamState? State { get; init; }
 
     /// <summary>
     /// Raw JSON payload of the design state, or null if no state was saved.

@@ -5,7 +5,7 @@ namespace DG.Core.Services;
 
 public sealed class ValidationRunPersistenceService
 {
-    public ValidationRunRecord AttachDesignState(ValidationRunRecord record, DesignStateSnapshot? state)
+    public ValidationRunRecord AttachDesignState(ValidationRunRecord record, ParamState? state)
     {
         if (state is null)
         {

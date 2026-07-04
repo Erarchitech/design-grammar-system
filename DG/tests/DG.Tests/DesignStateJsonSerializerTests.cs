@@ -177,9 +177,9 @@ public sealed class DesignStateJsonSerializerTests
         Assert.Contains("CapturedAtUtc", ex3.Message);
     }
 
-    private static DesignStateSnapshot CreateSnapshot(params DesignStateParameter[] parameters)
+    private static ParamState CreateSnapshot(params DesignStateParameter[] parameters)
     {
-        var snapshot = new DesignStateSnapshot
+        var snapshot = new ParamState
         {
             StateId = "state-1",
             CapturedAtUtc = DateTimeOffset.Parse("2026-04-30T10:00:00.0000000Z"),

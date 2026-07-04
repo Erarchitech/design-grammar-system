@@ -6,7 +6,7 @@ internal sealed class ValidationPublishRequest
     public string Project { get; init; } = "default-project";
 
     /// <summary>
-    /// Serialized DesignStateSnapshot JSON from the DESIGN STATE component.
+    /// Serialized ParamState JSON from the PARAMETER STATE component.
     /// Null when no state was captured for this validation run.
     /// </summary>
     public string? StatePayloadJson { get; init; }

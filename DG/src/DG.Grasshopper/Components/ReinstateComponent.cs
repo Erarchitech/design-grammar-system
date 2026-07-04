@@ -13,7 +13,7 @@ using CoreDesignStateParameter = DG.Core.Models.DesignStateParameter;
 namespace DG.Grasshopper.Components;
 
 /// <summary>
-/// REINSTATE component. Applies a saved DesignStateSnapshot back to the upstream
+/// REINSTATE component. Applies a saved ParamState back to the upstream
 /// Grasshopper parameters that originally fed a DESIGN STATE component.
 /// </summary>
 public sealed class ReinstateComponent : GH_Component
@@ -41,7 +41,7 @@ public sealed class ReinstateComponent : GH_Component
         pManager.AddGenericParameter(
             "State",
             "State",
-            "DesignStateSnapshot to apply. Wire from VALIDATION RUNS 'States' output or directly from DESIGN STATE 'State' output.",
+            "ParamState to apply. Wire from VALIDATION RUNS 'States' output or directly from DESIGN STATE 'State' output.",
             GH_ParamAccess.item);
 
         pManager.AddGenericParameter(
@@ -96,7 +96,7 @@ public sealed class ReinstateComponent : GH_Component
         {
             SetOutputs(da, null, "Invalid state input.");
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                $"Could not cast State input to DesignStateSnapshot. {DiagnoseInputType(stateInput)}");
+                $"Could not cast State input to ParamState. {DiagnoseInputType(stateInput)}");
             return;
         }
 
@@ -170,27 +170,27 @@ public sealed class ReinstateComponent : GH_Component
 
     // ── Snapshot unwrapping ─────────────────────────────────────────────────────
 
-    private static DesignStateSnapshot? UnwrapSnapshot(object? input)
+    private static ParamState? UnwrapSnapshot(object? input)
     {
         if (input is null) return null;
 
         // Direct type match (fastest path — same assembly)
-        if (input is DesignStateSnapshot direct) return direct;
-        if (input is global::DG.DesignStateSnapshot publicDirect) return publicDirect;
+        if (input is ParamState direct) return direct;
+        if (input is global::DG.ParamState publicDirect) return publicDirect;
 
         // Unwrap GH container first
         var raw = UnwrapGhContainer(input);
         if (raw is null) return null;
 
         // Try direct cast on unwrapped value
-        if (raw is DesignStateSnapshot rawDirect) return rawDirect;
-        if (raw is global::DG.DesignStateSnapshot rawPublic) return rawPublic;
+        if (raw is ParamState rawDirect) return rawDirect;
+        if (raw is global::DG.ParamState rawPublic) return rawPublic;
 
         // Assembly mismatch fallback: type name matches but cast fails
         // because GH loaded a different copy of DG.Core.dll.
         // Reconstruct via reflection.
         var typeName = raw.GetType().FullName;
-        if (typeName is "DG.Core.Models.DesignStateSnapshot" or "DG.DesignStateSnapshot")
+        if (typeName is "DG.Core.Models.ParamState" or "DG.ParamState")
         {
             return ReconstructSnapshot(raw);
         }
@@ -226,7 +226,7 @@ public sealed class ReinstateComponent : GH_Component
         return input;
     }
 
-    private static DesignStateSnapshot? ReconstructSnapshot(object foreign)
+    private static ParamState? ReconstructSnapshot(object foreign)
     {
         try
         {
@@ -236,7 +236,7 @@ public sealed class ReinstateComponent : GH_Component
             var capturedAt = capturedAtRaw is DateTimeOffset dto ? dto : DateTimeOffset.MinValue;
             var parametersRaw = foreignType.GetProperty("Parameters")?.GetValue(foreign);
 
-            var snapshot = new DesignStateSnapshot
+            var snapshot = new ParamState
             {
                 StateId = stateId,
                 CapturedAtUtc = capturedAt,
@@ -399,7 +399,7 @@ public sealed class ReinstateComponent : GH_Component
     /// the write to a fresh solution pass.
     /// </summary>
     private static void ScheduleWriteValues(
-        DesignStateSnapshot snapshot,
+        ParamState snapshot,
         DesignStateComponent designState,
         List<ResolvedTarget> resolvedTargets)
     {
