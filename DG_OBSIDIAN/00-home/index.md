@@ -137,5 +137,6 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-04 Phase 17 execution — Graph Access Components|2026-07-04 Phase 17 execution — Graph Access Components]]
 - [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|2026-07-04 Phase 18 discuss — Rules and Validator Rework]]
 - [[sessions/2026-07-04 Phase 18 planning — research|2026-07-04 Phase 18 planning — research]]
+- [[sessions/2026-07-04 Phase 18 UI design contract|2026-07-04 Phase 18 UI design contract — UI-SPEC approved]]
 - [[sessions/2026-07-04 Phase 15 planning — SpecGraph Runtime Rename (replan)|2026-07-04 Phase 15 replan — SpecGraph Runtime Rename]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]

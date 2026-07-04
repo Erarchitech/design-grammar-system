@@ -7,7 +7,7 @@ date: 2026-07-04
 
 ## Active
 
-1. **v7.0 Phase 18 (Rules and Validator Rework)** — **research complete 2026-07-04.** 9 decisions (D-01..D-09). `18-RESEARCH.md` written (HIGH confidence; ObjState Class IRI gap flagged). Planning blocked by UI safety gate — Phase 18 touches Model Viewer React code for v2 state payload adaptation. Next: `/gsd-ui-phase 18 --auto` or `/gsd-plan-phase 18 --skip-ui`. See [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|Phase 18 discuss session]] and [[sessions/2026-07-04 Phase 18 planning — research|Phase 18 research session]].
+1. **v7.0 Phase 18 (Rules and Validator Rework)** — **UI-SPEC approved 2026-07-04.** 6/6 PASS. Model Viewer read-side adaptation for v2 statePayloadJson documented. Next: `/gsd-plan-phase 18`. See [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|discuss]], [[sessions/2026-07-04 Phase 18 planning — research|research]], and [[sessions/2026-07-04 Phase 18 UI design contract|UI contract]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
