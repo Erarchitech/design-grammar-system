@@ -397,9 +397,9 @@ private static DesignState? TryParseDesignState(string? statePayloadJson)
 | A1 | `GhCastingHelpers.Unwrap<T>` works for all 4 handle types without per-handle registration | Code Examples | Handles are just `{ get; init; }` classes — same as `ConnectionInfo` — so `Unwrap<T>` should work. Risk: if Grasshopper requires `IGH_Goo` for non-primitive types through wires, each handle needs a wrapper. Mitigation: test with `Unwrap<ConnectionInfo>` (works today) — handles use same pattern. |
 | A2 | DesignState v1 payloads can be distinguished from v2 by JSON root key presence | Code Examples | If v1 and v2 payloads have overlapping key sets (e.g. both have `stateId` at root), heuristic may misclassify. Mitigation: Phase 18 VALIDATOR must use a discriminator key (`stateKind: "v2"` or similar) that v1 payloads lack. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **How to distinguish v1 from v2 statePayloadJson at deserialization time?**
+1. **(RESOLVED)** **How to distinguish v1 from v2 statePayloadJson at deserialization time?**
    - What we know: v1 is a strict ParamState (StateId + CapturedAtUtc + Parameters array). v2 will have 3-part composition structure.
    - What's unclear: The exact JSON shape of v2 is defined by Phase 18 VALIDATOR's write path, which hasn't been built yet. v1 payloads exist in DB from existing ValidationRun nodes.
    - Recommendation: Use a try-v2-first heuristic — attempt v2 deserialization, fall back to v1 if `JsonException` is thrown. Document that v2 payloads are absent until Phase 18 completes; Phase 17 VALIDATION GRAPH shows empty DesignState when only v1 payloads exist (which is an acceptable interim state per CONTEXT design).
