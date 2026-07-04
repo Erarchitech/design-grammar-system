@@ -144,7 +144,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. DESIGN STATE composes multiple ObjState/ParamState/PropState inputs into a DesignState; index-mismatched list inputs produce an explicit component error, not silent misalignment
   4. The v3.0 DefState/ObjectState scaffolding classes are gone — no remaining references in DG.Core or DG.Grasshopper
 
-**Plans**: 3/6 plans executed
+**Plans**: 6/6 plans complete
 
 **Wave 1** *(parallel — Plan 01 and Plan 02 are independent)*
 
@@ -154,12 +154,12 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 **Wave 2** *(parallel — Plan 03 and Plan 04 are independent)*
 
 - [x] 16-03-PLAN.md — GH infrastructure: PublicTypes wrappers, GhCastingHelpers Try* helpers, ErrorMessageTemplates index-mismatch messages — *wave 2, depends 16-01* — GHST-01..04 (infrastructure)
-- [ ] 16-04-PLAN.md — v2 statePayloadJson serializer (DesignStatePayloadV2Serializer) with versioned envelope, no v1 fallback — *wave 2, depends 16-01* — CORE-05
+- [x] 16-04-PLAN.md — v2 statePayloadJson serializer (DesignStatePayloadV2Serializer) with versioned envelope, no v1 fallback — *wave 2, depends 16-01* — CORE-05
 
 **Wave 3** *(parallel — Plan 05 and Plan 06 are independent)*
 
-- [ ] 16-05-PLAN.md — PARAMETER STATE rename (new GUID, ParamState output) + OBJECT STATE component (index-mismatch guard) — *wave 3, depends 16-03* — GHST-01/02
-- [ ] 16-06-PLAN.md — PROPERTY STATE component (index-mismatch guard) + DESIGN STATE composition component (bag semantics, deterministic aggregated StateId) — *wave 3, depends 16-03* — GHST-03/04
+- [x] 16-05-PLAN.md — PARAMETER STATE rename (new GUID, ParamState output) + OBJECT STATE component (index-mismatch guard) — *wave 3, depends 16-03* — GHST-01/02
+- [x] 16-06-PLAN.md — PROPERTY STATE component (index-mismatch guard) + DESIGN STATE composition component (bag semantics, deterministic aggregated StateId) — *wave 3, depends 16-03* — GHST-03/04
 
 ### Phase 17: Graph Access Components
 
@@ -173,9 +173,9 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. ONTOGRAPH lists Class/ObjProperties/DataProperties from the live OntoGraph layer
   4. VALIDATION GRAPH lists Run/Status/DesignState from the live ValidGraph layer; the VALIDATION RUNS component no longer exists in the plugin
 
-**Plans**: 4 plans, 2 waves
+**Plans**: 1/4 plans executed
 
-  - [ ] 17-01-PLAN.md — Handle types, models, icons, CONNECTOR update, GRAPH DECONSTRUCT — *wave 1* — GHGA-01/02
+  - [x] 17-01-PLAN.md — Handle types, models, icons, CONNECTOR update, GRAPH DECONSTRUCT — *wave 1* — GHGA-01/02
   - [ ] 17-02-PLAN.md — METAGRAPH extension (Objects output via REFERS_TO->Class query) — *wave 2, depends 17-01* — GHGA-03
   - [ ] 17-03-PLAN.md — ONTOGRAPH (Class/ObjProperties/DataProperties from OntoGraph) — *wave 2, depends 17-01* — GHGA-04
   - [ ] 17-04-PLAN.md — VALIDATION GRAPH (Run/Status/DesignState from ValidGraph, replaces VALIDATION RUNS) — *wave 2, depends 17-01* — GHGA-05
@@ -232,8 +232,8 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 13. Ontology V7 and Contract Investigation | 4/4 | Complete    | 2026-07-03 |
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
 | 15. SpecGraph Runtime Rename | 5/5 | Complete    | 2026-07-03 |
-| 16. DG.Core State Models and State Components | 3/6 | In Progress|  |
-| 17. Graph Access Components | 0/4 | Not started | - |
+| 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
+| 17. Graph Access Components | 1/4 | In Progress|  |
 | 18. Rules and Validator Rework | 0/? | Not started | - |
 | 19. Deconstruct and Reinstate Components | 0/? | Not started | - |
 | 20. E2E Validation and Docs | 0/? | Not started | - |

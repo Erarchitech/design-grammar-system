@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase: 16
-current_phase_name: dg-core-state-models-and-state-components
+current_phase: 17
+current_phase_name: graph-access-components
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-07-04T01:38:52.208Z"
+stopped_at: Completed Plan 02 — ID generator update
+last_updated: "2026-07-04T02:59:15.909Z"
 last_activity: 2026-07-04
-last_activity_desc: Completed Plan 01 — state models
+last_activity_desc: Phase 17 execution started
 progress:
   total_phases: 8
-  completed_phases: 3
-  total_plans: 22
-  completed_plans: 18
-  percent: 38
+  completed_phases: 4
+  total_plans: 26
+  completed_plans: 23
+  percent: 50
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 16 — dg-core-state-models-and-state-components
+**Current focus:** Phase 17 — graph-access-components
 
 ## Current Position
 
-Phase: 16 (dg-core-state-models-and-state-components) — EXECUTING
-Plan: 2 of 6
+Phase: 17 (graph-access-components) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-07-04 — Completed Plan 01 — state models
+Last activity: 2026-07-04 — Phase 17 execution started
 
 ## Performance Metrics
 
@@ -100,6 +100,15 @@ Shipped from Phase 16 Plan 01:
 - DefState, ObjectState, ObjectInstance deleted (zero remaining type references)
 - ObjState/PropState/DesignState/ParamState all unsealed (downstream may need inheritance)
 - Geometry field on ObjState typed as object? — in-process Rhino/GH handle, excluded from serialization
+- [Phase 16]: ParamStatePrefix reuses DS_ literal; DesignStatePrefix also DS_ — different hash input domains disambiguate per Research Finding 6
+- [Phase 16]: PropStatePrefix = PS_ per D-11
+- [Phase 16]: OI_ prefix and ComputeObjectInstanceId removed entirely — zero call sites per D-15
+- [Phase 16]: ComputeObjectStateId (OS_) and IdRefPrefix (IDR_) preserved unchanged — not in Phase 16 scope
+- [Phase ?]: Handle types are unsealed to permit public wrapper inheritance in DG namespace
+- [Phase ?]: All 4 handles wrap the SAME ConnectionInfo instance - no per-handle connection logic
+- [Phase ?]: GRAPH DECONSTRUCT is pure synchronous passthrough with no async, no DB calls, no CancellationTokenSource
+- [Phase ?]: CONNECTOR Project output is a string passthrough of the PROJECT NAME input (scopes downstream queries)
+- [Phase ?]: ErrorMessageTemplates follow What+Where+How-to-fix pattern for graph-access error surfaces
 
 ### Research Flags (carry into planning)
 
@@ -120,9 +129,9 @@ Shipped from Phase 16 Plan 01:
 
 ## Session Continuity
 
-Last session: 2026-07-04T01:38:52.193Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-graph-access-components/17-CONTEXT.md
+Last session: 2026-07-04T02:57:10.133Z
+Stopped at: Completed Plan 02 — ID generator update
+Resume file: None
 
 ## Performance Metrics
 
@@ -141,3 +150,6 @@ Resume file: .planning/phases/17-graph-access-components/17-CONTEXT.md
 | Phase 14-graph-schema-v4-propagation P05 | 18min | 2 tasks | 3 files |
 | Phase 14-graph-schema-v4-propagation P07 | 8min | 3 tasks | 4 files |
 | Phase 16 P01 | 10min | 3 tasks | 25 files |
+| Phase 16 P02 | 15m | 2 tasks | 2 files |
+| Phase 16-dg-core-state-models-and-state-components P03 | 8 | 3 tasks | 3 files |
+| Phase 17-graph-access-components P01 | 12m | 3 tasks | 22 files |
