@@ -142,7 +142,7 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
         }
     }
 
-    internal static (IReadOnlyList<string> ruleIds, IReadOnlyList<bool> results) ParseRulesJson(string rulesJson)
+    internal static (IReadOnlyList<string> ruleIds, IReadOnlyList<bool> results) ParseRulesJson(string? rulesJson)
     {
         if (string.IsNullOrWhiteSpace(rulesJson) || rulesJson == "[]")
         {
