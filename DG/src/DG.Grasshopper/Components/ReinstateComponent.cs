@@ -100,14 +100,14 @@ public sealed class ReinstateComponent : GH_Component
             return;
         }
 
-        // ── Find DesignStateComponent by walking wire sources ────────────────────
+        // ── Find ParameterStateComponent by walking wire sources ────────────────────
         var designStateComponent = FindUpstreamDesignState();
         if (designStateComponent is null)
         {
-            SetOutputs(da, null, "No DESIGN STATE found.");
+            SetOutputs(da, null, "No PARAMETER STATE found.");
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                "Could not find a DESIGN STATE component upstream of the 'DesignState' input. " +
-                "Wire the 'State' output of a DESIGN STATE component to this input.");
+                "Could not find a PARAMETER STATE component upstream of the 'DesignState' input. " +
+                "Wire the 'State' output of a PARAMETER STATE component to this input.");
             return;
         }
 
@@ -307,14 +307,14 @@ public sealed class ReinstateComponent : GH_Component
 
     // ── Component discovery via wire traversal ──────────────────────────────────
 
-    private DesignStateComponent? FindUpstreamDesignState()
+    private ParameterStateComponent? FindUpstreamDesignState()
     {
         var found = FindDesignStateFromInput(1);
         if (found is not null) return found;
         return FindDesignStateFromInput(0);
     }
 
-    private DesignStateComponent? FindDesignStateFromInput(int inputIndex)
+    private ParameterStateComponent? FindDesignStateFromInput(int inputIndex)
     {
         if (inputIndex >= Params.Input.Count) return null;
         var input = Params.Input[inputIndex];
@@ -323,7 +323,7 @@ public sealed class ReinstateComponent : GH_Component
         foreach (var source in input.Sources)
         {
             var docObj = source.Attributes?.GetTopLevel?.DocObject;
-            if (docObj is DesignStateComponent dsc)
+            if (docObj is ParameterStateComponent dsc)
                 return dsc;
         }
 
@@ -332,7 +332,7 @@ public sealed class ReinstateComponent : GH_Component
 
     // ── Target resolution ───────────────────────────────────────────────────────
 
-    private static List<ResolvedTarget> ResolveTargets(DesignStateComponent designState)
+    private static List<ResolvedTarget> ResolveTargets(ParameterStateComponent designState)
     {
         var targets = new List<ResolvedTarget>();
 
@@ -365,7 +365,7 @@ public sealed class ReinstateComponent : GH_Component
 
     /// <summary>
     /// Resolve the type and domain of a source parameter.
-    /// MUST match <see cref="DesignStateComponent"/> classification:
+    /// MUST match <see cref="ParameterStateComponent"/> classification:
     ///   GH_NumberSlider → always Number (ScriptVariable returns double regardless of DecimalPlaces).
     ///   GH_BooleanToggle → Boolean.
     /// </summary>
@@ -375,7 +375,7 @@ public sealed class ReinstateComponent : GH_Component
         {
             var min = (double)slider.Slider.Minimum;
             var max = (double)slider.Slider.Maximum;
-            // Always Number — DesignStateComponent captures slider output via
+            // Always Number — ParameterStateComponent captures slider output via
             // ScriptVariable() which returns double regardless of DecimalPlaces.
             return (DesignStateParameterType.Number, min, max);
         }
@@ -400,7 +400,7 @@ public sealed class ReinstateComponent : GH_Component
     /// </summary>
     private static void ScheduleWriteValues(
         ParamState snapshot,
-        DesignStateComponent designState,
+        ParameterStateComponent designState,
         List<ResolvedTarget> resolvedTargets)
     {
         var doc = designState.OnPingDocument();

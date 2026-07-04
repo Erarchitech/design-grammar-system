@@ -4,18 +4,16 @@ using DG.Core.Services;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using System.Drawing;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace DG.Grasshopper.Components;
 
 /// <summary>
-/// DESIGN STATE component. Collects named Number/Integer/Boolean inputs and serializes
+/// PARAMETER STATE component. Collects named Number/Integer/Boolean inputs and assembles
 /// them into a ParamState for attachment to Classificator runs or filtering in
 /// Validation Runs.
 ///
 /// Usage:
-///   1. Drop DESIGN STATE on the canvas.
+///   1. Drop PARAMETER STATE on the canvas.
 ///   2. Right-click the component → "Add input" to add a socket per parameter.
 ///   3. Rename each input's NickName to match the slider (e.g. "Height", "Floors", "Active").
 ///      The NickName becomes the stable ParameterId used for reinstatement matching.
@@ -23,21 +21,21 @@ namespace DG.Grasshopper.Components;
 ///      Boolean Toggles → Boolean inputs.
 ///   5. Wire the "State" output to Classificator.State and/or Validation Runs.State.
 /// </summary>
-public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterComponent
+public sealed class ParameterStateComponent : GH_Component, IGH_VariableParameterComponent
 {
-    public DesignStateComponent()
+    public ParameterStateComponent()
         : base(
-            "DESIGN STATE",
-            "DSGSTATE",
-            "Capture named Number, Integer, and Boolean parameters into a reusable design state snapshot.",
+            "PARAMETER STATE",
+            "PARAMSTATE",
+            "Capture named Number, Integer, and Boolean parameters into a reusable ParamState.",
             DgComponentCategory.Category,
             DgComponentCategory.Subcategory)
     {
     }
 
-    public override Guid ComponentGuid => new("B3D1E7F2-A945-4C8B-B6F0-1A0D3C4E9B72");
+    public override Guid ComponentGuid => new("A2E8C4F1-6B3D-4A9C-8E5F-2D7B0C1A3F6E");
 
-    protected override Bitmap Icon => DgIcons.DesignState24;
+    protected override Bitmap Icon => DgIcons.ParameterState24;
 
     // ── Inputs start with one placeholder. User adds more via right-click → "Add input".
     protected override void RegisterInputParams(GH_InputParamManager pManager)
@@ -55,7 +53,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
         pManager.AddGenericParameter(
             "State",
             "State",
-            "DG.ParamState — wire to Classificator.State to attach this state to a validation run, or to Validation Runs.State to filter runs by this state.",
+            "DG.ParamState — wire to DESIGN STATE ParamState input to compose into a DesignState, or to downstream state consumers.",
             GH_ParamAccess.item);
     }
 
@@ -235,7 +233,7 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
     {
         var snapshot = new ParamState
         {
-            StateId = ComputeStateId(parameters),
+            StateId = DesignStateIdGenerator.ComputeParamStateId(parameters),
             CapturedAtUtc = DateTimeOffset.UtcNow,
         };
 
@@ -244,40 +242,11 @@ public sealed class DesignStateComponent : GH_Component, IGH_VariableParameterCo
 
         return snapshot;
     }
-
-    /// <summary>
-    /// Produce a 16-character hex StateId that is a deterministic hash of the
-    /// sorted parameter ID + value pairs.
-    ///
-    /// Identical slider positions → identical StateId → state filter in VALIDATION RUNS
-    /// correctly matches across different sessions.
-    /// </summary>
-    private static string ComputeStateId(IEnumerable<DesignStateParameter> parameters)
-    {
-        var sb = new StringBuilder();
-
-        foreach (var p in parameters.OrderBy(x => x.ParameterId, StringComparer.Ordinal))
-        {
-            sb.Append(p.ParameterId);
-            sb.Append('=');
-            sb.Append(p.Type switch
-            {
-                DesignStateParameterType.Boolean => p.BooleanValue?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null",
-                DesignStateParameterType.Integer => p.IntegerValue?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null",
-                DesignStateParameterType.Number  => p.NumberValue?.ToString("R", System.Globalization.CultureInfo.InvariantCulture) ?? "null",
-                _ => "null",
-            });
-            sb.Append(';');
-        }
-
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString()));
-        return Convert.ToHexString(hash)[..16];
-    }
 }
 #else
 namespace DG.Grasshopper.Components;
 
-public sealed class DesignStateComponent
+public sealed class ParameterStateComponent
 {
 }
 #endif
