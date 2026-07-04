@@ -7,11 +7,10 @@ date: 2026-07-04
 
 ## Active
 
-1. **v7.0 Phase 18 (Rules and Validator Rework)** — **context gathered 2026-07-04.** 9 decisions (D-01..D-09): ValidStatus per-every-ObjState index-matched, DesignStateBindingService replacing VariableBinder, ObjState matching by Class IRI, RULE DECONSTRUCT error on unclassified + exclude Builtins, CLASSIFICATOR full purge, VariableTypeInferrer stays as-is. Next: `/gsd-plan-phase 18`. See [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|Phase 18 discuss session]].
-2. **v7.0 Phase 17 (Graph Access Components)** — **planned 2026-07-04.** 4 plans (17-01..17-04), 2 waves: foundation (handle types + CONNECTOR + GRAPH DECONSTRUCT) then parallel readers (METAGRAPH, ONTOGRAPH, VALIDATION GRAPH). 5/5 requirements covered, 0 blockers, 2 advisory warnings. Next: `/gsd-execute-phase 17`. See [[sessions/2026-07-04 Phase 17 planning|Phase 17 planning session]].
-4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
-5. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
-6. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+1. **v7.0 Phase 18 (Rules and Validator Rework)** — **context gathered 2026-07-04.** 9 decisions (D-01..D-09). Next: `/gsd-plan-phase 18`. See [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|Phase 18 discuss session]].
+2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
+3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
+4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
 > ℹ️ **v3.0 superseded 2026-07-02** — Phase 7 (Schema Foundation) shipped and carried forward; Phases 8–12 dropped in favor of the GH_DesignGrammars.pdf-driven v7.0 component set. Archive: `.planning/milestones/v3.0-phases/`.
 > ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
@@ -20,7 +19,7 @@ date: 2026-07-04
 
 ## Upcoming
 
-- Phases 16–20 of v7.0: DG.Core state models, graph access components, rules/validator rework, deconstruct/reinstate components, E2E validation
+- Phases 18–20 of v7.0: rules/validator rework, deconstruct/reinstate components, E2E validation
 - Рецензирование T2–T4 соавтором или научным руководителем
 - Реализация DesignSpaceGraph (T4) as milestone after v7.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
@@ -30,6 +29,7 @@ date: 2026-07-04
 
 ## Completed Recently
 
+- **v7.0 Phase 17 executed** — 2026-07-04. 4/4 plans across 1 wave, 24/24 must-haves verified, 5/5 requirements (GHGA-01..05) satisfied. Created 4 handle types, 6 repository files, 5 GH components (CONNECTOR updated, GRAPH DECONSTRUCT new, METAGRAPH extended, ONTOGRAPH new, VALIDATION GRAPH new replacing old ValidationRunsComponent). 61 new tests, build clean (176/176 pass). See [[sessions/2026-07-04 Phase 17 execution — Graph Access Components|session]].
 - **v7.0 Phase 15 executed** — 2026-07-04. 5/5 plans across 2 waves, 13/14 must-haves verified, blocker found & fixed (stale `knowledge_note_search` in `spec-query.json`). SC#4 gate: PASS — zero orphaned Knowledge* graph-layer references. Created DB migration (SPEC-01), renamed data-service (SPEC-02), n8n workflows (SPEC-03), NeoVis UI (SPEC-04). 13 commits. Migration file + seed ready for manual dev-Neo4j run. See [[sessions/2026-07-04 Phase 15 execution|session]].
 - **v7.0 Phase 16 executed** — 2026-07-04. 6/6 plans across 3 waves, 25/25 must-haves verified, 9/9 requirements satisfied. Created 4 state models, v2 serializer, 4 GH components. 41 new tests, build clean. See [[sessions/2026-07-04 Phase 16 execution - 6 plans all complete|session]].
 - **v7.0 Phase 18 context gathered** — 2026-07-04. Four gray areas discussed: ValidStatus array contract (per-every-ObjState index-matched, non-matching excluded from overall pass), VariableBinder redistribution (new DesignStateBindingService in DG.Core.Services, delete entire Classification namespace), RULE DECONSTRUCT edge cases (error on no REFERS_TO, exclude Builtins), CLASSIFICATOR full purge (component + namespace + model + tests). 9 decisions in `18-CONTEXT.md` + `18-DISCUSSION-LOG.md`. See [[sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework|session]].
