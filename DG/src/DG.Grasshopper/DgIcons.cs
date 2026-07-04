@@ -20,6 +20,8 @@ internal static class DgIcons
 
     public static Bitmap ObjectState24 { get; } = Load("ObjectState24.png");
 
+    public static Bitmap PropertyState24 { get; } = Load("PropertyState24.png");
+
     public static Bitmap Reinstate24 { get; } = Load("Reinstate24.png");
 
     public static Bitmap ValidationRuns24 { get; } = Load("ValidationRuns24.png");
