@@ -55,6 +55,12 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         ORDER BY ruleId, relationType, atomOrder, argPos
         """;
 
+    private const string ObjectsQuery = """
+        MATCH (r:Rule {graph:'Metagraph', project:$project})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[:REFERS_TO]->(c:Class)
+        RETURN DISTINCT c.iri AS iri, c.label AS label
+        ORDER BY c.label
+        """;
+
     public async Task<IReadOnlyList<Rule>> GetRulesAsync(ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
         await using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
@@ -69,6 +75,33 @@ public sealed class Neo4jRuleRepository : IRuleRepository
         await LoadAtomsAsync(session, connection.Project, rules, cancellationToken);
         PopulateVariables(rules.Values);
         return rules.Values.ToList();
+    }
+
+    public async Task<IReadOnlyList<OntologyClass>> GetObjectsAsync(
+        ConnectionInfo connection, CancellationToken cancellationToken = default)
+    {
+        await using var driver = GraphDatabase.Driver(
+            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
+        await using var session = driver.AsyncSession(
+            options => options.WithDatabase(connection.Database));
+
+        var cursor = await session
+            .RunAsync(ObjectsQuery, new { project = connection.Project })
+            .WaitAsync(QueryTimeout, cancellationToken);
+
+        var objects = new List<OntologyClass>();
+        await cursor
+            .ForEachAsync(record =>
+            {
+                objects.Add(new OntologyClass
+                {
+                    Iri = record["iri"].As<string>(),
+                    Label = record["label"].As<string>(),
+                });
+            })
+            .WaitAsync(QueryTimeout, cancellationToken);
+
+        return objects;
     }
 
     private static async Task<Dictionary<string, Rule>> LoadRulesAsync(

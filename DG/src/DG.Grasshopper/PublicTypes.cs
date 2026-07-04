@@ -36,6 +36,10 @@ public class MetagraphHandle : DG.Core.Models.MetagraphHandle
 {
 }
 
+public class OntologyClass : DG.Core.Models.OntologyClass
+{
+}
+
 public class OntographHandle : DG.Core.Models.OntographHandle
 {
 }
