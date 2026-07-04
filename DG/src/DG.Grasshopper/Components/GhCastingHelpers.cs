@@ -3,7 +3,11 @@ using DG.Core.Models;
 using Grasshopper.Kernel.Types;
 using System.Collections;
 using System.Globalization;
+using CoreDesignState = DG.Core.Models.DesignState;
 using CoreElementRef = DG.Core.Models.ElementRef;
+using CoreObjState = DG.Core.Models.ObjState;
+using CoreParamState = DG.Core.Models.ParamState;
+using CorePropState = DG.Core.Models.PropState;
 using CoreRule = DG.Core.Models.Rule;
 using CoreVariable = DG.Core.Models.Variable;
 
@@ -72,6 +76,89 @@ internal static class GhCastingHelpers
     public static BindingRow? TryBindingRow(object? input)
     {
         return Unwrap<BindingRow>(input);
+    }
+
+    public static CoreObjState? TryObjState(object? input)
+    {
+        var direct = Unwrap<CoreObjState>(input);
+        if (direct is not null) return direct;
+
+        var publicWrapper = Unwrap<global::DG.ObjState>(input);
+        return publicWrapper is null ? null : new CoreObjState
+        {
+            StateId = publicWrapper.StateId,
+            ObjectRef = publicWrapper.ObjectRef,
+            Geometry = publicWrapper.Geometry,
+            Label = publicWrapper.Label,
+            CapturedAtUtc = publicWrapper.CapturedAtUtc,
+        };
+    }
+
+    public static CoreParamState? TryParamState(object? input)
+    {
+        var direct = Unwrap<CoreParamState>(input);
+        if (direct is not null) return direct;
+
+        var publicWrapper = Unwrap<global::DG.ParamState>(input);
+        return publicWrapper is null ? null : new CoreParamState
+        {
+            StateId = publicWrapper.StateId,
+            CapturedAtUtc = publicWrapper.CapturedAtUtc,
+        };
+    }
+
+    public static CorePropState? TryPropState(object? input)
+    {
+        var direct = Unwrap<CorePropState>(input);
+        if (direct is not null) return direct;
+
+        var publicWrapper = Unwrap<global::DG.PropState>(input);
+        return publicWrapper is null ? null : new CorePropState
+        {
+            StateId = publicWrapper.StateId,
+            RuleIri = publicWrapper.RuleIri,
+            DataPropertyIri = publicWrapper.DataPropertyIri,
+            PropValue = publicWrapper.PropValue,
+        };
+    }
+
+    public static CoreDesignState? TryDesignState(object? input)
+    {
+        var direct = Unwrap<CoreDesignState>(input);
+        if (direct is not null) return direct;
+
+        var publicWrapper = Unwrap<global::DG.DesignState>(input);
+        if (publicWrapper is null) return null;
+
+        var objStates = new List<CoreObjState>(publicWrapper.ObjStates.Count);
+        foreach (var os in publicWrapper.ObjStates)
+        {
+            var unwrapped = TryObjState(os);
+            if (unwrapped is not null) objStates.Add(unwrapped);
+        }
+
+        var paramStates = new List<CoreParamState>(publicWrapper.ParamStates.Count);
+        foreach (var ps in publicWrapper.ParamStates)
+        {
+            var unwrapped = TryParamState(ps);
+            if (unwrapped is not null) paramStates.Add(unwrapped);
+        }
+
+        var propStates = new List<CorePropState>(publicWrapper.PropStates.Count);
+        foreach (var ps in publicWrapper.PropStates)
+        {
+            var unwrapped = TryPropState(ps);
+            if (unwrapped is not null) propStates.Add(unwrapped);
+        }
+
+        return new CoreDesignState
+        {
+            StateId = publicWrapper.StateId,
+            CapturedAtUtc = publicWrapper.CapturedAtUtc,
+            ObjStates = objStates,
+            ParamStates = paramStates,
+            PropStates = propStates,
+        };
     }
 
     public static CoreElementRef? TryElementRef(object? input)
