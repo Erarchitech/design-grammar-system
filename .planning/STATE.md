@@ -5,16 +5,16 @@ milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 17
 current_phase_name: graph-access-components
 status: executing
-stopped_at: Completed Plan 02 — ID generator update
-last_updated: "2026-07-04T03:14:57.062Z"
+stopped_at: Completed Plan 04 — VALIDATION GRAPH component
+last_updated: "2026-07-04T12:00:00.000Z"
 last_activity: 2026-07-04
-last_activity_desc: Phase 17 execution started
+last_activity_desc: Phase 17 execution completed
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 26
-  completed_plans: 24
-  percent: 50
+  completed_plans: 26
+  percent: 100
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 17 (graph-access-components) — EXECUTING
-Plan: 3 of 4
-Status: Ready to execute
-Last activity: 2026-07-04 — Phase 17 execution started
+Phase: 17 (graph-access-components) — COMPLETE
+Plan: 4 of 4
+Status: Done — all 4 plans executed
+Last activity: 2026-07-04 — Completed Plan 04 (VALIDATION GRAPH component)
 
 ## Performance Metrics
 
@@ -110,6 +110,20 @@ Shipped from Phase 16 Plan 01:
 - [Phase ?]: CONNECTOR Project output is a string passthrough of the PROJECT NAME input (scopes downstream queries)
 - [Phase ?]: ErrorMessageTemplates follow What+Where+How-to-fix pattern for graph-access error surfaces
 
+Shipped from Phase 17 Plan 03:
+
+- [Phase 17]: OntologyProperty unsealed in Core (matching OntologyClass pattern) to allow DG.Grasshopper public wrapper inheritance
+- [Phase 17]: GUID F8C6A4B2-1E3D-4F5A-8C7B-9D0E1F2A3B4C assigned to OntoGraphComponent
+
+Shipped from Phase 17 Plan 04:
+
+- [Phase 17]: Neo4jValidGraphRepository is a new parallel class, not a modification of ValidationRunsQueryService (preserved for Phase 18 removal)
+- [Phase 17]: v1/v2 payload heuristic checks root JSON for stateKind/objStates keys to detect v2; falls back to DesignStateJsonSerializer for v1
+- [Phase 17]: Status constructed as per-ObjState Boolean list (overall AND of all rules per ObjState), single-element for v1
+- [Phase 17]: GUID 95fc9d32-307e-41fd-a158-bfae49a3dc2a assigned to ValidationGraphComponent (replaces old A7F2C3E1)
+- [Phase 17]: RunInfo unsealed in Core (matching DesignState/ParamState/ObjState/PropState pattern) for public wrapper inheritance
+- [Phase 17]: Old VALIDATION RUNS GUID (A7F2C3E1) fully purged — zero remaining references
+
 ### Research Flags (carry into planning)
 
 - Phase 13: resolve PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict AND the DesignState storage-layer conflict (cypher_template stores DesignState with graph='Metagraph' at line ~50; PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle) before locking the port↔IRI map
@@ -120,7 +134,7 @@ Shipped from Phase 16 Plan 01:
 ### Pending Todos
 
 - Execute Phase 13: /gsd-execute-phase 13 (4 plans, 3 waves — 13-01 locks names, 13-02 builds the V7 owl, 13-03/13-04 map ports + regenerate the bundle)
-- Phase 19 can run parallel to Phase 18 once Phase 16/17 land — see ROADMAP.md dependency notes
+- Phase 19 can run parallel to Phase 18 once Phase 16/17 land — Phases 16/17 now complete, ready for parallel execution
 
 ### Blockers/Concerns
 
@@ -129,8 +143,8 @@ Shipped from Phase 16 Plan 01:
 
 ## Session Continuity
 
-Last session: 2026-07-04T03:14:57.046Z
-Stopped at: Completed Plan 02 — ID generator update
+Last session: 2026-07-04T12:00:00.000Z
+Stopped at: Completed Plan 04 — VALIDATION GRAPH component (Phase 17 complete)
 Resume file: None
 
 ## Performance Metrics
@@ -154,3 +168,5 @@ Resume file: None
 | Phase 16-dg-core-state-models-and-state-components P03 | 8 | 3 tasks | 3 files |
 | Phase 17-graph-access-components P01 | 12m | 3 tasks | 22 files |
 | Phase 17 P02 | 6m | 3 tasks | 6 files |
+| Phase 17 P03 | 4m27s | 3 tasks | 6 files |
+| Phase 17 P04 | 4m30s | 4 tasks | 8 files |

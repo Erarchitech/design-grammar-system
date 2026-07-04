@@ -19,7 +19,7 @@ Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 compone
 - [ ] **Phase 14: Graph Schema v4 Propagation** — cypher_template v4, dataset_schema v4, n8n ingest+query prompts, NeoVis config, index.html, data-service Cypher, kind-migration script, training examples + test fixtures
 - [x] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis (completed 2026-07-03)
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
-- [ ] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
+- [x] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
 - [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation
 - [ ] **Phase 19: Deconstruct and Reinstate Components** — DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
 - [ ] **Phase 20: E2E Validation and Docs** — Live Docker E2E chain, release notes for canvas breakage, port↔IRI mapping published, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh
@@ -173,12 +173,12 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   3. ONTOGRAPH lists Class/ObjProperties/DataProperties from the live OntoGraph layer
   4. VALIDATION GRAPH lists Run/Status/DesignState from the live ValidGraph layer; the VALIDATION RUNS component no longer exists in the plugin
 
-**Plans**: 2/4 plans executed
+**Plans**: 4/4 plans complete
 
   - [x] 17-01-PLAN.md — Handle types, models, icons, CONNECTOR update, GRAPH DECONSTRUCT — *wave 1* — GHGA-01/02
   - [x] 17-02-PLAN.md — METAGRAPH extension (Objects output via REFERS_TO->Class query) — *wave 2, depends 17-01* — GHGA-03
-  - [ ] 17-03-PLAN.md — ONTOGRAPH (Class/ObjProperties/DataProperties from OntoGraph) — *wave 2, depends 17-01* — GHGA-04
-  - [ ] 17-04-PLAN.md — VALIDATION GRAPH (Run/Status/DesignState from ValidGraph, replaces VALIDATION RUNS) — *wave 2, depends 17-01* — GHGA-05
+  - [x] 17-03-PLAN.md — ONTOGRAPH (Class/ObjProperties/DataProperties from OntoGraph) — *wave 2, depends 17-01* — GHGA-04
+  - [x] 17-04-PLAN.md — VALIDATION GRAPH (Run/Status/DesignState from ValidGraph, replaces VALIDATION RUNS) — *wave 2, depends 17-01* — GHGA-05
 
 ### Phase 18: Rules and Validator Rework
 
@@ -233,13 +233,14 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 14. Graph Schema v4 Propagation | 7/7 | Complete   | 2026-07-03 |
 | 15. SpecGraph Runtime Rename | 5/5 | Complete    | 2026-07-03 |
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
-| 17. Graph Access Components | 2/4 | In Progress|  |
+| 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 0/? | Not started | - |
 | 19. Deconstruct and Reinstate Components | 0/? | Not started | - |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
 ---
 
+*Roadmap updated: 2026-07-04 — Phase 17 complete (Plan 04 — VALIDATION GRAPH component)*
 *Roadmap updated: 2026-07-02 (audit amendment) — +5 requirements from full-codebase audit: kind-migration + training/test fixtures (Phase 14), Model Viewer read-side (Phase 18), repo/AI docs + DG_OBSIDIAN/graphify refresh (Phase 20); Phase 13 investigation scope extended with DesignState layer-placement and version-marker conflicts*
 *Roadmap updated: 2026-07-02 — v7.0 phases 13-20 defined; v3.0 superseded (Phase 7 shipped, carried forward)*
 *Roadmap updated: 2026-05-25 — v4.0 BOT Ontology Bridge added as planned milestone*
