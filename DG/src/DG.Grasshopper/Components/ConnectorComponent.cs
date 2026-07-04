@@ -34,17 +34,18 @@ public sealed class ConnectorComponent : GH_Component
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Neo4j URI", "URI", "Neo4j bolt URI", GH_ParamAccess.item, "bolt://localhost:7687");
-        pManager.AddTextParameter("User", "User", "Neo4j user", GH_ParamAccess.item, "neo4j");
-        pManager.AddTextParameter("Password", "Password", "Neo4j password", GH_ParamAccess.item, "12345678");
+        pManager.AddTextParameter("Neo4jURI", "URI", "Neo4j bolt URI", GH_ParamAccess.item, "bolt://localhost:7687");
+        pManager.AddTextParameter("Neo4jUser", "User", "Neo4j user", GH_ParamAccess.item, "neo4j");
+        pManager.AddTextParameter("Neo4jPassword", "Password", "Neo4j password", GH_ParamAccess.item, "12345678");
         pManager.AddTextParameter("Database", "DB", "Neo4j database", GH_ParamAccess.item, "neo4j");
-        pManager.AddTextParameter("Project", "Project", "Project name", GH_ParamAccess.item, "default-project");
+        pManager.AddTextParameter("PROJECT NAME", "Project", "Project name (dg:project annotation)", GH_ParamAccess.item, "default-project");
         pManager.AddBooleanParameter("Connect", "Go", "Set true to connect", GH_ParamAccess.item, false);
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("Connection", "Connection", "DG connection object", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Database", "Database", "DG connection object from CONNECTOR", GH_ParamAccess.item);
+        pManager.AddTextParameter("Project", "Project", "Project name (passthrough of PROJECT NAME input)", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -109,6 +110,7 @@ public sealed class ConnectorComponent : GH_Component
         }
 
         da.SetData(0, _latestConnection);
+        da.SetData(1, project);
     }
 
     public override void RemovedFromDocument(GH_Document document)
