@@ -54,6 +54,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/ValidationGraph runtime renamed to ValidGraph per D-14|D-14 — ValidationGraph runtime renamed to ValidGraph]]
 - [[decisions/SpecGraph migration matches ValidGraph rename pattern with full index recreation|SpecGraph migration matches ValidGraph rename pattern with full index recreation]]
 - [[decisions/Phase 16 DesignState aggregate and statePayloadJson v2|Phase 16: DesignState aggregate + statePayloadJson v2]]
+- [[decisions/Phase 17 Graph Access Components layer handles and repository design|Phase 17: Graph Access Components — layer handles + repository design]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -127,4 +128,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions|2026-07-03 Phase 15 discuss — SpecGraph rename decisions]]
 - [[sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components|2026-07-04 Phase 16 discuss — DG.Core state models and state components]]
 - [[sessions/2026-07-04 Phase 16 planning - 6 plans across 3 waves|2026-07-04 Phase 16 planning — 6 plans across 3 waves]]
+- [[sessions/2026-07-04 Phase 17 discuss - Graph Access Components|2026-07-04 Phase 17 discuss — Graph Access Components]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
