@@ -1,6 +1,6 @@
 namespace DG.Core.Models;
 
-public sealed class OntologyProperty
+public class OntologyProperty
 {
     public string Iri { get; init; } = string.Empty;
 

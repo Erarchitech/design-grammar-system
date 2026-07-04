@@ -40,6 +40,10 @@ public class OntologyClass : DG.Core.Models.OntologyClass
 {
 }
 
+public class OntologyProperty : DG.Core.Models.OntologyProperty
+{
+}
+
 public class OntographHandle : DG.Core.Models.OntographHandle
 {
 }
