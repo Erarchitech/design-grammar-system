@@ -1,7 +1,7 @@
 ---
 tags: [atlas, grasshopper, csharp, rhino, plugin]
 date: 2026-04-05
-graphify_communities: ["Concern: Tight Coupling to Neo4j", "DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...", "DG.Grasshopper.csproj", "Neo4jConnectorService.cs", "Ontology v5 DCM ComputationGraph", "Phase 03 Validation Runs Summary", "Product Bridges Natural Language Rules to Graph-Based Val...", "State Projection for Validation Runs", "Validation Results Publish to Speckle as Overlay Versions", "Validation Viewer API", "ValidationGeometryPayload", "ValidationPublishClient", "ValidationPublishContract.cs", "Validator Failing Bindings Output Data", "Zone A Maximum Height (75m)", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries"]
+graphify_communities: ["Community 214", "Community 237", "Community 31", "Community 36", "Community 44", "Community 78", "Community 86", "DG.Grasshopper.csproj", "Graph Schema v3 is the Canonical Data Model", "Neo4jConnectorService", "Neo4jConnectorService.cs", "Ontology v5 DCM ComputationGraph", "Product Bridges Natural Language Rules to Graph-Based Val...", "RuleDeconstructComponent", "State Projection for Validation Runs", "Validation Results Publish to Speckle as Overlay Versions", "ValidationGeometryPayload", "Validator Failing Bindings Output Data", "Zone A Maximum Height (75m)", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries"]
 ---
 
 # DG Grasshopper Plugin Bridges Rhino to Neo4j Validation Pipeline
@@ -64,19 +64,23 @@ Override Rhino path: `-p:RhinoInstallDir="D:\Apps\Rhino 8"`
 <!-- graphify:connections:start -->
 ## Graph connections
 
-- [[graphify/communities/Concern Tight Coupling to Neo4j|Concern: Tight Coupling to Neo4j]]
-- [[graphify/communities/DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...|DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...]]
+- [[graphify/communities/Community 214|Community 214]]
+- [[graphify/communities/Community 237|Community 237]]
+- [[graphify/communities/Community 31|Community 31]]
+- [[graphify/communities/Community 36|Community 36]]
+- [[graphify/communities/Community 44|Community 44]]
+- [[graphify/communities/Community 78|Community 78]]
+- [[graphify/communities/Community 86|Community 86]]
 - [[graphify/communities/DG.Grasshopper.csproj|DG.Grasshopper.csproj]]
+- [[graphify/communities/Graph Schema v3 is the Canonical Data Model|Graph Schema v3 is the Canonical Data Model]]
+- [[graphify/communities/Neo4jConnectorService|Neo4jConnectorService]]
 - [[graphify/communities/Neo4jConnectorService.cs|Neo4jConnectorService.cs]]
-- [[graphify/communities/Ontology v5 DCM ComputationGraph|Ontology v5 DCM ComputationGraph]]
-- [[graphify/communities/Phase 03 Validation Runs Summary|Phase 03 Validation Runs Summary]]
+- [[graphify/communities/Ontology v5 DCM ComputationGraph (261)|Ontology v5 DCM ComputationGraph]]
 - [[graphify/communities/Product Bridges Natural Language Rules to Graph-Based Val...|Product Bridges Natural Language Rules to Graph-Based Val...]]
+- [[graphify/communities/RuleDeconstructComponent|RuleDeconstructComponent]]
 - [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
 - [[graphify/communities/Validation Results Publish to Speckle as Overlay Versions|Validation Results Publish to Speckle as Overlay Versions]]
-- [[graphify/communities/Validation Viewer API|Validation Viewer API]]
-- [[graphify/communities/ValidationGeometryPayload|ValidationGeometryPayload]]
-- [[graphify/communities/ValidationPublishClient|ValidationPublishClient]]
-- [[graphify/communities/ValidationPublishContract.cs|ValidationPublishContract.cs]]
+- [[graphify/communities/ValidationGeometryPayload (79)|ValidationGeometryPayload]]
 - [[graphify/communities/Validator Failing Bindings Output Data|Validator Failing Bindings Output Data]]
 - [[graphify/communities/Zone A Maximum Height (75m)|Zone A Maximum Height (75m)]]
 - [[graphify/communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries|n8n Workflow Orchestrator for LLM Rule Ingestion and Queries]]

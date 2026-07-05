@@ -1,7 +1,7 @@
 ---
 tags: [atlas, n8n, workflow, llm]
 date: 2026-04-05
-graphify_communities: ["Build Full-Text Cypher", "Create full-text index and parent class hub nodes for Kno...", "Fetch Graph Context (MCP)", "Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Prepare Graph Payload", "SC-2: POST to knowledge-query webhook returns an NL answe...", "knowledge-ingest.json", "knowledge-update.json", "n8n Runs Two Async Webhook Workflows for Ingest and Query", "n8n Workflow Orchestrator"]
+graphify_communities: ["Build Full-Text Cypher", "Community 12", "Community 177", "Community 214", "Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Prepare Graph Payload", "Return an HTTPException with a structured JSON detail bod...", "SC-2: POST to knowledge-query webhook returns an NL answe...", "Validation Endpoints (publish/runs/view)", "knowledge-ingest.json", "knowledge-update.json"]
 ---
 
 # n8n Runs Two Async Webhook Workflows for Ingest and Query
@@ -66,14 +66,15 @@ Detects keywords (`edit`, `update`, `change`, `modify`), extracts Rule_Id, gener
 ## Graph connections
 
 - [[graphify/communities/Build Full-Text Cypher|Build Full-Text Cypher]]
-- [[graphify/communities/Create full-text index and parent class hub nodes for Kno...|Create full-text index and parent class hub nodes for Kno...]]
-- [[graphify/communities/Fetch Graph Context (MCP)|Fetch Graph Context (MCP)]]
+- [[graphify/communities/Community 12|Community 12]]
+- [[graphify/communities/Community 177|Community 177]]
+- [[graphify/communities/Community 214|Community 214]]
 - [[graphify/communities/Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...|Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou...]]
 - [[graphify/communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery|Phase 3: n8n Knowledge Workflows + LLM Ingest/Query]]
 - [[graphify/communities/Prepare Graph Payload|Prepare Graph Payload]]
+- [[graphify/communities/Return an HTTPException with a structured JSON detail bod...|Return an HTTPException with a structured JSON detail bod...]]
 - [[graphify/communities/SC-2 POST to knowledge-query webhook returns an NL answe...|SC-2: POST to knowledge-query webhook returns an NL answe...]]
+- [[graphify/communities/Validation Endpoints (publishrunsview) (259)|Validation Endpoints (publish/runs/view)]]
 - [[graphify/communities/knowledge-ingest.json|knowledge-ingest.json]]
 - [[graphify/communities/knowledge-update.json|knowledge-update.json]]
-- [[graphify/communities/n8n Runs Two Async Webhook Workflows for Ingest and Query|n8n Runs Two Async Webhook Workflows for Ingest and Query]]
-- [[graphify/communities/n8n Workflow Orchestrator (197)|n8n Workflow Orchestrator]]
 <!-- graphify:connections:end -->

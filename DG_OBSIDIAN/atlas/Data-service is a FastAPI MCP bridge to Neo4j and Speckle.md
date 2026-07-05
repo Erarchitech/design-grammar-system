@@ -1,7 +1,7 @@
 ---
 tags: [atlas, data-service, fastapi, mcp, python]
 date: 2026-04-05
-graphify_communities: ["Concern: Tight Coupling to Neo4j", "Create full-text index and parent class hub nodes for Kno...", "Match Step (Neo4j Full-Text Search, No LLM)", "Model Viewer (graph-viewer/model-viewer/)", "Neo4jConnectorService", "Neo4jRuleRepository.cs", "Ontology v5 DCM ComputationGraph", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Remove all test notes from Neo4j.", "Return an HTTPException with a structured JSON detail bod...", "SpeckleProjectConfigPayload", "SpeckleSettingsPayload", "Validation Endpoints (publish/runs/view)", "Validation Endpoints (publish/runs/view)", "Validation Results Publish to Speckle as Overlay Versions", "Validation Viewer API", "ValidationGeometryPayload", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries"]
+graphify_communities: ["Community 12", "Community 17", "Community 226", "Community 242", "Community 257", "Community 286", "Community 36", "Community 44", "Community 45", "Community 78", "Match Step (Neo4j Full-Text Search, No LLM)", "Model Viewer (graph-viewer/model-viewer/)", "Neo4jConnectorService", "Ontology v5 DCM ComputationGraph", "Phase 3: n8n Knowledge Workflows + LLM Ingest/Query", "Remove all test notes from Neo4j.", "Return an HTTPException with a structured JSON detail bod...", "RuleDeconstructComponent", "SpeckleSettingsPayload", "Validation Endpoints (publish/runs/view)", "Validation Endpoints (publish/runs/view)", "Validation Results Publish to Speckle as Overlay Versions", "ValidationGeometryPayload", "ValidationGeometryPayload", "n8n Workflow Orchestrator for LLM Rule Ingestion and Queries"]
 ---
 
 # Data-Service is a FastAPI MCP Bridge to Neo4j and Speckle
@@ -68,22 +68,29 @@ Located in `data-service/app.py`, this Python service provides the MCP protocol 
 <!-- graphify:connections:start -->
 ## Graph connections
 
-- [[graphify/communities/Concern Tight Coupling to Neo4j|Concern: Tight Coupling to Neo4j]]
-- [[graphify/communities/Create full-text index and parent class hub nodes for Kno...|Create full-text index and parent class hub nodes for Kno...]]
+- [[graphify/communities/Community 12|Community 12]]
+- [[graphify/communities/Community 17|Community 17]]
+- [[graphify/communities/Community 226|Community 226]]
+- [[graphify/communities/Community 242|Community 242]]
+- [[graphify/communities/Community 257|Community 257]]
+- [[graphify/communities/Community 286|Community 286]]
+- [[graphify/communities/Community 36|Community 36]]
+- [[graphify/communities/Community 44|Community 44]]
+- [[graphify/communities/Community 45|Community 45]]
+- [[graphify/communities/Community 78|Community 78]]
 - [[graphify/communities/Match Step (Neo4j Full-Text Search, No LLM)|Match Step (Neo4j Full-Text Search, No LLM)]]
-- [[graphify/communities/Model Viewer (graph-viewermodel-viewer)|Model Viewer (graph-viewer/model-viewer/)]]
+- [[graphify/communities/Model Viewer (graph-viewermodel-viewer) (279)|Model Viewer (graph-viewer/model-viewer/)]]
 - [[graphify/communities/Neo4jConnectorService|Neo4jConnectorService]]
-- [[graphify/communities/Neo4jRuleRepository.cs|Neo4jRuleRepository.cs]]
-- [[graphify/communities/Ontology v5 DCM ComputationGraph|Ontology v5 DCM ComputationGraph]]
+- [[graphify/communities/Ontology v5 DCM ComputationGraph (261)|Ontology v5 DCM ComputationGraph]]
 - [[graphify/communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery|Phase 3: n8n Knowledge Workflows + LLM Ingest/Query]]
 - [[graphify/communities/Remove all test notes from Neo4j.|Remove all test notes from Neo4j.]]
 - [[graphify/communities/Return an HTTPException with a structured JSON detail bod...|Return an HTTPException with a structured JSON detail bod...]]
-- [[graphify/communities/SpeckleProjectConfigPayload|SpeckleProjectConfigPayload]]
+- [[graphify/communities/RuleDeconstructComponent|RuleDeconstructComponent]]
 - [[graphify/communities/SpeckleSettingsPayload|SpeckleSettingsPayload]]
-- [[graphify/communities/Validation Endpoints (publishrunsview) (51)|Validation Endpoints (publish/runs/view)]]
+- [[graphify/communities/Validation Endpoints (publishrunsview) (259)|Validation Endpoints (publish/runs/view)]]
 - [[graphify/communities/Validation Endpoints (publishrunsview)|Validation Endpoints (publish/runs/view)]]
 - [[graphify/communities/Validation Results Publish to Speckle as Overlay Versions|Validation Results Publish to Speckle as Overlay Versions]]
-- [[graphify/communities/Validation Viewer API|Validation Viewer API]]
 - [[graphify/communities/ValidationGeometryPayload|ValidationGeometryPayload]]
+- [[graphify/communities/ValidationGeometryPayload (79)|ValidationGeometryPayload]]
 - [[graphify/communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries|n8n Workflow Orchestrator for LLM Rule Ingestion and Queries]]
 <!-- graphify:connections:end -->

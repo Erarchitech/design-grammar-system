@@ -1,7 +1,7 @@
 ---
 tags: [atlas, model-viewer, speckle, 3d]
 date: 2026-04-05
-graphify_communities: ["Model Viewer (graph-viewer/model-viewer/)", "Model Viewer is a Vite-built Speckle 3D Viewer", "Per-Run Graphics State and Screenshot Persistence", "Product Bridges Natural Language Rules to Graph-Based Val...", "SpeckleProjectConfigPayload", "Validation Endpoints (publish/runs/view)", "ValidationGeometryPayload", "Worktree Branch Commits with Spurious Deletions", "code: 17 nodes", "extractErrorMessage()", "v2.0 Gap Closure Retrospective"]
+graphify_communities: ["Community 31", "Community 45", "Model Viewer (graph-viewer/model-viewer/)", "Model Viewer is a Vite-built Speckle 3D Viewer", "Per-Run Graphics State and Screenshot Persistence", "Product Bridges Natural Language Rules to Graph-Based Val...", "Validation Endpoints (publish/runs/view)", "ValidationGeometryPayload", "Worktree Branch Commits with Spurious Deletions", "code: 17 nodes", "extractErrorMessage()"]
 ---
 
 # Model Viewer is a Vite-Built Speckle 3D Viewer
@@ -51,15 +51,15 @@ model-viewer → /data-service/validation/view/{project} → manifest
 <!-- graphify:connections:start -->
 ## Graph connections
 
-- [[graphify/communities/Model Viewer (graph-viewermodel-viewer)|Model Viewer (graph-viewer/model-viewer/)]]
+- [[graphify/communities/Community 31|Community 31]]
+- [[graphify/communities/Community 45|Community 45]]
+- [[graphify/communities/Model Viewer (graph-viewermodel-viewer) (279)|Model Viewer (graph-viewer/model-viewer/)]]
 - [[graphify/communities/Model Viewer is a Vite-built Speckle 3D Viewer|Model Viewer is a Vite-built Speckle 3D Viewer]]
 - [[graphify/communities/Per-Run Graphics State and Screenshot Persistence|Per-Run Graphics State and Screenshot Persistence]]
 - [[graphify/communities/Product Bridges Natural Language Rules to Graph-Based Val...|Product Bridges Natural Language Rules to Graph-Based Val...]]
-- [[graphify/communities/SpeckleProjectConfigPayload|SpeckleProjectConfigPayload]]
-- [[graphify/communities/Validation Endpoints (publishrunsview) (51)|Validation Endpoints (publish/runs/view)]]
+- [[graphify/communities/Validation Endpoints (publishrunsview)|Validation Endpoints (publish/runs/view)]]
 - [[graphify/communities/ValidationGeometryPayload|ValidationGeometryPayload]]
 - [[graphify/communities/Worktree Branch Commits with Spurious Deletions|Worktree Branch Commits with Spurious Deletions]]
 - [[graphify/communities/code 17 nodes|code: 17 nodes]]
 - [[graphify/communities/extractErrorMessage()|extractErrorMessage()]]
-- [[graphify/communities/v2.0 Gap Closure Retrospective|v2.0 Gap Closure Retrospective]]
 <!-- graphify:connections:end -->

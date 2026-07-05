@@ -1,6 +1,7 @@
 ---
 tags: [atlas, neo4j, database, schema, v4]
 date: 2026-07-05
+graphify_communities: ["Community 237", "Community 262", "Community 286", "DesignRuleSession Nodes Stored in Metagraph", "Ontology v5 DCM ComputationGraph", "Rule Node (Rule_Id, title, name, description, kind, text,...", "State Projection for Validation Runs"]
 ---
 
 # Neo4j Stores Ontology and Metagraph in a Single Database
@@ -79,3 +80,15 @@ Legacy → v3 renames (v3.0, shipped 2026-06):
 - [[Graph schema v4 is the canonical data model]]
 - [[Architecture is a microservices Docker pipeline]]
 - [[Cypher MERGE idempotent node creation pattern]]
+
+<!-- graphify:connections:start -->
+## Graph connections
+
+- [[graphify/communities/Community 237|Community 237]]
+- [[graphify/communities/Community 262|Community 262]]
+- [[graphify/communities/Community 286|Community 286]]
+- [[graphify/communities/DesignRuleSession Nodes Stored in Metagraph|DesignRuleSession Nodes Stored in Metagraph]]
+- [[graphify/communities/Ontology v5 DCM ComputationGraph (261)|Ontology v5 DCM ComputationGraph]]
+- [[graphify/communities/Rule Node (Rule_Id, title, name, description, kind, text,...|Rule Node (Rule_Id, title, name, description, kind, text,...]]
+- [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
+<!-- graphify:connections:end -->

@@ -1,7 +1,7 @@
 ---
 tags: [atlas, stack, technology]
 date: 2026-04-05
-graphify_communities: ["Architecture is a Microservices Docker Pipeline", "STACK.md - Technology Stack Research", "Validation Viewer API", "n8n Workflow Orchestrator"]
+graphify_communities: ["Graph Schema v3 is the Canonical Data Model"]
 ---
 
 # Technology Stack Spans C-Sharp Grasshopper and Python FastAPI and React SPA
@@ -41,8 +41,5 @@ graphify_communities: ["Architecture is a Microservices Docker Pipeline", "STACK
 <!-- graphify:connections:start -->
 ## Graph connections
 
-- [[graphify/communities/Architecture is a Microservices Docker Pipeline|Architecture is a Microservices Docker Pipeline]]
-- [[graphify/communities/STACK.md - Technology Stack Research|STACK.md - Technology Stack Research]]
-- [[graphify/communities/Validation Viewer API|Validation Viewer API]]
-- [[graphify/communities/n8n Workflow Orchestrator|n8n Workflow Orchestrator]]
+- [[graphify/communities/Graph Schema v3 is the Canonical Data Model|Graph Schema v3 is the Canonical Data Model]]
 <!-- graphify:connections:end -->
