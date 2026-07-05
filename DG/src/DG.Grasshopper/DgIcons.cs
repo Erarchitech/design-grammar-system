@@ -23,9 +23,15 @@ internal static class DgIcons
 
     public static Bitmap Reinstate24 { get; } = Load("Reinstate24.png");
 
+    public static Bitmap DesignStateDeconstruct24 { get; } = Load("DesignStateDeconstruct24.png");
+
     public static Bitmap GraphDeconstruct24 { get; } = Load("GraphDeconstruct24.png");
 
+    public static Bitmap ObjectDeconstruct24 { get; } = Load("ObjectDeconstruct24.png");
+
     public static Bitmap OntoGraph24 { get; } = Load("OntoGraph24.png");
+
+    public static Bitmap ParameterReinstate24 { get; } = Load("ParameterReinstate24.png");
 
     public static Bitmap ValidationGraph24 { get; } = Load("ValidationGraph24.png");
 
