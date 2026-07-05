@@ -13,48 +13,48 @@ using CoreDesignStateParameter = DG.Core.Models.DesignStateParameter;
 namespace DG.Grasshopper.Components;
 
 /// <summary>
-/// REINSTATE component. Applies a saved ParamState back to the upstream
-/// Grasshopper parameters that originally fed a DESIGN STATE component.
+/// PARAMETER REINSTATE component. Applies a saved ParamState back to the upstream
+/// Grasshopper sliders/toggles that originally fed a PARAMETER STATE component.
+/// Required Target input wired from PARAMETER STATE. Rising-edge Reinstate trigger.
 /// </summary>
-public sealed class ReinstateComponent : GH_Component
+public sealed class ParameterReinstateComponent : GH_Component
 {
-    private bool _lastApplyInput;
-    private string? _lastAppliedStateId;
+    private bool _lastApplyInput = true; // true prevents first-solve auto-fire
     private ReinstatementResult? _latestResult;
+    private ParamState? _latestParamState;
 
-    public ReinstateComponent()
+    public ParameterReinstateComponent()
         : base(
-            "REINSTATE",
-            "REINSTATE",
-            "Apply a saved design state back to Grasshopper parameters. Requires a DESIGN STATE component reference for target resolution.",
+            "PARAMETER REINSTATE",
+            "PARAMREIN",
+            "Apply a saved ParamState back to Grasshopper sliders/toggles. Required Target input wired from PARAMETER STATE. Rising-edge Reinstate trigger.",
             DgComponentCategory.Category,
             DgComponentCategory.Subcategory)
     {
     }
 
-    public override Guid ComponentGuid => new("D4E2F8A1-C736-4B9D-AE51-2B1F7C9D0E63");
+    public override Guid ComponentGuid => new("8F9D0A1B-2C3D-4E4F-5A5B-6C7D8E9F0A1B");
 
-    protected override Bitmap Icon => DgIcons.Reinstate24;
+    protected override Bitmap Icon => DgIcons.ParameterReinstate24;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter(
-            "State",
-            "State",
-            "ParamState to apply. Wire from VALIDATION RUNS 'States' output or directly from DESIGN STATE 'State' output.",
+            "ParamState",
+            "ParamState",
+            "ParamState to apply. Wire from DESIGN STATE DECONSTRUCT or PARAMETER STATE State output.",
             GH_ParamAccess.item);
 
         pManager.AddGenericParameter(
-            "DesignState",
-            "DesignState",
-            "Wire the DESIGN STATE component's 'State' output here. The component is found by walking the wire to resolve write targets.",
+            "Target",
+            "Target",
+            "Required: Wire the State output of a PARAMETER STATE component. REINSTATE walks this wire to discover sliders/toggles.",
             GH_ParamAccess.item);
-        Params.Input[1].Optional = true;
 
         pManager.AddBooleanParameter(
-            "Apply",
-            "Apply",
-            "Rising-edge trigger. Component fires on false→true transition only. Use a Button or Boolean Toggle.",
+            "Reinstate",
+            "Reinstate",
+            "Rising-edge trigger -- fires on false->true transition. Use a Button or Boolean Toggle.",
             GH_ParamAccess.item,
             false);
     }
@@ -62,79 +62,81 @@ public sealed class ReinstateComponent : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter(
-            "Result",
-            "Result",
-            "Full ReinstatementResult object for downstream tooling.",
-            GH_ParamAccess.item);
+            "Parameters",
+            "Parameters",
+            "All captured DesignStateParameters from the input ParamState (D-05). Cross-reference with StateStatus to filter applied vs. blocked.",
+            GH_ParamAccess.list);
 
-        pManager.AddTextParameter(
-            "Report",
-            "Report",
-            "Per-parameter status lines. Format: '{ParameterId}: {Status} — {Detail}'.",
+        pManager.AddGenericParameter(
+            "StateStatus",
+            "StateStatus",
+            "Per-parameter ReinstatementStatus list, index-matched to Parameters (D-04). Same length, same order as Parameters.",
             GH_ParamAccess.list);
 
         pManager.AddTextParameter(
             "Status",
             "Status",
-            "Summary message: 'Applied N parameters' / 'Aborted: M blocked' / 'Unchanged (same state)' / 'Idle'.",
+            "Summary: Applied N parameters / Aborted: M blocked / Unchanged (same state) / Idle (D-06).",
             GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
     {
-        // ── Read State input ────────────────────────────────────────────────────
+        // ── Read ParamState input ───────────────────────────────────────────────
         object? stateInput = null;
         if (!da.GetData(0, ref stateInput))
         {
+            _latestParamState = null;
             SetOutputs(da, null, "No state input.");
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ValidationInputMissing("State"));
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ValidationInputMissing("ParamState"));
             return;
         }
 
         var snapshot = UnwrapSnapshot(stateInput);
         if (snapshot is null)
         {
+            _latestParamState = null;
             SetOutputs(da, null, "Invalid state input.");
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                $"Could not cast State input to ParamState. {DiagnoseInputType(stateInput)}");
+                $"Could not cast ParamState input to ParamState. {DiagnoseInputType(stateInput)}");
             return;
         }
 
-        // ── Find ParameterStateComponent by walking wire sources ────────────────────
+        _latestParamState = snapshot;
+
+        // ── Find ParameterStateComponent by walking wire sources ────────────────
+        // D-02: searches Input 1 (Target) ONLY — no fallback to Input 0
         var designStateComponent = FindUpstreamDesignState();
         if (designStateComponent is null)
         {
             SetOutputs(da, null, "No PARAMETER STATE found.");
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                "Could not find a PARAMETER STATE component upstream of the 'DesignState' input. " +
-                "Wire the 'State' output of a PARAMETER STATE component to this input.");
+                ErrorMessageTemplates.ReinstateSourceNotFound());
             return;
         }
 
-        // ── Read Apply trigger ──────────────────────────────────────────────────
+        // ── Read Reinstate trigger ──────────────────────────────────────────────
         bool applyInput = false;
         if (!da.GetData(2, ref applyInput))
         {
             applyInput = false;
         }
 
-        // Rising-edge detection (D-08)
+        // Rising-edge detection (D-08): _lastApplyInput starts true so first
+        // solve with Reinstate=true does NOT auto-fire.
         var isRisingEdge = applyInput && !_lastApplyInput;
         _lastApplyInput = applyInput;
 
         if (!isRisingEdge)
         {
-            SetOutputs(da, _latestResult, _latestResult is null ? "Idle" : FormatStatus(_latestResult));
+            SetOutputs(da, _latestResult, _latestResult is null ? "Idle" : ErrorMessageTemplates.FormatStatus(_latestResult));
             return;
         }
 
-        // ── Resolve targets (D-01 through D-04) ────────────────────────────────
+        // ── Resolve targets ─────────────────────────────────────────────────────
         var resolvedTargets = ResolveTargets(designStateComponent);
 
         // ── Validate via Core service ───────────────────────────────────────────
-        // Pass null for lastAppliedStateId: the rising-edge guard already prevents
-        // spurious re-fires. The StateId guard would block legitimate re-application
-        // when the user changes sliders and wants to restore the saved state.
         var service = new DesignStateReinstatementService();
         var result = service.Validate(snapshot, resolvedTargets, lastAppliedStateId: null);
 
@@ -142,10 +144,9 @@ public sealed class ReinstateComponent : GH_Component
         if (result.Applied)
         {
             ScheduleWriteValues(snapshot, designStateComponent, resolvedTargets);
-            _lastAppliedStateId = snapshot.StateId;
         }
 
-        // ── Surface blocked parameters as error bubbles ─────────────────────────
+        // ── Surface blocked parameters as warning bubbles ───────────────────────
         if (result.Aborted)
         {
             foreach (var report in result.Reports)
@@ -164,8 +165,8 @@ public sealed class ReinstateComponent : GH_Component
         }
 
         _latestResult = result;
-        SetOutputs(da, result, FormatStatus(result));
-        Message = FormatMessage(result);
+        SetOutputs(da, result, ErrorMessageTemplates.FormatStatus(result));
+        Message = ErrorMessageTemplates.FormatMessage(result);
     }
 
     // ── Snapshot unwrapping ─────────────────────────────────────────────────────
@@ -174,7 +175,7 @@ public sealed class ReinstateComponent : GH_Component
     {
         if (input is null) return null;
 
-        // Direct type match (fastest path — same assembly)
+        // Direct type match (fastest path -- same assembly)
         if (input is ParamState direct) return direct;
         if (input is global::DG.ParamState publicDirect) return publicDirect;
 
@@ -309,9 +310,8 @@ public sealed class ReinstateComponent : GH_Component
 
     private ParameterStateComponent? FindUpstreamDesignState()
     {
-        var found = FindDesignStateFromInput(1);
-        if (found is not null) return found;
-        return FindDesignStateFromInput(0);
+        // D-02: searches Input 1 (Target) ONLY — no fallback to Input 0
+        return FindDesignStateFromInput(1);
     }
 
     private ParameterStateComponent? FindDesignStateFromInput(int inputIndex)
@@ -481,35 +481,16 @@ public sealed class ReinstateComponent : GH_Component
 
     private void SetOutputs(IGH_DataAccess da, ReinstatementResult? result, string status)
     {
-        da.SetData(0, result);
-        if (result is not null)
-        {
-            var reportLines = result.Reports
-                .Select(r => $"{r.ParameterId}: {r.Status}" + (r.Detail is not null ? $" — {r.Detail}" : ""))
-                .ToList();
-            da.SetDataList(1, reportLines);
-        }
-        else
-        {
-            da.SetDataList(1, new List<string>());
-        }
+        // D-05: Parameters output — ALL params from _latestParamState, not just applied
+        da.SetDataList(0, _latestParamState is not null
+            ? _latestParamState.Parameters.ToList()
+            : new List<DesignStateParameter>());
+
+        // D-04: StateStatus output — index-matched to Parameters, same length and order
+        da.SetDataList(1, result?.Reports.Select(r => r.Status).ToList() ?? new List<ReinstatementStatus>());
+
+        // D-06: Status output — summary text
         da.SetData(2, status);
-    }
-
-    private static string FormatStatus(ReinstatementResult result)
-    {
-        if (result.Applied) return $"Applied {result.AppliedCount} parameters";
-        if (result.Aborted) return $"Aborted: {result.BlockedCount} blocked";
-        if (result.UnchangedCount > 0) return "Unchanged (same state)";
-        return "Idle";
-    }
-
-    private static string FormatMessage(ReinstatementResult result)
-    {
-        if (result.Applied) return $"Applied {result.AppliedCount}";
-        if (result.Aborted) return "Aborted";
-        if (result.UnchangedCount > 0) return "Unchanged";
-        return "Idle";
     }
 }
 #endif
