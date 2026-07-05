@@ -20,7 +20,7 @@ Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 compone
 - [x] **Phase 15: SpecGraph Runtime Rename** — KnowledgeGraph→SpecGraph migration across DB, data-service, n8n knowledge workflows, UI/NeoVis (completed 2026-07-03)
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
 - [x] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
-- [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation
+- [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation (1/5 plans)
 - [ ] **Phase 19: Deconstruct and Reinstate Components** — DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
 - [ ] **Phase 20: E2E Validation and Docs** — Live Docker E2E chain, release notes for canvas breakage, port↔IRI mapping published, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh
 

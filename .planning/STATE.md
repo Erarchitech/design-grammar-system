@@ -4,16 +4,16 @@ milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 18
 current_phase_name: rules-and-validator-rework
-status: planned
-stopped_at: Phase 18 plans created
-last_updated: "2026-07-04T10:43:30.231Z"
-last_activity: 2026-07-04
-last_activity_desc: Completed Phase 18 planning — 5 plans, 2 waves
+status: executing
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-07-05T12:19:15.357Z"
+last_activity: 2026-07-05
+last_activity_desc: Phase 18 execution started
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 31
-  completed_plans: 26
+  completed_plans: 27
   percent: 63
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 18 (rules-and-validator-rework) — PLANNED
-Plan: 5 plans, 2 waves
-Status: Plans created — 18-01 through 18-05
-Last activity: 2026-07-04 — Completed Phase 18 planning: 5 plans, 2 waves
+Phase: 18 (rules-and-validator-rework) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-07-05 — Phase 18 execution started
 
 ## Performance Metrics
 
@@ -123,6 +123,8 @@ Shipped from Phase 17 Plan 04:
 - [Phase 17]: GUID 95fc9d32-307e-41fd-a158-bfae49a3dc2a assigned to ValidationGraphComponent (replaces old A7F2C3E1)
 - [Phase 17]: RunInfo unsealed in Core (matching DesignState/ParamState/ObjState/PropState pattern) for public wrapper inheritance
 - [Phase 17]: Old VALIDATION RUNS GUID (A7F2C3E1) fully purged — zero remaining references
+- [Phase 18]: Builtin-only variables excluded from binding rows (D-07)
+- [Phase 18]: Property values apply to ALL existing rows (not per-ObjState), matching VALIDATOR evaluation contract
 
 ### Research Flags (carry into planning)
 
@@ -143,9 +145,9 @@ Shipped from Phase 17 Plan 04:
 
 ## Session Continuity
 
-Last session: 2026-07-04T10:43:30.198Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-rules-and-validator-rework/18-CONTEXT.md
+Last session: 2026-07-05T12:19:15.342Z
+Stopped at: Completed 18-01-PLAN.md
+Resume file: .planning/phases/18-rules-and-validator-rework/18-01-SUMMARY.md
 
 ## Performance Metrics
 
@@ -170,3 +172,4 @@ Resume file: .planning/phases/18-rules-and-validator-rework/18-CONTEXT.md
 | Phase 17 P02 | 6m | 3 tasks | 6 files |
 | Phase 17 P03 | 4m27s | 3 tasks | 6 files |
 | Phase 17 P04 | 4m30s | 4 tasks | 8 files |
+| Phase 18-rules-and-validator-rework P01 | 9m | 4 tasks | 5 files |
