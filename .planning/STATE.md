@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase: 18
-current_phase_name: rules-and-validator-rework
-status: verifying
+current_phase: 19
+current_phase_name: deconstruct-and-reinstate-components
+status: executing
 stopped_at: Phase 19 context gathered
-last_updated: "2026-07-05T14:47:53.728Z"
+last_updated: "2026-07-05T15:44:44.517Z"
 last_activity: 2026-07-05
-last_activity_desc: Phase 18 execution started
+last_activity_desc: Plan 01 complete (infrastructure: ErrorMessageTemplates + DgIcons + tests)
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 31
-  completed_plans: 31
+  total_plans: 34
+  completed_plans: 32
   percent: 75
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 18 — rules-and-validator-rework
+**Current focus:** Phase 19 — deconstruct-and-reinstate-components
 
 ## Current Position
 
-Phase: 18 (rules-and-validator-rework) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-07-05 — Phase 18 execution started
+Phase: 19 (deconstruct-and-reinstate-components) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-07-05 — Phase 19 execution started
 
 ## Performance Metrics
 
@@ -128,6 +128,10 @@ Shipped from Phase 17 Plan 04:
 - [Phase ?]: CLASSIFICATOR fully purged per D-09 (GHVL-02)
 - [Phase ?]: Return shape identical for v1 and v2: only {stateId, capturedAtUtc, parameterCount} - no stateKind field
 
+- [Phase 19 Plan 01]: ErrorMessageTemplates extended with FormatStatus/FormatMessage moved from old ReinstateComponent into DG.Core so Plans 2/3 can access them without DG.Grasshopper dependency — pure static functions on ReinstatementResult, testable from DG.Tests
+- [Phase 19 Plan 01]: Deconstruct warning templates use D-07 Warning-level tone with "is required"/"Could not unwrap" wording; reinstate templates describe Target wire setup in What+Where+How-to-fix structure
+- [Phase 19 Plan 01]: Minimal PNG icon placeholders sufficient — DgIcons.Load fallback to new Bitmap(24,24) guarantees compilation regardless of artwork quality
+
 ### Research Flags (carry into planning)
 
 - Phase 13: resolve PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict AND the DesignState storage-layer conflict (cypher_template stores DesignState with graph='Metagraph' at line ~50; PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle) before locking the port↔IRI map
@@ -147,8 +151,8 @@ Shipped from Phase 17 Plan 04:
 
 ## Session Continuity
 
-Last session: 2026-07-05T14:47:53.712Z
-Stopped at: Phase 19 context gathered
+Last session: 2026-07-05T15:43:17.000Z
+Stopped at: Ready for wave 2 (Plans 19-02, 19-03)
 Resume file: .planning/phases/19-deconstruct-and-reinstate-components/19-CONTEXT.md
 
 ## Performance Metrics
@@ -179,3 +183,4 @@ Resume file: .planning/phases/19-deconstruct-and-reinstate-components/19-CONTEXT
 | Phase 18-rules-and-validator-rework P03 | 3m | - tasks | - files |
 | Phase 18 PP04 | 6m | 2 tasks | 2 files |
 | Phase 18-rules-and-validator-rework P05 | 12min | 3 tasks | 5 files |
+| Phase 19 P01 | 12min | 2 tasks | 7 files |

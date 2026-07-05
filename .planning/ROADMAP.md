@@ -220,7 +220,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Wave 1** *(parallel — no dependencies)*
 
-- 19-01 — Infrastructure: ErrorMessageTemplates (deconstruct/reinstate templates + FormatStatus/FormatMessage), DgIcons (3 icon properties), 3 PNG files — *wave 1* — GHST-05/06/07 (shared infra)
+- [x] 19-01 — Infrastructure: ErrorMessageTemplates (deconstruct/reinstate templates + FormatStatus/FormatMessage), DgIcons (3 icon properties), 3 PNG files — *wave 1* — GHST-05/06/07 (shared infra) ✓
 
 **Wave 2** *(parallel — both depend on 19-01)*
 
@@ -254,7 +254,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 5/5 | Complete   | 2026-07-05 |
-| 19. Deconstruct and Reinstate Components | 0/3 | Not started | - |
+| 19. Deconstruct and Reinstate Components | 1/3 | Wave 1 complete | 2026-07-05 |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
 ---
