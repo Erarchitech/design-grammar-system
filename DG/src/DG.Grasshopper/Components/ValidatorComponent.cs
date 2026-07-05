@@ -24,11 +24,11 @@ public sealed class ValidatorComponent : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("Rules", "Rules", "Rule list from METAGRAPH", GH_ParamAccess.list);
-        pManager.AddGenericParameter("Variables", "Variables", "Binding rows from CLASSIFICATOR", GH_ParamAccess.list);
+        pManager.AddGenericParameter("Variables", "Variables", "Binding rows from RULE DECONSTRUCT (partitioned variables)", GH_ParamAccess.list);
         pManager.AddBooleanParameter("Run", "Run", "Set true to validate", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("SendRules", "SendRules", "Set true to send validation geometry and results to DG backend for Speckle publication", GH_ParamAccess.item, false);
         pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
-        pManager.AddGenericParameter("State", "State", "Optional DG.DesignStateSnapshot from DESIGN STATE (or Classificator.State output). Attached to the validation run so it can be retrieved and filtered in VALIDATION RUNS.", GH_ParamAccess.item);
+        pManager.AddGenericParameter("State", "State", "Optional DG.DesignState from DESIGN STATE composition. Attached to the validation run so it can be retrieved and filtered in VALIDATION GRAPH.", GH_ParamAccess.item);
         pManager[5].Optional = true;
     }
 

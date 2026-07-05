@@ -9,7 +9,7 @@ namespace DG.Grasshopper.Components;
 
 /// <summary>
 /// PARAMETER STATE component. Collects named Number/Integer/Boolean inputs and assembles
-/// them into a ParamState for attachment to Classificator runs or filtering in
+/// them into a ParamState for attachment and filtering in Validation Runs or filtering in
 /// Validation Runs.
 ///
 /// Usage:
@@ -19,7 +19,7 @@ namespace DG.Grasshopper.Components;
 ///      The NickName becomes the stable ParameterId used for reinstatement matching.
 ///   4. Wire Number Sliders → Number inputs, Integer Sliders → Integer inputs,
 ///      Boolean Toggles → Boolean inputs.
-///   5. Wire the "State" output to Classificator.State and/or Validation Runs.State.
+///   5. Wire the "State" output to Validation Runs.State (or DESIGN STATE for v7.0+ composition).
 /// </summary>
 public sealed class ParameterStateComponent : GH_Component, IGH_VariableParameterComponent
 {
