@@ -216,7 +216,16 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   2. OBJECT DECONSTRUCT returns Object/Geometry/Label from an ObjState
   3. PARAMETER REINSTATE applies a ParamState to source sliders/toggles on a false→true Reinstate edge and outputs Parameters + StateStatus with the 7-value ReStatus reporting intact
 
-**Plans**: TBD
+**Plans**: 3 plans, 2 waves
+
+**Wave 1** *(parallel — no dependencies)*
+
+- 19-01 — Infrastructure: ErrorMessageTemplates (deconstruct/reinstate templates + FormatStatus/FormatMessage), DgIcons (3 icon properties), 3 PNG files — *wave 1* — GHST-05/06/07 (shared infra)
+
+**Wave 2** *(parallel — both depend on 19-01)*
+
+- 19-02 — DECONSTRUCT components: DESIGN STATE DECONSTRUCT (pure sync passthrough, DesignState -> ObjState/ParamState/PropState lists) + OBJECT DECONSTRUCT (pure sync passthrough, ObjState -> Object/Geometry/Label) — *wave 2, depends 19-01* — GHST-05/06
+- 19-03 — PARAMETER REINSTATE: reworked REINSTATE (new GUID, required Target input, index-matched Parameters+StateStatus+Status, wire-traversal, rising-edge trigger, deferred write) — *wave 2, depends 19-01* — GHST-07
 
 ### Phase 20: E2E Validation and Docs
 
@@ -245,7 +254,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 5/5 | Complete   | 2026-07-05 |
-| 19. Deconstruct and Reinstate Components | 0/? | Not started | - |
+| 19. Deconstruct and Reinstate Components | 0/3 | Not started | - |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
 ---
