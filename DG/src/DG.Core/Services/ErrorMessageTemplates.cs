@@ -94,4 +94,68 @@ public static class ErrorMessageTemplates
     {
         return $"{componentName}: Could not unwrap {handleType} input. Ensure the input is connected to GRAPH DECONSTRUCT's {handleType} output.";
     }
+
+    // --- Deconstruct templates (DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT) ---
+
+    public static string DesignStateDeconstructInputMissing()
+    {
+        return "DESIGN STATE DECONSTRUCT: DesignState input is required. Connect a DESIGN STATE or VALIDATION GRAPH component to the DesignState input.";
+    }
+
+    public static string DesignStateDeconstructCastFailed()
+    {
+        return "DESIGN STATE DECONSTRUCT: Could not unwrap the DesignState input. Ensure the input is connected to a DESIGN STATE or VALIDATION GRAPH component.";
+    }
+
+    public static string ObjectDeconstructInputMissing()
+    {
+        return "OBJECT DECONSTRUCT: ObjState input is required. Connect a DESIGN STATE DECONSTRUCT or OBJECT STATE component to the ObjState input.";
+    }
+
+    public static string ObjectDeconstructCastFailed()
+    {
+        return "OBJECT DECONSTRUCT: Could not unwrap the ObjState input. Ensure the input is connected to a DESIGN STATE DECONSTRUCT or OBJECT STATE component.";
+    }
+
+    // --- Reinstate templates (PARAMETER REINSTATE) ---
+
+    public static string ReinstateTargetRequired()
+    {
+        return "PARAMETER REINSTATE: Target input is required. Wire the 'State' output of a PARAMETER STATE component to the Target input.";
+    }
+
+    public static string ReinstateSourceNotFound()
+    {
+        return "PARAMETER REINSTATE: Could not find a PARAMETER STATE component upstream of the Target input. Ensure the Target input is wired to a PARAMETER STATE component's State output.";
+    }
+
+    // --- Format helpers (moved from old ReinstateComponent) ---
+
+    public static string FormatStatus(ReinstatementResult result)
+    {
+        if (result.Applied && result.AppliedCount > 0)
+            return $"Applied {result.AppliedCount} parameters";
+
+        if (result.Aborted && result.BlockedCount > 0)
+            return $"Aborted: {result.BlockedCount} blocked";
+
+        if (result.UnchangedCount > 0)
+            return "Unchanged (same state)";
+
+        return "Idle";
+    }
+
+    public static string FormatMessage(ReinstatementResult result)
+    {
+        if (result.Applied && result.AppliedCount > 0)
+            return $"Applied {result.AppliedCount}";
+
+        if (result.Aborted && result.BlockedCount > 0)
+            return "Aborted";
+
+        if (result.UnchangedCount > 0)
+            return "Unchanged";
+
+        return "Idle";
+    }
 }
