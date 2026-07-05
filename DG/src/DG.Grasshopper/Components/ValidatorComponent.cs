@@ -23,132 +23,121 @@ public sealed class ValidatorComponent : GH_Component
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Rules", "Rules", "Rule list from METAGRAPH", GH_ParamAccess.list);
-        pManager.AddGenericParameter("Variables", "Variables", "Binding rows from RULE DECONSTRUCT (partitioned variables)", GH_ParamAccess.list);
-        pManager.AddBooleanParameter("Run", "Run", "Set true to validate", GH_ParamAccess.item, false);
-        pManager.AddBooleanParameter("SendRules", "SendRules", "Set true to send validation geometry and results to DG backend for Speckle publication", GH_ParamAccess.item, false);
+        pManager.AddGenericParameter("Rule", "Rule", "DG.Rule from RULE DECONSTRUCT or METAGRAPH", GH_ParamAccess.item);
+        pManager.AddGenericParameter("DesignState", "DesignState", "Composed DG.DesignState from DESIGN STATE component", GH_ParamAccess.item);
+        pManager[1].Optional = true;
+        pManager.AddBooleanParameter("SendValid", "SendValid", "Set true to evaluate and publish results to data-service", GH_ParamAccess.item, false);
         pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
-        pManager.AddGenericParameter("State", "State", "Optional DG.DesignState from DESIGN STATE composition. Attached to the validation run so it can be retrieved and filtered in VALIDATION GRAPH.", GH_ParamAccess.item);
-        pManager[5].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddBooleanParameter("Pass", "Pass", "Per-rule pass/no pass", GH_ParamAccess.list);
-        pManager.AddTextParameter("RuleName", "RuleName", "Rule names", GH_ParamAccess.list);
-        pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule descriptions", GH_ParamAccess.list);
+        pManager.AddBooleanParameter("ValidStatus", "ValidStatus", "Per-ObjState Boolean list: true=passing, false=failing. Index-matched to DesignState.ObjStates order.", GH_ParamAccess.list);
+        pManager.AddTextParameter("RuleName", "RuleName", "Rule name from the bound Rule", GH_ParamAccess.item);
+        pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule description from the bound Rule", GH_ParamAccess.item);
         pManager.AddTextParameter("Report", "Report", "Per-rule report lines", GH_ParamAccess.list);
         pManager.AddTextParameter("FailingBindings", "FailingBindings", "Failing bindings in format: b(building32): h(83), w(54)", GH_ParamAccess.list);
-        pManager.AddTextParameter("PublishStatus", "PublishStatus", "Speckle publish status", GH_ParamAccess.item);
+        pManager.AddTextParameter("SendStatus", "SendStatus", "Speckle publish status (published / Not requested / error message)", GH_ParamAccess.item);
         pManager.AddTextParameter("ValidationRunId", "ValidationRunId", "Validation run identifier returned by DG backend", GH_ParamAccess.item);
         pManager.AddTextParameter("ModelViewerUrl", "ModelViewerUrl", "Model Viewer URL returned by DG backend", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
     {
-        var run = false;
-        da.GetData(2, ref run);
-        var sendRules = false;
-        da.GetData(3, ref sendRules);
+        // 1. Read inputs
+        object? ruleInput = null;
+        if (!da.GetData(0, ref ruleInput))
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Rule input is required.");
+            return;
+        }
+
+        var rule = GhCastingHelpers.TryRule(ruleInput);
+        if (rule is null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not cast Rule input.");
+            return;
+        }
+
+        object? designStateInput = null;
+        da.GetData(1, ref designStateInput);
+        var designState = GhCastingHelpers.TryDesignState(designStateInput);
+
+        var sendValid = false;
+        da.GetData(2, ref sendValid);
+
         var dataServiceUrl = "http://localhost:8000";
-        da.GetData(4, ref dataServiceUrl);
+        da.GetData(3, ref dataServiceUrl);
 
-        // Read optional state — used when publishing to attach design context to the run.
-        object? stateInput = null;
-        da.GetData(5, ref stateInput);
-        var state = GhCastingHelpers.Unwrap<ParamState>(stateInput)
-                    ?? GhCastingHelpers.Unwrap<global::DG.ParamState>(stateInput);
-
-        if (!run)
+        // 2. If DesignState is null: warning, continue with empty
+        if (designState is null)
         {
-            Message = "Idle";
-            return;
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "DesignState input is empty. Connect a DESIGN STATE component.");
         }
 
-        var ruleInputs = new List<object>();
-        var bindingInputs = new List<object>();
-        if (!da.GetDataList(0, ruleInputs))
+        // 3. Bind via DesignStateBindingService (D-03)
+        var bindings = designState is not null && designState.ObjStates.Count > 0
+            ? DesignStateBindingService.BuildBindings(rule, designState)
+            : new List<BindingRow>();
+
+        // 4. Evaluate via RuleEvaluator (single rule)
+        var result = _ruleEvaluator.EvaluateRule(rule, bindings);
+
+        // 5. Build ValidStatus per D-01/D-02
+        var validStatus = new List<bool>();
+        if (designState is not null)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Rules"));
-            return;
-        }
-
-        if (!da.GetDataList(1, bindingInputs))
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ValidationInputMissing("Variables (bindings)"));
-            return;
-        }
-
-        var rules = ruleInputs
-            .Select(GhCastingHelpers.TryRule)
-            .Where(rule => rule is not null)
-            .Select(rule => rule!)
-            .ToList();
-
-        var bindings = bindingInputs
-            .Select(GhCastingHelpers.TryBindingRow)
-            .Where(binding => binding is not null)
-            .Select(binding => binding!)
-            .ToList();
-
-        if (rules.Count == 0)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No rules to validate.");
-            return;
-        }
-
-        var results = _ruleEvaluator.EvaluateRules(rules, bindings);
-        var pass = results.Select(result => result.Passed).ToList();
-        var names = results.Select(result => result.RuleName).ToList();
-        var descriptions = results.Select(result => result.RuleDescription).ToList();
-        var reports = results.Select(ValidationReportFormatter.ToReportLine).ToList();
-        var ruleById = rules
-            .GroupBy(rule => rule.Id)
-            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var failing = new List<string>();
-        foreach (var result in results)
-        {
-            if (!ruleById.TryGetValue(result.RuleId, out var rule))
+            var failingBindingsSet = new HashSet<BindingRow>(result.FailingBindings);
+            for (var i = 0; i < designState.ObjStates.Count; i++)
             {
-                continue;
-            }
-
-            foreach (var binding in result.FailingBindings)
-            {
-                failing.Add(FailingBindingFormatter.Format(rule, binding));
+                // D-01: every ObjState gets ValidStatus[i], index-matched
+                // D-02: non-matching (bindingExists==false) get false but excluded from overall pass AND
+                var bindingExists = i < bindings.Count;
+                validStatus.Add(bindingExists && !failingBindingsSet.Contains(bindings[i]));
             }
         }
 
-        var publishStatus = sendRules ? "Pending" : "Not requested";
+        // 6. Set outputs
+        da.SetDataList(0, validStatus);
+        da.SetData(1, rule.Name);
+        da.SetData(2, rule.Description);
+        da.SetDataList(3, new[] { ValidationReportFormatter.ToReportLine(result) });
+        var failingFormatted = result.FailingBindings
+            .Select(b => FailingBindingFormatter.Format(rule, b))
+            .ToList();
+        da.SetDataList(4, failingFormatted);
+
+        // 7. Publish on SendValid=true
+        var sendStatus = "Not requested";
         var validationRunId = string.Empty;
         var modelViewerUrl = string.Empty;
-        if (sendRules)
+        if (sendValid)
         {
             try
             {
-                var response = ValidationPublishClient.Publish(rules, results, bindings, dataServiceUrl, state);
-                publishStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
+                var response = ValidationPublishClient.Publish(
+                    new[] { rule },
+                    new[] { result },
+                    bindings,
+                    dataServiceUrl,
+                    designState,
+                    validStatus);
+                sendStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
                 validationRunId = response.RunId;
                 modelViewerUrl = response.ModelViewerUrl;
             }
             catch (Exception ex)
             {
-                publishStatus = $"Publish failed: {ex.Message}";
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.PublishFailed("project", ex.Message));
+                sendStatus = $"Publish failed: {ex.Message}";
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Publish failed: {ex.Message}");
             }
         }
-
-        da.SetDataList(0, pass);
-        da.SetDataList(1, names);
-        da.SetDataList(2, descriptions);
-        da.SetDataList(3, reports);
-        da.SetDataList(4, failing);
-        da.SetData(5, publishStatus);
+        da.SetData(5, sendStatus);
         da.SetData(6, validationRunId);
         da.SetData(7, modelViewerUrl);
-        Message = sendRules
-            ? $"{pass.Count(value => value)} / {pass.Count} pass | {publishStatus}"
-            : $"{pass.Count(value => value)} / {pass.Count} pass";
+        Message = designState is not null
+            ? $"{validStatus.Count(v => v)} / {validStatus.Count} pass | {sendStatus}"
+            : "No DesignState";
     }
 }
 #else
