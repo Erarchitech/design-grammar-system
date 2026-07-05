@@ -57,8 +57,8 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **GHST-02**: PARAMETER STATE captures a Parameters list into ParamState (variable-input pattern and deterministic StateId preserved from v2.0 DESIGN STATE)
 - [ ] **GHST-03**: PROPERTY STATE composes Rule + DataProperty + PropValue into PropState
 - [ ] **GHST-04**: DESIGN STATE composes many ObjState + ParamState + PropState into DesignState (index-matched list contract)
-- [ ] **GHST-05**: DESIGN STATE DECONSTRUCT splits DesignState into ObjState / ParamState / PropState
-- [ ] **GHST-06**: OBJECT DECONSTRUCT splits ObjState into Object / Geometry / Label
+- [x] **GHST-05**: DESIGN STATE DECONSTRUCT splits DesignState into ObjState / ParamState / PropState
+- [x] **GHST-06**: OBJECT DECONSTRUCT splits ObjState into Object / Geometry / Label
 - [ ] **GHST-07**: PARAMETER REINSTATE (reworked REINSTATE) applies ParamState on a rising-edge Reinstate trigger and outputs Parameters + StateStatus (7-value ReStatus reporting preserved)
 
 ### Rules & Validation (GHVL)

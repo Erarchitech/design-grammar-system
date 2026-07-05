@@ -216,7 +216,11 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   2. OBJECT DECONSTRUCT returns Object/Geometry/Label from an ObjState
   3. PARAMETER REINSTATE applies a ParamState to source sliders/toggles on a false→true Reinstate edge and outputs Parameters + StateStatus with the 7-value ReStatus reporting intact
 
-**Plans**: 3 plans, 2 waves
+**Plans**: 2/3 plans executed
+
+- [x] 19-01-PLAN.md
+- [x] 19-02-PLAN.md
+- [ ] 19-03-PLAN.md
 
 **Wave 1** *(parallel — no dependencies)*
 
@@ -254,7 +258,7 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 5/5 | Complete   | 2026-07-05 |
-| 19. Deconstruct and Reinstate Components | 1/3 | Wave 1 complete | 2026-07-05 |
+| 19. Deconstruct and Reinstate Components | 2/3 | In Progress|  |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
 ---
