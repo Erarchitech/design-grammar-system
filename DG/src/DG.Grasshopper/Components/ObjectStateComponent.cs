@@ -59,6 +59,13 @@ public sealed class ObjectStateComponent : GH_Component
             "User-supplied display label (optional).",
             GH_ParamAccess.list);
         pManager[2].Optional = true;
+
+        pManager.AddTextParameter(
+            "Class",
+            "Class",
+            "Class IRI from METAGRAPH Objects output (e.g. ex:Building). Used for Class IRI matching in VALIDATOR.",
+            GH_ParamAccess.list);
+        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -75,18 +82,20 @@ public sealed class ObjectStateComponent : GH_Component
         var objects = new List<object?>();
         var geometries = new List<object?>();
         var labels = new List<object?>();
+        var classes = new List<string>();
 
         da.GetDataList(0, objects);
         da.GetDataList(1, geometries);
         da.GetDataList(2, labels);
+        da.GetDataList(3, classes);
 
         // Index-mismatch guard (D-03): validate BEFORE iteration
         var count = objects.Count;
-        if (count != geometries.Count || count != labels.Count)
+        if (count != geometries.Count || count != labels.Count || count != classes.Count)
         {
             AddRuntimeMessage(
                 GH_RuntimeMessageLevel.Error,
-                ErrorMessageTemplates.ObjStateMismatchedListLengths(count, geometries.Count, labels.Count));
+                ErrorMessageTemplates.ObjStateMismatchedListLengths(count, geometries.Count, labels.Count, classes.Count));
             da.SetData(0, null);
             return;
         }
@@ -97,6 +106,7 @@ public sealed class ObjectStateComponent : GH_Component
             var objectRef = ResolveObjectRef(objects[i]);
             var geometry = geometries[i];
             var label = labels[i]?.ToString();
+            var classIri = string.IsNullOrEmpty(classes[i]) ? null : classes[i];
 
             var stateId = ComputeObjStateId(objectRef, label);
 
@@ -106,6 +116,7 @@ public sealed class ObjectStateComponent : GH_Component
                 ObjectRef = objectRef,
                 Geometry = geometry,
                 Label = label,
+                ClassIri = classIri,
                 CapturedAtUtc = DateTimeOffset.UtcNow,
             });
         }
