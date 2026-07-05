@@ -447,7 +447,13 @@ public sealed class ParameterReinstateComponent : GH_Component
         {
             // Snapshot always stores Number type for sliders (ScriptVariable → double).
             // Use NumberValue for the write regardless of the slider's DecimalPlaces mode.
-            var value = (decimal)(parameter.NumberValue ?? 0.0);
+            var rawValue = parameter.NumberValue ?? 0.0;
+            if (double.IsNaN(rawValue) || double.IsInfinity(rawValue))
+            {
+                rawValue = 0.0;
+            }
+            rawValue = Math.Max(Math.Min(rawValue, (double)decimal.MaxValue), (double)decimal.MinValue);
+            var value = (decimal)rawValue;
             slider.SetSliderValue(value);
             return;
         }
