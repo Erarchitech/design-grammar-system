@@ -1,4 +1,4 @@
-# Database Schema (Neo4j Graph v3)
+# Database Schema (Neo4j Graph v4)
 
 ## Overview
 
@@ -10,7 +10,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 |---------------|-------------|---------|
 | `OntoGraph` | Class, DatatypeProperty, ObjectProperty | Domain ontology terms |
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
-| `ValidationGraph` | IntegrationConfig, ValidationRun, ValidationEntity | Speckle integration + validation metadata |
+| `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config |
 | `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
 
 ## Node Labels
@@ -82,6 +82,30 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 (:SpecSession {sessionId: "ks-abc123", mode: "insert", prompt: "...", result: "...", createdAt: "2026-01-01T00:00:00Z", graph: "SpecGraph", project: "1"})
 ```
 
+### ValidGraph
+
+**DesignState** — 3-part composed design state (ObjState, ParamState, PropState)
+```
+(:DesignState {StateId: "OS_abc123", kind: "ObjState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+(:DesignState {StateId: "DS_abc123", kind: "ParamState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+(:DesignState {StateId: "PS_abc123", kind: "PropState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+```
+- `kind` = ObjState | ParamState | PropState
+- `statePayloadJson` = v2 JSON envelope with `objStates`/`paramStates`/`propStates` keys, each containing typed state arrays
+- StateId prefix: `OS_` for ObjState, `DS_` for ParamState, `PS_` for PropState
+- Persisted with `graph = 'ValidGraph'` (not Metagraph — corrected in v7.0)
+- Written only by VALIDATOR on publish; MERGE'd by StateId + project (dedup across runs)
+- No orphan DesignStates — always has >=1 linked Run
+
+**Run** — A validation run execution record
+```
+(:Run {Run_Id: "VRUN_abc123", ValidStatus: [true, false, true], SendStatus: true, statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+```
+- `Run_Id` — unique identifier for the validation run
+- `ValidStatus` — Boolean list, one element per ObjState in the validated DesignState, index-matched to ObjState order
+- `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success)
+- `statePayloadJson` — v2 projection for Model Viewer read-back
+
 ## Relationships
 
 | Relationship | From | To | Properties | Description |
@@ -90,6 +114,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `HAS_HEAD` | Rule | Atom | `order` (int) | Head atoms (conclusions) |
 | `REFERS_TO` | Atom | Class/DatatypeProperty/ObjectProperty/Builtin | — | What the atom references |
 | `ARG` | Atom | Var/Literal | `pos` (int, 1-indexed) | Atom arguments |
+| `HAS_STATE` | DesignState | DesignState | — | Read-side composition: parent DesignState to ObjState/ParamState/PropState |
 | `TAGGED_WITH` | SpecNote | SpecTag | — | Note-to-tag association |
 | `INSTANCE_OF` | SpecNote/SpecSession | SpecClass | — | Instance-to-parent-class link |
 
@@ -128,7 +153,7 @@ The system uses **inverted logic** — body atoms fire when the constraint is **
 Rule: "Maximum building height is 75 meters"
 
 ```cypher
-MERGE (r:Rule {Rule_Id: "R_URB_HEIGHT_MAX_75_V", text: "Maximum building height is 75 meters", graph: "Metagraph", project: "1"})
+MERGE (r:Rule {Rule_Id: "R_URB_HEIGHT_MAX_75_V", SWRL: "Maximum building height is 75 meters", RuleName: "Max building height 75m", graph: "Metagraph", project: "1"})
 
 MERGE (a1:Atom {Atom_Id: "R_URB_HEIGHT_MAX_75_V_A1", iri: "ex:Building", SWRL_label: "Building(?b)"})
 MERGE (r)-[:HAS_BODY {order: 1}]->(a1)
@@ -153,14 +178,39 @@ MERGE (a3)-[:ARG {pos: 2}]->(:Literal {lex: "75", datatype: "xsd:decimal"})
 | File | Role |
 |------|------|
 | `training/dataset_schema.json` | Formal JSON schema definition |
-| `cypher_template.txt` | v3 Cypher template for LLM prompts |
-| `training/updated_cypher_reference_examples_v3.cypher` | Complete reference examples |
+| `cypher_template.txt` | v4 Cypher template for LLM prompts |
+| `training/updated_cypher_reference_examples_v3.cypher` | Complete reference examples (v3 historical, carried forward) |
 | `graph-viewer/config.template.js` | NeoVis display configuration |
+| `data-service/app.py` | FastAPI data service Cypher for validation publish/read-back |
 
 **When changing schema, update ALL of these files.**
 
-## v3 Migration Notes (Legacy → v3)
+## v3→v4 Migration Notes (complete)
 
+### v3→v4 migrations (all completed in v7.0 milestone)
+
+**Graph schema:**
+- Added `ValidGraph` as the fourth graph layer (for DesignState, Run, IntegrationConfig, ValidationEntity)
+- DesignState moved from `graph='Metagraph'` to `graph='ValidGraph'` (corrected from v3 cypher_template)
+- Added `SpecGraph` as the official graph layer for project spec storage
+
+**Rule properties:**
+- `Rule.text` → `Rule.SWRL`
+- `Rule.title` → `Rule.RuleName`
+- Added: `Rule.RuleDescription` (optional)
+
+**DesignState kinds:**
+- `DefState` → `ParamState`
+- `ObjectState` → `ObjState`
+- Added: `PropState` (new, for Rule+DataProperty+PropValue composition)
+
+**Run/Validation labels:**
+- `ValidationRun` → `Run` (node label)
+- `ValidationGraph` → `ValidGraph` (graph property value)
+- Added: `Run.ValidStatus` (Boolean list per ObjState)
+- Added: `Run.SendStatus` (single Boolean per Run)
+
+**Legacy → v3 (historical):**
 - `Rule.id` → `Rule.Rule_Id`
 - `DatatypeProperty.label` → `DatatypeProperty.SWRL_label`
 - `Atom.id` / `Atom.Id` → `Atom.Atom_Id`

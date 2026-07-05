@@ -67,11 +67,15 @@ http://localhost:8090
 ```
 Create a Speckle project/model there, then open a DG project in the graph view and configure the DG project link from the left sidebar "Model Viewer" card there. The card is not shown on the DG home page. The mapping fields accept either raw Speckle ids or full Speckle URLs; the backend normalizes URLs automatically.
 
-7) Publish validation overlays from Grasshopper:
-- `CLASSIFICATOR` can attach `ElementRefs` carrying `dgEntityId` and optional geometry.
-- `VALIDATOR` keeps semantic rule evaluation local, but when `SendRules=True` it posts a validation package to `data-service`.
+7) Publish validation overlays from Grasshopper (v7.0):
+- `OBJECT STATE` captures Object+Geometry+Label into ObjState.
+- `PARAMETER STATE` captures canvas Parameters into ParamState.
+- `PROPERTY STATE` captures Rule+DataProperty+PropValue into PropState.
+- `DESIGN STATE` composes ObjState/ParamState/PropState into a single DesignState.
+- `VALIDATOR` evaluates Rule+DesignState, and when `SendValid=True` posts a validation package to `data-service`.
 - `data-service` resolves the linked Speckle base model for the DG project, publishes one DG validation version, stores run metadata in Neo4j, and returns a DG `Model Viewer` URL.
 - If publish fails with a missing token error, open `http://localhost:8080`, save the tokens in the home page `Speckle Settings` card, then run `VALIDATOR` again.
+- See `docs/RELEASE-NOTES-v7.0.md` for the full per-component re-wiring guide with ASCII diagrams.
 
 8) Review rule-specific geometry overlays:
 ```
@@ -180,17 +184,22 @@ Login with `neo4j / 12345678` unless changed.
 - Nodes:
   - OntoGraph: `Class`, `DatatypeProperty`, `ObjectProperty`
   - Metagraph: `Rule`, `Atom`, `Builtin`, `Var`, `Literal`
+  - ValidGraph: `DesignState` (kind: ObjState/ParamState/PropState), `Run` (ValidStatus/SendStatus), `IntegrationConfig`, `ValidationEntity`
+  - SpecGraph: `SpecNote`, `SpecTag`, `SpecSession`, `SpecClass`
 - Relationships:
   - `HAS_DATA_PROPERTY`, `HAS_OBJECT_PROPERTY`
   - `HAS_BODY` (property: `order`), `HAS_HEAD` (property: `order`)
   - `REFERS_TO`
   - `ARG` (property: `pos`)
+  - `HAS_STATE` (DesignState -> state nodes, read-side composition)
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
-  - Rule: `id`, `text` (SWRL expression), `kind` (violation)
-  - Atom: `id`, `type` (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom)
+  - Rule: `Rule_Id`, `SWRL` (SWRL expression), `RuleName`, `RuleDescription`, `kind` (violation)
+  - Atom: `Atom_Id`, `type` (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom)
   - Var: `name` (e.g. `?b`), Literal: `lex`, `datatype`
-- All nodes include `graph` (`OntoGraph` or `Metagraph`) and `project` (from `project_name`).
+  - DesignState: `StateId`, `kind` (ObjState|ParamState|PropState), `statePayloadJson`
+  - Run: `Run_Id`, `ValidStatus` (Boolean list), `SendStatus` (Boolean)
+- All nodes include `graph` (`OntoGraph` or `Metagraph` or `ValidGraph` or `SpecGraph`) and `project` (from `project_name`).
 
 ## Machine learning (LoRA) and training dataset
 This repo includes a complete LoRA fine-tuning pipeline to create a custom Ollama model for rule parsing.
@@ -250,11 +259,21 @@ Named volumes:
 - `speckle_redis_data` -> Speckle cache/queues
 - `speckle_minio_data` -> Speckle object storage
 
-## Grasshopper add-in scaffold (DG)
-A new folder `DG/` contains an initial implementation of the Design Grammars Grasshopper add-in:
-- `DG/src/DG.Core` -> Neo4j connector, rule repository, SWRL parser, validator engine
-- `DG/src/DG.Grasshopper` -> components: `CONNECTOR`, `METAGRAPH`, `RULE DECONSTRUCT`, `CLASSIFICATOR`, `VALIDATOR`
-- `DG/tests/DG.Tests` -> parser/evaluator/classificator tests
+## Grasshopper add-in scaffold (DG — 14 components)
+`DG/` contains the Design Grammars Grasshopper add-in with 14 components:
+
+- `DG/src/DG.Core` -> Neo4j connector, rule repository, SWRL parser, validator engine, state models (ObjState, ParamState, PropState, DesignState)
+- `DG/src/DG.Grasshopper` -> 14 components:
+  - **Graph access**: `CONNECTOR`, `GRAPH DECONSTRUCT`, `METAGRAPH`, `ONTOGRAPH`, `VALIDATION GRAPH`
+  - **State capture**: `OBJECT STATE`, `PARAMETER STATE`, `PROPERTY STATE`
+  - **State composition**: `DESIGN STATE`
+  - **State deconstruction**: `DESIGN STATE DECONSTRUCT`, `OBJECT DECONSTRUCT`
+  - **Rule processing**: `RULE DECONSTRUCT`
+  - **Reinstatement**: `PARAMETER REINSTATE`
+  - **Validation**: `VALIDATOR`
+- `DG/tests/DG.Tests` -> parser/evaluator/state/reinstatement tests
+
+**Upgrade from v2.0?** See `docs/RELEASE-NOTES-v7.0.md` for the full per-component re-wiring guide with ASCII diagrams — CLASSIFICATOR is removed, VALIDATION RUNS is replaced by VALIDATION GRAPH, and REINSTATE is reworked to PARAMETER REINSTATE.
 
 Build and test:
 ```powershell

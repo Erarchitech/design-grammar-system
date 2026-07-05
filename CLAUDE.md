@@ -67,7 +67,7 @@ design-grammar-system/
 ├── spec/                        ← project specification
 ├── DG_OBSIDIAN/                 ← Obsidian knowledge vault
 ├── docker-compose.yml           ← orchestration (12+ services)
-├── cypher_template.txt          ← v3 Cypher template for LLM prompts
+├── cypher_template.txt          ← v4 Cypher template for LLM prompts
 │
 ├── graph-viewer/                ← Main UI container
 │   ├── index.html               ← Single-file React 18 SPA (no build step)
@@ -97,7 +97,7 @@ design-grammar-system/
 │   └── graph-query-mcp.json     ← NL question → Cypher → answer (15 nodes)
 │
 ├── training/                    ← LLM fine-tuning (LoRA for llama3.1)
-│   ├── dataset_schema.json      ← v3 schema definition
+│   ├── dataset_schema.json      ← v4 schema definition
 │   ├── updated_cypher_reference_examples_v3.cypher
 │   ├── train_lora.py
 │   └── training_dataset.json
@@ -125,7 +125,7 @@ design-grammar-system/
 
 This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserving each milestone's plans separately.
 
-## Graph Schema v3
+## Graph Schema v4
 
 **Single source of truth:** `training/dataset_schema.json` + `cypher_template.txt`
 
@@ -141,10 +141,29 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 | `Var` | Metagraph | `name` | `name` |
 | `Literal` | Metagraph | `lex` | `lex` |
 | `Builtin` | Metagraph | `iri` | `label` |
+| `DesignState` | ValidGraph | `StateId` | `kind` (ObjState/ParamState/PropState) |
+| `Run` | ValidGraph | `Run_Id` | `Run_Id` |
+
+### ValidGraph Labels
+
+| Label | Graph | Properties | Description |
+|-------|-------|-----------|-------------|
+| `DesignState` | ValidGraph | `StateId` (key), `kind` (ObjState/ParamState/PropState), `statePayloadJson` (v2 envelope) | 3-part design state composition |
+| `Run` | ValidGraph | `Run_Id` (key), `ValidStatus` (Boolean list per ObjState), `SendStatus` (single Boolean) | Validation run metadata |
+| `IntegrationConfig` | ValidGraph | Speckle/project integration settings | External viewer integration |
+| `ValidationEntity` | ValidGraph | Per-entity validation results | Individual pass/fail records |
+
+### DesignState kinds
+
+| Kind | Prefix | Component | Content |
+|------|--------|-----------|---------|
+| `ObjState` | `OS_` | OBJECT STATE | Object + Geometry + Label |
+| `ParamState` | `DS_` | PARAMETER STATE | Parameters list (sliders, toggles) |
+| `PropState` | `PS_` | PROPERTY STATE | Rule + DataProperty + PropValue |
 
 ### Relationships
 
-`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity), `ARG` (Atom→Var/Literal, with `pos`)
+`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition)
 
 ### Rule ID Format
 
@@ -152,7 +171,7 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Schema Change Propagation
 
-When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, and any Cypher templates in Python/JS.
+When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, and any Cypher templates in Python/JS.
 
 ## Common Commands
 
@@ -172,10 +191,9 @@ dotnet test .\DG\tests\DG.Tests\
 
 ## Current Priorities
 
-1. **Phase 14: Graph Schema v4 Propagation** — propagate V7 ontology names across cypher_template.txt, dataset_schema.json, n8n prompts, NeoVis config, data-service Cypher. Start: `/gsd-discuss-phase 14`
-2. **Phase 15: SpecGraph Runtime Rename** — runtime rename in data-service, n8n, NeoVis, UI + DB migration
-3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport
-4. **Validation management** — add delete/rename for validation runs
+1. **Phase 20: E2E Validation and Docs** — complete the milestone wrap-up phase: validate full live pipeline, release notes for canvas breakage, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh. Start: `/gsd-discuss-phase 20`
+2. **v7.0 completion** — ship the DG v7.0 milestone (14-component set, ontology-aligned ports, 3-part DesignState composition)
+3. **v4.0 BOT Ontology Bridge** — next milestone after v7.0 ships. Bridge design-grammar concepts with the BOT (Building Ontology Topology) standard and Topologic for cross-vocabulary architecture analysis
 
 ## Known Gotchas
 
@@ -185,12 +203,14 @@ dotnet test .\DG\tests\DG.Tests\
 - **LLM Cypher output** needs bracket nesting validation before execution
 - **Edit mode** requires cleanup of old atoms (MATCH-DELETE) before re-creation
 - **Conditional compilation** — `#if GRASSHOPPER_SDK` guards all GH-dependent code in DG.Grasshopper
+- **Canvas breakage** — old .gh files referencing CLASSIFICATOR/VALIDATION RUNS/old REINSTATE show missing-component placeholders. Re-wire per `docs/RELEASE-NOTES-v7.0.md`.
+- **Old component GUIDs in saved .gh files** — opening a v2.0 canvas without updating GUID mapping file causes missing components. The VALIDATION RUNS GUID (A7F2C3E1) is replaced by VALIDATION GRAPH (95fc9d32-307e-41fd-a158-bfae49a3dc2a). CLASSIFICATOR is fully removed — no replacement GUID.
 
 ## Tech Stack Summary
 
 | Layer | Language | Key Tech |
 |-------|----------|----------|
-| Grasshopper Plugin | C# (.NET 7/9) | Neo4j.Driver, Rhino 8 SDK |
+| Grasshopper Plugin | C# (.NET 7/9) | Neo4j.Driver, Rhino 8 SDK (14 components) |
 | Data Service | Python 3 | FastAPI, neo4j, specklepy, pydantic |
 | Workflows | JavaScript (n8n) | Webhook, HTTP, Function nodes |
 | Main UI | JavaScript | React 18 (CDN, no JSX), NeoVis.js |
