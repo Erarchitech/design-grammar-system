@@ -43,7 +43,12 @@ internal static class DgIcons
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream is null)
         {
-            return new Bitmap(24, 24);
+            var fallback = new Bitmap(24, 24);
+            using var g = Graphics.FromImage(fallback);
+            g.Clear(Color.LightPink);
+            g.DrawLine(Pens.Red, 0, 0, 24, 24);
+            g.DrawLine(Pens.Red, 24, 0, 0, 24);
+            return fallback;
         }
 
         using var source = new Bitmap(stream);
