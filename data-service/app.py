@@ -549,6 +549,19 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
         return None
     if not isinstance(parsed, dict):
         return None
+    # v2 envelope detection via root version field
+    version = parsed.get("version")
+    if version == "2":
+        obj_count = len(parsed.get("objStates") or [])
+        param_count = len(parsed.get("paramStates") or [])
+        prop_count = len(parsed.get("propStates") or [])
+        return {
+            "stateId": parsed.get("stateId") or "",
+            "capturedAtUtc": parsed.get("capturedAtUtc"),
+            "parameterCount": obj_count + param_count + prop_count,
+        }
+
+    # v1 fallback (ParamState-only)
     parameters = parsed.get("parameters")
     parameter_count = len(parameters) if isinstance(parameters, list) else 0
     return {
