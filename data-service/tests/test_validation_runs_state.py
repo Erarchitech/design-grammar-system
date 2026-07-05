@@ -79,3 +79,77 @@ def test_state_projection_does_not_raise_on_garbage_input():
             _project_state_summary(garbage)
         except Exception as e:
             pytest.fail(f"_project_state_summary raised on input {garbage!r}: {e}")
+
+
+# --- v2 envelope tests (Phase 18, GHVL-06) ---
+
+
+def test_v2_envelope_all_three_kinds():
+    payload = (
+        '{"version":"2",'
+        '"stateId":"DS_1",'
+        '"capturedAtUtc":"2026-07-04T10:00:00.0000000Z",'
+        '"objStates":[{}],'
+        '"paramStates":[{},{}],'
+        '"propStates":[{},{},{}]}'
+    )
+    result = _project_state_summary(payload)
+    assert result == {
+        "stateId": "DS_1",
+        "capturedAtUtc": "2026-07-04T10:00:00.0000000Z",
+        "parameterCount": 6,
+    }
+
+
+def test_v2_envelope_empty_arrays():
+    payload = (
+        '{"version":"2",'
+        '"stateId":"DS_2",'
+        '"capturedAtUtc":"2026-07-04T10:00:00Z",'
+        '"objStates":[],'
+        '"paramStates":[],'
+        '"propStates":[]}'
+    )
+    result = _project_state_summary(payload)
+    assert result == {
+        "stateId": "DS_2",
+        "capturedAtUtc": "2026-07-04T10:00:00Z",
+        "parameterCount": 0,
+    }
+
+
+def test_v2_missing_arrays_defaults_to_zero():
+    payload = '{"version":"2","stateId":"DS_3"}'
+    result = _project_state_summary(payload)
+    assert result == {
+        "stateId": "DS_3",
+        "capturedAtUtc": None,
+        "parameterCount": 0,
+    }
+
+
+def test_v1_fallback_no_version_field():
+    payload = (
+        '{"stateId":"S-1",'
+        '"parameters":[{"parameterId":"p1"},{"parameterId":"p2"}]}'
+    )
+    result = _project_state_summary(payload)
+    assert result == {
+        "stateId": "S-1",
+        "capturedAtUtc": None,
+        "parameterCount": 2,
+    }
+
+
+def test_v2_incompatible_version_falls_back():
+    payload = (
+        '{"version":"1",'
+        '"stateId":"S-2",'
+        '"parameters":[{"parameterId":"p1"}]}'
+    )
+    result = _project_state_summary(payload)
+    assert result == {
+        "stateId": "S-2",
+        "capturedAtUtc": None,
+        "parameterCount": 1,
+    }
