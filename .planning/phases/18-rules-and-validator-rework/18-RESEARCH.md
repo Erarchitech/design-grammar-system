@@ -598,32 +598,22 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
 | A5 | RuleEvaluator's binding contract (List<BindingRow>) remains unchanged | Standard Stack | If the binding format changes, both RuleEvaluator and FailingBindingFormatter need adaptation |
 | A6 | The port-iri-map-V7.md is the authoritative VALIDATOR port contract, not GHVL-03's imprecise text | Pitfall 5 | If GHVL-03's "(Rule + DesignState + SendValid + Run)" is interpreted literally, Run would be an input contradicting the port-iri-map |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How does DesignStateBindingService match ObjStates by Class IRI (D-05) when ObjState doesn't carry a Class IRI?**
-   - What we know: D-05 requires Class-aware matching. ObjState model has ObjectRef, Geometry, Label — no ClassIri field.
-   - What's unclear: Does phase need to (a) add ClassIri to ObjState and update OBJECT STATE component, or (b) bind all ObjStates to all Object variables and use D-02 exclusion semantics?
-   - Recommendation: Flag for user decision. Option (b) is simpler and doesn't require Phase 16 model changes, but creates a semantic gap where a "wall height" rule technically binds to window ObjStates (later excluded from AND).
+   - RESOLVED: Path A chosen — ObjState extended with `ClassIri` property (string?, null default). OBJECT STATE component gets new "Class" input port to pass Class IRI from METAGRAPH Objects output. DesignStateBindingService matches ObjState.ClassIri against Rule variable's REFERS_TO Class IRI. Only matching ObjStates produce BindingRows. (See Plan 18-01 Task 1 + Task 2)
 
 2. **Should the VALIDATOR evaluate on every solve or only on SendValid trigger?**
-   - What we know: Old VALIDATOR needed Run=true to evaluate. New contract has SendValid (publish trigger) only.
-   - What's unclear: Should VALIDATOR auto-evaluate on every solve (Rule+DesignState connected) and only use SendValid for publish? Or should it require a separate trigger for evaluation?
-   - Recommendation: Auto-evaluate on every solve when Rule+DesignState are connected. SendValid only controls publish. This matches the expectation that ValidStatus outputs are always live.
+   - RESOLVED: Auto-evaluate on every solve when Rule+DesignState connected. SendValid only controls publish. ValidStatus outputs are always live.
 
 3. **What happens to the old FailingBindings output?**
-   - What we know: FailingBindings is listed as a "non-overlapping extra kept from v2.0 VALIDATOR."
-   - What's unclear: With per-BindingRow evaluation, "failing bindings" could mean different things. The old VALIDATOR produced one failing bindings string per rule across all bindings.
-   - Recommendation: Keep FailingBindings as a per-ObjState text list showing failing variable/values — one entry per `ValidStatus[i] == false`. Format matches existing `FailingBindingFormatter.Format()` pattern.
+   - RESOLVED: FailingBindings kept as a per-rule text list (unchanged from current behavior). One entry per failing binding across all ObjStates. Format uses existing FailingBindingFormatter.Format() pattern. Output is on index 4 of the new 8-output contract.
 
 4. **Is `using DG.Core.Classification` present anywhere else besides ClassificatorComponent.cs?**
-   - What we know: Grep found only one hit: `DG\src\DG.Grasshopper\Components\ClassificatorComponent.cs:2:using DG.Core.Classification;`
-   - What's unclear: None — confirmed single reference. Delete with confidence.
-   - Confidence: HIGH (verified via Grep)
+   - RESOLVED: Confirmed single reference. Plan 18-03 deletes it with confidence.
 
 5. **Does the ValidationRunPersistenceService need v2 Serializer or does the publish path stay in Grasshopper?**
-   - What we know: ValidationRunPersistenceService currently attaches v1 ParamState to ValidationRunRecord. The publish path is entirely in DG.Grasshopper (ValidationPublishClient).
-   - What's unclear: Should ValidationRunPersistenceService be extended, or should the serialization stay in the Grasshopper layer?
-   - Recommendation: The Grasshopper publish path handles serialization. ValidationRunPersistenceService may be extended for C#-side read/attach operations but the main flow stays in ValidationPublishClient.
+   - RESOLVED: ValidationPublishClient (Grasshopper layer) handles serialization via DesignStatePayloadV2Serializer. ValidationRunPersistenceService extended with v2-compatible overloads per Plan 18-05 Task 3.
 
 ## Environment Availability
 
