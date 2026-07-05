@@ -11,9 +11,6 @@ internal static class DgIcons
     public static Bitmap Metagraph24 { get; } = Load("Metagraph24.png");
 
     public static Bitmap RuleDeconstruct24 { get; } = Load("RuleDeconstruct24.png");
-
-    public static Bitmap Classificator24 { get; } = Load("Classificator24.png");
-
     public static Bitmap Validator24 { get; } = Load("Validator24.png");
 
     public static Bitmap ParameterState24 { get; } = Load("ParameterState24.png");
