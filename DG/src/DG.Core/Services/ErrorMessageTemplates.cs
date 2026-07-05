@@ -80,6 +80,16 @@ public static class ErrorMessageTemplates
         return "CONNECTOR: Project output passthrough failed. Ensure PROJECT NAME input is connected.";
     }
 
+    public static string RuleVariableUnclassified(string ruleId, string variableName)
+    {
+        return $"Cannot classify variable '?{variableName}' in rule '{ruleId}': no REFERS_TO link found. Ensure the SWRL expression assigns every variable to a ClassAtom, DataPropertyAtom, or ObjectPropertyAtom. Re-ingest the rule through the rules-ingest webhook.";
+    }
+
+    public static string BindingServiceNoObjectBindings(string ruleId)
+    {
+        return $"Binding service for rule '{ruleId}': DesignState contains no ObjStates but the rule requires Object variables. Connect OBJECT STATE components upstream to supply building instances for validation.";
+    }
+
     public static string HandleTypeUnwrapped(string componentName, string handleType)
     {
         return $"{componentName}: Could not unwrap {handleType} input. Ensure the input is connected to GRAPH DECONSTRUCT's {handleType} output.";
