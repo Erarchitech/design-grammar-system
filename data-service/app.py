@@ -163,6 +163,9 @@ class ValidationPublishRequest(BaseModel):
     # OS_-prefixed ObjState references join this payload from Phase 11
     # onward (see CLAUDE.md Graph Schema v4 / DesignState kind vocabulary).
     statePayloadJson: str | None = None
+    # validStatus carries per-ObjState Boolean list from Phase 18 GHVL-05.
+    # Index-matched to DesignState.ObjStates order. None for pre-v7.0 clients.
+    validStatus: list[bool] | None = None
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
     entities: list[ValidationPublishEntityPayload] = Field(default_factory=list)
@@ -401,15 +404,19 @@ def store_validation_run(
     rules_summary: list[dict[str, Any]],
     entities: list[dict[str, Any]],
     state_payload_json: str | None = None,
+    valid_status_param: list[bool] | None = None,
 ) -> None:
     created_at = datetime.now(timezone.utc).isoformat()
 
-    # Best-effort ValidStatus: per-entity pass/fail from currently available data.
-    # Phase 18 (GHVL-05) owns the full per-ObjState index-matched population.
-    valid_status: list[bool] = [
-        len(entity.get("failedRuleIds") or []) == 0
-        for entity in entities
-    ]
+    # Use passed ValidStatus from the request if present (Phase 18 GHVL-05),
+    # otherwise fall back to entity-based computation (backward compat for pre-v7.0 clients)
+    if valid_status_param is not None:
+        valid_status = valid_status_param
+    else:
+        valid_status = [
+            len(entity.get("failedRuleIds") or []) == 0
+            for entity in entities
+        ]
 
     write_query(
         """
@@ -899,6 +906,7 @@ def publish_validation(payload: ValidationPublishRequest):
             rules_summary,
             entity_dicts,
             state_payload_json=payload.statePayloadJson,
+            valid_status_param=payload.validStatus,
         )
         return {
             "status": "published",

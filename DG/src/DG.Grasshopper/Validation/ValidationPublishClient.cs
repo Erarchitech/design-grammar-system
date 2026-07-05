@@ -6,6 +6,7 @@ using DG.Core.Models;
 using DG.Core.Serialization;
 using DG.Core.Validation;
 using CoreBindingRow = DG.Core.Models.BindingRow;
+using CoreDesignState = DG.Core.Models.DesignState;
 using CoreRule = DG.Core.Models.Rule;
 using CoreRuleEvaluationResult = DG.Core.Models.RuleEvaluationResult;
 
@@ -24,11 +25,13 @@ internal static class ValidationPublishClient
         IReadOnlyList<CoreRuleEvaluationResult> results,
         IReadOnlyList<CoreBindingRow> bindings,
         string dataServiceUrl,
-        ParamState? state = null)
+        CoreDesignState? designState = null,
+        List<bool>? validStatus = null)
     {
         var package = ValidationPublishPackageBuilder.Build(rules, results, bindings);
-        var statePayloadJson = SerializeState(state);
+        var statePayloadJson = SerializeDesignState(designState);
         var request = BuildRequest(package, statePayloadJson);
+        request.ValidStatus = validStatus;
         var endpoint = $"{NormalizeUrl(dataServiceUrl)}/validation/publish";
         using var response = HttpClient.PostAsJsonAsync(endpoint, request, JsonOptions).GetAwaiter().GetResult();
         var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -46,16 +49,16 @@ internal static class ValidationPublishClient
         return parsed;
     }
 
-    private static string? SerializeState(ParamState? state)
+    private static string? SerializeDesignState(CoreDesignState? designState)
     {
-        if (state is null)
+        if (designState is null)
         {
             return null;
         }
 
         try
         {
-            return DesignStateJsonSerializer.Serialize(state);
+            return DesignStatePayloadV2Serializer.Serialize(designState);
         }
         catch (InvalidOperationException)
         {
