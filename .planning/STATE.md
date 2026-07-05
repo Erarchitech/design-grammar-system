@@ -5,15 +5,15 @@ milestone_name: — Update of DG Addin for Grasshopper
 current_phase: 18
 current_phase_name: rules-and-validator-rework
 status: executing
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-07-05T12:19:15.357Z"
+stopped_at: Completed 18-03-PLAN.md
+last_updated: "2026-07-05T13:04:43.238Z"
 last_activity: 2026-07-05
 last_activity_desc: Phase 18 execution started
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 31
-  completed_plans: 27
+  completed_plans: 30
   percent: 63
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 ## Current Position
 
 Phase: 18 (rules-and-validator-rework) — EXECUTING
-Plan: 2 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-05 — Phase 18 execution started
 
@@ -125,6 +125,8 @@ Shipped from Phase 17 Plan 04:
 - [Phase 17]: Old VALIDATION RUNS GUID (A7F2C3E1) fully purged — zero remaining references
 - [Phase 18]: Builtin-only variables excluded from binding rows (D-07)
 - [Phase 18]: Property values apply to ALL existing rows (not per-ObjState), matching VALIDATOR evaluation contract
+- [Phase ?]: CLASSIFICATOR fully purged per D-09 (GHVL-02)
+- [Phase ?]: Return shape identical for v1 and v2: only {stateId, capturedAtUtc, parameterCount} - no stateKind field
 
 ### Research Flags (carry into planning)
 
@@ -145,7 +147,7 @@ Shipped from Phase 17 Plan 04:
 
 ## Session Continuity
 
-Last session: 2026-07-05T12:19:15.342Z
+Last session: 2026-07-05T12:59:19.072Z
 Stopped at: Completed 18-01-PLAN.md
 Resume file: .planning/phases/18-rules-and-validator-rework/18-01-SUMMARY.md
 
@@ -173,3 +175,6 @@ Resume file: .planning/phases/18-rules-and-validator-rework/18-01-SUMMARY.md
 | Phase 17 P03 | 4m27s | 3 tasks | 6 files |
 | Phase 17 P04 | 4m30s | 4 tasks | 8 files |
 | Phase 18-rules-and-validator-rework P01 | 9m | 4 tasks | 5 files |
+| Phase 18-rules-and-validator-rework P02 | 8m | - tasks | - files |
+| Phase 18-rules-and-validator-rework P03 | 3m | - tasks | - files |
+| Phase 18 PP04 | 6m | 2 tasks | 2 files |

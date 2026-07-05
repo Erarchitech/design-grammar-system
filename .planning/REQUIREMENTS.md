@@ -63,12 +63,12 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### Rules & Validation (GHVL)
 
-- [ ] **GHVL-01**: RULE DECONSTRUCT partitions rule variables into Objects + DataProperties outputs via VariableTypeInferrer (Variables/VariableName outputs removed; Rule/SWRL/RuleName/RuleDescription kept)
-- [ ] **GHVL-02**: CLASSIFICATOR component is removed from the plugin
+- [x] **GHVL-01**: RULE DECONSTRUCT partitions rule variables into Objects + DataProperties outputs via VariableTypeInferrer (Variables/VariableName outputs removed; Rule/SWRL/RuleName/RuleDescription kept)
+- [x] **GHVL-02**: CLASSIFICATOR component is removed from the plugin
 - [ ] **GHVL-03**: VALIDATOR implements the new contract — inputs Rule, DesignState, SendValid, Run; outputs ValidStatus, RuleName, RuleDescription, SendStatus — keeping non-overlapping extras (DataServiceUrl input; Report, FailingBindings, ValidationRunId, ModelViewerUrl outputs)
 - [x] **GHVL-04**: VALIDATOR binds variables from the composed DesignState (ObjState → Object variables, PropState → Property values), replacing the CLASSIFICATOR/VariableBinder path
 - [ ] **GHVL-05**: The publish path persists a Run with ValidStatus/SendStatus and the 3-part state payload; VALIDATION GRAPH reads it back intact
-- [ ] **GHVL-06**: The Model Viewer keeps working against v7.0 data — data-service `_project_state_summary` and the `/validation/runs` projection are adapted to statePayloadJson v2, and `useValidationRunsGrouping` (group-by-State via `state.stateId`) plus ValidationRunsStrip render correctly for runs with 3-part states
+- [x] **GHVL-06**: The Model Viewer keeps working against v7.0 data — data-service `_project_state_summary` and the `/validation/runs` projection are adapted to statePayloadJson v2, and `useValidationRunsGrouping` (group-by-State via `state.stateId`) plus ValidationRunsStrip render correctly for runs with 3-part states
 
 ### End-to-End & Docs (E2E)
 
