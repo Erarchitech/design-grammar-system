@@ -1,6 +1,6 @@
 ---
 tags: [home, moc]
-date: 2026-04-05
+date: 2026-07-05
 ---
 
 # Design Grammar System � Knowledge Vault
@@ -13,7 +13,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Architecture is a microservices Docker pipeline]]
 - [[Technology stack spans C-Sharp Grasshopper and Python FastAPI and React SPA]]
 - [[Neo4j stores ontology and metagraph in a single database]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
+- [[archive/Graph schema v3 is the canonical data model (archived)|Graph schema v3 (archived)]]
 - [[Deployment uses Docker Compose with nginx reverse proxy]]
 - [[UI is a single-file React 18 SPA with no build step]]
 - [[Model Viewer is a Vite-built Speckle 3D viewer]]
@@ -42,7 +43,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Update flow uses three-step match-propose-confirm with server-side diff]]
 - [[DesignRuleSession nodes stored in Metagraph]]
 - [[ResizeObserver wires Speckle viewer.resize on host element]]
-- [[ValidationRunsStrip component with per-project localStorage persistence]]
+- [[archive/ValidationRunsStrip component with per-project localStorage persistence (archived)|ValidationRunsStrip (archived — replaced by VALIDATION GRAPH)]]
 - [[DCM ComputationGraph as 5th ontology layer]]
 - [[decisions/v3.0 vendor-neutral rename deferred|v3.0 vendor-neutral rename deferred]]
 - [[decisions/Worktree execution disabled due to commit_docs conflict|Worktree execution disabled due to commit_docs conflict]]
@@ -147,4 +148,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-04 Phase 15 planning — SpecGraph Runtime Rename (replan)|2026-07-04 Phase 15 replan — SpecGraph Runtime Rename]]
 - [[sessions/2026-07-05 Phase 20 discuss — E2E Validation and Docs|2026-07-05 Phase 20 discuss — E2E Validation and Docs]]
 - [[sessions/2026-07-05 Phase 20 planning — 3 plans, all verified|2026-07-05 Phase 20 planning — 3 plans, all verified]]
+- [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|2026-07-05 Phase 20 execution — E2E validation, release notes, docs update, vault refresh]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
+
+### Archive
+- [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
+
+> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. Next: v4.0 BOT Ontology Bridge.

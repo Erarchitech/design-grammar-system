@@ -1,7 +1,6 @@
 ---
-tags: [atlas, neo4j, database, schema]
-date: 2026-04-05
-graphify_communities: ["Architecture is a Microservices Docker Pipeline", "DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...", "DesignRuleSession Nodes Stored in Metagraph", "JavaScript SPA Conventions", "Metagraph (SWRL Rules Layer)", "Rule Node (Rule_Id, title, name, description, kind, text,...", "STACK.md - Technology Stack Research", "State Projection for Validation Runs"]
+tags: [atlas, neo4j, database, schema, v4]
+date: 2026-07-05
 ---
 
 # Neo4j Stores Ontology and Metagraph in a Single Database
@@ -14,9 +13,10 @@ All data lives in **one Neo4j 5 database**. Logical separation is achieved by th
 |-------------|----------|---------|
 | `OntoGraph` | Class, DatatypeProperty, ObjectProperty | Domain ontology terms (building types, properties) |
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and their decomposed atom structures |
-| `ValidationGraph` | IntegrationConfig, ValidationRun, ValidationEntity | Speckle integration config + validation run metadata |
+| `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation run state and metadata |
+| `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage (notes, tags, sessions) |
 
-## Canonical Node Labels (v3)
+## Canonical Node Labels (v4)
 
 | Label | Key Property | Display Property | Graph |
 |-------|-------------|-----------------|-------|
@@ -28,6 +28,25 @@ All data lives in **one Neo4j 5 database**. Logical separation is achieved by th
 | `Atom` | `Atom_Id` | `SWRL_label` | Metagraph |
 | `Var` | `name` | `name` | Metagraph |
 | `Literal` | `lex` + `datatype` | `lex` | Metagraph |
+| `DesignState` | `StateId` | `kind` | ValidGraph |
+| `Run` | `Run_Id` | `Run_Id` | ValidGraph |
+
+### DesignState Properties
+
+| Property | Values | Description |
+|----------|--------|-------------|
+| `kind` | `ObjState`, `ParamState`, `PropState` | State kind discriminator |
+| `StateId` | `OS_*`, `DS_*`, `PS_*` | Prefixed identifier per kind |
+| `statePayloadJson` | JSON (v2) | Envelope with `objStates`, `paramStates`, `propStates` keys |
+
+### Run Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Run_Id` | string | Key property |
+| `ValidStatus` | Boolean[] | Per-ObjState validation result (index-matched) |
+| `SendStatus` | Boolean | Whether results were published to Speckle |
+| `statePayloadJson` | JSON (v2) | Projection of the DesignState that was validated |
 
 ## Canonical Relationships
 
@@ -35,14 +54,21 @@ All data lives in **one Neo4j 5 database**. Logical separation is achieved by th
 - `HAS_HEAD` — Rule → Atom (head atoms, with `order` property)
 - `REFERS_TO` — Atom → Class/DatatypeProperty/ObjectProperty/Builtin
 - `ARG` — Atom → Var/Literal (with `pos` property, 1-indexed)
+- `HAS_STATE` — DesignState → state nodes (read-side composition)
 
 ## Project Isolation
 
 Every node carries a `project` property. All Cypher queries filter by `project:'<name>'`. See [[Project isolation uses property filtering not separate databases]].
 
-## v3 Migration Notes
+## Schema Migration History (v3→v4, complete)
 
-Legacy → v3 renames:
+v3→v4 renames (v7.0 Phase 14, shipped 2026-07):
+- DesignState `kind` values: `DefState`→`ParamState`, `ObjectState`→`ObjState`, new `PropState`
+- `KnowledgeGraph`→`SpecGraph` (runtime label rename, Phase 15)
+- `ValidationGraph`→`ValidGraph` (runtime label rename, Phase 14)
+- Rule properties: `text`→`SWRL`, `title`→`RuleName`, new `RuleDescription`
+
+Legacy → v3 renames (v3.0, shipped 2026-06):
 - `Rule.id` → `Rule.Rule_Id`
 - `DatatypeProperty.label` → `DatatypeProperty.SWRL_label`
 - `Atom.id` / `Atom.Id` → `Atom.Atom_Id`
@@ -50,19 +76,6 @@ Legacy → v3 renames:
 
 ## Related
 
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 - [[Architecture is a microservices Docker pipeline]]
 - [[Cypher MERGE idempotent node creation pattern]]
-
-<!-- graphify:connections:start -->
-## Graph connections
-
-- [[graphify/communities/Architecture is a Microservices Docker Pipeline|Architecture is a Microservices Docker Pipeline]]
-- [[graphify/communities/DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...|DG Grasshopper Plugin Bridges Rhino to Neo4j Validation P...]]
-- [[graphify/communities/DesignRuleSession Nodes Stored in Metagraph|DesignRuleSession Nodes Stored in Metagraph]]
-- [[graphify/communities/JavaScript SPA Conventions|JavaScript SPA Conventions]]
-- [[graphify/communities/Metagraph (SWRL Rules Layer) (84)|Metagraph (SWRL Rules Layer)]]
-- [[graphify/communities/Rule Node (Rule_Id, title, name, description, kind, text,...|Rule Node (Rule_Id, title, name, description, kind, text,...]]
-- [[graphify/communities/STACK.md - Technology Stack Research|STACK.md - Technology Stack Research]]
-- [[graphify/communities/State Projection for Validation Runs|State Projection for Validation Runs]]
-<!-- graphify:connections:end -->
