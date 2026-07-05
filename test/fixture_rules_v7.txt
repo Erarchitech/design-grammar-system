@@ -1,0 +1,11 @@
+# DG v7.0 E2E Test Fixture Rules
+# ============================================================================
+# Three representative rules covering the main SWRL patterns:
+# 1. Height / numeric comparison (greaterThan)
+# 2. Area / numeric comparison (lessThan)
+# 3. Separation / object property comparison
+# ============================================================================
+
+Maximum height of buildings is 75 meters.
+Minimum area of living units is 28 square meters.
+All residential buildings must be at least 10 meters apart.
