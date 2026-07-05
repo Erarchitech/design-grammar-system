@@ -133,11 +133,15 @@ public static class ErrorMessageTemplates
 
     public static string FormatStatus(ReinstatementResult result)
     {
-        if (result.Applied && result.AppliedCount > 0)
-            return $"Applied {result.AppliedCount} parameters";
+        if (result.Applied)
+            return result.AppliedCount > 0
+                ? $"Applied {result.AppliedCount} parameters"
+                : "Applied (0)";
 
-        if (result.Aborted && result.BlockedCount > 0)
-            return $"Aborted: {result.BlockedCount} blocked";
+        if (result.Aborted)
+            return result.BlockedCount > 0
+                ? $"Aborted: {result.BlockedCount} blocked"
+                : "Aborted (0)";
 
         if (result.UnchangedCount > 0)
             return "Unchanged (same state)";
@@ -147,11 +151,15 @@ public static class ErrorMessageTemplates
 
     public static string FormatMessage(ReinstatementResult result)
     {
-        if (result.Applied && result.AppliedCount > 0)
-            return $"Applied {result.AppliedCount}";
+        if (result.Applied)
+            return result.AppliedCount > 0
+                ? $"Applied {result.AppliedCount}"
+                : "Applied";
 
-        if (result.Aborted && result.BlockedCount > 0)
-            return "Aborted";
+        if (result.Aborted)
+            return result.BlockedCount > 0
+                ? "Aborted"
+                : "Aborted";
 
         if (result.UnchangedCount > 0)
             return "Unchanged";
