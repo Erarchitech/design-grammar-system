@@ -7,7 +7,7 @@ date: 2026-07-05
 
 ## Active
 
-1. **v7.0 Phase 18 (Rules and Validator Rework)** — **Planned 2026-07-05.** 5 plans across 2 waves, 6/6 requirements covered. Path A decision: ObjState.ClassIri for D-05 Class IRI matching. See [[sessions/2026-07-05 Phase 18 planning — 5 plans 2 waves with Path A ClassIri|planning session]]. Next: `/gsd-execute-phase 18`.
+1. **v7.0 Phase 19 (Deconstruct and Reinstate Components)** — **Planned 2026-07-05.** DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE. Next: discuss-phase and plan.
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
@@ -29,7 +29,7 @@ date: 2026-07-05
 
 ## Completed Recently
 
-- **v7.0 Phase 18 planned** — 2026-07-05. 5 plans (18-01..18-05) across 2 waves, all 6 requirements GHVL-01..06 covered. Revision loop resolved 2 blockers: Path A adds ObjState.ClassIri for D-05 Class IRI matching and restores D-02 exclusion semantics. See [[sessions/2026-07-05 Phase 18 planning — 5 plans 2 waves with Path A ClassIri|session]].
+- **v7.0 Phase 18 executed** — 2026-07-05. 5/5 plans across 2 waves (1→sequential due to worktree base mismatch, 2→sequential), 9/9 must-haves verified, 6/6 requirements (GHVL-01..06) satisfied. Created DesignStateBindingService, partitioned RULE DECONSTRUCT outputs, purged CLASSIFICATOR (5 files deleted), adapted Model Viewer read-side for v2 payloads, rewrote VALIDATOR with DesignState-driven contract + v2 publish path. 17 commits, 28 files changed (+1660/-407). Build clean (0/0), 179/179 C# + 28/28 Python tests pass. See [[sessions/2026-07-05 Phase 18 execution — Rules and Validator Rework|session]].
 - **v7.0 Phase 17 executed** — 2026-07-04. 4/4 plans across 1 wave, 24/24 must-haves verified, 5/5 requirements (GHGA-01..05) satisfied. Created 4 handle types, 6 repository files, 5 GH components (CONNECTOR updated, GRAPH DECONSTRUCT new, METAGRAPH extended, ONTOGRAPH new, VALIDATION GRAPH new replacing old ValidationRunsComponent). 61 new tests, build clean (176/176 pass). See [[sessions/2026-07-04 Phase 17 execution — Graph Access Components|session]].
 - **v7.0 Phase 15 executed** — 2026-07-04. 5/5 plans across 2 waves, 13/14 must-haves verified, blocker found & fixed (stale `knowledge_note_search` in `spec-query.json`). SC#4 gate: PASS — zero orphaned Knowledge* graph-layer references. Created DB migration (SPEC-01), renamed data-service (SPEC-02), n8n workflows (SPEC-03), NeoVis UI (SPEC-04). 13 commits. Migration file + seed ready for manual dev-Neo4j run. See [[sessions/2026-07-04 Phase 15 execution|session]].
 - **v7.0 Phase 16 executed** — 2026-07-04. 6/6 plans across 3 waves, 25/25 must-haves verified, 9/9 requirements satisfied. Created 4 state models, v2 serializer, 4 GH components. 41 new tests, build clean. See [[sessions/2026-07-04 Phase 16 execution - 6 plans all complete|session]].
