@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: — Update of DG Addin for Grasshopper
-current_phase: 19
-current_phase_name: deconstruct-and-reinstate-components
-status: verifying
-stopped_at: Ready for verification
-last_updated: "2026-07-05T18:00:00.000Z"
-last_activity: 2026-07-05
-last_activity_desc: Completed 19-03 — PARAMETER REINSTATE component
+current_phase: 20
+current_phase_name: e2e-validation-and-docs
+status: executing
+stopped_at: Plan 20-02 completed (release notes + docs update)
+last_updated: "2026-07-06T23:25:00Z"
+last_activity: 2026-07-06
+last_activity_desc: Plan 20-02 completed — release notes + docs to v4
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 34
-  completed_plans: 34
+  total_plans: 37
+  completed_plans: 36
   percent: 88
 ---
 
@@ -24,20 +24,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 19 — deconstruct-and-reinstate-components
+**Current focus:** Phase 20 — e2e-validation-and-docs
 
 ## Current Position
 
-Phase: 19 (deconstruct-and-reinstate-components) — EXECUTING
+Phase: 20 (e2e-validation-and-docs) — EXECUTING
 Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-07-05 — Completed 19-03 PARAMETER REINSTATE
+Status: Ready to execute
+Last activity: 2026-07-06 — Plan 20-02 completed (release notes + docs update)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0 (v7.0)
+- Total plans completed: 36 (v7.0)
 - Average duration: —
 - Total execution time: —
 
@@ -135,6 +135,13 @@ Shipped from Phase 17 Plan 04:
 - [Phase 19 Plan 03]: _lastApplyInput initialized to true (not default false) — prevents first-solve auto-fire while preserving rising-edge behavior
 - [Phase 19 Plan 03]: Wire-traversal restricted to Input 1 (Target) only — no fallback to Input 0 per D-02
 - [Phase 19 Plan 03]: Parameters output always returns ALL params from ParamState (D-05), StateStatus index-matched to Parameters (D-04)
+- [Phase ?]: E2E checklist structured as dual-purpose artifact (development QA + release/installation verification)
+
+Shipped from Phase 20 Plan 02:
+
+- [Phase 20]: Release notes use per-component structure: old name -> new name, what broke, ASCII diagram, port mapping table, GUID changes — consistent layout across all 7 affected components
+- [Phase 20]: copilot-instructions.md rewritten as full replacement (not patch) per D-10 — avoids v3 remnants in retained sections
+- [Phase 20]: spec/DATABASE.md v3 migration notes preserved as historical section prefaced "v3->v4 migration (complete)" — keeps institutional knowledge
 
 ### Research Flags (carry into planning)
 
@@ -155,9 +162,9 @@ Shipped from Phase 17 Plan 04:
 
 ## Session Continuity
 
-Last session: 2026-07-05T18:00:00.000Z
-Stopped at: Phase 19 complete — ready for verification
-Resume file: (none — all 3 plans shipped)
+Last session: 2026-07-06T23:25:00Z
+Stopped at: Plan 20-02 completed (release notes + docs update)
+Resume file: .planning/phases/20-e2e-validation-and-docs/20-03-PLAN.md
 
 ## Performance Metrics
 
@@ -190,3 +197,5 @@ Resume file: (none — all 3 plans shipped)
 | Phase 19 P01 | 12min | 2 tasks | 7 files |
 | Phase 19-deconstruct-and-reinstate-components P02 | 3m | 2 tasks | 4 files |
 | Phase 19-deconstruct-and-reinstate-components P03 | 8min | 2 tasks | 2 files |
+| Phase 20-e2e-validation-and-docs P01 | 15min | 2 tasks | 4 files |
+| Phase 20-e2e-validation-and-docs P02 | 25min | 3 tasks | 6 files |

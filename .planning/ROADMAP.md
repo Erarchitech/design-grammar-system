@@ -244,11 +244,12 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   4. DG_OBSIDIAN reflects v7.0: schema-v3 atlas note superseded, graphify regenerated via `scripts/refresh_graphify.sh` — no community note describes CLASSIFICATOR/VALIDATION RUNS or v3.0-phase plans as current work
   5. All 39 v7.0 requirements are checked off in REQUIREMENTS.md with traceability complete
 
-**Plans**: 3 plans (3 waves — sequential by nature: E2E before docs before vault refresh)
+**Plans**: 2/3 plans executed
 
 Plans:
-- [ ] 20-01-PLAN.md — E2E Validation: create checklist + Docker automation, execute full chain, fix critical bugs inline — *wave 1* — E2E-01
-- [ ] 20-02-PLAN.md — Release Notes + Repo/AI Docs: re-wiring guide with ASCII diagrams, CLAUDE.md/copilot/DATABASE.md/README.md to v4, SC#3 grep gate — *wave 2, depends 20-01* — E2E-02/03
+
+- [x] 20-01-PLAN.md — E2E Validation: create checklist + Docker automation, execute full chain, fix critical bugs inline — *wave 1* — E2E-01
+- [x] 20-02-PLAN.md — Release Notes + Repo/AI Docs: re-wiring guide with ASCII diagrams, CLAUDE.md/copilot/DATABASE.md/README.md to v4, SC#3 grep gate — *wave 2, depends 20-01* — E2E-02/03
 - [ ] 20-03-PLAN.md — DG_OBSIDIAN + Graphify Refresh: archive stale notes, rewrite atlas to v4, regenerate graphify, finalize REQUIREMENTS.md — *wave 3, depends 20-02* — E2E-04
 
 ---
@@ -264,7 +265,7 @@ Plans:
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 5/5 | Complete   | 2026-07-05 |
 | 19. Deconstruct and Reinstate Components | 3/3 | Complete | 2026-07-05 |
-| 20. E2E Validation and Docs | 0/3 | Not started | - |
+| 20. E2E Validation and Docs | 2/3 | In Progress|  |
 
 ---
 
