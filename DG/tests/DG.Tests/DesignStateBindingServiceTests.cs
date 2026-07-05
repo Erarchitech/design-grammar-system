@@ -140,7 +140,9 @@ public sealed class DesignStateBindingServiceTests
     [Fact]
     public void BuildBindings_UnclassifiedVariableThrows()
     {
-        // Variable "?x" appears in BodyAtoms only at non-qualifying positions
+        // Variable "?x" at pos-1 of DataPropertyAtom (not qualifying for Object or Property)
+        // No ClassAtom or ObjectPropertyAtom for ?x, and pos-1 is not a Property position.
+        // VariableTypeInferrer.Infer sees ?x but returns null (priority 4).
         var rule = new Rule
         {
             Id = "R_TEST_UNCLASSIFIED_V",
@@ -156,8 +158,8 @@ public sealed class DesignStateBindingServiceTests
                     Order = 0,
                     Args =
                     {
-                        new AtomArg { Pos = 1, Kind = ArgKind.Literal, Value = "ex:Something" },
-                        new AtomArg { Pos = 2, Kind = ArgKind.Variable, Value = "?x" },
+                        new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?x" },
+                        new AtomArg { Pos = 2, Kind = ArgKind.Literal, Value = "75.0" },
                     },
                 },
             },
@@ -180,7 +182,7 @@ public sealed class DesignStateBindingServiceTests
         var ex = Assert.Throws<InvalidOperationException>(() =>
             DesignStateBindingService.BuildBindings(rule, designState));
 
-        Assert.Contains("No ObjStates", ex.Message);
+        Assert.Contains("DesignState contains no ObjStates", ex.Message);
     }
 
     [Fact]
