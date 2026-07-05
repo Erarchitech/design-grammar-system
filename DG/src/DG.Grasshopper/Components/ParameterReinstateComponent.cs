@@ -103,6 +103,7 @@ public sealed class ParameterReinstateComponent : GH_Component
         }
 
         _latestParamState = snapshot;
+        _latestResult = null; // Invalidate stale result — new snapshot invalidates previous status
 
         // ── Find ParameterStateComponent by walking wire sources ────────────────
         // D-02: searches Input 1 (Target) ONLY — no fallback to Input 0
@@ -487,7 +488,10 @@ public sealed class ParameterReinstateComponent : GH_Component
             : new List<DesignStateParameter>());
 
         // D-04: StateStatus output — index-matched to Parameters, same length and order
-        da.SetDataList(1, result?.Reports.Select(r => r.Status).ToList() ?? new List<ReinstatementStatus>());
+        da.SetDataList(1, result?.Reports.Select(r => r.Status).ToList()
+            ?? (_latestParamState is not null
+                ? Enumerable.Repeat(ReinstatementStatus.Unchanged, _latestParamState.Parameters.Count).ToList()
+                : new List<ReinstatementStatus>()));
 
         // D-06: Status output — summary text
         da.SetData(2, status);
