@@ -257,8 +257,9 @@ public sealed class ParameterReinstateComponent : GH_Component
 
             return snapshot;
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"ReconstructSnapshot failed: {ex}");
             return null;
         }
     }
@@ -292,8 +293,9 @@ public sealed class ParameterReinstateComponent : GH_Component
                 BooleanValue = booleanValue,
             };
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"ReconstructParameter failed: {ex}");
             return null;
         }
     }
