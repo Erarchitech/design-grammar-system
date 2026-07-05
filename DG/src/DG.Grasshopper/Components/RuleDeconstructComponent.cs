@@ -101,24 +101,56 @@ public sealed class RuleDeconstructComponent : GH_Component
             }
         }
 
-        var variables = variablesByName.Values
+        var sortedVariables = variablesByName.Values
             .OrderBy(variable => variable.Name, StringComparer.Ordinal)
             .ToList();
 
-        var publicVars = variables
-            .Select(variable => new global::DG.Variable
+        var objects = new List<global::DG.Variable>();
+        var dataProperties = new List<global::DG.Variable>();
+        var unclassifiedCount = 0;
+
+        foreach (var variable in sortedVariables)
+        {
+            var kind = VariableTypeInferrer.Infer(rule, variable.Name);
+
+            if (kind == VariableKind.Object)
             {
-                Name = variable.Name,
-                InferredDatatype = variable.InferredDatatype,
-                Kind = variable.Kind,
-            })
-            .ToList();
-        var variableNames = publicVars
-            .Select(variable => (variable.Name ?? string.Empty).Trim())
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name.StartsWith("?", StringComparison.Ordinal) ? name[1..] : name)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+                objects.Add(new global::DG.Variable
+                {
+                    Name = variable.Name,
+                    InferredDatatype = variable.InferredDatatype,
+                    Kind = variable.Kind,
+                });
+            }
+            else if (kind == VariableKind.Property)
+            {
+                dataProperties.Add(new global::DG.Variable
+                {
+                    Name = variable.Name,
+                    InferredDatatype = variable.InferredDatatype,
+                    Kind = variable.Kind,
+                });
+            }
+            else
+            {
+                // null from Infer(): check if this variable appears in any non-BuiltinAtom
+                var allAtoms = rule.BodyAtoms.Concat(rule.HeadAtoms);
+                var foundInRegularAtom = allAtoms
+                    .Where(atom => atom.Type != "BuiltinAtom")
+                    .SelectMany(atom => atom.Args)
+                    .Any(arg => arg.Kind == ArgKind.Variable &&
+                                string.Equals(arg.Value, variable.Name, StringComparison.Ordinal));
+
+                if (foundInRegularAtom)
+                {
+                    // D-06: variable appears in a regular atom but couldn't be classified
+                    unclassifiedCount++;
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                        $"Variable '?{variable.Name}' could not be classified: no REFERS_TO link found. Ensure the variable appears in a ClassAtom or DataPropertyAtom.");
+                }
+                // else: Builtin-only per D-07 — exclude from both outputs (skip silently)
+            }
+        }
 
         var publicRule = new global::DG.Rule
         {
@@ -152,12 +184,17 @@ public sealed class RuleDeconstructComponent : GH_Component
         }
 
         da.SetData(0, publicRule);
-        da.SetDataList(1, publicVars);
-        da.SetDataList(2, variableNames);
+        da.SetDataList(1, objects);
+        da.SetDataList(2, dataProperties);
         da.SetData(3, rule.Swrl);
         da.SetData(4, rule.Name);
         da.SetData(5, rule.Description);
-        Message = $"{publicVars.Count} vars";
+
+        Message = $"{objects.Count} obj, {dataProperties.Count} prop";
+        if (unclassifiedCount > 0)
+        {
+            Message += $", {unclassifiedCount} unclassified";
+        }
     }
 
     private void EnsureOutputLayout()
