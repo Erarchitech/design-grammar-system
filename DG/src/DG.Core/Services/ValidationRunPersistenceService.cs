@@ -30,6 +30,61 @@ public sealed class ValidationRunPersistenceService
         }
     }
 
+    /// <summary>
+    /// Attaches a v2 DesignState payload to a validation run record.
+    /// Uses DesignStatePayloadV2Serializer for serialization.
+    /// </summary>
+    public ValidationRunRecord AttachDesignStateV2(ValidationRunRecord record, DesignState? designState)
+    {
+        if (designState is null)
+        {
+            return record;
+        }
+
+        try
+        {
+            var serialized = DesignStatePayloadV2Serializer.Serialize(designState);
+            return new ValidationRunRecord
+            {
+                RunId = record.RunId,
+                Project = record.Project,
+                Graph = record.Graph,
+                CapturedAtUtc = record.CapturedAtUtc,
+                StatePayloadJson = serialized,
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException("Failed to serialize v2 design state for validation run persistence.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Validates a StatePayloadJson string by auto-detecting v1 vs v2 format.
+    /// v2 payloads contain "version":"2"; v1 payloads use DesignStateJsonSerializer format.
+    /// </summary>
+    public void ValidateDesignStatePayload(string? statePayloadJson)
+    {
+        if (string.IsNullOrWhiteSpace(statePayloadJson))
+            return;
+
+        try
+        {
+            if (statePayloadJson.Contains("\"version\":\"2\"", StringComparison.Ordinal))
+            {
+                DesignStatePayloadV2Serializer.Deserialize(statePayloadJson);
+            }
+            else
+            {
+                DesignStateJsonSerializer.Deserialize(statePayloadJson);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException("StatePayloadJson is not valid design state payload.", ex);
+        }
+    }
+
     public void ValidateRunRecord(ValidationRunRecord record)
     {
         if (string.IsNullOrWhiteSpace(record.RunId))
