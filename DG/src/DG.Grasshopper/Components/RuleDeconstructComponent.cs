@@ -13,8 +13,8 @@ public sealed class RuleDeconstructComponent : GH_Component
     private static readonly string[] ExpectedOutputNames =
     {
         "Rule",
-        "Variables",
-        "VariableName",
+        "Objects",
+        "DataProperties",
         "SWRL",
         "RuleName",
         "RuleDescription",
@@ -37,8 +37,8 @@ public sealed class RuleDeconstructComponent : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Rule", "Rule", "Rule pass-through", GH_ParamAccess.item);
-        pManager.AddGenericParameter("Variables", "Variables", "Unique DG.Variable list", GH_ParamAccess.list);
-        pManager.AddTextParameter("VariableName", "VariableName", "Variable names without '?' prefix", GH_ParamAccess.list);
+        pManager.AddGenericParameter("Objects", "Objects", "Object-type variables from the rule (each maps to an ObjState)", GH_ParamAccess.list);
+        pManager.AddGenericParameter("DataProperties", "DataProperties", "DataProperty-type variables from the rule (each maps to a PropState)", GH_ParamAccess.list);
         pManager.AddTextParameter("SWRL", "SWRL", "SWRL expression", GH_ParamAccess.item);
         pManager.AddTextParameter("RuleName", "RuleName", "Rule name", GH_ParamAccess.item);
         pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule description", GH_ParamAccess.item);
@@ -182,16 +182,16 @@ public sealed class RuleDeconstructComponent : GH_Component
         });
         Params.RegisterOutputParam(new Param_GenericObject
         {
-            Name = "Variables",
-            NickName = "Variables",
-            Description = "Unique DG.Variable list",
+            Name = "Objects",
+            NickName = "Objects",
+            Description = "Object-type variables from the rule (each maps to an ObjState)",
             Access = GH_ParamAccess.list,
         });
-        Params.RegisterOutputParam(new Param_String
+        Params.RegisterOutputParam(new Param_GenericObject
         {
-            Name = "VariableName",
-            NickName = "VariableName",
-            Description = "Variable names without '?' prefix",
+            Name = "DataProperties",
+            NickName = "DataProperties",
+            Description = "DataProperty-type variables from the rule (each maps to a PropState)",
             Access = GH_ParamAccess.list,
         });
         Params.RegisterOutputParam(new Param_String
