@@ -27,7 +27,7 @@ graphify_snapshot: graphify-2026-06-22
 
 ## Связанные curated notes
 
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 
 ## Смотрите также
 

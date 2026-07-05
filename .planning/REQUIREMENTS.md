@@ -23,8 +23,8 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [x] **SCHM-08**: `training/dataset_schema.json` v4 mirrors the same schema
 - [x] **SCHM-09**: n8n `rules-to-metagraph.json` prompts (Build LLM Prompt, Prepare Graph Payload, Parse LLM Output) emit the v4 schema
 - [x] **SCHM-10**: n8n `graph-query-mcp.json` Build Cypher Prompt describes the v4 schema
-- [ ] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds; reconcile the duplicate DatatypeProperty/DataProperty label entries) and `index.html` hardcoded Cypher updated
-- [ ] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
+- [x] **SCHM-11**: NeoVis `config.template.js` (labels/relationships/visGroups incl. three state kinds; reconcile the duplicate DatatypeProperty/DataProperty label entries) and `index.html` hardcoded Cypher updated
+- [x] **SCHM-12**: data-service `app.py` Cypher aligned with v4 (ValidationRun carries ValidStatus/SendStatus)
 - [x] **SCHM-13**: A migration script (following `migrations/` pattern) renames existing DesignState `kind` values (DefState→ParamState, ObjectState→ObjState) and applies the Phase-13 layer-placement decision on dev databases
 - [x] **SCHM-14**: `training/updated_cypher_reference_examples_v3.cypher` gets a v4 successor and `test/` fixtures referencing v3 state kinds are updated — no runtime or LLM few-shot artifact still teaches the old schema
 
@@ -41,7 +41,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [x] **CORE-02**: `ParamState` model (typed Number/Integer/Boolean parameters, deterministic StateId) adapted from DesignStateSnapshot
 - [x] **CORE-03**: `PropState` model (Rule reference, DataProperty reference, PropValue)
 - [x] **CORE-04**: `DesignState` composition model aggregates many ObjState/ParamState/PropState with per-class ID prefixes via DesignStateIdGenerator
-- [ ] **CORE-05**: `statePayloadJson` v2 serializes the 3-part composition with lossless round-trip (unit-tested)
+- [x] **CORE-05**: `statePayloadJson` v2 serializes the 3-part composition with lossless round-trip (unit-tested)
 
 ### Graph Access Components (GHGA)
 
@@ -49,14 +49,14 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [x] **GHGA-02**: GRAPH DECONSTRUCT splits Database into Metagraph / Ontograph / ValidGraph / SpecGraph layer handles
 - [x] **GHGA-03**: METAGRAPH accepts the Metagraph handle and outputs Rules + Objects (index-matched lists)
 - [x] **GHGA-04**: ONTOGRAPH outputs Class / ObjProperties / DataProperties lists read from the OntoGraph layer
-- [ ] **GHGA-05**: VALIDATION GRAPH (replaces VALIDATION RUNS, new GUID) outputs Run / Status / DesignState lists read from the ValidGraph layer
+- [x] **GHGA-05**: VALIDATION GRAPH (replaces VALIDATION RUNS, new GUID) outputs Run / Status / DesignState lists read from the ValidGraph layer
 
 ### State Components (GHST)
 
-- [ ] **GHST-01**: OBJECT STATE composes Object + Geometry + Label into ObjState
-- [ ] **GHST-02**: PARAMETER STATE captures a Parameters list into ParamState (variable-input pattern and deterministic StateId preserved from v2.0 DESIGN STATE)
-- [ ] **GHST-03**: PROPERTY STATE composes Rule + DataProperty + PropValue into PropState
-- [ ] **GHST-04**: DESIGN STATE composes many ObjState + ParamState + PropState into DesignState (index-matched list contract)
+- [x] **GHST-01**: OBJECT STATE composes Object + Geometry + Label into ObjState
+- [x] **GHST-02**: PARAMETER STATE captures a Parameters list into ParamState (variable-input pattern and deterministic StateId preserved from v2.0 DESIGN STATE)
+- [x] **GHST-03**: PROPERTY STATE composes Rule + DataProperty + PropValue into PropState
+- [x] **GHST-04**: DESIGN STATE composes many ObjState + ParamState + PropState into DesignState (index-matched list contract)
 - [x] **GHST-05**: DESIGN STATE DECONSTRUCT splits DesignState into ObjState / ParamState / PropState
 - [x] **GHST-06**: OBJECT DECONSTRUCT splits ObjState into Object / Geometry / Label
 - [x] **GHST-07**: PARAMETER REINSTATE (reworked REINSTATE) applies ParamState on a rising-edge Reinstate trigger and outputs Parameters + StateStatus (7-value ReStatus reporting intact)
@@ -72,10 +72,10 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 ### End-to-End & Docs (E2E)
 
-- [ ] **E2E-01**: Full live chain on Docker completes without errors: rule ingest → METAGRAPH → RULE DECONSTRUCT → OBJECT/PARAMETER/PROPERTY STATE → DESIGN STATE → VALIDATOR → publish → VALIDATION GRAPH read-back → PARAMETER REINSTATE
-- [ ] **E2E-02**: Release notes document canvas breakage and re-wiring for every changed component; port↔IRI mapping doc published
-- [ ] **E2E-03**: Repo/AI-assistant docs updated to schema v4 and the v7.0 component set: `CLAUDE.md` (Graph Schema section + Schema Change Propagation list), `.github/copilot-instructions.md` (currently mandates "v3 as source of truth"), `spec/DATABASE.md`, `README.md`
-- [ ] **E2E-04**: DG_OBSIDIAN reflects v7.0: the "Graph schema v3 is the canonical data model" atlas note superseded/updated, stale component notes annotated, and the graphify knowledge graph regenerated via `scripts/refresh_graphify.sh` so community notes (e.g. CLASSIFICATOR Component, ValidationRunsComponent, v3.0-phase notes) no longer describe deleted/renamed code as current
+- [x] **E2E-01**: Full live chain on Docker completes without errors: rule ingest → METAGRAPH → RULE DECONSTRUCT → OBJECT/PARAMETER/PROPERTY STATE → DESIGN STATE → VALIDATOR → publish → VALIDATION GRAPH read-back → PARAMETER REINSTATE
+- [x] **E2E-02**: Release notes document canvas breakage and re-wiring for every changed component; port↔IRI mapping doc published
+- [x] **E2E-03**: Repo/AI-assistant docs updated to schema v4 and the v7.0 component set: `CLAUDE.md` (Graph Schema section + Schema Change Propagation list), `.github/copilot-instructions.md` (currently mandates "v3 as source of truth"), `spec/DATABASE.md`, `README.md`
+- [x] **E2E-04**: DG_OBSIDIAN reflects v7.0: the "Graph schema v3 is the canonical data model" atlas note superseded/updated, stale component notes annotated, and the graphify knowledge graph regenerated via `scripts/refresh_graphify.sh` so community notes (e.g. CLASSIFICATOR Component, ValidationRunsComponent, v3.0-phase notes) no longer describe deleted/renamed code as current
 
 ## Future Requirements
 
@@ -101,17 +101,18 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ONTO-01 … ONTO-06 | Phase 13: Ontology V7 and Contract Investigation | Pending |
-| SCHM-07 … SCHM-14 | Phase 14: Graph Schema v4 Propagation | Pending |
-| SPEC-01 … SPEC-04 | Phase 15: SpecGraph Runtime Rename | Pending |
-| CORE-01 … CORE-05 | Phase 16: DG.Core State Models and State Components | Pending |
-| GHST-01 … GHST-04 | Phase 16: DG.Core State Models and State Components | Pending |
-| GHGA-01 … GHGA-05 | Phase 17: Graph Access Components | Pending |
-| GHVL-01 … GHVL-06 | Phase 18: Rules and Validator Rework | Pending |
+| ONTO-01 … ONTO-06 | Phase 13: Ontology V7 and Contract Investigation | Complete |
+| SCHM-07 … SCHM-14 | Phase 14: Graph Schema v4 Propagation | Complete |
+| SPEC-01 … SPEC-04 | Phase 15: SpecGraph Runtime Rename | Complete |
+| CORE-01 … CORE-05 | Phase 16: DG.Core State Models and State Components | Complete |
+| GHST-01 … GHST-04 | Phase 16: DG.Core State Models and State Components | Complete |
+| GHGA-01 … GHGA-05 | Phase 17: Graph Access Components | Complete |
+| GHVL-01 … GHVL-06 | Phase 18: Rules and Validator Rework | Complete |
 | GHST-05 … GHST-07 | Phase 19: Deconstruct and Reinstate Components | Complete |
-| E2E-01 … E2E-04 | Phase 20: E2E Validation and Docs | Pending |
+| E2E-01 … E2E-04 | Phase 20: E2E Validation and Docs | Complete |
 
 **Coverage:** 39/39 requirements mapped to exactly one phase — no orphans.
+*Milestone v7.0 completed 2026-07-05 — all 39 requirements satisfied.*
 *Amended 2026-07-02 after full-codebase audit: +SCHM-13/14 (kind migration, training/test fixtures), +GHVL-06 (Model Viewer read-side), +E2E-03/04 (repo/AI docs, DG_OBSIDIAN+graphify refresh); ONTO-04 scope extended with DesignState layer-placement and version-marker conflicts.*
 
 ---

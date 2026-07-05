@@ -29,7 +29,7 @@ graphify_snapshot: graphify-2026-06-22
 
 - [[UI is a single-file React 18 SPA with no build step]]
 - [[Model Viewer is a Vite-built Speckle 3D viewer]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 
 ## Смотрите также
 

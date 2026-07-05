@@ -29,50 +29,50 @@ source_commit: 0651774
 > Таблица ниже генерируется автоматически — `"$(cat graphify-out/.graphify_python)" scripts/export_graphify_conceptual.py`. Не редактировать вручную между маркерами.
 
 <!-- graphify:index:start -->
-> 1836 nodes · 2335 edges · 198 communities (104 shown, 94 thin omitted)
+> 2544 nodes · 3342 edges · 290 communities (160 shown, 130 thin omitted)
 
 | Community | Nodes |
 |-----------|-------|
+| [[communities/RuleDeconstructComponent\|RuleDeconstructComponent]] | 60 |
+| [[communities/Community 33\|Community 33]] | 52 |
 | [[communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery\|Phase 3: n8n Knowledge Workflows + LLM Ingest/Query]] | 48 |
-| [[communities/Phase 03 Validation Runs Summary\|Phase 03 Validation Runs Summary]] | 46 |
-| [[communities/ValidationRunsComponent\|ValidationRunsComponent]] | 42 |
-| [[communities/Fetch Graph Context (MCP)\|Fetch Graph Context (MCP)]] | 41 |
+| [[communities/Graph Schema v3 is the Canonical Data Model\|Graph Schema v3 is the Canonical Data Model]] | 44 |
 | [[communities/Prepare Graph Payload\|Prepare Graph Payload]] | 41 |
+| [[communities/Community 21\|Community 21]] | 40 |
 | [[communities/extractErrorMessage()\|extractErrorMessage()]] | 39 |
 | [[communities/Zone A Maximum Height (75m)\|Zone A Maximum Height (75m)]] | 39 |
-| [[communities/RuleDeconstructComponent\|RuleDeconstructComponent]] | 37 |
+| [[communities/Community 12\|Community 12]] | 36 |
 | [[communities/code rule\|code: rule]] | 36 |
-| [[communities/ReinstateComponent.cs\|ReinstateComponent.cs]] | 35 |
 | [[communities/State Projection for Validation Runs\|State Projection for Validation Runs]] | 33 |
+| [[communities/Community 63\|Community 63]] | 32 |
+| [[communities/Community 31\|Community 31]] | 32 |
 | [[communities/code 32 nodes\|code: 32 nodes]] | 32 |
-| [[communities/Create full-text index and parent class hub nodes for Kno...\|Create full-text index and parent class hub nodes for Kno...]] | 31 |
 | [[communities/switcherРњРµРЅСЋ Р±С‹СЃС‚СЂРѕРіРѕ РїРµСЂРµС…РѕРґР°\|switcher:РњРµРЅСЋ Р±С‹СЃС‚СЂРѕРіРѕ РїРµСЂРµС…РѕРґР°]] | 30 |
-| [[communities/ValidationGeometryPayload\|ValidationGeometryPayload]] | 29 |
 | [[communities/Build Full-Text Cypher\|Build Full-Text Cypher]] | 29 |
+| [[communities/Community 213\|Community 213]] | 27 |
 | [[communities/knowledge-ingest.json\|knowledge-ingest.json]] | 27 |
-| [[communities/DesignStateComponent.cs\|DesignStateComponent.cs]] | 24 |
+| [[communities/Community 286\|Community 286]] | 24 |
+| [[communities/Community 9\|Community 9]] | 24 |
+| [[communities/Community 17\|Community 17]] | 24 |
 | [[communities/MetagraphComponent.cs\|MetagraphComponent.cs]] | 24 |
 | [[communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries\|n8n Workflow Orchestrator for LLM Rule Ingestion and Queries]] | 24 |
-| [[communities/Neo4jRuleRepository.cs\|Neo4jRuleRepository.cs]] | 23 |
 | [[communities/Match Step (Neo4j Full-Text Search, No LLM)\|Match Step (Neo4j Full-Text Search, No LLM)]] | 23 |
+| [[communities/Community 52\|Community 52]] | 22 |
 | [[communities/Neo4jConnectorService.cs\|Neo4jConnectorService.cs]] | 22 |
 | [[communities/collapse-color-groups\|collapse-color-groups]] | 21 |
-| [[communities/SpeckleSettingsPayload\|SpeckleSettingsPayload]] | 21 |
 | [[communities/knowledge-update.json\|knowledge-update.json]] | 21 |
-| [[communities/ReinstatementServiceTests\|ReinstatementServiceTests]] | 20 |
-| [[communities/Concern Tight Coupling to Neo4j\|Concern: Tight Coupling to Neo4j]] | 20 |
+| [[communities/Community 214\|Community 214]] | 20 |
+| [[communities/Community 57\|Community 57]] | 20 |
+| [[communities/Community 28\|Community 28]] | 20 |
 | [[communities/Validation Results Publish to Speckle as Overlay Versions\|Validation Results Publish to Speckle as Overlay Versions]] | 20 |
-| [[communities/ConnectorComponent.cs\|ConnectorComponent.cs]] | 19 |
+| [[communities/Community 44\|Community 44]] | 19 |
+| [[communities/Community 39\|Community 39]] | 19 |
+| [[communities/SpeckleSettingsPayload\|SpeckleSettingsPayload]] | 19 |
+| [[communities/Phase 03 Validation Runs Summary\|Phase 03 Validation Runs Summary]] | 19 |
+| [[communities/Community 125\|Community 125]] | 18 |
+| [[communities/Community 50\|Community 50]] | 18 |
 | [[communities/DG.Grasshopper.csproj\|DG.Grasshopper.csproj]] | 18 |
-| [[communities/DesignStateJsonSerializer\|DesignStateJsonSerializer]] | 18 |
-| [[communities/Per-Run Graphics State and Screenshot Persistence\|Per-Run Graphics State and Screenshot Persistence]] | 18 |
-| [[communities/CLASSIFICATOR Component\|CLASSIFICATOR Component]] | 18 |
-| [[communities/.TryResolveVariableValue()\|.TryResolveVariableValue()]] | 17 |
-| [[communities/DesignStateValidationFlowTests\|DesignStateValidationFlowTests]] | 17 |
-| [[communities/ValidationRunsQueryTests\|ValidationRunsQueryTests]] | 17 |
-| [[communities/code 17 nodes\|code: 17 nodes]] | 17 |
-| [[communities/FailingBindingFormatter\|FailingBindingFormatter]] | 16 |
-| [[communities/ValidationPublishClient\|ValidationPublishClient]] | 16 |
+| [[communities/ValidationGeometryPayload (79)\|ValidationGeometryPayload]] | 18 |
 <!-- graphify:index:end -->
 
 ---

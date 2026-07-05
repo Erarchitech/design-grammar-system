@@ -1,34 +1,30 @@
 ---
 community_id: 40
-nodes_count: 12
+nodes_count: 8
 tags: [graphify/community, validation-endpoints-publish-runs-view]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # Validation Endpoints (publish/runs/view)
 
-> Автоматически сгенерировано graphify. **12 nodes**, типы: document=7, rationale=3, code=2
+> Автоматически сгенерировано graphify. **8 nodes**, типы: concept=3, document=2, code=2, rationale=1
 
 ## Ключевые узлы
 
-- **Project Isolation via Property Filtering** — spec/DATABASE.md
-- **ADR-3: Project Isolation via Property** — spec/DECISIONS.md
-- **ADR-9: Config Injection via sed** — spec/DECISIONS.md
-- **design-grammars UI Container** — spec/ARCHITECTURE.md
-- **Execution Tracking Endpoints** — spec/API.md
-- **ADR-8: Async Polling for n8n** — spec/DECISIONS.md
-- **data-service (FastAPI)** — spec/ARCHITECTURE.md
-- **Async Polling Pattern** — spec/ARCHITECTURE.md
-- **Neo4j Graph Database** — spec/ARCHITECTURE.md
-- **Nginx Reverse Proxy** — spec/ARCHITECTURE.md
-- **Neo4j Python Driver** — data-service/requirements.txt
-- **FastAPI Framework** — data-service/requirements.txt
+- **Validation Endpoints (publish/runs/view)** — spec/API.md
+- **useValidationRunsGrouping (Pure Adapter)** — DG_OBSIDIAN/sessions/2026-05-10 Phase 05 model-viewer grouping execution.md
+- **ResizeObserver Speckle Viewer Sync** — DG_OBSIDIAN/sessions/2026-05-10 Phase 05 model-viewer grouping execution.md
+- **ADR-6: Speckle Validation Publish** — spec/DECISIONS.md
+- **ValidationRunsStrip Component** — DG_OBSIDIAN/sessions/2026-05-10 Phase 05 model-viewer grouping execution.md
+- **Model Viewer Vite+React App** — graph-viewer/model-viewer/index.html
+- **Speckle 3D Platform** — spec/ARCHITECTURE.md
+- **specklepy SDK** — data-service/requirements.txt
 
 ## Связанные curated notes
 
+- [[Model Viewer is a Vite-built Speckle 3D viewer]]
+- [[Graph schema v4 is the canonical data model]]
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
-- [[Deployment uses Docker Compose with nginx reverse proxy]]
-- [[Graph schema v3 is the canonical data model]]
 
 ## Смотрите также
 

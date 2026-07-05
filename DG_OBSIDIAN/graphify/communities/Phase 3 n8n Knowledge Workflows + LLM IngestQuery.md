@@ -28,7 +28,7 @@ graphify_snapshot: graphify-2026-06-22
 ## Связанные curated notes
 
 - [[n8n runs two async webhook workflows for ingest and query]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
 
 ## Смотрите также

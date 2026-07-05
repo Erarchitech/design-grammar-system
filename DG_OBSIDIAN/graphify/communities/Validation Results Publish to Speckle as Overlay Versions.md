@@ -1,5 +1,5 @@
 ---
-community_id: 26
+community_id: 14
 nodes_count: 20
 tags: [graphify/community, validation-results-publish-to-speckle-as-overlay-v]
 graphify_snapshot: graphify-2026-06-22
@@ -29,7 +29,7 @@ graphify_snapshot: graphify-2026-06-22
 
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
 - [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 
 ## Смотрите также
 

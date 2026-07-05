@@ -1,5 +1,5 @@
 ---
-community_id: 56
+community_id: 239
 nodes_count: 11
 tags: [graphify/community, validator-failing-bindings-output-data]
 graphify_snapshot: graphify-2026-06-22

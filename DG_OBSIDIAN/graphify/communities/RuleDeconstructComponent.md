@@ -1,33 +1,34 @@
 ---
 community_id: 7
-nodes_count: 37
+nodes_count: 60
 tags: [graphify/community, ruledeconstructcomponent]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # RuleDeconstructComponent
 
-> Автоматически сгенерировано graphify. **37 nodes**, типы: code=37
+> Автоматически сгенерировано graphify. **60 nodes**, типы: code=60
 
 ## Ключевые узлы
 
-- **.TryReadElementRefMembers()** `L166` — DG/src/DG.Grasshopper/Components/GhCastingHelpers.cs
+- **DesignStateDeconstructComponent.cs** `L1` — DG/src/DG.Grasshopper/Components/DesignStateDeconstructComponent.cs
+- **DesignStateCompositionComponent.cs** `L1` — DG/src/DG.Grasshopper/Components/DesignStateCompositionComponent.cs
+- **.TryReadElementRefMembers()** `L254` — DG/src/DG.Grasshopper/Components/GhCastingHelpers.cs
 - **RuleDeconstructComponent.cs** `L1` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
+- **ValidationPublishClient.cs** `L1` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
 - **.HasExpectedOutputLayout()** `L220` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **ClassificatorComponent.cs** `L1` — DG/src/DG.Grasshopper/Components/ClassificatorComponent.cs
+- **ValidationPublishResponse** `L22` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
+- **CoreRuleEvaluationResult** `L22` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
+- **ValidationPublishPackage** `L67` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
+- **ValidationPublishRequest** `L67` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
 - **RuleDeconstructComponent** `L11` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **.RegisterOutputParams()** `L37` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **.RegisterInputParams()** `L32` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **.TryResolveEntityId()** `L268` — DG/src/DG.Grasshopper/Components/GhCastingHelpers.cs
-- **GH_OutputParamManager** `L37` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **.EnsureOutputLayout()** `L160` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **GH_InputParamManager** `L32` — DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs
-- **GhCastingHelpers.cs** `L1` — DG/src/DG.Grasshopper/Components/GhCastingHelpers.cs
-- ... и ещё 25 узлов
+- **ValidationPublishClient** `L14` — DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
+- ... и ещё 48 узлов
 
 ## Связанные curated notes
 
-_Автоматических совпадений не найдено._
+- [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
+- [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
 
 ## Смотрите также
 

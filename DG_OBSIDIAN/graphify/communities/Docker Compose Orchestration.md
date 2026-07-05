@@ -1,5 +1,5 @@
 ---
-community_id: 44
+community_id: 267
 nodes_count: 14
 tags: [graphify/community, docker-compose-orchestration]
 graphify_snapshot: graphify-2026-06-22
@@ -22,7 +22,7 @@ graphify_snapshot: graphify-2026-06-22
 - **Docker Volumes** `## Docker Volumes` — spec/DEPLOYMENT.md
 - **DEPLOYMENT.md** — spec/DEPLOYMENT.md
 - **DECISIONS.md** `## Contents` — spec/README.md
-- **DATABASE.md** `## Contents` — spec/README.md
+- **DATABASE.md** `L1` — spec/DATABASE.md
 - ... и ещё 2 узлов
 
 ## Связанные curated notes

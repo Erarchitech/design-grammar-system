@@ -7,7 +7,7 @@ date: 2026-07-05
 
 ## Active
 
-1. **v7.0 Phase 20 (E2E Validation and Docs)** — **Planned 2026-07-05.** 3 plans across 3 waves, all 4 requirements covered, all 15 decisions incorporated, VERIFICATION PASSED. See [[sessions/2026-07-05 Phase 20 planning — 3 plans, all verified|planning session]]. Next: `/gsd-execute-phase 20`.
+1. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges connecting building topology to DG ontology. See `.planning/milestones/v4.0-ROADMAP.md`.
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
@@ -29,6 +29,7 @@ date: 2026-07-05
 
 ## Completed Recently
 
+- **v7.0 Phase 20 executed** — 2026-07-05. 3/3 plans across 3 waves, all E2E-01..04 requirements satisfied. Created E2E checklist + Docker automation, release notes with per-component ASCII wiring diagrams, updated repo/AI docs to v4, refreshed DG_OBSIDIAN + graphify. **v7.0 milestone complete — 8 phases (13–20), 34 plans, 39 requirements.** See [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|session]].
 - **v7.0 Phase 19 executed** — 2026-07-05. 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings — all 6 critical/warning fixed. 207/207 non-E2E tests pass. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
 - **v7.0 Phase 18 executed** — 2026-07-05. 5/5 plans across 2 waves (1→sequential due to worktree base mismatch, 2→sequential), 9/9 must-haves verified, 6/6 requirements (GHVL-01..06) satisfied. Created DesignStateBindingService, partitioned RULE DECONSTRUCT outputs, purged CLASSIFICATOR (5 files deleted), adapted Model Viewer read-side for v2 payloads, rewrote VALIDATOR with DesignState-driven contract + v2 publish path. 17 commits, 28 files changed (+1660/-407). Build clean (0/0), 179/179 C# + 28/28 Python tests pass. See [[sessions/2026-07-05 Phase 18 execution — Rules and Validator Rework|session]].
 - **v7.0 Phase 17 executed** — 2026-07-04. 4/4 plans across 1 wave, 24/24 must-haves verified, 5/5 requirements (GHGA-01..05) satisfied. Created 4 handle types, 6 repository files, 5 GH components (CONNECTOR updated, GRAPH DECONSTRUCT new, METAGRAPH extended, ONTOGRAPH new, VALIDATION GRAPH new replacing old ValidationRunsComponent). 61 new tests, build clean (176/176 pass). See [[sessions/2026-07-04 Phase 17 execution — Graph Access Components|session]].

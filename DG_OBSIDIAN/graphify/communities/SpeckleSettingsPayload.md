@@ -1,13 +1,13 @@
 ---
 community_id: 23
-nodes_count: 21
+nodes_count: 19
 tags: [graphify/community, specklesettingspayload]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # SpeckleSettingsPayload
 
-> Автоматически сгенерировано graphify. **21 nodes**, типы: code=21
+> Автоматически сгенерировано graphify. **19 nodes**, типы: code=19
 
 ## Ключевые узлы
 
@@ -15,15 +15,15 @@ graphify_snapshot: graphify-2026-06-22
 - **ValidationPublishEntityPayload** `L149` — data-service/app.py
 - **ValidationGeometryItemPayload** `L136` — data-service/app.py
 - **ValidationPublishRulePayload** `L123` — data-service/app.py
-- **delete_validation_version()** `L142` — data-service/speckle_validation.py
 - **ValidationGeometryPayload** `L144` — data-service/app.py
-- **SpeckleConnectionSettings** `L256` — data-service/app.py
+- **SpeckleConnectionSettings** `L260` — data-service/app.py
 - **SpeckleConnectionSettings** `L21` — data-service/speckle_validation.py
 - **ValidationPublishRequest** `L159` — data-service/app.py
-- **store_execution_result()** `L1069` — data-service/app.py
-- **DesignRuleSessionPayload** `L1274` — data-service/app.py
+- **DesignRuleSessionPayload** `L1311` — data-service/app.py
 - **SpeckleSettingsPayload** `L117` — data-service/app.py
-- ... и ещё 9 узлов
+- **SpeckleValidationError** `L16` — data-service/speckle_validation.py
+- **UpdateProposeRequest** `L187` — data-service/app.py
+- ... и ещё 7 узлов
 
 ## Связанные curated notes
 

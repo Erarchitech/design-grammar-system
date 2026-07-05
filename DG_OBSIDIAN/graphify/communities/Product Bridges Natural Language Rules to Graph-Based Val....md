@@ -21,7 +21,7 @@ graphify_snapshot: graphify-2026-06-22
 ## Связанные curated notes
 
 - [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 - [[Model Viewer is a Vite-built Speckle 3D viewer]]
 
 ## Смотрите также

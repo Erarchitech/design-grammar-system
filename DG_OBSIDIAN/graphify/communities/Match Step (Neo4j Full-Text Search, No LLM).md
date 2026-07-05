@@ -29,7 +29,7 @@ graphify_snapshot: graphify-2026-06-22
 
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
 - [[Deployment uses Docker Compose with nginx reverse proxy]]
-- [[Graph schema v3 is the canonical data model]]
+- [[Graph schema v4 is the canonical data model]]
 
 ## Смотрите также
 

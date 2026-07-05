@@ -1,5 +1,5 @@
 ---
-community_id: 79
+community_id: 260
 nodes_count: 8
 tags: [graphify/community, neo4jconnectorservice]
 graphify_snapshot: graphify-2026-06-22
@@ -12,7 +12,7 @@ graphify_snapshot: graphify-2026-06-22
 ## Ключевые узлы
 
 - **Neo4jConnectorService.cs** `L1` — DG/src/DG.Core/Data/Neo4jConnectorService.cs
-- **INeo4jConnectorService**
+- **INeo4jConnectorService** `L11` — DG/src/DG.Grasshopper/Components/ConnectorComponent.cs
 - **Neo4jConnectorService** `L6` — DG/src/DG.Core/Data/Neo4jConnectorService.cs
 - **.TryConnectAsync()** `L10` — DG/src/DG.Core/Data/Neo4jConnectorService.cs
 - **CancellationToken** `L10` — DG/src/DG.Core/Data/Neo4jConnectorService.cs
@@ -23,6 +23,7 @@ graphify_snapshot: graphify-2026-06-22
 ## Связанные curated notes
 
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
+- [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
 
 ## Смотрите также
 

@@ -1,29 +1,31 @@
 ---
-community_id: 82
-nodes_count: 8
+community_id: 258
+nodes_count: 11
 tags: [graphify/community, ontology-v5-dcm-computationgraph]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # Ontology v5 DCM ComputationGraph
 
-> Автоматически сгенерировано graphify. **8 nodes**, типы: concept=7, document=1
+> Автоматически сгенерировано graphify. **11 nodes**, типы: concept=11
 
 ## Ключевые узлы
 
-- **ComputationGraph (5th Graph Layer)** — DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md
-- **Grasshopper MCP Tools Integration** — graph-viewer/interface/SKILL.md
+- **SpecGraph (Renamed KnowledgeGraph in v6)** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure вЂ” Core band, SpecGraph, partonomy.md
+- **externalProjectId (Neutralized Property)** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.1 vendor-neutralization.md
+- **Ontology v6.0 Core Band Restructure** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure вЂ” Core band, SpecGraph, partonomy.md
+- **dg:Session (Unified Session Entity)** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure вЂ” Core band, SpecGraph, partonomy.md
+- **Ontology v6.1 Vendor-Neutralization** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.1 vendor-neutralization.md
 - **Ontology v5 DCM ComputationGraph** — DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md
+- **Partonomy (dg:hasPart Hierarchy)** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure вЂ” Core band, SpecGraph, partonomy.md
 - **Topologic Ontology Extension** — DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md
-- **Grasshopper Definition Skill** — graph-viewer/interface/SKILL.md
 - **FBS Framework (Gero 1990)** — DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md
-- **Rhino.Inside.Revit Bridge** — graph-viewer/interface/SKILL.md
+- **dg:Core (Over-Layer Band)** — DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure вЂ” Core band, SpecGraph, partonomy.md
 - **BOT Ontology Extension** — DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md
 
 ## Связанные curated notes
 
-- [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
-- [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
+_Автоматических совпадений не найдено._
 
 ## Смотрите также
 

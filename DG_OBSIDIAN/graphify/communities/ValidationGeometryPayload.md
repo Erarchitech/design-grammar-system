@@ -1,35 +1,35 @@
 ---
-community_id: 14
-nodes_count: 29
+community_id: 26
+nodes_count: 13
 tags: [graphify/community, validationgeometrypayload]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # ValidationGeometryPayload
 
-> Автоматически сгенерировано graphify. **29 nodes**, типы: code=29
+> Автоматически сгенерировано graphify. **13 nodes**, типы: code=13
 
 ## Ключевые узлы
 
-- **ValidationGeometryPayloadSerializer.cs** `L1` — DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs
-- **ValidationGeometryPayloadSerializer** `L8` — DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs
 - **get_or_create_validation_model_id()** `L43` — data-service/speckle_validation.py
-- **ValidationGeometryItemPayload** `L30` — DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs
+- **get_latest_model_version_id()** `L67` — data-service/speckle_validation.py
 - **publish_validation_version()** `L87` — data-service/speckle_validation.py
-- **ValidationGeometryPayload** `L10` — DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs
+- **delete_validation_version()** `L142` — data-service/speckle_validation.py
 - **build_model_version_url()** `L77` — data-service/speckle_validation.py
 - **build_validation_entity()** `L162` — data-service/speckle_validation.py
 - **build_model_viewer_url()** `L82` — data-service/speckle_validation.py
 - **speckle_validation.py** `L1` — data-service/speckle_validation.py
-- **build_display_value()** `L180` — data-service/speckle_validation.py
-- **.SerializePolyline()** `L165` — DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs
-- ... и ещё 17 узлов
+- **normalize_url()** `L29` — data-service/speckle_validation.py
+- **build_client()** `L33` — data-service/speckle_validation.py
+- **SpeckleClient** `L33` — data-service/speckle_validation.py
+- **Base** `L162` — data-service/speckle_validation.py
+- ... и ещё 1 узлов
 
 ## Связанные curated notes
 
 - [[Model Viewer is a Vite-built Speckle 3D viewer]]
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
-- [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
+- [[Graph schema v4 is the canonical data model]]
 
 ## Смотрите также
 

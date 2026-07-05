@@ -1,5 +1,5 @@
 ---
-community_id: 95
+community_id: 264
 nodes_count: 6
 tags: [graphify/community, t4-design-space-itcon-paper]
 graphify_snapshot: graphify-2026-06-22

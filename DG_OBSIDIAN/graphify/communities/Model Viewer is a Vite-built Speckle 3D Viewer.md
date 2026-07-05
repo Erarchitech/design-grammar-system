@@ -1,13 +1,13 @@
 ---
 community_id: 67
-nodes_count: 9
+nodes_count: 6
 tags: [graphify/community, model-viewer-is-a-vite-built-speckle-3d-viewer]
 graphify_snapshot: graphify-2026-06-22
 ---
 
 # Model Viewer is a Vite-built Speckle 3D Viewer
 
-> Автоматически сгенерировано graphify. **9 nodes**, типы: concept=6, document=3
+> Автоматически сгенерировано graphify. **6 nodes**, типы: concept=4, document=2
 
 ## Ключевые узлы
 
@@ -17,9 +17,6 @@ graphify_snapshot: graphify-2026-06-22
 - **Validation Run Management (Delete/Rename) Feature** — DG_OBSIDIAN/inbox/Model viewer needs rotation fix and validation management.md
 - **Model Viewer is a Vite-built Speckle 3D Viewer** — DG_OBSIDIAN/atlas/Model Viewer is a Vite-built Speckle 3D viewer.md
 - **Model Viewer Rotation/Mixed State Bug** — DG_OBSIDIAN/inbox/Model viewer needs rotation fix and validation management.md
-- **Model Viewer Visual Bugs Priority** — DG_OBSIDIAN/00-home/Current priorities.md
-- **Current Priorities - Home Note** — DG_OBSIDIAN/00-home/Current priorities.md
-- **v3.0 Implementation Priority** — DG_OBSIDIAN/00-home/Current priorities.md
 
 ## Связанные curated notes
 

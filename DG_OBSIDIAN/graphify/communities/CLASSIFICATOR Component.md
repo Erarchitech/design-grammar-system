@@ -1,5 +1,5 @@
 ---
-community_id: 31
+community_id: 29
 nodes_count: 18
 tags: [graphify/community, classificator-component]
 graphify_snapshot: graphify-2026-06-22
