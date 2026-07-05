@@ -7,7 +7,7 @@ date: 2026-07-05
 
 ## Active
 
-1. **v7.0 Phase 20 (E2E Validation and Docs)** — **Context gathered 2026-07-05.** 4 gray areas discussed, 15 decisions captured. Next: `/gsd-plan-phase 20`. See [[sessions/2026-07-05 Phase 20 discuss — E2E Validation and Docs|discussion session]], [[decisions/Phase 20 E2E Validation and Docs context decisions|decisions]].
+1. **v7.0 Phase 20 (E2E Validation and Docs)** — **Planned 2026-07-05.** 3 plans across 3 waves, all 4 requirements covered, all 15 decisions incorporated, VERIFICATION PASSED. See [[sessions/2026-07-05 Phase 20 planning — 3 plans, all verified|planning session]]. Next: `/gsd-execute-phase 20`.
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
