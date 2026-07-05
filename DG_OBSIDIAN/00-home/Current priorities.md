@@ -7,7 +7,7 @@ date: 2026-07-05
 
 ## Active
 
-1. **v7.0 Phase 19 (Deconstruct and Reinstate Components)** — **Planned 2026-07-05.** 3 plans across 2 waves, all verified (0 blockers). 3 requirements GHST-05/06/07 covered, all 7 locked decisions (D-01..D-07) honored. Next: `/gsd-execute-phase 19`. See [[sessions/2026-07-05 Phase 19 planning — Deconstruct and Reinstate Components|planning session]], [[sessions/2026-07-05 Phase 19 discuss — Deconstruct and Reinstate Components|discuss session]], and [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
+1. **v7.0 Phase 19 (Deconstruct and Reinstate Components)** — **Executed 2026-07-05.** 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings (2 critical, 4 warning, 3 info) — all 6 critical/warning fixed. Build clean (0/0), 207/207 non-E2E tests pass. Next: `/gsd-discuss-phase 20`. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|execution session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.

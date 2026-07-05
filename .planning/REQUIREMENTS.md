@@ -59,7 +59,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 - [ ] **GHST-04**: DESIGN STATE composes many ObjState + ParamState + PropState into DesignState (index-matched list contract)
 - [x] **GHST-05**: DESIGN STATE DECONSTRUCT splits DesignState into ObjState / ParamState / PropState
 - [x] **GHST-06**: OBJECT DECONSTRUCT splits ObjState into Object / Geometry / Label
-- [ ] **GHST-07**: PARAMETER REINSTATE (reworked REINSTATE) applies ParamState on a rising-edge Reinstate trigger and outputs Parameters + StateStatus (7-value ReStatus reporting preserved)
+- [x] **GHST-07**: PARAMETER REINSTATE (reworked REINSTATE) applies ParamState on a rising-edge Reinstate trigger and outputs Parameters + StateStatus (7-value ReStatus reporting intact)
 
 ### Rules & Validation (GHVL)
 
@@ -108,7 +108,7 @@ Source of truth for the component contract: `ontology/GH_DesignGrammars.pdf` (14
 | GHST-01 … GHST-04 | Phase 16: DG.Core State Models and State Components | Pending |
 | GHGA-01 … GHGA-05 | Phase 17: Graph Access Components | Pending |
 | GHVL-01 … GHVL-06 | Phase 18: Rules and Validator Rework | Pending |
-| GHST-05 … GHST-07 | Phase 19: Deconstruct and Reinstate Components | Pending |
+| GHST-05 … GHST-07 | Phase 19: Deconstruct and Reinstate Components | Complete |
 | E2E-01 … E2E-04 | Phase 20: E2E Validation and Docs | Pending |
 
 **Coverage:** 39/39 requirements mapped to exactly one phase — no orphans.

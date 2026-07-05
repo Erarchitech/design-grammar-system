@@ -21,7 +21,7 @@ Component contract source of truth: `ontology/GH_DesignGrammars.pdf` (14 compone
 - [ ] **Phase 16: DG.Core State Models and State Components** — ObjState/ParamState/PropState/DesignState models + statePayloadJson v2; OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE components
 - [x] **Phase 17: Graph Access Components** — CONNECTOR update, GRAPH DECONSTRUCT, METAGRAPH rework, ONTOGRAPH, VALIDATION GRAPH
 - [ ] **Phase 18: Rules and Validator Rework** — RULE DECONSTRUCT partition, VALIDATOR new contract with DesignState-driven binding, CLASSIFICATOR deletion, publish/persistence extension, Model Viewer read-side adaptation (1/5 plans)
-- [ ] **Phase 19: Deconstruct and Reinstate Components** — DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
+- [x] **Phase 19: Deconstruct and Reinstate Components** — DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
 - [ ] **Phase 20: E2E Validation and Docs** — Live Docker E2E chain, release notes for canvas breakage, port↔IRI mapping published, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh
 
 <details>
@@ -216,11 +216,11 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
   2. OBJECT DECONSTRUCT returns Object/Geometry/Label from an ObjState
   3. PARAMETER REINSTATE applies a ParamState to source sliders/toggles on a false→true Reinstate edge and outputs Parameters + StateStatus with the 7-value ReStatus reporting intact
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans complete
 
 - [x] 19-01-PLAN.md
 - [x] 19-02-PLAN.md
-- [ ] 19-03-PLAN.md
+- [x] 19-03-PLAN.md
 
 **Wave 1** *(parallel — no dependencies)*
 
@@ -228,8 +228,8 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 
 **Wave 2** *(parallel — both depend on 19-01)*
 
-- 19-02 — DECONSTRUCT components: DESIGN STATE DECONSTRUCT (pure sync passthrough, DesignState -> ObjState/ParamState/PropState lists) + OBJECT DECONSTRUCT (pure sync passthrough, ObjState -> Object/Geometry/Label) — *wave 2, depends 19-01* — GHST-05/06
-- 19-03 — PARAMETER REINSTATE: reworked REINSTATE (new GUID, required Target input, index-matched Parameters+StateStatus+Status, wire-traversal, rising-edge trigger, deferred write) — *wave 2, depends 19-01* — GHST-07
+- 19-02 — DECONSTRUCT components: DESIGN STATE DECONSTRUCT (pure sync passthrough, DesignState -> ObjState/ParamState/PropState lists) + OBJECT DECONSTRUCT (pure sync passthrough, ObjState -> Object/Geometry/Label) — *wave 2, depends 19-01* — GHST-05/06 ✓
+- 19-03 — PARAMETER REINSTATE: reworked REINSTATE (new GUID, required Target input, index-matched Parameters+StateStatus+Status, wire-traversal, rising-edge trigger, deferred write) — *wave 2, depends 19-01* — GHST-07 ✓
 
 ### Phase 20: E2E Validation and Docs
 
@@ -258,12 +258,12 @@ Phase 7 (Schema Foundation) shipped 2026-06-23 — VariableKind + VariableTypeIn
 | 16. DG.Core State Models and State Components | 6/6 | Complete   | 2026-07-04 |
 | 17. Graph Access Components | 4/4 | Complete    | 2026-07-04 |
 | 18. Rules and Validator Rework | 5/5 | Complete   | 2026-07-05 |
-| 19. Deconstruct and Reinstate Components | 2/3 | In Progress|  |
+| 19. Deconstruct and Reinstate Components | 3/3 | Complete | 2026-07-05 |
 | 20. E2E Validation and Docs | 0/? | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-07-04 — Phase 17 complete (Plan 04 — VALIDATION GRAPH component)*
+*Roadmap updated: 2026-07-05 — Phase 19 complete (Plan 03 — PARAMETER REINSTATE component)*
 *Roadmap updated: 2026-07-02 (audit amendment) — +5 requirements from full-codebase audit: kind-migration + training/test fixtures (Phase 14), Model Viewer read-side (Phase 18), repo/AI docs + DG_OBSIDIAN/graphify refresh (Phase 20); Phase 13 investigation scope extended with DesignState layer-placement and version-marker conflicts*
 *Roadmap updated: 2026-07-02 — v7.0 phases 13-20 defined; v3.0 superseded (Phase 7 shipped, carried forward)*
 *Roadmap updated: 2026-05-25 — v4.0 BOT Ontology Bridge added as planned milestone*
