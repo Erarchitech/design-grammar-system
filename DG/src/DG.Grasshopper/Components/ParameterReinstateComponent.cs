@@ -273,7 +273,9 @@ public sealed class ParameterReinstateComponent : GH_Component
 
             var typeRaw = t.GetProperty("Type")?.GetValue(foreign);
             var paramType = typeRaw is not null
-                ? (DesignStateParameterType)(int)typeRaw
+                ? (Enum.IsDefined(typeof(DesignStateParameterType), typeRaw)
+                    ? (DesignStateParameterType)(int)typeRaw
+                    : DesignStateParameterType.Number)
                 : DesignStateParameterType.Number;
 
             var numberValue = t.GetProperty("NumberValue")?.GetValue(foreign) as double?;
