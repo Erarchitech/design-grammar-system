@@ -7,7 +7,7 @@ date: 2026-07-05
 
 ## Active
 
-1. **v7.0 Phase 19 (Deconstruct and Reinstate Components)** — **Executed 2026-07-05.** 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings (2 critical, 4 warning, 3 info) — all 6 critical/warning fixed. Build clean (0/0), 207/207 non-E2E tests pass. Next: `/gsd-discuss-phase 20`. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|execution session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
+1. **v7.0 Phase 20 (E2E Validation and Docs)** — **Context gathered 2026-07-05.** 4 gray areas discussed, 15 decisions captured. Next: `/gsd-plan-phase 20`. See [[sessions/2026-07-05 Phase 20 discuss — E2E Validation and Docs|discussion session]], [[decisions/Phase 20 E2E Validation and Docs context decisions|decisions]].
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
@@ -19,7 +19,7 @@ date: 2026-07-05
 
 ## Upcoming
 
-- Phases 18–20 of v7.0: rules/validator rework, deconstruct/reinstate components, E2E validation
+- v7.0 Phase 20 execution: E2E validation → docs → release notes → DG_OBSIDIAN refresh
 - Рецензирование T2–T4 соавтором или научным руководителем
 - Реализация DesignSpaceGraph (T4) as milestone after v7.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
@@ -29,6 +29,7 @@ date: 2026-07-05
 
 ## Completed Recently
 
+- **v7.0 Phase 19 executed** — 2026-07-05. 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings — all 6 critical/warning fixed. 207/207 non-E2E tests pass. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
 - **v7.0 Phase 18 executed** — 2026-07-05. 5/5 plans across 2 waves (1→sequential due to worktree base mismatch, 2→sequential), 9/9 must-haves verified, 6/6 requirements (GHVL-01..06) satisfied. Created DesignStateBindingService, partitioned RULE DECONSTRUCT outputs, purged CLASSIFICATOR (5 files deleted), adapted Model Viewer read-side for v2 payloads, rewrote VALIDATOR with DesignState-driven contract + v2 publish path. 17 commits, 28 files changed (+1660/-407). Build clean (0/0), 179/179 C# + 28/28 Python tests pass. See [[sessions/2026-07-05 Phase 18 execution — Rules and Validator Rework|session]].
 - **v7.0 Phase 17 executed** — 2026-07-04. 4/4 plans across 1 wave, 24/24 must-haves verified, 5/5 requirements (GHGA-01..05) satisfied. Created 4 handle types, 6 repository files, 5 GH components (CONNECTOR updated, GRAPH DECONSTRUCT new, METAGRAPH extended, ONTOGRAPH new, VALIDATION GRAPH new replacing old ValidationRunsComponent). 61 new tests, build clean (176/176 pass). See [[sessions/2026-07-04 Phase 17 execution — Graph Access Components|session]].
 - **v7.0 Phase 15 executed** — 2026-07-04. 5/5 plans across 2 waves, 13/14 must-haves verified, blocker found & fixed (stale `knowledge_note_search` in `spec-query.json`). SC#4 gate: PASS — zero orphaned Knowledge* graph-layer references. Created DB migration (SPEC-01), renamed data-service (SPEC-02), n8n workflows (SPEC-03), NeoVis UI (SPEC-04). 13 commits. Migration file + seed ready for manual dev-Neo4j run. See [[sessions/2026-07-04 Phase 15 execution|session]].

@@ -57,6 +57,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 17 Graph Access Components layer handles and repository design|Phase 17: Graph Access Components — layer handles + repository design]]
 - [[decisions/Phase 18 Rules and Validator Rework decisions|Phase 18: Rules and Validator Rework — ValidStatus per-ObjState, DesignStateBindingService, CLASSIFICATOR purge]]
 - [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|Phase 19: Deconstruct and Reinstate Components — REINSTATE Target, StateStatus, DECONSTRUCT error contract]]
+- [[decisions/Phase 20 E2E Validation and Docs context decisions|Phase 20: E2E Validation and Docs — E2E scope, release notes, docs strategy, vault refresh]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -144,4 +145,5 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|2026-07-05 Phase 19 execution — 3 plans complete, 19/19 verified, all 6 code review issues fixed]]
 - [[sessions/2026-07-05 Phase 18 planning — 5 plans 2 waves with Path A ClassIri|2026-07-05 Phase 18 planning — 5 plans, 2 waves, Path A ClassIri]]
 - [[sessions/2026-07-04 Phase 15 planning — SpecGraph Runtime Rename (replan)|2026-07-04 Phase 15 replan — SpecGraph Runtime Rename]]
+- [[sessions/2026-07-05 Phase 20 discuss — E2E Validation and Docs|2026-07-05 Phase 20 discuss — E2E Validation and Docs]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
