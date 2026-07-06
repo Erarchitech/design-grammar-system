@@ -221,7 +221,7 @@ class OpenAIAdapter(LLMAdapter):
 
     def generate(self, req: GenerateRequest, api_key: str | None) -> GenerateResponse:
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {api_key or ''}",
             "content-type": "application/json",
         }
         messages: list[dict[str, str]] = []
@@ -508,7 +508,10 @@ def resolve_active_provider(
 
 # ── Model Discovery (D-13, D-14, D-16) ──
 
+import threading
+
 _ollama_models_cache: list[str] | None = None
+_ollama_cache_lock = threading.Lock()
 
 
 def init_ollama_models() -> None:
@@ -539,9 +542,10 @@ def list_models_for_provider(
     try:
         if provider == "ollama":
             global _ollama_models_cache
-            if _ollama_models_cache is None:
-                init_ollama_models()
-            return _ollama_models_cache or []
+            with _ollama_cache_lock:
+                if _ollama_models_cache is None:
+                    init_ollama_models()
+                return _ollama_models_cache or []
 
         adapter = get_adapter(provider)
         if api_key:

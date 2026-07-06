@@ -4009,7 +4009,7 @@
         const [isChanging, setIsChanging] = React.useState(false);
 
         // Helper: fetch models for a provider
-        function fetchModels(provider, hasApiKey) {
+        function fetchModels(provider) {
           return fetch("/llm/models?provider=" + encodeURIComponent(provider || "ollama"))
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -4049,7 +4049,7 @@
               setFormBaseUrl(data.baseUrl || "");
               setIsChanging(false);
               setError(null);
-              return fetchModels(data.provider || "anthropic", data.apiKeyConfigured);
+              return fetchModels(data.provider || "anthropic");
             });
         }
 
@@ -4066,7 +4066,7 @@
               setIsChanging(false);
               setError(null);
               setTestResult(null);
-              return fetchModels("anthropic", false);
+              return fetchModels("anthropic");
             });
         }
 
@@ -4127,7 +4127,7 @@
               setFormProvider(data.provider || "anthropic");
               setFormModel(data.model || "");
               if (data.baseUrl) setFormBaseUrl(data.baseUrl);
-              return fetchModels(data.provider || "anthropic", data.apiKeyConfigured);
+              return fetchModels(data.provider || "anthropic");
             })
             .catch(function() {
               setError("Could not load LLM settings.");
@@ -4185,7 +4185,7 @@
                     onChange: function(ev) {
                       var p = ev.target.value;
                       setFormProvider(p);
-                      fetchModels(p, settings && settings.apiKeyConfigured);
+                      fetchModels(p);
                     }
                   },
                     e("option", { value: "anthropic" }, "Anthropic"),

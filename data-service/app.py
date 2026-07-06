@@ -44,7 +44,7 @@ from llm_gateway import (
     mask_key,
     encrypt_value,
     decrypt_value,
-    should_refresh_on_test,
+    init_ollama_models,
     SEED_MODELS,
     LLM_SETTINGS_FILE,
 )
@@ -772,6 +772,7 @@ def generate_note_id(project: str, source_path: str) -> str:
 @app.on_event("startup")
 def ensure_spec_indexes():
     """Create full-text index and parent class hub nodes for SpecGraph."""
+    init_ollama_models()
     with driver.session() as session:
         session.run(
             "CREATE FULLTEXT INDEX spec_note_search IF NOT EXISTS "
@@ -869,6 +870,13 @@ def put_llm_settings(payload: LLMSettingsPayload):
     master_secret = os.getenv("LLM_MASTER_SECRET", "")
     if not master_secret:
         raise HTTPException(status_code=500, detail="LLM_MASTER_SECRET not configured")
+
+    VALID_PROVIDERS = {"anthropic", "openai", "ollama"}
+    if payload.provider is not None and payload.provider not in VALID_PROVIDERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown provider: {payload.provider}. Valid options: {', '.join(sorted(VALID_PROVIDERS))}",
+        )
 
     settings = load_persisted_llm_settings()
 

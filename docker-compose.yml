@@ -46,8 +46,8 @@ services:
       - "5678:5678"
     environment:
       N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: erarchitech@gmail.com
-      N8N_BASIC_AUTH_PASSWORD: Ermolenko#^4538!
+      N8N_BASIC_AUTH_USER: ${N8N_USER:-erarchitech@gmail.com}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-Ermolenko#^4538!}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: llama3.1:latest
