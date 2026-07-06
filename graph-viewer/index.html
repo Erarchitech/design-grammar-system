@@ -1009,6 +1009,102 @@
       .session-badge-update { background: #ffb66f; color: #20160f; }
       .session-badge-ingest { background: #6da7ff; color: #0c1018; }
       .session-badge-edit { background: #c6b5ff; color: #1a1030; }
+      /* --- LLM Settings Panel --- */
+      .llm-settings-page {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 48px;
+      }
+      .llm-settings-banner {
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .llm-settings-banner.warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+      }
+      .llm-settings-banner.success {
+        background: #d4edda;
+        border: 1px solid #28a745;
+        color: #155724;
+      }
+      .llm-settings-form {
+        display: grid;
+        gap: 16px;
+      }
+      .llm-settings-row {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+      }
+      .llm-settings-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #eef3ff;
+        margin-bottom: 4px;
+      }
+      .llm-settings-input {
+        background: #0d1220;
+        border: 1px solid #283143;
+        color: #eef3ff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .llm-settings-select {
+        background: #0d1220;
+        border: 1px solid #283143;
+        color: #eef3ff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .llm-settings-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+      .llm-settings-key-preview {
+        font-family: monospace;
+        color: #5fd0ff;
+        padding: 6px 0;
+      }
+      .llm-settings-error {
+        font-size: 13px;
+        padding: 8px 12px;
+        background: rgba(220,53,69,0.1);
+        border-radius: 6px;
+        color: #f8a0a0;
+        margin-bottom: 12px;
+      }
+      .llm-settings-success {
+        font-size: 13px;
+        padding: 8px 12px;
+        background: rgba(40,167,69,0.1);
+        border-radius: 6px;
+        color: #75b798;
+        margin-bottom: 12px;
+      }
+      .llm-settings-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(95, 208, 255, 0.3);
+        border-top-color: #5fd0ff;
+        border-radius: 50%;
+        animation: llm-spin 0.6s linear infinite;
+      }
+      @keyframes llm-spin {
+        to { transform: rotate(360deg); }
+      }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1320,6 +1416,7 @@
         const onBack = props.onBack;
         const onOpenGraphViewer = props.onOpenGraphViewer;
         const onOpenModelViewer = props.onOpenModelViewer;
+        const onOpenLLMSettings = props.onOpenLLMSettings;
         const user = props.user;
 
         const [userProfile, setUserProfile] = React.useState({ name: "", surname: "" });
@@ -1422,6 +1519,18 @@
                 e("div", { className: "project-action-body" },
                   e("div", { className: "project-action-name" }, "Model Viewer"),
                   e("div", { className: "project-action-desc" }, "Visualize and inspect 3D models from Speckle streams")
+                )
+              ),
+              e("div", { className: "project-action-tile", onClick: props.onOpenLLMSettings },
+                e("div", { className: "project-action-thumb" },
+                  e("svg", { width: 48, height: 48, viewBox: "0 0 24 24", fill: "none", stroke: "#5a6a88", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
+                    e("circle", { cx: 12, cy: 12, r: 3 }),
+                    e("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
+                  )
+                ),
+                e("div", { className: "project-action-body" },
+                  e("div", { className: "project-action-name" }, "LLM Settings"),
+                  e("div", { className: "project-action-desc" }, "Configure AI provider, model, and API key")
                 )
               )
             )
@@ -3879,6 +3988,288 @@
         );
       }
 
+      function LLMSettingsPanel(props) {
+        const onBack = props.onBack;
+        const onLogout = props.onLogout;
+
+        // State
+        const [settings, setSettings] = React.useState(null);
+        const [loading, setLoading] = React.useState(true);
+        const [saving, setSaving] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [testResult, setTestResult] = React.useState(null);
+        const [testInProgress, setTestInProgress] = React.useState(false);
+        const [models, setModels] = React.useState([]);
+
+        // Form state (for no-key / change mode)
+        const [formProvider, setFormProvider] = React.useState("anthropic");
+        const [formModel, setFormModel] = React.useState("");
+        const [formApiKey, setFormApiKey] = React.useState("");
+        const [formBaseUrl, setFormBaseUrl] = React.useState("");
+        const [isChanging, setIsChanging] = React.useState(false);
+
+        // Helper: fetch models for a provider
+        function fetchModels(provider, hasApiKey) {
+          return fetch("/llm/models?provider=" + encodeURIComponent(provider || "ollama"))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (Array.isArray(data)) {
+                setModels(data);
+                return data;
+              }
+              setModels([]);
+              return [];
+            })
+            .catch(function() {
+              setModels([]);
+              return [];
+            });
+        }
+
+        // Helper: save settings
+        function saveSettings(provider, model, apiKey, baseUrl) {
+          return fetch("/llm/settings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: provider,
+              model: model || null,
+              apiKey: apiKey || null,
+              baseUrl: baseUrl || null
+            })
+          })
+            .then(function(r) {
+              if (!r.ok) { return r.json().then(function(d) { throw new Error(d.error || "Save failed"); }); }
+              return r.json();
+            })
+            .then(function(data) {
+              setSettings(data);
+              setFormProvider(data.provider || "anthropic");
+              setFormModel(data.model || "");
+              setFormBaseUrl(data.baseUrl || "");
+              setIsChanging(false);
+              setError(null);
+              return fetchModels(data.provider || "anthropic", data.apiKeyConfigured);
+            });
+        }
+
+        // Helper: delete settings
+        function deleteSettings() {
+          return fetch("/llm/settings", { method: "DELETE" })
+            .then(function(r) {
+              if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || "Remove failed"); });
+              setSettings(null);
+              setFormProvider("anthropic");
+              setFormModel("");
+              setFormApiKey("");
+              setFormBaseUrl("");
+              setIsChanging(false);
+              setError(null);
+              setTestResult(null);
+              return fetchModels("anthropic", false);
+            });
+        }
+
+        // Helper: test connection
+        function testConnection() {
+          setTestInProgress(true);
+          setTestResult(null);
+          return fetch("/llm/settings/test", { method: "POST" })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data.success) {
+                var modelList = data.models || [];
+                setTestResult({ type: "success", message: data.latencyMs + "ms — models: " + modelList.join(", ") });
+                if (modelList.length > 0) { setModels(modelList); }
+              } else {
+                setTestResult({ type: "error", message: data.error || "Test failed" });
+              }
+              setTestInProgress(false);
+            })
+            .catch(function(err) {
+              setTestResult({ type: "error", message: "Test connection failed: " + err.message });
+              setTestInProgress(false);
+            });
+        }
+
+        // Handlers
+        function handleSave() {
+          setSaving(true);
+          setError(null);
+          saveSettings(formProvider, formModel, formApiKey, formBaseUrl)
+            .catch(function(e) { setError("Failed to save: " + e.message); })
+            .finally(function() { setSaving(false); });
+        }
+
+        function handleTest() {
+          testConnection();
+        }
+
+        function handleRemove() {
+          if (!window.confirm("Remove API key and fall back to local Ollama?")) return;
+          deleteSettings().catch(function(e) { setError("Failed to remove: " + e.message); });
+        }
+
+        function handleChange() {
+          setFormProvider(settings.provider || "anthropic");
+          setFormModel(settings.model || "");
+          setFormBaseUrl(settings.baseUrl || "");
+          setFormApiKey("");
+          setIsChanging(true);
+        }
+
+        // Fetch settings on mount
+        React.useEffect(function() {
+          fetch("/llm/settings")
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              setSettings(data);
+              setFormProvider(data.provider || "anthropic");
+              setFormModel(data.model || "");
+              if (data.baseUrl) setFormBaseUrl(data.baseUrl);
+              return fetchModels(data.provider || "anthropic", data.apiKeyConfigured);
+            })
+            .catch(function() {
+              setError("Could not load LLM settings.");
+            })
+            .finally(function() {
+              setLoading(false);
+            });
+        }, []);
+
+        // Loading state
+        if (loading) {
+          return e("div", { className: "llm-settings-page" },
+            e("button", { className: "back-btn", onClick: onBack }, "< Back"),
+            e("h2", null, "LLM Settings"),
+            e("div", { style: { textAlign: "center", padding: "40px 0", color: "#98a4bd" } },
+              e("div", { className: "llm-settings-spinner", style: { margin: "0 auto 12px" } }),
+              "Loading settings..."
+            )
+          );
+        }
+
+        // Determine state: no key vs active vs changing
+        var hasKey = settings && settings.apiKeyConfigured;
+        var showForm = !hasKey || isChanging;
+
+        return e("div", { className: "llm-settings-page" },
+          e("button", { className: "back-btn", onClick: onBack }, "< Back"),
+          e("h2", null, "LLM Settings"),
+
+          // Status banner
+          !hasKey
+            ? e("div", { className: "llm-settings-banner warning" },
+                "Using local Ollama (fallback)")
+            : e("div", { className: "llm-settings-banner success" },
+                "Connected: " + (settings.provider || "ollama")),
+
+          // Error display
+          error ? e("div", { className: "llm-settings-error" }, error) : null,
+
+          // Test result display
+          testResult ? e("div", {
+            className: testResult.type === "success" ? "llm-settings-success" : "llm-settings-error"
+          }, testResult.message) : null,
+
+          // Form or active display
+          showForm
+            ? // --- No-key / Change form ---
+              e("div", { className: "llm-settings-form" },
+                // Provider dropdown
+                e("div", { className: "llm-settings-row" },
+                  e("label", { className: "llm-settings-label" }, "Provider"),
+                  e("select", {
+                    className: "llm-settings-select",
+                    value: formProvider,
+                    onChange: function(ev) {
+                      var p = ev.target.value;
+                      setFormProvider(p);
+                      fetchModels(p, settings && settings.apiKeyConfigured);
+                    }
+                  },
+                    e("option", { value: "anthropic" }, "Anthropic"),
+                    e("option", { value: "openai" }, "OpenAI"),
+                    e("option", { value: "ollama" }, "Ollama")
+                  )
+                ),
+                // Model dropdown
+                e("div", { className: "llm-settings-row" },
+                  e("label", { className: "llm-settings-label" }, "Model"),
+                  e("select", {
+                    className: "llm-settings-select",
+                    value: formModel,
+                    onChange: function(ev) { setFormModel(ev.target.value); }
+                  },
+                    models.length > 0
+                      ? models.map(function(m) {
+                          return e("option", { key: m, value: m }, m);
+                        })
+                      : e("option", { value: "", disabled: true }, "No models available")
+                  )
+                ),
+                // Base URL input (OpenAI only)
+                formProvider === "openai"
+                  ? e("div", { className: "llm-settings-row" },
+                      e("label", { className: "llm-settings-label" }, "API Base URL (optional)"),
+                      e("input", {
+                        className: "llm-settings-input",
+                        type: "text",
+                        placeholder: "https://api.openai.com/v1",
+                        value: formBaseUrl,
+                        onChange: function(ev) { setFormBaseUrl(ev.target.value); }
+                      })
+                    )
+                  : null,
+                // API key input (hidden for Ollama)
+                formProvider !== "ollama"
+                  ? e("div", { className: "llm-settings-row" },
+                      e("label", { className: "llm-settings-label" }, "API Key"),
+                      e("input", {
+                        className: "llm-settings-input",
+                        type: "password",
+                        placeholder: isChanging ? "Enter new API key" : "Enter your API key",
+                        value: formApiKey,
+                        onChange: function(ev) { setFormApiKey(ev.target.value); }
+                      })
+                    )
+                  : null,
+                // Action buttons
+                e("div", { className: "llm-settings-actions" },
+                  e("button", {
+                    className: "btn-primary",
+                    onClick: handleSave,
+                    disabled: saving
+                  }, saving ? "Saving..." : "Save"),
+                  isChanging
+                    ? e("button", {
+                        className: "secondary-btn",
+                        onClick: function() { setIsChanging(false); }
+                      }, "Cancel")
+                    : null
+                )
+              )
+            : // --- Active state display ---
+              e("div", null,
+                e("div", { className: "llm-settings-key-preview" },
+                  (settings.provider ? settings.provider.charAt(0).toUpperCase() + settings.provider.slice(1) : "Unknown") + " - " + (settings.apiKeyPreview || "****")
+                ),
+                e("div", { style: { marginTop: "8px", color: "#98a4bd", fontSize: "14px" } },
+                  "Model: " + (settings.model || "default")
+                ),
+                e("div", { className: "llm-settings-actions" },
+                  e("button", {
+                    className: "btn-primary",
+                    onClick: handleTest,
+                    disabled: testInProgress
+                  }, testInProgress ? "Testing..." : "Test Connection"),
+                  e("button", { className: "secondary-btn", onClick: handleChange }, "Change"),
+                  e("button", { className: "secondary-btn", onClick: handleRemove }, "Remove")
+                )
+              )
+        );
+      }
+
       function AppRouter() {
         const [page, setPage] = React.useState("register");
         const [currentUser, setCurrentUser] = React.useState(null);
@@ -3943,6 +4334,10 @@
           window.location.href = "/model-viewer/?" + params.toString();
         };
 
+        const handleOpenLLMSettings = function() {
+          setPage("llm-settings");
+        };
+
         const handleBackToHome = function() {
           setCurrentProject(null);
           setPage("home");
@@ -3959,7 +4354,10 @@
           return e(HomePage, { user: currentUser, onSelectProject: handleSelectProject, onLogout: handleLogout });
         }
         if (page === "project") {
-          return e(ProjectPage, { project: currentProject, user: currentUser, onBack: handleBackToHome, onOpenGraphViewer: handleOpenGraphViewer, onOpenModelViewer: handleOpenModelViewer });
+          return e(ProjectPage, { project: currentProject, user: currentUser, onBack: handleBackToHome, onOpenGraphViewer: handleOpenGraphViewer, onOpenModelViewer: handleOpenModelViewer, onOpenLLMSettings: handleOpenLLMSettings });
+        }
+        if (page === "llm-settings") {
+          return e(LLMSettingsPanel, { project: currentProject, onBack: handleBackToProject, onLogout: handleLogout });
         }
         return e(GraphViewerPage, { key: currentProject, project: currentProject, onLogout: handleLogout, onBack: handleBackToProject });
       }
