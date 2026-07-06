@@ -1,6 +1,6 @@
 ---
 tags: [home, moc]
-date: 2026-07-05
+date: 2026-07-06
 ---
 
 # Design Grammar System � Knowledge Vault
@@ -149,6 +149,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-05 Phase 20 discuss — E2E Validation and Docs|2026-07-05 Phase 20 discuss — E2E Validation and Docs]]
 - [[sessions/2026-07-05 Phase 20 planning — 3 plans, all verified|2026-07-05 Phase 20 planning — 3 plans, all verified]]
 - [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|2026-07-05 Phase 20 execution — E2E validation, release notes, docs update, vault refresh]]
+- [[sessions/2026-07-06 v9.0 Phase 01 planning|2026-07-06 v9.0 Phase 01 planning — research + 3 plans, ready for execution]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
