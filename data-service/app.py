@@ -28,6 +28,27 @@ from speckle_validation import (
     publish_validation_version,
 )
 
+from llm_gateway import (
+    LLMSettingsPayload,
+    LLMSettingsResponse,
+    GenerateRequest,
+    GenerateResponse,
+    TestResult,
+    get_adapter,
+    load_persisted_llm_settings,
+    save_persisted_llm_settings,
+    get_llm_settings_response,
+    resolve_active_provider,
+    list_models_for_provider,
+    map_provider_error,
+    mask_key,
+    encrypt_value,
+    decrypt_value,
+    should_refresh_on_test,
+    SEED_MODELS,
+    LLM_SETTINGS_FILE,
+)
+
 app = FastAPI()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
@@ -827,6 +848,135 @@ def put_speckle_runtime_settings(payload: SpeckleSettingsPayload):
 
     save_persisted_speckle_settings(persisted)
     return get_speckle_settings_response()
+
+
+# ---------------------------------------------------------------------------
+# LLM Gateway endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.get("/llm/settings")
+def get_llm_settings():
+    """Read LLM settings (provider, model, masked key, status)."""
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+    return get_llm_settings_response(settings, master_secret)
+
+
+@app.put("/llm/settings")
+def put_llm_settings(payload: LLMSettingsPayload):
+    """Save LLM settings. Encrypts apiKey with Fernet before persisting."""
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    if not master_secret:
+        raise HTTPException(status_code=500, detail="LLM_MASTER_SECRET not configured")
+
+    settings = load_persisted_llm_settings()
+
+    if payload.provider is not None:
+        settings["provider"] = payload.provider
+    if payload.model is not None:
+        settings["model"] = payload.model
+    if payload.baseUrl is not None:
+        settings["baseUrl"] = payload.baseUrl
+    if payload.apiKey:
+        # Only encrypt+store if apiKey is non-empty (None or "" keeps existing)
+        settings["apiKey"] = encrypt_value(payload.apiKey, master_secret)
+
+    save_persisted_llm_settings(settings)
+    # Re-read to return consistent state
+    return get_llm_settings_response(load_persisted_llm_settings(), master_secret)
+
+
+@app.delete("/llm/settings", status_code=204)
+def delete_llm_settings():
+    """Clear all LLM settings. Gateway falls back to Ollama on next call."""
+    save_persisted_llm_settings({})
+    return None
+
+
+@app.post("/llm/generate")
+def llm_generate(req: GenerateRequest):
+    """Main gateway endpoint. Routes prompt to the active provider adapter.
+
+    n8n sends provider:null per D-07 — gateway resolves active provider from
+    saved settings. Request-level provider/model override saved values.
+    """
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+
+    provider, model, api_key = resolve_active_provider(settings, master_secret)
+
+    # Request-level override (n8n sends null per D-07)
+    if req.provider is not None:
+        provider = req.provider
+    if req.model is not None:
+        model = req.model
+
+    req_with_model = GenerateRequest(
+        prompt=req.prompt,
+        system=req.system,
+        model=model,
+        provider=provider,
+    )
+
+    try:
+        adapter = get_adapter(provider)
+        response = adapter.generate(req_with_model, api_key)
+        return response
+    except Exception as exc:
+        error_msg, hint, code = map_provider_error(exc)
+        raise _structured_error_response(error_msg, hint, code, 502)
+
+
+@app.post("/llm/settings/test")
+def test_llm_settings():
+    """Test saved LLM configuration with a minimal provider call.
+
+    Returns success/failure with latency measurement and live model list.
+    """
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+
+    provider, model, api_key = resolve_active_provider(settings, master_secret)
+
+    if not api_key:
+        return TestResult(success=False, error="No API key configured")
+
+    start = time.time()
+    try:
+        adapter = get_adapter(provider)
+        test_req = GenerateRequest(prompt="test", model=model)
+        adapter.generate(test_req, api_key)
+        latency_ms = (time.time() - start) * 1000.0
+
+        models = list_models_for_provider(provider, api_key)
+
+        return TestResult(success=True, latencyMs=latency_ms, models=models)
+    except Exception as exc:
+        error_msg, _hint, _code = map_provider_error(exc)
+        return TestResult(success=False, error=error_msg)
+
+
+@app.get("/llm/models")
+def get_llm_models(provider: str):
+    """Return available model IDs for the given provider.
+
+    Ollama: cached auto-discovery result (D-16).
+    Anthropic/OpenAI with key: live API query.
+    Anthropic/OpenAI without key: seed list (D-14).
+    """
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+    encrypted_key = settings.get("apiKey", "")
+    api_key: str | None = None
+    if encrypted_key:
+        try:
+            api_key = decrypt_value(encrypted_key, master_secret)
+        except Exception:
+            pass
+
+    models = list_models_for_provider(provider, api_key)
+    return models
 
 
 @app.put("/integration/speckle/project/{project}")

@@ -1,5 +1,7 @@
+cryptography
 fastapi
-uvicorn
+httpx
 neo4j
-specklepy==3.2.4
 pytest
+specklepy==3.2.4
+uvicorn

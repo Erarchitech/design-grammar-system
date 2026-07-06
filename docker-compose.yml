@@ -31,6 +31,7 @@ services:
       DG_BASE_URL: http://localhost:8080
       DG_KNOWLEDGE_REPO_ROOT: /mnt/repo
       N8N_INTERNAL_URL: http://n8n:5678
+      LLM_MASTER_SECRET: ${LLM_MASTER_SECRET:-change-me-to-a-random-secret}
     volumes:
       - ./data-service/data:/app/data
       - .:/mnt/repo:ro
