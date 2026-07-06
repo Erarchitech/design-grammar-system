@@ -317,11 +317,13 @@ class OllamaAdapter(LLMAdapter):
 # ── Adapter Factory ──
 
 
-def get_adapter(provider: str) -> LLMAdapter:
+def get_adapter(provider: str, base_url: str | None = None) -> LLMAdapter:
     """Return the correct adapter instance for the given provider tag.
 
     Args:
         provider: One of 'anthropic', 'openai', 'ollama' (case-sensitive per D-02).
+        base_url: Optional base URL override. Only used by OpenAIAdapter
+            for OpenAI-compatible providers (e.g. DeepSeek, Groq).
 
     Returns:
         LLMAdapter instance.
@@ -332,7 +334,7 @@ def get_adapter(provider: str) -> LLMAdapter:
     if provider == "anthropic":
         return AnthropicAdapter()
     elif provider == "openai":
-        return OpenAIAdapter()
+        return OpenAIAdapter(base_url=base_url or "https://api.openai.com/v1")
     elif provider == "ollama":
         return OllamaAdapter()
     else:
@@ -531,6 +533,7 @@ def init_ollama_models() -> None:
 def list_models_for_provider(
     provider: str,
     api_key: str | None,
+    base_url: str | None = None,
 ) -> list[str]:
     """Return available model IDs for the given provider.
 
@@ -547,7 +550,7 @@ def list_models_for_provider(
                     init_ollama_models()
                 return _ollama_models_cache or []
 
-        adapter = get_adapter(provider)
+        adapter = get_adapter(provider, base_url)
         if api_key:
             return adapter.list_models(api_key)
         return SEED_MODELS.get(provider, [])

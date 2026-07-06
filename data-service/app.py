@@ -928,7 +928,7 @@ def llm_generate(req: GenerateRequest):
     )
 
     try:
-        adapter = get_adapter(provider)
+        adapter = get_adapter(provider, settings.get("baseUrl"))
         response = adapter.generate(req_with_model, api_key)
         return response
     except Exception as exc:
@@ -952,12 +952,12 @@ def test_llm_settings():
 
     start = time.time()
     try:
-        adapter = get_adapter(provider)
+        adapter = get_adapter(provider, settings.get("baseUrl"))
         test_req = GenerateRequest(prompt="test", model=model)
         adapter.generate(test_req, api_key)
         latency_ms = (time.time() - start) * 1000.0
 
-        models = list_models_for_provider(provider, api_key)
+        models = list_models_for_provider(provider, api_key, settings.get("baseUrl"))
 
         return TestResult(success=True, latencyMs=latency_ms, models=models)
     except Exception as exc:
@@ -983,7 +983,7 @@ def get_llm_models(provider: str):
         except Exception:
             pass
 
-    models = list_models_for_provider(provider, api_key)
+    models = list_models_for_provider(provider, api_key, settings.get("baseUrl"))
     return models
 
 
