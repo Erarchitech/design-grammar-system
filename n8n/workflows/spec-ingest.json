@@ -84,12 +84,12 @@
     },
     {
       "parameters": {
-        "url": "http://ollama:11434/api/generate",
+        "url": "http://data-service:8000/llm/generate",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"model\": \"llama3.1:latest\", \"prompt\": $json.prompt, \"stream\": false, \"format\": \"json\", \"options\": { \"temperature\": 0.1, \"num_predict\": 2048 } } }}",
+        "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $json.prompt, \"system\": null } }}",
         "requestMethod": "POST"
       },
       "id": "ki-ollama",
@@ -103,7 +103,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const input = $items('Build Insert Prompt')[0].json;\nconst raw = $json.response !== undefined ? $json.response : JSON.stringify($json);\nlet parsed = null;\ntry {\n  let text = typeof raw === 'string' ? raw : JSON.stringify(raw);\n  // Strip markdown fences\n  text = text.replace(/```json?\\s*/gi, '').replace(/```/g, '');\n  // Find first { to last }\n  const start = text.indexOf('{');\n  const end = text.lastIndexOf('}');\n  if (start !== -1 && end !== -1 && end > start) {\n    parsed = JSON.parse(text.slice(start, end + 1));\n  } else {\n    parsed = JSON.parse(text.trim());\n  }\n} catch (e) {\n  parsed = null;\n}\n// Normalize or fall back\nlet title, content, tags;\nif (parsed && typeof parsed === 'object') {\n  title = (parsed.title || '').trim().slice(0, 100);\n  content = (parsed.content || '').trim();\n  tags = parsed.tags;\n  // Normalize tags\n  if (typeof tags === 'string') {\n    tags = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);\n  }\n  if (!Array.isArray(tags) || tags.length === 0) {\n    tags = ['untagged'];\n  } else {\n    tags = tags.map(t => String(t).toLowerCase().trim()).filter(Boolean);\n    if (tags.length === 0) tags = ['untagged'];\n  }\n  if (!title) title = (input.prompt_text || '').slice(0, 60);\n  if (!content) content = input.prompt_text || '';\n} else {\n  // Full fallback\n  title = (input.prompt_text || '').slice(0, 60);\n  content = input.prompt_text || '';\n  tags = ['untagged'];\n}\nconst noteId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);\nreturn [{ json: { ...input, noteId, title, content, tags } }];"
+        "functionCode": "const input = $items('Build Insert Prompt')[0].json;\nconst raw = $json.text !== undefined ? $json.text : JSON.stringify($json);\nlet parsed = null;\ntry {\n  let text = typeof raw === 'string' ? raw : JSON.stringify(raw);\n  // Strip markdown fences\n  text = text.replace(/```json?\\s*/gi, '').replace(/```/g, '');\n  // Find first { to last }\n  const start = text.indexOf('{');\n  const end = text.lastIndexOf('}');\n  if (start !== -1 && end !== -1 && end > start) {\n    parsed = JSON.parse(text.slice(start, end + 1));\n  } else {\n    parsed = JSON.parse(text.trim());\n  }\n} catch (e) {\n  parsed = null;\n}\n// Normalize or fall back\nlet title, content, tags;\nif (parsed && typeof parsed === 'object') {\n  title = (parsed.title || '').trim().slice(0, 100);\n  content = (parsed.content || '').trim();\n  tags = parsed.tags;\n  // Normalize tags\n  if (typeof tags === 'string') {\n    tags = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);\n  }\n  if (!Array.isArray(tags) || tags.length === 0) {\n    tags = ['untagged'];\n  } else {\n    tags = tags.map(t => String(t).toLowerCase().trim()).filter(Boolean);\n    if (tags.length === 0) tags = ['untagged'];\n  }\n  if (!title) title = (input.prompt_text || '').slice(0, 60);\n  if (!content) content = input.prompt_text || '';\n} else {\n  // Full fallback\n  title = (input.prompt_text || '').slice(0, 60);\n  content = input.prompt_text || '';\n  tags = ['untagged'];\n}\nconst noteId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);\nreturn [{ json: { ...input, noteId, title, content, tags } }];"
       },
       "id": "ki-parse-llm",
       "name": "Parse LLM JSON",

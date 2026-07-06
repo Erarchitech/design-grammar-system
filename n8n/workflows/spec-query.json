@@ -120,12 +120,12 @@
     },
     {
       "parameters": {
-        "url": "http://ollama:11434/api/generate",
+        "url": "http://data-service:8000/llm/generate",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"model\": \"llama3.1:latest\", \"prompt\": $json.answerPrompt, \"stream\": false, \"options\": { \"temperature\": 0.3, \"num_predict\": 512 } } }}",
+        "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $json.answerPrompt, \"system\": null } }}",
         "requestMethod": "POST"
       },
       "id": "kq-ollama",
@@ -139,7 +139,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const input = $items('Build Answer Prompt')[0].json;\nconst raw = $json.response !== undefined ? $json.response : '';\nlet answer = typeof raw === 'string' ? raw.trim() : String(raw).trim();\nif (!answer) {\n  answer = 'No answer could be generated.';\n}\nreturn [{ json: { ...input, answer: answer } }];"
+        "functionCode": "const input = $items('Build Answer Prompt')[0].json;\nconst raw = $json.text !== undefined ? $json.text : '';\nlet answer = typeof raw === 'string' ? raw.trim() : String(raw).trim();\nif (!answer) {\n  answer = 'No answer could be generated.';\n}\nreturn [{ json: { ...input, answer: answer } }];"
       },
       "id": "kq-parse-answer",
       "name": "Parse Answer",

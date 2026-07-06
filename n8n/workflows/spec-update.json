@@ -96,12 +96,12 @@
     },
     {
       "parameters": {
-        "url": "http://ollama:11434/api/generate",
+        "url": "http://data-service:8000/llm/generate",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ { \"model\": \"llama3.1\", \"prompt\": $json.update_prompt, \"stream\": false, \"options\": { \"temperature\": 0.3 } } }}",
+        "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $json.update_prompt, \"system\": null } }}",
         "requestMethod": "POST"
       },
       "id": "ku-ollama",
@@ -120,7 +120,7 @@
           "string": [
             {
               "name": "proposed_text",
-              "value": "={{$json.response || ''}}"
+              "value": "={{$json.text || ''}}"
             },
             {
               "name": "execution_id",
