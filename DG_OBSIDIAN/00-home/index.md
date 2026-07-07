@@ -155,6 +155,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|2026-07-05 Phase 20 execution — E2E validation, release notes, docs update, vault refresh]]
 - [[sessions/2026-07-06 v9.0 Phase 01 planning|2026-07-06 v9.0 Phase 01 planning — research + 3 plans, ready for execution]]
 - [[sessions/2026-07-07 v9.0 Phase 01 execution|2026-07-07 v9.0 Phase 01 execution — 3 plans complete, 6/7 verified, code review fixed]]
+- [[sessions/2026-07-07 DesignStateLabel input and output|2026-07-07 DesignStateLabel input/output]]
 - [[sessions/2026-07-07 METAGRAPH input rename fix|2026-07-07 METAGRAPH input rename fix]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
