@@ -4,16 +4,18 @@
 // relationships spanning layers become labelled cross edges.
 
 // Fixed layer order (mockup order); only layers present in the data render.
-const LAYER_ORDER = ["OntoGraph", "Metagraph", "SpecGraph", "ComputGraph", "ValidGraph"];
+// KnowledgeGraph is pre-v7 data that may coexist with SpecGraph.
+const LAYER_ORDER = ["OntoGraph", "Metagraph", "KnowledgeGraph", "SpecGraph", "ComputGraph", "ValidGraph"];
 
 // Orbit assignment per layer: label → orbit index. Unlisted labels fall to
 // the outer orbit. Orbit display names derive from the labels actually seen.
 const ORBITS = {
   OntoGraph: { Class: 0, ObjectProperty: 1, DatatypeProperty: 2 },
   Metagraph: { Rule: 0, Atom: 1, Var: 2, Literal: 2, Builtin: 2 },
+  KnowledgeGraph: { KnowledgeClass: 0, KnowledgeNote: 1, KnowledgeTag: 2, KnowledgeSession: 2 },
   SpecGraph: { SpecClass: 0, SpecNote: 1, SpecTag: 2, SpecSession: 2 },
   ComputGraph: { Pattern: 0, Parameter: 1, Interface: 2 },
-  ValidGraph: { Run: 0, DesignState: 1, ValidationEntity: 2, IntegrationConfig: 2 }
+  ValidGraph: { ValidationRun: 0, Run: 0, DesignState: 1, ValidationEntity: 2, IntegrationConfig: 2 }
 };
 
 // Display caption per label (from the legacy viewer's config.template.js).
@@ -27,8 +29,15 @@ const CAPTIONS = {
   Var: ["name"],
   Literal: ["lex"],
   DesignState: ["StateId"],
-  Run: ["Run_Id"],
-  ValidationEntity: ["objRefName", "id"],
+  Run: ["Run_Id", "runId"],
+  ValidationRun: ["runId"],
+  ValidationEntity: ["displayName", "dgEntityId", "objRefName"],
+  IntegrationConfig: ["project"],
+  KnowledgeClass: ["label", "name"],
+  KnowledgeNote: ["title"],
+  KnowledgeTag: ["name"],
+  KnowledgeSession: ["mode"],
+  DesignRuleSession: ["mode", "id"],
   SpecNote: ["title"],
   SpecTag: ["name"],
   SpecSession: ["mode"],
