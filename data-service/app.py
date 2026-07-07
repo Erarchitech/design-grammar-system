@@ -585,6 +585,7 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
         prop_count = len(parsed.get("propStates") or [])
         return {
             "stateId": parsed.get("stateId") or "",
+            "label": parsed.get("label"),
             "capturedAtUtc": parsed.get("capturedAtUtc"),
             "parameterCount": obj_count + param_count + prop_count,
         }
@@ -594,6 +595,7 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
     parameter_count = len(parameters) if isinstance(parameters, list) else 0
     return {
         "stateId": parsed.get("stateId") or "",
+        "label": parsed.get("label"),
         "capturedAtUtc": parsed.get("capturedAtUtc"),
         "parameterCount": parameter_count,
     }

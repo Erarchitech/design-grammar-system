@@ -65,6 +65,25 @@ public sealed class DesignStateDeconstructComponentTests
     }
 
     [Fact]
+    public void DesignStateWithLabel_ExposesLabel()
+    {
+        var designState = new DesignState
+        {
+            StateId = "DS_label",
+            Label = "My Design State",
+            CapturedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        Assert.Equal("My Design State", designState.Label);
+        Assert.Equal("DS_label", designState.StateId);
+
+        // Label is independent of the three state lists
+        Assert.Empty(designState.ObjStates);
+        Assert.Empty(designState.ParamStates);
+        Assert.Empty(designState.PropStates);
+    }
+
+    [Fact]
     public void DesignState_MissingInput_WarningPattern()
     {
         var inputMissing = ErrorMessageTemplates.DesignStateDeconstructInputMissing();

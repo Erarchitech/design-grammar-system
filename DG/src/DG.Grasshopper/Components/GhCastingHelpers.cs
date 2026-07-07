@@ -155,6 +155,7 @@ internal static class GhCastingHelpers
         return new CoreDesignState
         {
             StateId = publicWrapper.StateId,
+            Label = publicWrapper.Label,
             CapturedAtUtc = publicWrapper.CapturedAtUtc,
             ObjStates = objStates,
             ParamStates = paramStates,

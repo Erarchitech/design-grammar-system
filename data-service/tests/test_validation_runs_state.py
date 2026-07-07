@@ -19,6 +19,7 @@ def test_state_projection_valid_full_payload():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "S-001",
+        "label": None,
         "capturedAtUtc": "2026-05-01T10:00:00.0000000Z",
         "parameterCount": 2,
     }
@@ -57,6 +58,7 @@ def test_state_projection_missing_parameters_yields_zero_count():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "S-002",
+        "label": None,
         "capturedAtUtc": "2026-05-01T10:00:00Z",
         "parameterCount": 0,
     }
@@ -67,6 +69,7 @@ def test_state_projection_parameters_not_a_list_yields_zero_count():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "S-003",
+        "label": None,
         "capturedAtUtc": "2026-05-01T10:00:00Z",
         "parameterCount": 0,
     }
@@ -96,6 +99,7 @@ def test_v2_envelope_all_three_kinds():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "DS_1",
+        "label": None,
         "capturedAtUtc": "2026-07-04T10:00:00.0000000Z",
         "parameterCount": 6,
     }
@@ -113,6 +117,7 @@ def test_v2_envelope_empty_arrays():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "DS_2",
+        "label": None,
         "capturedAtUtc": "2026-07-04T10:00:00Z",
         "parameterCount": 0,
     }
@@ -123,6 +128,7 @@ def test_v2_missing_arrays_defaults_to_zero():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "DS_3",
+        "label": None,
         "capturedAtUtc": None,
         "parameterCount": 0,
     }
@@ -136,6 +142,7 @@ def test_v1_fallback_no_version_field():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "S-1",
+        "label": None,
         "capturedAtUtc": None,
         "parameterCount": 2,
     }
@@ -150,6 +157,7 @@ def test_v2_incompatible_version_falls_back():
     result = _project_state_summary(payload)
     assert result == {
         "stateId": "S-2",
+        "label": None,
         "capturedAtUtc": None,
         "parameterCount": 1,
     }

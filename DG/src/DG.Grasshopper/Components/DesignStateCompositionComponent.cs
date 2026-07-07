@@ -64,6 +64,13 @@ public sealed class DesignStateCompositionComponent : GH_Component
             "PropState list from PROPERTY STATE component.",
             GH_ParamAccess.list);
         pManager[2].Optional = true;
+
+        pManager.AddTextParameter(
+            "DesignStateLabel",
+            "DesignStateLabel",
+            "Human-readable label for this design state. Surfaces as a tile header in the Model Viewer.",
+            GH_ParamAccess.item);
+        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -84,6 +91,9 @@ public sealed class DesignStateCompositionComponent : GH_Component
         da.GetDataList(0, objStateInputs);
         da.GetDataList(1, paramStateInputs);
         da.GetDataList(2, propStateInputs);
+
+        var label = string.Empty;
+        da.GetData(3, ref label);
 
         // Unwrap each input list
         var objStates = new List<CoreObjState>();
@@ -148,6 +158,7 @@ public sealed class DesignStateCompositionComponent : GH_Component
         var designState = new DG.DesignState
         {
             StateId = designStateId,
+            Label = string.IsNullOrWhiteSpace(label) ? null : label.Trim(),
             CapturedAtUtc = DateTimeOffset.UtcNow,
         };
 

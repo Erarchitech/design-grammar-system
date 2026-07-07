@@ -144,9 +144,35 @@ public sealed class DesignStateModelTests
         var designState = new DesignState();
 
         Assert.Equal("", designState.StateId);
+        Assert.Null(designState.Label);
         Assert.Empty(designState.ObjStates);
         Assert.Empty(designState.ParamStates);
         Assert.Empty(designState.PropStates);
+    }
+
+    [Fact]
+    public void DesignState_ShouldAcceptLabel()
+    {
+        var designState = new DesignState
+        {
+            StateId = "DS_labelled",
+            Label = "Zoning Check — Block A",
+            CapturedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        Assert.Equal("Zoning Check — Block A", designState.Label);
+    }
+
+    [Fact]
+    public void DesignState_LabelShouldBeNullByDefault()
+    {
+        var designState = new DesignState
+        {
+            StateId = "DS_nolabel",
+            CapturedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        Assert.Null(designState.Label);
     }
 
     [Fact]

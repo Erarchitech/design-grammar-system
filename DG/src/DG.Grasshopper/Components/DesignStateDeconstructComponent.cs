@@ -17,6 +17,7 @@ public sealed class DesignStateDeconstructComponent : GH_Component
     private List<CoreObjState> _latestObjStates = new();
     private List<CoreParamState> _latestParamStates = new();
     private List<CorePropState> _latestPropStates = new();
+    private string _latestLabel = string.Empty;
 
     public DesignStateDeconstructComponent()
         : base("DESIGN STATE DECONSTRUCT", "DSGDECON",
@@ -43,6 +44,8 @@ public sealed class DesignStateDeconstructComponent : GH_Component
             "List of ParamState objects. From DesignState.ParamStates.", GH_ParamAccess.list);
         pManager.AddGenericParameter("PropState", "PropState",
             "List of PropState objects. From DesignState.PropStates.", GH_ParamAccess.list);
+        pManager.AddTextParameter("DesignStateLabel", "DesignStateLabel",
+            "Human-readable label assigned in DESIGN STATE. From DesignState.Label.", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -66,10 +69,12 @@ public sealed class DesignStateDeconstructComponent : GH_Component
         _latestObjStates = designState.ObjStates;
         _latestParamStates = designState.ParamStates;
         _latestPropStates = designState.PropStates;
+        _latestLabel = designState.Label ?? string.Empty;
 
         da.SetDataList(0, designState.ObjStates);
         da.SetDataList(1, designState.ParamStates);
         da.SetDataList(2, designState.PropStates);
+        da.SetData(3, _latestLabel);
 
         Message = $"{designState.ObjStates.Count}O/{designState.ParamStates.Count}P/{designState.PropStates.Count}Pr";
     }
@@ -79,10 +84,12 @@ public sealed class DesignStateDeconstructComponent : GH_Component
         _latestObjStates = new List<CoreObjState>();
         _latestParamStates = new List<CoreParamState>();
         _latestPropStates = new List<CorePropState>();
+        _latestLabel = string.Empty;
 
         da.SetDataList(0, _latestObjStates);
         da.SetDataList(1, _latestParamStates);
         da.SetDataList(2, _latestPropStates);
+        da.SetData(3, _latestLabel);
 
         AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, status);
     }

@@ -22,6 +22,7 @@ public static class DesignStatePayloadV2Serializer
         {
             Version = "2",
             StateId = designState.StateId,
+            Label = designState.Label,
             CapturedAtUtc = designState.CapturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
             ObjStates = designState.ObjStates
                 .OrderBy(o => o.StateId, StringComparer.Ordinal)
@@ -75,6 +76,7 @@ public static class DesignStatePayloadV2Serializer
         var designState = new DesignState
         {
             StateId = dto.StateId ?? string.Empty,
+            Label = dto.Label,
             CapturedAtUtc = capturedAt.ToUniversalTime(),
         };
 
@@ -451,6 +453,8 @@ public static class DesignStatePayloadV2Serializer
         public string? Version { get; init; }
 
         public string? StateId { get; init; }
+
+        public string? Label { get; init; }
 
         public string? CapturedAtUtc { get; init; }
 

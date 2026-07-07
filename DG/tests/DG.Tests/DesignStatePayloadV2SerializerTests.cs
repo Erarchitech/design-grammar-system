@@ -16,6 +16,7 @@ public sealed class DesignStatePayloadV2SerializerTests
         var roundTrip = DesignStatePayloadV2Serializer.Deserialize(json);
 
         Assert.Equal(state.StateId, roundTrip.StateId);
+        Assert.Equal(state.Label, roundTrip.Label);
         Assert.Equal(state.ObjStates.Count, roundTrip.ObjStates.Count);
         Assert.Equal(state.ParamStates.Count, roundTrip.ParamStates.Count);
         Assert.Equal(state.PropStates.Count, roundTrip.PropStates.Count);
@@ -217,6 +218,7 @@ public sealed class DesignStatePayloadV2SerializerTests
         return new DesignState
         {
             StateId = designStateId,
+            Label = "My Design State",
             CapturedAtUtc = new DateTimeOffset(2026, 7, 4, 10, 0, 0, TimeSpan.Zero),
             ObjStates = { objState1, objState2 },
             ParamStates = { paramState },

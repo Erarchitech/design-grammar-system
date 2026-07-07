@@ -374,12 +374,17 @@ export default function ModelScreen({ active, onBack, project }) {
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ font: "600 13px/1.2 var(--font-mono)", letterSpacing: "-0.1px", color: on ? "var(--color-signal-ink)" : "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {g.key === NO_STATE ? "No design state" : g.key}
+                  {g.key === NO_STATE ? "No design state" : (g.state?.label || g.key)}
                 </span>
                 <span style={{ font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                   {g.runs.length} run{g.runs.length === 1 ? "" : "s"}
                 </span>
               </div>
+              {g.state?.label && g.key !== NO_STATE && (
+                <div style={{ font: "400 10px/1.3 var(--font-mono)", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {g.key}
+                </div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                   <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>Captured</span>
