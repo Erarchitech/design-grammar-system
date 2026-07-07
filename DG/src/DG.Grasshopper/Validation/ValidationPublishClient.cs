@@ -29,7 +29,7 @@ internal static class ValidationPublishClient
         List<bool>? validStatus = null)
     {
         var package = ValidationPublishPackageBuilder.Build(rules, results, bindings);
-        var statePayloadJson = SerializeDesignState(designState);
+        var (statePayloadJson, stateWarning) = SerializeDesignState(designState);
         var request = BuildRequest(package, statePayloadJson);
         request.ValidStatus = validStatus;
         var endpoint = $"{NormalizeUrl(dataServiceUrl)}/validation/publish";
@@ -46,24 +46,37 @@ internal static class ValidationPublishClient
             throw new InvalidOperationException("Validation publish failed: backend returned an empty response.");
         }
 
+        if (!string.IsNullOrWhiteSpace(stateWarning))
+        {
+            parsed = new ValidationPublishResponse
+            {
+                Status = stateWarning,
+                RunId = parsed.RunId,
+                ModelViewerUrl = parsed.ModelViewerUrl,
+                ValidationModelId = parsed.ValidationModelId,
+                ValidationVersionId = parsed.ValidationVersionId,
+                BaseVersionId = parsed.BaseVersionId,
+            };
+        }
+
         return parsed;
     }
 
-    private static string? SerializeDesignState(CoreDesignState? designState)
+    private static (string? Json, string? Warning) SerializeDesignState(CoreDesignState? designState)
     {
         if (designState is null)
         {
-            return null;
+            return (null, null);
         }
 
         try
         {
-            return DesignStatePayloadV2Serializer.Serialize(designState);
+            return (DesignStatePayloadV2Serializer.Serialize(designState), null);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            // Malformed state — skip rather than fail the whole publish.
-            return null;
+            // Surface the validation error so the user can fix their DesignState wiring.
+            return (null, $"DesignState not saved: {ex.Message}");
         }
     }
 

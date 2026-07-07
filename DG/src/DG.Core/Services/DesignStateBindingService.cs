@@ -58,18 +58,18 @@ public static class DesignStateBindingService
 
             foreach (var objState in designState.ObjStates)
             {
-                // Skip ObjStates with null ClassIri (backward compat — ClassIri not set)
-                if (objState.ClassIri is null)
-                    continue;
-
                 var matched = false;
                 var row = new BindingRow();
 
                 foreach (var objVar in objectVars)
                 {
                     var targetClassIri = objectVarClassIris[objVar];
-                    if (targetClassIri is not null &&
-                        string.Equals(objState.ClassIri, targetClassIri, StringComparison.Ordinal))
+                    // Match when:
+                    //   - No class constraint (targetClassIri is null): match ALL ObjStates
+                    //   - Class constraint present: match only ObjStates with matching ClassIri
+                    if (targetClassIri is null ||
+                        (objState.ClassIri is not null &&
+                         string.Equals(objState.ClassIri, targetClassIri, StringComparison.Ordinal)))
                     {
                         matched = true;
                         row.ValuesByVar[objVar] = objState.ObjectRef;
