@@ -93,12 +93,23 @@ export default function ModelScreen({ active, onBack, project }) {
     setLoadErr("");
     try {
       const data = await fetchValidationRuns(project);
-      setRuns(data.runs || []);
-      if ((data.runs || []).length && !runId) setRunId(data.runs[0].runId);
+      const list = data.runs || [];
+      setRuns(list);
+      // keep the current run only if it still exists under this project scope
+      setRunId((prev) => (prev && list.some((r) => r.runId === prev) ? prev : list[0]?.runId || null));
     } catch (err) {
       setLoadErr(err.message || "data-service unreachable");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project]);
+
+  // project switch invalidates every run-scoped bit of state
+  React.useEffect(() => {
+    setRuns([]);
+    setRunId(null);
+    setView(null);
+    setStateKey(null);
+    setPicked(null);
+    setPropMode("run");
   }, [project]);
 
   React.useEffect(() => {
@@ -155,7 +166,7 @@ export default function ModelScreen({ active, onBack, project }) {
       .then((s) => !gone && setPickedStatuses(s))
       .catch(() => !gone && setPickedStatuses([]));
     return () => {
-      gone: true;
+      gone = true;
     };
   }, [picked, runId, project]);
 
