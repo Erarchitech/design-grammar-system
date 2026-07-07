@@ -58,18 +58,19 @@ public static class DesignStateBindingService
 
             foreach (var objState in designState.ObjStates)
             {
+                // Skip ObjStates with null ClassIri (D-05 — object binding is class-driven;
+                // an ObjState must carry a ClassIri to match an object variable's target class).
+                if (objState.ClassIri is null)
+                    continue;
+
                 var matched = false;
                 var row = new BindingRow();
 
                 foreach (var objVar in objectVars)
                 {
                     var targetClassIri = objectVarClassIris[objVar];
-                    // Match when:
-                    //   - No class constraint (targetClassIri is null): match ALL ObjStates
-                    //   - Class constraint present: match only ObjStates with matching ClassIri
-                    if (targetClassIri is null ||
-                        (objState.ClassIri is not null &&
-                         string.Equals(objState.ClassIri, targetClassIri, StringComparison.Ordinal)))
+                    if (targetClassIri is not null &&
+                        string.Equals(objState.ClassIri, targetClassIri, StringComparison.Ordinal))
                     {
                         matched = true;
                         row.ValuesByVar[objVar] = objState.ObjectRef;
@@ -198,6 +199,24 @@ public static class DesignStateBindingService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Resolves the DataProperty IRI associated with a property variable in a rule
+    /// (via the DataPropertyAtom that carries the variable at pos 2). Public so the
+    /// PROPERTY STATE component can turn a wired property variable (e.g. ?h) into the
+    /// exact IRI the binder matches against. Tolerates a leading '?' on the name.
+    /// </summary>
+    public static string? ResolveDataPropertyIri(Rule rule, string variableName)
+    {
+        var direct = GetDataPropertyIri(rule, variableName);
+        if (direct is not null)
+            return direct;
+
+        var normalized = variableName.StartsWith("?", StringComparison.Ordinal)
+            ? variableName[1..]
+            : "?" + variableName;
+        return GetDataPropertyIri(rule, normalized);
     }
 
     private static string? GetDataPropertyIri(Rule rule, string variableName)

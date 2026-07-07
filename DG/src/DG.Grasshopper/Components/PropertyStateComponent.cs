@@ -93,9 +93,10 @@ public sealed class PropertyStateComponent : GH_Component
         var results = new List<DG.PropState>();
         for (var i = 0; i < count; i++)
         {
+            var ruleObj = i < rules.Count ? GhCastingHelpers.TryRule(rules[i]) : null;
             var ruleIri = i < rules.Count ? ResolveRuleIri(rules[i]) : string.Empty;
             var dataPropertyIri = i < dataProperties.Count
-                ? dataProperties[i]?.ToString() ?? string.Empty
+                ? ResolveDataPropertyIri(dataProperties[i], ruleObj)
                 : string.Empty;
             var scalar = UnwrapScalar(propValues[i]);
             var propValue = scalar is not null ? BuildParameter($"prop_{i}", dataPropertyIri, scalar) : null;
@@ -131,6 +132,31 @@ public sealed class PropertyStateComponent : GH_Component
         var rule = GhCastingHelpers.TryRule(input);
         if (rule is not null)
             return rule.Id ?? string.Empty;
+
+        if (input is string s)
+            return s;
+
+        return input.ToString() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Resolves the DataProperty IRI for this PropState. When the DataProperty input is
+    /// the property VARIABLE emitted by RULE DECONSTRUCT (e.g. ?h) and a Rule is present,
+    /// the IRI is resolved from the rule's DataPropertyAtom so it matches what the binder
+    /// expects. Otherwise the input's string form is used verbatim (raw IRI wiring).
+    /// </summary>
+    private static string ResolveDataPropertyIri(object? input, DG.Core.Models.Rule? rule)
+    {
+        if (input is null)
+            return string.Empty;
+
+        var variable = GhCastingHelpers.TryVariable(input);
+        if (variable is not null && !string.IsNullOrWhiteSpace(variable.Name) && rule is not null)
+        {
+            var resolved = DesignStateBindingService.ResolveDataPropertyIri(rule, variable.Name);
+            if (!string.IsNullOrWhiteSpace(resolved))
+                return resolved;
+        }
 
         if (input is string s)
             return s;
