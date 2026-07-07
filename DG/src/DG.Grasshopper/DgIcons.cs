@@ -35,6 +35,8 @@ internal static class DgIcons
 
     public static Bitmap ValidationGraph24 { get; } = Load("ValidationGraph24.png");
 
+    public static Bitmap Label24 { get; } = Load("Label24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();

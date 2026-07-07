@@ -95,6 +95,18 @@ public static class ErrorMessageTemplates
         return $"{componentName}: Could not unwrap {handleType} input. Ensure the input is connected to GRAPH DECONSTRUCT's {handleType} output.";
     }
 
+    // --- Label templates ---
+
+    public static string LabelInputMissing()
+    {
+        return "LABEL: Var input is required. Connect a DG.Variable from METAGRAPH or RULE DECONSTRUCT to the Var input.";
+    }
+
+    public static string LabelCastFailed()
+    {
+        return "LABEL: Could not unwrap the Var input as a DG.Variable. Ensure the input is a DG.Variable object.";
+    }
+
     // --- Deconstruct templates (DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT) ---
 
     public static string DesignStateDeconstructInputMissing()
