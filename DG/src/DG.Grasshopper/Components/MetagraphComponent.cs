@@ -31,7 +31,7 @@ public sealed class MetagraphComponent : GH_Component
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Connection", "Connection", "DG connection object from CONNECTOR", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Metagraph", "Metagraph", "DG connection object from CONNECTOR", GH_ParamAccess.item);
         pManager.AddBooleanParameter("Refresh", "Refresh", "Set true to fetch rules", GH_ParamAccess.item, true);
     }
 
