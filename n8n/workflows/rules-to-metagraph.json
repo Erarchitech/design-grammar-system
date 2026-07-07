@@ -36,7 +36,7 @@
             },
             {
               "name": "project_name",
-              "value": "={{$json.project_name || $json.project || 'default-project'}}"
+              "value": "={{$json.project_name || $json.project || ($json.body && ($json.body.project_name || $json.body.project)) || 'default-project'}}"
             },
             {
               "name": "ollama_model",
