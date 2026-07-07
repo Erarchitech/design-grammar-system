@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
-current_phase_name: 23-graph-viewer
+current_phase_name: 26-deployment-cutover
 status: executing
-stopped_at: Phase 22 complete
-last_updated: "2026-07-07T11:30:00.000Z"
+stopped_at: Phases 23-25 complete, verified live
+last_updated: "2026-07-07T18:00:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 22 shell/landing/auth complete (layered fly transitions, particle hero, legacy-compatible auth)
+last_activity_desc: Phases 23-25 complete — graph/model/projects screens verified against live Docker stack
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 33
+  completed_phases: 5
+  total_plans: 5
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: 22 complete → 23 (Graph Viewer) next
-Plan: 22-01 complete
+Phase: 23-25 complete → 26 (Deployment Cutover and E2E Parity) next
+Plan: 25-01 complete
 Status: Executing milestone v8.0 autonomously (planning documented post facto per user directive)
 Last activity: 2026-07-07 — Phase 21 Design System Foundation complete
 
@@ -145,6 +145,11 @@ Established for v8.0 (Phase 21):
 - [Phase 22]: V2 auth reuses the legacy localStorage contract (`dg_users` salted SHA-256 + `dg_current_user`) — existing accounts survive cutover; full-name field split into legacy name/surname
 - [Phase 22]: Engine-owned styling contract — canvas-engine-animated DOM carries classes only, never React style props (re-render safety); engine self-heals 0×0 mounts by re-measuring each frame
 - [Phase 22]: Mockup dark-mode toggle dropped (out of scope per REQUIREMENTS); selected project persists at `dgv2_project`
+- [Phase 23]: Datascape ring layers map 1:1 to live `graph` property values; node labels bucket into 3 orbits per layer; relationships → typed ring/cross edges
+- [Phase 23]: V2 client reproduces the legacy post-ingest `tagProjectNodes` claim — the n8n workflows write to default-project (Set Input Defaults lacks `$json.body.project_name` fallback; repo JSONs patched) and the client claims nodes for the active project
+- [Phase 23]: graph-query-mcp.json Build Cypher Prompt had a fatal quote-syntax error (from parked v9.0 rewiring) — fixed and re-imported; live n8n workflows have drifted ahead of repo JSONs (user edits, versionCounter 22)
+- [Phase 24]: Model viewer map is deterministic synthetic iso massing from entity-id hashes (spec's stylised map; Speckle 3D deferred); rule SWRL resolved from metagraph Rule.SWRL, not data-service
+- [Phase 24]: v2.0-era validation data carries graph:'ValidationGraph' (pre-v4) — invisible to data-service until migrations/2026-07-07_validationgraph_to_validgraph.cypher runs (NEEDS USER APPROVAL; auto-mode denied bulk mutation); v8-ui-smoke seed fixture covers UI verification meanwhile
 
 Shipped from Phase 20 Plan 02:
 
@@ -209,3 +214,6 @@ Resume file: .planning/phases/21-design-system-foundation/21-CONTEXT.md
 | Phase 20-e2e-validation-and-docs P02 | 25min | 3 tasks | 6 files |
 | Phase 21-design-system-foundation P01 | 35min | 3 tasks | 46 files |
 | Phase 22-navigation-shell-landing-auth P01 | 45min | 2 tasks | 9 files |
+| Phase 23-graph-viewer P01 | 2.5h | 4 tasks | 7 files |
+| Phase 24-model-viewer P01 | 1h | 2 tasks | 5 files |
+| Phase 25-projects-and-scoping P01 | 25min | 1 task | 2 files |
