@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
-current_phase_name: 22-navigation-shell-landing-auth
+current_phase_name: 23-graph-viewer
 status: executing
-stopped_at: Phase 21 complete
-last_updated: "2026-07-07T10:30:00.000Z"
+stopped_at: Phase 22 complete
+last_updated: "2026-07-07T11:30:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 21 Design System Foundation complete (ui-v2 scaffold, tokens, fonts, 23 primitives, specimen)
+last_activity_desc: Phase 22 shell/landing/auth complete (layered fly transitions, particle hero, legacy-compatible auth)
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 17
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: 21 complete → 22 (Navigation Shell, Landing and Auth) next
-Plan: 21-01 complete
+Phase: 22 complete → 23 (Graph Viewer) next
+Plan: 22-01 complete
 Status: Executing milestone v8.0 autonomously (planning documented post facto per user directive)
 Last activity: 2026-07-07 — Phase 21 Design System Foundation complete
 
@@ -142,6 +142,9 @@ Established for v8.0 (Phase 21):
 - [Phase 21]: Fonts self-hosted — @fontsource latin woff2 vendored into `ui-v2/src/styles/tokens/fonts/`, no CDN at runtime
 - [Phase 21]: Status tokens aligned to requirements over stale spec CSS — `--status-fail` = Signal Red (DSYS-01/MVIEW-03), pass = ink, base = mid-gray; reference spec files in design/v2 untouched
 - [Phase 21]: No router library — layer-based navigation; dev-only specimen behind `#specimen` hash + DEV gate
+- [Phase 22]: V2 auth reuses the legacy localStorage contract (`dg_users` salted SHA-256 + `dg_current_user`) — existing accounts survive cutover; full-name field split into legacy name/surname
+- [Phase 22]: Engine-owned styling contract — canvas-engine-animated DOM carries classes only, never React style props (re-render safety); engine self-heals 0×0 mounts by re-measuring each frame
+- [Phase 22]: Mockup dark-mode toggle dropped (out of scope per REQUIREMENTS); selected project persists at `dgv2_project`
 
 Shipped from Phase 20 Plan 02:
 
@@ -205,3 +208,4 @@ Resume file: .planning/phases/21-design-system-foundation/21-CONTEXT.md
 | Phase 20-e2e-validation-and-docs P01 | 15min | 2 tasks | 4 files |
 | Phase 20-e2e-validation-and-docs P02 | 25min | 3 tasks | 6 files |
 | Phase 21-design-system-foundation P01 | 35min | 3 tasks | 46 files |
+| Phase 22-navigation-shell-landing-auth P01 | 45min | 2 tasks | 9 files |

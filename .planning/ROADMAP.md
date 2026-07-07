@@ -17,7 +17,7 @@
 Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/` design system. Full replacement of the dark legacy SPA, wired to real backends (Neo4j proxy, n8n webhooks, data-service, Speckle).
 
 - [x] **Phase 21: Design System Foundation** — Light token set, type stack, and reusable primitives (frost, blueprint grid, callout, pill controls) as the shared base for all screens (completed 2026-07-07)
-- [ ] **Phase 22: Navigation Shell, Landing and Auth** — Layered screen architecture with transitions, particle-ring landing hero, region navigation, inline login/register with session state
+- [x] **Phase 22: Navigation Shell, Landing and Auth** — Layered screen architecture with transitions, particle-ring landing hero, region navigation, inline login/register with session state (completed 2026-07-07)
 - [ ] **Phase 23: Graph Viewer** — Canvas datascape from live Neo4j metagraph, node selection with divergence callouts, prompt bar wired to n8n ingest/query webhooks, session panel, search
 - [ ] **Phase 24: Model Viewer** — Validation runs from data-service, run/instance modes, map canvas + minimap + zoom, orbit legend, rule SWRL panel
 - [ ] **Phase 25: Projects and Scoping** — Project tile grid from live data; opening a project scopes Graph and Model viewer queries
@@ -102,7 +102,7 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 21. Design System Foundation | 1/1 | Complete | 2026-07-07 |
-| 22. Navigation Shell, Landing and Auth | 0/? | Not started | — |
+| 22. Navigation Shell, Landing and Auth | 1/1 | Complete | 2026-07-07 |
 | 23. Graph Viewer | 0/? | Not started | — |
 | 24. Model Viewer | 0/? | Not started | — |
 | 25. Projects and Scoping | 0/? | Not started | — |
