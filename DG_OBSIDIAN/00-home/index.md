@@ -1,6 +1,6 @@
 ---
 tags: [home, moc]
-date: 2026-07-06
+date: 2026-07-07
 ---
 
 # Design Grammar System � Knowledge Vault
@@ -32,7 +32,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
-- [[Single-file React SPA avoids build tooling for main UI]]
+- [[archive/Single-file React SPA avoids build tooling for main UI (archived)|Single-file React SPA (v1–v7, archived)]] — superseded by v8.0
+- [[decisions/V8 frontend build supersedes no-JSX pattern|V8.0: Vite+React+JSX app replaces no-build pattern]]
 - [[SWRL parsing is bespoke regex not vendor OWL library]]
 - [[Project isolation uses property filtering not separate databases]]
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
@@ -60,6 +61,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 18 Rules and Validator Rework decisions|Phase 18: Rules and Validator Rework — ValidStatus per-ObjState, DesignStateBindingService, CLASSIFICATOR purge]]
 - [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|Phase 19: Deconstruct and Reinstate Components — REINSTATE Target, StateStatus, DECONSTRUCT error contract]]
 - [[decisions/Phase 20 E2E Validation and Docs context decisions|Phase 20: E2E Validation and Docs — E2E scope, release notes, docs strategy, vault refresh]]
+- [[decisions/V8 frontend build supersedes no-JSX pattern|Phase 21 (v8.0): Design System Foundation — Vite+React+JSX, full component library, specimen page, new app directory]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]

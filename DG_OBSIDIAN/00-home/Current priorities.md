@@ -1,15 +1,16 @@
 ---
 tags: [home, priorities]
-date: 2026-07-06
+date: 2026-07-07
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). Provider-agnostic LLM gateway with Anthropic/OpenAI/Ollama adapters, n8n rewiring, UI settings panel. 6/7 must-haves verified, 1 UAT pending (E2E provider switch). 8 code review findings fixed, baseUrl propagation bug fixed. Ship blocked pending: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
-2. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges connecting building topology to DG ontology. See `.planning/milestones/v4.0-ROADMAP.md`.
-2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
+1. **v8.0 Phase 21 Design System Foundation** — Context gathered (4 gray areas). Decisions locked: Vite+React (JSX), single V2 app, full 23-component library, self-hosted fonts, new top-level directory. Ready for planning. See [[sessions/2026-07-07 Phase 21 context|session]] and [[decisions/V8 frontend build supersedes no-JSX pattern|architecture decision]].
+2. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). Provider-agnostic LLM gateway with Anthropic/OpenAI/Ollama adapters, n8n rewiring, UI settings panel. 6/7 must-haves verified, 1 UAT pending (E2E provider switch). 8 code review findings fixed, baseUrl propagation bug fixed. Ship blocked pending: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
+3. **v4.0 BOT Ontology Bridge** — Next milestone after v8.0. BOT anchor nodes + ALIGNED_TO edges connecting building topology to DG ontology. See `.planning/milestones/v4.0-ROADMAP.md`.
+4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
 4. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
@@ -20,9 +21,10 @@ date: 2026-07-06
 
 ## Upcoming
 
-- v7.0 Phase 20 execution: E2E validation → docs → release notes → DG_OBSIDIAN refresh
+- **v8.0 Phase 21 planning** — `/gsd-plan-phase 21` to create execution plans
+- **v8.0 Phase 22–26** — Navigation Shell, Landing/Auth, Graph Viewer, Model Viewer, Projects, Cutover
 - Рецензирование T2–T4 соавтором или научным руководителем
-- Реализация DesignSpaceGraph (T4) as milestone after v7.0
+- Реализация DesignSpaceGraph (T4) as milestone after v8.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
 - Improve LLM Cypher generation accuracy
 - Harden authentication with server-side auth
@@ -30,6 +32,7 @@ date: 2026-07-06
 
 ## Completed Recently
 
+- **v8.0 Phase 21 context gathered** — 2026-07-07. Four gray areas discussed and locked: App architecture (Vite+React, single app, recipes copied), Token/font delivery (6-file token split, self-hosted fonts, Oswald), Primitive scope/proof (full 23-component library, specimen dev page), Legacy coexistence (new top-level dir, Vite dev server until Phase 26). 11 decisions captured. See [[sessions/2026-07-07 Phase 21 context|session]] and [[decisions/V8 frontend build supersedes no-JSX pattern|decision]].
 - **v9.0 Phase 01 executed** — 2026-07-07. 3/3 plans across 2 waves, 12 commits. LLM gateway with 3 providers, n8n rewiring (6 HTTP nodes), LLM Settings UI panel. 6/7 must-haves verified. Code review: 8/8 blocker+warning fixed + baseUrl propagation bug fixed. 58/58 tests pass. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
 - **v7.0 Phase 20 executed** — 2026-07-05. 3/3 plans across 3 waves, all E2E-01..04 requirements satisfied. Created E2E checklist + Docker automation, release notes with per-component ASCII wiring diagrams, updated repo/AI docs to v4, refreshed DG_OBSIDIAN + graphify. **v7.0 milestone complete — 8 phases (13–20), 34 plans, 39 requirements.** See [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|session]].
 - **v7.0 Phase 19 executed** — 2026-07-05. 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings — all 6 critical/warning fixed. 207/207 non-E2E tests pass. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
