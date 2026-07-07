@@ -998,13 +998,36 @@ def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayloa
     return config.model_dump()
 
 
+def _auto_configure_integration(project: str) -> SpeckleProjectConfigPayload | None:
+    """Try to auto-create an IntegrationConfig from environment variables.
+
+    Returns the created config if both SPECKLE_PROJECT_ID and SPECKLE_BASE_MODEL_ID
+    are set in the environment, otherwise None.
+    """
+    speckle_project_id = os.getenv("SPECKLE_PROJECT_ID", "").strip()
+    base_model_id = os.getenv("SPECKLE_BASE_MODEL_ID", "").strip()
+    if not speckle_project_id or not base_model_id:
+        return None
+    return upsert_integration_config(
+        project,
+        SpeckleProjectConfigPayload(
+            speckleProjectId=speckle_project_id,
+            baseModelId=base_model_id,
+        ),
+    )
+
+
 @app.post("/validation/publish")
 def publish_validation(payload: ValidationPublishRequest):
     config = get_integration_config(payload.project)
     if config is None:
+        config = _auto_configure_integration(payload.project)
+    if config is None:
         raise _structured_error_response(
             "No Speckle project configuration found.",
-            "Open the project's Speckle Settings card on the DG home page and save your Speckle project ID.",
+            "Set SPECKLE_PROJECT_ID and SPECKLE_BASE_MODEL_ID environment variables "
+            "on the data-service container, or open the project's Speckle Settings card "
+            "on the DG home page and save your Speckle project ID.",
             "SPECKLE_CONFIG_MISSING",
             404,
         )
