@@ -1375,6 +1375,13 @@
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </owl:DatatypeProperty>
 
+    <owl:DatatypeProperty rdf:about="&dgv;designStateLabel">
+        <rdfs:label xml:lang="en">designStateLabel</rdfs:label>
+        <rdfs:comment xml:lang="en">Human-readable label assigned by the user in DESIGN STATE component. Surfaces as a tile header in the Model Viewer and as an output of DESIGN STATE DECONSTRUCT. NEW in v7.0 post-release (2026-07-08).</rdfs:comment>
+        <rdfs:domain rdf:resource="&dg;DesignState"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+
     <owl:DatatypeProperty rdf:about="&dgv;parameterId">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label xml:lang="en">parameterId</rdfs:label>
