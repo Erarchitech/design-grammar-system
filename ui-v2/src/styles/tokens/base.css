@@ -1,0 +1,25 @@
+/* Design Grammars — base element defaults */
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+  background: var(--surface-canvas);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01" on, "cv11" on;
+}
+
+code, pre, kbd { font-family: var(--font-mono); }
+
+/* Annotation caption — the divergence-callout voice */
+.dg-annotation {
+  font-family: var(--font-annotation);
+  font-size: var(--text-annotation);
+  font-weight: 500;
+  letter-spacing: var(--tracking-annotation);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.dg-annotation--muted { color: var(--text-muted); font-weight: 400; }

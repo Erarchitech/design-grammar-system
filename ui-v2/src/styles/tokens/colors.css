@@ -1,0 +1,60 @@
+/* Design Grammars — Colors
+   Monochromatic by default. Color is absence, not expression.
+   One chromatic hue exists: Signal Red. Selections, highlights, failures. */
+
+:root {
+  /* Base — achromatic stack */
+  --color-canvas: #f5f5f5;        /* page background, frosted paper */
+  --color-paper: #ffffff;         /* card surfaces, brightest layer */
+  --color-surface-alt: #fafafa;   /* sidebar, subtle card variant */
+  --color-ink: #0a0a0a;           /* primary text, icon strokes */
+  --color-ink-soft: #171717;      /* filled button backgrounds */
+  --color-mid-gray: #737373;      /* muted text, placeholders, labels */
+  --color-hairline: #e5e5e5;      /* borders, dividers, table rules */
+  --color-hairline-strong: #d4d4d4; /* emphasized rules, focus edges */
+
+  /* Ink alpha steps — datascape strokes, graph edges, grid lines */
+  --ink-a04: rgba(10, 10, 10, 0.04);
+  --ink-a08: rgba(10, 10, 10, 0.08);
+  --ink-a16: rgba(10, 10, 10, 0.16);
+  --ink-a32: rgba(10, 10, 10, 0.32);
+  --ink-a56: rgba(10, 10, 10, 0.56);
+
+  /* The one chromatic hue — Signal Red. Spent only on selection,
+     failure, and destructive affordances (DSYS-01). */
+  --color-signal: #e7000b;
+  --color-signal-ink: #b8000e;              /* selected text/labels on light surfaces */
+  --color-signal-soft: rgba(231, 0, 11, 0.08);  /* selection wash */
+  --color-signal-mid: rgba(231, 0, 11, 0.32);   /* selection ring, node halos */
+
+  /* Semantic aliases */
+  --surface-canvas: var(--color-canvas);
+  --surface-sidebar: var(--color-surface-alt);
+  --surface-card: var(--color-paper);
+  --surface-input: var(--color-canvas);
+  --surface-inverse: var(--color-ink-soft);
+
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-ink-soft);
+  --text-muted: var(--color-mid-gray);
+  --text-inverse: #fafafa;
+  --text-selection: var(--color-signal-ink);
+
+  --border-default: var(--color-hairline);
+  --border-strong: var(--color-hairline-strong);
+  --border-selected: var(--color-signal);
+
+  --accent-selection: var(--color-signal);
+  --accent-selection-bg: var(--color-signal-soft);
+  /* Status — failing entities spend the hue (MVIEW-03);
+     pass = ink, base geometry = mid-gray. */
+  --status-fail: var(--color-signal);
+  --status-pass: var(--color-ink);
+  --status-base: var(--color-mid-gray);
+  --status-destructive: var(--color-signal-ink);
+}
+
+::selection {
+  background: var(--color-signal-soft);
+  color: var(--color-signal-ink);
+}

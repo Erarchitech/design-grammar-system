@@ -1,0 +1,26 @@
+/* Design Grammars — Typography */
+
+:root {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-annotation: 'Oswald', 'Arial Narrow', sans-serif; /* condensed uppercase callouts */
+
+  /* Scale */
+  --text-caption: 12px;      --leading-caption: 1.33;   --tracking-caption: 0.6px;
+  --text-body: 14px;         --leading-body: 1.43;
+  --text-body-lg: 16px;      --leading-body-lg: 1.5;
+  --text-subheading: 18px;   --leading-subheading: 1.56;
+  --text-heading-sm: 24px;   --leading-heading-sm: 1.33; --tracking-heading-sm: -0.6px;
+  --text-heading: 30px;      --leading-heading: 1.2;     --tracking-heading: -0.75px;
+  --text-heading-lg: 36px;   --leading-heading-lg: 1.11; --tracking-heading-lg: -0.9px;
+  --text-display: 48px;      --leading-display: 1.1;     --tracking-display: -2.4px;
+
+  /* Annotation (divergence-caption) scale — uppercase, tracked open */
+  --text-annotation: 13px;   --tracking-annotation: 1.2px;
+  --text-annotation-lg: 18px; --tracking-annotation-lg: 1.6px;
+
+  /* Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
