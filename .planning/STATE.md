@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
-current_phase_name: defining requirements
-status: planning
-stopped_at: Phase 21 context gathered
-last_updated: "2026-07-07T07:41:11.138Z"
+current_phase_name: 22-navigation-shell-landing-auth
+status: executing
+stopped_at: Phase 21 complete
+last_updated: "2026-07-07T10:30:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Milestone v8.0 started
+last_activity_desc: Phase 21 Design System Foundation complete (ui-v2 scaffold, tokens, fonts, 23 primitives, specimen)
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-07 — Milestone v8.0 started
+Phase: 21 complete → 22 (Navigation Shell, Landing and Auth) next
+Plan: 21-01 complete
+Status: Executing milestone v8.0 autonomously (planning documented post facto per user directive)
+Last activity: 2026-07-07 — Phase 21 Design System Foundation complete
 
 ## Performance Metrics
 
@@ -136,6 +136,13 @@ Shipped from Phase 17 Plan 04:
 - [Phase 19 Plan 03]: Parameters output always returns ALL params from ParamState (D-05), StateStatus index-matched to Parameters (D-04)
 - [Phase ?]: E2E checklist structured as dual-purpose artifact (development QA + release/installation verification)
 
+Established for v8.0 (Phase 21):
+
+- [Phase 21]: V2 app lives at `ui-v2/` (Vite 5 + React 18, JSX/JS) — supersedes "no JSX build" for the retiring dark UI; single app hosts all four screen layers
+- [Phase 21]: Fonts self-hosted — @fontsource latin woff2 vendored into `ui-v2/src/styles/tokens/fonts/`, no CDN at runtime
+- [Phase 21]: Status tokens aligned to requirements over stale spec CSS — `--status-fail` = Signal Red (DSYS-01/MVIEW-03), pass = ink, base = mid-gray; reference spec files in design/v2 untouched
+- [Phase 21]: No router library — layer-based navigation; dev-only specimen behind `#specimen` hash + DEV gate
+
 Shipped from Phase 20 Plan 02:
 
 - [Phase 20]: Release notes use per-component structure: old name -> new name, what broke, ASCII diagram, port mapping table, GUID changes — consistent layout across all 7 affected components
@@ -197,3 +204,4 @@ Resume file: .planning/phases/21-design-system-foundation/21-CONTEXT.md
 | Phase 19-deconstruct-and-reinstate-components P03 | 8min | 2 tasks | 2 files |
 | Phase 20-e2e-validation-and-docs P01 | 15min | 2 tasks | 4 files |
 | Phase 20-e2e-validation-and-docs P02 | 25min | 3 tasks | 6 files |
+| Phase 21-design-system-foundation P01 | 35min | 3 tasks | 46 files |
