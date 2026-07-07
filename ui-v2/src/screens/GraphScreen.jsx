@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, getConfig } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -275,6 +275,7 @@ export default function GraphScreen({ active, onBack, project }) {
         const cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
         response = "Rule ingested into the metagraph." + (cypher ? "\n\n// Cypher\n" + cypher : "");
         meta = "Committed → Metagraph · " + secs + "s";
+        await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
       } else {
         response = payload.answer || payload.response || "(empty answer)";

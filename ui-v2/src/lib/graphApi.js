@@ -57,6 +57,17 @@ export async function fetchGraph(project) {
   };
 }
 
+// Legacy-parity post-ingest fixup ("Neo4j node tagging" gotcha): the n8n
+// workflow writes nodes under default-project; the client claims them for
+// the active project afterwards, exactly like the legacy SPA's tagProjectNodes.
+export async function tagProjectNodes(project) {
+  if (!project) return;
+  await executeCypher(
+    "MATCH (n) WHERE n.project IS NULL OR n.project = 'default-project' SET n.project = $project",
+    { project }
+  );
+}
+
 export async function fetchProjects() {
   const json = await executeCypher(
     "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"
@@ -126,11 +137,14 @@ async function callWorkflow(url, body, workflowKey, { onProgress } = {}) {
   return data || { answer: rawText };
 }
 
+// Both `project` (legacy SPA contract) and `project_name` (v7 workflow
+// contract) are sent — the live workflows read project_name.
 export function ingestRules(rulesText, project, opts) {
   const cfg = getConfig();
+  const p = project || "default-project";
   return callWorkflow(
     cfg.n8nWebhook,
-    { rules_text: rulesText, cypher_prompt: false, project: project || "default-project" },
+    { rules_text: rulesText, cypher_prompt: false, project: p, project_name: p },
     "rules-ingest",
     opts
   );
@@ -138,9 +152,10 @@ export function ingestRules(rulesText, project, opts) {
 
 export function queryGraph(prompt, project, opts) {
   const cfg = getConfig();
+  const p = project || "default-project";
   return callWorkflow(
     cfg.n8nQueryWebhook,
-    { prompt, cypher_prompt: false, project: project || "default-project" },
+    { prompt, cypher_prompt: false, project: p, project_name: p },
     "graph-query",
     opts
   );
