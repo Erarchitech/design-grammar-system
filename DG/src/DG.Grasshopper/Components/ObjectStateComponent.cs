@@ -14,12 +14,16 @@ namespace DG.Grasshopper.Components;
 ///
 /// Usage:
 ///   1. Drop OBJECT STATE on the canvas.
-///   2. Wire Object references to the "Object" input (ElementRef, GUID, or string).
+///   2. Wire Object references to the "Object" input (ElementRef, GUID, string,
+///      or OntologyClass from METAGRAPH Objects output — Class IRI is extracted
+///      from the Object input when it carries OntologyClass information).
 ///   3. Wire Rhino geometry to the "Geometry" input (optional, in-process only, not serialized).
 ///   4. Wire labels to the "Label" input (optional display string).
 ///   5. Wire the "ObjState" output to DESIGN STATE composition's ObjState input.
 ///
-/// Index-mismatch guard: All three inputs must have equal list lengths.
+/// Output list length is driven by Geometry and Label (they must be equal).
+/// Object is an independent input — gaps are filled with empty ObjectRef.
+/// Class IRI is resolved from the Object input (OntologyClass IRI, or null).
 /// </summary>
 public sealed class ObjectStateComponent : GH_Component
 {
@@ -42,7 +46,7 @@ public sealed class ObjectStateComponent : GH_Component
         pManager.AddGenericParameter(
             "Object",
             "Object",
-            "Object reference (ElementRef, GUID, or string identifier).",
+            "Object reference (ElementRef, GUID, string, or OntologyClass from METAGRAPH Objects — class IRI is extracted from OntologyClass).",
             GH_ParamAccess.list);
         pManager[0].Optional = true;
 
@@ -59,13 +63,6 @@ public sealed class ObjectStateComponent : GH_Component
             "User-supplied display label (optional).",
             GH_ParamAccess.list);
         pManager[2].Optional = true;
-
-        pManager.AddTextParameter(
-            "Class",
-            "Class",
-            "Class IRI from METAGRAPH Objects output (e.g. ex:Building). Used for Class IRI matching in VALIDATOR.",
-            GH_ParamAccess.list);
-        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -82,31 +79,31 @@ public sealed class ObjectStateComponent : GH_Component
         var objects = new List<object?>();
         var geometries = new List<object?>();
         var labels = new List<object?>();
-        var classes = new List<string>();
 
         da.GetDataList(0, objects);
         da.GetDataList(1, geometries);
         da.GetDataList(2, labels);
-        da.GetDataList(3, classes);
 
-        // Index-mismatch guard (D-03): validate BEFORE iteration
-        var count = objects.Count;
-        if (count != geometries.Count || count != labels.Count || count != classes.Count)
+        // Output list length is driven by Geometry and Label — they must be equal.
+        // Object is an independent input (may differ in length).
+        var geoCount = geometries.Count;
+        var labelCount = labels.Count;
+        if (geoCount != labelCount)
         {
             AddRuntimeMessage(
                 GH_RuntimeMessageLevel.Error,
-                ErrorMessageTemplates.ObjStateMismatchedListLengths(count, geometries.Count, labels.Count, classes.Count));
+                ErrorMessageTemplates.ObjStateMismatchedListLengths(geoCount, labelCount));
             da.SetData(0, null);
             return;
         }
 
         var results = new List<DG.ObjState>();
-        for (var i = 0; i < count; i++)
+        for (var i = 0; i < geoCount; i++)
         {
-            var objectRef = ResolveObjectRef(objects[i]);
+            var objectRef = i < objects.Count ? ResolveObjectRef(objects[i]) : string.Empty;
+            var classIri = i < objects.Count ? ResolveClassIri(objects[i]) : null;
             var geometry = geometries[i];
             var label = labels[i]?.ToString();
-            var classIri = string.IsNullOrEmpty(classes[i]) ? null : classes[i];
 
             var stateId = ComputeObjStateId(objectRef, label);
 
@@ -130,6 +127,12 @@ public sealed class ObjectStateComponent : GH_Component
         if (input is null)
             return string.Empty;
 
+        // OntologyClass carries IRI + Label but no DgEntityId —
+        // use Label as the object reference display, IRI as identity fallback.
+        var ontClass = GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input);
+        if (ontClass is not null)
+            return string.IsNullOrWhiteSpace(ontClass.Label) ? ontClass.Iri : ontClass.Label;
+
         // Try ElementRef unwrapping via GhCastingHelpers
         var elementRef = GhCastingHelpers.TryElementRef(input);
         if (elementRef is not null)
@@ -140,6 +143,22 @@ public sealed class ObjectStateComponent : GH_Component
             return s;
 
         return input.ToString() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Extract Class IRI from the Object input when it carries OntologyClass information.
+    /// Returns null for non-OntologyClass inputs (ElementRef, GUID, string, etc.).
+    /// </summary>
+    private static string? ResolveClassIri(object? input)
+    {
+        if (input is null)
+            return null;
+
+        var ontClass = GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input);
+        if (ontClass is not null && !string.IsNullOrWhiteSpace(ontClass.Iri))
+            return ontClass.Iri;
+
+        return null;
     }
 
     private static string ComputeObjStateId(string objectRef, string? label)

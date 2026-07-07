@@ -21,7 +21,8 @@ namespace DG.Grasshopper.Components;
 ///   4. Wire PROPERTY STATE component output → "PropState" input.
 ///   5. Wire the "DesignState" output to VALIDATOR.DesignState.
 ///
-/// Inputs are independent bags (D-02) — no cross-index alignment enforced.
+/// Cross-index validation: If both ObjState and PropState are present, their list
+/// lengths must be equal (property values are evaluated against objects at every index).
 /// Output is a SINGLE DesignState, not a list (D-01).
 /// Filename: DesignStateCompositionComponent.cs (avoids collision with renamed ParameterStateComponent per Research Finding 7).
 /// </summary>
@@ -117,6 +118,19 @@ public sealed class DesignStateCompositionComponent : GH_Component
                 ErrorMessageTemplates.DesignStateNoInputs());
             da.SetData(0, null);
             Message = "No inputs";
+            return;
+        }
+
+        // Cross-index validation: when both ObjState and PropState are present,
+        // their list lengths must be equal (property values are evaluated against
+        // objects at each index).
+        if (objStates.Count > 0 && propStates.Count > 0 && objStates.Count != propStates.Count)
+        {
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Error,
+                ErrorMessageTemplates.DesignStatePropObjCountMismatch(objStates.Count, propStates.Count));
+            da.SetData(0, null);
+            Message = "Count mismatch";
             return;
         }
 

@@ -90,6 +90,7 @@ internal static class GhCastingHelpers
             ObjectRef = publicWrapper.ObjectRef,
             Geometry = publicWrapper.Geometry,
             Label = publicWrapper.Label,
+            ClassIri = publicWrapper.ClassIri,
             CapturedAtUtc = publicWrapper.CapturedAtUtc,
         };
     }

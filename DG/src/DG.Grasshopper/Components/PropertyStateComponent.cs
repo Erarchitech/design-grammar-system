@@ -18,7 +18,9 @@ namespace DG.Grasshopper.Components;
 ///   4. Wire a scalar value (Number, Integer, or Boolean) to the "PropValue" input.
 ///   5. Wire the "PropState" output to DESIGN STATE composition's PropState input.
 ///
-/// Index-mismatch guard: All three inputs must have equal list lengths.
+/// Output list length is driven by PropValue. Rule and DataProperty at each index
+/// are used when available; mismatched list lengths are tolerated — gaps produce
+/// PropStates with empty RuleIri or DataPropertyIri.
 /// </summary>
 public sealed class PropertyStateComponent : GH_Component
 {
@@ -79,22 +81,22 @@ public sealed class PropertyStateComponent : GH_Component
         da.GetDataList(1, dataProperties);
         da.GetDataList(2, propValues);
 
-        // Index-mismatch guard (D-03): validate BEFORE iteration
-        var count = rules.Count;
-        if (count != dataProperties.Count || count != propValues.Count)
+        // Output list length is driven by PropValue.
+        var count = propValues.Count;
+        if (count == 0)
         {
-            AddRuntimeMessage(
-                GH_RuntimeMessageLevel.Error,
-                ErrorMessageTemplates.PropStateMismatchedListLengths(count, dataProperties.Count, propValues.Count));
-            da.SetData(0, null);
+            da.SetDataList(0, new List<DG.PropState>());
+            Message = "0 props";
             return;
         }
 
         var results = new List<DG.PropState>();
         for (var i = 0; i < count; i++)
         {
-            var ruleIri = ResolveRuleIri(rules[i]);
-            var dataPropertyIri = dataProperties[i]?.ToString() ?? string.Empty;
+            var ruleIri = i < rules.Count ? ResolveRuleIri(rules[i]) : string.Empty;
+            var dataPropertyIri = i < dataProperties.Count
+                ? dataProperties[i]?.ToString() ?? string.Empty
+                : string.Empty;
             var scalar = UnwrapScalar(propValues[i]);
             var propValue = scalar is not null ? BuildParameter($"prop_{i}", dataPropertyIri, scalar) : null;
 

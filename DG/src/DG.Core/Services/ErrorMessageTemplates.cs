@@ -50,14 +50,14 @@ public static class ErrorMessageTemplates
         return $"Design state capture skipped: parameter '{parameterName}' has unsupported type '{typeName}'. Only Number, Integer, and Boolean inputs are supported.";
     }
 
-    public static string ObjStateMismatchedListLengths(int objectCount, int geometryCount, int labelCount, int classCount)
+    public static string ObjStateMismatchedListLengths(int geometryCount, int labelCount)
     {
-        return $"OBJECT STATE: Object list length ({objectCount}), Geometry list length ({geometryCount}), Label list length ({labelCount}), and Class list length ({classCount}) must be equal at every index. Ensure each index provides all four values per D-03.";
+        return $"OBJECT STATE: Geometry list length ({geometryCount}) and Label list length ({labelCount}) must be equal at every index. Ensure each index provides both values.";
     }
 
-    public static string PropStateMismatchedListLengths(int ruleCount, int dataPropertyCount, int propValueCount)
+    public static string DesignStatePropObjCountMismatch(int objCount, int propCount)
     {
-        return $"PROPERTY STATE: Rule list length ({ruleCount}), DataProperty list length ({dataPropertyCount}), and PropValue list length ({propValueCount}) must be equal at every index. Ensure each index provides all three values per D-03.";
+        return $"DESIGN STATE: PropState list length ({propCount}) does not match ObjState list length ({objCount}). When both are present, their list lengths must be equal (property values are evaluated against objects at each index).";
     }
 
     public static string DesignStateNoInputs()
