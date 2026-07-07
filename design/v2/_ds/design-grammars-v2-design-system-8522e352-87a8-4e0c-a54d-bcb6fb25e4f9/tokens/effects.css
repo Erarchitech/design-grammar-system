@@ -1,0 +1,46 @@
+/* Design Grammars — Radii, Shadows, Frost, Blueprint grid */
+
+:root {
+  /* Radii — 18px interactive (pill on 36px height), 24px containers */
+  --radius-small: 6px;
+  --radius-nested: 10px;
+  --radius-buttons: 18px;
+  --radius-inputs: 18px;
+  --radius-badges: 18px;
+  --radius-cards: 24px;
+  --radius-full: 999px;
+
+  /* Elevation — whisper-quiet */
+  --shadow-subtle: 0 0 0 1px rgba(23, 23, 23, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-panel: 0 0 0 1px rgba(23, 23, 23, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+
+  /* Frost — translucent panels floating over the datascape */
+  --frost-bg: rgba(255, 255, 255, 0.78);
+  --frost-blur: 14px;
+
+  /* Focus */
+  --focus-ring: 0 0 0 1px var(--color-hairline-strong);
+  --focus-ring-selected: 0 0 0 1px var(--color-signal);
+
+  /* Motion — clinical: fades and small translations only, no bounce */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1); /* @kind other */
+  --duration-fast: 120ms; /* @kind other */
+  --duration-base: 200ms; /* @kind other */
+}
+
+/* Blueprint grid — faint drafting grid on frosted paper */
+.dg-blueprint {
+  background-color: var(--color-canvas);
+  background-image:
+    linear-gradient(var(--ink-a04) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ink-a04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Frosted panel over a datascape */
+.dg-frost {
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: blur(var(--frost-blur));
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--color-hairline);
+}

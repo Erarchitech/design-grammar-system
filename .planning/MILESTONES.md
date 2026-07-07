@@ -1,5 +1,16 @@
 # Milestones
 
+## v7.0 Update of DG Addin for Grasshopper (Shipped: 2026-07-05)
+
+**Status:** Shipped — 8 phases, 37 plans complete; archived 2026-07-07
+**Timeline:** 2026-07-02 → 2026-07-05
+
+Rebuilt the DG Grasshopper addin around the ontology-aligned 14-component schema (`ontology/GH_DesignGrammars.pdf`): Ontology V6→V7 rename with recovery mapping, state trio (ObjState/ParamState/PropState) + DesignState composition, graph access chain (CONNECTOR, GRAPH DECONSTRUCT, METAGRAPH, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework with DesignState-driven binding, CLASSIFICATOR elimination, PARAMETER REINSTATE, KnowledgeGraph→SpecGraph runtime rename, graph schema v4 propagation, release notes for canvas breakage.
+
+→ [Requirements](v7.0-REQUIREMENTS.md) | [Roadmap](v7.0-ROADMAP.md) | [Phases archive](v7.0-phases/)
+
+---
+
 ## v3.0 Typed Variables and Composable Design State (Superseded: 2026-07-02)
 
 **Status:** Superseded by v7.0 — Update of DG Addin for Grasshopper
@@ -27,7 +38,7 @@ Automatic alignment of DG Ontograph entities to the W3C Building Topology Ontolo
 
 ## v9.0 AI Workflow Intelligence (Future)
 
-**Status:** Future — isolated planning package; pending v7.0 completion (do not activate while v7.0 phases are in flight)
+**Status:** Paused — Phase 01 (cloud-llm-connector) executed 2026-07-06 and parked in [v9.0-phases/](v9.0-phases/); resume after v8.0 Design Grammars V2 UI
 **Defined:** 2026-07-03
 
 Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user-supplied API key, Claude/OpenAI-compatible/Ollama-fallback, provider control from the UI) plus a DG-aware context layer injecting ontology V7 concepts, SWRL conventions, and a standard Cypher expression catalog with pre-execution validation; (2) AI implementation workflows — upgraded rules ingest/edit (clarification loops, atom-diff previews, validation-feedback retries), AI recognition of Grasshopper node blocks as Object Behaviour persisted to the Computgraph layer, AI-generated Grasshopper script inputs as ParamState payloads, and a DesignState auto-validation investigation. Includes an n8n→OpenClaw orchestration decision gate (spike + ADR, no committed migration).

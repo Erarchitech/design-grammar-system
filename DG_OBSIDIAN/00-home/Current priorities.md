@@ -7,7 +7,7 @@ date: 2026-07-06
 
 ## Active
 
-1. **v9.0 Phase 01 Cloud LLM Connector** — Planned (3 plans, 2 waves). Provider-agnostic LLM gateway with Anthropic/OpenAI/Ollama adapters. Ready for execution: `/gsd-execute-phase 1`. See [[sessions/2026-07-06 v9.0 Phase 01 planning|session]].
+1. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). Provider-agnostic LLM gateway with Anthropic/OpenAI/Ollama adapters, n8n rewiring, UI settings panel. 6/7 must-haves verified, 1 UAT pending (E2E provider switch). 8 code review findings fixed, baseUrl propagation bug fixed. Ship blocked pending: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
 2. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges connecting building topology to DG ontology. See `.planning/milestones/v4.0-ROADMAP.md`.
 2. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j (carried from v3.0 Phase 7 — not yet superseded, applies to v7.0 too).
 3. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1, still open).
@@ -30,6 +30,7 @@ date: 2026-07-06
 
 ## Completed Recently
 
+- **v9.0 Phase 01 executed** — 2026-07-07. 3/3 plans across 2 waves, 12 commits. LLM gateway with 3 providers, n8n rewiring (6 HTTP nodes), LLM Settings UI panel. 6/7 must-haves verified. Code review: 8/8 blocker+warning fixed + baseUrl propagation bug fixed. 58/58 tests pass. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
 - **v7.0 Phase 20 executed** — 2026-07-05. 3/3 plans across 3 waves, all E2E-01..04 requirements satisfied. Created E2E checklist + Docker automation, release notes with per-component ASCII wiring diagrams, updated repo/AI docs to v4, refreshed DG_OBSIDIAN + graphify. **v7.0 milestone complete — 8 phases (13–20), 34 plans, 39 requirements.** See [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|session]].
 - **v7.0 Phase 19 executed** — 2026-07-05. 3/3 plans across 2 waves, 19/19 must-haves verified, 3 requirements (GHST-05/06/07) satisfied. Code review: 9 findings — all 6 critical/warning fixed. 207/207 non-E2E tests pass. See [[sessions/2026-07-05 Phase 19 execution — Deconstruct and Reinstate Components|session]], [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|decisions]].
 - **v7.0 Phase 18 executed** — 2026-07-05. 5/5 plans across 2 waves (1→sequential due to worktree base mismatch, 2→sequential), 9/9 must-haves verified, 6/6 requirements (GHVL-01..06) satisfied. Created DesignStateBindingService, partitioned RULE DECONSTRUCT outputs, purged CLASSIFICATOR (5 files deleted), adapted Model Viewer read-side for v2 payloads, rewrote VALIDATOR with DesignState-driven contract + v2 publish path. 17 commits, 28 files changed (+1660/-407). Build clean (0/0), 179/179 C# + 28/28 Python tests pass. See [[sessions/2026-07-05 Phase 18 execution — Rules and Validator Rework|session]].

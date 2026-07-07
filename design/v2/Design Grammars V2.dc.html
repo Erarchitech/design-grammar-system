@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{{const H=new URLSearchParams(location.search).get("theme");if(H==="light"||H==="dark"){document.documentElement.dataset.theme=H}}{const H=()=>{try{if(document.querySelector('meta[name="color-scheme"]'))return;const A=getComputedStyle(document.documentElement).getPropertyValue("color-scheme").trim();if(A&&A!=="normal")return;const M=(L)=>{if(!L)return null;const F=getComputedStyle(L).backgroundColor.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+%?))?\s*\)$/);if(!F)return null;const Y=F[4]==null?1:parseFloat(F[4])/(F[4].endsWith("%")?100:1);if(Y<0.99)return null;return[+F[1],+F[2],+F[3]]};const j=M(document.body)||M(document.documentElement);if(!j)return;const x=(L)=>{const F=L/255;return F<=0.04045?F/12.92:((F+0.055)/1.055)**2.4};const G=0.2126*x(j[0])+0.7152*x(j[1])+0.0722*x(j[2]);document.documentElement.style.setProperty("color-scheme",G<0.4?"dark":"light")}catch{}};if(document.readyState==="complete")H();else window.addEventListener("load",H)}var S=[];var v=false;var P=30000;var h=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const A="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[A])){H.registerPlugin(A,({types:G})=>({visitor:{JSXOpeningElement(L,F){const Y=L.node;if(Y.name&&Y.name.type==="JSXMemberExpression")return;for(let J=0;J<Y.attributes.length;J++){const V=Y.attributes[J];if(V.type==="JSXAttribute"&&V.name&&V.name.name==="data-om-id")return}const B=F.file&&F.file.opts&&F.file.opts.filename||"?";const w=Y.loc&&Y.loc.start;const z=`jsx:${B}:${Y.start??0}:${w?w.line:0}:${w?w.column+1:0}`;Y.attributes.push(G.jsxAttribute(G.jsxIdentifier("data-om-id"),G.stringLiteral(z)))}}}))}const M="om-text-extract";let j=false;if(v&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[M])){const G=window.React;if(G&&G.useSyncExternalStore&&G.createElement){j=true;const L={};const F=new Set;let Y=0;window.__omTextO=L;window.__omTextSet=(z)=>{for(const J in z){const V=z[J];if(V==null)delete L[J];else L[J]=V}Y++;F.forEach((J)=>J())};const B=(z)=>{F.add(z);return()=>F.delete(z)};const w=()=>Y;window.__OmT=function z(J){G.useSyncExternalStore(B,w,w);return G.createElement("span",{"data-om-text":J.i,className:"__om-t"},J.i in L?L[J.i]:J.children)};H.registerPlugin(M,({types:z})=>{const J={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const V={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const W=(Z,q)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral(Z),true),q);const Q=(Z)=>Z.file&&Z.file.opts&&Z.file.opts.filename||"?";const C=(Z)=>Z.file&&Z.file.code||"";const K=(Z,q)=>{const U=($)=>$&&$.start!=null&&$.end!=null&&($.type==="StringLiteral"||$.type==="TemplateLiteral"&&$.expressions.length===0)?[$.start,$.end]:null;const N=U(q);if(N)return N;if(q&&q.type==="Identifier"){const $=Z.scope.getBinding(q.name);if($&&$.constant&&$.path.node.type==="VariableDeclarator"){return U($.path.node.init)}}return null};const E=(Z,q,U)=>{const N=Z.node;let $=false;const R=(D,k)=>{$=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(D))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[k],false)};const X=N.children.map((D)=>{if(D.type==="JSXText"){if(D.start==null||D.end==null)return D;const k=U.slice(D.start,D.end);const f=k.length-k.trimStart().length;const I=k.length-k.trimEnd().length;if(f+I>=k.length)return D;return R(`txt:${q}:${D.start+f}:${D.end-I}`,D)}if(D.type==="JSXExpressionContainer"){const k=K(Z,D.expression);if(k)return R(`str:${q}:${k[0]}:${k[1]}`,D)}return D});if($)N.children=X};return{visitor:{JSXOpeningElement(Z,q){const U=Z.node;const N=Q(q);const $={};for(let R=0;R<U.attributes.length;R++){const X=U.attributes[R];if(X.type!=="JSXAttribute"||!X.name)continue;const D=X.name.name;if(!V[D])continue;if(!X.value||X.value.type!=="StringLiteral")continue;if(X.value.start==null||X.value.end==null)continue;const k=`txt:${N}:${X.value.start}:${X.value.end}`;$[D]=k;X.value=z.jsxExpressionContainer(W(k,z.stringLiteral(X.value.value)))}if(Object.keys($).length){U.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify($))))}},JSXElement(Z,q){const U=Z.node.openingElement;const N=U&&U.name&&U.name.name;if(N==="__OmT")return;if(typeof N==="string"&&J[N])return;E(Z,Q(q),C(q))},JSXFragment(Z,q){E(Z,Q(q),C(q))}}}})}}const x=j?["transform-react-jsx-source",A,M]:["transform-react-jsx-source",A];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((G,L)=>{const F=G.getAttribute("data-plugins")||"";const Y=x.filter((B)=>F.indexOf(B)<0);if(Y.length){G.setAttribute("data-plugins",F?`${F},${Y.join(",")}`:Y.join(","))}if(!G.hasAttribute("data-filename")){G.setAttribute("data-filename",G.getAttribute("src")||`inline-${L}`)}})});var _=window.parent;if(_&&_!==window){const H=(z,J)=>{try{_.postMessage({__omelette_log:true,type:z,data:J},"*")}catch{}};["log","warn","error"].forEach((z)=>{const J=console[z];console[z]=(...V)=>{const W=V.map((Q)=>{try{return typeof Q==="object"?JSON.stringify(Q):String(Q)}catch{try{return String(Q)}catch{return"[unstringifiable]"}}}).join(" ");H(z,W);J.apply(console,V)}});window.addEventListener("error",(z)=>{const J=z.target;if(J&&J!==window&&J.tagName){const V=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${V}`)}else{H("error",`${z.message||"Unknown error"} at ${z.filename||"?"}:${z.lineno||0}:${z.colno||0}`)}},true);window.addEventListener("unhandledrejection",(z)=>{const J=z.reason;const V=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${V}`)});window.addEventListener("click",(z)=>{if(z.defaultPrevented||z.button!==0)return;if(z.metaKey||z.ctrlKey||z.shiftKey||z.altKey)return;const J=z.composedPath?z.composedPath():[];const V=["button","input","select","textarea","summary","label"];let W=null;for(const E of J){if(!(E instanceof Element))continue;if(E.localName==="a"){if(!(E instanceof HTMLAnchorElement))return;W=E;break}if(V.indexOf(E.localName)!==-1)return}if(!W)return;if(W.isContentEditable)return;const Q=W.closest("[contenteditable]");if(Q&&Q.getAttribute("contenteditable")!=="false")return;const C=(W.getAttribute("target")||"_self").toLowerCase();if(C!=="_self"&&C!=="_top"&&C!=="_parent")return;let K;try{K=new URL(W.href)}catch{return}if(K.protocol!=="http:"&&K.protocol!=="https:")return;if(location.origin==="null")return;if(K.origin===location.origin)return;z.preventDefault();window.open(K.href,"_blank","noopener,noreferrer")});const A=()=>{try{_.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(window.ResizeObserver)new ResizeObserver(A).observe(document.documentElement);const M=()=>{A();if(!document.querySelector('script[type="text/babel"],script[type="text/jsx"]'))return;const z=()=>document.getElementById("root")||document.querySelector("body > div[id]");const J=z()?.firstElementChild??null;let V=0;const W=()=>{const Q=z();if(Q&&Q.firstElementChild!==J||++V>30){A();return}setTimeout(W,100)};setTimeout(W,100)};if(document.readyState==="complete")M();else window.addEventListener("load",M);const j={};let x=0;const G=(z)=>new Promise((J,V)=>{if(!S.length){V(new Error("claude.complete: no parent origin"));return}const W=`c${++x}`;const Q=()=>setTimeout(()=>{delete j[W];V(new Error(`claude.complete: no data for ${P/1000}s`))},P);const C=Q();j[W]={resolve:J,reject:V,text:"",t:C,arm:Q};try{for(const K of S){_.postMessage({__om_api:true,id:W,body:z},K)}}catch(K){clearTimeout(C);delete j[W];V(K)}});const L=8;const F=async(z,J)=>{if(!Array.isArray(z.messages)){throw new Error("claude.complete: tools require a messages array")}const V=z.messages.slice();const W={...z,tools:z.tools.map((K)=>{if(K===null||typeof K!=="object")return K;const E={};for(const Z of Object.keys(K)){if(typeof K[Z]!=="function")E[Z]=K[Z]}return E})};const Q=W.tool_choice;const C=Q!=null&&(Q.type==="any"||Q.type==="tool")?{...W,tool_choice:Q.disable_parallel_tool_use!==undefined?{type:"auto",disable_parallel_tool_use:Q.disable_parallel_tool_use}:{type:"auto"}}:W;for(let K=0;K<L;K++){const E=await G({...K===0?W:C,messages:V});const Z=E.message;const q=Z&&Array.isArray(Z.content)?Z.content:null;const U=q?q.filter(($)=>$?.type==="tool_use"):[];if(Z?.stop_reason!=="tool_use"||U.length===0){return E.text}const N=[];for(const $ of U){const R=J.get($.name);if(!R){N.push({type:"tool_result",tool_use_id:$.id,content:`no handler for tool "${$.name}"`,is_error:true});continue}try{const X=await R($.input);const D=typeof X==="string"?X:w(X)??"";N.push({type:"tool_result",tool_use_id:$.id,content:D})}catch(X){N.push({type:"tool_result",tool_use_id:$.id,content:String(X?.message??X??"tool handler failed"),is_error:true})}}V.push({role:"assistant",content:q},{role:"user",content:N})}throw new Error(`claude.complete: exceeded ${L} tool turns`)};window.claude={complete(z){const J=z;if(J!==null&&typeof J==="object"&&Array.isArray(J.tools)&&J.tools.some((V)=>V!==null&&typeof V==="object"&&typeof V.run==="function")){const V=new Map;for(const W of J.tools){if(W!==null&&typeof W==="object"&&typeof W.run==="function"){V.set(String(W.name),W.run)}}return F(J,V)}return G(z).then((V)=>V.text)}};const Y={};let B=0;window.omelette={writeFile:(z,J)=>new Promise((V,W)=>{if(!S.length){V();return}const Q=`f${++B}`;const C=setTimeout(()=>{delete Y[Q];V()},h);Y[Q]={resolve:V,reject:W,t:C};try{for(const K of S){_.postMessage({__om_file:true,id:Q,op:"write",path:z,content:J},K)}}catch{clearTimeout(C);delete Y[Q];V()}})};const w=(z)=>{try{return JSON.stringify(z)}catch{return JSON.stringify(String(z))}};window.addEventListener("message",(z)=>{if(S.indexOf(z.origin)<0)return;if(z.source!==_)return;const J=z.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+(\.(rc|pr-[0-9]+))?(\.[0-9]+\.[0-9a-f]{16})?$/.test(J.token))return;const Q=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+Q;return}if(J.__om_file_r){const Q=Y[J.id];if(!Q)return;clearTimeout(Q.t);delete Y[J.id];if(J.ok)Q.resolve();else Q.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const Q=j[J.id];if(!Q)return;if(J.error!=null){clearTimeout(Q.t);delete j[J.id];Q.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(Q.t);Q.t=Q.arm();Q.text+=J.chunk;return}if(J.done){clearTimeout(Q.t);delete j[J.id];Q.resolve({text:J.text!=null?J.text:Q.text,message:J.message});return}return}if(!J.__om_eval)return;const V=J;const W=(Q)=>{z.source.postMessage({...Q,__om_eval_r:1,id:V.id},z.origin)};try{const Q=(0,eval)(V.code);if(Q&&typeof Q.then==="function"){Q.then((C)=>W({ok:1,v:w(C)}),(C)=>W({ok:0,e:String(C)}))}else{W({ok:1,v:w(Q)})}}catch(Q){W({ok:0,e:String(Q)})}})}})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Design Grammars — V2</title>
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/effects.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/tokens/base.css">
+  <link rel="stylesheet" href="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/styles.css">
+  <script src="_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/_ds_bundle.js"></script>
+  <style>
+    html, body { margin: 0; overflow: hidden; }
+    input, textarea { font-family: inherit; }
+  </style>
+</helmet>
+
+<div id="dg-root" style="position:fixed; inset:0; background:var(--color-canvas); overflow:hidden; font-family:var(--font-sans); color:var(--text-primary); user-select:none">
+
+  <!-- ================= LANDING ================= -->
+  <div id="layer-landing" data-screen-label="Landing" style="position:absolute; inset:0; opacity:1; transform:scale(1); transition:opacity 520ms cubic-bezier(0.2,0,0,1), transform 520ms cubic-bezier(0.2,0,0,1); will-change:transform,opacity">
+    <canvas id="cv-landing" style="position: absolute; inset: 0; width: 100%; height: 100%"></canvas>
+    <!-- HERO TITLE — materialises from the particle cloud -->
+    <div id="hero-title" style="position: absolute; left: 0; width: 100%; text-align: center; pointer-events: none; opacity: 0; will-change: opacity,transform,filter; display: flex; flex-direction: column; align-items: center; top: 300px">
+      <div id="hero-l1" style="position: static; font-family: var(--font-annotation); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; width: auto; max-width: none; color: var(--text-primary); font-size: clamp(32px,5.2vw,76px); line-height: 1.06">Design Grammars.</div>
+      <div id="hero-l2" style="position: static; font-family: var(--font-annotation); font-weight: 400; letter-spacing: 0.6px; white-space: nowrap; width: auto; max-width: none; color: var(--text-primary); font-size: clamp(15px,2.2vw,32px); line-height: 1.3; margin-top: 0.28em">Encode your design intent.</div>
+    </div>
+
+    <!-- HERO BENEATH — login/register CTA (guest) or identity + status (member) -->
+    <div id="hero-beneath" style="position: absolute; left: 0; top: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; opacity: 0; pointer-events: none; will-change: opacity,transform">
+      <sc-if value="{{ showGuest }}" hint-placeholder-val="{{ true }}">
+        <div style="pointer-events:auto">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="180px,40px" variant="outline" size="lg" on-click="{{ openAuth }}">Login / Register</x-import>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showMember }}" hint-placeholder-val="{{ false }}">
+        <div style="pointer-events:auto; display:flex; flex-direction:column; align-items:center; gap:9px">
+          <div style="display:flex; align-items:center; gap:10px">
+            <span style="width:7px; height:7px; border-radius:50%; background:var(--color-signal); flex:none"></span>
+            <span style="font:600 21px/1.1 var(--font-sans); letter-spacing:-0.5px; color:var(--text-primary)">{{ userName }}</span>
+          </div>
+          <div class="dg-annotation" style="font-size:11px; letter-spacing:1.4px; color:var(--text-muted)">System initiated · <span style="color:{{ statusColor }}">{{ statusTail }}</span></div>
+          <div onClick="{{ signOut }}" style="cursor:pointer; font:400 10px/1.3 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); padding:2px 4px" style-hover="color:var(--text-primary)">Sign out</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- HERO FORM — rises through the particles in place of the title -->
+    <div id="hero-form" style="position: absolute; left: 0; top: 0; width: 100%; display: flex; justify-content: center; transform: translateY(-50%); pointer-events: none">
+      <div id="hero-form-card" class="dg-frost" style="width:min(372px,86vw); box-sizing:border-box; border-radius:var(--radius-cards); padding:26px 26px 22px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:15px; opacity:0; transform:translateY(18px); filter:blur(9px); pointer-events:none; transition:opacity 500ms cubic-bezier(0.2,0,0,1), transform 560ms cubic-bezier(0.2,0,0,1), filter 500ms cubic-bezier(0.2,0,0,1)">
+        <div style="display:flex; flex-direction:column; gap:6px">
+          <div class="dg-annotation dg-annotation--muted" style="font-size:10px">{{ authKicker }}</div>
+          <div style="font:600 22px/1.15 var(--font-sans); letter-spacing:-0.6px; color:var(--text-primary)">{{ authTitle }}</div>
+          <div style="font:400 13px/1.45 var(--font-sans); color:var(--text-muted)">{{ authSub }}</div>
+        </div>
+        <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Input" hint-size="100%,36px" placeholder="Full name" value="{{ authName }}" on-change="{{ onAuthName }}"></x-import>
+        </sc-if>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Input" hint-size="100%,36px" type="email" placeholder="Email" value="{{ authEmail }}" on-change="{{ onAuthEmail }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Input" hint-size="100%,36px" type="password" placeholder="Password" value="{{ authPass }}" on-change="{{ onAuthPass }}"></x-import>
+        <sc-if value="{{ authError }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 12px/1.4 var(--font-sans); color:var(--color-signal)">{{ authErrorMsg }}</div>
+        </sc-if>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="100%,40px" size="lg" style="width:100%" on-click="{{ submitAuth }}">{{ authCta }}</x-import>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-top:2px">
+          <div onClick="{{ switchAuthMode }}" style="cursor:pointer; font:400 12px/1.3 var(--font-sans); color:var(--text-muted)" style-hover="color:var(--text-primary)">{{ authSwitch }}</div>
+          <div onClick="{{ cancelAuth }}" style="cursor:pointer; font:400 11px/1.3 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted)" style-hover="color:var(--text-primary)">Cancel</div>
+        </div>
+      </div>
+    </div>
+    <div id="ll-graph" onClick="{{ goGraph }}" style="position:absolute; left:0; top:0; opacity:0; cursor:pointer; font-family:var(--font-annotation); font-size:clamp(15px,1.5vw,21px); letter-spacing:0.5px; color:var(--text-primary); white-space:nowrap; padding:4px 6px" style-hover="opacity:0.55">Graph Viewer</div>
+    <div id="ll-model" onClick="{{ goModel }}" style="position:absolute; left:0; top:0; opacity:0; cursor:pointer; font-family:var(--font-annotation); font-size:clamp(15px,1.5vw,21px); letter-spacing:0.5px; color:var(--text-primary); white-space:nowrap; padding:4px 6px" style-hover="opacity:0.55">Model Viewer</div>
+    <div id="ll-projects" onClick="{{ goProjects }}" style="position:absolute; left:0; top:0; opacity:0; cursor:pointer; font-family:var(--font-annotation); font-size:clamp(15px,1.5vw,21px); letter-spacing:0.5px; color:var(--text-primary); white-space:nowrap; padding:4px 6px" style-hover="opacity:0.55">Projects.</div>
+    <div id="ll-hint" class="dg-annotation dg-annotation--muted" style="position:absolute; left:50%; bottom:18px; transform:translateX(-50%); font-size:10px; pointer-events:none; transition:opacity 300ms cubic-bezier(0.2,0,0,1)">Select a region</div>
+  </div>
+
+  <!-- ================= GRAPH VIEWER ================= -->
+  <div id="layer-graph" data-screen-label="Graph Viewer" style="position:absolute; inset:0; opacity:0; pointer-events:none; transform:scale(0.965); transition:opacity 520ms cubic-bezier(0.2,0,0,1), transform 520ms cubic-bezier(0.2,0,0,1); will-change:transform,opacity">
+    <canvas id="cv-graph" style="position:absolute; inset:0; width:100%; height:100%; touch-action:none"></canvas>
+
+    <div style="position:absolute; left:20px; top:20px; display:flex; align-items:center; gap:14px; z-index:5">
+      <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="96px,30px" variant="outline" size="sm" on-click="{{ goLanding }}">← Back</x-import>
+      <div style="display:flex; flex-direction:column; gap:2px">
+        <div style="font:600 16px/1.2 var(--font-sans); letter-spacing:-0.3px">Graph Viewer</div>
+        <div style="font:400 11px/1.3 var(--font-mono); color:var(--text-muted)">Nordhavn Block C · bolt://dg-meta:7687</div>
+      </div>
+    </div>
+
+    <sc-if value="{{ filterOn }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:50%; top:24px; transform:translateX(-50%); z-index:5">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Chip" hint-size="auto,28px" selected="{{ true }}" on-remove="{{ clearFilter }}">{{ filterChipText }}</x-import>
+      </div>
+    </sc-if>
+
+    <div style="position:absolute; left:20px; top:94px; z-index:5; width:224px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 132px); overflow:auto">
+      <div class="dg-frost" style="border-radius:var(--radius-nested); padding:8px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:1px; flex:none">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:2px 6px 6px">
+          <span class="dg-annotation dg-annotation--muted" style="font-size:10px">Graph Layers</span>
+          <span style="font:400 9px/1.3 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted)">Grouped · 5×3</span>
+        </div>
+        <sc-for list="{{ layers }}" as="L" hint-placeholder-count="5">
+          <div onClick="{{ L.pick }}" style="display:flex; align-items:center; gap:9px; padding:6px 6px; border-radius:8px; cursor:pointer; transition:background 120ms" style-hover="background:var(--ink-a04)">
+            <span style="width:12px; text-align:right; font:500 10px/1.4 var(--font-mono); color:{{ L.numColor }}">{{ L.num }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px">
+              <span style="font-size:12px; letter-spacing:0.2px; color:{{ L.nameColor }}; font-weight:{{ L.weight }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ L.name }}</span>
+              <span style="font:400 10px/1.3 var(--font-mono); color:var(--text-muted)">{{ L.count }}</span>
+              <span style="font:400 9px/1.4 var(--font-annotation); letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ L.orbits }}</span>
+            </div>
+            <span style="width:5px; height:5px; border-radius:50%; flex:none; background:{{ L.dot }}"></span>
+          </div>
+        </sc-for>
+        <div style="margin-top:5px; padding:7px 6px 2px; border-top:1px solid var(--color-hairline)">
+          <div class="dg-annotation dg-annotation--muted" style="font-size:9.5px; line-height:1.5">Drag to rotate · click to align · double-click to inspect · search bar below</div>
+        </div>
+      </div>
+      <div id="orbit-legend" class="dg-frost" style="border-radius:var(--radius-nested); padding:8px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:1px; flex:none">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:2px 6px 6px">
+          <span class="dg-annotation dg-annotation--muted" style="font-size:10px">Orbits</span>
+          <span style="font:400 9px/1.3 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:118px">{{ orbitLayerName }}</span>
+        </div>
+        <sc-for list="{{ orbitLegend }}" as="row" hint-placeholder-count="3">
+          <div style="display:flex; align-items:center; gap:11px; padding:5px 6px">
+            <span style="position:relative; width:24px; height:24px; flex:none">
+              <span style="position:absolute; left:50%; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; border:1.5px solid {{ row.r2 }}"></span>
+              <span style="position:absolute; left:50%; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px; border-radius:50%; border:1.5px solid {{ row.r1 }}"></span>
+              <span style="position:absolute; left:50%; top:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px; border-radius:50%; background:{{ row.r0 }}"></span>
+            </span>
+            <span style="display:flex; flex-direction:column; gap:1px; min-width:0">
+              <span style="font:600 11px/1.3 var(--font-sans); letter-spacing:0.1px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ row.name }}</span>
+              <span style="font:400 9px/1.4 var(--font-annotation); letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted)">{{ row.count }}</span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="hover-panel" style="position:absolute; left:0; top:0; width:280px; z-index:6; opacity:0; pointer-events:none; transition:opacity 140ms">
+      <sc-if value="{{ hoverOn }}" hint-placeholder-val="{{ false }}">
+        <div class="dg-frost" style="border-radius:var(--radius-nested); padding:12px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:8px">
+          <div style="display:flex; align-items:center; gap:8px">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Chip" hint-size="auto,24px">{{ hoverKind }}</x-import>
+            <span style="font:500 12px/1.3 var(--font-mono)">{{ hoverName }}</span>
+          </div>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.PropertiesTable" hint-size="100%,140px" rows="{{ hoverRows }}"></x-import>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="sel-panel" style="position:absolute; left:0; top:0; width:360px; z-index:7; opacity:0; pointer-events:none; transition:opacity 160ms">
+      <sc-if value="{{ selOn }}" hint-placeholder-val="{{ false }}">
+        <div class="dg-frost" style="border-radius:var(--radius-cards); padding:18px; box-shadow:var(--shadow-panel); height:70vh; box-sizing:border-box; display:flex; flex-direction:column; gap:12px; overflow:hidden">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Chip" hint-size="auto,24px" selected="{{ true }}">{{ selKind }}</x-import>
+            <div onClick="{{ closeSel }}" style="cursor:pointer; font-size:15px; color:var(--text-muted); line-height:1; padding:4px" style-hover="color:var(--text-primary)">✕</div>
+          </div>
+          <div style="font:500 15px/1.3 var(--font-mono); letter-spacing:-0.2px">{{ selName }}</div>
+          <div style="flex:1 1 auto; overflow:auto; min-height:0; display:flex; flex-direction:column; gap:14px">
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div class="dg-annotation dg-annotation--muted" style="font-size:11px">Properties</div>
+              <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.PropertiesTable" hint-size="100%,220px" rows="{{ selRows }}" editable="{{ true }}"></x-import>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px">
+              <div class="dg-annotation dg-annotation--muted" style="font-size:11px">{{ selEdges }}</div>
+              <sc-for list="{{ selConns }}" as="c" hint-placeholder-count="3">
+                <div onClick="{{ c.go }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 4px; border-bottom:1px solid var(--color-hairline); cursor:pointer" style-hover="background:var(--ink-a04)">
+                  <span style="font:400 12px/1.3 var(--font-mono)">{{ c.label }}</span>
+                  <span style="font:400 11px/1.3 var(--font-sans); color:var(--text-muted); white-space:nowrap">{{ c.ring }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="search-pop" style="position:absolute; left:0; top:0; z-index:8">
+      <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+        <div class="dg-frost" style="border-radius:var(--radius-buttons); padding:6px; box-shadow:var(--shadow-panel); display:flex; align-items:center; gap:8px">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.SearchField" hint-size="230px,32px" placeholder="{{ searchPh }}" value="{{ q }}" on-change="{{ onQ }}" style="width:230px"></x-import>
+          <span class="dg-annotation dg-annotation--muted" style="font-size:10px; white-space:nowrap">{{ searchCount }}</span>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="66px,30px" variant="outline" size="sm" on-click="{{ applyFilter }}">Filter</x-import>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:6; display:flex; align-items:flex-end; gap:12px; max-width:96vw">
+      <div id="prompt-wrap" style="width:min(560px,56vw); display:flex; flex-direction:column; align-items:stretch; gap:8px">
+
+        <!-- ===== EXTENDED SESSION / RESPONSE PANEL — grows above the bar; response sits under each prompt ===== -->
+        <sc-if value="{{ sessionOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="dg-frost" style="width:100%; box-sizing:border-box; border-radius:var(--radius-nested); box-shadow:var(--shadow-panel); display:flex; flex-direction:column; overflow:hidden">
+            <div style="display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--color-hairline)">
+              <span style="font:500 10px/1 var(--font-annotation); letter-spacing:1.4px; text-transform:uppercase; color:var(--text-muted)">Session</span>
+              <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Badge" hint-size="26px,20px" variant="outline">{{ sessionCount }}</x-import>
+              <span style="flex:1"></span>
+              <span onClick="{{ clearSession }}" style="cursor:pointer; font:400 10px/1 var(--font-annotation); letter-spacing:1.1px; text-transform:uppercase; color:var(--text-muted); padding:3px 5px" style-hover="color:var(--text-primary)">Clear</span>
+              <div onClick="{{ collapseSession }}" title="Collapse session" style="cursor:pointer; width:22px; height:22px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-secondary)" style-hover="background:var(--ink-a04)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+              </div>
+            </div>
+            <div id="session-scroll" style="max-height:min(46vh,340px); overflow-y:auto; display:flex; flex-direction:column">
+              <sc-for list="{{ session }}" as="turn" hint-placeholder-count="1">
+                <div style="padding:11px 12px; border-bottom:1px solid var(--color-hairline); display:flex; flex-direction:column; gap:8px">
+                  <div style="display:flex; align-items:flex-start; gap:8px">
+                    <span style="flex:none; font:500 9px/1.5 var(--font-annotation); letter-spacing:1px; text-transform:uppercase; color:var(--text-secondary); border:1px solid var(--color-hairline); border-radius:5px; padding:2px 6px">{{ turn.modeLabel }}</span>
+                    <span style="flex:1; font:400 12px/1.5 var(--font-mono); color:var(--text-primary); overflow-wrap:anywhere">{{ turn.text }}</span>
+                  </div>
+                  <sc-if value="{{ turn.hasAttach }}" hint-placeholder-val="{{ false }}">
+                    <span style="align-self:flex-start; font:400 10px/1 var(--font-mono); color:var(--text-secondary); background:var(--color-canvas); border:1px solid var(--color-hairline); border-radius:6px; padding:4px 8px">{{ turn.attach }}</span>
+                  </sc-if>
+                  <sc-if value="{{ turn.processing }}" hint-placeholder-val="{{ false }}">
+                    <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Progress" hint-size="100%,90px" value="{{ turn.progress }}" steps="{{ turn.steps }}"></x-import>
+                  </sc-if>
+                  <sc-if value="{{ turn.done }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; flex-direction:column; gap:6px; padding-left:10px; border-left:2px solid var(--color-hairline)">
+                      <span style="font:500 9px/1 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted)">Response</span>
+                      <pre style="margin:0; font:400 11px/1.6 var(--font-mono); color:var(--color-ink); white-space:pre-wrap; overflow-wrap:anywhere">{{ turn.response }}</pre>
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:2px">
+                        <span style="font:500 9px/1 var(--font-annotation); letter-spacing:1px; text-transform:uppercase; color:var(--color-signal)">{{ turn.meta }}</span>
+                        <span style="font:400 10px/1 var(--font-mono); color:var(--text-muted)">{{ turn.clock }}</span>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===== PERSISTENT PROMPT BAR ===== -->
+        <div class="dg-frost" style="width:100%; box-sizing:border-box; border-radius:var(--radius-buttons); padding:6px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:6px">
+          <div style="display:flex; align-items:center; gap:8px; padding:0 2px">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Tabs" hint-size="210px,30px" style="height:30px; width:210px; flex:none" tabs="{{ modeTabs }}" active="{{ mode }}" on-change="{{ setMode }}"></x-import>
+            <span style="flex:1; min-width:0; text-align:right; font:500 9px/1.3 var(--font-annotation); letter-spacing:1.1px; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ typeHint }}</span>
+            <sc-if value="{{ sessionReopen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ openSession }}" title="Show session" style="cursor:pointer; width:24px; height:24px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-secondary)" style-hover="background:var(--ink-a04)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <sc-if value="{{ showDocBtn }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ pickDoc }}" title="Attach document" style="flex:none; height:36px; box-sizing:border-box; display:flex; align-items:center; gap:6px; padding:0 10px; border:1px solid var(--color-hairline); border-radius:var(--radius-buttons); cursor:pointer; background:var(--surface-card); color:var(--text-secondary); font:400 12px/1 var(--font-sans); max-width:180px" style-hover="background:var(--ink-a04)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ docLabel }}</span>
+                <sc-if value="{{ docPicked }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ clearDoc }}" style="flex:none; opacity:0.6; padding-left:2px; font:400 13px/1 var(--font-sans)">×</span>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showFileBtn }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ pickFile }}" title="Import Grasshopper (.gh) or Dynamo (.dyn)" style="flex:none; height:36px; box-sizing:border-box; display:flex; align-items:center; gap:6px; padding:0 10px; border:1px solid var(--color-hairline); border-radius:var(--radius-buttons); cursor:pointer; background:var(--surface-card); color:var(--text-secondary); font:400 12px/1 var(--font-sans); max-width:200px" style-hover="background:var(--ink-a04)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path><rect x="1" y="3" width="22" height="5" rx="1"></rect><path d="M12 12v6"></path><path d="m9 15 3 3 3-3"></path></svg>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ fileLabel }}</span>
+                <sc-if value="{{ filePicked }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ clearFile }}" style="flex:none; opacity:0.6; padding-left:2px; font:400 13px/1 var(--font-sans)">×</span>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showConnSel }}" hint-placeholder-val="{{ false }}">
+              <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Select" hint-size="190px,36px" style="width:190px; font-size:12px" value="{{ connector }}" options="{{ connectorOptions }}" on-change="{{ onConnector }}"></x-import>
+            </sc-if>
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Input" hint-size="100%,36px" style="flex:1 1 auto; min-width:60px" placeholder="{{ promptPh }}" mono="{{ true }}" value="{{ promptVal }}" on-change="{{ onPrompt }}"></x-import>
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="80px,32px" size="sm" on-click="{{ sendPrompt }}">{{ sendLabel }}</x-import>
+          </div>
+        </div>
+
+        <input id="spec-doc-input" type="file" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.csv" style="display:none" onChange="{{ onDocFile }}">
+        <input id="comp-file-input" type="file" accept=".gh,.dyn" style="display:none" onChange="{{ onCompFile }}">
+      </div>
+      <div id="search-bar" class="dg-frost" style="box-sizing:border-box; border-radius:var(--radius-buttons); padding:6px; box-shadow:var(--shadow-panel); display:flex; align-items:center; gap:6px; flex:none">
+        <span class="dg-annotation dg-annotation--muted" style="font-size:9px; padding-left:4px; white-space:nowrap">Search by</span>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Select" hint-size="136px,32px" value="{{ searchProp }}" options="{{ searchProps }}" on-change="{{ onSearchProp }}" style="height:32px; width:136px; font-size:12px; padding:0 30px 0 12px"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.SearchField" hint-size="184px,32px" placeholder="{{ searchBarPh }}" value="{{ q }}" on-change="{{ onSearch }}" style="width:184px"></x-import>
+        <span class="dg-annotation dg-annotation--muted" style="font-size:10px; white-space:nowrap; min-width:48px; text-align:right; padding-right:4px">{{ searchBarCount }}</span>
+      </div>
+    </div>
+
+    <div id="minimap" style="position:absolute; right:20px; top:64px; z-index:6">
+      <div class="dg-frost" style="border-radius:var(--radius-nested); padding:8px; box-shadow:var(--shadow-panel); display:flex; flex-direction:column; gap:6px">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 2px">
+          <span class="dg-annotation dg-annotation--muted" style="font-size:9px">Overview</span>
+          <span id="map-zoom" style="font:500 9px/1.3 var(--font-mono); color:var(--text-muted)">1.0×</span>
+        </div>
+        <canvas id="cv-map" width="150" height="150" style="width:150px; height:150px; display:block; border-radius:6px; cursor:crosshair"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= MODEL VIEWER ================= -->
+  <div id="layer-model" data-screen-label="Model Viewer" style="position:absolute; inset:0; opacity:0; pointer-events:none; transform:scale(0.965); transition:opacity 520ms cubic-bezier(0.2,0,0,1), transform 520ms cubic-bezier(0.2,0,0,1); display:flex; will-change:transform,opacity">
+    <aside style="width:320px; flex:none; box-sizing:border-box; background:var(--surface-sidebar); border-right:1px solid var(--color-hairline); overflow:auto; padding:16px; display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--color-hairline)">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="90px,30px" variant="outline" size="sm" on-click="{{ goLanding }}">← Back</x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="120px,30px" variant="secondary" size="sm" on-click="{{ goGraph }}">Graph Viewer</x-import>
+      </div>
+      <div>
+        <h3 style="margin:0; font:600 20px/1.2 var(--font-sans); letter-spacing:-0.5px; color:var(--color-ink)">Model Viewer</h3>
+        <span style="font:400 13px/1.4 var(--font-sans); color:var(--text-muted)">Nordhavn Block C</span>
+      </div>
+      <div style="position:relative; display:flex; align-items:center; gap:8px; margin-top:2px">
+        <span style="font:500 11px/1.33 var(--font-sans); letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted)">Design States</span>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Badge" hint-size="30px,22px" variant="outline">{{ dstateCount }}</x-import>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px">
+          <span class="dg-annotation dg-annotation--muted" style="font-size:9px">{{ tilePropCount }} props</span>
+          <div onClick="{{ toggleDsSettings }}" title="Configure tile properties" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid var(--color-hairline); border-radius:var(--radius-buttons); cursor:pointer; color:var(--text-secondary); background:var(--surface-card); transition:background 120ms" style-hover="background:var(--ink-a04); color:var(--text-primary)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"></line><line x1="10" y1="4" x2="3" y2="4"></line><line x1="21" y1="12" x2="12" y2="12"></line><line x1="8" y1="12" x2="3" y2="12"></line><line x1="21" y1="20" x2="16" y2="20"></line><line x1="12" y1="20" x2="3" y2="20"></line><line x1="14" y1="2" x2="14" y2="6"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="16" y1="18" x2="16" y2="22"></line></svg>
+          </div>
+        </div>
+        <sc-if value="{{ dsSettingsOpen }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeDsSettings }}" style="position:fixed; inset:0; z-index:14"></div>
+          <div class="dg-frost" style="position:absolute; right:0; top:38px; z-index:15; width:250px; border-radius:var(--radius-nested); box-shadow:var(--shadow-panel); padding:12px; display:flex; flex-direction:column; gap:2px">
+            <div style="display:flex; flex-direction:column; gap:3px; padding:0 4px 8px; border-bottom:1px solid var(--color-hairline)">
+              <span class="dg-annotation dg-annotation--muted" style="font-size:10px">Tile Properties</span>
+              <span style="font:400 9px/1.4 var(--font-mono); color:var(--text-muted)">PropState ⊑ DesignState · bolt://dg-meta:7687</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:1px; padding-top:4px">
+              <sc-for list="{{ propStateOptions }}" as="p" hint-placeholder-count="6">
+                <div onClick="{{ p.toggle }}" style="display:flex; align-items:center; gap:10px; padding:6px 4px; border-radius:8px; cursor:pointer; transition:background 120ms" style-hover="background:var(--ink-a04)">
+                  <span style="width:15px; height:15px; flex:none; border:1px solid {{ p.markBorder }}; background:{{ p.markBg }}; border-radius:5px; display:flex; align-items:center; justify-content:center; font:600 9px/1 var(--font-sans); color:var(--surface-card)">{{ p.check }}</span>
+                  <span style="flex:1; font:500 12px/1.3 var(--font-sans); color:{{ p.rowColor }}">{{ p.label }}</span>
+                  <span style="font:400 9px/1.3 var(--font-mono); color:var(--text-muted); white-space:nowrap">{{ p.iri }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="100%,32px" variant="outline" size="sm" style="width:100%">Update</x-import>
+      <sc-for list="{{ dstates }}" as="d" hint-placeholder-count="5">
+        <div onClick="{{ d.select }}" style="border:1px solid {{ d.border }}; background:{{ d.bg }}; border-radius:var(--radius-nested); padding:12px; cursor:pointer; display:flex; flex-direction:column; gap:9px; transition:background 120ms, border-color 120ms" style-hover="background:var(--ink-a04)">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+            <span style="font:600 13px/1.2 var(--font-sans); letter-spacing:-0.1px; color:{{ d.nameColor }}">{{ d.name }}</span>
+            <span style="font:400 9px/1.3 var(--font-annotation); letter-spacing:1px; text-transform:uppercase; color:{{ d.tagColor }}; white-space:nowrap">{{ d.tag }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:3px">
+            <sc-for list="{{ d.propRows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px"><span style="font:400 10px/1.4 var(--font-annotation); letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted)">{{ r.label }}</span><span style="font:500 11px/1.3 var(--font-mono); color:var(--text-secondary)">{{ r.value }}</span></div>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid var(--color-hairline)">
+            <span style="font:400 10px/1.3 var(--font-mono); color:var(--text-muted)">{{ d.date }}</span>
+            <span style="font:500 10px/1.3 var(--font-mono); color:{{ d.passColor }}">{{ d.pass }} pass</span>
+          </div>
+        </div>
+      </sc-for>
+    </aside>
+    <main style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; position:relative">
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:10px 140px 10px 16px; background:var(--surface-card); border-bottom:1px solid var(--color-hairline)">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Checkbox" hint-size="76px,24px" label="Failing" checked="{{ mvFail }}" on-change="{{ setMvFail }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Checkbox" hint-size="80px,24px" label="Passing" checked="{{ mvPass }}" on-change="{{ setMvPass }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Checkbox" hint-size="100px,24px" label="Base model" checked="{{ mvBase }}" on-change="{{ setMvBase }}"></x-import>
+        <span style="width:1px; height:20px; background:var(--color-hairline)"></span>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Slider" hint-size="150px,32px" style="width:150px" label="Fail α" value="{{ aFail }}" on-change="{{ setAFail }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Slider" hint-size="150px,32px" style="width:150px" label="Pass α" value="{{ aPass }}" on-change="{{ setAPass }}"></x-import>
+        <span style="width:1px; height:20px; background:var(--color-hairline)"></span>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.SearchField" hint-size="170px,30px" style="width:170px" placeholder="Select by Id…" on-change="{{ onSelectById }}"></x-import>
+        <div style="display:flex; gap:6px; margin-left:auto">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="70px,30px" variant="outline" size="sm" selected="{{ isolateOn }}" on-click="{{ toggleIsolate }}">Isolate</x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="58px,30px" variant="outline" size="sm" on-click="{{ hidePicked }}">Hide</x-import>
+          <sc-if value="{{ hiddenOn }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="80px,30px" variant="secondary" size="sm" on-click="{{ showAll }}">Show all</x-import>
+          </sc-if>
+        </div>
+      </div>
+      <div style="flex:1 1 auto; min-height:0; display:flex; position:relative">
+        <div class="dg-blueprint" style="flex:1 1 auto; min-width:0; position:relative">
+        <svg width="100%" height="100%" viewBox="0 0 880 440" preserveAspectRatio="xMidYMid meet" style="display:block; position:absolute; inset:0">
+          <sc-if value="{{ mvBaseOn }}" hint-placeholder-val="{{ true }}">
+            <path d="M30 360 L 850 360 M60 390 L 880 390" stroke="var(--ink-a08)" stroke-width="1" fill="none"></path>
+          </sc-if>
+          <sc-for list="{{ mvItems }}" as="b" hint-placeholder-count="7">
+            <path d="{{ b.d }}" fill="{{ b.fill }}" stroke="{{ b.stroke }}" stroke-width="{{ b.sw }}" opacity="{{ b.op }}" onClick="{{ b.pick }}" style="cursor:pointer"></path>
+          </sc-for>
+          <sc-if value="{{ mvCallOn }}" hint-placeholder-val="{{ false }}">
+            <path d="{{ mvCallout.d }}" stroke="var(--ink-a32)" stroke-width="1" fill="none"></path>
+            <text x="{{ mvCallout.tx }}" y="{{ mvCallout.ty1 }}" font-family="Oswald, sans-serif" font-size="13" letter-spacing="1.4" fill="var(--color-ink)">{{ mvCallout.name }}</text>
+            <text x="{{ mvCallout.tx }}" y="{{ mvCallout.ty2 }}" font-family="Oswald, sans-serif" font-size="10" letter-spacing="1.2" fill="var(--color-mid-gray)">{{ mvCallout.status }}</text>
+          </sc-if>
+        </svg>
+        </div>
+      </div>
+      <div style="background:var(--surface-card); border-top:1px solid var(--color-hairline); padding:10px 16px 14px">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px">
+          <span style="font:500 11px/1.33 var(--font-sans); letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted)">Validation runs</span>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Badge" hint-size="30px,22px" variant="outline">{{ runCount }}</x-import>
+          <div style="margin-left:auto">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="120px,30px" variant="outline" size="sm" on-click="{{ rerun }}">Re-run checks</x-import>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; overflow-x:auto">
+          <sc-for list="{{ runs }}" as="r" hint-placeholder-count="5">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.RunTile" hint-size="190px,120px" rule-id="{{ r.id }}" date="{{ r.date }}" kind="{{ r.kind }}" active="{{ r.active }}" on-select="{{ r.select }}" on-delete="{{ r.del }}"></x-import>
+          </sc-for>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===== RIGHT: Properties sidebar ===== -->
+    <aside style="width:344px; flex:none; box-sizing:border-box; background:var(--surface-sidebar); border-left:1px solid var(--color-hairline); overflow:auto; padding:56px 16px 16px; display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--color-hairline)">
+        <span style="font:600 15px/1.2 var(--font-sans); letter-spacing:-0.2px; color:var(--color-ink)">Properties</span>
+        <span style="margin-left:auto; font:400 9px/1.3 var(--font-annotation); letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); white-space:nowrap">{{ propScopeLabel }}</span>
+      </div>
+
+      <!-- ===== RUN MODE: validation run / failing / passing / rule ===== -->
+      <sc-if value="{{ propRunMode }}" hint-placeholder-val="{{ true }}">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Panel" hint-size="100%,230px" title="Validation run">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Run Id" value="{{ mvRunUuid }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Date Created" value="{{ mvRunDate }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Base Model" value="main"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Validation Model" value="dg-validation"></x-import>
+          <div style="display:flex; gap:28px; margin-top:10px">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.StatBlock" hint-size="80px,48px" label="Failing" value="{{ failCount }}"></x-import>
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.StatBlock" hint-size="80px,48px" label="Passing" value="{{ passCount }}" muted="{{ true }}"></x-import>
+          </div>
+        </x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Collapsible" hint-size="100%,150px" label="Failing items" count="{{ failCount }}" emphasis="{{ true }}" open="{{ failOpen }}" on-toggle="{{ toggleFailOpen }}">
+          <sc-for list="{{ failItems }}" as="it" hint-placeholder-count="3">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.CollapsibleItem" hint-size="100%,44px" primary="{{ it.primary }}" secondary="{{ it.secondary }}" selected="{{ it.selected }}" on-click="{{ it.click }}"></x-import>
+          </sc-for>
+        </x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Collapsible" hint-size="100%,52px" label="Passing items" count="{{ passCount }}" open="{{ passOpen }}" on-toggle="{{ togglePassOpen }}">
+          <sc-for list="{{ passItems }}" as="it" hint-placeholder-count="3">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.CollapsibleItem" hint-size="100%,44px" primary="{{ it.primary }}" secondary="{{ it.secondary }}" selected="{{ it.selected }}" on-click="{{ it.click }}"></x-import>
+          </sc-for>
+        </x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Panel" hint-size="100%,240px" title="Rule">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Rule_Id" value="{{ mvRuleId }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,40px" label="Description" value="{{ mvRuleDesc }}" mono="{{ false }}"></x-import>
+          <div style="margin-top:10px">
+            <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.CodeBlock" hint-size="100%,90px" label="SWRL Expression">{{ mvSwrl }}</x-import>
+          </div>
+        </x-import>
+      </sc-if>
+
+      <!-- ===== INSTANCE MODE: selected geometry instance ===== -->
+      <sc-if value="{{ propInstMode }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ backToRun }}" style="display:inline-flex; align-items:center; gap:6px; align-self:flex-start; cursor:pointer; font:500 11px/1.2 var(--font-annotation); letter-spacing:1px; text-transform:uppercase; color:var(--text-muted)" style-hover="color:var(--text-primary)">← Validation run</div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Chip" hint-size="auto,24px" selected="{{ true }}">{{ instClass }}</x-import>
+          <span style="font:500 13px/1.3 var(--font-mono); letter-spacing:-0.2px">{{ instId }}</span>
+        </div>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Panel" hint-size="100%,180px" title="Instance properties">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Id" value="{{ instId }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Class" value="{{ instClass }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Height" value="{{ instHeight }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Footprint" value="{{ instFootprint }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Storeys" value="{{ instStoreys }}"></x-import>
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.KVRow" hint-size="100%,24px" label="Floor Area" value="{{ instFloorArea }}"></x-import>
+        </x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Panel" hint-size="100%,140px" title="Validation">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--color-hairline)">
+            <span style="font:400 12px/1.3 var(--font-sans); color:var(--text-muted)">Status</span>
+            <span style="font:600 12px/1.3 var(--font-mono); color:{{ instStatusColor }}">{{ instStatusLabel }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:1px; margin-top:6px">
+            <sc-for list="{{ instRuns }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:5px 0"><span style="font:400 12px/1.3 var(--font-mono); color:var(--text-secondary)">{{ r.ruleId }}</span><span style="font:500 11px/1.3 var(--font-mono); color:{{ r.statusColor }}">{{ r.statusLabel }}</span></div>
+            </sc-for>
+          </div>
+        </x-import>
+      </sc-if>
+    </aside>
+  </div>
+
+  <!-- ================= PROJECTS ================= -->
+  <div id="layer-projects" data-screen-label="Projects" style="position:absolute; inset:0; opacity:0; pointer-events:none; transform:scale(0.965); transition:opacity 520ms cubic-bezier(0.2,0,0,1), transform 520ms cubic-bezier(0.2,0,0,1); overflow:auto; will-change:transform,opacity">
+    
+  <div style="max-width:1280px; margin:0 auto; padding:28px 40px 60px; box-sizing:border-box; display:flex; flex-direction:column; gap:28px">
+      <div style="display:flex; align-items:center; gap:16px">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="90px,30px" variant="outline" size="sm" on-click="{{ goLanding }}">← Back</x-import>
+        <div style="font:600 34px/1.1 var(--font-sans); letter-spacing:-1.2px">Projects.</div>
+        <div style="margin-left:auto">
+          <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="120px,30px" size="sm">New Project</x-import>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px">
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Tile" hint-size="100%,220px" title="Nordhavn Block C" description="Mixed-use block · 24,600 m² GFA · Copenhagen" on-click="{{ pickProj0 }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Tile" hint-size="100%,220px" title="Køge Bay Housing" description="Residential · 12,300 m² · Køge" on-click="{{ pickProj1 }}"></x-import>
+        <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Tile" hint-size="100%,220px" title="Aarhus Ø Tower" description="Residential tower · 96 m · Aarhus" on-click="{{ pickProj2 }}"></x-import>
+      </div>
+      <div class="dg-annotation dg-annotation--muted" style="font-size:11px">3 projects · Neo4j connected · bolt://dg-meta:7687</div>
+    </div></div>
+
+  <!-- ================= GLOBAL CHROME ================= -->
+  <div style="position:absolute; right:20px; top:20px; z-index:9">
+    <x-import component-from-global-scope="DesignGrammarsDesignSystem_8522e3.Button" hint-size="100px,30px" variant="outline" size="sm" on-click="{{ toggleDark }}">{{ darkLabel }}</x-import>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startRegion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;projects&quot;,&quot;graph&quot;,&quot;model&quot;],&quot;default&quot;:&quot;landing&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Navigation&quot;},&quot;particleDensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:2,&quot;min&quot;:0.4,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Landing&quot;},&quot;idleDrift&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Graph Viewer&quot;},&quot;fieldOn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Divergence field&quot;},&quot;fieldAmplitude&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.2,&quot;min&quot;:0,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Divergence field&quot;},&quot;fieldDensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.8,&quot;min&quot;:0.4,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Divergence field&quot;}}">
+class Component extends DCLogic {
+  state = {
+    region: 'landing', dark: false, type: 0,
+    sel: null, selBig: false, hover: null,
+    searchOpen: false, q: '', filterOn: false, filterQ: '', searchProp: '*',
+    promptVal: '', promptLog: '',
+    mode: 0, session: [], sessionOpen: false, specDoc: null, compFile: null, connector: 'gh_facade',
+    run: 'height_max', picked: 'building2', mvFail: true, mvPass: true, mvBase: true,
+    aFail: 85, aPass: 55, failOpen: true, passOpen: false, isolate: false, hidden: [], rerun: false,
+    dstate: 'ds_base', dsOpen: true,
+    propMode: 'run', tileProps: ['height', 'gfa', 'units'], dsSettingsOpen: false,
+    // ----- landing identity / auth -----
+    user: null, project: null,
+    authOpen: false, authMode: 'login', authName: '', authEmail: '', authPass: '', authErr: ''
+  };
+
+  /* ================= static data ================= */
+  GRAPHS() {
+    return [
+      { key: 'onto', ns: 'dg',  name: 'Ontograph',   orbits: ['Class', 'ObjProperty', 'DataProperty'] },
+      { key: 'meta', ns: 'dgm', name: 'Metagraph',    orbits: ['Rule', 'Atom', 'Variable'] },
+      { key: 'spec', ns: 'dgs', name: 'SpecGraph',    orbits: ['SpecClass', 'SpecNote', 'SpecTag'] },
+      { key: 'comp', ns: 'dgc', name: 'Computgraph',  orbits: ['Pattern', 'Parameter', 'Interface'] },
+      { key: 'val',  ns: 'dgv', name: 'Validgraph',   orbits: ['Run', 'ValidationEntity', 'DSParameter'] }
+    ];
+  }
+  RULES() {
+    return [
+      ['R_height_max', 'Max building height', 'hasHeight', '≤ 30 m', '27.8 m', '34.2 m'],
+      ['R_setback_front', 'Front setback', 'hasSetback', '≥ 5 m', '6.2 m', '3.9 m'],
+      ['R_floor_area', 'Gross floor area', 'grossArea', '≤ 24,600 m²', '23,940 m²', '25,310 m²'],
+      ['R_window_ratio', 'Glazing ratio', 'glazingRatio', '≥ 0.32', '0.36', '0.27'],
+      ['R_door_width', 'Clear door width', 'clearWidth', '≥ 850 mm', '910 mm', '762 mm'],
+      ['R_corridor_width', 'Corridor clear width', 'clearWidth', '≥ 1300 mm', '1450 mm', '1180 mm'],
+      ['R_stair_riser', 'Stair riser height', 'riserHeight', '≤ 180 mm', '172 mm', '187 mm'],
+      ['R_egress_dist', 'Egress travel distance', 'egressDistance', '≤ 25.0 m', '21.6 m', '27.4 m'],
+      ['R_daylight', 'Daylight factor', 'daylightFactor', '≥ 2.1 %', '2.6 %', '1.7 %'],
+      ['R_unit_area', 'Unit floor area', 'netArea', '≥ 35.0 m²', '41.2 m²', '33.6 m²'],
+      ['R_balcony_depth', 'Balcony depth', 'hasDepth', '≥ 1500 mm', '1620 mm', '1410 mm'],
+      ['R_parking_ratio', 'Parking ratio', 'parkingRatio', '≥ 0.75 / unit', '0.82', '0.61'],
+      ['R_roof_slope', 'Roof slope', 'slopeAngle', '≤ 25°', '18°', '29°'],
+      ['R_court_ratio', 'Courtyard ratio', 'courtRatio', '≥ 0.18', '0.22', '0.14']
+    ];
+  }
+  MRUNS() {
+    return [
+      { id: 'height_max', uuid: 'ab12f3e0-51c4-4e8a-9b02', date: 'Jul 3, 2026', dateFull: '7/3/2026, 10:30 AM · 2.4 s', kind: 'Constraint', desc: 'Maximum building height must not exceed 30 meters', swrl: 'Building(?b) ∧ hasHeight(?b, ?h) ∧ swrlb:greaterThan(?h, 30) → violation(?b)', fails: ['building2', 'building5', 'building7'] },
+      { id: 'setback_front', uuid: 'c8d94a17-0f2b-43aa-8e51', date: 'Jul 2, 2026', dateFull: '7/2/2026, 4:12 PM · 1.9 s', kind: 'Requirement', desc: 'Front setback must be at least 5 meters', swrl: 'Building(?b) ∧ hasSetback(?b, ?s) ∧ swrlb:lessThan(?s, 5) → violation(?b)', fails: ['building3'] },
+      { id: 'floor_area', uuid: 'f412bb08-77d1-49c0-b3a6', date: 'Jul 1, 2026', dateFull: '7/1/2026, 9:05 AM · 3.1 s', kind: 'Constraint', desc: 'Gross floor area must not exceed 24,600 m²', swrl: 'Building(?b) ∧ grossArea(?b, ?a) ∧ swrlb:greaterThan(?a, 24600) → violation(?b)', fails: ['building7', 'building4'] },
+      { id: 'window_ratio', uuid: '19e07c55-2b8f-4f4d-a2c9', date: 'Jun 30, 2026', dateFull: '6/30/2026, 2:47 PM · 2.2 s', kind: 'Guideline', desc: 'Glazing ratio should be at least 0.32', swrl: 'Facade(?f) ∧ glazingRatio(?f, ?r) ∧ swrlb:lessThan(?r, 0.32) → violation(?f)', fails: ['building1'] },
+      { id: 'daylight_factor', uuid: '7a3d10c2-9e64-4b7f-8d02', date: 'Jun 28, 2026', dateFull: '6/28/2026, 11:20 AM · 2.8 s', kind: 'Requirement', desc: 'Daylight factor in habitable rooms must be at least 2.1 %', swrl: 'Room(?r) ∧ daylightFactor(?r, ?df) ∧ swrlb:lessThan(?df, 2.1) → violation(?r)', fails: ['building5', 'building6'] }
+    ];
+  }
+  DSTATES() {
+    // each is a distinct design configuration (massing / structure variant) of Nordhavn Block C
+    return [
+      { id: 'ds_base', name: 'Baseline massing', date: 'Jul 3, 2026', tag: 'current', height: '27.8 m', gfa: '23,940 m²', units: '168', storeys: '9', coverage: '42 %', setback: '6.2 m', glazing: '0.36', daylight: '2.6 %', parking: '0.82', pass: '11 / 14',
+        hScale: 1.0, xShift: 0, drop: [], fails: ['building2', 'building5', 'building7'], runs: ['height_max', 'setback_front', 'floor_area', 'window_ratio', 'daylight_factor'] },
+      { id: 'ds_low', name: 'Height −4 m', date: 'Jul 2, 2026', tag: 'variant', height: '23.8 m', gfa: '22,100 m²', units: '156', storeys: '7', coverage: '42 %', setback: '6.2 m', glazing: '0.36', daylight: '2.8 %', parking: '0.80', pass: '13 / 14',
+        hScale: 0.80, xShift: 0, drop: [], fails: ['building7'], runs: ['height_max', 'floor_area', 'daylight_factor'] },
+      { id: 'ds_setback', name: 'Setback +2 m', date: 'Jul 1, 2026', tag: 'variant', height: '27.8 m', gfa: '22,780 m²', units: '160', storeys: '9', coverage: '38 %', setback: '8.2 m', glazing: '0.34', daylight: '2.5 %', parking: '0.78', pass: '12 / 14',
+        hScale: 1.0, xShift: 12, drop: [], fails: ['building2', 'building5'], runs: ['setback_front', 'height_max', 'floor_area'] },
+      { id: 'ds_court', name: 'Courtyard expanded', date: 'Jun 30, 2026', tag: 'variant', height: '27.8 m', gfa: '21,300 m²', units: '150', storeys: '9', coverage: '34 %', setback: '6.2 m', glazing: '0.38', daylight: '2.9 %', parking: '0.90', pass: '14 / 14',
+        hScale: 1.0, xShift: 0, drop: ['building4'], fails: [], runs: ['floor_area', 'window_ratio', 'daylight_factor'] },
+      { id: 'ds_timber', name: 'Timber CLT frame', date: 'Jun 28, 2026', tag: 'variant', height: '26.4 m', gfa: '23,940 m²', units: '168', storeys: '8', coverage: '42 %', setback: '6.2 m', glazing: '0.35', daylight: '2.4 %', parking: '0.82', pass: '12 / 14',
+        hScale: 0.94, xShift: 0, drop: [], fails: ['building5', 'building7'], runs: ['height_max', 'daylight_factor', 'window_ratio'] }
+    ];
+  }
+  // PropState ⊑ DesignState — retrieved from the metagraph (owl:subClassOf DesignState).
+  // Each entry drives an optional key/value row shown inside a design-state tile.
+  PROPSTATES() {
+    return [
+      { key: 'height',   label: 'Height',         iri: 'dg:HeightState' },
+      { key: 'gfa',      label: 'GFA',            iri: 'dg:GFAState' },
+      { key: 'units',    label: 'Units',          iri: 'dg:UnitCountState' },
+      { key: 'storeys',  label: 'Storeys',        iri: 'dg:StoreyState' },
+      { key: 'coverage', label: 'Site coverage',  iri: 'dg:CoverageState' },
+      { key: 'setback',  label: 'Setback',        iri: 'dg:SetbackState' },
+      { key: 'glazing',  label: 'Glazing ratio',  iri: 'dg:GlazingState' },
+      { key: 'daylight', label: 'Daylight factor', iri: 'dg:DaylightState' },
+      { key: 'parking',  label: 'Parking ratio',  iri: 'dg:ParkingState' }
+    ];
+  }
+  BLD() {
+    return [
+      { id: 'building1', x: 90, y: 320, w: 70, d: 34, h: 60 },
+      { id: 'building2', x: 200, y: 340, w: 60, d: 30, h: 150 },
+      { id: 'building3', x: 310, y: 320, w: 80, d: 38, h: 84 },
+      { id: 'building4', x: 430, y: 350, w: 66, d: 32, h: 52 },
+      { id: 'building5', x: 540, y: 325, w: 58, d: 28, h: 168 },
+      { id: 'building7', x: 660, y: 345, w: 74, d: 36, h: 188 },
+      { id: 'building6', x: 760, y: 320, w: 64, d: 30, h: 92 }
+    ];
+  }
+  geomFor(d) {
+    // transform the base massing to reflect a design state's configuration
+    return this.BLD().filter((b) => (d.drop || []).indexOf(b.id) < 0)
+      .map((b) => ({ ...b, x: b.x + (d.xShift || 0), h: Math.round(b.h * (d.hScale != null ? d.hScale : 1)) }));
+  }
+  boxPath(b) {
+    const iso = (dx, dy, dz) => [b.x + dx - dy * 0.6, b.y - dz - dy * 0.32];
+    const p = (a) => a.join(',');
+    const A = iso(0, 0, 0), B = iso(b.w, 0, 0), C = iso(b.w, b.d, 0), D2 = iso(0, 0, b.h), B2 = iso(b.w, 0, b.h), C2 = iso(b.w, b.d, b.h), E2 = iso(0, b.d, b.h);
+    return 'M' + p(A) + ' L' + p(B) + ' L' + p(B2) + ' L' + p(D2) + ' Z M' + p(B) + ' L' + p(C) + ' L' + p(C2) + ' L' + p(B2) + ' Z M' + p(D2) + ' L' + p(B2) + ' L' + p(C2) + ' L' + p(E2) + ' Z';
+  }
+  ANCH() {
+    return [
+      { key: 'graph', ang: Math.PI * 1.06, amp: 0.95, sig: 0.30 },
+      { key: 'model', ang: -0.20, amp: 1.0, sig: 0.26 },
+      { key: 'projects', ang: Math.PI * 0.62, amp: 0.72, sig: 0.22 }
+    ];
+  }
+
+  rng(seed) { let t = seed >>> 0; return function () { t += 0x6D2B79F5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; }; }
+  gauss(R) { let u = 0, v = 0; while (!u) u = R(); while (!v) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.28318 * v); }
+  angDiff(a, b) { let d = (a - b) % 6.283185307; if (d > 3.141592653) d -= 6.283185307; if (d < -3.141592653) d += 6.283185307; return d; }
+
+  /* ================= graph data ================= */
+  buildData() {
+    const G = this.GRAPHS(), RU = this.RULES();
+
+    // ---------- per-orbit world radii (5 layers × 3 orbits, grouped) ----------
+    // tight intra-layer gaps, wide inter-layer gaps
+    this._orbR = []; let acc = 0.16;
+    for (let g = 0; g < 5; g++) { const t = []; for (let o = 0; o < 3; o++) { t.push(acc); acc += 0.058; } acc += 0.12; this._orbR.push(t); }
+    this._fit = 0.40 / this._orbR[4][2];
+
+    // ---------- layer builder ----------
+    // orbits = [arr0, arr1, arr2] of node objects; spokes = [[fromOrbit, fromIdx, toOrbit, toIdx], …]
+    const mkLayer = (g, orbits, spokes) => {
+      let nodes = []; const ob = [];
+      orbits.forEach((arr, o) => { const start = nodes.length; arr.forEach((n) => { n.orbit = o; }); nodes = nodes.concat(arr); ob.push([start, nodes.length]); });
+      nodes.forEach((n, i) => { n.ring = g; n.idx = i; n.deg = 0; });
+      ob.forEach((rng, o) => { const c = Math.max(1, rng[1] - rng[0]); for (let i = rng[0]; i < rng[1]; i++) nodes[i].ang = ((i - rng[0]) / c) * 6.283185307 + o * 0.26; });
+      // Edges come ONLY from semantic spokes (real ObjectProperty relations).
+      // No implicit same-orbit ring cycle: peers on one orbit (e.g. Rule↔Rule) are
+      // NOT auto-connected. A shared node (e.g. a reused ClassAtom) links to every
+      // node it genuinely relates to, yielding several distinct edges.
+      const edges = [], seen = new Set();
+      spokes.forEach((sp) => {
+        const a = ob[sp[0]][0] + sp[1], b = ob[sp[2]][0] + sp[3];
+        if (!nodes[a] || !nodes[b] || a === b) return;
+        const key = a < b ? a + '_' + b : b + '_' + a;
+        if (seen.has(key)) return; seen.add(key);
+        edges.push([a, b]);
+      });
+      edges.forEach((e) => { nodes[e[0]].deg++; nodes[e[1]].deg++; });
+      return { key: G[g].key, ns: G[g].ns, name: G[g].name, orbits: G[g].orbits, nodes, edges, ob };
+    };
+    const P = (arr) => arr;   // props identity
+
+    const rings = [];
+
+    // ============ 0 · Ontograph (dg) — Class / ObjProperty / DataProperty ============
+    {
+      const CLS = ['Building', 'LivingUnit', 'Street', 'Storey', 'Space', 'Unit', 'Corridor', 'Stair', 'Door', 'Window', 'Wall', 'Slab', 'Roof', 'Balcony', 'Core', 'Facade', 'Room', 'Zone', 'Site', 'Column'];
+      const OBJ = ['hasPart', 'partOf', 'adjacentTo', 'contains', 'boundedBy', 'connectsTo', 'servedBy', 'hasStorey', 'hasUnit', 'facesStreet', 'hasFacade', 'accessTo'];
+      const DAT = ['hasHeightM', 'hasWidthM', 'hasDepthM', 'hasAreaM2', 'hasWindowCount', 'glazingRatio', 'hasSetbackM', 'riserHeightMm', 'clearWidthMm', 'daylightFactor', 'netAreaM2', 'slopeAngle', 'violatesMaxHeight', 'violatesMinWidth', 'violatesMinWindowCount'];
+      const o0 = CLS.map((c, i) => ({ label: 'Class_' + c, props: P([['iri', 'ex:' + c], ['label', c], ['type', 'owl:Class'], ['subClassOf', i < 3 ? 'owl:Thing' : 'Class_' + CLS[i % 3]], ['instances', String(4 + (i * 29) % 120)], ['ns', 'dg']]) }));
+      const o1 = OBJ.map((p, i) => ({ label: 'OProp_' + p, props: P([['iri', 'ex:' + p], ['type', 'owl:ObjectProperty'], ['domain', 'Class_' + CLS[i % CLS.length]], ['range', 'Class_' + CLS[(i * 3 + 1) % CLS.length]], ['ns', 'dg']]) }));
+      const o2 = DAT.map((p, i) => ({ label: 'DProp_' + p, props: P([['iri', 'ex:' + p], ['type', 'owl:DatatypeProperty'], ['domain', 'Class_' + CLS[(i * 2) % CLS.length]], ['range', p.indexOf('violates') === 0 ? 'xsd:boolean' : (p.indexOf('Count') >= 0 ? 'xsd:integer' : 'xsd:decimal')], ['ns', 'dg']]) }));
+      const spokes = [];
+      o0.forEach((n, i) => { if (i >= 3) spokes.push([0, i, 0, i % 3]); });                 // subClassOf
+      o1.forEach((n, i) => { spokes.push([1, i, 0, i % o0.length]); spokes.push([1, i, 0, (i * 3 + 1) % o0.length]); }); // domain/range
+      o2.forEach((n, i) => { spokes.push([2, i, 0, (i * 2) % o0.length]); });               // domain
+      rings.push(mkLayer(0, [o0, o1, o2], spokes));
+    }
+
+    // ============ 1 · Metagraph (dgm) — Rule / Atom / Variable ============
+    {
+      // [class, objVar, dataProp, propVar, comparator, bound] — parallel to RULES()
+      const RM = [
+        ['Building', '?b', 'hasHeight', '?h', 'greaterThan', '30'],
+        ['Building', '?b', 'hasSetback', '?sb', 'lessThan', '5'],
+        ['Building', '?b', 'grossArea', '?ga', 'greaterThan', '24600'],
+        ['Facade', '?f', 'glazingRatio', '?gr', 'lessThan', '0.32'],
+        ['Door', '?d', 'clearWidth', '?cw', 'lessThan', '850'],
+        ['Corridor', '?c', 'clearWidth', '?cw', 'lessThan', '1300'],
+        ['Stair', '?s', 'riserHeight', '?rh', 'greaterThan', '180'],
+        ['Building', '?b', 'egressDist', '?ed', 'greaterThan', '25'],
+        ['Room', '?r', 'daylightFactor', '?df', 'lessThan', '2.1'],
+        ['Unit', '?u', 'netArea', '?na', 'lessThan', '35'],
+        ['Balcony', '?bl', 'balconyDepth', '?bd', 'lessThan', '1500'],
+        ['Site', '?si', 'parkingRatio', '?pr', 'lessThan', '0.75'],
+        ['Roof', '?rf', 'roofSlope', '?rs', 'greaterThan', '25'],
+        ['Site', '?si', 'courtRatio', '?cr', 'lessThan', '0.18']
+      ];
+      const o0 = RU.map((r, k) => ({ label: r[0], props: P([['Rule_Id', r[0]], ['label', r[1]], ['type', 'dgm:Rule'], ['expression', 'body → head'], ['bodyAtom', RM[k][0] + '(' + RM[k][1] + ')'], ['limit', r[3]], ['validates', 'DesignState'], ['ns', 'dgm']]) }));
+
+      // --- Atom orbit: unique (reused) ClassAtoms first, then one BuiltinAtom per rule ---
+      const o1 = []; const classAtomIdx = {}; const rulesOfClass = {};
+      RM.forEach((m, k) => {
+        if (!(m[0] in classAtomIdx)) {
+          classAtomIdx[m[0]] = o1.length; rulesOfClass[m[0]] = [];
+          o1.push({ label: m[0] + '(' + m[1] + ')', props: P([['Atom_Id', 'atom_' + m[0].toLowerCase()], ['type', 'dgm:ClassAtom'], ['predicate', m[0]], ['argument', m[1]], ['reuse', 'shared across rules'], ['ns', 'dgm']]) });
+        }
+        rulesOfClass[m[0]].push(k);
+      });
+      const nClass = o1.length;
+      const builtinIdx = RM.map((m, k) => { const idx = o1.length; o1.push({ label: 'swrlb:' + m[4] + '(' + m[3] + ', ' + m[5] + ')', props: P([['Atom_Id', 'atom_b' + (k + 1)], ['type', 'dgm:BuiltinAtom'], ['predicate', 'swrlb:' + m[4]], ['argument', m[3]], ['bound', m[5]], ['rule', RU[k][0]], ['ns', 'dgm']]) }); return idx; });
+
+      // --- Variable orbit: unique object + property variables (reused → multi-edge) ---
+      const varIdx = {}; const o2 = [];
+      const pushVar = (v, kind) => { if (!(v in varIdx)) { varIdx[v] = o2.length; o2.push({ label: v, props: P([['name', v], ['type', 'dgm:' + kind], ['bindsTo', kind === 'ObjectVariable' ? 'ObjectInstance' : 'xsd:decimal'], ['reuse', 'shared'], ['ns', 'dgm']]) }); } return varIdx[v]; };
+      RM.forEach((m) => { pushVar(m[1], 'ObjectVariable'); pushVar(m[3], 'PropertyVariable'); });
+
+      const spokes = [];
+      // ClassAtom → every Rule that uses it (a reused atom fans out to several rules)
+      Object.keys(classAtomIdx).forEach((cn) => { rulesOfClass[cn].forEach((k) => spokes.push([1, classAtomIdx[cn], 0, k])); });
+      // BuiltinAtom_k → Rule_k (unique per rule)
+      RM.forEach((m, k) => spokes.push([1, builtinIdx[k], 0, k]));
+      // ClassAtom → its object variable
+      Object.keys(classAtomIdx).forEach((cn) => { const m = RM.find((x) => x[0] === cn); spokes.push([1, classAtomIdx[cn], 2, varIdx[m[1]]]); });
+      // BuiltinAtom_k → its property variable
+      RM.forEach((m, k) => spokes.push([1, builtinIdx[k], 2, varIdx[m[3]]]));
+      const metaRing = mkLayer(1, [o0, o1, o2], spokes);
+      metaRing.nClassAtoms = nClass;
+      rings.push(metaRing);
+    }
+
+    // ============ 2 · SpecGraph (dgs) — SpecClass / SpecNote / SpecTag ============
+    {
+      const CLASSES = ['ProgramNote', 'SiteConstraint', 'ClientBrief', 'CodeReference', 'PrecedentStudy', 'MaterialSpec', 'Sustainability', 'AccessNote'];
+      const TAGS = ['nordhavn', 'residential', 'mixed-use', 'height-limit', 'daylight', 'setback', 'facade', 'egress', 'parking', 'courtyard', 'BR18', 'DGNB', 'harbour', 'wind', 'acoustic', 'fire', 'accessibility', 'timber', 'concrete', 'glazing'];
+      const NOTES = [
+        'Max height 30 m to protect harbour sightlines', 'Ground floor active frontage on Sundkrogsgade', 'Client brief: 40 % family units', 'BR18 §4 daylight factor ≥ 2.1 %', 'Precedent: Krøyers Plads massing rhythm', 'Facade brick + anodised aluminium', 'DGNB Gold target — embodied carbon cap', 'Two independent egress stairs per core', 'Front setback 5 m to public quay', 'Courtyard ≥ 18 % of block footprint', 'Parking 0.75 spaces per dwelling', 'Balcony depth ≥ 1.5 m for usability', 'Roof slope ≤ 25° for solar array', 'Corridor clear width ≥ 1.3 m', 'Glazing ratio 0.32 min on south facade', 'Acoustic class C between units', 'Wind study: SW gusts at upper storeys', 'Timber CLT floors above level 2', 'Harbour flood datum +2.5 m DVR90', 'Unit net area ≥ 35 m²', 'Stair riser ≤ 180 mm', 'Fire compartment per storey', 'Accessible route to all cores', 'Material passport for reuse'
+      ];
+      const o0 = CLASSES.map((c, i) => ({ label: 'Spec_' + c, props: P([['spec_id', 'sc_' + (i + 1)], ['type', 'dgs:SpecClass'], ['discriminator', c], ['noteCount', String(3 + (i * 7) % 6)], ['ns', 'dgs']]) }));
+      const o1 = NOTES.map((t, i) => ({ label: 'Note_' + (i + 1 < 10 ? '0' : '') + (i + 1), props: P([['note_id', 'note_' + (i + 1)], ['type', 'dgs:SpecNote'], ['title', t], ['source', i % 3 === 0 ? 'prompt' : 'folder ingest'], ['class', CLASSES[i % CLASSES.length]], ['ns', 'dgs']]) }));
+      const o2 = TAGS.map((t, i) => ({ label: '#' + t, props: P([['tag', t], ['type', 'dgs:SpecTag'], ['skos', 'skos:Concept'], ['uses', String(1 + (i * 5) % 9)], ['ns', 'dgs']]) }));
+      const spokes = [];
+      o1.forEach((n, i) => { spokes.push([1, i, 0, i % o0.length]); spokes.push([1, i, 2, i % o2.length]); spokes.push([1, i, 2, (i * 3 + 2) % o2.length]); });
+      rings.push(mkLayer(2, [o0, o1, o2], spokes));
+    }
+
+    // ============ 3 · Computgraph (dgc) — Pattern / Parameter / Interface ============
+    {
+      const PAT = ['Gh_NumberSlider', 'Gh_Panel', 'Gh_Series', 'Gh_Extrude', 'Gh_Move', 'Gh_Rotate', 'Gh_BoundingBox', 'Gh_Area', 'Gh_Divide', 'Gh_Loft', 'Gh_Offset', 'Gh_Cull', 'Gh_Graft', 'Gh_Merge', 'Gh_Dispatch', 'Gh_Evaluate', 'Gh_ClosestPt', 'Gh_Voronoi', 'Gh_Mass', 'Gh_Deconstruct', 'Gh_Vector', 'Gh_Expression'];
+      const PARM = ['11_Var_SpansCount', '11_Var_StoreyHeight', '11_Const_ptZero', '11_Const_TrussConfig', '11_Emg_LineSDL', '12_Emg_FloorArea', '12_Var_UnitWidth', '12_Var_CoreCount', '13_Const_GridSpacing', '13_Emg_Height', '14_Var_GlazingRatio', '14_Emg_FacadeArea', '15_Var_SetbackM', '15_Emg_Footprint', '16_Var_RoofSlope', '16_Emg_RoofArea', '17_Const_FloorDatum', '17_Emg_UnitCount', '18_Var_BalconyDepth', '18_Emg_DaylightF', '19_Const_EgressMax', '19_Emg_TravelDist', '20_Var_ParkRatio', '20_Emg_ParkCount'];
+      const IFACE = ['In_Curve', 'In_Number', 'In_Point', 'In_Brep', 'In_Vector', 'In_Bool', 'Out_Geometry', 'Out_Number', 'Out_Area', 'Out_Volume', 'Out_Points', 'Out_Report', 'In_Plane', 'Out_Mesh', 'In_Domain', 'Out_Bool'];
+      const o0 = PAT.map((p, i) => ({ label: p, props: P([['pattern_id', 'ptn_' + (i + 1)], ['type', 'dgc:Pattern'], ['ghComponent', p.slice(3)], ['procedure', 'Proc_' + (1 + i % 4)], ['ns', 'dgc']]) }));
+      const o1 = PARM.map((p, i) => { const kind = p.indexOf('_Var_') >= 0 ? 'VariableParam' : (p.indexOf('_Const_') >= 0 ? 'ConstantParam' : 'EmergentParam'); return { label: p, props: P([['param_id', 'prm_' + (i + 1)], ['type', 'dgc:' + kind], ['dataType', p.indexOf('Count') >= 0 || p.indexOf('Spans') >= 0 ? 'Integer' : (p.indexOf('Config') >= 0 ? 'Text' : 'Float')], ['value', kind === 'ConstantParam' ? 'fixed' : (kind === 'EmergentParam' ? 'computed' : 'user')], ['ns', 'dgc']]) }; });
+      const o2 = IFACE.map((p, i) => ({ label: p, props: P([['iface_id', 'if_' + (i + 1)], ['type', p.indexOf('In_') === 0 ? 'dgc:Input' : 'dgc:Output'], ['dataType', p.split('_')[1]], ['listStructure', i % 4 === 0 ? 'graft' : 'item'], ['ns', 'dgc']]) }));
+      const spokes = [];
+      o1.forEach((n, i) => { spokes.push([1, i, 0, i % o0.length]); });          // param feeds pattern
+      o2.forEach((n, i) => { spokes.push([2, i, 0, i % o0.length]); spokes.push([2, i, 1, (i * 2) % o1.length]); }); // iface ↔ pattern/param
+      rings.push(mkLayer(3, [o0, o1, o2], spokes));
+    }
+
+    // ============ 4 · Validgraph (dgv) — Run / ValidationEntity / DesignStateParameter ============
+    {
+      const RUNS = ['RUN 042', 'RUN 041', 'RUN 040', 'RUN 039', 'RUN 038', 'RUN 037', 'RUN 036', 'RUN 035'];
+      const ENT = ['building1', 'building2', 'building3', 'building4', 'building5', 'building7', 'unit_4.02', 'unit_5.11', 'corridor_C03', 'stair_ST02', 'door_D42_07', 'facade_S', 'facade_N', 'core_B', 'roof_R1', 'balcony_B3.07', 'window_W88', 'wall_W114', 'slab_S22', 'room_R204', 'room_R311', 'zone_Z2', 'shaft_V2', 'space_S07', 'storey_L4', 'storey_L5', 'court_C1', 'ramp_P1', 'column_C22', 'beam_B14'];
+      const failEnt = new Set([1, 2, 4, 5, 11, 15, 19]);
+      const o0 = RUNS.map((r, i) => ({ label: r, props: P([['runId', 'run_' + (42 - i)], ['type', 'dgv:Run'], ['date', ['Jul 3', 'Jul 2', 'Jul 1', 'Jun 30', 'Jun 28', 'Jun 25', 'Jun 22', 'Jun 20'][i] + ', 2026'], ['reasoner', 'SWRL forward-chain'], ['baseModel', 'main'], ['ns', 'dgv']]) }));
+      const o1 = ENT.map((e, i) => { const fail = failEnt.has(i); return { label: e, props: P([['objRefName', e], ['type', 'dgv:ValidationEntity'], ['status', fail ? 'fail' : 'pass'], ['idRef', 'ds_' + (100 + i)], ['geoRef', 'geo_' + (i + 1)], ['ns', 'dgv']]) }; });
+      const DSP = ['heightM', 'widthM', 'depthM', 'areaM2', 'setbackM', 'glazingRatio', 'riserMm', 'clearWidthMm', 'daylightF', 'netAreaM2', 'slopeDeg', 'parkRatio', 'balconyM', 'egressM', 'windowCount', 'floorCount', 'courtRatio', 'uValue', 'acousticC', 'fireClass'];
+      const o2 = DSP.map((p, i) => ({ label: 'dsp_' + p, props: P([['parameterId', 'dsp_' + (i + 1)], ['type', 'dgv:DesignStateParameter'], ['displayName', p], ['valueType', p.indexOf('Count') >= 0 ? 'Integer' : (p.indexOf('Class') >= 0 ? 'Text' : 'Number')], ['ns', 'dgv']]) }));
+      const spokes = [];
+      // Run → previous Run (dgv:previousRun temporal chain; runs are sequential, not a cycle)
+      for (let i = 0; i < o0.length - 1; i++) spokes.push([0, i, 0, i + 1]);
+      // ValidationEntity → its Run (evaluatedIn) + its DesignStateParameters (hasParameter)
+      o1.forEach((n, i) => { spokes.push([1, i, 0, i % o0.length]); spokes.push([1, i, 2, i % o2.length]); spokes.push([1, i, 2, (i * 2 + 1) % o2.length]); });
+      rings.push(mkLayer(4, [o0, o1, o2], spokes));
+    }
+
+    this._rings = rings;
+
+    // ---------- cross-layer edges (V7 object properties) ----------
+    this._cross = []; this._xmap = {};
+    const addX = (r1, i1, r2, i2, label) => {
+      if (!this._rings[r1] || !this._rings[r2] || !this._rings[r1].nodes[i1] || !this._rings[r2].nodes[i2]) return;
+      this._cross.push({ r1, i1, r2, i2, label });
+      (this._xmap[r1 + ':' + i1] = this._xmap[r1 + ':' + i1] || []).push({ r: r2, i: i2, label });
+      (this._xmap[r2 + ':' + i2] = this._xmap[r2 + ':' + i2] || []).push({ r: r1, i: i1, label });
+      this._rings[r1].nodes[i1].deg++; this._rings[r2].nodes[i2].deg++;
+    };
+    const OB = (g) => this._rings[g].ob;   // [ [s,e]×3 ]
+    const at = (g, o, k) => OB(g)[o][0] + (k % Math.max(1, OB(g)[o][1] - OB(g)[o][0]));
+    // Metagraph Rule → Ontograph Class (dgm:validates / definesFunction)
+    for (let k = 0; k < 14; k++) addX(1, at(1, 0, k), 0, at(0, 0, k), 'validates');
+    // Metagraph BuiltinAtom → Ontograph DataProperty (builtin atoms follow the class atoms in orbit 1)
+    const bStart = this._rings[1].nClassAtoms || 0;
+    for (let k = 0; k < 14; k++) addX(1, at(1, 1, bStart + k), 0, at(0, 2, k), 'constrains');
+    // Computgraph Parameter → Metagraph Rule (param provides rule limit)
+    for (let k = 0; k < 12; k++) addX(3, at(3, 1, k * 2), 1, at(1, 0, k), 'providesLimit');
+    // Validgraph Run → Metagraph Rule (run evaluates rule)
+    for (let k = 0; k < 8; k++) addX(4, at(4, 0, k), 1, at(1, 0, k), 'evaluates');
+    // Validgraph ValidationEntity → Ontograph Class (dg:objectRef)
+    for (let k = 0; k < 14; k++) addX(4, at(4, 1, k), 0, at(0, 0, k), 'objectRef');
+    // Validgraph DesignStateParameter → Ontograph DataProperty
+    for (let k = 0; k < 12; k++) addX(4, at(4, 2, k), 0, at(0, 2, k), 'measures');
+    // SpecGraph SpecNote → Metagraph Rule (spec informs rule)
+    for (let k = 0; k < 12; k++) addX(2, at(2, 1, k * 2), 1, at(1, 0, k), 'informs');
+
+    this._xPerRing = [0, 0, 0, 0, 0];
+    this._cross.forEach((x) => { this._xPerRing[x.r1]++; this._xPerRing[x.r2]++; });
+  }
+
+  reAngle(g) {
+    const rg = this._rings[g], byO = [[], [], []];
+    rg.nodes.forEach((n) => { byO[n.orbit || 0].push(n); });
+    byO.forEach((arr, o) => { const c = Math.max(1, arr.length); arr.forEach((n, k) => { n.ang = (k / c) * 6.283185307 + o * 0.26; }); });
+    rg.nodes.forEach((n, i) => { n.idx = i; });
+  }
+  xOf(r, i) { return (this._xmap && this._xmap[r + ':' + i]) || []; }
+  xCount(r) { return this._xPerRing ? this._xPerRing[r] : 0; }
+  // ObjectProperty label for a same-ring edge, from the two orbits it links
+  sameEdgeLabel(gkey, oa, ob) {
+    const k = Math.min(oa, ob) + '_' + Math.max(oa, ob);
+    const M = {
+      onto: { '0_0': 'subClassOf', '0_1': 'hasDomain', '0_2': 'hasDomain', '1_2': 'relatedTo' },
+      meta: { '0_1': 'hasAtom', '1_2': 'hasArgument', '0_2': 'usesVariable' },
+      spec: { '0_1': 'classifiedAs', '1_2': 'hasTag', '0_2': 'taggedAs' },
+      comp: { '0_1': 'feeds', '0_2': 'exposesPort', '1_2': 'carries' },
+      val:  { '0_0': 'previousRun', '0_1': 'evaluatedIn', '1_2': 'hasParameter', '0_2': 'derivesParam' }
+    };
+    return (M[gkey] && M[gkey][k]) || 'relatedTo';
+  }
+
+  /* ================= lifecycle ================= */
+  componentDidMount() {
+    this._stop = false;
+    // per-orbit rotation: _rot[layer][orbit] — each of a layer's 3 orbits turns independently
+    this._rot = [[0.30, 0.95, 1.60], [1.70, 2.35, 0.45], [0.90, 2.05, 3.05], [2.40, 1.15, 0.20], [1.20, 2.80, 1.95]];
+    this._rotT = this._rot.map((a) => a.slice());
+    this._spin = this._rot.map((a) => a.map(() => 0));
+    this._cam = { x: 0, y: 0, s: 1 }; this._camT = { x: 0, y: 0, s: 1 };
+    this._matches = new Set(); this._fMatches = new Set(); this._hits = null; this._hitsRing = -1;
+    this._anch = this.ANCH();
+    this.buildData();
+    this._orbReach = [0.030, 0.052, 0.175];
+    this.initGraphParticles();
+    try {
+      const p = JSON.parse(localStorage.getItem('dgv2-prefs') || 'null');
+      if (p) this.setState({ dark: !!p.dark, type: typeof p.type === 'number' ? p.type : 0 });
+    } catch (e) {}
+    this.resize();
+    this.initParticles();
+    this._heroPh = 'hidden'; this._heroParts = null; this._heroT0 = 0;
+    this.bind();
+    const sr = this.props.startRegion;
+    if (sr && sr !== 'landing') this.setState({ region: sr });
+    setTimeout(() => { this.syncLayers(); this.applyTheme(); }, 0);
+    this.initHeroWhenReady();
+    this._raf = requestAnimationFrame(this.tick.bind(this));
+  }
+  componentWillUnmount() { this._stop = true; cancelAnimationFrame(this._raf); this.unbind(); }
+  componentDidUpdate(prevProps) {
+    // NOTE: the runtime passes only prevProps (no prevState) — track prev state ourselves.
+    const p = this._prevSnap || {};
+    if (p.region !== this.state.region) this.syncLayers();
+    if (p.dark !== this.state.dark) { this.applyTheme(); this.persist(); }
+    if (p.type !== this.state.type) this.persist();
+    if (p.authOpen !== this.state.authOpen) { this.updateFormReveal(); this.setNavLabels(!this.state.authOpen); }
+    this._prevSnap = { region: this.state.region, dark: this.state.dark, type: this.state.type, authOpen: this.state.authOpen };
+    if (prevProps) {
+      if (prevProps.particleDensity !== this.props.particleDensity) { this.initParticles(); if (this._fontsReady) { this.sampleHeroTargets(); } }
+      if (prevProps.fieldDensity !== this.props.fieldDensity) this.initGraphParticles();
+      if (prevProps.startRegion !== this.props.startRegion && this.props.startRegion) this.fly(this.props.startRegion);
+    }
+  }
+  persist() { try { localStorage.setItem('dgv2-prefs', JSON.stringify({ dark: this.state.dark, type: this.state.type })); } catch (e) {} }
+
+  theme() {
+    return this.state.dark ? {
+      ink: '#f2f2f2', dim: '#454545', guide: 'rgba(242,242,242,0.07)', guideOn: 'rgba(242,242,242,0.16)', edge: 'rgba(242,242,242,0.22)', signal: '#ff4d55', signalDim: 'rgba(255,77,85,0.5)', leader: 'rgba(242,242,242,0.42)', paper: '#141414'
+    } : {
+      ink: '#0a0a0a', dim: '#d4d4d4', guide: 'rgba(10,10,10,0.06)', guideOn: 'rgba(10,10,10,0.16)', edge: 'rgba(10,10,10,0.20)', signal: '#e7000b', signalDim: 'rgba(231,0,11,0.5)', leader: 'rgba(10,10,10,0.38)', paper: '#f5f5f5'
+    };
+  }
+  applyTheme() {
+    const root = document.getElementById('dg-root'); if (!root) return;
+    const dark = {
+      '--color-canvas': '#141414', '--color-paper': '#1b1b1b', '--color-surface-alt': '#171717',
+      '--color-ink': '#f2f2f2', '--color-ink-soft': '#e8e8e8', '--color-mid-gray': '#9a9a9a',
+      '--text-primary': '#f2f2f2', '--text-secondary': '#e8e8e8', '--text-muted': '#9a9a9a',
+      '--color-hairline': '#2c2c2c', '--color-hairline-strong': '#3d3d3d',
+      '--ink-a04': 'rgba(242,242,242,0.05)', '--ink-a08': 'rgba(242,242,242,0.09)', '--ink-a16': 'rgba(242,242,242,0.17)', '--ink-a32': 'rgba(242,242,242,0.34)', '--ink-a56': 'rgba(242,242,242,0.58)',
+      '--frost-bg': 'rgba(20,20,20,0.74)', '--color-signal': '#ff4d55', '--color-signal-ink': '#ff7075',
+      '--color-signal-soft': 'rgba(255,77,85,0.12)', '--color-signal-mid': 'rgba(255,77,85,0.35)',
+      '--text-inverse': '#141414', '--surface-inverse': '#f2f2f2',
+      /* semantic aliases (colors.css resolves these once at :root — they must be re-declared
+         here directly, or components using them stay locked to their light-mode value) */
+      '--surface-canvas': '#141414', '--surface-sidebar': '#171717', '--surface-card': '#1b1b1b',
+      '--surface-input': '#141414', '--text-selection': '#ff7075',
+      '--border-default': '#2c2c2c', '--border-strong': '#3d3d3d', '--border-selected': '#ff4d55',
+      '--accent-selection': '#ff4d55', '--accent-selection-bg': 'rgba(255,77,85,0.12)',
+      '--status-fail': '#f2f2f2', '--status-pass': '#9a9a9a', '--status-base': 'rgba(242,242,242,0.34)',
+      '--status-destructive': '#e8e8e8'
+    };
+    Object.keys(dark).forEach((k) => { if (this.state.dark) root.style.setProperty(k, dark[k]); else root.style.removeProperty(k); });
+  }
+
+  /* ================= navigation ================= */
+  fly(region, origin) {
+    if (origin) { const l = document.getElementById('layer-landing'); if (l) l.style.transformOrigin = origin[0] + 'px ' + origin[1] + 'px'; }
+    this._transUntil = performance.now() + 620;
+    this._cam = { x: 0, y: 0, s: 1 }; this._camT = { x: 0, y: 0, s: 1 };
+    const backHome = region === 'landing';
+    this.setState({ region, searchOpen: false, promptLog: '', hover: null, authOpen: backHome ? false : this.state.authOpen });
+    if (backHome && this._heroParts && !this.state.authOpen) this.setHeroPhase('forming');
+  }
+  syncLayers() {
+    const reg = this.state.region;
+    const defs = { landing: 'layer-landing', projects: 'layer-projects', graph: 'layer-graph', model: 'layer-model' };
+    Object.keys(defs).forEach((k) => {
+      const el = document.getElementById(defs[k]); if (!el) return;
+      const on = k === reg;
+      el.style.opacity = on ? '1' : '0';
+      el.style.pointerEvents = on ? 'auto' : 'none';
+      el.style.transform = on ? 'scale(1)' : (k === 'landing' ? 'scale(1.6)' : 'scale(0.965)');
+    });
+  }
+
+  /* ================= landing particles ================= */
+  initParticles() {
+    const R = this.rng(7);
+    const N = Math.round(5200 * (this.props.particleDensity ?? 1));
+    this._parts = [];
+    for (let i = 0; i < N; i++) {
+      const wide = R() < 0.18;
+      this._parts.push({ a: R() * 6.28318, j: this.gauss(R) * (wide ? 13 : 4.5), u: Math.pow(R(), 1.6), s: 0.5 + R() * 0.95, al: 0.16 + R() * 0.44, w: R() * 6.28, v: (R() - 0.5) * 0.02 });
+    }
+  }
+  peakEnv(a) {
+    let e = 0.05;
+    for (const an of this._anch) { const d = this.angDiff(a, an.ang); e += an.amp * Math.exp(-(d * d) / (2 * an.sig * an.sig)); }
+    return e;
+  }
+  layoutLanding() {
+    const cx = this._vw / 2, cy = this._vh / 2, R = Math.min(this._vw, this._vh) * 0.365;
+    // Radial outward placement: each label sits OUTSIDE the ring on its own side,
+    // leader elbows out from the ring point so nothing reaches back over the centered headline.
+    const cfg = { graph: { el: 'll-graph', out: 62 }, model: { el: 'll-model', out: 62 }, projects: { el: 'll-projects', out: 54 } };
+    this._lls = []; this._pk = {};
+    for (const an of this._anch) {
+      const c = cfg[an.key];
+      const dx = Math.cos(an.ang), dy = Math.sin(an.ang);
+      const P = [cx + dx * R, cy + dy * R];
+      const K = [cx + dx * (R + c.out), cy + dy * (R + c.out)];
+      const right = dx >= 0;
+      const tx = K[0] + (right ? 14 : -14);
+      const hx = K[0] + (right ? 8 : -8);
+      this._lls.push({ P, K, hx, ty: K[1] });
+      this._pk[an.key] = P;
+      const el = document.getElementById(c.el);
+      if (el) {
+        el.style.left = '0px'; el.style.top = '0px';
+        el.style.textAlign = right ? 'left' : 'right';
+        el.style.transform = 'translate(' + tx + 'px, ' + K[1] + 'px) translate(' + (right ? '0' : '-100%') + ', -50%)';
+        el.style.transition = 'opacity 300ms cubic-bezier(0.2,0,0,1)';
+        el.style.opacity = this.state.authOpen ? '0' : '1';
+      }
+    }
+  }
+  drawLanding(t) {
+    const ctx = this._ctxL; if (!ctx) return;
+    const th = this.theme(), vw = this._vw, vh = this._vh;
+    ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+    ctx.clearRect(0, 0, vw, vh);
+    const cx = vw / 2, cy = vh / 2, R = Math.min(vw, vh) * 0.365;
+    ctx.fillStyle = th.ink;
+    for (const p of this._parts) {
+      p.a += p.v * 0.016;
+      const env = this.peakEnv(p.a);
+      const sp = Math.pow(Math.abs(Math.sin(p.a * 41 + p.w + t * 0.10)), 3) * 0.62 + Math.pow(Math.abs(Math.sin(p.a * 13 - t * 0.05 + p.w * 2)), 2) * 0.38;
+      const disp = env * (0.22 + 0.78 * sp);
+      const rad = R + p.j + disp * p.u * R * 0.40;
+      const x = cx + Math.cos(p.a) * rad, y = cy + Math.sin(p.a) * rad;
+      ctx.globalAlpha = p.al * (0.55 + 0.45 * sp);
+      ctx.fillRect(x, y, p.s, p.s);
+    }
+    ctx.globalAlpha = 1;
+    if (!this.state.authOpen) {
+      ctx.strokeStyle = th.leader; ctx.lineWidth = 1;
+      for (const L of this._lls || []) {
+        ctx.beginPath(); ctx.moveTo(L.P[0], L.P[1]); ctx.lineTo(L.K[0], L.K[1]); ctx.lineTo(L.hx, L.ty); ctx.stroke();
+        for (const pt of [L.P, [L.hx, L.ty]]) { ctx.beginPath(); ctx.arc(pt[0], pt[1], 3, 0, 6.29); ctx.fillStyle = th.paper; ctx.fill(); ctx.stroke(); }
+      }
+    }
+    this.drawHero(t);
+  }
+
+  /* ================= hero: title materialises from the particle cloud ================= */
+  heroMetrics() {
+    const vw = this._vw || window.innerWidth, vh = this._vh || window.innerHeight;
+    const cx = vw / 2, cy = vh * 0.44;
+    // read actual rendered font sizes so particle targets match the DOM exactly
+    const l1 = document.getElementById('hero-l1'), l2 = document.getElementById('hero-l2');
+    const s1 = l1 ? parseFloat(getComputedStyle(l1).fontSize) : Math.max(32, Math.min(76, vw * 0.052));
+    const s2 = l2 ? parseFloat(getComputedStyle(l2).fontSize) : s1 * 0.42;
+    const lh1 = s1 * 1.06, gap = s1 * 0.28, lh2 = s2 * 1.3;
+    const H = lh1 + gap + lh2;
+    const top = cy - H / 2;
+    return { vw, vh, cx, cy, s1, s2, lh1, lh2, gap, top, H, l1y: top + lh1 / 2, l2y: top + lh1 + gap + lh2 / 2 };
+  }
+  layoutHero() {
+    const m = this.heroMetrics();
+    const t = document.getElementById('hero-title');
+    if (t) t.style.top = m.top + 'px';
+    const be = document.getElementById('hero-beneath');
+    if (be) { be.style.top = (m.top + m.H + Math.max(30, m.s1 * 0.62)) + 'px'; be.style.transition = 'opacity 220ms cubic-bezier(0.2,0,0,1)'; }
+    const f = document.getElementById('hero-form');
+    if (f) f.style.top = m.cy + 'px';
+  }
+  sampleHeroTargets() {
+    const m = this.heroMetrics();
+    const cvs = document.createElement('canvas'); cvs.width = m.vw; cvs.height = m.vh;
+    const c = cvs.getContext('2d');
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#000';
+    c.font = '500 ' + Math.round(m.s1) + 'px "Oswald", sans-serif';
+    try { c.letterSpacing = '1px'; } catch (e) {}
+    c.fillText('DESIGN GRAMMARS.', m.cx, m.l1y);
+    c.font = '400 ' + Math.round(m.s2) + 'px "Oswald", sans-serif';
+    try { c.letterSpacing = '0.6px'; } catch (e) {}
+    c.fillText('Encode your design intent.', m.cx, m.l2y);
+    const data = c.getImageData(0, 0, m.vw, m.vh).data;
+    const dens = this.props.particleDensity ?? 1;
+    const stride = Math.max(2, Math.round(4 / Math.max(0.6, dens)));
+    const pts = [];
+    for (let y = 0; y < m.vh; y += stride) {
+      for (let x = 0; x < m.vw; x += stride) {
+        if (data[(y * m.vw + x) * 4 + 3] > 110) pts.push([x + (Math.random() - 0.5) * stride, y + (Math.random() - 0.5) * stride]);
+      }
+    }
+    // shuffle then cap for perf
+    for (let i = pts.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const tmp = pts[i]; pts[i] = pts[j]; pts[j] = tmp; }
+    const N = Math.min(pts.length, 2600);
+    const R = Math.min(m.vw, m.vh) * 0.365;
+    const parts = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const ang = Math.random() * 6.28318, rr = R * (0.82 + Math.random() * 0.5);
+      parts[i] = {
+        tx: pts[i][0], ty: pts[i][1],
+        hx: m.cx + Math.cos(ang) * rr, hy: m.cy + Math.sin(ang) * rr,
+        d: Math.random() * 0.26, al: 0.5 + Math.random() * 0.5, s: 0.7 + Math.random() * 1.1,
+        cur: (6 + Math.random() * 22), ca: Math.random() * 6.28318
+      };
+    }
+    this._heroParts = parts; this._fontsReady = true;
+  }
+  initHeroWhenReady() {
+    const go = () => {
+      if (this._stop) return;
+      this.sampleHeroTargets(); this.layoutHero();
+      if (this.state.region === 'landing' && !this.state.authOpen) this.setHeroPhase('forming');
+      else this._heroPh = 'shown';
+    };
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(go, 40)); else setTimeout(go, 80);
+  }
+  setHeroPhase(ph) {
+    this._heroPh = ph; this._heroT0 = performance.now();
+  }
+  _clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+  _smooth(a, b, x) { const t = this._clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); }
+  drawHero(t) {
+    const ctx = this._ctxL; if (!ctx) return;
+    const el = document.getElementById('hero-title');
+    const be = document.getElementById('hero-beneath');
+    const ph = this._heroPh;
+    if (!ph || ph === 'hidden' || !this._heroParts) {
+      if (el) el.style.opacity = '0';
+      if (be) { be.style.opacity = '0'; be.style.pointerEvents = 'none'; }
+      return;
+    }
+    const th = this.theme();
+    if (ph === 'shown') {
+      if (el) { el.style.opacity = '1'; el.style.filter = 'none'; el.style.transform = 'translateY(0)'; }
+      if (be) { const on = !this.state.authOpen; be.style.opacity = on ? '1' : '0'; be.style.transform = 'translateY(0)'; be.style.pointerEvents = on ? 'auto' : 'none'; }
+      return;
+    }
+    const forming = ph === 'forming';
+    const dur = forming ? 900 : 620;
+    const p = this._clamp01((performance.now() - (this._heroT0 || 0)) / dur);
+    ctx.fillStyle = th.ink;
+    for (const q of this._heroParts) {
+      const lp = this._clamp01((p - q.d) / (1 - 0.26));
+      const fromX = forming ? q.hx : q.tx, fromY = forming ? q.hy : q.ty;
+      const toX = forming ? q.tx : q.hx, toY = forming ? q.ty : q.hy;
+      const e = forming ? (1 - Math.pow(1 - lp, 3)) : (lp * lp);
+      let x = fromX + (toX - fromX) * e, y = fromY + (toY - fromY) * e;
+      const swirl = (1 - e) * q.cur;
+      x += Math.cos(q.ca + t * 0.6) * swirl * 0.4;
+      y += Math.sin(q.ca + t * 0.7) * swirl * 0.4;
+      let a;
+      if (forming) a = lp < 0.68 ? lp / 0.68 : Math.max(0, 1 - (lp - 0.68) / 0.32);
+      else a = 1 - lp;
+      ctx.globalAlpha = Math.max(0, a) * 0.9 * q.al;
+      ctx.fillRect(x, y, q.s, q.s);
+    }
+    ctx.globalAlpha = 1;
+    const tv = forming ? this._smooth(0.5, 1, p) : (1 - this._smooth(0, 0.5, p));
+    if (el) {
+      el.style.opacity = String(tv);
+      el.style.filter = 'blur(' + ((1 - tv) * 7).toFixed(2) + 'px)';
+      el.style.transform = 'translateY(' + ((1 - tv) * (forming ? 9 : -9)).toFixed(2) + 'px)';
+    }
+    const bv = forming ? this._smooth(0.66, 1, p) : (1 - this._smooth(0, 0.38, p));
+    if (be) {
+      be.style.opacity = String(bv);
+      be.style.transform = 'translateY(' + ((1 - bv) * 10).toFixed(2) + 'px)';
+      be.style.pointerEvents = (bv > 0.92 && !this.state.authOpen) ? 'auto' : 'none';
+    }
+    if (p >= 1) this._heroPh = forming ? 'shown' : 'hidden';
+  }
+  updateFormReveal() {
+    const card = document.getElementById('hero-form-card'); if (!card) return;
+    if (this.state.authOpen) {
+      card.style.transitionDelay = '260ms';
+      card.style.opacity = '1'; card.style.transform = 'translateY(0)'; card.style.filter = 'blur(0px)'; card.style.pointerEvents = 'auto';
+      setTimeout(() => { const inp = document.querySelector('#hero-form-card input'); if (inp) inp.focus(); }, 620);
+    } else {
+      card.style.transitionDelay = '0ms';
+      card.style.opacity = '0'; card.style.transform = 'translateY(12px)'; card.style.filter = 'blur(9px)'; card.style.pointerEvents = 'none';
+    }
+  }
+  setNavLabels(v) {
+    for (const id of ['ll-graph', 'll-model', 'll-projects', 'll-hint']) {
+      const e = document.getElementById(id); if (e) e.style.opacity = v ? '1' : '0';
+    }
+  }
+  deriveName(email) {
+    const local = (email || '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+    if (!local) return 'Architect';
+    return local.split(' ').filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  /* ================= graph geometry ================= */
+  /* ================= camera ================= */
+  camScreen() {
+    const s = this._cam.s, m = Math.min(this._vw, this._vh);
+    return { gcx: this._vw / 2 - this._cam.x * s, gcy: this._vh / 2 - this._cam.y * s, base: m * this._fit * s, s };
+  }
+  worldOf(g, i, rot) {
+    const m = Math.min(this._vw, this._vh), nd = this._rings[g].nodes[i];
+    const a = nd.ang + (rot || this._rot)[g][nd.orbit], Rw = this._orbR[g][nd.orbit] * m * this._fit;
+    return [Math.cos(a) * Rw, Math.sin(a) * Rw];
+  }
+  fitToSelection(r, i, big) {
+    // frame the selected node + its neighbours in world space (use the POST-align rotation targets)
+    const rot = this._rotT, rg = this._rings[r], pts = [this.worldOf(r, i, rot)];
+    for (const e of rg.edges) {
+      if (e[0] === i) pts.push(this.worldOf(r, e[1], rot));
+      else if (e[1] === i) pts.push(this.worldOf(r, e[0], rot));
+    }
+    if (big) for (const p of this.xOf(r, i)) pts.push(this.worldOf(p.r, p.i, rot));
+    let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    for (const [x, y] of pts) { if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+    const cxw = (minx + maxx) / 2, cyw = (miny + maxy) / 2;
+    const w = Math.max(maxx - minx, 60), h = Math.max(maxy - miny, 60);
+    const fill = big ? 0.62 : 0.78;                       // tighter frame on double-click
+    let s = Math.min(this._vw * fill / w, this._vh * fill / h);
+    s = Math.max(big ? 1.15 : 0.95, Math.min(2.6, s));
+    // on double-click the detail panel occupies the left; nudge the framing right so the node clears it
+    const offX = big ? (this._vw * 0.14) / s : 0;
+    this._camT = { x: cxw - offX, y: cyw, s };
+  }
+  resetCam() { this._camT = { x: 0, y: 0, s: 1 }; }
+
+  nodePos(g, i) {
+    const { gcx, gcy, base } = this.camScreen();
+    const nd = this._rings[g].nodes[i], a = nd.ang + this._rot[g][nd.orbit], R = this._orbR[g][nd.orbit] * base;
+    return [gcx + Math.cos(a) * R, gcy + Math.sin(a) * R];
+  }
+  hitNode(x, y) {
+    if (!this._rings) return null;
+    const { gcx, gcy, base } = this.camScreen();
+    const act = this.state.type;
+    let best = null, bestRaw = 1e9, bestScore = 1e9;
+    for (let g = 0; g < 5; g++) {
+      const rg = this._rings[g];
+      for (let i = 0; i < rg.nodes.length; i++) {
+        const nd = rg.nodes[i];
+        const a = nd.ang + this._rot[g][nd.orbit], R = this._orbR[g][nd.orbit] * base;
+        const dx = x - (gcx + Math.cos(a) * R), dy = y - (gcy + Math.sin(a) * R);
+        const raw = dx * dx + dy * dy, score = g === act ? raw * 0.45 : raw;
+        if (score < bestScore) { bestScore = score; bestRaw = raw; best = { r: g, i }; }
+      }
+    }
+    return best && bestRaw < 220 ? best : null;
+  }
+  computeMatches(q, ring) {
+    const s = new Set(); if (!q || !this._rings) return s;
+    const lq = q.toLowerCase();
+    this._rings[ring].nodes.forEach((n, i) => {
+      if (n.label.toLowerCase().indexOf(lq) >= 0 || n.props.some((p) => String(p[1]).toLowerCase().indexOf(lq) >= 0)) s.add(i);
+    });
+    return s;
+  }
+  computePropMatches(q, ring, prop) {
+    const s = new Set(); if (!q || !this._rings) return s;
+    const lq = q.toLowerCase();
+    this._rings[ring].nodes.forEach((n, i) => {
+      let hay;
+      if (prop === '*') hay = n.label + ' ' + n.props.map((p) => p[1]).join(' ');
+      else if (prop === '__label') hay = n.label;
+      else { const kv = n.props.find((p) => p[0] === prop); hay = kv ? String(kv[1]) : ''; }
+      if (hay.toLowerCase().indexOf(lq) >= 0) s.add(i);
+    });
+    return s;
+  }
+  setType(i) {
+    if (i === this.state.type) return;
+    this._matches = this.computeMatches(this.state.q, i);
+    this._fMatches = new Set();
+    this.resetCam();
+    this.setState({ type: i, sel: null, selBig: false, filterOn: false, filterQ: '', q: '', searchProp: '*' });
+    this._hits = null;
+  }
+  align(r0, i0) {
+    // Selected node → 3 o'clock (east). Each *other* involved orbit is rotated so its
+    // connected node lands at a distinct angle FANNED around east, so the edges radiating
+    // from the selection spread apart instead of collapsing onto one horizontal line.
+    const done = new Set();
+    const setO = (r, o, ang, tgt) => {
+      const key = r + ':' + o; if (done.has(key)) return true; done.add(key);
+      const cur = this._rot[r][o];
+      this._rotT[r][o] = cur + this.angDiff(tgt - ang, cur);   // node displayed angle → tgt
+      return false;
+    };
+    const rg0 = this._rings[r0], nd0 = rg0.nodes[i0];
+    setO(r0, nd0.orbit, nd0.ang, 0);   // selection pinned to east
+
+    // gather the unique neighbour orbits (one fan slot each)
+    const fan = [];
+    const consider = (r, i) => { const n = this._rings[r].nodes[i]; const key = r + ':' + n.orbit; if (done.has(key) || fan.some((f) => f.key === key)) return; fan.push({ key, r, o: n.orbit, ang: n.ang }); };
+    for (const e of rg0.edges) { const j = e[0] === i0 ? e[1] : (e[1] === i0 ? e[0] : -1); if (j >= 0) consider(r0, j); }
+    for (const p of this.xOf(r0, i0)) consider(p.r, p.i);
+
+    // spread neighbour orbits across a ±spread arc centred on east
+    const cnt = fan.length, spread = 0.62;
+    fan.forEach((f, k) => {
+      const slot = cnt > 1 ? (k / (cnt - 1) - 0.5) * 2 : 0;   // -1 … +1
+      setO(f.r, f.o, f.ang, slot * spread);
+    });
+    this._spin = this._spin.map((a) => a.map(() => 0));
+  }
+  selectNode(r, i, big) {
+    if (r !== this.state.type) { this._matches = this.computeMatches(this.state.q, r); this.setState({ type: r, filterOn: false, filterQ: '' }); this._hits = null; }
+    this._selT = this._lt || 0;
+    this.setState({ sel: { r, i }, selBig: !!big, hover: null, searchOpen: false });
+    this.align(r, i);
+    this.fitToSelection(r, i, !!big);
+  }
+
+  /* ================= input ================= */
+  bind() {
+    const g = document.getElementById('cv-graph');
+    this._gEl = g;
+    this._L = {};
+    this._L.down = (e) => {
+      if (e.button !== 0) return;
+      const cx = this._vw / 2, cy = this._vh / 2;
+      // which orbit of the active layer is grabbed → drag rotates ONLY that ring
+      const act = this.state.type, base = this.camScreen().base;
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      let orbit = 0, bd = 1e9;
+      for (let o = 0; o < 3; o++) { const dd = Math.abs(dist - this._orbR[act][o] * base); if (dd < bd) { bd = dd; orbit = o; } }
+      this._pd = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, orbit, a: Math.atan2(e.clientY - cy, e.clientX - cx), la: 0, lt: performance.now() };
+    };
+    this._L.move = (e) => {
+      if (this._pd && (e.buttons & 1)) {
+        this._pd.moved += Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0);
+        if (this._pd.moved > 4) {
+          const cx = this._vw / 2, cy = this._vh / 2;
+          const a = Math.atan2(e.clientY - cy, e.clientX - cx);
+          const d = this.angDiff(a, this._pd.a);
+          const act = this.state.type, o = this._pd.orbit;
+          this._rot[act][o] += d; this._rotT[act][o] = this._rot[act][o];
+          const now = performance.now();
+          this._pd.la = d / Math.max(0.008, (now - this._pd.lt) / 1000); this._pd.lt = now;
+          this._pd.a = a;
+          if (this.state.sel) { this.resetCam(); this.setState({ sel: null, selBig: false }); }
+          g.style.cursor = 'grabbing';
+        }
+      } else {
+        const hit = this.hitNode(e.clientX, e.clientY);
+        const cur = this.state.hover;
+        if ((hit && (!cur || cur.r !== hit.r || cur.i !== hit.i)) || (!hit && cur)) this.setState({ hover: hit });
+        g.style.cursor = hit ? 'pointer' : 'default';
+      }
+    };
+    this._L.up = (e) => {
+      g.style.cursor = 'default';
+      if (this._pd) {
+        if (this._pd.moved < 5 && performance.now() - this._pd.t < 400) this.clickAt(e.clientX, e.clientY);
+        else if (Math.abs(this._pd.la) > 0.4 && !this.state.sel) this._spin[this.state.type][this._pd.orbit] = Math.max(-3, Math.min(3, this._pd.la));
+      }
+      this._pd = null;
+    };
+    this._L.dbl = (e) => { const hit = this.hitNode(e.clientX, e.clientY); if (hit) this.selectNode(hit.r, hit.i, true); };
+    this._L.ctx = (e) => {
+      e.preventDefault();
+      const hit = this.hitNode(e.clientX, e.clientY);
+      if (hit) return;
+      const sp = document.getElementById('search-pop');
+      if (sp) { sp.style.left = Math.min(e.clientX, this._vw - 420) + 'px'; sp.style.top = Math.min(e.clientY, this._vh - 70) + 'px'; }
+      this.setState({ searchOpen: true, hover: null });
+      setTimeout(() => { const inp = document.querySelector('#search-pop input'); if (inp) inp.focus(); }, 80);
+    };
+    this._L.wheel = (e) => {
+      e.preventDefault();
+      const rect = g.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const s0 = this._camT.s;
+      const ns = Math.max(0.55, Math.min(4.5, s0 * Math.exp(-e.deltaY * 0.0012)));
+      // keep the world point under the cursor fixed while zooming
+      const wx = this._camT.x + (mx - this._vw / 2) / s0;
+      const wy = this._camT.y + (my - this._vh / 2) / s0;
+      this._camT = { s: ns, x: wx - (mx - this._vw / 2) / ns, y: wy - (my - this._vh / 2) / ns };
+    };
+    this._L.key = (e) => {
+      if (e.key === 'Escape') {
+        if (this.state.searchOpen) this.setState({ searchOpen: false });
+        else if (this.state.sel) { this.resetCam(); this.setState({ sel: null, selBig: false }); }
+        else if (this.state.region !== 'landing') this.fly('landing');
+      }
+      if (e.key === 'Enter' && this.state.searchOpen && document.activeElement && document.activeElement.closest && document.activeElement.closest('#search-pop')) {
+        if (this.state.q) { this._fMatches = this.computeMatches(this.state.q, this.state.type); this.setState({ filterOn: true, filterQ: this.state.q, searchOpen: false }); }
+      }
+      if (e.key === 'Enter' && document.activeElement && document.activeElement.closest && document.activeElement.closest('#prompt-wrap')) this.sendPrompt();
+    };
+    this._L.resize = () => this.resize();
+    g.addEventListener('pointerdown', this._L.down);
+    g.addEventListener('pointermove', this._L.move);
+    window.addEventListener('pointerup', this._L.up);
+    g.addEventListener('dblclick', this._L.dbl);
+    g.addEventListener('contextmenu', this._L.ctx);
+    g.addEventListener('wheel', this._L.wheel, { passive: false });
+    window.addEventListener('keydown', this._L.key);
+    window.addEventListener('resize', this._L.resize);
+    // minimap: click / drag to pan the camera
+    const mp = document.getElementById('cv-map');
+    this._mpEl = mp;
+    if (mp) {
+      this._L.mapMove = (e) => {
+        if (!this._mapDrag || !this._mapMM) return;
+        const r = mp.getBoundingClientRect();
+        this._camT = { x: (e.clientX - r.left - 75) / this._mapMM, y: (e.clientY - r.top - 75) / this._mapMM, s: this._camT.s };
+      };
+      this._L.mapDown = (e) => { e.stopPropagation(); this._mapDrag = true; this._L.mapMove(e); };
+      this._L.mapUp = () => { this._mapDrag = false; };
+      mp.addEventListener('pointerdown', this._L.mapDown);
+      window.addEventListener('pointermove', this._L.mapMove);
+      window.addEventListener('pointerup', this._L.mapUp);
+    }
+  }
+  unbind() {
+    const g = this._gEl;
+    if (g && this._L) {
+      g.removeEventListener('pointerdown', this._L.down);
+      g.removeEventListener('pointermove', this._L.move);
+      g.removeEventListener('dblclick', this._L.dbl);
+      g.removeEventListener('contextmenu', this._L.ctx);
+      g.removeEventListener('wheel', this._L.wheel);
+    }
+    window.removeEventListener('pointerup', this._L.up);
+    window.removeEventListener('keydown', this._L.key);
+    window.removeEventListener('resize', this._L.resize);
+    if (this._mpEl && this._L.mapDown) this._mpEl.removeEventListener('pointerdown', this._L.mapDown);
+    if (this._L.mapMove) window.removeEventListener('pointermove', this._L.mapMove);
+    if (this._L.mapUp) window.removeEventListener('pointerup', this._L.mapUp);
+  }
+  clickAt(x, y) {
+    const hit = this.hitNode(x, y);
+    if (!hit) {
+      if (this.state.searchOpen) this.setState({ searchOpen: false });
+      else if (this.state.sel) { this.resetCam(); this.setState({ sel: null, selBig: false }); }
+      return;
+    }
+    this.selectNode(hit.r, hit.i, false);
+  }
+  resize() {
+    this._vw = window.innerWidth; this._vh = window.innerHeight;
+    this._dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (const id of ['cv-landing', 'cv-graph']) {
+      const c = document.getElementById(id);
+      if (c) { c.width = this._vw * this._dpr; c.height = this._vh * this._dpr; }
+    }
+    const l = document.getElementById('cv-landing'), gc = document.getElementById('cv-graph');
+    this._ctxL = l ? l.getContext('2d') : null;
+    this._ctxG = gc ? gc.getContext('2d') : null;
+    const mc = document.getElementById('cv-map');
+    if (mc) { mc.width = 150 * this._dpr; mc.height = 150 * this._dpr; this._ctxM = mc.getContext('2d'); }
+    this.layoutLanding();
+    this.layoutHero();
+    if (this._fontsReady) this.sampleHeroTargets();
+  }
+
+  /* ================= prompt console ================= */
+  MODES() { return ['Ingest', 'Query', 'Edit']; }
+  CONNECTORS() {
+    return [
+      { value: 'gh_facade',    label: 'Grasshopper — facade.gh' },
+      { value: 'rvt_blockc',   label: 'Revit — block-c.rvt' },
+      { value: 'blend_massing',label: 'Blender — massing.blend' },
+      { value: 'dyn_floors',   label: 'Dynamo — floors.dyn' }
+    ];
+  }
+  stepsFor(m) {
+    if (m === 0) return ['Parsing intent', 'Reasoning over ontology', 'Encoding SWRL / Cypher', 'Committing to metagraph'];
+    if (m === 1) return ['Parsing query', 'Traversing graph', 'Ranking matches'];
+    return ['Locating node', 'Applying patch', 'Committing change'];
+  }
+  clockNow() { try { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) { return ''; } }
+  autoScroll() { requestAnimationFrame(() => { const el = document.getElementById('session-scroll'); if (el) el.scrollTop = el.scrollHeight; }); }
+
+  sendPrompt() {
+    const s = this.state;
+    const type = s.type, modeIdx = s.mode;
+    const txt = (s.promptVal || '').trim();
+    // attachment label from the active graph's input affordance
+    let attach = '';
+    if (type === 2 && s.specDoc) attach = 'DOC · ' + s.specDoc.name;
+    else if (type === 3 && s.compFile) attach = 'FILE · ' + s.compFile.name;
+    else if (type === 4) { const c = this.CONNECTORS().find((x) => x.value === s.connector); attach = 'CONNECTOR · ' + (c ? c.label : s.connector); }
+    // need SOME input — text, or (for file/connector graphs) the attachment alone
+    if (!txt && !(type === 3 && s.compFile) && !(type === 4)) return;
+
+    const id = 't' + (this._tc = (this._tc || 0) + 1);
+    const stepDefs = this.stepsFor(modeIdx);
+    const displayText = txt || (type === 3 ? 'Import ' + (s.compFile ? s.compFile.name : 'geometry definition')
+      : type === 4 ? 'Query active connector' : 'Extract from document');
+    const turn = {
+      id, modeIdx, type, modeLabel: this.MODES()[modeIdx],
+      gName: this.GRAPHS()[type].name, text: displayText, attach,
+      steps: stepDefs.map((l) => ({ label: l, active: false, time: '' })),
+      progress: 0, status: 'processing', response: '', meta: '', clock: ''
+    };
+    this.setState((st) => ({ session: st.session.concat([turn]), sessionOpen: true, promptVal: '' }));
+    this.autoScroll();
+    this.animateTurn(id, stepDefs.length);
+  }
+
+  animateTurn(id, n) {
+    if (this._turnTimers) this._turnTimers.forEach((t) => clearTimeout(t));
+    this._turnTimers = [];
+    const dur = 430;
+    for (let k = 0; k < n; k++) {
+      this._turnTimers.push(setTimeout(() => {
+        this.setState((st) => ({
+          session: st.session.map((t) => t.id !== id ? t : {
+            ...t,
+            progress: Math.round(((k + 0.5) / n) * 100),
+            steps: t.steps.map((x, i) => ({ ...x, active: i === k, time: i < k ? (x.time || (0.3 * (i + 1)).toFixed(1) + 's') : x.time }))
+          })
+        }));
+        this.autoScroll();
+      }, dur * k));
+    }
+    this._turnTimers.push(setTimeout(() => this.finishTurn(id), dur * n));
+  }
+
+  finishTurn(id) {
+    const turn = this.state.session.find((t) => t.id === id);
+    if (!turn) return;
+    const info = this.applyTurnEffect(turn);
+    const gen = this.genResponse(turn, info);
+    this.setState((st) => ({
+      session: st.session.map((t) => t.id !== id ? t : {
+        ...t, status: 'done', progress: 100,
+        steps: t.steps.map((x, i) => ({ ...x, active: false, time: x.time || (0.3 * (i + 1)).toFixed(1) + 's' })),
+        response: gen.response, meta: gen.meta, clock: this.clockNow()
+      })
+    }));
+    this.autoScroll();
+  }
+
+  applyTurnEffect(turn) {
+    const txt = turn.text;
+    if (turn.modeIdx === 1) {
+      // QUERY — highlight matching nodes in the active ring
+      const words = txt.toLowerCase().replace(/[^a-z0-9_\s]/g, ' ').split(/\s+/).filter((w) => w.length > 3);
+      const ring = this._rings[this.state.type], hits = new Set(), labels = [];
+      ring.nodes.forEach((n, i) => {
+        const hay = (n.label + ' ' + n.props.map((p) => p[1]).join(' ')).toLowerCase();
+        if (words.length && words.some((w) => hay.indexOf(w) >= 0)) { hits.add(i); labels.push(n.label); }
+      });
+      this._hits = hits; this._hitsRing = this.state.type;
+      return { count: hits.size, hitLabels: labels };
+    }
+    if (turn.modeIdx === 0) {
+      // INGEST — add a rule node + two edges to the Metagraph
+      const gi = 1, ring = this._rings[gi];
+      const num = (this._pc = (this._pc || 0) + 1);
+      const n = ring.nodes.length;
+      const rid = 'R_PROMPT_' + (num < 10 ? '0' + num : num);
+      ring.nodes.push({ label: rid, orbit: 0, ang: 0, deg: 2, ring: gi, idx: n, props: [['Rule_Id', rid], ['kind', 'SWRL rule'], ['source', turn.attach ? 'import' : 'prompt'], ['status', 'parsed'], ['swrl', txt.slice(0, 64)], ['ns', 'dgm']] });
+      const aOrb = ring.ob[1], aCnt = Math.max(1, aOrb[1] - aOrb[0]);
+      const nCls = Math.max(1, ring.nClassAtoms || 1);
+      ring.edges.push([n, aOrb[0] + (num % nCls)], [n, aOrb[0] + Math.min(aCnt - 1, nCls + (num % Math.max(1, aCnt - nCls)))]);
+      this.reAngle(gi);
+      this._matches = this.computeMatches(this.state.q, gi);
+      this.setState({ type: gi, sel: { r: gi, i: n }, selBig: false, filterOn: false });
+      this.align(gi, n);
+      this.fitToSelection(gi, n, false);
+      return { rid: rid };
+    }
+    // EDIT — patch the currently-selected node (no structural change)
+    const se = this.state.sel;
+    const label = se ? this._rings[se.r].nodes[se.i].label : null;
+    return { editLabel: label };
+  }
+
+  toSwrl(t) {
+    const num = (t.match(/-?\d+(\.\d+)?/) || [])[0];
+    const op = /at least|min(imum)?|≥|>=|greater|not less|no less/i.test(t) ? 'lessThan' : 'greaterThan';
+    return 'Building(?b) ∧ hasValue(?b, ?v)\n  ∧ swrlb:' + op + '(?v' + (num ? ', ' + num : '') + ') → violation(?b)';
+  }
+
+  genResponse(turn, info) {
+    const g = turn.gName.toUpperCase();
+    if (turn.modeIdx === 1) {
+      const labels = (info.hitLabels || []).slice(0, 4);
+      const body = labels.length ? labels.map((l) => '• ' + l).join('\n') : '• no direct matches — broaden the terms';
+      return { response: 'MATCHES\n' + body, meta: (info.count || 0) + ' nodes in ' + g };
+    }
+    if (turn.modeIdx === 0) {
+      const src = turn.attach ? '\n// Source\n' + turn.attach : '';
+      return {
+        response: '// SWRL\n' + this.toSwrl(turn.text) + '\n\n// Cypher\nMERGE (r:Rule {id:"' + (info.rid || 'R_PROMPT') + '"})\n  SET r.status="parsed", r.source="prompt"' + src,
+        meta: '1 node · 2 edges → METAGRAPH'
+      };
+    }
+    return {
+      response: 'PATCH · ' + (info.editLabel || 'selection') + '\n- status: "parsed"\n+ status: "active"\n+ boundedBy: prompt',
+      meta: info.editLabel ? 'Node updated in ' + g : 'Select a node first'
+    };
+  }
+
+  /* ================= render loop ================= */
+  tick(ts) {
+    if (this._stop) return;
+    this._raf = requestAnimationFrame(this.tick.bind(this));
+    const t = ts / 1000, dt = Math.min(0.05, t - (this._lt || t)); this._lt = t;
+    const act = this.state.type;
+    for (let r = 0; r < 5; r++) {
+      for (let o = 0; o < 3; o++) {
+        const dr = this._rotT[r][o] - this._rot[r][o];
+        if (Math.abs(dr) > 0.0004) this._rot[r][o] += dr * Math.min(1, dt * 5);
+        else {
+          this._rot[r][o] = this._rotT[r][o];
+          if (this._spin[r][o]) { this._rot[r][o] += this._spin[r][o] * dt; this._rotT[r][o] = this._rot[r][o]; this._spin[r][o] *= Math.exp(-dt * 2.0); if (Math.abs(this._spin[r][o]) < 0.02) this._spin[r][o] = 0; }
+          else if (!this.state.sel && (this.props.idleDrift ?? true) && this.state.region === 'graph') {
+            // each orbit drifts at its own rate + direction, so a layer's rings never move as one
+            const sp = (r === act ? 0.012 : 0.005) * (o % 2 ? -1 : 1) * (0.6 + o * 0.4);
+            this._rot[r][o] += sp * dt; this._rotT[r][o] = this._rot[r][o];
+          }
+        }
+      }
+    }
+    const cs = this._cam, ct = this._camT, k = Math.min(1, dt * 6);
+    cs.x += (ct.x - cs.x) * k; cs.y += (ct.y - cs.y) * k; cs.s += (ct.s - cs.s) * k;
+    const trans = performance.now() < (this._transUntil || 0);
+    if (this.state.region === 'landing' || trans) this.drawLanding(t);
+    if (this.state.region === 'graph' || trans) { this.drawGraph(); this.placeGraphDOM(); this.drawMinimap(); }
+  }
+  drawGraph() {
+    const ctx = this._ctxG; if (!ctx || !this._rings) return;
+    const th = this.theme(), vw = this._vw, vh = this._vh;
+    ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+    ctx.clearRect(0, 0, vw, vh);
+    const m = Math.min(vw, vh), cam = this.camScreen(), cx = cam.gcx, cy = cam.gcy, z = cam.s, base = cam.base;
+    const act = this.state.type, sel = this.state.sel;
+    const RR = (g, nd) => this._orbR[g][nd.orbit] * base;
+    const posOf = (g, nd) => { const a = nd.ang + this._rot[g][nd.orbit], R = RR(g, nd); return [cx + Math.cos(a) * R, cy + Math.sin(a) * R]; };
+    const live = (this.state.searchOpen && this.state.q) ? this._matches : (this._hits && this._hitsRing === act ? this._hits : null);
+    const filt = (this.state.filterOn && this._fMatches) ? this._fMatches : null;
+
+    // ---- orbit guide circles (15 total; active layer's 3 brighter) ----
+    for (let g = 0; g < 5; g++) {
+      for (let o = 0; o < 3; o++) {
+        ctx.beginPath(); ctx.arc(cx, cy, this._orbR[g][o] * base, 0, 6.29);
+        ctx.strokeStyle = g === act ? th.guideOn : th.guide;
+        ctx.lineWidth = 1; ctx.stroke();
+      }
+    }
+
+    // ---- dimmed nodes on inactive layers ----
+    for (let g = 0; g < 5; g++) {
+      if (g === act) continue;
+      const rg = this._rings[g];
+      ctx.fillStyle = th.dim;
+      for (let i = 0; i < rg.nodes.length; i++) {
+        const nd = rg.nodes[i], a = nd.ang + this._rot[g][nd.orbit], R = RR(g, nd);
+        const rr = (1.5 + 0.30 * Math.min(nd.deg, 6)) * Math.sqrt(z);
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a) * R, cy + Math.sin(a) * R, rr, 0, 6.29); ctx.fill();
+      }
+    }
+
+    // ---- active layer divergence field ----
+    if (this.props.fieldOn ?? true) this.drawField(act, base, cx, cy, this._lt || 0);
+
+    // ---- active layer edges ----
+    const rg = this._rings[act];
+    ctx.strokeStyle = th.edge; ctx.lineWidth = 1;
+    for (const e of rg.edges) {
+      if (filt && !(filt.has(e[0]) && filt.has(e[1]))) continue;
+      const n1 = rg.nodes[e[0]], n2 = rg.nodes[e[1]];
+      const [x1, y1] = posOf(act, n1), [x2, y2] = posOf(act, n2);
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cx + (mx - cx) * 0.72, cy + (my - cy) * 0.72, x2, y2);
+      ctx.stroke();
+    }
+
+    // ---- cross-layer edges of the selection ----
+    if (sel) {
+      const [sx, sy] = this.nodePos(sel.r, sel.i);
+      const selNd = this._rings[sel.r].nodes[sel.i];
+      const tags = [];   // {x1,y1,x2,y2,label} — drawn last so text sits above the lines
+      ctx.lineWidth = 1.25;
+      // same-group edges (within the active layer) — highlighted straight, labelled
+      const srg = this._rings[sel.r];
+      for (const e of srg.edges) {
+        const j = e[0] === sel.i ? e[1] : (e[1] === sel.i ? e[0] : -1);
+        if (j < 0) continue;
+        const n2 = srg.nodes[j], [px, py] = this.nodePos(sel.r, j);
+        ctx.strokeStyle = th.signalDim;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(px, py); ctx.stroke();
+        ctx.strokeStyle = th.signal; ctx.beginPath(); ctx.arc(px, py, 5.5, 0, 6.29); ctx.stroke();
+        tags.push({ x1: sx, y1: sy, x2: px, y2: py, label: this.sameEdgeLabel(srg.key, selNd.orbit, n2.orbit) });
+      }
+      // cross-group edges (object properties spanning layers), labelled
+      for (const p of this.xOf(sel.r, sel.i)) {
+        const [px, py] = this.nodePos(p.r, p.i);
+        ctx.strokeStyle = th.signalDim;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(px, py); ctx.stroke();
+        ctx.strokeStyle = th.signal; ctx.beginPath(); ctx.arc(px, py, 5.5, 0, 6.29); ctx.stroke();
+        tags.push({ x1: sx, y1: sy, x2: px, y2: py, label: p.label || 'relatedTo' });
+      }
+      this._selTags = tags;   // labels drawn after the node pass so text sits on top
+    } else this._selTags = null;
+
+    // ---- active layer nodes ----
+    for (let i = 0; i < rg.nodes.length; i++) {
+      const nd = rg.nodes[i], [x, y] = posOf(act, nd);
+      const isSel = sel && sel.r === act && sel.i === i;
+      let rr = (2.0 + 0.34 * Math.min(nd.deg, 6)) * Math.sqrt(z);
+      if (isSel) rr *= this.state.selBig ? 2.1 : 1.8;
+      const faded = filt && !filt.has(i);
+      ctx.globalAlpha = faded ? 0.14 : 1;
+      ctx.fillStyle = isSel ? th.signal : th.ink;
+      ctx.beginPath(); ctx.arc(x, y, rr, 0, 6.29); ctx.fill();
+      if (!faded && live && live.has(i) && !isSel) {
+        ctx.strokeStyle = th.signal; ctx.lineWidth = 1.25;
+        ctx.beginPath(); ctx.arc(x, y, rr + 2.5, 0, 6.29); ctx.stroke();
+      }
+      if (isSel) {
+        ctx.strokeStyle = th.signal; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, rr + 4, 0, 6.29); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // ---- hover ring ----
+    const h = this.state.hover;
+    if (h) {
+      const [hx, hy] = this.nodePos(h.r, h.i);
+      ctx.strokeStyle = th.guideOn; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(hx, hy, 8, 0, 6.29); ctx.stroke();
+    }
+
+    // ---- edge property-label tags (on top of nodes) ----
+    if (this._selTags) for (const t of this._selTags) this.edgeTag(t.x1, t.y1, t.x2, t.y2, t.label);
+
+    // ---- divergence spire + callout on selection ----
+    if (sel && sel.r === act) this.drawSpire(act, sel.i, base, cx, cy, this._lt || 0);
+  }
+
+  // small ObjectProperty label riding on a selection edge
+  edgeTag(x1, y1, x2, y2, text) {
+    if (!text) return;
+    const ctx = this._ctxG, th = this.theme();
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+    if (len < 34) return;                                  // too short to label legibly
+    const mx = x1 + dx * 0.56, my = y1 + dy * 0.56;        // bias toward the neighbour end
+    const ox = -dy / len * 9, oy = dx / len * 9;           // nudge off the line
+    const tx = mx + ox, ty = my + oy;
+    ctx.save();
+    ctx.font = '500 9px "Oswald", "Geist", sans-serif';
+    ctx.letterSpacing = '1px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text.toUpperCase()).width;
+    ctx.globalAlpha = 1; ctx.fillStyle = th.paper;
+    ctx.fillRect(tx - w / 2 - 3, ty - 6.5, w + 6, 13);
+    ctx.fillStyle = th.signal;
+    ctx.fillText(text.toUpperCase(), tx, ty + 0.5);
+    ctx.restore();
+    ctx.letterSpacing = '0px';
+  }
+
+  /* ================= divergence spire callout ================= */
+  drawSpire(g, i, base, cx, cy, t) {
+    const ctx = this._ctxG, th = this.theme();
+    const rg = this._rings[g], nd = rg.nodes[i];
+    const a = nd.ang + this._rot[g][nd.orbit], R = this._orbR[g][nd.orbit] * base;
+    const nx = cx + Math.cos(a) * R, ny = cy + Math.sin(a) * R;   // node position
+    const ux = Math.cos(a), uy = Math.sin(a);                     // radial outward
+    const tx = -uy, ty = ux;                                      // tangent
+    // grow-in on select
+    const gi = Math.min(1, ((t - (this._selT || 0))) * 3.2);
+    const ease = 1 - Math.pow(1 - Math.max(0, gi), 3);
+    const spireLen = base * 0.135 * ease;
+    const tipx = nx + ux * spireLen, tipy = ny + uy * spireLen;
+
+    // (divergence particle spire removed — the inclined callout carries the divergence marker)
+    if (ease < 0.35) return;
+
+    // when the full detail panel is open (double-click), skip the text callout — the panel carries it
+    if (this.state.selBig) return;
+
+    // --- caption text metrics (measured first so we can keep it on-screen) ---
+    const vw = this._vw, vh = this._vh;
+    const kind = (rg.orbits[nd.orbit] || '') + ' · ' + rg.name;
+    const label = String(nd.label || '');
+    ctx.letterSpacing = '0.5px'; ctx.font = '600 17px "Oswald", "Geist", sans-serif';
+    const lw = ctx.measureText(label.toUpperCase()).width;
+    ctx.letterSpacing = '1.4px'; ctx.font = '500 10px "Oswald", "Geist", sans-serif';
+    const kw = ctx.measureText(kind.toUpperCase()).width;
+    ctx.letterSpacing = '0px';
+    const capW = Math.max(lw, kw, 84) + 18;
+
+    // --- inclined leader: anchored on the SELECTED node itself, rising UP-RIGHT to the tag
+    //     so it clearly points back to the selection and clears its (horizontal) edges. ---
+    const horiz = base * 0.17, lift = base * 0.20;
+    let dir = 1, vdir = -1;                                   // default: up and to the right
+    if (nx + horiz + capW + 28 > vw - 12) dir = -1;           // flip left only if the tag would clip
+    if (ny - lift < 64) vdir = 1;                             // flip downward only near the top edge
+    let ex = nx + dir * horiz;
+    let ey = Math.max(64, Math.min(vh - 84, ny + vdir * lift));
+    ctx.strokeStyle = th.leader; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(nx, ny);                               // from the selected node…
+    ctx.lineTo(ex, ey);                               // …one inclined segment up to the tag
+    ctx.stroke();
+    ctx.fillStyle = th.signal; ctx.beginPath(); ctx.arc(nx, ny, 2.2, 0, 6.29); ctx.fill();   // dot on the selected node
+    ctx.fillStyle = th.paper; ctx.beginPath(); ctx.arc(ex, ey, 2.4, 0, 6.29); ctx.fill();
+    ctx.strokeStyle = th.leader; ctx.stroke();
+
+    // --- caption block (condensed caps) ---
+    const align = dir > 0 ? 'left' : 'right';
+    const tX = ex + dir * 8;              // text anchor
+    ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+    // bracket at the caption's inner edge (near the leader)
+    const bx = ex + dir * 3, bTop = ey - 15, bBot = ey + 9;
+    ctx.strokeStyle = th.leader; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(bx + dir * 4, bTop); ctx.lineTo(bx, bTop);
+    ctx.lineTo(bx, bBot); ctx.lineTo(bx + dir * 4, bBot);
+    ctx.stroke();
+    // main label
+    ctx.letterSpacing = '0.5px';
+    ctx.font = '600 17px "Oswald", "Geist", sans-serif';
+    ctx.fillStyle = th.ink;
+    ctx.fillText(label.toUpperCase(), tX, ey - 2);
+    // kind subtitle
+    ctx.letterSpacing = '1.4px';
+    ctx.font = '500 10px "Oswald", "Geist", sans-serif';
+    ctx.fillStyle = th.signal;
+    ctx.fillText(kind.toUpperCase(), tX, ey + 12);
+    // hairline underline under the caption
+    ctx.strokeStyle = th.leader; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(tX, ey + 16); ctx.lineTo(tX + dir * (capW - 4), ey + 16); ctx.stroke();
+    ctx.letterSpacing = '0px'; ctx.textAlign = 'left';
+  }
+
+  /* ================= divergence field ================= */
+  initGraphParticles() {
+    const R = this.rng(19);
+    const N = Math.round(6000 * (this.props.fieldDensity ?? 1));
+    const parts = [];
+    for (let i = 0; i < N; i++) {
+      const rr = R();
+      const o = rr < 0.20 ? 0 : (rr < 0.48 ? 1 : 2);        // bias particles toward the outer (mountain) orbit
+      parts.push({ o, a: R() * 6.28318, j: this.gauss(R) * 2.6, u: Math.pow(R(), 1.4), s: 0.5 + R() * 1.0, al: 0.16 + R() * 0.5, w: R() * 6.28318, v: (R() - 0.5) * 0.016 });
+    }
+    this._gparts = parts;
+  }
+  buildEnvLUT(g) {
+    const BINS = 360, TAU = 6.283185307, rg = this._rings[g];
+    const luts = [new Float32Array(BINS), new Float32Array(BINS), new Float32Array(BINS)];
+    for (let o = 0; o < 3; o++) luts[o].fill(0.07);
+    const sig = 0.14, inv = 1 / (2 * sig * sig), span = Math.ceil((sig * 4) / TAU * BINS) + 2;
+    for (let i = 0; i < rg.nodes.length; i++) {
+      const nd = rg.nodes[i], o = nd.orbit || 0;
+      const a = ((nd.ang + this._rot[g][o]) % TAU + TAU) % TAU;
+      const amp = 0.30 + 1.05 * (Math.min(nd.deg, 8) / 8);
+      const cBin = a / TAU * BINS;
+      for (let db = -span; db <= span; db++) {
+        let b = Math.round(cBin) + db; b = ((b % BINS) + BINS) % BINS;
+        const da = (db / BINS) * TAU;
+        luts[o][b] += amp * Math.exp(-da * da * inv);
+      }
+    }
+    this._envLUT = luts; this._envBins = BINS;
+  }
+  sampleEnv(o, a) {
+    const BINS = this._envBins, TAU = 6.283185307;
+    const b = Math.round(((a % TAU + TAU) % TAU) / TAU * BINS) % BINS;
+    return this._envLUT[o][b];
+  }
+  drawField(g, base, cx, cy, t) {
+    const ctx = this._ctxG; if (!ctx || !this._gparts) return;
+    this.buildEnvLUT(g);
+    const th = this.theme(), amp = this.props.fieldAmplitude ?? 1, reach = this._orbReach;
+    ctx.fillStyle = th.ink;
+    for (const p of this._gparts) {
+      const o = p.o, Ro = this._orbR[g][o] * base;
+      p.a += p.v * 0.016;
+      const env = this.sampleEnv(o, p.a);
+      const shim = Math.pow(Math.abs(Math.sin(p.a * 37 + p.w + t * 0.10)), 3) * 0.60
+                 + Math.pow(Math.abs(Math.sin(p.a * 11 - t * 0.05 + p.w * 2)), 2) * 0.40;
+      const disp = env * reach[o] * base * p.u * amp * (0.35 + 0.65 * shim);
+      const rad = Ro + p.j + disp;
+      const x = cx + Math.cos(p.a) * rad, y = cy + Math.sin(p.a) * rad;
+      ctx.globalAlpha = p.al * (0.40 + 0.60 * shim) * Math.min(1, env * 0.80);
+      ctx.fillRect(x, y, p.s, p.s);
+    }
+    ctx.globalAlpha = 1;
+  }
+  drawMinimap() {
+    const ctx = this._ctxM; if (!ctx || !this._rings) return;
+    const th = this.theme(), S = 150, mc = S / 2, m = Math.min(this._vw, this._vh);
+    ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+    ctx.clearRect(0, 0, S, S);
+    const worldR = this._orbR[4][2] * m * this._fit;              // outermost orbit world radius
+    const mm = (S * 0.46) / worldR; this._mapMM = mm;            // world→minimap scale (CSS px)
+    const act = this.state.type;
+    // orbit rings (outer of each layer; active brighter)
+    for (let g = 0; g < 5; g++) {
+      ctx.beginPath(); ctx.arc(mc, mc, this._orbR[g][2] * m * this._fit * mm, 0, 6.29);
+      ctx.strokeStyle = g === act ? th.guideOn : th.guide; ctx.lineWidth = 1; ctx.stroke();
+    }
+    // active-layer nodes as tiny dots
+    const rg = this._rings[act];
+    ctx.fillStyle = th.dim;
+    for (const nd of rg.nodes) {
+      const a = nd.ang + this._rot[act][nd.orbit], R = this._orbR[act][nd.orbit] * m * this._fit * mm;
+      ctx.fillRect(mc + Math.cos(a) * R - 0.6, mc + Math.sin(a) * R - 0.6, 1.4, 1.4);
+    }
+    // selected node
+    const sel = this.state.sel;
+    if (sel && sel.r === act) {
+      const nd = rg.nodes[sel.i], a = nd.ang + this._rot[act][nd.orbit], R = this._orbR[act][nd.orbit] * m * this._fit * mm;
+      ctx.fillStyle = th.signal; ctx.beginPath(); ctx.arc(mc + Math.cos(a) * R, mc + Math.sin(a) * R, 2.4, 0, 6.29); ctx.fill();
+    }
+    // viewport rectangle (what the camera currently frames)
+    const cam = this._cam, halfW = (this._vw / 2) / cam.s, halfH = (this._vh / 2) / cam.s;
+    let rx = mc + (cam.x - halfW) * mm, ry = mc + (cam.y - halfH) * mm, rw = halfW * 2 * mm, rh = halfH * 2 * mm;
+    // clamp the drawn rect to the minimap so it stays legible when zoomed out
+    const x0 = Math.max(1, rx), y0 = Math.max(1, ry), x1 = Math.min(S - 1, rx + rw), y1 = Math.min(S - 1, ry + rh);
+    ctx.fillStyle = th.signal; ctx.globalAlpha = 0.09; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); ctx.globalAlpha = 1;
+    ctx.strokeStyle = th.signal; ctx.lineWidth = 1; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    const zl = document.getElementById('map-zoom'); if (zl) zl.textContent = cam.s.toFixed(1) + '×';
+  }
+  placeGraphDOM() {
+    const vw = this._vw, vh = this._vh, m = Math.min(vw, vh), z = this._cam.s, cx = vw / 2, cy = vh / 2;
+    const hp = document.getElementById('hover-panel');
+    if (hp) {
+      const h = this.state.hover;
+      if (h && !this.state.searchOpen) {
+        const [x, y] = this.nodePos(h.r, h.i);
+        const px = x + 18 > vw - 300 ? x - 300 : x + 18;
+        const py = Math.max(12, Math.min(vh - 260, y + 12));
+        hp.style.transform = 'translate(' + px + 'px, ' + py + 'px)';
+        hp.style.opacity = '1';
+      } else hp.style.opacity = '0';
+    }
+    const sp = document.getElementById('sel-panel');
+    if (sp) {
+      const s = this.state.sel;
+      if (s && this.state.selBig) {
+        const [x, y] = this.nodePos(s.r, s.i);
+        const w = 360, hh = vh * 0.7;
+        let px = x - w - 30; if (px < 12) px = Math.min(vw - w - 12, x + 26);
+        const py = Math.max(12, Math.min(vh - hh - 12, y - hh / 2));
+        sp.style.transform = 'translate(' + px + 'px, ' + py + 'px)';
+        sp.style.opacity = '1'; sp.style.pointerEvents = 'auto';
+      } else { sp.style.opacity = '0'; sp.style.pointerEvents = 'none'; }
+    }
+  }
+
+  /* ================= render vals ================= */
+  renderVals() {
+    const s = this.state;
+    const rings = this._rings;
+    const ringN = rings ? rings[s.type] : null;
+    const nodeOf = (h) => (rings && h) ? rings[h.r].nodes[h.i] : null;
+    const hv = nodeOf(s.hover), se = nodeOf(s.sel);
+    const rowsOf = (n, max) => n ? n.props.slice(0, max).map((p) => ({ key: p[0], value: String(p[1]) })) : [];
+    const conns = [];
+    if (se) {
+      for (const e of rings[se.ring].edges) {
+        if (e[0] === se.idx || e[1] === se.idx) {
+          const o = rings[se.ring].nodes[e[0] === se.idx ? e[1] : e[0]];
+          conns.push({ label: o.label, ring: rings[se.ring].name, go: () => this.selectNode(se.ring, o.idx, true) });
+        }
+      }
+      for (const p of this.xOf(se.ring, se.idx)) {
+        const o = rings[p.r].nodes[p.i];
+        conns.push({ label: o.label, ring: rings[p.r].name, go: () => this.selectNode(p.r, p.i, true) });
+      }
+    }
+    const status = ringN ? (ringN.name + ' · ' + ringN.nodes.length + ' nodes · ' + (ringN.edges.length + this.xCount(s.type)) + ' edges · layer ' + (s.type + 1) + '/5').toUpperCase() : '';
+    const mN = (s.q && this._matches) ? this._matches.size : 0;
+    // ----- model viewer (driven by the active design state) -----
+    const RUNS = this.MRUNS(), D = this.DSTATES();
+    const dstate = D.find((x) => x.id === s.dstate) || D[0];
+    const dRunIds = dstate.runs;
+    const activeRunId = dRunIds.indexOf(s.run) >= 0 ? s.run : dRunIds[0];
+    const run = RUNS.find((r) => r.id === activeRunId) || RUNS[0];
+    const B = this.geomFor(dstate);                       // geometry reflects the design state
+    const failSet = new Set(dstate.fails);                // validation result for this state
+    const hiddenSet = new Set(s.hidden);
+    const items = []; let call = null;
+    for (const b of B) {
+      const fail = failSet.has(b.id);
+      if ((fail && !s.mvFail) || (!fail && !s.mvPass) || hiddenSet.has(b.id) || (s.isolate && s.picked !== b.id)) continue;
+      const selB = s.picked === b.id;
+      items.push({
+        d: this.boxPath(b),
+        fill: selB ? 'var(--color-signal-soft)' : (fail ? 'var(--ink-a04)' : 'transparent'),
+        stroke: selB ? 'var(--color-signal)' : (fail ? 'var(--color-ink)' : 'var(--ink-a32)'),
+        sw: selB || fail ? 1.5 : 1,
+        op: (fail ? s.aFail : s.aPass) / 100,
+        pick: () => this.setState({ picked: b.id, propMode: 'instance' })
+      });
+      if (selB) call = {
+        d: 'M' + (b.x + b.w / 2) + ' ' + (b.y - b.h - 12) + ' L ' + (b.x + b.w / 2) + ' ' + (b.y - b.h - 42) + ' L ' + (b.x + b.w / 2 + 16) + ' ' + (b.y - b.h - 42),
+        tx: b.x + b.w / 2 + 22, ty1: b.y - b.h - 48, ty2: b.y - b.h - 34,
+        name: b.id.toUpperCase(), status: fail ? 'FAILING · ' + run.id.toUpperCase() : 'PASSING'
+      };
+    }
+    const presentFails = dstate.fails.filter((id) => B.some((b) => b.id === id));
+    const failItems = presentFails.map((id) => {
+      const b = B.find((x) => x.id === id);
+      return { primary: 'b(' + id + '): h(' + b.h + ')', secondary: 'id: ' + id, selected: s.picked === id, click: () => this.setState({ picked: id, propMode: 'instance' }) };
+    });
+    const passItems = B.filter((b) => !failSet.has(b.id)).map((b) => ({ primary: 'b(' + b.id + '): h(' + b.h + ')', secondary: 'id: ' + b.id, selected: s.picked === b.id, click: () => this.setState({ picked: b.id, propMode: 'instance' }) }));
+    const dRuns = dRunIds.map((id) => RUNS.find((r) => r.id === id)).filter(Boolean);
+    const runs = dRuns.map((r) => ({ id: r.id, date: r.date, kind: r.kind, active: activeRunId === r.id, select: () => this.setState({ run: r.id, hidden: [], isolate: false, rerun: false, propMode: 'run' }), del: () => {} }));
+    // ----- selected geometry instance (Properties sidebar, instance mode) -----
+    const selBld = B.find((b) => b.id === s.picked) || B[0];
+    const instFailing = selBld ? dstate.fails.indexOf(selBld.id) >= 0 : false;
+    const instStoreys = selBld ? Math.max(1, Math.round(selBld.h / 3.1)) : 0;
+    const instFloorArea = selBld ? (selBld.w * selBld.d).toLocaleString() : '0';
+    const instRuns = selBld ? dRuns.map((r) => {
+      const f = (r.fails || []).indexOf(selBld.id) >= 0;
+      return { ruleId: r.id, statusLabel: f ? 'Fail' : 'Pass', statusColor: f ? 'var(--color-signal)' : 'var(--text-secondary)' };
+    }) : [];
+    // ----- prompt console (mode + graph-type adaptive input + session) -----
+    const gtype = s.type;
+    const inpDoc = gtype === 2, inpFile = gtype === 3, inpConn = gtype === 4;
+    const typeHintMap = { 0: 'Ontograph · text', 1: 'Metagraph · text', 2: 'SpecGraph · document + text', 3: 'Computgraph · .gh / .dyn', 4: 'Validgraph · connector' };
+    let promptPh;
+    if (inpFile) promptPh = 'Add a note for this import (optional)…';
+    else if (inpConn) promptPh = 'Ask the selected connector…';
+    else if (inpDoc) promptPh = s.mode === 1 ? 'Query the document + graph…' : 'Extract design rules from the document…';
+    else promptPh = s.mode === 0 ? 'Encode a design rule…' : s.mode === 1 ? 'Ask the graph a question…' : 'Describe the edit to apply…';
+    return {
+      darkLabel: s.dark ? '☀ Light' : '☾ Dark',
+      toggleDark: () => this.setState((p) => ({ dark: !p.dark })),
+      goLanding: () => this.fly('landing'),
+      goProjects: () => this.fly('projects', this._pk && this._pk.projects),
+      goGraph: () => this.fly('graph', this._pk && this._pk.graph),
+      goModel: () => this.fly('model', this._pk && this._pk.model),
+      // ----- landing identity / auth -----
+      showGuest: !s.user && !s.authOpen,
+      showMember: !!s.user && !s.authOpen,
+      userName: s.user ? s.user.name : '',
+      statusTail: s.project ? s.project : 'Select the project',
+      statusColor: s.project ? 'var(--color-signal)' : 'var(--text-muted)',
+      signOut: () => this.setState({ user: null, project: null, authErr: '' }),
+      openAuth: () => { this.setHeroPhase('dissolving'); this.setState({ authOpen: true, authMode: 'login', authErr: '' }); },
+      cancelAuth: () => { this.setState({ authOpen: false, authErr: '' }); this.setHeroPhase('forming'); },
+      switchAuthMode: () => this.setState((p) => ({ authMode: p.authMode === 'login' ? 'register' : 'login', authErr: '' })),
+      authIsRegister: s.authMode === 'register',
+      authKicker: s.authMode === 'register' ? 'New account' : 'Access',
+      authTitle: s.authMode === 'register' ? 'Create your account' : 'Welcome back',
+      authSub: s.authMode === 'register' ? 'Register to start encoding design intent.' : 'Enter your credentials to access Design Grammars.',
+      authCta: s.authMode === 'register' ? 'Register' : 'Log in',
+      authSwitch: s.authMode === 'register' ? 'Have an account? Log in' : 'Need an account? Register',
+      authName: s.authName, authEmail: s.authEmail, authPass: s.authPass,
+      onAuthName: (e) => this.setState({ authName: e && e.target ? e.target.value : '', authErr: '' }),
+      onAuthEmail: (e) => this.setState({ authEmail: e && e.target ? e.target.value : '', authErr: '' }),
+      onAuthPass: (e) => this.setState({ authPass: e && e.target ? e.target.value : '', authErr: '' }),
+      authError: !!s.authErr, authErrorMsg: s.authErr,
+      submitAuth: () => {
+        const email = (s.authEmail || '').trim(), pass = s.authPass || '', reg = s.authMode === 'register';
+        if (reg && !(s.authName || '').trim()) return this.setState({ authErr: 'Enter your name.' });
+        if (!email || email.indexOf('@') < 1) return this.setState({ authErr: 'Enter a valid email.' });
+        if (pass.length < 4) return this.setState({ authErr: 'Password must be at least 4 characters.' });
+        const name = reg ? s.authName.trim() : this.deriveName(email);
+        this.setState({ user: { name }, authOpen: false, authErr: '', authPass: '' });
+        this.setHeroPhase('forming');
+      },
+      pickProj0: () => { this.setState({ project: 'Nordhavn Block C' }); this.fly('landing'); },
+      pickProj1: () => { this.setState({ project: 'Køge Bay Housing' }); this.fly('landing'); },
+      pickProj2: () => { this.setState({ project: 'Aarhus Ø Tower' }); this.fly('landing'); },
+      selType0: () => this.setType(0), selType1: () => this.setType(1), selType2: () => this.setType(2), selType3: () => this.setType(3), selType4: () => this.setType(4),
+      layers: rings ? rings.map((rg, r) => {
+        const on = r === s.type;
+        return {
+          num: String(r + 1), name: rg.name,
+          count: rg.nodes.length + ' nodes' + (on ? ' · ' + (rg.edges.length + this.xCount(r)) + ' edges' : ''),
+          orbits: on ? rg.orbits.join(' · ') : '',
+          numColor: on ? 'var(--color-signal)' : 'var(--text-muted)',
+          nameColor: on ? 'var(--color-ink)' : 'var(--text-muted)',
+          weight: on ? '600' : '400',
+          dot: on ? 'var(--color-signal)' : 'transparent',
+          pick: () => this.setType(r)
+        };
+      }) : [],
+      graphStatus: status,
+      orbitLayerName: ringN ? ringN.name : '',
+      // one row per orbit: concentric-ring glyph (inner→outer) marks which ring the class sits on
+      orbitLegend: ringN ? ringN.orbits.map((nm, o) => {
+        const rng = ringN.ob && ringN.ob[o] ? ringN.ob[o] : [0, 0];
+        const on = (k) => (k === o ? 'var(--color-signal)' : 'var(--ink-a16)');
+        return { name: nm, count: (rng[1] - rng[0]) + ' nodes', r0: on(0), r1: on(1), r2: on(2) };
+      }) : [],
+      searchOpen: s.searchOpen, q: s.q,
+      searchPh: 'Search ' + (ringN ? ringN.name : '') + '…',
+      onQ: (e) => { const q = e && e.target ? e.target.value : ''; this._matches = this.computeMatches(q, this.state.type); this.setState({ q }); },
+      searchCount: s.q ? (mN + ' MATCH' + (mN === 1 ? '' : 'ES')) : 'TYPE TO SEARCH',
+      applyFilter: () => { if (!this.state.q) return; this._fMatches = this.computeMatches(this.state.q, this.state.type); this.setState({ filterOn: true, filterQ: this.state.q, searchOpen: false }); },
+      // ----- property-scoped search bar (right of prompt) -----
+      searchProp: s.searchProp,
+      searchProps: ringN
+        ? [{ value: '*', label: 'Any field' }, { value: '__label', label: 'Label' }].concat(
+            [...new Set([].concat(...ringN.nodes.map((n) => n.props.map((p) => p[0]))))].map((k) => ({ value: k, label: k })))
+        : [{ value: '*', label: 'Any field' }],
+      searchBarPh: 'filter by ' + (s.searchProp === '*' ? 'any field' : (s.searchProp === '__label' ? 'label' : s.searchProp)) + '…',
+      searchBarCount: s.q ? ((this._fMatches ? this._fMatches.size : 0) + ' / ' + (ringN ? ringN.nodes.length : 0)) : '',
+      onSearch: (e) => { const q = e && e.target ? e.target.value : ''; const fm = this.computePropMatches(q, this.state.type, this.state.searchProp); this._fMatches = fm; this._matches = fm; this.setState({ q, filterOn: !!q, filterQ: q }); },
+      onSearchProp: (e) => { const prop = e && e.target ? e.target.value : '*'; const q = this.state.q; const fm = q ? this.computePropMatches(q, this.state.type, prop) : new Set(); this._fMatches = fm; this._matches = fm; this.setState({ searchProp: prop, filterOn: !!q, filterQ: q }); },
+      filterOn: s.filterOn,
+      filterChipText: (s.searchProp === '*' ? 'any' : (s.searchProp === '__label' ? 'label' : s.searchProp)) + ' ~ "' + s.filterQ + '" · ' + (this._fMatches ? this._fMatches.size : 0) + ' nodes',
+      clearFilter: () => this.setState({ filterOn: false, filterQ: '', q: '' }),
+      hoverOn: !!hv, hoverName: hv ? hv.label : '', hoverKind: hv ? rings[hv.ring].orbits[hv.orbit] : '', hoverRows: rowsOf(hv, 6),
+      selOn: !!(se && s.selBig), selName: se ? se.label : '', selKind: se ? rings[se.ring].orbits[se.orbit] : '',
+      selRows: rowsOf(se, 12), selConns: conns, selEdges: 'Edges · ' + conns.length,
+      closeSel: () => { this.resetCam(); this.setState({ selBig: false, sel: null }); },
+      promptVal: s.promptVal,
+      onPrompt: (e) => this.setState({ promptVal: e && e.target ? e.target.value : '' }),
+      sendPrompt: () => this.sendPrompt(),
+      promptLogOn: !!s.promptLog, promptLog: s.promptLog,
+      // ----- interaction modes -----
+      mode: s.mode, modeTabs: this.MODES(),
+      setMode: (i) => this.setState({ mode: i }),
+      sendLabel: ['Ingest', 'Query', 'Apply'][s.mode] || 'Send',
+      typeHint: typeHintMap[gtype], promptPh: promptPh,
+      // ----- graph-type adaptive inputs -----
+      showDocBtn: inpDoc, showFileBtn: inpFile, showConnSel: inpConn,
+      docPicked: !!s.specDoc, filePicked: !!s.compFile,
+      docLabel: s.specDoc ? s.specDoc.name : 'Attach document',
+      fileLabel: s.compFile ? s.compFile.name : 'Import .gh / .dyn',
+      pickDoc: () => { const el = document.getElementById('spec-doc-input'); if (el) el.click(); },
+      pickFile: () => { const el = document.getElementById('comp-file-input'); if (el) el.click(); },
+      onDocFile: (e) => { const f = e && e.target && e.target.files && e.target.files[0]; this.setState({ specDoc: f ? { name: f.name } : null }); },
+      onCompFile: (e) => { const f = e && e.target && e.target.files && e.target.files[0]; this.setState({ compFile: f ? { name: f.name } : null }); },
+      clearDoc: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ specDoc: null }); },
+      clearFile: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ compFile: null }); },
+      connector: s.connector, connectorOptions: this.CONNECTORS(),
+      onConnector: (e) => this.setState({ connector: e && e.target ? e.target.value : s.connector }),
+      // ----- session history -----
+      session: s.session.map((t) => ({
+        id: t.id, modeLabel: t.modeLabel, text: t.text,
+        hasAttach: !!t.attach, attach: t.attach,
+        processing: t.status === 'processing', done: t.status === 'done',
+        progress: t.progress, steps: t.steps,
+        response: t.response, meta: t.meta, clock: t.clock
+      })),
+      sessionCount: String(s.session.length),
+      sessionOpen: s.sessionOpen && s.session.length > 0,
+      sessionReopen: s.session.length > 0 && !s.sessionOpen,
+      openSession: () => this.setState({ sessionOpen: true }),
+      collapseSession: () => this.setState({ sessionOpen: false }),
+      clearSession: () => { this._hits = null; this.setState({ session: [], sessionOpen: false }); },
+      mvFail: s.mvFail, mvPass: s.mvPass, mvBase: s.mvBase, mvBaseOn: s.mvBase,
+      setMvFail: (v) => this.setState({ mvFail: v }), setMvPass: (v) => this.setState({ mvPass: v }), setMvBase: (v) => this.setState({ mvBase: v }),
+      aFail: s.aFail, aPass: s.aPass,
+      setAFail: (v) => this.setState({ aFail: v }), setAPass: (v) => this.setState({ aPass: v }),
+      mvItems: items, mvCallOn: !!call,
+      mvCallout: call || { d: '', tx: 0, ty1: 0, ty2: 0, name: '', status: '' },
+      failItems, passItems, runs, runCount: String(dRuns.length),
+      failOpen: s.failOpen, passOpen: s.passOpen,
+      toggleFailOpen: () => this.setState((p) => ({ failOpen: !p.failOpen })),
+      togglePassOpen: () => this.setState((p) => ({ passOpen: !p.passOpen })),
+      // ----- design states sidebar (left) -----
+      dsWidth: s.dsOpen ? '276px' : '0px',
+      dsClosed: !s.dsOpen,
+      toggleDs: () => this.setState((p) => ({ dsOpen: !p.dsOpen })),
+      dstateCount: String(this.DSTATES().length),
+      // Settings — choose which PropState rows the tiles display
+      dsSettingsOpen: s.dsSettingsOpen,
+      toggleDsSettings: () => this.setState((p) => ({ dsSettingsOpen: !p.dsSettingsOpen })),
+      closeDsSettings: () => this.setState({ dsSettingsOpen: false }),
+      tilePropCount: s.tileProps.length + ' / ' + this.PROPSTATES().length,
+      propStateOptions: this.PROPSTATES().map((p) => ({
+        label: p.label, iri: p.iri,
+        on: s.tileProps.indexOf(p.key) >= 0,
+        markBg: s.tileProps.indexOf(p.key) >= 0 ? 'var(--color-ink)' : 'transparent',
+        markBorder: s.tileProps.indexOf(p.key) >= 0 ? 'var(--color-ink)' : 'var(--color-hairline)',
+        check: s.tileProps.indexOf(p.key) >= 0 ? '✓' : '',
+        rowColor: s.tileProps.indexOf(p.key) >= 0 ? 'var(--text-primary)' : 'var(--text-muted)',
+        toggle: () => this.setState((st) => ({ tileProps: st.tileProps.indexOf(p.key) >= 0 ? st.tileProps.filter((k) => k !== p.key) : st.tileProps.concat([p.key]) }))
+      })),
+      dstates: this.DSTATES().map((d) => {
+        const on = s.dstate === d.id, full = d.pass.indexOf('14 / 14') >= 0;
+        const rows = this.PROPSTATES().filter((p) => s.tileProps.indexOf(p.key) >= 0).map((p) => ({ label: p.label, value: d[p.key] }));
+        return {
+          name: d.name, tag: d.tag, date: d.date, pass: d.pass, propRows: rows,
+          border: on ? 'var(--color-signal)' : 'var(--color-hairline)',
+          bg: on ? 'var(--color-signal-soft)' : 'var(--surface-card)',
+          nameColor: on ? 'var(--color-signal)' : 'var(--text-primary)',
+          tagColor: d.tag === 'current' ? 'var(--color-signal)' : 'var(--text-muted)',
+          passColor: full ? 'var(--text-secondary)' : 'var(--color-signal)',
+          select: () => { const present = this.geomFor(d); const pick = (d.fails.find((id) => present.some((b) => b.id === id))) || (present[0] && present[0].id) || 'building1'; this.setState({ dstate: d.id, run: d.runs[0], picked: pick, hidden: [], isolate: false, rerun: false, propMode: 'run' }); }
+        };
+      }),
+      // ----- properties sidebar (right) -----
+      propRunMode: s.propMode !== 'instance',
+      propInstMode: s.propMode === 'instance',
+      propScopeLabel: s.propMode === 'instance' ? 'Instance' : 'Validation run',
+      backToRun: () => this.setState({ propMode: 'run' }),
+      instId: selBld ? selBld.id : '',
+      instClass: 'Building',
+      instHeight: selBld ? selBld.h + ' m' : '',
+      instFootprint: selBld ? selBld.w + ' × ' + selBld.d + ' m' : '',
+      instStoreys: String(instStoreys),
+      instFloorArea: instFloorArea + ' m²',
+      instStatusLabel: instFailing ? 'Failing' : 'Passing',
+      instStatusColor: instFailing ? 'var(--color-signal)' : 'var(--text-secondary)',
+      instRuns: instRuns,
+      failCount: String(presentFails.length), passCount: String(B.length - presentFails.length),
+      mvRunUuid: run.uuid, mvRunDate: s.rerun ? 'Just now · 1.8 s' : run.dateFull,
+      mvRuleId: run.id, mvRuleDesc: run.desc, mvSwrl: run.swrl,
+      rerun: () => this.setState({ rerun: true }),
+      onSelectById: (e) => { const v = (e && e.target ? e.target.value : '').trim().toLowerCase(); const b = this.BLD().find((x) => x.id === v); if (b) this.setState({ picked: b.id }); },
+      toggleIsolate: () => this.setState((p) => ({ isolate: !p.isolate })), isolateOn: s.isolate,
+      hidePicked: () => this.setState((p) => ({ hidden: p.hidden.concat([p.picked]) })),
+      showAll: () => this.setState({ hidden: [], isolate: false }),
+      hiddenOn: s.hidden.length > 0 || s.isolate
+    };
+  }
+}
+</script>
+</body>
+</html>

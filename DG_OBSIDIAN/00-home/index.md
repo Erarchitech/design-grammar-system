@@ -21,6 +21,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline]]
 - [[Data-service is a FastAPI MCP bridge to Neo4j and Speckle]]
 - [[n8n runs two async webhook workflows for ingest and query]]
+- [[LLM Gateway provides provider-agnostic generation with Anthropic OpenAI and Ollama adapters]]
 
 ### Integrations
 - [[Neo4j provides graph storage with project-scoped isolation]]
@@ -71,6 +72,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Layout overflow guards required for resizable flex children]]
 - [[Worktree branch commits with spurious deletions]]
 - [[Stale index name in spec-query n8n workflow]]
+- [[debugging/get_adapter ignores baseUrl from settings|get_adapter() ignores baseUrl — DeepSeek key sent to OpenAI]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -150,6 +152,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-05 Phase 20 planning — 3 plans, all verified|2026-07-05 Phase 20 planning — 3 plans, all verified]]
 - [[sessions/2026-07-05 Phase 20 E2E Validation and Docs|2026-07-05 Phase 20 execution — E2E validation, release notes, docs update, vault refresh]]
 - [[sessions/2026-07-06 v9.0 Phase 01 planning|2026-07-06 v9.0 Phase 01 planning — research + 3 plans, ready for execution]]
+- [[sessions/2026-07-07 v9.0 Phase 01 execution|2026-07-07 v9.0 Phase 01 execution — 3 plans complete, 6/7 verified, code review fixed]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive

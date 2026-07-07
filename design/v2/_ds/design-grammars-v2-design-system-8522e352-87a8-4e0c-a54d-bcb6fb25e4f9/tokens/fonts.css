@@ -1,0 +1,7 @@
+/* Design Grammars — Webfonts
+   Geist + Geist Mono are the real families (per DESIGN.md).
+   Oswald is a SUBSTITUTE for the condensed grotesk used in the
+   Westworld-divergence-style annotation captions — flag: replace with
+   licensed DIN Condensed / Tungsten binaries if available. */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Oswald:wght@400;500;600&display=swap');

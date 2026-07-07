@@ -1,37 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v7.0
-milestone_name: — Update of DG Addin for Grasshopper
-current_phase: 1
-current_phase_name: cloud-llm-connector
-status: executing
-stopped_at: Plan 20-02 completed (release notes + docs update)
-last_updated: "2026-07-06T20:14:39.638Z"
-last_activity: 2026-07-06
-last_activity_desc: Phase 1 execution started
+milestone: v8.0
+milestone_name: Design Grammars V2 UI
+status: planning
+last_updated: "2026-07-07T06:54:23.387Z"
+last_activity: 2026-07-07
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 37
-  completed_plans: 38
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-02)
+See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1 — cloud-llm-connector
+**Current focus:** Milestone v8.0 Design Grammars V2 UI — Phase 21 (Design System Foundation) next
 
 ## Current Position
 
-Phase: 1 (cloud-llm-connector) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 1
-Last activity: 2026-07-06 — Phase 1 execution started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-07 — Milestone v8.0 started
 
 ## Performance Metrics
 
@@ -152,8 +148,7 @@ Shipped from Phase 20 Plan 02:
 
 ### Pending Todos
 
-- Execute Phase 13: /gsd-execute-phase 13 (4 plans, 3 waves — 13-01 locks names, 13-02 builds the V7 owl, 13-03/13-04 map ports + regenerate the bundle)
-- Phase 19 can run parallel to Phase 18 once Phase 16/17 land — Phases 16/17 now complete, ready for parallel execution
+- Resume v9.0 AI Workflow Intelligence after v8.0 ships — Phase 01 (cloud-llm-connector) executed and parked in .planning/milestones/v9.0-phases/; UAT item "E2E provider switch" still human-needed
 
 ### Blockers/Concerns
 
@@ -162,9 +157,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-06T23:25:00Z
-Stopped at: Plan 20-02 completed (release notes + docs update)
-Resume file: .planning/phases/20-e2e-validation-and-docs/20-03-PLAN.md
+Last session: 2026-07-07
+Stopped at: Milestone v8.0 initialized (requirements + roadmap approved pending)
+Resume file: .planning/ROADMAP.md
 
 ## Performance Metrics
 

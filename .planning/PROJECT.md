@@ -8,21 +8,19 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v7.0 Update of DG Addin for Grasshopper
+## Current Milestone: v8.0 Design Grammars V2 UI
 
-**Goal:** Rebuild the DG Grasshopper addin around the ontology-aligned component schema (`ontology/GH_DesignGrammars.pdf`) — 14 components whose every output carries an explicit ontology reference — with the ontology renamed V6→V7 to fully match the schema, and all interconnected artifacts (graph schema templates, n8n prompts, NeoVis config, data-service) propagated consistently.
+**Goal:** Replace the dark legacy web UI with the "Design Grammars V2" light clinical-blueprint interface (Claude Design spec at `design/v2/Design Grammars V2.dc.html` + design system at `design/v2/_ds/`), implemented as the real product UI wired to the existing Neo4j / n8n / data-service / Speckle backends.
 
 **Target features:**
 
-- Ontology V7: full rename of V6 to match schema notation (V6 is publication-only, no runtime consumer); V6→V7 IRI mapping file as recovery guard; new concepts `ParamState` (renames DefState), `PropState`, `SendStatus`, rule-level `SWRL`/`RuleName`/`RuleDescription` properties; consistency investigation resolves PDF-internal conflicts (ValidStatus Boolean vs Status text)
-- State capture trio: `OBJECT STATE` (Object+Geometry+Label→ObjState), `PARAMETER STATE` (Parameters→ParamState, successor of the v2.0 DESIGN STATE capture), `PROPERTY STATE` (Rule+DataProperty+PropValue→PropState)
-- `DESIGN STATE` reworked as composition: ObjState+ParamState+PropState (each many) → DesignState; index-matched list contract
-- Graph access chain: `CONNECTOR` (→Database), new `GRAPH DECONSTRUCT` (→Metagraph/Ontograph/ValidGraph/SpecGraph), `METAGRAPH` (+Objects output), new `ONTOGRAPH` (Class/ObjProperties/DataProperties), new `VALIDATION GRAPH` (Run/Status/DesignState — replaces VALIDATION RUNS)
-- Deconstruction: new `DESIGN STATE DECONSTRUCT` (→ObjState/ParamState/PropState), new `OBJECT DECONSTRUCT` (→Object/Geometry/Label); `RULE DECONSTRUCT` partitions variables into Objects + DataProperties (via shipped VariableTypeInferrer)
-- `VALIDATOR` reworked: Rule/DesignState/SendValid/Run → ValidStatus/RuleName/RuleDescription/SendStatus (+ kept publish extras); binding driven by composed DesignState — **CLASSIFICATOR eliminated**
-- `PARAMETER REINSTATE` (reworked REINSTATE): ParamState+Reinstate → Parameters/StateStatus
-- KnowledgeGraph→SpecGraph runtime rename (data-service, n8n knowledge workflows, NeoVis, UI + DB migration) — closes ontology↔runtime drift
-- Schema propagation across `cypher_template.txt`, `dataset_schema.json`, n8n prompts, `config.template.js`, `index.html`, data-service Cypher, C# repositories, test fixtures
+- Design system foundation: light "frosted paper" token set (canvas `#f5f5f5` → sidebar `#fafafa` → card `#ffffff`, ink `#0a0a0a`, Signal Red `#e7000b` selection-only), Geist/Geist Mono/Oswald type stack, pill geometry (18px interactive / 24px cards), `.dg-frost` panels, `.dg-blueprint` drafting grid, divergence-callout annotation grammar (hexagon marker + leader line + condensed caption)
+- Landing screen: particle-ring hero canvas ("DESIGN GRAMMARS. / Encode your design intent."), region callouts navigating to Graph Viewer / Model Viewer / Projects, inline login/register frost card replacing the separate RegisterForm page (guest vs member hero states, sign out)
+- Graph Viewer: canvas datascape rendering the Neo4j metagraph as ink arcs/dots with red selection halo, persistent prompt bar (mode select, send/clear), extended session/response panel with per-prompt responses, node-details panel, search
+- Model Viewer: validation-run browsing with run/instance modes, map canvas + minimap + zoom, orbit legend, hover/selection panels, failing/passing breakdowns wired to data-service validation runs
+- Projects screen: project tile grid backed by real project data
+- Screen-layer navigation shell: single-page layered architecture (landing/graph/model/projects) with 520ms scale/opacity transitions and global chrome
+- Backend wiring: real Neo4j Cypher (via nginx proxy), n8n webhooks for rules ingest/query, data-service validation endpoints, Speckle model data — replacing the mockup's embedded mock data
 
 ## Requirements
 
@@ -48,22 +46,21 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **MVGP-01..03**: Model Viewer grouping by rule and design state — v2.0
 - ✓ **INTG-01..03**: E2E state lifecycle, backward compat, actionable errors — v2.0
 - ✓ **ONTO-01..06**: Ontology V7 baseline — V6→V7 rename table, DesignGrammar-V7.owl, extension facades, catalog, port-IRI map, markdown docs — Phase 13
+- ✓ **v7.0 (Phases 13–20)**: Ontology-aligned 14-component Grasshopper addin — state trio (ObjState/ParamState/PropState), DesignState composition, graph access chain (GRAPH DECONSTRUCT, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework, CLASSIFICATOR elimination, SpecGraph rename, schema v4 propagation — shipped 2026-07-05, archived to `.planning/milestones/v7.0-phases/`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-**Milestone v7.0 — Update of DG Addin for Grasshopper** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
+**Milestone v8.0 — Design Grammars V2 UI** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
 
-- [x] Ontology V7 (full V6 rename to schema notation + ParamState/PropState/SendStatus/SWRL additions; V6→V7 recovery mapping file) — Phase 13 ✓
-- [ ] Graph schema propagation v4 (cypher_template, dataset_schema, n8n prompts, NeoVis, data-service)
-- [ ] SpecGraph runtime rename (KnowledgeGraph→SpecGraph + Knowledge*→Spec* labels, DB migration)
-- [ ] DG.Core state models: ObjState / ParamState / PropState / DesignState composition
-- [ ] Graph access components: CONNECTOR, GRAPH DECONSTRUCT, METAGRAPH, ONTOGRAPH, VALIDATION GRAPH
-- [ ] State components: OBJECT STATE, PARAMETER STATE, PROPERTY STATE, DESIGN STATE (composition)
-- [ ] Deconstruct/reinstate: DESIGN STATE DECONSTRUCT, OBJECT DECONSTRUCT, PARAMETER REINSTATE
-- [ ] RULE DECONSTRUCT partition (Objects + DataProperties); VALIDATOR rework; CLASSIFICATOR elimination
-- [ ] E2E live chain + docs (GH-mapping regeneration, release notes for canvas breakage)
+- [ ] Design system foundation (light tokens, type stack, pill geometry, frost/blueprint/callout primitives)
+- [ ] Landing screen (particle-ring hero, region navigation, inline auth card)
+- [ ] Graph Viewer (canvas datascape from real Neo4j metagraph, prompt bar + session panel, node details, search)
+- [ ] Model Viewer (validation runs from data-service, run/instance modes, map + minimap, hover/selection panels)
+- [ ] Projects screen (tile grid backed by real project data)
+- [ ] Layered navigation shell (landing/graph/model/projects transitions, global chrome)
+- [ ] Backend wiring parity (Neo4j Cypher, n8n ingest/query webhooks, data-service validation, Speckle)
 
 ### Out of Scope
 
@@ -79,7 +76,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-Shipped v2.0 on 2026-05-10 (18/18 requirements validated via human UAT). v3.0 superseded on 2026-07-02 after Phase 7 (Schema Foundation) shipped: VariableKind + VariableTypeInferrer, DesignStateIdGenerator, Var merge-key fix, schema propagation v3.1 — all carried into v7.0. Starting v7.0: addin rebuild per `ontology/GH_DesignGrammars.pdf` + Ontology V7.
+v7.0 (14-component ontology-aligned addin rebuild) shipped 2026-07-05 (all 8 phases, 37 plans complete) and archived 2026-07-07. v9.0 AI Workflow Intelligence started earlier (Phase 01 cloud-llm-connector executed) and is parked in `.planning/milestones/v9.0-phases/` — resume after v8.0. Starting v8.0: full replacement of the dark legacy web UI with the light "Design Grammars V2" interface from the Claude Design spec (`design/v2/`), wired to the real backends.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -157,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-03 after Phase 13 (ontology V7 baseline)*
+*Last updated: 2026-07-07 — milestone v8.0 Design Grammars V2 UI started*
