@@ -91,13 +91,13 @@ export default function App() {
         />
       </Layer>
       <Layer active={region === "graph"}>
-        <GraphScreen onBack={goLanding} project={project} />
+        <GraphScreen active={region === "graph"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "model"}>
-        <ModelScreen onBack={goLanding} project={project} />
+        <ModelScreen active={region === "model"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "projects"}>
-        <ProjectsScreen onBack={goLanding} project={project} onProject={setProject} />
+        <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={setProject} />
       </Layer>
     </div>
   );
