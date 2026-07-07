@@ -2,6 +2,7 @@
 using DG.Core.Models;
 using DG.Core.Services;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using System.Drawing;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,16 +15,17 @@ namespace DG.Grasshopper.Components;
 ///
 /// Usage:
 ///   1. Drop OBJECT STATE on the canvas.
-///   2. Wire Object references to the "Object" input (ElementRef, GUID, string,
-///      or OntologyClass from METAGRAPH Objects output — Class IRI is extracted
-///      from the Object input when it carries OntologyClass information).
-///   3. Wire Rhino geometry to the "Geometry" input (optional, in-process only, not serialized).
-///   4. Wire labels to the "Label" input (optional display string).
-///   5. Wire the "ObjState" output to DESIGN STATE composition's ObjState input.
+///   2. Wire the ontology class to the "Object" input (a single OntologyClass from
+///      METAGRAPH Objects — its Class IRI is broadcast to every geometry instance).
+///      Per-instance ElementRef/GUID/string inputs are also supported (one per geometry).
+///   3. Wire Rhino geometry to the "Geometry" input (one item per instance).
+///   4. Wire labels to the "Label" input (optional; empty, or one per geometry).
+///   5. Wire the "ObjState" output to DESIGN STATE (ObjState input) and, for per-object
+///      properties, to PROPERTY STATE (ObjState input).
 ///
-/// Output list length is driven by Geometry and Label (they must be equal).
-/// Object is an independent input — gaps are filled with empty ObjectRef.
-/// Class IRI is resolved from the Object input (OntologyClass IRI, or null).
+/// Output list length is driven by Geometry. A single OntologyClass on "Object" is
+/// broadcast as the shared ClassIri across all instances. Each ObjState gets a UNIQUE
+/// ObjectRef, resolved as: explicit per-instance ref → geometry reference GUID → index.
 /// </summary>
 public sealed class ObjectStateComponent : GH_Component
 {
@@ -77,18 +79,18 @@ public sealed class ObjectStateComponent : GH_Component
     protected override void SolveInstance(IGH_DataAccess da)
     {
         var objects = new List<object?>();
-        var geometries = new List<object?>();
+        var geometryGoos = new List<IGH_Goo>();
         var labels = new List<object?>();
 
         da.GetDataList(0, objects);
-        da.GetDataList(1, geometries);
+        da.GetDataList(1, geometryGoos);
         da.GetDataList(2, labels);
 
-        // Output list length is driven by Geometry and Label — they must be equal.
-        // Object is an independent input (may differ in length).
-        var geoCount = geometries.Count;
+        // Output list length is driven by Geometry. Labels, when supplied, must match
+        // Geometry length; an empty Label input is allowed (labels default to null).
+        var geoCount = geometryGoos.Count;
         var labelCount = labels.Count;
-        if (geoCount != labelCount)
+        if (labelCount != 0 && labelCount != geoCount)
         {
             AddRuntimeMessage(
                 GH_RuntimeMessageLevel.Error,
@@ -97,13 +99,25 @@ public sealed class ObjectStateComponent : GH_Component
             return;
         }
 
+        // A single Object that is an ontology class is broadcast as the shared ClassIri
+        // across every geometry instance (one class → many instances). Per-instance
+        // identity (ObjectRef) is derived from the geometry (reference GUID) or index,
+        // never from the shared class.
+        var broadcastClassIri = objects.Count == 1 ? ResolveClassIri(objects[0]) : null;
+
         var results = new List<DG.ObjState>();
         for (var i = 0; i < geoCount; i++)
         {
-            var objectRef = i < objects.Count ? ResolveObjectRef(objects[i]) : string.Empty;
-            var classIri = i < objects.Count ? ResolveClassIri(objects[i]) : null;
-            var geometry = geometries[i];
-            var label = labels[i]?.ToString();
+            var perItemObject = i < objects.Count ? objects[i] : null;
+            var classIri = broadcastClassIri ?? (perItemObject is not null ? ResolveClassIri(perItemObject) : null);
+
+            var geometry = geometryGoos[i]?.ScriptVariable();
+            var label = i < labels.Count ? labels[i]?.ToString() : null;
+
+            // ObjectRef priority: explicit per-instance ref → geometry reference GUID → index.
+            var objectRef = ResolveInstanceRef(perItemObject)
+                ?? GeometryReferenceId(geometryGoos[i])
+                ?? $"obj_{i}";
 
             var stateId = ComputeObjStateId(objectRef, label);
 
@@ -122,27 +136,39 @@ public sealed class ObjectStateComponent : GH_Component
         Message = $"{results.Count} obj(s)";
     }
 
-    private static string ResolveObjectRef(object? input)
+    /// <summary>
+    /// Returns a per-instance object reference from the input, or null when the input is
+    /// an ontology CLASS (a class is not an instance identity) or carries no usable id.
+    /// </summary>
+    private static string? ResolveInstanceRef(object? input)
     {
         if (input is null)
-            return string.Empty;
+            return null;
 
-        // OntologyClass carries IRI + Label but no DgEntityId —
-        // use Label as the object reference display, IRI as identity fallback.
-        var ontClass = GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input);
-        if (ontClass is not null)
-            return string.IsNullOrWhiteSpace(ontClass.Label) ? ontClass.Iri : ontClass.Label;
+        // OntologyClass is a class, not a per-instance identity — no ObjectRef from it.
+        if (GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input) is not null)
+            return null;
 
-        // Try ElementRef unwrapping via GhCastingHelpers
         var elementRef = GhCastingHelpers.TryElementRef(input);
-        if (elementRef is not null)
-            return elementRef.DgEntityId ?? string.Empty;
+        if (elementRef is not null && !string.IsNullOrWhiteSpace(elementRef.DgEntityId))
+            return elementRef.DgEntityId;
 
-        // Fallback: string or ToString
-        if (input is string s)
-            return s;
+        if (input is string s && !string.IsNullOrWhiteSpace(s))
+            return s.Trim();
 
-        return input.ToString() ?? string.Empty;
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts a stable per-instance identity from a referenced Rhino object's GUID,
+    /// or null for internalized/computed geometry that has no reference.
+    /// </summary>
+    private static string? GeometryReferenceId(IGH_Goo? goo)
+    {
+        if (goo is IGH_GeometricGoo geometric && geometric.ReferenceID != Guid.Empty)
+            return geometric.ReferenceID.ToString();
+
+        return null;
     }
 
     /// <summary>

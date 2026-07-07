@@ -161,6 +161,44 @@ public sealed class DesignStateIdGeneratorTests
     }
 
     [Fact]
+    public void ComputePropStateId_ShouldChange_WhenObjectRefChanges()
+    {
+        // Two objects sharing the same rule + property + value must get distinct StateIds
+        // when linked to different objects — otherwise they'd MERGE-collide in Neo4j.
+        var value = new DesignStateParameter
+        {
+            ParameterId = "height",
+            DisplayName = "Height",
+            Type = DesignStateParameterType.Number,
+            NumberValue = 60.0,
+        };
+
+        var id1 = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value, "B1");
+        var id2 = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value, "B2");
+
+        Assert.NotEqual(id1, id2);
+        Assert.StartsWith("PS_", id1);
+    }
+
+    [Fact]
+    public void ComputePropStateId_NullObjectRef_MatchesLegacyId()
+    {
+        // Passing no objectRef must reproduce the pre-per-object id (backward compatible).
+        var value = new DesignStateParameter
+        {
+            ParameterId = "height",
+            DisplayName = "Height",
+            Type = DesignStateParameterType.Number,
+            NumberValue = 75.0,
+        };
+
+        var legacy = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value);
+        var explicitNull = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value, null);
+
+        Assert.Equal(legacy, explicitNull);
+    }
+
+    [Fact]
     public void ComputeDesignStateId_ShouldBeDeterministic_ForSameMemberIds()
     {
         var memberIds = new List<string> { "OS_abc123", "DS_def456", "PS_ghi789" };

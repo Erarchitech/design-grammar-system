@@ -119,6 +119,7 @@ internal static class GhCastingHelpers
             StateId = publicWrapper.StateId,
             RuleIri = publicWrapper.RuleIri,
             DataPropertyIri = publicWrapper.DataPropertyIri,
+            ObjectRef = publicWrapper.ObjectRef,
             PropValue = publicWrapper.PropValue,
         };
     }

@@ -61,6 +61,37 @@ public sealed class DesignStatePayloadV2SerializerTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTrip_ShouldPreservePropStateObjectRef()
+    {
+        var propValue = new DesignStateParameter
+        {
+            ParameterId = "height", DisplayName = "Height",
+            Type = DesignStateParameterType.Number, NumberValue = 84.0,
+        };
+        var state = new DesignState
+        {
+            StateId = "DS_perobj",
+            CapturedAtUtc = new DateTimeOffset(2026, 7, 8, 10, 0, 0, TimeSpan.Zero),
+            PropStates =
+            {
+                new PropState
+                {
+                    StateId = DesignStateIdGenerator.ComputePropStateId("ex:Rule", "ex:height", propValue, "B2"),
+                    RuleIri = "ex:Rule",
+                    DataPropertyIri = "ex:height",
+                    ObjectRef = "B2",
+                    PropValue = propValue,
+                },
+            },
+        };
+
+        var roundTrip = DesignStatePayloadV2Serializer.Deserialize(
+            DesignStatePayloadV2Serializer.Serialize(state));
+
+        Assert.Equal("B2", roundTrip.PropStates[0].ObjectRef);
+    }
+
+    [Fact]
     public void Deserialize_WhenVersionIsMissing_ShouldThrow()
     {
         var json = """

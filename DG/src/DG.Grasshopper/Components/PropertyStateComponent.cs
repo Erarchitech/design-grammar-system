@@ -60,6 +60,15 @@ public sealed class PropertyStateComponent : GH_Component
             "Calculated property value (Number, Integer, or Boolean scalar).",
             GH_ParamAccess.list);
         pManager[2].Optional = true;
+
+        pManager.AddGenericParameter(
+            "ObjState",
+            "ObjState",
+            "Optional per-object link: DG.ObjState list from OBJECT STATE, paired positionally with PropValue. "
+                + "When provided, each PropState is tied to its object (ObjectRef), so the value binds only to "
+                + "that object instead of being broadcast to all objects.",
+            GH_ParamAccess.list);
+        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -76,10 +85,12 @@ public sealed class PropertyStateComponent : GH_Component
         var rules = new List<object?>();
         var dataProperties = new List<object?>();
         var propValues = new List<object?>();
+        var objStates = new List<object?>();
 
         da.GetDataList(0, rules);
         da.GetDataList(1, dataProperties);
         da.GetDataList(2, propValues);
+        da.GetDataList(3, objStates);
 
         // Output list length is driven by PropValue.
         var count = propValues.Count;
@@ -109,13 +120,18 @@ public sealed class PropertyStateComponent : GH_Component
                 continue;
             }
 
-            var stateId = DesignStateIdGenerator.ComputePropStateId(ruleIri, dataPropertyIri, propValue);
+            // Per-object link (optional): pair ObjState[i] with PropValue[i] positionally.
+            var objState = i < objStates.Count ? GhCastingHelpers.TryObjState(objStates[i]) : null;
+            var objectRef = string.IsNullOrWhiteSpace(objState?.ObjectRef) ? null : objState!.ObjectRef;
+
+            var stateId = DesignStateIdGenerator.ComputePropStateId(ruleIri, dataPropertyIri, propValue, objectRef);
 
             results.Add(new DG.PropState
             {
                 StateId = stateId,
                 RuleIri = ruleIri,
                 DataPropertyIri = dataPropertyIri,
+                ObjectRef = objectRef,
                 PropValue = propValue,
             });
         }

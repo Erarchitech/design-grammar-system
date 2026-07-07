@@ -131,12 +131,39 @@ public static class DesignStateBindingService
 
                 var value = ExtractPropValue(propState);
 
-                foreach (var row in rows)
+                if (!string.IsNullOrWhiteSpace(propState.ObjectRef))
                 {
-                    row.ValuesByVar[propVar] = value;
+                    // Per-object property: apply only to the row(s) whose object binding
+                    // matches this PropState's ObjectRef.
+                    foreach (var row in rows)
+                    {
+                        if (RowMatchesObjectRef(row, propState.ObjectRef))
+                        {
+                            row.ValuesByVar[propVar] = value;
+                        }
+                    }
+                }
+                else
+                {
+                    // Rule-scoped property: broadcast to every row (legacy behavior).
+                    foreach (var row in rows)
+                    {
+                        row.ValuesByVar[propVar] = value;
+                    }
                 }
             }
         }
+    }
+
+    private static bool RowMatchesObjectRef(BindingRow row, string objectRef)
+    {
+        foreach (var elementRef in row.ElementRefsByVar.Values)
+        {
+            if (string.Equals(elementRef.DgEntityId, objectRef, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 
     private static void ApplyPropertyValuesForRow(

@@ -279,6 +279,7 @@ public static class DesignStatePayloadV2Serializer
             StateId = propState.StateId,
             RuleIri = propState.RuleIri,
             DataPropertyIri = propState.DataPropertyIri,
+            ObjectRef = propState.ObjectRef,
             PropValue = propState.PropValue is not null ? ParamToDto(propState.PropValue) : null,
         };
     }
@@ -356,6 +357,7 @@ public static class DesignStatePayloadV2Serializer
             StateId = dto.StateId ?? string.Empty,
             RuleIri = dto.RuleIri ?? string.Empty,
             DataPropertyIri = dto.DataPropertyIri ?? string.Empty,
+            ObjectRef = string.IsNullOrWhiteSpace(dto.ObjectRef) ? null : dto.ObjectRef,
             PropValue = dto.PropValue is not null ? ParamFromDto(dto.PropValue) : null,
         };
     }
@@ -492,6 +494,8 @@ public static class DesignStatePayloadV2Serializer
         public string? RuleIri { get; init; }
 
         public string? DataPropertyIri { get; init; }
+
+        public string? ObjectRef { get; init; }
 
         public ParameterDto? PropValue { get; init; }
     }

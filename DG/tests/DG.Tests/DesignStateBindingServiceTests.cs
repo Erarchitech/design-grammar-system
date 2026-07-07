@@ -296,6 +296,98 @@ public sealed class DesignStateBindingServiceTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public void BuildBindings_PerObjectPropertyLinksByObjectRef()
+    {
+        // ?b : ex:Building, ?h : ex:height — three buildings each with their own height.
+        var rule = MakeRuleWithObjectAndProperty("?b", "ex:Building", "?h", "ex:height");
+
+        var designState = new DesignState
+        {
+            ObjStates = new List<ObjState>
+            {
+                new() { StateId = "OS_B1", ObjectRef = "B1", ClassIri = "ex:Building" },
+                new() { StateId = "OS_B2", ObjectRef = "B2", ClassIri = "ex:Building" },
+                new() { StateId = "OS_B3", ObjectRef = "B3", ClassIri = "ex:Building" },
+            },
+            PropStates = new List<PropState>
+            {
+                MakeHeightProp(rule.Id, "ex:height", "B1", 60.0),
+                MakeHeightProp(rule.Id, "ex:height", "B2", 84.0),
+                MakeHeightProp(rule.Id, "ex:height", "B3", 78.0),
+            },
+        };
+
+        var result = DesignStateBindingService.BuildBindings(rule, designState);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal(60.0, result[0].ValuesByVar["?h"]);
+        Assert.Equal(84.0, result[1].ValuesByVar["?h"]);
+        Assert.Equal(78.0, result[2].ValuesByVar["?h"]);
+    }
+
+    [Fact]
+    public void BuildBindings_NullObjectRefPropertyBroadcastsToAllRows()
+    {
+        // A PropState without ObjectRef keeps legacy behavior: applied to every object row.
+        var rule = MakeRuleWithObjectAndProperty("?b", "ex:Building", "?h", "ex:height");
+
+        var designState = new DesignState
+        {
+            ObjStates = new List<ObjState>
+            {
+                new() { StateId = "OS_B1", ObjectRef = "B1", ClassIri = "ex:Building" },
+                new() { StateId = "OS_B2", ObjectRef = "B2", ClassIri = "ex:Building" },
+            },
+            PropStates = new List<PropState>
+            {
+                MakeHeightProp(rule.Id, "ex:height", objectRef: null, value: 42.0),
+            },
+        };
+
+        var result = DesignStateBindingService.BuildBindings(rule, designState);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(42.0, result[0].ValuesByVar["?h"]);
+        Assert.Equal(42.0, result[1].ValuesByVar["?h"]);
+    }
+
+    private static PropState MakeHeightProp(string ruleIri, string dataPropertyIri, string? objectRef, double value)
+    {
+        return new PropState
+        {
+            RuleIri = ruleIri,
+            DataPropertyIri = dataPropertyIri,
+            ObjectRef = objectRef,
+            PropValue = new DesignStateParameter
+            {
+                ParameterId = "h",
+                Type = DesignStateParameterType.Number,
+                NumberValue = value,
+            },
+        };
+    }
+
+    private static Rule MakeRuleWithObjectAndProperty(
+        string objVar, string classIri, string propVar, string dataPropertyIri)
+    {
+        var rule = MakeRuleWithObjectVar(objVar, classIri);
+        rule.BodyAtoms.Add(new Atom
+        {
+            Type = "DataPropertyAtom",
+            PredicateIri = dataPropertyIri,
+            Side = AtomSide.Body,
+            Order = 1,
+            Args =
+            {
+                new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = objVar },
+                new AtomArg { Pos = 2, Kind = ArgKind.Variable, Value = propVar },
+            },
+        });
+        rule.Variables.Add(new Variable { Name = propVar });
+        return rule;
+    }
+
     private static Rule MakeRuleWithObjectVar(string varName, string classIri)
     {
         return new Rule

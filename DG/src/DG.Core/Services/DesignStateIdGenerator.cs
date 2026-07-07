@@ -61,11 +61,17 @@ public static class DesignStateIdGenerator
     }
 
     /// <summary>
-    /// Produces a PS_-prefixed StateId for PropState: PS_&lt;SHA256(ruleIri|dataPropertyIri|propValueLex)&gt;.
+    /// Produces a PS_-prefixed StateId for PropState: PS_&lt;SHA256(ruleIri|dataPropertyIri|propValueLex[|objectRef])&gt;.
     /// Deterministic over the Rule IRI, DataProperty IRI, and the typed property value.
-    /// Same Rule + DataProperty + value → same StateId across validation runs.
+    /// When <paramref name="objectRef"/> is provided (per-object properties), it is folded into
+    /// the hash so two objects sharing the same value get distinct StateIds (no MERGE collision).
+    /// Same Rule + DataProperty + value (+ object) → same StateId across validation runs.
     /// </summary>
-    public static string ComputePropStateId(string ruleIri, string dataPropertyIri, DesignStateParameter propValue)
+    public static string ComputePropStateId(
+        string ruleIri,
+        string dataPropertyIri,
+        DesignStateParameter propValue,
+        string? objectRef = null)
     {
         var lex = propValue.Type switch
         {
@@ -75,7 +81,9 @@ public static class DesignStateIdGenerator
             _ => "null",
         };
 
-        var input = $"{ruleIri}|{dataPropertyIri}|{lex}";
+        var input = string.IsNullOrWhiteSpace(objectRef)
+            ? $"{ruleIri}|{dataPropertyIri}|{lex}"
+            : $"{ruleIri}|{dataPropertyIri}|{lex}|{objectRef}";
         return PropStatePrefix + HashToHex16(input);
     }
 
