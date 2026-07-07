@@ -78,7 +78,9 @@ services:
               capabilities: [gpu]
 
   design-grammars:
-    build: ./graph-viewer
+    # v8.0: the container now serves the V2 UI (ui-v2/); the legacy dark SPA
+    # is archived at graph-viewer/ — see docs/RELEASE-NOTES-v8.0.md
+    build: ./ui-v2
     container_name: design-grammars
     ports:
       - "8080:80"
