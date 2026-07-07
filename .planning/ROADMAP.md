@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🔄 **v8.0 Design Grammars V2 UI** — Phases 21-26 (active)
+- ✅ **v8.0 Design Grammars V2 UI** — Phases 21-26 (shipped 2026-07-07) → [phases](milestones/v8.0-phases/)
 - ⏸ **v9.0 AI Workflow Intelligence** — Phases 1-8 (paused; Phase 01 executed 2026-07-06, parked) → [requirements](milestones/v9.0-REQUIREMENTS.md) | [roadmap](milestones/v9.0-ROADMAP.md) | [phases](milestones/v9.0-phases/)
 - 📋 **v4.0 BOT Ontology Bridge** — Phases 1-4 (planned) → [requirements](milestones/v4.0-REQUIREMENTS.md) | [roadmap](milestones/v4.0-ROADMAP.md)
 - ✅ **v7.0 Update of DG Addin for Grasshopper** — Phases 13-20 (shipped 2026-07-05) → [requirements](milestones/v7.0-REQUIREMENTS.md) | [roadmap](milestones/v7.0-ROADMAP.md) | [phases](milestones/v7.0-phases/)
@@ -21,7 +21,7 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 - [x] **Phase 23: Graph Viewer** — Canvas datascape from live Neo4j metagraph, node selection with divergence callouts, prompt bar wired to n8n ingest/query webhooks, session panel, search (completed 2026-07-07)
 - [x] **Phase 24: Model Viewer** — Validation runs from data-service, run/instance modes, map canvas + minimap + zoom, orbit legend, rule SWRL panel (completed 2026-07-07)
 - [x] **Phase 25: Projects and Scoping** — Project tile grid from live data; opening a project scopes Graph and Model viewer queries (completed 2026-07-07)
-- [ ] **Phase 26: Deployment Cutover and E2E Parity** — V2 UI ships as the design-grammars container at :8080; legacy workflows verified end-to-end against live Docker services
+- [x] **Phase 26: Deployment Cutover and E2E Parity** — V2 UI ships as the design-grammars container at :8080; legacy workflows verified end-to-end against live Docker services (completed 2026-07-07)
 
 ---
 
@@ -106,10 +106,11 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 | 23. Graph Viewer | 1/1 | Complete | 2026-07-07 |
 | 24. Model Viewer | 1/1 | Complete | 2026-07-07 |
 | 25. Projects and Scoping | 1/1 | Complete | 2026-07-07 |
-| 26. Deployment Cutover and E2E Parity | 0/? | Not started | — |
+| 26. Deployment Cutover and E2E Parity | 1/1 | Complete | 2026-07-07 |
 
 ---
 
-*Roadmap updated: 2026-07-07 — v8.0 Design Grammars V2 UI defined (phases 21-26, 25 requirements); v7.0 archived to milestones/*
+*Roadmap updated: 2026-07-07 — v8.0 shipped (phases 21-26 complete, 25/25 requirements, E2E parity verified against live stack)*
+*v8.0 shipped: 2026-07-07*
 *v7.0 shipped: 2026-07-05*
 *v2.0 shipped: 2026-05-10*

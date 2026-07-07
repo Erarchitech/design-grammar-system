@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
-current_phase_name: 26-deployment-cutover
-status: executing
-stopped_at: Phases 23-25 complete, verified live
-last_updated: "2026-07-07T18:00:00.000Z"
+current_phase_name: milestone complete
+status: milestone-shipped
+stopped_at: v8.0 shipped — all 6 phases complete, E2E parity verified
+last_updated: "2026-07-07T18:40:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Phases 23-25 complete — graph/model/projects screens verified against live Docker stack
+last_activity_desc: v8.0 Design Grammars V2 UI shipped — container cutover complete, 25/25 requirements
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 5
-  completed_plans: 5
-  percent: 83
+  completed_phases: 6
+  total_plans: 6
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: 23-25 complete → 26 (Deployment Cutover and E2E Parity) next
-Plan: 25-01 complete
-Status: Executing milestone v8.0 autonomously (planning documented post facto per user directive)
-Last activity: 2026-07-07 — Phase 21 Design System Foundation complete
+Phase: v8.0 SHIPPED (phases 21-26 complete, archived to milestones/v8.0-phases/)
+Plan: —
+Status: Milestone shipped; planning documented post facto per user directive
+Last activity: 2026-07-07 — v8.0 cutover complete; V2 UI live at :8080
 
 ## Performance Metrics
 
@@ -166,6 +166,9 @@ Shipped from Phase 20 Plan 02:
 
 ### Pending Todos
 
+- **USER APPROVAL NEEDED**: run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` — v2.0-era validation runs (project TestA, 20 runs/1148 entities) invisible to data-service until then (auto-mode denied the bulk mutation)
+- **Reconcile n8n workflows**: live instance versions drifted ahead of `n8n/workflows/*.json` (user editor changes, versionCounter 22); repo JSONs carry the quote-syntax + project_name body-fallback fixes — export live → repo or re-import repo → live
+- Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted
 - Resume v9.0 AI Workflow Intelligence after v8.0 ships — Phase 01 (cloud-llm-connector) executed and parked in .planning/milestones/v9.0-phases/; UAT item "E2E provider switch" still human-needed
 
 ### Blockers/Concerns
@@ -175,9 +178,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-07T07:41:11.126Z
-Stopped at: Phase 21 context gathered
-Resume file: .planning/phases/21-design-system-foundation/21-CONTEXT.md
+Last session: 2026-07-07 (autonomous v8.0 execution)
+Stopped at: v8.0 shipped
+Resume file: — (next: user approval items in Pending Todos, then /gsd-new-milestone)
 
 ## Performance Metrics
 
