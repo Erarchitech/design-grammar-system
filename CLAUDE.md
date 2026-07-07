@@ -42,7 +42,7 @@ User (browser) → Nginx SPA (:8080)
 
 | Service | Tech | Port | Role |
 |---------|------|------|------|
-| `design-grammars` | Nginx + static | 8080 | Main SPA UI + reverse proxy |
+| `design-grammars` | Nginx + Vite build (`ui-v2/`) | 8080 | V2 UI + reverse proxy |
 | `neo4j` | Neo4j 5 | 7474/7687 | Graph DB (single DB, project-isolated) |
 | `data-service` | Python FastAPI | 8000 | MCP bridge, validation publish, execution tracking |
 | `n8n` | n8n | 5678 | 2 webhook workflows (ingest + query) |
@@ -53,8 +53,7 @@ User (browser) → Nginx SPA (:8080)
 
 - **Single Neo4j database** with project isolation via `project` property on every node
 - **No message queue** — synchronous HTTP + async polling for LLM calls
-- **No JSX build** for main UI — single-file `index.html` with `React.createElement`
-- **Model Viewer** is a separate Vite+React app at `/model-viewer/`
+- **V2 UI (v8.0)** is one Vite + React (JSX) app at `ui-v2/` hosting all four screen layers (landing / graph / model / projects); the legacy no-JSX-build SPA and separate Model Viewer app at `graph-viewer/` are archived
 - **SWRL parsing** uses bespoke regex, not vendor OWL libraries
 - **LLM prompts embed schema constraints** instead of fine-tuning
 - **Violation pattern**: body atoms fire when constraint is violated (inverted logic)
@@ -69,16 +68,20 @@ design-grammar-system/
 ├── docker-compose.yml           ← orchestration (12+ services)
 ├── cypher_template.txt          ← v4 Cypher template for LLM prompts
 │
-├── graph-viewer/                ← Main UI container
-│   ├── index.html               ← Single-file React 18 SPA (no build step)
-│   ├── config.template.js       ← NeoVis config (env vars injected at runtime)
-│   ├── entrypoint.sh            ← sed-based config injection
-│   ├── nginx.conf               ← reverse proxy routes
-│   ├── Dockerfile
-│   └── model-viewer/            ← Speckle 3D viewer (Vite + React)
-│       ├── src/App.jsx
-│       ├── vite.config.js
-│       └── package.json
+├── ui-v2/                       ← Main UI container (V2, ships as design-grammars)
+│   ├── Dockerfile               ← node build → nginx serve
+│   ├── nginx.conf               ← reverse proxy routes (/neo4j /n8n /data-service /llm)
+│   ├── entrypoint.sh            ← regenerates config.js from env
+│   └── src/
+│       ├── components/          ← 23 design-system primitives (forms/display/surfaces)
+│       ├── styles/tokens/       ← 6-file token split + self-hosted fonts
+│       ├── landing/             ← particle-ring hero engine + layer
+│       ├── graph/               ← orbital datascape engine + ring mapper
+│       ├── screens/             ← Graph / Model / Projects screens
+│       └── lib/                 ← graphApi, modelApi, auth
+│
+├── graph-viewer/                ← LEGACY dark SPA (archived at v8.0 cutover)
+│   └── model-viewer/            ← legacy Speckle 3D viewer (archived)
 │
 ├── data-service/                ← Python FastAPI service
 │   ├── app.py                   ← MCP endpoint, execution tracking, Speckle publish
@@ -179,8 +182,11 @@ When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schem
 # Start all services
 docker compose up -d
 
-# Rebuild UI after index.html changes (--no-cache required!)
+# Rebuild V2 UI after ui-v2/ changes (--no-cache required!)
 docker compose build --no-cache design-grammars && docker compose up -d design-grammars
+
+# V2 UI dev server (proxies /neo4j /n8n /data-service to :8080)
+npm --prefix ui-v2 run dev
 
 # Build Grasshopper plugin
 dotnet build .\DG\DG.sln -c Release
@@ -191,15 +197,16 @@ dotnet test .\DG\tests\DG.Tests\
 
 ## Current Priorities
 
-1. **Phase 20: E2E Validation and Docs** — complete the milestone wrap-up phase: validate full live pipeline, release notes for canvas breakage, repo/AI docs to v4, DG_OBSIDIAN + graphify refresh. Start: `/gsd-discuss-phase 20`
-2. **v7.0 completion** — ship the DG v7.0 milestone (14-component set, ontology-aligned ports, 3-part DesignState composition)
-3. **v4.0 BOT Ontology Bridge** — next milestone after v7.0 ships. Bridge design-grammar concepts with the BOT (Building Ontology Topology) standard and Topologic for cross-vocabulary architecture analysis
+1. **v8.0 follow-ups** — approve and run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` (v2.0-era validation runs invisible until then); reconcile live n8n workflows with `n8n/workflows/*.json` (live versions drifted ahead of repo)
+2. **v9.0 AI Workflow Intelligence** — resume after v8.0; Phase 01 (cloud-llm-connector) parked in `.planning/milestones/v9.0-phases/`
+3. **v4.0 BOT Ontology Bridge** — bridge design-grammar concepts with the BOT standard and Topologic for cross-vocabulary architecture analysis
 
 ## Known Gotchas
 
 - **Docker layer caching** can serve stale `index.html` — always use `--no-cache`
 - **Browser cache** prevents seeing UI updates — hard-refresh (Ctrl+Shift+R) or incognito
-- **Neo4j node tagging** required after n8n ingestion — orphaned nodes need `graph`/`project` props
+- **Neo4j node tagging** required after n8n ingestion — orphaned nodes need `graph`/`project` props; the V2 UI claims `default-project` nodes for the active project after each ingest (legacy parity)
+- **v2.0-era validation data** carries `graph:'ValidationGraph'` (pre-v4) — invisible to data-service until `migrations/2026-07-07_validationgraph_to_validgraph.cypher` is approved and run
 - **LLM Cypher output** needs bracket nesting validation before execution
 - **Edit mode** requires cleanup of old atoms (MATCH-DELETE) before re-creation
 - **Conditional compilation** — `#if GRASSHOPPER_SDK` guards all GH-dependent code in DG.Grasshopper
@@ -213,8 +220,8 @@ dotnet test .\DG\tests\DG.Tests\
 | Grasshopper Plugin | C# (.NET 7/9) | Neo4j.Driver, Rhino 8 SDK (14 components) |
 | Data Service | Python 3 | FastAPI, neo4j, specklepy, pydantic |
 | Workflows | JavaScript (n8n) | Webhook, HTTP, Function nodes |
-| Main UI | JavaScript | React 18 (CDN, no JSX), NeoVis.js |
-| Model Viewer | JSX | React + Vite, @speckle/viewer, three.js |
+| Main UI (V2) | JSX | React 18 + Vite 5 (`ui-v2/`), canvas datascape |
+| Legacy UI (archived) | JavaScript | React 18 CDN no-JSX SPA + separate model-viewer |
 | LLM | — | Ollama, llama3.1 |
 | Database | Cypher | Neo4j 5 |
 | Fonts | — | Inter (body), Space Grotesk (headings) |
