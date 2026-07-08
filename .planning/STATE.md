@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
 current_phase: 27
-current_phase_name: Speckle 3D Embed
-status: verifying
+status: completed
 stopped_at: v8.0 shipped — all 6 phases complete, E2E parity verified
-last_updated: "2026-07-08T01:21:32.705Z"
+last_updated: "2026-07-08T01:42:26.067Z"
 last_activity: 2026-07-08
-last_activity_desc: Phase 27 execution started
+last_activity_desc: Phase 27 marked complete
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 1
   completed_plans: 1
   percent: 14
+current_phase_name: Speckle 3D Embed
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: 27 (Speckle 3D Embed) — EXECUTING
+Phase: 27 — COMPLETE
 Plan: 1 of 1
-Status: Phase complete — ready for verification
-Last activity: 2026-07-08 — Phase 27 execution started
+Status: Phase 27 complete
+Last activity: 2026-07-08 — Phase 27 marked complete
 
 ## Performance Metrics
 
