@@ -102,9 +102,11 @@ export default function SpeckleViewport({
   onReadyRef.current = onReady;
   onErrorRef.current = onError;
 
-  // Viewer lifecycle — keyed on resourceUrls + readToken + project + runId
+  // Viewer lifecycle — keyed on the joined resource-url string (scalar), not
+  // the array identity: ModelScreen re-renders must never recreate the viewer.
+  const resourceKey = (resourceUrls || []).filter(Boolean).join("|");
   React.useEffect(() => {
-    const urls = resourceUrls?.filter(Boolean) || [];
+    const urls = resourceKey ? resourceKey.split("|") : [];
     if (urls.length === 0 || !readToken) {
       onErrorRef.current?.("No Speckle resource URLs or token available");
       return;
@@ -200,7 +202,7 @@ export default function SpeckleViewport({
       entityMapRef.current = new Map();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourceUrls, readToken, project, runId]);
+  }, [resourceKey, readToken, project, runId]);
 
   // Resize handling
   React.useEffect(() => {

@@ -238,10 +238,10 @@ export default function ModelScreen({ active, onBack, project }) {
     }
   }
 
-  const pick = (id) => {
+  const pick = React.useCallback((id) => {
     setPicked(id);
     setPropMode("instance");
-  };
+  }, []);
 
   const retry3d = () => {
     setSpeckleError(null);
@@ -333,8 +333,13 @@ export default function ModelScreen({ active, onBack, project }) {
     { name: "Base model", color: "var(--color-mid-gray)", count: mvBase ? "on" : "off" }
   ];
 
-  const speckleResourceUrls = view ? [view.baseResourceUrl, view.validationResourceUrl].filter(Boolean) : [];
+  const speckleResourceUrls = React.useMemo(
+    () => (view ? [view.baseResourceUrl, view.validationResourceUrl].filter(Boolean) : []),
+    [view]
+  );
   const speckleToken = view?.readToken || null;
+  const handleSpeckleReady = React.useCallback(() => setSpeckleReady(true), []);
+  const handleSpeckleError = React.useCallback((msg) => setSpeckleError(msg), []);
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", background: "var(--color-canvas)" }}>
@@ -491,15 +496,15 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          {viewMode === "3d" && speckleResourceUrls.length > 0 && speckleToken ? (
+          {viewMode === "3d" && !speckleError && speckleResourceUrls.length > 0 && speckleToken ? (
             <SpeckleViewport
               readToken={speckleToken}
               resourceUrls={speckleResourceUrls}
               project={project}
               runId={runId}
-              onEntityClick={(id) => pick(id)}
-              onReady={() => setSpeckleReady(true)}
-              onError={(msg) => { setSpeckleError(msg); setViewMode("map"); }}
+              onEntityClick={pick}
+              onReady={handleSpeckleReady}
+              onError={handleSpeckleError}
               style={{ position: "absolute", inset: 0 }}
             />
           ) : (
