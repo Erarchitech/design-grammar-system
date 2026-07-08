@@ -76,6 +76,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Worktree branch commits with spurious deletions]]
 - [[Stale index name in spec-query n8n workflow]]
 - [[debugging/get_adapter ignores baseUrl from settings|get_adapter() ignores baseUrl — DeepSeek key sent to OpenAI]]
+- [[debugging/Model Viewer validation objects not found in Speckle world tree|Model Viewer: validation objects not found in Speckle world tree]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -162,6 +163,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-08 Per-object property binding and Speckle auto-config|2026-07-08 Per-object property binding & Speckle auto-config]]
 - [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|2026-07-08 Audit-fix classification + Phase 27 Speckle 3D embed]]
 - [[sessions/2026-07-08 Phase 27 Speckle 3D embed execution|2026-07-08 Phase 27 Speckle 3D embed — execution]]
+- [[sessions/2026-07-08 Model Viewer filter/coloring regression|2026-07-08 Model Viewer filter/coloring regression]]
 - [[decisions/Phase 27 Speckle 3D embed design decisions|2026-07-08 Phase 27 — 6 Speckle 3D embed decisions]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 

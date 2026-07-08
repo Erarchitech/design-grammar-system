@@ -7,10 +7,10 @@ date: 2026-07-08
 
 ## Active
 
-1. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
-2. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
-3. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
-4. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
+1. **Model Viewer regression RESOLVED (audit-fix F-01, 2026-07-08)** — root cause was `DesignStateBindingService` dropping `ObjState.Geometry` from ElementRefs → all v7.0+ publishes sent `displayValue: []` → viewer had nothing to color/toggle. Fixed in commit `0b15ce0` + verified live (toggles hide/isolate correct object IDs, materials apply). **Остаётся:** пересобрать GH-плагин у себя (`dotnet build DG/DG.sln -c Release` — уже проверено, собирается) и перезапустить publish из Grasshopper — все старые runs без геометрии останутся серыми. Тестовый run с геометрией: `test/publish_validation_run_with_geometry.py`. See [[debugging/Model Viewer validation objects not found in Speckle world tree|debugging note]].
+2. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
+3. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
+4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
 5. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
 > ℹ️ **v3.0 superseded 2026-07-02** — Phase 7 (Schema Foundation) shipped and carried forward; Phases 8–12 dropped in favor of the GH_DesignGrammars.pdf-driven v7.0 component set. Archive: `.planning/milestones/v3.0-phases/`.
