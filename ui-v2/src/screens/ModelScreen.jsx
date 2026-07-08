@@ -279,8 +279,13 @@ export default function ModelScreen({ active, onBack, project }) {
         setView(v);
         setSpeckleError(null);
         setSpeckleReady(false);
+        // restore saved ruleId if available, otherwise use first failing rule
+        const saved = runGfxRef.current[runId];
+        const savedRuleId = saved?.ruleId;
+        const hasValidRule = savedRuleId && (v.rules || []).some((r) => r.ruleId === savedRuleId);
         const firstFail = (v.rules || []).find((r) => !r.passed) || (v.rules || [])[0];
-        setRuleId(firstFail ? firstFail.ruleId : null);
+        skipGfxSaveRef.current = true;
+        setRuleId(hasValidRule ? savedRuleId : (firstFail ? firstFail.ruleId : null));
         setPicked(null);
         setPropMode("run");
         setHidden([]);

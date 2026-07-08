@@ -114,15 +114,17 @@ export default function GraphScreen({ active, onBack, project }) {
       return null;
     }
   };
-  const viewportKey = `dgv2_graph_viewport_${project || "default"}`;
-  const [viewport, setViewport] = React.useState(() => readViewportStore(viewportKey) || { x: 0, y: 0, s: 1 });
-  React.useEffect(() => {
+  const viewportKeyRef = React.useRef(`dgv2_graph_viewport_${project || "default"}`);
+  viewportKeyRef.current = `dgv2_graph_viewport_${project || "default"}`;
+  const viewportRef = React.useRef(readViewportStore(viewportKeyRef.current) || { x: 0, y: 0, s: 1 });
+  const saveViewport = React.useCallback((cam) => {
+    viewportRef.current = cam;
     try {
-      localStorage.setItem(viewportKey, JSON.stringify(viewport));
+      localStorage.setItem(viewportKeyRef.current, JSON.stringify(cam));
     } catch {
       // quota exceeded — viewport stays in-memory only
     }
-  }, [viewport, viewportKey]);
+  }, []);
 
   const cfg = React.useMemo(() => getConfig(), []);
 
@@ -195,26 +197,29 @@ export default function GraphScreen({ active, onBack, project }) {
   // Restore viewport on engine init and project change
   React.useEffect(() => {
     const engine = engineRef.current;
-    if (engine && viewport) {
+    if (!engine) return;
+    // Load viewport for this project
+    const viewport = readViewportStore(viewportKeyRef.current);
+    if (viewport) {
       engine.setCamera(viewport);
+      viewportRef.current = viewport;
     }
-  }, [project, viewport]);
+  }, [project]);
 
-  // Save viewport periodically (on every frame, but deduplicated via React state)
+  // Save viewport periodically as user pans/zooms
   React.useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-    let lastSaved = { x: viewport.x, y: viewport.y, s: viewport.s };
     const saveInterval = setInterval(() => {
       const cam = engine.getCamera();
-      const changed = cam.x !== lastSaved.x || cam.y !== lastSaved.y || cam.s !== lastSaved.s;
+      const last = viewportRef.current;
+      const changed = cam.x !== last.x || cam.y !== last.y || cam.s !== last.s;
       if (changed) {
-        setViewport(cam);
-        lastSaved = cam;
+        saveViewport(cam);
       }
     }, 500); // save every 500ms if viewport changed
     return () => clearInterval(saveInterval);
-  }, []);
+  }, [saveViewport]);
 
   React.useEffect(() => {
     loadGraph();
