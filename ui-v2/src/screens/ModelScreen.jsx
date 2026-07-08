@@ -200,6 +200,8 @@ export default function ModelScreen({ active, onBack, project }) {
     setAPass(saved.aPass);
     setFailColor(saved.failColor);
     setPassColor(saved.passColor);
+    if (saved.stateKey !== undefined) setStateKey(saved.stateKey);
+    if (saved.ruleId !== undefined) setRuleId(saved.ruleId);
   }, [runId]);
   // save settings for the active run whenever they change (not on run switch)
   React.useEffect(() => {
@@ -208,9 +210,9 @@ export default function ModelScreen({ active, onBack, project }) {
       skipGfxSaveRef.current = false;
       return;
     }
-    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor } }));
+    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, stateKey, ruleId } }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor]);
+  }, [mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, stateKey, ruleId]);
 
   const captureShot = React.useCallback(async () => {
     const api = speckleApiRef.current;

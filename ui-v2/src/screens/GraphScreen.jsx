@@ -106,6 +106,24 @@ export default function GraphScreen({ active, onBack, project }) {
   const [sessionOpen, setSessionOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
+  /* ---- viewport state persistence (camera pan/zoom per project) ---- */
+  const readViewportStore = (key) => {
+    try {
+      return JSON.parse(localStorage.getItem(key) || "null");
+    } catch {
+      return null;
+    }
+  };
+  const viewportKey = `dgv2_graph_viewport_${project || "default"}`;
+  const [viewport, setViewport] = React.useState(() => readViewportStore(viewportKey) || { x: 0, y: 0, s: 1 });
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(viewportKey, JSON.stringify(viewport));
+    } catch {
+      // quota exceeded — viewport stays in-memory only
+    }
+  }, [viewport, viewportKey]);
+
   const cfg = React.useMemo(() => getConfig(), []);
 
   const loadGraph = React.useCallback(async () => {
@@ -172,6 +190,30 @@ export default function GraphScreen({ active, onBack, project }) {
     if (import.meta.env.DEV) window.__dgg = engine;
     engine.start();
     return () => engine.stop();
+  }, []);
+
+  // Restore viewport on engine init and project change
+  React.useEffect(() => {
+    const engine = engineRef.current;
+    if (engine && viewport) {
+      engine.setCamera(viewport);
+    }
+  }, [project, viewport]);
+
+  // Save viewport periodically (on every frame, but deduplicated via React state)
+  React.useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    let lastSaved = { x: viewport.x, y: viewport.y, s: viewport.s };
+    const saveInterval = setInterval(() => {
+      const cam = engine.getCamera();
+      const changed = cam.x !== lastSaved.x || cam.y !== lastSaved.y || cam.s !== lastSaved.s;
+      if (changed) {
+        setViewport(cam);
+        lastSaved = cam;
+      }
+    }, 500); // save every 500ms if viewport changed
+    return () => clearInterval(saveInterval);
   }, []);
 
   React.useEffect(() => {

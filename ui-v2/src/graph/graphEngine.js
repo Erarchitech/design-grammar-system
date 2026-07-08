@@ -148,6 +148,19 @@ export default class GraphEngine {
   setVisible(v) {
     this.visible = v;
   }
+  getCamera() {
+    return { x: this._cam.x, y: this._cam.y, s: this._cam.s };
+  }
+  setCamera(cam) {
+    if (cam) {
+      this._cam.x = cam.x || 0;
+      this._cam.y = cam.y || 0;
+      this._cam.s = cam.s || 1;
+      this._camT.x = this._cam.x;
+      this._camT.y = this._cam.y;
+      this._camT.s = this._cam.s;
+    }
+  }
   resize() {
     this._vw = window.innerWidth;
     this._vh = window.innerHeight;
