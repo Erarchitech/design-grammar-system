@@ -7,13 +7,11 @@ date: 2026-07-08
 
 ## Active
 
-1. **Audit: DesignStateLabel (F-01)** — Code pipeline verified correct at all 6 stages (GH → Core → Serializer → data-service → Neo4j → UI). Root cause: old `statePayloadJson` in Neo4j (published before Label support in commit `4d2b45e`). Fix: rebuild data-service Docker, restart Rhino, re-publish with Panel → DesignStateLabel connected. See [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|session]].
-2. **Phase 27: Speckle 3D Embed** — New phase added to v8.0 milestone. Replaces synthetic SVG boxes with `@speckle/viewer` in V2 ModelScreen. 1 plan, 2 tasks, 6 decisions locked (D-01..D-06). Ready for execution. See [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|session]] and [[decisions/Phase 27 Speckle 3D embed design decisions|decisions]].
-3. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
-4. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
-5. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
-6. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
-7. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+1. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
+2. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
+3. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
+4. **Model Viewer visual bugs** — rotation/mixed state in validation viewport (carried from v1.1).
+5. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
 > ℹ️ **v3.0 superseded 2026-07-02** — Phase 7 (Schema Foundation) shipped and carried forward; Phases 8–12 dropped in favor of the GH_DesignGrammars.pdf-driven v7.0 component set. Archive: `.planning/milestones/v3.0-phases/`.
 > ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
@@ -22,9 +20,7 @@ date: 2026-07-08
 
 ## Upcoming
 
-- **v8.0 Phase 21 Design System Foundation** — Context gathered (4 gray areas). Decisions locked. Future planning.
-- **v8.0 Phase 22–26** — Navigation Shell, Landing/Auth, Graph Viewer, Model Viewer, Projects, Cutover
-- **Phase 27: Speckle 3D Embed execution** — `/gsd-execute-phase 27`
+- **v4.0 BOT Ontology Bridge** — Next milestone
 - Рецензирование T2–T4 соавтором или научным руководителем
 - Реализация DesignSpaceGraph (T4) as milestone after v8.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
@@ -34,6 +30,7 @@ date: 2026-07-08
 
 ## Completed Recently
 
+- **Phase 27: Speckle 3D Embed executed** — 2026-07-08. 1 plan executed via `/gsd-execute-phase 27`. SpeckleViewport React component created with full viewer lifecycle, 3D/Map toggle in ModelScreen toolbar, entity click wiring to Properties sidebar. 4 code review findings fixed (CR-01 stabilised callback refs, WR-01/02/03). Build passes (931 modules). See [[sessions/2026-07-08 Phase 27 Speckle 3D embed execution|session]].
 - **Phase 27: Speckle 3D Embed planned** — 2026-07-08. New v8.0 phase to replace synthetic SVG boxes with `@speckle/viewer` in V2 ModelScreen. 1 plan, 2 tasks, 6 decisions locked. Audit-fix F-02 escalated to this phase. See [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|session]].
 - **Audit-fix F-01: DesignStateLabel code verified** — 2026-07-08. Full 6-stage pipeline checked. Code correct at every stage. Root cause: environmental (old Neo4j data before Label support). See [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|session]].
 - **LABEL component added** — 2026-07-07. New single-purpose LABEL component accepting a `DG.Variable` (Var input) and displaying its `Name` property as text. Synchronous passthrough — no async or DB access. 3 files changed, 214/214 tests pass. Commit `82ed38e`. See [[sessions/2026-07-07-LABEL-component|session]].
