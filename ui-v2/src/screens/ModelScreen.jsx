@@ -15,6 +15,7 @@ import {
   StatBlock
 } from "../components/index.js";
 import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
+import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 
 // ---- deterministic synthetic massing: the V2 spec renders the validation
 // viewport as a stylised isometric map (true 3D Speckle embed is deferred);
@@ -83,6 +84,9 @@ export default function ModelScreen({ active, onBack, project }) {
   const [isolate, setIsolate] = React.useState(false);
   const [hidden, setHidden] = React.useState([]);
   const [selById, setSelById] = React.useState("");
+  const [viewMode, setViewMode] = React.useState("3d");
+  const [speckleReady, setSpeckleReady] = React.useState(false);
+  const [speckleError, setSpeckleError] = React.useState(null);
   const [viewBox, setViewBox] = React.useState({ x: 0, y: 0, w: 880, h: 440 });
   const svgRef = React.useRef(null);
   const mapRef = React.useRef(null);
@@ -120,6 +124,8 @@ export default function ModelScreen({ active, onBack, project }) {
   React.useEffect(() => {
     if (!runId) {
       setView(null);
+      setSpeckleError(null);
+      setSpeckleReady(false);
       return;
     }
     let gone = false;
@@ -127,6 +133,8 @@ export default function ModelScreen({ active, onBack, project }) {
       .then((v) => {
         if (gone) return;
         setView(v);
+        setSpeckleError(null);
+        setSpeckleReady(false);
         const firstFail = (v.rules || []).find((r) => !r.passed) || (v.rules || [])[0];
         setRuleId(firstFail ? firstFail.ruleId : null);
         setPicked(null);
@@ -320,6 +328,9 @@ export default function ModelScreen({ active, onBack, project }) {
     { name: "Base model", color: "var(--color-mid-gray)", count: mvBase ? "on" : "off" }
   ];
 
+  const speckleResourceUrls = view ? [view.baseResourceUrl, view.validationResourceUrl].filter(Boolean) : [];
+  const speckleToken = view?.readToken || null;
+
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", background: "var(--color-canvas)" }}>
       {/* ===== left: design states + runs ===== */}
@@ -450,6 +461,15 @@ export default function ModelScreen({ active, onBack, project }) {
               if (e.target.value && hit) pick(hit.dgEntityId);
             }}
           />
+          <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
+          <div style={{ display: "flex", gap: 4 }}>
+            <Button variant="outline" size="sm" selected={viewMode === "3d"} onClick={() => setViewMode("3d")} disabled={!!speckleError}>
+              {speckleError && viewMode === "3d" ? "3D (err)" : "3D"}
+            </Button>
+            <Button variant="outline" size="sm" selected={viewMode === "map"} onClick={() => setViewMode("map")}>
+              Map
+            </Button>
+          </div>
           <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
             <Button variant="outline" size="sm" selected={isolate} onClick={() => setIsolate((v) => !v)}>
               Isolate
@@ -466,65 +486,78 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          <div className="dg-blueprint" style={{ flex: "1 1 auto", minWidth: 0, position: "relative" }}>
-            <svg
-              ref={svgRef}
-              width="100%"
-              height="100%"
-              viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
-              preserveAspectRatio="xMidYMid meet"
-              style={{ display: "block", position: "absolute", inset: 0, touchAction: "none", cursor: "grab" }}
-              onWheel={onWheel}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-            >
-              {mvBase && <path d={`M30 ${worldRef.current.h - 80} L ${worldRef.current.w - 30} ${worldRef.current.h - 80} M60 ${worldRef.current.h - 50} L ${worldRef.current.w} ${worldRef.current.h - 50}`} stroke="var(--ink-a08)" strokeWidth="1" fill="none" />}
-              {items.map((b) => (
-                <path
-                  key={b.id}
-                  d={b.d}
-                  fill={b.fill}
-                  stroke={b.stroke}
-                  strokeWidth={b.sw}
-                  opacity={b.op}
-                  onClick={() => {
-                    if (!panRef.current || panRef.current.moved < 5) pick(b.id);
-                  }}
-                  style={{ cursor: "pointer" }}
-                />
-              ))}
-              {callout && (
-                <g>
-                  <path d={callout.d} stroke="var(--ink-a32)" strokeWidth="1" fill="none" />
-                  <text x={callout.tx} y={callout.ty1} fontFamily="Oswald, sans-serif" fontSize="13" letterSpacing="1.4" fill="var(--color-ink)">
-                    {callout.name}
+          {viewMode === "3d" && speckleResourceUrls.length > 0 && speckleToken ? (
+            <SpeckleViewport
+              readToken={speckleToken}
+              resourceUrls={speckleResourceUrls}
+              project={project}
+              runId={runId}
+              onEntityClick={(id) => pick(id)}
+              onReady={() => setSpeckleReady(true)}
+              onError={(msg) => { setSpeckleError(msg); setViewMode("map"); }}
+              style={{ position: "absolute", inset: 0 }}
+            />
+          ) : (
+            <div className="dg-blueprint" style={{ flex: "1 1 auto", minWidth: 0, position: "relative" }}>
+              <svg
+                ref={svgRef}
+                width="100%"
+                height="100%"
+                viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+                preserveAspectRatio="xMidYMid meet"
+                style={{ display: "block", position: "absolute", inset: 0, touchAction: "none", cursor: "grab" }}
+                onWheel={onWheel}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+              >
+                {mvBase && <path d={`M30 ${worldRef.current.h - 80} L ${worldRef.current.w - 30} ${worldRef.current.h - 80} M60 ${worldRef.current.h - 50} L ${worldRef.current.w} ${worldRef.current.h - 50}`} stroke="var(--ink-a08)" strokeWidth="1" fill="none" />}
+                {items.map((b) => (
+                  <path
+                    key={b.id}
+                    d={b.d}
+                    fill={b.fill}
+                    stroke={b.stroke}
+                    strokeWidth={b.sw}
+                    opacity={b.op}
+                    onClick={() => {
+                      if (!panRef.current || panRef.current.moved < 5) pick(b.id);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  />
+                ))}
+                {callout && (
+                  <g>
+                    <path d={callout.d} stroke="var(--ink-a32)" strokeWidth="1" fill="none" />
+                    <text x={callout.tx} y={callout.ty1} fontFamily="Oswald, sans-serif" fontSize="13" letterSpacing="1.4" fill="var(--color-ink)">
+                      {callout.name}
+                    </text>
+                    <text x={callout.tx} y={callout.ty2} fontFamily="Oswald, sans-serif" fontSize="10" letterSpacing="1.2" fill="var(--color-mid-gray)">
+                      {callout.status}
+                    </text>
+                  </g>
+                )}
+                {entities.length === 0 && (
+                  <text x={viewBox.x + viewBox.w / 2} y={viewBox.y + viewBox.h / 2} textAnchor="middle" fontFamily="Oswald, sans-serif" fontSize="12" letterSpacing="1.4" fill="var(--color-mid-gray)">
+                    {runId ? "NO ENTITIES IN THIS RUN" : "SELECT A VALIDATION RUN"}
                   </text>
-                  <text x={callout.tx} y={callout.ty2} fontFamily="Oswald, sans-serif" fontSize="10" letterSpacing="1.2" fill="var(--color-mid-gray)">
-                    {callout.status}
-                  </text>
-                </g>
-              )}
-              {entities.length === 0 && (
-                <text x={viewBox.x + viewBox.w / 2} y={viewBox.y + viewBox.h / 2} textAnchor="middle" fontFamily="Oswald, sans-serif" fontSize="12" letterSpacing="1.4" fill="var(--color-mid-gray)">
-                  {runId ? "NO ENTITIES IN THIS RUN" : "SELECT A VALIDATION RUN"}
-                </text>
-              )}
-            </svg>
+                )}
+              </svg>
 
-            {/* minimap */}
-            <div style={{ position: "absolute", right: 14, top: 14 }}>
-              <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 8, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 2px" }}>
-                  <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
-                    Overview
-                  </span>
-                  <span style={{ font: "500 9px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>{zoomPct.toFixed(1)}×</span>
+              {/* minimap — only in map mode */}
+              <div style={{ position: "absolute", right: 14, top: 14 }}>
+                <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 8, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 2px" }}>
+                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
+                      Overview
+                    </span>
+                    <span style={{ font: "500 9px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>{zoomPct.toFixed(1)}×</span>
+                  </div>
+                  <canvas ref={mapRef} style={{ width: 150, height: 150, display: "block", borderRadius: 6, cursor: "crosshair" }} onClick={onMapClick} />
                 </div>
-                <canvas ref={mapRef} style={{ width: 150, height: 150, display: "block", borderRadius: 6, cursor: "crosshair" }} onClick={onMapClick} />
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div style={{ background: "var(--surface-card)", borderTop: "1px solid var(--color-hairline)", padding: "10px 16px 14px" }}>
