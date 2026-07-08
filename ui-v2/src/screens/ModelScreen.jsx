@@ -175,6 +175,43 @@ export default function ModelScreen({ active, onBack, project }) {
     }
   }, [runShots]);
 
+  /* ---- per-run graphics state (legacy runGfxMap session persistence) ---- */
+  const [runGfx, setRunGfx] = React.useState(() => readShotStore("dgv2_run_gfx"));
+  const runGfxRef = React.useRef(runGfx);
+  runGfxRef.current = runGfx;
+  const skipGfxSaveRef = React.useRef(false);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("dgv2_run_gfx", JSON.stringify(runGfx));
+    } catch {
+      // quota exceeded — settings stay in-memory only
+    }
+  }, [runGfx]);
+  // restore saved settings when switching runs
+  React.useEffect(() => {
+    if (!runId) return;
+    const saved = runGfxRef.current[runId];
+    if (!saved) return;
+    skipGfxSaveRef.current = true;
+    setMvFail(saved.mvFail);
+    setMvPass(saved.mvPass);
+    setMvBase(saved.mvBase);
+    setAFail(saved.aFail);
+    setAPass(saved.aPass);
+    setFailColor(saved.failColor);
+    setPassColor(saved.passColor);
+  }, [runId]);
+  // save settings for the active run whenever they change (not on run switch)
+  React.useEffect(() => {
+    if (!runId) return;
+    if (skipGfxSaveRef.current) {
+      skipGfxSaveRef.current = false;
+      return;
+    }
+    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor } }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor]);
+
   const captureShot = React.useCallback(async () => {
     const api = speckleApiRef.current;
     if (!api || !runId) return;

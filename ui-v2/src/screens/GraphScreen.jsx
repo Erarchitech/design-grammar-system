@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -246,6 +246,47 @@ export default function GraphScreen({ active, onBack, project }) {
     }
   };
 
+  /* -------- session history (data-service DesignRuleSession nodes) -------- */
+  React.useEffect(() => {
+    let gone = false;
+    setSession([]);
+    fetchDrSessions(project)
+      .then((rows) => {
+        if (gone) return;
+        // API returns newest-first; the console renders oldest-first
+        const hist = rows
+          .slice()
+          .reverse()
+          .map((s) => {
+            const result = s.result || "";
+            const ix = result.indexOf("\n\n// Cypher\n");
+            const cypher = ix >= 0 ? result.slice(ix + 12) : "";
+            return {
+              id: s.sessionId,
+              modeLabel: s.mode === "query" ? "Query" : s.mode === "edit" ? "Edit" : "Ingest",
+              text: s.prompt || "",
+              steps: [],
+              progress: 100,
+              status: "done",
+              response: ix >= 0 ? result.slice(0, ix) : result,
+              cypher,
+              createdNodes: parseCreatedNodes(cypher),
+              cypherOpen: false,
+              meta: "History · " + String(s.createdAt || "").slice(0, 10),
+              clock: String(s.createdAt || "").slice(11, 19),
+              history: true
+            };
+          });
+        if (hist.length) setSession(hist);
+      })
+      .catch(() => {
+        // data-service unreachable — console starts empty, live turns still work
+      });
+    return () => {
+      gone = true;
+    };
+  }, [project]);
+
   /* -------- prompt console (rules-ingest / graph-query webhooks) -------- */
   const patchTurn = (id, patch) =>
     setSession((s) => s.map((t) => (t.id !== id ? t : { ...t, ...(typeof patch === "function" ? patch(t) : patch) })));
@@ -324,6 +365,13 @@ export default function GraphScreen({ active, onBack, project }) {
         meta,
         clock: clockNow()
       }));
+      // persist the turn so it survives reloads (legacy saveDrSession parity)
+      void saveDrSession(
+        project,
+        mode === 0 ? "ingest" : "query",
+        txt,
+        response + (cypher ? "\n\n// Cypher\n" + cypher : "")
+      );
     } catch (err) {
       clearInterval(timer);
       patchTurn(id, (t) => ({

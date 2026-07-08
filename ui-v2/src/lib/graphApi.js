@@ -75,6 +75,36 @@ export async function fetchProjects() {
   return rowsOf(json).map(([project, nodes]) => ({ project, nodes }));
 }
 
+// ---- design-rule session history (data-service, legacy SPA parity) ----
+
+export async function fetchDrSessions(project) {
+  const cfg = getConfig();
+  const base = (cfg.dataServiceUrl || "/data-service").replace(/\/$/, "");
+  const res = await fetch(`${base}/design-rule-sessions/${encodeURIComponent(project || "default-project")}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json().catch(() => null);
+  return Array.isArray(data?.sessions) ? data.sessions : [];
+}
+
+export async function saveDrSession(project, mode, prompt, result) {
+  const cfg = getConfig();
+  const base = (cfg.dataServiceUrl || "/data-service").replace(/\/$/, "");
+  try {
+    await fetch(`${base}/design-rule-sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project: project || "default-project",
+        mode,
+        prompt,
+        result: (result || "").slice(0, 2000)
+      })
+    });
+  } catch {
+    // history is best-effort — never block the workflow on it
+  }
+}
+
 // ---- n8n webhooks with the async "accepted → poll data-service" contract ----
 
 function webhookHeaders(cfg) {
