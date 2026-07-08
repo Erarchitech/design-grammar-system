@@ -63,6 +63,47 @@ const NO_STATE = "__no_state__";
 
 const RUN_SHOTS_KEY = "dgv2_run_shots";
 const PROJECT_SHOTS_KEY = "dgv2_project_shots";
+const TILE_PROPS_KEY = "dgv2_tile_props";
+
+// PropState ⊑ DesignState — the fixed catalogue of design-grammar properties the
+// tiles can surface (owl:subClassOf DesignState in the metagraph). Each entry maps
+// a display row to the real PropState values published from Grasshopper: `match`
+// keywords are tested against a run state's projected props (iri + displayName).
+const PROPSTATES = [
+  { key: "height", label: "Height", iri: "dg:HeightState", match: ["height"] },
+  { key: "gfa", label: "GFA", iri: "dg:GFAState", match: ["gfa", "floor area", "grossfloor"] },
+  { key: "units", label: "Units", iri: "dg:UnitCountState", match: ["unit"] },
+  { key: "storeys", label: "Storeys", iri: "dg:StoreyState", match: ["storey", "story", "floor count"] },
+  { key: "coverage", label: "Site coverage", iri: "dg:CoverageState", match: ["coverage", "site cover"] },
+  { key: "setback", label: "Setback", iri: "dg:SetbackState", match: ["setback"] },
+  { key: "glazing", label: "Glazing ratio", iri: "dg:GlazingState", match: ["glazing", "glaz"] },
+  { key: "daylight", label: "Daylight factor", iri: "dg:DaylightState", match: ["daylight"] },
+  { key: "parking", label: "Parking ratio", iri: "dg:ParkingState", match: ["parking"] }
+];
+const DEFAULT_TILE_PROPS = ["height", "gfa", "units"];
+
+function readTileProps() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TILE_PROPS_KEY) || "null");
+    if (Array.isArray(raw)) return raw.filter((k) => PROPSTATES.some((p) => p.key === k));
+  } catch {
+    /* fall through to default */
+  }
+  return DEFAULT_TILE_PROPS;
+}
+
+// Resolve a catalogue entry to a real value for a design-state group, matching the
+// state's projected props by keyword. Returns null when the state carries no such
+// property (caller renders an em dash).
+function propValueFor(state, entry) {
+  const props = state?.props;
+  if (!Array.isArray(props)) return null;
+  for (const p of props) {
+    const hay = ((p.label || "") + " " + (p.iri || "")).toLowerCase();
+    if (entry.match.some((m) => hay.includes(m))) return p.value || null;
+  }
+  return null;
+}
 
 function readShotStore(key) {
   try {
@@ -155,6 +196,8 @@ export default function ModelScreen({ active, onBack, project }) {
   const [isolate, setIsolate] = React.useState(false);
   const [hidden, setHidden] = React.useState([]);
   const [selById, setSelById] = React.useState("");
+  const [tileProps, setTileProps] = React.useState(readTileProps); // which PropState rows tiles show
+  const [dsSettingsOpen, setDsSettingsOpen] = React.useState(false);
   const [viewMode, setViewMode] = React.useState("3d");
   const [speckleReady, setSpeckleReady] = React.useState(false);
   const [speckleError, setSpeckleError] = React.useState(null);
@@ -174,6 +217,18 @@ export default function ModelScreen({ active, onBack, project }) {
       // quota exceeded — thumbnails stay in-memory only
     }
   }, [runShots]);
+
+  /* ---- tile-properties selection persistence ---- */
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(TILE_PROPS_KEY, JSON.stringify(tileProps));
+    } catch {
+      // quota exceeded — selection stays in-memory only
+    }
+  }, [tileProps]);
+  const toggleTileProp = React.useCallback((key) => {
+    setTileProps((prev) => (prev.indexOf(key) >= 0 ? prev.filter((k) => k !== key) : prev.concat([key])));
+  }, []);
 
   /* ---- per-run graphics state (legacy runGfxMap session persistence) ---- */
   const [runGfx, setRunGfx] = React.useState(() => readShotStore("dgv2_run_gfx"));
@@ -509,9 +564,60 @@ export default function ModelScreen({ active, onBack, project }) {
             {project || "default-project"}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
           <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>Design States</span>
           <Badge variant="outline">{groups.length}</Badge>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
+              {tileProps.length} / {PROPSTATES.length} props
+            </span>
+            <div
+              onClick={() => setDsSettingsOpen((v) => !v)}
+              title="Configure tile properties"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-buttons)", cursor: "pointer", color: "var(--text-secondary)", background: "var(--surface-card)" }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="21" y1="4" x2="14" y2="4" />
+                <line x1="10" y1="4" x2="3" y2="4" />
+                <line x1="21" y1="12" x2="12" y2="12" />
+                <line x1="8" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="20" x2="16" y2="20" />
+                <line x1="12" y1="20" x2="3" y2="20" />
+                <line x1="14" y1="2" x2="14" y2="6" />
+                <line x1="8" y1="10" x2="8" y2="14" />
+                <line x1="16" y1="18" x2="16" y2="22" />
+              </svg>
+            </div>
+          </div>
+          {dsSettingsOpen && (
+            <>
+              <div onClick={() => setDsSettingsOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 14 }} />
+              <div className="dg-frost" style={{ position: "absolute", right: 0, top: 38, zIndex: 15, width: 250, borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", padding: 12, display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "0 4px 8px", borderBottom: "1px solid var(--color-hairline)" }}>
+                  <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>Tile Properties</span>
+                  <span style={{ font: "400 9px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>PropState ⊑ DesignState · bolt://dg-meta:7687</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1, paddingTop: 4 }}>
+                  {PROPSTATES.map((p) => {
+                    const on = tileProps.indexOf(p.key) >= 0;
+                    return (
+                      <div
+                        key={p.key}
+                        onClick={() => toggleTileProp(p.key)}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 4px", borderRadius: 8, cursor: "pointer" }}
+                      >
+                        <span style={{ width: 15, height: 15, flex: "none", border: `1px solid ${on ? "var(--color-ink)" : "var(--color-hairline)"}`, background: on ? "var(--color-ink)" : "transparent", borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", font: "600 9px/1 var(--font-sans)", color: "var(--surface-card)" }}>
+                          {on ? "✓" : ""}
+                        </span>
+                        <span style={{ flex: 1, font: "500 12px/1.3 var(--font-sans)", color: on ? "var(--text-primary)" : "var(--text-muted)" }}>{p.label}</span>
+                        <span style={{ font: "400 9px/1.3 var(--font-mono)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{p.iri}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         {loadErr && (
           <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>
@@ -532,6 +638,11 @@ export default function ModelScreen({ active, onBack, project }) {
           const fails = g.runs.reduce((s, r) => s + (r.failedRuleCount || 0), 0);
           const rules = g.runs.reduce((s, r) => s + (r.ruleCount || 0), 0);
           const stateThumb = g.runs.map((r) => runShots[r.runId]).find(Boolean);
+          const propRows = PROPSTATES.filter((p) => tileProps.indexOf(p.key) >= 0).map((entry) => ({
+            key: entry.key,
+            label: entry.label,
+            value: propValueFor(g.state, entry)
+          }));
           return (
             <div
               key={g.key}
@@ -566,6 +677,16 @@ export default function ModelScreen({ active, onBack, project }) {
                   alt=""
                   style={{ width: "100%", height: 74, objectFit: "cover", display: "block", borderRadius: 6, border: "1px solid var(--color-hairline)" }}
                 />
+              )}
+              {propRows.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {propRows.map((r) => (
+                    <div key={r.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{r.label}</span>
+                      <span style={{ font: "500 11px/1.3 var(--font-mono)", color: "var(--text-secondary)" }}>{r.value ?? "—"}</span>
+                    </div>
+                  ))}
+                </div>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>

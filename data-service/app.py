@@ -559,6 +559,56 @@ def _structured_error_response(error: str, hint: str, code: str, status_code: in
     )
 
 
+def _format_prop_value(prop_value: Any) -> str:
+    """Render a PropState propValue envelope as a compact display string.
+
+    Accepts the {parameterId, displayName, type, value} shape produced by
+    DesignStatePayloadV2Serializer. Returns "" for absent/malformed values —
+    the UI renders an em dash in that case. Never raises.
+    """
+    if not isinstance(prop_value, dict):
+        return ""
+    value = prop_value.get("value")
+    if value is None:
+        return ""
+    ptype = str(prop_value.get("type") or "").lower()
+    if ptype == "boolean":
+        return "Yes" if value else "No"
+    if ptype == "integer":
+        try:
+            return str(int(value))
+        except (TypeError, ValueError):
+            return str(value)
+    if ptype == "number":
+        try:
+            num = float(value)
+            return str(int(num)) if num.is_integer() else f"{num:g}"
+        except (TypeError, ValueError):
+            return str(value)
+    return str(value)
+
+
+def _project_prop_states(prop_states: Any) -> list[dict[str, str]]:
+    """Project a v2 payload's propStates into compact {iri, label, value} rows
+    for the Model Viewer tile-properties selector. Tolerates missing fields."""
+    if not isinstance(prop_states, list):
+        return []
+    rows: list[dict[str, str]] = []
+    for ps in prop_states:
+        if not isinstance(ps, dict):
+            continue
+        prop_value = ps.get("propValue")
+        label = (prop_value.get("displayName") if isinstance(prop_value, dict) else None) or ""
+        rows.append(
+            {
+                "iri": ps.get("dataPropertyIri") or "",
+                "label": label,
+                "value": _format_prop_value(prop_value),
+            }
+        )
+    return rows
+
+
 def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | None:
     """Project a run's statePayloadJson into a compact summary for UI grouping.
 
@@ -588,6 +638,7 @@ def _project_state_summary(state_payload_json: str | None) -> dict[str, Any] | N
             "label": parsed.get("label"),
             "capturedAtUtc": parsed.get("capturedAtUtc"),
             "parameterCount": obj_count + param_count + prop_count,
+            "props": _project_prop_states(parsed.get("propStates")),
         }
 
     # v1 fallback (ParamState-only)

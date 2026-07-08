@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from app import _project_state_summary
+from app import _project_state_summary, _format_prop_value, _project_prop_states
 
 
 def test_state_projection_valid_full_payload():
@@ -102,6 +102,11 @@ def test_v2_envelope_all_three_kinds():
         "label": None,
         "capturedAtUtc": "2026-07-04T10:00:00.0000000Z",
         "parameterCount": 6,
+        "props": [
+            {"iri": "", "label": "", "value": ""},
+            {"iri": "", "label": "", "value": ""},
+            {"iri": "", "label": "", "value": ""},
+        ],
     }
 
 
@@ -120,6 +125,7 @@ def test_v2_envelope_empty_arrays():
         "label": None,
         "capturedAtUtc": "2026-07-04T10:00:00Z",
         "parameterCount": 0,
+        "props": [],
     }
 
 
@@ -131,6 +137,7 @@ def test_v2_missing_arrays_defaults_to_zero():
         "label": None,
         "capturedAtUtc": None,
         "parameterCount": 0,
+        "props": [],
     }
 
 
@@ -161,3 +168,60 @@ def test_v2_incompatible_version_falls_back():
         "capturedAtUtc": None,
         "parameterCount": 1,
     }
+
+
+# --- PropState projection for Model Viewer tile properties (v8.0 F-01, MVIEW-05) ---
+
+
+def test_format_prop_value_number_integer_boolean():
+    assert _format_prop_value({"type": "number", "value": 75.0}) == "75"
+    assert _format_prop_value({"type": "number", "value": 62.5}) == "62.5"
+    assert _format_prop_value({"type": "integer", "value": 240}) == "240"
+    assert _format_prop_value({"type": "boolean", "value": True}) == "Yes"
+    assert _format_prop_value({"type": "boolean", "value": False}) == "No"
+
+
+def test_format_prop_value_absent_or_malformed_returns_empty():
+    assert _format_prop_value(None) == ""
+    assert _format_prop_value({}) == ""
+    assert _format_prop_value({"type": "number", "value": None}) == ""
+    assert _format_prop_value("not-a-dict") == ""
+
+
+def test_project_prop_states_extracts_iri_label_value():
+    prop_states = [
+        {
+            "stateId": "PS_1",
+            "dataPropertyIri": "dg:height",
+            "propValue": {"parameterId": "h", "displayName": "Height", "type": "number", "value": 75.0},
+        },
+        {
+            "stateId": "PS_2",
+            "dataPropertyIri": "dg:gfa",
+            "propValue": {"parameterId": "g", "displayName": "GFA", "type": "integer", "value": 12000},
+        },
+    ]
+    assert _project_prop_states(prop_states) == [
+        {"iri": "dg:height", "label": "Height", "value": "75"},
+        {"iri": "dg:gfa", "label": "GFA", "value": "12000"},
+    ]
+
+
+def test_project_prop_states_tolerates_missing_fields():
+    assert _project_prop_states(None) == []
+    assert _project_prop_states("oops") == []
+    assert _project_prop_states([{}, "bad", {"dataPropertyIri": "dg:units"}]) == [
+        {"iri": "", "label": "", "value": ""},
+        {"iri": "dg:units", "label": "", "value": ""},
+    ]
+
+
+def test_v2_envelope_carries_prop_rows_end_to_end():
+    payload = (
+        '{"version":"2","stateId":"DS_9","capturedAtUtc":"2026-07-08T10:00:00Z",'
+        '"propStates":[{"stateId":"PS_1","dataPropertyIri":"dg:height",'
+        '"propValue":{"parameterId":"h","displayName":"Height","type":"number","value":75.0}}]}'
+    )
+    result = _project_state_summary(payload)
+    assert result["props"] == [{"iri": "dg:height", "label": "Height", "value": "75"}]
+    assert result["parameterCount"] == 1
