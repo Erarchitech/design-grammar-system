@@ -17,9 +17,11 @@ import {
 import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 
-// ---- deterministic synthetic massing: the V2 spec renders the validation
-// viewport as a stylised isometric map (true 3D Speckle embed is deferred);
-// box geometry derives from entity ids so layouts are stable across loads.
+// ---- deterministic synthetic massing: degraded-mode fallback only. When
+// Speckle is unavailable (no token/urls or init error) the viewport renders
+// these stylised isometric boxes; box geometry derives from entity ids so
+// layouts are stable across loads. With Speckle healthy, both 3D and Map
+// modes show the real model (Map = top-down orthographic).
 function hashOf(s) {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
@@ -500,8 +502,9 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          {viewMode === "3d" && !speckleError && speckleResourceUrls.length > 0 && speckleToken ? (
+          {!speckleError && speckleResourceUrls.length > 0 && speckleToken ? (
             <SpeckleViewport
+              viewMode={viewMode}
               readToken={speckleToken}
               resourceUrls={speckleResourceUrls}
               project={project}
