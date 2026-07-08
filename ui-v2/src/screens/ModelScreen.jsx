@@ -146,7 +146,7 @@ export default function ModelScreen({ active, onBack, project }) {
     return () => {
       gone = true;
     };
-  }, [runId, project]);
+  }, [runId, project, fetchValidationView]);
 
   // rule details (SWRL from the metagraph)
   React.useEffect(() => {
@@ -161,7 +161,7 @@ export default function ModelScreen({ active, onBack, project }) {
     return () => {
       gone = true;
     };
-  }, [ruleId, project]);
+  }, [ruleId, project, fetchRuleDetails]);
 
   // per-rule statuses for the picked instance
   React.useEffect(() => {
@@ -176,7 +176,7 @@ export default function ModelScreen({ active, onBack, project }) {
     return () => {
       gone = true;
     };
-  }, [picked, runId, project]);
+  }, [picked, runId, project, fetchEntityStatuses]);
 
   /* ---- design-state grouping (stateId from statePayloadJson summaries) ---- */
   const groups = React.useMemo(() => {
