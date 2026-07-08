@@ -79,6 +79,8 @@ export default function ModelScreen({ active, onBack, project }) {
   const [mvBase, setMvBase] = React.useState(true);
   const [aFail, setAFail] = React.useState(85);
   const [aPass, setAPass] = React.useState(55);
+  const [failColor, setFailColor] = React.useState("#e7000b");
+  const [passColor, setPassColor] = React.useState("#737373");
   const [failOpen, setFailOpen] = React.useState(true);
   const [passOpen, setPassOpen] = React.useState(false);
   const [isolate, setIsolate] = React.useState(false);
@@ -195,6 +197,8 @@ export default function ModelScreen({ active, onBack, project }) {
 
   /* ---- entities and map items ---- */
   const failedIds = React.useMemo(() => new Set((view?.objectSets?.failed || []).map((e) => e.dgEntityId)), [view]);
+  const failedEntityIdList = React.useMemo(() => (view?.objectSets?.failed || []).map((e) => e.dgEntityId), [view]);
+  const passedEntityIdList = React.useMemo(() => (view?.objectSets?.passed || []).map((e) => e.dgEntityId), [view]);
   const entities = React.useMemo(() => {
     const all = [...(view?.objectSets?.failed || []), ...(view?.objectSets?.passed || [])];
     all.sort((a, b) => a.dgEntityId.localeCompare(b.dgEntityId));
@@ -502,6 +506,17 @@ export default function ModelScreen({ active, onBack, project }) {
               resourceUrls={speckleResourceUrls}
               project={project}
               runId={runId}
+              failedEntityIds={failedEntityIdList}
+              passedEntityIds={passedEntityIdList}
+              showFailed={mvFail}
+              showPassed={mvPass}
+              showBase={mvBase}
+              failColor={failColor}
+              passColor={passColor}
+              failOpacity={aFail}
+              passOpacity={aPass}
+              hiddenIds={hidden}
+              isolateEntityId={isolate && picked ? picked : null}
               onEntityClick={pick}
               onReady={handleSpeckleReady}
               onError={handleSpeckleError}

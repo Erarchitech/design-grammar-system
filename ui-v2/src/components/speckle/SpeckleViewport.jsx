@@ -2,6 +2,7 @@ import React from "react";
 import {
   CameraController,
   DefaultViewerParams,
+  FilteringExtension,
   SelectionExtension,
   SpeckleLoader,
   UpdateFlags,
@@ -69,33 +70,58 @@ function collectValidationObjects(worldTree, runId, project) {
  * SpeckleViewport — wraps @speckle/viewer Viewer into a controlled React component.
  *
  * Props:
- *   readToken     — Speckle read token from the view payload (NOT stored in UI env vars)
- *   resourceUrls  — Speckle resource URLs (typically [view.baseResourceUrl, view.validationResourceUrl])
- *   project       — DG project name for world tree entity mapping
- *   runId         — Validation run ID for world tree entity mapping
- *   onEntityClick — Called with (dgEntityId) when a Speckle geometry object is clicked
- *   onReady       — Called after viewer finishes loading all resources
- *   onError       — Called with (message) on initialization failure
- *   style         — Optional container styling; defaults to { position: "absolute", inset: 0 }
+ *   readToken       — Speckle read token from the view payload (NOT stored in UI env vars)
+ *   resourceUrls    — Speckle resource URLs (typically [view.baseResourceUrl, view.validationResourceUrl])
+ *   project         — DG project name for world tree entity mapping
+ *   runId           — Validation run ID for world tree entity mapping
+ *   failedEntityIds — dgEntityIds of failing entities (colored failColor)
+ *   passedEntityIds — dgEntityIds of passing entities (colored passColor)
+ *   showFailed / showPassed / showBase — visibility toggles (toolbar checkboxes)
+ *   failColor / passColor — hex colors for the validation overlay
+ *   failOpacity / passOpacity — 0..100 opacity for each group
+ *   hiddenIds       — dgEntityIds hidden via the Hide button
+ *   isolateEntityId — when set, isolates that single entity
+ *   viewMode        — "3d" (perspective orbit) or "map" (top-down orthographic)
+ *   onEntityClick   — Called with (dgEntityId) when a Speckle geometry object is clicked
+ *   onReady         — Called after viewer finishes loading all resources
+ *   onError         — Called with (message) on initialization failure
+ *   apiRef          — Optional React ref; receives { screenshot() } once ready
+ *   style           — Optional container styling; defaults to { position: "absolute", inset: 0 }
  */
 export default function SpeckleViewport({
   readToken,
   resourceUrls,
   project,
   runId,
+  failedEntityIds,
+  passedEntityIds,
+  showFailed = true,
+  showPassed = true,
+  showBase = true,
+  failColor = "#e7000b",
+  passColor = "#737373",
+  failOpacity = 85,
+  passOpacity = 55,
+  hiddenIds,
+  isolateEntityId = null,
+  viewMode = "3d",
   onEntityClick,
   onReady,
   onError,
+  apiRef,
   style
 }) {
   const hostRef = React.useRef(null);
   const viewerRef = React.useRef(null);
+  const filteringRef = React.useRef(null);
   const entityMapRef = React.useRef(new Map());
+  const allValidationObjectIdsRef = React.useRef([]);
   const disposedRef = React.useRef(false);
   const clickHandlerRef = React.useRef(null);
   const onEntityClickRef = React.useRef(onEntityClick);
   const onReadyRef = React.useRef(onReady);
   const onErrorRef = React.useRef(onError);
+  const [ready, setReady] = React.useState(false);
 
   // Keep callback refs current (effect uses refs to avoid re-running on callback reference changes)
   onEntityClickRef.current = onEntityClick;
@@ -114,12 +140,14 @@ export default function SpeckleViewport({
 
     let disposed = false;
     disposedRef.current = false;
+    setReady(false);
 
     const initViewer = async () => {
       // Dispose previous viewer if it exists
       if (viewerRef.current) {
         viewerRef.current.dispose();
         viewerRef.current = null;
+        filteringRef.current = null;
       }
       const host = hostRef.current;
       if (!host) return;
@@ -133,16 +161,18 @@ export default function SpeckleViewport({
           verbose: false,
           showStats: false
         });
+        viewerRef.current = viewer;
         await viewer.init();
 
         if (disposed) {
           viewer.dispose();
+          if (viewerRef.current === viewer) viewerRef.current = null;
           return;
         }
 
         viewer.createExtension(CameraController);
         viewer.createExtension(SelectionExtension);
-        viewerRef.current = viewer;
+        filteringRef.current = viewer.createExtension(FilteringExtension);
 
         // Load each resource
         for (const resourceUrl of urls) {
@@ -161,6 +191,7 @@ export default function SpeckleViewport({
         const worldTree = viewer.getWorldTree();
         const collected = collectValidationObjects(worldTree, runId, project);
         entityMapRef.current = collected.entityMap;
+        allValidationObjectIdsRef.current = collected.allValidationObjectIds;
 
         // Click handler
         const handleClick = (payload) => {
@@ -174,6 +205,13 @@ export default function SpeckleViewport({
         clickHandlerRef.current = handleClick;
         viewer.on("object-clicked", handleClick);
 
+        if (apiRef) {
+          apiRef.current = {
+            screenshot: () => viewer.screenshot()
+          };
+        }
+
+        setReady(true);
         onReadyRef.current?.();
       } catch (err) {
         if (!disposed) {
@@ -191,6 +229,8 @@ export default function SpeckleViewport({
     return () => {
       disposed = true;
       disposedRef.current = true;
+      setReady(false);
+      if (apiRef) apiRef.current = null;
       if (viewerRef.current) {
         if (clickHandlerRef.current && typeof viewerRef.current.off === "function") {
           viewerRef.current.off("object-clicked", clickHandlerRef.current);
@@ -199,10 +239,146 @@ export default function SpeckleViewport({
         viewerRef.current.dispose();
         viewerRef.current = null;
       }
+      filteringRef.current = null;
       entityMapRef.current = new Map();
+      allValidationObjectIdsRef.current = [];
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceKey, readToken, project, runId]);
+
+  // Validation overlay — visibility, isolation, hiding, coloring and opacity.
+  // Ported from the legacy viewer (graph-viewer/model-viewer/src/App.jsx):
+  // geometry ships grey from Speckle; the fail/pass color coding is applied
+  // client-side through the FilteringExtension + renderer material overrides.
+  React.useEffect(() => {
+    const viewer = viewerRef.current;
+    const filtering = filteringRef.current;
+    if (!ready || !viewer || !filtering) return;
+
+    const entityMap = entityMapRef.current;
+    const flatten = (ids) => {
+      const objectIds = [];
+      for (const id of ids || []) {
+        const mapped = entityMap.get(id) || [];
+        objectIds.push(...mapped);
+      }
+      return Array.from(new Set(objectIds));
+    };
+
+    filtering.resetFilters();
+    const failedObjectIds = showFailed ? flatten(failedEntityIds) : [];
+    const passedObjectIds = showPassed ? flatten(passedEntityIds) : [];
+    const visibleObjectIds = [...failedObjectIds, ...passedObjectIds];
+
+    if (isolateEntityId) {
+      const isoObjectIds = flatten([isolateEntityId]);
+      if (isoObjectIds.length > 0) {
+        filtering.isolateObjects(isoObjectIds, "dg-isolate", true, true);
+      }
+    } else {
+      // Hide validation objects excluded by the fail/pass toggles
+      const visibleSet = new Set(visibleObjectIds);
+      const hiddenValidationIds = allValidationObjectIdsRef.current.filter((id) => !visibleSet.has(id));
+      if (hiddenValidationIds.length > 0) {
+        filtering.hideObjects(hiddenValidationIds, "dg-validation", true, false);
+      }
+
+      // Base model off → isolate only the validation objects
+      if (!showBase && visibleObjectIds.length > 0) {
+        filtering.isolateObjects(visibleObjectIds, "dg-base", true, false);
+      }
+
+      // Entities hidden via the Hide button
+      if (hiddenIds && hiddenIds.length > 0) {
+        const hideObjectIds = flatten(hiddenIds);
+        if (hideObjectIds.length > 0) {
+          filtering.hideObjects(hideObjectIds, "dg-hide", true, false);
+        }
+      }
+    }
+
+    const colorGroups = [];
+    if (failedObjectIds.length > 0) colorGroups.push({ objectIds: failedObjectIds, color: failColor });
+    if (passedObjectIds.length > 0) colorGroups.push({ objectIds: passedObjectIds, color: passColor });
+    if (colorGroups.length > 0) {
+      filtering.setUserObjectColors(colorGroups);
+    }
+
+    // Per-group opacity via renderer material overrides. setUserObjectColors
+    // only handles RGB (the Speckle ramp texture has no alpha), so resolve
+    // each group's objectIds to render views and set a material with opacity.
+    try {
+      const renderer = viewer.getRenderer();
+      const worldTree = viewer.getWorldTree();
+      const renderTree = worldTree.getRenderTree();
+
+      const applyGroupMaterial = (objectIds, hexColor, opacityPercent) => {
+        if (objectIds.length === 0) return;
+        const rvs = [];
+        for (const id of objectIds) {
+          const nodes = worldTree.findId(id);
+          if (nodes) {
+            for (const node of nodes) {
+              const views = renderTree.getRenderViewsForNode(node);
+              if (views) rvs.push(...views);
+            }
+          }
+        }
+        if (rvs.length === 0) return;
+        const colorInt = parseInt(hexColor.slice(1), 16);
+        renderer.setMaterial(rvs, {
+          id: `dg-${hexColor}-${opacityPercent}`,
+          color: colorInt,
+          emissive: 0,
+          opacity: opacityPercent / 100,
+          roughness: 0.6,
+          metalness: 0,
+          vertexColors: false,
+          lineWeight: 1
+        });
+      };
+
+      applyGroupMaterial(failedObjectIds, failColor, failOpacity);
+      applyGroupMaterial(passedObjectIds, passColor, passOpacity);
+    } catch {
+      // renderer material override unavailable — color groups still applied
+    }
+
+    viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
+  }, [
+    ready,
+    failedEntityIds,
+    passedEntityIds,
+    showFailed,
+    showPassed,
+    showBase,
+    failColor,
+    passColor,
+    failOpacity,
+    passOpacity,
+    hiddenIds,
+    isolateEntityId
+  ]);
+
+  // View mode — "map" is a top-down orthographic projection of the real
+  // model (no more synthetic boxes); "3d" restores the perspective orbit.
+  React.useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!ready || !viewer) return;
+    const cam = viewer.getExtension(CameraController);
+    if (!cam) return;
+    try {
+      if (viewMode === "map") {
+        if (typeof cam.setOrthoCameraOn === "function") cam.setOrthoCameraOn();
+        if (typeof cam.setCameraView === "function") cam.setCameraView("top", true);
+      } else {
+        if (typeof cam.setPerspectiveCameraOn === "function") cam.setPerspectiveCameraOn();
+      }
+      viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
+    } catch {
+      // camera API drift across @speckle/viewer versions — keep current view
+    }
+  }, [ready, viewMode]);
 
   // Resize handling
   React.useEffect(() => {
