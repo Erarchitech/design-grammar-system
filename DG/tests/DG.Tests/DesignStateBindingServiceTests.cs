@@ -30,6 +30,31 @@ public sealed class DesignStateBindingServiceTests
     }
 
     [Fact]
+    public void BuildBindings_ElementRefCarriesObjStateGeometry()
+    {
+        // Regression F-01: geometry captured by OBJECT STATE must flow into the
+        // binding's ElementRef, otherwise validation publish sends entities with
+        // no displayValue and the Model Viewer has nothing to color or toggle.
+        var rule = MakeRuleWithObjectVar("?b", "ex:Building");
+        var geometry = new object();
+
+        var designState = new DesignState
+        {
+            ObjStates = new List<ObjState>
+            {
+                new() { StateId = "OS_A", ObjectRef = "B1", ClassIri = "ex:Building", Geometry = geometry, Label = "Building 1" },
+            },
+        };
+
+        var result = DesignStateBindingService.BuildBindings(rule, designState);
+
+        Assert.Single(result);
+        var elementRef = result[0].ElementRefsByVar["?b"];
+        Assert.Same(geometry, elementRef.Geometry);
+        Assert.Equal("Building 1", elementRef.DisplayName);
+    }
+
+    [Fact]
     public void BuildBindings_PropertyVarMatchByDataPropertyIri()
     {
         var rule = MakeRuleWithObjectVar("?b", "ex:Building");

@@ -77,6 +77,7 @@ public static class DesignStateBindingService
                         row.ElementRefsByVar[objVar] = new ElementRef
                         {
                             DgEntityId = objState.ObjectRef,
+                            Geometry = objState.Geometry,
                             DisplayName = objState.Label ?? objState.ObjectRef,
                         };
                     }
