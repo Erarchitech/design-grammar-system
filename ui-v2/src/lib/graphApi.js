@@ -78,6 +78,17 @@ export async function updateNodeProp(neoId, key, value) {
   return rowsOf(json)[0]?.[0] || null;
 }
 
+// Existing rules for the Edit mode picker (legacy fetchExistingRules parity)
+export async function fetchRules(project) {
+  const scope = project ? " AND r.project = $project" : "";
+  const json = await executeCypher(
+    `MATCH (r:Rule) WHERE r.graph = 'Metagraph'${scope} ` +
+      "RETURN r.Rule_Id AS ruleId, coalesce(r.SWRL, r.text, '') AS text ORDER BY r.Rule_Id",
+    project ? { project } : {}
+  );
+  return rowsOf(json).map(([ruleId, text]) => ({ ruleId, text }));
+}
+
 export async function fetchProjects() {
   const json = await executeCypher(
     "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"

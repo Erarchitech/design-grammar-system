@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -16,10 +16,11 @@ import {
   Tabs
 } from "../components/index.js";
 
-const MODES = ["Ingest", "Query"];
+const MODES = ["Ingest", "Query", "Edit"];
 const STEPS = {
   0: ["Parsing intent", "Reasoning over ontology", "Encoding SWRL / Cypher", "Committing to metagraph"],
-  1: ["Parsing query", "Traversing graph", "Ranking matches"]
+  1: ["Parsing query", "Traversing graph", "Ranking matches"],
+  2: ["Locating rule", "Reasoning over ontology", "Re-encoding SWRL / Cypher", "Rewriting metagraph"]
 };
 
 const frost = (extra) => ({
@@ -99,6 +100,8 @@ export default function GraphScreen({ active, onBack, project }) {
   const [matchList, setMatchList] = React.useState([]);
   const [mode, setMode] = React.useState(0);
   const [promptVal, setPromptVal] = React.useState("");
+  const [editRules, setEditRules] = React.useState([]);
+  const [editRuleId, setEditRuleId] = React.useState("");
   const [session, setSession] = React.useState([]);
   const [sessionOpen, setSessionOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -287,6 +290,20 @@ export default function GraphScreen({ active, onBack, project }) {
     };
   }, [project]);
 
+  // Edit mode: load the project's existing rules for the picker whenever
+  // the Edit tab is active (legacy fetchExistingRules parity)
+  React.useEffect(() => {
+    if (mode !== 2) return;
+    let gone = false;
+    setEditRuleId("");
+    fetchRules(project)
+      .then((rules) => !gone && setEditRules(rules))
+      .catch(() => !gone && setEditRules([]));
+    return () => {
+      gone = true;
+    };
+  }, [mode, project]);
+
   /* -------- prompt console (rules-ingest / graph-query webhooks) -------- */
   const patchTurn = (id, patch) =>
     setSession((s) => s.map((t) => (t.id !== id ? t : { ...t, ...(typeof patch === "function" ? patch(t) : patch) })));
@@ -299,7 +316,10 @@ export default function GraphScreen({ active, onBack, project }) {
 
   const sendPrompt = async () => {
     const txt = promptVal.trim();
-    if (!txt || busy) return;
+    if (!txt || busy || (mode === 2 && !editRuleId)) return;
+    // Edit mode reuses the ingest webhook with the legacy prefix contract;
+    // the n8n workflow deletes the rule's old atoms before re-creation.
+    const sentText = mode === 2 ? "edit Rule_Id: " + editRuleId + " — " + txt : txt;
     const id = "t" + Date.now();
     const steps = STEPS[mode];
     setSession((s) =>
@@ -307,7 +327,7 @@ export default function GraphScreen({ active, onBack, project }) {
         {
           id,
           modeLabel: MODES[mode],
-          text: txt,
+          text: sentText,
           steps: steps.map((l) => ({ label: l, active: false, time: "" })),
           progress: 5,
           status: "processing",
@@ -339,15 +359,15 @@ export default function GraphScreen({ active, onBack, project }) {
 
     try {
       const payload =
-        mode === 0 ? await ingestRules(txt, project) : await queryGraph(txt, project);
+        mode === 1 ? await queryGraph(txt, project) : await ingestRules(sentText, project);
       clearInterval(timer);
       const secs = ((Date.now() - t0) / 1000).toFixed(1);
       let response, meta, cypher = "", createdNodes = [];
-      if (mode === 0) {
+      if (mode !== 1) {
         cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
         createdNodes = parseCreatedNodes(cypher);
-        response = "Rule ingested into the metagraph.";
-        meta = "Committed → Metagraph · " + secs + "s";
+        response = mode === 2 ? "Rule " + editRuleId + " rewritten in the metagraph." : "Rule ingested into the metagraph.";
+        meta = (mode === 2 ? "Rewritten" : "Committed") + " → Metagraph · " + secs + "s";
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
       } else {
@@ -368,8 +388,8 @@ export default function GraphScreen({ active, onBack, project }) {
       // persist the turn so it survives reloads (legacy saveDrSession parity)
       void saveDrSession(
         project,
-        mode === 0 ? "ingest" : "query",
-        txt,
+        mode === 1 ? "query" : mode === 2 ? "edit" : "ingest",
+        sentText,
         response + (cypher ? "\n\n// Cypher\n" + cypher : "")
       );
     } catch (err) {
@@ -705,7 +725,7 @@ export default function GraphScreen({ active, onBack, project }) {
 
           <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-buttons)", padding: 6, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
-              <Tabs tabs={MODES} active={mode} onChange={setMode} style={{ height: 30, width: 170, flex: "none" }} />
+              <Tabs tabs={MODES} active={mode} onChange={setMode} style={{ height: 30, width: 240, flex: "none" }} />
               <span style={{ flex: 1, minWidth: 0, textAlign: "right", font: "500 9px/1.3 var(--font-annotation)", letterSpacing: "1.1px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {ringN ? ringN.name + " · text" : "No data"}
               </span>
@@ -717,10 +737,38 @@ export default function GraphScreen({ active, onBack, project }) {
                 </div>
               )}
             </div>
+            {mode === 2 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
+                <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9, whiteSpace: "nowrap" }}>
+                  Rule
+                </span>
+                <Select
+                  value={editRuleId}
+                  options={[{ value: "", label: editRules.length ? "Select a rule to edit…" : "No rules in this project" }].concat(
+                    editRules.map((r) => ({ value: r.ruleId, label: r.ruleId }))
+                  )}
+                  onChange={(e) => setEditRuleId(e.target.value)}
+                  style={{ height: 32, flex: "1 1 auto", minWidth: 0, fontSize: 12, padding: "0 30px 0 12px" }}
+                />
+              </div>
+            )}
+            {mode === 2 && editRuleId && (
+              <div style={{ padding: "0 4px", font: "400 10.5px/1.5 var(--font-mono)", color: "var(--text-muted)", maxHeight: 54, overflowY: "auto", overflowWrap: "anywhere" }}>
+                {editRules.find((r) => r.ruleId === editRuleId)?.text || ""}
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Input
                 mono
-                placeholder={mode === 0 ? "Encode a design rule…" : "Ask the graph a question…"}
+                placeholder={
+                  mode === 0
+                    ? "Encode a design rule…"
+                    : mode === 1
+                      ? "Ask the graph a question…"
+                      : editRuleId
+                        ? "Describe the changes to apply to " + editRuleId + "…"
+                        : "Select a rule above first…"
+                }
                 value={promptVal}
                 onChange={(e) => setPromptVal(e.target.value)}
                 onKeyDown={(e) => {
@@ -728,8 +776,8 @@ export default function GraphScreen({ active, onBack, project }) {
                 }}
                 style={{ flex: "1 1 auto", minWidth: 60 }}
               />
-              <Button size="sm" onClick={sendPrompt} disabled={busy}>
-                {mode === 0 ? "Ingest" : "Query"}
+              <Button size="sm" onClick={sendPrompt} disabled={busy || (mode === 2 && !editRuleId)}>
+                {mode === 0 ? "Ingest" : mode === 1 ? "Query" : "Apply Edit"}
               </Button>
             </div>
           </div>
