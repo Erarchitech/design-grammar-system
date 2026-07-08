@@ -180,7 +180,11 @@ export default function SpeckleViewport({
       }
     };
 
-    void initViewer();
+    void initViewer().catch((err) => {
+      if (!disposed) {
+        onErrorRef.current?.(err.message || "Speckle viewer initialization failed");
+      }
+    });
 
     return () => {
       disposed = true;
