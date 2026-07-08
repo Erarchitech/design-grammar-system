@@ -23,11 +23,23 @@ function collectValidationObjects(worldTree, runId, project) {
   const entityMap = new Map();
   const allValidationObjectIds = [];
 
+  // Debug: sample some tree nodes to see their structure
+  let sampleCount = 0;
+  worldTree.walk((node) => {
+    if (sampleCount < 10 && node.model?.raw && Object.keys(node.model.raw).length > 2) {
+      console.log("[DG-Debug] Sample tree node:", node.model.id, Object.keys(node.model.raw));
+      sampleCount++;
+    }
+    return true;
+  });
+
   // Primary search: strict match on project + run + entity id.
   let nodes = worldTree.findAll((node) => {
     const raw = node.model?.raw;
     return raw && raw.validationRunId === runId && raw.dgProject === project && raw.dgEntityId;
   });
+
+  console.log("[DG-Debug] collectValidationObjects: runId =", runId, "project =", project, "matched nodes =", nodes.length);
 
   // Legacy fallback: some historical payloads may miss validationRunId.
   if (nodes.length === 0) {
@@ -35,6 +47,7 @@ function collectValidationObjects(worldTree, runId, project) {
       const raw = node.model?.raw;
       return raw && raw.dgProject === project && raw.dgEntityId;
     });
+    console.log("[DG-Debug] Fallback search (project + dgEntityId): matched nodes =", nodes.length);
   }
 
   // Final fallback for older data where project was not persisted in object raw payload.
@@ -43,6 +56,7 @@ function collectValidationObjects(worldTree, runId, project) {
       const raw = node.model?.raw;
       return raw && raw.validationRunId === runId && raw.dgEntityId;
     });
+    console.log("[DG-Debug] Fallback search (runId + dgEntityId): matched nodes =", nodes.length);
   }
 
   for (const node of nodes) {
@@ -58,6 +72,12 @@ function collectValidationObjects(worldTree, runId, project) {
       entityMap.set(dgEntityId, []);
     }
     entityMap.get(dgEntityId).push(...allIds);
+  }
+
+  console.log("[DG-Debug] entityMap size:", entityMap.size, "total objectIds:", allValidationObjectIds.length);
+  if (entityMap.size > 0) {
+    const first = entityMap.entries().next().value;
+    console.log("[DG-Debug] Sample entity:", first[0], "→", first[1].length, "objectIds:", first[1].slice(0, 3));
   }
 
   return {
@@ -192,6 +212,9 @@ export default function SpeckleViewport({
         const collected = collectValidationObjects(worldTree, runId, project);
         entityMapRef.current = collected.entityMap;
         allValidationObjectIdsRef.current = collected.allValidationObjectIds;
+
+        // Debug handle for live world-tree inspection (harmless in production)
+        window.__dgSpeckleDebug = { viewer, worldTree, runId, project, entityMap: collected.entityMap };
 
         // Click handler
         const handleClick = (payload) => {
