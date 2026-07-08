@@ -7,6 +7,7 @@ import {
   Badge,
   Button,
   Chip,
+  Collapsible,
   Input,
   Progress,
   PropertiesTable,
@@ -31,6 +32,36 @@ const frost = (extra) => ({
   flex: "none",
   ...extra
 });
+
+// Extract the nodes a rule-ingest Cypher statement creates, so the session
+// turn can list them (rule first, then atoms, vars, literals, builtins).
+const NODE_DISPLAY_KEYS = ["Rule_Id", "SWRL_label", "Atom_Id", "label", "name", "lex", "iri"];
+const NODE_ORDER = { Rule: 0, Atom: 1, Var: 2, Literal: 3, Builtin: 4 };
+function parseCreatedNodes(cypher) {
+  if (!cypher) return [];
+  const nodes = [];
+  const seen = new Set();
+  const re = /(?:CREATE|MERGE)\s*\(\s*[\w`]*\s*:\s*`?(\w+)`?\s*(\{[^}]*\})?/gi;
+  let m;
+  while ((m = re.exec(cypher))) {
+    const label = m[1];
+    const propsText = m[2] || "";
+    let display = "";
+    for (const key of NODE_DISPLAY_KEYS) {
+      const pm = propsText.match(new RegExp(key + "\\s*:\\s*(?:'([^']*)'|\"([^\"]*)\")"));
+      if (pm) {
+        display = pm[1] ?? pm[2] ?? "";
+        if (display) break;
+      }
+    }
+    const id = label + "·" + display;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    nodes.push({ label, display });
+  }
+  nodes.sort((a, b) => (NODE_ORDER[a.label] ?? 9) - (NODE_ORDER[b.label] ?? 9));
+  return nodes;
+}
 
 function clockNow() {
   try {
@@ -270,10 +301,11 @@ export default function GraphScreen({ active, onBack, project }) {
         mode === 0 ? await ingestRules(txt, project) : await queryGraph(txt, project);
       clearInterval(timer);
       const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      let response, meta;
+      let response, meta, cypher = "", createdNodes = [];
       if (mode === 0) {
-        const cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
-        response = "Rule ingested into the metagraph." + (cypher ? "\n\n// Cypher\n" + cypher : "");
+        cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
+        createdNodes = parseCreatedNodes(cypher);
+        response = "Rule ingested into the metagraph.";
         meta = "Committed → Metagraph · " + secs + "s";
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
@@ -286,6 +318,9 @@ export default function GraphScreen({ active, onBack, project }) {
         progress: 100,
         steps: t.steps.map((x) => ({ ...x, active: false, time: x.time || "·" })),
         response,
+        cypher,
+        createdNodes,
+        cypherOpen: false,
         meta,
         clock: clockNow()
       }));
@@ -561,6 +596,32 @@ export default function GraphScreen({ active, onBack, project }) {
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 10, borderLeft: "2px solid var(--color-hairline)" }}>
                         <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>Response</span>
                         <pre style={{ margin: 0, font: "400 11px/1.6 var(--font-mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{turn.response}</pre>
+                        {turn.createdNodes && turn.createdNodes.length > 0 && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                              Created nodes · {turn.createdNodes.length}
+                            </span>
+                            {turn.createdNodes.map((n, k) => (
+                              <div key={k} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                                <span style={{ flex: "none", font: "500 9px/1.5 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: n.label === "Rule" ? "var(--color-signal-ink)" : "var(--text-secondary)", border: "1px solid var(--color-hairline)", borderRadius: 5, padding: "1px 6px", minWidth: 44, textAlign: "center" }}>
+                                  {n.label}
+                                </span>
+                                <span style={{ font: "400 11px/1.5 var(--font-mono)", overflowWrap: "anywhere" }}>{n.display || "—"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {turn.cypher && (
+                          <Collapsible
+                            label="Cypher"
+                            open={!!turn.cypherOpen}
+                            onToggle={() => patchTurn(turn.id, (t) => ({ cypherOpen: !t.cypherOpen }))}
+                          >
+                            <pre style={{ margin: 0, padding: "8px 12px", font: "400 10.5px/1.6 var(--font-mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 220, overflowY: "auto" }}>
+                              {turn.cypher}
+                            </pre>
+                          </Collapsible>
+                        )}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 2 }}>
                           <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--color-signal)" }}>{turn.meta}</span>
                           <span style={{ font: "400 10px/1 var(--font-mono)", color: "var(--text-muted)" }}>{turn.clock}</span>
