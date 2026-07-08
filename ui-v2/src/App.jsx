@@ -36,7 +36,20 @@ export default function App() {
   const [region, setRegion] = React.useState("landing");
   const [user, setUser] = React.useState(() => currentUser());
   const [project, setProject] = React.useState(() => localStorage.getItem("dgv2_project") || null);
+  const [theme, setTheme] = React.useState(() => (localStorage.getItem("dgv2_theme") === "dark" ? "dark" : "light"));
   const landingLayerRef = React.useRef(null);
+
+  // Theme: stamp <html data-theme> for the CSS token overrides and notify
+  // the canvas engines (they listen for "dg-theme" to swap palettes).
+  React.useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("dgv2_theme", theme);
+    } catch {
+      // storage unavailable — theme resets on reload
+    }
+    window.dispatchEvent(new CustomEvent("dg-theme", { detail: theme }));
+  }, [theme]);
 
   React.useEffect(() => {
     const onHash = () => setHash(window.location.hash);
@@ -99,6 +112,39 @@ export default function App() {
       <Layer active={region === "projects"}>
         <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={setProject} />
       </Layer>
+
+      {/* dark / light toggle — global, floats above every layer */}
+      <div
+        className="dg-frost"
+        onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        style={{
+          position: "absolute",
+          right: 18,
+          bottom: 18,
+          zIndex: 50,
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "var(--shadow-panel)",
+          color: "var(--text-secondary)"
+        }}
+      >
+        {theme === "dark" ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        )}
+      </div>
     </div>
   );
 }

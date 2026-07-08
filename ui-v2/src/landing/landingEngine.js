@@ -19,6 +19,16 @@ const TH = {
   paper: "#f5f5f5"
 };
 
+// Theme-aware canvas palette (dark values mirror colors.css dark tokens)
+function refreshLandingTheme() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  TH.ink = dark ? "#f0f0f0" : "#0a0a0a";
+  TH.leader = dark ? "rgba(240,240,240,0.38)" : "rgba(10,10,10,0.38)";
+  TH.paper = dark ? "#111111" : "#f5f5f5";
+}
+refreshLandingTheme();
+if (typeof window !== "undefined") window.addEventListener("dg-theme", refreshLandingTheme);
+
 function rng(seed) {
   let t = seed >>> 0;
   return function () {

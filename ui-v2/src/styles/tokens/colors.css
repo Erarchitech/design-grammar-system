@@ -54,6 +54,32 @@
   --status-destructive: var(--color-signal-ink);
 }
 
+/* Dark mode — same monochromatic system, inverted stack. Toggled by the
+   App-level theme switch setting data-theme on <html>. */
+:root[data-theme="dark"] {
+  --color-canvas: #111111;
+  --color-paper: #1b1b1b;
+  --color-surface-alt: #171717;
+  --color-ink: #f0f0f0;
+  --color-ink-soft: #e2e2e2;
+  --color-mid-gray: #909090;
+  --color-hairline: #2a2a2a;
+  --color-hairline-strong: #3d3d3d;
+
+  --ink-a04: rgba(240, 240, 240, 0.05);
+  --ink-a08: rgba(240, 240, 240, 0.09);
+  --ink-a16: rgba(240, 240, 240, 0.17);
+  --ink-a32: rgba(240, 240, 240, 0.34);
+  --ink-a56: rgba(240, 240, 240, 0.58);
+
+  --color-signal: #ff3b44;
+  --color-signal-ink: #ff7079;
+  --color-signal-soft: rgba(255, 59, 68, 0.14);
+  --color-signal-mid: rgba(255, 59, 68, 0.4);
+
+  --text-inverse: #111111;
+}
+
 ::selection {
   background: var(--color-signal-soft);
   color: var(--color-signal-ink);

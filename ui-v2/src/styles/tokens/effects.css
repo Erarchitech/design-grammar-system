@@ -28,6 +28,12 @@
   --duration-base: 200ms; /* @kind other */
 }
 
+:root[data-theme="dark"] {
+  --shadow-subtle: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
+  --shadow-panel: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --frost-bg: rgba(20, 20, 20, 0.72);
+}
+
 /* Blueprint grid — faint drafting grid on frosted paper */
 .dg-blueprint {
   background-color: var(--color-canvas);

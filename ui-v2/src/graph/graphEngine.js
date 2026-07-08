@@ -20,6 +20,24 @@ const TH = {
   paper: "#f5f5f5"
 };
 
+// Theme-aware canvas palette: light values above stay pixel-identical;
+// dark values mirror the [data-theme="dark"] tokens in colors.css.
+function refreshEngineTheme() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const a = dark ? (x) => `rgba(240,240,240,${x})` : (x) => `rgba(10,10,10,${x})`;
+  TH.ink = dark ? "#f0f0f0" : "#0a0a0a";
+  TH.dim = dark ? "#3d3d3d" : "#d4d4d4";
+  TH.guide = a(0.06);
+  TH.guideOn = a(0.16);
+  TH.edge = a(0.2);
+  TH.signal = dark ? "#ff3b44" : "#e7000b";
+  TH.signalDim = dark ? "rgba(255,59,68,0.5)" : "rgba(231,0,11,0.5)";
+  TH.leader = a(0.38);
+  TH.paper = dark ? "#111111" : "#f5f5f5";
+}
+refreshEngineTheme();
+if (typeof window !== "undefined") window.addEventListener("dg-theme", refreshEngineTheme);
+
 function rng(seed) {
   let t = seed >>> 0;
   return function () {
