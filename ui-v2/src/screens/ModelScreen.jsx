@@ -61,6 +61,30 @@ function boxPath(b) {
 
 const NO_STATE = "__no_state__";
 
+// Clickable colour swatch backed by a hidden <input type="color"> —
+// same pattern as the legacy viewer's graphics bar.
+function ColorSwatch({ label, color, onChange }) {
+  const ref = React.useRef(null);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span
+        onClick={() => ref.current?.click()}
+        title={label + " colour"}
+        style={{
+          width: 18,
+          height: 18,
+          borderRadius: 5,
+          background: color,
+          border: "1px solid var(--color-hairline-strong)",
+          cursor: "pointer",
+          flex: "none"
+        }}
+      />
+      <input ref={ref} type="color" value={color} onChange={(e) => onChange(e.target.value)} style={{ display: "none" }} />
+    </span>
+  );
+}
+
 // Validation results in the V2 skin: run browsing with failing/passing
 // breakdowns (MVIEW-01), instance inspection (MVIEW-02), map canvas with
 // validation colouring + minimap + zoom (MVIEW-03), SWRL rule panel and
@@ -228,7 +252,7 @@ export default function ModelScreen({ active, onBack, project }) {
       id: b.id,
       d: boxPath(b),
       fill: selB ? "var(--color-signal-soft)" : fail ? "var(--color-signal-soft)" : "transparent",
-      stroke: selB ? "var(--color-signal)" : fail ? "var(--status-fail)" : "var(--ink-a32)",
+      stroke: selB ? "var(--color-signal)" : fail ? failColor : passColor,
       sw: selB || fail ? 1.5 : 1,
       op: (fail ? aFail : aPass) / 100
     });
@@ -302,13 +326,13 @@ export default function ModelScreen({ active, onBack, project }) {
       oy = 5;
     for (const b of boxes) {
       const fail = failedIds.has(b.id);
-      ctx.fillStyle = fail ? "#e7000b" : "rgba(10,10,10,0.4)";
+      ctx.fillStyle = fail ? failColor : passColor;
       ctx.fillRect(ox + b.x * sc, oy + (b.y - b.h) * sc, Math.max(2, b.w * sc), Math.max(2, b.h * sc));
     }
-    ctx.strokeStyle = "#e7000b";
+    ctx.strokeStyle = failColor;
     ctx.lineWidth = 1;
     ctx.strokeRect(ox + viewBox.x * sc, oy + viewBox.y * sc, viewBox.w * sc, viewBox.h * sc);
-  }, [boxes, viewBox, failedIds]);
+  }, [boxes, viewBox, failedIds, failColor, passColor]);
 
   const onMapClick = (e) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -438,7 +462,9 @@ export default function ModelScreen({ active, onBack, project }) {
           <Checkbox label="Passing" checked={mvPass} onChange={setMvPass} />
           <Checkbox label="Base model" checked={mvBase} onChange={setMvBase} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
+          <ColorSwatch label="Fail" color={failColor} onChange={setFailColor} />
           <Slider label="Fail α" value={aFail} onChange={setAFail} style={{ width: 150 }} />
+          <ColorSwatch label="Pass" color={passColor} onChange={setPassColor} />
           <Slider label="Pass α" value={aPass} onChange={setAPass} style={{ width: 150 }} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <SearchField
