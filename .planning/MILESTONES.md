@@ -36,15 +36,38 @@ Automatic alignment of DG Ontograph entities to the W3C Building Topology Ontolo
 
 ---
 
+## v8.0 Design Grammars V2 UI (Shipped: 2026-07-07)
+
+**Status:** Shipped — Phases 21–27, 28 requirements complete (Phase 27 Speckle 3D Embed added post-ship, completed 2026-07-08)
+**Timeline:** 2026-07-07 → 2026-07-08
+
+Replaced the dark legacy web SPA with the "Design Grammars V2" light clinical-blueprint interface as the real product UI (`ui-v2/`, Vite + React): design-system foundation (tokens, Geist/Oswald, frost/blueprint primitives), particle-ring landing with inline auth, canvas datascape Graph Viewer wired to live Neo4j + n8n webhooks, Model Viewer over data-service validation runs, project scoping, deployment cutover at :8080 with E2E parity. Post-ship Phase 27 replaced the synthetic SVG map with an embedded Speckle 3D viewer (validation colour overlay, SVG fallback toggle).
+
+→ [Requirements](v8.0-REQUIREMENTS.md) | [Phases archive](v8.0-phases/)
+
+---
+
 ## v9.0 AI Workflow Intelligence (Future)
 
-**Status:** Paused — Phase 01 (cloud-llm-connector) executed 2026-07-06 and parked in [v9.0-phases/](v9.0-phases/); resume after v8.0 Design Grammars V2 UI
+**Status:** Paused — Phase 28 (cloud-llm-connector) executed 2026-07-06 and parked in [v9.0-phases/](v9.0-phases/); resume after v8.0 follow-ups. Restructured + renumbered 2026-07-08 (milestone-local 1–13 → global 28–40).
 **Defined:** 2026-07-03
 
-Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user-supplied API key, Claude/OpenAI-compatible/Ollama-fallback, provider control from the UI) plus a DG-aware context layer injecting ontology V7 concepts, SWRL conventions, and a standard Cypher expression catalog with pre-execution validation; (2) AI implementation workflows — upgraded rules ingest/edit (clarification loops, atom-diff previews, validation-feedback retries), AI recognition of Grasshopper node blocks as Object Behaviour persisted to the Computgraph layer, AI-generated Grasshopper script inputs as ParamState payloads, and a DesignState auto-validation investigation. Includes an n8n→OpenClaw orchestration decision gate (spike + ADR, no committed migration).
+Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user-supplied API key, Claude/OpenAI-compatible/Ollama-fallback, provider control from the UI) plus a DG-aware context layer injecting ontology V7 concepts, SWRL conventions, and a standard Cypher expression catalog with pre-execution validation; (2) Grasshopper canvas intelligence — the script's graph context serialized to the ontology's Computgraph layer via annotation-convention parsing (Frame worked example), a native grasshopper-mcp-style canvas bridge, tagging components + manual selection, LLM recognition with on-canvas proposal preview/confirm, MERGE-idempotent persistence with ui-v2 layer display, and a script structure-validation MVP; plus upgraded rules ingest/edit, AI-generated script inputs as ParamState payloads, and a DesignState auto-validation investigation. Includes an n8n→OpenClaw orchestration decision gate (spike + ADR, no committed migration).
 
-**Phases planned:** 8 (36 requirements)
+**Phases planned:** 13 (Phases 28–40, 54 requirements)
 → [Requirements](v9.0-REQUIREMENTS.md) | [Roadmap](v9.0-ROADMAP.md)
+
+---
+
+## v10.0 Script Intelligence (Future)
+
+**Status:** Planned (isolated) — activates via `/gsd-new-milestone` after v9.0 ships
+**Defined:** 2026-07-08
+
+The connected LLM becomes an active partner on the Grasshopper canvas: granular wire substrate persistence with topology queries and snapshot diffing, a DG-native component knowledge base, bridge write commands (off by default, KB-validated, undo-batched), cluster introspection, script part generation into tagged slots with on-canvas preview/confirm, script part editing as old→new canvas diffs, graph-native structure-rule grammar, and a multi-turn rule-aware consulting assistant that proposes but never executes.
+
+**Phases planned:** 9 (Phases 41–49, 31 requirements)
+→ [Requirements](v10.0-REQUIREMENTS.md) | [Roadmap](v10.0-ROADMAP.md)
 
 ---
 

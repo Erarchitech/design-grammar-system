@@ -59,11 +59,18 @@ Archived v7.0 requirements: `.planning/milestones/v7.0-REQUIREMENTS.md`.
 - [x] **DEPL-01**: The V2 UI ships as the `design-grammars` container at :8080, replacing the dark legacy SPA
 - [x] **DEPL-02**: End-to-end parity check passes — every workflow the legacy UI supported (rule ingest, graph query, graph browse, validation run browsing, project scoping) works in the V2 UI against live Docker services
 
+### Model Viewer 3D Embed (MVIEW3D) — post-ship addendum, Phase 27 (2026-07-08)
+
+<!-- Promoted from Future Requirements after v8.0 shipped; executed as Phase 27 -->
+
+- [x] **MVIEW3D-01**: ModelScreen renders an interactive 3D viewport using the embedded Speckle viewer (replacing the synthetic SVG isometric boxes) — entity selection, zoom, pan, and orbit all work
+- [x] **MVIEW3D-02**: Validation colouring is applied to Speckle geometry — Signal Red for failing entities, ink/gray for passing/base — matching the SVG map colour scheme
+- [x] **MVIEW3D-03**: The SVG map remains available as a fallback toggle; run browsing, instance inspection, and the SWRL rule panel work unchanged in 3D mode
+
 ## Future Requirements
 
 <!-- Valid but deferred beyond v8.0 -->
 
-- Speckle 3D viewport embedded in Model Viewer (three.js @speckle/viewer) replacing the 2D map canvas — the V2 spec models the viewport as a stylised map; true 3D embed deferred until the map interaction model is validated
 - Graphics settings toolbar (checkbox filters, colour swatches, opacity sliders, select-by-id) from the v1 Model Viewer — re-add after V2 map ships
 - Per-run screenshot persistence UI in V2 skin
 
@@ -104,8 +111,11 @@ Archived v7.0 requirements: `.planning/milestones/v7.0-REQUIREMENTS.md`.
 | PROJ-02 | 25 |
 | DEPL-01 | 26 |
 | DEPL-02 | 26 |
+| MVIEW3D-01 | 27 |
+| MVIEW3D-02 | 27 |
+| MVIEW3D-03 | 27 |
 
-**Coverage:** 25/25 requirements mapped — 100% ✓
+**Coverage:** 28/28 requirements mapped — 100% ✓
 
 ---
-*25 requirements across 8 categories*
+*28 requirements across 9 categories (MVIEW3D added post-ship with Phase 27, 2026-07-08)*
