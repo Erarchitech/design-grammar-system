@@ -22,6 +22,7 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 - [x] **Phase 24: Model Viewer** — Validation runs from data-service, run/instance modes, map canvas + minimap + zoom, orbit legend, rule SWRL panel (completed 2026-07-07)
 - [x] **Phase 25: Projects and Scoping** — Project tile grid from live data; opening a project scopes Graph and Model viewer queries (completed 2026-07-07)
 - [x] **Phase 26: Deployment Cutover and E2E Parity** — V2 UI ships as the design-grammars container at :8080; legacy workflows verified end-to-end against live Docker services (completed 2026-07-07)
+- [ ] **Phase 27: Speckle 3D Embed** — Replace synthetic SVG isometric boxes with embedded Speckle 3D viewer in V2 ModelScreen; deferred from Phase 24 (REQUIREMENTS Future)
 
 ---
 
@@ -95,6 +96,17 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
   2. The E2E parity checklist passes against live services: rule ingest, graph query, graph browse, validation run browsing, project scoping
   3. The legacy dark SPA is retired (removed or archived) with release notes
 
+### Phase 27: Speckle 3D Embed
+
+**Goal**: Replace synthetic SVG isometric boxes in ModelScreen.jsx with an embedded Speckle 3D viewer rendering real BIM geometry with validation color overlay
+**Depends on**: Phase 24 (Model Viewer), Phase 26 (deployed stack with Speckle services)
+**Requirements**: MVIEW3D-01, MVIEW3D-02, MVIEW3D-03
+**Success Criteria** (what must be TRUE):
+
+  1. ModelScreen.jsx renders an interactive 3D viewport using the Speckle viewer (not SVG boxes); entity selection, zoom, pan, and orbit all work
+  2. Validation color overlay (Signal Red for failing, ink/gray for passing) is applied to Speckle geometry, matching the current SVG color scheme
+  3. The legacy SVG map remains available as a fallback toggle; run browsing, instance inspection, and SWRL panel continue to work unchanged
+
 ---
 
 ## Progress Table
@@ -107,10 +119,11 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 | 24. Model Viewer | 1/1 | Complete | 2026-07-07 |
 | 25. Projects and Scoping | 1/1 | Complete | 2026-07-07 |
 | 26. Deployment Cutover and E2E Parity | 1/1 | Complete | 2026-07-07 |
+| 27. Speckle 3D Embed | 1/1 | Planning | — |
 
 ---
 
-*Roadmap updated: 2026-07-07 — v8.0 shipped (phases 21-26 complete, 25/25 requirements, E2E parity verified against live stack)*
+*Roadmap updated: 2026-07-08 — Phase 27 plan created (Speckle 3D embed, deferred from Phase 24)*
 *v8.0 shipped: 2026-07-07*
 *v7.0 shipped: 2026-07-05*
 *v2.0 shipped: 2026-05-10*
