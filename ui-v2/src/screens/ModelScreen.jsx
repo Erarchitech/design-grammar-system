@@ -333,12 +333,6 @@ export default function ModelScreen({ active, onBack, project }) {
   const pickedFailing = picked ? failedIds.has(picked) : false;
   const zoomPct = worldRef.current.w / viewBox.w;
 
-  const legendRows = [
-    { name: "Failing", color: "var(--color-signal)", count: failItems.length },
-    { name: "Passing", color: "var(--color-ink)", count: passItems.length },
-    { name: "Base model", color: "var(--color-mid-gray)", count: mvBase ? "on" : "off" }
-  ];
-
   const speckleResourceUrls = React.useMemo(
     () => (view ? [view.baseResourceUrl, view.validationResourceUrl].filter(Boolean) : []),
     [view]
@@ -435,26 +429,6 @@ export default function ModelScreen({ active, onBack, project }) {
             </div>
           );
         })}
-
-        {/* orbit-glyph status legend (per spec) */}
-        <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 8, display: "flex", flexDirection: "column", gap: 1, marginTop: "auto" }}>
-          <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, padding: "2px 6px 6px" }}>
-            Legend
-          </span>
-          {legendRows.map((row, o) => (
-            <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 11, padding: "5px 6px" }}>
-              <span style={{ position: "relative", width: 24, height: 24, flex: "none" }}>
-                <span style={{ position: "absolute", left: "50%", top: "50%", width: 22, height: 22, margin: "-11px 0 0 -11px", borderRadius: "50%", border: `1.5px solid ${o === 2 ? row.color : "var(--ink-a16)"}` }} />
-                <span style={{ position: "absolute", left: "50%", top: "50%", width: 13, height: 13, margin: "-6.5px 0 0 -6.5px", borderRadius: "50%", border: `1.5px solid ${o === 1 ? row.color : "var(--ink-a16)"}` }} />
-                <span style={{ position: "absolute", left: "50%", top: "50%", width: 5, height: 5, margin: "-2.5px 0 0 -2.5px", borderRadius: "50%", background: o === 0 ? row.color : "var(--ink-a16)" }} />
-              </span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <span style={{ font: "600 11px/1.3 var(--font-sans)" }}>{row.name}</span>
-                <span style={{ font: "400 9px/1.4 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--text-muted)" }}>{row.count}</span>
-              </span>
-            </div>
-          ))}
-        </div>
       </aside>
 
       {/* ===== centre: toolbar + map + runs strip ===== */}
