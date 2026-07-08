@@ -13,6 +13,7 @@ import {
   PropertiesTable,
   SearchField,
   Select,
+  SessionHistory,
   Tabs
 } from "../components/index.js";
 
@@ -105,6 +106,8 @@ export default function GraphScreen({ active, onBack, project }) {
   const [session, setSession] = React.useState([]);
   const [sessionOpen, setSessionOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [drSessions, setDrSessions] = React.useState([]); // raw persisted turns for the Session History panel
+  const [historyOpen, setHistoryOpen] = React.useState(false);
 
   /* ---- viewport state persistence (camera pan/zoom per project) ---- */
   const readViewportStore = (key) => {
@@ -300,9 +303,12 @@ export default function GraphScreen({ active, onBack, project }) {
   React.useEffect(() => {
     let gone = false;
     setSession([]);
+    setDrSessions([]);
     fetchDrSessions(project)
       .then((rows) => {
         if (gone) return;
+        // Panel consumes the raw rows newest-first (as the API returns them)
+        setDrSessions(Array.isArray(rows) ? rows : []);
         // API returns newest-first; the console renders oldest-first
         const hist = rows
           .slice()
@@ -433,12 +439,14 @@ export default function GraphScreen({ active, onBack, project }) {
         clock: clockNow()
       }));
       // persist the turn so it survives reloads (legacy saveDrSession parity)
-      void saveDrSession(
-        project,
-        mode === 1 ? "query" : mode === 2 ? "edit" : "ingest",
-        sentText,
-        response + (cypher ? "\n\n// Cypher\n" + cypher : "")
-      );
+      const savedMode = mode === 1 ? "query" : mode === 2 ? "edit" : "ingest";
+      const savedResult = response + (cypher ? "\n\n// Cypher\n" + cypher : "");
+      void saveDrSession(project, savedMode, sentText, savedResult);
+      // optimistically surface the new turn in the Session History panel
+      setDrSessions((prev) => [
+        { sessionId: id, mode: savedMode, prompt: sentText, result: savedResult, createdAt: new Date().toISOString() },
+        ...prev
+      ]);
     } catch (err) {
       clearInterval(timer);
       patchTurn(id, (t) => ({
@@ -454,6 +462,25 @@ export default function GraphScreen({ active, onBack, project }) {
       autoScroll();
     }
   };
+
+  // Restore a persisted turn into the prompt bar: switch to its mode and
+  // pre-fill the prompt so the user can re-run or tweak it (legacy parity).
+  const MODE_INDEX = { ingest: 0, query: 1, edit: 2 };
+  const restoreSession = React.useCallback((s) => {
+    const idx = MODE_INDEX[s.mode] ?? 0;
+    setMode(idx);
+    let prompt = s.prompt || "";
+    if (idx === 2) {
+      // Edit turns are persisted as "edit Rule_Id: <id> — <text>"; recover the
+      // rule id for the picker and strip the prefix from the visible prompt.
+      const m = prompt.match(/^edit Rule_Id:\s*(\S+)\s*—\s*([\s\S]*)$/);
+      if (m) {
+        setEditRuleId(m[1]);
+        prompt = m[2];
+      }
+    }
+    setPromptVal(prompt);
+  }, []);
 
   /* -------- derived render data -------- */
   const rings = data?.rings || [];
@@ -700,6 +727,22 @@ export default function GraphScreen({ active, onBack, project }) {
       {/* bottom: session + prompt bar + property search */}
       <div style={{ position: "absolute", left: "50%", bottom: 22, transform: "translateX(-50%)", zIndex: 6, display: "flex", alignItems: "flex-end", gap: 12, maxWidth: "96vw" }}>
         <div style={{ width: "min(560px, 56vw)", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+          {/* Session History — persisted ingest/query/edit turns with restore */}
+          <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", padding: "4px 8px", boxShadow: "var(--shadow-panel)" }}>
+            <SessionHistory
+              sessions={drSessions}
+              open={historyOpen}
+              onToggle={() => setHistoryOpen((v) => !v)}
+              onRestore={restoreSession}
+              filters={[
+                { value: "all", label: "All" },
+                { value: "ingest", label: "Ingest" },
+                { value: "query", label: "Query" },
+                { value: "edit", label: "Edit" }
+              ]}
+              emptyLabel="No design rule sessions yet"
+            />
+          </div>
           {sessionOpen && (
             <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderBottom: "1px solid var(--color-hairline)" }}>

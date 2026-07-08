@@ -17,6 +17,7 @@ export { default as CodeBlock } from "./display/CodeBlock.jsx";
 export { KVRow, StatBlock } from "./display/KVRow.jsx";
 export { default as Progress } from "./display/Progress.jsx";
 export { default as PropertiesTable } from "./display/PropertiesTable.jsx";
+export { default as SessionHistory } from "./display/SessionHistory.jsx";
 
 export { Collapsible, CollapsibleItem } from "./surfaces/Collapsible.jsx";
 export { default as Dialog } from "./surfaces/Dialog.jsx";
