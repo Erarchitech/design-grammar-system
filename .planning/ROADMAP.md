@@ -22,7 +22,7 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 - [x] **Phase 24: Model Viewer** — Validation runs from data-service, run/instance modes, map canvas + minimap + zoom, orbit legend, rule SWRL panel (completed 2026-07-07)
 - [x] **Phase 25: Projects and Scoping** — Project tile grid from live data; opening a project scopes Graph and Model viewer queries (completed 2026-07-07)
 - [x] **Phase 26: Deployment Cutover and E2E Parity** — V2 UI ships as the design-grammars container at :8080; legacy workflows verified end-to-end against live Docker services (completed 2026-07-07)
-- [ ] **Phase 27: Speckle 3D Embed** — Replace synthetic SVG isometric boxes with embedded Speckle 3D viewer in V2 ModelScreen; deferred from Phase 24 (REQUIREMENTS Future)
+- [x] **Phase 27: Speckle 3D Embed** — Replace synthetic SVG isometric boxes with embedded Speckle 3D viewer in V2 ModelScreen; deferred from Phase 24 (REQUIREMENTS Future) (completed 2026-07-08)
 
 ---
 
@@ -119,7 +119,7 @@ Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/
 | 24. Model Viewer | 1/1 | Complete | 2026-07-07 |
 | 25. Projects and Scoping | 1/1 | Complete | 2026-07-07 |
 | 26. Deployment Cutover and E2E Parity | 1/1 | Complete | 2026-07-07 |
-| 27. Speckle 3D Embed | 1/1 | Planning | — |
+| 27. Speckle 3D Embed | 1/1 | Complete   | 2026-07-08 |
 
 ---
 

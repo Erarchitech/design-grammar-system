@@ -2,18 +2,19 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: — Design Grammars V2 UI
-current_phase_name: milestone complete
-status: milestone-shipped
+current_phase: 27
+current_phase_name: Speckle 3D Embed
+status: verifying
 stopped_at: v8.0 shipped — all 6 phases complete, E2E parity verified
-last_updated: "2026-07-07T18:40:00.000Z"
-last_activity: 2026-07-07
-last_activity_desc: v8.0 Design Grammars V2 UI shipped — container cutover complete, 25/25 requirements
+last_updated: "2026-07-08T01:21:32.705Z"
+last_activity: 2026-07-08
+last_activity_desc: Phase 27 execution started
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 14
 ---
 
 # Project State
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Milestone v8.0 Design Grammars V2 UI — Phase 21 (Design System Foundation) next
+**Current focus:** Phase 27 — Speckle 3D Embed
 
 ## Current Position
 
-Phase: v8.0 SHIPPED (phases 21-26 complete, archived to milestones/v8.0-phases/)
-Plan: —
-Status: Milestone shipped; planning documented post facto per user directive
-Last activity: 2026-07-07 — v8.0 cutover complete; V2 UI live at :8080
+Phase: 27 (Speckle 3D Embed) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-08 — Phase 27 execution started
 
 ## Performance Metrics
 
@@ -178,7 +179,7 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-07 (autonomous v8.0 execution)
+Last session: 2026-07-08T01:21:32.692Z
 Stopped at: v8.0 shipped
 Resume file: — (next: user approval items in Pending Todos, then /gsd-new-milestone)
 
@@ -220,3 +221,4 @@ Resume file: — (next: user approval items in Pending Todos, then /gsd-new-mile
 | Phase 23-graph-viewer P01 | 2.5h | 4 tasks | 7 files |
 | Phase 24-model-viewer P01 | 1h | 2 tasks | 5 files |
 | Phase 25-projects-and-scoping P01 | 25min | 1 task | 2 files |
+| Phase 27-speckle-3d-embed P27-01 | ~18m | - tasks | - files |
