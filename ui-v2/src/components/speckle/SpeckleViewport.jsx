@@ -268,38 +268,46 @@ export default function SpeckleViewport({
     filtering.resetFilters();
     const failedObjectIds = showFailed ? flatten(failedEntityIds) : [];
     const passedObjectIds = showPassed ? flatten(passedEntityIds) : [];
-    const visibleObjectIds = [...failedObjectIds, ...passedObjectIds];
+    const hideButtonIds = new Set(flatten(hiddenIds));
+    const visibleObjectIds = [...failedObjectIds, ...passedObjectIds].filter((id) => !hideButtonIds.has(id));
 
+    // FilteringExtension keeps a SINGLE visibility state — a second
+    // hideObjects/isolateObjects call with a different stateKey wipes the
+    // first one. So the toggles must resolve to exactly ONE operation here.
     if (isolateEntityId) {
       const isoObjectIds = flatten([isolateEntityId]);
       if (isoObjectIds.length > 0) {
-        filtering.isolateObjects(isoObjectIds, "dg-isolate", true, true);
+        filtering.isolateObjects(isoObjectIds, "dg-vis", true, true);
       }
-    } else {
-      // Hide validation objects excluded by the fail/pass toggles
+    } else if (showBase) {
+      // Base visible → hide only the excluded validation objects + Hide-button picks
       const visibleSet = new Set(visibleObjectIds);
-      const hiddenValidationIds = allValidationObjectIdsRef.current.filter((id) => !visibleSet.has(id));
-      if (hiddenValidationIds.length > 0) {
-        filtering.hideObjects(hiddenValidationIds, "dg-validation", true, false);
+      const hideSet = new Set(
+        allValidationObjectIdsRef.current.filter((id) => !visibleSet.has(id))
+      );
+      for (const id of hideButtonIds) hideSet.add(id);
+      if (hideSet.size > 0) {
+        filtering.hideObjects([...hideSet], "dg-vis", true, false);
       }
-
-      // Base model off → isolate only the validation objects
-      if (!showBase && visibleObjectIds.length > 0) {
-        filtering.isolateObjects(visibleObjectIds, "dg-base", true, false);
-      }
-
-      // Entities hidden via the Hide button
-      if (hiddenIds && hiddenIds.length > 0) {
-        const hideObjectIds = flatten(hiddenIds);
-        if (hideObjectIds.length > 0) {
-          filtering.hideObjects(hideObjectIds, "dg-hide", true, false);
-        }
-      }
+    } else if (visibleObjectIds.length > 0) {
+      // Base hidden → isolate the visible validation objects (hides the rest)
+      filtering.isolateObjects(visibleObjectIds, "dg-vis", true, false);
+    } else {
+      // Everything toggled off → isolate a sentinel id nothing matches,
+      // which hides the entire scene (empty ids would reset to show-all).
+      filtering.isolateObjects(["dg-none"], "dg-vis", true, false);
     }
 
+    // Colour/material groups exclude Hide-button picks: renderer.setMaterial
+    // below is a raw override that would resurrect hidden geometry otherwise.
+    // Under single-entity isolation, only that entity keeps its overlay.
+    const isoSet = isolateEntityId ? new Set(flatten([isolateEntityId])) : null;
+    const overlayVisible = (id) => !hideButtonIds.has(id) && (!isoSet || isoSet.has(id));
+    const failedVisibleIds = failedObjectIds.filter(overlayVisible);
+    const passedVisibleIds = passedObjectIds.filter(overlayVisible);
     const colorGroups = [];
-    if (failedObjectIds.length > 0) colorGroups.push({ objectIds: failedObjectIds, color: failColor });
-    if (passedObjectIds.length > 0) colorGroups.push({ objectIds: passedObjectIds, color: passColor });
+    if (failedVisibleIds.length > 0) colorGroups.push({ objectIds: failedVisibleIds, color: failColor });
+    if (passedVisibleIds.length > 0) colorGroups.push({ objectIds: passedVisibleIds, color: passColor });
     if (colorGroups.length > 0) {
       filtering.setUserObjectColors(colorGroups);
     }
@@ -338,8 +346,8 @@ export default function SpeckleViewport({
         });
       };
 
-      applyGroupMaterial(failedObjectIds, failColor, failOpacity);
-      applyGroupMaterial(passedObjectIds, passColor, passOpacity);
+      applyGroupMaterial(failedVisibleIds, failColor, failOpacity);
+      applyGroupMaterial(passedVisibleIds, passColor, passOpacity);
     } catch {
       // renderer material override unavailable — color groups still applied
     }
