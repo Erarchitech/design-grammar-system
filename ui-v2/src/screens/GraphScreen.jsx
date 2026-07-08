@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -405,6 +405,27 @@ export default function GraphScreen({ active, onBack, project }) {
       conns.push({ label: rings[p.r].nodes[p.i].label, ring: rings[p.r].name, r: p.r, i: p.i });
     }
   }
+  // Manual property editing (legacy SPA parity): write through to Neo4j,
+  // then refresh the node's props in the rings data so the panel re-renders.
+  const editNodeProp = async (key, rawValue) => {
+    if (!se || se.neoId == null) return;
+    let value = rawValue;
+    try {
+      value = JSON.parse(rawValue); // numbers / booleans / quoted strings
+    } catch {
+      // keep as plain string
+    }
+    try {
+      const props = await updateNodeProp(se.neoId, key, value);
+      if (props) {
+        se.props = Object.entries(props);
+        setSel((s) => (s ? { ...s } : s));
+      }
+    } catch (err) {
+      setLoadErr(err.message || "Property update failed");
+    }
+  };
+
   const searchProps = ringN
     ? [{ value: "*", label: "Any field" }, { value: "__label", label: "Label" }].concat(
         [...new Set([].concat(...ringN.nodes.map((n) => n.props.map((p) => p[0]))))].map((k) => ({ value: k, label: k }))
@@ -552,7 +573,7 @@ export default function GraphScreen({ active, onBack, project }) {
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
                   Properties
                 </div>
-                <PropertiesTable rows={rowsOf(se, 24)} />
+                <PropertiesTable rows={rowsOf(se, 24)} onEdit={editNodeProp} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>

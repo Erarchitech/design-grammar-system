@@ -68,6 +68,16 @@ export async function tagProjectNodes(project) {
   );
 }
 
+// Manual property editing (legacy SPA parity): write a single property on a
+// node by Neo4j id and return the updated property map.
+export async function updateNodeProp(neoId, key, value) {
+  const json = await executeCypher(
+    "MATCH (n) WHERE id(n) = $id SET n[$key] = $value RETURN properties(n) AS props",
+    { id: Number(neoId), key, value }
+  );
+  return rowsOf(json)[0]?.[0] || null;
+}
+
 export async function fetchProjects() {
   const json = await executeCypher(
     "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"
