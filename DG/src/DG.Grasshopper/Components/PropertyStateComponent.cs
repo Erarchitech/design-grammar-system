@@ -92,7 +92,8 @@ public sealed class PropertyStateComponent : GH_Component
         da.GetDataList(2, propValues);
         da.GetDataList(3, objStates);
 
-        // Output list length is driven by PropValue.
+        // Output list length is driven by PropValue. Single-item Rule and DataProperty
+        // inputs are broadcast across all PropValues; longer lists are paired positionally.
         var count = propValues.Count;
         if (count == 0)
         {
@@ -101,14 +102,18 @@ public sealed class PropertyStateComponent : GH_Component
             return;
         }
 
+        // Pre-resolve the shared rule (broadcast a single item across all values).
+        var sharedRuleObj = rules.Count == 1 ? GhCastingHelpers.TryRule(rules[0]) : null;
+        var sharedRuleIri = rules.Count == 1 ? ResolveRuleIri(rules[0]) : null;
+
         var results = new List<DG.PropState>();
         for (var i = 0; i < count; i++)
         {
-            var ruleObj = i < rules.Count ? GhCastingHelpers.TryRule(rules[i]) : null;
-            var ruleIri = i < rules.Count ? ResolveRuleIri(rules[i]) : string.Empty;
+            var ruleObj = sharedRuleObj ?? (i < rules.Count ? GhCastingHelpers.TryRule(rules[i]) : null);
+            var ruleIri = sharedRuleIri ?? (i < rules.Count ? ResolveRuleIri(rules[i]) : string.Empty);
             var dataPropertyIri = i < dataProperties.Count
                 ? ResolveDataPropertyIri(dataProperties[i], ruleObj)
-                : string.Empty;
+                : ResolveDataPropertyIri(dataProperties.FirstOrDefault(), ruleObj);
             var scalar = UnwrapScalar(propValues[i]);
             var propValue = scalar is not null ? BuildParameter($"prop_{i}", dataPropertyIri, scalar) : null;
 
