@@ -35,7 +35,7 @@ Prefixes: `dg = http://example.org/design-grammar#`, `dgc = .../design-grammar/c
 
 Relations: `dg:hasBehavior` (Object→Behavior, 2509) · `dgc:hasAlgorithm` (Behavior→Algorithm, functional, 2530) · `dgc:hasProcedure` (2540) · `dgc:hasPattern` (2549) · `dgc:patternHostTo` (Pattern→Pattern nesting, 2558) · `dgc:hasInterface` ({Alg/Proc/Pat}→Interface, 2567) · `dgc:hasParameter` (Pattern→Parameter, 2583) · `dgc:paramLink` (Parameter→Interface, 2592) · `dgc:attributeOf` (cross-layer Atom→Parameter bridge, 2621). Datatype props: `dg:objectName`, `dgc:algorithmName/procedureName/patternName/parameterName/interfaceName` (2640+, functional).
 
-**Neo4j label mapping (Phase 9):** strip prefixes — labels `Object|Behavior|Algorithm|Procedure|Pattern|Parameter|Interface` + `graph:'Computgraph'` + `project`; enum values become properties (`paramKind`, `dataType`, `ifaceType`, `listStructure`); relations upper-snake (`HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`).
+**Neo4j label mapping (Phase 36):** strip prefixes — labels `Object|Behavior|Algorithm|Procedure|Pattern|Parameter|Interface` + `graph:'Computgraph'` + `project`; enum values become properties (`paramKind`, `dataType`, `ifaceType`, `listStructure`); relations upper-snake (`HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`).
 
 ## 3. Frame worked example — screenshot ↔ OWL individuals
 
@@ -100,9 +100,9 @@ Non-matching group/scribble names → untagged set + warning. Names may contain 
   "warnings": ["'11_Emr_UpperChord' normalized to Emergent (Emr→Emg)"]
 }
 ```
-`source` per entity: `tagged` (manual convention group) | `recognized` (Phase 8, after confirmation). Ids are deterministic (`cg:<alg>:<kind>:<conventionName>`) — these become the Phase 9 MERGE keys together with `definition.documentId`.
+`source` per entity: `tagged` (manual convention group) | `recognized` (Phase 35, after confirmation). Ids are deterministic (`cg:<alg>:<kind>:<conventionName>`) — these become the Phase 36 MERGE keys together with `definition.documentId`.
 
-## 6. Proposed-structure JSON (Phase 8 contract, draft)
+## 6. Proposed-structure JSON (Phase 35 contract, draft)
 
 Recognition returns the same entity shapes as §5 but wrapped as proposals:
 ```jsonc
@@ -120,6 +120,6 @@ Schema-validated in data-service before any preview command is sent to the canva
 | HTTP publish from plugin | `DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs` pattern (static HttpClient, camelCase JSON, `{dataServiceUrl}` input) |
 | JSON serializer conventions | `DG/src/DG.Core/Serialization/DesignStatePayloadV2Serializer.cs` |
 | Neo4j repository pattern | `DG/src/DG.Core/Data/Neo4jOntoGraphRepository.cs` |
-| LLM calls | `data-service/llm_gateway.py` (`POST /llm/generate`, Phase 1 ✅) |
+| LLM calls | `data-service/llm_gateway.py` (`POST /llm/generate`, Phase 28 ✅) |
 | MCP server | `data-service/app.py` `POST /mcp` (JSON-RPC; extend `tools/list` + `tools/call`) |
 | Component scaffolding | any `#if GRASSHOPPER_SDK` component in `DG/src/DG.Grasshopper/Components/` + `DgComponentCategory` + `DgIcons` |

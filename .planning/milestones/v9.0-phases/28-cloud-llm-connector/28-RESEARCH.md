@@ -1,4 +1,4 @@
-# Phase 1: Cloud LLM Connector and Provider Abstraction - Research
+# Phase 28: Cloud LLM Connector and Provider Abstraction - Research
 
 **Researched:** 2026-07-06
 **Domain:** Provider-agnostic LLM gateway, encrypted credential storage, UI settings panel, n8n workflow rewiring
@@ -50,7 +50,7 @@ This phase builds a provider-agnostic LLM gateway into the existing `data-servic
 
 ### Deferred Ideas (OUT OF SCOPE)
 
-(From CONTEXT.md -- none; all ideas stayed within Phase 1 scope boundary.)
+(From CONTEXT.md -- none; all ideas stayed within Phase 28 scope boundary.)
 
 ## Phase Requirements
 
@@ -487,10 +487,10 @@ e("div", { className: "prompt-tabs", style: { marginTop: "14px" } },
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Direct Ollama HTTP from n8n | Gateway abstraction in data-service | Phase 1 | All LLM calls route through one contract; provider switching without workflow changes |
-| Ollama-only (local model) | Multi-provider (Anthropic, OpenAI, Ollama) | Phase 1 | User can choose cloud frontier models with Ollama as zero-config fallback |
-| API keys in n8n env vars | Fernet-encrypted in data-service JSON file | Phase 1 | Keys never leave data-service; encrypted at rest; masked in UI |
-| Static Ollama model | Dynamic model discovery per provider | Phase 1 | Model dropdown populated from live API; Ollama auto-discovers at startup |
+| Direct Ollama HTTP from n8n | Gateway abstraction in data-service | Phase 28 | All LLM calls route through one contract; provider switching without workflow changes |
+| Ollama-only (local model) | Multi-provider (Anthropic, OpenAI, Ollama) | Phase 28 | User can choose cloud frontier models with Ollama as zero-config fallback |
+| API keys in n8n env vars | Fernet-encrypted in data-service JSON file | Phase 28 | Keys never leave data-service; encrypted at rest; masked in UI |
+| Static Ollama model | Dynamic model discovery per provider | Phase 28 | Model dropdown populated from live API; Ollama auto-discovers at startup |
 
 **Deprecated/outdated:**
 - n8n environment variables `OLLAMA_URL`, `OLLAMA_HOST`, `OLLAMA_MODEL` in docker-compose.yml: These become unused defaults once all 5 workflows are rewired. Can be removed or kept as no-ops.
@@ -616,7 +616,7 @@ e("div", { className: "prompt-tabs", style: { marginTop: "14px" } },
 5. UI follows existing React.createElement tab pattern -- new "LLM Settings" tab added alongside DesignRules and Specs&Notes
 
 ### File Created
-`C:\Users\Admin\source\repos\design-grammar-system\.planning\phases\01-cloud-llm-connector\01-RESEARCH.md`
+`C:\Users\Admin\source\repos\design-grammar-system\.planning\phases\28-cloud-llm-connector\28-RESEARCH.md`
 
 ### Confidence Assessment
 | Area | Level | Reason |

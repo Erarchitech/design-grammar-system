@@ -1,5 +1,5 @@
 ---
-phase: 01-cloud-llm-connector
+phase: 28-cloud-llm-connector
 plan: 02
 subsystem: n8n
 tags:
@@ -47,7 +47,7 @@ completed: 2026-07-06
 status: complete
 ---
 
-# Phase 01 Plan 02: n8n Workflow Rewiring — All 5 Workflows Rewired to LLM Gateway
+# Phase 28 Plan 02: n8n Workflow Rewiring — All 5 Workflows Rewired to LLM Gateway
 
 **6 Ollama HTTP nodes across 5 n8n workflows rewired to `http://data-service:8000/llm/generate`. Zero remaining `ollama:11434` references. Response parsing reads from gateway envelope field `.text` instead of Ollama-specific `.response`.**
 

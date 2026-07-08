@@ -1,4 +1,4 @@
-# Phase 1: Cloud LLM Connector and Provider Abstraction - Context
+# Phase 28: Cloud LLM Connector and Provider Abstraction - Context
 
 **Gathered:** 2026-07-03
 **Status:** Ready for planning
@@ -16,11 +16,11 @@ Build a provider-agnostic LLM gateway in data-service (`POST /llm/generate`) wit
 - n8n workflows (`rules-to-metagraph.json`, `graph-query-mcp.json`, `spec-ingest.json`, `spec-query.json`, `spec-update.json`) — direct HTTP nodes rewired to gateway
 - pytest coverage: adapter routing, fallback resolution, key masking, error mapping
 
-**Out of scope (Phase 1 boundary):**
-- DG context layer (ontology/SWRL/Cypher awareness) — Phase 2
-- Rules ingest/edit workflow upgrades — Phase 4
-- Any GH node recognition or input generation — Phases 5-6
-- OpenClaw evaluation — Phase 3 (parallel track)
+**Out of scope (Phase 28 boundary):**
+- DG context layer (ontology/SWRL/Cypher awareness) — Phase 29
+- Rules ingest/edit workflow upgrades — Phase 31
+- Any GH node recognition or input generation — Phases 32-33
+- OpenClaw evaluation — Phase 30 (parallel track)
 
 </domain>
 
@@ -59,7 +59,7 @@ Build a provider-agnostic LLM gateway in data-service (`POST /llm/generate`) wit
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Phase and Requirements
-- `.planning/milestones/v9.0-ROADMAP.md` — Full v9.0 roadmap, Phase 1 goal and success criteria (LLMC-01..06)
+- `.planning/milestones/v9.0-ROADMAP.md` — Full v9.0 roadmap, Phase 28 goal and success criteria (LLMC-01..06)
 - `.planning/milestones/v9.0-REQUIREMENTS.md` — Full v9.0 requirements including LLMC-01..06 traceability
 
 ### Codebase Reference
@@ -117,7 +117,7 @@ Build a provider-agnostic LLM gateway in data-service (`POST /llm/generate`) wit
 <deferred>
 ## Deferred Ideas
 
-None — discussion stayed within the Phase 1 scope boundary. The user's original framing about scalabilty for generative functionality, parametric model parsing, and lessons-learned mechanisms maps to Phases 2+ (context layer) and Phases 5-6 (GH recognition and input generation).
+None — discussion stayed within the Phase 28 scope boundary. The user's original framing about scalabilty for generative functionality, parametric model parsing, and lessons-learned mechanisms maps to Phases 2+ (context layer) and Phases 32-33 (GH recognition and input generation).
 
 </deferred>
 

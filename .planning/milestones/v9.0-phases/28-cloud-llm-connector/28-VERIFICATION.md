@@ -1,5 +1,5 @@
 ---
-phase: 01-cloud-llm-connector
+phase: 28-cloud-llm-connector
 verified: 2026-07-06T12:00:00Z
 status: human_needed
 score: 6/7 must-haves verified
@@ -17,7 +17,7 @@ human_verification:
     why_human: "Requires running Docker stack with all services. The code is present and wired (unit-tested adapter routing, gateway reads settings per call, n8n workflows rewired), but the full E2E flow cannot be verified by static analysis."
 ---
 
-# Phase 01: Cloud LLM Connector and Provider Abstraction — Verification Report
+# Phase 28: Cloud LLM Connector and Provider Abstraction — Verification Report
 
 **Phase Goal:** Build a provider-agnostic LLM gateway in data-service (POST /llm/generate) with adapters for Anthropic Claude, OpenAI-compatible APIs, and local Ollama — replacing 5 direct Ollama HTTP calls from n8n workflows — plus encrypted key storage (GET/PUT/DELETE /llm/settings, POST /llm/settings/test, GET /llm/models) and a UI settings panel (new nav tab in graph-viewer/index.html) for provider/model/key management.
 

@@ -1,10 +1,10 @@
-# Phase 1: Cloud LLM Connector and Provider Abstraction - Discussion Log
+# Phase 28: Cloud LLM Connector and Provider Abstraction - Discussion Log
 
 > **Audit trail only.** Do not use as input to planning, research, or execution agents.
 > Decisions are captured in CONTEXT.md — this log preserves the alternatives considered.
 
 **Date:** 2026-07-03
-**Phase:** 01-cloud-llm-connector
+**Phase:** 28-cloud-llm-connector
 **Areas discussed:** Provider adapter design, n8n→gateway wiring, UI settings panel, Model discovery
 
 ---
@@ -177,7 +177,7 @@ No areas deferred to Claude discretion — the user made explicit choices on eve
 
 ## Deferred Ideas
 
-None — discussion stayed within phase scope. The user's original research framing about generative scalability, parametric model parsing, and lessons-learned mechanisms maps to Phases 2+ and Phases 5-6 respectively, not Phase 1.
+None — discussion stayed within phase scope. The user's original research framing about generative scalability, parametric model parsing, and lessons-learned mechanisms maps to Phases 2+ and Phases 32-33 respectively, not Phase 28.
 
 ---
 

@@ -76,7 +76,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-v7.0 (14-component ontology-aligned addin rebuild) shipped 2026-07-05 (all 8 phases, 37 plans complete) and archived 2026-07-07. v9.0 AI Workflow Intelligence started earlier (Phase 01 cloud-llm-connector executed) and is parked in `.planning/milestones/v9.0-phases/` — resume after v8.0. Starting v8.0: full replacement of the dark legacy web UI with the light "Design Grammars V2" interface from the Claude Design spec (`design/v2/`), wired to the real backends.
+v7.0 (14-component ontology-aligned addin rebuild) shipped 2026-07-05 (all 8 phases, 37 plans complete) and archived 2026-07-07. v9.0 AI Workflow Intelligence started earlier (Phase 28 cloud-llm-connector executed; renumbered from milestone-local 01 on 2026-07-08) and is parked in `.planning/milestones/v9.0-phases/` — resume after v8.0. Starting v8.0: full replacement of the dark legacy web UI with the light "Design Grammars V2" interface from the Claude Design spec (`design/v2/`), wired to the real backends.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE

@@ -1,12 +1,12 @@
-# Phase 6 Context: DG Canvas Bridge (grasshopper-mcp adaptation)
+# Phase 33 Context: DG Canvas Bridge (grasshopper-mcp adaptation)
 
 **Milestone:** v9.0 AI Workflow Intelligence (restructured 2026-07-08)
 **Requirements:** BRDG-01..04
-**Depends on:** Phase 5 (serves `cgContextJson v1`). Parallel-safe with Phase 7.
+**Depends on:** Phase 32 (serves `cgContextJson v1`). Parallel-safe with Phase 34.
 
 ## What this phase is
 
-The transport between the live Grasshopper canvas (Rhino on the Windows host) and data-service (Docker): a native re-implementation of the [grasshopper-mcp](https://github.com/alfredatnycu/grasshopper-mcp) bridge pattern inside the DG plugin, plus the data-service client and `gh_*` MCP tools. Protocol details in [../05-computgraph-serialization-core/05-RESEARCH.md](../05-computgraph-serialization-core/05-RESEARCH.md) §1.
+The transport between the live Grasshopper canvas (Rhino on the Windows host) and data-service (Docker): a native re-implementation of the [grasshopper-mcp](https://github.com/alfredatnycu/grasshopper-mcp) bridge pattern inside the DG plugin, plus the data-service client and `gh_*` MCP tools. Protocol details in [../32-computgraph-serialization-core/32-RESEARCH.md](../32-computgraph-serialization-core/32-RESEARCH.md) §1.
 
 ## Decided
 
@@ -16,7 +16,7 @@ The transport between the live Grasshopper canvas (Rhino on the Windows host) an
    - `System.Net.Sockets.TcpListener` on 127.0.0.1 (localhost only — no LAN exposure of the canvas), accept loop on a background thread, one client at a time
    - Wire format identical to grasshopper-mcp: newline-terminated JSON `{"type": ..., "parameters": {...}}` → single-line JSON response; UTF-8, BOM-tolerant
    - Every canvas touch through `RhinoApp.InvokeOnUiThread`; command handlers must never block the UI thread on network I/O
-   - Commands (v9.0, read+preview only): `get_canvas_context` (→ Phase 5 extractor+serializer), `get_selection` (selected instance GUIDs), `preview_structure`, `clear_preview`, `get_preview_status` (implemented as no-op stubs returning "not supported" until Phase 8 fills them)
+   - Commands (v9.0, read+preview only): `get_canvas_context` (→ Phase 32 extractor+serializer), `get_selection` (selected instance GUIDs), `preview_structure`, `clear_preview`, `get_preview_status` (implemented as no-op stubs returning "not supported" until Phase 35 fills them)
    - Toggle-off closes the socket deterministically; repeated on/off must not leak the port (dispose listener in `RemovedFromDocument` too — see ConnectorComponent precedent)
 3. **data-service side:**
    - `gh_bridge.py`: small TCP client; env `GH_BRIDGE_HOST` (default `host.docker.internal`), `GH_BRIDGE_PORT` (default `8720`); connect/read timeouts ~5s/30s; `ConnectionRefused`/timeout → structured error "Grasshopper bridge unreachable — start Rhino and enable DG CANVAS LISTENER (port 8720)" (What+Where+How-to-fix)

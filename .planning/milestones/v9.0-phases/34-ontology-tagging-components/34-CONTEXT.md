@@ -1,16 +1,16 @@
-# Phase 7 Context: Ontology Tagging Components and Manual Selection
+# Phase 34 Context: Ontology Tagging Components and Manual Selection
 
 **Milestone:** v9.0 AI Workflow Intelligence (restructured 2026-07-08)
 **Requirements:** TAGC-01..03
-**Depends on:** Phase 5 (convention grammar is the contract). Parallel-safe with Phase 6.
+**Depends on:** Phase 32 (convention grammar is the contract). Parallel-safe with Phase 33.
 
 ## What this phase is
 
-The architect's half of the tag→recognize→preview→confirm pipeline: DG components that turn *manual canvas selection* into convention-conformant annotations (groups + scribbles) that the Phase 5 parser reads back as ground truth. What the user tags is authoritative; the LLM (Phase 8) only fills the gaps.
+The architect's half of the tag→recognize→preview→confirm pipeline: DG components that turn *manual canvas selection* into convention-conformant annotations (groups + scribbles) that the Phase 32 parser reads back as ground truth. What the user tags is authoritative; the LLM (Phase 35) only fills the gaps.
 
 ## Decided
 
-1. **`Canvas/CanvasAnnotationStyles.cs`** (DG.Grasshopper): single source for group colors per entity kind, matched to the Frame reference screenshot — Procedure = white/light container; Pattern = orange; nested Pattern = purple; Parameter (Var/Const/Emg) = pink; Interface = white. Also the preview style used by Phase 8 (distinct, desaturated/dashed) lives here so confirm = restyle.
+1. **`Canvas/CanvasAnnotationStyles.cs`** (DG.Grasshopper): single source for group colors per entity kind, matched to the Frame reference screenshot — Procedure = white/light container; Pattern = orange; nested Pattern = purple; Parameter (Var/Const/Emg) = pink; Interface = white. Also the preview style used by Phase 35 (distinct, desaturated/dashed) lives here so confirm = restyle.
 2. **DG OBJECT MARKER** (`Components/ObjectMarkerComponent.cs`):
    - Inputs: `ObjectName` (text), optional `Class` (OntologyClass from ONTOGRAPH deconstruct — binds `dg:Object` to a `dg:Class` IRI), `AlgorithmIndex` (int, default 1)
    - Behavior: creates or updates the `OBJECT - <NAME>` and `<n>_ALGORITHM` scribbles (top-left placement, large font per screenshot); on an already-annotated canvas it *reads* and reports existing markers — never duplicates
@@ -25,7 +25,7 @@ The architect's half of the tag→recognize→preview→confirm pipeline: DG com
 
 ## Constraints
 
-- Components **emit** the convention; they must never introduce a name the Phase 5 parser can't read (share the grammar via DG.Core — e.g. a `CanvasAnnotationNameFactory` next to the parser, so write and read use one definition).
+- Components **emit** the convention; they must never introduce a name the Phase 32 parser can't read (share the grammar via DG.Core — e.g. a `CanvasAnnotationNameFactory` next to the parser, so write and read use one definition).
 - Tagging never writes to Neo4j and never calls data-service — canvas-only.
 - Nested patterns: tagging a selection inside an existing Pat group creates the purple nested style automatically (host = enclosing group).
 - Re-tagging (same name) updates group membership instead of erroring.
@@ -38,4 +38,4 @@ The architect's half of the tag→recognize→preview→confirm pipeline: DG com
 
 ## Verification sketch
 
-Tag a slider selection as Var "SpansCount" under proc 11 → pink group `11_Var_SpansCount` appears; run the Phase 5 extractor → entity appears as `CgParameter{kind:Variable, source:tagged}`; Ctrl+Z removes the group; DG OBJECT MARKER re-run reports the existing scribbles without creating duplicates.
+Tag a slider selection as Var "SpansCount" under proc 11 → pink group `11_Var_SpansCount` appears; run the Phase 32 extractor → entity appears as `CgParameter{kind:Variable, source:tagged}`; Ctrl+Z removes the group; DG OBJECT MARKER re-run reports the existing scribbles without creating duplicates.

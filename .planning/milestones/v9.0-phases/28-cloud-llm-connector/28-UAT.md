@@ -1,7 +1,7 @@
 ---
 status: testing
-phase: 01-cloud-llm-connector
-source: [01-VERIFICATION.md]
+phase: 28-cloud-llm-connector
+source: [28-VERIFICATION.md]
 started: 2026-07-06T23:45:00Z
 updated: 2026-07-06T23:45:00Z
 ---

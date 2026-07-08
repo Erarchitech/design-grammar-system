@@ -1,8 +1,8 @@
-# Phase 9 Context: Computgraph Persistence and Graph Layer Display
+# Phase 36 Context: Computgraph Persistence and Graph Layer Display
 
 **Milestone:** v9.0 AI Workflow Intelligence (restructured 2026-07-08)
 **Requirements:** CGPD-01..05
-**Depends on:** Phase 5 (serializer/ids); Phase 8 (confirmed structures — though a fully hand-tagged canvas can publish without Phase 8).
+**Depends on:** Phase 32 (serializer/ids); Phase 35 (confirmed structures — though a fully hand-tagged canvas can publish without Phase 35).
 
 ## What this phase is
 
@@ -10,13 +10,13 @@ Confirmed canvas structure becomes a persistent Neo4j subgraph — the ontology'
 
 ## Decided
 
-1. **`POST /computgraph/publish`** (app.py): input = confirmed `cgContextJson v1` (only `source: tagged|recognized` entities; untagged never publishes). Label/relation mapping per `../05-computgraph-serialization-core/05-RESEARCH.md` §2:
+1. **`POST /computgraph/publish`** (app.py): input = confirmed `cgContextJson v1` (only `source: tagged|recognized` entities; untagged never publishes). Label/relation mapping per `../32-computgraph-serialization-core/32-RESEARCH.md` §2:
    - Nodes: `Object` (`objectName`, optional `classIri`), `Behavior`, `Algorithm` (`algorithmName`, `algIndex`), `Procedure` (`procedureName`, `procIndex`), `Pattern` (`patternName`), `Parameter` (`parameterName`, `paramKind` ∈ Variable|Constant|Emergent, `dataType` ∈ Float|Integer|Text|Boolean|Geometry, `domainMin/Max/Step` when slider), `Interface` (`interfaceName`, `ifaceType` ∈ Input|Output) — every node `graph:'Computgraph'`, `project`
    - Relations: `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`; optional `REFERS_TO` from `Object` to the OntoGraph `Class` when `classIri` present (cross-layer bridge, mirrors Metagraph atoms → OntoGraph pattern)
-2. **MERGE keys:** `cgId` = deterministic id from Phase 5 (`cg:<alg>:<kind>:<conventionName>`) + `definitionId` + `project`. Re-publish updates properties, never duplicates (`MERGE (n:Pattern {cgId, definitionId, project})`). Entities absent from a re-publish are **not** auto-deleted in v9.0 — stale-entity cleanup is reported, deletion is explicit (avoid silent data loss; note in report).
+2. **MERGE keys:** `cgId` = deterministic id from Phase 32 (`cg:<alg>:<kind>:<conventionName>`) + `definitionId` + `project`. Re-publish updates properties, never duplicates (`MERGE (n:Pattern {cgId, definitionId, project})`). Entities absent from a re-publish are **not** auto-deleted in v9.0 — stale-entity cleanup is reported, deletion is explicit (avoid silent data loss; note in report).
 3. **Provenance per node:** `source` (tagged | recognized), `provider`/`model` (recognized only, from the recognition response), `confidence` (recognized only), `definitionId`, `fileName`, `publishedAt` (ISO).
 4. **Plugin publish path (CGPD-05):** a `Publish` trigger on DG STRUCTURE CONFIRM (or a small **DG COMPUTGRAPH PUBLISH** component — decide in planning) that POSTs the confirmed context to `/computgraph/publish`, following the `ValidationPublishClient` pattern (static HttpClient, `dataServiceUrl` input, camelCase JSON, status output). Confirm→publish completes without leaving Grasshopper.
-5. **Schema propagation checklist** (the CLAUDE.md standing rule): `cypher_template.txt`, `training/dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md schema tables (add Computgraph rows to Node Labels + Relationships), n8n/orchestrator prompts via the Phase 2 catalog (Computgraph block), `.github/copilot-instructions.md`, README.md.
+5. **Schema propagation checklist** (the CLAUDE.md standing rule): `cypher_template.txt`, `training/dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md schema tables (add Computgraph rows to Node Labels + Relationships), n8n/orchestrator prompts via the Phase 29 catalog (Computgraph block), `.github/copilot-instructions.md`, README.md.
 6. **ui-v2 display** (NOT legacy `graph-viewer/` — v8.0 cutover): Computgraph layer in the orbital datascape (`ui-v2/src/graph/` ring mapper + styling for the 7 new labels; per-project filter toggle in the Graph screen). Node display property: `objectName`/`algorithmName`/`procedureName`/`patternName`/`parameterName`/`interfaceName` respectively.
 
 ## Constraints

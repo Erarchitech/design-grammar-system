@@ -1,5 +1,5 @@
 ---
-phase: 01-cloud-llm-connector
+phase: 28-cloud-llm-connector
 plan: 03
 subsystem: ui
 tags:
@@ -49,7 +49,7 @@ completed: 2026-07-06
 status: complete
 ---
 
-# Phase 01 Plan 03: LLM Settings UI Panel -- Two-State Panel with Provider Selection, API Key Management, and Connection Testing
+# Phase 28 Plan 03: LLM Settings UI Panel -- Two-State Panel with Provider Selection, API Key Management, and Connection Testing
 
 **LLM Settings UI page added to the single-file React SPA: nav tile on ProjectPage, page routing, LLMSettingsPanel component with no-key/active two-state display, provider dropdown (Anthropic/OpenAI/Ollama), model dropdown from API, password-masked API key input, Test Connection button, Remove button, yellow fallback banner, green connected indicator, and actionable error display.**
 
@@ -163,5 +163,5 @@ All created files verified on disk. Commit `e46c931` confirmed in git log. All v
 
 ---
 
-*Phase: 01-cloud-llm-connector*
+*Phase: 28-cloud-llm-connector*
 *Completed: 2026-07-06*

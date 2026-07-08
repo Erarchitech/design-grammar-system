@@ -1,8 +1,8 @@
-# Phase 10 Context: Script Structure Validation MVP
+# Phase 37 Context: Script Structure Validation MVP
 
 **Milestone:** v9.0 AI Workflow Intelligence (restructured 2026-07-08)
 **Requirements:** SVAL-01..03
-**Depends on:** Phase 9 (published Computgraph to validate).
+**Depends on:** Phase 36 (published Computgraph to validate).
 
 ## What this phase is
 
