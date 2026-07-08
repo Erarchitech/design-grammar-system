@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function RunTile({ ruleId, date, kind = "Constraint", active = false, onSelect, onDelete, style }) {
+export default function RunTile({ ruleId, date, kind = "Constraint", thumb, active = false, onSelect, onDelete, style }) {
   return (
     <div
       onClick={onSelect}
@@ -51,15 +51,19 @@ export default function RunTile({ ruleId, date, kind = "Constraint", active = fa
           </span>
         )}
       </div>
-      <div
-        style={{
-          height: 64,
-          background: "var(--color-canvas)",
-          backgroundImage:
-            "linear-gradient(var(--ink-a04) 1px, transparent 1px), linear-gradient(90deg, var(--ink-a04) 1px, transparent 1px)",
-          backgroundSize: "16px 16px"
-        }}
-      />
+      {thumb ? (
+        <img src={thumb} alt="" style={{ width: "100%", height: 64, objectFit: "cover", display: "block" }} />
+      ) : (
+        <div
+          style={{
+            height: 64,
+            background: "var(--color-canvas)",
+            backgroundImage:
+              "linear-gradient(var(--ink-a04) 1px, transparent 1px), linear-gradient(90deg, var(--ink-a04) 1px, transparent 1px)",
+            backgroundSize: "16px 16px"
+          }}
+        />
+      )}
       <div
         style={{
           display: "flex",

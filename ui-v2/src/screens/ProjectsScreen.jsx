@@ -9,7 +9,18 @@ export default function ProjectsScreen({ active, onBack, project, onProject }) {
   const [loadErr, setLoadErr] = React.useState("");
   const [creating, setCreating] = React.useState(false);
   const [newName, setNewName] = React.useState("");
+  const [shots, setShots] = React.useState({});
   const cfg = React.useMemo(() => getConfig(), []);
+
+  // Viewport thumbnails captured by the Model Viewer (per project)
+  React.useEffect(() => {
+    if (!active) return;
+    try {
+      setShots(JSON.parse(localStorage.getItem("dgv2_project_shots") || "{}"));
+    } catch {
+      setShots({});
+    }
+  }, [active]);
 
   const load = React.useCallback(() => {
     setLoadErr("");
@@ -87,6 +98,11 @@ export default function ProjectsScreen({ active, onBack, project, onProject }) {
               key={p.project}
               title={p.project}
               description={`${p.nodes} node${p.nodes === 1 ? "" : "s"} in graph${p.project === project ? " · active" : ""}`}
+              thumbnail={
+                shots[p.project] ? (
+                  <img src={shots[p.project]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                ) : undefined
+              }
               onClick={() => open(p.project)}
             />
           ))}

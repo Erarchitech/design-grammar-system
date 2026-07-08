@@ -61,6 +61,49 @@ function boxPath(b) {
 
 const NO_STATE = "__no_state__";
 
+const RUN_SHOTS_KEY = "dgv2_run_shots";
+const PROJECT_SHOTS_KEY = "dgv2_project_shots";
+
+function readShotStore(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+// Downscale a viewer screenshot to a small JPEG thumbnail so the
+// localStorage stores stay within quota (legacy viewer pattern).
+function downscaleThumb(dataUrl, tw, th) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = tw;
+      canvas.height = th;
+      const ctx = canvas.getContext("2d");
+      const sr = img.width / img.height;
+      const tr = tw / th;
+      let sw, sh, sx, sy;
+      if (sr > tr) {
+        sh = img.height;
+        sw = sh * tr;
+        sx = (img.width - sw) / 2;
+        sy = 0;
+      } else {
+        sw = img.width;
+        sh = sw / tr;
+        sx = 0;
+        sy = (img.height - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tw, th);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
 // Clickable colour swatch backed by a hidden <input type="color"> —
 // same pattern as the legacy viewer's graphics bar.
 function ColorSwatch({ label, color, onChange }) {
@@ -120,6 +163,40 @@ export default function ModelScreen({ active, onBack, project }) {
   const mapRef = React.useRef(null);
   const panRef = React.useRef(null);
   const worldRef = React.useRef({ w: 880, h: 440 });
+  const speckleApiRef = React.useRef(null);
+
+  /* ---- automatic viewport screenshots (tiles) ---- */
+  const [runShots, setRunShots] = React.useState(() => readShotStore(RUN_SHOTS_KEY));
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(RUN_SHOTS_KEY, JSON.stringify(runShots));
+    } catch {
+      // quota exceeded — thumbnails stay in-memory only
+    }
+  }, [runShots]);
+
+  const captureShot = React.useCallback(async () => {
+    const api = speckleApiRef.current;
+    if (!api || !runId) return;
+    try {
+      const dataUrl = await api.screenshot();
+      if (!dataUrl) return;
+      const thumb = await downscaleThumb(dataUrl, 320, 180);
+      if (!thumb) return;
+      setRunShots((prev) => ({ ...prev, [runId]: thumb }));
+      if (project) {
+        try {
+          const shots = readShotStore(PROJECT_SHOTS_KEY);
+          shots[project] = thumb;
+          localStorage.setItem(PROJECT_SHOTS_KEY, JSON.stringify(shots));
+        } catch {
+          // quota exceeded — skip project thumbnail
+        }
+      }
+    } catch {
+      // screenshot unsupported / viewer busy — tile keeps its last thumbnail
+    }
+  }, [runId, project]);
 
   const load = React.useCallback(async () => {
     setLoadErr("");
@@ -273,6 +350,14 @@ export default function ModelScreen({ active, onBack, project }) {
     setPropMode("instance");
   }, []);
 
+  // Auto-capture: once the viewer is ready, and again (debounced) whenever
+  // the graphics settings change, refresh the run/state/project thumbnails.
+  React.useEffect(() => {
+    if (!speckleReady) return;
+    const t = setTimeout(() => void captureShot(), 1200);
+    return () => clearTimeout(t);
+  }, [speckleReady, mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, viewMode, captureShot]);
+
   const retry3d = () => {
     setSpeckleError(null);
     setViewMode("3d");
@@ -402,6 +487,7 @@ export default function ModelScreen({ active, onBack, project }) {
           const latest = g.runs[0];
           const fails = g.runs.reduce((s, r) => s + (r.failedRuleCount || 0), 0);
           const rules = g.runs.reduce((s, r) => s + (r.ruleCount || 0), 0);
+          const stateThumb = g.runs.map((r) => runShots[r.runId]).find(Boolean);
           return (
             <div
               key={g.key}
@@ -429,6 +515,13 @@ export default function ModelScreen({ active, onBack, project }) {
                 <div style={{ font: "400 10px/1.3 var(--font-mono)", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {g.key}
                 </div>
+              )}
+              {stateThumb && (
+                <img
+                  src={stateThumb}
+                  alt=""
+                  style={{ width: "100%", height: 74, objectFit: "cover", display: "block", borderRadius: 6, border: "1px solid var(--color-hairline)" }}
+                />
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -523,6 +616,7 @@ export default function ModelScreen({ active, onBack, project }) {
               onEntityClick={pick}
               onReady={handleSpeckleReady}
               onError={handleSpeckleError}
+              apiRef={speckleApiRef}
               style={{ position: "absolute", inset: 0 }}
             />
           ) : (
@@ -600,8 +694,12 @@ export default function ModelScreen({ active, onBack, project }) {
                 ruleId={r.ruleIds?.[0] ? r.ruleIds[0] + (r.ruleCount > 1 ? " +" + (r.ruleCount - 1) : "") : r.runId}
                 date={r.createdAt ? String(r.createdAt).slice(0, 10) : ""}
                 kind={r.failedRuleCount ? r.failedRuleCount + " failing" : "All pass"}
+                thumb={runShots[r.runId]}
                 active={r.runId === runId}
-                onSelect={() => setRunId(r.runId)}
+                onSelect={() => {
+                  void captureShot(); // snapshot the outgoing run before switching
+                  setRunId(r.runId);
+                }}
               />
             ))}
           </div>
