@@ -160,9 +160,11 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-07-LABEL-component|2026-07-07 LABEL component]]
 - [[sessions/2026-07-07 METAGRAPH input rename fix|2026-07-07 METAGRAPH input rename fix]]
 - [[sessions/2026-07-08 Per-object property binding and Speckle auto-config|2026-07-08 Per-object property binding & Speckle auto-config]]
+- [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|2026-07-08 Audit-fix classification + Phase 27 Speckle 3D embed]]
+- [[decisions/Phase 27 Speckle 3D embed design decisions|2026-07-08 Phase 27 — 6 Speckle 3D embed decisions]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
 
-> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. Next: v4.0 BOT Ontology Bridge.
+> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. **v8.0 shipped (2026-07-07).** Phase 27 (Speckle 3D embed) planned 2026-07-08. Next: v4.0 BOT Ontology Bridge.
