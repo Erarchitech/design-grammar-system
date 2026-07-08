@@ -61,6 +61,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 18 Rules and Validator Rework decisions|Phase 18: Rules and Validator Rework — ValidStatus per-ObjState, DesignStateBindingService, CLASSIFICATOR purge]]
 - [[decisions/Phase 19 Deconstruct and Reinstate Components decisions|Phase 19: Deconstruct and Reinstate Components — REINSTATE Target, StateStatus, DECONSTRUCT error contract]]
 - [[decisions/Phase 20 E2E Validation and Docs context decisions|Phase 20: E2E Validation and Docs — E2E scope, release notes, docs strategy, vault refresh]]
+- [[decisions/Per-object property binding via PropState.ObjectRef|Per-object property binding via PropState.ObjectRef (v7.0)]]
 - [[decisions/V8 frontend build supersedes no-JSX pattern|Phase 21 (v8.0): Design System Foundation — Vite+React+JSX, full component library, specimen page, new app directory]]
 
 ### Debugging
@@ -156,7 +157,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-06 v9.0 Phase 01 planning|2026-07-06 v9.0 Phase 01 planning — research + 3 plans, ready for execution]]
 - [[sessions/2026-07-07 v9.0 Phase 01 execution|2026-07-07 v9.0 Phase 01 execution — 3 plans complete, 6/7 verified, code review fixed]]
 - [[sessions/2026-07-07 DesignStateLabel input and output|2026-07-07 DesignStateLabel input/output]]
+- [[sessions/2026-07-07-LABEL-component|2026-07-07 LABEL component]]
 - [[sessions/2026-07-07 METAGRAPH input rename fix|2026-07-07 METAGRAPH input rename fix]]
+- [[sessions/2026-07-08 Per-object property binding and Speckle auto-config|2026-07-08 Per-object property binding & Speckle auto-config]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
