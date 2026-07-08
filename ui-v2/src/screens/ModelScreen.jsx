@@ -243,6 +243,11 @@ export default function ModelScreen({ active, onBack, project }) {
     setPropMode("instance");
   };
 
+  const retry3d = () => {
+    setSpeckleError(null);
+    setViewMode("3d");
+  };
+
   /* ---- map zoom / pan / minimap ---- */
   const onWheel = (e) => {
     e.preventDefault();
@@ -463,8 +468,8 @@ export default function ModelScreen({ active, onBack, project }) {
           />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <div style={{ display: "flex", gap: 4 }}>
-            <Button variant="outline" size="sm" selected={viewMode === "3d"} onClick={() => setViewMode("3d")} disabled={!!speckleError}>
-              {speckleError && viewMode === "3d" ? "3D (err)" : "3D"}
+            <Button variant="outline" size="sm" selected={viewMode === "3d"} onClick={() => { if (speckleError) retry3d(); else setViewMode("3d"); }}>
+              {speckleError ? "Retry 3D" : "3D"}
             </Button>
             <Button variant="outline" size="sm" selected={viewMode === "map"} onClick={() => setViewMode("map")}>
               Map
