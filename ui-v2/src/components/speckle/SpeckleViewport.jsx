@@ -93,12 +93,20 @@ export default function SpeckleViewport({
   const entityMapRef = React.useRef(new Map());
   const disposedRef = React.useRef(false);
   const clickHandlerRef = React.useRef(null);
+  const onEntityClickRef = React.useRef(onEntityClick);
+  const onReadyRef = React.useRef(onReady);
+  const onErrorRef = React.useRef(onError);
+
+  // Keep callback refs current (effect uses refs to avoid re-running on callback reference changes)
+  onEntityClickRef.current = onEntityClick;
+  onReadyRef.current = onReady;
+  onErrorRef.current = onError;
 
   // Viewer lifecycle — keyed on resourceUrls + readToken + project + runId
   React.useEffect(() => {
     const urls = resourceUrls?.filter(Boolean) || [];
     if (urls.length === 0 || !readToken) {
-      onError?.("No Speckle resource URLs or token available");
+      onErrorRef.current?.("No Speckle resource URLs or token available");
       return;
     }
 
@@ -157,17 +165,17 @@ export default function SpeckleViewport({
           const hit = payload?.hits?.[0];
           const raw = hit?.node?.model?.raw || {};
           const dgEntityId = raw.dgEntityId || "";
-          if (dgEntityId && onEntityClick) {
-            onEntityClick(dgEntityId);
+          if (dgEntityId && onEntityClickRef.current) {
+            onEntityClickRef.current(dgEntityId);
           }
         };
         clickHandlerRef.current = handleClick;
         viewer.on("object-clicked", handleClick);
 
-        onReady?.();
+        onReadyRef.current?.();
       } catch (err) {
         if (!disposed) {
-          onError?.(err.message || "Speckle viewer initialization failed");
+          onErrorRef.current?.(err.message || "Speckle viewer initialization failed");
         }
       }
     };
@@ -187,7 +195,8 @@ export default function SpeckleViewport({
       }
       entityMapRef.current = new Map();
     };
-  }, [resourceUrls, readToken, project, runId, onEntityClick, onReady, onError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resourceUrls, readToken, project, runId]);
 
   // Resize handling
   React.useEffect(() => {
