@@ -176,7 +176,7 @@ export default function SessionHistory({
                   <span style={{ flex: "0 0 auto", font: "400 10px/1.3 var(--font-sans)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                     {formatRelativeDate(session.createdAt)}
                   </span>
-                  {hasPoint(session.sessionId) ? (
+                  {hasPoint(session.sessionId) && (
                     <button
                       type="button"
                       title="Rewind the graph to how it looked before this turn"
@@ -206,29 +206,28 @@ export default function SessionHistory({
                       </svg>
                       Restore point
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      title="Reuse this prompt"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        onRestore && onRestore(session);
-                      }}
-                      style={{
-                        flex: "0 0 auto",
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-secondary)",
-                        font: "500 11px/1 var(--font-sans)",
-                        padding: "3px 6px",
-                        cursor: "pointer"
-                      }}
-                      onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
-                      onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
-                    >
-                      Reuse
-                    </button>
                   )}
+                  <button
+                    type="button"
+                    title="Restore this prompt into the prompt bar"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onRestore && onRestore(session);
+                    }}
+                    style={{
+                      flex: "0 0 auto",
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--color-signal-ink)",
+                      font: "500 11px/1 var(--font-sans)",
+                      padding: "3px 6px",
+                      cursor: "pointer"
+                    }}
+                    onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
+                    onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
+                  >
+                    Restore
+                  </button>
                 </div>
 
                 {isExpanded && (
@@ -297,7 +296,7 @@ export default function SessionHistory({
                           cursor: "pointer"
                         }}
                       >
-                        Reuse prompt
+                        Restore prompt
                       </button>
                     </div>
                   </div>
