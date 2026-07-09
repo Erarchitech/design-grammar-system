@@ -32,10 +32,15 @@ This project uses an **Obsidian Knowledge Vault** at `DG_OBSIDIAN/` to persist a
 
 ```
 User (browser) → Nginx SPA (:8080)
-  → /n8n/webhook/dg/rules-ingest  →  n8n  →  Ollama (llama3.1)  →  Neo4j
-  → /n8n/webhook/dg/graph-query   →  n8n  →  Ollama  →  data-service/mcp  →  Neo4j
+  → /n8n/webhook/dg/rules-ingest  →  n8n  →  data-service /llm/generate (LLM gateway)  →  Neo4j
+  → /n8n/webhook/dg/graph-query   →  n8n  →  data-service /llm/generate  →  data-service/mcp  →  Neo4j
   → /data-service/validation/...  →  data-service  →  Speckle
   → /neo4j/db/neo4j/tx/commit     →  Neo4j (direct Cypher)
+
+LLM gateway (v9.0 Phase 01, data-service/llm_gateway.py) is provider-agnostic:
+Anthropic / OpenAI adapters call out with an encrypted-at-rest API key (set via
+the LLMSettingsPanel or /llm/settings); an Ollama adapter remains for local
+models. n8n workflows no longer call Ollama directly.
 ```
 
 ### Service Map
@@ -45,8 +50,8 @@ User (browser) → Nginx SPA (:8080)
 | `design-grammars` | Nginx + Vite build (`ui-v2/`) | 8080 | V2 UI + reverse proxy |
 | `neo4j` | Neo4j 5 | 7474/7687 | Graph DB (single DB, project-isolated) |
 | `data-service` | Python FastAPI | 8000 | MCP bridge, validation publish, execution tracking |
-| `n8n` | n8n | 5678 | 2 webhook workflows (ingest + query) |
-| `ollama` | Ollama (GPU) | 11435 | Local LLM (llama3.1) |
+| `n8n` | n8n | 5678 | 2 webhook workflows (ingest + query), calls the LLM gateway |
+| `ollama` | Ollama (GPU) | 11435 | Optional local model — one of the LLM gateway's providers, not called directly by n8n |
 | `speckle-*` | Speckle stack | 8090 | Self-hosted 3D model platform (7 containers) |
 
 ### Key Design Decisions
@@ -197,9 +202,10 @@ dotnet test .\DG\tests\DG.Tests\
 
 ## Current Priorities
 
-1. **v8.0 follow-ups** — approve and run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` (v2.0-era validation runs invisible until then); reconcile live n8n workflows with `n8n/workflows/*.json` (live versions drifted ahead of repo)
-2. **v9.0 AI Workflow Intelligence** — resume after v8.0; Phase 01 (cloud-llm-connector) parked in `.planning/milestones/v9.0-phases/`
-3. **v4.0 BOT Ontology Bridge** — bridge design-grammar concepts with the BOT standard and Topologic for cross-vocabulary architecture analysis
+1. **v8.0 follow-ups (shipped, still open)** — approve and run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` (v2.0-era validation runs invisible until then); reconcile live n8n workflows with `n8n/workflows/*.json` (live versions drifted ahead of repo)
+2. **v9.0 AI Workflow Intelligence** — active (renumbered to global phases 28-40; GH canvas → Computgraph serialization pipeline elaborated into phases 32-37). LLM gateway (Phase 28/cloud-llm-connector) shipped and is what the V2 UI's Graph Viewer prompt console calls
+3. **v10.0 Script Intelligence** — planned, phases 41-49, isolated; activates after v9.0
+4. **v4.0 BOT Ontology Bridge** — bridge design-grammar concepts with the BOT standard and Topologic for cross-vocabulary architecture analysis
 
 ## Known Gotchas
 
@@ -222,7 +228,7 @@ dotnet test .\DG\tests\DG.Tests\
 | Workflows | JavaScript (n8n) | Webhook, HTTP, Function nodes |
 | Main UI (V2) | JSX | React 18 + Vite 5 (`ui-v2/`), canvas datascape |
 | Legacy UI (archived) | JavaScript | React 18 CDN no-JSX SPA + separate model-viewer |
-| LLM | — | Ollama, llama3.1 |
+| LLM | — | Provider-agnostic gateway (Anthropic/OpenAI via API key, Ollama local fallback) |
 | Database | Cypher | Neo4j 5 |
 | Fonts | — | Inter (body), Space Grotesk (headings) |
 
