@@ -75,6 +75,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Layout overflow guards required for resizable flex children]]
 - [[Worktree branch commits with spurious deletions]]
 - [[Stale index name in spec-query n8n workflow]]
+- [[debugging/n8n workflows had a fatal quote bug and silent project-scoping failure|n8n workflows: fatal quote bug + silent project-scoping failure]]
 - [[debugging/get_adapter ignores baseUrl from settings|get_adapter() ignores baseUrl — DeepSeek key sent to OpenAI]]
 - [[debugging/Model Viewer validation objects not found in Speckle world tree|Model Viewer: validation objects not found in Speckle world tree]]
 
@@ -164,6 +165,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|2026-07-08 Audit-fix classification + Phase 27 Speckle 3D embed]]
 - [[sessions/2026-07-08 Phase 27 Speckle 3D embed execution|2026-07-08 Phase 27 Speckle 3D embed — execution]]
 - [[sessions/2026-07-08 Model Viewer filter/coloring regression|2026-07-08 Model Viewer filter/coloring regression]]
+- [[sessions/2026-07-08 v8.0 Phases 21-26 autonomous execution|2026-07-08 v8.0 Phases 21–26 autonomous execution + n8n bug fixes + CLAUDE.md LLM gateway correction]]
 - [[decisions/Phase 27 Speckle 3D embed design decisions|2026-07-08 Phase 27 — 6 Speckle 3D embed decisions]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
