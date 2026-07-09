@@ -73,6 +73,16 @@ function clockNow() {
   }
 }
 
+// Persisted DR-session results embed the Cypher after a "// Cypher" delimiter.
+// The Session History panel shows only the human response; the raw Cypher stays
+// in the live Session console's collapsible dropdown block.
+const CYPHER_DELIM = "\n\n// Cypher\n";
+function stripCypher(result) {
+  if (!result) return "";
+  const ix = result.indexOf(CYPHER_DELIM);
+  return ix >= 0 ? result.slice(0, ix) : result;
+}
+
 // The live Neo4j datascape: ring layers from the project metagraph, node
 // selection with divergence callout + details panel, n8n prompt console,
 // and node search (right-click popover + persistent property-scoped bar).
@@ -525,6 +535,12 @@ export default function GraphScreen({ active, onBack, project }) {
   }, [loadGraph]);
 
   const restorePointSet = React.useMemo(() => new Set(restoreIds), [restoreIds]);
+  // Sessions for the history panel with the embedded Cypher stripped from the
+  // result — Cypher stays only in the live Session console's dropdown.
+  const historySessions = React.useMemo(
+    () => drSessions.map((s) => ({ ...s, result: stripCypher(s.result) })),
+    [drSessions]
+  );
 
   /* -------- derived render data -------- */
   const rings = data?.rings || [];
@@ -795,7 +811,7 @@ export default function GraphScreen({ active, onBack, project }) {
           {/* Session History — persisted ingest/query/edit turns with restore */}
           <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", padding: "4px 8px", boxShadow: "var(--shadow-panel)" }}>
             <SessionHistory
-              sessions={drSessions}
+              sessions={historySessions}
               open={historyOpen}
               onToggle={() => setHistoryOpen((v) => !v)}
               onRestore={restoreSession}
