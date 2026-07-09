@@ -13,7 +13,7 @@ public sealed class LabelComponent : GH_Component
     public LabelComponent()
         : base("LABEL", "LABEL",
             "Show the name of a DG.Variable from the Graph.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.StatesSubcategory)
     {
     }
 

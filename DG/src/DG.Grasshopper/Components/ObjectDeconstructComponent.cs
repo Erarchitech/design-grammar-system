@@ -16,7 +16,7 @@ public sealed class ObjectDeconstructComponent : GH_Component
     public ObjectDeconstructComponent()
         : base("OBJECT DECONSTRUCT", "OBJDECON",
             "Split an ObjState into Object reference, Geometry, and Label. Pure synchronous passthrough -- no refresh required.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.StatesSubcategory)
     {
     }
 

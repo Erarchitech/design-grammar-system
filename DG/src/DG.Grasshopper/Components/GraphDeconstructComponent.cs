@@ -12,7 +12,7 @@ public sealed class GraphDeconstructComponent : GH_Component
     public GraphDeconstructComponent()
         : base("GRAPH DECONSTRUCT", "DECONSTRUCT",
             "Split a Database handle into 4 graph layer handles.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

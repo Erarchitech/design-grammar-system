@@ -34,7 +34,7 @@ public sealed class DesignStateCompositionComponent : GH_Component
             "DSGSTATE",
             "Compose all wired ObjState, ParamState, and PropState inputs into a single aggregate DesignState with a deterministic StateId.",
             DgComponentCategory.Category,
-            DgComponentCategory.Subcategory)
+            DgComponentCategory.StatesSubcategory)
     {
     }
 

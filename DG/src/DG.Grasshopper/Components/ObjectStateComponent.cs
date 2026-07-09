@@ -35,7 +35,7 @@ public sealed class ObjectStateComponent : GH_Component
             "OBJSTATE",
             "Compose Object, Geometry, and Label into an ObjState for downstream DESIGN STATE composition.",
             DgComponentCategory.Category,
-            DgComponentCategory.Subcategory)
+            DgComponentCategory.StatesSubcategory)
     {
     }
 

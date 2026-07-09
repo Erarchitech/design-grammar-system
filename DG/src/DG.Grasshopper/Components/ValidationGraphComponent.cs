@@ -22,7 +22,7 @@ public sealed class ValidationGraphComponent : GH_Component
     public ValidationGraphComponent()
         : base("VALIDATION GRAPH", "VALGRAPH",
             "Load validation runs, status, and design states from the ValidGraph layer.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

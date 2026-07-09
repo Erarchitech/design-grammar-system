@@ -21,7 +21,7 @@ public sealed class MetagraphComponent : GH_Component
     private string _latestStatus = "Idle";
 
     public MetagraphComponent()
-        : base("METAGRAPH", "METAGRAPH", "Load design rules from Neo4j Metagraph.", DgComponentCategory.Category, DgComponentCategory.Subcategory)
+        : base("METAGRAPH", "METAGRAPH", "Load design rules from Neo4j Metagraph.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

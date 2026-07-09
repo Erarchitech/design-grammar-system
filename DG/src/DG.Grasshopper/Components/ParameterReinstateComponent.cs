@@ -29,7 +29,7 @@ public sealed class ParameterReinstateComponent : GH_Component
             "PARAMREIN",
             "Apply a saved ParamState back to Grasshopper sliders/toggles. Required Target input wired from PARAMETER STATE. Rising-edge Reinstate trigger.",
             DgComponentCategory.Category,
-            DgComponentCategory.Subcategory)
+            DgComponentCategory.ActionsSubcategory)
     {
     }
 

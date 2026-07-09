@@ -26,7 +26,7 @@ public sealed class OntoGraphComponent : GH_Component
     public OntoGraphComponent()
         : base("ONTOGRAPH", "ONTOGRAPH",
             "Load Classes, ObjProperties, and DataProperties from the OntoGraph layer.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

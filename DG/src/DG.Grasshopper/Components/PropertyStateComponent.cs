@@ -30,7 +30,7 @@ public sealed class PropertyStateComponent : GH_Component
             "PROPSTATE",
             "Compose a Rule, DataProperty, and PropValue into a PropState for downstream DESIGN STATE composition.",
             DgComponentCategory.Category,
-            DgComponentCategory.Subcategory)
+            DgComponentCategory.StatesSubcategory)
     {
     }
 

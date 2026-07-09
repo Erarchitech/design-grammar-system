@@ -24,7 +24,7 @@ public sealed class ConnectorComponent : GH_Component
     };
 
     public ConnectorComponent()
-        : base("CONNECTOR", "CONNECTOR", "Connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.Subcategory)
+        : base("CONNECTOR", "CONNECTOR", "Connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

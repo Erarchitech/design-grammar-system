@@ -29,7 +29,7 @@ public sealed class ParameterStateComponent : GH_Component, IGH_VariableParamete
             "PARAMSTATE",
             "Capture named Number, Integer, and Boolean parameters into a reusable ParamState.",
             DgComponentCategory.Category,
-            DgComponentCategory.Subcategory)
+            DgComponentCategory.StatesSubcategory)
     {
     }
 

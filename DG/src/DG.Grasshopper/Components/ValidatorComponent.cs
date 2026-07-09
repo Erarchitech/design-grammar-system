@@ -13,7 +13,7 @@ public sealed class ValidatorComponent : GH_Component
     private readonly RuleEvaluator _ruleEvaluator = new();
 
     public ValidatorComponent()
-        : base("VALIDATOR", "VALIDATOR", "Validate parametric state against DG rules.", DgComponentCategory.Category, DgComponentCategory.Subcategory)
+        : base("VALIDATOR", "VALIDATOR", "Validate parametric state against DG rules.", DgComponentCategory.Category, DgComponentCategory.ActionsSubcategory)
     {
     }
 

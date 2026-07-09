@@ -21,7 +21,7 @@ public sealed class RuleDeconstructComponent : GH_Component
     };
 
     public RuleDeconstructComponent()
-        : base("RULE DECONSTRUCT", "RULE DECONSTRUCT", "Extract variables, SWRL, and metadata from DG.Rule.", DgComponentCategory.Category, DgComponentCategory.Subcategory)
+        : base("RULE DECONSTRUCT", "RULE DECONSTRUCT", "Extract variables, SWRL, and metadata from DG.Rule.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 

@@ -22,7 +22,7 @@ public sealed class DesignStateDeconstructComponent : GH_Component
     public DesignStateDeconstructComponent()
         : base("DESIGN STATE DECONSTRUCT", "DSGDECON",
             "Split a DesignState into ObjState, ParamState, and PropState lists. Pure synchronous passthrough -- no refresh required.",
-            DgComponentCategory.Category, DgComponentCategory.Subcategory)
+            DgComponentCategory.Category, DgComponentCategory.StatesSubcategory)
     {
     }
 
