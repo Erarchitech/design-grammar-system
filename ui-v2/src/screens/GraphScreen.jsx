@@ -118,12 +118,52 @@ export default function GraphScreen({ active, onBack, project }) {
   const [busy, setBusy] = React.useState(false);
   const [drSessions, setDrSessions] = React.useState([]); // raw persisted turns for the Session History panel
   const [historyOpen, setHistoryOpen] = React.useState(false);
-  // Graph restore points: an in-memory checkpoint of the built datascape taken
-  // just before each mutating (ingest/edit) turn, keyed by that turn's id. Lets
-  // the user rewind the graph view to how it looked before any past turn.
+  // Graph restore points: a checkpoint of the built datascape taken just before
+  // each mutating (ingest/edit) turn, keyed by the turn's session id. Lets the
+  // user rewind the graph view to how it looked before that turn. Checkpoints
+  // are mirrored to localStorage (capped) so Restore survives reloads.
   const snapshotsRef = React.useRef({});
   const [restoreIds, setRestoreIds] = React.useState([]);
   const [restoredAt, setRestoredAt] = React.useState(null); // {sessionId, modeLabel, ts} | null
+
+  const snapStoreKey = React.useCallback(() => `dgv2_graph_snapshots_${project || "default"}`, [project]);
+  // Persist a checkpoint, capped to the most recent few, dropping oldest on a
+  // quota error so a large graph can never wedge the store.
+  const persistSnapshot = React.useCallback((sid, built) => {
+    const key = snapStoreKey();
+    let store;
+    try {
+      store = JSON.parse(localStorage.getItem(key) || "{}");
+    } catch {
+      store = {};
+    }
+    store[sid] = built;
+    const CAP = 4;
+    let ids = Object.keys(store);
+    while (ids.length > CAP) {
+      delete store[ids[0]];
+      ids = Object.keys(store);
+    }
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      try {
+        localStorage.setItem(key, JSON.stringify(store));
+        return;
+      } catch {
+        const oldest = Object.keys(store)[0];
+        if (!oldest || oldest === sid) {
+          // even a single snapshot won't fit — keep it in-memory only
+          try {
+            localStorage.removeItem(key);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        delete store[oldest];
+      }
+    }
+  }, [snapStoreKey]);
 
   /* ---- viewport state persistence (camera pan/zoom per project) ---- */
   const readViewportStore = (key) => {
@@ -321,10 +361,16 @@ export default function GraphScreen({ active, onBack, project }) {
     let gone = false;
     setSession([]);
     setDrSessions([]);
-    // Restore points are project-scoped and in-memory; drop them on switch.
-    snapshotsRef.current = {};
-    setRestoreIds([]);
     setRestoredAt(null);
+    // Load this project's persisted checkpoints so their turns show Restore.
+    let store;
+    try {
+      store = JSON.parse(localStorage.getItem(`dgv2_graph_snapshots_${project || "default"}`) || "{}");
+    } catch {
+      store = {};
+    }
+    snapshotsRef.current = store;
+    setRestoreIds(Object.keys(store));
     fetchDrSessions(project)
       .then((rows) => {
         if (gone) return;
@@ -388,25 +434,25 @@ export default function GraphScreen({ active, onBack, project }) {
       if (el) el.scrollTop = el.scrollHeight;
     });
 
-  const sendPrompt = async () => {
-    const txt = promptVal.trim();
-    if (!txt || busy || (mode === 2 && !editRuleId)) return;
+  // Execute one workflow turn. Extracted from sendPrompt so the Session History
+  // "Repeat" action can re-run a past turn with its own mode / text / rule.
+  const runTurn = async (turnMode, txt, editRule) => {
+    if (!txt || busy || (turnMode === 2 && !editRule)) return;
     // Edit mode reuses the ingest webhook with the legacy prefix contract;
     // the n8n workflow deletes the rule's old atoms before re-creation.
-    const sentText = mode === 2 ? "edit Rule_Id: " + editRuleId + " — " + txt : txt;
+    const sentText = turnMode === 2 ? "edit Rule_Id: " + editRule + " — " + txt : txt;
     const id = "t" + Date.now();
-    const steps = STEPS[mode];
+    const steps = STEPS[turnMode];
     // Checkpoint the graph as it stands *before* this turn mutates it, so the
     // turn can later be rewound. Query turns (mode 1) don't mutate → skip.
-    if (mode !== 1) {
+    if (turnMode !== 1) {
       snapshotsRef.current[id] = data || { rings: [], cross: [], xmap: {}, xPerRing: [] };
-      setRestoreIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     }
     setSession((s) =>
       s.concat([
         {
           id,
-          modeLabel: MODES[mode],
+          modeLabel: MODES[turnMode],
           text: sentText,
           steps: steps.map((l) => ({ label: l, active: false, time: "" })),
           progress: 5,
@@ -418,7 +464,6 @@ export default function GraphScreen({ active, onBack, project }) {
       ])
     );
     setSessionOpen(true);
-    setPromptVal("");
     setBusy(true);
     autoScroll();
 
@@ -439,15 +484,15 @@ export default function GraphScreen({ active, onBack, project }) {
 
     try {
       const payload =
-        mode === 1 ? await queryGraph(txt, project) : await ingestRules(sentText, project);
+        turnMode === 1 ? await queryGraph(txt, project) : await ingestRules(sentText, project);
       clearInterval(timer);
       const secs = ((Date.now() - t0) / 1000).toFixed(1);
       let response, meta, cypher = "", createdNodes = [];
-      if (mode !== 1) {
+      if (turnMode !== 1) {
         cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
         createdNodes = parseCreatedNodes(cypher);
-        response = mode === 2 ? "Rule " + editRuleId + " rewritten in the metagraph." : "Rule ingested into the metagraph.";
-        meta = (mode === 2 ? "Rewritten" : "Committed") + " → Metagraph · " + secs + "s";
+        response = turnMode === 2 ? "Rule " + editRule + " rewritten in the metagraph." : "Rule ingested into the metagraph.";
+        meta = (turnMode === 2 ? "Rewritten" : "Committed") + " → Metagraph · " + secs + "s";
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
       } else {
@@ -466,12 +511,23 @@ export default function GraphScreen({ active, onBack, project }) {
         clock: clockNow()
       }));
       // persist the turn so it survives reloads (legacy saveDrSession parity)
-      const savedMode = mode === 1 ? "query" : mode === 2 ? "edit" : "ingest";
+      const savedMode = turnMode === 1 ? "query" : turnMode === 2 ? "edit" : "ingest";
       const savedResult = response + (cypher ? "\n\n// Cypher\n" + cypher : "");
-      void saveDrSession(project, savedMode, sentText, savedResult);
+      const serverSessionId = await saveDrSession(project, savedMode, sentText, savedResult);
+      const finalId = serverSessionId || id;
+      // Re-key the checkpoint to the durable server session id and persist it so
+      // this turn keeps its Restore option across reloads.
+      if (turnMode !== 1) {
+        if (finalId !== id) {
+          snapshotsRef.current[finalId] = snapshotsRef.current[id];
+          delete snapshotsRef.current[id];
+        }
+        persistSnapshot(finalId, snapshotsRef.current[finalId]);
+        setRestoreIds((prev) => (prev.includes(finalId) ? prev : [...prev, finalId]));
+      }
       // optimistically surface the new turn in the Session History panel
       setDrSessions((prev) => [
-        { sessionId: id, mode: savedMode, prompt: sentText, result: savedResult, createdAt: new Date().toISOString() },
+        { sessionId: finalId, mode: savedMode, prompt: sentText, result: savedResult, createdAt: new Date().toISOString() },
         ...prev
       ]);
     } catch (err) {
@@ -490,24 +546,47 @@ export default function GraphScreen({ active, onBack, project }) {
     }
   };
 
-  // Restore a persisted turn into the prompt bar: switch to its mode and
-  // pre-fill the prompt so the user can re-run or tweak it (legacy parity).
+  const sendPrompt = () => {
+    const txt = promptVal.trim();
+    if (!txt) return;
+    setPromptVal("");
+    void runTurn(mode, txt, editRuleId);
+  };
+
+  // Split a persisted turn into {idx, text, editRule}. Edit turns are stored as
+  // "edit Rule_Id: <id> — <text>"; recover the rule id and the visible prompt.
   const MODE_INDEX = { ingest: 0, query: 1, edit: 2 };
-  const restoreSession = React.useCallback((s) => {
+  const parseSession = React.useCallback((s) => {
     const idx = MODE_INDEX[s.mode] ?? 0;
-    setMode(idx);
-    let prompt = s.prompt || "";
+    let text = s.prompt || "";
+    let editRule = "";
     if (idx === 2) {
-      // Edit turns are persisted as "edit Rule_Id: <id> — <text>"; recover the
-      // rule id for the picker and strip the prefix from the visible prompt.
-      const m = prompt.match(/^edit Rule_Id:\s*(\S+)\s*—\s*([\s\S]*)$/);
+      const m = text.match(/^edit Rule_Id:\s*(\S+)\s*—\s*([\s\S]*)$/);
       if (m) {
-        setEditRuleId(m[1]);
-        prompt = m[2];
+        editRule = m[1];
+        text = m[2];
       }
     }
-    setPromptVal(prompt);
+    return { idx, text, editRule };
   }, []);
+
+  // Reuse: drop the turn's prompt (and rule/mode) back into the prompt bar so
+  // the user can tweak and re-run it. Does not execute anything.
+  const restoreSession = React.useCallback((s) => {
+    const { idx, text, editRule } = parseSession(s);
+    setMode(idx);
+    if (editRule) setEditRuleId(editRule);
+    setPromptVal(text);
+  }, [parseSession]);
+
+  // Repeat: re-execute the turn as-is (used after Restore, to re-apply it).
+  const repeatSession = React.useCallback((s) => {
+    const { idx, text, editRule } = parseSession(s);
+    setMode(idx);
+    if (editRule) setEditRuleId(editRule);
+    void runTurn(idx, text, editRule);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parseSession, runTurn]);
 
   // Rewind the datascape to the checkpoint captured before a given turn. This
   // is a non-destructive view restore — the live Neo4j graph is untouched; the
@@ -631,6 +710,18 @@ export default function GraphScreen({ active, onBack, project }) {
               Restore point · graph as before {restoredAt.modeLabel} turn
               {restoredAt.ts ? " · " + String(restoredAt.ts).replace("T", " ").slice(0, 16) : ""}
             </span>
+            {restoredAt.modeLabel !== "query" && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const s = drSessions.find((d) => d.sessionId === restoredAt.sessionId);
+                  if (s) repeatSession(s);
+                }}
+                disabled={busy}
+              >
+                Repeat turn
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={returnToLive}>
               Return to live
             </Button>
@@ -816,7 +907,10 @@ export default function GraphScreen({ active, onBack, project }) {
               onToggle={() => setHistoryOpen((v) => !v)}
               onRestore={restoreSession}
               onRestorePoint={restoreGraphPoint}
+              onRepeat={repeatSession}
               restorePointIds={restorePointSet}
+              restoredSessionId={restoredAt?.sessionId || null}
+              busy={busy}
               filters={[
                 { value: "all", label: "All" },
                 { value: "ingest", label: "Ingest" },

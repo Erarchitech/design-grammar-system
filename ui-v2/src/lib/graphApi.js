@@ -111,7 +111,7 @@ export async function saveDrSession(project, mode, prompt, result) {
   const cfg = getConfig();
   const base = (cfg.dataServiceUrl || "/data-service").replace(/\/$/, "");
   try {
-    await fetch(`${base}/design-rule-sessions`, {
+    const res = await fetch(`${base}/design-rule-sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -121,9 +121,14 @@ export async function saveDrSession(project, mode, prompt, result) {
         result: (result || "").slice(0, 2000)
       })
     });
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      return data?.sessionId || null;
+    }
   } catch {
     // history is best-effort — never block the workflow on it
   }
+  return null;
 }
 
 // ---- n8n webhooks with the async "accepted → poll data-service" contract ----

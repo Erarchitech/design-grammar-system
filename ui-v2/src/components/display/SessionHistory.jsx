@@ -41,13 +41,16 @@ function formatRelativeDate(isoString) {
 
 /**
  * @param sessions         array of {sessionId, mode, prompt, result, createdAt}
- * @param filters          filter <select> options, e.g. [{value:"all",label:"All"},…]
- * @param open             controlled expanded/collapsed state of the whole panel
- * @param onToggle         () => void — toggle panel open/closed
- * @param onRestore        (session) => void — reuse the turn's prompt
- * @param onRestorePoint   (session) => void — rewind the graph to before this turn
- * @param restorePointIds  Set of sessionIds that have a captured graph snapshot
- * @param emptyLabel       copy shown when there are no sessions at all
+ * @param filters           filter <select> options, e.g. [{value:"all",label:"All"},…]
+ * @param open              controlled expanded/collapsed state of the whole panel
+ * @param onToggle          () => void — toggle panel open/closed
+ * @param onRestore         (session) => void — reuse the turn's prompt in the bar
+ * @param onRestorePoint    (session) => void — rewind the graph to before this turn
+ * @param onRepeat          (session) => void — re-run the turn (shown after restore)
+ * @param restorePointIds   Set of sessionIds that have a captured graph snapshot
+ * @param restoredSessionId sessionId currently rewound to (enables its Repeat)
+ * @param busy              when true, Repeat is disabled (a turn is running)
+ * @param emptyLabel        copy shown when there are no sessions at all
  */
 export default function SessionHistory({
   sessions = [],
@@ -56,10 +59,14 @@ export default function SessionHistory({
   onToggle,
   onRestore,
   onRestorePoint,
+  onRepeat,
   restorePointIds,
+  restoredSessionId = null,
+  busy = false,
   emptyLabel = "No sessions yet"
 }) {
   const hasPoint = (id) => !!(restorePointIds && restorePointIds.has(id) && onRestorePoint);
+  const isRestored = (id) => !!(onRepeat && restoredSessionId && restoredSessionId === id);
   const [filter, setFilter] = React.useState("all");
   const [displayCount, setDisplayCount] = React.useState(50);
   const [expandedId, setExpandedId] = React.useState(null);
@@ -204,12 +211,43 @@ export default function SessionHistory({
                         <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
                         <path d="M3 3v5h5" />
                       </svg>
-                      Restore point
+                      Restore
+                    </button>
+                  )}
+                  {isRestored(session.sessionId) && (
+                    <button
+                      type="button"
+                      title="Re-run this turn to re-apply it"
+                      disabled={busy}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        onRepeat(session);
+                      }}
+                      style={{
+                        flex: "0 0 auto",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 3,
+                        background: "var(--color-signal-soft)",
+                        border: "1px solid transparent",
+                        borderRadius: 6,
+                        color: "var(--color-signal-ink)",
+                        font: "500 10px/1 var(--font-sans)",
+                        padding: "3px 6px",
+                        cursor: busy ? "default" : "pointer",
+                        opacity: busy ? 0.5 : 1
+                      }}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                        <path d="M21 3v5h-5" />
+                      </svg>
+                      Repeat
                     </button>
                   )}
                   <button
                     type="button"
-                    title="Restore this prompt into the prompt bar"
+                    title="Load this prompt back into the prompt bar to edit or re-run"
                     onClick={(ev) => {
                       ev.stopPropagation();
                       onRestore && onRestore(session);
@@ -218,7 +256,7 @@ export default function SessionHistory({
                       flex: "0 0 auto",
                       background: "transparent",
                       border: "none",
-                      color: "var(--color-signal-ink)",
+                      color: "var(--text-secondary)",
                       font: "500 11px/1 var(--font-sans)",
                       padding: "3px 6px",
                       cursor: "pointer"
@@ -226,7 +264,7 @@ export default function SessionHistory({
                     onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
                     onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
                   >
-                    Restore
+                    Reuse prompt
                   </button>
                 </div>
 
@@ -280,6 +318,35 @@ export default function SessionHistory({
                           Restore graph to this point
                         </button>
                       )}
+                      {isRestored(session.sessionId) && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            onRepeat(session);
+                          }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            background: "var(--color-signal-soft)",
+                            border: "1px solid transparent",
+                            borderRadius: "var(--radius-buttons)",
+                            color: "var(--color-signal-ink)",
+                            font: "500 11px/1 var(--font-sans)",
+                            padding: "6px 10px",
+                            cursor: busy ? "default" : "pointer",
+                            opacity: busy ? 0.5 : 1
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                            <path d="M21 3v5h-5" />
+                          </svg>
+                          Repeat turn
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={(ev) => {
@@ -296,7 +363,7 @@ export default function SessionHistory({
                           cursor: "pointer"
                         }}
                       >
-                        Restore prompt
+                        Reuse prompt
                       </button>
                     </div>
                   </div>
