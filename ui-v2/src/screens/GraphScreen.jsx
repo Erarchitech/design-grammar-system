@@ -108,6 +108,12 @@ export default function GraphScreen({ active, onBack, project }) {
   const [busy, setBusy] = React.useState(false);
   const [drSessions, setDrSessions] = React.useState([]); // raw persisted turns for the Session History panel
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  // Graph restore points: an in-memory checkpoint of the built datascape taken
+  // just before each mutating (ingest/edit) turn, keyed by that turn's id. Lets
+  // the user rewind the graph view to how it looked before any past turn.
+  const snapshotsRef = React.useRef({});
+  const [restoreIds, setRestoreIds] = React.useState([]);
+  const [restoredAt, setRestoredAt] = React.useState(null); // {sessionId, modeLabel, ts} | null
 
   /* ---- viewport state persistence (camera pan/zoom per project) ---- */
   const readViewportStore = (key) => {
@@ -138,6 +144,7 @@ export default function GraphScreen({ active, onBack, project }) {
       const built = buildRings(raw);
       setData(built);
       if (engineRef.current) engineRef.current.setData(built);
+      setRestoredAt(null); // fetching live data exits any restore-point view
     } catch (err) {
       setLoadErr(err.message || "Could not reach Neo4j.");
     }
@@ -304,6 +311,10 @@ export default function GraphScreen({ active, onBack, project }) {
     let gone = false;
     setSession([]);
     setDrSessions([]);
+    // Restore points are project-scoped and in-memory; drop them on switch.
+    snapshotsRef.current = {};
+    setRestoreIds([]);
+    setRestoredAt(null);
     fetchDrSessions(project)
       .then((rows) => {
         if (gone) return;
@@ -375,6 +386,12 @@ export default function GraphScreen({ active, onBack, project }) {
     const sentText = mode === 2 ? "edit Rule_Id: " + editRuleId + " — " + txt : txt;
     const id = "t" + Date.now();
     const steps = STEPS[mode];
+    // Checkpoint the graph as it stands *before* this turn mutates it, so the
+    // turn can later be rewound. Query turns (mode 1) don't mutate → skip.
+    if (mode !== 1) {
+      snapshotsRef.current[id] = data || { rings: [], cross: [], xmap: {}, xPerRing: [] };
+      setRestoreIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    }
     setSession((s) =>
       s.concat([
         {
@@ -482,6 +499,33 @@ export default function GraphScreen({ active, onBack, project }) {
     setPromptVal(prompt);
   }, []);
 
+  // Rewind the datascape to the checkpoint captured before a given turn. This
+  // is a non-destructive view restore — the live Neo4j graph is untouched; the
+  // banner offers a one-click return to the live graph.
+  const restoreGraphPoint = React.useCallback((s) => {
+    const snap = snapshotsRef.current[s.sessionId];
+    if (!snap) return;
+    setData(snap);
+    if (engineRef.current) {
+      engineRef.current.clearSel();
+      engineRef.current.setData(snap);
+    }
+    setSel(null);
+    setSelBig(false);
+    setRestoredAt({
+      sessionId: s.sessionId,
+      modeLabel: s.mode === "edit" ? "edit" : s.mode === "query" ? "query" : "ingest",
+      ts: s.createdAt || ""
+    });
+  }, []);
+
+  const returnToLive = React.useCallback(() => {
+    setRestoredAt(null);
+    loadGraph();
+  }, [loadGraph]);
+
+  const restorePointSet = React.useMemo(() => new Set(restoreIds), [restoreIds]);
+
   /* -------- derived render data -------- */
   const rings = data?.rings || [];
   const ringN = rings[type] || null;
@@ -554,6 +598,27 @@ export default function GraphScreen({ active, onBack, project }) {
           <Chip selected onRemove={clearFilter}>
             {(searchProp === "*" ? "any" : searchProp === "__label" ? "label" : searchProp) + ' ~ "' + filterQ + '" · ' + matchCount + " nodes"}
           </Chip>
+        </div>
+      )}
+
+      {restoredAt && (
+        <div style={{ position: "absolute", left: "50%", top: filterOn ? 62 : 24, transform: "translateX(-50%)", zIndex: 6 }}>
+          <div
+            className="dg-frost"
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px 6px 12px", borderRadius: "var(--radius-buttons)", boxShadow: "var(--shadow-panel)", border: "1px solid var(--color-signal)" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-signal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            <span style={{ font: "500 11px/1.3 var(--font-sans)", color: "var(--color-ink)" }}>
+              Restore point · graph as before {restoredAt.modeLabel} turn
+              {restoredAt.ts ? " · " + String(restoredAt.ts).replace("T", " ").slice(0, 16) : ""}
+            </span>
+            <Button size="sm" variant="outline" onClick={returnToLive}>
+              Return to live
+            </Button>
+          </div>
         </div>
       )}
 
@@ -734,6 +799,8 @@ export default function GraphScreen({ active, onBack, project }) {
               open={historyOpen}
               onToggle={() => setHistoryOpen((v) => !v)}
               onRestore={restoreSession}
+              onRestorePoint={restoreGraphPoint}
+              restorePointIds={restorePointSet}
               filters={[
                 { value: "all", label: "All" },
                 { value: "ingest", label: "Ingest" },

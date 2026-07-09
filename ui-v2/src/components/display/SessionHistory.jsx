@@ -40,12 +40,14 @@ function formatRelativeDate(isoString) {
 }
 
 /**
- * @param sessions   array of {sessionId, mode, prompt, result, createdAt}
- * @param filters    filter <select> options, e.g. [{value:"all",label:"All"},…]
- * @param open       controlled expanded/collapsed state of the whole panel
- * @param onToggle   () => void — toggle panel open/closed
- * @param onRestore  (session) => void — user clicked Restore on a row
- * @param emptyLabel copy shown when there are no sessions at all
+ * @param sessions         array of {sessionId, mode, prompt, result, createdAt}
+ * @param filters          filter <select> options, e.g. [{value:"all",label:"All"},…]
+ * @param open             controlled expanded/collapsed state of the whole panel
+ * @param onToggle         () => void — toggle panel open/closed
+ * @param onRestore        (session) => void — reuse the turn's prompt
+ * @param onRestorePoint   (session) => void — rewind the graph to before this turn
+ * @param restorePointIds  Set of sessionIds that have a captured graph snapshot
+ * @param emptyLabel       copy shown when there are no sessions at all
  */
 export default function SessionHistory({
   sessions = [],
@@ -53,8 +55,11 @@ export default function SessionHistory({
   open = false,
   onToggle,
   onRestore,
+  onRestorePoint,
+  restorePointIds,
   emptyLabel = "No sessions yet"
 }) {
+  const hasPoint = (id) => !!(restorePointIds && restorePointIds.has(id) && onRestorePoint);
   const [filter, setFilter] = React.useState("all");
   const [displayCount, setDisplayCount] = React.useState(50);
   const [expandedId, setExpandedId] = React.useState(null);
@@ -171,26 +176,59 @@ export default function SessionHistory({
                   <span style={{ flex: "0 0 auto", font: "400 10px/1.3 var(--font-sans)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                     {formatRelativeDate(session.createdAt)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      onRestore && onRestore(session);
-                    }}
-                    style={{
-                      flex: "0 0 auto",
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--color-signal-ink)",
-                      font: "500 11px/1 var(--font-sans)",
-                      padding: "3px 6px",
-                      cursor: "pointer"
-                    }}
-                    onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
-                    onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
-                  >
-                    Restore
-                  </button>
+                  {hasPoint(session.sessionId) ? (
+                    <button
+                      type="button"
+                      title="Rewind the graph to how it looked before this turn"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        onRestorePoint(session);
+                      }}
+                      style={{
+                        flex: "0 0 auto",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 3,
+                        background: "transparent",
+                        border: "1px solid var(--color-hairline)",
+                        borderRadius: 6,
+                        color: "var(--color-signal-ink)",
+                        font: "500 10px/1 var(--font-sans)",
+                        padding: "3px 6px",
+                        cursor: "pointer"
+                      }}
+                      onMouseOver={(ev) => (ev.currentTarget.style.borderColor = "var(--color-signal)")}
+                      onMouseOut={(ev) => (ev.currentTarget.style.borderColor = "var(--color-hairline)")}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                        <path d="M3 3v5h5" />
+                      </svg>
+                      Restore point
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      title="Reuse this prompt"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        onRestore && onRestore(session);
+                      }}
+                      style={{
+                        flex: "0 0 auto",
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-secondary)",
+                        font: "500 11px/1 var(--font-sans)",
+                        padding: "3px 6px",
+                        cursor: "pointer"
+                      }}
+                      onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
+                      onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
+                    >
+                      Reuse
+                    </button>
+                  )}
                 </div>
 
                 {isExpanded && (
@@ -213,6 +251,54 @@ export default function SessionHistory({
                     <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Time</span>
                     <div style={{ font: "400 11px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>
                       {session.createdAt ? String(session.createdAt).replace("T", " ").slice(0, 16) : ""}
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--color-hairline)" }}>
+                      {hasPoint(session.sessionId) && (
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            onRestorePoint(session);
+                          }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            background: "var(--color-signal-soft)",
+                            border: "1px solid transparent",
+                            borderRadius: "var(--radius-buttons)",
+                            color: "var(--color-signal-ink)",
+                            font: "500 11px/1 var(--font-sans)",
+                            padding: "6px 10px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                            <path d="M3 3v5h5" />
+                          </svg>
+                          Restore graph to this point
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          onRestore && onRestore(session);
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid var(--color-hairline)",
+                          borderRadius: "var(--radius-buttons)",
+                          color: "var(--text-secondary)",
+                          font: "500 11px/1 var(--font-sans)",
+                          padding: "6px 10px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Reuse prompt
+                      </button>
                     </div>
                   </div>
                 )}
