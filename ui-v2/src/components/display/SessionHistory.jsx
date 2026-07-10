@@ -66,7 +66,6 @@ export default function SessionHistory({
   emptyLabel = "No sessions yet"
 }) {
   const hasPoint = (id) => !!(restorePointIds && restorePointIds.has(id) && onRestorePoint);
-  const isRestored = (id) => !!(onRepeat && restoredSessionId && restoredSessionId === id);
   const [filter, setFilter] = React.useState("all");
   const [displayCount, setDisplayCount] = React.useState(50);
   const [expandedId, setExpandedId] = React.useState(null);
@@ -214,10 +213,10 @@ export default function SessionHistory({
                       Restore
                     </button>
                   )}
-                  {isRestored(session.sessionId) && (
+                  {onRepeat && (
                     <button
                       type="button"
-                      title="Re-run this turn to re-apply it"
+                      title="Re-run this turn"
                       disabled={busy}
                       onClick={(ev) => {
                         ev.stopPropagation();
@@ -228,15 +227,17 @@ export default function SessionHistory({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 3,
-                        background: "var(--color-signal-soft)",
-                        border: "1px solid transparent",
+                        background: "transparent",
+                        border: "1px solid var(--color-hairline)",
                         borderRadius: 6,
-                        color: "var(--color-signal-ink)",
+                        color: "var(--color-ink)",
                         font: "500 10px/1 var(--font-sans)",
                         padding: "3px 6px",
                         cursor: busy ? "default" : "pointer",
                         opacity: busy ? 0.5 : 1
                       }}
+                      onMouseOver={(ev) => !busy && (ev.currentTarget.style.borderColor = "var(--color-hairline-strong)")}
+                      onMouseOut={(ev) => (ev.currentTarget.style.borderColor = "var(--color-hairline)")}
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
@@ -288,83 +289,6 @@ export default function SessionHistory({
                     <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Time</span>
                     <div style={{ font: "400 11px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>
                       {session.createdAt ? String(session.createdAt).replace("T", " ").slice(0, 16) : ""}
-                    </div>
-
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--color-hairline)" }}>
-                      {hasPoint(session.sessionId) && (
-                        <button
-                          type="button"
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            onRestorePoint(session);
-                          }}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            background: "var(--color-signal-soft)",
-                            border: "1px solid transparent",
-                            borderRadius: "var(--radius-buttons)",
-                            color: "var(--color-signal-ink)",
-                            font: "500 11px/1 var(--font-sans)",
-                            padding: "6px 10px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-                            <path d="M3 3v5h5" />
-                          </svg>
-                          Restore graph to this point
-                        </button>
-                      )}
-                      {isRestored(session.sessionId) && (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            onRepeat(session);
-                          }}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            background: "var(--color-signal-soft)",
-                            border: "1px solid transparent",
-                            borderRadius: "var(--radius-buttons)",
-                            color: "var(--color-signal-ink)",
-                            font: "500 11px/1 var(--font-sans)",
-                            padding: "6px 10px",
-                            cursor: busy ? "default" : "pointer",
-                            opacity: busy ? 0.5 : 1
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
-                            <path d="M21 3v5h-5" />
-                          </svg>
-                          Repeat turn
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          onRestore && onRestore(session);
-                        }}
-                        style={{
-                          background: "transparent",
-                          border: "1px solid var(--color-hairline)",
-                          borderRadius: "var(--radius-buttons)",
-                          color: "var(--text-secondary)",
-                          font: "500 11px/1 var(--font-sans)",
-                          padding: "6px 10px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Reuse prompt
-                      </button>
                     </div>
                   </div>
                 )}
