@@ -696,7 +696,7 @@ export default function GraphScreen({ active, onBack, project }) {
         </div>
       )}
 
-      {restoredAt && (
+      {restoredAt && !restoredAt.confirmed && (
         <div style={{ position: "absolute", left: "50%", top: filterOn ? 62 : 24, transform: "translateX(-50%)", zIndex: 6 }}>
           <div
             className="dg-frost"
@@ -710,9 +710,16 @@ export default function GraphScreen({ active, onBack, project }) {
               Restore point · graph as before {restoredAt.modeLabel} turn
               {restoredAt.ts ? " · " + String(restoredAt.ts).replace("T", " ").slice(0, 16) : ""}
             </span>
-            <Button size="sm" variant="outline" onClick={returnToLive}>
-              Return to live
-            </Button>
+            {!restoredAt.confirmed && (
+              <>
+                <Button size="sm" onClick={() => setRestoredAt((prev) => ({ ...prev, confirmed: true }))}>
+                  Confirm
+                </Button>
+                <Button size="sm" variant="outline" onClick={returnToLive}>
+                  Return to live
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
