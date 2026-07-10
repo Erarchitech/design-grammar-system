@@ -213,39 +213,6 @@ export default function SessionHistory({
                       Restore
                     </button>
                   )}
-                  {onRepeat && (
-                    <button
-                      type="button"
-                      title="Re-run this turn"
-                      disabled={busy}
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        onRepeat(session);
-                      }}
-                      style={{
-                        flex: "0 0 auto",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        background: "transparent",
-                        border: "1px solid var(--color-hairline)",
-                        borderRadius: 6,
-                        color: "var(--color-ink)",
-                        font: "500 10px/1 var(--font-sans)",
-                        padding: "3px 6px",
-                        cursor: busy ? "default" : "pointer",
-                        opacity: busy ? 0.5 : 1
-                      }}
-                      onMouseOver={(ev) => !busy && (ev.currentTarget.style.borderColor = "var(--color-hairline-strong)")}
-                      onMouseOut={(ev) => (ev.currentTarget.style.borderColor = "var(--color-hairline)")}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
-                        <path d="M21 3v5h-5" />
-                      </svg>
-                      Repeat
-                    </button>
-                  )}
                   <button
                     type="button"
                     title="Load this prompt back into the prompt bar to edit or re-run"
@@ -265,7 +232,7 @@ export default function SessionHistory({
                     onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
                     onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
                   >
-                    Reuse prompt
+                    Reuse
                   </button>
                 </div>
 

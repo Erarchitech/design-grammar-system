@@ -710,18 +710,6 @@ export default function GraphScreen({ active, onBack, project }) {
               Restore point · graph as before {restoredAt.modeLabel} turn
               {restoredAt.ts ? " · " + String(restoredAt.ts).replace("T", " ").slice(0, 16) : ""}
             </span>
-            {restoredAt.modeLabel !== "query" && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  const s = drSessions.find((d) => d.sessionId === restoredAt.sessionId);
-                  if (s) repeatSession(s);
-                }}
-                disabled={busy}
-              >
-                Repeat turn
-              </Button>
-            )}
             <Button size="sm" variant="outline" onClick={returnToLive}>
               Return to live
             </Button>
