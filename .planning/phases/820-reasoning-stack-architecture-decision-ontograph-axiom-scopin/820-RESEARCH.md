@@ -392,17 +392,19 @@ Not applicable in the usual sense — this phase's content (SWRL RDF vocabulary,
 
 **If this table is empty:** N/A — see rows above.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact per-builtin arity for DG's 8 confirmed builtins**
    - What we know: 8 builtins exist in live `v8-ui-smoke` data (`greaterThan`, `lessThan`, `or`, `equalTo`, `continuousFromTo`, `fillet`, `notEqual`, `towards`); `ARG {pos}` edges exist and are populated.
    - What's unclear: whether all 8 are strictly binary (2 args) or whether some (especially `continuousFromTo`, `towards`) need 3+ — this session sampled only `greaterThan`/`lessThan`/`notEqual`/`equalTo` patterns from `cypher_template.txt`'s worked example (all binary), not the others' actual `ARG` edge counts.
    - Recommendation: during Phase 820 execution, run `MATCH (a:Atom {type:'BuiltinAtom', project:'v8-ui-smoke'})-[r:ARG]->() RETURN a.iri, count(r) AS arity` against live Neo4j (a 30-second query) before finalizing the spec's BuiltinAtom mapping row.
+   - **RESOLVED:** operationally addressed by **Plan 02, Task 1** — the task runs this exact live arity query against Neo4j and cross-checks `training/dataset_schema.json` before finalizing the BuiltinAtom row, recording the observed arities in `spec/LPG-OWL-MAPPING.md`. The spec also mandates the `swrl:arguments` `rdf:List` form universally (strictly more general), so the answer cannot cause silent data loss regardless of the per-builtin count.
 
 2. **Is the `graph`-property tagging drift (Pitfall 1's finding) worth a separate quick-fix task, or purely a spec/spike scoping note?**
    - What we know: 2 atoms in `v8-ui-smoke` and 6+2 nodes in `phase14-smoke` are mistagged; this doesn't block the spike (label-based scoping works around it) or the mapping spec (which now documents the requirement).
    - What's unclear: whether this is worth a `MATCH ... SET n.graph = correct_value` one-off Cypher fix now (cheap) versus leaving it as a known-and-documented gap for Phase 821's real exporter to handle defensively.
    - Recommendation: leave it as a documented gap this phase (don't scope-creep into a data-repair task); Phase 821's planner should decide whether to add a defensive query or a one-time cleanup migration.
+   - **RESOLVED:** operationally addressed by **Plan 03, Task 1** — `820-DECISION.md` records the systemic tagging drift as a documented "Data-quality note" / known gap for Phase 821's exporter to handle defensively, and explicitly scopes NO data-repair task into Phase 820. The label-scoped export (Plan 01 Task 2 / Plan 02 Task 1's normative "Export scoping" subsection) makes the drift harmless for this phase's spike and the mapping contract.
 
 ## Environment Availability
 
