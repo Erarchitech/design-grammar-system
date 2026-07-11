@@ -46,7 +46,10 @@
   3. A spike against a real project's live OntoGraph data confirms whether a naive export would trivially report "consistent", and shows the chosen scoping approach avoids that false-positive outcome
   4. The sidecar-vs-embedded architecture decision (dedicated `dg-reasoner` service, isolated from `data-service`'s Speckle-publish/validation-run hot path) is confirmed and recorded as a Key Decision, unblocking Phase 821
 
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 820-01-PLAN.md — Throwaway spike: label-scoped Neo4j→RDF export + two-part HermiT proof (naive trivially-consistent vs hybrid seeded-contradiction unsatisfiable)
+- [ ] 820-02-PLAN.md — `spec/LPG-OWL-MAPPING.md`: SWRL-vocabulary Metagraph mapping, edge-property reification (ARG.pos, HAS_BODY/HAS_HEAD.order), IRI minting, UNA handling
+- [ ] 820-03-PLAN.md — `820-DECISION.md` + PROJECT.md Key Decisions (flip sidecar row, add hybrid axiom-scoping row)
 
 ### Phase 821: dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation
 
