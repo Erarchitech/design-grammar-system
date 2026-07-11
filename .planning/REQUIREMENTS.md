@@ -1,71 +1,48 @@
-# Requirements: Design Grammar System — Milestone v8.1 Platform Setup Regions
+# Requirements: Design Grammar System — Milestone v8.2 Connector Integration & Reasoning Engine
 
 **Defined:** 2026-07-11
 **Core Value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
-**Milestone goal:** Extend the V2 landing ring with four new region callouts — AI Engine, Connectors, Reasoner, DG API Documentation — each opening a real screen layer wired to backend services.
+**Milestone goal:** Wire the Grasshopper CONNECTOR component to the platform's credential mechanism, and replace the Reasoner screen's HermiT/Pellet placeholders with real OWL 2 DL + SHACL validation.
 
-Archived v8.0 requirements: `.planning/milestones/v8.0-REQUIREMENTS.md`.
+Archived v8.1 requirements: `.planning/milestones/v8.1-REQUIREMENTS.md`.
 
-## v8.1 Requirements
+## v8.2 Requirements
 
-Requirements for milestone v8.1. Each maps to roadmap phases 810–819.
+Requirements for milestone v8.2. Each maps to roadmap phases 820–829.
 
-### Ring Extension (RING)
+### Reasoner Integration (REAS)
 
-- [ ] **RING-01**: User sees four new region callouts — AI Engine, Connectors, Reasoner, DG API Docs — placed along the particle ring together with the existing Graph Viewer / Model Viewer / Projects callouts
-- [ ] **RING-02**: User can click each new callout to fly into its screen layer with the same transition grammar (520ms scale/opacity, fly-origin from the ring anchor) and back navigation as existing regions
-- [ ] **RING-03**: Ring anchor layout distributes all seven callouts without overlap at common desktop viewport sizes
+Continues the REAS category opened in v8.1 (REAS-01..03: placeholder selector). REAS-04..06 close out the deferred `REAS-F01` future requirement from v8.1 — real reasoning now replaces the placeholder.
 
-### AI Engine (AIENG)
+- [ ] **REAS-04**: The OntoGraph axiom-scoping approach is decided and documented (extend LLM ingestion to emit real `subClassOf`/`domain`/`range`/`disjointWith` axioms vs. scope reasoning to structural/referential checks vs. a hybrid), together with an LPG→OWL mapping spec covering edge-property reification (`Atom.ARG.pos`, `Rule.HAS_BODY/HAS_HEAD.order`)
+- [ ] **REAS-05**: A `dg-reasoner` sidecar service runs in docker-compose and exposes OWL 2 DL consistency-check and SHACL-validation endpoints, isolated from `data-service`'s Speckle-publish/validation-run hot path
+- [ ] **REAS-06**: User runs an OWL 2 DL consistency check from the Reasoner screen (HermiT default engine) and sees a pass/fail summary with unsatisfiable-class count, replacing the v8.1 "integration pending" placeholder label
 
-- [ ] **AIENG-01**: User can select an LLM provider (Anthropic / OpenAI / Ollama) and a model for that provider from the AI Engine screen
-- [ ] **AIENG-02**: User can manually input an API key, which is stored encrypted-at-rest via the existing data-service LLM gateway (`/llm/settings`)
-- [ ] **AIENG-03**: User can see the currently active provider/model and key status (set / not set) without the key value ever being exposed back to the browser
-- [ ] **AIENG-04**: User can test the configured connection and see success/failure feedback with an actionable error message
+### SHACL Validation (SHCL)
 
-### Connector Backend (CONNB)
+- [ ] **SHCL-01**: DesignState/Rule instance data is translated to RDF and validated via SHACL on each validation run, running alongside (not replacing) the existing SWRL-based VALIDATOR, with a documented rule-partition/precedence policy between the two
+- [ ] **SHCL-02**: SHACL violations surface through DG's existing ErrorMessageTemplates (What+Where+How-to-fix) with severity (info/warning/violation) mapped to a Solibri-style red/orange/yellow treatment — never raw RDF/SHACL vocabulary shown to the architect
 
-- [ ] **CONNB-01**: data-service exposes endpoints to create, list, and revoke connector credentials, scoped per connector type (14 connectors across 5 categories)
-- [ ] **CONNB-02**: Credential tokens are generated server-side, displayed once for copying, and stored hashed/encrypted-at-rest (following the existing llm-settings storage pattern)
-- [ ] **CONNB-03**: data-service exposes a token-authenticated heartbeat/ingest endpoint that connector components call from target software; each authenticated call updates that connector's status and last-connection timestamp
-- [ ] **CONNB-04**: A status query endpoint returns per-connector activation state (never connected / active / stale) and the last-connection date
+### Connector Grasshopper Integration (CONNG)
 
-### Connectors Screen (CONN)
-
-- [ ] **CONN-01**: User sees 14 connectors grouped in 5 categories — VPL Platforms (Grasshopper, Dynamo), BIM Authoring (Revit, Blender, Tekla, Archicad, Civil3D, Infraworks), BIM Coordination (Navisworks, Solibri), BCF Trackers (BIMCollab, BIMTrack), Visualization (Lumion, Twinmotion)
-- [ ] **CONN-02**: User can create a credential for a connector and copy the token for pasting into the connector component within the target software
-- [ ] **CONN-03**: User sees each connector's activation status and the date of its last connection (request or post to the Design Grammars platform)
-- [ ] **CONN-04**: User can revoke a connector credential, after which the token no longer authenticates
-
-### Reasoner (REAS)
-
-- [x] **REAS-01**: User can select a reasoner model for the Validation Graph from the Reasoner screen, with HermiT and Pellet offered as selectable entries
-- [x] **REAS-02**: The selected reasoner persists server-side (data-service settings store) and is shown as the active reasoner on revisit
-- [x] **REAS-03**: Placeholder reasoners are clearly marked as "integration pending" so users know selection does not yet change validation behavior
-
-### DG API Documentation (APID)
-
-- [x] **APID-01**: User can browse DG API documentation in-app in a Revit-API-style structure (sections → classes/endpoints → members, with a navigable tree and detail pane)
-- [x] **APID-02**: Documentation covers the connector-facing API — credential authentication, heartbeat/status, and validation publish endpoints — with request/response examples
-- [x] **APID-03**: Documentation content is extendable: new pages/sections are added via structured content files without touching viewer code
-
-### Integration (INTG)
-
-- [x] **INTG-01**: End-to-end: a credential created in the Connectors screen authenticates a simulated connector heartbeat, and the resulting status + last-connection date appear in the Connectors screen
-- [x] **INTG-02**: The rebuilt `design-grammars` container ships all four new regions while all v8.0 screens (Graph / Model / Projects, landing, auth) keep working
+- [ ] **CONNG-01**: The Grasshopper CONNECTOR component accepts a platform-issued credential/token (minted from the v8.1 Connectors screen, "Grasshopper" connector type) as a new additive input — existing Neo4jURI/User/Password/Database inputs and the component's GUID are preserved unchanged
+- [ ] **CONNG-02**: CONNECTOR shows in-canvas error feedback (GH runtime message, existing `AddRuntimeMessage`/ErrorMessageTemplates pattern) when the platform credential is invalid, revoked, or expired
 
 ## Future Requirements
 
-Deferred. Tracked but not in the v8.1 roadmap.
+Deferred. Tracked but not in the v8.2 roadmap.
 
 ### Reasoner Integration
 
-- **REAS-F01**: Selected reasoner actually drives Validation Graph inference (HermiT/Pellet or successor integrated as a real reasoning service)
+- **REAS-F02**: Explanation/justification UX for OWL reasoning failures — translate axiom-unsatisfiability justifications into plain language (Protégé-style "Explain inference"), deferred until the pass/fail summary has been used in practice
+- **REAS-F03**: TBox→SHACL shape auto-derivation — single source of truth generating both OWL constraints and SHACL shapes automatically; real open-world/closed-world design tension needs its own design pass
 
 ### Connectors
 
-- **CONN-F01**: Actual connector plugins for target software (Revit add-in, Dynamo package, etc.) — v8.1 only ships platform-side credentials + API
-- **CONN-F02**: Per-credential usage analytics / request logs beyond last-connection date
+- **CONN-F01**: Actual connector plugins for target software beyond Grasshopper (Revit add-in, Dynamo package, etc.) — carried forward from v8.1
+- **CONN-F02**: Per-credential usage analytics / request logs beyond last-connection date — carried forward from v8.1
+- **CONN-F03**: Pre-emptive credential status display on CONNECTOR (live active/stale/revoked shown before a validation run, via the existing heartbeat endpoint)
+- **CONN-F04**: Per-connector-type scoping surfaced explicitly in the Grasshopper UX (today implicit in the backend registry)
 
 ## Out of Scope
 
@@ -73,11 +50,12 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Building the connector plugins themselves (GH/Dynamo/Revit components) | v8.1 delivers the platform side: credentials, heartbeat API, docs. Plugins are separate deliverables |
-| Real HermiT/Pellet reasoning integration | Placeholders only per milestone brief; real integration when reasoner architecture is elaborated |
-| OAuth/token-exchange flows for connectors | Manual copy-paste credential model is the explicit v8.1 design |
-| Auto-generated API docs from OpenAPI | Hand-authored structured content files; generation can come later without changing the viewer |
-| Mobile layout for new screens | Desktop/web-first for architect workflows (project-wide) |
+| Replacing the SWRL VALIDATOR with SHACL | SHACL ships as a complementary, additive validation layer this milestone per the explicit milestone framing; SWRL already encodes DG's rule semantics (violation-inverted body atoms) and a wholesale swap is a separate future-milestone decision |
+| Running OWL DL consistency reasoning on every validation run (same cadence as SHACL) | TBox reasoning is open-world/schema-level and answers a different question than per-design instance validation; conflating the two cadences into one status misleads architects and wastes cycles — OWL checks run only on-demand from the Reasoner screen or on ontology-export change |
+| Exposing raw SHACL/RDF validation report JSON in the UI | Architects have no semantic-web background; raw `sh:focusNode`/`sh:sourceShape` output is meaningless without translation through ErrorMessageTemplates |
+| Full Protégé-style ontology editor in the Reasoner screen | Massively out of scope — v8.2 reasons against the existing `DesignGrammar-V7.owl` export, it does not author it |
+| Storing the raw CONNECTOR credential/token inside the `.gh` file | `.gh` files are shared/versioned across a team; baking a `dgc_` secret into canvas state is a credential-leak vector and contradicts the v8.1 "shown once" token pattern |
+| Actual connector plugins for non-Grasshopper software (Revit, Dynamo, etc.) | v8.2 only wires the Grasshopper CONNECTOR component; other target-software plugins are separate future deliverables (tracked as CONN-F01) |
 
 ## Traceability
 
@@ -85,36 +63,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RING-01 | Phase 810 | Pending |
-| RING-02 | Phase 810 | Pending |
-| RING-03 | Phase 810 | Pending |
-| AIENG-01 | Phase 811 | Pending |
-| AIENG-02 | Phase 811 | Pending |
-| AIENG-03 | Phase 811 | Pending |
-| AIENG-04 | Phase 811 | Pending |
-| CONNB-01 | Phase 812 | Pending |
-| CONNB-02 | Phase 812 | Pending |
-| CONNB-03 | Phase 812 | Pending |
-| CONNB-04 | Phase 812 | Pending |
-| CONN-01 | Phase 813 | Pending |
-| CONN-02 | Phase 813 | Pending |
-| CONN-03 | Phase 813 | Pending |
-| CONN-04 | Phase 813 | Pending |
-| REAS-01 | Phase 814 | Complete |
-| REAS-02 | Phase 814 | Complete |
-| REAS-03 | Phase 814 | Complete |
-| APID-01 | Phase 815 | Complete |
-| APID-02 | Phase 815 | Complete |
-| APID-03 | Phase 815 | Complete |
-| INTG-01 | Phase 816 | Complete |
-| INTG-02 | Phase 816 | Complete |
+| REAS-04 | TBD | Pending |
+| REAS-05 | TBD | Pending |
+| REAS-06 | TBD | Pending |
+| SHCL-01 | TBD | Pending |
+| SHCL-02 | TBD | Pending |
+| CONNG-01 | TBD | Pending |
+| CONNG-02 | TBD | Pending |
 
 **Coverage:**
 
-- v8.1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0 ✓
+- v8.2 requirements: 7 total
+- Mapped to phases: 0
+- Unmapped: 7 (pending roadmap creation)
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-11 after roadmap creation*
