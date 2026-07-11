@@ -1,14 +1,14 @@
 ---
 phase: 820
 plan: 01
-status: partial
-tasks_completed: 2
+status: complete
+tasks_completed: 3
 tasks_total: 3
 ---
 
 # Plan 820-01 SUMMARY — Axiom-Scoping Spike
 
-**Status:** 2/3 tasks complete. Task 3 (reasoner runs) deferred pending JRE availability.
+**Status:** Complete ✓ — All 3 tasks done. Spike evidence captured.
 
 ## Task 1 — Package Legitimacy Gate ✓
 
@@ -24,13 +24,14 @@ tasks_total: 3
 - **Pitfall 1 mitigation:** `export.py` scopes Cypher by node **label** (not `graph` property), so the two mistagged `R_DOOR_ORIENTATION_V` atoms are correctly captured.
 - **SWRL export validated:** `grep -q "swrl:Imp" spike/output/naive_export.ttl` passes — Metagraph rules map to standard W3C SWRL RDF vocabulary.
 
-## Task 3 — Two-Part Reasoner Proof ⏳
+## Task 3 — Two-Part Reasoner Proof ✓
 
-- **Scripts ready:** `run_naive.py` and `run_hybrid.py` are complete with proper structure (rdflib Turtle→NTriples conversion, Owlready2 `sync_reasoner()`, inconsistent_classes() assertions, evidence files).
-- **Blocker:** HermiT requires JRE 17 (bundled JAR via Owlready2). No JRE installed on the dev host. The plan specifies a throwaway `python:3.11-slim` + `openjdk-17-jre-headless` Docker container, but the safety classifier for command execution is temporarily unavailable.
-- **Expected outcome (naive):** zero inconsistent classes — the documented trivial-consistency false positive.
-- **Expected outcome (hybrid):** `ex:SlidingDoor` reported unsatisfiable — the non-trivial result the naive export misses, proving the hybrid axiom scoping works.
-- **To resume:** Run `docker run --rm --network design-grammar-system_default -v "{repo}:/repo" -w /repo python:3.11-slim bash -c "apt-get install -y openjdk-17-jdk-headless && pip install owlready2 rdflib neo4j && python .../spike/run_naive.py && python .../spike/run_hybrid.py"`.
+- **Commit:** `99cf3a5 feat(820-01): fix run_hybrid.py builtin stripping + capture HermiT reasoner evidence`
+- **Naive run result:** 0 inconsistent classes. ASSERTION PASS — "the naive export reasons as trivially 'consistent'." This is the documented FALSE POSITIVE: the flat export carries no subClassOf/domain/range/disjointWith axioms, so no class can be unsatisfiable.
+- **Hybrid run result:** 2 inconsistent classes: `[owl.Nothing, ex.SlidingDoor]`. ASSERTION PASS — "HermiT caught the seeded TBox contradiction that the naive export could not express."
+- **Fix applied:** `run_hybrid.py` was missing the `strip_hermit_unsupported()` call that `run_naive.py` had — HermiT crashes on SWRL builtin atoms. Added import + stripping step (5 builtin-using rules stripped from both runs).
+- **Runtime:** throwaway Docker container (`python:3.11-slim` + `openjdk-21-jre-headless`). Naive: 0.43s HermiT. Hybrid: 1.23s HermiT.
+- **Evidence files:** `spike/output/naive_result.txt`, `spike/output/hybrid_result.txt`
 
 ## Self-Check
 
@@ -38,8 +39,8 @@ tasks_total: 3
 
 | must_have | Status | Evidence |
 |-----------|--------|----------|
-| run_naive.py reports zero inconsistent classes | ⏳ deferred | Script ready; JRE unavailable for execution |
-| run_hybrid.py reports SlidingDoor unsatisfiable | ⏳ deferred | Script ready; JRE unavailable for execution |
+| run_naive.py reports zero inconsistent classes | ✓ PASS | HermiT output: `Inconsistent classes: []`, Count: 0, 0.43s runtime |
+| run_hybrid.py reports SlidingDoor unsatisfiable | ✓ PASS | HermiT output: `Inconsistent classes: [owl.Nothing, ex.SlidingDoor]`, Count: 2, 1.23s runtime |
 | export.py scopes by label (captures mistagged atoms) | ✓ PASS | `export.py` uses `MATCH (a:Atom {project: $project})` label-scoped Cypher |
 | rdflib-parsed axiom counts are authoritative | ✓ PASS | `axiom_counts.txt`: 65 subClassOf, 101 domain, 110 range, 0 disjointWith (rdflib-parsed, not grep) |
 | Spike reproducible from README.md | ✓ PASS | `spike/README.md` documents env vars, container, run order |
@@ -51,17 +52,17 @@ tasks_total: 3
 | `spike/requirements.txt` | ✓ | `pip freeze`-style with pinned versions |
 | `spike/export.py` | ✓ | Label-scoped Cypher → RDFLib Turtle |
 | `spike/run_naive.py` | ✓ | Owlready2 HermiT naive run |
-| `spike/run_hybrid.py` | ✓ | Owlready2 HermiT hybrid+contradiction run |
+| `spike/run_hybrid.py` | ✓ | Owlready2 HermiT hybrid+contradiction run (fixed builtin stripping) |
 | `spike/README.md` | ✓ | Reproduction steps |
-| `spike/output/naive_result.txt` | ✗ | Not yet generated (needs JRE) |
-| `spike/output/hybrid_result.txt` | ✗ | Not yet generated (needs JRE) |
+| `spike/output/naive_result.txt` | ✓ | HermiT output: 0 inconsistent classes |
+| `spike/output/hybrid_result.txt` | ✓ | HermiT output: SlidingDoor unsatisfiable |
 | `spike/output/axiom_counts.txt` | ✓ | rdflib-parsed TBox counts |
 | `spike/output/naive_export.ttl` | ✓ | 25KB Turtle export |
 | `spike/output/hybrid_export.ttl` | ✓ | 135KB Turtle export |
 
 ### Deviations
 
-- **Task 3 deferred:** Reasoner execution blocked by JRE unavailability on host + Docker command classifier temporarily down. The spike scripts and export pipeline are complete and committed; the two-part HermiT proof is execution-only (no code changes needed). Resume by running the containerized commands documented above and in `spike/README.md`.
+- None. All tasks complete. The original executor crashed mid-Task 3 (session limit); the run_hybrid.py builtin-stripping fix and Docker-based reasoner execution were completed in the continuation session.
 
 ## Key Files Created
 
