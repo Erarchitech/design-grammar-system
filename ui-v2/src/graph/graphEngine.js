@@ -211,19 +211,37 @@ export default class GraphEngine {
       v.addEventListener("error", () => {
         this._thinkVideoFailed = true;
       });
-      v.addEventListener("stalled", () => {
-        this._thinkVideoFailed = true;
-      });
-      v.src = "/dg-think-sphere.mp4";
       this._thinkVideo = v;
+      // Fetch to a blob URL instead of assigning the network URL directly:
+      // Chrome defers <video> network loading in background tabs (and fires
+      // non-fatal "stalled"), which would strand the sphere on its fallback.
+      // A blob source is local data, so the element loads immediately.
+      fetch("/dg-think-sphere.mp4")
+        .then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.blob();
+        })
+        .then((b) => {
+          v.src = URL.createObjectURL(b);
+          // if a turn started before the blob arrived, start playback now —
+          // play() called before src exists is a no-op and leaves frame 0 stuck
+          if (this._thinkTarget > 0) {
+            const p = v.play();
+            if (p && typeof p.catch === "function") p.catch(() => {});
+          }
+        })
+        .catch(() => {
+          this._thinkVideoFailed = true;
+        });
     } catch {
       this._thinkVideoFailed = true;
     }
   }
   startThinking() {
     this._thinkTarget = 1;
-    if (this._thinkVideo && !this._thinkVideoFailed) {
-      const p = this._thinkVideo.play();
+    const v = this._thinkVideo;
+    if (v && !this._thinkVideoFailed) {
+      const p = v.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
   }
@@ -240,12 +258,20 @@ export default class GraphEngine {
     if (this._think < 0.01 && target === 0) {
       this._think = 0;
       if (this._thinkVideo && !this._thinkVideo.paused) this._thinkVideo.pause();
+    } else if (this._think > 0.01) {
+      // self-heal: keep the loop actually running while the sphere is visible
+      // (covers play()/src races and browser-initiated pauses)
+      const v = this._thinkVideo;
+      if (v && this._thinkVideoReady && v.paused) {
+        const p = v.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      }
     }
   }
   drawThinkingCore(cx, cy, base, t) {
     const ctx = this._ctx;
     if (!ctx || this._think < 0.005) return;
-    const R = base * 0.3;
+    const R = base * 0.033;
     // local dark backdrop first — the light paper canvas needs a black field
     // for the white wisps to glow against under a "lighter" composite
     const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
@@ -355,11 +381,11 @@ export default class GraphEngine {
         len = Math.hypot(dx, dy) || 1;
       const ux = dx / len,
         uy = dy / len;
-      // streams originate at the sphere's rim (base*0.24), not the exact core —
+      // streams originate at the sphere's rim (base*0.026), not the exact core —
       // combined with the intensity hold in updateThinking() this reads as
       // pouring continuously out of the still-glowing sphere
-      const ox = cx + ux * base * 0.24,
-        oy = cy + uy * base * 0.24;
+      const ox = cx + ux * base * 0.026,
+        oy = cy + uy * base * 0.026;
       const tailFade = st.p > 1 ? Math.max(0, 1 - (st.p - 1) / 0.25) : 1;
 
       for (const part of st.parts) {
@@ -864,22 +890,28 @@ export default class GraphEngine {
     // divergence field on the active layer
     if (this.fieldOn) this.drawField(act, base, cx, cy, this._lt || 0);
 
-    // active layer edges — translucent ink arcs bowed toward the centre
+    // active layer edges — translucent ink arcs bowed toward the centre.
+    // Edges fade out while the thinking sphere is active (edgeVis → 0).
     const rg = this.rings[act];
-    ctx.strokeStyle = TH.edge;
-    ctx.lineWidth = 1;
-    for (const e of rg.edges) {
-      if (filt && !(filt.has(e[0]) && filt.has(e[1]))) continue;
-      const n1 = rg.nodes[e[0]],
-        n2 = rg.nodes[e[1]];
-      const [x1, y1] = posOf(act, n1),
-        [x2, y2] = posOf(act, n2);
-      const mx = (x1 + x2) / 2,
-        my = (y1 + y2) / 2;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cx + (mx - cx) * 0.72, cy + (my - cy) * 0.72, x2, y2);
-      ctx.stroke();
+    const edgeVis = 1 - this._think;
+    if (edgeVis > 0.02) {
+      ctx.globalAlpha = edgeVis;
+      ctx.strokeStyle = TH.edge;
+      ctx.lineWidth = 1;
+      for (const e of rg.edges) {
+        if (filt && !(filt.has(e[0]) && filt.has(e[1]))) continue;
+        const n1 = rg.nodes[e[0]],
+          n2 = rg.nodes[e[1]];
+        const [x1, y1] = posOf(act, n1),
+          [x2, y2] = posOf(act, n2);
+        const mx = (x1 + x2) / 2,
+          my = (y1 + y2) / 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(cx + (mx - cx) * 0.72, cy + (my - cy) * 0.72, x2, y2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
     }
 
     // selection edges (same-ring + cross-layer), highlighted and labelled
@@ -888,6 +920,7 @@ export default class GraphEngine {
       const selNd = this.rings[sel.r].nodes[sel.i];
       const tags = [];
       ctx.lineWidth = 1.25;
+      ctx.globalAlpha = edgeVis; // selection edges hide with the rest while thinking
       const srg = this.rings[sel.r];
       for (const e of srg.edges) {
         const j = e[0] === sel.i ? e[1] : e[1] === sel.i ? e[0] : -1;
@@ -917,7 +950,8 @@ export default class GraphEngine {
         ctx.stroke();
         tags.push({ x1: sx, y1: sy, x2: px, y2: py, label: p.label || "relatedTo" });
       }
-      this._selTags = tags;
+      ctx.globalAlpha = 1;
+      this._selTags = edgeVis > 0.05 ? tags : null;
       void selNd;
     } else this._selTags = null;
 
