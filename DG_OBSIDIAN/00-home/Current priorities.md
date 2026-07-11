@@ -7,7 +7,7 @@ date: 2026-07-11
 
 ## Active
 
-1. **v8.1 Platform Setup Regions — Phases 810-816** — 🔄 Active. Phases 810–813 executed (2026-07-11). Phase 814 (Reasoner Screen) executed (2026-07-11): HermiT/Pellet placeholder selector. Phase 815 (DG API Documentation) executed (2026-07-11): documentation viewer. Phase 816 (Integration & Deployment) — EXECUTING. 23 commits. See [[sessions/2026-07-11 v8.1 milestone init and phases 810-813|session]], [[sessions/2026-07-11 Phase 814 Reasoner Screen execution + 815-816 progress|session]] and [[decisions/Milestone-derived phase numbering convention|phase numbering decision]].
+1. **v8.1 Platform Setup Regions — Phases 810-816** — ✅ Complete. All 7 phases executed and verified (2026-07-11). Completed with Phase 816 Integration & Deployment: proxy audit (fixed missing /reasoner/ nginx route), E2E connector lifecycle verified, deployment cutover with smoke checks. 4 commits. See [[sessions/2026-07-11 Phase 816 Integration & Deployment execution|session]].
 2. **v9.0 AI Workflow Intelligence — Phases 28-40** — Paused. Phase 28 (Cloud LLM Connector) executed and shipped (6/7 must-haves, 1 UAT pending: E2E provider switch). Phases 29-40 fully planned but not started: DG-aware context layer, orchestration eval, rules-ingest upgrade, and the 6-phase Computgraph serialization pipeline (32-37: serialization core, canvas bridge, tagging components, LLM recognition+preview, persistence+display, structure validation). Resume by planning Phase 29. See [[sessions/2026-07-11 v9.0-v10.0 global phase renumbering|session]].
 2. **v10.0 Script Intelligence — Phases 41-49** — Fully planned, isolated (do not activate until v9.0 ships). Wire substrate persistence, component KB, bridge write commands, cluster introspection, script generation/editing, structure rule grammar, consulting assistant. See `.planning/milestones/v10.0-ROADMAP.md`.
 3. **v8.0 Session History COMPLETED (2026-07-11)** — Session History panel with Restore points ported to V2 Graph Viewer. New SessionHistory component with collapsible filterable list, Restore (graph rewind), Reuse (load prompt), Confirm button. Checkpoints persisted to localStorage. 6 commits. See [[sessions/2026-07-11 Session History panel with Restore points|session]].
@@ -22,7 +22,8 @@ date: 2026-07-11
 
 ## Upcoming
 
-- **v4.0 BOT Ontology Bridge** — Next milestone
+- **v9.0 AI Workflow Intelligence — Phases 28-40** — Next after v8.1. Phase 28 (Cloud LLM Connector) executed and shipped (6/7 must-haves, 1 UAT pending). Plan Phase 29 (DG-aware context layer).
+- **v4.0 BOT Ontology Bridge** — After v9.0
 - Рецензирование T2–T4 соавтором или научным руководителем
 - Реализация DesignSpaceGraph (T4) as milestone after v8.0
 - Суррогатные модели для метрик после накопления >200 DesignSpacePoints
@@ -32,6 +33,8 @@ date: 2026-07-11
 
 ## Completed Recently
 
+- **v8.1 milestone complete (Phases 810-816)** — 2026-07-11. All 7 phases of the Platform Setup Regions milestone executed. Phase 816 (Integration & Deployment) completed: proxy audit with /reasoner/ route fix, E2E connector lifecycle (INTG-01) verified, deployment cutover with smoke tests (INTG-02). 4 commits. See [[sessions/2026-07-11 Phase 816 Integration & Deployment execution|session]].
+- **Phase 815 DG API Documentation executed** — 2026-07-11. Revit-API-style documentation browser with tree navigation, 5 block types (text/code/endpoint/table/note), 7 content modules cross-checked against `data-service/app.py`. Critical glob fix from code review (`##-*.js` → `[0-9][0-9]-*.js`). 8 commits, build passes (940 modules), 7/7 verification passed. See [[sessions/2026-07-11 Phase 815 DG API Documentation execution|session]].
 - **Phase 814-816 progress** — 2026-07-11. Phase 814 (Reasoner Screen) executed: HermiT/Pellet placeholder selector with JSON persistence, 8 tests, REAS-01/02/03 satisfied. Phase 815 (DG API Documentation) executed: doc browser with tree navigation. Phase 816 started. 8 commits. See [[sessions/2026-07-11 Phase 814 Reasoner Screen execution + 815-816 progress|session]].
 - **v8.1 milestone init + phases 810–813 execution** — 2026-07-11. 4 новых setup региона на landing ring (AI Engine, Connectors, Reasoner, DG API Docs). Ring extension + skeletons (810), AI Engine screen (811), connector credential backend — 14 connectors, dgc_ tokens, heartbeat (812), Connectors screen (813). 15 коммитов. See [[sessions/2026-07-11 v8.1 milestone init and phases 810-813|session]].
 - **v9.0/v10.0 global phase renumbering + v8.0 consistency fix** — 2026-07-11. v9.0 renumbered 1–13 → 28–40, v10.0 renumbered 1–9 → 41–49 (continuous global numbering following v8.0's Phase 27); Phase 27's missing MVIEW3D-01..03 requirements added, its split active/archive directory consolidated, MILESTONES/ROADMAP/STATE/PROJECT synced. 2 commits (`08980a8`, `26f98b7`). See [[sessions/2026-07-11 v9.0-v10.0 global phase renumbering|session]] and [[decisions/Global phase numbering continues across milestones|decision]].
