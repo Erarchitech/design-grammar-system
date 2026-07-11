@@ -70,6 +70,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/v8.2 hybrid axiom-scoping spike proven|v8.2: Hybrid axiom-scoping (static TBox ∪ live export + curated disjointness)]]
 - [[decisions/dg-reasoner sidecar owns the Cypher to RDF pipeline with sync API|Phase 821 (v8.2): dg-reasoner owns Cypher→RDF pipeline — custom translator, sync API, hybrid union in 821]]
 - [[decisions/reasoner-screen-phases-checks-results|Phase 822 (v8.2): Reasoner Screen — four-state verdict display, per-card Run on HermiT, in-session result persistence]]
+- [[decisions/Phase 822 monochromatic verdict mapping onto DSYS-01|Phase 822: Monochromatic verdict mapping — weight/opacity/glyph instead of green/amber hue]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -186,6 +187,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-11 v8.2 milestone init — Connector Integration and Reasoning Engine|2026-07-11 v8.2 milestone init — Connector Integration & Reasoning Engine]]
 - [[sessions/2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision and OntoGraph Axiom Scoping|2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping]]
 - [[sessions/2026-07-11 Phase 821 context discussion — dg-reasoner sidecar and RDF translation|2026-07-11 Phase 821 context discussion — dg-reasoner sidecar & RDF translation]]
+- [[sessions/2026-07-12 Phase 822 UI-SPEC|2026-07-12 Phase 822 UI design contract — monochromatic verdict reconciliation]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
