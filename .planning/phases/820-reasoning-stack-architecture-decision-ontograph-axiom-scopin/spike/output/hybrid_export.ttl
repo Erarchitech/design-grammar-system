@@ -1,0 +1,2710 @@
+@prefix dg: <http://example.org/design-grammar#> .
+@prefix dgc: <http://example.org/design-grammar/comp#> .
+@prefix dgm-spike: <http://example.org/design-grammar/meta#> .
+@prefix dgs: <http://example.org/design-grammar/spec#> .
+@prefix dgv: <http://example.org/design-grammar/valid#> .
+@prefix ex: <http://example.org/design-grammar/ex#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix swrlb: <http://www.w3.org/2003/11/swrlb#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/design-grammar> a owl:Ontology ;
+    rdfs:label "Design Grammar System Ontology"@en ;
+    rdfs:comment """
+            System-level ontology for the Design Grammar System (DG).
+            Defines the common classes that control data flow in the DG Grasshopper
+            plugin and Neo4j database. Domain-specific classes (Building, UrbanBlock, etc.)
+            are dynamically generated from user prompts via the Grammar Viewer and are NOT
+            part of this ontology.
+
+            Graph layers:
+            1. Ontograph — dynamically generated domain classes and properties (not defined here)
+            2. Metagraph — SWRL rule structure (Rule, Atom, Variable, Literal, Builtin)
+            3. Validgraph — validation runs, entity results, integration config
+            4. SpecGraph — project specification notes and tags
+            5. Computgraph — DCM parametric design model (Algorithm, Procedure, Pattern, Parameter, Interface)
+
+            Schema version: v7
+        """@en ;
+    rdfs:seeAlso "v3.0 requirements: Variable Typing (VTYP-01..04), Composable State (CMPST-01..08), Component Contracts (CTRCT-01..09), Schema & Data (SCHM-01..06), Integration (INTG-01..03). v3.1 ontology adds: ObjectInstance, GeoRef, IdRef classes; VariableKindValue, VariableScopeValue, DesignStateKindValue enum classes; full OWL characteristics on object properties; propValue on ValidationEntity (SCHM-05). v3.2 adds cross-ontology alignments to SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL, and OWL meta-schema — see ONTOLOGY-ALIGNMENT.md for rationale. v3.3 adds explicit per-layer class hubs (LayerEntity + four layer hubs). v3.4 unifies the four-layer enum and hub structure via OWL 2 punning (dg:Ontograph / dgm:Metagraph / dgv:Validgraph / dgs:SpecGraph each serve as both a class and a NamedIndividual of dg:GraphLayer), converts dg:graph annotation values to resource references, and adds annotation enrichment for 17 external superclasses. v4.0 splits cross-vocabulary alignments into a separate facade ontology (DesignGrammar-aligned.owl) per Option B in HIERARCHY-OPTIMIZATION.md — this core file now contains only DG content with no external imports. v4.1 eliminates two degenerate enum classes (DesignStateKindValue and VariableKindValue) whose values duplicated existing class hierarchies; replaces them with owl:disjointUnionOf on DesignState and Variable; closes GraphLayer with owl:oneOf; adds VariableScope derivation axioms; and removes the now-redundant dgv:kind and dgm:variableKind ObjectProperties. v5.0 adds Computgraph layer (5th layer) for DCM parametric design model aligned with Grasshopper: Algorithm, Procedure, Pattern, Parameter, Interface, Geometry; adds RuleSet and Reasoner to Metagraph; introduces cross-layer bridge dgc:attributeOf (Atom→Parameter); splits external vocabulary extensions into per-vocabulary files (BOT, Topologic). v6.0 introduces the over-layer dg:Core band (Gero FBS Object/Function/Behavior/Structure, Geometry, Topology, DesignState{ObjState,ParamState}, unified Session); shortens the layer IRIs (meta#/valid#/comp#); renames the Knowledge layer to Spec (spec#: SpecGraph/SpecClass/SpecNote/SpecTag); relocates Reasoner to the Validgraph (= Grasshopper 'Validator' component); drops dgc:ParametricState; and adds dg:objectRef, dg:definesFunction, dgv:refersToGeometry, dgm:validates. v6.1 vendor-neutralizes the Validgraph — renames dgv:speckleProjectId→dgv:externalProjectId, scrubs Speckle/Rhino vendor references from comments and example instances so the ontology models a generic external geometry/viewer integration; external-vocabulary alignments (standards, BOT, Topologic) are retained as legitimate links. v7.0 renames V6 to match the GH_DesignGrammars.pdf component schema notation (ontology/V7-INVESTIGATION.md is the naming authority): layer-hub casing to Ontograph/Validgraph/Computgraph (Metagraph and SpecGraph unchanged); the OntoGraph reification classes are renamed to ObjProperty/DataProperty (the OWL 2 property-declaration language constructs themselves are untouched); the two design-state kinds are renamed to ObjState/ParamState, plus a new PropState (Rule+DataProperty+PropValue composition); the validation-run class is renamed to Run; the reinstatement-status enum is renamed to ReStatus(Value); the two rule-text/title properties are renamed to SWRL/RuleName, plus a new RuleDescription; new Validgraph Boolean properties SendStatus (single per Run) and ValidStatus (per-ObjState list, index-matched, overall pass derived via AND, not stored). See ontology/V6-to-V7-mapping.md for the full old->new IRI table (recovery-only guard for existing publications referencing V6 names)."@en ;
+    owl:versionInfo "7.0" .
+
+dg:Class_Building a dg:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Building"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:Building" ;
+    dg:label "Building" ;
+    dg:project "UrbanBlock" .
+
+dg:Class_LivingUnit a dg:Class,
+        owl:NamedIndividual ;
+    rdfs:label "LivingUnit"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:LivingUnit" ;
+    dg:label "LivingUnit" ;
+    dg:project "TestA" .
+
+dg:Class_Street a dg:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Street"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:Street" ;
+    dg:label "Street" ;
+    dg:project "TestA" .
+
+dg:Class_Unit a dg:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Unit"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:Unit" ;
+    dg:label "Unit" ;
+    dg:project "Test Project" .
+
+dg:DProp_hasHeightM a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "hasHeightM"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:hasHeightM" ;
+    dg:project "UrbanBlock" ;
+    dg:range "xsd:decimal" .
+
+dg:DProp_hasWidthM a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "hasWidthM"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:hasWidthM" ;
+    dg:project "TestA" ;
+    dg:range "xsd:decimal" .
+
+dg:DProp_hasWindowCount a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "hasWindowCount"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:hasWindowCount" ;
+    dg:project "TestA" ;
+    dg:range "xsd:integer" .
+
+dg:DProp_violatesMaxHeight a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "violatesMaxHeight"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:violatesMaxHeight" ;
+    dg:project "UrbanBlock" ;
+    dg:range "xsd:boolean" .
+
+dg:DProp_violatesMinWidth a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "violatesMinWidth"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:violatesMinWidth" ;
+    dg:project "TestA" ;
+    dg:range "xsd:boolean" .
+
+dg:DProp_violatesMinWindowCount a dg:DataProperty,
+        owl:NamedIndividual ;
+    rdfs:label "violatesMinWindowCount"@en ;
+    dg:graph dg:Ontograph ;
+    dg:iri "ex:violatesMinWindowCount" ;
+    dg:project "TestA" ;
+    dg:range "xsd:boolean" .
+
+dg:DS_def_h25_w12 a dg:ParamState,
+        owl:NamedIndividual ;
+    rdfs:label "ParamState: height=25, width=12"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:hasIdRef dgv:IDR_DS_def_h25_w12 ;
+    dgv:stateId "DS_def_h25_w12" ;
+    rdfs:comment "Parametric capture of a Building configuration. Changes in this ParamState regenerate the linked IdRef per CMPST-05."@en .
+
+dg:Object_Frame a dg:Object,
+        owl:NamedIndividual ;
+    rdfs:label "Frame"@en ;
+    dg:graph dgc:Computgraph ;
+    dg:hasBehavior dg:Behavior_Frame ;
+    dg:hasStructure dg:Structure_Frame ;
+    dg:objectName "Frame" .
+
+dg:SWRL_label a owl:AnnotationProperty ;
+    rdfs:label "SWRL label"@en ;
+    rdfs:comment "Display label used in SWRL expressions for datatype properties and atoms."@en .
+
+dg:Session_ks_1d599d7a40a1 a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "Update session"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dg:sessionId "ks-1d599d7a40a1" ;
+    dg:sessionMode "update" .
+
+dg:Session_ks_mnoom0r3 a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "Insert: Parking is 300 slots"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dg:sessionId "ks-mnoom0r3" ;
+    dg:sessionMode "insert" .
+
+dg:Session_ks_mnoon96l a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "Insert: building has 3 staircases"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dg:sessionId "ks-mnoon96l" ;
+    dg:sessionMode "insert" .
+
+dg:Session_ks_mnp1jw35 a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "Insert: Address of the building is Portugal, Guimaraes..."@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dg:sessionId "ks-mnp1jw35" ;
+    dg:sessionMode "insert" .
+
+dg:Session_ks_mnq4ixld a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "Query: Where buidling is located"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dg:sessionId "ks-mnq4ixld" ;
+    dg:sessionMode "query" .
+
+dg:createdAt a owl:DatatypeProperty ;
+    rdfs:label "createdAt"@en ;
+    rdfs:comment "ISO 8601 UTC timestamp of node creation. Used across all graph layers. Aligned with: dcterms:created (R5/R7 — cross-cutting Dublin Core creation timestamp)."@en ;
+    rdfs:range xsd:dateTime .
+
+dg:definesFunction a owl:ObjectProperty ;
+    rdfs:label "DEFINES_FUNCTION"@en ;
+    rdfs:comment "Connects an Ontograph entity (Class, ObjProperty, or DataProperty) to the Core Function it realises for an Object. The Ontograph layer defines, from NL input, what classes and properties exist and links them to the Function of a specific Object — so one Object may have many Functions, and a group of Objects may share some Functions while differing in others."@en ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( dg:Class dg:ObjProperty dg:DataProperty ) ] ;
+    rdfs:range dg:Function .
+
+dg:drs_4cab136231cf a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "drs-4cab136231cf"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dg:sessionId "drs-4cab136231cf" ;
+    dg:sessionMode "ingest" ;
+    dg:sessionPrompt "Street minimum width is 15 meters." .
+
+dg:drs_79ba197cc693 a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "drs-79ba197cc693"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dg:sessionId "drs-79ba197cc693" ;
+    dg:sessionMode "edit" ;
+    dg:sessionPrompt "Street minimum width is 18 meters." .
+
+dg:drs_96d1ebd8dc8a a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "drs-96d1ebd8dc8a"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dg:sessionId "drs-96d1ebd8dc8a" ;
+    dg:sessionMode "ingest" ;
+    dg:sessionPrompt "All building must be maximum 75 meters high" .
+
+dg:drs_ac4c176afeeb a dg:Session,
+        owl:NamedIndividual ;
+    rdfs:label "drs-ac4c176afeeb"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dg:sessionId "drs-ac4c176afeeb" ;
+    dg:sessionMode "query" ;
+    dg:sessionPrompt "list all rules" .
+
+dg:evaluatedBy a owl:ObjectProperty ;
+    rdfs:label "EVALUATED_BY"@en ;
+    rdfs:comment "Connects a Function to the Reasoner that evaluates design rules against it. Links design intent (Function) to rule evaluation strategy (Reasoner)."@en ;
+    rdfs:domain dg:Function ;
+    rdfs:range dgv:Reasoner .
+
+dg:graph a owl:AnnotationProperty ;
+    rdfs:label "graph layer"@en ;
+    rdfs:comment "Logical graph partition within the single Neo4j database. Values are resource references to the four punned hub IRIs that are simultaneously classes (parents of layer-member entities) and NamedIndividuals of dg:GraphLayer: dg:Ontograph, dgm:Metagraph, dgv:Validgraph, dgs:SpecGraph. The range below documents this; OWL annotation properties do not enforce range."@en ;
+    rdfs:range dg:GraphLayer .
+
+dg:hasBehavior a owl:ObjectProperty ;
+    rdfs:label "HAS_BEHAVIOR"@en ;
+    rdfs:comment "Connects an Object to its Behavior (computational process achieving the function)."@en ;
+    rdfs:domain dg:Object ;
+    rdfs:range dg:Behavior ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dg:hasFunction a owl:ObjectProperty ;
+    rdfs:label "HAS_FUNCTION"@en ;
+    rdfs:comment "Connects an Object to its Function (design intent). An Object may have multiple Functions."@en ;
+    rdfs:domain dg:Object ;
+    rdfs:range dg:Function ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dg:hasGeometry a owl:ObjectProperty ;
+    rdfs:label "HAS_GEOMETRY"@en ;
+    rdfs:comment "Connects a Structure to its Geometry data (the physical form representation)."@en ;
+    rdfs:domain dg:Structure ;
+    rdfs:range dg:Geometry ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dg:hasStructure a owl:ObjectProperty ;
+    rdfs:label "HAS_STRUCTURE"@en ;
+    rdfs:comment "Connects an Object to its Structure (physical/geometric form)."@en ;
+    rdfs:domain dg:Object ;
+    rdfs:range dg:Structure ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dg:hasTopology a owl:ObjectProperty ;
+    rdfs:label "HAS_TOPOLOGY"@en ;
+    rdfs:comment "Connects a Structure to its Topology (spatial decomposition via Topologic)."@en ;
+    rdfs:domain dg:Structure ;
+    rdfs:range dg:Topology ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dg:iri a owl:DatatypeProperty ;
+    rdfs:label "iri"@en ;
+    rdfs:comment "IRI identifier for ontology entities. Format: ex:<Name> (e.g. ex:Building, ex:hasHeightM). Aligned with: dcterms:identifier (R7-adjacent) — the IRI IS the canonical identifier."@en ;
+    rdfs:range xsd:string .
+
+dg:label a owl:DatatypeProperty ;
+    rdfs:label "label"@en ;
+    rdfs:comment "Human-readable display label for Class and ObjectProperty nodes. Aligned with: rdfs:label (R7)."@en ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf rdfs:label .
+
+dg:objectName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a DCM Object (e.g. 'Frame', 'Truss'). Characteristics: Functional."@en ;
+    rdfs:domain dg:Object ;
+    rdfs:range xsd:string .
+
+dg:objectRef a owl:ObjectProperty ;
+    rdfs:label "OBJECT_REF"@en ;
+    rdfs:comment "Connects an ObjState to the Core Object it instantiates (the ERD 'ObjectRef' edge). The ObjState binds geometry to a specific design Object whose Function/Behavior/Structure are defined across the layers. (The string handle for the SWRL Object-variable name is dgv:objectRefName.)"@en ;
+    rdfs:domain dg:ObjState ;
+    rdfs:range dg:Object .
+
+dg:partOf a owl:ObjectProperty,
+        owl:TransitiveProperty ;
+    rdfs:label "PART_OF"@en ;
+    rdfs:comment "Inverse of dg:hasPart — a component is part of its container. Transitive."@en ;
+    owl:inverseOf dg:hasPart .
+
+dg:project a owl:AnnotationProperty ;
+    rdfs:label "project"@en ;
+    rdfs:comment "Project isolation key. Every persisted node must include this property for multi-project support."@en .
+
+dg:range a owl:DatatypeProperty ;
+    rdfs:label "range"@en ;
+    rdfs:comment "XSD datatype range for DatatypeProperty nodes (e.g. xsd:decimal, xsd:integer, xsd:boolean)."@en ;
+    rdfs:domain dg:DataProperty ;
+    rdfs:range xsd:string .
+
+dg:sessionId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "sessionId"@en ;
+    rdfs:comment "Unique identifier for a Session (e.g. drs-<hex12> for rule sessions, ks-<hex12> for spec sessions). Characteristics: Functional."@en ;
+    rdfs:domain dg:Session ;
+    rdfs:range xsd:string .
+
+dg:sessionMode a owl:DatatypeProperty ;
+    rdfs:label "mode"@en ;
+    rdfs:comment "Interaction mode of a Session: 'ingest' | 'query' | 'edit' (rule sessions) or 'insert' | 'query' | 'update' (spec sessions)."@en ;
+    rdfs:domain dg:Session ;
+    rdfs:range xsd:string .
+
+dg:sessionPrompt a owl:DatatypeProperty ;
+    rdfs:label "prompt"@en ;
+    rdfs:comment "The user's natural-language prompt that triggered this Session."@en ;
+    rdfs:domain dg:Session ;
+    rdfs:range xsd:string .
+
+dg:sessionResult a owl:DatatypeProperty ;
+    rdfs:label "result"@en ;
+    rdfs:comment "The LLM-generated result of the Session (Cypher, answer text, or update summary)."@en ;
+    rdfs:domain dg:Session ;
+    rdfs:range xsd:string .
+
+dgc:Const_12_TrussConfig a dgc:ConstantParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Const_TrussConfig"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Integer ;
+    dgc:parameterDisplayName "Truss configuration (footer)" ;
+    dgc:parameterName "12_Const_TrussConfig" .
+
+dgc:Emg_11_LineSDL a dgc:EmergentParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Emg_LineSDL"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Geometry ;
+    dgc:parameterDisplayName "Line SDL (computed)" ;
+    dgc:parameterName "11_Emg_LineSDL" .
+
+dgc:Emg_11_UpperChord a dgc:EmergentParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Emr_UpperChord"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Geometry ;
+    dgc:parameterDisplayName "Upper chord geometry" ;
+    dgc:parameterName "11_Emr_UpperChord" .
+
+dgc:Emg_12_BottomLn a dgc:EmergentParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Emg_BottomLn"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Geometry ;
+    dgc:parameterDisplayName "Footer bottom lines" ;
+    dgc:parameterName "12_Emg_BottomLn" .
+
+dgc:Emg_12_FooterFrame a dgc:EmergentParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Emg_FooterFrame"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Geometry ;
+    dgc:parameterDisplayName "Footer frame geometry" ;
+    dgc:parameterName "12_Emg_FooterFrame" .
+
+dgc:Var_12_FooterCount a dgc:VariableParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Var_FooterCount"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Integer ;
+    dgc:parameterDisplayName "Footer count" ;
+    dgc:parameterName "12_Var_FooterCount" .
+
+dgc:algorithmName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of an Algorithm (e.g. '1_Algorithm'). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Algorithm ;
+    rdfs:range xsd:string .
+
+dgc:attributeOf a owl:ObjectProperty ;
+    rdfs:label "ATTRIBUTE_OF"@en ;
+    rdfs:comment "Cross-layer bridge connecting a Metagraph Atom to a Computgraph Parameter. This is the semantic link enabling bidirectional translation between SWRL rules and Grasshopper parametric definitions: a rule atom can reference a parametric parameter. Follows the same cross-layer pattern as dgm:refersTo (Metagraph → Ontograph)."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range dgc:Parameter .
+
+dgc:hasAlgorithm a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_ALGORITHM"@en ;
+    rdfs:comment "Connects a Behavior to its Algorithm (the complete parametric definition describing it). Characteristics: Functional — one Behavior has one Algorithm."@en ;
+    rdfs:domain dg:Behavior ;
+    rdfs:range dgc:Algorithm .
+
+dgc:hasInterface a owl:ObjectProperty ;
+    rdfs:label "HAS_INTERFACE"@en ;
+    rdfs:comment "Connects a Pattern (or Procedure) to its Interface connector. Interfaces expose data at procedure boundaries."@en ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( dgc:Pattern dgc:Procedure ) ] ;
+    rdfs:range dgc:Interface ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dgc:hasParameter a owl:ObjectProperty ;
+    rdfs:label "HAS_PARAMETER"@en ;
+    rdfs:comment "Connects a Pattern to its Parameters (input values consumed by the component)."@en ;
+    rdfs:domain dgc:Pattern ;
+    rdfs:range dgc:Parameter ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dgc:hasPattern a owl:ObjectProperty ;
+    rdfs:label "HAS_PATTERN"@en ;
+    rdfs:comment "Connects a Procedure to its constituent Patterns. A Procedure contains multiple Patterns (GH components)."@en ;
+    rdfs:domain dgc:Procedure ;
+    rdfs:range dgc:Pattern ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dgc:hasProcedure a owl:ObjectProperty ;
+    rdfs:label "HAS_PROCEDURE"@en ;
+    rdfs:comment "Connects an Algorithm to its constituent Procedures. An Algorithm contains multiple Procedures."@en ;
+    rdfs:domain dgc:Algorithm ;
+    rdfs:range dgc:Procedure ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dgc:interfaceName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of an Interface (e.g. '11_IntF_ParSplitAt'). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Interface ;
+    rdfs:range xsd:string .
+
+dgc:listStructure a owl:ObjectProperty ;
+    rdfs:label "listStructure"@en ;
+    rdfs:comment "Data tree management operation applied to an Interface (Flatten, Graft, Simplify, Reverse)."@en ;
+    rdfs:domain dgc:Interface ;
+    rdfs:range dgc:ListStructureValue .
+
+dgc:paramDataType a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "paramDataType"@en ;
+    rdfs:comment "Data type of a Parameter (Float, Integer, Text, Boolean, Geometry). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Parameter ;
+    rdfs:range dgc:ParamDataTypeValue .
+
+dgc:paramLink a owl:ObjectProperty ;
+    rdfs:label "PARAM_LINK"@en ;
+    rdfs:comment "Connects a Parameter to the Interface it flows through. Models data wiring between Parameters and Interface connectors."@en ;
+    rdfs:domain dgc:Parameter ;
+    rdfs:range dgc:Interface .
+
+dgc:parameterDisplayName a owl:DatatypeProperty ;
+    rdfs:label "displayName"@en ;
+    rdfs:comment "Human-readable label for a Parameter (e.g. 'Count of spans', 'Footer Height')."@en ;
+    rdfs:domain dgc:Parameter ;
+    rdfs:range xsd:string .
+
+dgc:parameterName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a Parameter (e.g. '11_Var_SpansCount', '11_Const_ptZero'). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Parameter ;
+    rdfs:range xsd:string .
+
+dgc:patternHostTo a owl:ObjectProperty ;
+    rdfs:label "PATTERN_HOST_TO"@en ;
+    rdfs:comment "Nesting relationship — a Pattern can host (contain) other Patterns. Models GH component grouping within a procedure."@en ;
+    rdfs:domain dgc:Pattern ;
+    rdfs:range dgc:Pattern .
+
+dgc:patternName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a Pattern (e.g. '11_Pat_DivideLine'). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Pattern ;
+    rdfs:range xsd:string .
+
+dgc:procedureName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a Procedure (e.g. '11_Proc - 2D Truss Configuration'). Characteristics: Functional."@en ;
+    rdfs:domain dgc:Procedure ;
+    rdfs:range xsd:string .
+
+dgc:procedureOrder a owl:DatatypeProperty ;
+    rdfs:label "order"@en ;
+    rdfs:comment "Ordinal position of a Procedure within its Algorithm (numeric prefix, e.g. 11, 12)."@en ;
+    rdfs:domain dgc:Procedure ;
+    rdfs:range xsd:integer .
+
+ex:Column a owl:Class ;
+    rdfs:label "Column" .
+
+ex:Corridor a owl:Class ;
+    rdfs:label "Corridor" .
+
+ex:FacadePanel a owl:Class ;
+    rdfs:label "Facade panel" .
+
+ex:Floor a owl:Class ;
+    rdfs:label "Floor" .
+
+ex:Roof a owl:Class ;
+    rdfs:label "Roof" .
+
+ex:SlidingDoor a owl:Class ;
+    rdfs:subClassOf ex:Door,
+        ex:Window .
+
+ex:hasContinuity a owl:DatatypeProperty ;
+    rdfs:label "hasContinuity" ;
+    rdfs:range xsd:boolean .
+
+ex:hasFacingDirection a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirection" ;
+    rdfs:range xsd:string .
+
+ex:hasFacingDirectionEast a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirectionEast" ;
+    rdfs:range xsd:boolean .
+
+ex:hasFacingDirectionWest a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirectionWest" ;
+    rdfs:range xsd:boolean .
+
+ex:hasFlatness a owl:DatatypeProperty ;
+    rdfs:label "hasFlatness" ;
+    rdfs:range xsd:boolean .
+
+ex:hasHeightM a owl:DatatypeProperty ;
+    rdfs:label "hasHeightM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasLengthM a owl:DatatypeProperty ;
+    rdfs:label "hasLengthM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasOrientation a owl:DatatypeProperty ;
+    rdfs:label "hasOrientation" ;
+    rdfs:range xsd:string .
+
+ex:violatesContinuity a owl:DatatypeProperty ;
+    rdfs:label "violatesContinuity" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesDoorOrientation a owl:DatatypeProperty ;
+    rdfs:label "violatesDoorOrientation" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesFillet a owl:DatatypeProperty ;
+    rdfs:label "violatesFillet" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesFlatness a owl:DatatypeProperty ;
+    rdfs:label "violatesFlatness" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxHeight a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxHeight" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxLength a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxLength" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesSameHeight a owl:DatatypeProperty ;
+    rdfs:label "violatesSameHeight" ;
+    rdfs:range xsd:boolean .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_75_V a dgm-spike:Rule,
+        owl:NamedIndividual ;
+    rdfs:label "R_BUILDING_MAX_HEIGHT_75_V"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:SWRL "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)" ;
+    dgm-spike:hasBody dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A1,
+        dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A2,
+        dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A3 ;
+    dgm-spike:hasHead dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_H1 ;
+    dgm-spike:ruleId "R_BUILDING_MAX_HEIGHT_75_V" ;
+    dgm-spike:ruleKind "violation" .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_80_V a dgm-spike:Rule,
+        owl:NamedIndividual ;
+    rdfs:label "R_BUILDING_MAX_HEIGHT_80_V"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:SWRL "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,80)->violatesMaxHeight(?b,true)" ;
+    dgm-spike:ruleId "R_BUILDING_MAX_HEIGHT_80_V" ;
+    dgm-spike:ruleKind "violation" .
+
+dgm-spike:R_LIVINGUNIT_MIN_WINDOW_2_V a dgm-spike:Rule,
+        owl:NamedIndividual ;
+    rdfs:label "R_LIVINGUNIT_MIN_WINDOW_2_V"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:SWRL "LivingUnit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)->violatesMinWindowCount(?u,true)" ;
+    dgm-spike:ruleId "R_LIVINGUNIT_MIN_WINDOW_2_V" ;
+    dgm-spike:ruleKind "violation" .
+
+dgm-spike:R_STREET_MIN_WIDTH_18_V a dgm-spike:Rule,
+        owl:NamedIndividual ;
+    rdfs:label "R_STREET_MIN_WIDTH_18_V"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:SWRL "Street(?s)^hasWidthM(?s,?w)^swrlb:lessThan(?w,18)->violatesMinWidth(?s,true)" ;
+    dgm-spike:ruleId "R_STREET_MIN_WIDTH_18_V" ;
+    dgm-spike:ruleKind "violation" .
+
+dgm-spike:R_STREET_MIN_WIDTH_18_V_A1 a dgm-spike:ClassAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:atomId "R_STREET_MIN_WIDTH_18_V_A1" ;
+    dgm-spike:atomIri "ex:Street" ;
+    dgm-spike:atomSwrlLabel "Street" ;
+    dgm-spike:atomType "ClassAtom" .
+
+dgm-spike:R_STREET_MIN_WIDTH_18_V_A2 a dgm-spike:DataPropertyAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:atomId "R_STREET_MIN_WIDTH_18_V_A2" ;
+    dgm-spike:atomIri "ex:hasWidthM" ;
+    dgm-spike:atomSwrlLabel "hasWidthM" ;
+    dgm-spike:atomType "DataPropertyAtom" .
+
+dgm-spike:R_STREET_MIN_WIDTH_18_V_A3 a dgm-spike:BuiltinAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:atomId "R_STREET_MIN_WIDTH_18_V_A3" ;
+    dgm-spike:atomIri "swrlb:lessThan" ;
+    dgm-spike:atomSwrlLabel "lessThan" ;
+    dgm-spike:atomType "BuiltinAtom" ;
+    dgm-spike:refersTo dgm-spike:lessThan .
+
+dgm-spike:R_STREET_MIN_WIDTH_18_V_H1 a dgm-spike:DataPropertyAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:atomId "R_STREET_MIN_WIDTH_18_V_H1" ;
+    dgm-spike:atomIri "ex:violatesMinWidth" ;
+    dgm-spike:atomSwrlLabel "violatesMinWidth" ;
+    dgm-spike:atomType "DataPropertyAtom" .
+
+dgm-spike:R_UNIT_MIN_WINDOW_2_V a dgm-spike:Rule,
+        owl:NamedIndividual ;
+    rdfs:label "R_UNIT_MIN_WINDOW_2_V"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "Test Project" ;
+    dgm-spike:SWRL "Unit(?u)^hasWindowCount(?u,?w)^swrlb:lessThan(?w,2)->violatesMinWindowCount(?u,true)" ;
+    dgm-spike:ruleId "R_UNIT_MIN_WINDOW_2_V" ;
+    dgm-spike:ruleKind "violation" .
+
+dgm-spike:RuleDescription a owl:DatatypeProperty ;
+    rdfs:label "RuleDescription"@en ;
+    rdfs:comment "Natural-language description of a rule's intent — a longer explanation than RuleName's short title, distinct from SWRL's machine expression string. NEW in v7.0 (no V6 predecessor); matches the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.RuleDescription; Output=Rule().Description). Exposed by RULE DECONSTRUCT and VALIDATOR."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range xsd:string .
+
+dgm-spike:RuleName a owl:DatatypeProperty ;
+    rdfs:label "RuleName"@en ;
+    rdfs:comment "Optional human-readable title for a rule. v7.0 rename of the V6 rule-title property to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.RuleName)."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range xsd:string .
+
+dgm-spike:SWRL a owl:DatatypeProperty ;
+    rdfs:label "SWRL"@en ;
+    rdfs:comment "The SWRL expression string for a rule (e.g. Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)). v7.0 rename of the V6 rule-text property to match the GH_DesignGrammars.pdf schema (DG.Layer.Metagraph.SWRL)."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range xsd:string .
+
+dgm-spike:atomId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "Atom_Id"@en ;
+    rdfs:comment "Unique identifier for an atom. Body: {Rule_Id}_A{n}, Head: {Rule_Id}_H{n}. Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range xsd:string .
+
+dgm-spike:atomIri a owl:DatatypeProperty ;
+    rdfs:label "iri"@en ;
+    rdfs:comment "IRI of the ontology entity referenced by this atom (e.g. ex:Building, swrlb:greaterThan)."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range xsd:string .
+
+dgm-spike:atomSwrlLabel a owl:DatatypeProperty ;
+    rdfs:label "SWRL_label"@en ;
+    rdfs:comment "Display label for the atom in SWRL notation."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range xsd:string .
+
+dgm-spike:atomType a owl:DatatypeProperty ;
+    rdfs:label "type"@en ;
+    rdfs:comment "Atom type discriminator: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range xsd:string .
+
+dgm-spike:builtinIri a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "iri"@en ;
+    rdfs:comment "IRI of the SWRL builtin (e.g. swrlb:greaterThan). Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:Builtin ;
+    rdfs:range xsd:anyURI .
+
+dgm-spike:builtinLabel a owl:DatatypeProperty ;
+    rdfs:label "label"@en ;
+    rdfs:comment "Display label for the builtin (e.g. greaterThan, lessThan)."@en ;
+    rdfs:domain dgm-spike:Builtin ;
+    rdfs:range xsd:string .
+
+dgm-spike:equal a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "equal"@en ;
+    rdfs:comment "swrlb:equal — checks if two arguments are equal."@en .
+
+dgm-spike:greaterThanOrEqual a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "greaterThanOrEqual"@en ;
+    rdfs:comment "swrlb:greaterThanOrEqual — checks if first arg is greater than or equal to second."@en .
+
+dgm-spike:hasArg a owl:ObjectProperty ;
+    rdfs:label "ARG"@en ;
+    rdfs:comment "Connects an Atom to its arguments (Variable or Literal). Property: pos (integer, 1-indexed position). Characteristics: none (Atoms have multiple args; same Variable may appear in multiple Atoms). Range: union of {Variable, Literal}."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( dgm-spike:Variable dgm-spike:Literal ) ] .
+
+dgm-spike:hasBody a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_BODY"@en ;
+    rdfs:comment "Connects a Rule to its body (condition) atoms. The body checks the condition that breaks the rule in violation mode. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's body. Disjoint with hasHead: no Atom may simultaneously be a body and head atom of the same Rule. Equivalent to swrl:body."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range dgm-spike:Atom ;
+    owl:propertyDisjointWith dgm-spike:hasHead .
+
+dgm-spike:hasRule a owl:ObjectProperty ;
+    rdfs:label "HAS_RULE"@en ;
+    rdfs:comment "Connects a RuleSet to the Rules it contains. A RuleSet groups multiple Rules as a regulatory package."@en ;
+    rdfs:domain dgm-spike:RuleSet ;
+    rdfs:range dgm-spike:Rule ;
+    rdfs:subPropertyOf dg:hasPart .
+
+dgm-spike:inferredDatatype a owl:DatatypeProperty ;
+    rdfs:label "inferredDatatype"@en ;
+    rdfs:comment "XSD datatype inferred for this variable from SWRL atom context (e.g. xsd:decimal for a variable used in hasHeightM). Set by VariableTypeInferrer."@en ;
+    rdfs:domain dgm-spike:Variable ;
+    rdfs:range xsd:string .
+
+dgm-spike:lessThanOrEqual a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "lessThanOrEqual"@en ;
+    rdfs:comment "swrlb:lessThanOrEqual — checks if first arg is less than or equal to second."@en .
+
+dgm-spike:literalDatatype a owl:DatatypeProperty ;
+    rdfs:label "datatype"@en ;
+    rdfs:comment "XSD datatype of the literal (e.g. xsd:decimal, xsd:integer, xsd:boolean, xsd:string)."@en ;
+    rdfs:domain dgm-spike:Literal ;
+    rdfs:range xsd:string .
+
+dgm-spike:literalLex a owl:DatatypeProperty ;
+    rdfs:label "lex"@en ;
+    rdfs:comment "Lexical form of the literal value (e.g. \"75\", \"true\", \"2.8\")."@en ;
+    rdfs:domain dgm-spike:Literal ;
+    rdfs:range xsd:string .
+
+dgm-spike:literal_18 a dgm-spike:Literal,
+        owl:NamedIndividual ;
+    rdfs:label "18"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:literalDatatype "xsd:decimal" ;
+    dgm-spike:literalLex "18" .
+
+dgm-spike:literal_2 a dgm-spike:Literal,
+        owl:NamedIndividual ;
+    rdfs:label "2"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:literalDatatype "xsd:integer" ;
+    dgm-spike:literalLex "2" .
+
+dgm-spike:literal_80 a dgm-spike:Literal,
+        owl:NamedIndividual ;
+    rdfs:label "80"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:literalDatatype "xsd:decimal" ;
+    dgm-spike:literalLex "80" .
+
+dgm-spike:notEqual a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "notEqual"@en ;
+    rdfs:comment "swrlb:notEqual — checks if two arguments are not equal. Used for equality constraints (violation when value differs)."@en .
+
+dgm-spike:order a owl:DatatypeProperty ;
+    rdfs:label "order"@en ;
+    rdfs:comment "Ordinal position of an atom within a rule's body or head (1-indexed). Stored on HAS_BODY and HAS_HEAD relationships."@en ;
+    rdfs:range xsd:integer .
+
+dgm-spike:pos a owl:DatatypeProperty ;
+    rdfs:label "pos"@en ;
+    rdfs:comment "Positional index of an argument within an atom (1-indexed). Stored on ARG relationships."@en ;
+    rdfs:range xsd:integer .
+
+dgm-spike:refersTo a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "REFERS_TO"@en ;
+    rdfs:comment "Connects an Atom to the ontology entity it references (Class, DataProperty, ObjProperty, or Builtin). Each Atom has exactly one REFERS_TO. Characteristics: Functional. Range: union of {Class, DataProperty, ObjProperty, Builtin}."@en ;
+    rdfs:domain dgm-spike:Atom ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( dg:Class dg:DataProperty dg:ObjProperty dgm-spike:Builtin ) ] .
+
+dgm-spike:ruleId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "Rule_Id"@en ;
+    rdfs:comment "Unique identifier for a rule. Format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V (e.g. R_URB_HEIGHT_MAX_75_V). Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range xsd:string .
+
+dgm-spike:ruleKind a owl:DatatypeProperty ;
+    rdfs:label "kind"@en ;
+    rdfs:comment "Rule kind: 'violation' (body fires on constraint breach) or 'compliance' (body fires on constraint satisfaction)."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range xsd:string .
+
+dgm-spike:ruleSetName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a RuleSet (e.g. 'BuildingCode2024', 'ZoningRegulation'). Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:RuleSet ;
+    rdfs:range xsd:string .
+
+dgm-spike:usesReasoner a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "USES_REASONER"@en ;
+    rdfs:comment "Connects a RuleSet to the Reasoner used to evaluate its rules. Characteristics: Functional — a RuleSet uses exactly one Reasoner."@en ;
+    rdfs:domain dgm-spike:RuleSet ;
+    rdfs:range dgv:Reasoner .
+
+dgm-spike:validates a owl:ObjectProperty ;
+    rdfs:label "VALIDATES"@en ;
+    rdfs:comment "Connects a Metagraph Rule to the Core DesignState (the ERD 'STATE') it validates. The Ontograph-defined classes and properties referenced by the rule's atoms are evaluated against the captured Design State."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range dg:DesignState .
+
+dgm-spike:var_s a dgm-spike:ObjectVariable,
+        owl:NamedIndividual ;
+    rdfs:label "?s"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:variableName "?s" ;
+    rdfs:comment "Object variable representing a Street instance. Inferred from ClassAtom Street(?s). Cross-rule scoped (VTYP-02)."@en .
+
+dgm-spike:var_u a dgm-spike:ObjectVariable,
+        owl:NamedIndividual ;
+    rdfs:label "?u"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:variableName "?u" ;
+    rdfs:comment "Object variable representing a LivingUnit/Unit instance. Inferred from ClassAtom. Cross-rule scoped (VTYP-02)."@en .
+
+dgm-spike:var_w a dgm-spike:PropertyVariable,
+        owl:NamedIndividual ;
+    rdfs:label "?w"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:variableName "?w" ;
+    rdfs:comment "Property variable representing width/window count. Inferred from DataPropertyAtom arg-2. Rule-scoped (VTYP-03)."@en .
+
+dgm-spike:variableName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Variable name prefixed with '?' (e.g. ?b, ?h, ?lu). Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:Variable ;
+    rdfs:range xsd:string .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_CORNER_FILLET_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A4> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A5> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — ClassAtom missing ARG pos=1" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — BuiltinAtom has no ARG edges" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_H1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_H1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A4> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A4> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A5> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_H1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A1> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A2> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A3> a dgm-spike:SkippedAtom ;
+    rdfs:comment "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BLOCK_MIN_FOOTPRINT_PCT_18_V> a swrl:Imp ;
+    rdfs:label "R_BLOCK_MIN_FOOTPRINT_PCT_18_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_CORNER_FILLET_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_BUILDING_CORNER_FILLET_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_HEIGHT_60_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_BUILDING_MAX_HEIGHT_60_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_STOREY_9_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_MAX_STOREY_9_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MIN_DISTANCE_12_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_MIN_DISTANCE_12_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_COLUMN_CONTINUITY_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_COLUMN_CONTINUITY_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_COLUMN_CONTINUITY_V_A1, R_COLUMN_CONTINUITY_V_A2, R_COLUMN_CONTINUITY_V_A3, R_COLUMN_CONTINUITY_V_H1" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_DOOR_ORIENTATION_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_CORRIDOR_DOOR_ORIENTATION_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_MAX_LENGTH_14_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_CORRIDOR_MAX_LENGTH_14_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_CORRIDOR_MAX_LENGTH_14_V_A2, R_CORRIDOR_MAX_LENGTH_14_V_H1" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_DOOR_ORIENTATION_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_DOOR_ORIENTATION_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_GRID_HEX_V> a swrl:Imp ;
+    rdfs:label "R_FACADE_GRID_HEX_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_PANEL_GRID_HEX_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_FACADE_PANEL_GRID_HEX_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_HEIGHT_EQ_0_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_FLOOR_HEIGHT_EQ_0_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_0_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_FLOOR_SAME_HEIGHT_0_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_FLOOR_SAME_HEIGHT_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_FACING_DIRECTION_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_LIVINGUNIT_FACING_DIRECTION_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_LIVINGUNIT_FACING_DIRECTION_V_A2, R_LIVINGUNIT_FACING_DIRECTION_V_A4, R_LIVINGUNIT_FACING_DIRECTION_V_A5, R_LIVINGUNIT_FACING_DIRECTION_V_H1" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_MIN_AREA_30_V> a swrl:Imp ;
+    rdfs:label "R_LIVINGUNIT_MIN_AREA_30_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_ROOF_FLAT_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_ROOF_FLAT_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_URB_HEIGHT_MAX_75_V> a dgm-spike:SkippedRule ;
+    rdfs:label "R_URB_HEIGHT_MAX_75_V" ;
+    rdfs:comment "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+
+dgs:KC_Session a dgs:SpecClass,
+        owl:NamedIndividual ;
+    rdfs:label "Session"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    rdfs:comment "Hub node for knowledge sessions. Neo4j SpecGraph, project: UrbanBlock."@en .
+
+dgs:KC_SpecNote a dgs:SpecClass,
+        owl:NamedIndividual ;
+    rdfs:label "SpecNote"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    rdfs:comment "Hub node for knowledge notes. Neo4j SpecGraph, project: UrbanBlock."@en .
+
+dgs:Note_BIG_Architects a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "BIG Architects"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:taggedWith dgs:Tag_architects,
+        dgs:Tag_studio ;
+    dgs:tags "architects,studio" ;
+    dgs:title "BIG Architects" .
+
+dgs:Note_BuildingAddress a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Building Address"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:taggedWith dgs:Tag_guimaraes,
+        dgs:Tag_portugal,
+        dgs:Tag_rua_do_avelino_germano ;
+    dgs:tags "portugal,guimaraes,rua-d0-avelino-germano" ;
+    dgs:title "Building Address" .
+
+dgs:Note_BuildingHeightRegulations a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Building Height Regulations"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:title "Building Height Regulations" .
+
+dgs:Note_BuildingStaircaseCount a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Building Staircase Count"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:taggedWith dgs:Tag_building,
+        dgs:Tag_staircase ;
+    dgs:tags "building,staircase" ;
+    dgs:title "Building Staircase Count" .
+
+dgs:Note_GreenAreaRatio a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Green Area Ratio"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:title "Green Area Ratio" .
+
+dgs:Note_MaxFloorToFloorHeightZoneA a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Maximum floor-to-floor height Zone A"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:taggedWith dgs:Tag_compliance,
+        dgs:Tag_height,
+        dgs:Tag_residential,
+        dgs:Tag_zone_a ;
+    dgs:tags "height,residential,zone-a,compliance" ;
+    dgs:title "Maximum floor-to-floor height Zone A" .
+
+dgs:Note_ParkingCapacity a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Parking Capacity"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:taggedWith dgs:Tag_capacity,
+        dgs:Tag_parking ;
+    dgs:tags "parking,capacity" ;
+    dgs:title "Parking Capacity" .
+
+dgs:Note_ProjectLocation a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Project Location"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:taggedWith dgs:Tag_braga,
+        dgs:Tag_guimaraes,
+        dgs:Tag_portugal ;
+    dgs:tags "guimaraes,braga,portugal" ;
+    dgs:title "Project Location" .
+
+dgs:Note_SetbackRequirements a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Setback Requirements"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:title "Setback Requirements" .
+
+dgs:Note_TestUpdateNote a dgs:SpecNote,
+        owl:NamedIndividual ;
+    rdfs:label "Test Update Note"@en ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "test-update-flow" ;
+    dgs:title "Test Update Note" .
+
+dgs:Tag_corridor a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "test-phase03" ;
+    dgs:tagName "corridor" .
+
+dgs:Tag_evacuation a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "test-phase03" ;
+    dgs:tagName "evacuation" .
+
+dgs:Tag_width a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "test-phase03" ;
+    dgs:tagName "width" .
+
+dgs:Tag_zone_b a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:tagName "zone-b" .
+
+dgs:content a owl:DatatypeProperty ;
+    rdfs:label "content"@en ;
+    rdfs:comment "Full text content of a knowledge note. Aligned with: skos:note (R5) — the SKOS pattern for the textual body of a concept-related artifact."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range xsd:string .
+
+dgs:createdAt a owl:DatatypeProperty ;
+    rdfs:label "createdAt"@en ;
+    rdfs:comment "ISO 8601 UTC timestamp of creation. Aligned with: dcterms:created (R5)."@en ;
+    rdfs:range xsd:dateTime .
+
+dgs:instanceOf a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "INSTANCE_OF"@en ;
+    rdfs:comment "Connects a SpecNote or Session to its parent SpecClass hub node. Characteristics: Functional — each Note/Session has exactly one parent hub."@en ;
+    rdfs:range dgs:SpecClass .
+
+dgs:noteId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "noteId"@en ;
+    rdfs:comment "Unique identifier for a knowledge note. Characteristics: Functional. Aligned with: dcterms:identifier (R5)."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range xsd:string .
+
+dgs:source a owl:DatatypeProperty ;
+    rdfs:label "source"@en ;
+    rdfs:comment "Source file path or reference for a knowledge note (e.g. notes/site.md). Aligned with: dcterms:source (R5)."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range xsd:string .
+
+dgs:tagName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Tag name string (e.g. \"zoning\", \"structural\"). Characteristics: Functional — one canonical name per Tag. Aligned with: skos:prefLabel (R5) — the SKOS canonical label for a concept."@en ;
+    rdfs:domain dgs:SpecTag ;
+    rdfs:range xsd:string .
+
+dgs:taggedWith a owl:ObjectProperty ;
+    rdfs:label "TAGGED_WITH"@en ;
+    rdfs:comment "Connects a SpecNote to its SpecTag nodes. Characteristics: none (many-to-many — a Note has multiple Tags, a Tag is reused across Notes)."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range dgs:SpecTag .
+
+dgs:tags a owl:DatatypeProperty ;
+    rdfs:label "tags"@en ;
+    rdfs:comment "Array of tag names associated with a knowledge note (stored as Neo4j list property)."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range xsd:string .
+
+dgs:title a owl:DatatypeProperty ;
+    rdfs:label "title"@en ;
+    rdfs:comment "Title of a knowledge note. Aligned with: dcterms:title (R5)."@en ;
+    rdfs:domain dgs:SpecNote ;
+    rdfs:range xsd:string .
+
+dgs:updatedAt a owl:DatatypeProperty ;
+    rdfs:label "updatedAt"@en ;
+    rdfs:comment "ISO 8601 UTC timestamp of last update. Aligned with: dcterms:modified (R5)."@en ;
+    rdfs:range xsd:dateTime .
+
+dgv:Integration_TestA a dgv:IntegrationConfig,
+        owl:NamedIndividual ;
+    rdfs:label "External Integration (TestA)"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:baseModelId "4c546c0771" ;
+    dgv:externalProjectId "44088eefc6" ;
+    dgv:provider "ExternalViewer" ;
+    dgv:validationModelId "a6d1e0c5da" ;
+    rdfs:comment "Integration config from Neo4j Validgraph. Connects project TestA to an external geometry/viewer platform for 3D validation overlay."@en .
+
+dgv:SendStatus a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "SendStatus"@en ;
+    rdfs:comment "NEW in v7.0 (no V6 predecessor). Single Boolean per Run: whether publishing this run's results to the external geometry/viewer platform succeeded (D-08). Orthogonal to ValidStatus — set true when the publish operation completes successfully, independent of the rule pass/fail outcome. Publishing is one operation per run, so SendStatus is not per-object. Characteristics: Functional. Matches the GH_DesignGrammars.pdf schema (DG.Layer.Validgraph.SendStatus; Output=Run().SendStatus Datatype: Boolean)."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:boolean .
+
+dgv:VRun_27b121d78c73 a dgv:Run,
+        owl:NamedIndividual ;
+    rdfs:label "Validation Run 27b121d78c73"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:runId "27b121d78c73" ;
+    dgv:status dgv:Status_Completed .
+
+dgv:VRun_63ffbff1f928 a dgv:Run,
+        owl:NamedIndividual ;
+    rdfs:label "Validation Run 63ffbff1f928"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:runId "63ffbff1f928" ;
+    dgv:status dgv:Status_Completed .
+
+dgv:VRun_a5671cb1bd30 a dgv:Run,
+        owl:NamedIndividual ;
+    rdfs:label "Validation Run a5671cb1bd30"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:hasEntity dgv:VEntity_a5671cb1bd30_b1_height,
+        dgv:VEntity_a5671cb1bd30_b1_overflow ;
+    dgv:runId "a5671cb1bd30" ;
+    dgv:status dgv:Status_Completed .
+
+dgv:VRun_ac0d62f1332c a dgv:Run,
+        owl:NamedIndividual ;
+    rdfs:label "Validation Run ac0d62f1332c"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:runId "ac0d62f1332c" ;
+    dgv:status dgv:Status_Completed .
+
+dgv:VRun_f8678448d4e7 a dgv:Run,
+        owl:NamedIndividual ;
+    rdfs:label "Validation Run f8678448d4e7"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:runId "f8678448d4e7" ;
+    dgv:status dgv:Status_Completed .
+
+dgv:ValidStatus a owl:DatatypeProperty ;
+    rdfs:label "ValidStatus"@en ;
+    rdfs:comment "NEW in v7.0 (no V6 predecessor). Boolean LIST per Run, one element per ObjState in the validated DesignState, index-matched to the DesignState's ObjState order (D-06). Each element is that object's pass/fail against the rule. Overall pass = AND(ValidStatus), derived at read time, never stored as a separate field (D-07) — unifies the PDF's VALIDATOR-port ValidStatus(Boolean) and VALIDATION GRAPH-port Status(text) naming split into this one field. Not declared FunctionalProperty (multiple values per Run form the list). Population semantics (which ObjStates the list covers) are Phase 18 scope (VALIDATOR variable binding), not locked here. Matches the GH_DesignGrammars.pdf schema (DG.Layer.Validgraph.ValidStatus)."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:boolean .
+
+dgv:baseModelId a owl:DatatypeProperty ;
+    rdfs:label "baseModelId"@en ;
+    rdfs:comment "ID of the base geometry model in the external platform. Stored on the IntegrationConfig node."@en ;
+    rdfs:domain dgv:IntegrationConfig ;
+    rdfs:range xsd:string .
+
+dgv:baseModelName a owl:DatatypeProperty ;
+    rdfs:label "baseModelName"@en ;
+    rdfs:comment "Display name of the base geometry model in the external platform."@en ;
+    rdfs:domain dgv:IntegrationConfig ;
+    rdfs:range xsd:string .
+
+dgv:baseVersionId a owl:DatatypeProperty ;
+    rdfs:label "baseVersionId"@en ;
+    rdfs:comment "Version ID of the base model (in the external platform) used in this validation run."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dgv:capturedAtUtc a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "capturedAtUtc"@en ;
+    rdfs:comment "UTC timestamp when a design state or validation run was captured. Characteristics: Functional — one capture time per snapshot. Domain union: DesignState ∪ Run. Aligned with: prov:startedAtTime (R2) — semantically, the moment an activity started / a sample was captured."@en ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( dg:DesignState dgv:Run ) ] ;
+    rdfs:range xsd:dateTime .
+
+dgv:designStateLabel a owl:DatatypeProperty ;
+    rdfs:label "designStateLabel"@en ;
+    rdfs:comment "Human-readable label assigned by the user in DESIGN STATE component. Surfaces as a tile header in the Model Viewer and as an output of DESIGN STATE DECONSTRUCT. NEW in v7.0 post-release (2026-07-08)."@en ;
+    rdfs:domain dg:DesignState ;
+    rdfs:range xsd:string .
+
+dgv:dgEntityId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "dgEntityId"@en ;
+    rdfs:comment "Unique DG identifier for a BIM entity in a validation run. Characteristics: Functional."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range xsd:string .
+
+dgv:displayName a owl:DatatypeProperty ;
+    rdfs:label "displayName"@en ;
+    rdfs:comment "Human-readable name for a validation entity."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range xsd:string .
+
+dgv:externalProjectId a owl:DatatypeProperty ;
+    rdfs:label "externalProjectId"@en ;
+    rdfs:comment "ID of the linked project in the external geometry/viewer platform. Stored on the IntegrationConfig node for the project."@en ;
+    rdfs:domain dgv:IntegrationConfig ;
+    rdfs:range xsd:string .
+
+dgv:geoRefId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "geoRefId"@en ;
+    rdfs:comment "Source-system handle for a geometry primitive (an external source-system object handle). The value wired into the GeoRef input of OBJECT STATE per CTRCT-09. Characteristics: Functional."@en ;
+    rdfs:domain dgv:GeoRef ;
+    rdfs:range xsd:string .
+
+dgv:hasEntity a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_ENTITY"@en ;
+    rdfs:comment "Connects a Run to its evaluated ValidationEntity results. Characteristics: InverseFunctional — each ValidationEntity belongs to exactly one Run. Aligned with: prov:generated (R2) — a ValidationEntity is generated by the run."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range dgv:ValidationEntity .
+
+dgv:hasGeoRef a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_GEO_REF"@en ;
+    rdfs:comment "Connects an ObjState to its geometry handles wired into the GeoRef input of OBJECT STATE (CTRCT-09). One ObjState may have many GeoRefs (the geometry elements composing the ObjectInstance). Characteristics: InverseFunctional — each GeoRef belongs to exactly one ObjState. Aligned with: geo:hasGeometry (R6) — the GeoSPARQL pattern for object↔geometry linking."@en ;
+    rdfs:domain dg:ObjState ;
+    rdfs:range dgv:GeoRef .
+
+dgv:hasObjState a owl:FunctionalProperty,
+        owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_OBJECT_STATE"@en ;
+    rdfs:comment "Connects an ObjectInstance to its current ObjState (the geometry + variable binding snapshot). Characteristics: Functional + InverseFunctional — strict 1:1 cardinality per CMPST-06. Inverse of representsInstance."@en ;
+    rdfs:domain dgv:ObjectInstance ;
+    rdfs:range dg:ObjState ;
+    owl:inverseOf dgv:representsInstance .
+
+dgv:hasObjectVariable a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_OBJECT_VARIABLE"@en ;
+    rdfs:comment "Connects an ObjState to the SWRL Object Variable wired into the ObjectRef input of OBJECT STATE (CTRCT-08). The ObjectVariable is cross-rule (VTYP-02) — same variable name identifies the same ObjectInstance across all rules in a project. Characteristics: Functional — one canonical variable per ObjState."@en ;
+    rdfs:domain dg:ObjState ;
+    rdfs:range dgm-spike:ObjectVariable .
+
+dgv:hasParameter a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_PARAMETER"@en ;
+    rdfs:comment "Connects a DesignState snapshot to its individual parameters. Characteristics: InverseFunctional — each DesignStateParameter belongs to exactly one DesignState."@en ;
+    rdfs:domain dg:DesignState ;
+    rdfs:range dgv:DesignStateParameter .
+
+dgv:idRefValue a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "idRefValue"@en ;
+    rdfs:comment "The auto-regenerated identifier string produced by DESIGN STATE (CMPST-03, CMPST-05). Changes whenever ParamState changes. Note: IdRef is the DesignState's ID, NOT ObjState's ID — ObjState carries its own stateId (OS_ prefix). Characteristics: Functional."@en ;
+    rdfs:domain dgv:IdRef ;
+    rdfs:range xsd:string .
+
+dgv:instanceId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "instanceId"@en ;
+    rdfs:comment "Stable cross-rule identifier of an ObjectInstance. Format: OI_<hash>. Persists across geometry edits (CMPST-06). Characteristics: Functional."@en ;
+    rdfs:domain dgv:ObjectInstance ;
+    rdfs:range xsd:string .
+
+dgv:modelViewerUrl a owl:DatatypeProperty ;
+    rdfs:label "modelViewerUrl"@en ;
+    rdfs:comment "URL to view the validation results in the Model Viewer."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dgv:objectRefName a owl:DatatypeProperty ;
+    rdfs:label "objectRef"@en ;
+    rdfs:comment "Object variable reference string for an ObjState (e.g. the variable name from a ClassAtom). Links this ObjState to the SWRL Object variable it represents."@en ;
+    rdfs:domain dg:ObjState ;
+    rdfs:range xsd:string .
+
+dgv:parameterId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "parameterId"@en ;
+    rdfs:comment "Identifier of a design state parameter (maps to a DatatypeProperty iri in the Ontograph). Characteristics: Functional."@en ;
+    rdfs:domain dgv:DesignStateParameter ;
+    rdfs:range xsd:string .
+
+dgv:parameterType a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "parameterType"@en ;
+    rdfs:comment "Type discriminator for parameter value (enum-valued): ParameterType_Number, ParameterType_Integer, or ParameterType_Boolean. Characteristics: Functional."@en ;
+    rdfs:domain dgv:DesignStateParameter ;
+    rdfs:range dgv:DesignStateParameterTypeValue .
+
+dgv:propValue a owl:DatatypeProperty ;
+    rdfs:label "propValue"@en ;
+    rdfs:comment "The validated property value for this ValidationEntity (SCHM-05). One value per (Run, Rule, ObjectInstance) cell — the \"main attribute\" the rule checked. Shown in the Model Viewer's passing/failing item list per rule. Lex form (xsd:string) for display; actual typed value lives on the DesignStateParameter. Aligned with: sosa:hasSimpleResult (R3) — the validated value IS the observation's simple result."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range xsd:string .
+
+dgv:propValueOf a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "PROP_VALUE_OF"@en ;
+    rdfs:comment "Connects a ValidationEntity to the PropertyVariable whose value the rule checked (SCHM-05). The \"main attribute being validated\" — determines which property's value is shown in the Model Viewer's passing/failing list. Characteristics: Functional — one main property per ValidationEntity cell. Aligned with: sosa:observedProperty (R3, equivalent) and sh:resultPath (R4, subProperty)."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range dgm-spike:PropertyVariable .
+
+dgv:provider a owl:DatatypeProperty ;
+    rdfs:label "provider"@en ;
+    rdfs:comment "Integration provider name identifying the external geometry/viewer platform."@en ;
+    rdfs:domain dgv:IntegrationConfig ;
+    rdfs:range xsd:string .
+
+dgv:reasonerName a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "Display name of a Reasoner (e.g. 'SWRLForwardChainer', 'GrasshopperSolver'). Characteristics: Functional."@en ;
+    rdfs:domain dgv:Reasoner ;
+    rdfs:range xsd:string .
+
+dgv:refersToGeometry a owl:ObjectProperty ;
+    rdfs:label "REFERS_TO_GEOMETRY"@en ;
+    rdfs:comment "Connects a GeoRef to the Core Geometry it points at. Completes the ERD chain ObjState -hasGeoRef-> GeoRef -refersToGeometry-> Geometry, i.e. Geometry is linked to ObjState through the GeoRef handle. Geometry is part of Structure (Structure -hasGeometry-> Geometry)."@en ;
+    rdfs:domain dgv:GeoRef ;
+    rdfs:range dg:Geometry .
+
+dgv:resolvesTo a owl:ObjectProperty ;
+    rdfs:label "RESOLVES_TO"@en ;
+    rdfs:comment "Connects an IdRef to the ObjectInstance(s) it tracks across runs (INTG-03). Characteristics: none — an IdRef may resolve to many ObjectInstances (the run's full object set), and an ObjectInstance is referenced by many IdRefs over time (one per ParamState configuration)."@en ;
+    rdfs:domain dgv:IdRef ;
+    rdfs:range dgv:ObjectInstance .
+
+dgv:ruleId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "ruleId"@en ;
+    rdfs:comment "Rule ID associated with a validation entity result. Characteristics: Functional — each ValidationEntity references exactly one rule."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range xsd:string .
+
+dgv:rulesJson a owl:DatatypeProperty ;
+    rdfs:label "rulesJson"@en ;
+    rdfs:comment "JSON-serialized array of rules evaluated in this run."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dgv:runId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "runId"@en ;
+    rdfs:comment "Unique identifier for a validation run. Characteristics: Functional."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dgv:stateId a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:label "stateId"@en ;
+    rdfs:comment "Unique identifier for a DesignState snapshot. Characteristics: Functional."@en ;
+    rdfs:domain dg:DesignState ;
+    rdfs:range xsd:string .
+
+dgv:statePayloadJson a owl:DatatypeProperty ;
+    rdfs:label "statePayloadJson"@en ;
+    rdfs:comment "JSON-serialized DesignState snapshot used as input to this run."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dgv:status a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "status"@en ;
+    rdfs:comment "Status of a validation run (Status_Completed) or entity result (Status_Passed / Status_Failed). Domain union: Run ∪ ValidationEntity. Characteristics: Functional."@en ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( dgv:Run dgv:ValidationEntity ) ] ;
+    rdfs:range dgv:ValidationStatusValue .
+
+dgv:validatesInstance a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "VALIDATES_INSTANCE"@en ;
+    rdfs:comment "Connects a ValidationEntity result cell to the ObjectInstance it describes. Characteristics: Functional — each ValidationEntity describes exactly one ObjectInstance. Inverse direction is NOT functional: an ObjectInstance has many ValidationEntities (one per rule per run). Aligned with: sosa:hasFeatureOfInterest (R3, equivalent) and sh:focusNode (R4, subProperty). The SOSA mapping is the stronger semantic match; SHACL is a sibling subPropertyOf to avoid asserting transitive equivalence between sosa:hasFeatureOfInterest and sh:focusNode."@en ;
+    rdfs:domain dgv:ValidationEntity ;
+    rdfs:range dgv:ObjectInstance .
+
+dgv:validationModelId a owl:DatatypeProperty ;
+    rdfs:label "validationModelId"@en ;
+    rdfs:comment "ID of the validation overlay model in the external platform. Stored on the IntegrationConfig node."@en ;
+    rdfs:domain dgv:IntegrationConfig ;
+    rdfs:range xsd:string .
+
+dgv:validationVersionId a owl:DatatypeProperty ;
+    rdfs:label "validationVersionId"@en ;
+    rdfs:comment "Version ID of the validation overlay (in the external platform) created by this run."@en ;
+    rdfs:domain dgv:Run ;
+    rdfs:range xsd:string .
+
+dg:Behavior_Frame a dg:Behavior,
+        owl:NamedIndividual ;
+    rdfs:label "Frame Behavior"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasAlgorithm dgc:Algorithm_1 .
+
+dg:OS_b1_var_b a dg:ObjState,
+        owl:NamedIndividual ;
+    rdfs:label "ObjState: OI_Building_b1 ↔ ?b"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:hasGeoRef dgv:GR_geom_1,
+        dgv:GR_geom_2 ;
+    dgv:hasObjectVariable dgm-spike:var_b ;
+    dgv:objectRefName "obj-9f3e2a" ;
+    dgv:representsInstance dgv:OI_Building_b1 ;
+    dgv:stateId "OS_a1b2c3d4" ;
+    rdfs:comment "Binding snapshot pairing OI_Building_b1 with Object variable ?b (var_b) and its current GeoRef set. State_Id computed as OS_<SHA256(projectId + objectInstanceId + variableName)> per CMPST-07."@en .
+
+dg:Structure_Frame a dg:Structure,
+        owl:NamedIndividual ;
+    rdfs:label "Frame Structure"@en ;
+    dg:graph dgc:Computgraph .
+
+dgc:Algorithm_1 a dgc:Algorithm,
+        owl:NamedIndividual ;
+    rdfs:label "1_Algorithm"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:algorithmName "1_Algorithm" ;
+    dgc:hasProcedure dgc:Proc_11,
+        dgc:Proc_12 .
+
+dgc:Const_11_TrussConfig a dgc:ConstantParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Const_TrussConfig"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Integer ;
+    dgc:parameterDisplayName "Truss web configuration" ;
+    dgc:parameterName "11_Const_TrussConfig" .
+
+dgc:Const_11_ptZero a dgc:ConstantParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Const_ptZero"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Geometry ;
+    dgc:parameterDisplayName "Origin point" ;
+    dgc:parameterName "11_Const_ptZero" .
+
+dgc:Const_12_IndList_1 a dgc:ConstantParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Const_IndList_1"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Integer ;
+    dgc:parameterDisplayName "Index list 1" ;
+    dgc:parameterName "12_Const_IndList_1" .
+
+dgc:IntF_11_MergeRes a dgc:Output,
+        owl:NamedIndividual ;
+    rdfs:label "11_IntF_MergeRes"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:interfaceName "11_IntF_MergeRes" .
+
+dgc:IntF_11_ParSplitAt a dgc:Output,
+        owl:NamedIndividual ;
+    rdfs:label "11_IntF_ParSplitAt"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:interfaceName "11_IntF_ParSplitAt" .
+
+dgc:IntF_11_TrussConfig a dgc:Output,
+        owl:NamedIndividual ;
+    rdfs:label "11_IntF_TrussConfig"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:interfaceName "11_IntF_TrussConfig" .
+
+dgc:IntF_12_FooterFrame a dgc:Output,
+        owl:NamedIndividual ;
+    rdfs:label "12_IntF_FooterFrame"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:interfaceName "12_IntF_FooterFrame" .
+
+dgc:ListStructure_Flatten a dgc:ListStructureValue,
+        owl:NamedIndividual ;
+    rdfs:label "Flatten"@en .
+
+dgc:ListStructure_Graft a dgc:ListStructureValue,
+        owl:NamedIndividual ;
+    rdfs:label "Graft"@en .
+
+dgc:ListStructure_Reverse a dgc:ListStructureValue,
+        owl:NamedIndividual ;
+    rdfs:label "Reverse"@en .
+
+dgc:ListStructure_Simplify a dgc:ListStructureValue,
+        owl:NamedIndividual ;
+    rdfs:label "Simplify"@en .
+
+dgc:ParamDataType_Boolean a dgc:ParamDataTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Boolean"@en .
+
+dgc:ParamDataType_Text a dgc:ParamDataTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Text"@en .
+
+dgc:Pat_11_DivideLine a dgc:Pattern,
+        owl:NamedIndividual ;
+    rdfs:label "11_Pat_DivideLine"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasParameter dgc:Const_11_ptZero,
+        dgc:Var_11_SpansCount ;
+    dgc:patternName "11_Pat_DivideLine" .
+
+dgc:Pat_11_TopChord a dgc:Pattern,
+        owl:NamedIndividual ;
+    rdfs:label "11_Pat_TopChord"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasParameter dgc:Const_11_TrussConfig,
+        dgc:Var_11_HTotal ;
+    dgc:patternName "11_Pat_TopChord" .
+
+dgc:Pat_12_FooterBottomLines a dgc:Pattern,
+        owl:NamedIndividual ;
+    rdfs:label "12_Pat_1 - Create footer bottom lines"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasParameter dgc:Const_12_IndList_1,
+        dgc:Var_12_HFooter ;
+    dgc:patternName "12_Pat_1 - Create footer bottom lines" .
+
+dgc:Proc_11 a dgc:Procedure,
+        owl:NamedIndividual ;
+    rdfs:label "11_Proc - 2D Truss Configuration"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasInterface dgc:IntF_11_MergeRes,
+        dgc:IntF_11_ParSplitAt,
+        dgc:IntF_11_TrussConfig ;
+    dgc:hasPattern dgc:Pat_11_DivideLine,
+        dgc:Pat_11_TopChord ;
+    dgc:procedureName "11_Proc - 2D Truss Configuration" ;
+    dgc:procedureOrder 11 .
+
+dgc:Proc_12 a dgc:Procedure,
+        owl:NamedIndividual ;
+    rdfs:label "12_Proc - 2D Footer Configuration"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:hasInterface dgc:IntF_12_FooterFrame ;
+    dgc:hasPattern dgc:Pat_12_FooterBottomLines ;
+    dgc:procedureName "12_Proc - 2D Footer Configuration" ;
+    dgc:procedureOrder 12 .
+
+dgc:Var_11_HTotal a dgc:VariableParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Var_HTotal"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Float ;
+    dgc:parameterDisplayName "Total height" ;
+    dgc:parameterName "11_Var_HTotal" .
+
+dgc:Var_11_SpansCount a dgc:VariableParam,
+        owl:NamedIndividual ;
+    rdfs:label "11_Var_SpansCount"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Integer ;
+    dgc:parameterDisplayName "Count of spans" ;
+    dgc:parameterName "11_Var_SpansCount" .
+
+dgc:Var_12_HFooter a dgc:VariableParam,
+        owl:NamedIndividual ;
+    rdfs:label "12_Var_HFooter"@en ;
+    dg:graph dgc:Computgraph ;
+    dgc:paramDataType dgc:ParamDataType_Float ;
+    dgc:parameterDisplayName "Footer height" ;
+    dgc:parameterName "12_Var_HFooter" .
+
+ex:Block a owl:Class ;
+    rdfs:label "Block" .
+
+ex:Door a owl:Class ;
+    rdfs:label "Door" ;
+    owl:disjointWith ex:Window .
+
+ex:Facade a owl:Class ;
+    rdfs:label "Facade" .
+
+ex:LivingUnit a owl:Class ;
+    rdfs:label "LivingUnit" .
+
+ex:hasAreaM2 a owl:DatatypeProperty ;
+    rdfs:label "hasAreaM2" ;
+    rdfs:range xsd:decimal .
+
+ex:hasDistanceM a owl:DatatypeProperty ;
+    rdfs:label "hasDistanceM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasFootprintM2 a owl:DatatypeProperty ;
+    rdfs:label "hasFootprintM2" ;
+    rdfs:range xsd:decimal .
+
+ex:hasGridType a owl:DatatypeProperty ;
+    rdfs:label "hasGridType" ;
+    rdfs:range xsd:string .
+
+ex:hasStoreyCount a owl:DatatypeProperty ;
+    rdfs:label "hasStoreyCount" ;
+    rdfs:range xsd:integer .
+
+ex:violatesGridType a owl:DatatypeProperty ;
+    rdfs:label "violatesGridType" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxStoreyCount a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxStoreyCount" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinArea a owl:DatatypeProperty ;
+    rdfs:label "violatesMinArea" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinDistance a owl:DatatypeProperty ;
+    rdfs:label "violatesMinDistance" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinFootprintPct a owl:DatatypeProperty ;
+    rdfs:label "violatesMinFootprintPct" ;
+    rdfs:range xsd:boolean .
+
+dgm-spike:ObjectPropertyAtom a owl:Class ;
+    rdfs:label "ObjectPropertyAtom"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "An atom asserting an object property relationship (e.g. locatedIn(?b, ?block)). Takes two variable arguments."@en ;
+    rdfs:subClassOf dgm-spike:Atom .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A1 a dgm-spike:ClassAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:atomId "R_BUILDING_MAX_HEIGHT_75_V_A1" ;
+    dgm-spike:atomIri "ex:Building" ;
+    dgm-spike:atomSwrlLabel "Building" ;
+    dgm-spike:atomType "ClassAtom" ;
+    dgm-spike:hasArg dgm-spike:var_b .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A2 a dgm-spike:DataPropertyAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:atomId "R_BUILDING_MAX_HEIGHT_75_V_A2" ;
+    dgm-spike:atomIri "ex:hasHeightM" ;
+    dgm-spike:atomSwrlLabel "hasHeightM" ;
+    dgm-spike:atomType "DataPropertyAtom" ;
+    dgm-spike:hasArg dgm-spike:var_b,
+        dgm-spike:var_h .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_A3 a dgm-spike:BuiltinAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:atomId "R_BUILDING_MAX_HEIGHT_75_V_A3" ;
+    dgm-spike:atomIri "swrlb:greaterThan" ;
+    dgm-spike:atomSwrlLabel "greaterThan" ;
+    dgm-spike:atomType "BuiltinAtom" ;
+    dgm-spike:hasArg dgm-spike:literal_75,
+        dgm-spike:var_h ;
+    dgm-spike:refersTo dgm-spike:greaterThan .
+
+dgm-spike:R_BUILDING_MAX_HEIGHT_75_V_H1 a dgm-spike:DataPropertyAtom,
+        owl:NamedIndividual ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:atomId "R_BUILDING_MAX_HEIGHT_75_V_H1" ;
+    dgm-spike:atomIri "ex:violatesMaxHeight" ;
+    dgm-spike:atomSwrlLabel "violatesMaxHeight" ;
+    dgm-spike:atomType "DataPropertyAtom" ;
+    dgm-spike:hasArg dgm-spike:literal_true,
+        dgm-spike:var_b .
+
+dgm-spike:greaterThan a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "greaterThan"@en ;
+    rdfs:comment "swrlb:greaterThan — checks if first arg is strictly greater than second. Used for maximum constraints (violation when value exceeds limit)."@en .
+
+dgm-spike:hasHead a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_HEAD"@en ;
+    rdfs:comment "Connects a Rule to its head (conclusion) atoms. The head sets the violation flag to true when the body fires. Property: order (integer, 1-indexed). Characteristics: InverseFunctional — each Atom belongs to exactly one Rule's head. Disjoint with hasBody (declared on hasBody side). Equivalent to swrl:head."@en ;
+    rdfs:domain dgm-spike:Rule ;
+    rdfs:range dgm-spike:Atom .
+
+dgm-spike:lessThan a dgm-spike:Builtin,
+        owl:NamedIndividual ;
+    rdfs:label "lessThan"@en ;
+    rdfs:comment "swrlb:lessThan — checks if first arg is strictly less than second. Used for minimum constraints (violation when value below limit)."@en .
+
+dgm-spike:literal_75 a dgm-spike:Literal,
+        owl:NamedIndividual ;
+    rdfs:label "75"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:literalDatatype "xsd:decimal" ;
+    dgm-spike:literalLex "75" .
+
+dgm-spike:literal_true a dgm-spike:Literal,
+        owl:NamedIndividual ;
+    rdfs:label "true"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "TestA" ;
+    dgm-spike:literalDatatype "xsd:boolean" ;
+    dgm-spike:literalLex "true" .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Block .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:propertyPredicate ex:hasFootprintM2 .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/f> 0.18 ) ;
+    swrl:builtin swrlb:greaterThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinFootprintPct .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Building .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/s> ;
+    swrl:propertyPredicate ex:hasStoreyCount .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/s> 9 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMaxStoreyCount .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Building .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/d> ;
+    swrl:propertyPredicate ex:hasDistanceM .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/d> 12.0 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinDistance .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:classPredicate ex:Facade .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/g> ;
+    swrl:propertyPredicate ex:hasGridType .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/g> "hexagonal"^^xsd:string ) ;
+    swrl:builtin swrlb:equalTo .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:argument2 "hexagonal"^^xsd:string ;
+    swrl:propertyPredicate ex:violatesGridType .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:classPredicate ex:LivingUnit .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/a> ;
+    swrl:propertyPredicate ex:hasAreaM2 .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/a> 30.0 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinArea .
+
+dgs:Tag_architects a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "architects" .
+
+dgs:Tag_braga a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "braga" .
+
+dgs:Tag_building a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "building" .
+
+dgs:Tag_capacity a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "capacity" .
+
+dgs:Tag_compliance a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:tagName "compliance" .
+
+dgs:Tag_height a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:tagName "height" .
+
+dgs:Tag_parking a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "parking" .
+
+dgs:Tag_residential a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:tagName "residential" .
+
+dgs:Tag_rua_do_avelino_germano a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "rua-d0-avelino-germano" .
+
+dgs:Tag_staircase a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "staircase" .
+
+dgs:Tag_studio a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "studio" .
+
+dgs:Tag_zone_a a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "UrbanBlock" ;
+    dgs:tagName "zone-a" .
+
+dgv:GR_geom_1 a dgv:GeoRef,
+        owl:NamedIndividual ;
+    rdfs:label "GeoRef: obj:xyz1"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:geoRefId "obj:xyz1" ;
+    rdfs:comment "External source-system object handle for the primary mass geometry of Building #1."@en .
+
+dgv:GR_geom_2 a dgv:GeoRef,
+        owl:NamedIndividual ;
+    rdfs:label "GeoRef: obj:xyz2"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:geoRefId "obj:xyz2" ;
+    rdfs:comment "External source-system object handle for the roof geometry of Building #1."@en .
+
+dgv:IDR_DS_def_h25_w12 a dgv:IdRef,
+        owl:NamedIndividual ;
+    rdfs:label "IdRef for DS_def_h25_w12"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:idRefValue "IDR_a1b2c3d4e5f6" ;
+    dgv:resolvesTo dgv:OI_Building_b1 ;
+    rdfs:comment "Auto-generated identifier for ParamState DS_def_h25_w12 (CMPST-08). Resolves to OI_Building_b1 for cross-run tracking (INTG-03). Will regenerate if any slider value in the ParamState changes."@en .
+
+dgv:ParameterType_Boolean a dgv:DesignStateParameterTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Boolean"@en ;
+    rdfs:comment "Boolean parameter value. From Boolean Toggles in Grasshopper."@en .
+
+dgv:ParameterType_Integer a dgv:DesignStateParameterTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Integer"@en ;
+    rdfs:comment "Integer parameter value (long). From Integer Sliders in Grasshopper."@en .
+
+dgv:ParameterType_Number a dgv:DesignStateParameterTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Number"@en ;
+    rdfs:comment "Floating-point parameter value (double). From Number Sliders in Grasshopper."@en .
+
+dgv:ReStatus_AmbiguousTarget a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "AmbiguousTarget"@en ;
+    rdfs:comment "Multiple matching sliders/toggles found — cannot determine which to reinstate."@en .
+
+dgv:ReStatus_Applied a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "Applied"@en ;
+    rdfs:comment "Parameter value was successfully applied to the target slider/toggle."@en .
+
+dgv:ReStatus_MissingTarget a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "MissingTarget"@en ;
+    rdfs:comment "No matching slider/toggle found on the canvas for this parameter."@en .
+
+dgv:ReStatus_OutOfRange a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "OutOfRange"@en ;
+    rdfs:comment "Parameter value exceeds the target slider's min/max range."@en .
+
+dgv:ReStatus_TypeMismatch a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "TypeMismatch"@en ;
+    rdfs:comment "Target slider type does not match parameter type (e.g. Number param wired to Integer slider)."@en .
+
+dgv:ReStatus_Unchanged a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "Unchanged"@en ;
+    rdfs:comment "Target slider already has the requested value — no change needed."@en .
+
+dgv:ReStatus_WouldApply a dgv:ReStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "WouldApply"@en ;
+    rdfs:comment "Dry-run mode — parameter would be applied if reinstatement were executed."@en .
+
+dgv:VEntity_a5671cb1bd30_b1_height a dgv:ValidationEntity,
+        owl:NamedIndividual ;
+    rdfs:label "Entity: Building #1 height check (passed)"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:dgEntityId "VE_a5671cb1bd30_b1_height" ;
+    dgv:displayName "Building #1" ;
+    dgv:propValue "25" ;
+    dgv:propValueOf dgm-spike:var_h ;
+    dgv:ruleId "R_BUILDING_MAX_HEIGHT_75_V" ;
+    dgv:status dgv:Status_Passed ;
+    dgv:validatesInstance dgv:OI_Building_b1 ;
+    rdfs:comment "Per-rule, per-instance validation result cell. Records that Building #1 passed R_BUILDING_MAX_HEIGHT_75_V with a measured height value of 25 (the propValue — SCHM-05). Belongs to run a5671cb1bd30."@en .
+
+dgv:VEntity_a5671cb1bd30_b1_overflow a dgv:ValidationEntity,
+        owl:NamedIndividual ;
+    rdfs:label "Entity: Building #1 height check (failed example)"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:dgEntityId "VE_a5671cb1bd30_b1_overflow" ;
+    dgv:displayName "Building #1" ;
+    dgv:propValue "80" ;
+    dgv:propValueOf dgm-spike:var_h ;
+    dgv:ruleId "R_BUILDING_MAX_HEIGHT_75_V" ;
+    dgv:status dgv:Status_Failed ;
+    dgv:validatesInstance dgv:OI_Building_b1 ;
+    rdfs:comment "Illustrative failing case: same ObjectInstance, different parametric run, height exceeded the 75m limit (value 80). Shows that ObjectInstance can be referenced by multiple ValidationEntities — one per (Run × Rule)."@en .
+
+dgv:hasIdRef a owl:FunctionalProperty,
+        owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "HAS_ID_REF"@en ;
+    rdfs:comment "Connects a ParamState to its auto-generated IdRef. Characteristics: Functional + InverseFunctional — IdRef IS the ParamState-generated DesignState ID, so strict 1:1 cardinality (CMPST-08). Domain restricted to ParamState (NOT all DesignState): per CMPST-05, only ParamState triggers IdRef regeneration. ObjState carries its own stateId (OS_ prefix) and never has an IdRef — see the ObjState SubClassOf (hasIdRef max 0) restriction below."@en ;
+    rdfs:domain dg:ParamState ;
+    rdfs:range dgv:IdRef .
+
+dgv:representsInstance a owl:FunctionalProperty,
+        owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "REPRESENTS_INSTANCE"@en ;
+    rdfs:comment "Connects an ObjState back to the ObjectInstance it captures. Characteristics: Functional + InverseFunctional — strict 1:1 cardinality. Inverse of hasObjState."@en ;
+    rdfs:domain dg:ObjState ;
+    rdfs:range dgv:ObjectInstance .
+
+swrlb:equalTo a swrl:Builtin .
+
+swrlb:greaterThan a swrl:Builtin .
+
+dg:PropState a owl:Class ;
+    rdfs:label "PropState"@en ;
+    rdfs:comment "Property state — the third DesignState kind (v7.0), composing a Rule's DataProperty result and its validated PropValue for a specific ObjectInstance. Built on the existing dgv:propValue / dgv:propValueOf datatype/object properties, which already attach per-instance validation-result values to ValidationEntity — PropState generalises that per-cell value into a first-class DesignState kind alongside ObjState and ParamState (ONTO-03, GHST-03). ID prefix: PS_."@en ;
+    rdfs:subClassOf dg:DesignState .
+
+dg:Topology a owl:Class ;
+    rdfs:label "Topology"@en ;
+    rdfs:comment "Spatial topology of geometric structure — decomposition via Topologic library (Cluster, CellComplex, Cell, Shell, Face, Wire, Edge, Vertex). Used for spatial analysis of design output. Alignment with external Topologic vocabulary defined in DesignGrammar-Topologic-extension.owl."@en ;
+    rdfs:subClassOf dg:Core .
+
+dgc:Input a owl:Class ;
+    rdfs:label "Input"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "An input port on an Interface — receives data into a Procedure or Pattern."@en ;
+    rdfs:subClassOf dgc:Interface .
+
+ex:Building a owl:Class ;
+    rdfs:label "Building" .
+
+ex:Window a owl:Class .
+
+dgm-spike:BuiltinVariable a owl:Class ;
+    rdfs:label "BuiltinVariable"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A variable bound only inside BuiltinAtom arguments (e.g. an arithmetic intermediate). Not surfaced on the Grasshopper canvas — the VariableTypeInferrer recognizes this category to keep RULE DECONSTRUCT outputs clean (VTYP-01 priority chain step 3)."@en ;
+    rdfs:subClassOf dgm-spike:Variable .
+
+dgm-spike:VariableScope_CrossRule a dgm-spike:VariableScopeValue,
+        owl:NamedIndividual ;
+    rdfs:label "cross-rule"@en ;
+    rdfs:comment "Shared identity across all rules in a project. Applies to Object variables (VTYP-02)."@en .
+
+dgm-spike:VariableScope_RuleLocal a dgm-spike:VariableScopeValue,
+        owl:NamedIndividual ;
+    rdfs:label "rule-scoped"@en ;
+    rdfs:comment "Independent variable per rule. Applies to Property variables (VTYP-03)."@en .
+
+dgm-spike:variableScope a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "variableScope"@en ;
+    rdfs:comment "Scoping semantics (enum-valued): VariableScope_CrossRule for Object variables (shared identity across rules in a project, VTYP-02) or VariableScope_RuleLocal for Property variables (independent per rule, VTYP-03). Derived from variableKind. Characteristics: Functional."@en ;
+    rdfs:domain dgm-spike:Variable ;
+    rdfs:range dgm-spike:VariableScopeValue .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/a> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/d> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/g> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/s> a swrl:Variable .
+
+dgs:Tag_guimaraes a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "guimaraes" .
+
+dgs:Tag_portugal a dgs:SpecTag,
+        owl:NamedIndividual ;
+    dg:graph dgs:SpecGraph ;
+    dg:project "TestA" ;
+    dgs:tagName "portugal" .
+
+dgv:Status_Failed a dgv:ValidationStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "failed"@en ;
+    rdfs:comment "Validation entity failed one or more rules — violations detected."@en .
+
+dgv:Status_Passed a dgv:ValidationStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "passed"@en ;
+    rdfs:comment "Validation entity passed all rules — no violations detected."@en .
+
+dg:Geometry a owl:Class ;
+    rdfs:label "Geometry"@en ;
+    rdfs:comment "Typed geometric data flowing through the parametric definition. Represents GH geometry types (Line, Point, Vector, Brep, Mesh, etc.). Connected to Structure as the physical form output. Distinct from dgv:ObjectInstance (which is a validated entity in Validgraph)."@en ;
+    rdfs:subClassOf dg:Core .
+
+dg:ObjProperty a owl:Class ;
+    rdfs:label "ObjProperty"@en ;
+    dg:graph dg:Ontograph ;
+    rdfs:comment "A dynamically generated object property in the Ontograph layer. Represents relationships between domain classes (e.g. locatedIn). Key property: iri. Aligned with: owl:ObjectProperty (R7)."@en ;
+    rdfs:subClassOf dg:Ontograph,
+        owl:ObjectProperty .
+
+dgc:ParamDataType_Float a dgc:ParamDataTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Float"@en .
+
+dgm-spike:BuiltinAtom a owl:Class ;
+    rdfs:label "BuiltinAtom"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "An atom invoking a SWRL builtin comparison operator (e.g. swrlb:greaterThan(?h, 75)). Takes two arguments for comparison."@en ;
+    rdfs:subClassOf dgm-spike:Atom .
+
+dgm-spike:ClassAtom a owl:Class ;
+    rdfs:label "ClassAtom"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "An atom asserting class membership (e.g. Building(?b)). Takes one variable argument at pos 1."@en ;
+    rdfs:subClassOf dgm-spike:Atom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/u> a swrl:Variable .
+
+swrlb:lessThan a swrl:Builtin .
+
+dg:Behavior a owl:Class ;
+    rdfs:label "Behavior"@en ;
+    rdfs:comment "How the design achieves its function — the computational process. Described by an Algorithm (Grasshopper definition). Behavior produces Structure (geometric form). In DCM: Behavior IS the parametric definition that generates design output."@en ;
+    rdfs:subClassOf dg:Core .
+
+dg:Function a owl:Class ;
+    rdfs:label "Function"@en ;
+    rdfs:comment "What the design object is supposed to achieve — its purpose or design intent. Rules enforce Functions. A Function is realized through Behavior (the computation that achieves it). Connected to Reasoner (as the mechanism evaluating design intent)."@en ;
+    rdfs:subClassOf dg:Core .
+
+dg:ParamState a owl:Class ;
+    rdfs:label "ParamState"@en ;
+    rdfs:comment "Definition state — a named set of Number/Integer/Boolean parameters captured from Grasshopper sliders and toggles. Represents the current parametric configuration. When ParamState changes, dependent IdRefs regenerate. ID prefix: DS_."@en ;
+    rdfs:subClassOf dg:DesignState .
+
+dgm-spike:RuleSet a owl:Class ;
+    rdfs:label "RuleSet"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A named collection of design grammar rules applied together as a regulatory package (e.g. \"BuildingCode2024\"). A RuleSet is NOT a sequence — rules within it have no precedence order. Rules can only host each other (nesting). Contains Rules via dgm:hasRule. Linked to a Reasoner via dgm:usesReasoner."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph .
+
+dgm-spike:VariableScopeValue a owl:Class ;
+    rdfs:label "VariableScope"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "Enumeration of variable scoping semantics derived from VariableKind. SCHM-06: enum class mirroring DesignStateParameterTypeValue pattern. Closed via owl:oneOf."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgm-spike:VariableScope_CrossRule dgm-spike:VariableScope_RuleLocal ) ] .
+
+dgm-spike:var_b a dgm-spike:ObjectVariable,
+        owl:NamedIndividual ;
+    rdfs:label "?b"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:variableName "?b" ;
+    rdfs:comment "Object variable representing a Building instance. Inferred from ClassAtom Building(?b). Cross-rule scoped (VTYP-02)."@en .
+
+dgm-spike:var_h a dgm-spike:PropertyVariable,
+        owl:NamedIndividual ;
+    rdfs:label "?h"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    dg:project "UrbanBlock" ;
+    dgm-spike:inferredDatatype "xsd:decimal" ;
+    dgm-spike:variableName "?h" ;
+    rdfs:comment "Property variable representing height. Inferred from DataPropertyAtom hasHeightM(?b,?h) arg-2. Rule-scoped (VTYP-03)."@en .
+
+dgs:SpecClass a owl:Class ;
+    rdfs:label "SpecClass"@en ;
+    dg:graph dgs:SpecGraph ;
+    rdfs:comment "Parent hub node connecting all instances of a knowledge type. Acts as a type discriminator (e.g. SpecNote, Session)."@en ;
+    rdfs:subClassOf dgs:SpecGraph .
+
+dgv:DesignStateParameter a owl:Class ;
+    rdfs:label "DesignStateParameter"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "A single measurable parameter within a ParamState snapshot. Has a parameterId, displayName, type (Number/Integer/Boolean), and the corresponding typed value."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dgv:OI_Building_b1 a dgv:ObjectInstance,
+        owl:NamedIndividual ;
+    rdfs:label "ObjectInstance: Building #1"@en ;
+    dg:graph dgv:Validgraph ;
+    dg:project "TestA" ;
+    dgv:hasObjState dg:OS_b1_var_b ;
+    dgv:instanceId "OI_Building_b1" ;
+    rdfs:comment "Cross-rule identity for the first Building in the TestA model. Bound to Object variable ?b via its ObjState."@en .
+
+dgv:Reasoner a owl:Class ;
+    rdfs:label "Reasoner"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "An evaluation engine concept representing the strategy used to apply rules to design state. Different reasoners may process rules differently (SWRL forward-chaining, Grasshopper constraint solver, parametric propagation). Linked from RuleSet (dgm:usesReasoner) and from Core Function (dg:evaluatedBy, as the mechanism that evaluates design intent). Corresponds to the Grasshopper \"Validator\" add-in component. Reconsidered as part of the Validgraph layer in v6.0."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dg:LayerEntity a owl:Class ;
+    rdfs:label "LayerEntity"@en ;
+    rdfs:comment "Abstract root for DG entities that belong to one of the four graph layers. Direct subclasses are the four layer hubs: dg:Ontograph, dgm:Metagraph, dgv:Validgraph, dgs:SpecGraph. Each hub IRI is simultaneously a class (grouping its layer's DG entities) AND a NamedIndividual of dg:GraphLayer via OWL 2 punning (v3.4 unified structure). dg:LayerEntity itself is intentionally NOT tagged with a dg:graph annotation because it is cross-cutting — it is the parent of all four layer hubs, not a member of any single layer."@en .
+
+dg:Structure a owl:Class ;
+    rdfs:label "Structure"@en ;
+    rdfs:comment "What the design IS — its physical/geometric form resulting from Behavior. Connects to Geometry (data) and Topology (spatial decomposition). Represents the output of parametric computation."@en ;
+    rdfs:subClassOf dg:Core .
+
+dgc:Algorithm a owl:Class ;
+    rdfs:label "Algorithm"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A complete parametric definition — the top-level container for the computational process. Maps to a Grasshopper definition file (the whole canvas). Contains Procedures. Example: '1_Algorithm' generating a Frame object."@en ;
+    rdfs:subClassOf dgc:Computgraph .
+
+dgm-spike:DataPropertyAtom a owl:Class ;
+    rdfs:label "DataPropertyAtom"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "An atom asserting a datatype property value (e.g. hasHeightM(?b, ?h)). Takes two arguments: entity variable (pos 1) and value variable/literal (pos 2)."@en ;
+    rdfs:subClassOf dgm-spike:Atom .
+
+dgm-spike:PropertyVariable a owl:Class ;
+    rdfs:label "PropertyVariable"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A variable representing a datatype property value (e.g. ?h for height). Inferred from DataPropertyAtom arg-2 position (VTYP-01). Property variables are rule-scoped: the same name in different rules represents independent variables (VTYP-03). The rule-local scope is inferred by reasoner via the SubClassOf restriction below (v4.1)."@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue dgm-spike:VariableScope_RuleLocal ;
+            owl:onProperty dgm-spike:variableScope ],
+        dgm-spike:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/f> a swrl:Variable .
+
+dgv:DesignStateParameterTypeValue a owl:Class ;
+    rdfs:label "DesignStateParameterType"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Enumeration of supported parameter value types for DesignState snapshots. Corresponds to C# enum DG.Core.Models.DesignStateParameterType. Closed via owl:oneOf."@en ;
+    rdfs:subClassOf dgv:Validgraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgv:ParameterType_Number dgv:ParameterType_Integer dgv:ParameterType_Boolean ) ] .
+
+dgv:ValidationStatusValue a owl:Class ;
+    rdfs:label "ValidationStatus"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Status values for validation runs and entity results. Closed via owl:oneOf — value space is fixed at Completed, Passed, Failed."@en ;
+    rdfs:subClassOf dgv:Validgraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgv:Status_Completed dgv:Status_Passed dgv:Status_Failed ) ] .
+
+dg:GraphLayer a owl:Class ;
+    rdfs:label "GraphLayer"@en ;
+    rdfs:comment "A logical partition of the single Neo4j database. The Design Grammar System organizes all persisted nodes into exactly four layers (closed enumeration via owl:oneOf below, v4.1): Ontograph, Metagraph, Validgraph, SpecGraph. The four layer IRIs are punned per OWL 2 — each is both a class (parent of the layer's DG entities, under LayerEntity) and an individual (member of this GraphLayer enum). Every DG class carries a `dg:graph` annotation pointing at its layer."@en ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dg:Ontograph dgm-spike:Metagraph dgv:Validgraph dgs:SpecGraph dgc:Computgraph ) ] .
+
+dgc:ConstantParam a owl:Class ;
+    rdfs:label "ConstantParam"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A fixed configuration value — preset and not intended for user adjustment. Example: '11_Const_ptZero' (origin point), '11_Const_TrussConfig' (Truss Web Configuration)."@en ;
+    rdfs:subClassOf dgc:Parameter .
+
+dgc:EmergentParam a owl:Class ;
+    rdfs:label "EmergentParam"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A computed output value — emerges from Pattern execution. Not directly set by user; derived from computation. Example: '11_Emg_LineSDL' (computed line), '12_Emg_FooterFrame' (generated frame geometry)."@en ;
+    rdfs:subClassOf dgc:Parameter .
+
+dgc:ListStructureValue a owl:Class ;
+    rdfs:label "ListStructure"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "Enumeration of Grasshopper data tree management operations applicable to Interfaces. Closed via owl:oneOf."@en ;
+    rdfs:subClassOf dgc:Computgraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgc:ListStructure_Flatten dgc:ListStructure_Graft dgc:ListStructure_Simplify dgc:ListStructure_Reverse ) ] .
+
+dgc:Output a owl:Class ;
+    rdfs:label "Output"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "An output port on an Interface — emits data from a Procedure or Pattern."@en ;
+    rdfs:subClassOf dgc:Interface .
+
+dgc:ParamDataType_Geometry a dgc:ParamDataTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Geometry"@en .
+
+dgc:ParamDataType_Integer a dgc:ParamDataTypeValue,
+        owl:NamedIndividual ;
+    rdfs:label "Integer"@en .
+
+dgc:VariableParam a owl:Class ;
+    rdfs:label "VariableParam"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A user-adjustable input parameter (GH slider, number input, toggle). Value can be changed by the user at design time. Example: '11_Var_SpansCount' (Count of spans), '12_Var_HFooter' (Footer Height)."@en ;
+    rdfs:subClassOf dgc:Parameter .
+
+dgm-spike:ObjectVariable a owl:Class ;
+    rdfs:label "ObjectVariable"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A variable representing a domain entity instance (e.g. ?b for Building). Inferred from ClassAtom arguments (VTYP-01). Object variables are cross-rule scoped: the same variable name maps to the same entity across all rules in a project (VTYP-02). Can be wired to OBJECT STATE component to create ObjState (CMPST-01). The cross-rule scope is inferred by reasoner via the SubClassOf restriction below (v4.1)."@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue dgm-spike:VariableScope_CrossRule ;
+            owl:onProperty dgm-spike:variableScope ],
+        dgm-spike:Variable .
+
+dgv:Status_Completed a dgv:ValidationStatusValue,
+        owl:NamedIndividual ;
+    rdfs:label "completed"@en ;
+    rdfs:comment "Validation run finished successfully."@en .
+
+dg:Class a owl:Class ;
+    rdfs:label "Class"@en ;
+    dg:graph dg:Ontograph ;
+    rdfs:comment "A dynamically generated OWL class in the Ontograph layer. Created from user prompts (e.g. Building, UrbanBlock). Key property: iri. Aligned with: owl:Class (R7, subClassOf rather than equivalentClass — DG reifies the OWL meta-schema as Neo4j data, so dg:Class instances are also conceptually owl:Class instances, but using subClassOf keeps the meta-level reification clear)."@en ;
+    rdfs:subClassOf dg:Ontograph,
+        owl:Class .
+
+dg:Object a owl:Class ;
+    rdfs:label "Object"@en ;
+    rdfs:comment "A design entity described through its Function, Behavior, and Structure (FBS framework). Represents a parametric design object whose behavior is defined by Grasshopper algorithms. Example: a Frame object whose algorithm generates a 2D truss. Bridges to dg:Class instances (a Building IS an Object in DCM terms)."@en ;
+    rdfs:subClassOf dg:Core .
+
+dgc:Interface a owl:Class ;
+    rdfs:label "Interface"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "An inter-procedure connector — exposes data between Procedures. Maps to Grasshopper connection points at procedure boundaries. Has InterfaceType (Input/Output) and optional ListStructure for data tree management. Example: '11_IntF_ParSplitAt', '11_IntF_MergeRes'. Every Interface is necessarily an Input OR an Output (owl:disjointUnionOf)."@en ;
+    rdfs:subClassOf dgc:Computgraph ;
+    owl:disjointUnionOf ( dgc:Input dgc:Output ) .
+
+dgc:ParamDataTypeValue a owl:Class ;
+    rdfs:label "ParamDataType"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "Enumeration of parameter data types in the computation graph. Maps to Grasshopper data types. Closed via owl:oneOf."@en ;
+    rdfs:subClassOf dgc:Computgraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgc:ParamDataType_Float dgc:ParamDataType_Integer dgc:ParamDataType_Text dgc:ParamDataType_Boolean dgc:ParamDataType_Geometry ) ] .
+
+dgv:GeoRef a owl:Class ;
+    rdfs:label "GeoRef"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Geometry reference — a handle to a geometry primitive in the source model (an external source-system object handle) wired into the OBJECT STATE component (CMPST-01, CTRCT-09). One ObjState may reference multiple GeoRefs (the geometry elements that compose the ObjectInstance). Aligned with: geo:Geometry (R6) — note that DG stores a source-system handle (geoRefId) rather than serialized geometry (geo:asWKT)."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dgv:IdRef a owl:Class ;
+    rdfs:label "IdRef"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Auto-generated DesignState identifier (CMPST-08). IdRef = DesignState ID — NOT ObjState ID. Regenerates whenever ParamState changes (CMPST-05). Persisted in statePayloadJson for cross-run object identity tracking (INTG-03). Resolves to one or more ObjectInstance(s). ID prefix: IDR_."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dgv:IntegrationConfig a owl:Class ;
+    rdfs:label "IntegrationConfig"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Configuration node linking a DG project to its external geometry/viewer integration. Stores the external project ID, base model, and validation model references. One per project per provider."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dg:Core a owl:Class ;
+    rdfs:label "Core"@en ;
+    rdfs:comment "Top-level grouping for the main Design Grammar entities considered over the layer structure: Object, Function, Behavior, Structure (Gero FBS), Geometry, Topology, DesignState (with ObjState/ParamState), and the shared Session. Core entities are referenced by the five graph layers but belong to none of them — they carry no dg:graph annotation (cross-cutting, like dg:LayerEntity). An Object has Function, Behavior, and Structure; its Function is covered by the Ontograph layer (dg:definesFunction), and its Design State is validated by the Metagraph layer (dgm:validates)."@en .
+
+dgc:Procedure a owl:Class ;
+    rdfs:label "Procedure"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A grouped sequence of Patterns within an Algorithm — an organizational unit of computation. Maps to a Grasshopper Cluster or Group. Contains Patterns and exposes Interfaces for inter-procedure data flow. Example: '11_Proc - 2D Truss Configuration', '12_Proc - 2D Footer Configuration'."@en ;
+    rdfs:subClassOf dgc:Computgraph .
+
+dgm-spike:Variable a owl:Class ;
+    rdfs:label "Variable"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A SWRL variable (e.g. ?b, ?h). Key property: name (prefixed with '?'). Every Variable individual is necessarily an ObjectVariable, PropertyVariable, OR BuiltinVariable (owl:disjointUnionOf below — VTYP-01 priority chain). MERGE key includes project to prevent cross-project collision (SCHM-02). STORAGE NOTE: In the Neo4j layer, variable kind is inferred at read time by VariableTypeInferrer.Infer() — not stored on the Var node. The OWL ontology uses rdf:type plus disjointUnionOf to discriminate; no separate kind property exists (v4.1)."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph ;
+    owl:disjointUnionOf ( dgm-spike:ObjectVariable dgm-spike:PropertyVariable dgm-spike:BuiltinVariable ) .
+
+dgv:ObjectInstance a owl:Class ;
+    rdfs:label "ObjectInstance"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Cross-rule identity of a validated geometric element (CMPST-06). The noun — the actual thing in the model that gets validated. Stable across geometry edits. Each ObjectInstance has exactly one ObjState (its current binding snapshot). ID prefix: OI_. Both ObjectInstance and ObjState live above rule scope. Aligned with: sosa:FeatureOfInterest (R3) and geo:Feature (R6)."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dgv:ReStatusValue a owl:Class ;
+    rdfs:label "ReStatus"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Outcome status for a single parameter during design state reinstatement. Corresponds to C# enum DG.Core.Models.ReStatus. Used by the REINSTATE component to report per-parameter results. Closed via owl:oneOf."@en ;
+    rdfs:subClassOf dgv:Validgraph ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:oneOf ( dgv:ReStatus_Applied dgv:ReStatus_MissingTarget dgv:ReStatus_TypeMismatch dgv:ReStatus_AmbiguousTarget dgv:ReStatus_OutOfRange dgv:ReStatus_Unchanged dgv:ReStatus_WouldApply ) ] .
+
+dg:DesignState a owl:Class ;
+    rdfs:label "DesignState"@en ;
+    rdfs:comment "A snapshot of design parameters captured from Grasshopper. Every DesignState individual is necessarily one of ParamState, ObjState, or PropState (owl:disjointUnionOf below) — mutually exclusive, never more than one. ID prefixes: DS_ (ParamState), OS_ (ObjState), PS_ (PropState). Composed by DESIGN STATE and persisted in validation runs (v7.0: CLASSIFICATOR is eliminated; VALIDATOR binds directly from the composed DesignState). STORAGE NOTE: In the Neo4j layer (SCHM-01), this discrimination is materialized as a `kind` property with values \"ParamState\" | \"ObjState\" | \"PropState\" on a single :DesignState node label — a runtime convenience because Cypher does not infer subclass membership. The OWL ontology does not include the kind property because rdf:type plus disjointUnionOf already discriminate (v4.1)."@en ;
+    rdfs:subClassOf dg:Core ;
+    owl:disjointUnionOf ( dg:ParamState dg:ObjState dg:PropState ) .
+
+dgm-spike:Literal a owl:Class ;
+    rdfs:label "Literal"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A constant value used as an atom argument (e.g. 75, true). Key properties: lex (lexical form) + datatype (xsd type)."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/b> a swrl:Variable .
+
+dg:DataProperty a owl:Class ;
+    rdfs:label "DataProperty"@en ;
+    dg:graph dg:Ontograph ;
+    rdfs:comment "A dynamically generated datatype property in the Ontograph layer. Represents measurable attributes (e.g. hasHeightM) and violation flags (e.g. violatesMaxHeight). Key property: iri. Aligned with: owl:DatatypeProperty (R7)."@en ;
+    rdfs:subClassOf dg:Ontograph,
+        owl:DatatypeProperty .
+
+dg:ObjState a owl:Class ;
+    rdfs:label "ObjState"@en ;
+    rdfs:comment "Object state — associates an Object variable reference (from SWRL ClassAtom) with geometry elements. Created by the OBJECT STATE component by wiring ObjectRef + GeoRef. Composed into DESIGN STATE alongside ParamState to produce stable IdRefs. ID prefix: OS_. NEVER has an IdRef — carries its own stateId (OS_ prefix). Enforced via SubClassOf (hasIdRef max 0)."@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:maxQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+            owl:onClass dgv:IdRef ;
+            owl:onProperty dgv:hasIdRef ],
+        dg:DesignState .
+
+dgc:Parameter a owl:Class ;
+    rdfs:label "Parameter"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "A typed value in a parametric definition — data flowing through the computation graph. Distinct from dgm:Variable (which is a SWRL runtime binding): Parameter is a GH definition-time concept. Has ParameterType (Var/Const/Emergent) and ParamDataType. Bridge: Atoms can reference Parameters via dgc:attributeOf. Every Parameter is necessarily a VariableParam, ConstantParam, OR EmergentParam (owl:disjointUnionOf)."@en ;
+    rdfs:subClassOf dgc:Computgraph ;
+    owl:disjointUnionOf ( dgc:VariableParam dgc:ConstantParam dgc:EmergentParam ) .
+
+dgc:Pattern a owl:Class ;
+    rdfs:label "Pattern"@en ;
+    dg:graph dgc:Computgraph ;
+    rdfs:comment "The atomic unit of parametric computation — a single operation node. Maps to a Grasshopper Component (a node on the canvas). Has Interfaces (I/O ports) and receives Parameters. Patterns can host other Patterns (nesting). Example: '11_Pat_DivideLine', '11_Pat_TopChord', '12_Pat_1 - Create footer bottom lines'."@en ;
+    rdfs:subClassOf dgc:Computgraph .
+
+dgm-spike:Builtin a owl:Class ;
+    rdfs:label "Builtin"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A SWRL builtin comparison or arithmetic operator. Referenced by BuiltinAtom via REFERS_TO. Key property: iri (swrlb: prefix)."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph .
+
+dg:hasPart a owl:ObjectProperty,
+        owl:TransitiveProperty ;
+    rdfs:label "HAS_PART"@en ;
+    rdfs:comment "Generic composition (part-whole) relation. Transitive super-property of the ERD containment hierarchy: Object hasPart {Function, Behavior, Structure}; Structure hasPart {Geometry, Topology}; RuleSet hasPart Rule; Algorithm hasPart Procedure; Procedure hasPart Pattern; Pattern hasPart {Parameter, Interface}. Transitivity yields the full decomposition, e.g. Object hasPart Geometry and Algorithm hasPart Parameter. Inverse: dg:partOf. Not used in cardinality restrictions (kept simple-property-safe for OWL 2 DL)."@en .
+
+dgv:ValidationEntity a owl:Class ;
+    rdfs:label "ValidationEntity"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "A BIM entity evaluated in a validation run. Records the entity's DG ID, display name, and overall pass/fail status for the specific run and rule. Aligned with: prov:Entity (R2), sosa:Observation (R3), and sh:ValidationResult (R4) — the cell (Run × Rule × ObjectInstance) is simultaneously a provenance entity, an observation of a property on a feature, and a validation result."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dg:Session a owl:Class ;
+    rdfs:label "Session"@en ;
+    rdfs:comment "A unified interaction-log entity common to all layers (v6.0 — unifies the former Metagraph rule-session and Spec knowledge-session logs). Records an LLM-driven interaction (the user prompt and generated result); the sessionMode discriminates the operation (ingest/query/edit for rule sessions, insert/query/update for spec sessions). Aligned with: prov:Activity (see standards extension)."@en ;
+    rdfs:subClassOf dg:Core .
+
+dgm-spike:Atom a owl:Class ;
+    rdfs:label "Atom"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "An individual SWRL atom — a single predicate assertion within a rule. Types: ClassAtom, DataPropertyAtom, ObjectPropertyAtom, BuiltinAtom. Key property: Atom_Id."@en ;
+    rdfs:subClassOf dgm-spike:Metagraph .
+
+dgm-spike:Rule a owl:Class ;
+    rdfs:label "Rule"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "A design grammar rule expressed as a SWRL implication. Contains body atoms (conditions) and head atoms (conclusions). Key property: Rule_Id. Format: R_<DOMAIN>_<PROPERTY>_<LIMIT>_V"@en ;
+    rdfs:subClassOf dgm-spike:Metagraph .
+
+dgs:SpecNote a owl:Class ;
+    rdfs:label "SpecNote"@en ;
+    dg:graph dgs:SpecGraph ;
+    rdfs:comment "A project knowledge entry (from folder ingest or NL prompt). Contains title, content, tags, and source reference."@en ;
+    rdfs:subClassOf dgs:SpecGraph .
+
+dgv:Run a owl:Class ;
+    rdfs:label "Run"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "A single execution of rule evaluation against design state. Records which rules were evaluated, the external model version created, and entity-level pass/fail results. Created by the DG Grasshopper plugin's validation workflow. Aligned with: prov:Activity (R2) and sh:ValidationReport (R4)."@en ;
+    rdfs:subClassOf dgv:Validgraph .
+
+dg:Ontograph a dg:GraphLayer,
+        owl:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Ontograph"@en ;
+    dg:graph dg:Ontograph ;
+    rdfs:comment "Hub class for the Ontograph layer (dynamic domain ontology meta-schema). Top-level subclasses: Class, DatatypeProperty, ObjectProperty."@en ;
+    rdfs:subClassOf dg:LayerEntity .
+
+dgs:SpecTag a owl:Class ;
+    rdfs:label "SpecTag"@en ;
+    dg:graph dgs:SpecGraph ;
+    rdfs:comment "A tag label shared across knowledge notes for categorization. Aligned with: skos:Concept (R5) — a Tag IS a concept in a project's tag taxonomy."@en ;
+    rdfs:subClassOf dgs:SpecGraph .
+
+dgv:Validgraph a dg:GraphLayer,
+        owl:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Validgraph"@en ;
+    dg:graph dgv:Validgraph ;
+    rdfs:comment "Hub class for the Validgraph layer (validation runs, design state, integration config). Top-level subclasses: Run, ValidationEntity, Reasoner, DesignStateParameter, IntegrationConfig, ObjectInstance, GeoRef, IdRef, and three enum value classes (DesignStateParameterTypeValue, ValidationStatusValue, ReStatusValue). (The design-state classes moved to Core in v6.0.)"@en ;
+    rdfs:subClassOf dg:LayerEntity .
+
+dgs:SpecGraph a dg:GraphLayer,
+        owl:Class,
+        owl:NamedIndividual ;
+    rdfs:label "SpecGraph"@en ;
+    dg:graph dgs:SpecGraph ;
+    rdfs:comment "Hub class for the SpecGraph layer (project specification notes and tags). Top-level subclasses: SpecClass, SpecNote, SpecTag. (Renamed in v6.0; sessions unified into Core.)"@en ;
+    rdfs:subClassOf dg:LayerEntity .
+
+dgc:Computgraph a dg:GraphLayer,
+        owl:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Computgraph"@en ;
+    rdfs:comment "Hub class for the Computgraph layer (DCM parametric design model). Contains: Algorithm, Procedure, Pattern, Parameter, Interface. (FBS Object/Function/Behavior/Structure, Geometry and Topology moved to Core; ParametricState dropped; in v6.0.) Conceptual layer for future Grasshopper integration — enables translation of design grammars into/from parametric definitions."@en,
+        "Named individual for the Computgraph layer (OWL 2 punning: simultaneously a class and an individual of dg:GraphLayer)."@en ;
+    rdfs:subClassOf dg:LayerEntity .
+
+dgm-spike:Metagraph a dg:GraphLayer,
+        owl:Class,
+        owl:NamedIndividual ;
+    rdfs:label "Metagraph"@en ;
+    dg:graph dgm-spike:Metagraph ;
+    rdfs:comment "Hub class for the Metagraph layer (SWRL rule structure). Top-level subclasses: Rule, Atom (with ClassAtom/DataPropertyAtom/ObjectPropertyAtom/BuiltinAtom children), Variable (with ObjectVariable/PropertyVariable/BuiltinVariable children), Literal, Builtin, RuleSet, VariableScopeValue. (Reasoner moved to Validgraph and sessions unified into Core in v6.0.)"@en ;
+    rdfs:subClassOf dg:LayerEntity .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgc:Algorithm dgc:Procedure dgc:Pattern dgc:Parameter dgc:Interface ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgv:ObjectInstance dg:ObjState dgv:IdRef dgv:GeoRef ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dg:Object dg:Function dg:Behavior dg:Structure dg:Geometry dg:Topology dg:DesignState dg:Session ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgm-spike:Rule dgm-spike:Atom dgm-spike:Variable dgm-spike:Literal dgm-spike:Builtin dgm-spike:RuleSet ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgm-spike:VariableScopeValue dgv:DesignStateParameterTypeValue dgv:ValidationStatusValue dgv:ReStatusValue dgc:ParamDataTypeValue dgc:ListStructureValue ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dg:ParamState dg:ObjState dg:PropState ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgm-spike:ClassAtom dgm-spike:DataPropertyAtom dgm-spike:ObjectPropertyAtom dgm-spike:BuiltinAtom ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dg:Class dg:DataProperty dg:ObjProperty ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgm-spike:ObjectVariable dgm-spike:PropertyVariable dgm-spike:BuiltinVariable ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgc:VariableParam dgc:ConstantParam dgc:EmergentParam ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgc:Input dgc:Output ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgv:Run dgv:ValidationEntity dgv:Reasoner dgv:DesignStateParameter dgv:IntegrationConfig dgv:ObjectInstance dgv:GeoRef dgv:IdRef ) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( dgs:SpecClass dgs:SpecNote dgs:SpecTag ) .
+
