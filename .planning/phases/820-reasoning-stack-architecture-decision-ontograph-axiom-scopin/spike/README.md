@@ -27,11 +27,14 @@ Empirical evidence for REAS-04's hybrid axiom-scoping decision:
 against a real client project, do NOT commit the exported `.ttl` files — they contain
 that project's rule bodies (T-820-02).
 
-## JRE-17 throwaway container (required for the reasoner steps)
+## JRE throwaway container (required for the reasoner steps)
 
 No JRE is installed on the dev host. Owlready2's `sync_reasoner()` shells out to its
-bundled HermiT JAR, which needs Java 17. Run the whole spike inside a throwaway
-container instead of installing a JRE on the host:
+bundled HermiT JAR, which needs a JRE (Java 17+; OpenJDK 21 from Debian trixie works).
+Run the whole spike inside a throwaway container instead of installing a JRE on the host.
+
+**Verified working configuration** (2026-07-11): `python:3.11-slim` (Debian trixie) +
+`openjdk-21-jre-headless`. HermiT is backward-compatible with Java 21.
 
 ```bash
 # 1. Find the compose network (so bolt://neo4j:7687 resolves):
@@ -40,19 +43,20 @@ docker network ls   # -> design-grammar-system_default
 # 2. Run the spike (from the repo root; mounts the repo at /repo):
 docker run --rm --network design-grammar-system_default \
   -v "<absolute-repo-path>:/repo" \
-  -w /repo/.planning/phases/820-reasoning-stack-architecture-decision-ontograph-axiom-scopin/spike \
+  -w /repo \
   python:3.11-slim bash -c "\
-    apt-get update -qq && apt-get install -y -qq openjdk-17-jre-headless && \
-    pip install -q -r requirements.txt && \
-    python export.py --hybrid && \
-    python run_naive.py && python run_hybrid.py"
+    apt-get update -qq && apt-get install -y -qq openjdk-21-jre-headless && \
+    pip install -q owlready2==0.51 rdflib==7.6.0 neo4j==6.2.0 && \
+    python .planning/phases/820-reasoning-stack-architecture-decision-ontograph-axiom-scopin/spike/run_naive.py && \
+    python .planning/phases/820-reasoning-stack-architecture-decision-ontograph-axiom-scopin/spike/run_hybrid.py"
 ```
 
 If the container cannot join the compose network, fall back to
 `-e NEO4J_URI=bolt://host.docker.internal:7687` (Neo4j publishes 7687 to the host).
 
 The export step alone (`python export.py`) needs no JRE — only the two `run_*.py`
-reasoner steps do.
+reasoner steps do. On Windows with Git Bash, prefix docker commands with `MSYS_NO_PATHCONV=1`
+to prevent path mangling.
 
 ## Run order
 
@@ -76,3 +80,9 @@ reasoner steps do.
 - **Turtle → NTriples conversion in the run scripts:** Owlready2 cannot parse
   Turtle (it reads RDF/XML, OWL/XML, NTriples only), so `run_naive.py`/`run_hybrid.py`
   convert the canonical `.ttl` evidence files to `.nt` via rdflib before loading.
+- **SWRL-incomplete rules are captured, not silently dropped:** live `v8-ui-smoke`
+  data contains atoms with no `ARG` edges at all (a further data-quality drift in
+  the same family as Pitfall 1). OWL API/HermiT refuses to translate rules with
+  argument-less atoms, so such rules/atoms are exported as annotated
+  `dgm-spike:SkippedRule`/`dgm-spike:SkippedAtom` individuals with the reason in
+  `rdfs:comment` — present in the TTL evidence, excluded from the swrl:Imp mapping.
