@@ -3,3 +3,7 @@
 # data-service runtime state (settings + connector credentials) — never commit
 data-service/data/*
 !data-service/data/.gitkeep
+
+# Python bytecode cache (generated, never committed)
+__pycache__/
+*.pyc
