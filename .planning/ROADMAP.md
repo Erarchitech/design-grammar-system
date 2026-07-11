@@ -27,7 +27,7 @@
 | # | Phase | Goal | Requirements | Depends on |
 |---|-------|------|--------------|------------|
 | 820 | Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping | 3/3 | Complete    | 2026-07-11 |
-| 821 | dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation | 4/4 | Complete   | 2026-07-11 |
+| 821 | dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation | 4/4 | Complete    | 2026-07-11 |
 | 822 | OWL 2 DL Reasoning Integration + Reasoner Screen Wiring | Users run a real consistency check from the Reasoner screen | REAS-06 | 821 |
 | 823 | SHACL Validation Layer | Instance data is validated via SHACL alongside the existing SWRL VALIDATOR | SHCL-01, SHCL-02 | 821 |
 | 824 | CONNECTOR Credential Integration | Grasshopper CONNECTOR authenticates with a platform-issued credential | CONNG-01, CONNG-02 | — |
