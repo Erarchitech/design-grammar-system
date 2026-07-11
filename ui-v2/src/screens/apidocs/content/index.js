@@ -3,7 +3,7 @@
 // {id, title, pages: [...]}. Adding a file = adding a section,
 // no viewer changes needed.
 
-const modules = import.meta.glob("./##-*.js", { eager: true });
+const modules = import.meta.glob("./[0-9][0-9]-*.js", { eager: true });
 
 const entries = Object.entries(modules)
   .filter(([_, mod]) => mod && mod.default && mod.default.id)

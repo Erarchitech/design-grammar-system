@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, CodeBlock, Badge } from "../components/index.js";
+import { Button, CodeBlock } from "../components/index.js";
 import sections from "./apidocs/content/index.js";
 
 // ── Block Renderer ──────────────────────────────────────────────────────────

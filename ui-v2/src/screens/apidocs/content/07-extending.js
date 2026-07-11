@@ -13,7 +13,7 @@ export default {
         {
           type: "text",
           content:
-            "Each content module is a plain JavaScript file named ##-<slug>.js in the content/ directory. The ## prefix determines the section ordering. Each file exports a default object with the following shape:",
+            "Each content module is a plain JavaScript file named NN-slug.js in the content/ directory. The two-digit numeric prefix (e.g. 01, 02) determines the section ordering. Each file exports a default object with the following shape:",
         },
         {
           type: "code",
@@ -24,7 +24,7 @@ export default {
         {
           type: "text",
           content:
-            "The index.js uses Vite's import.meta.glob to discover all ##-*.js files eagerly and sort them by their numeric prefix. Adding a new file to the content directory automatically registers the section.",
+            "The index.js uses Vite's import.meta.glob to discover all [0-9][0-9]-*.js files eagerly and sort them by their numeric prefix. Adding a new file to the content directory automatically registers the section.",
         },
         {
           type: "text",
@@ -52,7 +52,7 @@ export default {
           type: "note",
           variant: "tip",
           content:
-            "To add a new section: create ##-<slug>.js in the content/ directory with the exported section object. The index.js aggregator picks it up automatically. Use a ## prefix number that places it in the desired order among existing sections.",
+            "To add a new section: create NN-slug.js in the content/ directory with the exported section object. The index.js aggregator picks it up automatically. Use a two-digit prefix number that places it in the desired order among existing sections.",
         },
       ],
     },
