@@ -309,17 +309,13 @@ Not applicable — no external library/version drift to report. All findings abo
 | A2 | The static TBox (`DesignGrammar-V7.owl`) classes also carry `rdfs:label` (not just live per-project `ex:` classes) | D-13 recommendation | If a TBox-only class goes unsatisfiable and has no label, the local-IRI-name fallback (mandatory per D-02) covers it — no functional risk, just a less pretty label for meta-schema classes, which is an edge case (design rule violations are expected to surface project-scoped `ex:` classes, not TBox classes) |
 | A3 | 821's `SUMMARY.md`/`STATE.md` gap (Pitfall 3) is bookkeeping lag, not a sign that 821-04's Task 2 (live integration test) is incomplete or failing | Pitfall 3 | If 821-04's own integration test is actually broken, that's a Phase 821 concern, not blocking for 822 (which was empirically verified live above, independent of that test's status) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does 822's plan get to touch `dg-reasoner/reasoning.py` directly, or must the D-13 change go back through a formal Phase 821 addendum?**
-   - What we know: 821's code is committed but `821-04-SUMMARY.md` doesn't exist yet, so the phase isn't formally closed out; 822-CONTEXT.md's canonical_refs already list `data-service/reasoner.py` + `app.py` as "existing code to modify" but don't mention `dg-reasoner/`.
-   - What's unclear: whether the user/orchestrator wants phase boundaries strictly respected (822 only touches its own listed files) or whether a small, well-justified upstream fix is acceptable within 822's own plan.
-   - Recommendation: default to including the `dg-reasoner/reasoning.py` + `dg-reasoner/tests/test_routes.py` changes directly in 822's plan (smallest total-system change, avoids reopening a phase for one function), but flag it explicitly in the plan's file list so it's visible to review.
+   - RESOLVED (2026-07-12, plan-phase): Yes, 822's plan edits `dg-reasoner/reasoning.py` directly (Plan 01, Task 2). D-13 is RESOLVED = option (a), sidecar enriches labels. The change is small and contained — `_local_name` helper + `{iri,label}` construction inside `_reason_worker`. Label data is already in-memory. Flagged as an explicit upstream-821-touch in Plan 01's objective.
 
-2. **Should the data-service proxy timeout bump (Pitfall 2) be in scope for 822, given the file (`data-service/app.py`) is explicitly listed as "existing code to modify" in 822-CONTEXT.md, but the timeout constant itself was written by Phase 821?**
-   - What we know: the mismatch is real and code-verified; it does not manifest with today's fixture data but is a latent risk.
-   - What's unclear: whether to fix it now (proactive) or defer until it's observed in practice (reactive, per the project's general "don't over-engineer ahead of real usage" posture seen elsewhere, e.g. REAS-F02/F03 deferrals).
-   - Recommendation: fix it now — it's a one-line env-default change plus reusing the same `DG_REASONER_TIMEOUT_SECONDS` value data-service could read from its own env (or a new `DG_REASONER_PROXY_TIMEOUT_SECONDS`), and it directly protects criterion 3's correctness as soon as any project's rule count grows past what fits in 5 seconds.
+2. **Should the data-service proxy timeout bump (Pitfall 2) be in scope for 822?**
+   - RESOLVED (2026-07-12, plan-phase): Yes, fixed now in Plan 02 Tasks 1-2. The proxy read timeout is reconciled to `float(os.getenv("DG_REASONER_TIMEOUT_SECONDS", "90")) + 10` with connect staying at 2.0s. It directly protects criterion 3 and is a one-line change to an already-listed file.
 
 ## Environment Availability
 
