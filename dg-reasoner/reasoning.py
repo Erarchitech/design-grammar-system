@@ -124,6 +124,22 @@ def _serialize_nt(graph: Graph) -> Path:
     return path
 
 
+def _local_name(iri: str) -> str:
+    """Pure IRI-local-name helper (D-02 fallback label, D-13).
+
+    Returns the substring after the last '#' if present, else the substring
+    after the last '/'; if neither delimiter is present, returns `iri`
+    unchanged. Never returns an empty string for a non-empty `iri`.
+    """
+    if "#" in iri:
+        candidate = iri.rsplit("#", 1)[-1]
+    elif "/" in iri:
+        candidate = iri.rsplit("/", 1)[-1]
+    else:
+        candidate = iri
+    return candidate or iri
+
+
 def _reason_worker(nt_path: str, queue: "multiprocessing.Queue") -> None:
     """Runs inside the timeout-bounded child process. Never raises across the boundary."""
     os.setsid()  # own process group — parent can killpg() to reach Java grandchild
@@ -142,10 +158,19 @@ def _reason_worker(nt_path: str, queue: "multiprocessing.Queue") -> None:
             inconsistent = list(default_world.inconsistent_classes())
 
         owl_nothing = "http://www.w3.org/2002/07/owl#Nothing"
-        iris = sorted(
-            {getattr(c, "iri", str(c)) for c in inconsistent} - {owl_nothing}
-        )
-        queue.put({"unsatisfiable_classes": iris})
+        unsatisfiable_by_iri = {}
+        for cls in inconsistent:
+            iri = getattr(cls, "iri", str(cls))
+            if iri == owl_nothing:
+                continue
+            labels = list(getattr(cls, "label", []) or [])
+            label = str(labels[0]) if labels and str(labels[0]).strip() else _local_name(iri)
+            unsatisfiable_by_iri[iri] = {"iri": iri, "label": label}
+
+        unsatisfiable_classes = [
+            unsatisfiable_by_iri[iri] for iri in sorted(unsatisfiable_by_iri)
+        ]
+        queue.put({"unsatisfiable_classes": unsatisfiable_classes})
     except Exception as exc:  # pragma: no cover - defensive, reported to parent
         queue.put({"error": f"{type(exc).__name__}: {exc}"})
 
