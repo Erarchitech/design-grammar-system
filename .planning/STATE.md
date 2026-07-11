@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 Phase: 27 — COMPLETE
 Plan: 1 of 1
 Status: Phase 27 complete
-Last activity: 2026-07-11 - Completed quick task 260711-gtz: Decrease the size of title in the landing page so it fits the ring
+Last activity: 2026-07-11 - Completed quick task 260711-shf: Fold Session History panel on outside click
 
 ## Performance Metrics
 
@@ -182,6 +182,7 @@ Shipped from Phase 20 Plan 02:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260711-gtz | Decrease the size of title in the landing page so it fits the ring | 2026-07-11 | c60f541 | [260711-gtz-decrease-the-size-of-title-in-the-landin](./quick/260711-gtz-decrease-the-size-of-title-in-the-landin/) |
+| 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
 
 ## Session Continuity
 
