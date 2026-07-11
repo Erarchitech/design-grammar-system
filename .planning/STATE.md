@@ -4,17 +4,17 @@ milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
 current_phase: 821
 current_phase_name: dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
-status: executing
-stopped_at: Completed 821-02-PLAN.md
-last_updated: "2026-07-11T22:35:14.136Z"
+status: verifying
+stopped_at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
+last_updated: "2026-07-11T22:48:46.934Z"
 last_activity: 2026-07-11
 last_activity_desc: Phase 821 execution started
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 20
+  completed_plans: 7
+  percent: 40
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 821 (dg-reasoner-sidecar-ontograph-metagraph-rdf-translation) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-11 — Phase 821 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -181,6 +181,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 821]: [Phase 821 Plan 03]: reasoning.py functions accept an injectable session param (default None -> lazy module driver) so tests bypass live Neo4j entirely -- app.py opens one session per request and passes it through
 - [Phase 821]: [Phase 821 Plan 03]: HermiT/Owlready2's sync_reasoner() runs inside a multiprocessing.Process joined with DG_REASONER_TIMEOUT_SECONDS, terminate() on expiry kills the java grandchild too (D-09) -- child reports results back via a Queue
 - [Phase 821]: [Phase 821 Plan 03]: run_shacl validates the live per-project export (not the full hybrid TBox union) against an empty placeholder shapes graph -- real shapes deferred to Phase 823 (D-11)
+- [Phase ?]: [Phase 821 Plan 04]: httpx.post(...) sync proxy with an explicit httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=2.0) -- matches app.py's prevailing sync-def style and llm_gateway.py's existing sync httpx.Client(timeout=...) pattern rather than introducing async
+- [Phase ?]: [Phase 821 Plan 04]: dg-reasoner and data-service Docker images had to be rebuilt mid-plan -- both containers were still running Plan 01-era stub code, so live verification of Plans 02/03/04 code required an explicit docker compose build + up -d
 
 ### Research Flags (carry into planning)
 
@@ -217,11 +219,12 @@ Shipped from Phase 20 Plan 02:
 | Phase 821 P01 | 40min | 2 tasks | 8 files |
 | Phase 821 P02 | 25min | 2 tasks | 3 files |
 | Phase 821 P03 | 30min | 3 tasks | 4 files |
+| Phase 821 P04 | 7min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-11T22:32:04.972Z
-Stopped at: Completed 821-02-PLAN.md
+Last session: 2026-07-11T22:48:46.919Z
+Stopped at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
 Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
 
 ## Performance Metrics

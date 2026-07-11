@@ -176,3 +176,7 @@ None — no external service configuration required. `DG_REASONER_URL` already h
 ---
 *Phase: 821-dg-reasoner-sidecar-ontograph-metagraph-rdf-translation*
 *Completed: 2026-07-11*
+
+## Self-Check: PASSED
+
+Both modified/created files verified present on disk (`data-service/app.py`, `dg-reasoner/tests/test_roundtrip_integration.py`). All three commits (`2c6cb8a`, `032b08c`, `5120877`) verified present in git log.
