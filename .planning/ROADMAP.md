@@ -26,7 +26,7 @@
 
 | # | Phase | Goal | Requirements | Depends on |
 |---|-------|------|--------------|------------|
-| 820 | Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping | Document how OWL reasoning interprets DG's ontology data before any reasoner code is built | REAS-04 | — |
+| 820 | Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping | 3/3 | Complete    | 2026-07-11 |
 | 821 | dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation | Stand up the isolated reasoning sidecar and translate live graph data to RDF | REAS-05 | 820 |
 | 822 | OWL 2 DL Reasoning Integration + Reasoner Screen Wiring | Users run a real consistency check from the Reasoner screen | REAS-06 | 821 |
 | 823 | SHACL Validation Layer | Instance data is validated via SHACL alongside the existing SWRL VALIDATOR | SHCL-01, SHCL-02 | 821 |
@@ -47,15 +47,15 @@
   3. A spike against a real project's live OntoGraph data confirms whether a naive export would trivially report "consistent", and shows the chosen scoping approach avoids that false-positive outcome
   4. The sidecar-vs-embedded architecture decision (dedicated `dg-reasoner` service, isolated from `data-service`'s Speckle-publish/validation-run hot path) is confirmed and recorded as a Key Decision, unblocking Phase 821
 
-**Plans**: 3 plans
+**Plans**: 3/3 plans complete
 **Wave 1**
 
-- [ ] 820-01-PLAN.md — Throwaway spike: label-scoped Neo4j→RDF export + two-part HermiT proof (naive trivially-consistent vs hybrid seeded-contradiction unsatisfiable)
-- [ ] 820-02-PLAN.md — `spec/LPG-OWL-MAPPING.md`: SWRL-vocabulary Metagraph mapping, edge-property reification (ARG.pos, HAS_BODY/HAS_HEAD.order), IRI minting, UNA handling
+- [x] 820-01-PLAN.md — Throwaway spike: label-scoped Neo4j→RDF export + two-part HermiT proof (naive trivially-consistent vs hybrid seeded-contradiction unsatisfiable)
+- [x] 820-02-PLAN.md — `spec/LPG-OWL-MAPPING.md`: SWRL-vocabulary Metagraph mapping, edge-property reification (ARG.pos, HAS_BODY/HAS_HEAD.order), IRI minting, UNA handling
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 820-03-PLAN.md — `820-DECISION.md` + PROJECT.md Key Decisions (flip sidecar row, add hybrid axiom-scoping row)
+- [x] 820-03-PLAN.md — `820-DECISION.md` + PROJECT.md Key Decisions (flip sidecar row, add hybrid axiom-scoping row)
 
 ### Phase 821: dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation
 
