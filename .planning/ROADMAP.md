@@ -28,7 +28,7 @@
 | 813 | Connectors Screen | 14 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
 | 814 | Reasoner Screen | 1/1 | Complete    | 2026-07-11 |
 | 815 | DG API Documentation | 1/1 | Complete    | 2026-07-11 |
-| 816 | Integration & Deployment | 1/1 | Complete   | 2026-07-11 |
+| 816 | Integration & Deployment | 1/1 | Complete    | 2026-07-11 |
 
 ### Phase 810: Ring Extension & Screen Shell
 

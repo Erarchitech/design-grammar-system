@@ -51,8 +51,8 @@ Requirements for milestone v8.1. Each maps to roadmap phases 810–819.
 
 ### Integration (INTG)
 
-- [ ] **INTG-01**: End-to-end: a credential created in the Connectors screen authenticates a simulated connector heartbeat, and the resulting status + last-connection date appear in the Connectors screen
-- [ ] **INTG-02**: The rebuilt `design-grammars` container ships all four new regions while all v8.0 screens (Graph / Model / Projects, landing, auth) keep working
+- [x] **INTG-01**: End-to-end: a credential created in the Connectors screen authenticates a simulated connector heartbeat, and the resulting status + last-connection date appear in the Connectors screen
+- [x] **INTG-02**: The rebuilt `design-grammars` container ships all four new regions while all v8.0 screens (Graph / Model / Projects, landing, auth) keep working
 
 ## Future Requirements
 
@@ -106,8 +106,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | APID-01 | Phase 815 | Complete |
 | APID-02 | Phase 815 | Complete |
 | APID-03 | Phase 815 | Complete |
-| INTG-01 | Phase 816 | Pending |
-| INTG-02 | Phase 816 | Pending |
+| INTG-01 | Phase 816 | Complete |
+| INTG-02 | Phase 816 | Complete |
 
 **Coverage:**
 
