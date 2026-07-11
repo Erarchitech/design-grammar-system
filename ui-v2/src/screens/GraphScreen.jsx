@@ -451,6 +451,9 @@ export default function GraphScreen({ active, onBack, project }) {
   // "Repeat" action can re-run a past turn with its own mode / text / rule.
   const runTurn = async (turnMode, txt, editRule) => {
     if (!txt || busy || (turnMode === 2 && !editRule)) return;
+    // Snapshot node ids before any mutation so a mutating turn's success path
+    // can diff against the reloaded graph to find exactly the NEW nodes.
+    const prevIds = engineRef.current?.snapshotNodeIds?.() || new Set();
     // Edit mode reuses the ingest webhook with the legacy prefix contract;
     // the n8n workflow deletes the rule's old atoms before re-creation.
     const sentText = turnMode === 2 ? "edit Rule_Id: " + editRule + " — " + txt : txt;
@@ -478,6 +481,7 @@ export default function GraphScreen({ active, onBack, project }) {
     );
     setSessionOpen(true);
     setBusy(true);
+    engineRef.current?.startThinking?.();
     autoScroll();
 
     // advance the step display while the workflow runs (capped at the last step)
@@ -508,6 +512,9 @@ export default function GraphScreen({ active, onBack, project }) {
         meta = (turnMode === 2 ? "Rewritten" : "Committed") + " → Metagraph · " + secs + "s";
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
+        // loadGraph() → setData() cleared streams; repopulate against the fresh
+        // rings so streams target exactly the nodes this turn just created.
+        engineRef.current?.emitNewNodeStreams?.(prevIds);
       } else {
         response = payload.answer || payload.response || "(empty answer)";
         meta = "Query · " + (project || "all projects") + " · " + secs + "s";
@@ -555,6 +562,7 @@ export default function GraphScreen({ active, onBack, project }) {
       }));
     } finally {
       setBusy(false);
+      engineRef.current?.stopThinking?.();
       autoScroll();
     }
   };
