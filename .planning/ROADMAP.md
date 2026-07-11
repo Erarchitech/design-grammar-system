@@ -26,7 +26,7 @@
 | 811 | AI Engine Screen | LLM provider/model/API-key setup over the existing gateway | AIENG-01..04 | 810 |
 | 812 | Connector Credential Backend | data-service credential CRUD + heartbeat/status API | CONNB-01..04 | — |
 | 813 | Connectors Screen | 14 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
-| 814 | Reasoner Screen | 1/1 | Complete   | 2026-07-11 |
+| 814 | Reasoner Screen | 1/1 | Complete    | 2026-07-11 |
 | 815 | DG API Documentation | Revit-API-style in-app doc browser, extendable content | APID-01..03 | 810, 812 |
 | 816 | Integration & Deployment | E2E credential→heartbeat→status flow, container cutover | INTG-01..02 | 811–815 |
 
