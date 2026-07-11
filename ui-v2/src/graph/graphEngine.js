@@ -95,6 +95,10 @@ export default class GraphEngine {
     this._thinkVideo = null;
     this._thinkVideoReady = false;
     this._thinkVideoFailed = false;
+
+    /* core→node stream + emergence state (see snapshotNodeIds/emitNewNodeStreams) */
+    this._streams = [];
+    this._emerge = Object.create(null); // neoId → emergence 0..1 (absent key = fully materialized)
   }
 
   /* ---------------- data ---------------- */
@@ -128,6 +132,9 @@ export default class GraphEngine {
     this._rotT = this._rot.map((a) => a.slice());
     this._spin = this._rot.map((a) => a.map(() => 0));
     if (this.type >= N) this.type = 0;
+    // a plain reload/restore never carries stale streams/emergence forward
+    this._streams = [];
+    this._emerge = Object.create(null);
     this.initFieldParticles();
   }
   xOf(r, i) {
@@ -280,6 +287,100 @@ export default class GraphEngine {
 
     // Task 2 populates drawStreams(); guarded for the same reason as above.
     if (this.drawStreams) this.drawStreams(cx, cy, base, t);
+  }
+
+  /* ---------------- core→node streams ---------------- */
+  snapshotNodeIds() {
+    const s = new Set();
+    for (const rg of this.rings) for (const nd of rg.nodes) s.add(nd.neoId);
+    return s;
+  }
+  emitNewNodeStreams(prevIdSet) {
+    const CAP = 80;
+    let emitted = 0;
+    for (let g = 0; g < this.rings.length; g++) {
+      const rg = this.rings[g];
+      for (let i = 0; i < rg.nodes.length; i++) {
+        const nd = rg.nodes[i];
+        if (prevIdSet.has(nd.neoId)) continue;
+        this._emerge[nd.neoId] = 0; // pop in even if this stream is capped below
+        if (emitted >= CAP) continue;
+        emitted++;
+        const seed = (Number(nd.neoId) * 2654435761) >>> 0;
+        const R = rng(seed);
+        const n = 18 + Math.round(R() * 8);
+        const parts = [];
+        for (let p = 0; p < n; p++) {
+          parts.push({
+            u: R(),
+            off: gauss(R),
+            ph: R() * TAU,
+            s: 0.6 + R() * 1.0,
+            al: 0.12 + R() * 0.38
+          });
+        }
+        this._streams.push({ g, i, neoId: nd.neoId, p: 0, life: 0.85 + Math.random() * 0.5, seed, parts });
+      }
+    }
+  }
+  updateStreams(dt) {
+    if (!this._streams.length) return;
+    const alive = [];
+    for (const st of this._streams) {
+      st.p += dt / st.life;
+      if (st.p >= 1.25) {
+        delete this._emerge[st.neoId]; // absent key = fully materialized
+        continue;
+      }
+      this._emerge[st.neoId] = Math.max(0, Math.min(1, (st.p - 0.6) / 0.4));
+      alive.push(st);
+    }
+    this._streams = alive;
+  }
+  drawStreams(cx, cy, base, t) {
+    const ctx = this._ctx;
+    if (!ctx || !this._streams.length) return;
+    const coreScale = base * 0.05;
+    ctx.fillStyle = TH.ink;
+    for (const st of this._streams) {
+      const rg = this.rings[st.g];
+      const nd = rg && rg.nodes[st.i];
+      if (!nd) continue; // rings can change between frames — skip a stale target
+      const a = nd.ang + this._rot[st.g][nd.orbit],
+        R = this._orbR[st.g][nd.orbit] * base;
+      const tx = cx + Math.cos(a) * R,
+        ty = cy + Math.sin(a) * R;
+      const dx = tx - cx,
+        dy = ty - cy,
+        len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len,
+        uy = dy / len;
+      // streams originate at the sphere's rim (base*0.24), not the exact core —
+      // combined with the intensity hold in updateThinking() this reads as
+      // pouring continuously out of the still-glowing sphere
+      const ox = cx + ux * base * 0.24,
+        oy = cy + uy * base * 0.24;
+      const tailFade = st.p > 1 ? Math.max(0, 1 - (st.p - 1) / 0.25) : 1;
+
+      for (const part of st.parts) {
+        const headReach = st.p * 1.12;
+        if (headReach < part.u) continue; // head hasn't reached this particle yet
+        const growIn = Math.min(1, (headReach - part.u) * 3);
+        const wob = Math.sin(part.ph + t * 3 + part.u * 6) * (1 - part.u) * coreScale;
+        const px = ox + dx * part.u - uy * part.off * wob,
+          py = oy + dy * part.u + ux * part.off * wob;
+        ctx.globalAlpha = part.al * growIn * tailFade;
+        ctx.fillRect(px - part.s / 2, py - part.s / 2, part.s, part.s);
+      }
+
+      // ink head dot at the leading edge of the filament
+      const headP = Math.min(1, st.p);
+      const hx = ox + dx * headP,
+        hy = oy + dy * headP;
+      ctx.globalAlpha = 0.85 * tailFade;
+      ctx.fillRect(hx - 1.6, hy - 1.6, 3.2, 3.2);
+    }
+    ctx.globalAlpha = 1;
   }
 
   tick(ts) {
@@ -749,12 +850,16 @@ export default class GraphEngine {
         const nd = rg.nodes[i],
           a = nd.ang + this._rot[g][nd.orbit],
           R = RR(g, nd);
-        const rr = (1.5 + 0.3 * Math.min(nd.deg, 6)) * Math.sqrt(z);
+        const emv = this._emerge[nd.neoId];
+        const emK = emv == null ? 1 : emv;
+        const rr = (1.5 + 0.3 * Math.min(nd.deg, 6)) * Math.sqrt(z) * (0.25 + 0.75 * emK);
+        ctx.globalAlpha = emK;
         ctx.beginPath();
         ctx.arc(cx + Math.cos(a) * R, cy + Math.sin(a) * R, rr, 0, 6.29);
         ctx.fill();
       }
     }
+    ctx.globalAlpha = 1;
 
     // divergence field on the active layer
     if (this.fieldOn) this.drawField(act, base, cx, cy, this._lt || 0);
@@ -821,10 +926,13 @@ export default class GraphEngine {
       const nd = rg.nodes[i],
         [x, y] = posOf(act, nd);
       const isSel = sel && sel.r === act && sel.i === i;
+      const emv = this._emerge[nd.neoId];
+      const emK = emv == null ? 1 : emv;
       let rr = (2.0 + 0.34 * Math.min(nd.deg, 6)) * Math.sqrt(z);
       if (isSel) rr *= this.selBig ? 2.1 : 1.8;
+      rr *= 0.25 + 0.75 * emK;
       const faded = filt && !filt.has(i);
-      ctx.globalAlpha = faded ? 0.14 : 1;
+      ctx.globalAlpha = (faded ? 0.14 : 1) * emK;
       ctx.fillStyle = isSel ? TH.signal : TH.ink;
       ctx.beginPath();
       ctx.arc(x, y, rr, 0, 6.29);
