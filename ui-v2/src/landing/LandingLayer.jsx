@@ -17,6 +17,10 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
   const labelGraphRef = React.useRef(null);
   const labelModelRef = React.useRef(null);
   const labelProjectsRef = React.useRef(null);
+  const labelAiEngineRef = React.useRef(null);
+  const labelConnectorsRef = React.useRef(null);
+  const labelReasonerRef = React.useRef(null);
+  const labelApiDocsRef = React.useRef(null);
   const hintRef = React.useRef(null);
   const engineRef = React.useRef(null);
 
@@ -39,7 +43,11 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
         labels: {
           graph: labelGraphRef.current,
           model: labelModelRef.current,
-          projects: labelProjectsRef.current
+          projects: labelProjectsRef.current,
+          aiengine: labelAiEngineRef.current,
+          connectors: labelConnectorsRef.current,
+          reasoner: labelReasonerRef.current,
+          apidocs: labelApiDocsRef.current
         },
         hint: hintRef.current
       },
@@ -224,6 +232,18 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
       </div>
       <div ref={labelProjectsRef} className="dgl-region-label" onClick={() => fly("projects")}>
         Projects.
+      </div>
+      <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>
+        AI Engine
+      </div>
+      <div ref={labelConnectorsRef} className="dgl-region-label" onClick={() => fly("connectors")}>
+        Connectors
+      </div>
+      <div ref={labelReasonerRef} className="dgl-region-label" onClick={() => fly("reasoner")}>
+        Reasoner
+      </div>
+      <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
+        DG API Docs
       </div>
       <div ref={hintRef} className="dg-annotation dg-annotation--muted dgl-hint">
         Select a region
