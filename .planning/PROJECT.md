@@ -8,18 +8,16 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v8.1 Platform Setup Regions
+## Current Milestone: v8.2 Connector Integration & Reasoning Engine
 
-**Goal:** Extend the V2 landing ring with four new region callouts — AI Engine, Connectors, Reasoner, DG API Documentation — each opening a real screen layer wired to backend services. Positioned between shipped v8.0 (V2 UI) and parked v9.0 (AI Workflow Intelligence). Phases numbered 810–819 per the milestone-derived numbering convention (vX.Y → X·100+Y·10, max 10 phases).
+**Goal:** Wire the Grasshopper CONNECTOR component to the platform's new credential mechanism, and replace the Reasoner screen's HermiT/Pellet placeholders with real OWL 2 DL + SHACL validation. Positioned right after v8.1 (Platform Setup Regions). Phases numbered 820–829 per the milestone-derived numbering convention (vX.Y → X·100+Y·10, max 10 phases).
 
 **Target features:**
 
-- Ring extension: 4 new region callouts (AI Engine, Connectors, Reasoner, DG API Docs) placed along the particle ring alongside Graph Viewer / Model Viewer / Projects, with fly-in navigation and screen layers
-- AI Engine screen: LLM provider/model selection + manual API key input, wired to the existing data-service LLM gateway (`/llm/settings`, encrypted-at-rest keys)
-- Connectors: 14 connectors in 5 categories (VPL: Grasshopper, Dynamo · BIM Authoring: Revit, Blender, Tekla, Archicad, Civil3D, Infraworks · BIM Coordination: Navisworks, Solibri · BCF Trackers: BIMCollab, BIMTrack · Visualization: Lumion, Twinmotion); credential creation with copyable tokens for pasting into connector components in target software; per-connector activation status + last-connection date
-- Connector backend: data-service credential CRUD + authenticated heartbeat/status endpoints recording each connector's last request/post
-- Reasoner screen: reasoner model selector for the Validation Graph — HermiT and Pellet as placeholders until real reasoner integration is elaborated
-- DG API Documentation: in-app, Revit-API-style structured doc browser (sections → endpoints/classes → members) documenting the DG connector API, extendable via content files
+- CONNECTOR component (Grasshopper): accepts a platform-issued credential (minted from the v8.1 Connectors screen) as its connection input, replacing today's manual setup
+- OWL 2 DL reasoning: HermiT and/or Pellet wired in for real ontology-consistency checking (class satisfiability, property domain/range coherence, TBox integrity) at rule-authoring time, replacing the v8.1 placeholder-only Reasoner selector
+- SHACL validation layer: data-level design-rule/instance validation, investigated alongside the existing SWRL-based VALIDATOR
+- Reasoning-stack architecture decision: integration path between the proposed RDF/OWL-native stack (Apache Jena, HermiT via OWL API, pySHACL/TopBraid SHACL, optional ELK pre-classifier) and DG's existing Neo4j property-graph ontology encoding — likely anchored on the existing `DesignGrammar-V7.owl` export
 
 ## Requirements
 
@@ -47,19 +45,18 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **ONTO-01..06**: Ontology V7 baseline — V6→V7 rename table, DesignGrammar-V7.owl, extension facades, catalog, port-IRI map, markdown docs — Phase 13
 - ✓ **v7.0 (Phases 13–20)**: Ontology-aligned 14-component Grasshopper addin — state trio (ObjState/ParamState/PropState), DesignState composition, graph access chain (GRAPH DECONSTRUCT, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework, CLASSIFICATOR elimination, SpecGraph rename, schema v4 propagation — shipped 2026-07-05, archived to `.planning/milestones/v7.0-phases/`
 - ✓ **v8.0 (Phases 21–27)**: Design Grammars V2 UI — light clinical-blueprint interface at `ui-v2/` (Vite + React): design-system foundation, particle-ring landing with inline auth, canvas datascape Graph Viewer (live Neo4j + n8n), Model Viewer over data-service validation runs, Projects screen, layered navigation shell, deployment cutover at :8080, Speckle 3D embed — shipped 2026-07-07, archived to `.planning/milestones/v8.0-phases/`
+- ✓ **v8.1 (Phases 810–816)**: Platform Setup Regions — four new landing-ring regions each wired to real backend services: AI Engine (LLM provider/model/key setup over the existing gateway), Connectors (14 connectors / 5 categories, credential CRUD + heartbeat/status lifecycle), Reasoner (HermiT/Pellet placeholder selector, persisted), DG API Documentation (Revit-API-style in-app doc browser); full E2E connector lifecycle + deployment cutover with zero v8.0 regressions — completed 2026-07-11; phases not yet archived (`.planning/phases/810-816-*/`), formal `/gsd-complete-milestone` pass still pending
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-**Milestone v8.1 — Platform Setup Regions** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
+**Milestone v8.2 — Connector Integration & Reasoning Engine** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
 
-- [ ] Ring extension: 4 new region callouts + screen layers (AI Engine, Connectors, Reasoner, DG API Docs)
-- [ ] AI Engine screen (provider/model selection, API key input, wired to LLM gateway `/llm/settings`)
-- [ ] Connector credential backend (data-service CRUD, token generation, heartbeat/status endpoints)
-- [ ] Connectors screen (14 connectors / 5 categories, credential create+copy, status + last-connection date)
-- [ ] Reasoner screen (HermiT/Pellet placeholder selector, persisted selection)
-- [ ] DG API Documentation (Revit-API-style in-app doc browser, extendable content)
+- [ ] CONNECTOR component (Grasshopper): consume platform-issued credential as connection input
+- [ ] OWL 2 DL reasoning integration (HermiT/Pellet) for ontology-consistency checking
+- [ ] SHACL validation layer for design-rule / instance-level checking
+- [ ] Reasoning-stack architecture decision: RDF/OWL integration path against the Neo4j-encoded ontology
 
 ### Out of Scope
 
@@ -75,7 +72,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen will surface). v8.1: four setup regions along the landing ring — AI Engine (810), Connectors (811–813), Reasoner (814), DG API Documentation (815) — all complete. Next: Phase 816 Integration & Deployment.
+v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen surfaces). v8.1 (Phases 810–816) completed 2026-07-11 — all four setup regions live (AI Engine, Connectors, Reasoner, DG API Documentation) plus verified E2E connector lifecycle and deployment cutover; formal archive via `/gsd-complete-milestone` still pending. v8.2 starting: wire the Grasshopper CONNECTOR component to platform-issued credentials and replace Reasoner placeholders with real OWL 2 DL + SHACL validation.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -153,4 +150,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 — Phase 815 DG API Documentation complete; v8.1 all five setup regions shipped*
+*Last updated: 2026-07-11 — v8.1 complete (Phases 810–816); v8.2 Connector Integration & Reasoning Engine started*
