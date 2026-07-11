@@ -2,7 +2,8 @@
 
 ## Milestones
 
-- ✅ **v8.0 Design Grammars V2 UI** — Phases 21-27 (shipped 2026-07-07; Phase 27 Speckle 3D Embed added post-ship, completed 2026-07-08) → [phases](milestones/v8.0-phases/)
+- 🔄 **v8.1 Platform Setup Regions** — Phases 810-816 (active; started 2026-07-11; first milestone on the vX.Y → X·100+Y·10 phase-numbering convention)
+- ✅ **v8.0 Design Grammars V2 UI** — Phases 21-27 (shipped 2026-07-07; Phase 27 Speckle 3D Embed added post-ship, completed 2026-07-08) → [requirements](milestones/v8.0-REQUIREMENTS.md) | [roadmap](milestones/v8.0-ROADMAP.md) | [phases](milestones/v8.0-phases/)
 - ⏸ **v9.0 AI Workflow Intelligence** — Phases 28-40 (paused; Phase 28 executed 2026-07-06; restructured 2026-07-08: GH canvas → Computgraph serialization pipeline elaborated into Phases 32-37; renumbered from milestone-local 1-13) → [requirements](milestones/v9.0-REQUIREMENTS.md) | [roadmap](milestones/v9.0-ROADMAP.md) | [phases](milestones/v9.0-phases/)
 - 📋 **v10.0 Script Intelligence** — Phases 41-49 (planned 2026-07-08, isolated; activates after v9.0; renumbered from milestone-local 1-9) → [requirements](milestones/v10.0-REQUIREMENTS.md) | [roadmap](milestones/v10.0-ROADMAP.md)
 - 📋 **v4.0 BOT Ontology Bridge** — Phases 1-4 (planned) → [requirements](milestones/v4.0-REQUIREMENTS.md) | [roadmap](milestones/v4.0-ROADMAP.md)
@@ -11,120 +12,103 @@
 - ✅ **v2.0 DG Plugin - Design State and Validation Runs** — Phases 1-6 (shipped 2026-05-10) → [archive](milestones/v2.0-ROADMAP.md)
 - ✅ **v1.1 Project Knowledge Graph** — Phases 1-7 (shipped 2026-04-10) → [archive](milestones/v1.1-phases/)
 
-## Phases
+## Milestone v8.1: Platform Setup Regions
 
-### v8.0 — Design Grammars V2 UI
+**Goal:** Four new setup regions along the V2 landing ring — AI Engine, Connectors, Reasoner, DG API Documentation — each a real screen layer wired to backend services.
 
-Design source of truth: `design/v2/Design Grammars V2.dc.html` + `design/v2/_ds/` design system. Full replacement of the dark legacy SPA, wired to real backends (Neo4j proxy, n8n webhooks, data-service, Speckle).
+**Phase numbering:** 810–816 (convention: milestone vX.Y → phases from X·100+Y·10; max 10 per milestone).
 
-- [x] **Phase 21: Design System Foundation** — Light token set, type stack, and reusable primitives (frost, blueprint grid, callout, pill controls) as the shared base for all screens (completed 2026-07-07)
-- [x] **Phase 22: Navigation Shell, Landing and Auth** — Layered screen architecture with transitions, particle-ring landing hero, region navigation, inline login/register with session state (completed 2026-07-07)
-- [x] **Phase 23: Graph Viewer** — Canvas datascape from live Neo4j metagraph, node selection with divergence callouts, prompt bar wired to n8n ingest/query webhooks, session panel, search (completed 2026-07-07)
-- [x] **Phase 24: Model Viewer** — Validation runs from data-service, run/instance modes, map canvas + minimap + zoom, orbit legend, rule SWRL panel (completed 2026-07-07)
-- [x] **Phase 25: Projects and Scoping** — Project tile grid from live data; opening a project scopes Graph and Model viewer queries (completed 2026-07-07)
-- [x] **Phase 26: Deployment Cutover and E2E Parity** — V2 UI ships as the design-grammars container at :8080; legacy workflows verified end-to-end against live Docker services (completed 2026-07-07)
-- [x] **Phase 27: Speckle 3D Embed** — Replace synthetic SVG isometric boxes with embedded Speckle 3D viewer in V2 ModelScreen; deferred from Phase 24 (REQUIREMENTS Future) (completed 2026-07-08)
+### Phase Overview
 
----
+| # | Phase | Goal | Requirements | Depends on |
+|---|-------|------|--------------|------------|
+| 810 | Ring Extension & Screen Shell | 7 callouts on the ring, 4 new navigable screen layers | RING-01..03 | — |
+| 811 | AI Engine Screen | LLM provider/model/API-key setup over the existing gateway | AIENG-01..04 | 810 |
+| 812 | Connector Credential Backend | data-service credential CRUD + heartbeat/status API | CONNB-01..04 | — |
+| 813 | Connectors Screen | 13 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
+| 814 | Reasoner Screen | Reasoner selector (HermiT/Pellet placeholders), persisted | REAS-01..03 | 810 |
+| 815 | DG API Documentation | Revit-API-style in-app doc browser, extendable content | APID-01..03 | 810, 812 |
+| 816 | Integration & Deployment | E2E credential→heartbeat→status flow, container cutover | INTG-01..02 | 811–815 |
 
-## Phase Details
+### Phase 810: Ring Extension & Screen Shell
 
-### Phase 21: Design System Foundation
+**Goal:** The landing ring shows all seven region callouts and each new callout flies into its own (initially skeletal) screen layer.
 
-**Goal**: Every V2 screen builds on one shared, spec-faithful foundation — tokens, fonts, and primitives — so later phases compose instead of restyling
-**Depends on**: Nothing (universal prerequisite for phases 22–26)
-**Requirements**: DSYS-01, DSYS-02, DSYS-03
-**Success Criteria** (what must be TRUE):
+**Requirements:** RING-01, RING-02, RING-03
 
-  1. A token stylesheet derived from `design/v2/_ds/tokens/` loads in the app; rendered surfaces use the canvas/sidebar/card three-tone stack and no chromatic colour other than Signal Red `#e7000b`
-  2. Geist, Geist Mono, and Oswald render in their spec roles (body/headings, data values and code, uppercase annotation captions)
-  3. Button/Input/frost-panel/blueprint-grid/divergence-callout primitives render consistent with the design-system recipes — 18px pill radius on interactive elements, 24px on cards, 1px hairline borders, 78% white + 14px backdrop blur on frost
+**Success criteria:**
+1. Landing shows AI Engine, Connectors, Reasoner, and DG API Docs callouts along the particle ring beside Graph Viewer / Model Viewer / Projects, without overlap at common desktop sizes
+2. Clicking any new callout flies into its screen layer with the standard 520ms transition originating from its ring anchor
+3. Each new screen has back navigation to the landing, matching existing screens
+4. Existing three regions behave exactly as before (no regression in anchors, hero, auth)
 
-### Phase 22: Navigation Shell, Landing and Auth
+### Phase 811: AI Engine Screen
 
-**Goal**: The app opens on the V2 landing experience — the user can move between all four screen layers and authenticate without leaving the landing
-**Depends on**: Phase 21 (primitives, tokens)
-**Requirements**: NAV-01, NAV-02, LAND-01, LAND-02, LAND-03, AUTH-01, AUTH-02, AUTH-03, AUTH-04
-**Success Criteria** (what must be TRUE):
+**Goal:** Users configure the platform LLM (provider, model, API key) from the AI Engine region, backed by the existing data-service LLM gateway.
 
-  1. Landing shows the particle-ring hero canvas with the materialising "DESIGN GRAMMARS." title; region callouts navigate to Graph Viewer / Model Viewer / Projects with the 520ms scale+opacity transition, and Back returns to landing
-  2. A guest sees the Login/Register CTA; submitting valid credentials via the rising frost card signs the user in and the hero switches to the member state (name, red status dot, "System initiated" annotation, Sign out)
-  3. Register mode collects full name + email + password via the same card's mode switch; auth errors render inline in Signal Red; Cancel returns to the hero
-  4. Global chrome (screen title, mono connection subtitle) renders on every non-landing screen
+**Requirements:** AIENG-01, AIENG-02, AIENG-03, AIENG-04
 
-### Phase 23: Graph Viewer
+**Success criteria:**
+1. User selects provider (Anthropic / OpenAI / Ollama) and model; the choice persists via `/llm/settings`
+2. User enters an API key that is stored encrypted-at-rest; the UI shows only set/not-set status, never the key
+3. User runs a connection test and gets clear success/failure feedback
+4. The Graph Viewer prompt console continues to work against the newly configured provider
 
-**Goal**: The datascape is real — the user browses, queries, and extends the live project metagraph from the V2 canvas
-**Depends on**: Phase 22 (shell navigation, session state)
-**Requirements**: GVIEW-01, GVIEW-02, GVIEW-03, GVIEW-04, GVIEW-05
-**Success Criteria** (what must be TRUE):
+### Phase 812: Connector Credential Backend
 
-  1. The canvas renders nodes/edges fetched from Neo4j (project-scoped, via the nginx proxy) as translucent ink arcs and achromatic dots with idle drift and divergence field per design defaults
-  2. Clicking a node shows the red selection halo + divergence callout and populates the node-details panel with the node's live label chip and properties table
-  3. Sending a rule from the persistent prompt bar calls the rules-ingest n8n webhook and the outcome appears under the prompt in the extended session panel; query mode does the same via the graph-query webhook
-  4. Search finds live nodes via the search bar popover and centres the canvas on the chosen result
+**Goal:** data-service can mint, list, and revoke connector credentials and track per-connector connection status via an authenticated heartbeat endpoint.
 
-### Phase 24: Model Viewer
+**Requirements:** CONNB-01, CONNB-02, CONNB-03, CONNB-04
 
-**Goal**: Validation results are browsable in the V2 skin — runs, failing/passing breakdowns, and per-instance inspection over the map canvas
-**Depends on**: Phase 22 (shell); parallel-safe with Phase 23
-**Requirements**: MVIEW-01, MVIEW-02, MVIEW-03, MVIEW-04
-**Success Criteria** (what must be TRUE):
+**Success criteria:**
+1. Credentials can be created/listed/revoked per connector type via REST; the 13-connector / 5-category registry is served by the API
+2. Tokens are generated server-side, returned once, and stored hashed/encrypted (llm-settings storage pattern)
+3. A token-authenticated heartbeat call updates the connector's status and last-connection timestamp; revoked/unknown tokens are rejected
+4. Status endpoint reports never-connected / active / stale + last-connection date per connector; covered by pytest tests
 
-  1. The run list loads from data-service validation endpoints; selecting a run populates KV rows and failing/passing collapsible groups
-  2. The map canvas colours failing entities Signal Red and passing/base entities ink/gray, with working minimap and zoom
-  3. Instance mode shows hover and selection panels for individual geometry entities
-  4. The rule panel displays the selected run's SWRL verbatim in mono; the orbit legend renders per spec
+### Phase 813: Connectors Screen
 
-### Phase 25: Projects and Scoping
+**Goal:** The Connectors region shows all connectors by category with credential creation, copy-once tokens, activation status, and last-connection dates.
 
-**Goal**: Projects are first-class — the user picks a project and every viewer works within it
-**Depends on**: Phases 23–24 (viewers exist to be scoped)
-**Requirements**: PROJ-01, PROJ-02
-**Success Criteria** (what must be TRUE):
+**Requirements:** CONN-01, CONN-02, CONN-03, CONN-04
 
-  1. The Projects screen lists real projects from the database as V2 tiles
-  2. Opening a project scopes subsequent Graph Viewer and Model Viewer data to that project — verified by switching projects and observing different data
+**Success criteria:**
+1. All 13 connectors render grouped in the 5 categories from the milestone brief
+2. User creates a credential and copies the token (shown once) for pasting into the target software's connector component
+3. Each connector shows activation status and last-connection date from the status endpoint
+4. User can revoke a credential and the UI reflects the deactivation
 
-### Phase 26: Deployment Cutover and E2E Parity
+### Phase 814: Reasoner Screen
 
-**Goal**: V2 is the product UI — served by the design-grammars container with no workflow regressions against the legacy SPA
-**Depends on**: Phases 21–25
-**Requirements**: DEPL-01, DEPL-02
-**Success Criteria** (what must be TRUE):
+**Goal:** The Reasoner region lets users select the Validation Graph reasoner, with HermiT and Pellet as clearly-labeled placeholders.
 
-  1. `docker compose up` serves the V2 UI at :8080 through the existing nginx reverse-proxy routes
-  2. The E2E parity checklist passes against live services: rule ingest, graph query, graph browse, validation run browsing, project scoping
-  3. The legacy dark SPA is retired (removed or archived) with release notes
+**Requirements:** REAS-01, REAS-02, REAS-03
 
-### Phase 27: Speckle 3D Embed
+**Success criteria:**
+1. User selects HermiT or Pellet from the Reasoner screen
+2. Selection persists server-side and is shown as active on revisit
+3. Placeholder entries carry an explicit "integration pending" annotation
 
-**Goal**: Replace synthetic SVG isometric boxes in ModelScreen.jsx with an embedded Speckle 3D viewer rendering real BIM geometry with validation color overlay
-**Depends on**: Phase 24 (Model Viewer), Phase 26 (deployed stack with Speckle services)
-**Requirements**: MVIEW3D-01, MVIEW3D-02, MVIEW3D-03
-**Success Criteria** (what must be TRUE):
+### Phase 815: DG API Documentation
 
-  1. ModelScreen.jsx renders an interactive 3D viewport using the Speckle viewer (not SVG boxes); entity selection, zoom, pan, and orbit all work
-  2. Validation color overlay (Signal Red for failing, ink/gray for passing) is applied to Speckle geometry, matching the current SVG color scheme
-  3. The legacy SVG map remains available as a fallback toggle; run browsing, instance inspection, and SWRL panel continue to work unchanged
+**Goal:** The DG API Docs region hosts a Revit-API-style documentation browser for connector developers, driven by extendable structured content.
 
----
+**Requirements:** APID-01, APID-02, APID-03
 
-## Progress Table
+**Success criteria:**
+1. User navigates a tree (sections → endpoints/classes → members) with a detail pane, Revit-API-doc style
+2. Connector-facing API is documented end-to-end: credential auth, heartbeat/status, validation publish — with request/response examples
+3. Adding a new doc page requires only adding a structured content file (no viewer code change)
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 21. Design System Foundation | 1/1 | Complete | 2026-07-07 |
-| 22. Navigation Shell, Landing and Auth | 1/1 | Complete | 2026-07-07 |
-| 23. Graph Viewer | 1/1 | Complete | 2026-07-07 |
-| 24. Model Viewer | 1/1 | Complete | 2026-07-07 |
-| 25. Projects and Scoping | 1/1 | Complete | 2026-07-07 |
-| 26. Deployment Cutover and E2E Parity | 1/1 | Complete | 2026-07-07 |
-| 27. Speckle 3D Embed | 1/1 | Complete   | 2026-07-08 |
+### Phase 816: Integration & Deployment
+
+**Goal:** The full connector lifecycle works end-to-end and the rebuilt container ships all four regions without v8.0 regressions.
+
+**Requirements:** INTG-01, INTG-02
+
+**Success criteria:**
+1. A credential created in the Connectors screen authenticates a simulated heartbeat (curl/script), and the status + last-connection date update in the UI
+2. `docker compose build --no-cache design-grammars` ships all seven regions; Graph / Model / Projects / landing / auth still pass their v8.0 smoke checks
 
 ---
-
-*Roadmap updated: 2026-07-08 — Phase 27 plan created (Speckle 3D embed, deferred from Phase 24)*
-*v8.0 shipped: 2026-07-07*
-*v7.0 shipped: 2026-07-05*
-*v2.0 shipped: 2026-05-10*
+*Roadmap created: 2026-07-11 — milestone v8.1 Platform Setup Regions*
