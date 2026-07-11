@@ -29,7 +29,9 @@ def test_reason_consistency_returns_d10_contract(monkeypatch):
         assert engine == "hermit"
         return {
             "consistent": True,
-            "unsatisfiable_classes": [],
+            "unsatisfiable_classes": [
+                {"iri": "http://example.org/dg/ex#SlidingDoor", "label": "Sliding Door"}
+            ],
             "axiom_counts": {"subClassOf": 65, "domain": 101, "range": 112, "disjointWith": 2, "classDeclarations": 80},
             "duration_ms": 42,
             "stripped_builtin_rules": 1,
@@ -44,6 +46,45 @@ def test_reason_consistency_returns_d10_contract(monkeypatch):
     assert D10_KEYS <= set(body.keys())
     assert body["consistent"] is True
     assert body["stripped_builtin_rules"] == 1
+
+
+def test_local_name_fallback():
+    from reasoning import _local_name
+
+    assert _local_name("http://example.org/dg/ex#SlidingDoor") == "SlidingDoor"
+    assert _local_name("http://example.org/dg/path/Thing") == "Thing"
+    assert not _local_name("http://example.org/dg/ex#SlidingDoor").startswith("http")
+    assert not _local_name("http://example.org/dg/path/Thing").startswith("http")
+
+
+def test_unsatisfiable_classes_have_iri_and_label(monkeypatch):
+    def fake_run_consistency(project, engine="hermit", session=None):
+        assert project == "x"
+        return {
+            "consistent": False,
+            "unsatisfiable_classes": [
+                {"iri": "http://example.org/dg/ex#SlidingDoor", "label": "Sliding Door"},
+                {"iri": "http://example.org/dg/ex#RevolvingDoor", "label": "RevolvingDoor"},
+            ],
+            "axiom_counts": {"subClassOf": 65, "domain": 101, "range": 112, "disjointWith": 2, "classDeclarations": 80},
+            "duration_ms": 42,
+            "stripped_builtin_rules": 0,
+        }
+
+    monkeypatch.setattr(reasoning, "run_consistency", fake_run_consistency)
+
+    response = client.post("/reason/consistency", json={"project": "x"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["unsatisfiable_classes"]) == 2
+    for entry in body["unsatisfiable_classes"]:
+        assert isinstance(entry, dict)
+        assert "iri" in entry
+        assert "label" in entry
+        assert isinstance(entry["label"], str)
+        assert len(entry["label"]) > 0
+        assert not entry["label"].startswith("http")
 
 
 def test_reason_consistency_unknown_engine_returns_422(monkeypatch):
