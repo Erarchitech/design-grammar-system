@@ -67,6 +67,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Milestone-derived phase numbering convention|Milestone-derived phase numbering vX.Y → X·100+Y·10 (v8.1:810-819, max 10 per milestone)]]
 - [[decisions/Content module glob uses numeric prefix pattern|Content module glob uses numeric prefix [0-9][0-9]-* pattern]]
 - [[decisions/Reasoning runs in isolated dg-reasoner sidecar not embedded in data-service|v8.2: Reasoning runs in isolated dg-reasoner sidecar, not embedded in data-service]]
+- [[decisions/v8.2 hybrid axiom-scoping spike proven|v8.2: Hybrid axiom-scoping (static TBox ∪ live export + curated disjointness)]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -181,6 +182,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-11 Phase 815 DG API Documentation execution|2026-07-11 Phase 815 DG API Documentation execution]]
 - [[sessions/2026-07-11 Phase 816 Integration & Deployment execution|2026-07-11 Phase 816 Integration & Deployment execution]]
 - [[sessions/2026-07-11 v8.2 milestone init — Connector Integration and Reasoning Engine|2026-07-11 v8.2 milestone init — Connector Integration & Reasoning Engine]]
+- [[sessions/2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision and OntoGraph Axiom Scoping|2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive

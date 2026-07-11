@@ -16,3 +16,4 @@ date: 2026-07-11
 **Scope:** Established for v8.2 (Phase 821: dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation). See `.planning/research/SUMMARY.md` for the full research trace.
 
 **Date:** 2026-07-11 — established during v8.2 milestone init.
+**Status:** ✅ Confirmed and recorded as a PROJECT.md Key Decision (Outcome: `✓ Shipped — v8.2 Phase 820`). See `820-DECISION.md` for the ADR entry with spike-evidence subsection linking `spike/output/naive_result.txt` and `hybrid_result.txt`.
