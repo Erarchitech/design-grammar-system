@@ -1,308 +1,178 @@
-# Research Summary: v3.0 Typed Variables and Composable Design State
+# Project Research Summary
 
-**Project:** Design Grammar System — v3.0 Typed Variables and Composable Design State
-**Domain:** Parametric architectural compliance checking — SWRL/OWL rule system, Grasshopper plugin, Neo4j metagraph
-**Researched:** 2026-05-11
-**Confidence:** HIGH (all four researchers grounded findings in direct codebase inspection)
-
----
-
-## Open Questions — Answer Before Writing Requirements
-
-These five questions have architectural consequences. Requirements should not be drafted until they are resolved, because each affects data contracts that cascade across all phases.
-
-**Q1 — DesignState hierarchy strategy in Neo4j (CRITICAL)**
-
-Two researchers split on this. STACK.md recommends multi-label nodes (`:DesignState:DefState`, `:DesignState:ObjectState`). ARCHITECTURE.md recommends single label `DesignState` with `kind` property (`DefState` | `ObjectState`), citing the established `Rule.kind` pattern and NeoVis rendering instability with multi-label nodes. See the Disagreements section for full tradeoff analysis. **Which pattern do you want?**
-
-**Q2 — ObjectRef stable identity mechanism (CRITICAL)**
-
-FEATURES.md insists the user must supply a semantic string ID (e.g. Rhino GUID from the model) because geometry-hash IDs break whenever geometry changes during design exploration. STACK.md and ARCHITECTURE.md both assume this too. The anti-feature automatic geometry-hash-based ID generation is explicitly rejected by all three researchers. **Confirm: ObjectRef is a user-supplied string, not auto-computed. Do users need a UI affordance (panel label, tooltip) to understand what to wire there, or is documentation sufficient?**
-
-**Q3 — VALIDATION RUNS rename migration strategy (HIGH)**
-
-PITFALLS.md flags two options for the VALIDATION RUNS to RUN DECONSTRUCT rename: (a) new ComponentGuid, accept canvas breakage, document re-wire steps; (b) keep old Guid, add one-release migration shim that shows "re-wire required" instead of null outputs. Option (b) is the safer user experience but requires writing a shim. **Which approach do you want?**
-
-**Q4 — CLASSIFICATOR input ordering strategy (HIGH)**
-
-PITFALLS.md documents that adding inputs between existing indices 0 to 3 causes silent wire misrouting in saved v2.0 canvases. The safe approach (append all new inputs after index 3) conflicts with the documentation-friendly ordering shown in PROJECT.md. **Do you require backward-wire-safe index ordering (append-only), or is a clean break acceptable with a migration warning in Read()?**
-
-**Q5 — Var node merge key fix scope (CRITICAL, v2.0 bug)**
-
-Pitfall P4 exposes a latent v2.0 bug: MERGE on Var nodes uses only name as the merge key, meaning variables with the same name across projects silently share a single Var node. This must be fixed before v3.0 cross-rule identity is built on top of it. The fix requires a Cypher template change, a data migration on existing Var nodes, and an n8n workflow update. **Confirm this lands in Phase 1 as a prerequisite (not a v3.0 feature), and that you accept the schema migration risk on existing Var nodes.**
-
----
+**Project:** Design Grammar System — v8.2 Connector Integration & Reasoning Engine
+**Domain:** OWL 2 DL ontology reasoning + SHACL instance validation bolted onto a Neo4j-native property-graph compliance system, plus credential-gated Grasshopper connector wiring
+**Researched:** 2026-07-11
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-v3.0 restructures the DG Grasshopper plugin around two new data concepts: typed variables (Object vs Property, inferred from SWRL atom structure) and a composable DesignState hierarchy (DefState for parametric capture plus ObjectState for element identity plus their parent class). These changes touch every component in the GH canvas pipeline — METAGRAPH, RULE DECONSTRUCT, DESIGN STATE, CLASSIFICATOR, VALIDATOR publish path, and the new OBJECT STATE and VARIABLE NAME components — plus six schema-propagation surfaces outside the plugin. The research confirms that no new NuGet packages, pip packages, or Docker services are required. All v3.0 features are achievable with the existing stack by extending in-place.
+v8.2 adds three tightly-related capabilities to the already-shipped v8.1 platform: (1) real OWL 2 DL reasoning (HermiT/Pellet via Owlready2) replacing the v8.1 Reasoner screen's inert placeholder selector, (2) a SHACL validation layer running alongside — not replacing — the existing bespoke-regex SWRL VALIDATOR, and (3) wiring the Grasshopper CONNECTOR component to the v8.1 Connector Credential Backend so it stops taking raw Neo4j credentials with no relationship to the platform's credential system. All three are standard, well-documented technology choices (Owlready2 + pySHACL, both Python-native or JVM-subprocess), but the *integration* is genuinely hard: DG's live Neo4j `OntoGraph` is a flat vocabulary with no `rdfs:subClassOf`/`domain`/`range`/`disjointWith` axioms today, so a naive reasoner run over it will report "consistent" trivially — not because the ontology is sound, but because it has nothing to reason over. This is the single most important finding across all four research files and must be resolved as an explicit early decision, not discovered mid-build.
 
-The core architectural finding is that variable type is derived data: it is 100% computable at read time in Neo4jRuleRepository.PopulateVariables() from the atom structure already stored in Neo4j. Writing it to Neo4j or inferring it in n8n would be redundant and error-prone. Similarly, cross-rule Object variable identity should be anchored to a user-supplied semantic string (the ObjectRef), not to a computed geometry hash — geometry hashes break on every design change, which is exactly when cross-run identity matters most. The DESIGN STATE component caches IdRefs keyed by DefState content hash to avoid re-scanning geometry on every solve.
+The recommended approach: run OWL reasoning and SHACL validation in a **new sidecar service (`dg-reasoner`)**, isolated from `data-service`'s FastAPI hot path, called synchronously over HTTP exactly like the existing `data-service → n8n`/`data-service → Speckle` patterns. STACK.md argued for embedding Owlready2 + a headless JRE directly inside `data-service` to avoid a 13th compose service; ARCHITECTURE.md argued for a dedicated sidecar to isolate the JVM subprocess lifecycle from Speckle-publish/validation-run traffic. **This summary resolves in favor of the sidecar** — see "Architecture Decision: Sidecar vs Embedded" below — because PITFALLS.md's Pitfall 2 (reasoner timeout/blowup under cyclic axioms or growing ABox) makes failure isolation a correctness requirement, not just tidiness, and the milestone explicitly risks unbounded ontology growth as architects author more rules.
 
-The largest risk in v3.0 is not technical complexity — it is backward compatibility. The component rework changes input/output counts and indices on CLASSIFICATOR (4 to 8+ inputs), RULE DECONSTRUCT (6 to 4 outputs), and renames VALIDATION RUNS to RUN DECONSTRUCT. Existing .gh canvas files will have misrouted wires if migration guards are not applied. A latent v2.0 bug (P4: Var nodes share across projects via name-only merge key) must be patched in Phase 1 before any cross-rule identity feature is built on top of it, or the cross-rule identity mechanism will be built on a broken foundation. Schema propagation across all six surfaces (C# models, cypher_template.txt, dataset_schema.json, n8n workflow prompts, config.template.js, data-service Cypher) must be treated as a first-class deliverable in Phase 1, not a follow-up.
+Key risks, in order of how early they must be resolved: (1) the OntoGraph axiom gap must be scoped (extend LLM ingestion to emit real axioms vs. scope reasoning to structural checks only) before any reasoner UI work starts; (2) TBox (schema) reasoning and ABox (instance/design) validation must be kept as two visibly distinct checks, never merged into one pass/fail badge, or architects will misread "ontology schema OK" as "my building design is compliant"; (3) SHACL and the existing SWRL VALIDATOR must have a documented rule-partition or precedence policy before either checks real rules, to avoid silent double-authoring and disagreeing verdicts; (4) the CONNECTOR component's credential change must follow DG's own established breaking-change discipline (additive ports, GUID preservation, release-notes migration table) — this project has already been burned by exactly this class of change (v7.0 CLASSIFICATOR/VALIDATION RUNS GUID breakage) and has a documented playbook to reuse.
 
----
+## Key Findings
 
-## Resolved Findings
+### Recommended Stack
 
-The following areas had researcher agreement and can be treated as decided.
+Owlready2 0.51 (embeds HermiT as default reasoner, Openllet as the maintained Pellet fork for a second engine) is the only Python library offering genuine OWL 2 DL completeness — no pure-Python library (owlrl included) implements full DL satisfiability/consistency checking, only the incomplete OWL 2 RL profile. pySHACL 0.40.0 is pure Python, no JVM, and handles SHACL Core + SHACL-SPARQL for instance-level validation. Both share RDFLib 7.6.0 as their common in-memory graph type, so a single Neo4j→RDF projection step can feed both engines. A headless JRE (OpenJDK 17) is unavoidable for HermiT/Openllet, since they run as JAR subprocesses Owlready2 shells out to per `sync_reasoner()` call — but the JVM is transient (starts, reasons, exits), not a standing server, so it does not need Jena/Fuseki/TopBraid-style always-on infrastructure. No new NuGet packages are needed on the Grasshopper/C# side — `System.Net.Http.Json` already establishes the `data-service`-calling pattern in `ValidationPublishClient.cs`, directly reusable for CONNECTOR's new credential-heartbeat call.
 
-### Stack — No New Dependencies
+**Core technologies:**
+- **Owlready2 0.51** (HermiT default, Openllet second engine) — real OWL 2 DL reasoning via bundled JAR subprocess; no live triple-store server needed
+- **pySHACL 0.40.0** — SHACL Core + SPARQL instance validation, pure Python, no JVM, actively maintained
+- **RDFLib 7.6.0 + owlrl 7.6.2** — shared RDF graph substrate between the OWL and SHACL paths; owlrl is a pySHACL dependency only, not a DL-reasoning substitute
+- **neosemantics (n10s)** Neo4j plugin — project-scoped Cypher→RDF export (`n10s.rdf.export.cypher`), avoids hand-rolling a serializer
+- **OpenJDK 17 headless JRE** — apt-installed runtime for the HermiT/Openllet JARs, ~200MB layer, no persistent process
 
-**Confidence: HIGH** (verified against NuGet, pip, Rhino developer docs, direct codebase read)
+### Expected Features
 
-All v3.0 features are implemented within the existing stack. Neo4j.Driver stays at 5.28.2 — 6.0.0 drops .NET 7 support and renames transaction APIs; upgrading breaks net7.0-windows with no v3.0 benefit. System.Security.Cryptography.SHA256 is already imported in DesignStateComponent and extends to ObjectState IDs with OS_ prefix. GH_Structure<IGH_Goo> with GH_Path is the existing DataTree pattern for the new Values output on CLASSIFICATOR. SwrlRuleParser is extended in-place; variable kind inference is extracted to a dedicated VariableTypeInferrer class in DG.Core.Parsing.
+Two fundamentally different "reasoning" cadences must be kept separate in the UI/API from day one: OWL TBox consistency (schema-level, open-world, runs at rule-authoring time when the ontology changes) versus SHACL/SWRL ABox validation (instance-level, closed-world, runs every time a DesignState is checked). Conflating them into one status is the single most-repeated risk across FEATURES.md, ARCHITECTURE.md, and PITFALLS.md.
 
-### Variable Type Inference — Read-Time, Not Write-Time
+**Must have (table stakes):**
+- Reasoner screen "Run check" action that actually reasons, replacing the v8.1 "integration pending" placeholder — binary pass/fail + unsatisfiable-class count is sufficient for v1
+- SHACL violation results mapped through DG's existing ErrorMessageTemplates (What+Where+How-to-fix), never raw RDF/SHACL vocabulary shown to architects
+- Severity levels (info/warning/violation) mapped to a Solibri-style red/orange/yellow treatment architects already recognize from BIM tooling
+- CONNECTOR component accepts a single pasted platform credential/token, replacing manual Neo4j password entry — matches the Speckle/n8n "paste an opaque token" norm
+- In-canvas error feedback when the credential is invalid/revoked/expired (reuse existing `AddRuntimeMessage`/ErrorMessageTemplates pattern)
 
-**Confidence: HIGH** (all three researchers agreed; grounded in SWRL W3C semantics and direct codebase read)
+**Should have (competitive):**
+- Pre-emptive credential status display on CONNECTOR (live active/stale/revoked from the already-shipped `/connectors/heartbeat` endpoint) — exceeds both Solibri's and n8n's reactive-only credential UX
+- Per-connector-type token scoping surfaced explicitly in the Grasshopper UX (already modeled server-side in the v8.1 14-connector registry, mostly UI-copy work)
 
-Variable kind (Object vs Property) is inferred at read time in Neo4jRuleRepository.PopulateVariables() from the atom structure already in Neo4j — not stored on Var nodes, not computed in n8n, not declared by the user. The inference rule is a strict priority chain: (1) variable at pos-1 of any ClassAtom in body or head is Object; (2) else at pos-2+ of any DataPropertyAtom is Property; (3) else only in BuiltinAtom args is Builtin-bound and not exposed to the GH canvas; (4) head-atom-only variables classified by head predicate IRI. Inference is extracted to a dedicated VariableTypeInferrer class so it can be unit-tested for each category independently, including the critical case where a variable appears in both ClassAtom and DataPropertyAtom (correct answer: Object wins).
+**Defer (v2+):**
+- Explanation/justification UX for why a class is unsatisfiable (Protege-style axiom justification translated to plain language) — ship pass/fail summary first
+- TBox→SHACL shape auto-derivation (single source of truth generating both OWL constraints and SHACL shapes) — real open-world/closed-world tension, needs its own design pass
+- SWRL→SHACL consolidation (retiring the bespoke VALIDATOR) — explicitly out of scope per milestone framing, SHACL ships as complementary only
 
-### Cross-Rule Object Identity — User-Supplied ObjectRef
+### Architecture Approach
 
-**Confidence: HIGH** (FEATURES.md, ARCHITECTURE.md, and STACK.md all agree; confirmed against Speckle applicationId pattern)
+Reasoning runs as a synchronous HTTP call from `data-service` to a new dedicated sidecar (`dg-reasoner`), mirroring the existing `data-service → n8n`/`data-service → Speckle` call pattern and respecting CLAUDE.md's "no message queue" decision. Neo4j stays the single source of truth; `DesignGrammar-V7.owl` is loaded as a static meta-schema TBox, unioned at reasoning time with a project-scoped dynamic export of the live OntoGraph/Metagraph via `n10s.rdf.export.cypher`. The Metagraph (Rule/Atom/Var/Literal/Builtin) maps near-1:1 onto the standard W3C SWRL RDF vocabulary (`swrl:Imp`, `swrl:body`/`swrl:head`, `swrl:ClassAtom`, etc.) — a known, low-risk translation. The OntoGraph half has no such shortcut and is the harder, higher-risk translation (see Critical Finding below). Grasshopper is entirely outside this pipeline — reasoning is server-side only, triggered from the `ui-v2` Reasoner screen, never from a GH component's `SolveInstance`.
 
-The ObjectRef is a user-supplied stable string (e.g. Rhino object GUID, panel-labeled string). Automatic geometry-hash-based ID generation is explicitly rejected — geometry regenerates on every GH solve, so content-hash IDs break precisely when cross-run history matters most. This mirrors Speckle's applicationId (stable, user/source-supplied) vs id (content-hash, changes with geometry) distinction. DESIGN STATE component caches (lastDefStateId, cachedIdRefs). IdRefs re-scan only when DefState.StateId changes.
+**Major components:**
+1. **`dg-reasoner` (new sidecar)** — Python + headless JRE container; wraps Owlready2 (`sync_reasoner()`/`sync_reasoner_pellet()`) and pySHACL behind `POST /reason/consistency` and `POST /shacl/validate`; stateless, no Neo4j access of its own
+2. **`data-service/ontology_export.py` (new module)** — project-scoped Cypher→RDF export via `n10s`, owns the Neo4j bolt driver connection; orchestrates calls to the sidecar and persists run results (extends `reasoner.py`'s existing JSON-settings pattern)
+3. **`neo4j` + `n10s` plugin** — RDF export capability added to the existing Neo4j service (plugin jar in the plugins volume), no new container
+4. **CONNECTOR component (`ConnectorComponent.cs`)** — two independent, parallel flows: unchanged bolt connection (raw Neo4j creds) plus a new optional best-effort heartbeat call using the platform token; token never gates or substitutes for bolt credentials
+5. **`ui-v2` Reasoner screen** — extends existing `GET/PUT /reasoner/settings` with `POST /reasoner/run`, displays two clearly separated statuses (schema consistency vs. design/SHACL validation)
 
-### METAGRAPH as Single Neo4j Consumer
+### Critical Pitfalls
 
-**Confidence: HIGH** (both ARCHITECTURE.md and FEATURES.md agreed; follows existing ScheduleSolution pattern)
+1. **OntoGraph has no real axioms today (Critical Finding, both ARCHITECTURE.md and effectively STACK.md)** — running HermiT against a naive export of the live flat vocabulary will report "consistent" trivially. Must be resolved as an explicit spike/decision before any reasoner UI work: either extend LLM ingestion to emit real domain/range/subclass/disjoint triples, or scope v8.2 reasoning down to structural/referential sanity checks (dangling `range`, orphaned `REFERS_TO`), or a hybrid. This is the load-bearing decision the entire milestone's later phases depend on.
+2. **Property-graph → RDF translation silently drops edge-property semantics** (`ARG.pos`, `HAS_BODY/HAS_HEAD.order`) — RDF has no native equivalent for edge properties without explicit reification; a hand-rolled exporter can produce valid, "successful" Turtle that has quietly lost ordering data the reasoner result then contradicts. Avoid by writing an explicit LPG→OWL mapping spec first and adding round-trip fidelity tests against known fixtures.
+3. **Reasoner timeout/blowup treated as an edge case** — HermiT/Pellet are worst-case exponential and can hang or exhaust memory on cyclic axioms or growing ABox data; must never be called synchronously inside a request handler or GH `SolveInstance`. Reuse `ConnectorComponent`'s existing async-task-plus-`ExpireSolution` pattern; timeout must produce a distinct "unknown" result, never silently read as pass or fail.
+4. **TBox/ABox conflation surfaced as one badge** — "ontology schema consistent" and "this specific design is compliant" are different reasoning tasks with different triggers and failure meanings; merging them into a single status will mislead architects into treating a schema-only green check as a design-compliance pass.
+5. **SWRL VALIDATOR and SHACL disagree with no defined precedence** — SHACL is closed-world, SWRL/VALIDATOR is effectively closed-world-in-practice-but-hand-built, and nothing guarantees the two engines agree on edge cases (missing properties, cardinality on absent data). Partition rule categories by kind (structural/shape → SHACL, domain compliance → SWRL VALIDATOR) rather than building an arbitration layer; never author the same business rule twice.
+6. **CONNECTOR credential change breaks saved .gh canvases without a migration path** — Grasshopper resolves wires by parameter name and position; any port reorder/removal is a breaking change regardless of code-diff size. This project has an established playbook (v7.0 CONNECTOR port-rename release notes) — follow it exactly: prefer additive new input over replacing existing ports, keep the same ComponentGuid, and if any port shifts, ship a release-notes migration table before merge.
 
-METAGRAPH runs two concurrent async tasks (GetRulesAsync plus ValidationRunsQueryService.QueryAsync) via Task.WhenAll, then fires ScheduleSolution. All downstream components operate purely on pre-loaded data. ValidationRunsQueryService is reused as-is with ruleId: null, stateId: null for the all-runs load. Objects and Properties outputs are derived by partitioning loaded rules' variables by Kind — no second DB query.
+## Implications for Roadmap
 
-### Phase 1 Must Fix the Var Merge Key (P4 — Latent v2.0 Bug)
+### Architecture Decision: Sidecar vs Embedded (resolving the STACK.md / ARCHITECTURE.md conflict)
 
-**Confidence: HIGH** (PITFALLS.md grounded in direct read of cypher_template.txt showing name-only MERGE)
+**Decision: separate `dg-reasoner` sidecar service, not embedded in `data-service`.**
 
-The existing MERGE pattern for Var nodes does not include project in the merge key. Variables with the same name across projects share a single Var node — a silent project isolation violation. v3.0 cross-rule identity is built on Var node identity. If this bug is not fixed first, the cross-rule identity mechanism inherits cross-project contamination. Fix requires: cypher_template.txt update, data migration script for existing Var nodes, n8n workflow JSON update, Neo4jRuleRepository AtomsQuery update. This is a Phase 1 prerequisite, not a v3.0 feature.
+Both research files agree on the libraries (Owlready2 wrapping HermiT/Openllet, pySHACL) and agree the JVM only needs to exist as a transient per-call subprocess, not a standing server — the disagreement is purely process/container placement:
 
-### Schema Propagation — Six Surfaces, All Mandatory
+- STACK.md's embedded approach avoids a 13th docker-compose service and a network hop, and is defensible in isolation — the JVM subprocess is short-lived either way.
+- ARCHITECTURE.md's sidecar approach isolates the JVM subprocess's failure modes (hang, OOM, crash) from `data-service`'s hot path, which also serves Speckle publish and validation-run retrieval for the Grasshopper VALIDATOR/VALIDATION GRAPH components — traffic that must stay unaffected by reasoning workload.
 
-**Confidence: HIGH** (FEATURES.md SP-01..SP-06, cross-validated by PITFALLS.md P3/P9/P10)
+**Tradeoff accepted:** one more container in an already-12+-service `docker-compose.yml`, one more network hop, one more Dockerfile to maintain. This is accepted because PITFALLS.md's Pitfall 2 (reasoner timeout/blowup) is not a hypothetical — DL reasoning is worst-case exponential and DG's rule corpus grows unboundedly with no current size cap, and a JVM hang/crash inside `data-service`'s own process would take down Speckle publish and validation-run retrieval alongside it. The sidecar's failure-isolation property directly prevents that blast radius. pySHACL (pure Python, no JVM) is co-located in the same sidecar per ARCHITECTURE.md's rationale — it keeps all RDF-toolkit dependencies (`rdflib`, `owlrl`) in one new, clearly-scoped service rather than adding an RDF-processing dependency surface to `data-service` itself; moving `shacl_validator.py` back into `data-service` later is a low-risk follow-up if the sidecar round-trip proves unnecessary for SHACL-only checks (no JVM to isolate for that path).
 
-Every schema change must propagate to all six surfaces in the same phase: (1) DG.Core.Models with new VariableKind enum, Variable.Kind, and DesignState/DefState/ObjectState C# models; (2) cypher_template.txt with new node shapes, ID prefix conventions, MERGE patterns, and schema version stamp; (3) training/dataset_schema.json with new node types and VariableKind field; (4) n8n/workflows JSON files with updated LLM system prompt ALLOWED node labels and GRAPH SCHEMA sections; (5) graph-viewer/config.template.js with NeoVis labels and visGroups for new node classes; (6) data-service/app.py with extended statePayloadJson to include idRefs list.
+This decision should be recorded as a PROJECT.md Key Decision before phase planning begins.
 
-### EnsureOutputLayout Migration Guard — Apply to All Reworked Components
+### Phase 1: Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping
+**Rationale:** Everything downstream depends on resolving the Critical Finding (OntoGraph has no real axioms) and the LPG→OWL mapping spec (Pitfalls 1, 5). Skipping straight to UI wiring risks building a "Run Reasoner" button that always reports "consistent" and teaches users to distrust it.
+**Delivers:** Written decision on axiom-scoping option (extend LLM ingestion / scope to structural checks / hybrid); explicit LPG→OWL mapping spec covering edge-property reification and UNA handling; documented in PROJECT.md Key Decisions
+**Addresses:** Prerequisite for both OWL reasoning and SHACL features in FEATURES.md's MVP list
+**Avoids:** Pitfall 1 (silent RDF translation data loss), Pitfall 5 (UNA gap)
 
-**Confidence: HIGH** (pattern already exists in RuleDeconstructComponent; PITFALLS.md P6/P7/P8 document the risks)
+### Phase 2: `dg-reasoner` Sidecar Skeleton + `n10s` Plumbing
+**Rationale:** Pure plumbing, independent of Phase 1's axiom-scoping decision — stand up the container and prove the Cypher→RDF→Owlready2→HermiT round trip on a toy example before wiring real project data through it.
+**Delivers:** New `dg-reasoner` service in docker-compose (Python + headless JRE), `n10s` plugin installed on the `neo4j` service, `POST /reason/consistency` skeleton endpoint
+**Uses:** Owlready2, HermiT (default), n10s (STACK.md, ARCHITECTURE.md)
+**Implements:** Reasoning-as-sidecar pattern (Architecture Pattern 1)
 
-All components with changed output/input counts must apply the existing EnsureOutputLayout migration guard pattern. New inputs must be appended after existing indices (not inserted between them) unless an explicit Read(GH_IReader) migration shim detects and adapts the old layout. This is the difference between silent wrong results and a clear migration message.
+### Phase 3: OntoGraph/Metagraph → RDF Translation
+**Rationale:** Shaped directly by Phase 1's decision; Metagraph translation is low-risk (SWRL vocabulary mapping already known), OntoGraph translation is the harder piece this phase must implement carefully.
+**Delivers:** `data-service/ontology_export.py` — project-scoped Cypher→RDF export feeding both the OWL and SHACL paths from one shared RDFLib graph
+**Implements:** Pattern 2 (Cypher-scoped RDF export) and Pattern 3 (SWRL vocabulary mapping)
+**Avoids:** Pitfall 1 (fidelity tests for `order`/`pos` edge properties), Pitfall 5 (UNA declarations in the exporter)
 
-### Unchanged Components
+### Phase 4: OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
+**Rationale:** Consumes Phase 3's translator; replaces the v8.1 placeholder selector per the explicit milestone goal.
+**Delivers:** `POST /reasoner/run` endpoint, async task pattern (reusing `ConnectorComponent`'s existing background-task/`ExpireSolution` precedent) with configurable timeout, `ui-v2` Reasoner screen showing pass/fail + unsatisfiable-class count as a distinctly-labeled "schema consistency" status
+**Addresses:** FEATURES.md table stakes — "Run check" action, consistency summary
+**Avoids:** Pitfall 2 (synchronous reasoner call / no timeout), Pitfall 3 (TBox/ABox conflation — must ship as a visibly separate status from SHACL/SWRL results)
 
-CONNECTOR, VALIDATOR (inputs), REINSTATE, Speckle stack, Ollama, n8n ingest logic (Cypher template documentation only), Model Viewer — all unchanged. ValidationPublishClient is a minor extension (adds idRefs to statePayloadJson).
-
----
-
-## Disagreements — Presented with Tradeoffs
-
-### Disagreement 1: Neo4j DesignState Hierarchy Strategy
-
-This is the most consequential unresolved disagreement. It affects cypher_template.txt, config.template.js, METAGRAPH query patterns, and every piece of Cypher that reads or writes DesignState nodes.
-
-**Option A: Multi-Label** (STACK.md recommendation)
-
-Nodes carry two labels: :DesignState:DefState or :DesignState:ObjectState. MERGE on the subtype label; parent label added via SET.
-
-Advantages: MATCH (d:DesignState) returns all subtypes without property filter; MERGE key is unambiguous (subtype label).
-
-Disadvantages: LLM must learn compound label MERGE pattern not in any existing DG template; NeoVis renders by first label and label order in Neo4j 5 is non-deterministic across minor versions (PITFALLS.md P3); no existing pattern in the codebase uses multi-label nodes; higher propagation surface (three config.template.js entries vs one).
-
-**Option B: Single Label + kind Property** (ARCHITECTURE.md recommendation)
-
-All nodes carry label :DesignState with kind: 'DefState' | 'ObjectState' property. Mirrors the established Rule.kind pattern.
-
-Advantages: One NeoVis config entry with deterministic rendering; single canonical MATCH pattern; mirrors Rule.kind so LLM already knows this pattern from existing Cypher templates; lower propagation surface.
-
-Disadvantages: Cannot subtype-query with MATCH (d:DefState) — must always filter by kind property; nodes indistinguishable by label alone in Cypher.
-
-**Recommendation: Option B (single label + kind).** Rationale: mirrors established Rule.kind pattern the LLM already knows; deterministic NeoVis rendering; lower propagation surface; lower risk of LLM Cypher template drift. The cost (no subtype-only Cypher query) is acceptable because all DesignState queries in this system filter by project and specific kind anyway.
-
-The roadmapper must record the user's choice as a Key Decision in PROJECT.md before phase planning begins.
-
----
-
-### Disagreement 2: ObjectRef ID Generation — Researcher Framing Mismatch
-
-This was not a true disagreement on the mechanism but a framing inconsistency that could confuse requirements.
-
-FEATURES.md clearly states the ObjectRef is user-supplied. STACK.md describes an OS_<ruleId>_<varName>_<elementRefHash> ID for the ObjectState node — which is different from the ObjectRef (the stable element identity string the user supplies). ARCHITECTURE.md proposes OS_<elementId>_<ruleId> for the node ID.
-
-Resolution: these are two distinct IDs that must not be conflated:
-
-- ObjectRef: user-supplied (e.g. Rhino GUID), stable element identity across rules and sessions, user-defined string.
-- ObjectState.State_Id: generated by the DG plugin via SHA256 truncation, serves as the Neo4j node unique identifier, format OS_<hash8> consistent with DS_<hash16> for DefState.
-
-The ObjectState.State_Id is computed from SHA256(ruleId + varName + objectRef) so it is deterministic given stable inputs. There is no geometry-hash in either ID. Requirements should define both IDs explicitly to prevent confusion during implementation.
-
----
-
-### Disagreement 3: DesignState Parent — Concrete Node or Virtual Class
-
-STACK.md's pattern implies a concrete DesignState parent node exists in Neo4j with DGST_ prefix aggregating DefState and ObjectState sub-nodes. ARCHITECTURE.md states the parent class has no concrete instances — there are only DefState and ObjectState instances.
-
-Resolution (aligned with Option B in Disagreement 1): With single-label plus kind property, the parent concept is implicit in the label DesignState. All nodes are DesignState nodes via the shared label, distinguished by kind. No separate parent node is needed. The DGST_ prefix from FEATURES.md is therefore unused — only DS_ (DefState) and OS_ (ObjectState) prefixes exist.
-
-If Option A (multi-label) is chosen instead, a concrete parent DesignState node with DGST_ prefix makes sense as the aggregation root. The roadmapper should capture this implication based on the user's Q1 answer.
-
----
-
-## Roadmap Implications
-
-### Suggested Phase Structure (6 phases)
-
-The phase ordering is driven by three hard dependency chains: (1) Variable.Kind must exist before any component can produce or consume typed outputs; (2) the Var merge key bug (P4) must be fixed before cross-rule identity is built; (3) schema propagation must be complete before end-to-end validation can be tested.
-
----
-
-**Phase 1 — Schema Foundation and Bug Fix**
-
-Rationale: Everything else depends on Variable.Kind being available and the Var merge key being safe. No downstream component can be built until these data contracts are locked. This phase has no upstream dependencies.
-
-Delivers: VariableKind enum and Variable.Kind property in DG.Core.Models; VariableTypeInferrer class with unit tests for all 4 atom categories; PopulateVariables() extended with kind inference; DesignState/DefState/ObjectState C# models and ID prefix constants; Var node merge key fix (name plus project) with data migration script; schema propagation across all six surfaces for new node classes and VariableKind; NeoVis config.template.js entries for new node labels; cypher_template.txt schema version stamp.
-
-Must avoid: P1 (type inference false positives), P4 (cross-project Var collision), P3 (NeoVis label proliferation), P9 (n8n prompt desync).
-
-Research flag: Standard patterns — no further research needed.
-
----
-
-**Phase 2 — METAGRAPH Expansion and RULE DECONSTRUCT Rework**
-
-Rationale: METAGRAPH must expose Runs before RUN DECONSTRUCT can consume them. RULE DECONSTRUCT must expose Objects/Properties before CLASSIFICATOR rework is meaningful. Both depend only on Phase 1. Independent of Phase 3.
-
-Delivers: METAGRAPH concurrent Task.WhenAll(GetRulesAsync, QueryRunsAsync) with new outputs Objects, Properties, DesignStates, Runs; RULE DECONSTRUCT Objects, Properties, Runs outputs with Variables deprecated (not removed) at last index; VARIABLE NAME new trivial component; EnsureOutputLayout applied with deprecated Variables output preserved.
-
-Must avoid: P6 (VALIDATION RUNS rename canvas break), P8 (RULE DECONSTRUCT Variables removal). Parallel with: Phase 3. Research flag: Standard patterns.
-
----
-
-**Phase 3 — OBJECT STATE Component and DESIGN STATE Rework**
-
-Rationale: Produces the IdRefs/GeoRefs contract that CLASSIFICATOR needs. Depends only on Phase 1 (C# models). Independent of Phase 2.
-
-Delivers: ObjectStateComponent (new) with ObjectRef plus GeoRef inputs emitting DG.ObjectState; DesignStateComponent rework with inputs changing to ObjectState[] plus DefState and outputs becoming IdRefs, GeoRefs, DefState with cache logic; DG.ObjectState public GH-wirable type; unit tests for cache invalidation.
-
-Must avoid: P5 (stale IdRefs when DefState changes). Parallel with: Phase 2. Research flag: Standard patterns.
-
----
-
-**Phase 4 — CLASSIFICATOR Rework**
-
-Rationale: Depends on Phase 1 (Variable.Kind), Phase 2 (typed Objects/Properties from RULE DECONSTRUCT), and Phase 3 (IdRefs/GeoRefs from DESIGN STATE). All three must be done before CLASSIFICATOR can be fully reworked.
-
-Delivers: CLASSIFICATOR new inputs Rule, Objects, Properties, PropValues, IdRefs, GeoRefs, DefState; rename ElementRefs to GeoRefs and State to DefState output; new outputs Values (DataTree) and Variables (full bound list); binding logic updated to use Objects-to-IdRefs mapping; EnsureOutputLayout with Read() migration detection for v2.0 canvas files; component message showing N objects bound, M properties bound.
-
-Must avoid: P7 (CLASSIFICATOR input index shift).
-
-Research flag: Needs /gsd-research-phase before PLAN — read VariableBinder.BuildBindings before drafting this phase.
-
----
-
-**Phase 5 — RUN DECONSTRUCT and statePayloadJson Extension**
-
-Rationale: Depends on Phase 2 (Runs from METAGRAPH) and Phase 3/4 (extended DesignState shape for statePayloadJson). Partial implementation possible after Phase 2.
-
-Delivers: ValidationRunsComponent to RunDeconstructComponent migration (strategy per Q3 decision) with outputs passing items, failing items, RunId, DateCreated, State; DesignStateSnapshot.cs gains IdRefs list; data-service/app.py extends statePayloadJson deserialization; ValidationPublishClient serializes IdRefs into statePayloadJson.
-
-Must avoid: P6 (VALIDATION RUNS rename canvas breakage).
-
-Research flag: Needs /gsd-research-phase before PLAN — read ValidationRunPersistenceService.cs and app.py serialization path; also requires Q3 decision from user.
-
----
-
-**Phase 6 — End-to-End Validation and Schema Propagation Verification**
-
-Rationale: Document-level propagation can be drafted in parallel with Phases 3-5 but must be verified end-to-end after all code phases complete.
-
-Delivers: Live ingest test confirming LLM generates Cypher with new node labels; training dataset audit with dataset_schema.json examples passing validation script; schema version stamp verified between cypher_template.txt and n8n workflow Function node; REINSTATE component smoke test with new statePayloadJson shape; E2E canvas test confirming OBJECT STATE to DESIGN STATE to CLASSIFICATOR to VALIDATOR to run persistence to RUN DECONSTRUCT reads correctly.
-
-Must avoid: P9 (n8n prompt desync), P10 (dataset obsolescence).
-
-Research flag: Needs live system test — cannot be verified without a running Docker environment.
-
----
+### Phase 5: SHACL Validation Layer
+**Rationale:** Lower risk than OWL reasoning, can run partially in parallel with Phases 1–4 once ValidGraph instance-data extraction is defined; shapes can be authored independently of the OWL TBox question. Must land the SWRL/SHACL precedence decision before shipping more than a demo rule.
+**Delivers:** `POST /shacl/validate` (pySHACL), severity-mapped results surfaced through existing ErrorMessageTemplates, written rule-partition/precedence decision vs. SWRL VALIDATOR
+**Addresses:** FEATURES.md table stakes — SHACL violation surfacing, severity levels
+**Avoids:** Pitfall 4 (SWRL/SHACL disagreement with no precedence) — must produce this as a written Key Decision, not just a working prototype
+
+### Phase 6: CONNECTOR Credential Integration
+**Rationale:** Fully independent of Phases 1–5 (no shared code path); the backend contract (`/connectors/heartbeat`) already exists from v8.1 Phase 812 with zero backend changes required. Can be built and shipped in parallel at any point.
+**Delivers:** New optional `PlatformCredential`/token input on `ConnectorComponent`, additive (existing raw-credential inputs preserved, same ComponentGuid), in-canvas error feedback on invalid/revoked token, security review confirming no raw credential in `BuildRequestKey`/logs/status text
+**Addresses:** FEATURES.md table stakes — credential input, in-canvas error feedback; should-have — pre-emptive status display
+**Avoids:** Pitfall 6 (canvas breakage — additive-only port design, release-notes migration table if any port shifts), Pitfall 7 (credential treated as weak plaintext secret)
 
 ### Phase Ordering Rationale
 
-Phase 1 is a universal prerequisite — Variable.Kind and the Var merge key fix are both blocking for all downstream work. Phases 2 and 3 are parallel — METAGRAPH/RULE DECONSTRUCT expansion does not share state with OBJECT STATE/DESIGN STATE rework. Phase 4 (CLASSIFICATOR) is the synchronization point — it depends on both Phase 2 output types and Phase 3 geometry contracts. Phase 5 (RUN DECONSTRUCT) is partially parallel with Phase 4 but must wait for statePayloadJson shape to be final. Phase 6 is the verification gate — no phase is done until the end-to-end data flow is confirmed live.
-
-The v2.0 retrospective (see .planning/REQUIREMENTS.md Phase 3.1 gap closure) shows that plan-level completeness does not imply implementation completeness. Every phase should include an explicit broken-chain check: wire METAGRAPH to RULE DECONSTRUCT to CLASSIFICATOR to VALIDATOR to RUN DECONSTRUCT and confirm data flows end-to-end, not just that each component compiles.
-
----
+- Phases 1–4 are strictly sequential (each depends on the prior phase's output) because the OntoGraph axiom gap is a correctness blocker, not a nice-to-have — this is the "likely needs deeper research" segment of the roadmap per ARCHITECTURE.md's Suggested Build Order.
+- Phase 5 (SHACL) can start once ValidGraph instance-data extraction is defined, independent of exactly how Phase 1's axiom question resolves — SHACL shapes don't need TBox axioms to be authored.
+- Phase 6 (CONNECTOR) has zero shared code with Phases 1–5 and can run fully in parallel from day one — it's the lowest-risk, most self-contained piece of the milestone and should not be sequenced behind the reasoning work.
+- This ordering directly avoids Pitfall 3 (TBox/ABox conflation) by keeping the OWL-reasoning phase (schema-level) and the SHACL phase (instance-level) as separately deliverable, separately statused work, never merged into one "add reasoning" phase.
 
 ### Research Flags
 
-Phases needing deeper research during planning:
-- Phase 4 (CLASSIFICATOR rework): The binding logic change is the most complex algorithmic change in v3.0. Read VariableBinder.BuildBindings in detail before the PLAN is written.
-- Phase 5 (statePayloadJson extension): The data-service/app.py _project_state_summary() function and ValidationRunPersistenceService.cs serialize path should be read before the PLAN is written — the v2.0 gap closure showed this was the source of a silent data loss bug.
+Needs research during planning (`--research-phase`):
+- **Phase 1** — the OntoGraph axiom-scoping decision is genuinely open-ended (extend LLM ingestion vs. scope down vs. hybrid) and has no single documented right answer; needs a prototype/spike, not just a literature read
+- **Phase 3** — the OntoGraph half of the LPG→OWL translation has no standard shortcut (unlike Metagraph's SWRL-vocabulary mapping) and is where Pitfall 1's silent data-loss risk concentrates
 
-Phases with standard patterns (skip research-phase):
-- Phase 1: VariableTypeInferrer — straightforward enum plus inference logic with clear test cases.
-- Phase 2: METAGRAPH expansion — Task.WhenAll plus ScheduleSolution pattern is established.
-- Phase 3: OBJECT STATE and DESIGN STATE — new fixed-input component plus cache pattern.
-- Phase 6: Schema propagation verification — checklist-driven, no new code.
-
----
-
-## Pitfall Index — Top 5 Risks
-
-| # | Pitfall | Target Phase | Prevention |
-|---|---------|-------------|------------|
-| P4 | Cross-project Var node collision (latent v2.0 bug) | Phase 1 prerequisite | MERGE Var on (name, project); migration script; verify MATCH (v:Var) WHERE NOT EXISTS(v.project) RETURN count(v) = 0 |
-| P1 | Variable type inference false positives (variable in both ClassAtom and DataPropertyAtom) | Phase 1 | VariableTypeInferrer with priority chain; unit tests for every category including multi-atom-type case |
-| P7 | CLASSIFICATOR input index shift silently misroutes v2.0 canvas wires | Phase 4 | Append-only new inputs OR Read() migration detection with explicit error message; verify by loading v2.0 canvas |
-| P6 | VALIDATION RUNS to RUN DECONSTRUCT rename breaks existing canvases | Phase 5 | Decide migration strategy (Q3) before writing the component; document re-wire steps in release notes |
-| P9 | n8n prompt desync after schema change — LLM generates Cypher with old node labels | Phase 1 and every schema-touching phase | Schema version stamp in both cypher_template.txt and n8n workflow JSON; live ingest test after every schema change |
-
----
+Standard patterns (skip research-phase):
+- **Phase 2** — sidecar skeleton + n10s wiring is well-documented, standard Docker/FastAPI plumbing
+- **Phase 4** — once Phase 3's translator exists, Owlready2's `sync_reasoner()` API is HIGH-confidence, official-docs-verified
+- **Phase 5** — pySHACL's API is standard and well-documented; the precedence *decision* needs discussion but not technical research
+- **Phase 6** — CONNECTOR's HTTP-calling pattern already exists verbatim in `ValidationPublishClient.cs`; this is a direct-reuse implementation task
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | No new dependencies; all recommendations grounded in direct NuGet/pip registry checks and codebase read |
-| Features | HIGH | Grounded in SWRL W3C semantics, Speckle docs, and direct v2.0 component code read |
-| Architecture | HIGH | All integration points traced to specific files and methods in the codebase |
-| Pitfalls | HIGH | P4 confirmed via direct read of cypher_template.txt; P7 confirmed via direct read of ClassificatorComponent input indices; all pitfalls grounded in concrete code evidence |
+| Stack | MEDIUM | PyPI metadata and official docs confirmed directly (HIGH-tier sources), but Context7/Exa MCP tools were unavailable this session and Perplexity MCP returned 401 — library choices are solid, exact version pinning should be re-verified at implementation time |
+| Features | MEDIUM | Vendor docs (Solibri, W3C SHACL spec, Protege, n8n community, Speckle docs) cross-checked across independent sources; no HIGH-confidence primary-doc lookups this pass |
+| Architecture | MEDIUM-HIGH | Integration pattern and library choices are HIGH confidence (well-documented); the exact shape of the Neo4j→OWL translation is MEDIUM confidence, gated on the Phase 1 spike this summary flags |
+| Pitfalls | MEDIUM (web sources) / HIGH (project-specific facts) | OWL/RDF/SHACL general pitfalls are web-sourced and cross-checked (MEDIUM); CONNECTOR breaking-change precedent and current code patterns are read directly from `ConnectorComponent.cs` and `docs/RELEASE-NOTES-v7.0.md` (HIGH) |
 
-**Overall confidence: HIGH**
+**Overall confidence:** MEDIUM-HIGH
 
-### Gaps to Address During Planning
+### Gaps to Address
 
-- VariableBinder.BuildBindings rework scope: exact change to binding construction needs a detailed code read before Phase 4 PLAN is written. Flag for /gsd-research-phase before Phase 4.
-- statePayloadJson extension risk: Phase 5 touches the same code path that caused the v2.0 gap-closure bug. Read ValidationRunPersistenceService.cs and app.py serialization path before Phase 5 PLAN. Flag for /gsd-research-phase before Phase 5.
-- Migration strategy decision (Q3): VALIDATION RUNS component migration path must be decided by the user before Phase 5 PLAN is written.
-- DesignState hierarchy strategy (Q1): must be resolved before Phase 1 PLAN is written. The Key Decision must be recorded in PROJECT.md.
-
----
+- **OntoGraph axiom scope (Critical Finding):** Not resolvable from research alone — requires a Phase 1 spike against a real project's data before phase 2+ can be planned in detail. Flagged explicitly as the roadmap's first gating decision.
+- **HermiT/Openllet long-term maintenance health:** HermiT upstream has had no commits in ~6 years (still the de facto Protege default, still bundled by Owlready2) and stock Pellet is effectively unmaintained (Openllet is the recommended fork). Acceptable for v8.2 given no better-maintained OWL 2 DL alternative exists, but worth re-checking at a future milestone if reasoning becomes business-critical.
+- **Sidecar vs embedded reversibility:** If reasoning load turns out to be very light in practice (small ontologies, infrequent runs), the sidecar's extra container/network-hop cost may be reconsidered — but start with the sidecar per the Pitfall-2-driven reasoning above; do not default to embedding without re-running that tradeoff analysis.
+- **Exact JDK/Debian package name drift:** `openjdk-17-jre-headless` is confirmed for `python:3.11-slim`'s current Debian base, but Debian's default-JDK alias can shift between bookworm/trixie — verify at Dockerfile-write time via `apt-cache search openjdk`.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
-- Direct codebase inspection: DG.Core/Models/Variable.cs, DG.Core/Data/Neo4jRuleRepository.cs, DG.Core/Parsing/SwrlRuleParser.cs, DG.Core/Services/ValidationRunsQueryService.cs, all 7 GH component files, data-service/app.py, cypher_template.txt, training/dataset_schema.json, graph-viewer/config.template.js
-- SWRL W3C Submission (https://www.w3.org/submissions/SWRL/) — i-variable/d-variable distinction, rule-local scoping
-- SWRL Language FAQ protegeproject/swrlapi (https://github.com/protegeproject/swrlapi/wiki/SWRLLanguageFAQ) — ClassAtom/DataPropertyAtom argument semantics
-- NuGet Gallery Neo4j.Driver (https://www.nuget.org/packages/Neo4j.Driver) — 5.28.4 latest 5.x; 6.0.0 breaking changes confirmed
-- Neo4j .NET Driver Upgrade Guide (https://neo4j.com/docs/dotnet-manual/current/upgrade/) — 6.0.0 requires .NET 8 minimum
-- Rhino Developer Docs IGH_DataAccess.GetDataTree — GH_Structure vs DataTree SDK guidance
-- Speckle Core Concepts applicationId pattern (https://docs.speckle.systems/developers/data-schema/concepts) — stable vs content-hash identity
+- https://pypi.org/pypi/owlready2/json, https://pypi.org/pypi/pyshacl/json, https://pypi.org/pypi/rdflib/json, https://pypi.org/pypi/owlrl/json — official PyPI metadata
+- https://owlready2.readthedocs.io/en/latest/reasoning.html — Owlready2 reasoning docs
+- https://github.com/RDFLib/pySHACL — pySHACL repo, release cadence into 2026
+- Direct codebase reads: `data-service/reasoner.py`, `data-service/connectors.py`, `data-service/app.py`, `DG/src/DG.Grasshopper/Components/ConnectorComponent.cs`, `DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs`, `ontology/DesignGrammar-V7.owl`, `cypher_template.txt`, `training/dataset_schema.json`, `docs/RELEASE-NOTES-v7.0.md`, `ui-v2/src/screens/ReasonerScreen.jsx`, `.planning/PROJECT.md`
 
 ### Secondary (MEDIUM confidence)
+- https://neo4j.com/labs/neosemantics/, https://github.com/neo4j-labs/neosemantics — n10s RDF export plugin
+- https://github.com/Galigator/openllet, https://github.com/stardog-union/pellet — Openllet vs stock Pellet maintenance comparison
+- https://help.solibri.com — severity-level UX conventions
+- https://w3.org/TR/shacl12-ui/ — SHACL vocabulary and UI conventions
+- arXiv 2309.06888 ("OWL Reasoners still useable in 2023"), ORE 2015 Competition Report — reasoner performance/reliability benchmarks
+- arXiv 2507.12286 — SHACL/OWL open-world/closed-world semantics tension
 
-- Neo4j Developer Blog Graph Modeling Labels — multi-label hierarchy guidance, 4-label performance threshold
-- Neo4j Community Create multiple labels — community validation of multi-label subtype pattern
-- Grasshopper/McNeel community forums — GUID persistence/loss behavior on regeneration
-
-### Primary Internal (HIGH confidence)
-
-- .planning/REQUIREMENTS.md — v2.0 Phase 3.1 gap closure retrospective (broken chain pattern)
-- DG_OBSIDIAN/atlas/Graph schema v3 is the canonical data model.md — schema propagation checklist
-- DG_OBSIDIAN/knowledge/decisions/SWRL parsing is bespoke regex not vendor OWL library.md — parser limitation scope
+### Tertiary (LOW confidence)
+- General web survey of HermiT/Pellet/Openllet/ELK maintenance status — dated 2023 baseline extrapolated forward; recommend re-verifying at implementation time
 
 ---
-
-*Research completed: 2026-05-11*
-*Ready for roadmap: yes — pending resolution of Q1 and Q3 by user*
+*Research completed: 2026-07-11*
+*Ready for roadmap: yes*
