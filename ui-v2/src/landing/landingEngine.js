@@ -10,7 +10,13 @@
 const ANCH = [
   { key: "graph", ang: Math.PI * 1.06, amp: 0.95, sig: 0.3 },
   { key: "model", ang: -0.2, amp: 1.0, sig: 0.26 },
-  { key: "projects", ang: Math.PI * 0.62, amp: 0.72, sig: 0.22 }
+  { key: "projects", ang: Math.PI * 0.62, amp: 0.72, sig: 0.22 },
+  // v8.1 setup regions — secondary peaks (amp/sig below the three primaries),
+  // distributed in the free arcs so all 7 callouts + hero + hint stay clear.
+  { key: "aiengine", ang: -Math.PI * 0.45, amp: 0.68, sig: 0.24 }, // top, slightly right
+  { key: "connectors", ang: Math.PI * 0.3, amp: 0.66, sig: 0.22 }, // lower-right
+  { key: "reasoner", ang: -Math.PI * 0.78, amp: 0.64, sig: 0.22 }, // top-left
+  { key: "apidocs", ang: Math.PI * 0.86, amp: 0.6, sig: 0.2 } // left, below center
 ];
 
 const TH = {
@@ -59,7 +65,7 @@ const smooth = (a, b, x) => {
 
 export default class LandingEngine {
   /**
-   * @param els {{canvas, heroTitle, heroL1, heroL2, heroBeneath, labels: Record<'graph'|'model'|'projects', HTMLElement>, hint, heroForm}}
+   * @param els {{canvas, heroTitle, heroL1, heroL2, heroBeneath, labels: Record<'graph'|'model'|'projects'|'aiengine'|'connectors'|'reasoner'|'apidocs', HTMLElement>, hint, heroForm}}
    */
   constructor(els, { density = 2 } = {}) {
     this.els = els;
@@ -159,7 +165,11 @@ export default class LandingEngine {
     const cfg = {
       graph: { el: this.els.labels.graph, out: 62 },
       model: { el: this.els.labels.model, out: 62 },
-      projects: { el: this.els.labels.projects, out: 54 }
+      projects: { el: this.els.labels.projects, out: 54 },
+      aiengine: { el: this.els.labels.aiengine, out: 54 },
+      connectors: { el: this.els.labels.connectors, out: 54 },
+      reasoner: { el: this.els.labels.reasoner, out: 54 },
+      apidocs: { el: this.els.labels.apidocs, out: 54 }
     };
     this._lls = [];
     this.pk = {};
@@ -188,7 +198,7 @@ export default class LandingEngine {
   }
   setNavLabels(v) {
     const { labels, hint } = this.els;
-    for (const e of [labels.graph, labels.model, labels.projects, hint]) {
+    for (const e of [...Object.values(labels), hint]) {
       if (e) e.style.opacity = v ? "1" : "0";
     }
   }
