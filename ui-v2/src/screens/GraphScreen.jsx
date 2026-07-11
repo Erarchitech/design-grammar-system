@@ -94,6 +94,7 @@ export default function GraphScreen({ active, onBack, project }) {
   const selPanelRef = React.useRef(null);
   const searchPopRef = React.useRef(null);
   const historyPanelRef = React.useRef(null);
+  const sessionPanelRef = React.useRef(null);
   const sessionScrollRef = React.useRef(null);
   const engineRef = React.useRef(null);
 
@@ -138,6 +139,18 @@ export default function GraphScreen({ active, onBack, project }) {
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [historyOpen]);
+
+  // Fold the live Session console closed on any click outside it.
+  React.useEffect(() => {
+    if (!sessionOpen) return;
+    const onPointerDown = (ev) => {
+      if (sessionPanelRef.current && !sessionPanelRef.current.contains(ev.target)) {
+        setSessionOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [sessionOpen]);
 
   const snapStoreKey = React.useCallback(() => `dgv2_graph_snapshots_${project || "default"}`, [project]);
   // Persist a checkpoint, capped to the most recent few, dropping oldest on a
@@ -357,6 +370,32 @@ export default function GraphScreen({ active, onBack, project }) {
     engineRef.current?.selectNode(type, i, false);
     setSearchOpen(false);
   };
+
+  // Resolve a Session console "created node" entry (Neo4j label + parsed
+  // caption text, no neoId — parsed from Cypher before ids existed) to a live
+  // {ring, index} and select it. Exact kind+caption match preferred; falls
+  // back to the first node of that kind if the caption text doesn't line up
+  // (e.g. a Builtin with no captured display prop).
+  const selectCreatedNode = React.useCallback((n) => {
+    const eng = engineRef.current;
+    if (!eng || !eng.rings) return;
+    let exact = null,
+      fallback = null;
+    for (let g = 0; g < eng.rings.length && !exact; g++) {
+      const nodes = eng.rings[g].nodes;
+      for (let i = 0; i < nodes.length; i++) {
+        const nd = nodes[i];
+        if (nd.kind !== n.label) continue;
+        if (!fallback) fallback = { g, i };
+        if (n.display && nd.label === n.display) {
+          exact = { g, i };
+          break;
+        }
+      }
+    }
+    const hit = exact || fallback;
+    if (hit) eng.selectNode(hit.g, hit.i, true);
+  }, []);
 
   const clearFilter = () => {
     setFilterOn(false);
@@ -937,7 +976,7 @@ export default function GraphScreen({ active, onBack, project }) {
             />
           </div>
           {sessionOpen && (
-            <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div ref={sessionPanelRef} className="dg-frost dg-frost-sheer" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderBottom: "1px solid var(--color-hairline)" }}>
                 <span style={{ font: "500 10px/1 var(--font-annotation)", letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--text-muted)" }}>Session</span>
                 <Badge variant="outline">{session.length}</Badge>
@@ -975,9 +1014,14 @@ export default function GraphScreen({ active, onBack, project }) {
                             </span>
                             {turn.createdNodes.map((n, k) => (
                               <div key={k} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                                <span style={{ flex: "none", font: "500 9px/1.5 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: n.label === "Rule" ? "var(--color-signal-ink)" : "var(--text-secondary)", border: "1px solid var(--color-hairline)", borderRadius: 5, padding: "1px 6px", minWidth: 44, textAlign: "center" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => selectCreatedNode(n)}
+                                  title={"Select " + n.label + " node in graph"}
+                                  style={{ flex: "none", font: "500 9px/1.5 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: n.label === "Rule" ? "var(--color-signal-ink)" : "var(--text-secondary)", background: "none", border: "1px solid var(--color-hairline)", borderRadius: 5, padding: "1px 6px", minWidth: 44, textAlign: "center", cursor: "pointer" }}
+                                >
                                   {n.label}
-                                </span>
+                                </button>
                                 <span style={{ font: "400 11px/1.5 var(--font-mono)", overflowWrap: "anywhere" }}>{n.display || "—"}</span>
                               </div>
                             ))}

@@ -16,7 +16,9 @@
 
   /* Frost — translucent panels floating over the datascape */
   --frost-bg: rgba(255, 255, 255, 0.78);
+  --frost-bg-sheer: rgba(255, 255, 255, 0.04); /* near-invisible — the thinking sphere must read through it */
   --frost-blur: 14px;
+  --frost-blur-sheer: 5px; /* lighter blur so the sphere/streams stay legible, not fogged */
 
   /* Focus */
   --focus-ring: 0 0 0 1px var(--color-hairline-strong);
@@ -32,6 +34,7 @@
   --shadow-subtle: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
   --shadow-panel: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
   --frost-bg: rgba(20, 20, 20, 0.72);
+  --frost-bg-sheer: rgba(20, 20, 20, 0.05);
 }
 
 /* Blueprint grid — faint drafting grid on frosted paper */
@@ -49,4 +52,13 @@
   -webkit-backdrop-filter: blur(var(--frost-blur));
   backdrop-filter: blur(var(--frost-blur));
   border: 1px solid var(--color-hairline);
+}
+
+/* Sheer frost — near-transparent panel that lets content behind it (the
+   thinking sphere/streams) read through clearly. Defined after .dg-frost so
+   its overrides win when both classes are applied together. */
+.dg-frost-sheer {
+  background: var(--frost-bg-sheer);
+  -webkit-backdrop-filter: blur(var(--frost-blur-sheer));
+  backdrop-filter: blur(var(--frost-blur-sheer));
 }

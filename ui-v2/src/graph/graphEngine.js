@@ -86,6 +86,7 @@ export default class GraphEngine {
     this.fieldAmplitude = 0.2;
     this._cam = { x: 0, y: 0, s: 1 };
     this._camT = { x: 0, y: 0, s: 1 };
+    this._camSaved = null; // pre-think camera, restored after the think/stream sequence
     this._orbReach = [0.03, 0.052, 0.175];
     this._stop = false;
 
@@ -97,7 +98,8 @@ export default class GraphEngine {
     this._thinkVideoFailed = false;
 
     /* core→node stream + emergence state (see snapshotNodeIds/emitNewNodeStreams) */
-    this._streams = [];
+    this._growth = null; // sequential core→orbits growth stream (see emitNewNodeStreams)
+    this._impulses = []; // node-arrival pulse rings
     this._emerge = Object.create(null); // neoId → emergence 0..1 (absent key = fully materialized)
   }
 
@@ -133,7 +135,8 @@ export default class GraphEngine {
     this._spin = this._rot.map((a) => a.map(() => 0));
     if (this.type >= N) this.type = 0;
     // a plain reload/restore never carries stale streams/emergence forward
-    this._streams = [];
+    this._growth = null;
+    this._impulses = [];
     this._emerge = Object.create(null);
     this.initFieldParticles();
   }
@@ -239,6 +242,10 @@ export default class GraphEngine {
   }
   startThinking() {
     this._thinkTarget = 1;
+    // zoom the view in toward the core as the sphere emerges; the pre-think
+    // camera is saved and restored once the whole sequence settles
+    if (!this._camSaved) this._camSaved = { ...this._camT };
+    this._camT = { x: 0, y: 0, s: 2.6 };
     const v = this._thinkVideo;
     if (v && !this._thinkVideoFailed) {
       const p = v.play();
@@ -252,7 +259,7 @@ export default class GraphEngine {
     // Task 2 populates updateStreams(); guarded so tick() never breaks between
     // this task landing and that one.
     if (this.updateStreams) this.updateStreams(dt);
-    const target = this._streams && this._streams.length ? Math.max(this._thinkTarget, 0.6) : this._thinkTarget;
+    const target = this._growth && !this._growth.done ? Math.max(this._thinkTarget, 0.6) : this._thinkTarget;
     const k = Math.min(1, dt * 4);
     this._think += (target - this._think) * k;
     if (this._think < 0.01 && target === 0) {
@@ -267,11 +274,21 @@ export default class GraphEngine {
         if (p && typeof p.catch === "function") p.catch(() => {});
       }
     }
+    // restore the pre-think camera once the sphere is gone and streaming ended
+    if (
+      this._camSaved &&
+      this._thinkTarget === 0 &&
+      this._think < 0.01 &&
+      (!this._growth || this._growth.done)
+    ) {
+      this._camT = { ...this._camSaved };
+      this._camSaved = null;
+    }
   }
   drawThinkingCore(cx, cy, base, t) {
     const ctx = this._ctx;
     if (!ctx || this._think < 0.005) return;
-    const R = base * 0.033;
+    const R = base * 0.066;
     // local dark backdrop first — the light paper canvas needs a black field
     // for the white wisps to glow against under a "lighter" composite
     const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
@@ -286,7 +303,18 @@ export default class GraphEngine {
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = this._think;
     if (this._thinkVideoReady && !this._thinkVideoFailed) {
-      ctx.drawImage(this._thinkVideo, cx - R, cy - R, 2 * R, 2 * R);
+      // Clip the video to a circle: the mp4 is a square frame whose near-black
+      // corners still leak a faint square under "lighter" (limited-range H.264
+      // black is not exactly 0). The sphere's wisps sit well inside R, so the
+      // circular clip removes the square without touching the sphere. Draw the
+      // video slightly oversized (2.2R) so the sphere fills the clipped disc.
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, TAU);
+      ctx.clip();
+      const vR = R * 1.1;
+      ctx.drawImage(this._thinkVideo, cx - vR, cy - vR, 2 * vR, 2 * vR);
+      ctx.restore();
     } else {
       // procedural fallback — pulsing near-white glow + faint rim strokes
       const glowA = this._think * (0.55 + 0.25 * Math.sin(t * 2.2));
@@ -323,88 +351,213 @@ export default class GraphEngine {
   }
   emitNewNodeStreams(prevIdSet) {
     const CAP = 80;
-    let emitted = 0;
+    // collect new nodes with their polar placement (radius unitless, ×base at draw)
+    const fresh = [];
     for (let g = 0; g < this.rings.length; g++) {
       const rg = this.rings[g];
       for (let i = 0; i < rg.nodes.length; i++) {
         const nd = rg.nodes[i];
         if (prevIdSet.has(nd.neoId)) continue;
-        this._emerge[nd.neoId] = 0; // pop in even if this stream is capped below
-        if (emitted >= CAP) continue;
-        emitted++;
-        const seed = (Number(nd.neoId) * 2654435761) >>> 0;
-        const R = rng(seed);
-        const n = 18 + Math.round(R() * 8);
-        const parts = [];
-        for (let p = 0; p < n; p++) {
-          parts.push({
-            u: R(),
-            off: gauss(R),
-            ph: R() * TAU,
-            s: 0.6 + R() * 1.0,
-            al: 0.12 + R() * 0.38
-          });
-        }
-        this._streams.push({ g, i, neoId: nd.neoId, p: 0, life: 0.85 + Math.random() * 0.5, seed, parts });
+        fresh.push({ g, i, neoId: nd.neoId, r: this._orbR[g][nd.orbit] });
       }
     }
+    if (!fresh.length) return;
+    // overflow beyond CAP still pops in, just without a stream visit
+    for (const f of fresh.slice(CAP)) this._emerge[f.neoId] = 0.02;
+    const picked = fresh.slice(0, CAP);
+    for (const f of picked) this._emerge[f.neoId] = 0; // hidden until the stream arrives
+    // group by orbit radius, innermost orbit first
+    const groups = new Map();
+    for (const f of picked) {
+      const key = f.r.toFixed(4);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(f);
+    }
+    const ordered = [...groups.values()].sort((a, b) => a[0].r - b[0].r);
+    // visit order: enter each orbit at the node angularly closest to the previous
+    // waypoint, then run ALONG the orbit through its remaining new nodes
+    const angOf = (f) => {
+      const nd = this.rings[f.g].nodes[f.i];
+      return nd.ang + this._rot[f.g][nd.orbit];
+    };
+    const wps = [];
+    let prevAng = null;
+    for (const grp of ordered) {
+      let entry = 0;
+      if (prevAng != null) {
+        let bd = Infinity;
+        grp.forEach((f, k) => {
+          const d = Math.abs(((((angOf(f) - prevAng) % TAU) + TAU + Math.PI) % TAU) - Math.PI);
+          if (d < bd) {
+            bd = d;
+            entry = k;
+          }
+        });
+      }
+      const ea = angOf(grp[entry]);
+      const rest = grp
+        .filter((_, k) => k !== entry)
+        .sort((f1, f2) => ((angOf(f1) - ea + TAU) % TAU) - ((angOf(f2) - ea + TAU) % TAU));
+      const visit = [grp[entry], ...rest];
+      for (const f of visit) wps.push(f);
+      prevAng = angOf(visit[visit.length - 1]);
+    }
+    // per-segment durations from unitless polar arc lengths (constant-ish speed)
+    const durs = [];
+    let pr = 0.052,
+      pa = angOf(wps[0]); // path starts at the sphere rim, radially under wp0
+    for (const f of wps) {
+      let dA = (angOf(f) - pa) % TAU;
+      if (dA > Math.PI) dA -= TAU;
+      if (dA < -Math.PI) dA += TAU;
+      const len = Math.hypot(f.r - pr, ((f.r + pr) / 2) * dA);
+      // 2x speed: half the per-segment duration (clamped floor/ceiling halved too)
+      durs.push(Math.min(0.35, Math.max(0.07, len / 1.0)));
+      pr = f.r;
+      pa = angOf(f);
+    }
+    const total = durs.reduce((s, d) => s + d, 0);
+    if (total > 2.5) {
+      const k = 2.5 / total;
+      for (let i = 0; i < durs.length; i++) durs[i] *= k;
+    }
+    // scale the view back down to frame all new nodes (+ the core) as the
+    // streams begin reaching them — the camera lerp makes this a smooth pull-back
+    const fitPts = [[0, 0]];
+    for (const f of picked) fitPts.push(this.worldOf(f.g, f.i, this._rotT));
+    this._fitWorldPoints(fitPts, 0.72);
+    // strand descriptors — a small bundle of strings following the same path
+    const R = rng((Number(picked[0].neoId) * 2654435761) >>> 0);
+    const strands = [];
+    for (let m = 0; m < 4; m++) strands.push({ amp: 0.006 + R() * 0.012, ph: R() * TAU, fq: 5 + R() * 9 });
+    this._growth = { wps, durs, seg: 0, segP: 0, done: false, fade: 1, strands };
   }
   updateStreams(dt) {
-    if (!this._streams.length) return;
-    const alive = [];
-    for (const st of this._streams) {
-      st.p += dt / st.life;
-      if (st.p >= 1.25) {
-        delete this._emerge[st.neoId]; // absent key = fully materialized
-        continue;
+    // arrived nodes pop in as an impulse (fast emergence ramp)
+    for (const id in this._emerge) {
+      if (this._emerge[id] > 0) {
+        this._emerge[id] = Math.min(1, this._emerge[id] + dt * 4);
+        if (this._emerge[id] >= 1) delete this._emerge[id]; // absent key = fully materialized
       }
-      this._emerge[st.neoId] = Math.max(0, Math.min(1, (st.p - 0.6) / 0.4));
-      alive.push(st);
     }
-    this._streams = alive;
+    this._impulses = this._impulses.filter((im) => (im.age += dt) < 0.6);
+    const G = this._growth;
+    if (!G) return;
+    if (G.done) {
+      G.fade -= dt / 0.5;
+      if (G.fade <= 0) this._growth = null;
+      return;
+    }
+    G.segP += dt / G.durs[G.seg];
+    while (G.segP >= 1) {
+      const f = G.wps[G.seg];
+      this._emerge[f.neoId] = Math.max(this._emerge[f.neoId] || 0, 0.02);
+      this._impulses.push({ g: f.g, i: f.i, age: 0 });
+      G.seg++;
+      if (G.seg >= G.wps.length) {
+        G.done = true;
+        break;
+      }
+      G.segP = (G.segP - 1) * (G.durs[G.seg - 1] / G.durs[G.seg]);
+    }
   }
   drawStreams(cx, cy, base, t) {
     const ctx = this._ctx;
-    if (!ctx || !this._streams.length) return;
-    const coreScale = base * 0.05;
-    ctx.fillStyle = TH.ink;
-    for (const st of this._streams) {
-      const rg = this.rings[st.g];
-      const nd = rg && rg.nodes[st.i];
-      if (!nd) continue; // rings can change between frames — skip a stale target
-      const a = nd.ang + this._rot[st.g][nd.orbit],
-        R = this._orbR[st.g][nd.orbit] * base;
-      const tx = cx + Math.cos(a) * R,
-        ty = cy + Math.sin(a) * R;
-      const dx = tx - cx,
-        dy = ty - cy,
-        len = Math.hypot(dx, dy) || 1;
-      const ux = dx / len,
-        uy = dy / len;
-      // streams originate at the sphere's rim (base*0.026), not the exact core —
-      // combined with the intensity hold in updateThinking() this reads as
-      // pouring continuously out of the still-glowing sphere
-      const ox = cx + ux * base * 0.026,
-        oy = cy + uy * base * 0.026;
-      const tailFade = st.p > 1 ? Math.max(0, 1 - (st.p - 1) / 0.25) : 1;
-
-      for (const part of st.parts) {
-        const headReach = st.p * 1.12;
-        if (headReach < part.u) continue; // head hasn't reached this particle yet
-        const growIn = Math.min(1, (headReach - part.u) * 3);
-        const wob = Math.sin(part.ph + t * 3 + part.u * 6) * (1 - part.u) * coreScale;
-        const px = ox + dx * part.u - uy * part.off * wob,
-          py = oy + dy * part.u + ux * part.off * wob;
-        ctx.globalAlpha = part.al * growIn * tailFade;
-        ctx.fillRect(px - part.s / 2, py - part.s / 2, part.s, part.s);
+    if (!ctx) return;
+    // node-arrival impulse rings
+    for (const im of this._impulses) {
+      const rg = this.rings[im.g],
+        nd = rg && rg.nodes[im.i];
+      if (!nd) continue;
+      const a = nd.ang + this._rot[im.g][nd.orbit],
+        r = this._orbR[im.g][nd.orbit] * base;
+      const k = im.age / 0.6;
+      ctx.strokeStyle = TH.ink;
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = 0.55 * (1 - k);
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 2.5 + k * 24, 0, TAU);
+      ctx.stroke();
+    }
+    const G = this._growth;
+    if (!G) {
+      ctx.globalAlpha = 1;
+      return;
+    }
+    // sample the visited path (sphere rim → … → head) against live rotations so
+    // the whole trail keeps tracking the rotating orbits
+    const polar = (f) => {
+      const nd = this.rings[f.g] && this.rings[f.g].nodes[f.i];
+      if (!nd) return null;
+      return { r: this._orbR[f.g][nd.orbit], a: nd.ang + this._rot[f.g][nd.orbit] };
+    };
+    const first = polar(G.wps[0]);
+    if (!first) {
+      ctx.globalAlpha = 1;
+      return;
+    }
+    const pts = [{ x: cx + Math.cos(first.a) * 0.052 * base, y: cy + Math.sin(first.a) * 0.052 * base, d: 0 }];
+    let prev = { r: 0.052, a: first.a };
+    let dcum = 0;
+    const lastSeg = G.done ? G.wps.length - 1 : G.seg;
+    for (let k = 0; k <= lastSeg && k < G.wps.length; k++) {
+      const end = polar(G.wps[k]);
+      if (!end) break;
+      let dA = (end.a - prev.a) % TAU;
+      if (dA > Math.PI) dA -= TAU;
+      if (dA < -Math.PI) dA += TAU;
+      const frac = G.done || k < G.seg ? 1 : G.segP;
+      const len = Math.hypot(end.r - prev.r, ((end.r + prev.r) / 2) * dA) * base;
+      const steps = Math.max(3, Math.ceil((len * frac) / 12));
+      for (let s = 1; s <= steps; s++) {
+        const e = (s / steps) * frac;
+        const rr = (prev.r + (end.r - prev.r) * e) * base;
+        const aa = prev.a + dA * e;
+        pts.push({ x: cx + Math.cos(aa) * rr, y: cy + Math.sin(aa) * rr, d: dcum + len * e });
       }
-
-      // ink head dot at the leading edge of the filament
-      const headP = Math.min(1, st.p);
-      const hx = ox + dx * headP,
-        hy = oy + dy * headP;
-      ctx.globalAlpha = 0.85 * tailFade;
-      ctx.fillRect(hx - 1.6, hy - 1.6, 3.2, 3.2);
+      if (frac >= 1) {
+        dcum += len;
+        prev = end;
+      }
+    }
+    const headD = pts[pts.length - 1].d;
+    const gAl = G.done ? Math.max(0, G.fade) : 1;
+    // strand bundle — thin wobbling ink strings along the path
+    ctx.strokeStyle = TH.ink;
+    ctx.lineWidth = 0.8;
+    for (const st of G.strands) {
+      ctx.globalAlpha = 0.16 * gAl;
+      ctx.beginPath();
+      for (let p = 0; p < pts.length; p++) {
+        const pt = pts[p];
+        const nx = pts[Math.min(p + 1, pts.length - 1)],
+          px = pts[Math.max(p - 1, 0)];
+        let dx = nx.x - px.x,
+          dy = nx.y - px.y;
+        const dl = Math.hypot(dx, dy) || 1;
+        const wob = Math.sin(pt.d / (base * 0.03) + st.ph + t * 2.2) * st.amp * base;
+        const taper = Math.min(1, pt.d / (base * 0.02)) * Math.min(1, (headD - pt.d) / (base * 0.02) + 0.35);
+        const ox = pt.x + (-dy / dl) * wob * taper,
+          oy = pt.y + (dx / dl) * wob * taper;
+        if (p === 0) ctx.moveTo(ox, oy);
+        else ctx.lineTo(ox, oy);
+      }
+      ctx.stroke();
+    }
+    // brighter shimmering portion just behind the head + head dot
+    const hp = pts[pts.length - 1];
+    ctx.fillStyle = TH.ink;
+    for (let p = pts.length - 1; p >= 0; p--) {
+      const pt = pts[p];
+      const behind = headD - pt.d;
+      if (behind > base * 0.12) break;
+      const al = (1 - behind / (base * 0.12)) * 0.5 * gAl;
+      ctx.globalAlpha = al * (0.5 + 0.5 * Math.sin(pt.d * 7 + t * 5));
+      ctx.fillRect(pt.x - 0.9, pt.y - 0.9, 1.8, 1.8);
+    }
+    if (!G.done) {
+      ctx.globalAlpha = 0.9 * gAl;
+      ctx.fillRect(hp.x - 1.7, hp.y - 1.7, 3.4, 3.4);
     }
     ctx.globalAlpha = 1;
   }
@@ -493,6 +646,27 @@ export default class GraphEngine {
   }
   resetCam() {
     this._camT = { x: 0, y: 0, s: 1 };
+  }
+  // Frame a set of world-space points [x,y] with a screen fill fraction.
+  _fitWorldPoints(pts, fill) {
+    if (!pts.length) return;
+    let minx = 1e9,
+      miny = 1e9,
+      maxx = -1e9,
+      maxy = -1e9;
+    for (const [x, y] of pts) {
+      if (x < minx) minx = x;
+      if (x > maxx) maxx = x;
+      if (y < miny) miny = y;
+      if (y > maxy) maxy = y;
+    }
+    const cxw = (minx + maxx) / 2,
+      cyw = (miny + maxy) / 2;
+    const w = Math.max(maxx - minx, 120),
+      h = Math.max(maxy - miny, 120);
+    let s = Math.min((this._vw * fill) / w, (this._vh * fill) / h);
+    s = Math.max(0.5, Math.min(2.6, s));
+    this._camT = { x: cxw, y: cyw, s };
   }
   nodePos(g, i) {
     const { gcx, gcy, base } = this.camScreen();
