@@ -2,15 +2,19 @@
 gsd_state_version: 1.0
 milestone: v8.1
 milestone_name: Platform Setup Regions
-status: planning
-last_updated: "2026-07-11T09:29:14.940Z"
+current_phase: 814
+current_phase_name: reasoner-screen
+status: verifying
+stopped_at: v8.0 shipped
+last_updated: "2026-07-11T10:49:38.133Z"
 last_activity: 2026-07-11
+last_activity_desc: Phase 814 execution started
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 7
+  completed_phases: 4
+  total_plans: 7
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -20,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 27 — Speckle 3D Embed
+**Current focus:** Phase 814 — reasoner-screen
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-11 — Completed quick task 260711-i63: graph core thinking-sphere animation with node-emergence streams
+Phase: 814 (reasoner-screen) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-11 — Phase 814 execution started
 
 ## Performance Metrics
 
@@ -153,6 +157,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 20]: Release notes use per-component structure: old name -> new name, what broke, ASCII diagram, port mapping table, GUID changes — consistent layout across all 7 affected components
 - [Phase 20]: copilot-instructions.md rewritten as full replacement (not patch) per D-10 — avoids v3 remnants in retained sections
 - [Phase 20]: spec/DATABASE.md v3 migration notes preserved as historical section prefaced "v3->v4 migration (complete)" — keeps institutional knowledge
+- [Phase ?]: Reasoner settings stored as plain JSON (no encryption needed)
+- [Phase ?]: Registry structured with explicit status field for future integrated/non-placeholder reasoners
 
 ### Research Flags (carry into planning)
 
@@ -180,10 +186,11 @@ Shipped from Phase 20 Plan 02:
 | 260711-gtz | Decrease the size of title in the landing page so it fits the ring | 2026-07-11 | c60f541 | [260711-gtz-decrease-the-size-of-title-in-the-landin](./quick/260711-gtz-decrease-the-size-of-title-in-the-landin/) |
 | 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
+| Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-08T01:21:32.692Z
+Last session: 2026-07-11T10:48:49.846Z
 Stopped at: v8.0 shipped
 Resume file: — (next: user approval items in Pending Todos, then /gsd-new-milestone)
 

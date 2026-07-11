@@ -39,9 +39,9 @@ Requirements for milestone v8.1. Each maps to roadmap phases 810–819.
 
 ### Reasoner (REAS)
 
-- [ ] **REAS-01**: User can select a reasoner model for the Validation Graph from the Reasoner screen, with HermiT and Pellet offered as selectable entries
-- [ ] **REAS-02**: The selected reasoner persists server-side (data-service settings store) and is shown as the active reasoner on revisit
-- [ ] **REAS-03**: Placeholder reasoners are clearly marked as "integration pending" so users know selection does not yet change validation behavior
+- [x] **REAS-01**: User can select a reasoner model for the Validation Graph from the Reasoner screen, with HermiT and Pellet offered as selectable entries
+- [x] **REAS-02**: The selected reasoner persists server-side (data-service settings store) and is shown as the active reasoner on revisit
+- [x] **REAS-03**: Placeholder reasoners are clearly marked as "integration pending" so users know selection does not yet change validation behavior
 
 ### DG API Documentation (APID)
 
@@ -100,9 +100,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONN-02 | Phase 813 | Pending |
 | CONN-03 | Phase 813 | Pending |
 | CONN-04 | Phase 813 | Pending |
-| REAS-01 | Phase 814 | Pending |
-| REAS-02 | Phase 814 | Pending |
-| REAS-03 | Phase 814 | Pending |
+| REAS-01 | Phase 814 | Complete |
+| REAS-02 | Phase 814 | Complete |
+| REAS-03 | Phase 814 | Complete |
 | APID-01 | Phase 815 | Pending |
 | APID-02 | Phase 815 | Pending |
 | APID-03 | Phase 815 | Pending |
@@ -110,6 +110,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTG-02 | Phase 816 | Pending |
 
 **Coverage:**
+
 - v8.1 requirements: 23 total
 - Mapped to phases: 23
 - Unmapped: 0 ✓

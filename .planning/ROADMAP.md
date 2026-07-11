@@ -26,7 +26,7 @@
 | 811 | AI Engine Screen | LLM provider/model/API-key setup over the existing gateway | AIENG-01..04 | 810 |
 | 812 | Connector Credential Backend | data-service credential CRUD + heartbeat/status API | CONNB-01..04 | — |
 | 813 | Connectors Screen | 14 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
-| 814 | Reasoner Screen | Reasoner selector (HermiT/Pellet placeholders), persisted | REAS-01..03 | 810 |
+| 814 | Reasoner Screen | 1/1 | Complete   | 2026-07-11 |
 | 815 | DG API Documentation | Revit-API-style in-app doc browser, extendable content | APID-01..03 | 810, 812 |
 | 816 | Integration & Deployment | E2E credential→heartbeat→status flow, container cutover | INTG-01..02 | 811–815 |
 
@@ -37,6 +37,7 @@
 **Requirements:** RING-01, RING-02, RING-03
 
 **Success criteria:**
+
 1. Landing shows AI Engine, Connectors, Reasoner, and DG API Docs callouts along the particle ring beside Graph Viewer / Model Viewer / Projects, without overlap at common desktop sizes
 2. Clicking any new callout flies into its screen layer with the standard 520ms transition originating from its ring anchor
 3. Each new screen has back navigation to the landing, matching existing screens
@@ -49,6 +50,7 @@
 **Requirements:** AIENG-01, AIENG-02, AIENG-03, AIENG-04
 
 **Success criteria:**
+
 1. User selects provider (Anthropic / OpenAI / Ollama) and model; the choice persists via `/llm/settings`
 2. User enters an API key that is stored encrypted-at-rest; the UI shows only set/not-set status, never the key
 3. User runs a connection test and gets clear success/failure feedback
@@ -61,6 +63,7 @@
 **Requirements:** CONNB-01, CONNB-02, CONNB-03, CONNB-04
 
 **Success criteria:**
+
 1. Credentials can be created/listed/revoked per connector type via REST; the 14-connector / 5-category registry is served by the API
 2. Tokens are generated server-side, returned once, and stored hashed/encrypted (llm-settings storage pattern)
 3. A token-authenticated heartbeat call updates the connector's status and last-connection timestamp; revoked/unknown tokens are rejected
@@ -73,6 +76,7 @@
 **Requirements:** CONN-01, CONN-02, CONN-03, CONN-04
 
 **Success criteria:**
+
 1. All 14 connectors render grouped in the 5 categories from the milestone brief
 2. User creates a credential and copies the token (shown once) for pasting into the target software's connector component
 3. Each connector shows activation status and last-connection date from the status endpoint
@@ -85,6 +89,7 @@
 **Requirements:** REAS-01, REAS-02, REAS-03
 
 **Success criteria:**
+
 1. User selects HermiT or Pellet from the Reasoner screen
 2. Selection persists server-side and is shown as active on revisit
 3. Placeholder entries carry an explicit "integration pending" annotation
@@ -96,6 +101,7 @@
 **Requirements:** APID-01, APID-02, APID-03
 
 **Success criteria:**
+
 1. User navigates a tree (sections → endpoints/classes → members) with a detail pane, Revit-API-doc style
 2. Connector-facing API is documented end-to-end: credential auth, heartbeat/status, validation publish — with request/response examples
 3. Adding a new doc page requires only adding a structured content file (no viewer code change)
@@ -107,6 +113,7 @@
 **Requirements:** INTG-01, INTG-02
 
 **Success criteria:**
+
 1. A credential created in the Connectors screen authenticates a simulated heartbeat (curl/script), and the status + last-connection date update in the UI
 2. `docker compose build --no-cache design-grammars` ships all seven regions; Graph / Model / Projects / landing / auth still pass their v8.0 smoke checks
 
