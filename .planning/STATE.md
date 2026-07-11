@@ -5,15 +5,15 @@ milestone_name: Connector Integration & Reasoning Engine
 current_phase: 821
 current_phase_name: dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
 status: executing
-stopped_at: Phase 822 UI-SPEC approved
-last_updated: "2026-07-11T22:10:36.662Z"
+stopped_at: Completed 821-02-PLAN.md
+last_updated: "2026-07-11T22:23:04.272Z"
 last_activity: 2026-07-11
 last_activity_desc: Phase 821 execution started
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 20
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 821 (dg-reasoner-sidecar-ontograph-metagraph-rdf-translation) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-07-11 — Phase 821 execution started
 
@@ -176,6 +176,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 821 Plan 01]: openjdk-17-jre-headless unavailable on Debian trixie (python:3.11-slim base) - substituted openjdk-21-jre-headless per plan's documented fallback (proven in 820 spike, HermiT floor is Java 1.5+)
 - [Phase ?]: [Phase 821 Plan 01]: dg-reasoner/requirements.txt pins starlette<1.0.0 + httpx - unpinned fastapi resolves starlette>=1.0 whose TestClient requires a new package (httpx2) instead of the already-vetted httpx used elsewhere in this repo
 - [Phase ?]: [Phase 821 Plan 01]: n10s installed via custom neo4j/Dockerfile (neo4j:5.26 + wget-fetched neosemantics-5.26.0.jar), not NEO4J_PLUGINS auto-download, per RESEARCH.md flakiness warning (docker-neo4j#489)
+- [Phase ?]: [Phase 821 Plan 02]: build_graph(session, project) duck-types neo4j.Session.run() without importing neo4j at module scope -- unit-testable via a fixture-backed FixtureSession with zero mocking
+- [Phase ?]: [Phase 821 Plan 02]: owl:AllDifferent (UNA) deliberately deferred to Phase 823's ValidGraph ABox export per spec's explicit scope boundary -- not implemented in ontology_export.py
 
 ### Research Flags (carry into planning)
 
@@ -210,11 +212,12 @@ Shipped from Phase 20 Plan 02:
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 | Phase 821 P01 | 40min | 2 tasks | 8 files |
+| Phase 821 P02 | 25min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-11T22:09:41.516Z
-Stopped at: Phase 822 UI-SPEC approved
+Last session: 2026-07-11T22:23:04.250Z
+Stopped at: Completed 821-02-PLAN.md
 Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
 
 ## Performance Metrics
