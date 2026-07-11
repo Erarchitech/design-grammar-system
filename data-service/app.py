@@ -56,6 +56,8 @@ from connectors import (
     HeartbeatResponse,
 )
 
+import reasoner
+
 app = FastAPI()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
@@ -1119,6 +1121,42 @@ def connector_heartbeat(request: Request):
         connector_id=record["connector_id"],
         status=connectors.derive_status(record["last_connection"]),
     )
+
+
+# ---------------------------------------------------------------------------
+# Reasoner settings endpoints (Phase 814: REAS-01..03)
+# ---------------------------------------------------------------------------
+
+
+class ReasonerSettingsPayload(BaseModel):
+    reasoner: str
+
+
+@app.get("/reasoner/settings")
+def get_reasoner_settings():
+    """Return the reasoner registry and currently selected reasoner id."""
+    settings = reasoner.load_settings()
+    return {
+        "reasoners": reasoner.REASONER_REGISTRY,
+        "selected": settings.get("selected", None),
+    }
+
+
+@app.put("/reasoner/settings")
+def put_reasoner_settings(payload: ReasonerSettingsPayload):
+    """Persist the selected reasoner id. Rejects unknown ids with 422."""
+    if payload.reasoner not in reasoner.REASONER_IDS:
+        raise _structured_error_response(
+            f"Unknown reasoner: {payload.reasoner}",
+            f"Valid reasoner ids: {', '.join(sorted(reasoner.REASONER_IDS))}",
+            "REASONER_NOT_FOUND",
+            422,
+        )
+    reasoner.save_settings({"selected": payload.reasoner})
+    return {
+        "reasoners": reasoner.REASONER_REGISTRY,
+        "selected": payload.reasoner,
+    }
 
 
 @app.put("/integration/speckle/project/{project}")
