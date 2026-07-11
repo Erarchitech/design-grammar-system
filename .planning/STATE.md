@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
 current_phase: 821
-current_phase_name: dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation
+current_phase_name: dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
 status: executing
-stopped_at: Phase 822 context gathered
-last_updated: "2026-07-11T21:03:13.066Z"
+stopped_at: Phase 822 UI-SPEC approved
+last_updated: "2026-07-11T22:10:36.662Z"
 last_activity: 2026-07-11
-last_activity_desc: Phase 820 complete, transitioned to Phase 821
+last_activity_desc: Phase 821 execution started
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 7
+  completed_plans: 4
   percent: 20
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 820 — Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping
+**Current focus:** Phase 821 — dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
 
 ## Current Position
 
-Phase: 821 — dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation
-Plan: Not started
-Status: Executing Phase 820
-Last activity: 2026-07-11 — Phase 820 complete, transitioned to Phase 821
+Phase: 821 (dg-reasoner-sidecar-ontograph-metagraph-rdf-translation) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-11 — Phase 821 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -173,6 +173,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase 20]: spec/DATABASE.md v3 migration notes preserved as historical section prefaced "v3->v4 migration (complete)" — keeps institutional knowledge
 - [Phase ?]: Reasoner settings stored as plain JSON (no encryption needed)
 - [Phase ?]: Registry structured with explicit status field for future integrated/non-placeholder reasoners
+- [Phase ?]: [Phase 821 Plan 01]: openjdk-17-jre-headless unavailable on Debian trixie (python:3.11-slim base) - substituted openjdk-21-jre-headless per plan's documented fallback (proven in 820 spike, HermiT floor is Java 1.5+)
+- [Phase ?]: [Phase 821 Plan 01]: dg-reasoner/requirements.txt pins starlette<1.0.0 + httpx - unpinned fastapi resolves starlette>=1.0 whose TestClient requires a new package (httpx2) instead of the already-vetted httpx used elsewhere in this repo
+- [Phase ?]: [Phase 821 Plan 01]: n10s installed via custom neo4j/Dockerfile (neo4j:5.26 + wget-fetched neosemantics-5.26.0.jar), not NEO4J_PLUGINS auto-download, per RESEARCH.md flakiness warning (docker-neo4j#489)
 
 ### Research Flags (carry into planning)
 
@@ -206,12 +209,13 @@ Shipped from Phase 20 Plan 02:
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
+| Phase 821 P01 | 40min | 2 tasks | 8 files |
 
 ## Session Continuity
 
-Last session: 2026-07-11T21:03:13.053Z
-Stopped at: Phase 822 context gathered
-Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-CONTEXT.md
+Last session: 2026-07-11T22:09:41.516Z
+Stopped at: Phase 822 UI-SPEC approved
+Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
 
 ## Performance Metrics
 

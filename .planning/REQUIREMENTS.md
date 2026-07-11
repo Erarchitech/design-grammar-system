@@ -15,7 +15,7 @@ Requirements for milestone v8.2. Each maps to roadmap phases 820–829.
 Continues the REAS category opened in v8.1 (REAS-01..03: placeholder selector). REAS-04..06 close out the deferred `REAS-F01` future requirement from v8.1 — real reasoning now replaces the placeholder.
 
 - [x] **REAS-04**: The OntoGraph axiom-scoping approach is decided and documented (extend LLM ingestion to emit real `subClassOf`/`domain`/`range`/`disjointWith` axioms vs. scope reasoning to structural/referential checks vs. a hybrid), together with an LPG→OWL mapping spec covering edge-property reification (`Atom.ARG.pos`, `Rule.HAS_BODY/HAS_HEAD.order`)
-- [ ] **REAS-05**: A `dg-reasoner` sidecar service runs in docker-compose and exposes OWL 2 DL consistency-check and SHACL-validation endpoints, isolated from `data-service`'s Speckle-publish/validation-run hot path
+- [x] **REAS-05**: A `dg-reasoner` sidecar service runs in docker-compose and exposes OWL 2 DL consistency-check and SHACL-validation endpoints, isolated from `data-service`'s Speckle-publish/validation-run hot path
 - [ ] **REAS-06**: User runs an OWL 2 DL consistency check from the Reasoner screen (HermiT default engine) and sees a pass/fail summary with unsatisfiable-class count, replacing the v8.1 "integration pending" placeholder label
 
 ### SHACL Validation (SHCL)
@@ -64,7 +64,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | REAS-04 | Phase 820 | Complete |
-| REAS-05 | Phase 821 | Pending |
+| REAS-05 | Phase 821 | Complete |
 | REAS-06 | Phase 822 | Pending |
 | SHCL-01 | Phase 823 | Pending |
 | SHCL-02 | Phase 823 | Pending |
