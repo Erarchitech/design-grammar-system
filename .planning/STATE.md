@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 Phase: 27 — COMPLETE
 Plan: 1 of 1
 Status: Phase 27 complete
-Last activity: 2026-07-08 — Phase 27 marked complete
+Last activity: 2026-07-11 - Completed quick task 260711-gtz: Decrease the size of title in the landing page so it fits the ring
 
 ## Performance Metrics
 
@@ -176,6 +176,12 @@ Shipped from Phase 20 Plan 02:
 
 - .NET SDK 10.0.109 is installed on this machine (per 2026-06-23 session note); `dotnet test` requires `DOTNET_ROLL_FORWARD=LatestMajor` (net9.0 runtime absent — only 7/8/10). Verify once before Phase 16+ state-model changes land
 - Pending migration from v3.0 Phase 7 still applies: `migrations/2026-06-23_var_project_merge_key.cypher` has not been run against live Neo4j
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260711-gtz | Decrease the size of title in the landing page so it fits the ring | 2026-07-11 | c60f541 | [260711-gtz-decrease-the-size-of-title-in-the-landin](./quick/260711-gtz-decrease-the-size-of-title-in-the-landin/) |
 
 ## Session Continuity
 
