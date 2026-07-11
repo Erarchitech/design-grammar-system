@@ -168,6 +168,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-08 v8.0 Phases 21-26 autonomous execution|2026-07-08 v8.0 Phases 21–26 autonomous execution + n8n bug fixes + CLAUDE.md LLM gateway correction]]
 - [[decisions/Phase 27 Speckle 3D embed design decisions|2026-07-08 Phase 27 — 6 Speckle 3D embed decisions]]
 - [[sessions/2026-07-09 GH component subcategory grouping|2026-07-09 GH component tool panel grouping — Graph / States / Actions]]
+- [[sessions/2026-07-11 Session History panel with Restore points|2026-07-11 Session History panel + Restore points]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive

@@ -7,7 +7,7 @@ date: 2026-07-08
 
 ## Active
 
-1. **Model Viewer regression RESOLVED (audit-fix F-01, 2026-07-08)** — root cause was `DesignStateBindingService` dropping `ObjState.Geometry` from ElementRefs → all v7.0+ publishes sent `displayValue: []` → viewer had nothing to color/toggle. Fixed in commit `0b15ce0` + verified live (toggles hide/isolate correct object IDs, materials apply). **Остаётся:** пересобрать GH-плагин у себя (`dotnet build DG/DG.sln -c Release` — уже проверено, собирается) и перезапустить publish из Grasshopper — все старые runs без геометрии останутся серыми. Тестовый run с геометрией: `test/publish_validation_run_with_geometry.py`. See [[debugging/Model Viewer validation objects not found in Speckle world tree|debugging note]].
+1. **v8.0 Session History COMPLETED (2026-07-11)** — Session History panel with Restore points ported to V2 Graph Viewer. New SessionHistory component with collapsible filterable list, Restore (graph rewind), Reuse (load prompt), Confirm button. Checkpoints persisted to localStorage. 6 commits. See [[sessions/2026-07-11 Session History panel with Restore points|session]].
 2. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
 3. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
 4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
