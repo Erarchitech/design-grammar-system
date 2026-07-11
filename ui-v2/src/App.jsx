@@ -3,12 +3,16 @@ import LandingLayer from "./landing/LandingLayer.jsx";
 import GraphScreen from "./screens/GraphScreen.jsx";
 import ModelScreen from "./screens/ModelScreen.jsx";
 import ProjectsScreen from "./screens/ProjectsScreen.jsx";
+import AiEngineScreen from "./screens/AiEngineScreen.jsx";
+import ConnectorsScreen from "./screens/ConnectorsScreen.jsx";
+import ReasonerScreen from "./screens/ReasonerScreen.jsx";
+import ApiDocsScreen from "./screens/ApiDocsScreen.jsx";
 import SpecimenPage from "./specimen/SpecimenPage.jsx";
 import { currentUser } from "./lib/auth.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
-// One of the four screen layers. All stay mounted; the active one is scaled
+// One of the screen layers. All stay mounted; the active one is scaled
 // to 1 / opaque, the rest fade with the spec's 520ms scale+opacity transition.
 // Landing scales UP (1.6) when it recedes — it zooms toward the clicked
 // region callout via transform-origin set in fly().
@@ -111,6 +115,18 @@ export default function App() {
       </Layer>
       <Layer active={region === "projects"}>
         <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={setProject} />
+      </Layer>
+      <Layer active={region === "aiengine"}>
+        <AiEngineScreen active={region === "aiengine"} onBack={goLanding} project={project} />
+      </Layer>
+      <Layer active={region === "connectors"}>
+        <ConnectorsScreen active={region === "connectors"} onBack={goLanding} project={project} />
+      </Layer>
+      <Layer active={region === "reasoner"}>
+        <ReasonerScreen active={region === "reasoner"} onBack={goLanding} project={project} />
+      </Layer>
+      <Layer active={region === "apidocs"}>
+        <ApiDocsScreen active={region === "apidocs"} onBack={goLanding} project={project} />
       </Layer>
 
       {/* dark / light toggle — global, floats above every layer */}
