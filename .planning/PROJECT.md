@@ -75,7 +75,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen will surface). Starting v8.1: four new setup regions along the landing ring (AI Engine, Connectors, Reasoner, DG API Documentation), phases 810+.
+v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen will surface). v8.1: four setup regions along the landing ring — AI Engine (810), Connectors (811–813), Reasoner (814), DG API Documentation (815) — all complete. Next: Phase 816 Integration & Deployment.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -153,4 +153,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 — milestone v8.1 Platform Setup Regions started*
+*Last updated: 2026-07-11 — Phase 815 DG API Documentation complete; v8.1 all five setup regions shipped*
