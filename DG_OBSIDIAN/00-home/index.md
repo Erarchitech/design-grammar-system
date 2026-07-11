@@ -169,6 +169,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 27 Speckle 3D embed design decisions|2026-07-08 Phase 27 — 6 Speckle 3D embed decisions]]
 - [[sessions/2026-07-09 GH component subcategory grouping|2026-07-09 GH component tool panel grouping — Graph / States / Actions]]
 - [[sessions/2026-07-11 Session History panel with Restore points|2026-07-11 Session History panel + Restore points]]
+- [[sessions/2026-07-11 Landing hero title shrink quick task|2026-07-11 Landing hero title shrink — Quick task 260711-gtz]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
