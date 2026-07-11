@@ -1,0 +1,10 @@
+Spike part (a) — naive flat export of live v8-ui-smoke OntoGraph/Metagraph
+source: naive_export.ttl (converted to naive_export.nt for owlready2)
+reasoner: HermiT via owlready2 sync_reasoner()
+builtin-using SWRL rules stripped from reasoner input: 5 (HermiT: 'built-in atoms are not supported yet'; TBox axioms untouched)
+
+Inconsistent classes: []
+Count: 0
+
+RESULT: zero inconsistent classes — the naive export reasons as trivially 'consistent'. This is the documented FALSE POSITIVE: the flat export carries no subClassOf/domain/range/disjointWith axioms, so no class can be unsatisfiable regardless of the rules' content.
+ASSERTION (expected empty): PASS

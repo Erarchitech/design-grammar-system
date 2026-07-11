@@ -1,0 +1,13 @@
+Spike part (b) — hybrid: static DesignGrammar-V7.owl TBox + live v8-ui-smoke export
+                 + curated ex:Door owl:disjointWith ex:Window
+                 + seeded ex:SlidingDoor rdfs:subClassOf ex:Door, ex:Window
+source: hybrid_export.ttl (converted to hybrid_export.nt for owlready2)
+reasoner: HermiT via owlready2 sync_reasoner()
+builtin-using SWRL rules stripped from reasoner input: 5 (HermiT: 'built-in atoms are not supported yet'; TBox axioms untouched)
+
+Inconsistent classes: [owl.Nothing, ex.SlidingDoor]
+IRIs: ['http://www.w3.org/2002/07/owl#Nothing', 'http://example.org/design-grammar/ex#SlidingDoor']
+Count: 2
+
+RESULT: ex:SlidingDoor is unsatisfiable — HermiT caught the seeded TBox contradiction that the naive export could not express. This is the non-trivial answer the hybrid axiom scoping (static TBox + live export + curated disjointness) makes possible.
+ASSERTION (SlidingDoor unsatisfiable): PASS
