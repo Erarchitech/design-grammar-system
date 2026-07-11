@@ -1,1 +1,5 @@
 .env
+
+# data-service runtime state (settings + connector credentials) — never commit
+data-service/data/*
+!data-service/data/.gitkeep

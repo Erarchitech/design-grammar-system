@@ -49,6 +49,13 @@ from llm_gateway import (
     LLM_SETTINGS_FILE,
 )
 
+import connectors
+from connectors import (
+    CredentialCreatePayload,
+    CredentialCreatedResponse,
+    HeartbeatResponse,
+)
+
 app = FastAPI()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
@@ -1038,6 +1045,80 @@ def get_llm_models(provider: str):
 
     models = list_models_for_provider(provider, api_key, settings.get("baseUrl"))
     return models
+
+
+# ---------------------------------------------------------------------------
+# Connector credential endpoints (Phase 812: CONNB-01..04)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/connectors")
+def get_connectors():
+    """Connector registry joined with per-connector status, last-connection
+    date, and credential summaries (never tokens or hashes). CONNB-01, CONNB-04.
+    """
+    return {
+        "categories": connectors.CONNECTOR_CATEGORIES,
+        "connectors": connectors.get_connector_overview(),
+    }
+
+
+@app.post("/connectors/{connector_id}/credentials", status_code=201)
+def create_connector_credential(connector_id: str, payload: CredentialCreatePayload | None = None):
+    """Mint a credential for a connector. The token is returned once here
+    and never again — only its SHA-256 hash is persisted (CONNB-02).
+    """
+    if connector_id not in connectors.CONNECTOR_IDS:
+        raise _structured_error_response(
+            f"Unknown connector: {connector_id}",
+            "Use a connector id from GET /connectors.",
+            "CONNECTOR_NOT_FOUND",
+            404,
+        )
+    label = payload.label if payload else None
+    record, token = connectors.create_credential(connector_id, label)
+    return CredentialCreatedResponse(credential_id=record["credential_id"], token=token)
+
+
+@app.delete("/connectors/{connector_id}/credentials/{credential_id}", status_code=204)
+def revoke_connector_credential(connector_id: str, credential_id: str):
+    """Revoke a credential. Revoked tokens stop authenticating heartbeats (CONNB-01)."""
+    if connector_id not in connectors.CONNECTOR_IDS:
+        raise _structured_error_response(
+            f"Unknown connector: {connector_id}",
+            "Use a connector id from GET /connectors.",
+            "CONNECTOR_NOT_FOUND",
+            404,
+        )
+    if not connectors.revoke_credential(connector_id, credential_id):
+        raise _structured_error_response(
+            f"Credential not found: {credential_id}",
+            "Use a credential_id from GET /connectors.",
+            "CREDENTIAL_NOT_FOUND",
+            404,
+        )
+    return None
+
+
+@app.post("/connectors/heartbeat")
+def connector_heartbeat(request: Request):
+    """Token-authenticated heartbeat. Updates the connector's last_connection
+    and returns its derived status. 401 on unknown/revoked token (CONNB-03).
+    """
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[len("Bearer "):].strip() if auth_header.startswith("Bearer ") else ""
+    record = connectors.record_heartbeat(token) if token.startswith(connectors.TOKEN_PREFIX) else None
+    if record is None:
+        raise _structured_error_response(
+            "Invalid or revoked connector token.",
+            "Create a new credential via POST /connectors/{connector_id}/credentials.",
+            "CONNECTOR_AUTH_FAILED",
+            401,
+        )
+    return HeartbeatResponse(
+        connector_id=record["connector_id"],
+        status=connectors.derive_status(record["last_connection"]),
+    )
 
 
 @app.put("/integration/speckle/project/{project}")
