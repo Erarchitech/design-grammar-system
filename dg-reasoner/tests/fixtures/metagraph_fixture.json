@@ -1,0 +1,68 @@
+{
+  "_comment": "Graph-shaped fixture for dg-reasoner/tests/test_ontology_export.py. Based on the real R_BUILDING_MAX_STOREY_9_V worked example in spec/LPG-OWL-MAPPING.md. Exercises: a multi-atom body (ClassAtom + DataPropertyAtom + BuiltinAtom), a single-atom head (DataPropertyAtom), both ARG positions (pos:1 and pos:2), and one deliberately-incomplete BuiltinAtom (REFERS_TO present, zero ARG edges -> dgm:SkippedAtom path), modeled directly on spec's R_COLUMN_CONTINUITY_V_A3 example.",
+  "project": "fixture-proj",
+  "nodes": [
+    {"key": "cls_building", "labels": ["Class"], "props": {
+      "project": "fixture-proj", "iri": "ex:Building", "label": "Building"
+    }},
+    {"key": "dtp_storeycount", "labels": ["DatatypeProperty"], "props": {
+      "project": "fixture-proj", "iri": "ex:hasStoreyCount", "SWRL_label": "hasStoreyCount", "range": "xsd:integer"
+    }},
+    {"key": "dtp_violates", "labels": ["DatatypeProperty"], "props": {
+      "project": "fixture-proj", "iri": "ex:violatesMaxStoreyCount", "SWRL_label": "violatesMaxStoreyCount", "range": "xsd:boolean"
+    }},
+    {"key": "builtin_gt", "labels": ["Builtin"], "props": {
+      "project": "fixture-proj", "iri": "swrlb:greaterThan", "label": "greaterThan"
+    }},
+    {"key": "builtin_cft", "labels": ["Builtin"], "props": {
+      "project": "fixture-proj", "iri": "swrlb:continuousFromTo", "label": "continuousFromTo"
+    }},
+
+    {"key": "rule1", "labels": ["Rule"], "props": {
+      "project": "fixture-proj", "Rule_Id": "R_BUILDING_MAX_STOREY_9_V",
+      "kind": "Constraint", "RuleName": "Max Storey Count",
+      "RuleDescription": "Building storey count must not exceed 9"
+    }},
+
+    {"key": "atom_a1", "labels": ["Atom"], "props": {
+      "project": "fixture-proj", "Atom_Id": "R_BUILDING_MAX_STOREY_9_V_A1", "type": "ClassAtom"
+    }},
+    {"key": "atom_a2", "labels": ["Atom"], "props": {
+      "project": "fixture-proj", "Atom_Id": "R_BUILDING_MAX_STOREY_9_V_A2", "type": "DataPropertyAtom"
+    }},
+    {"key": "atom_a3", "labels": ["Atom"], "props": {
+      "project": "fixture-proj", "Atom_Id": "R_BUILDING_MAX_STOREY_9_V_A3", "type": "BuiltinAtom"
+    }},
+    {"key": "atom_a5", "labels": ["Atom"], "props": {
+      "project": "fixture-proj", "Atom_Id": "R_BUILDING_MAX_STOREY_9_V_A5", "type": "DataPropertyAtom"
+    }},
+    {"key": "atom_incomplete", "labels": ["Atom"], "props": {
+      "project": "fixture-proj", "Atom_Id": "R_COLUMN_CONTINUITY_V_A3", "type": "BuiltinAtom"
+    }},
+
+    {"key": "var_b", "labels": ["Var"], "props": {"project": "fixture-proj", "name": "?b"}},
+    {"key": "var_h", "labels": ["Var"], "props": {"project": "fixture-proj", "name": "?h"}},
+    {"key": "lit_9", "labels": ["Literal"], "props": {"project": "fixture-proj", "lex": "9", "datatype": "xsd:integer"}},
+    {"key": "lit_true", "labels": ["Literal"], "props": {"project": "fixture-proj", "lex": "true", "datatype": "xsd:boolean"}}
+  ],
+  "edges": [
+    {"type": "HAS_BODY", "from": "rule1", "to": "atom_a1", "props": {"order": 1}},
+    {"type": "HAS_BODY", "from": "rule1", "to": "atom_a2", "props": {"order": 2}},
+    {"type": "HAS_BODY", "from": "rule1", "to": "atom_a3", "props": {"order": 3}},
+    {"type": "HAS_HEAD", "from": "rule1", "to": "atom_a5", "props": {"order": 1}},
+
+    {"type": "REFERS_TO", "from": "atom_a1", "to": "cls_building"},
+    {"type": "REFERS_TO", "from": "atom_a2", "to": "dtp_storeycount"},
+    {"type": "REFERS_TO", "from": "atom_a3", "to": "builtin_gt"},
+    {"type": "REFERS_TO", "from": "atom_a5", "to": "dtp_violates"},
+    {"type": "REFERS_TO", "from": "atom_incomplete", "to": "builtin_cft"},
+
+    {"type": "ARG", "from": "atom_a1", "to": "var_b", "props": {"pos": 1}},
+    {"type": "ARG", "from": "atom_a2", "to": "var_b", "props": {"pos": 1}},
+    {"type": "ARG", "from": "atom_a2", "to": "var_h", "props": {"pos": 2}},
+    {"type": "ARG", "from": "atom_a3", "to": "var_h", "props": {"pos": 1}},
+    {"type": "ARG", "from": "atom_a3", "to": "lit_9", "props": {"pos": 2}},
+    {"type": "ARG", "from": "atom_a5", "to": "var_b", "props": {"pos": 1}},
+    {"type": "ARG", "from": "atom_a5", "to": "lit_true", "props": {"pos": 2}}
+  ]
+}
