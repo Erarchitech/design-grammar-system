@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 Phase: Not started (defining requirements)
 Plan: —
 Status: Defining requirements
-Last activity: 2026-07-11 — Milestone v8.1 started
+Last activity: 2026-07-11 — Completed quick task 260711-i63: graph core thinking-sphere animation with node-emergence streams
 
 ## Performance Metrics
 
@@ -179,6 +179,7 @@ Shipped from Phase 20 Plan 02:
 |---|-------------|------|--------|-----------|
 | 260711-gtz | Decrease the size of title in the landing page so it fits the ring | 2026-07-11 | c60f541 | [260711-gtz-decrease-the-size-of-title-in-the-landin](./quick/260711-gtz-decrease-the-size-of-title-in-the-landin/) |
 | 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
+| 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
 
 ## Session Continuity
 
