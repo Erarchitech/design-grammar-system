@@ -6,15 +6,15 @@ current_phase: 815
 current_phase_name: DG API Documentation
 status: verifying
 stopped_at: v8.0 shipped
-last_updated: "2026-07-11T11:01:21.248Z"
+last_updated: "2026-07-11T11:27:36.473Z"
 last_activity: 2026-07-11
-last_activity_desc: Phase 814 complete, transitioned to Phase 815
+last_activity_desc: Phase 815 execution started
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 814 — reasoner-screen
+**Current focus:** Phase 815 — DG API Documentation
 
 ## Current Position
 
-Phase: 815 — DG API Documentation
-Plan: Not started
+Phase: 815 (DG API Documentation) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-07-11 — Phase 814 complete, transitioned to Phase 815
+Last activity: 2026-07-11 — Phase 815 execution started
 
 ## Performance Metrics
 
@@ -44,6 +44,12 @@ Last activity: 2026-07-11 — Phase 814 complete, transitioned to Phase 815
 ## Accumulated Context
 
 ### Decisions
+
+Established for v8.1 Phase 815 Plan 01:
+
+- [Phase 815]: Content modules discovered via `import.meta.glob('./##-*.js', {eager: true})` with ##- prefix sorting; adding a new module file auto-registers a section with zero viewer-code changes
+- [Phase 815]: Block types follow Revit-API reference structure: text, code, endpoint (signature+params+request+response), table, note (info/warning/tip). The endpoint block reuses the existing CodeBlock component for request/response examples.
+- [Phase 815]: No new shared primitives — the docs viewer reuses Button, CodeBlock, and design tokens from the V2 system. State is kept entirely local to the screen.
 
 Carried from v2.0:
 
@@ -187,6 +193,7 @@ Shipped from Phase 20 Plan 02:
 | 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
+| Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 
 ## Session Continuity
 
