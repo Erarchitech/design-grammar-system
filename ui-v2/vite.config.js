@@ -10,7 +10,8 @@ export default defineConfig({
     proxy: {
       "/neo4j": "http://localhost:8080",
       "/n8n": "http://localhost:8080",
-      "/data-service": "http://localhost:8080"
+      "/data-service": "http://localhost:8080",
+      "/llm": "http://localhost:8080"
     }
   },
   build: {
