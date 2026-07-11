@@ -131,6 +131,8 @@ v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27
 | KnowledgeGraph→SpecGraph runtime rename in scope | Closes pre-existing ontology↔runtime drift; GRAPH DECONSTRUCT exposes SpecGraph | — Pending — v7.0 |
 | Component ports: update where overlapping, keep where no overlap | Preserves publish extras (DataServiceUrl, Report, ValidationRunId…) without schema conflict | — Pending — v7.0 |
 | DB keeps existing labels except Knowledge*→Spec* | Ontology↔DB mapping documented; avoids invasive migrations | — Pending — v7.0 |
+| Reasoning runs in new `dg-reasoner` sidecar (Owlready2/HermiT/Openllet + pySHACL), not embedded in `data-service` | Isolates the JVM subprocess's failure modes (hang/OOM/crash) from `data-service`'s Speckle-publish/validation-run hot path; DL reasoning is worst-case exponential and the rule corpus grows unboundedly | — Pending — v8.2 (research-recommended, resolves STACK.md vs ARCHITECTURE.md conflict) |
+| CONNECTOR platform credential is additive (new optional token input, existing 4 raw Neo4j inputs + GUID preserved) | Avoids repeating the v7.0 CLASSIFICATOR/VALIDATION RUNS GUID-breakage pattern; token authenticates heartbeat only, never gates or replaces bolt auth | — Pending — v8.2 |
 
 ## Evolution
 
