@@ -182,26 +182,38 @@ def bind_prefixes(graph: Graph) -> None:
 
 
 def _atom_completeness_reason(
-    atom_type: str, has_refers_to_target: bool, arg_positions: set[int]
+    atom_type: str,
+    has_refers_to_target: bool,
+    arg_positions: set[int],
+    raw_positions: list[int | None] | None = None,
 ) -> str | None:
     """Return None if well-formed, else a human-readable SWRL-incompleteness reason.
 
     Mirrors the per-atom-kind well-formedness rules a real SWRL/OWL API
     parser would enforce: ClassAtom needs ARG pos=1; DataPropertyAtom and
     ObjectPropertyAtom need both pos=1 and pos=2; BuiltinAtom needs at least
-    one ARG edge (arity is variable, encoded via swrl:arguments).
+    one ARG edge (arity is variable, encoded via swrl:arguments) AND all
+    positions must be present and unique (order is semantically load-bearing
+    for builtins — CR-03).
     """
     if not has_refers_to_target:
         return "missing REFERS_TO target"
     if atom_type == BUILTIN_ATOM_TYPE:
-        return None if arg_positions else "BuiltinAtom has no ARG edges"
+        if not arg_positions:
+            return "BuiltinAtom has no ARG edges"
+        if raw_positions is not None:
+            if any(rp is None for rp in raw_positions):
+                return "BuiltinAtom has missing (null) ARG.pos value(s)"
+            if len(raw_positions) != len(set(raw_positions)):
+                return "BuiltinAtom has duplicate ARG.pos values"
+        return None
     if atom_type == "ClassAtom":
         return None if 1 in arg_positions else "ClassAtom missing ARG pos=1"
     if atom_type in ("DataPropertyAtom", "ObjectPropertyAtom"):
         return None if {1, 2} <= arg_positions else "property atom missing ARG pos=1 and/or pos=2"
-    # Not a schema-legal Atom.type (cypher_template.txt) -- treat defensively
-    # like a binary atom rather than silently accepting malformed data.
-    return None if {1, 2} <= arg_positions else f"atom of unrecognized type '{atom_type}' missing ARG pos=1/2"
+    # Not a schema-legal Atom.type (cypher_template.txt) -- route to SkippedAtom
+    # rather than guessing ClassAtom and emitting a hybrid, non-spec-legal shape.
+    return f"unrecognized Atom.type '{atom_type}'"
 
 
 def build_graph(session, project: str) -> Graph:
@@ -279,12 +291,14 @@ def build_graph(session, project: str) -> Graph:
 
     # --- ARG edges, grouped by atom ---
     args_by_atom: dict[str, list[tuple[int, object]]] = {}
+    raw_positions_by_atom: dict[str, list[int | None]] = {}  # pre-default pos for validation
     for record in session.run(ARG_QUERY, project=project):
         atom_id = record["atom_id"]
         if atom_id not in atoms:
             continue
         labels, props = record["labels"], record["props"]
-        pos = int(record["pos"]) if record["pos"] is not None else 0
+        raw_pos = record["pos"]  # may be None — validated before defaulting (CR-03)
+        pos = int(raw_pos) if raw_pos is not None else 0
         term: object
         if "Var" in labels and props.get("name"):
             term = mint(project, "var", props["name"].lstrip("?"))
@@ -293,9 +307,11 @@ def build_graph(session, project: str) -> Graph:
         else:
             continue
         args_by_atom.setdefault(atom_id, []).append((pos, term))
+        raw_positions_by_atom.setdefault(atom_id, []).append(raw_pos)
 
     # --- HAS_BODY / HAS_HEAD edges, grouped by rule + relation ---
     body_head: dict[str, dict[str, list[tuple[int, str]]]] = {}
+    raw_order_by_rule: dict[str, dict[str, list[int | None]]] = {}  # pre-default order for validation
     for record in session.run(BODY_HEAD_QUERY, project=project):
         rule_id, rel, order, atom_id = record["rule_id"], record["rel"], record["ord"], record["atom_id"]
         if rule_id not in rules or atom_id not in atoms:
@@ -303,12 +319,16 @@ def build_graph(session, project: str) -> Graph:
         body_head.setdefault(rule_id, {}).setdefault(rel, []).append(
             (int(order) if order is not None else 0, atom_id)
         )
+        raw_order_by_rule.setdefault(rule_id, {}).setdefault(rel, []).append(order)
 
     # --- SWRL well-formedness: split atoms/rules into exported vs. skipped ---
     incomplete_atoms: dict[str, str] = {}
     for atom_id, props in atoms.items():
         positions = {pos for pos, _ in args_by_atom.get(atom_id, [])}
-        reason = _atom_completeness_reason(props.get("type", ""), atom_id in refers_to, positions)
+        raw_pos = raw_positions_by_atom.get(atom_id)
+        reason = _atom_completeness_reason(
+            props.get("type", ""), atom_id in refers_to, positions, raw_positions=raw_pos
+        )
         if reason:
             incomplete_atoms[atom_id] = reason
 
@@ -318,6 +338,22 @@ def build_graph(session, project: str) -> Graph:
         body, head = edges.get("HAS_BODY", []), edges.get("HAS_HEAD", [])
         if not body or not head:
             skipped_rules[rule_id] = "missing HAS_BODY and/or HAS_HEAD atoms"
+            continue
+        # Validate HAS_BODY/HAS_HEAD.order — missing or duplicate order values
+        # produce nondeterministic swrl:AtomList order (WR-02).
+        for rel_name in ("HAS_BODY", "HAS_HEAD"):
+            raw_orders = raw_order_by_rule.get(rule_id, {}).get(rel_name, [])
+            if any(o is None for o in raw_orders):
+                skipped_rules[rule_id] = (
+                    skipped_rules.get(rule_id, "") + f"; null {rel_name}.order"
+                ).lstrip("; ")
+                continue
+            if len(set(raw_orders)) != len(raw_orders):
+                skipped_rules[rule_id] = (
+                    skipped_rules.get(rule_id, "") + f"; duplicate {rel_name}.order"
+                ).lstrip("; ")
+                continue
+        if rule_id in skipped_rules:
             continue
         bad = sorted({atom_id for _, atom_id in body + head if atom_id in incomplete_atoms})
         if bad:

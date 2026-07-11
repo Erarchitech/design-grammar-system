@@ -9,24 +9,29 @@ in turn builds on `ontology_export.build_graph` (Plan 821-02).
 
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
-from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from pydantic import BaseModel
 
 import reasoning
 
+logger = logging.getLogger(__name__)
 app = FastAPI()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
 
-# Reserved for the reasoning pipeline's hard subprocess timeout (Plan 821-03).
-DG_REASONER_TIMEOUT_SECONDS = int(os.getenv("DG_REASONER_TIMEOUT_SECONDS", "90"))
+if not os.getenv("NEO4J_PASSWORD"):
+    logger.warning(
+        "NEO4J_PASSWORD is not set — falling back to default '%s'. "
+        "Set NEO4J_PASSWORD in production to avoid hardcoded credentials.",
+        NEO4J_PASSWORD,
+    )
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -39,7 +44,7 @@ def health():
         with driver.session() as session:
             session.run("RETURN 1", timeout=3).consume()
         neo4j_status = "up"
-    except (ServiceUnavailable, Neo4jError, Exception):  # pragma: no cover - defensive
+    except Exception:  # pragma: no cover - defensive (IN-01)
         neo4j_status = "down"
 
     return {"status": "ok", "neo4j": neo4j_status}
@@ -70,8 +75,7 @@ def reason_consistency(payload: ConsistencyRequest):
             detail=f"Unsupported engine '{payload.engine}'. Supported: {sorted(reasoning.SUPPORTED_ENGINES)}",
         )
 
-    with driver.session() as session:
-        result = reasoning.run_consistency(payload.project, payload.engine, session=session)
+    result = reasoning.run_consistency(payload.project, payload.engine)
 
     if result.get("error") == "timeout":
         return JSONResponse(status_code=504, content=result)
@@ -84,5 +88,4 @@ def shacl_validate(payload: ShaclRequest):
 
     Proves the real pySHACL plumbing end-to-end; real shapes land in Phase 823.
     """
-    with driver.session() as session:
-        return reasoning.run_shacl(payload.project, session=session)
+    return reasoning.run_shacl(payload.project)

@@ -1183,7 +1183,9 @@ def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
         response = httpx.post(
             f"{DG_REASONER_URL}/reason/consistency",
             json={"project": payload.project, "engine": payload.engine},
-            timeout=httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=2.0),
+            # read must exceed the sidecar's own DG_REASONER_TIMEOUT_SECONDS (90s)
+            # or the proxy returns false 504s on every non-trivial HermiT run
+            timeout=httpx.Timeout(connect=2.0, read=95.0, write=2.0, pool=2.0),
         )
     except httpx.TimeoutException:
         raise _structured_error_response(

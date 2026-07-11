@@ -13,11 +13,12 @@ Owns the full `POST /reason/consistency` and `POST /shacl/validate` pipeline:
     3. The stripped union is serialized to NTriples -- Owlready2 has no
        Turtle parser (spec/LPG-OWL-MAPPING.md #SWRL Builtin Exclusion,
        820 spike pitfall 1).
-    4. Owlready2 loads the NTriples file and runs `sync_reasoner()` (HermiT)
-       inside a `multiprocessing.Process` joined with a hard wall-clock
-       timeout (`DG_REASONER_TIMEOUT_SECONDS`, D-09) -- `terminate()` on
-       expiry kills the java grandchild too, and a clean 504-style dict is
-       returned instead of hanging the request.
+    4. Owlready2 loads the NTriples file and runs ``sync_reasoner()`` (HermiT)
+       inside a ``spawn``-context ``multiprocessing.Process`` joined with a hard
+       wall-clock timeout (``DG_REASONER_TIMEOUT_SECONDS``, D-09). The worker
+       creates its own process group (``os.setsid()``) and on expiry the parent
+       kills the entire group (``os.killpg``), which reaches the Java grandchild
+       too. A clean 504-style dict is returned instead of hanging the request.
     5. `run_shacl` runs the real pySHACL pipeline against an intentionally
        empty/placeholder shapes graph (D-11) -- plumbing proven, real shapes
        land in Phase 823.
@@ -28,8 +29,10 @@ can supply a fixture-backed shim and bypass a live Neo4j connection entirely.
 """
 from __future__ import annotations
 
+import logging
 import multiprocessing
 import os
+import signal
 import tempfile
 import time
 from pathlib import Path
@@ -40,9 +43,18 @@ from rdflib.namespace import OWL, RDF, RDFS
 import ontology_export
 from ontology_export import strip_hermit_unsupported
 
+logger = logging.getLogger(__name__)
+
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
+
+if not os.getenv("NEO4J_PASSWORD"):
+    logger.warning(
+        "NEO4J_PASSWORD is not set — falling back to default '%s'. "
+        "Set NEO4J_PASSWORD in production to avoid hardcoded credentials.",
+        NEO4J_PASSWORD,
+    )
 
 # Hard wall-clock bound on the HermiT/JVM subprocess (D-09). No async job
 # pattern in v8.2 -- POST /reason/consistency is synchronous end-to-end.
@@ -114,6 +126,7 @@ def _serialize_nt(graph: Graph) -> Path:
 
 def _reason_worker(nt_path: str, queue: "multiprocessing.Queue") -> None:
     """Runs inside the timeout-bounded child process. Never raises across the boundary."""
+    os.setsid()  # own process group — parent can killpg() to reach Java grandchild
     try:
         from owlready2 import get_ontology, sync_reasoner
 
@@ -140,17 +153,24 @@ def _reason_worker(nt_path: str, queue: "multiprocessing.Queue") -> None:
 def _reason_with_timeout(nt_path: Path, timeout_seconds: int) -> dict:
     """Run HermiT (via Owlready2) in a subprocess, killed on `timeout_seconds` expiry.
 
-    Killing the child process also kills its java grandchild (D-09). Returns
-    `{"timeout": True}` on expiry, or `{"timeout": False, "unsatisfiable_classes": [...]}`
-    on success. Propagates reasoner errors as `RuntimeError`.
+    Uses the ``spawn`` start method (not ``fork``) to avoid the deadlock hazard
+    of forking mid-request from FastAPI's threaded handler (#821-REVIEW WR-03).
+    The worker calls ``os.setsid()`` to create its own process group; on timeout
+    the parent kills the entire group (``os.killpg``), which reaches the Java
+    grandchild that Owlready2's ``sync_reasoner()`` shells out to (D-09).
+
+    Returns ``{"timeout": True}`` on expiry, or ``{"timeout": False,
+    "unsatisfiable_classes": [...]}`` on success. Propagates reasoner errors as
+    ``RuntimeError``.
     """
-    queue: multiprocessing.Queue = multiprocessing.Queue()
-    process = multiprocessing.Process(target=_reason_worker, args=(str(nt_path), queue))
+    ctx = multiprocessing.get_context("spawn")
+    queue: multiprocessing.Queue = ctx.Queue()
+    process = ctx.Process(target=_reason_worker, args=(str(nt_path), queue))
     process.start()
     process.join(timeout_seconds)
 
     if process.is_alive():
-        process.terminate()
+        os.killpg(process.pid, signal.SIGKILL)
         process.join(5)
         return {"timeout": True}
 
@@ -219,15 +239,66 @@ def run_consistency(project: str, engine: str = "hermit", session=None) -> dict:
     }
 
 
+def _shacl_worker(data_nt: str, shapes_nt: str, queue: "multiprocessing.Queue") -> None:
+    """SHACL validation worker. Same process-group isolation pattern as _reason_worker."""
+    os.setsid()
+    try:
+        from pyshacl import validate as pyshacl_validate
+
+        conforms, _results_graph, _results_text = pyshacl_validate(
+            data_nt,
+            shacl_graph=shapes_nt,
+            inference="none",
+            advanced=False,
+        )
+        queue.put({"conforms": bool(conforms)})
+    except Exception as exc:  # pragma: no cover - defensive
+        queue.put({"error": f"{type(exc).__name__}: {exc}"})
+
+
+def _run_shacl_with_timeout(data_graph: Graph, shapes_graph: Graph, timeout_seconds: int) -> dict:
+    """Run pySHACL in a timeout-bounded subprocess (same spawn+killpg pattern as HermiT)."""
+    data_nt = _serialize_nt(data_graph)
+    shapes_nt = _serialize_nt(shapes_graph)
+    try:
+        ctx = multiprocessing.get_context("spawn")
+        queue: multiprocessing.Queue = ctx.Queue()
+        process = ctx.Process(
+            target=_shacl_worker, args=(str(data_nt), str(shapes_nt), queue)
+        )
+        process.start()
+        process.join(timeout_seconds)
+
+        if process.is_alive():
+            os.killpg(process.pid, signal.SIGKILL)
+            process.join(5)
+            return {"timeout": True}
+
+        if not queue.empty():
+            payload = queue.get()
+            if "error" in payload:
+                raise RuntimeError(payload["error"])
+            return {"timeout": False, "conforms": payload["conforms"]}
+
+        raise RuntimeError(
+            f"SHACL subprocess exited without a result (exitcode={process.exitcode})"
+        )
+    finally:
+        data_nt.unlink(missing_ok=True)
+        shapes_nt.unlink(missing_ok=True)
+
+
 def run_shacl(project: str, session=None) -> dict:
     """Run the real pySHACL pipeline against an empty/placeholder shapes graph (D-11).
 
     Proves the plumbing (data graph built from the live export, real
-    `pyshacl.validate()` invoked) without committing to real shapes yet --
+    ``pyshacl.validate()`` invoked) without committing to real shapes yet --
     those land in Phase 823. Empty shapes always conform, by construction.
-    """
-    from pyshacl import validate as pyshacl_validate  # lazy: keeps import-time light
 
+    Validation runs in a timeout-bounded subprocess (same spawn+killpg pattern
+    as ``run_consistency``) so that heavy/pathological shapes (Phase 823) cannot
+    hang the route indefinitely (WR-04).
+    """
     owns_session = session is None
     if owns_session:
         session = _get_driver().session()
@@ -241,11 +312,8 @@ def run_shacl(project: str, session=None) -> dict:
     # real SHACL shapes. Clearly labelled so it's unmistakable in review.
     shapes_graph = Graph()
 
-    conforms, _results_graph, _results_text = pyshacl_validate(
-        data_graph,
-        shacl_graph=shapes_graph,
-        inference="none",
-        advanced=False,
-    )
+    result = _run_shacl_with_timeout(data_graph, shapes_graph, DG_REASONER_TIMEOUT_SECONDS)
+    if result.get("timeout"):
+        return {"conforms": None, "error": "timeout", "timeout_seconds": DG_REASONER_TIMEOUT_SECONDS}
 
-    return {"conforms": bool(conforms), "results": []}
+    return {"conforms": result["conforms"], "results": []}
