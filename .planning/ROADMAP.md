@@ -25,7 +25,7 @@
 | 810 | Ring Extension & Screen Shell | 7 callouts on the ring, 4 new navigable screen layers | RING-01..03 | — |
 | 811 | AI Engine Screen | LLM provider/model/API-key setup over the existing gateway | AIENG-01..04 | 810 |
 | 812 | Connector Credential Backend | data-service credential CRUD + heartbeat/status API | CONNB-01..04 | — |
-| 813 | Connectors Screen | 13 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
+| 813 | Connectors Screen | 14 connectors / 5 categories UI with credentials + status | CONN-01..04 | 810, 812 |
 | 814 | Reasoner Screen | Reasoner selector (HermiT/Pellet placeholders), persisted | REAS-01..03 | 810 |
 | 815 | DG API Documentation | Revit-API-style in-app doc browser, extendable content | APID-01..03 | 810, 812 |
 | 816 | Integration & Deployment | E2E credential→heartbeat→status flow, container cutover | INTG-01..02 | 811–815 |
@@ -61,7 +61,7 @@
 **Requirements:** CONNB-01, CONNB-02, CONNB-03, CONNB-04
 
 **Success criteria:**
-1. Credentials can be created/listed/revoked per connector type via REST; the 13-connector / 5-category registry is served by the API
+1. Credentials can be created/listed/revoked per connector type via REST; the 14-connector / 5-category registry is served by the API
 2. Tokens are generated server-side, returned once, and stored hashed/encrypted (llm-settings storage pattern)
 3. A token-authenticated heartbeat call updates the connector's status and last-connection timestamp; revoked/unknown tokens are rejected
 4. Status endpoint reports never-connected / active / stale + last-connection date per connector; covered by pytest tests
@@ -73,7 +73,7 @@
 **Requirements:** CONN-01, CONN-02, CONN-03, CONN-04
 
 **Success criteria:**
-1. All 13 connectors render grouped in the 5 categories from the milestone brief
+1. All 14 connectors render grouped in the 5 categories from the milestone brief
 2. User creates a credential and copies the token (shown once) for pasting into the target software's connector component
 3. Each connector shows activation status and last-connection date from the status endpoint
 4. User can revoke a credential and the UI reflects the deactivation

@@ -25,14 +25,14 @@ Requirements for milestone v8.1. Each maps to roadmap phases 810–819.
 
 ### Connector Backend (CONNB)
 
-- [ ] **CONNB-01**: data-service exposes endpoints to create, list, and revoke connector credentials, scoped per connector type (13 connectors across 5 categories)
+- [ ] **CONNB-01**: data-service exposes endpoints to create, list, and revoke connector credentials, scoped per connector type (14 connectors across 5 categories)
 - [ ] **CONNB-02**: Credential tokens are generated server-side, displayed once for copying, and stored hashed/encrypted-at-rest (following the existing llm-settings storage pattern)
 - [ ] **CONNB-03**: data-service exposes a token-authenticated heartbeat/ingest endpoint that connector components call from target software; each authenticated call updates that connector's status and last-connection timestamp
 - [ ] **CONNB-04**: A status query endpoint returns per-connector activation state (never connected / active / stale) and the last-connection date
 
 ### Connectors Screen (CONN)
 
-- [ ] **CONN-01**: User sees 13 connectors grouped in 5 categories — VPL Platforms (Grasshopper, Dynamo), BIM Authoring (Revit, Blender, Tekla, Archicad, Civil3D, Infraworks), BIM Coordination (Navisworks, Solibri), BCF Trackers (BIMCollab, BIMTrack), Visualization (Lumion, Twinmotion)
+- [ ] **CONN-01**: User sees 14 connectors grouped in 5 categories — VPL Platforms (Grasshopper, Dynamo), BIM Authoring (Revit, Blender, Tekla, Archicad, Civil3D, Infraworks), BIM Coordination (Navisworks, Solibri), BCF Trackers (BIMCollab, BIMTrack), Visualization (Lumion, Twinmotion)
 - [ ] **CONN-02**: User can create a credential for a connector and copy the token for pasting into the connector component within the target software
 - [ ] **CONN-03**: User sees each connector's activation status and the date of its last connection (request or post to the Design Grammars platform)
 - [ ] **CONN-04**: User can revoke a connector credential, after which the token no longer authenticates

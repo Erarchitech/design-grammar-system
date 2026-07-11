@@ -16,7 +16,7 @@ Architects can express design constraints in plain language and instantly valida
 
 - Ring extension: 4 new region callouts (AI Engine, Connectors, Reasoner, DG API Docs) placed along the particle ring alongside Graph Viewer / Model Viewer / Projects, with fly-in navigation and screen layers
 - AI Engine screen: LLM provider/model selection + manual API key input, wired to the existing data-service LLM gateway (`/llm/settings`, encrypted-at-rest keys)
-- Connectors: 13 connectors in 5 categories (VPL: Grasshopper, Dynamo · BIM Authoring: Revit, Blender, Tekla, Archicad, Civil3D, Infraworks · BIM Coordination: Navisworks, Solibri · BCF Trackers: BIMCollab, BIMTrack · Visualization: Lumion, Twinmotion); credential creation with copyable tokens for pasting into connector components in target software; per-connector activation status + last-connection date
+- Connectors: 14 connectors in 5 categories (VPL: Grasshopper, Dynamo · BIM Authoring: Revit, Blender, Tekla, Archicad, Civil3D, Infraworks · BIM Coordination: Navisworks, Solibri · BCF Trackers: BIMCollab, BIMTrack · Visualization: Lumion, Twinmotion); credential creation with copyable tokens for pasting into connector components in target software; per-connector activation status + last-connection date
 - Connector backend: data-service credential CRUD + authenticated heartbeat/status endpoints recording each connector's last request/post
 - Reasoner screen: reasoner model selector for the Validation Graph — HermiT and Pellet as placeholders until real reasoner integration is elaborated
 - DG API Documentation: in-app, Revit-API-style structured doc browser (sections → endpoints/classes → members) documenting the DG connector API, extendable via content files
@@ -57,7 +57,7 @@ Architects can express design constraints in plain language and instantly valida
 - [ ] Ring extension: 4 new region callouts + screen layers (AI Engine, Connectors, Reasoner, DG API Docs)
 - [ ] AI Engine screen (provider/model selection, API key input, wired to LLM gateway `/llm/settings`)
 - [ ] Connector credential backend (data-service CRUD, token generation, heartbeat/status endpoints)
-- [ ] Connectors screen (13 connectors / 5 categories, credential create+copy, status + last-connection date)
+- [ ] Connectors screen (14 connectors / 5 categories, credential create+copy, status + last-connection date)
 - [ ] Reasoner screen (HermiT/Pellet placeholder selector, persisted selection)
 - [ ] DG API Documentation (Revit-API-style in-app doc browser, extendable content)
 
