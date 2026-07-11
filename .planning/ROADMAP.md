@@ -41,14 +41,20 @@
 **Requirements**: REAS-04
 
 **Success Criteria** (what must be TRUE):
+
   1. PROJECT.md Key Decisions records the chosen axiom-scoping approach (extend LLM ingestion to emit real `subClassOf`/`domain`/`range`/`disjointWith` axioms vs. scope reasoning to structural/referential checks vs. a hybrid) with rationale
   2. A written LPG→OWL mapping spec exists covering edge-property reification for `Atom.ARG.pos` and `Rule.HAS_BODY/HAS_HEAD.order`, reviewable before Phase 821 implements the translator against it
   3. A spike against a real project's live OntoGraph data confirms whether a naive export would trivially report "consistent", and shows the chosen scoping approach avoids that false-positive outcome
   4. The sidecar-vs-embedded architecture decision (dedicated `dg-reasoner` service, isolated from `data-service`'s Speckle-publish/validation-run hot path) is confirmed and recorded as a Key Decision, unblocking Phase 821
 
 **Plans**: 3 plans
+**Wave 1**
+
 - [ ] 820-01-PLAN.md — Throwaway spike: label-scoped Neo4j→RDF export + two-part HermiT proof (naive trivially-consistent vs hybrid seeded-contradiction unsatisfiable)
 - [ ] 820-02-PLAN.md — `spec/LPG-OWL-MAPPING.md`: SWRL-vocabulary Metagraph mapping, edge-property reification (ARG.pos, HAS_BODY/HAS_HEAD.order), IRI minting, UNA handling
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 820-03-PLAN.md — `820-DECISION.md` + PROJECT.md Key Decisions (flip sidecar row, add hybrid axiom-scoping row)
 
 ### Phase 821: dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation
@@ -60,6 +66,7 @@
 **Requirements**: REAS-05
 
 **Success Criteria** (what must be TRUE):
+
   1. `dg-reasoner` runs as its own container in docker-compose (Python + headless JRE), with the `n10s` plugin installed on the `neo4j` service enabling RDF export — its failure or a hang never blocks a concurrent Speckle-publish or validation-run call to `data-service`
   2. A project-scoped Cypher→RDF export produces valid Turtle for a real project's OntoGraph + Metagraph, with fidelity tests confirming `Atom.ARG.pos` and `HAS_BODY/HAS_HEAD.order` survive the translation per Phase 820's mapping spec
   3. `POST /reason/consistency` and `POST /shacl/validate` routes exist on the sidecar and are reachable from `data-service`
@@ -76,6 +83,7 @@
 **Requirements**: REAS-06
 
 **Success Criteria** (what must be TRUE):
+
   1. User clicks "Run check" on the Reasoner screen and a real HermiT consistency check executes against the translated OntoGraph, replacing the v8.1 "integration pending" placeholder label
   2. Result displays a clear pass/fail summary with unsatisfiable-class count, labeled distinctly as "schema consistency" so it is never mistaken for a design-compliance result
   3. A long-running or hung reasoning call times out and returns a distinct "unknown" result rather than silently reporting pass or fail, and never blocks the calling request synchronously
@@ -94,6 +102,7 @@
 **Requirements**: SHCL-01, SHCL-02
 
 **Success Criteria** (what must be TRUE):
+
   1. On each validation run, DesignState/Rule instance data is translated to RDF and validated against SHACL shapes, running alongside — not replacing — the existing SWRL-based VALIDATOR
   2. A documented rule-partition/precedence policy states which rule categories are checked by SHACL vs. the SWRL VALIDATOR, so no business rule is authored twice with disagreeing verdicts
   3. SHACL violations surface through DG's existing ErrorMessageTemplates (What+Where+How-to-fix) — raw RDF/SHACL vocabulary (`sh:focusNode`, `sh:sourceShape`) never reaches the architect
@@ -112,6 +121,7 @@
 **Requirements**: CONNG-01, CONNG-02
 
 **Success Criteria** (what must be TRUE):
+
   1. CONNECTOR exposes a new optional platform-credential/token input; the existing Neo4jURI/User/Password/Database inputs and the component's GUID are unchanged, so saved `.gh` canvases keep working without rewiring
   2. Pasting a valid token minted from the v8.1 Connectors screen's "Grasshopper" connector type authenticates a heartbeat call to `data-service`
   3. An invalid, revoked, or expired token produces a clear in-canvas runtime message via the existing `AddRuntimeMessage`/ErrorMessageTemplates pattern, never a silent failure or crash
