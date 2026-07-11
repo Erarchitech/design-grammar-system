@@ -93,6 +93,7 @@ export default function GraphScreen({ active, onBack, project }) {
   const hoverPanelRef = React.useRef(null);
   const selPanelRef = React.useRef(null);
   const searchPopRef = React.useRef(null);
+  const historyPanelRef = React.useRef(null);
   const sessionScrollRef = React.useRef(null);
   const engineRef = React.useRef(null);
 
@@ -125,6 +126,18 @@ export default function GraphScreen({ active, onBack, project }) {
   const snapshotsRef = React.useRef({});
   const [restoreIds, setRestoreIds] = React.useState([]);
   const [restoredAt, setRestoredAt] = React.useState(null); // {sessionId, modeLabel, ts} | null
+
+  // Fold the Session History panel closed on any click outside it.
+  React.useEffect(() => {
+    if (!historyOpen) return;
+    const onPointerDown = (ev) => {
+      if (historyPanelRef.current && !historyPanelRef.current.contains(ev.target)) {
+        setHistoryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [historyOpen]);
 
   const snapStoreKey = React.useCallback(() => `dgv2_graph_snapshots_${project || "default"}`, [project]);
   // Persist a checkpoint, capped to the most recent few, dropping oldest on a
@@ -895,7 +908,7 @@ export default function GraphScreen({ active, onBack, project }) {
       <div style={{ position: "absolute", left: "50%", bottom: 22, transform: "translateX(-50%)", zIndex: 6, display: "flex", alignItems: "flex-end", gap: 12, maxWidth: "96vw" }}>
         <div style={{ width: "min(560px, 56vw)", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
           {/* Session History — persisted ingest/query/edit turns with restore */}
-          <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", padding: "4px 8px", boxShadow: "var(--shadow-panel)" }}>
+          <div ref={historyPanelRef} className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", padding: "4px 8px", boxShadow: "var(--shadow-panel)" }}>
             <SessionHistory
               sessions={historySessions}
               open={historyOpen}
