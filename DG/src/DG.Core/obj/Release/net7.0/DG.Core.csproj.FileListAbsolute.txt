@@ -1,0 +1,13 @@
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Release\net7.0\DG.Core.deps.json
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Release\net7.0\DG.Core.dll
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Release\net7.0\DG.Core.pdb
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.csproj.AssemblyReference.cache
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.AssemblyInfoInputs.cache
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.AssemblyInfo.cs
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.csproj.CoreCompileInputs.cache
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.sourcelink.json
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.dll
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\refint\DG.Core.dll
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\DG.Core.pdb
+C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\obj\Release\net7.0\ref\DG.Core.dll

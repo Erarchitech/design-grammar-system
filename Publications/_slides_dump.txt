@@ -1,0 +1,106 @@
+NUM SLIDES: 24
+======================================================================
+SLIDE 1
+  [TXT] Speaker: Evgenii Ermolenko (1) | Supervisors: Bruno Figueiredo (2) | 	   Miguel Azenha (3)
+  [TXT] Design Grammars system supporting decision-making in Construction across platforms and disciplines. | Carrying parametric design intent and machine-readable design rules across the openBIM lifecycle.
+  [TXT] (1) University of Minho, EAAD, Lab2PT, ISISE, Guimarães, Portugal, 0009-0003-1228-9550 | (2) Universidade do Minho, EAAD, Lab2PT, IN2PAST, Guimarães, Portugal, 0000-0001-8439-7065 | (3) University of Minho, ISISE, ARISE, Department of Civil Engineering, Guimarães,  | Portugal, 0000-0003-1374-9427
+  [TXT] ptBIM 26
+  [NOTES] Good morning everyone, and thanks for having me today. The Thesis I am working on is presented above.
+======================================================================
+SLIDE 2
+  [TXT] Roadmap
+  [TXT] 2
+  [TXT] Why current BIM handovers fail to carry intent | What is Design Knowledge | Design Rules | Design State | The Knowledge Gap | Proposed “Design Grammars” system | Goal | Characteristics | Knowledge Graph | Ontology | Framework | Prototype  | System Architecture | Use Case. From client requirements to validated design state | Conclusion
+  [TXT] Design Grammars system supporting decision-making in Construction across platforms and disciplines.
+  [TXT] ptBIM 26
+======================================================================
+SLIDE 3
+  [TXT] How much design intent survives the next handover?
+  [TXT] From Concept Design to Maintenance – stripping away design intent
+  [NOTES] The intent in order to be sustainable and constant throughout the design lifecycle should be encoded. The encoded intent is used to be called Design Knowledge.
+======================================================================
+SLIDE 4
+  [TXT] Encoded machine-readable Design Intent, containing Design Rules (constraints, morphologic etc) that produce Design States (design solutions)
+  [TXT] DESIGN KNOWLEDGE | THE LOGIC BEHIND THE MODEL
+  [TXT] Design Rules
+  [TXT] Design States
+======================================================================
+SLIDE 5
+  [TXT] DESIGN RULES | Morphologic atoms of Design Knowledge
+======================================================================
+SLIDE 6
+  [TXT] DESIGN RULES | Machine-readable SWRL expression
+  [NOTES] Encoded Design Rules
+======================================================================
+SLIDE 7
+  [TXT] The Design State (Design Solution). Uniquely identified snapshot of a design's current parametric configuration — the set of input parameters (defState) and geometric objects (objState) captured from the parametric tool at a specific time.
+  [TXT] THE  | DESIGN STATE
+======================================================================
+SLIDE 8
+  [TXT] The Design State (Design Solution). Uniquely identified snapshot of a design's current parametric configuration — the set of input parameters (defState) and geometric objects (objState) captured from the parametric tool at a specific time.
+  [TXT] THE  | DESIGN STATE
+======================================================================
+SLIDE 9
+  [TXT] • BIM manages information — but design knowledge stays fragmented across files, platforms and disciplines. | • Parametric tools (Grasshopper / Dynamo) silo that logic as opaque,​non-interoperable node graphs that die at export — the rules are​replicated per platform, never shared.​
+  [TXT] THE  | KNOWLEDGE  | GAP
+======================================================================
+SLIDE 10
+  [TXT] PROPOSED DESIGN KNOWLEDGE MANAGEMENT SYSTEM
+  [TXT] THE  | DESIGN  | GRAMMARS
+======================================================================
+SLIDE 11
+  [TXT] GOAL | Build a Shared Knowledge Core that carries encoded design intent through a cross-platform environment of the BIM project and reuses it for validation and generation of design states during design development. |  | Example: “Hexagonal Units must be assigned per level ranges according to level boundaries and unit’s vertices must coincide with level planes" travels as a reusable rule through architectural concept stage and BIM-model on Construction stage.
+  [TXT] FROM COLLABORATIVE FILE-BASED EXCHANGE  | TO OBJECT-LEVEL KNOWLEDGE SHARING  | WITHIN INTEGRATED BIM
+======================================================================
+SLIDE 12
+  [TXT] The Three Pillars of Design Grammars
+  [TXT] An Ontology-based Knowledge Graph
+======================================================================
+SLIDE 13
+  [TXT] Knowledge Graph | A structured way to organize data
+  [TXT] A knowledge graph is an organized representation of information that models real-world entities and relationships between them. It maps data visually as a network of connected labeled entities with properties as nodes and edges, so the data keeps its meaning and context.
+  [NOTES] an ontology example could be a system that defines building, room, door, window, and floor as concepts, then specifies relationships like “a room is part of a building” and “a door connects two spaces”
+======================================================================
+SLIDE 14
+  [TXT] Ontology | Organized domain knowledge
+  [TXT] Ontology is a structured, machine-readable framework that organizes knowledge within a specific domain. It consists of:
+  [NOTES] an ontology example could be a system that defines building, room, door, window, and floor as concepts, then specifies relationships like “a room is part of a building” and “a door connects two spaces”
+======================================================================
+SLIDE 15
+  [TXT] Ontology | Organized domain knowledge
+  [TXT] OntoGraph - Generated ontology from the encoded design intent
+  [NOTES] an ontology example could be a system that defines building, room, door, window, and floor as concepts, then specifies relationships like “a room is part of a building” and “a door connects two spaces”
+======================================================================
+SLIDE 16
+  [TXT] Core–Periphery data model
+  [TXT] DG SYSTEM FRAMEWORK | 5 LAYERS  | FROM SEMNTICS TO VALIDATION
+======================================================================
+SLIDE 17
+  [TXT] DG SYSTEM PROTOTYPE | ARCHITECTURE
+======================================================================
+SLIDE 18
+  [TXT] DG SYSTEM PROTOTYPE | USE CASE. FROM CLIENT REQUIREMENTS TO VALIDATED DESIGN STATE
+======================================================================
+SLIDE 19
+  [TXT] DG SYSTEM PROTOTYPE | PHASE 1-2. Client Brief and Rule Authoring.  | Web interface. Grammar Viewer
+======================================================================
+SLIDE 20
+  [TXT] DG SYSTEM PROTOTYPE | PHASE 3. Design Bootstrap.  | Grasshopper Addin
+======================================================================
+SLIDE 21
+  [TXT] DG SYSTEM PROTOTYPE | PHASE 4. Validation and Communication.  | Web Interface. Design State Viewer
+======================================================================
+SLIDE 22
+  [TXT] 22
+  [TXT] DS
+  [TXT] Contribution | A working prototype that encodes, manages and reuses grammar | knowledge across the design lifecycle. |  | What works | • Multimodal Rule ingestion | • Structured ingestion of project documentation | • Iterative validation of design states against rule sets | • Review validation results | • Design states record and reinstating parametric model  |  | Limitations & next steps | •  SWRL coverage limited to ClassAtom / DataPropertyAtom / BuiltinAtom — next: extend to full SWRL body coverage | •  Academic evaluation only — production stress-testing pending
+  [TXT] CONCLUSION
+  [NOTES] TO sum up, This research aims to develop Design Grammars as A generative copilot system that connects architectural knowledge  | with ontological object relationships across domains, moving beyond manual file exchanges.  | It enables collecting parametric rules, synchronizing key parameters between platforms, smart design assistance,  | AI-driven insights and feedback, design validation, LLM communication, machine learning on design history, and dataset reuse.  | I believe, this approach supports more sustainable and consistent design planning.  | For future developments, I want to review ontology, develop API, develop modular database, so it handles different types of data efficiently dy dedicated modules, setup sunchronization..
+======================================================================
+SLIDE 23
+  [TXT] THANK YOU  | FOR YOUR  | ATTENTION
+======================================================================
+SLIDE 24
+  [TXT] 24
+  [TXT] REFERENCES
+  [TXT] [1] Hubka, V., and W. E. Eder. 2002. “Theory of technical systems and engineering design synthesis.” In Engineering design synthesis: Understanding, approaches and tools (pp. 49-66). London: Springer London. | [2] Lawson, B. (2006). How designers think. | [3] J. Poon, M.L. Maher, Co-evolution and emergence in design, Artif. Intell. Eng. 11 (3) (1997) 319–327. | [4] D.A. Schon, Designing as reflective conversation with the materials of a design situation, Res. Eng. Des. 3 (3) (1992) 131–147. | [5] Cross, N. “Analysing design activity.” (1996). | [6] K. Dorst, N. Cross, Creativity in design process: co-evolution of problem-solution, Des. Stud. 22 (2001) 425–437. | [7] Gero, J. S. 1992. “What’s in a design case and how it can be used.” AID’92 Workshop on Case Based Design Systems, pp. 27-28. | [8] K. Mubarak, Case based reasoning for design composition in architecture, Carnegie Melon University, Pittsburgh, 2004. | [9] Fu, K., J. Murphy, M. Yang, K. Otto, D. Jensen, and K. Wood. 2015. “Design-by- analogy: experimental evaluation of a functional analogy search methodology for concept generation improvement.” Res Eng Des. Springer London | [10] Gero, J. S. 1990. “Design prototypes. A knowledge representation schema for design,” AI Mag., vol. 11, no. 4, pp. 26–36, 1990. | [11] K. Dorst, The core of ‘design thinking’ and its application, Des. Stud. 32 (6) (2011) 521–532. | [12] Lin, Chieh Jen ‘Design Criteria Modeling - Use of Ontology-Based Algorithmic Modeling’ | [13] Prof. Dr. Harald Sack, OpenHPI - Course Knowledge Engineering with Semantic Web Technologies: Ontological Engineering, 2019 | [14] Mads Holten Rasmussen, BOT: The building topology ontology of the W3C linked building data group | [15] https://topologic.app/tutorials/Topologic-01-Introduction.pdf  | [16] Aish, R., Jabi, W., Lannon, S., Wardhana, N., & Chatzivasileiadi, A. (2018). Topologic: tools to explore architectural topology.  | [17] Rasmussen, M. H., Lefrançois, M., Schneider, G. F., Pauwels, P., & Janowicz, K. (2020). BOT: the Building Topology Ontology of the W3C Linked Building Data Group. | [18] Lin, C. J. (2016). Design Criteria Modeling - Use of Ontology-Based Algorithmic Modeling to Represent Architectural Design Criteria at the Conceptual Design Stage.  | [19] Prof. Dr. Harald Sack. (2023, November 15). (1337) Knowledge Graphs - Excursion 7 The Semantic Web Rule Language SWRL | [20] Succar, B. (2016). BIMe Initiative Model Uses List. http://bit.ly/BIMPaperA10 | [21] Peffers, K., Tuunanen, T., & Rossi, M. (2006). The design science research process: A model for producing and presenting information systems research. | [22] Zhu, J., Wu, P., & Lei, X. (2023). IFC-graph for facilitating building information access and query. Automation in Construction, 148. | [23] Bobed, C., Maillot, P., Cellier, P., & Ferré, S. (2020). Data-driven assessment of structural evolution of RDF graphs. Semantic Web, 11(5), 831–853. | [24] Building performance optimisation: A hybrid architecture for the integration of contextual information and time-series data. (2016). Automation in Construction, 70, 51–61. | [25] buildingSMART. Information Delivery Specification (IDS) — technical documentation; mvdXML; bSDD. | [26] ISO 16739-1 (IFC4.3); ISO 19650-1/-2 (information management); LOIN / ISO 7817. | [27] Eastman, C., Lee, J., Jeong, Y., Lee, J. (2009). Automatic rule-based checking of building designs. Automation in Construction 18(8), 1011–1033. | [28] Pauwels, P., Zhang, S., Lee, Y.-C. (2017). Semantic web technologies in AEC industry: A literature overview. Automation in Construction 73, 145–165. | [29] Beach, T., Rezgui, Y., et al. Building compliance / regulatory knowledge representation for BIM. | [30] Stiny, G. (1980). Introduction to shape and shape grammars. Environment and Planning B 7(3), 343–351. | [31] Solibri Model Checker (SMC) — commercial automated code-compliance baseline.

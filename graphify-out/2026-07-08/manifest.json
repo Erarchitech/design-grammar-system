@@ -1,0 +1,3567 @@
+{
+  ".claude/launch.json": {
+    "mtime": 1783525232.2529345,
+    "ast_hash": "a3c886ae8bf644a3413e442583c8ffe1",
+    "semantic_hash": ""
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1783416182.779323,
+    "ast_hash": "dd9ada85d27f531c94b6d4d6e5f156ed",
+    "semantic_hash": ""
+  },
+  ".planning/config.json": {
+    "mtime": 1778263979.5062697,
+    "ast_hash": "0ed6708d6f966a7ae35f36675ba72468",
+    "semantic_hash": ""
+  },
+  ".vs/VSWorkspaceState.json": {
+    "mtime": 1772574657.56935,
+    "ast_hash": "a20d142449fb439bb7bc2cfbf02ec79c",
+    "semantic_hash": ""
+  },
+  ".vs/design-grammar-system/v17/DocumentLayout.json": {
+    "mtime": 1772574657.4915512,
+    "ast_hash": "bea71469cd8c9667bd27ddf3cd814b25",
+    "semantic_hash": ""
+  },
+  ".vscode/mcp.json": {
+    "mtime": 1774934985.3597019,
+    "ast_hash": "6de4c3b8e85fd05d10ff2d861d16b0e2",
+    "semantic_hash": ""
+  },
+  ".vscode/settings.json": {
+    "mtime": 1774934985.3597019,
+    "ast_hash": "377d072e137022223a370760763420bb",
+    "semantic_hash": ""
+  },
+  "DG/.vs/DG/v17/DocumentLayout.backup.json": {
+    "mtime": 1772575040.450002,
+    "ast_hash": "9ebc2ffbc86acf69fd0b28a9c8520cee",
+    "semantic_hash": ""
+  },
+  "DG/.vs/DG/v17/DocumentLayout.json": {
+    "mtime": 1700065377.1216273,
+    "ast_hash": "9ebc2ffbc86acf69fd0b28a9c8520cee",
+    "semantic_hash": ""
+  },
+  "DG/DG.sln": {
+    "mtime": 1772572609.7854009,
+    "ast_hash": "b96914f2689e958fa0a8df4482e9f9b8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/DG.Core.csproj": {
+    "mtime": 1782289155.3265345,
+    "ast_hash": "b379898e4c0ed70eb78fd5299b00606b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/INeo4jConnectorService.cs": {
+    "mtime": 1772573052.2702,
+    "ast_hash": "9bc18ce7e13e33d3908f8a07e03e0ee3",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/IRuleRepository.cs": {
+    "mtime": 1783134257.5771086,
+    "ast_hash": "9eda94f8c2b7e77f2fb4fdf7e8d2b181",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/Neo4jConnectorService.cs": {
+    "mtime": 1772658476.1820211,
+    "ast_hash": "ed15e1fa925fc3ee927d9130b7269c12",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/Neo4jRuleRepository.cs": {
+    "mtime": 1783134268.3320441,
+    "ast_hash": "4e25fab131b322c77943b5e26eb0c89f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ArgKind.cs": {
+    "mtime": 1772572846.7573946,
+    "ast_hash": "24a930975cca357e76b1080cfdae5544",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/Atom.cs": {
+    "mtime": 1773038541.9229088,
+    "ast_hash": "9d2840e73ce03f0c88c0c8827338d728",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/AtomArg.cs": {
+    "mtime": 1772572866.7927785,
+    "ast_hash": "a40c61f5b43830c42a714b893c2a382c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/AtomSide.cs": {
+    "mtime": 1772572852.4627128,
+    "ast_hash": "808be4976f12dd1c7b502aeb7d5183bf",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/BindingRow.cs": {
+    "mtime": 1774934985.3637059,
+    "ast_hash": "47f3a7774d2736a344f26220d5b978e0",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ConnectionInfo.cs": {
+    "mtime": 1772572926.6764536,
+    "ast_hash": "8b1690084dddae87ffde08ebeb8994d2",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/DesignStateParameter.cs": {
+    "mtime": 1778180171.4760633,
+    "ast_hash": "81f0cabe4a1b29ef6280aa130e8cfa39",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ElementRef.cs": {
+    "mtime": 1774934985.3637059,
+    "ast_hash": "ed187380899c3200c665ad7cb1f7d46c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ReinstatementParameterReport.cs": {
+    "mtime": 1778430284.1223867,
+    "ast_hash": "5b1810006cc0db5692620e0fa660ed43",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ReinstatementResult.cs": {
+    "mtime": 1778430284.123384,
+    "ast_hash": "9e5dce0ccdcfa7169bf1eb08b7f41df6",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ReinstatementStatus.cs": {
+    "mtime": 1778430284.1223867,
+    "ast_hash": "75cefd30e4d0e8576200ff1881e4b6b1",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ResolvedTarget.cs": {
+    "mtime": 1778430284.1223867,
+    "ast_hash": "2d691b59938b52a92789738b967fb102",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/Rule.cs": {
+    "mtime": 1772573144.3786347,
+    "ast_hash": "dc3298c05e250bbd8fb5dcdf7394ce8b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/RuleEvaluationResult.cs": {
+    "mtime": 1772572918.65585,
+    "ast_hash": "5df8471edbbd0fb6d5f9f8fce32c4814",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/SerializationError.cs": {
+    "mtime": 1778264748.7418132,
+    "ast_hash": "909aca5e3d386e657186b8eac3d75aab",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationPublishEntity.cs": {
+    "mtime": 1774934985.3637059,
+    "ast_hash": "4dbe4245515cd034ec501a00f4a4e213",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationPublishPackage.cs": {
+    "mtime": 1774934985.3637059,
+    "ast_hash": "66ca430ae00daa4e62b71064d3761644",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationPublishRule.cs": {
+    "mtime": 1774934985.3652124,
+    "ast_hash": "780f959b74baad09e2e241271b31a1b0",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationPublishRuleResult.cs": {
+    "mtime": 1774934985.3652124,
+    "ast_hash": "3b96c9a7ae5c0e08f2e7a2a1f2e6e23b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationRunQueryResult.cs": {
+    "mtime": 1783127699.9447992,
+    "ast_hash": "656b55a02053602f5f9887d17d4e5543",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidationRunRecord.cs": {
+    "mtime": 1778180171.4785821,
+    "ast_hash": "1130d822f1f3a63256878ac7654b5caa",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/Variable.cs": {
+    "mtime": 1782289155.329672,
+    "ast_hash": "90fca596b9f81c63e3c189f957f08db0",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Parsing/ParsedSwrlRule.cs": {
+    "mtime": 1772572957.7108657,
+    "ast_hash": "0c44d0a7468d5ff2b173ea3dae4662e5",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Parsing/SwrlRuleParser.cs": {
+    "mtime": 1772572979.4091053,
+    "ast_hash": "3805817ae42d15284238a36bcb6fb034",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Serialization/DesignStateJsonSerializer.cs": {
+    "mtime": 1783127713.7423668,
+    "ast_hash": "bf5792ffdcd1db85371579a2b0af0cc4",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/DesignStateReinstatementService.cs": {
+    "mtime": 1783127701.48774,
+    "ast_hash": "7ad3aec700e5de81d34e0f8da157dc0f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/ErrorMessageTemplates.cs": {
+    "mtime": 1783456638.1920023,
+    "ast_hash": "b456f8d5bd78a49fe527123f3d10184c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/ValidationRunPersistenceService.cs": {
+    "mtime": 1783257372.2541041,
+    "ast_hash": "c803447424054fa21a91c0fde4b38139",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/ValidationRunsQueryService.cs": {
+    "mtime": 1783127704.5982223,
+    "ast_hash": "40380badae9cd10a71da95730cb5d363",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Validation/FailingBindingFormatter.cs": {
+    "mtime": 1772667316.2360027,
+    "ast_hash": "0f3174b1452a405322c50819de9b669c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Validation/RuleEvaluator.cs": {
+    "mtime": 1772665675.5082862,
+    "ast_hash": "91657abdf672faacda65d0bdc64f4f54",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Validation/ValidationPublishPackageBuilder.cs": {
+    "mtime": 1774934985.3652124,
+    "ast_hash": "1fe1dce59e45fa97357ea4644459f366",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Validation/ValidationReportFormatter.cs": {
+    "mtime": 1772573020.5954149,
+    "ast_hash": "3a9e816eca09a96c1f113ee7e7305b21",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ConnectorComponent.cs": {
+    "mtime": 1783133544.7135317,
+    "ast_hash": "71af058581480c440a896ac204ed720d",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/GhCastingHelpers.cs": {
+    "mtime": 1783467698.6003988,
+    "ast_hash": "d49d318d1d8d454f17777a9497aa27ab",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/MetagraphComponent.cs": {
+    "mtime": 1783453350.014924,
+    "ast_hash": "e9e45465ace48d679496b984a0064fcf",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/RuleDeconstructComponent.cs": {
+    "mtime": 1783254395.9074621,
+    "ast_hash": "282b56b96f431cce6504af0d61af288a",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ValidatorComponent.cs": {
+    "mtime": 1783257082.0212808,
+    "ast_hash": "6d64d2989fb55e3c6b31aa5d5ab13eeb",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/DG.Grasshopper.csproj": {
+    "mtime": 1774934985.3682263,
+    "ast_hash": "8a3dbe33cb18755954ec8ce23e035865",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/DgComponentCategory.cs": {
+    "mtime": 1772573203.172829,
+    "ast_hash": "661ef301e01791cc20f703f4ab8d0324",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/DgIcons.cs": {
+    "mtime": 1783456644.3103046,
+    "ast_hash": "dc067f2985be392aa9d183d6a646af92",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/PluginInfo.cs": {
+    "mtime": 1772634365.3454378,
+    "ast_hash": "70446928bc1a2926090241ce817b3b13",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/PublicTypes.cs": {
+    "mtime": 1783135942.880296,
+    "ast_hash": "a2127e91fd563ed434198023dd78313b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Validation/ValidationGeometryPayloadSerializer.cs": {
+    "mtime": 1774934985.3692238,
+    "ast_hash": "1f76a6d085c06fd9f5d4d3eb6ea3d73e",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs": {
+    "mtime": 1783463810.9137056,
+    "ast_hash": "54d09a5524d8637845f671575cf51362",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Validation/ValidationPublishContract.cs": {
+    "mtime": 1783257174.749456,
+    "ast_hash": "40f6431385669a1e3c44d3dafad056bf",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DG.Tests.csproj": {
+    "mtime": 1778281943.4046214,
+    "ast_hash": "0daa01b4d6d967e8b97a02e0d39387b9",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStateJsonSerializerTests.cs": {
+    "mtime": 1783127757.6314783,
+    "ast_hash": "a407639e7102c399e694fbae20dcd8dd",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/E2E/DesignStateValidationFlowTests.cs": {
+    "mtime": 1783127883.646245,
+    "ast_hash": "7e5b4dbda46d33d563d30626ba00e8b9",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ErrorMessageTemplateTests.cs": {
+    "mtime": 1783265971.7791793,
+    "ast_hash": "c920096d100fc18252b3e1c2e76dddc1",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/FailingBindingFormatterTests.cs": {
+    "mtime": 1772667343.300649,
+    "ast_hash": "8c8752051de8c7d35f079843afddfe23",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ReinstatementServiceTests.cs": {
+    "mtime": 1783127876.681659,
+    "ast_hash": "fe0877ba06dbe2feb25e13170ee06215",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/RuleEvaluatorTests.cs": {
+    "mtime": 1772665685.945489,
+    "ast_hash": "37b392b1530ae465ae738894639fd8a7",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/SwrlRuleParserTests.cs": {
+    "mtime": 1772573411.9127705,
+    "ast_hash": "016955908872ee10c2074693482abb5f",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ValidationPublishPackageBuilderTests.cs": {
+    "mtime": 1774934985.3712258,
+    "ast_hash": "a8eb82afc8a4288c3136d46bd8430614",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ValidationRunPersistenceTests.cs": {
+    "mtime": 1783127937.1694462,
+    "ast_hash": "a3be68fda88bab813b3e7d1dc7d63fe9",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ValidationRunsQueryTests.cs": {
+    "mtime": 1783127938.7017663,
+    "ast_hash": "f0ba335cb16893686c5ce47471bfad84",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/.obsidian/app.json": {
+    "mtime": 1780663248.871673,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/.obsidian/appearance.json": {
+    "mtime": 1780663248.8736737,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/.obsidian/core-plugins.json": {
+    "mtime": 1780663248.5371904,
+    "ast_hash": "7c877bea49eaeabb100563bd157b9051",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/.obsidian/graph.json": {
+    "mtime": 1780666118.338,
+    "ast_hash": "b8c9643b1f569dabfc9204daca938da9",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/.obsidian/workspace.json": {
+    "mtime": 1780663249.0443425,
+    "ast_hash": "45af9e0f80ba223ebc722f5df5e87a7e",
+    "semantic_hash": ""
+  },
+  "data-service/app.py": {
+    "mtime": 1783524465.9375343,
+    "ast_hash": "e30ab134c4ad94e6e9bd62d9911de90a",
+    "semantic_hash": ""
+  },
+  "data-service/speckle_validation.py": {
+    "mtime": 1774934985.3772242,
+    "ast_hash": "6b2e2c92efe01b3b2546e0d6778aaa92",
+    "semantic_hash": ""
+  },
+  "data-service/tests/__init__.py": {
+    "mtime": 1775505363.7781603,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "data-service/tests/conftest.py": {
+    "mtime": 1775505364.1501393,
+    "ast_hash": "940081cfce13cea252e31d8b045f38e5",
+    "semantic_hash": ""
+  },
+  "data-service/tests/test_error_responses.py": {
+    "mtime": 1778281943.4046214,
+    "ast_hash": "da1de38eb27e2cb207e45fb538be27ac",
+    "semantic_hash": ""
+  },
+  "data-service/tests/test_update_flow.py": {
+    "mtime": 1783095380.8617625,
+    "ast_hash": "e265f6f9b2d572ec5f9e7cfac4fc2e73",
+    "semantic_hash": ""
+  },
+  "data-service/tests/test_validation_runs_state.py": {
+    "mtime": 1783524521.4667344,
+    "ast_hash": "e302623ec06c0afe0c755a9681203eb2",
+    "semantic_hash": ""
+  },
+  "graph-viewer/config.template.js": {
+    "mtime": 1783096348.6682963,
+    "ast_hash": "1cdd3fbc4f7ac46bbbcb7837d17653df",
+    "semantic_hash": ""
+  },
+  "graph-viewer/entrypoint.sh": {
+    "mtime": 1774948577.0773342,
+    "ast_hash": "cf5a03b68991e3bab9723ada5d3770e8",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/package.json": {
+    "mtime": 1778179351.1185584,
+    "ast_hash": "b31e9f77851899320a26811e9a1f0857",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/src/App.jsx": {
+    "mtime": 1778744618.3065543,
+    "ast_hash": "c868f252a52d01e8453d6d0601eb5c56",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/src/ValidationRunsStrip.jsx": {
+    "mtime": 1778180171.4988294,
+    "ast_hash": "4394d35b400878065da8b8fcd5d26313",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/src/main.jsx": {
+    "mtime": 1774934985.4077485,
+    "ast_hash": "4092a960c326ecc3fa66095ba71bf05f",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/src/useValidationRunsGrouping.js": {
+    "mtime": 1778179351.1229956,
+    "ast_hash": "3ef0271cec392f953e10fc498b90ae0f",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/src/useValidationRunsGrouping.test.js": {
+    "mtime": 1778179351.12352,
+    "ast_hash": "fba1e3c928c2be5f54decf60dccafc80",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/vite.config.js": {
+    "mtime": 1778179351.1246202,
+    "ast_hash": "44adc9a6dd2ae72bae2dd49073610e6f",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/graph-query-mcp.json": {
+    "mtime": 1783444730.4754913,
+    "ast_hash": "0057466ba7cd340e457e611fc888121c",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/rules-to-metagraph.json": {
+    "mtime": 1783444730.4719782,
+    "ast_hash": "b4b36a9cb4f52cf3efd7f8f88f0a46d2",
+    "semantic_hash": ""
+  },
+  "pencil_doc/content.json": {
+    "mtime": 1774934985.4117486,
+    "ast_hash": "2e157520bca34e6b09f4b68982f1ec7e",
+    "semantic_hash": ""
+  },
+  "pencil_doc/page1.json": {
+    "mtime": 1774934985.4127457,
+    "ast_hash": "6318565249edc28da3d78f4f542f9935",
+    "semantic_hash": ""
+  },
+  "scripts/export_graphify_conceptual.py": {
+    "mtime": 1782084945.4812074,
+    "ast_hash": "2bea68b4280cbdf9e8ce740578fe2337",
+    "semantic_hash": ""
+  },
+  "scripts/refresh_graphify.sh": {
+    "mtime": 1782084651.4669485,
+    "ast_hash": "f18ae0640677dcfe0e8a033b76b9ad92",
+    "semantic_hash": ""
+  },
+  "speckle/bootstrap-local.sql": {
+    "mtime": 1774934985.413748,
+    "ast_hash": "19b16665fed3973c2c5fce3103873cc5",
+    "semantic_hash": ""
+  },
+  "test/CaseStudy_LivingUnit/records_LU1.json": {
+    "mtime": 1774934985.413748,
+    "ast_hash": "7bdabb3f894fdb908954613a9d339e05",
+    "semantic_hash": ""
+  },
+  "test/CaseStudy_LivingUnit/records_LU2.json": {
+    "mtime": 1774934985.4152546,
+    "ast_hash": "eb357dd82531b95572ca42f0229df55f",
+    "semantic_hash": ""
+  },
+  "test/CaseStudy_LivingUnit/records_LU3.json": {
+    "mtime": 1774934985.4152546,
+    "ast_hash": "a83d15f1c529646c92a124f3bfc1ce8c",
+    "semantic_hash": ""
+  },
+  "test/neo4j_res.json": {
+    "mtime": 1771786210.755798,
+    "ast_hash": "1c219813d7c75a2f2736b3437ae2ab23",
+    "semantic_hash": ""
+  },
+  "test/neo4j_res2.json": {
+    "mtime": 1771787219.0491643,
+    "ast_hash": "902005a8d1d08431885150842e0cadd1",
+    "semantic_hash": ""
+  },
+  "test/neo4j_res3.json": {
+    "mtime": 1771788217.330022,
+    "ast_hash": "ef06f17268710c3bfc19a89c44c07cb6",
+    "semantic_hash": ""
+  },
+  "test/neo4j_res4.json": {
+    "mtime": 1771789140.2990596,
+    "ast_hash": "12d0818487e2d8cabbf35ead2b653e49",
+    "semantic_hash": ""
+  },
+  "test/records.json": {
+    "mtime": 1771749797.3789563,
+    "ast_hash": "ecbac21a7916ad5e1ac2bff3474c223b",
+    "semantic_hash": ""
+  },
+  "test/records2.json": {
+    "mtime": 1771752868.7186954,
+    "ast_hash": "77121f89901104f13c726e3c1a196968",
+    "semantic_hash": ""
+  },
+  "test/records3.json": {
+    "mtime": 1772660894.067229,
+    "ast_hash": "57cdc2074404b97586a1761ca729faea",
+    "semantic_hash": ""
+  },
+  "test/records4.json": {
+    "mtime": 1772661151.446135,
+    "ast_hash": "3c66e12a8b81a66f1f02a5c6320c3695",
+    "semantic_hash": ""
+  },
+  "test/test_cleanup.js": {
+    "mtime": 1771789410.882589,
+    "ast_hash": "e1793b374df75f54b22a55a5cc8677f2",
+    "semantic_hash": ""
+  },
+  "test/test_consolidation.js": {
+    "mtime": 1771789410.882589,
+    "ast_hash": "5233a29a048993029ba613db47a2d651",
+    "semantic_hash": ""
+  },
+  "test/test_phase04_update_flow.sh": {
+    "mtime": 1783096953.0837245,
+    "ast_hash": "7633253ccac34d3502ce4a588f600ea0",
+    "semantic_hash": ""
+  },
+  "test/training_dataset.json": {
+    "mtime": 1783081428.9633865,
+    "ast_hash": "d8bb719fa88a3fb605e5cb2bb49c4fca",
+    "semantic_hash": ""
+  },
+  "test/whisper_server.py": {
+    "mtime": 1774934985.4162633,
+    "ast_hash": "38c1932dadef25b5678ef495b0ee6e53",
+    "semantic_hash": ""
+  },
+  "training/dataset_schema.json": {
+    "mtime": 1783073510.5907857,
+    "ast_hash": "265ceabe853148b92e734c7dc3c78b72",
+    "semantic_hash": ""
+  },
+  ".github/agents/DesignGrammarAgent.agent.md": {
+    "mtime": 1774934985.3577027,
+    "ast_hash": "c6aac206add448a6b3703b56f3f9b0b5",
+    "semantic_hash": ""
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1783285804.5524175,
+    "ast_hash": "5bab0bad6fe43bdd19a3d869f872c80d",
+    "semantic_hash": ""
+  },
+  ".planning/MILESTONES.md": {
+    "mtime": 1779700510.5392907,
+    "ast_hash": "8ba78d758ac1bca729c9fcf0b9ea9c95",
+    "semantic_hash": ""
+  },
+  ".planning/PROJECT.md": {
+    "mtime": 1778523145.4605105,
+    "ast_hash": "bfa00bb9fa9b076a77eb932f02ff6e5d",
+    "semantic_hash": ""
+  },
+  ".planning/REQUIREMENTS.md": {
+    "mtime": 1778752108.255693,
+    "ast_hash": "efb2eadc76387284b770f3ded5ae7bba",
+    "semantic_hash": ""
+  },
+  ".planning/ROADMAP.md": {
+    "mtime": 1779700510.5402894,
+    "ast_hash": "7e3afe2c42fd68c6eb85728622e4ecb3",
+    "semantic_hash": ""
+  },
+  ".planning/STATE.md": {
+    "mtime": 1778524150.585085,
+    "ast_hash": "169c45aa9230a24afc8ec46140317851",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/ARCHITECTURE.md": {
+    "mtime": 1775377005.2219887,
+    "ast_hash": "c653afaab1c4c455980819794b699b00",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/CONCERNS.md": {
+    "mtime": 1775377310.4349184,
+    "ast_hash": "2fa903845dbb78dc9b7609b7769e89f8",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/CONVENTIONS.md": {
+    "mtime": 1775377310.429401,
+    "ast_hash": "f4f6ee2e1df6dd2188c44c68cd30cb3c",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/INTEGRATIONS.md": {
+    "mtime": 1775376963.7943068,
+    "ast_hash": "dc0b899ad1540b1bb60a423af597791d",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/STACK.md": {
+    "mtime": 1775376933.4485004,
+    "ast_hash": "fafd3ec1348ef7f0e0b58a479db86c91",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/STRUCTURE.md": {
+    "mtime": 1775377310.429401,
+    "ast_hash": "fa04d62012613baacc601b457d088660",
+    "semantic_hash": ""
+  },
+  ".planning/codebase/TESTING.md": {
+    "mtime": 1775377310.429401,
+    "ast_hash": "3811f926e0e34f535715751ba2e2639e",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/01-neo4j-schema-foundation/01-01-PLAN.md": {
+    "mtime": 1778223514.8640225,
+    "ast_hash": "fabde786692755e846a0b443671f442c",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/01-neo4j-schema-foundation/01-01-SUMMARY.md": {
+    "mtime": 1778223514.8780184,
+    "ast_hash": "93706a2f57cd01608332d75e81f511f0",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/01-neo4j-schema-foundation/01-HUMAN-UAT.md": {
+    "mtime": 1778223514.8876662,
+    "ast_hash": "0703007db4fbb29b0983531fae52fa1d",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/01-neo4j-schema-foundation/01-VERIFICATION.md": {
+    "mtime": 1778223514.8974595,
+    "ast_hash": "0a7bfa656ebfbcf280bcc8163c41e70d",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-01-PLAN.md": {
+    "mtime": 1778223514.907479,
+    "ast_hash": "9f5df4543af1b9cabd39d08641fc7206",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-01-SUMMARY.md": {
+    "mtime": 1778223514.918623,
+    "ast_hash": "14502bbc22c08af39f093a94001ee19a",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-02-PLAN.md": {
+    "mtime": 1778223514.928785,
+    "ast_hash": "6f6bd5c56bc33c01c18f06715f7c2d42",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-02-SUMMARY.md": {
+    "mtime": 1778223514.9398139,
+    "ast_hash": "0ee570ace499ff6ad97f9f1b041e09f5",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-HUMAN-UAT.md": {
+    "mtime": 1778223514.9509377,
+    "ast_hash": "42cd72e5cb8da7bcc5319aeee6ef9473",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-RESEARCH.md": {
+    "mtime": 1778223514.9600961,
+    "ast_hash": "d8c14f5a75e2660eb0867e590a713eff",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-VALIDATION.md": {
+    "mtime": 1778223514.9751282,
+    "ast_hash": "e75bef71cda6055cc510e6a45db562c6",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/02-data-service-crud-folder-ingest/02-VERIFICATION.md": {
+    "mtime": 1778223514.9845345,
+    "ast_hash": "45d0c2802f7aaa9f598cc76b674598d9",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-01-PLAN.md": {
+    "mtime": 1778223514.9962676,
+    "ast_hash": "76ba196992cf98362b33c8f958276677",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-01-SUMMARY.md": {
+    "mtime": 1778223515.009944,
+    "ast_hash": "31427c4cfcb2fa91b60d2c972be9950f",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-02-PLAN.md": {
+    "mtime": 1778223515.0236096,
+    "ast_hash": "885977e36df4303f9abe5aa8dd2047cc",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-02-SUMMARY.md": {
+    "mtime": 1778223515.0357778,
+    "ast_hash": "373ee69de9f511900b8fd734b1c7a5b7",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-CONTEXT.md": {
+    "mtime": 1778223515.046805,
+    "ast_hash": "f499f55089c0f3413443ecd18d574d40",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-DISCUSSION-LOG.md": {
+    "mtime": 1778223515.0569468,
+    "ast_hash": "ff0e8cad66177a62a55a9b81fb864aeb",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-RESEARCH.md": {
+    "mtime": 1778223515.0660481,
+    "ast_hash": "ef670d6cf9a535eaa0a3767bab7607fd",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-VALIDATION.md": {
+    "mtime": 1778223515.0807483,
+    "ast_hash": "ab9b9788a0ad176ba32804fec6654f71",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/03-n8n-knowledge-workflows-llm-ingest-and-query/03-VERIFICATION.md": {
+    "mtime": 1778223515.089779,
+    "ast_hash": "a6ca273dd78b5b04602e5ec96ada9768",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-01-PLAN.md": {
+    "mtime": 1778223515.1028874,
+    "ast_hash": "beb4d19be187f0d38298a42027553c2d",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-01-SUMMARY.md": {
+    "mtime": 1778223515.1154947,
+    "ast_hash": "01653d9333ce835a5a8acaf6009d33ca",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-02-PLAN.md": {
+    "mtime": 1778223515.1261294,
+    "ast_hash": "bbfad28ac9a10bce6495dff3b6d974df",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-02-SUMMARY.md": {
+    "mtime": 1778223515.140343,
+    "ast_hash": "28bd70536207bb13dcfad21d3826a860",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-CONTEXT.md": {
+    "mtime": 1778223515.1516268,
+    "ast_hash": "10de5f8de5cdc8909ebed8b71b2dcc14",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-DISCUSSION-LOG.md": {
+    "mtime": 1778223515.1613226,
+    "ast_hash": "bf128ac66b1ea3f92e475561e99412dc",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-HUMAN-UAT.md": {
+    "mtime": 1778223515.169843,
+    "ast_hash": "9f61adc30002dd6fac46ede8bf551da0",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-RESEARCH.md": {
+    "mtime": 1778223515.1790214,
+    "ast_hash": "57701be208030faf3fa198ef48c1c941",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-VALIDATION.md": {
+    "mtime": 1778223515.1931517,
+    "ast_hash": "63217d9fcc1278c1de33489fc7aa34d1",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/04-update-flow-endpoints/04-VERIFICATION.md": {
+    "mtime": 1778223515.2027838,
+    "ast_hash": "a3a5f1058206e913a8ebc49b9b75c393",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-01-PLAN.md": {
+    "mtime": 1778223515.2133024,
+    "ast_hash": "92624fe8cc63264458a26cd3a281687b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-01-SUMMARY.md": {
+    "mtime": 1778223515.226499,
+    "ast_hash": "60d88a57b98c8c0da1f05f13126d77d0",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-02-PLAN.md": {
+    "mtime": 1778223515.2360866,
+    "ast_hash": "c98556f311f9dd314ee439a6d4ec9516",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-CONTEXT.md": {
+    "mtime": 1778223515.2481153,
+    "ast_hash": "625fd69ba3731e646356e9c1043a50de",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-DISCUSSION-LOG.md": {
+    "mtime": 1778223515.25881,
+    "ast_hash": "13982eacb266fbf4dd1e9b776300b50b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-RESEARCH.md": {
+    "mtime": 1778223515.2681172,
+    "ast_hash": "783c49b883d417a8d5fa28331e11e993",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-UI-SPEC.md": {
+    "mtime": 1778223515.2807198,
+    "ast_hash": "488591692547a57e916ac34997d40966",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/05-ui-mode-restructuring-insert-and-query-panels/05-VALIDATION.md": {
+    "mtime": 1778223515.2928457,
+    "ast_hash": "4f8bb844bd5872b22e0bc3eb5fddcbe2",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-01-PLAN.md": {
+    "mtime": 1778223515.3016808,
+    "ast_hash": "d277ad36ca7f536ca48039a744801c78",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-01-SUMMARY.md": {
+    "mtime": 1778223515.314866,
+    "ast_hash": "08cf02419f802053765c4ba06e6ccad8",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-02-PLAN.md": {
+    "mtime": 1778223515.3251333,
+    "ast_hash": "30a1c1efadbceb0d7a5492ab3a0be049",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-02-SUMMARY.md": {
+    "mtime": 1778223515.3376935,
+    "ast_hash": "c7d8300861ba406b365f8d1af6f89185",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-CONTEXT.md": {
+    "mtime": 1778223515.3470528,
+    "ast_hash": "fd0fa2da88052853606467e407192a21",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-DISCUSSION-LOG.md": {
+    "mtime": 1778223515.357194,
+    "ast_hash": "7f55461abc1b457844c7b2d35d1ba719",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-RESEARCH.md": {
+    "mtime": 1778223515.36785,
+    "ast_hash": "cc9403fcb84a9cdfc0e5e6d3108cd911",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-UI-SPEC.md": {
+    "mtime": 1778223515.3805842,
+    "ast_hash": "0698db82b5aa42fd51ae05c576064678",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-VALIDATION.md": {
+    "mtime": 1778223515.393693,
+    "ast_hash": "816cffc715e0fd35ee867a47ac62f8ad",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/06-ui-update-panel-inline-diff-editor/06-VERIFICATION.md": {
+    "mtime": 1778223515.4027288,
+    "ast_hash": "db3e9b04dcae8baa32bf453c582350c0",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-01-PLAN.md": {
+    "mtime": 1778223515.4135091,
+    "ast_hash": "c2ce630e472f1584883c59f361e11b25",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-01-SUMMARY.md": {
+    "mtime": 1778223515.4256423,
+    "ast_hash": "a53842fa8b818c7d01da087cda6c43a1",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-02-PLAN.md": {
+    "mtime": 1778223515.4356804,
+    "ast_hash": "495e87f56ab57d9e209283e2a4a33eca",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-CONTEXT.md": {
+    "mtime": 1778223515.4463027,
+    "ast_hash": "c73a0f078fffab311c19e0415e8361ae",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-DISCUSSION-LOG.md": {
+    "mtime": 1778223515.4568985,
+    "ast_hash": "82d5c3cd5a99739b037205f46b46a6e8",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v1.1-phases/07-ui-session-history-panel-neovis-knowledge-view/07-UI-SPEC.md": {
+    "mtime": 1778223515.4670763,
+    "ast_hash": "8477d6ba78f12489aa88f3af9928e926",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-REQUIREMENTS.md": {
+    "mtime": 1778428599.629126,
+    "ast_hash": "452b96eb729150184752589655b426e9",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-ROADMAP.md": {
+    "mtime": 1778428599.6281126,
+    "ast_hash": "ea0e387d8fe689c3d3d24c359a0e669c",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/01-design-state-contract-and-serialization/01-01-SUMMARY.md": {
+    "mtime": 1778222371.153438,
+    "ast_hash": "887ca33d0e674ae1f138586d11a99050",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/02-classificator-state-input-and-run-persistence/02-01-SUMMARY.md": {
+    "mtime": 1778222371.158472,
+    "ast_hash": "11d634ca8297de75ee24aca28b74027b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-01-PLAN.md": {
+    "mtime": 1778222371.1736875,
+    "ast_hash": "4cd924b4d04e1e2b4c5b7849085eeb6c",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-01-SUMMARY.md": {
+    "mtime": 1778222371.1744037,
+    "ast_hash": "fb9b2c389a7f98832b88fca489d0d098",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-CONTEXT.md": {
+    "mtime": 1778222371.1744037,
+    "ast_hash": "55d99eb7afc628d7b54b89b00d01d34f",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-HUMAN-UAT.md": {
+    "mtime": 1778222371.1759255,
+    "ast_hash": "2fddef050b56b4fbea2e07b81777a45a",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-RESEARCH.md": {
+    "mtime": 1778222371.1759255,
+    "ast_hash": "292326b0e07ddd32b04f0dd1c9446588",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/03-VERIFICATION.md": {
+    "mtime": 1778222371.176934,
+    "ast_hash": "8b5498bde24a4d37298dc6eb11b6f456",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/03-validation-runs-retrieval-component/PHASE.md": {
+    "mtime": 1778222371.178156,
+    "ast_hash": "f70d5f7f8cd7cb6cfcf34ed21a4ddab5",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-01-PLAN.md": {
+    "mtime": 1778222371.178664,
+    "ast_hash": "21faaf6a0f74fb7183665a28dbf2cb6d",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-01-SUMMARY.md": {
+    "mtime": 1778222371.1796737,
+    "ast_hash": "52c17d666df036990f97e57aaf1afc6b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-02-PLAN.md": {
+    "mtime": 1778222371.180717,
+    "ast_hash": "54247e35bc0f3659dbaf763c8fa1a759",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-02-SUMMARY.md": {
+    "mtime": 1778222371.180717,
+    "ast_hash": "036bed6904613ad4cef3af3575e81c24",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-VERIFICATION.md": {
+    "mtime": 1778222371.1817167,
+    "ast_hash": "04c085aad0eb48fd6599f5ba17a22fa2",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/04-reinstatement-component/04-reinstatement-component/04-VERIFICATION.md": {
+    "mtime": 1778430284.2219818,
+    "ast_hash": "04c085aad0eb48fd6599f5ba17a22fa2",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/05-model-viewer-grouping-by-rule-state/05-01-SUMMARY.md": {
+    "mtime": 1778222371.1905267,
+    "ast_hash": "9194cd91e3fd3d7fd0275ccfa123e922",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/05-model-viewer-grouping-by-rule-state/05-02-SUMMARY.md": {
+    "mtime": 1778222371.1905267,
+    "ast_hash": "a1a5b1ee7483e60977ed9870c30b3b5b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-01-PLAN.md": {
+    "mtime": 1778230865.9667578,
+    "ast_hash": "a3085620b39dcd0b7d51e9494affe4af",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-01-SUMMARY.md": {
+    "mtime": 1778264748.7555528,
+    "ast_hash": "a589e02946285a59ac3bcf500fb07176",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-02-PLAN.md": {
+    "mtime": 1778230772.87241,
+    "ast_hash": "c572e5774cdb38be8abcf0e7ad0cff78",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-02-SUMMARY.md": {
+    "mtime": 1778281943.4046214,
+    "ast_hash": "9ac5dda8ef07c8d2b68305792cbc1abf",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-03-PLAN.md": {
+    "mtime": 1778231070.8028066,
+    "ast_hash": "d0480d6ad5b62661a0ce426eb51e3a40",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-03-SUMMARY.md": {
+    "mtime": 1778281943.4076664,
+    "ast_hash": "cd48d428c22eaa64b641c87fdc9caf2c",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-CONTEXT.md": {
+    "mtime": 1778229432.6628358,
+    "ast_hash": "2ca662a0edbacc63e4bb2516ad85786f",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-DISCUSSION-LOG.md": {
+    "mtime": 1778229500.1569853,
+    "ast_hash": "068ea20fa16639d80e8ad980f6d3838d",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-HUMAN-UAT.md": {
+    "mtime": 1778428163.9630723,
+    "ast_hash": "e4bd5c38a11386ab74746ba603b61328",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-RESEARCH.md": {
+    "mtime": 1778222371.2012892,
+    "ast_hash": "16d3a270a7d45239aa14250e2eec2f24",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/06-VERIFICATION.md": {
+    "mtime": 1778428163.9620707,
+    "ast_hash": "69cd2069505fdb26b0b5a1091eef8277",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v2.0-phases/06-end-to-end-hardening-and-verification/PHASE.md": {
+    "mtime": 1778222371.2012892,
+    "ast_hash": "6ff68ef56a7eab87cbc59befebe3ad6b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v4.0-REQUIREMENTS.md": {
+    "mtime": 1779700510.5412889,
+    "ast_hash": "305d0d7286289fc42c954228f20ec73b",
+    "semantic_hash": ""
+  },
+  ".planning/milestones/v4.0-ROADMAP.md": {
+    "mtime": 1779700510.5431404,
+    "ast_hash": "fe41a8b6ff0f850f74416f4534b40b02",
+    "semantic_hash": ""
+  },
+  ".planning/research/ARCHITECTURE.md": {
+    "mtime": 1778451898.0300932,
+    "ast_hash": "6738f52fdccbaea28833da8d5e39e8c4",
+    "semantic_hash": ""
+  },
+  ".planning/research/FEATURES.md": {
+    "mtime": 1778452132.7333534,
+    "ast_hash": "99a8598c751180478298dc7bf1b55853",
+    "semantic_hash": ""
+  },
+  ".planning/research/PITFALLS.md": {
+    "mtime": 1778451900.899238,
+    "ast_hash": "2fe2e9075b1a9605a15fd64c62b34c3c",
+    "semantic_hash": ""
+  },
+  ".planning/research/STACK.md": {
+    "mtime": 1778451826.8051858,
+    "ast_hash": "574baa52846dcf6db6e55a78acc50c81",
+    "semantic_hash": ""
+  },
+  ".planning/research/SUMMARY.md": {
+    "mtime": 1778453063.4739122,
+    "ast_hash": "17f1ad4c7ecff1be6cce66d82b4cb14f",
+    "semantic_hash": ""
+  },
+  ".planning/v2.0-GAP-CLOSURE.md": {
+    "mtime": 1778221724.2180316,
+    "ast_hash": "123225d5fa1e7ae763495a00ad47df03",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1783445412.545887,
+    "ast_hash": "380800bc35e191ad1c8066443cd2dc4c",
+    "semantic_hash": ""
+  },
+  "DG-Grasshopper_plugin_update_instructions.txt": {
+    "mtime": 1774934985.3607035,
+    "ast_hash": "4b9879a5866525198a427a0180dbe2ff",
+    "semantic_hash": ""
+  },
+  "DG/README.md": {
+    "mtime": 1774934985.3607035,
+    "ast_hash": "fce44c321c8cbb32c511533b76c96915",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/00-home/Current priorities.md": {
+    "mtime": 1783521026.6207268,
+    "ast_hash": "62d93a4f5cc03de193b595c198e50dd7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/00-home/index.md": {
+    "mtime": 1783514216.8485858,
+    "ast_hash": "15c6ec77f89c369c90e516cbe011e0ec",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Architecture is a microservices Docker pipeline.md": {
+    "mtime": 1783287073.6502786,
+    "ast_hash": "fa5421f635cb462b99c58f22074dbd94",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/DG Grasshopper plugin bridges Rhino to Neo4j validation pipeline.md": {
+    "mtime": 1783287073.6432738,
+    "ast_hash": "50b018f39726f85f2d77da883ed2b651",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Data-service is a FastAPI MCP bridge to Neo4j and Speckle.md": {
+    "mtime": 1783287073.6432738,
+    "ast_hash": "8eebb2b6d359c22d35d47545df5451df",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Deployment uses Docker Compose with nginx reverse proxy.md": {
+    "mtime": 1783287073.647276,
+    "ast_hash": "9d9dad2fcaf07fa7331dc247c460171e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Model Viewer is a Vite-built Speckle 3D viewer.md": {
+    "mtime": 1783287073.648275,
+    "ast_hash": "5f0d19b93f09596c6713cdf419125cb2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Neo4j stores ontology and metagraph in a single database.md": {
+    "mtime": 1783287073.6492774,
+    "ast_hash": "f1765f1ead9e833f0f63dd2b9b5eb114",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Technology stack spans C-Sharp Grasshopper and Python FastAPI and React SPA.md": {
+    "mtime": 1783287073.646274,
+    "ast_hash": "3bd78852a9454d80b6082e3347d28f67",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/UI is a single-file React 18 SPA with no build step.md": {
+    "mtime": 1783287073.647276,
+    "ast_hash": "7d5ce046a99a6c7ae0b14c1a15bd3541",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/n8n runs two async webhook workflows for ingest and query.md": {
+    "mtime": 1783287073.6442742,
+    "ast_hash": "8f3b952a95f2d6776ba9bbc70d7e1c8f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/Graph Index.md": {
+    "mtime": 1782084441.988226,
+    "ast_hash": "09021ed2f9214cc3e8c0a5905605463d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/MCP_SETUP.md": {
+    "mtime": 1782082077.9527864,
+    "ast_hash": "a9c29431d26e629dbc7f1210076023a2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/.TryResolveVariableValue().md": {
+    "mtime": 1782084441.513154,
+    "ast_hash": "6e7aa68f48d23279513ed1e8c8ceb0df",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Build Full-Text Cypher.md": {
+    "mtime": 1782084441.491004,
+    "ast_hash": "6194d5d07030e95efa84b17f4def4e25",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/CLASSIFICATOR Component.md": {
+    "mtime": 1782084441.5121546,
+    "ast_hash": "48b0cba5148cc2656f80d1cf13fe2843",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/DG.Grasshopper.csproj.md": {
+    "mtime": 1782084441.5081542,
+    "ast_hash": "d684bd0c78118db57ad600ff13f7363a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/DesignRuleSession Nodes Stored in Metagraph.md": {
+    "mtime": 1782084441.5462,
+    "ast_hash": "ad23b3928003e2d2ae8c7cb9c6a5967e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Docker Compose Orchestration.md": {
+    "mtime": 1782084441.5276797,
+    "ast_hash": "01e371e767323c3af2888bd27b22ae72",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/DocumentGroupContainers (102).md": {
+    "mtime": 1782084441.5868087,
+    "ast_hash": "042db65554f777b02b66a5dc67951ef3",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/DocumentGroupContainers.md": {
+    "mtime": 1782084441.5898287,
+    "ast_hash": "08b66a7fc9bc2a2961ee11c44ec2224d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/DocumentLayout.backup.json.md": {
+    "mtime": 1782084441.5878077,
+    "ast_hash": "d3136ab1a6b9f64dea0bd8764804947c",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/FailingBindingFormatter.md": {
+    "mtime": 1782084441.5176766,
+    "ast_hash": "9c873e32144f90de9bcdbe8f80e2bedc",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/FailingBindingFormatterTests.md": {
+    "mtime": 1782084441.590809,
+    "ast_hash": "7e336e1fbc26e59f929f68491c135212",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Graph Schema v3 is the Canonical Data Model.md": {
+    "mtime": 1782084441.556211,
+    "ast_hash": "d2fd55daa12fd30b76cc8bc3ea00d392",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/INeo4jConnectorService.md": {
+    "mtime": 1782084441.5776284,
+    "ast_hash": "141d162b919b3add28ff4d1e264e1989",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Knowledge Webhook Field Name Mismatch Causes Stale LLM Ou....md": {
+    "mtime": 1782084441.5938075,
+    "ast_hash": "1141132fa48da4d639fb32735b86e70a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Match Step (Neo4j Full-Text Search, No LLM).md": {
+    "mtime": 1782084441.4980025,
+    "ast_hash": "8acdac313f7c1a97c8b14dc4cdaa1542",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/MetagraphComponent.cs.md": {
+    "mtime": 1782084441.4950051,
+    "ast_hash": "1afdb001b52b48d5c4685f8867adcb9a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Model Viewer (graph-viewermodel-viewer).md": {
+    "mtime": 1782084441.5746286,
+    "ast_hash": "50b084d63beafcbc11ef0c2c9db36801",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Model Viewer is a Vite-built Speckle 3D Viewer.md": {
+    "mtime": 1782084441.55721,
+    "ast_hash": "5a3024712b98c81c18e88a879a03af8d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Neo4jConnectorService.cs.md": {
+    "mtime": 1782084441.499002,
+    "ast_hash": "096790abab42f8b629010a10c9aa3433",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Neo4jConnectorService.md": {
+    "mtime": 1782084441.5622091,
+    "ast_hash": "240146eaa6406fdbf3c29cb47fb9e9f8",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Ontology v5 DCM ComputationGraph.md": {
+    "mtime": 1782084441.5736284,
+    "ast_hash": "c8c75e8bb9e887a51cc62ce09c2eca27",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Per-Run Graphics State and Screenshot Persistence.md": {
+    "mtime": 1782084441.5111554,
+    "ast_hash": "d3a988f0d87f47fae2178f1540786473",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Phase 03 Validation Runs Summary.md": {
+    "mtime": 1782084441.4756513,
+    "ast_hash": "8e20780fe23cba79fbd4bae9cda86757",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Phase 3 n8n Knowledge Workflows + LLM IngestQuery.md": {
+    "mtime": 1782084441.473649,
+    "ast_hash": "802d46082ac478106af8795e4b95afc4",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Phase 6 Plan 02 Summary.md": {
+    "mtime": 1782084441.5666192,
+    "ast_hash": "44ff20c2356efc5305ad7f398ea781ea",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Prepare Graph Payload.md": {
+    "mtime": 1782084441.4784887,
+    "ast_hash": "f13509262dc45ab25b19e37885cd29ae",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Product Bridges Natural Language Rules to Graph-Based Val....md": {
+    "mtime": 1782084441.5842853,
+    "ast_hash": "6a7da413b8fcf855888ae34769057e54",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Remove all test notes from Neo4j..md": {
+    "mtime": 1782084441.5266817,
+    "ast_hash": "5672120d66361c67158d794fd75ce572",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Return an HTTPException with a structured JSON detail bod....md": {
+    "mtime": 1782084441.5246801,
+    "ast_hash": "e496ea4e2afa9b843521c828ca485465",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Rule Node (Rule_Id, title, name, description, kind, text,....md": {
+    "mtime": 1782084441.5286777,
+    "ast_hash": "44d937d7aa704b6f36c820a08d59338d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/RuleDeconstructComponent.md": {
+    "mtime": 1782084441.4824877,
+    "ast_hash": "b9b801950e3d1946dd30485ba1444857",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/RuleEvaluatorTests.cs.md": {
+    "mtime": 1782084441.5821462,
+    "ast_hash": "76e95917d9b561383a6e4659cc6eb190",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/SC-2 POST to knowledge-query webhook returns an NL answe....md": {
+    "mtime": 1782084441.5206795,
+    "ast_hash": "e889a93218945541140f9a66327f3115",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Session History Collapsible Panel.md": {
+    "mtime": 1782084441.5451992,
+    "ast_hash": "0d1d5da229ec302388543b75a2fe797e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/SpeckleSettingsPayload.md": {
+    "mtime": 1782084441.5010056,
+    "ast_hash": "043b586675d1531af2eb7821aa8f5686",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/State Projection for Validation Runs.md": {
+    "mtime": 1782084441.485994,
+    "ast_hash": "cad55d7e34d1270d824617f06297f148",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/T4 Design Space (ITcon Paper).md": {
+    "mtime": 1782084441.5857966,
+    "ast_hash": "e02bc832e3376546a1d1a0fa36d65540",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Tests for structured error responses from validation endp....md": {
+    "mtime": 1782084441.5412006,
+    "ast_hash": "d070ac63ebfd12c55f3b17c383bd1353",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Update Knowledge Mode UI.md": {
+    "mtime": 1782084441.5552113,
+    "ast_hash": "79a0460c819365f4ea47d6c7b8b6a79b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Validation Endpoints (publishrunsview).md": {
+    "mtime": 1782084441.535201,
+    "ast_hash": "5f325d67643f2527a4c429312c9df78f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Validation Results Publish to Speckle as Overlay Versions.md": {
+    "mtime": 1782084441.506154,
+    "ast_hash": "0d26c3fcf961c49051de5882947e34ef",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/ValidationGeometryPayload.md": {
+    "mtime": 1782084441.4900043,
+    "ast_hash": "90fa1f77bf72ccbe23c87765fd1362b6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/ValidationPublishPackage.md": {
+    "mtime": 1782084441.5226789,
+    "ast_hash": "876692edd3f9e02e94b5994aa938fce8",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/ValidationPublishPackageBuilderTests.md": {
+    "mtime": 1782084441.5756285,
+    "ast_hash": "ad58e746458ba0a6c447687295404949",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/ValidationReportFormatter.md": {
+    "mtime": 1782084441.5791368,
+    "ast_hash": "799a2ec663de019c83da36ecbe00f84b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Validator Failing Bindings Output Data.md": {
+    "mtime": 1782084441.5391994,
+    "ast_hash": "be7a9fc45ddc488790530469c02ff3a1",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Worktree Branch Commits with Spurious Deletions.md": {
+    "mtime": 1782084441.5321882,
+    "ast_hash": "06697aa9ed23213c58570dd8f612787b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/Zone A Maximum Height (75m).md": {
+    "mtime": 1782084441.481487,
+    "ast_hash": "1a1f77e72a035832d97031a8258056a7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/code 17 nodes.md": {
+    "mtime": 1782084441.516666,
+    "ast_hash": "667ed5b52ecca8930e1196e812245825",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/code 32 nodes.md": {
+    "mtime": 1782084441.4870038,
+    "ast_hash": "c22a80c50a43a8139beeb99f3cd2dc71",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/code 7 nodes.md": {
+    "mtime": 1782084441.5766282,
+    "ast_hash": "27359bdbf409876188b403cc476875cf",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/code rule.md": {
+    "mtime": 1782084441.483491,
+    "ast_hash": "5838d10752ca506d2488df62d911471b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/code.md": {
+    "mtime": 1782084441.5216796,
+    "ast_hash": "d1bb0a223042b572d9ea38735dee729d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/collapse-color-groups.md": {
+    "mtime": 1782084441.5000043,
+    "ast_hash": "0638bc269da74443eb8be204921a3022",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/extractErrorMessage().md": {
+    "mtime": 1782084441.4794874,
+    "ast_hash": "dc7cc5ef4964c9e5734dde531e195a14",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/knowledge-ingest.json.md": {
+    "mtime": 1782084441.4930058,
+    "ast_hash": "cc49984aea2ff65f0a95433b85105281",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/knowledge-update.json.md": {
+    "mtime": 1782084441.5030148,
+    "ast_hash": "f641b0bfcd2f2aa46e821bf5515002a2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/n8n Workflow Orchestrator for LLM Rule Ingestion and Queries.md": {
+    "mtime": 1782084441.496005,
+    "ast_hash": "e0b08d3520f2a04dfe5ea7739b8e9b8a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/switcher\u0420\u045a\u0420\u00b5\u0420\u0405\u0421\u040b \u0420\u00b1\u0421\u2039\u0421\u0403\u0421\u201a\u0421\u0402\u0420\u0455\u0420\u0456\u0420\u0455 \u0420\u0457\u0420\u00b5\u0421\u0402\u0420\u00b5\u0421\u2026\u0420\u0455\u0420\u0491\u0420\u00b0.md": {
+    "mtime": 1782084441.4890041,
+    "ast_hash": "3c336373652ffdb08988196c07af2ffa",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/test_consolidation.js.md": {
+    "mtime": 1782084441.5651104,
+    "ast_hash": "feeea7e9bd5395b4a95d41676eb771db",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/graphify/communities/v4.0 BOT Ontology Bridge.md": {
+    "mtime": 1782084441.5532093,
+    "ast_hash": "2dd1e378bc4c2e71dd72b7b0e121f428",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/inbox/Model viewer needs rotation fix and validation management.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "d0099c8b3448c7d0257a7c7eb2fa7dbb",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/business/Design Grammars automates architectural compliance checking.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "8f3ba12a707a36301eb65e0e4b63db43",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/business/Product bridges natural language rules to graph-based validation.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "aa83fab35d0e192fdedf6572d5030cdb",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/business/Target audience is architects and urban planners.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "c221b732b5632b28d608ca3404f4aa70",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Browser cache prevents seeing UI updates after rebuild.md": {
+    "mtime": 1775378575.7581384,
+    "ast_hash": "31fafb24e62e41ce93e7e0c8ed7ebce8",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Docker layer caching can serve stale index.html.md": {
+    "mtime": 1775378575.7581384,
+    "ast_hash": "f155134468c60270285491137f87d0df",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Edit mode requires cleanup of old atoms before re-creation.md": {
+    "mtime": 1775378575.7581384,
+    "ast_hash": "f28cfc784d6faca1a7f175395e85d45b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Knowledge webhook field name mismatch causes stale LLM output.md": {
+    "mtime": 1775571704.52162,
+    "ast_hash": "c854e8cc2e2364a3bbaffbb0243de1f6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/LLM Cypher output needs bracket nesting validation.md": {
+    "mtime": 1775378575.7581384,
+    "ast_hash": "508485c83edc085c1f20f3bd148db552",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Layout overflow guards required for resizable flex children.md": {
+    "mtime": 1778428934.9565403,
+    "ast_hash": "e768098c9b5c5b6796d8e9abff4ac54b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Neo4j node tagging required after n8n ingestion.md": {
+    "mtime": 1775378575.7581384,
+    "ast_hash": "8541c774ba5beb5bd8028e438ae669a3",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Worktree branch commits with spurious deletions.md": {
+    "mtime": 1778428978.4743457,
+    "ast_hash": "2671470796f599fe8ffc50bb4b901bc6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/docker-compose depends_on cycle with n8n and data-service.md": {
+    "mtime": 1775541556.5570736,
+    "ast_hash": "6604262bab48b60ed031808d2b72efb9",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/DCM ComputationGraph as 5th ontology layer.md": {
+    "mtime": 1780168770.139967,
+    "ast_hash": "f2fadf18d37a05e0c275643e8280d549",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/DG ontology must be vendor-neutral except Grasshopper and IFC.md": {
+    "mtime": 1780292376.4748929,
+    "ast_hash": "5e55703fc9fe86cc61b9ebe3f8e06cb5",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/DesignRuleSession nodes stored in Metagraph.md": {
+    "mtime": 1775662768.1121356,
+    "ast_hash": "d69818a2b5dc0fca7882b766f36887a2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Graphify-CGD-Obsidian integration improvement plan.md": {
+    "mtime": 1782085068.9605596,
+    "ast_hash": "1b59c1eb04d99ad4fd9cc7ed3a2e2618",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Knowledge workflows use hybrid search-then-summarize for queries.md": {
+    "mtime": 1775476021.4623919,
+    "ast_hash": "dd323b6c63135fc73fbde420dc9fa984",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/LLM prompts embed schema constraints instead of fine-tuning.md": {
+    "mtime": 1775378323.918252,
+    "ast_hash": "6d3038e704f641b0976fe373ec2ad34c",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Passwords hashed client-side with SubtleCrypto SHA-256.md": {
+    "mtime": 1775378323.9310093,
+    "ast_hash": "d83c557c513e0d01924ad8e789697401",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Per-run graphics state and screenshot persistence.md": {
+    "mtime": 1775384475.486544,
+    "ast_hash": "f854ce62f7941cb2d54f28227955a4ae",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Project isolation uses property filtering not separate databases.md": {
+    "mtime": 1775378323.918252,
+    "ast_hash": "0866ecffa2dab289f40d13da37c54a0d",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/ResizeObserver wires Speckle viewer.resize on host element.md": {
+    "mtime": 1778428825.7319772,
+    "ast_hash": "d2a3056d0497fec8fe51b5de06cdb3ae",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/SWRL parsing is bespoke regex not vendor OWL library.md": {
+    "mtime": 1775378323.918252,
+    "ast_hash": "5a99cc3c1164ac711cae9aad10a07010",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Single-file React SPA avoids build tooling for main UI.md": {
+    "mtime": 1775378323.918252,
+    "ast_hash": "fab12b911f2ec83f7ba175ec4f612d39",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Update flow uses three-step match-propose-confirm with server-side diff.md": {
+    "mtime": 1775505094.101818,
+    "ast_hash": "23b6aecadc7ac5610ed26264fff6b6be",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Validation results publish to Speckle as overlay versions.md": {
+    "mtime": 1775378323.9310093,
+    "ast_hash": "dbdf439e04028ef47dcf297b63d4360e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Violation rules invert the constraint in SWRL body.md": {
+    "mtime": 1775378323.9310093,
+    "ast_hash": "5679e092011eed857b39560645c0f0a7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/FastAPI data-service bridges MCP Neo4j and Speckle.md": {
+    "mtime": 1775378300.82843,
+    "ast_hash": "f521f105ff9c86365e090c7dbe8cef98",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/Neo4j provides graph storage with project-scoped isolation.md": {
+    "mtime": 1775378300.825431,
+    "ast_hash": "d1d27ffea688f3ff0cf85df0cb32dbff",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/NeoVis renders interactive graph visualization in browser.md": {
+    "mtime": 1775378300.82843,
+    "ast_hash": "7b8052b124148445f5df0af9d75054eb",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/Ollama runs local LLM inference for Cypher generation.md": {
+    "mtime": 1775378300.8274324,
+    "ast_hash": "979de47e5a1cd998d9cbff4d5776190b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/Speckle hosts 3D BIM models for validation overlay.md": {
+    "mtime": 1775378300.82843,
+    "ast_hash": "881a1bfc51662fa2f736fb17475c1cb4",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/integrations/n8n orchestrates LLM-powered rule ingestion and graph queries.md": {
+    "mtime": 1775384548.6755044,
+    "ast_hash": "ad3139f46e5832bd10c65e4d46c832ab",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Async polling pattern for n8n workflow execution tracking.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "d26e1f5a59b3f138cbdc9f2fd1acf3cd",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Conditional compilation guards Grasshopper SDK availability.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "9d435854bfa7940268fbefb091d787e6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Config injection via entrypoint.sh sed replacement.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "85f7aeef9299b70e07b067e5c62d28e0",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Cypher MERGE idempotent node creation pattern.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "9213e0d52a339ac1a8f5c96a322a5926",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Grasshopper async component with ScheduleSolution polling.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "cfd84045b51a5c0386811b6707ca29a5",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Pure grouping adapter testable as plain function.md": {
+    "mtime": 1778428896.5537887,
+    "ast_hash": "3948c2b631ef4888ac0104c2171f46e3",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/patterns/Pydantic models validate all API boundaries.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "14e811123b419ea8982d09fb492ce98e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-05 Model Viewer screenshot and per-run graphics state.md": {
+    "mtime": 1775386566.9241395,
+    "ast_hash": "6189d6019025a0d73ac8f9a4dfd74cc6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-05 Obsidian vault creation.md": {
+    "mtime": 1775384529.0666797,
+    "ast_hash": "35ffc3fd4f2fdf9af691fd6c920c60bd",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-05 Project specification and CLAUDE.md creation.md": {
+    "mtime": 1775381155.6465404,
+    "ast_hash": "a0c593517f8c8f51c85219b9c2497646",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-06 Phase 01 KnowledgeGraph schema execution.md": {
+    "mtime": 1775467086.1519253,
+    "ast_hash": "256223f0a7bc009b44705a101d492887",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-06 Phase 02 data-service CRUD and folder ingest execution.md": {
+    "mtime": 1775472666.9421365,
+    "ast_hash": "abd6bf754d153f972c342fd9fde1dc40",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-06 Phase 03 context and planning.md": {
+    "mtime": 1775476010.6232896,
+    "ast_hash": "893e99e9867a5113a45bb44fb4095e81",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-06 Phase 03 n8n knowledge workflows execution.md": {
+    "mtime": 1775487084.6321514,
+    "ast_hash": "82390743967f156b06c893d92909f945",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-06 Phase 04 context and planning.md": {
+    "mtime": 1775505062.5330994,
+    "ast_hash": "6bb52cef2e7338500cd0cdac1582eb87",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-07 Phase 04 update-flow-endpoints execution.md": {
+    "mtime": 1775541550.9948115,
+    "ast_hash": "5beeb9899572a23a3c772e0140583728",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-07 Phase 05 UI mode restructuring execution.md": {
+    "mtime": 1775571704.5175402,
+    "ast_hash": "227e3682ac1b2bd0088f67a03ec1969b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-08 Collapsible Workflow Cypher panels.md": {
+    "mtime": 1775666539.1825788,
+    "ast_hash": "9337eea9106585d903e66ff30ab0f945",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-08 Phase 06 execution and Phase 07 context.md": {
+    "mtime": 1775654457.899057,
+    "ast_hash": "26ad98d24ee81b5521578ba8dbdb7586",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-08 Phase 07 UI-SPEC design contract.md": {
+    "mtime": 1775654556.3833003,
+    "ast_hash": "b9481fbe2ebcdc57e7df074f644cfd63",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-08 Phase 07 execution session history panels.md": {
+    "mtime": 1775662798.859112,
+    "ast_hash": "86124167cef503534c41c7138a50c8c7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-04-08 Phase 07 planning.md": {
+    "mtime": 1775654622.7667365,
+    "ast_hash": "80a1c563291ff030a25db4742569dfd6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-05-10 Phase 05 model-viewer grouping execution.md": {
+    "mtime": 1778428798.719818,
+    "ast_hash": "2d22a8a1a8836c8112596ceba5467487",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-05-10 v2.0 Milestone completion.md": {
+    "mtime": 1778430284.123384,
+    "ast_hash": "8d1baa9339956873765757a659260103",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-05-30 Ontology v5 DCM ComputationGraph extension.md": {
+    "mtime": 1780169039.2418725,
+    "ast_hash": "6acfe4b3c55fae52ecc8d0bc0286e182",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-05-30 PhD publications series T1-T4 drafts.md": {
+    "mtime": 1780156664.1749463,
+    "ast_hash": "8c61de88286e2742996a65e23f5cb751",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.0 restructure \u2014 Core band, SpecGraph, partonomy.md": {
+    "mtime": 1780289862.0067115,
+    "ast_hash": "7cf8efbe7244a558a379a31d4d138662",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-01 Ontology v6.1 vendor-neutralization.md": {
+    "mtime": 1780292363.610724,
+    "ast_hash": "b0f12bd5f565d2cd53d1ca36d930ddc8",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-22 Graphify-CGD-Obsidian integration Phase 1.md": {
+    "mtime": 1782082683.66039,
+    "ast_hash": "4b5269ff2142a44dc7acb991e83649d5",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/_template.md": {
+    "mtime": 1775378575.7611396,
+    "ast_hash": "c7a94284e417acaa61862368050abdc3",
+    "semantic_hash": ""
+  },
+  "NOTES.txt": {
+    "mtime": 1774934985.3722231,
+    "ast_hash": "c3abf1bca0c1ec88df917bf9e5567fcd",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783285872.2606556,
+    "ast_hash": "a5b0082f8b73e6742805fb4aa2d11908",
+    "semantic_hash": ""
+  },
+  "cypher_template.txt": {
+    "mtime": 1783073397.4796145,
+    "ast_hash": "35bc813af7f22c5bf20b62732dabf20b",
+    "semantic_hash": ""
+  },
+  "data-service/requirements.txt": {
+    "mtime": 1783369142.8527956,
+    "ast_hash": "e5f8128bd71b0df99eb1f98b2403bccb",
+    "semantic_hash": ""
+  },
+  "docker-compose.yml": {
+    "mtime": 1783459264.7712727,
+    "ast_hash": "c08d446cda0eef5efc29ad5263dfe031",
+    "semantic_hash": ""
+  },
+  "graph-viewer/index.html": {
+    "mtime": 1783372625.7630692,
+    "ast_hash": "44451021fa8b0b76169b18f1fab6666b",
+    "semantic_hash": ""
+  },
+  "graph-viewer/interface/SKILL.md": {
+    "mtime": 1774934985.3842227,
+    "ast_hash": "f368bdbe7c5dff5b9164c7f431d23f6d",
+    "semantic_hash": ""
+  },
+  "graph-viewer/model-viewer/index.html": {
+    "mtime": 1774934985.4037437,
+    "ast_hash": "3773d2d7462b944fe7f3c7b9ab30b2a6",
+    "semantic_hash": ""
+  },
+  "spec/API.md": {
+    "mtime": 1775380524.4363806,
+    "ast_hash": "4f6a420bf42f1486146c095dda3bab5e",
+    "semantic_hash": ""
+  },
+  "spec/ARCHITECTURE.md": {
+    "mtime": 1775380424.9500873,
+    "ast_hash": "36f95e7946a6c63bc3e2322100522be2",
+    "semantic_hash": ""
+  },
+  "spec/DATABASE.md": {
+    "mtime": 1783285847.1654074,
+    "ast_hash": "596f9932d8968f87dedbec1f7fd4fa67",
+    "semantic_hash": ""
+  },
+  "spec/DECISIONS.md": {
+    "mtime": 1775381137.9435434,
+    "ast_hash": "ef2b1b16e825821edce618694f97aff3",
+    "semantic_hash": ""
+  },
+  "spec/DEPLOYMENT.md": {
+    "mtime": 1775381104.367822,
+    "ast_hash": "99b4ad71ee1d026deec0cc226e4be59b",
+    "semantic_hash": ""
+  },
+  "spec/GRASSHOPPER.md": {
+    "mtime": 1775380555.934007,
+    "ast_hash": "47e4633dbbc35a44ed35bfae86c3bd3f",
+    "semantic_hash": ""
+  },
+  "spec/PROJECT.md": {
+    "mtime": 1775380147.332957,
+    "ast_hash": "84863a4ae0f4f217684263350043500a",
+    "semantic_hash": ""
+  },
+  "spec/README.md": {
+    "mtime": 1783285924.4266255,
+    "ast_hash": "6fd8133efed366ba030da5b52a81b485",
+    "semantic_hash": ""
+  },
+  "spec/UI.md": {
+    "mtime": 1775381088.4773088,
+    "ast_hash": "b8900723f87d8d83aac7000585f4e8df",
+    "semantic_hash": ""
+  },
+  "test/Classificator_inputs.txt": {
+    "mtime": 1772664144.9632185,
+    "ast_hash": "c427d18fb469802687cb9aa795fcdd73",
+    "semantic_hash": ""
+  },
+  "test/Validator_FalingBindings_output.txt": {
+    "mtime": 1772665915.3879392,
+    "ast_hash": "986df2f4d80eb2e70e0b43d0385d1835",
+    "semantic_hash": ""
+  },
+  "test/knowledge-notes/building-height-regulations.md": {
+    "mtime": 1775531894.6423585,
+    "ast_hash": "36648a14b2aec5131a9ba116c712afaa",
+    "semantic_hash": ""
+  },
+  "test/knowledge-notes/facade-materials.md": {
+    "mtime": 1775531906.818554,
+    "ast_hash": "b318da85bfe4681fa5f216800c8b0769",
+    "semantic_hash": ""
+  },
+  "test/knowledge-notes/green-area-ratio.md": {
+    "mtime": 1775531903.7024038,
+    "ast_hash": "d7a92afdc6e5a06c1c57476a630f0902",
+    "semantic_hash": ""
+  },
+  "test/knowledge-notes/parking-standards.md": {
+    "mtime": 1775531900.943832,
+    "ast_hash": "e0c05574849d6d3d5c4ac4405c1f1471",
+    "semantic_hash": ""
+  },
+  "test/knowledge-notes/setback-requirements.md": {
+    "mtime": 1775531900.0858843,
+    "ast_hash": "38de9c41df7dc3c43586d4a30252fae8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/Connector24.png": {
+    "mtime": 1772633920.6982944,
+    "ast_hash": "103e9018d520160d2d8b8ec4a2eff4d6",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/DesignState24.png": {
+    "mtime": 1778500852.2737014,
+    "ast_hash": "ad2424a9f86bd6e8825a8c9682d525ef",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/Metagraph24.png": {
+    "mtime": 1772633980.762953,
+    "ast_hash": "8770bf818b3ee90349ea3222ce525d60",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/Reinstate24.png": {
+    "mtime": 1778500912.6421237,
+    "ast_hash": "e6cdf252e9854f55d4595cf68f5f1af9",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/RuleDeconstruct24.png": {
+    "mtime": 1772633954.7443733,
+    "ast_hash": "722c229124f176f62dde6df12432e6f0",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/Validator24.png": {
+    "mtime": 1772634054.7329962,
+    "ast_hash": "a4613d8a69e10c0e8b325c0cac3ec87e",
+    "semantic_hash": ""
+  },
+  "GH_DesignGrammars.png": {
+    "mtime": 1772565053.7064545,
+    "ast_hash": "abc470e0c2ba7b827038da863115f3c2",
+    "semantic_hash": ""
+  },
+  "graph-viewer/interface/design-grammars-MetagraphOntology.png": {
+    "mtime": 1774934985.3977406,
+    "ast_hash": "f90e9e427b2aacd48283cf8eb946bd44",
+    "semantic_hash": ""
+  },
+  "graph-viewer/interface/image.png": {
+    "mtime": 1774934985.4037437,
+    "ast_hash": "ccca027a1d840dcd10baba87ad446adc",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1783045259.657875,
+    "ast_hash": "7bf81dca0376bde3a32244b82bc7cbc0",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/VariableKind.cs": {
+    "mtime": 1782289155.3306735,
+    "ast_hash": "78fd4ada644d20f99d2a2292a1223214",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Parsing/VariableTypeInferrer.cs": {
+    "mtime": 1782289155.331859,
+    "ast_hash": "f10bcc3217f1f45399b29bb2db2ad23c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/DesignStateIdGenerator.cs": {
+    "mtime": 1783467642.0768495,
+    "ast_hash": "338b5ec003b3b520a8047bc27525d6b0",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStateIdGeneratorTests.cs": {
+    "mtime": 1783467927.4172847,
+    "ast_hash": "13cf38b85f829bc61ba1c82ea3195020",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/Neo4jRuleRepositoryVariableKindTests.cs": {
+    "mtime": 1782289155.33683,
+    "ast_hash": "13e848bc9c4a28cc1c12300f44862188",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/VariableTypeInferrerTests.cs": {
+    "mtime": 1782289155.33683,
+    "ast_hash": "39793db3a150a7a372959631b461615a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/DesignState persists to ValidGraph not Metagraph.md": {
+    "mtime": 1783038928.9104617,
+    "ast_hash": "0f7e7ad6ad788232b6a40abe8437512e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Ontology V7 full rename over incremental.md": {
+    "mtime": 1783022240.0028055,
+    "ast_hash": "e3a3e7c5b5b984f7987f1cd9b6b655cb",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Run ValidStatus is a per-object boolean array.md": {
+    "mtime": 1783038943.64473,
+    "ast_hash": "ee352ec05f64288a3c9985f28cbfdad2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Worktree execution disabled due to commit_docs conflict.md": {
+    "mtime": 1782289155.3401163,
+    "ast_hash": "38c787665f9e94a610a7bbfb2b5b2af0",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/v3.0 vendor-neutral rename deferred.md": {
+    "mtime": 1782289155.3401163,
+    "ast_hash": "c57aca4eea478ae07651344a75a83c9b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-22 Graphify integration Phases 2-4.md": {
+    "mtime": 1782085103.9703836,
+    "ast_hash": "34e0860917aded2d40d7f45a7e16ce86",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-23 New PC Docker setup and n8n workflow fix.md": {
+    "mtime": 1782289155.3411305,
+    "ast_hash": "fc19abdf54aa3a23fa63f73c94c067a6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-06-23 v3.0 Phase 7 Schema Foundation execution.md": {
+    "mtime": 1782289155.342139,
+    "ast_hash": "3b80be55da398d2e36295898312a9f7b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-02 v7.0 milestone init from GH_DesignGrammars schema.md": {
+    "mtime": 1783022219.7034554,
+    "ast_hash": "f8bd6b61e42faa25e74fe8186d3a305f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 13 discuss - ValidGraph and per-object ValidStatus.md": {
+    "mtime": 1783038966.6940207,
+    "ast_hash": "c81a50fe686908487da98f2d83eb45a6",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 13 planning - 4 plans across 3 waves.md": {
+    "mtime": 1783040229.6883433,
+    "ast_hash": "9cc032158b25ab8dd1b8a36fe0593bc7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 13 execution and Nyquist validation.md": {
+    "mtime": 1783046016.57637,
+    "ast_hash": "50bcd0781718202dde54252dfb543986",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Kind migration deletes orphan DesignStates on ValidGraph move.md": {
+    "mtime": 1783068140.8335772,
+    "ast_hash": "3972ef8a4e2cfbcdffcf69c298516b66",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Rule properties renamed to SWRL RuleName RuleDescription in v4.md": {
+    "mtime": 1783068129.348739,
+    "ast_hash": "aa84120299d4732665e507c6c4d95118",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 14 discuss - schema v4 propagation decisions.md": {
+    "mtime": 1783068115.1397521,
+    "ast_hash": "cfc21000731168fb681e4bd41774c2ba",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/ValidationGraph runtime renamed to ValidGraph per D-14.md": {
+    "mtime": 1783073167.2601895,
+    "ast_hash": "f6a0f56ec1650a91d00b75e4ff41d5ca",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 14 planning - 7 plans across 3 waves.md": {
+    "mtime": 1783073154.1122658,
+    "ast_hash": "e39d0d6dd746f0245baf958842093877",
+    "semantic_hash": ""
+  },
+  "test/smoke_graph_query.sh": {
+    "mtime": 1783074218.466041,
+    "ast_hash": "6a099b3976d14ab71a6f49e4b7e2a6de",
+    "semantic_hash": ""
+  },
+  "test/smoke_rules_ingest.sh": {
+    "mtime": 1783074204.748059,
+    "ast_hash": "e5797723e3f7613c5cdb0efe4a0b1182",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/SpecGraph migration matches ValidGraph rename pattern with full index recreation.md": {
+    "mtime": 1783092248.6579022,
+    "ast_hash": "70182682611d6c26a963d718b91a9d95",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-03 Phase 15 discuss - SpecGraph rename decisions.md": {
+    "mtime": 1783092270.578425,
+    "ast_hash": "7334ee35420ac79dcc290445d916aeda",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/spec-ingest.json": {
+    "mtime": 1783369854.509349,
+    "ast_hash": "75342312fb31a560a42c0c472c7feaa4",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/spec-query.json": {
+    "mtime": 1783369868.5553007,
+    "ast_hash": "51a18df6fabf121d9bbd431cd3dc8af6",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/spec-update.json": {
+    "mtime": 1783369882.6320848,
+    "ast_hash": "c194c890ff60e7fa694c3ccb1169ee3d",
+    "semantic_hash": ""
+  },
+  "test/test_spec_crud.py": {
+    "mtime": 1783096832.8592057,
+    "ast_hash": "2aebd1e5aee475b6387996328c2421d3",
+    "semantic_hash": ""
+  },
+  "test/test_spec_llm.py": {
+    "mtime": 1783096857.4389436,
+    "ast_hash": "32cce2d2a45e8eadda617bd5d1c098f1",
+    "semantic_hash": ""
+  },
+  "test/test_spec_schema.py": {
+    "mtime": 1783096827.686277,
+    "ast_hash": "f74c3337dec6efd80a47901a1e1e6c6a",
+    "semantic_hash": ""
+  },
+  "CLINE.md": {
+    "mtime": 1783105920.2979343,
+    "ast_hash": "8fc86256f89802bd817cdf8f72cacbc2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 16 DesignState aggregate and statePayloadJson v2.md": {
+    "mtime": 1783116324.9434135,
+    "ast_hash": "9ac77276a932fd9a5fe5ec0639959f1a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 16 discuss - DG.Core state models and state components.md": {
+    "mtime": 1783116311.0612452,
+    "ast_hash": "12c9e5a8772a08929b69aba7544a8955",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 16 planning - 6 plans across 3 waves.md": {
+    "mtime": 1783118270.203804,
+    "ast_hash": "be09131527e21e8755a0580891a795f7",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/DesignState.cs": {
+    "mtime": 1783455614.1502714,
+    "ast_hash": "762fdc578714e14d30b5479b8f84877f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ObjState.cs": {
+    "mtime": 1783252764.4543626,
+    "ast_hash": "2b30d8d66379efb8d09d06bb4d123b77",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ParamState.cs": {
+    "mtime": 1783127640.3607833,
+    "ast_hash": "23d0f58d350542ed14af9b994db6ea8e",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/PropState.cs": {
+    "mtime": 1783467627.6372766,
+    "ast_hash": "e6c72f3d02cdc4d0dda67cb88c3622a4",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStateModelTests.cs": {
+    "mtime": 1783455787.4399655,
+    "ast_hash": "5a7266a943d636fabe51529d46b37a14",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ObjStateModelTests.cs": {
+    "mtime": 1783128128.3008752,
+    "ast_hash": "fb2f75f319fcbdb2570fd8c9605c2a33",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ParamStateModelTests.cs": {
+    "mtime": 1783128080.3184829,
+    "ast_hash": "470ee0522f58e0d413e8b67cb122000c",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/PropStateModelTests.cs": {
+    "mtime": 1783128086.0154543,
+    "ast_hash": "053766e940d5c5a4456c3bb718e68637",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 17 Graph Access Components layer handles and repository design.md": {
+    "mtime": 1783129215.9351225,
+    "ast_hash": "5baedab6318d86a94e0b6fefb484294f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 17 discuss - Graph Access Components.md": {
+    "mtime": 1783129211.416636,
+    "ast_hash": "9763eb4ec09ff3670a8a0f5c7a2e9912",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Serialization/DesignStatePayloadV2Serializer.cs": {
+    "mtime": 1783467686.0116308,
+    "ast_hash": "45723b90462debfcac8eefbfeb99052c",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStatePayloadV2SerializerTests.cs": {
+    "mtime": 1783467956.3361475,
+    "ast_hash": "7c47d700c91cf890b8a29fe41508e5c4",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ParameterStateComponent.cs": {
+    "mtime": 1783255378.7861028,
+    "ast_hash": "520799fa90cb7ca7664f7bd459b8e9f2",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/ParameterState24.png": {
+    "mtime": 1783131614.4619548,
+    "ast_hash": "ad2424a9f86bd6e8825a8c9682d525ef",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ObjectStateComponent.cs": {
+    "mtime": 1783467852.8047147,
+    "ast_hash": "5c33e348b640284f7a939f03115f8d87",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/ObjectState24.png": {
+    "mtime": 1783131780.30796,
+    "ast_hash": "ad2424a9f86bd6e8825a8c9682d525ef",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/PropertyStateComponent.cs": {
+    "mtime": 1783468816.6543274,
+    "ast_hash": "27a7ebb9dea49ea003076d3646a3541b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/PropertyState24.png": {
+    "mtime": 1783131925.3955264,
+    "ast_hash": "ad2424a9f86bd6e8825a8c9682d525ef",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/DesignStateCompositionComponent.cs": {
+    "mtime": 1783455633.7475917,
+    "ast_hash": "c910de8368433a4ff840098a3678c71d",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/DesignStateComposition24.png": {
+    "mtime": 1783132018.916173,
+    "ast_hash": "ad2424a9f86bd6e8825a8c9682d525ef",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/MetagraphHandle.cs": {
+    "mtime": 1783133395.659207,
+    "ast_hash": "b987155d5455deba208b35813a175e99",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/OntographHandle.cs": {
+    "mtime": 1783133397.3423252,
+    "ast_hash": "94a9c560235694d6b228642ee68b3431",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/OntologyClass.cs": {
+    "mtime": 1783134293.253941,
+    "ast_hash": "4f3a585a5d232387c0887a2a60c0234a",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/OntologyProperty.cs": {
+    "mtime": 1783135309.9822245,
+    "ast_hash": "2def0bcfddf3b5aefbbd2b0114d23ab5",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/SpecGraphHandle.cs": {
+    "mtime": 1783133400.449411,
+    "ast_hash": "37b0ccd598ca623577ffdd375d9159f6",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Models/ValidGraphHandle.cs": {
+    "mtime": 1783133398.879431,
+    "ast_hash": "39d59c2dd886cf5b3f6aa8256cc13b0a",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/GraphDeconstruct24.png": {
+    "mtime": 1783133434.16283,
+    "ast_hash": "25ee8215c6e5009331b8dabd21294245",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/OntoGraph24.png": {
+    "mtime": 1783133434.1653428,
+    "ast_hash": "f083da14c821a80634791f913ca8816f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/ValidationGraph24.png": {
+    "mtime": 1783133434.1663425,
+    "ast_hash": "399b8124ce10553b657ec2fe1a8ec8b4",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/GraphDeconstructComponent.cs": {
+    "mtime": 1783133586.4359407,
+    "ast_hash": "1fa36815a3c5ccde01a686fcdcce281b",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ConnectorComponentPortContractTests.cs": {
+    "mtime": 1783133689.9470878,
+    "ast_hash": "50bcc8f113d9bec2a477f9a41d5ad12a",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/MetagraphHandleModelTests.cs": {
+    "mtime": 1783133671.7084782,
+    "ast_hash": "615343f61d0e42053b48e942c8a027e9",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/OntographHandleModelTests.cs": {
+    "mtime": 1783133673.9420936,
+    "ast_hash": "6b009d9b31cce0df471072096b208bcc",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/OntologyClassModelTests.cs": {
+    "mtime": 1783133680.1551194,
+    "ast_hash": "3298d92d49300934d1b5b13b61e314dc",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/OntologyPropertyModelTests.cs": {
+    "mtime": 1783133681.7993436,
+    "ast_hash": "cf650d499211022ea0fbd6958ce15dd2",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/SpecGraphHandleModelTests.cs": {
+    "mtime": 1783133678.4379933,
+    "ast_hash": "f51b4a9a98a443ddefdbfb199468e335",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ValidGraphHandleModelTests.cs": {
+    "mtime": 1783133676.2031655,
+    "ast_hash": "bc4f91d4f0fe54a8b68abffd9c740f93",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ObjectsQueryTests.cs": {
+    "mtime": 1783134588.0680764,
+    "ast_hash": "321ebb92ec30257ba0fa1ce9b1b80fd7",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/IOntoGraphRepository.cs": {
+    "mtime": 1783135188.899645,
+    "ast_hash": "906d018b475a87127952492258e5bac2",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/Neo4jOntoGraphRepository.cs": {
+    "mtime": 1783135193.348214,
+    "ast_hash": "3612eb5978d11ff5b65825af7a27d0b3",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/OntoGraphComponent.cs": {
+    "mtime": 1783135285.5800753,
+    "ast_hash": "103424cbeda98f035a638b6108fb3be1",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/Neo4jOntoGraphRepositoryTests.cs": {
+    "mtime": 1783135377.2809227,
+    "ast_hash": "c9257a5f03ad100a1f220477a0066473",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/IValidGraphRepository.cs": {
+    "mtime": 1783136000.88968,
+    "ast_hash": "3d9829b0e95afcf6d23f035648eaeb5f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs": {
+    "mtime": 1783136175.2071457,
+    "ast_hash": "99152b4376f5f5b3d071ca3f29c160fc",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ValidationGraphComponent.cs": {
+    "mtime": 1783135959.225991,
+    "ast_hash": "cd97cd58ac7589a982eab72d03634edf",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs": {
+    "mtime": 1783136065.2530234,
+    "ast_hash": "372c0746d8fc68a1018dad2092bf64d7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 18 Rules and Validator Rework decisions.md": {
+    "mtime": 1783161957.4171371,
+    "ast_hash": "60b07c78bfa528128637bc03f894d75c",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 18 discuss - Rules and Validator Rework.md": {
+    "mtime": 1783161950.0639122,
+    "ast_hash": "c5082cb0bf74b13affe610ad0b2f010e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 16 execution - 6 plans all complete.md": {
+    "mtime": 1783162138.547925,
+    "ast_hash": "94840d7423ec29c778ac5b789c6844c9",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 17 planning.md": {
+    "mtime": 1783162431.964159,
+    "ast_hash": "ce187ef5c97db6a499c0f14de6a998d0",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Stale index name in spec-query n8n workflow.md": {
+    "mtime": 1783162812.5217443,
+    "ast_hash": "b2f49345d3d5198f3f5e4c265b3cb065",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 15 execution.md": {
+    "mtime": 1783162806.7320275,
+    "ast_hash": "bb2b04d924eb0576d4d8980d572f40f0",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 17 execution \u2014 Graph Access Components.md": {
+    "mtime": 1783162966.412712,
+    "ast_hash": "c4c211dc2a41bc2b10fa0f2ee70189cc",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 15 planning \u2014 SpecGraph Runtime Rename (replan).md": {
+    "mtime": 1783163252.9716153,
+    "ast_hash": "772cec5222ac9e80cbf824961cabc8ca",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 18 planning \u2014 research.md": {
+    "mtime": 1783164119.6384594,
+    "ast_hash": "74fcf097f4b742e978a57dc53aac016b",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-04 Phase 18 UI design contract.md": {
+    "mtime": 1783164652.4258058,
+    "ast_hash": "0f5149f624b33031beeee00785811b47",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 18 planning \u2014 5 plans 2 waves with Path A ClassIri.md": {
+    "mtime": 1783251899.463226,
+    "ast_hash": "0f6dff3c521621e1a0f7984388619850",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStateBindingServiceTests.cs": {
+    "mtime": 1783519676.5302086,
+    "ast_hash": "2f1f0b8d335fd55551723d2eb41e0b67",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/Services/DesignStateBindingService.cs": {
+    "mtime": 1783519676.529108,
+    "ast_hash": "129c50cc569e83a475681f4ba6779824",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 18 execution \u2014 Rules and Validator Rework.md": {
+    "mtime": 1783259850.4422984,
+    "ast_hash": "97dcbdd77df648a1f900939d99c277b2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 19 Deconstruct and Reinstate Components decisions.md": {
+    "mtime": 1783263051.1549401,
+    "ast_hash": "7e8c3528d70462530f669c9b95fdbb99",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 19 discuss \u2014 Deconstruct and Reinstate Components.md": {
+    "mtime": 1783263043.1441474,
+    "ast_hash": "f175404954faa97a0c0ecee6aa650cae",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 19 planning \u2014 Deconstruct and Reinstate Components.md": {
+    "mtime": 1783265085.7252223,
+    "ast_hash": "40e04a4c9ac189c787114e9106f20112",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/DesignStateDeconstruct24.png": {
+    "mtime": 1783266088.930607,
+    "ast_hash": "a6bc19779e7cb87a39fd2dc7c94ab05b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/ObjectDeconstruct24.png": {
+    "mtime": 1783266088.931607,
+    "ast_hash": "f27e390cbdf4c0cb2968a5e7dceb6de9",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Properties/ParameterReinstate24.png": {
+    "mtime": 1783266088.9326067,
+    "ast_hash": "d4b29d39c5211b99f8cd0b3644ca6622",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/DesignStateDeconstructComponent.cs": {
+    "mtime": 1783455663.18196,
+    "ast_hash": "8a35bd24c41a1c9f59bb21fdc548bf45",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ObjectDeconstructComponent.cs": {
+    "mtime": 1783266606.2496333,
+    "ast_hash": "0633413b8e18001b83d6c9b03302fa0d",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/DesignStateDeconstructComponentTests.cs": {
+    "mtime": 1783455794.2081769,
+    "ast_hash": "9677da96573127f26319156cef26c6cc",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ObjectDeconstructComponentTests.cs": {
+    "mtime": 1783266611.9836664,
+    "ast_hash": "f9adb1ce09fb218e6569561d037d995f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/ParameterReinstateComponent.cs": {
+    "mtime": 1783269807.5378706,
+    "ast_hash": "acb07eb3329da77d07598888949be760",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/ParameterReinstateComponentTests.cs": {
+    "mtime": 1783267730.202319,
+    "ast_hash": "a21b516236284c641ae0fe6f2d3d6b1f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 19 execution \u2014 Deconstruct and Reinstate Components.md": {
+    "mtime": 1783270772.4000568,
+    "ast_hash": "065d9b1e6c9e646a1ff3c44df2d5948a",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 20 E2E Validation and Docs context decisions.md": {
+    "mtime": 1783276168.0751443,
+    "ast_hash": "5bbacce2195a7b9b3ba9192af61b3a10",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 20 discuss \u2014 E2E Validation and Docs.md": {
+    "mtime": 1783276159.379897,
+    "ast_hash": "93aa60aabd3f333aeb33577c6a5e3f30",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 20 planning \u2014 3 plans, all verified.md": {
+    "mtime": 1783284213.1242762,
+    "ast_hash": "7844bbda0474ae148ffbd23543b3af2c",
+    "semantic_hash": ""
+  },
+  "test/fixture_geometry.json": {
+    "mtime": 1783284766.8297646,
+    "ast_hash": "e279109e796ff218fd7a979cd7fa481f",
+    "semantic_hash": ""
+  },
+  "test/smoke_e2e.sh": {
+    "mtime": 1783284790.6010697,
+    "ast_hash": "a578c66d80d03bc00462dedaa5e8f16d",
+    "semantic_hash": ""
+  },
+  "test/e2e-v7.0-checklist.md": {
+    "mtime": 1783284866.104179,
+    "ast_hash": "7b46d843c53e2cef10b06d41e23f0c0c",
+    "semantic_hash": ""
+  },
+  "test/fixture_rules_v7.txt": {
+    "mtime": 1783284765.131029,
+    "ast_hash": "949a9f753cc0ad92303639b000f707f1",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/archive/Graph schema v3 is the canonical data model (archived).md": {
+    "mtime": 1783023540.6282218,
+    "ast_hash": "c45fd2c84c8cb7b615a3a6bce7e90948",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/archive/ValidationRunsStrip component with per-project localStorage persistence (archived).md": {
+    "mtime": 1778428863.931448,
+    "ast_hash": "4660b4ea56185d9d9a1f17f0eedad2ec",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/atlas/Graph schema v4 is the canonical data model.md": {
+    "mtime": 1783287073.6452737,
+    "ast_hash": "01b96103d0d575d3642bfe8722ae8a19",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-05 Phase 20 E2E Validation and Docs.md": {
+    "mtime": 1783287149.6765785,
+    "ast_hash": "6f69ef54684a4661a75e0c830479baaa",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-06 v9.0 Phase 01 planning.md": {
+    "mtime": 1783368346.8122995,
+    "ast_hash": "4f3ec692c895778b2ca7d1a2a63b9144",
+    "semantic_hash": ""
+  },
+  "data-service/llm_gateway.py": {
+    "mtime": 1783373627.6242182,
+    "ast_hash": "90d578dd5491dc6a55265f0248ceefe2",
+    "semantic_hash": ""
+  },
+  "data-service/tests/test_llm_gateway.py": {
+    "mtime": 1783369299.711472,
+    "ast_hash": "e6455eaa5a7938c504f98407ffd27cad",
+    "semantic_hash": ""
+  },
+  "DeepSeek_API_key.txt": {
+    "mtime": 1783372284.4166622,
+    "ast_hash": "3d319519058ccf21b42a3d4cb276d07c",
+    "semantic_hash": ""
+  },
+  "design/v2/_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/_adherence.oxlintrc.json": {
+    "mtime": 1783379973.095326,
+    "ast_hash": "577bae31ba4584d0032531303803a9da",
+    "semantic_hash": ""
+  },
+  "design/v2/_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/_ds_bundle.js": {
+    "mtime": 1783379973.0963316,
+    "ast_hash": "57a1135c270d45b0c390a4f98ab0be1c",
+    "semantic_hash": ""
+  },
+  "design/v2/_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/_ds_manifest.json": {
+    "mtime": 1783379973.0978408,
+    "ast_hash": "4fe1d6239d72de7ca6dbd6780c73d83e",
+    "semantic_hash": ""
+  },
+  "design/v2/support.js": {
+    "mtime": 1783379973.0898008,
+    "ast_hash": "843c817ed1abf0fa4deacf7162814833",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/LLM Gateway provides provider-agnostic generation with Anthropic OpenAI and Ollama adapters.md": {
+    "mtime": 1783379467.1523902,
+    "ast_hash": "dc569867ecca0e8c5f0208efda67a299",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/get_adapter ignores baseUrl from settings.md": {
+    "mtime": 1783379642.467556,
+    "ast_hash": "c30e8081cd6b5417cd7ea7b7f479052e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07 v9.0 Phase 01 execution.md": {
+    "mtime": 1783379355.9015136,
+    "ast_hash": "aa3cddb97677ec3d4e0f18b5033afc34",
+    "semantic_hash": ""
+  },
+  "design/v2/Design Grammars V2.dc.html": {
+    "mtime": 1783379821.1823018,
+    "ast_hash": "3588f957799bc5a3f56cd1d33107a18f",
+    "semantic_hash": ""
+  },
+  "design/v2/_ds/design-grammars-v2-design-system-8522e352-87a8-4e0c-a54d-bcb6fb25e4f9/readme.md": {
+    "mtime": 1783379973.0988512,
+    "ast_hash": "02e5f1a2d44533a99031bb9b2d75b708",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/V8 frontend build supersedes no-JSX pattern.md": {
+    "mtime": 1783410346.7381494,
+    "ast_hash": "181d9d97a158a0b7fd2d636129d1bd84",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07 Phase 21 context.md": {
+    "mtime": 1783410332.7409644,
+    "ast_hash": "74b612ef963965e0849d7ccfafb72f9a",
+    "semantic_hash": ""
+  },
+  "ui-v2/package.json": {
+    "mtime": 1783472960.2834864,
+    "ast_hash": "ccdfe0cd25a3b1c21f3b7ec2f3f7c407",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/App.jsx": {
+    "mtime": 1783507493.0108726,
+    "ast_hash": "20851d4811809a05ce8d1bd133f325de",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/Avatar.jsx": {
+    "mtime": 1783424650.7202754,
+    "ast_hash": "e7b95100b79bf23fec7db7c7f19fc6ee",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/Badge.jsx": {
+    "mtime": 1783424654.0006204,
+    "ast_hash": "8a4fa372f680cb3716e1707958714410",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/Callout.jsx": {
+    "mtime": 1783424661.5766306,
+    "ast_hash": "c90e0c9394f7aa484a7a4f6ea891f726",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/Chip.jsx": {
+    "mtime": 1783424665.1481936,
+    "ast_hash": "46d9e2a6fe33c3b9e9ad1ad9cb8f4205",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/CodeBlock.jsx": {
+    "mtime": 1783424680.9265194,
+    "ast_hash": "667a9513819880783c34e8ea2b945ec7",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/KVRow.jsx": {
+    "mtime": 1783424685.8469195,
+    "ast_hash": "28c792471942d5e7662f065fb8e969ec",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/Progress.jsx": {
+    "mtime": 1783424691.535225,
+    "ast_hash": "59d86af9b2c5dd1561d583bf334ac141",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/PropertiesTable.jsx": {
+    "mtime": 1783507322.596192,
+    "ast_hash": "4873299aefa32c2ccba07a49f4224680",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Button.jsx": {
+    "mtime": 1783416923.6446412,
+    "ast_hash": "cd05c41e99966d2d5a3dafbec2d0c405",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Checkbox.jsx": {
+    "mtime": 1783416928.1889098,
+    "ast_hash": "50cb7769f5600fe3e556e28cdf907efb",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Input.jsx": {
+    "mtime": 1783416933.8916297,
+    "ast_hash": "e598dead9e0c45c005d9d809249e432d",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/SearchField.jsx": {
+    "mtime": 1783416938.7983227,
+    "ast_hash": "b9f588bc44942d90e95090756ae55cfa",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Select.jsx": {
+    "mtime": 1783416952.1874218,
+    "ast_hash": "a1dc4b1519332acc7b30c1cdb0046ab6",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Slider.jsx": {
+    "mtime": 1783416959.7136774,
+    "ast_hash": "1ee8ae1e5c93afa5cc4f64b4dc327f95",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/forms/Textarea.jsx": {
+    "mtime": 1783416963.4233966,
+    "ast_hash": "904457d8a70330a1a17a9512be3ef504",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/index.js": {
+    "mtime": 1783524696.5327713,
+    "ast_hash": "bfb5d23554fff95958d558548c69e150",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/Collapsible.jsx": {
+    "mtime": 1783424712.001768,
+    "ast_hash": "6939ffbf5e08b2a5a79ca11da3edd663",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/Dialog.jsx": {
+    "mtime": 1783424717.266296,
+    "ast_hash": "dd4ebd13f706a9860676a8cbb529e2db",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/Panel.jsx": {
+    "mtime": 1783424721.0306299,
+    "ast_hash": "ddc64f6fa9242b550d4e675b4274d8b4",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/RunTile.jsx": {
+    "mtime": 1783507046.6484294,
+    "ast_hash": "6283cee802575a17a5ecb480b4a49010",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/Tabs.jsx": {
+    "mtime": 1783424724.4042997,
+    "ast_hash": "8d6b7456e2b17f003f2ce59704a137fc",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/surfaces/Tile.jsx": {
+    "mtime": 1783424745.9313414,
+    "ast_hash": "6c79d7928ea372f3c1618f24756b7c7c",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/main.jsx": {
+    "mtime": 1783416796.55178,
+    "ast_hash": "0f10a934edf7fad23e83ee0a7f18e91e",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/specimen/SpecimenPage.jsx": {
+    "mtime": 1783424815.2129765,
+    "ast_hash": "7e090b4f8c8e1ce46fd28948090ef197",
+    "semantic_hash": ""
+  },
+  "ui-v2/vite.config.js": {
+    "mtime": 1783416792.355422,
+    "ast_hash": "74c4de89c92022f0a12ad158325a0ec4",
+    "semantic_hash": ""
+  },
+  "ui-v2/index.html": {
+    "mtime": 1783445198.71347,
+    "ast_hash": "d440516175bccddb87020c2098925385",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/landing/LandingLayer.jsx": {
+    "mtime": 1783426757.8525894,
+    "ast_hash": "722f8a49742d4e5208d1d11d1946b136",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/landing/landingEngine.js": {
+    "mtime": 1783507474.473016,
+    "ast_hash": "5d758cd762265707428e84577d8cf5b3",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/lib/auth.js": {
+    "mtime": 1783426355.6464713,
+    "ast_hash": "bd7a9ccd2418b1b75c460b1f03a5d1e7",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/screens/GraphScreen.jsx": {
+    "mtime": 1783524831.4215286,
+    "ast_hash": "9310fe05baa2e34cab14c7c3dad15656",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/screens/ModelScreen.jsx": {
+    "mtime": 1783524640.3172982,
+    "ast_hash": "c4a2f1dd4dac2756f47444b60aac15de",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/screens/ProjectsScreen.jsx": {
+    "mtime": 1783507059.9885094,
+    "ast_hash": "07d1d89cdd69fb5f3edad62f074058b8",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/shell/ScreenHeader.jsx": {
+    "mtime": 1783426474.893059,
+    "ast_hash": "9950b4e9a0fd541755596624fce07011",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/graph/buildRings.js": {
+    "mtime": 1783442871.9445088,
+    "ast_hash": "bf0f8fb8179b77b9686482db818acf61",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/graph/graphEngine.js": {
+    "mtime": 1783523128.6604493,
+    "ast_hash": "3077c3059c0451f8cbee89c75d58319d",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/lib/graphApi.js": {
+    "mtime": 1783507763.1020012,
+    "ast_hash": "b5f597e0fff78dfb03d38cee0b330c60",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/lib/modelApi.js": {
+    "mtime": 1783427877.029767,
+    "ast_hash": "b451ae555d1f91c6a825e44f767584a6",
+    "semantic_hash": ""
+  },
+  "ui-v2/entrypoint.sh": {
+    "mtime": 1783445189.3131473,
+    "ast_hash": "6afc0b0821ec3262b453a0e910945a30",
+    "semantic_hash": ""
+  },
+  "ui-v2/public/config.js": {
+    "mtime": 1783445176.3779924,
+    "ast_hash": "03ad38f2de55e4b79ef275d114e947ea",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07 METAGRAPH input rename fix.md": {
+    "mtime": 1783453460.6707425,
+    "ast_hash": "dedcfe13fc7f6b94b747f307d6e55104",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07 Property State list-length logic fix.md": {
+    "mtime": 1783454766.3767598,
+    "ast_hash": "ca9776830e58273f8a5cec205f143b65",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07 DesignStateLabel input and output.md": {
+    "mtime": 1783456152.814849,
+    "ast_hash": "f99f097dbc47d17b5a55530b0f325d9f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/Components/LabelComponent.cs": {
+    "mtime": 1783456631.0050302,
+    "ast_hash": "dfab970d94b7b2444c6d6914437ee262",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-07-LABEL-component.md": {
+    "mtime": 1783457049.754816,
+    "ast_hash": "2d0cf1ec9d324f5b26f06ec84fdf169f",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/bin/Debug/net7.0/DG.Core.deps.json": {
+    "mtime": 1783257095.6191747,
+    "ast_hash": "6c64755bd8b40281cb0fdfb9f6fcd68b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/bin/Debug/net9.0/DG.Core.deps.json": {
+    "mtime": 1783473936.0620816,
+    "ast_hash": "307f8f52d8f4531094577b3e4e3f0c89",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/bin/Release/net7.0/DG.Core.deps.json": {
+    "mtime": 1783456682.5812242,
+    "ast_hash": "6c64755bd8b40281cb0fdfb9f6fcd68b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/bin/Release/net9.0/DG.Core.deps.json": {
+    "mtime": 1783459331.5286658,
+    "ast_hash": "307f8f52d8f4531094577b3e4e3f0c89",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/DG.Core.csproj.nuget.dgspec.json": {
+    "mtime": 1783463889.3117273,
+    "ast_hash": "78065c00617117588cabe44317e8c1ad",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net7.0/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs": {
+    "mtime": 1772573548.046587,
+    "ast_hash": "4bdaa6075c3028b4a6fd5b12843cab2b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net7.0/DG.Core.AssemblyInfo.cs": {
+    "mtime": 1783513325.048504,
+    "ast_hash": "e93fd463dcc3f3f2fe6e5a95c452f545",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net7.0/DG.Core.GlobalUsings.g.cs": {
+    "mtime": 1772573547.8489027,
+    "ast_hash": "0ca42cbc4f22da0578a209aaeb544bf8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net7.0/DG.Core.sourcelink.json": {
+    "mtime": 1783266858.7686193,
+    "ast_hash": "75cef02b37741a1ffd94682df751769b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1772573548.473198,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net9.0/DG.Core.AssemblyInfo.cs": {
+    "mtime": 1783513325.2529805,
+    "ast_hash": "e93fd463dcc3f3f2fe6e5a95c452f545",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net9.0/DG.Core.GlobalUsings.g.cs": {
+    "mtime": 1772573548.3427176,
+    "ast_hash": "0ca42cbc4f22da0578a209aaeb544bf8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net9.0/DG.Core.sourcelink.json": {
+    "mtime": 1783519636.6718466,
+    "ast_hash": "123dfff8c52a2cb234aa353767be85ae",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net7.0/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs": {
+    "mtime": 1772634478.6927938,
+    "ast_hash": "4bdaa6075c3028b4a6fd5b12843cab2b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net7.0/DG.Core.AssemblyInfo.cs": {
+    "mtime": 1783520966.667164,
+    "ast_hash": "0b97126b40568d3f6b7338cba0dd8b9e",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net7.0/DG.Core.GlobalUsings.g.cs": {
+    "mtime": 1772634478.6384213,
+    "ast_hash": "0ca42cbc4f22da0578a209aaeb544bf8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net7.0/DG.Core.sourcelink.json": {
+    "mtime": 1783520966.672681,
+    "ast_hash": "e1bcc85a0cf634797ad3d860a8e03c57",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1772634478.7036812,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net9.0/DG.Core.AssemblyInfo.cs": {
+    "mtime": 1783520966.6812425,
+    "ast_hash": "0b97126b40568d3f6b7338cba0dd8b9e",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net9.0/DG.Core.GlobalUsings.g.cs": {
+    "mtime": 1772634478.6717644,
+    "ast_hash": "0ca42cbc4f22da0578a209aaeb544bf8",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net9.0/DG.Core.sourcelink.json": {
+    "mtime": 1783520966.686239,
+    "ast_hash": "e1bcc85a0cf634797ad3d860a8e03c57",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/project.assets.json": {
+    "mtime": 1772634378.9561448,
+    "ast_hash": "1cd3ea3f2c629cfeb33041ea5e7dd4cb",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/bin/Debug/net7.0-windows/DG.Grasshopper.deps.json": {
+    "mtime": 1783266700.0648198,
+    "ast_hash": "fc708712660be389d5e946da50d725b3",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/bin/Release/net7.0-windows/DG.Grasshopper.deps.json": {
+    "mtime": 1783464009.0973341,
+    "ast_hash": "fc708712660be389d5e946da50d725b3",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/DG.Grasshopper.csproj.nuget.dgspec.json": {
+    "mtime": 1783464004.9220772,
+    "ast_hash": "99632af86e3f78efe124f932f4414350",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Debug/net7.0-windows/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs": {
+    "mtime": 1772573651.6169777,
+    "ast_hash": "4bdaa6075c3028b4a6fd5b12843cab2b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Debug/net7.0-windows/DG.Grasshopper.AssemblyInfo.cs": {
+    "mtime": 1783513325.5583434,
+    "ast_hash": "d538551ebc620c1b9ae6f0b76f11eb97",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Debug/net7.0-windows/DG.Grasshopper.GlobalUsings.g.cs": {
+    "mtime": 1772573693.3604257,
+    "ast_hash": "4547b127e7a1cd4454705bbb184d4e22",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Debug/net7.0-windows/DG.Grasshopper.sourcelink.json": {
+    "mtime": 1783266859.390455,
+    "ast_hash": "75cef02b37741a1ffd94682df751769b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Release/net7.0-windows/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs": {
+    "mtime": 1772574628.743758,
+    "ast_hash": "4bdaa6075c3028b4a6fd5b12843cab2b",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Release/net7.0-windows/DG.Grasshopper.AssemblyInfo.cs": {
+    "mtime": 1783520968.5380828,
+    "ast_hash": "d626147ee8b17f9e5ee8ad03bd14aafd",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Release/net7.0-windows/DG.Grasshopper.GlobalUsings.g.cs": {
+    "mtime": 1772574628.7097085,
+    "ast_hash": "4547b127e7a1cd4454705bbb184d4e22",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Release/net7.0-windows/DG.Grasshopper.sourcelink.json": {
+    "mtime": 1783520968.5645113,
+    "ast_hash": "e1bcc85a0cf634797ad3d860a8e03c57",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/project.assets.json": {
+    "mtime": 1783464004.912806,
+    "ast_hash": "e4510ab49f5198723c890786a35d0c2a",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/bin/Debug/net9.0/DG.Tests.deps.json": {
+    "mtime": 1783473938.2912078,
+    "ast_hash": "f3cdd24ea2660e3f5754cf101efea416",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/bin/Debug/net9.0/DG.Tests.runtimeconfig.json": {
+    "mtime": 1783473938.3925657,
+    "ast_hash": "736f910c5e3628eb081902af0baac09d",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/bin/Release/net9.0/DG.Tests.deps.json": {
+    "mtime": 1783463896.0511599,
+    "ast_hash": "f3cdd24ea2660e3f5754cf101efea416",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/bin/Release/net9.0/DG.Tests.runtimeconfig.json": {
+    "mtime": 1783463896.1464293,
+    "ast_hash": "a7bff45102af2bb94842c65f18db1d7a",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/DG.Tests.csproj.nuget.dgspec.json": {
+    "mtime": 1783463889.3117273,
+    "ast_hash": "8c9418f6c40cdde27dbd6ffa8aaa1870",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1772573636.1464584,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Debug/net9.0/DG.Tests.AssemblyInfo.cs": {
+    "mtime": 1783513325.5674534,
+    "ast_hash": "43fcaa5d3756dfd79635eb9bd2b76743",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Debug/net9.0/DG.Tests.GlobalUsings.g.cs": {
+    "mtime": 1772573547.8413777,
+    "ast_hash": "85ade9612eda34da064d8501bc008ac7",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Debug/net9.0/DG.Tests.sourcelink.json": {
+    "mtime": 1783519639.4113696,
+    "ast_hash": "123dfff8c52a2cb234aa353767be85ae",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1772574628.8404593,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Release/net9.0/DG.Tests.AssemblyInfo.cs": {
+    "mtime": 1783520968.4391136,
+    "ast_hash": "0f18ede6192de0833925d9b9a5543af1",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Release/net9.0/DG.Tests.GlobalUsings.g.cs": {
+    "mtime": 1772574628.8047798,
+    "ast_hash": "85ade9612eda34da064d8501bc008ac7",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Release/net9.0/DG.Tests.sourcelink.json": {
+    "mtime": 1783520968.4479034,
+    "ast_hash": "e1bcc85a0cf634797ad3d860a8e03c57",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/project.assets.json": {
+    "mtime": 1783463889.2876318,
+    "ast_hash": "23e2c493cb1ce642c43caceec2a63ab2",
+    "semantic_hash": ""
+  },
+  "data-service/data/llm-settings.json": {
+    "mtime": 1783373392.7154555,
+    "ast_hash": "9c84d3fd905a10e0dea6a8303464b9ed",
+    "semantic_hash": ""
+  },
+  "data-service/data/speckle-settings.json": {
+    "mtime": 1778495501.8471274,
+    "ast_hash": "97df9b5ddd934d8c662bc64ca1dc4e0e",
+    "semantic_hash": ""
+  },
+  "ontology/add_layer_hubs.py": {
+    "mtime": 1778837478.51505,
+    "ast_hash": "041cd3eb057040d5d45b28b27866c1d3",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v34_consistency.py": {
+    "mtime": 1778854140.5921018,
+    "ast_hash": "787eec95cd1dbcfc88465ee0bf32d046",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v40_split.py": {
+    "mtime": 1778855155.9026854,
+    "ast_hash": "fa57228c73f49a5748aeb63296d5868b",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v41_simplification.py": {
+    "mtime": 1778858752.8537111,
+    "ast_hash": "10dab943f6f56214de1fc426237d8c8b",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v6_extensions.py": {
+    "mtime": 1780268467.71034,
+    "ast_hash": "d7927147289d959c6bc248f01aad398c",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v6_restructure.py": {
+    "mtime": 1780289510.6419609,
+    "ast_hash": "7fbeca59001294d118b78bc78e948df4",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v7_extensions.py": {
+    "mtime": 1783043804.6652095,
+    "ast_hash": "8318d0d68e98f0cf93bd09fcc306398e",
+    "semantic_hash": ""
+  },
+  "ontology/apply_v7_rename.py": {
+    "mtime": 1783042396.500218,
+    "ast_hash": "7a063938aa3c682841c0e65c39dc168c",
+    "semantic_hash": ""
+  },
+  "ontology/export_to_markdown.py": {
+    "mtime": 1778829316.3746104,
+    "ast_hash": "d95898a7ff023b523015c72f904a821c",
+    "semantic_hash": ""
+  },
+  "ontology/export_to_markdown_v6.py": {
+    "mtime": 1780289586.258769,
+    "ast_hash": "ffca6e78a34826ac10a3e0ed6bddb655",
+    "semantic_hash": ""
+  },
+  "ontology/export_to_markdown_v7.py": {
+    "mtime": 1783044988.4819915,
+    "ast_hash": "1f73a72913e86d24c06a6a9014ba9336",
+    "semantic_hash": ""
+  },
+  "ontology/fix_v41_artifacts.py": {
+    "mtime": 1778858958.5265415,
+    "ast_hash": "7906f930b372f104de8104ee83212c76",
+    "semantic_hash": ""
+  },
+  "ontology/make_docs_v6.py": {
+    "mtime": 1780268685.4658241,
+    "ast_hash": "ea4e99c264f3be4d9d2669a9321cfcc2",
+    "semantic_hash": ""
+  },
+  "ontology/make_docs_v7.py": {
+    "mtime": 1783043919.400027,
+    "ast_hash": "8bcdb733a53b91b8c4e20551ff47503a",
+    "semantic_hash": ""
+  },
+  "ontology/make_export_v6.py": {
+    "mtime": 1780289578.3820548,
+    "ast_hash": "42458e6abe21d35f9a95eb3f34624107",
+    "semantic_hash": ""
+  },
+  "ontology/make_export_v7.py": {
+    "mtime": 1783043892.884863,
+    "ast_hash": "8fa2ca212f802828c30191e6824252a2",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net7.0/DG.Core.csproj.FileListAbsolute.txt": {
+    "mtime": 1772573635.569878,
+    "ast_hash": "2ad46e5e9d3b6eb005b495e5c3800dea",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Debug/net9.0/DG.Core.csproj.FileListAbsolute.txt": {
+    "mtime": 1772573635.8733864,
+    "ast_hash": "f30ca8665f0e57c3bd00df7a11468bbe",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net7.0/DG.Core.csproj.FileListAbsolute.txt": {
+    "mtime": 1773046817.2907033,
+    "ast_hash": "4e0d59a288d95188ae1a4170312a26a5",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Core/obj/Release/net9.0/DG.Core.csproj.FileListAbsolute.txt": {
+    "mtime": 1773046817.653542,
+    "ast_hash": "eb874ecee56ff727a8f56107705648af",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Debug/net7.0-windows/DG.Grasshopper.csproj.FileListAbsolute.txt": {
+    "mtime": 1773521069.7916412,
+    "ast_hash": "3fbcfe544b138afd67ef7a32b489159c",
+    "semantic_hash": ""
+  },
+  "DG/src/DG.Grasshopper/obj/Release/net7.0-windows/DG.Grasshopper.csproj.FileListAbsolute.txt": {
+    "mtime": 1773046819.6916058,
+    "ast_hash": "74c109ed5b9be36535214b3963699437",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Debug/net9.0/DG.Tests.csproj.FileListAbsolute.txt": {
+    "mtime": 1772573636.824543,
+    "ast_hash": "e7b7b32c644e6ac0590872a4f21b66c7",
+    "semantic_hash": ""
+  },
+  "DG/tests/DG.Tests/obj/Release/net9.0/DG.Tests.csproj.FileListAbsolute.txt": {
+    "mtime": 1773046819.718136,
+    "ast_hash": "52a4ca7d5e62207ac4ff65b11e122799",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Per-object property binding via PropState.ObjectRef.md": {
+    "mtime": 1783470098.2391655,
+    "ast_hash": "63dc1a0214c415d739586314f3fc57e3",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/Series coherence map.md": {
+    "mtime": 1780156633.1672156,
+    "ast_hash": "6f0f9d2209de9cd04623d021672104d2",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/T1 \u2014 \u041e\u043d\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0444\u0440\u0435\u0439\u043c\u0432\u043e\u0440\u043a.md": {
+    "mtime": 1780156545.5379646,
+    "ast_hash": "66061236d45871d944d547087911d6f3",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/T2 \u2014 \u041a\u043e\u0434\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043f\u0440\u0430\u0432\u0438\u043b.md": {
+    "mtime": 1780156564.4946063,
+    "ast_hash": "ae6f07c20f5885997ca75dff96d6d38c",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/T3 \u2014 \u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435 \u0441\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u0439.md": {
+    "mtime": 1780156585.5640755,
+    "ast_hash": "fc6451783c57be06e637dab3cb4e6452",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/T4 \u2014 \u0414\u0438\u0437\u0430\u0439\u043d-\u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u043e.md": {
+    "mtime": 1780156612.5085688,
+    "ast_hash": "e21f00db3dc00e17918af22fb1b5fdd7",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/publications/index.md": {
+    "mtime": 1780156527.71223,
+    "ast_hash": "735b71cf9f91b24cfc843322d369e339",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-08 Per-object property binding and Speckle auto-config.md": {
+    "mtime": 1783470087.3415885,
+    "ast_hash": "e953b272fdb08eaba3ccae04f90834e4",
+    "semantic_hash": ""
+  },
+  "Publications/01_Comments/Consultation_080626.md": {
+    "mtime": 1781980939.3709822,
+    "ast_hash": "60a7eef861ce057c657460636d8857bb",
+    "semantic_hash": ""
+  },
+  "Publications/01_ptBIM26_R5.txt": {
+    "mtime": 1781649049.8644214,
+    "ast_hash": "37d0f9dbb2182af5e3b79a83c79a62fb",
+    "semantic_hash": ""
+  },
+  "Publications/DesignKnowledge_Definition.txt": {
+    "mtime": 1780751557.9928358,
+    "ast_hash": "b7247e0337d0ab0d72c0d4353a9f6def",
+    "semantic_hash": ""
+  },
+  "Publications/_docx_dump.txt": {
+    "mtime": 1781646205.5520391,
+    "ast_hash": "8de3cc7db9f31c2a5ba8b10e03667548",
+    "semantic_hash": ""
+  },
+  "Publications/_slides_dump.txt": {
+    "mtime": 1781646059.8650298,
+    "ast_hash": "83265d3fe4590f6d8d2df96d8693ce7f",
+    "semantic_hash": ""
+  },
+  "Publications/ptBIM26_BIM-Context_Improvement_Plan.md": {
+    "mtime": 1780600249.921063,
+    "ast_hash": "8c9f78c647613997864236beccbc4804",
+    "semantic_hash": ""
+  },
+  "Publications/ptBIM26_PowerPoint_Edit_Instructions_R2.md": {
+    "mtime": 1780752936.1597738,
+    "ast_hash": "c13debd77037b94a4f5ba27dedcda3b1",
+    "semantic_hash": ""
+  },
+  "Publications/ptBIM26_PowerPoint_Edit_Instructions_R3.md": {
+    "mtime": 1780828694.121248,
+    "ast_hash": "d7bcdce91cc4b34187ac5c56a336d8f1",
+    "semantic_hash": ""
+  },
+  "Publications/ptBIM26_PowerPoint_Edit_Instructions_R5.md": {
+    "mtime": 1780956602.1241105,
+    "ast_hash": "c0c98fd0e6cce1b3498e6d96ba1efdbd",
+    "semantic_hash": ""
+  },
+  "docs/RELEASE-NOTES-v7.0.md": {
+    "mtime": 1783285680.0110831,
+    "ast_hash": "3da5cc12eae875da3e5a4b0a98c06f4c",
+    "semantic_hash": ""
+  },
+  "docs/RELEASE-NOTES-v8.0.md": {
+    "mtime": 1783445330.9237828,
+    "ast_hash": "ad0a03da4b547eae7ca82a9162636ebb",
+    "semantic_hash": ""
+  },
+  "docs/UPDATED_SYSTEM_SETUP_AND_TEST.md": {
+    "mtime": 1774934985.3792226,
+    "ast_hash": "744ca54328e68b2a1592b99b3d3ed270",
+    "semantic_hash": ""
+  },
+  "docs/manual-testing-llm-gateway.md": {
+    "mtime": 1783373255.117699,
+    "ast_hash": "ed20dffa45258270847619cc39779e37",
+    "semantic_hash": ""
+  },
+  "ontology/DesignGrammar-V6.md": {
+    "mtime": 1780289586.4042654,
+    "ast_hash": "4dc34f21a11f40da5aa70a83f47b67f2",
+    "semantic_hash": ""
+  },
+  "ontology/DesignGrammar-V7.md": {
+    "mtime": 1783044988.716861,
+    "ast_hash": "7c6cbf693ecd8aa625ae597897ac9b26",
+    "semantic_hash": ""
+  },
+  "ontology/DesignGrammar.md": {
+    "mtime": 1778859021.1180515,
+    "ast_hash": "ac6347b696ed90e448b2e82de9643e99",
+    "semantic_hash": ""
+  },
+  "ontology/HIERARCHY-OPTIMIZATION-V6.md": {
+    "mtime": 1780268702.835941,
+    "ast_hash": "e7426e6a74bccec21bb886d730ab6a29",
+    "semantic_hash": ""
+  },
+  "ontology/HIERARCHY-OPTIMIZATION.md": {
+    "mtime": 1778846186.811499,
+    "ast_hash": "299c17f8f033d4cd35b2ffbd8a19f13a",
+    "semantic_hash": ""
+  },
+  "ontology/ONTOLOGY-ALIGNMENT-V6.md": {
+    "mtime": 1780268702.8349416,
+    "ast_hash": "a6597c8d7a4bf317b527e255738bf76f",
+    "semantic_hash": ""
+  },
+  "ontology/ONTOLOGY-ALIGNMENT.md": {
+    "mtime": 1778857090.3349419,
+    "ast_hash": "24db7090de6b88fb2fa94b1b4597a5ec",
+    "semantic_hash": ""
+  },
+  "ontology/V6-to-V7-mapping.md": {
+    "mtime": 1783044905.745477,
+    "ast_hash": "6f484d01192e42bd908c419f41e6819a",
+    "semantic_hash": ""
+  },
+  "ontology/V7-INVESTIGATION.md": {
+    "mtime": 1783040878.5152676,
+    "ast_hash": "cb2f2abac6d088e2be9136f4a70f62de",
+    "semantic_hash": ""
+  },
+  "ontology/port-iri-map-V7.md": {
+    "mtime": 1783043315.574145,
+    "ast_hash": "3eba75b017ac398b397d9831f419d882",
+    "semantic_hash": ""
+  },
+  "Publications/01_ptBIM26_R2.pdf": {
+    "mtime": 1780599791.0045283,
+    "ast_hash": "7bea20fce327bbbdf59a26cdfa4c3fd8",
+    "semantic_hash": ""
+  },
+  "Publications/01_ptBIM26_R4.pdf": {
+    "mtime": 1780955147.6909647,
+    "ast_hash": "3b7cd59d1b2f64329a04e2b15064aa3b",
+    "semantic_hash": ""
+  },
+  "Publications/01_ptBIM26_R5.pdf": {
+    "mtime": 1781522342.817935,
+    "ast_hash": "f1afba4165438c30077483d41a9b9ef9",
+    "semantic_hash": ""
+  },
+  "Publications/01_ptBIM26_R6.pdf": {
+    "mtime": 1781808616.5138495,
+    "ast_hash": "b765b2e4bf8a3679b1f687030788eb35",
+    "semantic_hash": ""
+  },
+  "Publications/04_SoA_Presentation_Ontologies_Rev03.pdf": {
+    "mtime": 1780156084.1493063,
+    "ast_hash": "1198ba4d30ce96ec97892921679a04b2",
+    "semantic_hash": ""
+  },
+  "Publications/T1_ITcon_DG_Draft_R4.pdf": {
+    "mtime": 1780229646.128711,
+    "ast_hash": "97578d1ee39d96d3fc4ccc510bb4eaea",
+    "semantic_hash": ""
+  },
+  "Publications/T1_ITcon_DG_Draft_R5.pdf": {
+    "mtime": 1780311287.4134889,
+    "ast_hash": "955979a5da1e71d9b81eb863fb7e23d2",
+    "semantic_hash": ""
+  },
+  "Publications/ptBIM2026_Evgenii_Ermolenko_UMinho_R2.pdf": {
+    "mtime": 1781445520.0008533,
+    "ast_hash": "63785887b01e8b1cd37652f32afba326",
+    "semantic_hash": ""
+  },
+  "docs/GSD_Guide_ClaudeCode.pdf": {
+    "mtime": 1775422025.0,
+    "ast_hash": "dd217c854279a570e76903b82b99c885",
+    "semantic_hash": ""
+  },
+  "docs/Obsidian_ClaudeCode_Guide.pdf": {
+    "mtime": 1775388338.0,
+    "ast_hash": "59a68c3b7043e7485af29d7c6dc9660c",
+    "semantic_hash": ""
+  },
+  "ontology/04_SoA_Presentation_Ontologies_Rev03_ERD-Mapping.pdf": {
+    "mtime": 1780164925.0627842,
+    "ast_hash": "9f03543fcf9aa8a9af57acb99cbd2c18",
+    "semantic_hash": ""
+  },
+  "ontology/GH_DesignGrammars.pdf": {
+    "mtime": 1783000367.5696084,
+    "ast_hash": "07714e8fe759c7804b939c9bf03dbd4e",
+    "semantic_hash": ""
+  },
+  "Publications/unpacked_orig/word/media/image2.png": {
+    "mtime": 1780310124.8664694,
+    "ast_hash": "04d377d968557a6092bccb1617db5a65",
+    "semantic_hash": ""
+  },
+  "Publications/unpacked_r5/word/media/image2.png": {
+    "mtime": 1780295178.5945618,
+    "ast_hash": "04d377d968557a6092bccb1617db5a65",
+    "semantic_hash": ""
+  },
+  "Publications/unpacked_r5/word/media/image3.png": {
+    "mtime": 1780295476.049723,
+    "ast_hash": "60aa8354e3e1ab7a1166cadc794ec2b6",
+    "semantic_hash": ""
+  },
+  "ontology/GH-mapping.png": {
+    "mtime": 1780267986.2511292,
+    "ast_hash": "60aa8354e3e1ab7a1166cadc794ec2b6",
+    "semantic_hash": ""
+  },
+  "ontology/Mapping.jpg": {
+    "mtime": 1780267823.7314763,
+    "ast_hash": "9da40b61657ab58a626af69d33a50a70",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/decisions/Phase 27 Speckle 3D embed design decisions.md": {
+    "mtime": 1783472624.2199855,
+    "ast_hash": "fc60510010425a50b036633a87082d2c",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan.md": {
+    "mtime": 1783472577.942688,
+    "ast_hash": "a7c38cb1918d6cb504cb58aab53ec66b",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/speckle/SpeckleViewport.jsx": {
+    "mtime": 1783518828.2802827,
+    "ast_hash": "29a65f86f79243568c1a70f91290d950",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-08 Phase 27 Speckle 3D embed execution.md": {
+    "mtime": 1783488804.2057335,
+    "ast_hash": "6d613ea284464b5477e06708b4b00a6e",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/knowledge/debugging/Model Viewer validation objects not found in Speckle world tree.md": {
+    "mtime": 1783521002.2786226,
+    "ast_hash": "2c5049ed7e95a3b17e998484a45c413f",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-08 Model Viewer filter/coloring regression.md": {
+    "mtime": 1783514001.7700567,
+    "ast_hash": "23af702fb7cc4fc244f6bd835bd07d37",
+    "semantic_hash": ""
+  },
+  "test/publish_validation_run_with_geometry.py": {
+    "mtime": 1783520954.350428,
+    "ast_hash": "36f1da0c695c355114c4ee585303e2fd",
+    "semantic_hash": ""
+  },
+  "DG_OBSIDIAN/sessions/2026-07-08 audit-fix - Model Viewer geometry regression (F-01 F-02 F-03).md": {
+    "mtime": 1783522103.685992,
+    "ast_hash": "f14b024e0e7d8327a44f0641167ab6db",
+    "semantic_hash": ""
+  },
+  "ui-v2/src/components/display/SessionHistory.jsx": {
+    "mtime": 1783524690.7951381,
+    "ast_hash": "ff1b8f7275c081e14cf55fc9074a5e7b",
+    "semantic_hash": ""
+  }
+}

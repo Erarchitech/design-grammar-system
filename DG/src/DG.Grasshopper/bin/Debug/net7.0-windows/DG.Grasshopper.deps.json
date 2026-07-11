@@ -1,0 +1,75 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v7.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v7.0": {
+      "DG.Grasshopper/1.0.0": {
+        "dependencies": {
+          "DG.Core": "1.0.0"
+        },
+        "runtime": {
+          "DG.Grasshopper.dll": {}
+        }
+      },
+      "Neo4j.Driver/5.28.2": {
+        "dependencies": {
+          "System.IO.Pipelines": "8.0.0"
+        },
+        "runtime": {
+          "lib/net6.0/Neo4j.Driver.dll": {
+            "assemblyVersion": "5.28.41.2",
+            "fileVersion": "5.28.2.0"
+          }
+        }
+      },
+      "System.IO.Pipelines/8.0.0": {
+        "runtime": {
+          "lib/net7.0/System.IO.Pipelines.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "DG.Core/1.0.0": {
+        "dependencies": {
+          "Neo4j.Driver": "5.28.2"
+        },
+        "runtime": {
+          "DG.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DG.Grasshopper/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Neo4j.Driver/5.28.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-n/2qVFP7LEk56CtXZ3GC4enFw1pfXbs/34GO1S2wSUSOpFPQrw3FXfdc+QIkNUrOfhsdtOLw69ZVXn/Hw05Zrg==",
+      "path": "neo4j.driver/5.28.2",
+      "hashPath": "neo4j.driver.5.28.2.nupkg.sha512"
+    },
+    "System.IO.Pipelines/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FHNOatmUq0sqJOkTx+UF/9YK1f180cnW5FVqnQMvYUN0elp6wFzbtPSiqbo1/ru8ICp43JM1i7kKkk6GsNGHlA==",
+      "path": "system.io.pipelines/8.0.0",
+      "hashPath": "system.io.pipelines.8.0.0.nupkg.sha512"
+    },
+    "DG.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

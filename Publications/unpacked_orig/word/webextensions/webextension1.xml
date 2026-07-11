@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<we:webextension xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" id="{4C493D13-7CD6-4001-A577-F4FF42CCED51}">
+  <we:reference id="wa104382081" version="1.55.1.0" store="ru-RU" storeType="OMEX"/>
+  <we:alternateReferences>
+    <we:reference id="WA104382081" version="1.55.1.0" store="" storeType="OMEX"/>
+  </we:alternateReferences>
+  <we:properties>
+    <we:property name="MENDELEY_CITATIONS" value="[]"/>
+    <we:property name="MENDELEY_CITATIONS_STYLE" value="{&quot;id&quot;:&quot;https://www.zotero.org/styles/apa&quot;,&quot;title&quot;:&quot;APA Style 7th edition&quot;,&quot;format&quot;:&quot;author-date&quot;,&quot;defaultLocale&quot;:null,&quot;isLocaleCodeValid&quot;:true}"/>
+    <we:property name="MENDELEY_BIBLIOGRAPHY_IS_DIRTY" value="true"/>
+    <we:property name="MENDELEY_BIBLIOGRAPHY_LAST_MODIFIED" value="1780225152044"/>
+  </we:properties>
+  <we:bindings/>
+  <we:snapshot xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+</we:webextension>

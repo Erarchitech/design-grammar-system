@@ -1,0 +1,19 @@
+Canonical one-sentence definition
+
+Design knowledge is the explicit, machine-readable body of functions, constraints, rules and relationships that justify and generate a design — the design logic and intent — as distinct from the geometry and properties that merely record its final, realised state.
+
+Slide-ready (tight) version
+
+Design knowledge = the why and how behind a model, not the model itself.
+The rules, constraints, parametric relationships and functional intent that produce and govern geometry — formalised so they can be stored, shared, reasoned over and validated, independently of any one tool or file.
+
+Research definition (expanded, with the FBS spine)
+In this research design knowledge is framed through the Function–Behaviour–Structure lens (Gero). A BIM deliverable captures Structure — the realised geometry and properties that IFC represents well. Design knowledge is everything upstream of that artefact:
+
+Functional intent — what the design must achieve (spatial program, adjacencies, performance goals).
+Constraints and rules — the regulatory, project and disciplinary requirements a valid design must satisfy (e.g. "max building height ≤ 75 m", "habitable rooms ≥ X m² with daylight access"), formalised here as SWRL rules over an ontology.
+Relationships and dependencies — the parametric and topological logic that links objects and drives generation (the Grasshopper/grammar logic).
+Rationale — the design reasoning that connects intent to form, which conventional handovers discard.
+
+It is defined by three properties that separate it from ordinary BIM data: it is explicit and machine-readable (encoded as ontology + SWRL atoms, not implicit in a node graph or a designer's head), generative and prescriptive (it produces and tests designs, rather than describing a finished one), and tool- and file-independent (it lives in a shared semantic core referenced by all disciplines, not locked inside one platform's export).
+In one line for the talk: IFC carries the building's Structure; Design Grammars carries its Design Knowledge — the Function, Behaviour and rules that produced it.

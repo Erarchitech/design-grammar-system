@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "QtjQoIz04do=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\DG.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\neo4j.driver\\5.28.2\\neo4j.driver.5.28.2.nupkg.sha512",
+    "C:\\Users\\Admin\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

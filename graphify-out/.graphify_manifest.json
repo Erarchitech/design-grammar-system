@@ -1,0 +1,63 @@
+{
+  "built_at": "2026-06-21",
+  "status": "complete",
+  "extraction": {
+    "ast_nodes": 1211,
+    "ast_edges": 1966,
+    "semantic_nodes": 641,
+    "semantic_edges": 726,
+    "semantic_hyperedges": 32,
+    "total_nodes": 1836,
+    "total_edges": 2335
+  },
+  "graph": {
+    "nodes": 1836,
+    "edges": 2335,
+    "communities": 198,
+    "direction": "directed"
+  },
+  "vault": {
+    "path": "DG_OBSIDIAN/graphify_dump",
+    "node_notes": 1830,
+    "community_notes": 170,
+    "total_notes": 2000,
+    "size_bytes": 1028438,
+    "size_kb": 1004
+  },
+  "outputs": {
+    "graph.json": 1319899,
+    "GRAPH_REPORT.md": 50280,
+    ".graphify_labels.json": 7949,
+    ".graphify_extract.json": 1055489
+  },
+  "god_nodes": [
+    {
+      "label": "Design Grammar System",
+      "edges": 30
+    },
+    {
+      "label": "SpeckleValidationError",
+      "edges": 25
+    },
+    {
+      "label": "SpeckleConnectionSettings",
+      "edges": 24
+    },
+    {
+      "label": "ReinstateComponent",
+      "edges": 22
+    },
+    {
+      "label": "DG.Core",
+      "edges": 22
+    },
+    {
+      "label": "ValidationRunsComponent",
+      "edges": 18
+    },
+    {
+      "label": "HTTPException",
+      "edges": 18
+    }
+  ]
+}

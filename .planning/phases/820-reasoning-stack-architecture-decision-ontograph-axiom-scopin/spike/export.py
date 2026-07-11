@@ -42,6 +42,7 @@ BASE = "http://example.org/design-grammar"  # DesignGrammar-V7.owl xml:base
 # ex: is per-project dynamically-generated domain vocabulary — a namespace
 # SEPARATE from the V7 meta-schema's dg/dgm/dgv/dgs (do not conflate).
 EX = Namespace(f"{BASE}/ex#")
+DGM = Namespace(f"{BASE}/meta#")  # spike-only annotations (SkippedRule/SkippedAtom)
 SWRL = Namespace("http://www.w3.org/2003/11/swrl#")
 SWRLB = Namespace("http://www.w3.org/2003/11/swrlb#")
 
@@ -173,6 +174,7 @@ def make_plain_list(g: Graph, items: list) -> URIRef | BNode:
 
 def bind_prefixes(g: Graph) -> None:
     g.bind("ex", EX)
+    g.bind("dgm-spike", DGM)
     g.bind("swrl", SWRL)
     g.bind("swrlb", SWRLB)
     g.bind("owl", OWL)
@@ -205,7 +207,7 @@ def build_rdf_graph(session, project: str) -> Graph:
             if props.get("label"):
                 g.add((iri, RDFS.label, RDFLiteral(props["label"])))
 
-    # --- Metagraph nodes ---
+    # --- Metagraph: collect nodes (label-scoped) ---
     atoms: dict[str, dict] = {}      # Atom_Id -> props
     rules: dict[str, dict] = {}      # Rule_Id -> props
     exported_atom_count = 0
@@ -216,14 +218,9 @@ def build_rdf_graph(session, project: str) -> Graph:
         elif "Atom" in labels and props.get("Atom_Id"):
             atoms[props["Atom_Id"]] = props
             exported_atom_count += 1
-        elif "Builtin" in labels:
-            iri = expand_iri(props.get("iri"))
-            if iri is not None:
-                g.add((iri, RDF.type, SWRL.Builtin))
-        elif "Var" in labels and props.get("name"):
-            var_iri = mint(project, "var", props["name"].lstrip("?"))
-            g.add((var_iri, RDF.type, SWRL.Variable))
-        # Literal nodes become typed RDF literals at ARG-mapping time, not nodes
+        # Var/Builtin declarations are emitted only when referenced by an
+        # exported atom (orphan swrl-typed nodes confuse the OWL API parser).
+        # Literal nodes become typed RDF literals at ARG-mapping time.
 
     # Pitfall 1 assertion: label-scoped export must see ALL atoms, including
     # the mistagged graph:'OntoGraph' ones — compare with independent count.
@@ -234,42 +231,87 @@ def build_rdf_graph(session, project: str) -> Graph:
             f"independent label count {independent} — scoping bug (Pitfall 1)"
         )
 
-    # --- Atom individuals ---
-    atom_iri: dict[str, URIRef] = {}
-    for atom_id, props in atoms.items():
-        a_iri = mint(project, "atom", atom_id)
-        atom_iri[atom_id] = a_iri
-        swrl_type, _ = atom_kind(props)
-        g.add((a_iri, RDF.type, swrl_type))
-
-    # --- REFERS_TO -> classPredicate / propertyPredicate / builtin ---
+    # --- collect structure (REFERS_TO, ARG, HAS_BODY/HAS_HEAD) ---
+    refers: dict[str, URIRef] = {}
     for rec in session.run(REFERS_QUERY, project=project):
-        atom_id, target = rec["atom_id"], expand_iri(rec["target_iri"])
-        if atom_id not in atoms or target is None:
-            continue
-        _, predicate = atom_kind(atoms[atom_id])
-        g.add((atom_iri[atom_id], predicate, target))
+        target = expand_iri(rec["target_iri"])
+        if rec["atom_id"] in atoms and target is not None:
+            refers[rec["atom_id"]] = target
 
-    # --- ARG.pos -> swrl:argument1/2 (binary atoms) or swrl:arguments list (builtins) ---
     args_by_atom: dict[str, list[tuple[int, object]]] = {}
     for rec in session.run(ARG_QUERY, project=project):
         atom_id = rec["atom_id"]
         if atom_id not in atoms:
             continue
         labels, props = rec["labels"], rec["props"]
-        pos = rec["pos"] if rec["pos"] is not None else 0
+        pos = int(rec["pos"]) if rec["pos"] is not None else 0
         if "Var" in labels and props.get("name"):
             term: object = mint(project, "var", props["name"].lstrip("?"))
         elif "Literal" in labels:
             term = RDFLiteral(props.get("lex", ""), datatype=xsd_datatype(props.get("datatype")))
         else:
             continue
-        args_by_atom.setdefault(atom_id, []).append((int(pos), term))
+        args_by_atom.setdefault(atom_id, []).append((pos, term))
 
-    for atom_id, arg_list in args_by_atom.items():
-        arg_list.sort(key=lambda t: t[0])
+    body_head: dict[str, dict[str, list[tuple[int, str]]]] = {}
+    for rec in session.run(BODY_HEAD_QUERY, project=project):
+        rule_id, rel, ord_, atom_id = rec["rule_id"], rec["rel"], rec["ord"], rec["atom_id"]
+        if rule_id not in rules or atom_id not in atoms:
+            continue
+        body_head.setdefault(rule_id, {}).setdefault(rel, []).append(
+            (int(ord_) if ord_ is not None else 0, atom_id)
+        )
+
+    # --- SWRL well-formedness (live data has atoms with NO ARG edges at all;
+    #     OWL API/HermiT refuses to translate rules containing them, so
+    #     incomplete rules are captured as annotated SkippedRule/SkippedAtom
+    #     individuals instead of malformed swrl:Imp structures) ---
+    def atom_incomplete_reason(atom_id: str) -> str | None:
+        props = atoms[atom_id]
+        t = props.get("type", "")
+        if atom_id not in refers:
+            return "missing REFERS_TO target"
+        positions = {p for p, _ in args_by_atom.get(atom_id, [])}
+        if t in BUILTIN_TYPES:
+            return None if positions else "BuiltinAtom has no ARG edges"
+        if t == "ClassAtom" or t not in ATOM_TYPE_MAP:
+            return None if 1 in positions else "ClassAtom missing ARG pos=1"
+        return None if {1, 2} <= positions else "property atom missing ARG pos=1 and/or pos=2"
+
+    incomplete_atoms = {aid: r for aid in atoms if (r := atom_incomplete_reason(aid))}
+
+    skipped_rules: dict[str, str] = {}
+    for rule_id in rules:
+        edges = body_head.get(rule_id, {})
+        body, head = edges.get("HAS_BODY", []), edges.get("HAS_HEAD", [])
+        if not body or not head:
+            skipped_rules[rule_id] = "missing HAS_BODY and/or HAS_HEAD atoms"
+            continue
+        bad = sorted({aid for _, aid in body + head if aid in incomplete_atoms})
+        if bad:
+            skipped_rules[rule_id] = "incomplete atoms: " + ", ".join(bad)
+
+    exported_rules = [r for r in rules if r not in skipped_rules]
+    swrl_atom_ids: set[str] = set()
+    for rule_id in exported_rules:
+        for items in body_head.get(rule_id, {}).values():
+            swrl_atom_ids.update(aid for _, aid in items)
+
+    # --- emit SWRL atoms (well-formed rules only) ---
+    atom_iri: dict[str, URIRef] = {aid: mint(project, "atom", aid) for aid in atoms}
+    for atom_id in swrl_atom_ids:
+        props = atoms[atom_id]
         a_iri = atom_iri[atom_id]
-        if atoms[atom_id].get("type") in BUILTIN_TYPES:
+        swrl_type, predicate = atom_kind(props)
+        g.add((a_iri, RDF.type, swrl_type))
+        g.add((a_iri, predicate, refers[atom_id]))
+        if props.get("type") in BUILTIN_TYPES:
+            g.add((refers[atom_id], RDF.type, SWRL.Builtin))
+        arg_list = sorted(args_by_atom.get(atom_id, []), key=lambda t: t[0])
+        for _, term in arg_list:
+            if isinstance(term, URIRef):  # a minted Var — declare it
+                g.add((term, RDF.type, SWRL.Variable))
+        if props.get("type") in BUILTIN_TYPES:
             g.add((a_iri, SWRL.arguments, make_plain_list(g, [t for _, t in arg_list])))
         else:
             for pos, term in arg_list:
@@ -280,17 +322,8 @@ def build_rdf_graph(session, project: str) -> Graph:
                 else:
                     print(f"WARNING: non-builtin atom {atom_id} has ARG pos={pos} (>2) — unmapped")
 
-    # --- Rules: swrl:Imp with ordered swrl:body / swrl:head AtomLists ---
-    body_head: dict[str, dict[str, list[tuple[int, str]]]] = {}
-    for rec in session.run(BODY_HEAD_QUERY, project=project):
-        rule_id, rel, ord_, atom_id = rec["rule_id"], rec["rel"], rec["ord"], rec["atom_id"]
-        if rule_id not in rules or atom_id not in atoms:
-            continue
-        body_head.setdefault(rule_id, {}).setdefault(rel, []).append(
-            (int(ord_) if ord_ is not None else 0, atom_id)
-        )
-
-    for rule_id, props in rules.items():
+    # --- emit rules ---
+    for rule_id in exported_rules:
         r_iri = mint(project, "rule", rule_id)
         g.add((r_iri, RDF.type, SWRL.Imp))
         g.add((r_iri, RDFS.label, RDFLiteral(rule_id)))
@@ -299,9 +332,84 @@ def build_rdf_graph(session, project: str) -> Graph:
             items = sorted(edges.get(rel, []), key=lambda t: t[0])
             g.add((r_iri, swrl_pred, make_atom_list(g, [atom_iri[a] for _, a in items])))
 
-    print(f"Exported project '{project}': {len(rules)} rules, {len(atoms)} atoms "
-          f"(independent atom count: {independent} — label-scoped, Pitfall 1 OK)")
+    # --- captured-not-dropped: skipped rules/atoms stay in the export as
+    #     annotated individuals (incl. the two mistagged R_DOOR_ORIENTATION_V
+    #     atoms — Pitfall 1's label-scoping catch) without swrl typing ---
+    for rule_id, reason in skipped_rules.items():
+        r_iri = mint(project, "rule", rule_id)
+        g.add((r_iri, RDF.type, DGM.SkippedRule))
+        g.add((r_iri, RDFS.label, RDFLiteral(rule_id)))
+        g.add((r_iri, RDFS.comment, RDFLiteral(
+            f"captured by label-scoped export but not mapped to swrl:Imp — {reason}")))
+        print(f"NOTE: rule {rule_id} skipped from SWRL mapping — {reason}")
+    for atom_id in atoms:
+        if atom_id in swrl_atom_ids:
+            continue
+        reason = incomplete_atoms.get(atom_id, "belongs to a skipped rule")
+        g.add((atom_iri[atom_id], RDF.type, DGM.SkippedAtom))
+        g.add((atom_iri[atom_id], RDFS.comment, RDFLiteral(
+            f"captured by label-scoped export but excluded from SWRL mapping — {reason}")))
+
+    print(f"Exported project '{project}': {len(exported_rules)}/{len(rules)} rules as swrl:Imp "
+          f"({len(skipped_rules)} skipped as SWRL-incomplete), "
+          f"{len(atoms)} atoms captured (independent atom count: {independent} — "
+          f"label-scoped, Pitfall 1 OK; {len(swrl_atom_ids)} mapped to SWRL, "
+          f"{len(atoms) - len(swrl_atom_ids)} kept as dgm:SkippedAtom)")
     return g
+
+
+def strip_hermit_unsupported(g: Graph) -> int:
+    """Remove swrl:Imp rules that use builtin atoms from a reasoning-input graph.
+
+    HermiT rejects any ontology containing SWRL builtin atoms outright
+    ("built-in atoms are not supported yet" — java.lang.IllegalArgumentException),
+    and DG's violation pattern is builtin-centric. The canonical .ttl evidence
+    files keep the FULL SWRL mapping; only the reasoner input is filtered.
+    The consistency contrast the spike proves lives entirely in the TBox
+    class/property axioms, which are untouched. Returns removed-rule count.
+    """
+    builtin_atoms = set(g.subjects(RDF.type, SWRL.BuiltinAtom))
+
+    def list_cells(node):
+        cells = []
+        while node is not None and node != RDF.nil:
+            first = g.value(node, RDF.first)
+            cells.append((node, first))
+            node = g.value(node, RDF.rest)
+        return cells
+
+    removed = 0
+    for imp in list(g.subjects(RDF.type, SWRL.Imp)):
+        cells, atoms_of = [], []
+        for pred in (SWRL.body, SWRL.head):
+            for head in g.objects(imp, pred):
+                for cell, item in list_cells(head):
+                    cells.append(cell)
+                    if item is not None:
+                        atoms_of.append(item)
+        if not any(a in builtin_atoms for a in atoms_of):
+            continue
+        for atom in set(atoms_of):
+            for args_head in g.objects(atom, SWRL.arguments):
+                for cell, _ in list_cells(args_head):
+                    g.remove((cell, None, None))
+            g.remove((atom, None, None))
+        for cell in cells:
+            g.remove((cell, None, None))
+        g.remove((imp, None, None))
+        removed += 1
+
+    # prune now-unreferenced swrl:Variable / swrl:Builtin declarations
+    used_terms = set(g.objects(None, SWRL.argument1)) | set(g.objects(None, SWRL.argument2)) \
+        | set(g.objects(None, RDF.first))
+    for var in list(g.subjects(RDF.type, SWRL.Variable)):
+        if var not in used_terms:
+            g.remove((var, None, None))
+    used_builtins = set(g.objects(None, SWRL.builtin))
+    for b in list(g.subjects(RDF.type, SWRL.Builtin)):
+        if b not in used_builtins:
+            g.remove((b, RDF.type, SWRL.Builtin))
+    return removed
 
 
 def count_tbox_axioms(owl_path: Path, out_path: Path) -> None:

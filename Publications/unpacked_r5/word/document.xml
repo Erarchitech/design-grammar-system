@@ -1,0 +1,4225 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14">
+  <w:body>
+    <w:p w14:paraId="0DE27FAD" w14:textId="0B55591E" w:rsidR="00943C52" w:rsidRPr="00065D41" w:rsidRDefault="00057DCB" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="1"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:szCs w:val="28"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>INVENTING ONTOLOGY OF DESIGN GRAMMARS AS A SEMANTIC CORE FOR inTeractive data-driven DESIGN VALIDATION</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="4548CFB0" w14:textId="3839E7FE" w:rsidR="0065122D" w:rsidRPr="00A42483" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+        <w:t>SUBMITTED: June 2026</w:t>
+      </w:r>
+      
+    </w:p>
+    <w:p w14:paraId="1554637D" w14:textId="77777777" w:rsidR="0065122D" w:rsidRPr="00A42483" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+        <w:t xml:space="preserve">REVISED: </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="61797000" w14:textId="77777777" w:rsidR="0065122D" w:rsidRPr="00A42483" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+        <w:t xml:space="preserve">PUBLISHED: </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0ACA95AE" w14:textId="5475070A" w:rsidR="0065122D" w:rsidRPr="00A42483" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+        <w:t>EDITOR: Evgenii Ermolenko</w:t>
+      </w:r>
+      
+    </w:p>
+    <w:p w14:paraId="18DCFA59" w14:textId="77777777" w:rsidR="0065122D" w:rsidRPr="00A42483" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="ae"/>
+        </w:rPr>
+        <w:t xml:space="preserve">DOI: </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="707CDC68" w14:textId="53CAC798" w:rsidR="00F0166D" w:rsidRPr="00A42483" w:rsidRDefault="00812F93" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t>Evgenii Ermolenko, Mr,</w:t>
+      <w:br/><w:t>University of Minho; EAAD; Lab2PT;ISISE, Guimaraes, Portugal</w:t></w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="012064D7" w14:textId="4F41D72F" w:rsidR="00943C52" w:rsidRPr="00A42483" w:rsidRDefault="00F0166D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ORCID: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="pt-PT"/>
+        </w:rPr>
+        <w:t>0009-0003-1228-9550</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:br/>
+        <w:t>email erarchitech@gmail.com</w:t>
+      </w:r>
+      
+    </w:p>
+    <w:p w14:paraId="52C944AD" w14:textId="6E79EE5D" w:rsidR="00F0166D" w:rsidRPr="00A42483" w:rsidRDefault="005C58C7" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t>Bruno Figueiredo, Pr,</w:t>
+      <w:br/><w:t>University of Minho; EAAD; Lab2PT;IN2PAST, Guimaraes, Portugal;</w:t></w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="0E5C8003" w14:textId="285D4725" w:rsidR="00943C52" w:rsidRPr="00A42483" w:rsidRDefault="00F0166D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ORCID: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="pt-PT"/>
+        </w:rPr>
+        <w:t>0000-0001-8439-7065</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:br/>
+        <w:t>email bfigueiredo@eaad.uminho.pt</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="3980BA25" w14:textId="709414E8" w:rsidR="005C58C7" w:rsidRPr="00A42483" w:rsidRDefault="005C58C7" w:rsidP="005C58C7">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t>Miguel Azenha, Pr,</w:t>
+      <w:br/><w:t>University of Minho; ISISE; ARISE; Department of Civil Engineering, Guimaraes, Portugal;</w:t></w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="0DA7A5E5" w14:textId="2603E6A0" w:rsidR="00B127F4" w:rsidRDefault="005C58C7" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+        <w:rPr>
+          <w:ins w:id="0" w:author="Автор"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ORCID: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="pt-PT"/>
+        </w:rPr>
+        <w:t>0000-0003-1374-9427</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:br/>
+        <w:t>email miguel.azenha@civil.uminho.pt</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="7393FB82" w14:textId="77777777" w:rsidR="00AF4975" w:rsidRPr="00065D41" w:rsidRDefault="00AF4975" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Address"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="69FAF687" w14:textId="0123BF87" w:rsidR="00145E2E" w:rsidRPr="00437D3B" w:rsidRDefault="000E1262" w:rsidP="00145E2E">
+      <w:pPr>
+        <w:spacing w:before="80" w:after="80"/>
+        <w:jc w:val="both"/>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>SUMMARY</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>Design grammars offer a formal language for describing spatial and regulatory constraints in architectural design, yet their encoding in machine-readable ontologies remains fragmented and ad hoc. This paper presents the development of a structured ontology for design grammars, intended to act as a semantic core for data-driven design that bridges abstract design rules, parametric design definitions, and object-oriented model representations within Parametric Design and Building Information Modelling (BIM) interoperable workflows. Aside from existing IFC-schema-based validators, this research shifts focus from file-based compliance checking to object-level communication and validation of design data integrated into interactive workflows. Rather than describing a complete software system, the paper concentrates on the ontology itself: its development methodology, conceptual structure, and formalization. Following established ontology-engineering activities - specification, conceptualization, formalization, and implementation - the ontology reuses and aligns with existing design and topology ontologies (Gero&#x2019;s Function–Behaviour–Structure model, Design Criteria Modelling, the Building Topology Ontology, and Topologic). The schema employs OWL 2 constructs and the Semantic Web Rule Language (SWRL) to represent architectural design grammars as typed rule nodes within a property-graph (LPG) database. The ontology is organized as a cross-cutting Core band - grounded in the Function–Behaviour–Structure framework - over five co-resident graph layers: an OntoGraph of domain vocabulary, a Metagraph that decomposes each rule into atomic predicates (class atoms, datatype-property atoms, and SWRL built-in atoms), a ValidationGraph that records execution and results, a SpecGraph for shared knowledge, and a ComputationGraph that mirrors the parametric design model and maps directly onto Grasshopper definitions. A violation-pattern semantics encodes each constraint so that a rule fires precisely when the constraint is broken, and a cross-layer bridge attaches rule atoms to the parameters of the parametric definition that produces the validated geometry. The ontology is delivered as a vendor-neutral core module with three optional alignment extensions - standards, BOT, and Topologic - following the W3C core-plus-extension pattern. Project-scoped isolation allows multiple design projects to coexist within a single graph while still enabling knowledge sharing, so the ontology can accumulate lessons learned across a shared stakeholder memory. Three use cases - natural-language design-rule communication, master-plan design-state validation, and encoded spatial-programme implementation in parametric plan-layout generation - are formalized to illustrate the ontology&#x2019;s applicability potential; their operational realization within a full authoring-and-validation framework is left to a further stage of research. The contribution advances the state of the art by providing a scalable, technology-agnostic ontology schema for design grammars that is compatible with mainstream BIM authoring and computational design tools and accessible to practitioners without formal ontology expertise.</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="0F24A8B5" w14:textId="5BD097E5" w:rsidR="00943C52" w:rsidRPr="00145E2E" w:rsidRDefault="00943C52" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Summary"/>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="0C68F29C" w14:textId="4F21C50D" w:rsidR="0065122D" w:rsidRPr="004E5CC1" w:rsidRDefault="000E1262" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Summary"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>KEYWORDS</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:iCs/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">design grammars; ontology; SWRL; knowledge graph; modular ontology; Grasshopper; </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:i w:val="0"/>
+          <w:iCs/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>design rules; BIM; parametric design</w:t>
+      </w:r>
+      
+    </w:p>
+    <w:p w14:paraId="31300FC2" w14:textId="7F93BB4D" w:rsidR="0065122D" w:rsidRPr="004E5CC1" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Summary"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>REFERENCE</w:t>
+      </w:r>
+      <w:r>
+        <w:t>: First N. Lastname &amp; First N. Lastname (2023). Article title. Journal of Information Technology in Construction (ITcon), Vol. 0, pg. 1-2, DOI: 10.36680/j.itcon.2023.0</w:t>
+      </w:r>
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="1BD94B16" w14:textId="02B35773" w:rsidR="00943C52" w:rsidRPr="00065D41" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="Summary"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>COPYRIGHT</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">: © 2026 Evgenii Ermolenko, </w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      <w:r>
+        <w:rPr>
+          <w:rStyle w:val="af"/>
+        </w:rPr>
+        <w:t>Bruno Figueired, Miguel Azenha</w:t>
+      </w:r>
+      
+      
+      <w:r>
+        <w:t>. This is an open access article distributed under the terms of the Creative Commons Attribution 4.0 International (</w:t>
+      </w:r>
+      
+      <w:hyperlink r:id="rId8" w:history="1">
+        <w:r>
+          <w:rPr>
+            <w:rStyle w:val="a8"/>
+            <w:rFonts w:cs="Times New Roman (Body CS)"/>
+            <w:iCs/>
+          </w:rPr>
+          <w:t>https://creativecommons.org/licenses/by/4.0/</w:t>
+        </w:r>
+      </w:hyperlink>
+      <w:r>
+        <w:t>), which permits unrestricted use, distribution, and reproduction in any medium, provided the original work is properly cited.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="7A225B03" w14:textId="77777777" w:rsidR="0065122D" w:rsidRPr="0065122D" w:rsidRDefault="0065122D" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+        <w:sectPr w:rsidR="0065122D" w:rsidRPr="0065122D" w:rsidSect="00A0786D">
+          <w:headerReference w:type="default" r:id="rId9"/>
+          <w:footerReference w:type="default" r:id="rId10"/>
+          <w:pgSz w:w="11907" w:h="16840" w:code="9"/>
+          <w:pgMar w:top="1418" w:right="1418" w:bottom="2268" w:left="1418" w:header="624" w:footer="1106" w:gutter="0"/>
+          <w:cols w:space="720"/>
+          <w:docGrid w:linePitch="326"/>
+        </w:sectPr>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="130A81FF" w14:textId="7E73807C" w:rsidR="00943C52" w:rsidRDefault="00AC77E6" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t>INTRODUCTION</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1ADA4D2F" w14:textId="5706D5CD" w:rsidR="00830A21" w:rsidRDefault="00830A21" w:rsidP="00830A21">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The built environment is governed by an increasingly dense body of regulatory codes, planning guidelines, and project-specific design rules that architects and engineers must navigate throughout the design process. Manual compliance validation is time-consuming, error-prone, and difficult to scale across large project portfolios and design stages. The emergence of Building Information Modelling (BIM) as the dominant digital medium for architectural design has created an opportunity to automate compliance checking by querying structured geometric and semantic data against machine-readable rule sets (Eastman et al., 2009).</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="43CFCD5B" w14:textId="18CF0456" w:rsidR="00830A21" w:rsidRDefault="00830A21" w:rsidP="00830A21">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Design grammars, first introduced by Stiny and Gips (1972) as shape grammars, provide a generative, rule-based formalism for describing spatial configurations. Subsequent extensions - including parametric shape grammars, description-logic grammars, and ontology-driven rule systems - have sought to bring this formalism closer to practical compliance-checking workflows (Duarte, 2005; Beirão et al., 2011). However, the translation of design-grammar rules into executable ontology representations that operate directly on BIM data remains largely unsolved. A central obstacle is the absence of a shared, well-structured ontology that can host such rules: existing efforts tend to author ontologies ad hoc for individual studies, with little attention to reuse, alignment, or systematic development. This paper addresses that gap by focusing on the ontology itself rather than on any particular software system built around it.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="1605E843" w14:textId="3E415B9E" w:rsidR="00830A21" w:rsidRDefault="00830A21" w:rsidP="00830A21">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">An ontology functions as the semantic core - effectively the </w:t>
+      </w:r>
+      
+      
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>&#x201C;</w:t>
+      </w:r>
+      <w:r>
+        <w:t>brain&#x201D; - of a knowledge graph: it interprets entities and infers semantic relationships in response to queries posed to the system. To organize and connect concepts that originate in diverse domains of architectural knowledge, a common and shared understanding of those concepts is required. Elaborating an ontology that embraces and extends existing design domains and their interrelationships therefore establishes the shared semantic core on which true design-grammar reasoning can be built.</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="7BAC21C3" w14:textId="08AF8AE5" w:rsidR="00830A21" w:rsidRDefault="00830A21" w:rsidP="00830A21">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Ontology-based compliance checking has been studied in the AEC sector for two decades, from early rule systems operating on enriched IFC files (Eastman et al., 2009) to OWL-based approaches using IfcOWL, SPARQL, and SWRL (Pauwels &amp; Terkaj, 2016; Pauwels et al., 2017), and more recently to knowledge-graph backends for rule storage and evaluation (Zhou et al., 2022). Property-graph databases such as Neo4j have likewise been adopted as flexible stores for heterogeneous building knowledge (Sacks et al., 2020). The present work builds on this lineage furhter gaining to develop common ontology that such validation systems presuppose extending on cross-platform and cross-format basis. Consequently, within the research scope, the ontology described here forms the semantic core of the broader cross-platform knowledge-management framework introduced in Ermolenko et al. (2026).</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="1529C983" w14:textId="4AB3033C" w:rsidR="00943C52" w:rsidRDefault="00830A21" w:rsidP="00830A21">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Against this background, the contributions of this paper are: (1) the application of a systematic ontology-development methodology to design grammars within a cross-domain knowledge system; (2) a five-layer ontology schema, organized as a cross-cutting Core band over an OntoGraph, a Metagraph, a ValidationGraph, a SpecGraph, and a ComputationGraph, with a violation-pattern SWRL encoding and a cross-layer bridge that links rule atoms to parametric-design parameters; (3) a modular packaging of the ontology as a vendor-neutral core with three optional standards, BOT, and Topologic alignment extensions, together with a worked mapping between a Grasshopper parametric definition and the ComputationGraph; and (4) three formalized use cases that illustrate the ontology&#x2019;s applicability potential. The remainder of the paper is organized as follows. Section 2 presents the ontology-development methodology and the specification of the design-grammar domain, including the reuse of existing ontologies. Section 3 describes the resulting design-grammar ontology - its Core band and five-layer modular schema, node and relationship types, SWRL encoding, and the mapping of parametric definitions onto the ComputationGraph. Section 4 evaluates the ontology through three formalized use cases. Section 5 discusses expressiveness, limitations, and positioning relative to related approaches. Section 6 concludes. The operationalization of the ontology within a complete authoring-and-validation framework - including the natural-language rule-encoding pipeline - is the subject of a companion paper.</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="564ED068" w14:textId="73BE8A91" w:rsidR="00E50935" w:rsidRDefault="00C76ED0" w:rsidP="00E50935">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>ONTOLOGY DEVELOPMENT METHODOLOGY</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7F247111" w14:textId="09EE9A4C" w:rsidR="00943C52" w:rsidRDefault="00C76ED0" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>Development Activities</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="210670D5" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">There is no single correct way to model a domain; viable alternatives always exist (Noy &amp; McGuinness, 2001). Accordingly, the design-grammar ontology was developed following a structured set of ontology-development activities widely used in ontological engineering (Sack, 2019), comprising four principal stages organized as an </w:t>
+      <w:lastRenderedPageBreak/><w:t>iterative process across increasing levels of formality. Specification establishes the main definition of the ontology. Conceptualization structures domain knowledge into a conceptual model. Formalization expresses that conceptual model in a (semi-)computable form. Implementation constructs a computable model in an ontology-representation environment. These principal activities are accompanied by supporting activities carried out continuously throughout development: knowledge acquisition (gathering knowledge from experts and the literature), evaluation (technical assessment of the ontology at each step), reuse (merging and aligning existing ontologies), documentation, and configuration management (version control).</w:t></w:r>
+      
+    </w:p>
+    <w:p w14:paraId="634764AE" w14:textId="5ADACA1B" w:rsidR="00E50935" w:rsidRDefault="00C76ED0" w:rsidP="00E50935">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Specification: Domain, Scope, and Feasibility</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="3B15847B" w14:textId="4C24126E" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The specification stage fixes the boundaries and purpose of the ontology. The domain is procedural design in the conceptual stage of architecture, and the scope is design grammars - problem formulation and parametric schema, design inputs, constraints, and relationships. The purpose is to support design-system decomposition and grammar inference, and to carry design intent into later stages of parametric design and grammar validation. The intended end-users are architects and clients, while maintainers are BIM departments. The anticipated benefits are rigorous communication of design grammars, simplified management of complex design ideas and multiple constraints, automatic design-intent validation, and improved sustainability of design knowledge across reformulations and reuse.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="1507D50A" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The scope is informed by how architects reason: through problem–solution co-evolution (Schön, 1992; Poon &amp; Maher, 1997; Dorst &amp; Cross, 2001), iterative divergence and convergence with problem reformulation, framing and abductive reasoning (Dorst, 2011), analogical reasoning such as design-by-analogy and case-based reasoning (Gero, 1992; Mubarak, 2004; Fu et al., 2015), and function–structure mapping and decomposition (Gero, 1990). From these, the ontology is required to support a corresponding set of tasks: decomposing the design problem into computable parts; enabling a modular structure of design knowledge; composing complex algorithms within a single class and its properties; raising interoperability and shared perception across stakeholders; translating design knowledge among authoring systems; enabling a semantic reasoner over defined design rules; and enabling automatic design-intent validation.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6931416B" w14:textId="5C3915D8" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Feasibility is assessed through the competency questions the ontology must answer, which both bound its scope and provide acceptance criteria for evaluation. Representative competency questions include: Does a staircase comply with defined dimension constraints and spatial adjacencies? Does the current model state meet the lighting constraints? Can a design space of plan configurations be generated according to the spatial programme and constraints? Does the detailed-design BIM model comply with the initial parametric schema defined at the conceptual stage? The three use cases of Section 4 are derived directly from these questions.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="35DB28DE" w14:textId="2509E425" w:rsidR="00824A7C" w:rsidRDefault="00C76ED0" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>Knowledge Reuse and Alignment</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="296B4402" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>A core principle of the methodology is reuse of existing ontologies rather than de novo authoring. Four sources were analyzed for versatility of implementation, accessibility for external use, and maintainability, and were aligned to the design-grammar domain while preserving a common SWRL convention. Following the W3C core-plus-extension pattern, each external alignment is kept out of the vendor-neutral core ontology and confined to a dedicated extension module, so that reuse never couples the core schema to a particular vocabulary or platform. The Function&#x2013;Behaviour&#x2013;Structure framework supplies the conceptual scaffolding for the cross-cutting Core band, Design Criteria Modelling informs both the rule encoding and the ComputationGraph layer, and the topology ontologies are bridged through separate BOT and Topologic extension modules.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="131CBFE5" w14:textId="29B9AE5E" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The first source is the Design Knowledge Ontology grounded in Gero&#x2019;s Function–Behaviour–Structure (FBS) framework (Gero, 1990; Gero &amp; Kannengiesser, 2004), which decomposes a design into functions mapped to structures, with behaviour mediating the relationship and supporting reformulation. FBS provides modular, transparent, and domain-agnostic design reasoning - for example, designing a chair decomposes the function &#x201C;seating&#x201D; into expected behaviours (load capacity, comfort, light weight) realized by alternative structures, with reformulation driven by the gap between expected and actual behaviour.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="50FA6C63" w14:textId="4814E586" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The second source is Design Criteria Modelling (DCM) (Lin, 2021), which distinguishes three types of design information - semantic, topological, and geometric - and uses SWRL expressions of the form Body → Head to associate a semantic ontology with algorithmically computed topological relationships such as separated, connective, adjacent, and enclosing. DCM directly informs both the rule encoding adopted here and the ComputationGraph layer (Section 3), in which the algorithmically computed quantities that DCM evaluates are themselves modelled as parameters of a parametric design definition. For instance, DCM expresses a vision-quality criterion as:</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="321CF4A6" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:i/>
+        </w:rPr>
+        <w:lastRenderedPageBreak/>
+        <w:t>IndoorSpace(?s) ∧ Window(?w) ∧ hasWindow(?s, ?w) ∧ OutdoorSpace(?x) ∧ LandscapeElement(?y) ∧ hasQuality(?y, &#x201C;Good&#x201D;) ∧ isAdjacent(?s, ?x) ∧ FaceTo(?w, ?y) → hasVisionQuality(?s, &#x201C;Good&#x201D;)</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1BE24040" w14:textId="032B6CED" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>This pattern - semantic atoms combined with algorithmically computed topological predicates - is the conceptual antecedent of the encoding formalized in Section 3.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="51C796B7" w14:textId="550B2100" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The third source comprises topology ontologies: the Building Topology Ontology (BOT) (Rasmussen et al., 2017, 2020) and the Topologic ontology (Jabi, 2021), which provide navigable representations of building topology for spatial relationships. Rather than embedding these vocabularies in the core schema, the ontology aligns to them through two dedicated extension modules: a BOT extension that maps the Core topology concept onto BOT&#x2019;s building/storey/space decomposition, and a Topologic extension that bridges the geometric output of the ComputationGraph to Topologic&#x2019;s hierarchical decomposition (cluster, cell-complex, cell, shell, face, wire, edge, vertex). Complementary shape-grammar and building-product vocabularies were additionally considered for terminology alignment. Across all sources, the violation-pattern SWRL convention drawn from DCM is retained, ensuring that reused concepts integrate consistently into the design-grammar schema.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="73728469" w14:textId="1F1257AD" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t>Formalization and Implementation Environment</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="26FDD8CA" w14:textId="4290AC7E" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>In the formalization stage the conceptual model is expressed using OWL 2 constructs and SWRL Horn clauses (Section 3). In the implementation stage the ontology is realized as a property graph in Neo4j, with the conceptual model optionally authored in a dedicated ontology editor such as Protégé. The ontology is designed to operate within mainstream BIM and parametric-design environments - BIM authoring and parametric tools (e.g., Rhinoceros, Revit) and visual-programming editors (e.g., Grasshopper, Dynamo). This paper formalizes the schema at the level of node labels, relationships, and SWRL encoding; the surrounding software services that exercise the ontology are out of scope and are addressed in the farther research stage.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="4CB79039" w14:textId="0DA86A5B" w:rsidR="00824A7C" w:rsidRDefault="00824A7C" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>THE DESIGN GRAMMAR ONTOLOGY</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1104D6E4" w14:textId="116DBA4E" w:rsidR="00C76ED0" w:rsidRPr="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The ontology is organized as a cross-cutting Core band over five co-resident graph layers within a single property-graph (Neo4j) database instance, sharing nodes through typed relationships. The Core band holds the over-layer concepts that every layer references - the Function&#x2013;Behaviour&#x2013;Structure roles (Object, Function, Behaviour, Structure), Geometry and Topology, the captured design states (ObjectState and DefState), and a unified interaction Session. The OntoGraph layer captures the ontological vocabulary - domain classes, datatype properties, object properties, and SWRL built-ins. The Metagraph layer captures the structural decomposition of each design rule into rule, atom, variable, and literal nodes. The ValidationGraph layer records the execution of rules against a design state and the resulting per-object outcomes. The SpecGraph layer holds shared notes and tags that accumulate project knowledge. The ComputationGraph layer models the parametric design definition that produces the geometry under validation, and maps directly onto Grasshopper definitions (Section 3.5). The five layers are partitioned logically by a graph property rather than physically, so cross-layer relationships - for example, a Metagraph atom that constrains a ComputationGraph parameter - can be traversed without federation.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="3C1AD590" w14:textId="6C126B51" w:rsidR="00824A7C" w:rsidRDefault="00824A7C" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Ontology Architecture: Core Band and Five-Layer Modular Schema</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5C3DB511" w14:textId="77777771" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The Core band sits above the five layers and is intentionally not tagged to any one of them, because its concepts are referenced from several layers at once. It encodes the Function&#x2013;Behaviour&#x2013;Structure (FBS) reading of a design artefact: an Object carries a Function (the design intent that rules enforce), is realized through Behaviour (the computational process that generates it), and yields a Structure (its geometric and topological output). Geometry and Topology are first-class Core concepts so that both the validated model and the parametric definition can refer to the same spatial vocabulary. Two design-state concepts - ObjectState, a snapshot of an object&#x2019;s bound variables, and DefState, a snapshot of the parametric definition - capture the state that a validation run consumes, and a single Session concept records each authoring, query, or validation interaction. Keeping these over-layer concepts in one band is what lets the Metagraph, ValidationGraph, and ComputationGraph remain decoupled yet interoperable.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5C3DB56D" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The OntoGraph corresponds conceptually to a lightweight OWL 2 ontology in which domain entities (e.g., Building, Floor, UrbanBlock) are represented as Class nodes and their measurable attributes (e.g., hasHeightM, grossFloorArea) are represented as DatatypeProperty nodes with typed ranges (xsd:decimal, xsd:integer, xsd:boolean). Object properties capture relationships between domain entities (e.g., containedIn, adjacentTo). All OntoGraph nodes are tagged with graph = 'OntoGraph' and a project identifier, enabling multiple projects to share a single database instance while maintaining logical isolation.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="466604BE" w14:textId="441B54BD" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">The Metagraph layer instantiates rules as Rule nodes, each identified by a structured Rule_Id of the form R_&lt;DOMAIN&gt;_&lt;PROPERTY&gt;_&lt;LIMIT&gt;_V (e.g., R_URB_HEIGHT_MAX_75_V). Each Rule node is connected to a set of Atom nodes via HAS_BODY (antecedent) and HAS_HEAD (consequent) relationships, ordered by an integer pos attribute. Atom nodes carry typed references (REFERS_TO) to ontology terms in the OntoGraph and argument relationships (ARG) to Var and Literal nodes. Rules are grouped into a RuleSet for evaluation. This decomposition makes every component of a SWRL rule individually addressable and queryable, which is a prerequisite for inspecting, auditing, and updating rules at the level of individual atoms. </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="466604C1" w14:textId="441B54C1" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The ValidationGraph layer records what happens when a RuleSet is evaluated against a design state. A ValidationRun captures a single evaluation - its rule set, the design state consumed, a timestamp, and a status - and is linked to one ValidationEntity per checked object, each recording the object instance, the property and value observed, and a pass or fail outcome. An ObjectInstance is the concrete geometric thing under test; it carries an ObjectState and a GeoRef, a neutral handle to the externally stored geometry held in the source viewer or model platform. A Reasoner node represents the evaluating component (the Grasshopper &#x201C;Validator&#x201D;), and an IntegrationConfig records the generic external project and model-version identifiers needed to fetch geometry, without naming a specific product. This layer aligns conceptually with the W3C PROV-O, SOSA, SHACL, and GeoSPARQL vocabularies, an alignment that is declared in a separate extension module rather than the core (Section 3.4).</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="466604C2" w14:textId="441B54C2" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The SpecGraph layer holds shared project knowledge as lightweight notes and tags. A SpecNote is a titled text artefact with a source; a SpecTag is a controlled tag; and a SpecClass groups instances of a given type. This layer lets the system accumulate lessons learned - decisions, debugging notes, and conventions - alongside the formal rules, and aligns with the SKOS and Dublin Core vocabularies through the standards extension.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="466604C3" w14:textId="441B54C3" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The ComputationGraph layer is the fifth and most recent layer. It models the parametric design definition that generates the geometry a rule checks, expressed in the FBS terms of the Core band: the definition is the Behaviour that turns Function into Structure. Its central hierarchy is Algorithm &#x2192; Procedure &#x2192; Pattern, which corresponds one-to-one to a Grasshopper definition, its clusters, and the components inside them. Parameters (constant, variable, or emergent) are the inputs and outputs of these elements, exposed through typed Interface nodes. The layer is connected to the rule structure by a single cross-layer bridge, attributeOf, which links a Metagraph atom to the ComputationGraph Parameter it constrains; this bridge is what makes a design rule and the parametric definition that must satisfy it mutually addressable, and is the basis for the bidirectional translation between design grammars and parametric definitions developed in Section 3.5.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="68EE173C" w14:textId="19D98CF4" w:rsidR="00824A7C" w:rsidRDefault="00824A7C" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>SWRL Rule Encoding and Violation-Pattern Semantics</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="284CBE13" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Design rules are encoded as SWRL Horn clauses of the form Body → Head, where the body atoms express the condition that violates the constraint and the head atom asserts a boolean violation flag. This inverted, violation-first semantics simplifies rule evaluation: a rule fires if and only if the constraint is broken, avoiding the need to reason over the complement of a positive condition. For example, the regulation &#x201C;maximum building height is 75 metres&#x201D; is encoded as:</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="2324B034" w14:textId="77777777" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:i/>
+        </w:rPr>
+        <w:lastRenderedPageBreak/>
+        <w:t>Building(?b) ∧ hasHeightM(?b, ?h) ∧ swrlb:greaterThan(?h, 75.0) → violatesMaxHeight(?b, true)</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="51887170" w14:textId="24BB6920" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Minimum constraints use swrlb:lessThan, equality constraints use swrlb:notEqual, and range constraints are decomposed into two separate violation rules - one for the lower bound and one for the upper bound - to maintain the principle that each Rule node encodes a single, atomic constraint. This rule-separation principle avoids compound rules that are difficult to trace during debugging and audit.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="7A74B884" w14:textId="6FA67962" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">The violation-pattern semantics is applied consistently across all rule types supported by the schema. It operates under an open-world assumption: if no Building node is present in the graph, a height rule will not fire, regardless of whether the constraint is semantically satisfied. Section 5.1 discusses this limitation and its mitigation. </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="07C8F0C3" w14:textId="0FA366E1" w:rsidR="00824A7C" w:rsidRDefault="00824A7C" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Graph Schema: Node Labels and Relationship Types</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="65DA0034" w14:textId="752A2BC2" w:rsidR="00C76ED0" w:rsidRDefault="00C76ED0" w:rsidP="00C76ED0">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Table 1 summarizes the node labels, key properties, and graph-layer assignments of the schema. Table 2 lists the allowed relationship types and their source–target constraints. Together, these tables constitute the normative schema definition against which encoded rules are validated before they are committed to the graph. </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="63F157EF" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>Table 1. Node labels in the Design Grammar ontology schema (v6), grouped by Core band and the five graph layers.</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="0" w:type="auto"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+        </w:tblBorders>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2160"/>
+        <w:gridCol w:w="2160"/>
+        <w:gridCol w:w="2160"/>
+        <w:gridCol w:w="2160"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="009D53EB" w14:paraId="1BE9BF3E" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3CC75088" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="456940AE" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Graph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="71E333CA" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Key Property</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3446D1C2" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Display Property</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="39C31772" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="715A771A" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Class</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="36980886" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>OntoGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="018BBBB3" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>iri</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="68AC6C49" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="2F53962C" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="0C673713" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>DatatypeProperty</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="6EB89264" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>OntoGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="39D4F2E6" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>iri</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3977430A" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>SWRL_label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="0A7774DE" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="34B4F106" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>ObjectProperty</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="1C8F4142" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>OntoGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3EC73ECB" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>iri</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="7CC0C5F6" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="448B55AE" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="23CB1DED" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Rule</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="4247C631" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Metagraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="568B2F60" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Rule_Id</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="34A54D18" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Rule_Id</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="0AF93BB7" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3062C463" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Atom</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="5814CB14" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Metagraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="30BF9230" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Atom_Id</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="4057FFB3" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>SWRL_label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="30419FB2" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="16748C1D" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Var</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="102FE398" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Metagraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="183AF465" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="28BE86AF" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="7090403D" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="60984B60" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Literal</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="4D90884D" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Metagraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3CC9D76D" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>lex + datatype</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="265A4831" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>lex</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="4A2D18C1" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="68FD4617" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Builtin</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="5776C9C7" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>OntoGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="0327C6F1" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>iri</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="2807B164" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+          <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">RuleSet</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Metagraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Object</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">objectId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Function</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">—</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Behaviour</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">—</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Structure</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">—</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Geometry</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">—</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Topology</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">—</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ObjectState</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">stateId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DefState</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">stateId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">label</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Session</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">sessionId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">mode</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationRun</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">runId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">runId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationEntity</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">dgEntityId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">displayName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ObjectInstance</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">instanceId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">displayName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">GeoRef</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">geoRefId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">geoRefId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Reasoner</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">IntegrationConfig</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">provider</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">provider</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecNote</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">noteId</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">title</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecTag</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">tagName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">tagName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecClass</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">name</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Algorithm</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ComputationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">algorithmName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">algorithmName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Procedure</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ComputationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">procedureName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">procedureName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Pattern</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ComputationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">patternName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">patternName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Parameter</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ComputationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">parameterName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">parameterDisplayName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Interface</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ComputationGraph</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">interfaceName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">interfaceName</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+</w:tbl>
+    <w:p w14:paraId="3F1B8346" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="1D87E222" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>Table 2. Relationship types in the Design Grammar ontology schema (v6), including the cross-layer bridges.</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="0" w:type="auto"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+        </w:tblBorders>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2880"/>
+        <w:gridCol w:w="2880"/>
+        <w:gridCol w:w="2880"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="009D53EB" w14:paraId="1E8359B8" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="00FAF3B1" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Relationship</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="36638FC3" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Source → Target</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="248F0A1A" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:b/>
+              </w:rPr>
+              <w:t>Description</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="6DE62206" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="3015AC41" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>HAS_BODY</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="4A7E0D3C" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Rule → Atom</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="60CE858B" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Links a rule to its antecedent (body) atoms, ordered by pos.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="73C14BA4" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="30B43C0A" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>HAS_HEAD</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="0D7008DA" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Rule → Atom</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="1E105609" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Links a rule to its consequent (head) atom.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="31AC19D8" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="597FD181" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>REFERS_TO</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="179536AE" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Atom → OntoGraph entity</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="525F6B81" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Maps an atom to the ontology term it instantiates (Class / DatatypeProperty / ObjectProperty / Builtin).</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="009D53EB" w14:paraId="0997346F" w14:textId="77777777" w:rsidTr="00DC79C5">
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="32682F1D" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>ARG</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="61E4357D" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Atom → Var / Literal</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2880" w:type="dxa"/>
+          </w:tcPr>
+          <w:p w14:paraId="0AE4E0F8" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="00DC79C5">
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t>Connects an atom to its argument variables and literals, ordered by pos.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+          <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">VALIDATES</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">RuleSet → ObjectInstance</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Cross-layer bridge linking the evaluated rule set to the object instances a validation run checks (Metagraph → ValidationGraph).</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_ENTITY</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationRun → ValidationEntity</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Links a validation run to its per-object result entities.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">VALIDATES_INSTANCE</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationEntity → ObjectInstance</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Identifies the object instance a result entity concerns.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">REFERS_TO_GEOMETRY</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ValidationEntity → GeoRef</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Bridges a result entity to the external geometry handle it concerns.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_OBJECT_STATE</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ObjectInstance → ObjectState</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Binds an object instance to its captured variable-binding state.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DEFINES_FUNCTION</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Object → Function</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Associates a design object with the design function (intent) it fulfils.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_ALGORITHM</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Object → Algorithm</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Links a design object to the parametric algorithm (definition) that generates it.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_PROCEDURE</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Algorithm → Procedure</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Decomposes an algorithm into ordered procedures (clusters), ordered by procedureOrder.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_PATTERN</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Procedure → Pattern</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Links a procedure to its constituent component patterns.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">HAS_PARAMETER</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Pattern → Parameter</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Connects a pattern to its input and output parameters via typed interfaces.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">ATTRIBUTE_OF</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Atom → Parameter</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Cross-layer bridge linking a rule atom to the ComputationGraph parameter it constrains (Metagraph → ComputationGraph).</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">TAGGED_WITH</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">SpecNote → SpecTag</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2160" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Connects a knowledge note to the tags that classify it.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+</w:tbl>
+    <w:p w14:paraId="14D1E201" w14:textId="0BA9DA01" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Modular Packaging: Core Ontology and Alignment Extensions</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E202" w14:textId="0BA9DA02" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The schema is delivered as four OWL modules that follow the W3C core-plus-extension pattern used by vocabularies such as SOSA/SSN and DCAT. The core ontology contains only design-grammar-native content - the Core band and the five layer hubs with their classes, properties, and internal axioms - and declares no external imports, so it loads cleanly, reasons quickly, and stays vendor-neutral: no specific geometry, viewer, or modelling product is named anywhere in the core. Three extension modules add interoperability on top without modifying the core. The standards extension imports the core together with the W3C and OGC vocabularies (SWRL, PROV-O, SOSA, SHACL, SKOS, Dublin Core, and GeoSPARQL) and carries the cross-vocabulary alignment axioms described in Sections 3.1&#x2013;3.3. The BOT extension maps the Core topology concept onto the Building Topology Ontology&#x2019;s building/storey/space decomposition. The Topologic extension bridges the geometric output of the ComputationGraph to Topologic&#x2019;s non-manifold spatial hierarchy (cluster, cell-complex, cell, shell, face, wire, edge, and vertex).</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E203" w14:textId="0BA9DA03" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>This separation keeps each concern independently maintainable and lets a consumer load only what is needed: the lean core for schema editing and rule authoring, or a given extension when reasoning across vocabularies or integrating with standards-aware tooling. Because the alignment axioms never live in the core, the ontology avoids the &#x201C;ontology pollution&#x201D; that results from re-parenting external classes under local hubs, and downstream systems that import only the core are not obliged to resolve seven external vocabularies. Table 3 summarizes the four modules and their roles.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E204" w14:textId="0BA9DA04" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Table 3. The four OWL modules of the Design Grammar ontology (v6).</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="8640" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="808080"/>
+        </w:tblBorders>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2520"/>
+        <w:gridCol w:w="2520"/>
+        <w:gridCol w:w="3600"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r><w:rPr><w:b/></w:rPr>
+              <w:t xml:space="preserve">Module</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r><w:rPr><w:b/></w:rPr>
+              <w:t xml:space="preserve">Imports</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r><w:rPr><w:b/></w:rPr>
+              <w:t xml:space="preserve">Contents and role</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DesignGrammar.owl (core)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">(none)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Core band and the five layer hubs; vendor-neutral DG content with no external imports.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DesignGrammar-standards-extension.owl</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">core + SWRL, PROV-O, SOSA, SHACL, SKOS, DCTerms, GeoSPARQL</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Cross-vocabulary alignment axioms for HermiT reasoning and standards-aware tooling.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DesignGrammar-BOT-extension.owl</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">core + BOT</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Maps the Core topology concept onto BOT building/storey/space decomposition.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">DesignGrammar-Topologic-extension.owl</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2520" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">core</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:after="40"/>
+            </w:pPr>
+            <w:r>
+              <w:t xml:space="preserve">Bridges ComputationGraph geometry to Topologic non-manifold spatial hierarchy.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+
+    <w:p w14:paraId="14D1E211" w14:textId="0BA9DA11" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Mapping Parametric Definitions onto the ComputationGraph</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E212" w14:textId="0BA9DA12" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The ComputationGraph is designed so that the parametric definitions architects already build in visual-programming environments can be expressed directly in the ontology, without translation loss. Grasshopper - the de facto authoring environment for which the system is built - organizes a definition as a canvas of wired components that may be grouped into named clusters. This structure maps one-to-one onto the ComputationGraph hierarchy: a Grasshopper definition is an Algorithm, each named cluster is a Procedure (ordered by procedureOrder), and each component within a cluster is a Pattern. The number sliders, panels, and value inputs that drive the definition become Parameter nodes, typed as constant, variable, or emergent and exposed through Input and Output Interface nodes; the wires between components are recorded by the paramLink relationship, and the geometry a component hosts by patternHostTo.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E213" w14:textId="0BA9DA13" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Figure 1 illustrates the mapping for a structural-frame definition. The whole canvas, labelled OBJECT - FRAME / 1_ALGORITHM, is the Algorithm that generates the frame Object; in Function&#x2013;Behaviour&#x2013;Structure terms it is the Behaviour that turns the design Function (a load-bearing frame) into a Structure (the frame geometry). Within it, two named clusters - 11_Proc - 2D Truss Configuration and 12_Proc - 2D Footer Configuration - are Procedures, and the components inside each cluster are Patterns. The sliders that set, for example, the truss height or the footer spacing are variable Parameters; quantities computed downstream from them, such as a derived member length, are emergent Parameters. The geometry produced (lower left) is the Structure, bound to the Object through the design state captured for a validation run.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E214" w14:textId="0BA9DA14" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:jc w:val="center"/>
+        <w:spacing w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:drawing>
+          <wp:inline distT="0" distB="0" distL="0" distR="0">
+            <wp:extent cx="5486400" cy="1871800"/>
+            <wp:effectExtent l="0" t="0" r="0" b="0"/>
+            <wp:docPr id="100" name="GH-mapping" descr="Grasshopper parametric definition mapped to the ComputationGraph"/>
+            <wp:cNvGraphicFramePr>
+              <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+            </wp:cNvGraphicFramePr>
+            <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+              <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                  <pic:nvPicPr>
+                    <pic:cNvPr id="100" name="GH-mapping.png" descr="Grasshopper parametric definition mapped to the ComputationGraph"/>
+                    <pic:cNvPicPr/>
+                  </pic:nvPicPr>
+                  <pic:blipFill>
+                    <a:blip r:embed="rId100"/>
+                    <a:stretch>
+                      <a:fillRect/>
+                    </a:stretch>
+                  </pic:blipFill>
+                  <pic:spPr>
+                    <a:xfrm>
+                      <a:off x="0" y="0"/>
+                      <a:ext cx="5486400" cy="1871800"/>
+                    </a:xfrm>
+                    <a:prstGeom prst="rect">
+                      <a:avLst/>
+                    </a:prstGeom>
+                  </pic:spPr>
+                </pic:pic>
+              </a:graphicData>
+            </a:graphic>
+          </wp:inline>
+        </w:drawing>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E215" w14:textId="0BA9DA15" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:jc w:val="center"/>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:i/>
+          <w:sz w:val="18"/>
+        </w:rPr>
+        <w:t>Figure 1. Mapping of a Grasshopper parametric definition (OBJECT - FRAME) onto the ComputationGraph: the definition is an Algorithm, named clusters are Procedures, components are Patterns, and sliders and computed values are Parameters.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E216" w14:textId="0BA9DA16" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The value of this mapping is that it makes a design rule and the parametric definition that must satisfy it mutually addressable. The cross-layer attributeOf bridge connects a Metagraph atom - for instance, the variable bound by swrlb:greaterThan in a maximum-height rule - to the specific ComputationGraph Parameter that produces the value being checked. A rule can therefore be traced back to the exact slider or computed quantity it constrains, and, conversely, a parameter can report which rules govern it. This two-way correspondence is the conceptual basis for the bidirectional translation between design grammars and parametric definitions that the companion work develops: rules authored in natural language can be projected onto the parameters of a live definition, and changes to a definition can be checked against the rules attached to its parameters.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="14D1E2B3" w14:textId="0BA9DA44" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t>Project Isolation and Knowledge Sharing</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="454AFD8E" w14:textId="11739A28" w:rsidR="00824A7C" w:rsidRPr="00824A7C" w:rsidRDefault="009D53EB" w:rsidP="00824A7C">
+      <w:r>
+        <w:t>All nodes in both layers carry a project property that scopes them to a named design project, allowing a single graph to host multiple concurrent projects with logical isolation while still permitting cross-project queries. This design lets the ontology accumulate knowledge and reuse lessons learned across a shared stakeholder memory, rather than fragmenting it across isolated databases. The isolation strategy avoids the operational overhead of per-project databases and is acceptable for pilot-scale use; multi-tenant production scenarios may require sharding or per-project databases, as discussed in Section 5.3.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="3924B0E0" w14:textId="1B00C006" w:rsidR="00824A7C" w:rsidRDefault="009D53EB" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>ONTOLOGY EVALUATION THROUGH USE CASES</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="06D36BF1" w14:textId="1530D0C3" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Because this paper concerns the ontology rather than a deployed system, evaluation is framed through three formalized use cases derived from the competency questions of Section 2.2. Each use case states the design question, identifies the ontology constructs that answer it, and indicates the intended future application. The use cases are illustrative of applicability potential; their quantitative, system-level evaluation is reserved for subsequent work.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="11C00443" w14:textId="2FDA03FF" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Use Case 1: Natural-language design-rule communication and compliance checking</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="30B20CBC" w14:textId="77777777" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Question. Does a given building or space comply with a stated regulatory or project-specific constraint, expressed in natural language?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="399F47B0" w14:textId="17EF9D14" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Ontology support. A natural-language rule such as &#x201C;maximum building height is 75 m&#x201D; corresponds to a single Rule node whose body atoms (ClassAtom, DataPropertyAtom, BuiltinAtom) encode the violating condition and whose head asserts a boolean violation flag - Building(?b) ∧ hasHeightM(?b, ?h) ∧ swrlb:greaterThan(?h, 75.0) → violatesMaxHeight(?b, true). Because each constraint is an addressable subgraph, rules can be inspected, audited, and communicated unambiguously among stakeholders, independently of any particular checking tool.</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="2E8DF80A" w14:textId="6FBFC648" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Future application. Machine-executable compliance checking against BIM geometry and natural-language authoring of rules; the encoding pipeline that converts natural language into this structure is detailed in the companion paper.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0436F8BB" w14:textId="5279E7A8" w:rsidR="009D53EB" w:rsidRDefault="009D53EB" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Use Case 2: Mixed-use master-plan design-state validation</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="31A980DA" w14:textId="1D9E484C" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Question. Does the current design state of a mixed-use master plan satisfy the planning constraints defined for each zone - for example, maximum building height per zone, minimum street-wall height, and maximum floor-plate area?</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="4EC0E6C3" w14:textId="77777777" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Ontology support. Each planning constraint maps to a separate Rule node following the rule-separation principle, and range constraints decompose into lower- and upper-bound rules. Project-scoped isolation lets several zones and design scenarios coexist within one graph, while the violation-pattern semantics makes the absence of violations a positive statement of compliance, provided the graph has been fully populated with the relevant model objects.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5961B030" w14:textId="77777777" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Future application. Longitudinal comparison of design states across iterative development cycles, supporting validation of how a scheme evolves through the design lifecycle.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="720B8A64" w14:textId="79D2A917" w:rsidR="009D53EB" w:rsidRDefault="001C7061" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Use Case 3: Encoded spatial-programme implementation in parametric layout generation</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="23BF8B9D" w14:textId="5A6403C4" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Question. Can a design space of plan configurations be generated that satisfies a spatial programme and its constraints - for example, minimum bedroom area (9 m²), minimum bathroom area (4 m²), minimum kitchen width (2.4 m), and at least one natural-light source per habitable room?</w:t>
+      </w:r>
+      
+      
+    </w:p>
+    <w:p w14:paraId="065BD490" w14:textId="77777777" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Ontology support. Spatial-programme requirements are expressed as constraints over domain classes (Bedroom, Bathroom, Kitchen), their datatype properties (area, width), and object properties (adjacency, hasWindow). The </w:t>
+      <w:lastRenderedPageBreak/><w:t>same constraint vocabulary that validates a model can also constrain a generative process, turning the ontology from a checker into a specification of the feasible design space.</w:t></w:r>
+      
+    </w:p>
+    <w:p w14:paraId="2B26A28E" w14:textId="4B8A2BDB" w:rsidR="009D53EB" w:rsidRDefault="001C7061" w:rsidP="009D53EB">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Future application. Specification-driven parametric plan-layout generation, in which the ontology defines the feasible design space for downstream generative tools.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4FA256DE" w14:textId="14D24DC4" w:rsidR="00824A7C" w:rsidRDefault="001C7061" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>DISCUSSION</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4AC49956" w14:textId="46D090E5" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Expressiveness and Limitations of the SWRL Encoding</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6A54CC1F" w14:textId="07F03E9F" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The current ontology encodes a subset of OWL 2 + SWRL expressiveness sufficient for quantitative threshold constraints (minimum, maximum, range, equality, cardinality). The schema supports three atom types - ClassAtom, DataPropertyAtom, and BuiltinAtom - which together cover the rule patterns illustrated in the use cases. It does not yet support disjunctive rules (A OR B), complex class expressions (intersection, union), or temporal constraints, which are common in building energy codes and fire-safety regulations. Extending the schema to accommodate these patterns is a priority for future work, likely through the addition of a Connector node type representing logical operators between atoms.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="5227AE82" w14:textId="370B497F" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The violation-pattern semantics operates under an open-world assumption: if no Building node exists in the graph, a height rule will not fire, irrespective of whether the constraint is satisfied. This may be counterintuitive for practitioners expecting closed-world compliance semantics. The intended mitigation is to pre-populate the graph with all model objects before rule evaluation, so that the absence of a violation genuinely indicates compliance rather than an empty graph.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="43C078B5" w14:textId="660F8266" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Positioning Relative to Related Approaches</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="64D28916" w14:textId="0BC9ED1E" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Compared with IfcOWL + SPARQL-based compliance checkers (Pauwels et al., 2017), the proposed ontology does not require a full IfcOWL serialization of the BIM model, reducing the data-transformation burden on the authoring-tool side. Compared with rule systems built on proprietary languages, it stores rules in an open, queryable graph format that can be inspected and audited independently of the checking tool. Its distinguishing feature is methodological: the ontology is developed through explicit specification, conceptualization, formalization, and implementation, and through systematic reuse of FBS, DCM, BOT, and Topologic, rather than authored ad hoc for a single study. It also provides the ontological core on which the broader framework of Ermolenko et al. (2026) rests.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="3CD3692E" w14:textId="51CE62A9" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:pStyle w:val="3"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Scalability and Reuse Considerations</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="62FE2454" w14:textId="4FB938EE" w:rsidR="001C7061" w:rsidRPr="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Project isolation via a property filter within a single graph is adequate for pilot-scale use of the ontology but should be revisited for multi-tenant settings, where sharding or per-project databases may be preferable. Because the schema decouples the ontology vocabulary from any specific BIM serialization format, it is positioned for reuse and alignment across systems; scaling to city-scale models or national regulatory libraries will require query-indexing strategies and is left for future work.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="21EB6628" w14:textId="4B8247A8" w:rsidR="00824A7C" w:rsidRDefault="001C7061" w:rsidP="00824A7C">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>CONCLUSION</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="554A19B5" w14:textId="32B10702" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>This paper has presented the development of an ontology for architectural design grammars, structured as typed SWRL rule constructs within a property graph. Following a systematic ontology-development methodology - specification, conceptualization, formalization, and implementation - and reusing established design and topology ontologies (FBS, DCM, BOT, Topologic), the work yields a five-layer schema organized beneath a cross-cutting, FBS-grounded Core band: an OntoGraph for ontological vocabulary, a Metagraph for rule decomposition, a ValidationGraph for execution and results, a SpecGraph for shared knowledge, and a ComputationGraph for the parametric design definition. A single cross-layer bridge links rule atoms to the parameters of the parametric definition, and a worked example shows how a Grasshopper definition maps directly onto the ComputationGraph. Delivered as a vendor-neutral core ontology with three optional alignment extensions (standards, BOT, and Topologic), the schema provides a modular, auditable, and technology-agnostic representation of design rules that can be evaluated directly against BIM geometry, with a violation-pattern semantics and a rule-separation principle that improve traceability and auditability.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="16C91BB5" w14:textId="3FF023F3" w:rsidR="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Three formalized use cases - natural-language design-rule communication, mixed-use master-plan design-state validation, and spatial-programme-driven parametric layout generation - illustrate the ontology&#x2019;s applicability </w:t>
+      <w:lastRenderedPageBreak/><w:t>potential across checking, interaction, and generation. By concentrating on the ontology rather than on a particular software stack, the schema is positioned for reuse and alignment across systems.</w:t></w:r>
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="37C99DCD" w14:textId="1978501F" w:rsidR="00824A7C" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Future work will (i) extend the schema to support disjunctive and temporal constraints, likely via a Connector node type for logical operators; (ii) align the ontology with IfcOWL and the buildingSMART Information Delivery Specification (IDS) to improve interoperability with standard exchange workflows; and (iii) operationalize the ontology within a complete natural-language authoring-and-validation framework, which is the subject of a companion paper. The ontology and supporting artefacts will be released as open source to support community adoption and comparative evaluation.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1F282CB2" w14:textId="7EA337B9" w:rsidR="00E50935" w:rsidRDefault="001C7061" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>ACKNOWLEDGEMENTS</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="569DBDA0" w14:textId="38FFA59C" w:rsidR="001C7061" w:rsidRPr="001C7061" w:rsidRDefault="001C7061" w:rsidP="001C7061">
+      <w:pPr>
+        <w:spacing w:after="120"/>
+      </w:pPr>
+      <w:r>
+        <w:t>This work is supported by national funds through FCT – Foundation for Science and Technology under grant agreement 2024.03763.BD attributed to the first author, and by the &#x201C;R2U Technologies | modular systems&#x201D; project (ref.: C644876810-00000019) funded by PRR – Plano de Recuperação e Resiliência – and by European Funds Next Generation EU. Additional support was provided through the Multiannual Funding of Lab2PT (UID/04509), FCT R&amp;D Unit ISISE (UID/4029/2025; UID/PRR/04029/2025), and Associate Laboratory ARISE (LA/P/0112/2020).</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4BB4E0CE" w14:textId="77777777" w:rsidR="00943C52" w:rsidRDefault="000E1262" w:rsidP="00A42483">
+      <w:pPr>
+        <w:pStyle w:val="2"/>
+      </w:pPr>
+      <w:r>
+        <w:t>References</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="33B649A6" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Beirão, J. N., Duarte, J. P., &amp; Stouffs, R. (2011). Creating Lisbon: Urban design with a city grammar. In Proceedings of the 2011 Symposium on Simulation for Architecture and Urban Design.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="73344356" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Dorst, K. (2011). The core of &#x2018;design thinking&#x2019; and its application. Design Studies, 32(6), 521–532.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="370838DF" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Dorst, K., &amp; Cross, N. (2001). Creativity in the design process: Co-evolution of problem–solution. Design Studies, 22(5), 425–437.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="517A9BF3" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Duarte, J. P. (2005). Towards the mass customization of housing: The grammar of Siza&#x2019;s Malagueira houses. Environment and Planning B: Planning and Design, 32(3), 347–380. https://doi.org/10.1068/b3144</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="67BDAA6B" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Eastman, C., Teicholz, P., Sacks, R., &amp; Liston, K. (2009). BIM handbook: A guide to building information modeling for owners, managers, designers, engineers and contractors. Wiley.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="723FAF59" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Ermolenko, E., Figueiredo, B., &amp; Azenha, M. (2026). Management of the design knowledge core in a cross-platform environment of the BIM project. In Proceedings of the ptBIM 2026 Conference. University of Minho.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1036D96E" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Fu, K., Murphy, J., Yang, M., Otto, K., Jensen, D., &amp; Wood, K. (2015). Design-by-analogy: Experimental evaluation of a functional analogy search methodology for concept generation improvement. Research in Engineering Design, 26(1), 77–95.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="233FFA40" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Gero, J. S. (1990). Design prototypes: A knowledge representation schema for design. AI Magazine, 11(4), 26–36.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="68701FF2" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Gero, J. S. (1992). What&#x2019;s in a design case and how it can be used. In AID&#x2019;92 Workshop on Case-Based Design Systems (pp. 27–28).</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="308677AF" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Gero, J. S., &amp; Kannengiesser, U. (2004). The situated function–behaviour–structure framework. Design Studies, 25(4), 373–391.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="31AA3636" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Jabi, W. (2021). Topologic: Tools for nonmanifold topology in architectural design. https://topologic.app</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="69EE93F3" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Lin, C.-J. (2021). Design Criteria Modelling: Use of ontology-based algorithmic modelling. Automation in Construction.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="00AEC56C" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Mubarak, K. (2004). Case-based reasoning for design composition in architecture. Carnegie Mellon University, Pittsburgh.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4BD8622D" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t>Noy, N. F., &amp; McGuinness, D. L. (2001). Ontology development 101: A guide to creating your first ontology. Stanford Knowledge Systems Laboratory Technical Report KSL-01-05.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="473B3D0D" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Pauwels, P., &amp; Terkaj, W. (2016). EXPRESS to OWL for construction industry: Towards a recommendable and usable ifcOWL ontology. Automation in Construction, 63, 100–133. https://doi.org/10.1016/j.autcon.2015.12.003</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="46A205D2" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Pauwels, P., Zhang, S., &amp; Lee, Y. C. (2017). Semantic web technologies in AEC industry: A literature overview. Automation in Construction, 83, 145–165. https://doi.org/10.1016/j.autcon.2017.03.009</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="50C62AEC" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Poon, J., &amp; Maher, M. L. (1997). Co-evolution and emergence in design. Artificial Intelligence in Engineering, 11(3), 319–327.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5D696D35" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Rasmussen, M. H., Lefrançois, M., Schneider, G. F., &amp; Pauwels, P. (2020). BOT: The building topology ontology of the W3C linked building data community group. Semantic Web, 12(1), 143–161. https://doi.org/10.3233/SW-200385</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="308F836A" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Rasmussen, M. H., Pauwels, P., Lefrançois, M., &amp; Schneider, G. F. (2017). Building topology ontology. In Proceedings of the 14th International Conference on Computing in Civil and Building Engineering.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0CB14856" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Sack, H. (2019). Knowledge engineering with semantic web technologies: Ontological engineering [MOOC]. openHPI.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0830C205" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Sacks, R., Brilakis, I., Pikas, E., Xie, H. S., &amp; Girolami, M. (2020). Construction with digital twin information systems. Data-Centric Engineering, 1, e14. https://doi.org/10.1017/dce.2020.16</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="518FE4D3" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Schön, D. A. (1992). Designing as reflective conversation with the materials of a design situation. Research in Engineering Design, 3(3), 131–147.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="184A5689" w14:textId="77777777" w:rsidR="005C24BA" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Stiny, G., &amp; Gips, J. (1972). Shape grammars and the generative specification of painting and sculpture. In C. V. Freiman (Ed.), Information Processing 71 (pp. 1460–1465). North-Holland.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="136BA320" w14:textId="239CFE22" w:rsidR="00272624" w:rsidRDefault="005C24BA" w:rsidP="005C24BA">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Zhou, Y., Braun, A., &amp; Borrmann, A. (2022). Knowledge graph-based automated code compliance checking for building design. In Proceedings of the European Conference on Computing in Construction. https://doi.org/10.35490/EC3.2022.188</w:t>
+      </w:r>
+    </w:p>
+    <w:sectPr w:rsidR="00272624" w:rsidSect="0065122D">
+      <w:headerReference w:type="default" r:id="rId11"/>
+      <w:pgSz w:w="11907" w:h="16840" w:code="9"/>
+      <w:pgMar w:top="1418" w:right="1418" w:bottom="2268" w:left="1418" w:header="567" w:footer="1134" w:gutter="0"/>
+      <w:cols w:space="720"/>
+      <w:formProt w:val="0"/>
+      <w:docGrid w:linePitch="272"/>
+    </w:sectPr>
+  </w:body>
+</w:document>

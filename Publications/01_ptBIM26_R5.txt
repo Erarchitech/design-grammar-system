@@ -1,0 +1,223 @@
+Design Grammars system supporting decision-making in Construction across platforms and disciplines.
+
+SPEAKER NOTES — ptBIM 2026 (FEUP, 17–19 June 2026)
+Friday, 9:20. ~12–15 min talk. Speak the lines below; slides only support.
+Principle (per consultation): top-down — hook with the problem, teach the few
+terms we need with everyday examples, show the system selectively, generate
+enthusiasm. The audience is ~70% practitioners, very few know ontologies — so
+no term is assumed; each is introduced before it is used.
+One through-line: intent is lost at every handover → make intent travel.
+
+====================================================================
+1 slide. Title
+SPEECH:
+Good morning, everyone — and thank you for having me. I am Evgenii Ermolenko,
+from the University of Minho, working with Bruno Figueiredo and Miguel Azenha.
+Today I want to talk about something all of us lose, every day, without
+noticing: the reasoning behind our models. My subject is how to carry design
+intent across platforms and disciplines, through the whole openBIM lifecycle.
+
+====================================================================
+2 slide. Roadmap
+SPEECH:
+Here is where we are going. First a problem — why our handovers keep losing
+intent. Then three words we need to share a language: design knowledge, design
+rules, design states. Then the gap that no current tool closes, and our
+proposal — a system we call Design Grammars. Finally I will show the prototype
+working end to end, from a client's brief to a validated design. Don't worry
+about the technical terms; I will build them up as we go.
+
+====================================================================
+3 slide. Hook
+(On screen: RIBA phases — intent stripping away from Concept to Maintenance)
+SPEECH:
+Let me start with one question: how much of your design intent actually
+survives the next handover? Picture a project moving from concept, to
+developed design, to construction, to maintenance. At every handover we pass
+files — geometry, sheets, models. But the WHY behind them — the rules, the
+constraints, the reasoning — stays in our heads, or dies inside a tool. Each
+transfer strips a little more intent away. What we would really want is for
+that intent to travel with the project. And to travel, it has to be encoded.
+Encoded design intent is what we call design knowledge.
+
+====================================================================
+4 slide. Design Knowledge — the logic behind the model
+SPEECH:
+So — design knowledge. Simply: the logic behind the model. It is
+machine-readable design intent, made of two things. Design RULES — the
+constraints and the shaping logic. And design STATES — the actual solutions
+those rules produce. Hold on to these two words, rules and states; the whole
+talk hangs on them.
+
+====================================================================
+5 slide. Design Rules — morphologic atoms of design knowledge
+SPEECH:
+First, design rules. A design rule is an explicit, codified constraint that a
+design must satisfy — for example, "a hexagonal unit must sit within its level
+boundaries." Architects already think in these rules; we just rarely write
+them down in a form a machine can act on. Here is one expressed graphically.
+
+====================================================================
+6 slide. Design Rules — machine-readable (SWRL)
+SPEECH:
+And here is the same rule made machine-readable. Take a plain constraint —
+"the maximum building height is 75 metres" — and the system turns it into a
+small logical statement: if a building is taller than 75, flag it. That formal
+form is what lets the computer check the rule for us. You don't need to read
+the syntax — the point is that a sentence in natural language became something
+executable.
+
+====================================================================
+7 slide. The Design State
+SPEECH:
+The second word: design state. A design state is a uniquely identified
+snapshot of a design at one moment — the input parameters that defined it, and
+the geometry that resulted. Think of it as a named save-point of your
+parametric model: one you can store, return to, and compare.
+
+====================================================================
+8 slide. The Design State — and why it matters
+SPEECH:
+Why does that matter? Because the system both validates each state against the
+rules, and can generate new states from them. So design stops being one frozen
+file. It becomes a space of solutions you can explore, compare, and reinstate —
+all while staying checked against the original intent.
+
+====================================================================
+9 slide. The Knowledge Gap
+SPEECH:
+So where is the gap? BIM manages information safisctically — but design knowledge
+stays fragmented across files, platforms, and disciplines. And our parametric
+tools — Grasshopper, Dynamo — hold the real logic, yet as opaque node graphs
+that die at export. The rules get rebuilt in every tool, and never actually
+shared. That is the gap: we exchange the RESULTS of design thinking, but never
+the thinking itself.
+
+====================================================================
+10 slide. The Design Grammars
+SPEECH:
+Our answer to that gap is a design-knowledge management system. We call it
+Design Grammars.
+
+====================================================================
+11 slide. Goal
+SPEECH:
+Its goal is a single idea: a Shared Knowledge Core that carries encoded intent
+across every platform in the project, and reuses it to validate and generate
+design states as the project develops. Concretely — a rule like "hexagonal
+units must align with level boundaries" is authored once, at concept stage,
+and still checks the BIM model at construction stage. Same rule, one source,
+travelling with the project.
+
+====================================================================
+12 slide. The Three Pillars
+SPEECH:
+For that to work, the system needs three properties. It must be explicit and
+machine-readable. It must be generative — able to produce solutions, not just
+store them. And it must be cross-platform — independent of any single tool. One
+technology gives us all three: an ontology-driven knowledge graph. Let me
+unpack those two words, because most of our field does not use them daily.
+
+====================================================================
+13 slide. Knowledge Graph — a structured way to organise data
+SPEECH:
+First, a knowledge graph. Forget architecture for a second. When Netflix says
+"because you watched this, you might like that," it is walking a graph — films,
+actors, genres, all joined by meaningful links. "A friend of a friend" on
+social media is the same idea. A knowledge graph stores data as things and the
+relationships between them, so the data keeps its meaning. And unlike a
+spreadsheet or a plain database, it can infer — follow the links to reach new
+facts. We use it to hold design rules from many sources and reuse them.
+
+====================================================================
+14 slide. Ontology — organised domain knowledge
+SPEECH:
+Second, ontology. An ontology is simply the agreed vocabulary and rules of a
+domain — the grammar of the graph. It names what kinds of things exist —
+classes, like building, room, door; how they relate — a door connects two
+spaces, a room is part of a building; the properties they carry; and the actual
+instances. It is how we make sure that everyone, and every tool, means the same
+thing by "room" or "wall."
+
+====================================================================
+15 slide. Ontology — generated OntoGraph
+SPEECH:
+And this is not only theory drawn by hand. Here is an ontology our system
+generated automatically from encoded design intent — the design rules
+themselves, turned into a structured, queryable web of concepts. Ten seconds on
+this: just notice it is organised, and machine-built, not hand-drawn.
+
+====================================================================
+16 slide. DG System Framework — 5 layers, Core–Periphery
+SPEECH:
+Now the system itself, at a glance. It is a core–periphery model with five
+layers, from the outside in. Human input enters through a Communication layer;
+AI and APIs translate it into structured logic; an Analysis layer evaluates it;
+and a Data layer — a graph database — holds it as the shared core. You don't
+need the detail now. The takeaway: abstract intent goes in one side, and comes
+out the other as live validation against the BIM model.
+
+====================================================================
+17 slide. DG System Prototype — Architecture
+SPEECH:
+Under the hood, this already runs as a working prototype — a web platform, a
+local language model that interprets the rules, a graph database for the core,
+and a Grasshopper connector to the parametric and BIM tools. Again, ten
+seconds: I only want you to see that it is real, integrated, and built on open
+components.
+
+====================================================================
+18 slide. Use Case — from client requirements to validated design state
+SPEECH:
+Let me prove it with one walkthrough — a real path from a client's
+requirements all the way to a validated design state, in four phases.
+
+====================================================================
+19 slide. Phase 1–2. Client Brief and Rule Authoring (Web — Grammar Viewer)
+SPEECH:
+Phases one and two — the brief and the rules. On the web interface, a planner
+writes requirements in plain language: heights, spacing, adjacencies. The
+system encodes them into the Knowledge Core. In our tests, a first-time user
+with no formal-logic background authored and validated a rule in about fifteen
+minutes — against roughly forty-five by hand.
+
+====================================================================
+20 slide. Phase 3. Design Bootstrap (Grasshopper Add-in)
+SPEECH:
+Phase three — the design. Through a Grasshopper add-in, the computational
+designer pulls those same rules into the parametric model, binds them to
+geometry, and generates options. Because the rules live in the core, a single
+edit re-evaluates every alternative in seconds — so instead of three to five
+options per session, we explored twelve to twenty.
+
+====================================================================
+21 slide. Phase 4. Validation and Communication (Web — Design State Viewer)
+SPEECH:
+Phase four — validation and communication. Every design state is checked
+against the rules and published back to the platform: colour-coded, with a full
+history you can query by rule or by state, reinstate, and compare. And it is
+transparent — no black box. You always see which rule passed or failed, and
+why.
+
+====================================================================
+22 slide. Conclusion
+SPEECH:
+To sum up: we have a working prototype that encodes, manages, and reuses design
+knowledge across the lifecycle. It already ingests rules from multiple sources,
+validates evolving design states, and records them so a parametric model can be
+reinstated. The honest limits — our rule coverage is still a subset of full
+logic, and we have evaluated it only in academic case studies; production
+stress-testing is next. But the core idea holds: when intent travels as shared
+knowledge instead of detached files, almost none of it is lost at the handover.
+
+====================================================================
+23 slide. Thank You
+SPEECH:
+So — how much design intent survives your next handover? With a shared
+knowledge core, the answer can finally be: almost all of it. Thank you for your
+attention — I would be glad to take your questions.
+
+====================================================================
+24 slide. References
+SPEECH:
+(References — happy to point you to any of these in the discussion.)

@@ -1,0 +1,194 @@
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_CORNER_FILLET_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/ex#hasFlatness> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasContinuity> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#hasFacingDirectionWest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A5> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_HEIGHT_60_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#violatesSameHeight> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#violatesGridType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_CORNER_FILLET_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_BUILDING_CORNER_FILLET_V" .
+<http://example.org/design-grammar/ex#Door> <http://www.w3.org/2000/01/rdf-schema#label> "Door" .
+<http://example.org/design-grammar/ex#violatesDoorOrientation> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasFacingDirection> <http://www.w3.org/2000/01/rdf-schema#label> "hasFacingDirection" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_DOOR_ORIENTATION_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A5> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_H1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesMaxHeight> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMaxHeight" .
+<http://example.org/design-grammar/ex#violatesGridType> <http://www.w3.org/2000/01/rdf-schema#label> "violatesGridType" .
+<http://example.org/design-grammar/ex#hasStoreyCount> <http://www.w3.org/2000/01/rdf-schema#label> "hasStoreyCount" .
+<http://example.org/design-grammar/ex#violatesMaxStoreyCount> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMaxStoreyCount" .
+<http://example.org/design-grammar/ex#violatesMinFootprintPct> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_0_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesMinFootprintPct> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMinFootprintPct" .
+<http://example.org/design-grammar/ex#violatesMinDistance> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasFootprintM2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#Block> <http://www.w3.org/2000/01/rdf-schema#label> "Block" .
+<http://example.org/design-grammar/ex#hasGridType> <http://www.w3.org/2000/01/rdf-schema#label> "hasGridType" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#violatesMinArea> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_CORNER_FILLET_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#Facade> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/ex#FacadePanel> <http://www.w3.org/2000/01/rdf-schema#label> "Facade panel" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — ClassAtom missing ARG pos=1" .
+<http://example.org/design-grammar/ex#hasContinuity> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_PANEL_GRID_HEX_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#Column> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesContinuity> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasDistanceM> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasFlatness> <http://www.w3.org/2000/01/rdf-schema#label> "hasFlatness" .
+<http://example.org/design-grammar/ex#Corridor> <http://www.w3.org/2000/01/rdf-schema#label> "Corridor" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_HEIGHT_EQ_0_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#hasFacingDirectionEast> <http://www.w3.org/2000/01/rdf-schema#label> "hasFacingDirectionEast" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_CORNER_FILLET_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+<http://example.org/design-grammar/ex#violatesMinArea> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMinArea" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_HEIGHT_EQ_0_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/ex#hasFacingDirectionWest> <http://www.w3.org/2000/01/rdf-schema#label> "hasFacingDirectionWest" .
+<http://example.org/design-grammar/ex#violatesMaxStoreyCount> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#violatesMaxLength> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasHeightM> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/design-grammar/ex#violatesFlatness> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#violatesGridType> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#hasLengthM> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_FLOOR_SAME_HEIGHT_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_URB_HEIGHT_MAX_75_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_DOOR_ORIENTATION_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_CORRIDOR_DOOR_ORIENTATION_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasFacingDirectionEast> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — belongs to a skipped rule" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_H1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasContinuity> <http://www.w3.org/2000/01/rdf-schema#label> "hasContinuity" .
+<http://example.org/design-grammar/ex#Building> <http://www.w3.org/2000/01/rdf-schema#label> "Building" .
+<http://example.org/design-grammar/ex#hasAreaM2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_HEIGHT_60_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_BUILDING_MAX_HEIGHT_60_V" .
+<http://example.org/design-grammar/ex#hasStoreyCount> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasAreaM2> <http://www.w3.org/2000/01/rdf-schema#label> "hasAreaM2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#Floor> <http://www.w3.org/2000/01/rdf-schema#label> "Floor" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_HEIGHT_EQ_0_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_FLOOR_HEIGHT_EQ_0_V" .
+<http://example.org/design-grammar/ex#violatesContinuity> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#hasStoreyCount> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasLengthM> <http://www.w3.org/2000/01/rdf-schema#label> "hasLengthM" .
+<http://example.org/design-grammar/ex#hasFacingDirection> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+<http://example.org/design-grammar/ex#Column> <http://www.w3.org/2000/01/rdf-schema#label> "Column" .
+<http://example.org/design-grammar/ex#hasHeightM> <http://www.w3.org/2000/01/rdf-schema#label> "hasHeightM" .
+<http://example.org/design-grammar/ex#violatesSameHeight> <http://www.w3.org/2000/01/rdf-schema#label> "violatesSameHeight" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_H1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesFillet> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A4> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A4> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_DOOR_ORIENTATION_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_MAX_LENGTH_14_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_CORRIDOR_MAX_LENGTH_14_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_H1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_ROOF_FLAT_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_COLUMN_CONTINUITY_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_COLUMN_CONTINUITY_V_A1, R_COLUMN_CONTINUITY_V_A2, R_COLUMN_CONTINUITY_V_A3, R_COLUMN_CONTINUITY_V_H1" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasHeightM> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#Floor> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_DOOR_ORIENTATION_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A4> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A5> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#Building> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/ex#violatesDoorOrientation> <http://www.w3.org/2000/01/rdf-schema#label> "violatesDoorOrientation" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_PANEL_GRID_HEX_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_FACADE_PANEL_GRID_HEX_V" .
+<http://example.org/design-grammar/ex#Roof> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_COLUMN_CONTINUITY_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesFlatness> <http://www.w3.org/2000/01/rdf-schema#label> "violatesFlatness" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_HEIGHT_60_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/ex#violatesMinFootprintPct> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_FACING_DIRECTION_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#Corridor> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/ex#violatesMaxLength> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMaxLength" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#hasFootprintM2> <http://www.w3.org/2000/01/rdf-schema#label> "hasFootprintM2" .
+<http://example.org/design-grammar/ex#hasOrientation> <http://www.w3.org/2000/01/rdf-schema#label> "hasOrientation" .
+<http://example.org/design-grammar/ex#hasFacingDirection> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — BuiltinAtom has no ARG edges" .
+<http://example.org/design-grammar/ex#hasDistanceM> <http://www.w3.org/2000/01/rdf-schema#label> "hasDistanceM" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_MAX_LENGTH_14_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_CORRIDOR_MAX_LENGTH_14_V_A2, R_CORRIDOR_MAX_LENGTH_14_V_H1" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#Door> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_URB_HEIGHT_MAX_75_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_URB_HEIGHT_MAX_75_V" .
+<http://example.org/design-grammar/ex#hasGridType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_DOOR_ORIENTATION_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#violatesMaxHeight> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#LivingUnit> <http://www.w3.org/2000/01/rdf-schema#label> "LivingUnit" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A5> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_0_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_FLOOR_SAME_HEIGHT_0_V" .
+<http://example.org/design-grammar/ex#violatesMinDistance> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A2> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/ex#hasOrientation> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#FacadePanel> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/ex#hasDistanceM> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#violatesMinArea> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#violatesFillet> <http://www.w3.org/2000/01/rdf-schema#label> "violatesFillet" .
+<http://example.org/design-grammar/ex#hasFlatness> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_MAX_LENGTH_14_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#hasGridType> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+<http://example.org/design-grammar/ex#Roof> <http://www.w3.org/2000/01/rdf-schema#label> "Roof" .
+<http://example.org/design-grammar/ex#Block> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.org/design-grammar/ex#hasLengthM> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_COLUMN_CONTINUITY_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_COLUMN_CONTINUITY_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#hasFacingDirectionWest> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_CORNER_FILLET_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesMaxStoreyCount> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#hasOrientation> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+<http://example.org/design-grammar/ex#violatesMinDistance> <http://www.w3.org/2000/01/rdf-schema#label> "violatesMinDistance" .
+<http://example.org/design-grammar/ex#violatesMaxLength> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_FACING_DIRECTION_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_LIVINGUNIT_FACING_DIRECTION_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_H1> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — property atom missing ARG pos=1 and/or pos=2" .
+<http://example.org/design-grammar/ex#violatesFlatness> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#violatesSameHeight> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/ex#Facade> <http://www.w3.org/2000/01/rdf-schema#label> "Facade" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_DOOR_ORIENTATION_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_DOOR_ORIENTATION_V" .
+<http://example.org/design-grammar/ex#hasFacingDirectionEast> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesDoorOrientation> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_URB_HEIGHT_MAX_75_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/ex#violatesMaxHeight> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/ex#hasAreaM2> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_ROOF_FLAT_V> <http://www.w3.org/2000/01/rdf-schema#label> "R_ROOF_FLAT_V" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_0_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_H1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedAtom> .
+<http://example.org/design-grammar/ex#violatesFillet> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A3> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but excluded from SWRL mapping — missing REFERS_TO target" .
+<http://example.org/design-grammar/ex#hasFootprintM2> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_ROOF_FLAT_V> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/design-grammar/meta#SkippedRule> .
+<http://example.org/design-grammar/ex#violatesContinuity> <http://www.w3.org/2000/01/rdf-schema#label> "violatesContinuity" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_PANEL_GRID_HEX_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — missing HAS_BODY and/or HAS_HEAD atoms" .
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_FACING_DIRECTION_V> <http://www.w3.org/2000/01/rdf-schema#comment> "captured by label-scoped export but not mapped to swrl:Imp — incomplete atoms: R_LIVINGUNIT_FACING_DIRECTION_V_A2, R_LIVINGUNIT_FACING_DIRECTION_V_A4, R_LIVINGUNIT_FACING_DIRECTION_V_A5, R_LIVINGUNIT_FACING_DIRECTION_V_H1" .
+<http://example.org/design-grammar/ex#LivingUnit> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .

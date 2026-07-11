@@ -1,0 +1,70 @@
+NUM PARAS: 69
+[0][-] Design Grammars system supporting decision-making in Construction across platforms and disciplines.
+[1][-] 
+[2][-] 3 slide. Hook
+[3][-] How much design intent survives the next handover?
+[4][-] Illustrate how design intent is stripping away through the architectural design development aligned to the phases of RIBA plan
+[5][-] “From Concept Design to Maintenance – stripping away design intent”
+[6][-] Currently, architectural design largely adheres to handover principles throughout the development process. Consequently, with each transfer of design outputs among stakeholders, the design intent and rules established before decisions are lost. Each transition causes a partial loss of intent because only final states are exchanged as detached files, not the underlying rules and constraints that defined them
+[7][-] The intent in order to be sustainable and constant throughout the design lifecycle should be encoded. The encoded intent is used to be called Design Knowledge.
+[8][-] 
+[9][-] 4 slide. Design Knowledge.
+[10][-] Explain what is Design Knowledge. 
+[11][-] Encoded machine-readable Design Intent, containing Design Rules (constraints, and morphologic) that produces Design States (design solutions)
+[12][-] 
+[13][-] 5 slide. Design Rules.
+[14][-] Explain what are Design Rules. 
+[15][-] Design Rules are explicit, codified constraints and guidelines that a design must satisfy so it can be manufactured, used, or operated reliably.
+[16][-] Illustrating the example of Design Rules Graphically
+[17][-] 
+[18][-] 6 slide. Design Rules.
+[19][-] Illustrating the example of Design Rules encoded into Ontologic Graph and SWRL rules
+[20][-] 
+[21][-] 7 slide. Design State.
+[22][-] Design State is Uniquely identified snapshot of a design's current parametric configuration — the set of input parameters (defState) and geometric objects (objState) captured from the parametric tool at a specific time.
+[23][-] Input parameters of model definition are concluded in defState, while objects assocated with geometry are stored in objState. Together defState and objState are parts of Design State class.
+[24][-] 
+[25][-] 8 slide. Design State.
+[26][-] Explain what are Design States and they related with Design Knowledge
+[27][-] The Design State is validated and recorded by Design Knowledge system.
+[28][-] Also Design Knowledge system enables generation and population of Design States proofing its emerging nature.
+[29][-] 
+[30][-] 9 slide. The Knowledge Gap.
+[31][a4] BIM manages information — but design knowledge stays fragmented across files, platforms and disciplines.
+[32][-] While Building Information Modelling (BIM) has advanced to a high degree of automation in project information management, design knowledge remains fragmented across various domain-specific datasets that are continuously reconstructed across tools and project phases, resulting in redundancy, loss of original intent, and limited traceability
+[33][a4] Parametric tools (Grasshopper / Dynamo) silo that logic as opaque,​non-interoperable node graphs that die at export — the rules are​replicated per platform, never shared.​
+[34][-] Existing integrations between parametric environments (e.g., Grasshopper/Dynamo/Rhino.Inside.Revit) and BIM platforms remain constrained by platform-specific definitions, resulting in the replication of abstract logic rather than its sharing <w:id w:val="106014017"/><w:placeholder><w:docPart w:val="C570CEEB18624FF0A062727C55C9F053"/></w:placeholder></w:sdtPr><w:sdtEndPr/><w:sdtContent><w:r w:rsidRPr="00BD2936"><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:color w:val="000000"/><w:lang w:val="pt-PT"/></w:rPr><w:t>[4]. To address the fragmentation of architectural knowledge inherent in conventional design workflows, a shift is required from detailed representations to abstract, object-level knowledge, thereby establishing a common semantic tier that connects domain-specific parts of the model without duplicating information.
+[35][-] 
+[36][-] 10 slide. The Design Grammars
+[37][-] In attempt to address this gap The Design Grammars system is proposed in this research as Design Knowledge Management System.
+[38][-] 
+[39][-] 11 slide. The Design Grammars Goal
+[40][-] Build a Shared Knowledge Core that carries encoded design intent through a cross-platform environment of the BIM project and reuses it for validation and generation of design states during design development.
+[41][-] 
+[42][-] 12 slide. The 3 pillars of Design Grammars
+[43][-] From the goal above, main characteristics of proposed system are stated as three pillars: Explicit Machine-Readable, Generative or Emergent nature, Cross-platform or tool independent. Based on these pillars, the technologic solution core of the system is Ontology-driven Knowledge Graph. 
+[44][-] Let’s consider these aspects one by one.
+[45][-] 13 slide. Knowledge Graph
+[46][-] A knowledge graph is an organized representation of information that models real-world entities and the relationships between them. It maps data visually as a network of connected labeled entities with properties as nodes and edges, so the data keeps its meaning and context.
+[47][-] The Graph is used to encode Design Grammars from diverse sources of Knowledge, keeping multilayer concept relationships and reusing it.
+[48][-] 
+[49][-] 14 slide. Ontology. Definition
+[50][-] Ontology is a structured, machine-readable framework that organizes knowledge within a specific domain. It consists of:
+[51][-] Classes: The concepts or types of things (e.g., Employee, Manager).
+[52][-] Relationships (Object Properties): How these classes connect to one another (e.g., Manages, Works For).
+[53][-] Properties (Data Properties): Describing classes with specific value (literal)
+[54][-] Instances: The actual, concrete entities (e.g., the person "John Doe").
+[55][-] 
+[56][-] 15 slide. Ontology. Generated Ontology
+[57][-] Semantic Web – based generated ontology from the encoded design intent
+[58][-] 
+[59][-] 16 slide. DG System Framework.
+[60][-] Proposed DG system framework represents a Core-Periphery data model and consists of 5 main layers sorted from the outer layer to the core. 
+[61][-] This 5-layer framework structures how architectural design intent is captured, processed, and validated. It translates human input through the Communication layer into structured logic via Integration and Orchestration (AI/APIs). That logic is evaluated in the Analysis layer and stored persistently in the Data layer (Graph DB). Together, this stack turns abstract knowledge into executable rules, ensuring design intent is actively validated against the BIM model rather than lost in file exchanges.
+[62][-] 
+[63][-] 17 slide. DG System Architecture.
+[64][-] 18 slide. DG System. Use Case.
+[65][-] 
+[66][-] 
+[67][-] 
+[68][-] 
