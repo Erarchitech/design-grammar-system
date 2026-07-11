@@ -8,19 +8,18 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v8.0 Design Grammars V2 UI
+## Current Milestone: v8.1 Platform Setup Regions
 
-**Goal:** Replace the dark legacy web UI with the "Design Grammars V2" light clinical-blueprint interface (Claude Design spec at `design/v2/Design Grammars V2.dc.html` + design system at `design/v2/_ds/`), implemented as the real product UI wired to the existing Neo4j / n8n / data-service / Speckle backends.
+**Goal:** Extend the V2 landing ring with four new region callouts — AI Engine, Connectors, Reasoner, DG API Documentation — each opening a real screen layer wired to backend services. Positioned between shipped v8.0 (V2 UI) and parked v9.0 (AI Workflow Intelligence). Phases numbered 810–819 per the milestone-derived numbering convention (vX.Y → X·100+Y·10, max 10 phases).
 
 **Target features:**
 
-- Design system foundation: light "frosted paper" token set (canvas `#f5f5f5` → sidebar `#fafafa` → card `#ffffff`, ink `#0a0a0a`, Signal Red `#e7000b` selection-only), Geist/Geist Mono/Oswald type stack, pill geometry (18px interactive / 24px cards), `.dg-frost` panels, `.dg-blueprint` drafting grid, divergence-callout annotation grammar (hexagon marker + leader line + condensed caption)
-- Landing screen: particle-ring hero canvas ("DESIGN GRAMMARS. / Encode your design intent."), region callouts navigating to Graph Viewer / Model Viewer / Projects, inline login/register frost card replacing the separate RegisterForm page (guest vs member hero states, sign out)
-- Graph Viewer: canvas datascape rendering the Neo4j metagraph as ink arcs/dots with red selection halo, persistent prompt bar (mode select, send/clear), extended session/response panel with per-prompt responses, node-details panel, search
-- Model Viewer: validation-run browsing with run/instance modes, map canvas + minimap + zoom, orbit legend, hover/selection panels, failing/passing breakdowns wired to data-service validation runs
-- Projects screen: project tile grid backed by real project data
-- Screen-layer navigation shell: single-page layered architecture (landing/graph/model/projects) with 520ms scale/opacity transitions and global chrome
-- Backend wiring: real Neo4j Cypher (via nginx proxy), n8n webhooks for rules ingest/query, data-service validation endpoints, Speckle model data — replacing the mockup's embedded mock data
+- Ring extension: 4 new region callouts (AI Engine, Connectors, Reasoner, DG API Docs) placed along the particle ring alongside Graph Viewer / Model Viewer / Projects, with fly-in navigation and screen layers
+- AI Engine screen: LLM provider/model selection + manual API key input, wired to the existing data-service LLM gateway (`/llm/settings`, encrypted-at-rest keys)
+- Connectors: 13 connectors in 5 categories (VPL: Grasshopper, Dynamo · BIM Authoring: Revit, Blender, Tekla, Archicad, Civil3D, Infraworks · BIM Coordination: Navisworks, Solibri · BCF Trackers: BIMCollab, BIMTrack · Visualization: Lumion, Twinmotion); credential creation with copyable tokens for pasting into connector components in target software; per-connector activation status + last-connection date
+- Connector backend: data-service credential CRUD + authenticated heartbeat/status endpoints recording each connector's last request/post
+- Reasoner screen: reasoner model selector for the Validation Graph — HermiT and Pellet as placeholders until real reasoner integration is elaborated
+- DG API Documentation: in-app, Revit-API-style structured doc browser (sections → endpoints/classes → members) documenting the DG connector API, extendable via content files
 
 ## Requirements
 
@@ -47,20 +46,20 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **INTG-01..03**: E2E state lifecycle, backward compat, actionable errors — v2.0
 - ✓ **ONTO-01..06**: Ontology V7 baseline — V6→V7 rename table, DesignGrammar-V7.owl, extension facades, catalog, port-IRI map, markdown docs — Phase 13
 - ✓ **v7.0 (Phases 13–20)**: Ontology-aligned 14-component Grasshopper addin — state trio (ObjState/ParamState/PropState), DesignState composition, graph access chain (GRAPH DECONSTRUCT, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework, CLASSIFICATOR elimination, SpecGraph rename, schema v4 propagation — shipped 2026-07-05, archived to `.planning/milestones/v7.0-phases/`
+- ✓ **v8.0 (Phases 21–27)**: Design Grammars V2 UI — light clinical-blueprint interface at `ui-v2/` (Vite + React): design-system foundation, particle-ring landing with inline auth, canvas datascape Graph Viewer (live Neo4j + n8n), Model Viewer over data-service validation runs, Projects screen, layered navigation shell, deployment cutover at :8080, Speckle 3D embed — shipped 2026-07-07, archived to `.planning/milestones/v8.0-phases/`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-**Milestone v8.0 — Design Grammars V2 UI** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
+**Milestone v8.1 — Platform Setup Regions** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
 
-- [ ] Design system foundation (light tokens, type stack, pill geometry, frost/blueprint/callout primitives)
-- [ ] Landing screen (particle-ring hero, region navigation, inline auth card)
-- [ ] Graph Viewer (canvas datascape from real Neo4j metagraph, prompt bar + session panel, node details, search)
-- [ ] Model Viewer (validation runs from data-service, run/instance modes, map + minimap, hover/selection panels)
-- [ ] Projects screen (tile grid backed by real project data)
-- [ ] Layered navigation shell (landing/graph/model/projects transitions, global chrome)
-- [ ] Backend wiring parity (Neo4j Cypher, n8n ingest/query webhooks, data-service validation, Speckle)
+- [ ] Ring extension: 4 new region callouts + screen layers (AI Engine, Connectors, Reasoner, DG API Docs)
+- [ ] AI Engine screen (provider/model selection, API key input, wired to LLM gateway `/llm/settings`)
+- [ ] Connector credential backend (data-service CRUD, token generation, heartbeat/status endpoints)
+- [ ] Connectors screen (13 connectors / 5 categories, credential create+copy, status + last-connection date)
+- [ ] Reasoner screen (HermiT/Pellet placeholder selector, persisted selection)
+- [ ] DG API Documentation (Revit-API-style in-app doc browser, extendable content)
 
 ### Out of Scope
 
@@ -76,7 +75,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-v7.0 (14-component ontology-aligned addin rebuild) shipped 2026-07-05 (all 8 phases, 37 plans complete) and archived 2026-07-07. v9.0 AI Workflow Intelligence started earlier (Phase 28 cloud-llm-connector executed; renumbered from milestone-local 01 on 2026-07-08) and is parked in `.planning/milestones/v9.0-phases/` — resume after v8.0. Starting v8.0: full replacement of the dark legacy web UI with the light "Design Grammars V2" interface from the Claude Design spec (`design/v2/`), wired to the real backends.
+v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen will surface). Starting v8.1: four new setup regions along the landing ring (AI Engine, Connectors, Reasoner, DG API Documentation), phases 810+.
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -154,4 +153,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-07 — milestone v8.0 Design Grammars V2 UI started*
+*Last updated: 2026-07-11 — milestone v8.1 Platform Setup Regions started*

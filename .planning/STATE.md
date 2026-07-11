@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.0
-milestone_name: — Design Grammars V2 UI
-current_phase: 27
-status: completed
-stopped_at: v8.0 shipped — all 6 phases complete, E2E parity verified
-last_updated: "2026-07-08T01:42:26.067Z"
-last_activity: 2026-07-08
-last_activity_desc: Phase 27 marked complete
+milestone: v8.1
+milestone_name: Platform Setup Regions
+status: planning
+last_updated: "2026-07-11T09:29:14.940Z"
+last_activity: 2026-07-11
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 1
-  completed_plans: 1
-  percent: 100
-current_phase_name: Speckle 3D Embed
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 
 ## Current Position
 
-Phase: 27 — COMPLETE
-Plan: 1 of 1
-Status: Phase 27 complete
-Last activity: 2026-07-11 - Completed quick task 260711-shf: Fold Session History panel on outside click
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-11 — Milestone v8.1 started
 
 ## Performance Metrics
 
