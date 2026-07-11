@@ -1,0 +1,13 @@
+owlready2==0.51
+rdflib==7.6.0
+pyshacl==0.40.0
+owlrl==7.6.2
+neo4j==6.2.0
+fastapi
+uvicorn
+pytest
+# starlette>=1.0 switched TestClient's transport to the new `httpx2` package;
+# pinned <1.0 to keep TestClient on `httpx` (already a vetted repo dependency,
+# same one data-service uses) instead of pulling in an unreviewed new package.
+starlette<1.0.0
+httpx
