@@ -1,6 +1,6 @@
 ---
 tags: [home, moc]
-date: 2026-07-11
+date: 2026-07-12
 ---
 
 # Design Grammar System � Knowledge Vault
@@ -68,6 +68,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Content module glob uses numeric prefix pattern|Content module glob uses numeric prefix [0-9][0-9]-* pattern]]
 - [[decisions/Reasoning runs in isolated dg-reasoner sidecar not embedded in data-service|v8.2: Reasoning runs in isolated dg-reasoner sidecar, not embedded in data-service]]
 - [[decisions/v8.2 hybrid axiom-scoping spike proven|v8.2: Hybrid axiom-scoping (static TBox ∪ live export + curated disjointness)]]
+- [[decisions/dg-reasoner sidecar owns the Cypher to RDF pipeline with sync API|Phase 821 (v8.2): dg-reasoner owns Cypher→RDF pipeline — custom translator, sync API, hybrid union in 821]]
+- [[decisions/reasoner-screen-phases-checks-results|Phase 822 (v8.2): Reasoner Screen — four-state verdict display, per-card Run on HermiT, in-session result persistence]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -183,6 +185,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-11 Phase 816 Integration & Deployment execution|2026-07-11 Phase 816 Integration & Deployment execution]]
 - [[sessions/2026-07-11 v8.2 milestone init — Connector Integration and Reasoning Engine|2026-07-11 v8.2 milestone init — Connector Integration & Reasoning Engine]]
 - [[sessions/2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision and OntoGraph Axiom Scoping|2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping]]
+- [[sessions/2026-07-11 Phase 821 context discussion — dg-reasoner sidecar and RDF translation|2026-07-11 Phase 821 context discussion — dg-reasoner sidecar & RDF translation]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
