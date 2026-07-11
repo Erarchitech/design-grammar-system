@@ -1,0 +1,53 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex: <http://example.org/design-grammar/ex#> .
+
+# ontology/dg-disjointness.ttl
+#
+# Curated owl:disjointWith overlay (D-04, ADR-820-1).
+#
+# ontology/DesignGrammar-V7.owl (the static TBox export) stays a PRISTINE
+# export from the ontology-authoring toolchain and carries zero disjointWith
+# axioms today. The live OntoGraph Cypher export (dg-reasoner/ontology_export.py)
+# is a flat per-project vocabulary with no subClassOf/disjointWith of its own
+# (spec/LPG-OWL-MAPPING.md #OntoGraph flatness) -- domain classes like
+# `ex:Door`/`ex:Window` are dynamically generated from user prompts and never
+# carry curated axioms either. Without this overlay, HermiT's consistency
+# check over the hybrid union (TBox + live export) can never meaningfully
+# fail -- there is nothing for it to contradict.
+#
+# This file is the version-controlled, human-curated home for genuine
+# design-time architectural disjointness knowledge (e.g. "a Door is never
+# also a Window") in the `ex:` per-project domain-vocabulary namespace. It is
+# unioned with the static TBox and the live export at reasoning time only
+# (dg-reasoner/reasoning.py::_hybrid_union) -- never merged back into
+# DesignGrammar-V7.owl. It is volume-mounted read-only into the sidecar
+# (docker-compose.yml `./ontology:/app/ontology:ro`, Plan 821-01 D-07), so
+# curating new disjointness axioms is an edit + container restart, never an
+# image rebuild.
+#
+# IMPORTANT: unlike the Phase 820 spike (which seeded a deliberate
+# `ex:SlidingDoor rdfs:subClassOf ex:Door, ex:Window` contradiction purely to
+# prove HermiT catches it), this is a REAL curated production artifact. It
+# must NOT seed a contradiction itself -- it only declares genuine mutually
+# exclusive architectural element classes so that IF a live project's
+# OntoGraph (or a future TBox class) is ever asserted as a subclass of two
+# disjoint classes here, HermiT will correctly flag it as unsatisfiable.
+
+ex:Door a owl:Class .
+ex:Window a owl:Class .
+ex:Wall a owl:Class .
+ex:Slab a owl:Class .
+
+# A Door is never also a Window: both are openings in a wall/slab assembly,
+# but they are mutually exclusive element categories in the DesignGrammar
+# domain vocabulary (matches the 820 spike's own curated axiom -- reused here
+# as a real, defensible disjointness, not the spike's seeded contradiction).
+ex:Door owl:disjointWith ex:Window .
+
+# A Wall is never also a Slab: Wall is a vertical enclosing element, Slab is
+# a horizontal structural element -- structurally and functionally distinct
+# architectural element categories that a design should never classify as
+# the same instance.
+ex:Wall owl:disjointWith ex:Slab .
