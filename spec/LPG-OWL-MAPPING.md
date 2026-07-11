@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document is the **normative mapping contract** between DG's Neo4j labelled-property graph (LPG) and the standard RDF/OWL/SWRL representation used for OWL 2 DL reasoning and external-tool interoperability (Protégé, OWL API).
+This document is the **normative mapping contract** between DG's Neo4j labelled-property graph (LPG) and the standard RDF/OWL/SWRL representation used for OWL 2 DL reasoning and external-tool interoperability (Protégé, OWL API). It fulfills requirement **REAS-04** (edge-property reification for `Atom.ARG.pos` and `Rule.HAS_BODY`/`HAS_HEAD.order`).
 
 **Normative scope** (these sections are the binding contract Phase 821 implements):
 - [Metagraph -> SWRL RDF](#metagraph-to-swrl-rdf-mapping) -- every Metagraph node/relationship maps onto the W3C SWRL RDF vocabulary
