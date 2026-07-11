@@ -190,6 +190,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-11 Phase 821 context discussion — dg-reasoner sidecar and RDF translation|2026-07-11 Phase 821 context discussion — dg-reasoner sidecar & RDF translation]]
 - [[sessions/2026-07-12 Phase 822 UI-SPEC|2026-07-12 Phase 822 UI design contract — monochromatic verdict reconciliation]]
 - [[sessions/2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review, full verification|2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review findings, full verification]]
+- [[sessions/2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring|2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring, 4 plans across 3 waves]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
