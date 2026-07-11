@@ -12,7 +12,9 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Path, Relationship
 from pydantic import BaseModel, Field
@@ -63,6 +65,10 @@ app = FastAPI()
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
+
+# dg-reasoner sidecar (Plan 821-01 compose env; internal-only, D-12) --
+# reached exclusively through the thin proxy route below (D-06).
+DG_REASONER_URL = os.getenv("DG_REASONER_URL", "http://dg-reasoner:8000")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -1157,6 +1163,49 @@ def put_reasoner_settings(payload: ReasonerSettingsPayload):
         "reasoners": reasoner.REASONER_REGISTRY,
         "selected": payload.reasoner,
     }
+
+
+class ReasonerConsistencyRequest(BaseModel):
+    project: str
+    engine: str = "hermit"
+
+
+@app.post("/reasoner/consistency")
+def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
+    """Thin proxy to the dg-reasoner sidecar's `POST /reason/consistency` (D-06).
+
+    Forwards `{project, engine}` to `DG_REASONER_URL` over httpx with an
+    EXPLICIT short timeout. This is the only thing that reaches the sidecar
+    (D-12, internal-only, no nginx route, no host port) -- a sidecar hang
+    surfaces here as a fast, caught 502/504, never a hang in this hot path.
+    """
+    try:
+        response = httpx.post(
+            f"{DG_REASONER_URL}/reason/consistency",
+            json={"project": payload.project, "engine": payload.engine},
+            timeout=httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=2.0),
+        )
+    except httpx.TimeoutException:
+        raise _structured_error_response(
+            "Reasoner sidecar request timed out.",
+            "The dg-reasoner sidecar is slow or unreachable. Try again later.",
+            "REASONER_TIMEOUT",
+            504,
+        )
+    except httpx.ConnectError:
+        raise _structured_error_response(
+            "Could not connect to the reasoner sidecar.",
+            "Verify the dg-reasoner service is running.",
+            "REASONER_UNAVAILABLE",
+            502,
+        )
+
+    try:
+        body = response.json()
+    except ValueError:
+        body = {"detail": response.text}
+
+    return JSONResponse(status_code=response.status_code, content=body)
 
 
 @app.put("/integration/speckle/project/{project}")
