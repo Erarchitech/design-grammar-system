@@ -87,6 +87,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/get_adapter ignores baseUrl from settings|get_adapter() ignores baseUrl — DeepSeek key sent to OpenAI]]
 - [[debugging/Model Viewer validation objects not found in Speckle world tree|Model Viewer: validation objects not found in Speckle world tree]]
 - [[debugging/Glob pattern star star star star matched zero content modules|Glob pattern ##-*.js matched zero content modules (Phase 815 code review)]]
+- [[debugging/code-review-821-proxy-timeout-orphaned-jvms-arg-pos|Phase 821 code review: proxy timeout mismatch, orphaned JVMs, silent ARG.pos data loss]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -188,6 +189,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision and OntoGraph Axiom Scoping|2026-07-11 Phase 820 execution — Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping]]
 - [[sessions/2026-07-11 Phase 821 context discussion — dg-reasoner sidecar and RDF translation|2026-07-11 Phase 821 context discussion — dg-reasoner sidecar & RDF translation]]
 - [[sessions/2026-07-12 Phase 822 UI-SPEC|2026-07-12 Phase 822 UI design contract — monochromatic verdict reconciliation]]
+- [[sessions/2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review, full verification|2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review findings, full verification]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
