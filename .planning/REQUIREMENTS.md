@@ -63,19 +63,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REAS-04 | TBD | Pending |
-| REAS-05 | TBD | Pending |
-| REAS-06 | TBD | Pending |
-| SHCL-01 | TBD | Pending |
-| SHCL-02 | TBD | Pending |
-| CONNG-01 | TBD | Pending |
-| CONNG-02 | TBD | Pending |
+| REAS-04 | Phase 820 | Pending |
+| REAS-05 | Phase 821 | Pending |
+| REAS-06 | Phase 822 | Pending |
+| SHCL-01 | Phase 823 | Pending |
+| SHCL-02 | Phase 823 | Pending |
+| CONNG-01 | Phase 824 | Pending |
+| CONNG-02 | Phase 824 | Pending |
 
 **Coverage:**
 
 - v8.2 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7 (pending roadmap creation)
+- Mapped to phases: 7
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-11*
+*Roadmap created: 2026-07-11 — 5 phases (820–824), 100% coverage*

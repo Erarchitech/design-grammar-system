@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
 status: planning
-last_updated: "2026-07-11T13:14:56.275Z"
+last_updated: "2026-07-11T14:20:00.000Z"
 last_activity: 2026-07-11
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-07)
+See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 816 — Integration & Deployment
+**Current focus:** Milestone v8.2 — Phase 820 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-11 — Milestone v8.2 started
+Phase: 820 of 5 (Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-07-11 — v8.2 ROADMAP.md created: 5 phases (820–824), 7/7 requirements mapped, 100% coverage
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -40,6 +42,12 @@ Last activity: 2026-07-11 — Milestone v8.2 started
 ## Accumulated Context
 
 ### Decisions
+
+Established for v8.2 (roadmap, Phases 820–824):
+
+- [Roadmap]: REAS-05 (dg-reasoner sidecar + OntoGraph/Metagraph RDF translation) delivered as one merged phase (821) rather than the two sub-phases research suggested — keeps traceability single-owner per requirement; Phase 821 still carries the harder OntoGraph-translation research flag internally
+- [Roadmap]: Phase 823 (SHACL) depends on Phase 821 only, not Phase 822 (OWL reasoning) — SHACL shape authoring doesn't need the OWL TBox question resolved, per research's phase-ordering rationale
+- [Roadmap]: Phase 824 (CONNECTOR) has no dependency on Phases 820–823 and can be planned/executed in parallel at any point — zero shared code path with the reasoning work
 
 Established for v8.1 Phase 815 Plan 01:
 
@@ -164,6 +172,8 @@ Shipped from Phase 20 Plan 02:
 
 ### Research Flags (carry into planning)
 
+- Phase 820: OntoGraph axiom-scoping decision is genuinely open-ended (extend LLM ingestion vs. scope down vs. hybrid) — needs a prototype/spike against real project data, not just a literature read
+- Phase 821: the OntoGraph half of the LPG→OWL translation has no standard shortcut (unlike Metagraph's SWRL-vocabulary mapping) — highest-risk piece for silent edge-property data loss (`ARG.pos`, `HAS_BODY/HAS_HEAD.order`); flag for `--research-phase`
 - Phase 13: resolve PDF-internal ValidStatus(Boolean)-vs-Status(text) conflict AND the DesignState storage-layer conflict (cypher_template stores DesignState with graph='Metagraph' at line ~50; PDF's VALIDATION GRAPH reads DesignState from the ValidGraph handle) before locking the port↔IRI map
 - Phase 18: read VariableBinder.BuildBindings (DG.Core.Classification) before writing PLAN — its logic is being redistributed to OBJECT STATE/PROPERTY STATE/VALIDATOR, not deleted wholesale
 - Phase 18: read data-service `_project_state_summary` (app.py ~521) + `graph-viewer/model-viewer/src/useValidationRunsGrouping.js` before writing PLAN — Model Viewer groups runs by `state.stateId` from the statePayloadJson projection (GHVL-06)
@@ -174,12 +184,14 @@ Shipped from Phase 20 Plan 02:
 - **USER APPROVAL NEEDED**: run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` — v2.0-era validation runs (project TestA, 20 runs/1148 entities) invisible to data-service until then (auto-mode denied the bulk mutation)
 - **Reconcile n8n workflows**: live instance versions drifted ahead of `n8n/workflows/*.json` (user editor changes, versionCounter 22); repo JSONs carry the quote-syntax + project_name body-fallback fixes — export live → repo or re-import repo → live
 - Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted
-- Resume v9.0 AI Workflow Intelligence after v8.0 ships — Phase 28 (cloud-llm-connector, renumbered from 01 on 2026-07-08) executed and parked in .planning/milestones/v9.0-phases/28-cloud-llm-connector/; UAT item "E2E provider switch" still human-needed
+- Resume v9.0 AI Workflow Intelligence after v8.2 ships — Phase 28 (cloud-llm-connector, renumbered from 01 on 2026-07-08) executed and parked in .planning/milestones/v9.0-phases/28-cloud-llm-connector/; UAT item "E2E provider switch" still human-needed
+- Formal `/gsd-complete-milestone` pass for v8.1 still pending (all 7 phases complete and verified 2026-07-11, not yet archived)
 
 ### Blockers/Concerns
 
-- .NET SDK 10.0.109 is installed on this machine (per 2026-06-23 session note); `dotnet test` requires `DOTNET_ROLL_FORWARD=LatestMajor` (net9.0 runtime absent — only 7/8/10). Verify once before Phase 16+ state-model changes land
+- .NET SDK 10.0.109 is installed on this machine (per 2026-06-23 session note); `dotnet test` requires `DOTNET_ROLL_FORWARD=LatestMajor` (net9.0 runtime absent — only 7/8/10). Verify once before Phase 821+ C#/sidecar changes land
 - Pending migration from v3.0 Phase 7 still applies: `migrations/2026-06-23_var_project_merge_key.cypher` has not been run against live Neo4j
+- v8.2 Phase 820 spike outcome (OntoGraph axiom-scoping decision) gates Phases 821–823 — do not start sidecar/translation/SHACL implementation before Phase 820's Key Decision is recorded
 
 ### Quick Tasks Completed
 
@@ -193,9 +205,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-11T10:48:49.846Z
-Stopped at: v8.0 shipped
-Resume file: — (next: user approval items in Pending Todos, then /gsd-new-milestone)
+Last session: 2026-07-11T14:20:00.000Z
+Stopped at: v8.2 ROADMAP.md created — 5 phases (820–824), 7/7 requirements mapped, 100% coverage
+Resume file: — (next: `/gsd-plan-phase 820`)
 
 ## Performance Metrics
 
