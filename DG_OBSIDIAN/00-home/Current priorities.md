@@ -1,17 +1,18 @@
 ---
 tags: [home, priorities]
-date: 2026-07-08
+date: 2026-07-11
 ---
 
 # Current Priorities
 
 ## Active
 
-1. **v8.0 Session History COMPLETED (2026-07-11)** — Session History panel with Restore points ported to V2 Graph Viewer. New SessionHistory component with collapsible filterable list, Restore (graph rewind), Reuse (load prompt), Confirm button. Checkpoints persisted to localStorage. 6 commits. See [[sessions/2026-07-11 Session History panel with Restore points|session]].
-2. **v9.0 Phase 01 Cloud LLM Connector** — Executed (3/3 plans, 2 waves). 6/7 must-haves verified, 1 UAT pending (E2E provider switch). Ship blocked: UAT completion, gh CLI install. See [[sessions/2026-07-07 v9.0 Phase 01 execution|session]].
-3. **v4.0 BOT Ontology Bridge** — Next milestone. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
-4. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
-5. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+1. **v9.0 AI Workflow Intelligence — Phases 28-40** — Paused. Phase 28 (Cloud LLM Connector) executed and shipped (6/7 must-haves, 1 UAT pending: E2E provider switch). Phases 29-40 fully planned but not started: DG-aware context layer, orchestration eval, rules-ingest upgrade, and the 6-phase Computgraph serialization pipeline (32-37: serialization core, canvas bridge, tagging components, LLM recognition+preview, persistence+display, structure validation). Resume by planning Phase 29. See [[sessions/2026-07-11 v9.0-v10.0 global phase renumbering|session]].
+2. **v10.0 Script Intelligence — Phases 41-49** — Fully planned, isolated (do not activate until v9.0 ships). Wire substrate persistence, component KB, bridge write commands, cluster introspection, script generation/editing, structure rule grammar, consulting assistant. See `.planning/milestones/v10.0-ROADMAP.md`.
+3. **v8.0 Session History COMPLETED (2026-07-11)** — Session History panel with Restore points ported to V2 Graph Viewer. New SessionHistory component with collapsible filterable list, Restore (graph rewind), Reuse (load prompt), Confirm button. Checkpoints persisted to localStorage. 6 commits. See [[sessions/2026-07-11 Session History panel with Restore points|session]].
+4. **v4.0 BOT Ontology Bridge** — Planned, isolated, still on old milestone-local "Phases 1-4" numbering — needs renumbering (likely 50+) when activated, per [[decisions/Global phase numbering continues across milestones|global numbering decision]]. BOT anchor nodes + ALIGNED_TO edges. See `.planning/milestones/v4.0-ROADMAP.md`.
+5. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
+6. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
 
 > ℹ️ **v3.0 superseded 2026-07-02** — Phase 7 (Schema Foundation) shipped and carried forward; Phases 8–12 dropped in favor of the GH_DesignGrammars.pdf-driven v7.0 component set. Archive: `.planning/milestones/v3.0-phases/`.
 > ℹ️ **Требуется рестарт Claude Desktop/Code** — активировать graphify MCP server (зарегистрирован, но не подхвачен).
@@ -30,6 +31,7 @@ date: 2026-07-08
 
 ## Completed Recently
 
+- **v9.0/v10.0 global phase renumbering + v8.0 consistency fix** — 2026-07-11. v9.0 renumbered 1–13 → 28–40, v10.0 renumbered 1–9 → 41–49 (continuous global numbering following v8.0's Phase 27); Phase 27's missing MVIEW3D-01..03 requirements added, its split active/archive directory consolidated, MILESTONES/ROADMAP/STATE/PROJECT synced. 2 commits (`08980a8`, `26f98b7`). See [[sessions/2026-07-11 v9.0-v10.0 global phase renumbering|session]] and [[decisions/Global phase numbering continues across milestones|decision]].
 - **v8.0 Phases 21–26 autonomous execution + CLAUDE.md correction** — 2026-07-08. Whole milestone executed via `/gsd-execute-phase`, GSD docs written post facto. Found and fixed two live n8n bugs (fatal quote-syntax hang in graph-query, silent project-scoping failure) and confirmed the container cutover with a 7-point E2E parity pass. Corrected CLAUDE.md's architecture description — LLM calls route through the v9.0 gateway (`data-service/llm_gateway.py`), not Ollama directly. See [[sessions/2026-07-08 v8.0 Phases 21-26 autonomous execution|session]] and [[debugging/n8n workflows had a fatal quote bug and silent project-scoping failure|debugging note]].
 - **Phase 27: Speckle 3D Embed executed** — 2026-07-08. 1 plan executed via `/gsd-execute-phase 27`. SpeckleViewport React component created with full viewer lifecycle, 3D/Map toggle in ModelScreen toolbar, entity click wiring to Properties sidebar. 4 code review findings fixed (CR-01 stabilised callback refs, WR-01/02/03). Build passes (931 modules). See [[sessions/2026-07-08 Phase 27 Speckle 3D embed execution|session]].
 - **Phase 27: Speckle 3D Embed planned** — 2026-07-08. New v8.0 phase to replace synthetic SVG boxes with `@speckle/viewer` in V2 ModelScreen. 1 plan, 2 tasks, 6 decisions locked. Audit-fix F-02 escalated to this phase. See [[sessions/2026-07-08 audit-fix and Phase 27 Speckle 3D embed plan|session]].

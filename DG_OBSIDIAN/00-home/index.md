@@ -63,6 +63,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 20 E2E Validation and Docs context decisions|Phase 20: E2E Validation and Docs — E2E scope, release notes, docs strategy, vault refresh]]
 - [[decisions/Per-object property binding via PropState.ObjectRef|Per-object property binding via PropState.ObjectRef (v7.0)]]
 - [[decisions/V8 frontend build supersedes no-JSX pattern|Phase 21 (v8.0): Design System Foundation — Vite+React+JSX, full component library, specimen page, new app directory]]
+- [[decisions/Global phase numbering continues across milestones|Global phase numbering continues across milestones (v7.0:13-20 → v8.0:21-27 → v9.0:28-40 → v10.0:41-49)]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -170,9 +171,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-09 GH component subcategory grouping|2026-07-09 GH component tool panel grouping — Graph / States / Actions]]
 - [[sessions/2026-07-11 Session History panel with Restore points|2026-07-11 Session History panel + Restore points]]
 - [[sessions/2026-07-11 Landing hero title shrink quick task|2026-07-11 Landing hero title shrink — Quick task 260711-gtz]]
+- [[sessions/2026-07-11 v9.0-v10.0 global phase renumbering|2026-07-11 v9.0/v10.0 global phase renumbering + v8.0 consistency fix]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
 
-> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. **v8.0 shipped (2026-07-07).** Phase 27 (Speckle 3D embed) planned 2026-07-08. Next: v4.0 BOT Ontology Bridge.
+> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. **v8.0 shipped (2026-07-07)**, Phase 27 (Speckle 3D embed) added post-ship 2026-07-08 — 7 phases (21–27), 28/28 requirements. **v9.0 (Phases 28–40, paused)** and **v10.0 (Phases 41–49, isolated)** renumbered 2026-07-11 to continue global phase numbering. Next active work: resume v9.0 Phase 29, or v4.0 BOT Ontology Bridge.
