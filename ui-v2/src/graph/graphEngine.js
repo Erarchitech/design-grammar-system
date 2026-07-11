@@ -88,6 +88,13 @@ export default class GraphEngine {
     this._camT = { x: 0, y: 0, s: 1 };
     this._orbReach = [0.03, 0.052, 0.175];
     this._stop = false;
+
+    /* thinking-core state (core sphere + streams — see startThinking/stopThinking) */
+    this._think = 0; // current intensity 0..1
+    this._thinkTarget = 0;
+    this._thinkVideo = null;
+    this._thinkVideoReady = false;
+    this._thinkVideoFailed = false;
   }
 
   /* ---------------- data ---------------- */
@@ -134,6 +141,7 @@ export default class GraphEngine {
   start() {
     this._stop = false;
     this.resize();
+    this._initThinkVideo();
     this._onResize = () => this.resize();
     window.addEventListener("resize", this._onResize);
     this.bind();
@@ -179,6 +187,101 @@ export default class GraphEngine {
     }
   }
 
+  /* ---------------- thinking core ---------------- */
+  _initThinkVideo() {
+    if (this._thinkVideo) return; // idempotent — created once per engine instance
+    try {
+      const v = document.createElement("video");
+      v.muted = true;
+      v.loop = true;
+      v.playsInline = true;
+      v.preload = "auto";
+      const onReady = () => {
+        this._thinkVideoReady = true;
+      };
+      v.addEventListener("canplay", onReady);
+      v.addEventListener("loadeddata", onReady);
+      v.addEventListener("error", () => {
+        this._thinkVideoFailed = true;
+      });
+      v.addEventListener("stalled", () => {
+        this._thinkVideoFailed = true;
+      });
+      v.src = "/dg-think-sphere.mp4";
+      this._thinkVideo = v;
+    } catch {
+      this._thinkVideoFailed = true;
+    }
+  }
+  startThinking() {
+    this._thinkTarget = 1;
+    if (this._thinkVideo && !this._thinkVideoFailed) {
+      const p = this._thinkVideo.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }
+  stopThinking() {
+    this._thinkTarget = 0;
+  }
+  updateThinking(dt) {
+    // Task 2 populates updateStreams(); guarded so tick() never breaks between
+    // this task landing and that one.
+    if (this.updateStreams) this.updateStreams(dt);
+    const target = this._streams && this._streams.length ? Math.max(this._thinkTarget, 0.6) : this._thinkTarget;
+    const k = Math.min(1, dt * 4);
+    this._think += (target - this._think) * k;
+    if (this._think < 0.01 && target === 0) {
+      this._think = 0;
+      if (this._thinkVideo && !this._thinkVideo.paused) this._thinkVideo.pause();
+    }
+  }
+  drawThinkingCore(cx, cy, base, t) {
+    const ctx = this._ctx;
+    if (!ctx || this._think < 0.005) return;
+    const R = base * 0.3;
+    // local dark backdrop first — the light paper canvas needs a black field
+    // for the white wisps to glow against under a "lighter" composite
+    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    bg.addColorStop(0, `rgba(8,8,12,${0.92 * this._think})`);
+    bg.addColorStop(1, "rgba(8,8,12,0)");
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.fill();
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = this._think;
+    if (this._thinkVideoReady && !this._thinkVideoFailed) {
+      ctx.drawImage(this._thinkVideo, cx - R, cy - R, 2 * R, 2 * R);
+    } else {
+      // procedural fallback — pulsing near-white glow + faint rim strokes
+      const glowA = this._think * (0.55 + 0.25 * Math.sin(t * 2.2));
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      glow.addColorStop(0, `rgba(245,245,248,${glowA})`);
+      glow.addColorStop(1, "rgba(245,245,248,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(245,245,248,${glowA * 0.5})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 0.7, 0, TAU);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(245,245,248,${glowA * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 0.9, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+
+    // Task 2 populates drawStreams(); guarded for the same reason as above.
+    if (this.drawStreams) this.drawStreams(cx, cy, base, t);
+  }
+
   tick(ts) {
     if (this._stop) return;
     this._raf = requestAnimationFrame(this.tick.bind(this));
@@ -213,6 +316,7 @@ export default class GraphEngine {
     cs.x += (ct.x - cs.x) * k;
     cs.y += (ct.y - cs.y) * k;
     cs.s += (ct.s - cs.s) * k;
+    this.updateThinking(dt);
     this.drawGraph();
     this.placeGraphDOM();
     this.drawMinimap();
@@ -758,6 +862,9 @@ export default class GraphEngine {
 
     // divergence spire callout on selection
     if (sel && sel.r === act) this.drawSpire(act, sel.i, base, cx, cy, this._lt || 0);
+
+    // thinking-core overlay (see startThinking()/stopThinking())
+    this.drawThinkingCore(cx, cy, base, this._lt || 0);
   }
 
   edgeTag(x1, y1, x2, y2, text) {
