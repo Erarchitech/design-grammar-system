@@ -1,0 +1,12 @@
+DesignGrammar-V7.owl TBox axiom counts — rdflib-parsed (authoritative, not grep)
+source: DesignGrammar-V7.owl, total triples: 2139
+
+rdfs:subClassOf: 65
+rdfs:domain: 101
+rdfs:range: 110
+owl:disjointWith: 0
+owl:Class declarations: 75
+
+Note: owl:disjointWith == 0 is the empirical justification for curating
+disjointness axioms into the hybrid TBox — without them, consistency
+checking cannot meaningfully fail (the trivial-consistency false positive).

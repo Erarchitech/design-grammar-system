@@ -1,0 +1,515 @@
+@prefix ex: <http://example.org/design-grammar/ex#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix swrlb: <http://www.w3.org/2003/11/swrlb#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:Door a owl:Class ;
+    rdfs:label "Door" .
+
+ex:FacadePanel a owl:Class ;
+    rdfs:label "Facade panel" .
+
+ex:Floor a owl:Class ;
+    rdfs:label "Floor" .
+
+ex:Roof a owl:Class ;
+    rdfs:label "Roof" .
+
+ex:hasFlatness a owl:DatatypeProperty ;
+    rdfs:label "hasFlatness" ;
+    rdfs:range xsd:boolean .
+
+ex:hasHeightM a owl:DatatypeProperty ;
+    rdfs:label "hasHeightM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasOrientation a owl:DatatypeProperty ;
+    rdfs:label "hasOrientation" ;
+    rdfs:range xsd:string .
+
+ex:violatesDoorOrientation a owl:DatatypeProperty ;
+    rdfs:label "violatesDoorOrientation" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesFillet a owl:DatatypeProperty ;
+    rdfs:label "violatesFillet" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesFlatness a owl:DatatypeProperty ;
+    rdfs:label "violatesFlatness" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxHeight a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxHeight" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesSameHeight a owl:DatatypeProperty ;
+    rdfs:label "violatesSameHeight" ;
+    rdfs:range xsd:boolean .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A1> a swrl:ClassAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A2> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A3> a swrl:BuiltinAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A4> a swrl:BuiltinAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_HEIGHT_60_V_A5> a swrl:BuiltinAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A1> a swrl:ClassAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A2> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_DOOR_ORIENTATION_V_A3> a swrl:BuiltinAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A1> a swrl:ClassAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A2> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A3> a swrl:BuiltinAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_PANEL_GRID_HEX_V_A4> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A1> a swrl:ClassAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A2> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_ROOF_FLAT_V_A3> a swrl:DatavaluedPropertyAtom .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BLOCK_MIN_FOOTPRINT_PCT_18_V> a swrl:Imp ;
+    rdfs:label "R_BLOCK_MIN_FOOTPRINT_PCT_18_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_CORNER_FILLET_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_CORNER_FILLET_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_CORNER_FILLET_V_A1> ;
+            rdf:rest () ] ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_HEIGHT_60_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_MAX_HEIGHT_60_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MAX_STOREY_9_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_MAX_STOREY_9_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_BUILDING_MIN_DISTANCE_12_V> a swrl:Imp ;
+    rdfs:label "R_BUILDING_MIN_DISTANCE_12_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_COLUMN_CONTINUITY_V> a swrl:Imp ;
+    rdfs:label "R_COLUMN_CONTINUITY_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_DOOR_ORIENTATION_V> a swrl:Imp ;
+    rdfs:label "R_CORRIDOR_DOOR_ORIENTATION_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_CORRIDOR_MAX_LENGTH_14_V> a swrl:Imp ;
+    rdfs:label "R_CORRIDOR_MAX_LENGTH_14_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_DOOR_ORIENTATION_V> a swrl:Imp ;
+    rdfs:label "R_DOOR_ORIENTATION_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_GRID_HEX_V> a swrl:Imp ;
+    rdfs:label "R_FACADE_GRID_HEX_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FACADE_PANEL_GRID_HEX_V> a swrl:Imp ;
+    rdfs:label "R_FACADE_PANEL_GRID_HEX_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_HEIGHT_EQ_0_V> a swrl:Imp ;
+    rdfs:label "R_FLOOR_HEIGHT_EQ_0_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_0_V> a swrl:Imp ;
+    rdfs:label "R_FLOOR_SAME_HEIGHT_0_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_FLOOR_SAME_HEIGHT_V> a swrl:Imp ;
+    rdfs:label "R_FLOOR_SAME_HEIGHT_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_FACING_DIRECTION_V> a swrl:Imp ;
+    rdfs:label "R_LIVINGUNIT_FACING_DIRECTION_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A3> ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A4> ;
+                                    rdf:rest [ a swrl:AtomList ;
+                                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A5> ;
+                                            rdf:rest () ] ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_LIVINGUNIT_MIN_AREA_30_V> a swrl:Imp ;
+    rdfs:label "R_LIVINGUNIT_MIN_AREA_30_V" ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A1> ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A2> ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A3> ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first <http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_H1> ;
+            rdf:rest () ] .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_ROOF_FLAT_V> a swrl:Imp ;
+    rdfs:label "R_ROOF_FLAT_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/rule/R_URB_HEIGHT_MAX_75_V> a swrl:Imp ;
+    rdfs:label "R_URB_HEIGHT_MAX_75_V" ;
+    swrl:body () ;
+    swrl:head () .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/h> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/h1> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/h2> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/o> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/r> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/t> a swrl:Variable .
+
+swrlb:fillet a swrl:Builtin .
+
+swrlb:notEqual a swrl:Builtin .
+
+swrlb:towards a swrl:Builtin .
+
+ex:Block a owl:Class ;
+    rdfs:label "Block" .
+
+ex:Column a owl:Class ;
+    rdfs:label "Column" .
+
+ex:Corridor a owl:Class ;
+    rdfs:label "Corridor" .
+
+ex:Facade a owl:Class ;
+    rdfs:label "Facade" .
+
+ex:hasAreaM2 a owl:DatatypeProperty ;
+    rdfs:label "hasAreaM2" ;
+    rdfs:range xsd:decimal .
+
+ex:hasContinuity a owl:DatatypeProperty ;
+    rdfs:label "hasContinuity" ;
+    rdfs:range xsd:boolean .
+
+ex:hasDistanceM a owl:DatatypeProperty ;
+    rdfs:label "hasDistanceM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasFacingDirection a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirection" ;
+    rdfs:range xsd:string .
+
+ex:hasFacingDirectionEast a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirectionEast" ;
+    rdfs:range xsd:boolean .
+
+ex:hasFootprintM2 a owl:DatatypeProperty ;
+    rdfs:label "hasFootprintM2" ;
+    rdfs:range xsd:decimal .
+
+ex:hasGridType a owl:DatatypeProperty ;
+    rdfs:label "hasGridType" ;
+    rdfs:range xsd:string .
+
+ex:hasLengthM a owl:DatatypeProperty ;
+    rdfs:label "hasLengthM" ;
+    rdfs:range xsd:decimal .
+
+ex:hasStoreyCount a owl:DatatypeProperty ;
+    rdfs:label "hasStoreyCount" ;
+    rdfs:range xsd:integer .
+
+ex:violatesContinuity a owl:DatatypeProperty ;
+    rdfs:label "violatesContinuity" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesGridType a owl:DatatypeProperty ;
+    rdfs:label "violatesGridType" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxLength a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxLength" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMaxStoreyCount a owl:DatatypeProperty ;
+    rdfs:label "violatesMaxStoreyCount" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinArea a owl:DatatypeProperty ;
+    rdfs:label "violatesMinArea" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinDistance a owl:DatatypeProperty ;
+    rdfs:label "violatesMinDistance" ;
+    rdfs:range xsd:boolean .
+
+ex:violatesMinFootprintPct a owl:DatatypeProperty ;
+    rdfs:label "violatesMinFootprintPct" ;
+    rdfs:range xsd:boolean .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Block .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:propertyPredicate ex:hasFootprintM2 .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/f> 0.18 ) ;
+    swrl:builtin swrlb:greaterThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BLOCK_MIN_FOOTPRINT_PCT_18_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinFootprintPct .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_CORNER_FILLET_V_A1> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/b> <http://example.org/design-grammar/project/v8-ui-smoke/var/b> <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ) ;
+    swrl:builtin ex:Building .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Building .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/s> ;
+    swrl:propertyPredicate ex:hasStoreyCount .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/s> 9 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MAX_STOREY_9_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMaxStoreyCount .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:classPredicate ex:Building .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/d> ;
+    swrl:propertyPredicate ex:hasDistanceM .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/d> 12.0 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_BUILDING_MIN_DISTANCE_12_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/b> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinDistance .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A1> a swrl:ClassAtom ;
+    swrl:classPredicate ex:Column .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:propertyPredicate ex:hasContinuity .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_A3> a swrl:BuiltinAtom ;
+    swrl:builtin swrlb:continuousFromTo .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_COLUMN_CONTINUITY_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:propertyPredicate ex:violatesContinuity .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/c> ;
+    swrl:classPredicate ex:Corridor .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/c> ;
+    swrl:propertyPredicate ex:hasLengthM .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( 14.0 ) ;
+    swrl:builtin swrlb:greaterThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_CORRIDOR_MAX_LENGTH_14_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 true ;
+    swrl:propertyPredicate ex:violatesMaxLength .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:classPredicate ex:Facade .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/g> ;
+    swrl:propertyPredicate ex:hasGridType .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/g> "hexagonal"^^xsd:string ) ;
+    swrl:builtin swrlb:equalTo .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_FACADE_GRID_HEX_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/f> ;
+    swrl:argument2 "hexagonal"^^xsd:string ;
+    swrl:propertyPredicate ex:violatesGridType .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:classPredicate ex:LivingUnit .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/d> ;
+    swrl:propertyPredicate ex:hasFacingDirection .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/d> false ) ;
+    swrl:builtin swrlb:or .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A4> a swrl:DatavaluedPropertyAtom ;
+    swrl:propertyPredicate ex:hasFacingDirectionWest .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_A5> a swrl:DatavaluedPropertyAtom ;
+    swrl:propertyPredicate ex:hasFacingDirectionEast .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_FACING_DIRECTION_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:propertyPredicate ex:hasFacingDirectionWest .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A1> a swrl:ClassAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:classPredicate ex:LivingUnit .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A2> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:argument2 <http://example.org/design-grammar/project/v8-ui-smoke/var/a> ;
+    swrl:propertyPredicate ex:hasAreaM2 .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_A3> a swrl:BuiltinAtom ;
+    swrl:arguments ( <http://example.org/design-grammar/project/v8-ui-smoke/var/a> 30.0 ) ;
+    swrl:builtin swrlb:lessThan .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/atom/R_LIVINGUNIT_MIN_AREA_30_V_H1> a swrl:DatavaluedPropertyAtom ;
+    swrl:argument1 <http://example.org/design-grammar/project/v8-ui-smoke/var/u> ;
+    swrl:argument2 true ;
+    swrl:propertyPredicate ex:violatesMinArea .
+
+swrlb:continuousFromTo a swrl:Builtin .
+
+swrlb:equalTo a swrl:Builtin .
+
+swrlb:or a swrl:Builtin .
+
+ex:LivingUnit a owl:Class ;
+    rdfs:label "LivingUnit" .
+
+ex:hasFacingDirectionWest a owl:DatatypeProperty ;
+    rdfs:label "hasFacingDirectionWest" ;
+    rdfs:range xsd:boolean .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/a> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/c> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/g> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/s> a swrl:Variable .
+
+swrlb:greaterThan a swrl:Builtin .
+
+ex:Building a owl:Class ;
+    rdfs:label "Building" .
+
+swrlb:lessThan a swrl:Builtin .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/d> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/u> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/f> a swrl:Variable .
+
+<http://example.org/design-grammar/project/v8-ui-smoke/var/b> a swrl:Variable .
+
