@@ -45,9 +45,9 @@ Requirements for milestone v8.1. Each maps to roadmap phases 810–819.
 
 ### DG API Documentation (APID)
 
-- [ ] **APID-01**: User can browse DG API documentation in-app in a Revit-API-style structure (sections → classes/endpoints → members, with a navigable tree and detail pane)
-- [ ] **APID-02**: Documentation covers the connector-facing API — credential authentication, heartbeat/status, and validation publish endpoints — with request/response examples
-- [ ] **APID-03**: Documentation content is extendable: new pages/sections are added via structured content files without touching viewer code
+- [x] **APID-01**: User can browse DG API documentation in-app in a Revit-API-style structure (sections → classes/endpoints → members, with a navigable tree and detail pane)
+- [x] **APID-02**: Documentation covers the connector-facing API — credential authentication, heartbeat/status, and validation publish endpoints — with request/response examples
+- [x] **APID-03**: Documentation content is extendable: new pages/sections are added via structured content files without touching viewer code
 
 ### Integration (INTG)
 
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REAS-01 | Phase 814 | Complete |
 | REAS-02 | Phase 814 | Complete |
 | REAS-03 | Phase 814 | Complete |
-| APID-01 | Phase 815 | Pending |
-| APID-02 | Phase 815 | Pending |
-| APID-03 | Phase 815 | Pending |
+| APID-01 | Phase 815 | Complete |
+| APID-02 | Phase 815 | Complete |
+| APID-03 | Phase 815 | Complete |
 | INTG-01 | Phase 816 | Pending |
 | INTG-02 | Phase 816 | Pending |
 
