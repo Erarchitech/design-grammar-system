@@ -28,7 +28,7 @@
 |---|-------|------|--------------|------------|
 | 820 | Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping | 3/3 | Complete    | 2026-07-11 |
 | 821 | dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation | 4/4 | Complete    | 2026-07-11 |
-| 822 | OWL 2 DL Reasoning Integration + Reasoner Screen Wiring | 3/4 | In Progress|  |
+| 822 | OWL 2 DL Reasoning Integration + Reasoner Screen Wiring | 4/4 | Complete   | 2026-07-12 |
 | 823 | SHACL Validation Layer | Instance data is validated via SHACL alongside the existing SWRL VALIDATOR | SHCL-01, SHCL-02 | 821 |
 | 824 | CONNECTOR Credential Integration | Grasshopper CONNECTOR authenticates with a platform-issued credential | CONNG-01, CONNG-02 | — |
 
@@ -94,12 +94,12 @@
   3. A long-running or hung reasoning call times out and returns a distinct "unknown" result rather than silently reporting pass or fail, and never blocks the calling request synchronously
   4. Re-running the check after an ontology export change reflects updated results, not a cached/stale answer
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 
 - [x] 822-01-PLAN.md
 - [x] 822-02-PLAN.md
 - [x] 822-03-PLAN.md
-- [ ] 822-04-PLAN.md
+- [x] 822-04-PLAN.md
 
 **UI hint**: yes
 

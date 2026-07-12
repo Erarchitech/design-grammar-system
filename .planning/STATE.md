@@ -4,16 +4,16 @@ milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
 current_phase: 822
 current_phase_name: OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
-status: executing
-stopped_at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
-last_updated: "2026-07-12T09:00:56.764Z"
+status: verifying
+stopped_at: Completed 822-04-PLAN.md (final plan, phase 822 ready for verification)
+last_updated: "2026-07-12T13:15:00.000Z"
 last_activity: 2026-07-12
-last_activity_desc: Phase 822 execution started (822-01 complete)
+last_activity_desc: Phase 822 execution complete (4/4 plans)
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 40
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 822 (OWL 2 DL Reasoning Integration + Reasoner Screen Wiring) — EXECUTING
+Phase: 822 (OWL 2 DL Reasoning Integration + Reasoner Screen Wiring) — EXECUTION COMPLETE
 Plan: 4 of 4
-Status: Executing — 822-01 complete
-Last activity: 2026-07-12 — Phase 822 execution started (822-01 complete)
+Status: Backend gate green; manual UAT skipped per user decision; ready for phase verification
+Last activity: 2026-07-12 — Phase 822 execution complete (4/4 plans)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -190,6 +190,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 822 Plan 03]: runConsistencyCheck does not reuse getJson and does not throw on non-2xx -- returns {ok,status,body} so the caller branches on body shape (D-08/D-09)
 - [Phase ?]: [Phase 822 Plan 03]: Run/Cancel controls and the result region are gated on r.status === 'integrated', not on card selection -- a user can run the check without re-selecting HermiT
 - [Phase ?]: [Phase 822 Plan 03]: Each terminal verdict state renders its own re-run Run check button (Consistent/Inconsistent/Unknown/Cancelled); Error mirrors the existing loadError inline-Retry pattern instead
+- [Phase ?]: [Phase 822 Plan 04]: Backend automated gate (dg-reasoner 19/19 incl. live HermiT round-trip, data-service 13/13, live curl) accepted as sufficient to close the phase; manual frontend UAT (Steps A-G) explicitly skipped per user decision rather than run partially
 
 ### Research Flags (carry into planning)
 
@@ -230,12 +231,13 @@ Shipped from Phase 20 Plan 02:
 | Phase 822 P01 | 15min | 2 tasks | 2 files |
 | Phase 822 P02 | 12min | 3 tasks | 3 files |
 | Phase 822 P03 | 35min | 3 tasks | 2 files |
+| Phase 822 P04 | 45min | 2 tasks | 0 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T08:59:43.669Z
-Stopped at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
-Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
+Last session: 2026-07-12T13:15:00.000Z
+Stopped at: Completed 822-04-PLAN.md (final plan, phase 822 ready for verification)
+Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-04-SUMMARY.md
 
 ## Performance Metrics
 
