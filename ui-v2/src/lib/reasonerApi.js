@@ -22,6 +22,25 @@ export function getReasonerSettings() {
   return getJson("/reasoner/settings");
 }
 
+// POST /reasoner/consistency with { project, engine: "hermit" }.
+// The run always forces the HermiT engine (D-05). Does NOT throw on
+// non-2xx — a 504 is ambiguous between a genuine sidecar semantic
+// timeout (D-08) and a data-service transport timeout (D-09), so the
+// caller branches on body shape, not status code (RESEARCH Pitfall 1).
+// Forwards the caller's AbortController signal so a run can be
+// cancelled client-side (D-07). Every call is a fresh POST — no
+// response is stored or reused across runs (D-10).
+export async function runConsistencyCheck(project, { signal } = {}) {
+  const res = await fetch("/reasoner/consistency", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, engine: "hermit" }),
+    signal,
+  });
+  const body = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, body };
+}
+
 // PUT /reasoner/settings with { reasoner: "hermit" }
 // Returns the updated settings. Rejects unknown ids with 422.
 export async function selectReasoner(id) {
