@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
-current_phase: 821
-current_phase_name: dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
-status: verifying
-stopped_at: Phase 823 UI-SPEC approved
-last_updated: "2026-07-12T00:18:25.981Z"
-last_activity: 2026-07-11
-last_activity_desc: Phase 821 execution started
+current_phase: 822
+current_phase_name: OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
+status: executing
+stopped_at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
+last_updated: "2026-07-12T00:22:00.000Z"
+last_activity: 2026-07-12
+last_activity_desc: Phase 822 execution started (822-01 complete)
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
   percent: 40
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 821 — dg-reasoner-sidecar-ontograph-metagraph-rdf-translation
+**Current focus:** Phase 822 — OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
 
 ## Current Position
 
-Phase: 821 (dg-reasoner-sidecar-ontograph-metagraph-rdf-translation) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-07-11 — Phase 821 execution started
+Phase: 822 (OWL 2 DL Reasoning Integration + Reasoner Screen Wiring) — EXECUTING
+Plan: 2 of 4
+Status: Executing — 822-01 complete
+Last activity: 2026-07-12 — Phase 822 execution started (822-01 complete)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -183,6 +183,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 821]: [Phase 821 Plan 03]: run_shacl validates the live per-project export (not the full hybrid TBox union) against an empty placeholder shapes graph -- real shapes deferred to Phase 823 (D-11)
 - [Phase ?]: [Phase 821 Plan 04]: httpx.post(...) sync proxy with an explicit httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=2.0) -- matches app.py's prevailing sync-def style and llm_gateway.py's existing sync httpx.Client(timeout=...) pattern rather than introducing async
 - [Phase ?]: [Phase 821 Plan 04]: dg-reasoner and data-service Docker images had to be rebuilt mid-plan -- both containers were still running Plan 01-era stub code, so live verification of Plans 02/03/04 code required an explicit docker compose build + up -d
+- [Phase ?]: [Phase 822 Plan 01]: _local_name splits on last '#' first, then last '/', else returns IRI unchanged -- guarantees non-empty, non-http-prefixed fallback label
+- [Phase ?]: [Phase 822 Plan 01]: Label resolution order is first non-empty owlready2 Class.label element, else _local_name(iri) fallback -- matches D-02
 
 ### Research Flags (carry into planning)
 
@@ -220,12 +222,13 @@ Shipped from Phase 20 Plan 02:
 | Phase 821 P02 | 25min | 2 tasks | 3 files |
 | Phase 821 P03 | 30min | 3 tasks | 4 files |
 | Phase 821 P04 | 7min | 2 tasks | 3 files |
+| Phase 822 P01 | 15min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T00:18:25.966Z
-Stopped at: Phase 823 UI-SPEC approved
-Resume file: .planning/phases/823-shacl-validation-layer/823-UI-SPEC.md
+Last session: 2026-07-12T00:22:00.000Z
+Stopped at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
+Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
 
 ## Performance Metrics
 
