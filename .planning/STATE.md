@@ -6,14 +6,14 @@ current_phase: 822
 current_phase_name: OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
 status: executing
 stopped_at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
-last_updated: "2026-07-12T00:43:47.524Z"
+last_updated: "2026-07-12T09:00:56.764Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 822 execution started (822-01 complete)
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 822 (OWL 2 DL Reasoning Integration + Reasoner Screen Wiring) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Executing — 822-01 complete
 Last activity: 2026-07-12 — Phase 822 execution started (822-01 complete)
 
@@ -187,6 +187,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 822 Plan 01]: Label resolution order is first non-empty owlready2 Class.label element, else _local_name(iri) fallback -- matches D-02
 - [Phase ?]: [Phase 822 Plan 02]: Proxy read timeout expression is float(os.getenv('DG_REASONER_TIMEOUT_SECONDS','90'))+10 -- tracks sidecar's actual configured ceiling instead of a hardcoded literal, connect/write/pool stay 2.0s
 - [Phase ?]: [Phase 822 Plan 02]: HermiT registry status flipped to 'integrated' per D-04; Pellet stays 'placeholder' -- Pellet integration explicitly out of phase scope
+- [Phase ?]: [Phase 822 Plan 03]: runConsistencyCheck does not reuse getJson and does not throw on non-2xx -- returns {ok,status,body} so the caller branches on body shape (D-08/D-09)
+- [Phase ?]: [Phase 822 Plan 03]: Run/Cancel controls and the result region are gated on r.status === 'integrated', not on card selection -- a user can run the check without re-selecting HermiT
+- [Phase ?]: [Phase 822 Plan 03]: Each terminal verdict state renders its own re-run Run check button (Consistent/Inconsistent/Unknown/Cancelled); Error mirrors the existing loadError inline-Retry pattern instead
 
 ### Research Flags (carry into planning)
 
@@ -226,10 +229,11 @@ Shipped from Phase 20 Plan 02:
 | Phase 821 P04 | 7min | 2 tasks | 3 files |
 | Phase 822 P01 | 15min | 2 tasks | 2 files |
 | Phase 822 P02 | 12min | 3 tasks | 3 files |
+| Phase 822 P03 | 35min | 3 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T00:42:33.307Z
+Last session: 2026-07-12T08:59:43.669Z
 Stopped at: Completed 821-04-PLAN.md (final plan, phase 821 ready for verification)
 Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-UI-SPEC.md
 
