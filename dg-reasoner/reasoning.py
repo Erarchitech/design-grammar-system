@@ -66,6 +66,11 @@ DG_REASONER_TIMEOUT_SECONDS = int(os.getenv("DG_REASONER_TIMEOUT_SECONDS", "90")
 DG_OWL_PATH = os.getenv("DG_OWL_PATH", "/app/ontology/DesignGrammar-V7.owl")
 DG_DISJOINTNESS_PATH = os.getenv("DG_DISJOINTNESS_PATH", "/app/ontology/dg-disjointness.ttl")
 
+# Version-controlled SHACL data-integrity shapes (D-07/D-08, Plan 823-02).
+# Same read-only volume-mount overlay pattern as DG_DISJOINTNESS_PATH -- an
+# edit + container restart picks up shape changes, no image rebuild.
+DG_SHAPES_PATH = os.getenv("DG_SHAPES_PATH", "/app/ontology/dg-shapes.ttl")
+
 SUPPORTED_ENGINES = frozenset({"hermit"})
 
 _driver = None  # lazy singleton -- only created the first time no session is injected

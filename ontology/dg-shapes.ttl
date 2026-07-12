@@ -1,0 +1,155 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dgv: <http://example.org/design-grammar/valid#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix ex: <http://example.org/design-grammar/ex#> .
+@prefix dgsh: <http://example.org/design-grammar/shapes#> .
+
+# ontology/dg-shapes.ttl
+#
+# Version-controlled SHACL data-integrity shapes (D-07/D-08, Phase 823 Plan 02).
+#
+# Replaces the Phase 821 empty-placeholder shapes graph in
+# dg-reasoner/reasoning.py::run_shacl(). Loaded from the existing read-only
+# ./ontology volume mount (821 D-07 overlay pattern) -- editing this file and
+# restarting the dg-reasoner container is enough, no image rebuild.
+#
+# SCOPE (D-08, spec/RULE-PARTITION-POLICY.md): these shapes validate
+# structural DATA INTEGRITY of the v4 instance data (ValidGraph ABox +
+# Metagraph individuals) -- never a quantitative geometry/parameter
+# architect-authored design rule. Those live exclusively in the SWRL
+# VALIDATOR pipeline. Disagreement between the two systems means
+# mis-categorization, never a shape re-encoding a business rule.
+#
+# Every shape below carries sh:severity + a human sh:message (plain
+# architect language, no sh:* vocabulary) + dgsh:howToFix (remediation
+# guidance). dgsh:howToFix is this file's own annotation predicate --
+# consumed by dg-reasoner/reasoning.py's result enrichment, never rendered
+# as raw RDF to an architect.
+
+#############################################
+# 1. DesignState-kind membership (structural)
+#############################################
+dgsh:DsKindLabelShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:ObjState, dgv:ParamState, dgv:PropState ;
+    sh:severity sh:Violation ;
+    sh:message "A DesignState child (object, parameter, or property state) is missing an identifying label." ;
+    dgsh:howToFix "Ensure the state's label, objectRef, or stateId is populated before the run is published." ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+    ] .
+
+#############################################
+# 2. PropState completeness
+#############################################
+dgsh:PropStateCompletenessShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:PropState ;
+    sh:severity sh:Violation ;
+    sh:message "A property state is missing its Rule, DataProperty, or PropValue binding." ;
+    dgsh:howToFix "Confirm the VALIDATOR run bound a Rule, a DataProperty, and a PropValue to this property state before sending." ;
+    sh:property [
+        sh:path dgv:ruleIri ;
+        sh:minCount 1 ;
+    ] ;
+    sh:property [
+        sh:path dgv:dataPropertyIri ;
+        sh:minCount 1 ;
+    ] ;
+    sh:property [
+        sh:path dgv:propValue ;
+        sh:minCount 1 ;
+    ] .
+
+#############################################
+# 3. Run status
+#############################################
+dgsh:RunStatusShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:Run ;
+    sh:severity sh:Violation ;
+    sh:message "A validation Run is missing its send/valid status." ;
+    dgsh:howToFix "Re-publish the run so SendStatus and ValidStatus are recorded on the Run node." ;
+    sh:property [
+        sh:path dgv:sendStatus ;
+        sh:minCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path dgv:validStatus ;
+        sh:minCount 1 ;
+    ] .
+
+#############################################
+# 4. ObjState objectRef non-empty
+#############################################
+dgsh:ObjStateObjectRefShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:ObjState ;
+    sh:severity sh:Violation ;
+    sh:message "An object state has an empty object reference." ;
+    dgsh:howToFix "Reconnect the OBJECT STATE component's ObjectRef input so it captures a non-empty identifier." ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minLength 1 ;
+    ] .
+
+#############################################
+# 5. Var name non-empty (advisory)
+#############################################
+dgsh:VarNameShape
+    a sh:NodeShape ;
+    sh:targetClass swrl:Variable ;
+    sh:severity sh:Warning ;
+    sh:message "A SWRL variable used by a rule has no human-readable name." ;
+    dgsh:howToFix "Author the rule so every variable keeps a descriptive name (e.g. ?height) instead of an anonymous placeholder." ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minLength 1 ;
+    ] .
+
+#############################################
+# 6. Rule structural integrity -- Rule_Id present
+#############################################
+dgsh:RuleIdShape
+    a sh:NodeShape ;
+    sh:targetClass swrl:Imp ;
+    sh:severity sh:Violation ;
+    sh:message "A rule is missing its Rule_Id-bearing label." ;
+    dgsh:howToFix "Re-ingest the rule so it carries a Rule_Id (e.g. R_URB_HEIGHT_MAX_75_V) before validation." ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+    ] .
+
+#############################################
+# 7. Rule structural integrity -- SHOULD reference a SWRL body (advisory)
+#############################################
+dgsh:RuleBodyReferenceShape
+    a sh:NodeShape ;
+    sh:targetClass swrl:Imp ;
+    sh:severity sh:Warning ;
+    sh:message "A rule has no SWRL body atoms -- it can never fire." ;
+    dgsh:howToFix "Check the rule's RULE DECONSTRUCT output; a rule with zero body atoms should be re-ingested or removed." ;
+    sh:property [
+        sh:path swrl:body ;
+        sh:minCount 1 ;
+    ] .
+
+#############################################
+# 8. Advisory: a ParamState with zero captured parameters is tolerable but suspicious
+#############################################
+dgsh:ParamStateParameterCountShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:ParamState ;
+    sh:severity sh:Info ;
+    sh:message "A parameter state was captured with zero parameters." ;
+    dgsh:howToFix "This is tolerable (e.g. a design with no sliders/toggles) but worth double-checking the PARAMETER STATE wiring." ;
+    sh:property [
+        sh:path dgv:parameterCount ;
+        sh:minInclusive 1 ;
+    ] .
