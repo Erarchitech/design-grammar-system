@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.2
-milestone_name: Connector Integration & Reasoning Engine
-current_phase: 824
-status: Awaiting next milestone
-stopped_at: v8.2 milestone completed and archived (override closeout — 822/823/824 verification deferred)
-last_updated: "2026-07-12T14:11:19.088Z"
+milestone: v9.0
+milestone_name: AI Workflow Intelligence
+status: planning
+last_updated: "2026-07-12T14:47:15.711Z"
 last_activity: 2026-07-12
-last_activity_desc: Milestone v8.2 completed and archived
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 19
-  completed_plans: 19
-  percent: 100
-current_phase_name: CONNECTOR Credential Integration
+  total_phases: 13
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 8
 ---
 
 # Project State
@@ -24,14 +20,14 @@ current_phase_name: CONNECTOR Credential Integration
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** v8.2 (Connector Integration & Reasoning Engine) shipped 2026-07-12 (override closeout). Next: reactivate v9.0 AI Workflow Intelligence and plan Phase 29 (DG-Aware Context Layer)
+**Current focus:** v9.0 AI Workflow Intelligence reactivated 2026-07-12 (Phase 28 cloud LLM connector already shipped 2026-07-06). Next: plan Phase 29 (DG-Aware Context Layer)
 
 ## Current Position
 
-Phase: Milestone v8.2 complete
+Phase: 29 — DG-Aware Context Layer (not yet planned)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-12 — Milestone v8.2 completed and archived
+Status: Ready to plan
+Last activity: 2026-07-12 — Milestone v9.0 reactivated (phases 28,32-37 restored from milestones/v9.0-phases/; requirements restored; roadmap inlined)
 
 ## Deferred Items
 

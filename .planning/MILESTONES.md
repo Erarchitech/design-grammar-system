@@ -62,15 +62,15 @@ Replaced the dark legacy web SPA with the "Design Grammars V2" light clinical-bl
 
 ---
 
-## v9.0 AI Workflow Intelligence (Future)
+## v9.0 AI Workflow Intelligence (Active)
 
-**Status:** Paused — Phase 28 (cloud-llm-connector) executed 2026-07-06 and parked in [v9.0-phases/](v9.0-phases/); resume after v8.0 follow-ups. Restructured + renumbered 2026-07-08 (milestone-local 1–13 → global 28–40).
+**Status:** Active — reactivated 2026-07-12 (phase directories + requirements moved from `milestones/v9.0-phases/`+`v9.0-REQUIREMENTS.md` into `.planning/phases/`+`.planning/REQUIREMENTS.md`; roadmap detail inlined in `.planning/ROADMAP.md`). Phase 28 (cloud-llm-connector) shipped 2026-07-06; Phase 29 next. Restructured + renumbered 2026-07-08 (milestone-local 1–13 → global 28–40).
 **Defined:** 2026-07-03
 
 Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user-supplied API key, Claude/OpenAI-compatible/Ollama-fallback, provider control from the UI) plus a DG-aware context layer injecting ontology V7 concepts, SWRL conventions, and a standard Cypher expression catalog with pre-execution validation; (2) Grasshopper canvas intelligence — the script's graph context serialized to the ontology's Computgraph layer via annotation-convention parsing (Frame worked example), a native grasshopper-mcp-style canvas bridge, tagging components + manual selection, LLM recognition with on-canvas proposal preview/confirm, MERGE-idempotent persistence with ui-v2 layer display, and a script structure-validation MVP; plus upgraded rules ingest/edit, AI-generated script inputs as ParamState payloads, and a DesignState auto-validation investigation. Includes an n8n→OpenClaw orchestration decision gate (spike + ADR, no committed migration).
 
 **Phases planned:** 13 (Phases 28–40, 54 requirements)
-→ [Requirements](v9.0-REQUIREMENTS.md) | [Roadmap](v9.0-ROADMAP.md)
+→ [Requirements](../REQUIREMENTS.md) | [Roadmap](../ROADMAP.md) | [Phases](../phases/)
 
 ---
 

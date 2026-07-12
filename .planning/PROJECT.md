@@ -8,11 +8,11 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: (between milestones) → v9.0 AI Workflow Intelligence next
+## Current Milestone: v9.0 AI Workflow Intelligence (active)
 
 **v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — Phases 822/823/824 verification deferred; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
 
-**Next:** reactivate **v9.0 AI Workflow Intelligence** (Phases 28–40) — Phase 28 (cloud LLM connector) already shipped; **Phase 29 (DG-Aware Context Layer)** is the next phase to plan. At activation the v9.0 phase directories move from `milestones/v9.0-phases/` into `.planning/phases/` and its roadmap detail is inlined in ROADMAP.md.
+**Now:** **v9.0 AI Workflow Intelligence** (Phases 28–40) reactivated 2026-07-12 — Phase 28 (cloud LLM connector) already shipped; **Phase 29 (DG-Aware Context Layer)** is the next phase to plan. Phase directories moved from `milestones/v9.0-phases/` into `.planning/phases/`; roadmap detail inlined in `ROADMAP.md`; requirements restored to `.planning/REQUIREMENTS.md`.
 
 ## Requirements
 
@@ -40,14 +40,14 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **ONTO-01..06**: Ontology V7 baseline — V6→V7 rename table, DesignGrammar-V7.owl, extension facades, catalog, port-IRI map, markdown docs — Phase 13
 - ✓ **v7.0 (Phases 13–20)**: Ontology-aligned 14-component Grasshopper addin — state trio (ObjState/ParamState/PropState), DesignState composition, graph access chain (GRAPH DECONSTRUCT, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework, CLASSIFICATOR elimination, SpecGraph rename, schema v4 propagation — shipped 2026-07-05, archived to `.planning/milestones/v7.0-phases/`
 - ✓ **v8.0 (Phases 21–27)**: Design Grammars V2 UI — light clinical-blueprint interface at `ui-v2/` (Vite + React): design-system foundation, particle-ring landing with inline auth, canvas datascape Graph Viewer (live Neo4j + n8n), Model Viewer over data-service validation runs, Projects screen, layered navigation shell, deployment cutover at :8080, Speckle 3D embed — shipped 2026-07-07, archived to `.planning/milestones/v8.0-phases/`
-- ✓ **v8.1 (Phases 810–816)**: Platform Setup Regions — four new landing-ring regions each wired to real backend services: AI Engine (LLM provider/model/key setup over the existing gateway), Connectors (14 connectors / 5 categories, credential CRUD + heartbeat/status lifecycle), Reasoner (HermiT/Pellet placeholder selector, persisted), DG API Documentation (Revit-API-style in-app doc browser); full E2E connector lifecycle + deployment cutover with zero v8.0 regressions — completed 2026-07-11; phases not yet archived (`.planning/phases/810-816-*/`), formal `/gsd-complete-milestone` pass still pending
+- ✓ **v8.1 (Phases 810–816)**: Platform Setup Regions — four new landing-ring regions each wired to real backend services: AI Engine (LLM provider/model/key setup over the existing gateway), Connectors (14 connectors / 5 categories, credential CRUD + heartbeat/status lifecycle), Reasoner (HermiT/Pellet placeholder selector, persisted), DG API Documentation (Revit-API-style in-app doc browser); full E2E connector lifecycle + deployment cutover with zero v8.0 regressions — completed 2026-07-11, phases archived to `.planning/milestones/v8.1-phases/` 2026-07-12; formal `/gsd-complete-milestone` pass still pending
 - ✓ **v8.2 (Phases 820–824)**: Connector Integration & Reasoning Engine — isolated `dg-reasoner` sidecar (Python + headless JRE) with a fidelity-tested Cypher→RDF translator (`spec/LPG-OWL-MAPPING.md`); real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen with `{iri,label}` unsatisfiable-class results and timeout→unknown safety; a SHACL validation layer (8 data-integrity NodeShapes over the ValidGraph ABox with UNA) surfacing on the VALIDATOR + a Solibri-style Data Integrity panel in ui-v2, governed by `spec/RULE-PARTITION-POLICY.md`; additive CONNECTOR platform-token heartbeat with in-canvas feedback + full token secrecy (GUID/ports untouched) — shipped 2026-07-12 (override closeout: 822/823/824 verification deferred), archived to `.planning/milestones/v8.2-phases/`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-**Next milestone: v9.0 AI Workflow Intelligence** (Phases 28–40; see `.planning/milestones/v9.0-REQUIREMENTS.md` — becomes `.planning/REQUIREMENTS.md` on reactivation)
+**Active milestone: v9.0 AI Workflow Intelligence** (Phases 28–40; `.planning/REQUIREMENTS.md`)
 
 - [x] Phase 28: Cloud LLM connector + provider abstraction (shipped 2026-07-06)
 - [ ] Phase 29: DG-Aware Context Layer (SWRL + ontology + Cypher awareness) — **next to plan**
@@ -69,7 +69,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
-v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v9.0 AI Workflow Intelligence remains parked in `.planning/milestones/v9.0-phases/` (Phase 28 cloud-llm-connector executed — its LLM gateway is what the AI Engine screen surfaces). v8.1 (Phases 810–816) completed 2026-07-11 — all four setup regions live (AI Engine, Connectors, Reasoner, DG API Documentation) plus verified E2E connector lifecycle and deployment cutover; formal archive via `/gsd-complete-milestone` still pending. **v8.2 Phase 820 complete (2026-07-11):** hybrid axiom-scoping decision recorded, LPG→OWL mapping spec written at `spec/LPG-OWL-MAPPING.md`, spike evidence captured (naive export trivially consistent, hybrid+curated disjointness detects SlidingDoor unsatisfiable), dg-reasoner sidecar decision confirmed.
+v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v8.1 (Phases 810–816) completed 2026-07-11 — all four setup regions live (AI Engine, Connectors, Reasoner, DG API Documentation) plus verified E2E connector lifecycle and deployment cutover; formal archive via `/gsd-complete-milestone` still pending, phase dirs archived to `.planning/milestones/v8.1-phases/` 2026-07-12. v8.2 (Phases 820–824) shipped 2026-07-12 (override closeout — 822/823/824 verification deferred): isolated `dg-reasoner` sidecar with real OWL 2 DL (HermiT) consistency checking + SHACL data-integrity layer, additive CONNECTOR platform-token heartbeat. **v9.0 AI Workflow Intelligence reactivated 2026-07-12** — active in `.planning/phases/` (Phase 28 cloud-llm-connector already shipped, its LLM gateway is what the AI Engine screen surfaces; Phase 29 DG-Aware Context Layer next).
 
 **Grasshopper Plugin (C# .NET 7/9):**
 - 5 components: DESIGN STATE, CLASSIFICATOR, VALIDATOR, VALIDATION RUNS, REINSTATE
@@ -152,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-12 — v8.2 Connector Integration & Reasoning Engine complete (Phases 820–824, override closeout); v9.0 AI Workflow Intelligence queued for reactivation (Phase 29 next)*
+*Last updated: 2026-07-12 — v8.2 Connector Integration & Reasoning Engine complete (Phases 820–824, override closeout); v9.0 AI Workflow Intelligence reactivated (Phase 29 next)*
