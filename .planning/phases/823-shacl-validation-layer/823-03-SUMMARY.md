@@ -122,3 +122,11 @@ None - no external service configuration required. `DG_SHACL_HTTP_TIMEOUT_SECOND
 ---
 *Phase: 823-shacl-validation-layer*
 *Completed: 2026-07-12*
+
+## Self-Check: PASSED
+
+- FOUND: data-service/tests/test_shacl_proxy.py
+- FOUND: .planning/phases/823-shacl-validation-layer/823-03-SUMMARY.md
+- FOUND commit: 27ff7fa (Task 1)
+- FOUND commit: bca5649 (Task 2)
+- FOUND commit: e68e75f (SUMMARY)
