@@ -179,7 +179,11 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Schema Change Propagation
 
-When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, and any Cypher templates in Python/JS.
+When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), and any Cypher templates in Python/JS.
+
+`shaclReportJson` (ValidationRun/Run node property, `spec/DATABASE.md`) is a schema-propagation surface itself — added Phase 823, sibling to `statePayloadJson`/`rulesJson`.
+
+**Rule partition policy:** `spec/RULE-PARTITION-POLICY.md` governs which validation system (SWRL VALIDATOR vs. SHACL) owns a given rule category — consult it before adding a new SHACL shape or a new SWRL rule category, and update it if a schema change shifts the partition line.
 
 ## Common Commands
 

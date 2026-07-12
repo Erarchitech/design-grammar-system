@@ -198,7 +198,7 @@ Login with `neo4j / 12345678` unless changed.
   - Atom: `Atom_Id`, `type` (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom)
   - Var: `name` (e.g. `?b`), Literal: `lex`, `datatype`
   - DesignState: `StateId`, `kind` (ObjState|ParamState|PropState), `statePayloadJson`
-  - Run: `Run_Id`, `ValidStatus` (Boolean list), `SendStatus` (Boolean)
+  - Run: `Run_Id`, `ValidStatus` (Boolean list), `SendStatus` (Boolean), `shaclReportJson` (per-run SHACL report envelope JSON string; absent on pre-Phase-823 runs — see `spec/RULE-PARTITION-POLICY.md`)
 - All nodes include `graph` (`OntoGraph` or `Metagraph` or `ValidGraph` or `SpecGraph`) and `project` (from `project_name`).
 
 ## Machine learning (LoRA) and training dataset
