@@ -1,11 +1,33 @@
 import React from "react";
 import { Button, Badge } from "../components/index.js";
-import { getReasonerSettings, selectReasoner } from "../lib/reasonerApi.js";
+import {
+  getReasonerSettings,
+  selectReasoner,
+  runConsistencyCheck,
+} from "../lib/reasonerApi.js";
+
+// Lifted verbatim from SessionHistory.jsx L27-40 (module-private there) —
+// the one relative-time convention in this codebase; do not write a second one.
+function formatRelativeDate(isoString) {
+  if (!isoString) return "";
+  const then = new Date(isoString).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffMs = Date.now() - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return diffMin + "m ago";
+  if (diffHr < 24) return diffHr + "h ago";
+  if (diffDay < 7) return diffDay + "d ago";
+  return String(isoString).slice(0, 10);
+}
 
 // Reasoner region — ontology reasoner selector for the Validation Graph.
-// HermiT and Pellet ship as clearly-labeled placeholders ("integration pending" —
-// selection is persisted server-side but does not yet drive validation).
-// Selection survives revisits (Phase 814: REAS-01..03).
+// HermiT is the one live/integrated engine (Phase 822) — its card runs a real
+// schema-consistency check. Pellet remains a clearly-labeled placeholder
+// ("integration pending" — selection persists server-side but does not yet
+// drive validation). Selection survives revisits (Phase 814: REAS-01..03).
 export default function ReasonerScreen({ active, onBack, project }) {
   const [reasoners, setReasoners] = React.useState([]);
   const [selected, setSelected] = React.useState(null);
@@ -15,6 +37,14 @@ export default function ReasonerScreen({ active, onBack, project }) {
 
   const [saving, setSaving] = React.useState(false);
   const [saveError, setSaveError] = React.useState("");
+
+  // ── Consistency-check run-state machine (HermiT card, D-01/D-07/D-08/D-09/D-11) ──
+  const [runState, setRunState] = React.useState("idle");
+  const [runError, setRunError] = React.useState("");
+  const [runResult, setRunResult] = React.useState(null);
+  const [lastCheckedAt, setLastCheckedAt] = React.useState(null);
+  const [elapsedSec, setElapsedSec] = React.useState(0);
+  const abortRef = React.useRef(null);
 
   // ── Load settings when screen becomes active ──
   React.useEffect(() => {
@@ -57,6 +87,55 @@ export default function ReasonerScreen({ active, onBack, project }) {
       })
       .catch((err) => setLoadError(err.message || "Failed to load settings"))
       .finally(() => setLoading(false));
+  };
+
+  // ── Run a schema-consistency check (HermiT card only, D-04/D-05) ──
+  const handleRunCheck = async () => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setRunState("running");
+    setRunError("");
+    setElapsedSec(0);
+    const t0 = Date.now();
+    const timer = setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - t0) / 1000));
+    }, 1000);
+    try {
+      const result = await runConsistencyCheck(project, {
+        signal: controller.signal,
+      });
+      const body = result.body || {};
+      // RESEARCH Pitfall 1 — 504 is ambiguous; branch on body shape, not status.
+      if (body.error === "timeout" && "consistent" in body) {
+        // Genuine sidecar semantic timeout — Unknown/Inconclusive (D-08).
+        setRunResult(body);
+        setRunState("unknown");
+        setLastCheckedAt(new Date().toISOString());
+      } else if (!result.ok) {
+        // Transport/hard error — distinct error line, never folded into Unknown (D-09).
+        setRunError(body?.detail?.error || "Reasoner unavailable");
+        setRunState("error");
+      } else {
+        setRunResult(body);
+        setRunState(body.consistent ? "consistent" : "inconsistent");
+        setLastCheckedAt(new Date().toISOString());
+      }
+    } catch (err) {
+      if (err.name === "AbortError") {
+        setRunState("cancelled"); // D-07 — kept distinct from Unknown
+      } else {
+        setRunError(err.message || "Reasoner unavailable");
+        setRunState("error");
+      }
+    } finally {
+      clearInterval(timer);
+      abortRef.current = null;
+    }
+  };
+
+  // ── Cancel the in-flight check (client-side abort only, D-07) ──
+  const handleCancel = () => {
+    abortRef.current?.abort();
   };
 
   // ── Render ──
@@ -173,10 +252,10 @@ export default function ReasonerScreen({ active, onBack, project }) {
                       cursor: "pointer",
                       transition: "all 0.15s ease",
                       boxShadow: isActive
-                        ? "var(--shadow-panel), 0 0 0 1.5px var(--color-accent)"
+                        ? "var(--shadow-panel), 0 0 0 1.5px var(--accent-selection)"
                         : "var(--shadow-panel), 0 0 0 1px var(--color-hairline)",
                       background: isActive
-                        ? "var(--surface-focus)"
+                        ? "var(--accent-selection-bg)"
                         : "var(--surface-card)",
                       opacity: saving ? 0.7 : 1,
                       pointerEvents: saving ? "none" : "auto",
@@ -219,16 +298,106 @@ export default function ReasonerScreen({ active, onBack, project }) {
                     >
                       {r.description}
                     </div>
-                    {isActive && (
+                    {r.status === "integrated" ? (
                       <div
                         style={{
-                          marginTop: 14,
-                          font: "400 12px/1.33 var(--font-sans)",
-                          color: "var(--color-accent)",
+                          marginTop: 16,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
                         }}
                       >
-                        Selected — will be used when integration is complete.
+                        <div
+                          style={{
+                            font: "400 12px/1.33 var(--font-sans)",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          Schema-consistency check — verifies the ontology's logical
+                          structure, not design compliance.
+                        </div>
+
+                        {runState === "idle" && (
+                          <>
+                            <div
+                              style={{
+                                font: "400 13px/1.5 var(--font-sans)",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
+                              No check run yet. Run a schema-consistency check against
+                              the active project.
+                            </div>
+                            <div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRunCheck();
+                                }}
+                              >
+                                Run check
+                              </Button>
+                            </div>
+                          </>
+                        )}
+
+                        {runState === "running" && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                            }}
+                          >
+                            <style>{`@keyframes dg-reasoner-spin { to { transform: rotate(360deg); } }`}</style>
+                            <div
+                              style={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: "50%",
+                                border: "2px solid var(--color-hairline)",
+                                borderTopColor: "var(--text-muted)",
+                                animation: "dg-reasoner-spin 0.8s linear infinite",
+                              }}
+                            />
+                            <div
+                              style={{
+                                font: "400 12px/1.33 var(--font-sans)",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              Running… {elapsedSec}s
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancel();
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button variant="outline" size="sm" disabled>
+                              Run check
+                            </Button>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      isActive && (
+                        <div
+                          style={{
+                            marginTop: 14,
+                            font: "400 12px/1.33 var(--font-sans)",
+                            color: "var(--accent-selection)",
+                          }}
+                        >
+                          Selected — will be used when integration is complete.
+                        </div>
+                      )
                     )}
                   </div>
                 );
