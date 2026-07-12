@@ -154,3 +154,13 @@ None - no external service configuration required. This is a pure Python module 
 ---
 *Phase: 823-shacl-validation-layer*
 *Completed: 2026-07-12*
+
+## Self-Check: PASSED
+
+- FOUND: `dg-reasoner/valid_graph_export.py`
+- FOUND: `dg-reasoner/tests/test_validgraph_export.py`
+- FOUND: `dg-reasoner/tests/fixtures/valid_graph_fixture.json`
+- FOUND: `.planning/phases/823-shacl-validation-layer/823-01-SUMMARY.md`
+- FOUND commit: `20eb92a` (test)
+- FOUND commit: `d51558f` (feat)
+- FOUND commit: `ddbd92c` (docs)
