@@ -371,4 +371,32 @@ public sealed class ErrorMessageTemplateTests
         Assert.EndsWith(".", result);
         Assert.DoesNotContain("..", result);
     }
+
+    // --- Connector credential template tests (Phase 824) ---
+
+    [Fact]
+    public void ConnectorTokenRejected_ReturnsHouseStyleMessage()
+    {
+        var result = ErrorMessageTemplates.ConnectorTokenRejected();
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("Connectors", result);
+        Assert.Contains(": ", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorHeartbeatUnreachable_IncludesUrlAndEndsWithPeriod()
+    {
+        var result = ErrorMessageTemplates.ConnectorHeartbeatUnreachable("http://localhost:8000");
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("http://localhost:8000", result);
+        Assert.Contains(": ", result);
+        Assert.EndsWith(".", result);
+    }
 }

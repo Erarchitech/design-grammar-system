@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
-current_phase: 823
-current_phase_name: SHACL Validation Layer
+current_phase: 824
+current_phase_name: CONNECTOR Credential Integration
 status: executing
-stopped_at: Completed 823-06-PLAN.md (all 3 tasks) — Phase 823 SHACL Validation Layer fully complete (6/6 plans)
-last_updated: "2026-07-12T12:02:19.144Z"
+stopped_at: Phase 824 executed (2 plans) — code-complete, build + 234 tests green; verification human_needed (in-Rhino UAT deferred per user)
+last_updated: "2026-07-12T00:00:00.000Z"
 last_activity: 2026-07-12
-last_activity_desc: "Phase 823 Plan 06 complete (SHACL Data Integrity UI: severity tokens + Badge/Collapsible variants + ModelScreen panel; Task 3 checkpoint closed via user approval) — Phase 823 SHACL Validation Layer fully complete"
+last_activity_desc: Phase 824 executed — CONNECTOR platform-token heartbeat + secrecy; 3 in-Rhino UAT items deferred
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
+  total_plans: 19
+  completed_plans: 19
   percent: 80
 ---
 
@@ -28,12 +28,20 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 823 (SHACL Validation Layer) — COMPLETE (6/6 plans)
-Plan: 6 of 6 (823-01, 823-02, 823-03, 823-04, 823-05, 823-06 all complete)
-Status: 823-06 complete — SHACL Data Integrity Panel added to Model screen's selected-run detail (four states keyed on results.length, Solibri-style severity chips, per-severity Collapsible groups); Task 3 human-verify checkpoint closed via user "approved" response with no code changes needed. Phase 823 SHACL Validation Layer requirements SHCL-01/SHCL-02 both complete.
-Last activity: 2026-07-12 — Phase 823 Plan 06 complete (all 3 tasks) — Phase 823 fully complete
+Phase: 824 (CONNECTOR Credential Integration) — EXECUTED (2/2 plans); verification human_needed
+Plan: 2 of 2 (824-01 DG.Core heartbeat client + templates + tests; 824-02 CONNECTOR component wiring + secrecy)
+Status: Code-complete — `dotnet build DG.sln -c Release` green (DG.Grasshopper compiled against the real Rhino 8 SDK), `dotnet test` 234/234 pass, all source assertions hold. Requirements CONNG-01/CONNG-02 implemented (additive DataServiceUrl + Token inputs, GUID 24E78A17… unchanged; heartbeat-on-Connect with Error/Warning feedback; token secrecy — SHA-256 hashed dedup key, PersistentData scrub, token-free ConnectionInfo/outputs/logs). 3 success criteria need in-Rhino UAT (live Grasshopper + data-service) — deferred; see 824-UAT.md.
+Last activity: 2026-07-12 — Phase 824 executed (both plans) via /gsd-autonomous --only 824
 
-Progress: [██████████] 100%
+Progress: Phase 823 [██████████] 100% · Phase 824 executed, verification deferred
+
+## Deferred Verification
+
+| Phase | State | Resume |
+|-------|-------|--------|
+| 824 | verification_deferred_human | /gsd-verify-work 824 |
+
+The 3 in-Rhino acceptance checks (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are documented in `.planning/phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) already pass. Note: `dotnet test`/`dotnet build` ran clean on net9.0 **without** `DOTNET_ROLL_FORWARD` this session — the earlier "net9.0 runtime absent" blocker appears stale.
 
 ## Performance Metrics
 

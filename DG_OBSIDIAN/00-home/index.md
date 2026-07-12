@@ -72,6 +72,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/reasoner-screen-phases-checks-results|Phase 822 (v8.2): Reasoner Screen — four-state verdict display, per-card Run on HermiT, in-session result persistence]]
 - [[decisions/Phase 822 monochromatic verdict mapping onto DSYS-01|Phase 822: Monochromatic verdict mapping — weight/opacity/glyph instead of green/amber hue]]
 - [[decisions/Phase 823 SHACL validation layer design decisions|Phase 823: SHACL Validation Layer — 8 design decisions]]
+- [[decisions/Phase 824 CONNECTOR credential integration decisions|Phase 824: CONNECTOR Credential Integration — 4 design decisions (DG.Core heartbeat logic, dgc_ prefix guard, heartbeat-only auth, additive-end input order)]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -194,6 +195,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review, full verification|2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review findings, full verification]]
 - [[sessions/2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring|2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring, 4 plans across 3 waves]]
 - [[sessions/2026-07-12 Phase 823 SHACL Validation Layer execution|2026-07-12 Phase 823 execution — SHACL Validation Layer, 6 plans across 4 waves]]
+- [[sessions/2026-07-12 Phase 824 CONNECTOR Credential Integration execution|2026-07-12 Phase 824 execution — CONNECTOR platform-token heartbeat, 2 plans, code-complete, in-Rhino UAT deferred]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive

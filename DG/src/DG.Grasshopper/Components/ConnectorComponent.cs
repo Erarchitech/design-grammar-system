@@ -1,17 +1,23 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Data;
 using DG.Core.Models;
+using DG.Core.Services;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using System.Drawing;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DG.Grasshopper.Components;
 
 public sealed class ConnectorComponent : GH_Component
 {
     private readonly INeo4jConnectorService _connectorService = new Neo4jConnectorService();
-    private Task<ConnectionInfo>? _connectTask;
+    private readonly IConnectorHeartbeatClient _heartbeatClient = new ConnectorHeartbeatClient();
+    private Task<ConnectResult>? _connectTask;
     private CancellationTokenSource? _connectCts;
     private string _activeRequestKey = string.Empty;
+    private HeartbeatResult _latestAuth = HeartbeatResult.NotAttempted;
     private ConnectionInfo _latestConnection = new()
     {
         Uri = "bolt://localhost:7687",
@@ -40,6 +46,12 @@ public sealed class ConnectorComponent : GH_Component
         pManager.AddTextParameter("Database", "DB", "Neo4j database", GH_ParamAccess.item, "neo4j");
         pManager.AddTextParameter("PROJECT NAME", "Project", "Project name (dg:project annotation)", GH_ParamAccess.item, "default-project");
         pManager.AddBooleanParameter("Connect", "Go", "Set true to connect", GH_ParamAccess.item, false);
+        // Additive optional inputs (Phase 824). Appended at indices 6-7 so the existing
+        // inputs 0-5, their wiring, and the component GUID stay unchanged for saved canvases.
+        pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL for platform-token auth", GH_ParamAccess.item, "http://localhost:8000");
+        pManager.AddTextParameter("Platform Token", "Token", "Optional platform credential (dgc_… token minted from the Connectors screen, Grasshopper connector). Wire from a Panel — never internalised.", GH_ParamAccess.item, "");
+        pManager[6].Optional = true;
+        pManager[7].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -56,6 +68,8 @@ public sealed class ConnectorComponent : GH_Component
         var database = "neo4j";
         var project = "default-project";
         var connect = false;
+        var dataServiceUrl = "http://localhost:8000";
+        var token = string.Empty;
 
         da.GetData(0, ref uri);
         da.GetData(1, ref user);
@@ -63,6 +77,11 @@ public sealed class ConnectorComponent : GH_Component
         da.GetData(3, ref database);
         da.GetData(4, ref project);
         da.GetData(5, ref connect);
+        da.GetData(6, ref dataServiceUrl);
+        da.GetData(7, ref token);
+
+        // Secrecy: never let an internalised token persist into the .gh file.
+        ScrubTokenPersistentData();
 
         var request = new ConnectionInfo
         {
@@ -77,30 +96,36 @@ public sealed class ConnectorComponent : GH_Component
         {
             CancelPendingConnection();
             _latestConnection = WithStatus(request, isConnected: false, "Connection prepared. Set Connect=true to test.");
+            _latestAuth = HeartbeatResult.NotAttempted;
             Message = "Idle";
         }
         else
         {
-            var requestKey = BuildRequestKey(request);
+            var requestKey = BuildRequestKey(request, dataServiceUrl, token);
             if (_connectTask is null || !string.Equals(_activeRequestKey, requestKey, StringComparison.Ordinal))
             {
-                StartConnection(request, requestKey);
+                StartConnection(request, dataServiceUrl, token, requestKey);
             }
 
             if (_connectTask is { IsCompletedSuccessfully: true })
             {
-                _latestConnection = _connectTask.Result;
-                Message = _latestConnection.IsConnected ? "Connected" : "Connect failed";
+                var result = _connectTask.Result;
+                _latestConnection = result.Connection;
+                _latestAuth = result.Auth;
+                Message = (_latestConnection.IsConnected ? "Connected" : "Connect failed") + AuthSuffix(_latestAuth.Outcome);
+                ReportAuth(_latestAuth, dataServiceUrl);
             }
             else if (_connectTask is { IsFaulted: true })
             {
                 var error = _connectTask.Exception?.GetBaseException().Message ?? "Connection task failed.";
                 _latestConnection = WithStatus(request, isConnected: false, error);
+                _latestAuth = HeartbeatResult.NotAttempted;
                 Message = "Connect failed";
             }
             else if (_connectTask is { IsCanceled: true })
             {
                 _latestConnection = WithStatus(request, isConnected: false, "Connection canceled.");
+                _latestAuth = HeartbeatResult.NotAttempted;
                 Message = "Canceled";
             }
             else
@@ -109,6 +134,8 @@ public sealed class ConnectorComponent : GH_Component
             }
         }
 
+        // The platform token authenticates the heartbeat only — it never gates the bolt
+        // connection. Both outputs are emitted regardless of the auth outcome.
         da.SetData(0, _latestConnection);
         da.SetData(1, project);
     }
@@ -119,14 +146,14 @@ public sealed class ConnectorComponent : GH_Component
         base.RemovedFromDocument(document);
     }
 
-    private void StartConnection(ConnectionInfo request, string requestKey)
+    private void StartConnection(ConnectionInfo request, string dataServiceUrl, string token, string requestKey)
     {
         CancelPendingConnection();
 
         _activeRequestKey = requestKey;
         _latestConnection = WithStatus(request, isConnected: false, "Connecting to Neo4j...");
         _connectCts = new CancellationTokenSource();
-        _connectTask = _connectorService.TryConnectAsync(request, _connectCts.Token);
+        _connectTask = RunConnectAsync(request, dataServiceUrl, token, _connectCts.Token);
 
         _ = _connectTask.ContinueWith(
             _ =>
@@ -135,6 +162,45 @@ public sealed class ConnectorComponent : GH_Component
                 doc?.ScheduleSolution(1, _ => ExpireSolution(false));
             },
             TaskScheduler.Default);
+    }
+
+    private async Task<ConnectResult> RunConnectAsync(ConnectionInfo request, string dataServiceUrl, string token, CancellationToken cancellationToken)
+    {
+        var connection = await _connectorService.TryConnectAsync(request, cancellationToken).ConfigureAwait(false);
+
+        // The heartbeat authenticates the platform token; skip it entirely when no token
+        // is supplied so the component stays backward-compatible (pure bolt connection).
+        var auth = string.IsNullOrWhiteSpace(token)
+            ? HeartbeatResult.NotAttempted
+            : await _heartbeatClient.CheckAsync(dataServiceUrl, token, cancellationToken).ConfigureAwait(false);
+
+        return new ConnectResult(connection, auth);
+    }
+
+    private void ReportAuth(HeartbeatResult auth, string dataServiceUrl)
+    {
+        switch (auth.Outcome)
+        {
+            case HeartbeatOutcome.Rejected:
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ConnectorTokenRejected());
+                break;
+            case HeartbeatOutcome.Unreachable:
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ConnectorHeartbeatUnreachable(dataServiceUrl));
+                break;
+        }
+    }
+
+    private void ScrubTokenPersistentData()
+    {
+        if (Params.Input.Count > 7
+            && Params.Input[7] is GH_PersistentParam<GH_String> tokenParam
+            && tokenParam.PersistentData.DataCount > 0)
+        {
+            tokenParam.PersistentData.Clear();
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Remark,
+                "CONNECTOR: platform token was internalised and has been cleared for security — wire it from a Panel instead.");
+        }
     }
 
     private void CancelPendingConnection()
@@ -156,10 +222,29 @@ public sealed class ConnectorComponent : GH_Component
         }
     }
 
-    private static string BuildRequestKey(ConnectionInfo request)
+    private static string AuthSuffix(HeartbeatOutcome outcome)
     {
-        return $"{request.Uri}|{request.User}|{request.Password}|{request.Database}|{request.Project}";
+        return outcome switch
+        {
+            HeartbeatOutcome.Authenticated => " · Auth OK",
+            HeartbeatOutcome.Rejected => " · Auth failed",
+            HeartbeatOutcome.Unreachable => " · Auth unreachable",
+            _ => string.Empty,
+        };
     }
+
+    private static string BuildRequestKey(ConnectionInfo request, string dataServiceUrl, string token)
+    {
+        // The token is included as a hash only — the raw secret never enters the dedup key.
+        return $"{request.Uri}|{request.User}|{request.Password}|{request.Database}|{request.Project}|{dataServiceUrl}|{HashToken(token)}";
+    }
+
+    private static string HashToken(string token)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token ?? string.Empty)));
+    }
+
+    private readonly record struct ConnectResult(ConnectionInfo Connection, HeartbeatResult Auth);
 
     private static ConnectionInfo WithStatus(ConnectionInfo source, bool isConnected, string status)
     {

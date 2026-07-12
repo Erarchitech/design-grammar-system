@@ -41,7 +41,9 @@ When SDK DLLs are not found, `DG.Grasshopper` still compiles as a placeholder as
 - `DG.Core.Models.ConnectionInfo`
 
 ## Component Contracts
-- `CONNECTOR`: Neo4j connection object output
+- `CONNECTOR`: Neo4j connection object output. Inputs `Neo4jURI`, `Neo4jUser`, `Neo4jPassword`, `Database`, `PROJECT NAME`, `Connect` are unchanged, plus two additive optional inputs (Phase 824):
+  - `DataServiceUrl` — DG data-service base URL (default `http://localhost:8000`) used for platform-token auth.
+  - `Platform Token` (nickname `Token`) — optional `dgc_` credential minted from the Connectors screen's Grasshopper connector. Wire it from a Panel (never internalised); it authenticates a `data-service` heartbeat on `Connect` and is never persisted to the `.gh` file, an output, the status label, or a log. An invalid/revoked/expired token surfaces an in-canvas error (data-service unreachable is a warning) but does **not** block the bolt connection. The component GUID `24E78A17-4533-44E7-8931-1224A70A1B36` and the existing inputs/outputs are unchanged, so saved canvases keep working without rewiring.
 - `METAGRAPH`: load rules from `Metagraph`
 - `RULE DECONSTRUCT`: unique variables, SWRL, name/description
 - `CLASSIFICATOR`: map variable list to value branches, with optional `ElementRefs` branches that attach DG entity ids and geometry to binding rows

@@ -169,6 +169,18 @@ public static class ErrorMessageTemplates
         return $"SHACL {severity}: {what} at {where}. {fix}.";
     }
 
+    // --- Connector credential templates (Phase 824, CONNG-02) ---
+
+    public static string ConnectorTokenRejected()
+    {
+        return "CONNECTOR: platform token rejected — invalid, revoked, or expired. Mint a new token from the Connectors screen (Grasshopper connector) and re-paste it into the Token input.";
+    }
+
+    public static string ConnectorHeartbeatUnreachable(string dataServiceUrl)
+    {
+        return $"CONNECTOR: could not reach data-service at {dataServiceUrl} to verify the platform token. Check the DataServiceUrl input and that data-service is running.";
+    }
+
     public static string FormatMessage(ReinstatementResult result)
     {
         if (result.Applied)
