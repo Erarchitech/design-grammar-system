@@ -23,11 +23,21 @@
 # VALIDATOR pipeline. Disagreement between the two systems means
 # mis-categorization, never a shape re-encoding a business rule.
 #
-# Every shape below carries sh:severity + a human sh:message (plain
-# architect language, no sh:* vocabulary) + dgsh:howToFix (remediation
-# guidance). dgsh:howToFix is this file's own annotation predicate --
-# consumed by dg-reasoner/reasoning.py's result enrichment, never rendered
-# as raw RDF to an architect.
+# STRUCTURE: each top-level `sh:NodeShape` declares only `sh:targetClass` and
+# one or more `sh:property` links to a NAMED (not blank-node) property shape.
+# This is deliberate, not stylistic: SHACL's `sh:severity`/`sh:message` are
+# read from the SHAPE THAT ACTUALLY PRODUCES the validation result -- for a
+# `sh:property` constraint that is the nested property shape, never the
+# enclosing NodeShape (verified empirically against the installed pySHACL
+# 0.40.0: a `sh:severity`/`sh:message` placed only on the NodeShape is
+# silently ignored, every result defaults to `sh:Violation` with pySHACL's
+# generic constraint message). Naming the property shapes (instead of using
+# blank nodes) also keeps `sh:sourceShape` a stable `URIRef` that survives
+# the NTriples round-trip pySHACL's subprocess isolation depends on, so
+# dg-reasoner/reasoning.py's `dgsh:howToFix` enrichment lookup resolves
+# correctly. Every property shape below carries its own sh:severity +
+# sh:message (plain architect language, no sh:* vocabulary) + dgsh:howToFix
+# (remediation guidance, this file's own annotation predicate).
 
 #############################################
 # 1. DesignState-kind membership (structural)
@@ -35,13 +45,14 @@
 dgsh:DsKindLabelShape
     a sh:NodeShape ;
     sh:targetClass dgv:ObjState, dgv:ParamState, dgv:PropState ;
+    sh:property dgsh:DsKindLabelShape_label .
+
+dgsh:DsKindLabelShape_label
+    sh:path rdfs:label ;
+    sh:minCount 1 ;
     sh:severity sh:Violation ;
     sh:message "A DesignState child (object, parameter, or property state) is missing an identifying label." ;
-    dgsh:howToFix "Ensure the state's label, objectRef, or stateId is populated before the run is published." ;
-    sh:property [
-        sh:path rdfs:label ;
-        sh:minCount 1 ;
-    ] .
+    dgsh:howToFix "Ensure the state's label, objectRef, or stateId is populated before the run is published." .
 
 #############################################
 # 2. PropState completeness
@@ -49,21 +60,28 @@ dgsh:DsKindLabelShape
 dgsh:PropStateCompletenessShape
     a sh:NodeShape ;
     sh:targetClass dgv:PropState ;
+    sh:property dgsh:PropStateCompletenessShape_rule, dgsh:PropStateCompletenessShape_dataProperty, dgsh:PropStateCompletenessShape_value .
+
+dgsh:PropStateCompletenessShape_rule
+    sh:path dgv:ruleIri ;
+    sh:minCount 1 ;
     sh:severity sh:Violation ;
-    sh:message "A property state is missing its Rule, DataProperty, or PropValue binding." ;
-    dgsh:howToFix "Confirm the VALIDATOR run bound a Rule, a DataProperty, and a PropValue to this property state before sending." ;
-    sh:property [
-        sh:path dgv:ruleIri ;
-        sh:minCount 1 ;
-    ] ;
-    sh:property [
-        sh:path dgv:dataPropertyIri ;
-        sh:minCount 1 ;
-    ] ;
-    sh:property [
-        sh:path dgv:propValue ;
-        sh:minCount 1 ;
-    ] .
+    sh:message "A property state has no Rule binding." ;
+    dgsh:howToFix "Confirm the VALIDATOR run bound a Rule to this property state before sending." .
+
+dgsh:PropStateCompletenessShape_dataProperty
+    sh:path dgv:dataPropertyIri ;
+    sh:minCount 1 ;
+    sh:severity sh:Violation ;
+    sh:message "A property state has no DataProperty binding." ;
+    dgsh:howToFix "Confirm the VALIDATOR run bound a DataProperty to this property state before sending." .
+
+dgsh:PropStateCompletenessShape_value
+    sh:path dgv:propValue ;
+    sh:minCount 1 ;
+    sh:severity sh:Violation ;
+    sh:message "A property state has no captured PropValue." ;
+    dgsh:howToFix "Confirm the PROPERTY STATE component captured a value before the run was sent." .
 
 #############################################
 # 3. Run status
@@ -71,18 +89,22 @@ dgsh:PropStateCompletenessShape
 dgsh:RunStatusShape
     a sh:NodeShape ;
     sh:targetClass dgv:Run ;
+    sh:property dgsh:RunStatusShape_send, dgsh:RunStatusShape_valid .
+
+dgsh:RunStatusShape_send
+    sh:path dgv:sendStatus ;
+    sh:minCount 1 ;
+    sh:datatype xsd:boolean ;
     sh:severity sh:Violation ;
-    sh:message "A validation Run is missing its send/valid status." ;
-    dgsh:howToFix "Re-publish the run so SendStatus and ValidStatus are recorded on the Run node." ;
-    sh:property [
-        sh:path dgv:sendStatus ;
-        sh:minCount 1 ;
-        sh:datatype xsd:boolean ;
-    ] ;
-    sh:property [
-        sh:path dgv:validStatus ;
-        sh:minCount 1 ;
-    ] .
+    sh:message "A validation Run is missing its SendStatus." ;
+    dgsh:howToFix "Re-publish the run so SendStatus is recorded as a boolean on the Run node." .
+
+dgsh:RunStatusShape_valid
+    sh:path dgv:validStatus ;
+    sh:minCount 1 ;
+    sh:severity sh:Violation ;
+    sh:message "A validation Run is missing its ValidStatus list." ;
+    dgsh:howToFix "Re-publish the run so ValidStatus is recorded on the Run node." .
 
 #############################################
 # 4. ObjState objectRef non-empty
@@ -90,13 +112,14 @@ dgsh:RunStatusShape
 dgsh:ObjStateObjectRefShape
     a sh:NodeShape ;
     sh:targetClass dgv:ObjState ;
+    sh:property dgsh:ObjStateObjectRefShape_label .
+
+dgsh:ObjStateObjectRefShape_label
+    sh:path rdfs:label ;
+    sh:minLength 1 ;
     sh:severity sh:Violation ;
     sh:message "An object state has an empty object reference." ;
-    dgsh:howToFix "Reconnect the OBJECT STATE component's ObjectRef input so it captures a non-empty identifier." ;
-    sh:property [
-        sh:path rdfs:label ;
-        sh:minLength 1 ;
-    ] .
+    dgsh:howToFix "Reconnect the OBJECT STATE component's ObjectRef input so it captures a non-empty identifier." .
 
 #############################################
 # 5. Var name non-empty (advisory)
@@ -104,13 +127,14 @@ dgsh:ObjStateObjectRefShape
 dgsh:VarNameShape
     a sh:NodeShape ;
     sh:targetClass swrl:Variable ;
+    sh:property dgsh:VarNameShape_label .
+
+dgsh:VarNameShape_label
+    sh:path rdfs:label ;
+    sh:minLength 1 ;
     sh:severity sh:Warning ;
     sh:message "A SWRL variable used by a rule has no human-readable name." ;
-    dgsh:howToFix "Author the rule so every variable keeps a descriptive name (e.g. ?height) instead of an anonymous placeholder." ;
-    sh:property [
-        sh:path rdfs:label ;
-        sh:minLength 1 ;
-    ] .
+    dgsh:howToFix "Author the rule so every variable keeps a descriptive name (e.g. ?height) instead of an anonymous placeholder." .
 
 #############################################
 # 6. Rule structural integrity -- Rule_Id present
@@ -118,13 +142,14 @@ dgsh:VarNameShape
 dgsh:RuleIdShape
     a sh:NodeShape ;
     sh:targetClass swrl:Imp ;
+    sh:property dgsh:RuleIdShape_label .
+
+dgsh:RuleIdShape_label
+    sh:path rdfs:label ;
+    sh:minCount 1 ;
     sh:severity sh:Violation ;
     sh:message "A rule is missing its Rule_Id-bearing label." ;
-    dgsh:howToFix "Re-ingest the rule so it carries a Rule_Id (e.g. R_URB_HEIGHT_MAX_75_V) before validation." ;
-    sh:property [
-        sh:path rdfs:label ;
-        sh:minCount 1 ;
-    ] .
+    dgsh:howToFix "Re-ingest the rule so it carries a Rule_Id (e.g. R_URB_HEIGHT_MAX_75_V) before validation." .
 
 #############################################
 # 7. Rule structural integrity -- SHOULD reference a SWRL body (advisory)
@@ -132,13 +157,14 @@ dgsh:RuleIdShape
 dgsh:RuleBodyReferenceShape
     a sh:NodeShape ;
     sh:targetClass swrl:Imp ;
+    sh:property dgsh:RuleBodyReferenceShape_body .
+
+dgsh:RuleBodyReferenceShape_body
+    sh:path swrl:body ;
+    sh:minCount 1 ;
     sh:severity sh:Warning ;
     sh:message "A rule has no SWRL body atoms -- it can never fire." ;
-    dgsh:howToFix "Check the rule's RULE DECONSTRUCT output; a rule with zero body atoms should be re-ingested or removed." ;
-    sh:property [
-        sh:path swrl:body ;
-        sh:minCount 1 ;
-    ] .
+    dgsh:howToFix "Check the rule's RULE DECONSTRUCT output; a rule with zero body atoms should be re-ingested or removed." .
 
 #############################################
 # 8. Advisory: a ParamState with zero captured parameters is tolerable but suspicious
@@ -146,10 +172,11 @@ dgsh:RuleBodyReferenceShape
 dgsh:ParamStateParameterCountShape
     a sh:NodeShape ;
     sh:targetClass dgv:ParamState ;
+    sh:property dgsh:ParamStateParameterCountShape_count .
+
+dgsh:ParamStateParameterCountShape_count
+    sh:path dgv:parameterCount ;
+    sh:minInclusive 1 ;
     sh:severity sh:Info ;
     sh:message "A parameter state was captured with zero parameters." ;
-    dgsh:howToFix "This is tolerable (e.g. a design with no sliders/toggles) but worth double-checking the PARAMETER STATE wiring." ;
-    sh:property [
-        sh:path dgv:parameterCount ;
-        sh:minInclusive 1 ;
-    ] .
+    dgsh:howToFix "This is tolerable (e.g. a design with no sliders/toggles) but worth double-checking the PARAMETER STATE wiring." .
