@@ -22,7 +22,7 @@ REASONER_REGISTRY: list[dict[str, str]] = [
         "id": "hermit",
         "name": "HermiT",
         "description": "OWL 2 DL hypertableau reasoner — checks concept satisfiability and entailment for OWL 2 DL ontologies.",
-        "status": "placeholder",
+        "status": "integrated",
     },
     {
         "id": "pellet",
