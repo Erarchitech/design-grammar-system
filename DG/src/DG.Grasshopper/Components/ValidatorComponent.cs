@@ -101,7 +101,8 @@ public sealed class ValidatorComponent : GH_Component
         da.SetDataList(0, validStatus);
         da.SetData(1, rule.Name);
         da.SetData(2, rule.Description);
-        da.SetDataList(3, new[] { ValidationReportFormatter.ToReportLine(result) });
+        var reportLines = new List<string> { ValidationReportFormatter.ToReportLine(result) };
+        da.SetDataList(3, reportLines);
         var failingFormatted = result.FailingBindings
             .Select(b => FailingBindingFormatter.Format(rule, b))
             .ToList();
@@ -125,6 +126,35 @@ public sealed class ValidatorComponent : GH_Component
                 sendStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
                 validationRunId = response.RunId;
                 modelViewerUrl = response.ModelViewerUrl;
+
+                // 7a. Surface SHACL findings (D-15): Report lines + runtime messages, capped
+                // at Warning -- a SHACL data-integrity finding must never render this
+                // component as errored/failed. GH_RuntimeMessageLevel.Error stays reserved
+                // for the publish-exception catch block below.
+                var shacl = response.Shacl;
+                if (shacl?.Results is { Count: > 0 })
+                {
+                    foreach (var finding in shacl.Results)
+                    {
+                        var severity = finding.Severity ?? string.Empty;
+                        var line = ErrorMessageTemplates.ShaclViolation(severity, finding.What ?? string.Empty, finding.Where ?? string.Empty, finding.HowToFix ?? string.Empty);
+                        reportLines.Add(line);
+
+                        var level = severity.Trim().ToLowerInvariant() switch
+                        {
+                            "violation" => GH_RuntimeMessageLevel.Warning,
+                            "warning" => GH_RuntimeMessageLevel.Warning,
+                            "info" => GH_RuntimeMessageLevel.Remark,
+                            _ => GH_RuntimeMessageLevel.Remark,
+                        };
+                        AddRuntimeMessage(level, line);
+                    }
+                    da.SetDataList(3, reportLines);
+                }
+                else if (shacl is not null && (shacl.Status == "unavailable" || shacl.Status == "timeout"))
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"SHACL was not evaluated for this run ({shacl.Status}).");
+                }
             }
             catch (Exception ex)
             {
