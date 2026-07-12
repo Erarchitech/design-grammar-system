@@ -21,6 +21,21 @@ export default function Badge({ variant = "soft", children, style }) {
       background: "var(--color-signal-soft)",
       color: "var(--color-signal-ink)",
       border: "1px solid transparent"
+    },
+    violation: {
+      background: "var(--color-signal-soft)",
+      color: "var(--color-signal-ink)",
+      border: "1px solid transparent"
+    },
+    warning: {
+      background: "var(--color-warning-soft)",
+      color: "var(--color-warning-ink)",
+      border: "1px solid transparent"
+    },
+    info: {
+      background: "var(--color-info-soft)",
+      color: "var(--color-info-ink)",
+      border: "1px solid transparent"
     }
   };
   return (

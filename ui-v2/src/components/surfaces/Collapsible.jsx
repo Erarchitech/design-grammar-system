@@ -1,6 +1,17 @@
 import React from "react";
 
-export function Collapsible({ label, count, open = false, onToggle, signal = false, children, style }) {
+const TONE_TOKENS = {
+  violation: { bg: "var(--color-signal-soft)", ink: "var(--color-signal-ink)" },
+  warning: { bg: "var(--color-warning-soft)", ink: "var(--color-warning-ink)" },
+  info: { bg: "var(--color-info-soft)", ink: "var(--color-info-ink)" },
+  neutral: { bg: "var(--color-paper)", ink: "var(--text-muted)" }
+};
+
+export function Collapsible({ label, count, open = false, onToggle, signal = false, tone, children, style }) {
+  // `signal` is a backward-compatible alias for tone="violation" — the two
+  // existing call sites (Failing/Passing items) need no change.
+  const resolvedTone = tone || (signal ? "violation" : "neutral");
+  const toneColors = TONE_TOKENS[resolvedTone] || TONE_TOKENS.neutral;
   return (
     <div
       style={{
@@ -52,9 +63,9 @@ export function Collapsible({ label, count, open = false, onToggle, signal = fal
               font: "500 12px/1 var(--font-mono)",
               padding: "2px 7px",
               borderRadius: "var(--radius-full)",
-              background: signal ? "var(--color-signal-soft)" : "var(--color-paper)",
-              color: signal ? "var(--color-signal-ink)" : "var(--text-muted)",
-              border: signal ? "1px solid transparent" : "1px solid var(--color-hairline)"
+              background: toneColors.bg,
+              color: toneColors.ink,
+              border: resolvedTone === "neutral" ? "1px solid var(--color-hairline)" : "1px solid transparent"
             }}
           >
             {count}

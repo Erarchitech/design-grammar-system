@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
-current_phase: 822
-current_phase_name: OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
-status: verifying
-stopped_at: Completed 822-04-PLAN.md (final plan, phase 822 ready for verification)
-last_updated: "2026-07-12T13:15:00.000Z"
+current_phase: 823
+current_phase_name: SHACL Validation Layer
+status: executing
+stopped_at: Completed 823-06-PLAN.md (all 3 tasks) — Phase 823 SHACL Validation Layer fully complete (6/6 plans)
+last_updated: "2026-07-12T12:02:19.144Z"
 last_activity: 2026-07-12
-last_activity_desc: Phase 822 execution complete (4/4 plans)
+last_activity_desc: "Phase 823 Plan 06 complete (SHACL Data Integrity UI: severity tokens + Badge/Collapsible variants + ModelScreen panel; Task 3 checkpoint closed via user approval) — Phase 823 SHACL Validation Layer fully complete"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 11
-  completed_plans: 11
-  percent: 40
+  completed_phases: 4
+  total_plans: 17
+  completed_plans: 17
+  percent: 80
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 822 — OWL 2 DL Reasoning Integration + Reasoner Screen Wiring
+**Current focus:** Phase 823 — SHACL Validation Layer — COMPLETE (all 6 plans); Phase 824 (CONNECTOR Credential Integration) next, no dependency on 820-823
 
 ## Current Position
 
-Phase: 822 (OWL 2 DL Reasoning Integration + Reasoner Screen Wiring) — EXECUTION COMPLETE
-Plan: 4 of 4
-Status: Backend gate green; manual UAT skipped per user decision; ready for phase verification
-Last activity: 2026-07-12 — Phase 822 execution complete (4/4 plans)
+Phase: 823 (SHACL Validation Layer) — COMPLETE (6/6 plans)
+Plan: 6 of 6 (823-01, 823-02, 823-03, 823-04, 823-05, 823-06 all complete)
+Status: 823-06 complete — SHACL Data Integrity Panel added to Model screen's selected-run detail (four states keyed on results.length, Solibri-style severity chips, per-severity Collapsible groups); Task 3 human-verify checkpoint closed via user "approved" response with no code changes needed. Phase 823 SHACL Validation Layer requirements SHCL-01/SHCL-02 both complete.
+Last activity: 2026-07-12 — Phase 823 Plan 06 complete (all 3 tasks) — Phase 823 fully complete
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -191,6 +191,12 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 822 Plan 03]: Run/Cancel controls and the result region are gated on r.status === 'integrated', not on card selection -- a user can run the check without re-selecting HermiT
 - [Phase ?]: [Phase 822 Plan 03]: Each terminal verdict state renders its own re-run Run check button (Consistent/Inconsistent/Unknown/Cancelled); Error mirrors the existing loadError inline-Retry pattern instead
 - [Phase ?]: [Phase 822 Plan 04]: Backend automated gate (dg-reasoner 19/19 incl. live HermiT round-trip, data-service 13/13, live curl) accepted as sufficient to close the phase; manual frontend UAT (Steps A-G) explicitly skipped per user decision rather than run partially
+- [Phase 823]: [Phase 823 Plan 02] Sidecar {project, run_id?} contract extension pattern: add the field to the Pydantic model + the Python function signature + the route call simultaneously to avoid breaking the 821 backward-compat test
+- [Phase 823 Plan 03]: publish_validation wraps _call_shacl_validate + _persist_shacl_report in one outer try/except (not just the proxy's internal catch-all) so a persistence-layer failure also degrades to shacl:{status:unavailable} instead of raising
+- [Phase 823 Plan 03]: shaclReport parsing added only to the /validation/view/* route family (build_view_payload/get_validation_run), not list_validation_runs -- confirmed via ui-v2/src/lib/modelApi.js + ModelScreen.jsx that view is the selected-run-detail path
+- [Phase ?]: [Phase 823 Plan 05] SHACL DTOs live in DG.Core.Validation (public), not DG.Grasshopper.Validation (internal) -- DG.Tests (net9.0) cannot ProjectReference DG.Grasshopper (net7.0-windows7.0, NU1201 TFM incompatibility confirmed via probe restore)
+- [Phase ?]: [Phase 823 Plan 05] ValidatorComponent SHACL surfacing caps runtime message level at Warning/Remark, never Error, per D-15 -- Error stays reserved for the pre-existing publish-exception catch block
+- [Phase 823]: [Phase 823 Plan 06] Task 3 checkpoint:human-verify closed via user 'approved' response with no code changes -- state selection keys strictly on shaclReport.results.length, never a conforms boolean
 
 ### Research Flags (carry into planning)
 
@@ -232,12 +238,16 @@ Shipped from Phase 20 Plan 02:
 | Phase 822 P02 | 12min | 3 tasks | 3 files |
 | Phase 822 P03 | 35min | 3 tasks | 2 files |
 | Phase 822 P04 | 45min | 2 tasks | 0 files |
+| Phase 823 P02 | 15min | 3 tasks | 2 files |
+| Phase 823 P03 | 20min | 2 tasks | 2 files |
+| Phase 823 P05 | 35min | 3 tasks | 7 files |
+| Phase 823-shacl-validation-layer P06 | 10min | 3 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T13:15:00.000Z
-Stopped at: Completed 822-04-PLAN.md (final plan, phase 822 ready for verification)
-Resume file: .planning/phases/822-owl-2-dl-reasoning-integration-reasoner-screen-wiring/822-04-SUMMARY.md
+Last session: 2026-07-12T12:01:23.889Z
+Stopped at: Completed 823-03-PLAN.md (both tasks)
+Resume file: None
 
 ## Performance Metrics
 

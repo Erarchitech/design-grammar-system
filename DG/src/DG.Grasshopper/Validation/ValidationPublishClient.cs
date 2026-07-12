@@ -56,6 +56,7 @@ internal static class ValidationPublishClient
                 ValidationModelId = parsed.ValidationModelId,
                 ValidationVersionId = parsed.ValidationVersionId,
                 BaseVersionId = parsed.BaseVersionId,
+                Shacl = parsed.Shacl,
             };
         }
 

@@ -118,8 +118,9 @@ def test_reason_consistency_timeout_returns_504(monkeypatch):
 
 
 def test_shacl_validate_returns_empty_shapes_contract(monkeypatch):
-    def fake_run_shacl(project, session=None):
+    def fake_run_shacl(project, run_id=None, session=None):
         assert project == "x"
+        assert run_id is None
         return {"conforms": True, "results": []}
 
     monkeypatch.setattr(reasoning, "run_shacl", fake_run_shacl)
@@ -128,3 +129,35 @@ def test_shacl_validate_returns_empty_shapes_contract(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"conforms": True, "results": []}
+
+
+def test_shacl_validate_with_run_id_returns_canonical_envelope(monkeypatch):
+    def fake_run_shacl(project, run_id=None, session=None):
+        assert project == "x"
+        assert run_id == "run-123"
+        return {
+            "conforms": False,
+            "results": [
+                {
+                    "severity": "violation",
+                    "what": "Run is missing sendStatus",
+                    "where": "Run run-123",
+                    "howToFix": "Ensure the run publishes a sendStatus boolean",
+                    "focusLabel": "Run run-123",
+                    "shapeId": "RunStatusShape",
+                }
+            ],
+            "counts": {"violation": 1, "warning": 0, "info": 0},
+        }
+
+    monkeypatch.setattr(reasoning, "run_shacl", fake_run_shacl)
+
+    response = client.post("/shacl/validate", json={"project": "x", "run_id": "run-123"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body["results"], list)
+    assert body["conforms"] is False
+    assert set(body["counts"].keys()) == {"violation", "warning", "info"}
+    finding = body["results"][0]
+    assert set(finding.keys()) == {"severity", "what", "where", "howToFix", "focusLabel", "shapeId"}

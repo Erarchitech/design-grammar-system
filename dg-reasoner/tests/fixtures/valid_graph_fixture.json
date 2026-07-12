@@ -1,0 +1,7 @@
+{
+  "project": "fixture-proj",
+  "runId": "RUN_001",
+  "validStatus": [true, false],
+  "sendStatus": true,
+  "statePayloadJson": "{\"version\": \"2\", \"stateId\": \"DS_root001\", \"label\": \"Root design state\", \"capturedAtUtc\": \"2026-07-12T10:00:00.0000000Z\", \"objStates\": [{\"stateId\": \"OS_obj001\", \"objectRef\": \"Wall_001\", \"label\": \"North Wall\", \"capturedAtUtc\": \"2026-07-12T10:00:00.0000000Z\"}], \"paramStates\": [{\"stateId\": \"DS_param001\", \"capturedAtUtc\": \"2026-07-12T10:00:00.0000000Z\", \"parameters\": [{\"parameterId\": \"p1\", \"displayName\": \"Height\", \"type\": \"number\", \"value\": 75.0}]}], \"propStates\": [{\"stateId\": \"PS_prop001\", \"ruleIri\": \"ex:R_URB_HEIGHT_MAX_75_V\", \"dataPropertyIri\": \"ex:hasHeight\", \"objectRef\": \"Wall_001\", \"propValue\": {\"parameterId\": \"pv1\", \"displayName\": \"Height\", \"type\": \"number\", \"value\": 72.5}}]}"
+}

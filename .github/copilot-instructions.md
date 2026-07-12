@@ -26,7 +26,7 @@ Use the v4 schema as the source of truth for all code changes, prompts, generate
 - `Var`: key `name`
 - `Literal`: key `lex` + `datatype`
 - `DesignState`: key `StateId`, `kind` {ObjState, ParamState, PropState}, `statePayloadJson` v2
-- `Run`: key `Run_Id`, `ValidStatus` (Boolean list per ObjState), `SendStatus` (single Boolean)
+- `Run`: key `Run_Id`, `ValidStatus` (Boolean list per ObjState), `SendStatus` (single Boolean), `shaclReportJson` (per-run SHACL report envelope JSON string, sibling to `statePayloadJson`; absent on pre-Phase-823 runs — see `spec/RULE-PARTITION-POLICY.md`)
 
 ### Canonical relationships
 Use these relationship types in generated Cypher and UI assumptions:

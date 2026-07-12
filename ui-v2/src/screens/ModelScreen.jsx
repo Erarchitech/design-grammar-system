@@ -193,6 +193,9 @@ export default function ModelScreen({ active, onBack, project }) {
   const [passColor, setPassColor] = React.useState("#737373");
   const [failOpen, setFailOpen] = React.useState(true);
   const [passOpen, setPassOpen] = React.useState(false);
+  const [shaclViolationOpen, setShaclViolationOpen] = React.useState(true);
+  const [shaclWarningOpen, setShaclWarningOpen] = React.useState(false);
+  const [shaclInfoOpen, setShaclInfoOpen] = React.useState(false);
   const [isolate, setIsolate] = React.useState(false);
   const [hidden, setHidden] = React.useState([]);
   const [selById, setSelById] = React.useState("");
@@ -892,6 +895,105 @@ export default function ModelScreen({ active, onBack, project }) {
                 <StatBlock label="Passing" value={String(passItems.length)} />
               </div>
             </Panel>
+            {(() => {
+              // SHACL Data Integrity — four states keyed on results.length,
+              // NEVER on a conforms boolean (allow_infos/allow_warnings means
+              // conforms stays true with only info/warning findings). shapeId
+              // is present on each finding but must never be rendered here.
+              const shaclReport = view.shaclReport;
+              if (!shaclReport) {
+                return (
+                  <Panel title="SHACL Data Integrity">
+                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>Not checked</div>
+                    <div style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)", marginTop: 2 }}>
+                      This run predates SHACL validation.
+                    </div>
+                  </Panel>
+                );
+              }
+              if (shaclReport.status === "unavailable" || shaclReport.status === "timeout") {
+                return (
+                  <Panel title="SHACL Data Integrity">
+                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>Not evaluated</div>
+                    <div style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)", marginTop: 2 }}>
+                      {shaclReport.status === "timeout"
+                        ? "SHACL validation timed out when this run published."
+                        : "SHACL validator was unreachable when this run published."}
+                    </div>
+                  </Panel>
+                );
+              }
+              const shaclResults = shaclReport.results || [];
+              if (shaclResults.length === 0) {
+                return (
+                  <Panel title="SHACL Data Integrity">
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--color-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                      <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--color-ink)" }}>Conforms</span>
+                    </div>
+                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)", marginTop: 4 }}>
+                      No data-integrity issues found in this run.
+                    </div>
+                  </Panel>
+                );
+              }
+              const bySeverity = { violation: [], warning: [], info: [] };
+              shaclResults.forEach((f) => {
+                (bySeverity[f.severity] || bySeverity.violation).push(f);
+              });
+              const chipDefs = [
+                { severity: "violation", variant: "violation", singular: "Violation", plural: "Violations" },
+                { severity: "warning", variant: "warning", singular: "Warning", plural: "Warnings" },
+                { severity: "info", variant: "info", singular: "Info", plural: "Info" }
+              ];
+              const chips = chipDefs
+                .map((d) => ({ ...d, n: bySeverity[d.severity].length }))
+                .filter((d) => d.n > 0);
+              const findingCard = (f, i, isLast) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    padding: "8px 12px",
+                    borderBottom: isLast ? "none" : "1px solid var(--color-hairline)"
+                  }}
+                >
+                  <span style={{ font: "500 12px/1.3 var(--font-mono)", color: "var(--color-ink)" }}>{f.focusLabel || "—"}</span>
+                  <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-secondary)" }}>{f.what || "—"}</span>
+                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>Where: {f.where || "—"}</span>
+                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>Fix: {f.howToFix || "—"}</span>
+                </div>
+              );
+              const severityGroup = (label, tone, items, open, setOpen) =>
+                items.length > 0 && (
+                  <Collapsible key={label} label={label} tone={tone} count={items.length} open={open} onToggle={() => setOpen((v) => !v)}>
+                    {items.map((f, i) => findingCard(f, i, i === items.length - 1))}
+                  </Collapsible>
+                );
+              return (
+                <Panel title="SHACL Data Integrity">
+                  <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                    {chips.map((c, i) => (
+                      <React.Fragment key={c.severity}>
+                        {i > 0 && <span style={{ font: "400 12px/1 var(--font-sans)", color: "var(--text-muted)" }}>·</span>}
+                        <Badge variant={c.variant}>
+                          {c.n} {c.n === 1 ? c.singular : c.plural}
+                        </Badge>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+                    {severityGroup("Violations", "violation", bySeverity.violation, shaclViolationOpen, setShaclViolationOpen)}
+                    {severityGroup("Warnings", "warning", bySeverity.warning, shaclWarningOpen, setShaclWarningOpen)}
+                    {severityGroup("Info", "info", bySeverity.info, shaclInfoOpen, setShaclInfoOpen)}
+                  </div>
+                </Panel>
+              );
+            })()}
             <Collapsible label="Failing items" count={failItems.length} signal={failItems.length > 0} open={failOpen} onToggle={() => setFailOpen((v) => !v)}>
               {failItems.map((it) => (
                 <CollapsibleItem key={it.id} primary={it.primary} secondary={it.secondary} selected={picked === it.id} onClick={() => pick(it.id)} />

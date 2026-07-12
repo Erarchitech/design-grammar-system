@@ -99,12 +99,13 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 
 **Run** — A validation run execution record
 ```
-(:Run {Run_Id: "VRUN_abc123", ValidStatus: [true, false, true], SendStatus: true, statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+(:Run {Run_Id: "VRUN_abc123", ValidStatus: [true, false, true], SendStatus: true, statePayloadJson: '{...}', shaclReportJson: '{...}', graph: "ValidGraph", project: "1"})
 ```
 - `Run_Id` — unique identifier for the validation run
 - `ValidStatus` — Boolean list, one element per ObjState in the validated DesignState, index-matched to ObjState order
 - `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success)
 - `statePayloadJson` — v2 projection for Model Viewer read-back
+- `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
 
 ## Relationships
 

@@ -13,9 +13,11 @@ This document is the **normative mapping contract** between DG's Neo4j labelled-
 - [Unique Name Assumption](#unique-name-assumption-una) -- `owl:AllDifferent` for future ABox exports
 
 **Informative scope** (forward-looking sketch, non-normative):
-- [ValidGraph -> RDF Sketch](#validgraph-to-rdf-sketch-informative) -- preliminary mapping for Phase 823
+- [ValidGraph -> RDF Sketch](#validgraph-to-rdf-sketch-informative) -- ABox mapping, **implemented in Phase 823**
 
 The authoritative node/label/property definitions for each graph layer are in **`spec/DATABASE.md`** (see [§ Graph Separation](spec/DATABASE.md#graph-separation)). This document adds only the RDF-mapping columns -- it does not duplicate the base schema.
+
+**Related policy:** `spec/RULE-PARTITION-POLICY.md` governs which validation system (SWRL VALIDATOR vs. the SHACL layer that validates the ValidGraph ABox this document maps) owns which rule category. See that document for the partition line and precedence rules.
 
 ---
 
@@ -296,7 +298,9 @@ When Phase 823 exports ValidGraph entities (DesignState, Run) as named OWL indiv
 
 ### Normative Requirement
 
-The LPG->RDF translator MUST emit, for every project export batch that includes **named individuals** (future ABox export), exactly one `owl:AllDifferent` declaration enumerating every minted named individual via `owl:distinctMembers`.
+The LPG->RDF translator MUST emit, for every project export batch that includes **named individuals**, exactly one `owl:AllDifferent` declaration enumerating every minted named individual via `owl:distinctMembers`.
+
+**Status:** Implemented in Phase 823. `dg-reasoner/valid_graph_export.py`'s `build_valid_graph()` mints ValidGraph named individuals (DesignState kinds + Run) and `add_all_different()` emits the `owl:AllDifferent` declaration over the union of ValidGraph and Metagraph/OntoGraph individuals in the export batch -- the obligation described below is no longer forward-looking.
 
 ```turtle
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
@@ -320,9 +324,9 @@ The LPG->RDF translator MUST emit, for every project export batch that includes 
 
 ## ValidGraph to RDF Sketch (Informative)
 
-> **Status:** Informative. This section is a forward-looking sketch for Phase 823. It is NOT normative -- the details will be finalized when the ValidGraph->RDF translator is built.
+> **Status:** Implemented in Phase 823 by `dg-reasoner/valid_graph_export.py` (`build_valid_graph()` + `add_all_different()`). This section remains informative in structure (it predates the implementation and is not re-normalized line-by-line), but the mapping it describes is now live code, not a forward-looking sketch. Primary data source in the live implementation is the `statePayloadJson` v2 envelope stored on the `ValidationRun` node (data-service's actual write path), with label-scoped live `DesignState` nodes included when present -- see `spec/RULE-PARTITION-POLICY.md` for how SHACL validation of this ABox relates to the SWRL VALIDATOR.
 
-The ValidGraph layer stores validation execution state: design states (3-part composition of object, parameter, and property snapshots) and runs (with their Boolean pass/fail lists). This section sketches how these would map to RDF individuals in a future ABox export.
+The ValidGraph layer stores validation execution state: design states (3-part composition of object, parameter, and property snapshots) and runs (with their Boolean pass/fail lists). This section sketches how these map to RDF individuals in the ABox export.
 
 ### DesignState
 
@@ -351,7 +355,7 @@ The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]
 
 ### UNA Interaction
 
-Because ValidGraph nodes are named individuals, the `owl:AllDifferent` requirement (see [UNA section](#unique-name-assumption-una)) becomes critical: every DesignState and Run IRI must be listed in the project's `owl:distinctMembers` declaration, alongside the Metagraph individuals, to prevent the reasoner from merging e.g. two distinct `dgv:ObjState` individuals with overlapping property values.
+Because ValidGraph nodes are named individuals, the `owl:AllDifferent` requirement (see [UNA section](#unique-name-assumption-una)) is critical: every DesignState and Run IRI is listed in the project's `owl:distinctMembers` declaration, alongside the Metagraph individuals, to prevent the reasoner from merging e.g. two distinct `dgv:ObjState` individuals with overlapping property values. This is implemented (not merely required) as of Phase 823 -- see the [UNA section](#unique-name-assumption-una) status note.
 
 ---
 

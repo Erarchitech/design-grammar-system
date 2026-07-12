@@ -337,4 +337,38 @@ public sealed class ErrorMessageTemplateTests
         Assert.NotEmpty(ErrorMessageTemplates.FormatStatus(idleResult));
         Assert.NotEmpty(ErrorMessageTemplates.FormatMessage(idleResult));
     }
+
+    // --- ShaclViolation template tests ---
+
+    [Theory]
+    [InlineData("violation", "Door width below minimum", "focus:Door_12", "Increase width to at least 900mm")]
+    [InlineData("warning", "Room area unusually small", "focus:Room_04", "Verify the room area is intentional")]
+    [InlineData("info", "Wall thickness not specified", "focus:Wall_09", "Consider adding an explicit thickness value")]
+    public void ShaclViolation_EachSeverity_ProducesHouseStyleMessage(string severity, string what, string where, string howToFix)
+    {
+        var result = ErrorMessageTemplates.ShaclViolation(severity, what, where, howToFix);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains(severity, result);
+        Assert.Contains(what, result);
+        Assert.Contains(where, result);
+        Assert.Contains(howToFix, result);
+        Assert.Contains(": ", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ShaclViolation_HowToFixAlreadyEndingInPeriod_DoesNotDoublePunctuate()
+    {
+        var result = ErrorMessageTemplates.ShaclViolation(
+            "violation",
+            "Door width below minimum",
+            "focus:Door_12",
+            "Increase width to at least 900mm.");
+
+        Assert.NotNull(result);
+        Assert.EndsWith(".", result);
+        Assert.DoesNotContain("..", result);
+    }
 }
