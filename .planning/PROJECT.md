@@ -8,16 +8,11 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v8.2 Connector Integration & Reasoning Engine
+## Current Milestone: (between milestones) → v9.0 AI Workflow Intelligence next
 
-**Goal:** Wire the Grasshopper CONNECTOR component to the platform's new credential mechanism, and replace the Reasoner screen's HermiT/Pellet placeholders with real OWL 2 DL + SHACL validation. Positioned right after v8.1 (Platform Setup Regions). Phases numbered 820–829 per the milestone-derived numbering convention (vX.Y → X·100+Y·10, max 10 phases).
+**v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — Phases 822/823/824 verification deferred; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
 
-**Target features:**
-
-- CONNECTOR component (Grasshopper): accepts a platform-issued credential (minted from the v8.1 Connectors screen) as its connection input, replacing today's manual setup
-- OWL 2 DL reasoning: HermiT and/or Pellet wired in for real ontology-consistency checking (class satisfiability, property domain/range coherence, TBox integrity) at rule-authoring time, replacing the v8.1 placeholder-only Reasoner selector
-- SHACL validation layer: data-level design-rule/instance validation, investigated alongside the existing SWRL-based VALIDATOR
-- Reasoning-stack architecture decision: integration path between the proposed RDF/OWL-native stack (Apache Jena, HermiT via OWL API, pySHACL/TopBraid SHACL, optional ELK pre-classifier) and DG's existing Neo4j property-graph ontology encoding — likely anchored on the existing `DesignGrammar-V7.owl` export
+**Next:** reactivate **v9.0 AI Workflow Intelligence** (Phases 28–40) — Phase 28 (cloud LLM connector) already shipped; **Phase 29 (DG-Aware Context Layer)** is the next phase to plan. At activation the v9.0 phase directories move from `milestones/v9.0-phases/` into `.planning/phases/` and its roadmap detail is inlined in ROADMAP.md.
 
 ## Requirements
 
@@ -46,17 +41,19 @@ Architects can express design constraints in plain language and instantly valida
 - ✓ **v7.0 (Phases 13–20)**: Ontology-aligned 14-component Grasshopper addin — state trio (ObjState/ParamState/PropState), DesignState composition, graph access chain (GRAPH DECONSTRUCT, ONTOGRAPH, VALIDATION GRAPH), VALIDATOR rework, CLASSIFICATOR elimination, SpecGraph rename, schema v4 propagation — shipped 2026-07-05, archived to `.planning/milestones/v7.0-phases/`
 - ✓ **v8.0 (Phases 21–27)**: Design Grammars V2 UI — light clinical-blueprint interface at `ui-v2/` (Vite + React): design-system foundation, particle-ring landing with inline auth, canvas datascape Graph Viewer (live Neo4j + n8n), Model Viewer over data-service validation runs, Projects screen, layered navigation shell, deployment cutover at :8080, Speckle 3D embed — shipped 2026-07-07, archived to `.planning/milestones/v8.0-phases/`
 - ✓ **v8.1 (Phases 810–816)**: Platform Setup Regions — four new landing-ring regions each wired to real backend services: AI Engine (LLM provider/model/key setup over the existing gateway), Connectors (14 connectors / 5 categories, credential CRUD + heartbeat/status lifecycle), Reasoner (HermiT/Pellet placeholder selector, persisted), DG API Documentation (Revit-API-style in-app doc browser); full E2E connector lifecycle + deployment cutover with zero v8.0 regressions — completed 2026-07-11; phases not yet archived (`.planning/phases/810-816-*/`), formal `/gsd-complete-milestone` pass still pending
+- ✓ **v8.2 (Phases 820–824)**: Connector Integration & Reasoning Engine — isolated `dg-reasoner` sidecar (Python + headless JRE) with a fidelity-tested Cypher→RDF translator (`spec/LPG-OWL-MAPPING.md`); real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen with `{iri,label}` unsatisfiable-class results and timeout→unknown safety; a SHACL validation layer (8 data-integrity NodeShapes over the ValidGraph ABox with UNA) surfacing on the VALIDATOR + a Solibri-style Data Integrity panel in ui-v2, governed by `spec/RULE-PARTITION-POLICY.md`; additive CONNECTOR platform-token heartbeat with in-canvas feedback + full token secrecy (GUID/ports untouched) — shipped 2026-07-12 (override closeout: 822/823/824 verification deferred), archived to `.planning/milestones/v8.2-phases/`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-**Milestone v8.2 — Connector Integration & Reasoning Engine** (see `.planning/REQUIREMENTS.md` for REQ-IDs)
+**Next milestone: v9.0 AI Workflow Intelligence** (Phases 28–40; see `.planning/milestones/v9.0-REQUIREMENTS.md` — becomes `.planning/REQUIREMENTS.md` on reactivation)
 
-- [ ] CONNECTOR component (Grasshopper): consume platform-issued credential as connection input
-- [ ] OWL 2 DL reasoning integration (HermiT/Pellet) for ontology-consistency checking
-- [ ] SHACL validation layer for design-rule / instance-level checking
-- [ ] Reasoning-stack architecture decision: RDF/OWL integration path against the Neo4j-encoded ontology
+- [x] Phase 28: Cloud LLM connector + provider abstraction (shipped 2026-07-06)
+- [ ] Phase 29: DG-Aware Context Layer (SWRL + ontology + Cypher awareness) — **next to plan**
+- [ ] Phases 30–31: Orchestration evaluation (n8n vs OpenClaw) + rules ingest/edit rebuild on the context layer
+- [ ] Phases 32–37: Grasshopper canvas → Computgraph serialization pipeline (serialization core, DG canvas bridge, tagging, LLM recognition + on-canvas preview, persistence/display, structure-validation MVP)
+- [ ] Phases 38–40: AI-generated script inputs, DesignState auto-validation investigation, E2E + docs
 
 ### Out of Scope
 
@@ -133,7 +130,9 @@ v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27
 | DB keeps existing labels except Knowledge*→Spec* | Ontology↔DB mapping documented; avoids invasive migrations | — Pending — v7.0 |
 | Reasoning runs in new `dg-reasoner` sidecar (Owlready2/HermiT/Openllet + pySHACL), not embedded in `data-service` | Isolates the JVM subprocess's failure modes (hang/OOM/crash) from `data-service`'s Speckle-publish/validation-run hot path; DL reasoning is worst-case exponential and the rule corpus grows unboundedly | ✓ Shipped — v8.2 Phase 820 (spike evidence: see 820-DECISION.md) |
 | Hybrid axiom-scoping: union static DesignGrammar-V7.owl TBox (65 subClassOf, 101 domain, 110 range) + live project-scoped OntoGraph/Metagraph export + structural checks; curate disjointWith into the static TBox once; LLM-ingestion axiom emission deferred | Live OntoGraph is flat (zero SUBCLASS_OF/DOMAIN/RANGE/DISJOINT_WITH relationship types confirmed DB-wide); naive export reasons as trivially consistent; hybrid makes HermiT's answer non-trivial without mid-milestone n8n prompt churn or 9-file schema propagation | ✓ Shipped — v8.2 Phase 820 (see 820-DECISION.md; mapping spec spec/LPG-OWL-MAPPING.md) |
-| CONNECTOR platform credential is additive (new optional token input, existing 4 raw Neo4j inputs + GUID preserved) | Avoids repeating the v7.0 CLASSIFICATOR/VALIDATION RUNS GUID-breakage pattern; token authenticates heartbeat only, never gates or replaces bolt auth | — Pending — v8.2 |
+| CONNECTOR platform credential is additive (new optional token input, existing 4 raw Neo4j inputs + GUID preserved) | Avoids repeating the v7.0 CLASSIFICATOR/VALIDATION RUNS GUID-breakage pattern; token authenticates heartbeat only, never gates or replaces bolt auth | ✓ Shipped — v8.2 Phase 824 (token secrecy: hashed dedup key, persistent-data scrub, token-free outputs) |
+| Real OWL 2 DL consistency check via HermiT default engine; `unsatisfiable_classes` returned as `{iri,label}`; hung/long reasoning returns a distinct "unknown" (never silent pass/fail), each call fresh (no cache) | HermiT is the proven engine from the 820 spike; timeout→unknown keeps DL's worst-case exponential cost off the caller's hot path; labels make results readable without semantic-web background | ✓ Shipped — v8.2 Phase 822 |
+| SHACL layer runs alongside (never replaces) the SWRL VALIDATOR; a written rule-partition/precedence policy (`spec/RULE-PARTITION-POLICY.md`) assigns each rule category to exactly one system; SHACL findings surface via ErrorMessageTemplates capped at Warning/Remark (never Error) | Prevents the same business rule being authored twice with disagreeing verdicts; keeps raw SHACL vocabulary away from architects; a data-integrity finding must never render the VALIDATOR component as failed | ✓ Shipped — v8.2 Phase 823 |
 
 ## Evolution
 
@@ -153,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 — v8.1 complete (Phases 810–816); v8.2 Connector Integration & Reasoning Engine started*
+*Last updated: 2026-07-12 — v8.2 Connector Integration & Reasoning Engine complete (Phases 820–824, override closeout); v9.0 AI Workflow Intelligence queued for reactivation (Phase 29 next)*

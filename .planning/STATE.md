@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: Connector Integration & Reasoning Engine
 current_phase: 824
-current_phase_name: CONNECTOR Credential Integration
-status: executing
-stopped_at: Phase 824 executed (2 plans) — code-complete, build + 234 tests green; verification human_needed (in-Rhino UAT deferred per user)
-last_updated: "2026-07-12T00:00:00.000Z"
+status: Awaiting next milestone
+stopped_at: v8.2 milestone completed and archived (override closeout — 822/823/824 verification deferred)
+last_updated: "2026-07-12T14:11:19.088Z"
 last_activity: 2026-07-12
-last_activity_desc: Phase 824 executed — CONNECTOR platform-token heartbeat + secrecy; 3 in-Rhino UAT items deferred
+last_activity_desc: Milestone v8.2 completed and archived
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 19
   completed_plans: 19
-  percent: 80
+  percent: 100
+current_phase_name: CONNECTOR Credential Integration
 ---
 
 # Project State
@@ -24,24 +24,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 823 — SHACL Validation Layer — COMPLETE (all 6 plans); Phase 824 (CONNECTOR Credential Integration) next, no dependency on 820-823
+**Current focus:** v8.2 (Connector Integration & Reasoning Engine) shipped 2026-07-12 (override closeout). Next: reactivate v9.0 AI Workflow Intelligence and plan Phase 29 (DG-Aware Context Layer)
 
 ## Current Position
 
-Phase: 824 (CONNECTOR Credential Integration) — EXECUTED (2/2 plans); verification human_needed
-Plan: 2 of 2 (824-01 DG.Core heartbeat client + templates + tests; 824-02 CONNECTOR component wiring + secrecy)
-Status: Code-complete — `dotnet build DG.sln -c Release` green (DG.Grasshopper compiled against the real Rhino 8 SDK), `dotnet test` 234/234 pass, all source assertions hold. Requirements CONNG-01/CONNG-02 implemented (additive DataServiceUrl + Token inputs, GUID 24E78A17… unchanged; heartbeat-on-Connect with Error/Warning feedback; token secrecy — SHA-256 hashed dedup key, PersistentData scrub, token-free ConnectionInfo/outputs/logs). 3 success criteria need in-Rhino UAT (live Grasshopper + data-service) — deferred; see 824-UAT.md.
-Last activity: 2026-07-12 — Phase 824 executed (both plans) via /gsd-autonomous --only 824
+Phase: Milestone v8.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-12 — Milestone v8.2 completed and archived
 
-Progress: Phase 823 [██████████] 100% · Phase 824 executed, verification deferred
+## Deferred Items
 
-## Deferred Verification
+Items acknowledged and deferred at v8.2 milestone close on 2026-07-12 (override closeout — see MILESTONES.md `Known verification overrides: 3`):
 
-| Phase | State | Resume |
-|-------|-------|--------|
-| 824 | verification_deferred_human | /gsd-verify-work 824 |
+| Category | Item | Status | Resume |
+|----------|------|--------|--------|
+| verification | Phase 822 (OWL 2 DL + Reasoner wiring) | human_needed | /gsd-verify-work 822 — manual frontend UAT Steps A–G (3 scenarios); backend gate 19/19 + 13/13 green |
+| verification | Phase 823 (SHACL Validation Layer) | no VERIFICATION.md | code-complete, closed via user "approved" checkpoint in 823-P06; no formal verification doc written |
+| verification | Phase 824 (CONNECTOR Credential) | human_needed | /gsd-verify-work 824 — 3 in-Rhino UAT checks (live Grasshopper + data-service) |
 
-The 3 in-Rhino acceptance checks (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are documented in `.planning/phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) already pass. Note: `dotnet test`/`dotnet build` ran clean on net9.0 **without** `DOTNET_ROLL_FORWARD` this session — the earlier "net9.0 runtime absent" blocker appears stale.
+Phase 822/824 verification + UAT artifacts are archived under `.planning/milestones/v8.2-phases/`. The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are in `.planning/milestones/v8.2-phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) pass. Note: `dotnet test`/`dotnet build` ran clean on net9.0 **without** `DOTNET_ROLL_FORWARD` — the earlier "net9.0 runtime absent" blocker appears stale.
 
 ## Performance Metrics
 
@@ -296,3 +298,7 @@ Resume file: None
 | Phase 24-model-viewer P01 | 1h | 2 tasks | 5 files |
 | Phase 25-projects-and-scoping P01 | 25min | 1 task | 2 files |
 | Phase 27-speckle-3d-embed P27-01 | ~18m | - tasks | - files |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

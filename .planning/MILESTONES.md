@@ -1,5 +1,20 @@
 # Milestones
 
+## v8.2 Connector Integration & Reasoning Engine (Shipped: 2026-07-12)
+
+**Phases completed:** 5 phases, 19 plans, 44 tasks
+**Closeout:** override closeout — **Known verification overrides: 3** (Phases 822 & 824 in-app/in-Rhino UAT deferred; Phase 823 closed via user-approved checkpoint with no formal VERIFICATION.md — see STATE.md `## Deferred Items`)
+
+**Key accomplishments:**
+
+- **Phase 820** — Resolved the OntoGraph axiom-scoping question as a *hybrid* approach and authored the normative `spec/LPG-OWL-MAPPING.md` (Metagraph SWRL vocabulary, OntoGraph OWL terms, edge-property reification for `ARG.pos` + `HAS_BODY/HAS_HEAD.order`, IRI minting, UNA handling); both decisions recorded as ADRs with spike evidence.
+- **Phase 821** — New isolated `dg-reasoner` sidecar (Python 3.11 + headless JRE, internal-only in docker-compose, n10s-equipped neo4j) with a clean `ontology_export.py` Cypher→RDF translator and 8 fidelity tests proving `ARG.pos` and `HAS_BODY/HAS_HEAD.order` survive translation; a short-timeout httpx proxy wires data-service to the sidecar.
+- **Phase 822** — Real OWL 2 DL consistency check (HermiT default engine) wired end-to-end into the Reasoner screen, replacing the v8.1 "integration pending" placeholder; `unsatisfiable_classes` enriched to `{iri,label}`; HermiT flipped to `integrated`. Backend gate green (dg-reasoner 19/19, data-service 13/13); manual frontend UAT deferred.
+- **Phase 823** — SHACL Validation Layer: 8 version-controlled data-integrity NodeShapes over the run-scoped ValidGraph ABox (with `owl:AllDifferent` UNA), `shaclReportJson` propagated across five spec/config surfaces + `spec/RULE-PARTITION-POLICY.md`; findings surface on the VALIDATOR component (capped Warning/Remark) and a Solibri-style SHACL Data Integrity panel in the ui-v2 Model screen.
+- **Phase 824** — CONNECTOR gains an additive platform-token heartbeat with in-canvas Error/Warning feedback and full token secrecy (hashed dedup key, persistent-data scrub, token-free outputs); component GUID and existing ports untouched; whole solution builds green against the Rhino 8 SDK.
+
+---
+
 ## v7.0 Update of DG Addin for Grasshopper (Shipped: 2026-07-05)
 
 **Status:** Shipped — 8 phases, 37 plans complete; archived 2026-07-07
