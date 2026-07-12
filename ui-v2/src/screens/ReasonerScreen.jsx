@@ -385,6 +385,216 @@ export default function ReasonerScreen({ active, onBack, project }) {
                             </Button>
                           </div>
                         )}
+
+                        {runState === "consistent" && (
+                          <>
+                            <div
+                              style={{ display: "flex", alignItems: "center", gap: 8 }}
+                            >
+                              <div
+                                style={{
+                                  font: "600 13px/1.5 var(--font-sans)",
+                                  color: "var(--color-ink)",
+                                }}
+                              >
+                                ✓ Schema consistent — no unsatisfiable classes found.
+                              </div>
+                              <Badge variant="solid">Consistent</Badge>
+                            </div>
+                            {lastCheckedAt && (
+                              <div
+                                style={{
+                                  font: "400 12px/1.33 var(--font-sans)",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                Last checked {formatRelativeDate(lastCheckedAt)}
+                              </div>
+                            )}
+                            <div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRunCheck();
+                                }}
+                              >
+                                Run check
+                              </Button>
+                            </div>
+                          </>
+                        )}
+
+                        {runState === "inconsistent" &&
+                          (() => {
+                            const list = runResult?.unsatisfiable_classes || [];
+                            const n = list.length;
+                            return (
+                              <>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 8,
+                                    padding: 12,
+                                    borderRadius: "var(--radius-cards)",
+                                    background: "var(--color-signal-soft)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        font: "600 13px/1.5 var(--font-sans)",
+                                        color: "var(--color-signal)",
+                                      }}
+                                    >
+                                      Schema inconsistent — {n} unsatisfiable class
+                                      {n === 1 ? "" : "es"}.
+                                    </div>
+                                    <Badge variant="signal">Inconsistent</Badge>
+                                  </div>
+                                  {n > 0 && (
+                                    <ul
+                                      style={{
+                                        margin: 0,
+                                        paddingLeft: 20,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      {list.map((entry, i) => (
+                                        <li
+                                          key={i}
+                                          style={{
+                                            font: "400 13px/1.5 var(--font-sans)",
+                                            color: "var(--color-signal)",
+                                          }}
+                                        >
+                                          {entry.label}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                                {lastCheckedAt && (
+                                  <div
+                                    style={{
+                                      font: "400 12px/1.33 var(--font-sans)",
+                                      color: "var(--text-muted)",
+                                    }}
+                                  >
+                                    Last checked {formatRelativeDate(lastCheckedAt)}
+                                  </div>
+                                )}
+                                <div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRunCheck();
+                                    }}
+                                  >
+                                    Run check
+                                  </Button>
+                                </div>
+                              </>
+                            );
+                          })()}
+
+                        {runState === "unknown" && (
+                          <>
+                            <div
+                              style={{ display: "flex", alignItems: "center", gap: 8 }}
+                            >
+                              <div
+                                style={{
+                                  font: "400 13px/1.5 var(--font-sans)",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                – Inconclusive — the reasoner timed out before
+                                finishing. Try again.
+                              </div>
+                              <Badge variant="outline">Inconclusive</Badge>
+                            </div>
+                            {lastCheckedAt && (
+                              <div
+                                style={{
+                                  font: "400 12px/1.33 var(--font-sans)",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                Last checked {formatRelativeDate(lastCheckedAt)}
+                              </div>
+                            )}
+                            <div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRunCheck();
+                                }}
+                              >
+                                Run check
+                              </Button>
+                            </div>
+                          </>
+                        )}
+
+                        {runState === "cancelled" && (
+                          <>
+                            <div
+                              style={{
+                                font: "400 13px/1.5 var(--font-sans)",
+                                color: "var(--ink-a56)",
+                              }}
+                            >
+                              × Run cancelled — no result.
+                            </div>
+                            <div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRunCheck();
+                                }}
+                              >
+                                Run check
+                              </Button>
+                            </div>
+                          </>
+                        )}
+
+                        {runState === "error" && (
+                          <div
+                            style={{
+                              font: "400 13px/1.4 var(--font-sans)",
+                              color: "var(--color-signal-ink)",
+                            }}
+                          >
+                            Reasoner unavailable · {runError}{" "}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRunCheck();
+                              }}
+                              style={{ cursor: "pointer", textDecoration: "underline" }}
+                            >
+                              Retry
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       isActive && (
