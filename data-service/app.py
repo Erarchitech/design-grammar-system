@@ -564,7 +564,8 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
             run.rulesJson AS rulesJson,
             run.ValidStatus AS validStatus,
             run.SendStatus AS sendStatus,
-            run.createdAt AS createdAt
+            run.createdAt AS createdAt,
+            run.shaclReportJson AS shaclReportJson
         ORDER BY run.createdAt DESC
         LIMIT 1
     """
@@ -775,6 +776,22 @@ def build_rules_summary(request: ValidationPublishRequest) -> list[dict[str, Any
     return summaries
 
 
+def _parse_shacl_report(shacl_report_json: str | None) -> dict[str, Any] | None:
+    """Parse a persisted `shaclReportJson` string into a dict for the view payload.
+
+    Returns None for absent/empty/malformed JSON or a non-object payload --
+    never raises. Pre-823 runs (no shaclReportJson property) and corrupt data
+    both degrade to the same quiet not-checked state (D-17), never an error.
+    """
+    if not shacl_report_json:
+        return None
+    try:
+        parsed = json.loads(shacl_report_json)
+    except (TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str, list[str]], rule_id: str | None = None) -> dict[str, Any]:
     settings = get_speckle_settings()
     rules = json.loads(run["rulesJson"]) if run.get("rulesJson") else []
@@ -795,6 +812,7 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
         "createdAt": run.get("createdAt"),
         "rules": rules,
         "objectSets": object_sets,
+        "shaclReport": _parse_shacl_report(run.get("shaclReportJson")),
     }
 
 

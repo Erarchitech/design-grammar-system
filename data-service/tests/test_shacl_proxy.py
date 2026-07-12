@@ -26,6 +26,7 @@ from app import (  # noqa: E402
     app,
     _call_shacl_validate,
     _persist_shacl_report,
+    build_view_payload,
     SpeckleConnectionSettings,
     SpeckleProjectConfigPayload,
 )
@@ -269,3 +270,63 @@ class TestPublishValidationShaclWiring:
         body = response.json()
         assert body["status"] == "published"
         assert body["shacl"] == {"status": "unavailable"}
+
+
+# ── build_view_payload / get_validation_run: parsed shaclReport, D-17 quiet-null ──
+
+
+def _base_run_dict(**overrides):
+    run = {
+        "runId": "run-1",
+        "speckleProjectId": "sp-1",
+        "baseModelId": "bm-1",
+        "baseVersionId": "bv-1",
+        "validationModelId": "vm-1",
+        "validationVersionId": "vv-1",
+        "baseResourceUrl": "http://speckle.local/projects/sp-1/models/bm-1@bv-1",
+        "validationResourceUrl": "http://speckle.local/projects/sp-1/models/vm-1@vv-1",
+        "modelViewerUrl": "http://dg.local/model-viewer/?project=x&runId=y",
+        "createdAt": "2026-07-12T10:00:00Z",
+        "rulesJson": None,
+    }
+    run.update(overrides)
+    return run
+
+
+class TestBuildViewPayloadShaclReport:
+    def test_run_with_shacl_report_json_returns_parsed_dict(self):
+        report = {"status": "ok", "conforms": True, "results": [], "counts": {"violation": 0, "warning": 0, "info": 0}}
+        run = _base_run_dict(shaclReportJson=json.dumps(report))
+
+        payload = build_view_payload("proj-a", run, {"failed": [], "passed": []})
+
+        assert payload["shaclReport"] == report
+
+    def test_run_without_shacl_report_json_returns_null(self):
+        run = _base_run_dict()  # no shaclReportJson key at all (pre-823 run)
+
+        payload = build_view_payload("proj-a", run, {"failed": [], "passed": []})
+
+        assert payload["shaclReport"] is None
+
+    def test_run_with_empty_shacl_report_json_returns_null(self):
+        run = _base_run_dict(shaclReportJson="")
+
+        payload = build_view_payload("proj-a", run, {"failed": [], "passed": []})
+
+        assert payload["shaclReport"] is None
+
+    def test_run_with_malformed_shacl_report_json_degrades_to_null(self):
+        run = _base_run_dict(shaclReportJson="not-valid-json{{{")
+
+        payload = build_view_payload("proj-a", run, {"failed": [], "passed": []})
+
+        assert payload["shaclReport"] is None
+
+    def test_run_with_non_object_shacl_report_json_degrades_to_null(self):
+        """A JSON array/scalar (never expected, but must not raise or leak a partial shape)."""
+        run = _base_run_dict(shaclReportJson="[1, 2, 3]")
+
+        payload = build_view_payload("proj-a", run, {"failed": [], "passed": []})
+
+        assert payload["shaclReport"] is None
