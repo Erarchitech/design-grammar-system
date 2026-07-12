@@ -57,6 +57,7 @@ class ConsistencyRequest(BaseModel):
 
 class ShaclRequest(BaseModel):
     project: str
+    run_id: str | None = None
 
 
 @app.post("/reason/consistency")
@@ -84,8 +85,12 @@ def reason_consistency(payload: ConsistencyRequest):
 
 @app.post("/shacl/validate")
 def shacl_validate(payload: ShaclRequest):
-    """pySHACL validation against a placeholder/empty shapes graph (D-11).
+    """SHACL validation against the version-controlled shapes graph (D-07/D-08/D-09/D-10).
 
-    Proves the real pySHACL plumbing end-to-end; real shapes land in Phase 823.
+    Without `run_id`, validates the project-level Metagraph/OntoGraph export
+    only -- the 821 backward-compatible contract. With `run_id`, additionally
+    unions in that run's ValidGraph ABox (Plan 823-01) and re-derives a single
+    batch-wide `owl:AllDifferent` over every minted individual from both
+    exports. Returns the canonical `{conforms, results, counts}` envelope.
     """
-    return reasoning.run_shacl(payload.project)
+    return reasoning.run_shacl(payload.project, run_id=payload.run_id)
