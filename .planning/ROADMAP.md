@@ -29,7 +29,7 @@
 | 820 | Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping | 3/3 | Complete    | 2026-07-11 |
 | 821 | dg-reasoner Sidecar & OntoGraph/Metagraph RDF Translation | 4/4 | Complete    | 2026-07-11 |
 | 822 | OWL 2 DL Reasoning Integration + Reasoner Screen Wiring | 4/4 | Complete   | 2026-07-12 |
-| 823 | SHACL Validation Layer | Instance data is validated via SHACL alongside the existing SWRL VALIDATOR | SHCL-01, SHCL-02 | 821 |
+| 823 | SHACL Validation Layer | 6/6 | Complete   | 2026-07-12 |
 | 824 | CONNECTOR Credential Integration | Grasshopper CONNECTOR authenticates with a platform-issued credential | CONNG-01, CONNG-02 | — |
 
 ### Phase 820: Reasoning-Stack Architecture Decision & OntoGraph Axiom Scoping
@@ -118,7 +118,14 @@
   3. SHACL violations surface through DG's existing ErrorMessageTemplates (What+Where+How-to-fix) — raw RDF/SHACL vocabulary (`sh:focusNode`, `sh:sourceShape`) never reaches the architect
   4. Violation severity (info/warning/violation) displays with a Solibri-style red/orange/yellow treatment
 
-**Plans**: TBD
+**Plans**: 6/6 plans complete
+
+- [x] 823-01-PLAN.md
+- [x] 823-02-PLAN.md
+- [x] 823-03-PLAN.md
+- [x] 823-04-PLAN.md
+- [x] 823-05-PLAN.md
+- [x] 823-06-PLAN.md
 
 **UI hint**: yes
 

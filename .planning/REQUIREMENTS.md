@@ -20,8 +20,8 @@ Continues the REAS category opened in v8.1 (REAS-01..03: placeholder selector). 
 
 ### SHACL Validation (SHCL)
 
-- [ ] **SHCL-01**: DesignState/Rule instance data is translated to RDF and validated via SHACL on each validation run, running alongside (not replacing) the existing SWRL-based VALIDATOR, with a documented rule-partition/precedence policy between the two
-- [ ] **SHCL-02**: SHACL violations surface through DG's existing ErrorMessageTemplates (What+Where+How-to-fix) with severity (info/warning/violation) mapped to a Solibri-style red/orange/yellow treatment — never raw RDF/SHACL vocabulary shown to the architect
+- [x] **SHCL-01**: DesignState/Rule instance data is translated to RDF and validated via SHACL on each validation run, running alongside (not replacing) the existing SWRL-based VALIDATOR, with a documented rule-partition/precedence policy between the two
+- [x] **SHCL-02**: SHACL violations surface through DG's existing ErrorMessageTemplates (What+Where+How-to-fix) with severity (info/warning/violation) mapped to a Solibri-style red/orange/yellow treatment — never raw RDF/SHACL vocabulary shown to the architect
 
 ### Connector Grasshopper Integration (CONNG)
 
@@ -66,8 +66,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REAS-04 | Phase 820 | Complete |
 | REAS-05 | Phase 821 | Complete |
 | REAS-06 | Phase 822 | Complete |
-| SHCL-01 | Phase 823 | Pending |
-| SHCL-02 | Phase 823 | Pending |
+| SHCL-01 | Phase 823 | Complete |
+| SHCL-02 | Phase 823 | Complete |
 | CONNG-01 | Phase 824 | Pending |
 | CONNG-02 | Phase 824 | Pending |
 

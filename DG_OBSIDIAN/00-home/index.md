@@ -71,6 +71,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/dg-reasoner sidecar owns the Cypher to RDF pipeline with sync API|Phase 821 (v8.2): dg-reasoner owns Cypher→RDF pipeline — custom translator, sync API, hybrid union in 821]]
 - [[decisions/reasoner-screen-phases-checks-results|Phase 822 (v8.2): Reasoner Screen — four-state verdict display, per-card Run on HermiT, in-session result persistence]]
 - [[decisions/Phase 822 monochromatic verdict mapping onto DSYS-01|Phase 822: Monochromatic verdict mapping — weight/opacity/glyph instead of green/amber hue]]
+- [[decisions/Phase 823 SHACL validation layer design decisions|Phase 823: SHACL Validation Layer — 8 design decisions]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -88,6 +89,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/Model Viewer validation objects not found in Speckle world tree|Model Viewer: validation objects not found in Speckle world tree]]
 - [[debugging/Glob pattern star star star star matched zero content modules|Glob pattern ##-*.js matched zero content modules (Phase 815 code review)]]
 - [[debugging/code-review-821-proxy-timeout-orphaned-jvms-arg-pos|Phase 821 code review: proxy timeout mismatch, orphaned JVMs, silent ARG.pos data loss]]
+- [[debugging/CR-01 validStatus truthy check causes false SHACL violations|CR-01: truthy valid_status check causes false-positive SHACL Violations on empty ValidStatus]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -191,6 +193,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 822 UI-SPEC|2026-07-12 Phase 822 UI design contract — monochromatic verdict reconciliation]]
 - [[sessions/2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review, full verification|2026-07-12 Phase 821 execution — dg-reasoner sidecar, code review findings, full verification]]
 - [[sessions/2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring|2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring, 4 plans across 3 waves]]
+- [[sessions/2026-07-12 Phase 823 SHACL Validation Layer execution|2026-07-12 Phase 823 execution — SHACL Validation Layer, 6 plans across 4 waves]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
