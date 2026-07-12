@@ -161,6 +161,14 @@ public static class ErrorMessageTemplates
         return "Idle";
     }
 
+    // --- SHACL templates (Phase 823, D-15) ---
+
+    public static string ShaclViolation(string severity, string what, string where, string howToFix)
+    {
+        var fix = (howToFix ?? string.Empty).TrimEnd('.');
+        return $"SHACL {severity}: {what} at {where}. {fix}.";
+    }
+
     public static string FormatMessage(ReinstatementResult result)
     {
         if (result.Applied)
