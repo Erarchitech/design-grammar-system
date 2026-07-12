@@ -186,6 +186,47 @@ MERGE (a3)-[:ARG {pos: 2}]->(:Literal {lex: "75", datatype: "xsd:decimal"})
 
 **When changing schema, update ALL of these files.**
 
+## Cypher Expression Catalog (`llm/cypher_catalog.json`)
+
+Phase 29 (DG-Aware Context Layer) generalizes rule-ingest Cypher generation
+from a single hardcoded worked example (`cypher_template.txt`'s "maximum
+height" few-shot) into a **versioned six-shape catalog**,
+`llm/cypher_catalog.json` (`{version, shapes: [...]}`), loaded defensively by
+`data-service/dg_context.py`'s `load_cypher_catalog()`. This is the new
+**source of truth for standard Cypher shapes** the LLM gateway is prompted
+with — `cypher_template.txt` remains the authoritative *schema* reference
+(labels/relationships/key properties), while the catalog supplies the
+*worked-example patterns* for each constraint family.
+
+| Shape id | Name | What it represents |
+|----------|------|---------------------|
+| `max_limit` | Maximum Limit | "maximum X is N" / "at most N" — body fires via `swrlb:greaterThan` against a Literal threshold (violation-inverted). `Rule_Id`: `R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V`. |
+| `min_limit` | Minimum Limit | "minimum X is N" / "at least N" — mirror of `max_limit` using `swrlb:lessThan`. `Rule_Id`: `R_<DOMAIN>_<PROPERTY>_MIN_<LIMIT>_V`. |
+| `range` | Range (Between Min and Max) | "between MIN and MAX" — emits **two separate** violation Rules (one `min_limit`-shaped, one `max_limit`-shaped) sharing the same Class/DatatypeProperty via MERGE, each with its own violation property, Vars, and Atom subgraph. Not a new schema shape — documents the min+max pair as one worked example, per `cypher_template.txt`'s existing "never combine constraints" convention. |
+| `ratio` | Ratio Limit | Relates two DatatypeProperties via a `swrlb:divide` Builtin producing a computed ratio Var, then compares that ratio against a Literal threshold with a second Builtin (`swrlb:greaterThan` for a max-ratio cap, `swrlb:lessThan` for a min-ratio floor). `Rule_Id`: `R_<DOMAIN>_<RATIO_NAME>_MAX_<LIMIT>_V` (or `_MIN_<LIMIT>_V`). |
+| `boolean_requirement` | Boolean Requirement | A Boolean DatatypeProperty must equal a required value (usually `true`) — body fires via `swrlb:notEqual` when the actual value doesn't match (violation-inverted). `Rule_Id`: `R_<DOMAIN>_<PROPERTY>_REQ_<VALUE>_V`. |
+| `existence_count` | Existence / Count Requirement | **New territory (CTXA-02/D-12).** At least N instances of a related quantity (modeled as a count-valued DatatypeProperty) must exist — a `swrlb:` Builtin ATOM PAIR against a Literal threshold: one Builtin (`swrlb:greaterThanOrEqual` vs. `0`) establishes a valid non-negative count, the second (`swrlb:lessThan` vs. the required minimum) is the violation-inverted threshold check. `Rule_Id`: `R_<DOMAIN>_<COUNT_PROPERTY>_MIN_<LIMIT>_V`. The Var MERGE for the count variable keys on **both** `name` and `project` (omitting `project` reintroduces the historical cross-project Var collision bug). |
+
+**No schema-shape change.** `existence_count` — the one genuinely new
+constraint family this catalog adds — reuses ONLY the node labels and
+relationship types already documented above (`Class`, `DatatypeProperty`,
+`ObjectProperty`, `Rule`, `Atom`, `Var`, `Literal`, `Builtin`; `HAS_BODY`,
+`HAS_HEAD`, `REFERS_TO`, `ARG`). It introduces no new labels, no new
+relationship types, and no new key properties, so none of the Schema Change
+Propagation surfaces above (`cypher_template.txt`, `dataset_schema.json`,
+`config.template.js`, n8n workflow prompts) require updating for this
+catalog addition — this is a light-touch documentation note, not a
+structural schema propagation.
+
+**Runtime enforcement:** the catalog only supplies worked-example *guidance*
+to the LLM prompt (via `data-service/dg_context.py`'s deterministic keyword
+matcher, `assemble_context()`); it is `data-service`'s Cypher **validator**
+(`validate_cypher()`, `POST /context/generate-cypher`) that actually enforces
+the schema — allowed labels/relationships, `DesignState.kind` enum, key-name
+conventions (`Rule_Id`/`Atom_Id`/`SWRL_label`), and the request-type-aware
+write-verb policy — before any LLM-generated Cypher reaches Neo4j
+`tx/commit`. No catalog shape bypasses this validator.
+
 ## v3→v4 Migration Notes (complete)
 
 ### v3→v4 migrations (all completed in v7.0 milestone)
