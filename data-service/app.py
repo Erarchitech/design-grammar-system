@@ -70,6 +70,11 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
 # reached exclusively through the thin proxy route below (D-06).
 DG_REASONER_URL = os.getenv("DG_REASONER_URL", "http://dg-reasoner:8000")
 
+# SHACL sidecar proxy timeout (Phase 823 Plan 03, D-02) -- short by design so a
+# slow/hung sidecar degrades the publish hot path to a status dict instead of
+# hanging it; unlike DG_REASONER_TIMEOUT_SECONDS this call is a non-fatal sidecar.
+DG_SHACL_HTTP_TIMEOUT_SECONDS = float(os.getenv("DG_SHACL_HTTP_TIMEOUT_SECONDS", "15"))
+
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
@@ -1245,6 +1250,74 @@ def _auto_configure_integration(project: str) -> SpeckleProjectConfigPayload | N
     )
 
 
+def _call_shacl_validate(project: str, run_id: str) -> dict[str, Any]:
+    """Non-fatal proxy to the dg-reasoner sidecar's `POST /shacl/validate` (D-01/D-02).
+
+    Mirrors `post_reasoner_consistency`'s httpx pattern but diverges on
+    purpose: this proxy is catch-all non-fatal and NEVER raises -- a SHACL
+    failure (unreachable/timeout/error) must never endanger the Speckle
+    publish hot path. Returns a status dict:
+      - `{"status": "ok", **body}` on success (body = the canonical
+        `{conforms, results, counts}` envelope from Plan 823-02)
+      - `{"status": "timeout"}` on httpx timeout, sidecar body `error == "timeout"`,
+        or HTTP 504
+      - `{"status": "unavailable"}` on connect error or any other exception
+    """
+    try:
+        response = httpx.post(
+            f"{DG_REASONER_URL}/shacl/validate",
+            json={"project": project, "run_id": run_id},
+            timeout=httpx.Timeout(
+                connect=2.0,
+                read=DG_SHACL_HTTP_TIMEOUT_SECONDS,
+                write=2.0,
+                pool=2.0,
+            ),
+        )
+    except httpx.TimeoutException:
+        return {"status": "timeout"}
+    except Exception:
+        # Catch-all (D-02): connect errors and anything unforeseen degrade to
+        # "unavailable" -- this proxy must never raise into the caller.
+        return {"status": "unavailable"}
+
+    try:
+        if response.status_code == 504:
+            return {"status": "timeout"}
+        body = response.json()
+    except Exception:
+        return {"status": "unavailable"}
+
+    if isinstance(body, dict) and body.get("error") == "timeout":
+        return {"status": "timeout"}
+
+    if not isinstance(body, dict):
+        return {"status": "unavailable"}
+
+    return {"status": "ok", **body}
+
+
+def _persist_shacl_report(project: str, run_id: str, report_json: str) -> None:
+    """Persist a SHACL status dict as `shaclReportJson` on the ValidationRun node.
+
+    Additive, second write after `store_validation_run` -- ordering of the
+    Speckle publish + store_validation_run is unchanged (D-06). Parameterized
+    MERGE/SET keyed by {graph, project, runId}; never string-interpolated.
+    """
+    write_query(
+        """
+        MERGE (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
+        SET run.shaclReportJson = $shaclReportJson
+        """,
+        {
+            "graph": VALIDATION_GRAPH,
+            "project": project,
+            "runId": run_id,
+            "shaclReportJson": report_json,
+        },
+    )
+
+
 @app.post("/validation/publish")
 def publish_validation(payload: ValidationPublishRequest):
     config = get_integration_config(payload.project)
@@ -1319,6 +1392,18 @@ def publish_validation(payload: ValidationPublishRequest):
             state_payload_json=payload.statePayloadJson,
             valid_status_param=payload.validStatus,
         )
+
+        # SHACL sidecar proxy (Phase 823 Plan 03, D-01/D-02) -- AFTER
+        # store_validation_run so the run is already durably recorded; this
+        # entire block is non-fatal by construction (_call_shacl_validate
+        # never raises) with a defensive outer catch so even a persistence
+        # failure can never change the publish response/status.
+        try:
+            shacl_result = _call_shacl_validate(payload.project, run_id)
+            _persist_shacl_report(payload.project, run_id, json.dumps(shacl_result))
+        except Exception:
+            shacl_result = {"status": "unavailable"}
+
         return {
             "status": "published",
             "runId": run_id,
@@ -1326,6 +1411,7 @@ def publish_validation(payload: ValidationPublishRequest):
             "validationVersionId": publish_result["validationVersionId"],
             "baseVersionId": publish_result["baseVersionId"],
             "modelViewerUrl": publish_result["modelViewerUrl"],
+            "shacl": shacl_result,
         }
     except SpeckleValidationError as exc:
         raise _structured_error_response(
