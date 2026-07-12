@@ -190,3 +190,74 @@ class TestContextAssemble:
 
         for key in ("ontograph", "metagraph", "validgraph", "computgraph", "swrl_conventions", "selected_cypher_shapes"):
             assert key in context
+
+
+# ── /context/assemble + /context/debug endpoints (Phase 29-03: D-01/D-04) ──
+
+
+class TestContextEndpoints:
+    def test_post_assemble_returns_200_for_valid_type(self):
+        response = client.post(
+            "/context/assemble",
+            json={
+                "type": "rule_ingest",
+                "project": "phase29-endpoint-test",
+                "rules_text": "Maximum building height is 75 meters",
+                "question": None,
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["type"] == "rule_ingest"
+        assert any(shape["id"] == "max_limit" for shape in body["selected_cypher_shapes"])
+
+    def test_post_assemble_unknown_type_returns_structured_422(self):
+        response = client.post(
+            "/context/assemble",
+            json={"type": "bogus_type", "project": "phase29-endpoint-test"},
+        )
+        assert response.status_code == 422
+        detail = response.json()["detail"]
+        assert detail["code"] == "CONTEXT_TYPE_INVALID"
+
+    def test_get_debug_matches_post_assemble_body(self):
+        params = {
+            "type": "rule_ingest",
+            "project": "phase29-endpoint-test",
+            "rules_text": "Maximum building height is 75 meters",
+        }
+        post_response = client.post("/context/assemble", json={**params, "question": None})
+        get_response = client.get("/context/debug", params=params)
+
+        assert get_response.status_code == 200
+        assert get_response.json() == post_response.json()
+
+
+class TestDeterminism:
+    def test_repeated_assemble_calls_are_byte_identical(self):
+        """CTXA-05: the same /context/assemble request issued twice yields byte-identical JSON."""
+        payload = {
+            "type": "rule_ingest",
+            "project": "phase29-determinism-test",
+            "rules_text": "Maximum building height is 75 meters",
+            "question": None,
+        }
+        first = client.post("/context/assemble", json=payload)
+        second = client.post("/context/assemble", json=payload)
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert json.dumps(first.json(), sort_keys=False) == json.dumps(second.json(), sort_keys=False)
+
+    def test_get_debug_and_post_assemble_are_equal_for_graph_query(self):
+        """GET /context/debug and POST /context/assemble share one code path (D-04)."""
+        params = {
+            "type": "graph_query",
+            "project": "phase29-determinism-test",
+            "question": "What design states exist for this project?",
+        }
+        post_response = client.post("/context/assemble", json={**params, "rules_text": None})
+        get_response = client.get("/context/debug", params=params)
+
+        assert get_response.status_code == 200
+        assert json.dumps(get_response.json(), sort_keys=False) == json.dumps(post_response.json(), sort_keys=False)

@@ -59,6 +59,7 @@ from connectors import (
 )
 
 import reasoner
+import dg_context
 
 app = FastAPI()
 
@@ -1238,6 +1239,51 @@ def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
         body = {"detail": response.text}
 
     return JSONResponse(status_code=response.status_code, content=body)
+
+
+# ---------------------------------------------------------------------------
+# Context assembler endpoints (Phase 29: CTXA-01..05)
+# ---------------------------------------------------------------------------
+
+
+def _context_type_invalid_error(exc: ValueError) -> HTTPException:
+    return _structured_error_response(
+        str(exc),
+        "Valid types: rule_ingest, rule_edit, graph_query",
+        "CONTEXT_TYPE_INVALID",
+        422,
+    )
+
+
+@app.post("/context/assemble")
+def post_context_assemble(payload: dg_context.ContextAssembleRequest):
+    """Assemble the per-layer V7 concept subset + SWRL conventions + selected
+    Cypher catalog shapes + live existing entities for one request (D-01).
+    Thin route -- all logic delegates to dg_context.assemble_context()."""
+    try:
+        with driver.session() as session:
+            return dg_context.assemble_context(payload, session=session)
+    except ValueError as exc:
+        raise _context_type_invalid_error(exc)
+
+
+@app.get("/context/debug")
+def get_context_debug(
+    type: str,
+    project: str,
+    rules_text: str | None = None,
+    question: str | None = None,
+):
+    """Inspection endpoint sharing /context/assemble's exact param contract and
+    code path (D-04) -- what you inspect here is exactly what gets assembled."""
+    try:
+        req = dg_context.ContextAssembleRequest(
+            type=type, project=project, rules_text=rules_text, question=question
+        )
+        with driver.session() as session:
+            return dg_context.assemble_context(req, session=session)
+    except ValueError as exc:
+        raise _context_type_invalid_error(exc)
 
 
 @app.put("/integration/speckle/project/{project}")
