@@ -91,6 +91,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/Glob pattern star star star star matched zero content modules|Glob pattern ##-*.js matched zero content modules (Phase 815 code review)]]
 - [[debugging/code-review-821-proxy-timeout-orphaned-jvms-arg-pos|Phase 821 code review: proxy timeout mismatch, orphaned JVMs, silent ARG.pos data loss]]
 - [[debugging/CR-01 validStatus truthy check causes false SHACL violations|CR-01: truthy valid_status check causes false-positive SHACL Violations on empty ValidStatus]]
+- [[debugging/graph-query-design-states-schema-mismatch|Phase 29 graph_query design-state bug: schema mismatch between aspirational :DesignState nodes and production ValidationRun.statePayloadJson]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -196,6 +197,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring|2026-07-12 Phase 822 planning — OWL 2 DL Reasoner Screen Wiring, 4 plans across 3 waves]]
 - [[sessions/2026-07-12 Phase 823 SHACL Validation Layer execution|2026-07-12 Phase 823 execution — SHACL Validation Layer, 6 plans across 4 waves]]
 - [[sessions/2026-07-12 Phase 824 CONNECTOR Credential Integration execution|2026-07-12 Phase 824 execution — CONNECTOR platform-token heartbeat, 2 plans, code-complete, in-Rhino UAT deferred]]
+- [[sessions/2026-07-12 Phase 29 UAT diagnosis and fix planning|2026-07-12 Phase 29 UAT diagnosis and fix planning — graph_query design-state schema mismatch root cause + 3 fix plans (29-06/29-07/29-08)]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
