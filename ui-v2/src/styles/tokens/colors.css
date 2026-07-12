@@ -27,6 +27,17 @@
   --color-signal-soft: rgba(231, 0, 11, 0.08);  /* selection wash */
   --color-signal-mid: rgba(231, 0, 11, 0.32);   /* selection ring, node halos */
 
+  /* SHACL severity — Solibri-style extension of the single-hue system.
+     Two new chromatic hues, scoped exclusively to SHACL finding severity
+     (never reused as a general-purpose accent elsewhere). D-09/D-18. */
+  --color-warning: #d97706;                       /* orange base — chip fill source, icons */
+  --color-warning-ink: #b45309;                    /* darker orange — text on light surfaces */
+  --color-warning-soft: rgba(217, 119, 6, 0.10);   /* chip background wash */
+
+  --color-info: #ca8a04;                           /* gold-yellow base (not pure #eab308 — insufficient text contrast) */
+  --color-info-ink: #854d0e;                        /* darker gold-brown — text on light surfaces */
+  --color-info-soft: rgba(202, 138, 4, 0.10);       /* chip background wash */
+
   /* Semantic aliases */
   --surface-canvas: var(--color-canvas);
   --surface-sidebar: var(--color-surface-alt);
@@ -76,6 +87,14 @@
   --color-signal-ink: #ff7079;
   --color-signal-soft: rgba(255, 59, 68, 0.14);
   --color-signal-mid: rgba(255, 59, 68, 0.4);
+
+  --color-warning: #fb923c;
+  --color-warning-ink: #fdba74;
+  --color-warning-soft: rgba(251, 146, 60, 0.16);
+
+  --color-info: #facc15;
+  --color-info-ink: #fde047;
+  --color-info-soft: rgba(250, 204, 21, 0.16);
 
   --text-inverse: #111111;
 }
