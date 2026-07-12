@@ -95,3 +95,98 @@ class TestCypherCatalog:
         catalog_path.write_text(json.dumps(["not", "a", "dict"]), encoding="utf-8")
         result = dg_context.load_cypher_catalog()
         assert result == {"version": 0, "shapes": []}
+
+
+# ── assemble_context() -- deterministic context assembler (Phase 29-03: CTXA-01/04/05) ──
+
+
+class FixtureSession:
+    """Duck-types `neo4j.Session.run(query, **params)` with zero live Neo4j.
+
+    Mirrors the FixtureSession precedent in dg-reasoner/tests/test_ontology_export.py
+    (STATE.md Phase 821 Plan 02) -- returns a fixed list of existing-entity rows
+    regardless of the query text, just records the last `project` kwarg it was
+    called with so tests can assert the bound-parameter contract (T-29-03a).
+    """
+
+    def __init__(self, rows: list[dict] | None = None):
+        self._rows = rows if rows is not None else []
+        self.last_project: str | None = None
+
+    def run(self, query: str, **params):
+        self.last_project = params.get("project")
+        return list(self._rows)
+
+
+class TestContextAssemble:
+    def _req(self, **kwargs) -> dg_context.ContextAssembleRequest:
+        defaults = {"type": "rule_ingest", "project": "TestA", "rules_text": None, "question": None}
+        defaults.update(kwargs)
+        return dg_context.ContextAssembleRequest(**defaults)
+
+    def test_rule_ingest_max_height_selects_max_limit_shape_and_concepts(self):
+        """(a) 'maximum building height 75 m' -> max_limit shape + building-height concepts."""
+        req = self._req(type="rule_ingest", rules_text="Maximum building height is 75 meters")
+        context = dg_context.assemble_context(req, session=FixtureSession())
+
+        shape_ids = {shape["id"] for shape in context["selected_cypher_shapes"]}
+        assert "max_limit" in shape_ids
+
+        serialized = json.dumps(context).lower()
+        assert "building" in serialized
+        assert "height" in serialized
+
+    def test_graph_query_design_states_surfaces_v4_kind_enum(self):
+        """(b) a graph_query about design states contains the three DesignState kinds."""
+        req = self._req(
+            type="graph_query",
+            project="TestA",
+            question="What design states exist for this project?",
+        )
+        context = dg_context.assemble_context(req, session=FixtureSession())
+
+        assert context["validgraph"]["design_state_kinds"] == ["ObjState", "ParamState", "PropState"]
+        serialized = json.dumps(context)
+        assert "ObjState" in serialized
+        assert "ParamState" in serialized
+        assert "PropState" in serialized
+
+    def test_rule_edit_contains_rule_id_regenerate_and_preservation_guidance(self):
+        """(c) rule_edit context documents Rule_Id-regenerate + MATCH-DELETE + iri/SWRL_label preservation."""
+        req = self._req(type="rule_edit", rules_text="Change maximum height to 80m")
+        context = dg_context.assemble_context(req, session=FixtureSession())
+
+        guidance = context["edit_guidance"]
+        serialized = json.dumps(guidance)
+        assert "Rule_Id" in serialized
+        assert "MATCH-DELETE" in serialized
+        assert "iri" in serialized
+        assert "SWRL_label" in serialized
+
+    def test_unknown_type_raises_value_error(self):
+        """(d) an unknown `type` raises ValueError (app.py maps this to CONTEXT_TYPE_INVALID)."""
+        req = dg_context.ContextAssembleRequest.model_construct(
+            type="bogus_type", project="TestA", rules_text=None, question=None
+        )
+        with pytest.raises(ValueError):
+            dg_context.assemble_context(req, session=FixtureSession())
+
+    def test_live_entity_union_uses_injectable_session_and_binds_project(self):
+        """The live-entity union runs against an injectable session -- no live Neo4j required."""
+        fixture_rows = [
+            {"nodeLabel": "Class", "iri": "ex:Building", "label": "Building", "swrl_label": "", "range": ""},
+        ]
+        session = FixtureSession(rows=fixture_rows)
+        req = self._req(type="rule_ingest", project="fixture-proj", rules_text="Maximum height 75")
+        context = dg_context.assemble_context(req, session=session)
+
+        assert context["existing_entities"] == fixture_rows
+        assert session.last_project == "fixture-proj"
+
+    def test_all_four_layers_and_swrl_conventions_present(self):
+        """assemble_context() returns a dict with all four per-layer keys + SWRL + selected shapes."""
+        req = self._req(type="rule_ingest", rules_text="Maximum height 75")
+        context = dg_context.assemble_context(req, session=FixtureSession())
+
+        for key in ("ontograph", "metagraph", "validgraph", "computgraph", "swrl_conventions", "selected_cypher_shapes"):
+            assert key in context
