@@ -1,4 +1,6 @@
 #if GRASSHOPPER_SDK
+using DG.Core.Validation;
+
 namespace DG.Grasshopper.Validation;
 
 internal sealed class ValidationPublishRequest
@@ -94,6 +96,13 @@ internal sealed class ValidationPublishResponse
     public string BaseVersionId { get; init; } = string.Empty;
 
     public string ModelViewerUrl { get; init; } = string.Empty;
+
+    /// <summary>
+    /// SHACL report block (Phase 823, D-15). Null for pre-823 servers, unavailable/timeout
+    /// sidecars, or malformed data-service responses -- ValidatorComponent must treat a null
+    /// Shacl as "not checked", never as a failure.
+    /// </summary>
+    public ShaclReportPayload? Shacl { get; init; }
 }
 #else
 namespace DG.Grasshopper.Validation;
