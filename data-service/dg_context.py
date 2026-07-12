@@ -44,6 +44,12 @@ from neo4j import GraphDatabase
 from pydantic import BaseModel
 
 import dg_knowledge
+from llm_gateway import (
+    GenerateRequest,
+    get_adapter,
+    load_persisted_llm_settings,
+    resolve_active_provider,
+)
 
 
 # ── Cypher expression catalog (versioned artifact: llm/cypher_catalog.json) ──
@@ -690,3 +696,95 @@ def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
         unique_violations.append(violation)
 
     return {"valid": len(unique_violations) == 0, "violations": unique_violations}
+
+
+# ── Bounded retry loop + n8n-facing endpoint request model (Phase 29-04: D-06/D-07) ──
+
+
+def append_corrective_feedback(prompt: str, violations: list[dict[str, Any]]) -> str:
+    """Append structured violations to the original prompt as corrective
+    feedback for the next LLM attempt (What+Where+How-to-fix tone, mirroring
+    the ErrorMessageTemplates vocabulary discipline already standard on the
+    C# side)."""
+    lines = [
+        prompt,
+        "",
+        "--- CORRECTIVE FEEDBACK: the previous Cypher failed validation ---",
+    ]
+    for violation in violations:
+        where = f" (at: {violation['path']})" if violation.get("path") else ""
+        lines.append(f"- [{violation['code']}] {violation['message']}{where}")
+    lines.append(
+        "Regenerate the Cypher, fixing every violation listed above. Output "
+        "Cypher only -- no JSON, no markdown fences, no commentary."
+    )
+    return "\n".join(lines)
+
+
+def generate_validated_cypher(
+    prompt: str, request_type: str, max_retries: int = 2
+) -> dict[str, Any]:
+    """The single n8n-facing generate+validate+retry orchestrator (D-06/D-07,
+    RESEARCH.md Open Question 1 resolution: one endpoint, prompt-in ->
+    validated-cypher-out).
+
+    Calls the LLM gateway adapter directly in-process (resolve_active_provider
+    -> get_adapter -> adapter.generate -- the exact llm_generate() sequence
+    at app.py:996-1027) -- this NEVER re-POSTs to /llm/generate (RESEARCH.md
+    Anti-pattern guard: avoids a redundant network hop + provider
+    re-resolution on every retry attempt).
+
+    Validates every attempt with validate_cypher(); on failure, appends
+    structured corrective feedback to the ORIGINAL prompt and retries,
+    bounded at `max_retries` (default 2 retries = 3 attempts total per
+    CONTEXT.md D-07). n8n only ever sees the final result -- a valid Cypher
+    string or a final structured violation list; intermediate failed
+    attempts never surface (D-06).
+    """
+    if request_type not in CONTEXT_REQUEST_TYPES:
+        # Fail fast on an unknown type -- never touch the adapter/LLM for a
+        # request that validate_cypher() would reject anyway (app.py maps
+        # this ValueError to CONTEXT_TYPE_INVALID, same as assemble_context()).
+        raise ValueError(f"Unknown request type: {request_type}")
+
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+    provider, model, api_key = resolve_active_provider(settings, master_secret)
+    adapter = get_adapter(provider, settings.get("baseUrl"))
+
+    current_prompt = prompt
+    violations: list[dict[str, Any]] = []
+    for attempt in range(max_retries + 1):
+        req = GenerateRequest(prompt=current_prompt, model=model, provider=provider)
+        response = adapter.generate(req, api_key)
+        result = validate_cypher(response.text, request_type)
+        if result["valid"]:
+            return {"valid": True, "cypher": response.text, "attempts": attempt + 1}
+        violations = result["violations"]
+        current_prompt = append_corrective_feedback(prompt, violations)
+
+    return {"valid": False, "violations": violations, "attempts": max_retries + 1}
+
+
+class GenerateCypherRequest(BaseModel):
+    """Request body for POST /context/generate-cypher -- the ONE n8n-facing
+    call wrapping prompt-in -> validated-cypher-out (Open Question 1
+    resolution: no separate /context/validate HTTP surface).
+
+    `type` is plain str (not Pydantic Literal), validated by
+    validate_cypher()/generate_validated_cypher() against
+    CONTEXT_REQUEST_TYPES and raising ValueError on an unknown value --
+    mirrors ContextAssembleRequest's established ValueError-dispatch
+    convention (29-03) so app.py can translate it to the same
+    CONTEXT_TYPE_INVALID structured-error shape.
+
+    `project`/`model`/`provider` are accepted for schema symmetry with
+    GenerateRequest/ContextAssembleRequest but are NOT wired to override
+    resolution in this plan -- out of this plan's scope.
+    """
+
+    prompt: str
+    type: str
+    project: str | None = None
+    model: str | None = None
+    provider: str | None = None

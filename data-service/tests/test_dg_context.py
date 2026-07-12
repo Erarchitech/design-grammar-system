@@ -22,6 +22,7 @@ os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 import app as app_module  # noqa: E402
 import dg_context  # noqa: E402
 from app import app  # noqa: E402
+from llm_gateway import GenerateResponse  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -374,3 +375,143 @@ class TestValidator:
     def test_unknown_request_type_raises_value_error(self):
         with pytest.raises(ValueError):
             dg_context.validate_cypher("MERGE (r:Rule {Rule_Id: 'X'})", "bogus_type")
+
+
+# ── generate_validated_cypher() -- bounded retry loop (Phase 29-04: D-06/D-07) ──
+
+_VALID_CYPHER = (
+    "MERGE (r:Rule {Rule_Id: 'R_TEST_1_V'})\n"
+    "SET r.SWRL = 'x', r.project = 'p', r.graph = 'Metagraph'\n"
+    "MERGE (v:Var {name: '?b', project: 'p'})\n"
+    "SET v.graph = 'Metagraph'"
+)
+
+# Invalid for two independent reasons (bad_key_name + disallowed_verb) -- any
+# retry-loop test just needs this to fail validate_cypher(), not isolate why.
+_INVALID_CYPHER = "MERGE (r:Rule {id: 'R_TEST_1_V'}) DETACH DELETE r"
+
+
+class _FakeAdapterForRetry:
+    """Stand-in for an llm_gateway LLMAdapter -- returns queued response texts
+    in order and records every prompt it was called with, so tests can assert
+    both the attempt count and that corrective feedback was actually appended
+    on retry (per TestReasonerConsistencyProxy's monkeypatch.setattr pattern,
+    retargeted from httpx.post to the adapter itself, per RESEARCH.md)."""
+
+    def __init__(self, texts: list[str]):
+        self._texts = list(texts)
+        self.prompts_seen: list[str] = []
+        self.call_count = 0
+
+    def generate(self, req, api_key):
+        self.call_count += 1
+        self.prompts_seen.append(req.prompt)
+        text = self._texts.pop(0)
+        return GenerateResponse(text=text, provider="fake", model="fake-model", usage={})
+
+
+class TestRetryLoop:
+    def test_first_attempt_valid_returns_attempts_1_no_retry(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_VALID_CYPHER])
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = dg_context.generate_validated_cypher("write a height rule", "rule_ingest")
+
+        assert result == {"valid": True, "cypher": _VALID_CYPHER, "attempts": 1}
+        assert fake_adapter.call_count == 1
+
+    def test_two_failures_then_success_reaches_attempt_3_with_feedback(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_INVALID_CYPHER, _INVALID_CYPHER, _VALID_CYPHER])
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = dg_context.generate_validated_cypher("write a height rule", "rule_ingest")
+
+        assert result["valid"] is True
+        assert result["cypher"] == _VALID_CYPHER
+        assert result["attempts"] == 3
+        assert fake_adapter.call_count == 3
+        # The third (final) prompt must carry the appended corrective feedback.
+        assert "CORRECTIVE FEEDBACK" in fake_adapter.prompts_seen[2]
+        assert "disallowed_verb" in fake_adapter.prompts_seen[2]
+        # The very first prompt is the original, unmodified.
+        assert fake_adapter.prompts_seen[0] == "write a height rule"
+
+    def test_all_three_attempts_fail_returns_final_violations_bounded_at_3(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_INVALID_CYPHER, _INVALID_CYPHER, _INVALID_CYPHER])
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = dg_context.generate_validated_cypher("write a height rule", "rule_ingest")
+
+        assert result["valid"] is False
+        assert result["attempts"] == 3
+        assert len(result["violations"]) > 0
+        # Bound honored: never more than 3 adapter calls (2 retries + original).
+        assert fake_adapter.call_count == 3
+
+    def test_retry_loop_never_calls_llm_generate_http_endpoint(self, monkeypatch):
+        """The retry loop must call the adapter in-process -- never re-POST to
+        /llm/generate (RESEARCH.md Anti-pattern guard)."""
+
+        def fail_post(*args, **kwargs):
+            raise AssertionError("generate_validated_cypher must not re-POST to /llm/generate")
+
+        monkeypatch.setattr(app_module.httpx, "post", fail_post)
+        fake_adapter = _FakeAdapterForRetry([_VALID_CYPHER])
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = dg_context.generate_validated_cypher("write a height rule", "rule_ingest")
+
+        assert result["valid"] is True
+
+    def test_unknown_request_type_raises_value_error_without_touching_adapter(self, monkeypatch):
+        def unexpected_get_adapter(provider, base_url=None):
+            raise AssertionError("must not resolve an adapter for an unknown request type")
+
+        monkeypatch.setattr(dg_context, "get_adapter", unexpected_get_adapter)
+
+        with pytest.raises(ValueError):
+            dg_context.generate_validated_cypher("write a rule", "bogus_type")
+
+
+# ── POST /context/generate-cypher -- the single n8n-facing endpoint ──
+
+
+class TestGenerateCypherEndpoint:
+    def test_endpoint_returns_validated_cypher_for_mocked_valid_adapter(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_VALID_CYPHER])
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        response = client.post(
+            "/context/generate-cypher",
+            json={"prompt": "write a height rule", "type": "rule_ingest", "project": "p"},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["valid"] is True
+        assert body["cypher"] == _VALID_CYPHER
+        assert body["attempts"] == 1
+
+    def test_endpoint_returns_structured_error_on_adapter_failure(self, monkeypatch):
+        class _FailingAdapter:
+            def generate(self, req, api_key):
+                raise RuntimeError("simulated adapter failure")
+
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: _FailingAdapter())
+
+        response = client.post(
+            "/context/generate-cypher",
+            json={"prompt": "write a height rule", "type": "rule_ingest", "project": "p"},
+        )
+
+        assert response.status_code == 502
+        assert "code" in response.json()["detail"]
+
+    def test_endpoint_unknown_type_returns_structured_422(self):
+        response = client.post(
+            "/context/generate-cypher",
+            json={"prompt": "write a height rule", "type": "bogus_type", "project": "p"},
+        )
+
+        assert response.status_code == 422
+        assert response.json()["detail"]["code"] == "CONTEXT_TYPE_INVALID"

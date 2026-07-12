@@ -1286,6 +1286,22 @@ def get_context_debug(
         raise _context_type_invalid_error(exc)
 
 
+@app.post("/context/generate-cypher")
+def post_context_generate_cypher(payload: dg_context.GenerateCypherRequest):
+    """The single n8n-facing call wrapping prompt-in -> validated-cypher-out
+    (CTXA-04, D-06/D-07). Retries internally, bounded at 2 retries (3
+    attempts total) -- n8n sees only the final valid Cypher or a final
+    structured violation list; intermediate failed attempts stay invisible.
+    """
+    try:
+        return dg_context.generate_validated_cypher(payload.prompt, payload.type)
+    except ValueError as exc:
+        raise _context_type_invalid_error(exc)
+    except Exception as exc:
+        error_msg, hint, code = map_provider_error(exc)
+        raise _structured_error_response(error_msg, hint, code, 502)
+
+
 @app.put("/integration/speckle/project/{project}")
 def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayload):
     payload = normalize_speckle_project_config_payload(payload)
