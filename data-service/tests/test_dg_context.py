@@ -261,3 +261,116 @@ class TestDeterminism:
 
         assert get_response.status_code == 200
         assert json.dumps(get_response.json(), sort_keys=False) == json.dumps(post_response.json(), sort_keys=False)
+
+
+# ── validate_cypher() -- schema + verb-policy validator (Phase 29-04: CTXA-04) ──
+#
+# CTXA-04 is the phase's PRIMARY security control (T-29-01/T-29-02 mitigation,
+# 29-04-PLAN.md threat_model). These tests are the acceptance bar for that
+# mitigation -- do not weaken or skip the verb-policy cases.
+
+
+class TestValidator:
+    def test_clean_ingest_cypher_from_real_catalog_validates_true(self):
+        """A real, fully-instantiated worked_example (max_limit) validates clean."""
+        catalog = dg_context.load_cypher_catalog()
+        max_limit = next(s for s in catalog["shapes"] if s["id"] == "max_limit")
+        result = dg_context.validate_cypher(max_limit["worked_example"], "rule_ingest")
+        assert result == {"valid": True, "violations": []}
+
+    def test_unknown_label_is_caught(self):
+        cypher = "MERGE (x:BogusThing {iri: 'ex:Foo'})\nSET x.project = 'p', x.graph = 'OntoGraph'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "unknown_label" in codes
+
+    def test_unknown_relationship_is_caught(self):
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_X_V'})\n"
+            "MERGE (a:Atom {Atom_Id: 'R_X_V_A1'})\n"
+            "MERGE (r)-[:BOGUS_REL {`order`: 1}]->(a)"
+        )
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "unknown_relationship" in codes
+
+    def test_bad_kind_enum_is_caught(self):
+        cypher = (
+            "MERGE (ds:DesignState {StateId: 'x', project: 'p'})\n"
+            "SET ds.kind = 'Bogus'"
+        )
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "bad_kind_enum" in codes
+
+    def test_unbalanced_brackets_is_caught(self):
+        cypher = "MERGE (r:Rule {Rule_Id: 'R_X_V'}\nSET r.SWRL = 'test'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "unbalanced_brackets" in codes
+
+    def test_rule_keyed_on_id_instead_of_rule_id_is_caught(self):
+        cypher = "MERGE (r:Rule {id: 'R_X_V'})\nSET r.SWRL = 'test'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "bad_key_name" in codes
+
+    def test_atom_keyed_on_id_instead_of_atom_id_is_caught(self):
+        cypher = "MERGE (a1:Atom {id: 'R_X_V_A1'})\nSET a1.type = 'ClassAtom'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "bad_key_name" in codes
+
+    def test_datatype_property_label_instead_of_swrl_label_is_caught(self):
+        cypher = "MERGE (dp:DatatypeProperty {iri: 'ex:height'})\nSET dp.label = 'height'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "bad_key_name" in codes
+
+    def test_var_merge_missing_project_is_caught(self):
+        """Pitfall 1 regression guard: existence_count-style Var MERGE without project."""
+        cypher = "MERGE (vCount:Var {name: '?count'})\nSET vCount.graph = 'Metagraph'"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "missing_project_key" in codes
+
+    def test_ingest_detach_delete_is_disallowed_verb(self):
+        """T-29-02: ingest/edit may ONLY emit MERGE/SET."""
+        cypher = "MERGE (r:Rule {Rule_Id: 'R_X_V'})\nDETACH DELETE r"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "disallowed_verb" in codes
+
+    def test_edit_detach_delete_is_disallowed_verb(self):
+        cypher = "MERGE (r:Rule {Rule_Id: 'R_X_V'})\nDETACH DELETE r"
+        result = dg_context.validate_cypher(cypher, "rule_edit")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "disallowed_verb" in codes
+
+    def test_graph_query_write_verbs_are_disallowed(self):
+        """T-29-01/T-29-02: graph_query must be fully read-only (is_write_query() precedent)."""
+        cypher = "MATCH (r:Rule) SET r.kind = 'x' DELETE r"
+        result = dg_context.validate_cypher(cypher, "graph_query")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "disallowed_verb" in codes
+
+    def test_graph_query_read_only_cypher_has_no_disallowed_verb_violation(self):
+        cypher = "MATCH (r:Rule {graph: 'Metagraph'}) RETURN r.Rule_Id AS id LIMIT 50"
+        result = dg_context.validate_cypher(cypher, "graph_query")
+        codes = {v["code"] for v in result["violations"]}
+        assert "disallowed_verb" not in codes
+
+    def test_unknown_request_type_raises_value_error(self):
+        with pytest.raises(ValueError):
+            dg_context.validate_cypher("MERGE (r:Rule {Rule_Id: 'X'})", "bogus_type")

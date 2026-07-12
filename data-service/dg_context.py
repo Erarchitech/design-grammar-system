@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -360,3 +361,332 @@ def assemble_context(req: ContextAssembleRequest, session: Any = None) -> dict[s
         context["edit_guidance"] = dict(_RULE_EDIT_GUIDANCE)
 
     return context
+
+
+# ── Cypher validator (Phase 29-04: CTXA-04 -- PRIMARY security control) ──
+#
+# This is the phase's mitigation for T-29-01 (hallucinated/malformed Cypher
+# reaching Neo4j tx/commit) and T-29-02 (prompt injection via rules_text
+# attempting to make the LLM emit destructive Cypher). No LLM-generated
+# Cypher is executed until it passes every check below. Replaces n8n's ad
+# hoc "Parse LLM Output" (rules-to-metagraph.json) and "Parse Cypher"
+# (graph-query-mcp.json) JS checks with a pytest-covered Python function.
+
+# Schema-level allow-lists, straight from cypher_template.txt's GRAPH SCHEMA
+# + OUTPUT RULES sections and CLAUDE.md's Relationships table (VALIDATES /
+# HAS_STATE are ValidGraph-side relationships documented there, not emitted
+# by LLM ingest, but still part of the schema the validator must recognize).
+ALLOWED_LABELS: set[str] = {
+    "Class",
+    "DatatypeProperty",
+    "ObjectProperty",
+    "Builtin",
+    "Rule",
+    "Atom",
+    "Var",
+    "Literal",
+    "DesignState",
+    "Run",
+    "IntegrationConfig",
+    "ValidationEntity",
+}
+
+ALLOWED_RELATIONSHIPS: set[str] = {
+    "HAS_BODY",
+    "HAS_HEAD",
+    "REFERS_TO",
+    "ARG",
+    "HAS_STATE",
+    "VALIDATES",
+}
+
+# DesignState.kind enum (v4/v7 schema) -- same three values already exposed
+# via VALIDGRAPH_CONCEPTS["design_state_kinds"] above; kept as its own
+# module-level constant here so the validator's bad_kind_enum check doesn't
+# need to reach back into the assembler's concept dict.
+DESIGNSTATE_KINDS: set[str] = {"ObjState", "ParamState", "PropState"}
+
+# Verb policy (T-29-01/T-29-02 mitigation): rule_ingest/rule_edit may ONLY
+# emit MERGE/SET (cypher_template.txt OUTPUT RULES: "Use only MERGE and
+# SET"); graph_query must be fully read-only.
+WRITE_VERBS: set[str] = {"MERGE", "SET"}
+DISALLOWED_VERBS: set[str] = {"DELETE", "REMOVE", "DETACH", "DROP", "CREATE"}
+
+# Duplicated (not imported) from app.py's is_write_query() -- same verb set,
+# same regex text -- to reuse that exact precedent for the graph_query
+# read-only check without introducing a circular import (app.py imports
+# dg_context, so dg_context cannot import app).
+_WRITE_QUERY_PATTERN = re.compile(r"\b(CREATE|MERGE|DELETE|SET|REMOVE|DROP)\b", re.IGNORECASE)
+# Superset used for the rule_ingest/rule_edit policy -- adds DETACH, which
+# is not its own verb in is_write_query() but IS an explicit disallowed verb
+# per cypher_template.txt/CONTEXT.md ("reject DELETE/REMOVE/DETACH/DROP").
+_ALL_VERB_PATTERN = re.compile(r"\b(MERGE|SET|CREATE|DELETE|REMOVE|DETACH|DROP)\b", re.IGNORECASE)
+
+# Label extraction -- port of graph-query-mcp.json's "Parse Cypher" labelRegex,
+# extended to walk EVERY `:Label` in a multi-label chain (n:LabelA:LabelB),
+# not just the last one (the original JS regex only captures the final
+# colon-separated label per node due to its greedy `[^\)]*` prefix).
+_LABEL_CHAIN_PATTERN = re.compile(r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?((?::[A-Za-z_][A-Za-z0-9_]*)+)")
+_SINGLE_LABEL_PATTERN = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)")
+
+# Relationship-type extraction -- port of "Parse Cypher"'s relRegex, splitting
+# pipe-separated types (HAS_BODY|HAS_HEAD) into individual entries.
+_REL_TYPE_PATTERN = re.compile(r"-\s*\[[^\]]*:\s*([A-Za-z_][A-Za-z0-9_|]*)")
+
+# var -> label map (first `(var:Label` occurrence wins) -- lets a later
+# `var.prop = ...` SET clause be resolved back to the node's label.
+_NODE_VAR_LABEL_PATTERN = re.compile(r"\(\s*(\w+)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)")
+
+# Whole `MERGE (var:Label {props})` node pattern -- feeds the QUALITY CHECKS
+# key-name checks (Rule_Id/Atom_Id/project) below. `[^}]*` spans newlines
+# (it excludes only the literal `}` char), so multi-line templates work.
+_MERGE_NODE_PATTERN = re.compile(
+    r"MERGE\s*\(\s*(\w+)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*\{([^}]*)\}\s*\)",
+    re.IGNORECASE,
+)
+
+# DesignState.kind enum checks -- inline (`{kind: '...'}` within the same
+# MERGE) and SET-based (`var.kind = '...'` after a separate MERGE).
+_KIND_INLINE_PATTERN = re.compile(r"DesignState\s*\{[^}]*\bkind\s*:\s*'([^']*)'")
+_KIND_SET_PATTERN = re.compile(r"(\w+)\.kind\s*=\s*'([^']*)'")
+
+# Generic `var.prop = ...` assignment -- feeds the DatatypeProperty
+# display-property check (SWRL_label, not label).
+_DOT_ASSIGN_PATTERN = re.compile(r"(\w+)\.(\w+)\s*=")
+
+
+def has_valid_nesting(cypher: str) -> bool:
+    """Port of n8n's hasValidNesting() (rules-to-metagraph.json "Parse LLM
+    Output" node functionCode) -- strips quoted strings first (so a stray
+    bracket inside a string literal doesn't break the stack match), then
+    verifies every (), {}, [] opened is closed in the same order. Ported
+    near-verbatim; do NOT re-derive from scratch (this function is already
+    battle-tested against live LLM output noise per RESEARCH.md)."""
+    unquoted = re.sub(r"'[^']*'", "", cypher)
+    stack: list[str] = []
+    pairs = {"(": ")", "{": "}", "[": "]"}
+    closers = {")", "}", "]"}
+    for ch in unquoted:
+        if ch in pairs:
+            stack.append(ch)
+        elif ch in closers:
+            if not stack or pairs[stack.pop()] != ch:
+                return False
+    return not stack
+
+
+def _extract_labels(cypher: str) -> set[str]:
+    labels: set[str] = set()
+    for match in _LABEL_CHAIN_PATTERN.finditer(cypher):
+        labels.update(_SINGLE_LABEL_PATTERN.findall(match.group(1)))
+    return labels
+
+
+def _extract_relationships(cypher: str) -> set[str]:
+    rels: set[str] = set()
+    for match in _REL_TYPE_PATTERN.finditer(cypher):
+        rels.update(part.strip() for part in match.group(1).split("|") if part.strip())
+    return rels
+
+
+def _var_label_map(cypher: str) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for var, label in _NODE_VAR_LABEL_PATTERN.findall(cypher):
+        mapping.setdefault(var, label)
+    return mapping
+
+
+def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
+    """Validate LLM-generated Cypher against the v4 schema (allowed labels,
+    relationships, DesignState `kind` enum, Rule_Id/Atom_Id/SWRL_label naming,
+    Var `project` merge key) AND a request-type-aware write-verb policy
+    (CTXA-04 -- the phase's PRIMARY security control, mitigating T-29-01/
+    T-29-02).
+
+    Returns `{"valid": bool, "violations": [{"code", "message", "path"?}]}`.
+    Never raises on malformed Cypher -- every schema/verb problem becomes a
+    violation, not an exception. Raises ValueError only for an unrecognized
+    `request_type` (mirrors assemble_context()'s ValueError-dispatch
+    convention, app.py maps this to a structured error).
+    """
+    if request_type not in CONTEXT_REQUEST_TYPES:
+        raise ValueError(f"Unknown request type: {request_type}")
+
+    violations: list[dict[str, Any]] = []
+
+    if not has_valid_nesting(cypher):
+        violations.append(
+            {
+                "code": "unbalanced_brackets",
+                "message": (
+                    "Bracket/parenthesis/brace nesting is unbalanced outside "
+                    "quoted strings. Where: the full Cypher statement. How to "
+                    "fix: ensure every (), {}, [] opened is closed, in the "
+                    "same order."
+                ),
+            }
+        )
+
+    for label in sorted(_extract_labels(cypher) - ALLOWED_LABELS):
+        violations.append(
+            {
+                "code": "unknown_label",
+                "message": (
+                    f"Label '{label}' is not one of the allowed schema labels "
+                    f"({', '.join(sorted(ALLOWED_LABELS))}). Where: node label "
+                    f"'{label}'. How to fix: reuse an allowed label, or MERGE "
+                    f"an existing node instead of introducing a new one."
+                ),
+                "path": label,
+            }
+        )
+
+    for rel in sorted(_extract_relationships(cypher) - ALLOWED_RELATIONSHIPS):
+        violations.append(
+            {
+                "code": "unknown_relationship",
+                "message": (
+                    f"Relationship type '{rel}' is not one of the allowed "
+                    f"schema relationships ({', '.join(sorted(ALLOWED_RELATIONSHIPS))}). "
+                    f"Where: relationship '{rel}'. How to fix: use HAS_BODY/"
+                    f"HAS_HEAD/REFERS_TO/ARG (or HAS_STATE/VALIDATES for "
+                    f"ValidGraph)."
+                ),
+                "path": rel,
+            }
+        )
+
+    var_label = _var_label_map(cypher)
+
+    for value in _KIND_INLINE_PATTERN.findall(cypher):
+        if value not in DESIGNSTATE_KINDS:
+            violations.append(
+                {
+                    "code": "bad_kind_enum",
+                    "message": (
+                        f"DesignState.kind value '{value}' is not one of "
+                        f"{sorted(DESIGNSTATE_KINDS)}. Where: a DesignState "
+                        f"node's `kind` property. How to fix: use ObjState, "
+                        f"ParamState, or PropState."
+                    ),
+                    "path": value,
+                }
+            )
+    for var, value in _KIND_SET_PATTERN.findall(cypher):
+        if var_label.get(var) == "DesignState" and value not in DESIGNSTATE_KINDS:
+            violations.append(
+                {
+                    "code": "bad_kind_enum",
+                    "message": (
+                        f"DesignState.kind value '{value}' (on `{var}`) is not "
+                        f"one of {sorted(DESIGNSTATE_KINDS)}. Where: "
+                        f"`{var}.kind`. How to fix: use ObjState, ParamState, "
+                        f"or PropState."
+                    ),
+                    "path": var,
+                }
+            )
+
+    for var, label, props in _MERGE_NODE_PATTERN.findall(cypher):
+        if label == "Rule" and "Rule_Id" not in props:
+            violations.append(
+                {
+                    "code": "bad_key_name",
+                    "message": (
+                        f"Rule node `{var}` is not keyed on Rule_Id. Where: "
+                        f"MERGE ({var}:Rule {{...}}). How to fix: the Rule key "
+                        f"property is Rule_Id, not id (cypher_template.txt "
+                        f"QUALITY CHECKS)."
+                    ),
+                    "path": var,
+                }
+            )
+        elif label == "Atom" and "Atom_Id" not in props:
+            violations.append(
+                {
+                    "code": "bad_key_name",
+                    "message": (
+                        f"Atom node `{var}` is not keyed on Atom_Id. Where: "
+                        f"MERGE ({var}:Atom {{...}}). How to fix: the Atom key "
+                        f"property is Atom_Id, not id."
+                    ),
+                    "path": var,
+                }
+            )
+        elif label == "Var" and not re.search(r"\bproject\s*:", props):
+            violations.append(
+                {
+                    "code": "missing_project_key",
+                    "message": (
+                        f"Var node `{var}` MERGE is missing the `project` "
+                        f"property in its merge key. Where: MERGE "
+                        f"({var}:Var {{...}}). How to fix: Var MERGE keys on "
+                        f"both `name` and `project` -- omitting it "
+                        f"reintroduces the v2.0 cross-project variable-"
+                        f"collision bug (SWRL_CONVENTIONS.argument_rules)."
+                    ),
+                    "path": var,
+                }
+            )
+
+    for var, prop in _DOT_ASSIGN_PATTERN.findall(cypher):
+        if var_label.get(var) == "DatatypeProperty" and prop == "label":
+            violations.append(
+                {
+                    "code": "bad_key_name",
+                    "message": (
+                        f"DatatypeProperty `{var}` sets `.label` -- its "
+                        f"display property is SWRL_label, not label. Where: "
+                        f"`{var}.label`. How to fix: SET {var}.SWRL_label = "
+                        f"... instead."
+                    ),
+                    "path": var,
+                }
+            )
+
+    if request_type in ("rule_ingest", "rule_edit"):
+        for verb in sorted({v.upper() for v in _ALL_VERB_PATTERN.findall(cypher)}):
+            if verb not in WRITE_VERBS:
+                violations.append(
+                    {
+                        "code": "disallowed_verb",
+                        "message": (
+                            f"'{verb}' is not an allowed write verb for "
+                            f"{request_type} -- only MERGE and SET are "
+                            f"permitted (cypher_template.txt OUTPUT RULES). "
+                            f"Where: '{verb}' in the generated Cypher. How to "
+                            f"fix: rewrite using only MERGE/SET; never emit "
+                            f"DELETE/REMOVE/DETACH/DROP/CREATE."
+                        ),
+                        "path": verb,
+                    }
+                )
+    elif request_type == "graph_query":
+        if _WRITE_QUERY_PATTERN.search(cypher):
+            for verb in sorted({v.upper() for v in _WRITE_QUERY_PATTERN.findall(cypher)}):
+                violations.append(
+                    {
+                        "code": "disallowed_verb",
+                        "message": (
+                            f"'{verb}' is a write verb; graph_query Cypher "
+                            f"must be fully read-only (reuses app.py's "
+                            f"is_write_query() precedent). Where: '{verb}' in "
+                            f"the generated Cypher. How to fix: rewrite as a "
+                            f"read-only MATCH/RETURN query with no write "
+                            f"clauses."
+                        ),
+                        "path": verb,
+                    }
+                )
+
+    # De-duplicate identical violations (same code+path) while preserving order.
+    seen: set[tuple[str, str | None]] = set()
+    unique_violations: list[dict[str, Any]] = []
+    for violation in violations:
+        key = (violation["code"], violation.get("path"))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_violations.append(violation)
+
+    return {"valid": len(unique_violations) == 0, "violations": unique_violations}
