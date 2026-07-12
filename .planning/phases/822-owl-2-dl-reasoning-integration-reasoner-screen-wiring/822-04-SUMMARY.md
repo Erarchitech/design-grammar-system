@@ -96,6 +96,8 @@ cd data-service && python -m pytest tests/test_reasoner.py -x
 13 passed, 2 warnings in 2.27s
 ```
 
+**Re-verification note:** this session's working directory was briefly shared with a concurrent `/gsd-execute-phase 823` session (see the branch-split described in the git history around this commit). The above gate was re-run a second time after isolating Phase 822's work onto its own clean branch and rebuilding all three containers (`--no-cache`) from that confirmed-clean tree — identical results both times (19/13 passed, same curl envelopes), so the numbers above are trustworthy regardless of which run they're read from.
+
 ### Live curl verification
 
 ```
