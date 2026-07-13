@@ -57,7 +57,8 @@ public sealed class ConnectorHeartbeatClient : IConnectorHeartbeatClient
                 var body = await response.Content
                     .ReadAsStringAsync(cancellationToken)
                     .ConfigureAwait(false);
-                return new HeartbeatResult(HeartbeatOutcome.Authenticated, TryReadStatus(body));
+                var (status, bundle) = TryReadPayload(body);
+                return new HeartbeatResult(HeartbeatOutcome.Authenticated, status, bundle);
             }
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -80,25 +81,54 @@ public sealed class ConnectorHeartbeatClient : IConnectorHeartbeatClient
         }
     }
 
-    private static string? TryReadStatus(string body)
+    /// <summary>
+    /// Parse the heartbeat 200 body into (status, connection bundle). The bundle
+    /// (Phase 825) is null when the body carries no <c>neo4j</c> object, keeping
+    /// backward compatibility with a pre-825 status-only response.
+    /// </summary>
+    private static (string? Status, ConnectionBundle? Bundle) TryReadPayload(string body)
     {
         try
         {
             using var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.ValueKind == JsonValueKind.Object
-                && doc.RootElement.TryGetProperty("status", out var status)
-                && status.ValueKind == JsonValueKind.String)
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
             {
-                return status.GetString();
+                return (null, null);
             }
+
+            var status = root.TryGetProperty("status", out var s) && s.ValueKind == JsonValueKind.String
+                ? s.GetString()
+                : null;
+
+            var project = root.TryGetProperty("project", out var p) && p.ValueKind == JsonValueKind.String
+                ? p.GetString()
+                : null;
+
+            ConnectionBundle? bundle = null;
+            if (root.TryGetProperty("neo4j", out var neo) && neo.ValueKind == JsonValueKind.Object)
+            {
+                bundle = new ConnectionBundle(
+                    Uri: ReadString(neo, "uri"),
+                    User: ReadString(neo, "user"),
+                    Password: ReadString(neo, "password"),
+                    Database: ReadString(neo, "database"),
+                    Project: project);
+            }
+
+            return (status, bundle);
         }
         catch (JsonException)
         {
             // Tolerate a non-JSON / unexpected body — the 200 still authenticated.
+            return (null, null);
         }
-
-        return null;
     }
+
+    private static string? ReadString(JsonElement obj, string name) =>
+        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
+            ? v.GetString()
+            : null;
 
     private static string NormalizeUrl(string dataServiceUrl)
     {

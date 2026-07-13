@@ -178,7 +178,14 @@ public static class ErrorMessageTemplates
 
     public static string ConnectorHeartbeatUnreachable(string dataServiceUrl)
     {
-        return $"CONNECTOR: could not reach data-service at {dataServiceUrl} to verify the platform token. Check the DataServiceUrl input and that data-service is running.";
+        return $"CONNECTOR: could not reach data-service at {dataServiceUrl} to verify the platform token and resolve the connection. Check that data-service is running.";
+    }
+
+    // Phase 825: the token is now the only input, so a missing token blocks the
+    // whole connection (there is no fallback URI/User/Password to connect with).
+    public static string ConnectorTokenMissing()
+    {
+        return "CONNECTOR: no platform token. Paste a dgc_ token (minted on the Connectors screen, Grasshopper connector) into the Token input — it resolves the project and Neo4j connection.";
     }
 
     public static string FormatMessage(ReinstatementResult result)

@@ -19,11 +19,16 @@ public enum HeartbeatOutcome
 }
 
 /// <summary>
-/// Result of a platform heartbeat. Holds only the outcome and the derived
-/// connector status (active/stale/never_connected) — it carries no sensitive
-/// input value, so it can never leak through a serialized or returned object.
+/// Result of a platform heartbeat. Holds the outcome, the derived connector
+/// status (active/stale/never_connected), and — on success (Phase 825) — the
+/// <see cref="ConnectionBundle"/> the token unlocks. It carries no sensitive
+/// input value (never the token), so it can never leak the secret through a
+/// serialized or returned object.
 /// </summary>
-public readonly record struct HeartbeatResult(HeartbeatOutcome Outcome, string? Status)
+public readonly record struct HeartbeatResult(
+    HeartbeatOutcome Outcome,
+    string? Status,
+    ConnectionBundle? Bundle = null)
 {
     /// <summary>A heartbeat that was never attempted (no value supplied).</summary>
     public static HeartbeatResult NotAttempted { get; } = new(HeartbeatOutcome.NotAttempted, null);

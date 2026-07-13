@@ -64,6 +64,45 @@ public sealed class ConnectorHeartbeatClientTests
     }
 
     [Fact]
+    public async Task Check_Http200_WithNeo4jBundle_PopulatesBundle()
+    {
+        // Phase 825: an authenticated heartbeat returns the project + host-facing
+        // Neo4j connection bundle the token unlocks.
+        const string body =
+            "{\"connector_id\":\"grasshopper\",\"status\":\"active\",\"project\":\"urban-tower\"," +
+            "\"neo4j\":{\"uri\":\"bolt://localhost:7687\",\"user\":\"neo4j\"," +
+            "\"password\":\"12345678\",\"database\":\"neo4j\"}}";
+        var handler = new StubHttpMessageHandler(_ => Json(HttpStatusCode.OK, body));
+        var client = new ConnectorHeartbeatClient(handler);
+
+        var result = await client.CheckAsync("http://localhost:8000", "dgc_valid");
+
+        Assert.Equal(HeartbeatOutcome.Authenticated, result.Outcome);
+        Assert.Equal("active", result.Status);
+        Assert.NotNull(result.Bundle);
+        var bundle = result.Bundle!.Value;
+        Assert.Equal("bolt://localhost:7687", bundle.Uri);
+        Assert.Equal("neo4j", bundle.User);
+        Assert.Equal("12345678", bundle.Password);
+        Assert.Equal("neo4j", bundle.Database);
+        Assert.Equal("urban-tower", bundle.Project);
+    }
+
+    [Fact]
+    public async Task Check_Http200_StatusOnlyBody_LeavesBundleNull()
+    {
+        // Back-compat: a pre-825 status-only body still authenticates with no bundle.
+        var handler = new StubHttpMessageHandler(
+            _ => Json(HttpStatusCode.OK, "{\"connector_id\":\"grasshopper\",\"status\":\"active\"}"));
+        var client = new ConnectorHeartbeatClient(handler);
+
+        var result = await client.CheckAsync("http://localhost:8000", "dgc_valid");
+
+        Assert.Equal(HeartbeatOutcome.Authenticated, result.Outcome);
+        Assert.Null(result.Bundle);
+    }
+
+    [Fact]
     public async Task Check_Http401_ReturnsRejected()
     {
         var handler = new StubHttpMessageHandler(
