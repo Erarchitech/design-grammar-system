@@ -232,6 +232,7 @@ function CredentialSection({
   connector,
   creating,
   labelInputs,
+  projectInputs,
   tokenReveal,
   confirmRevoke,
   busyBusy,
@@ -241,6 +242,7 @@ function CredentialSection({
   onStartCreate,
   onCancelCreate,
   onSetLabelInput,
+  onSetProjectInput,
   onCreate,
   onRevoke,
   onToggleConfirm,
@@ -249,6 +251,7 @@ function CredentialSection({
   const creds = connector.credentials || [];
   const reveal = tokenReveal[connector.id];
   const labelValue = labelInputs[connector.id] || "";
+  const projectValue = projectInputs[connector.id] || "";
 
   const doCreate = (e) => {
     e.preventDefault();
@@ -306,6 +309,24 @@ function CredentialSection({
                 outline: "none"
               }}
             />
+            {/* Phase 825: the token is project-scoped — the CONNECTOR component
+                reads the project from the token, so no Project input on-canvas. */}
+            <input
+              placeholder="Project"
+              value={projectValue}
+              onChange={(e) => onSetProjectInput(connector.id, e.target.value)}
+              style={{
+                flex: 1,
+                height: 28,
+                borderRadius: "var(--radius-inputs)",
+                border: "1px solid var(--color-hairline)",
+                padding: "0 10px",
+                font: "400 13px/1 var(--font-sans)",
+                color: "var(--color-ink)",
+                background: "var(--surface-input)",
+                outline: "none"
+              }}
+            />
             <Button size="sm" type="submit">
               Create
             </Button>
@@ -347,6 +368,7 @@ function ConnectorCard({
   expanded,
   creating,
   labelInputs,
+  projectInputs,
   tokenReveal,
   confirmRevoke,
   busyBusy,
@@ -357,6 +379,7 @@ function ConnectorCard({
   onStartCreate,
   onCancelCreate,
   onSetLabelInput,
+  onSetProjectInput,
   onCreate,
   onRevoke,
   onToggleConfirm,
@@ -458,6 +481,7 @@ function ConnectorCard({
           connector={connector}
           creating={creating}
           labelInputs={labelInputs}
+          projectInputs={projectInputs}
           tokenReveal={tokenReveal}
           confirmRevoke={confirmRevoke}
           busyBusy={busyBusy}
@@ -466,6 +490,8 @@ function ConnectorCard({
           setCopyOk={setCopyOk}
           onStartCreate={onStartCreate}
           onCancelCreate={onCancelCreate}
+          onSetLabelInput={onSetLabelInput}
+          onSetProjectInput={onSetProjectInput}
           onCreate={onCreate}
           onRevoke={onRevoke}
           onToggleConfirm={onToggleConfirm}
@@ -488,6 +514,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
   const [expanded, setExpanded] = React.useState({});
   const [creating, setCreating] = React.useState({});
   const [labelInputs, setLabelInputs] = React.useState({});
+  const [projectInputs, setProjectInputs] = React.useState({});
   const [tokenReveal, setTokenReveal] = React.useState({});
   const [confirmRevoke, setConfirmRevoke] = React.useState({});
   const [busyBusy, setBusyBusy] = React.useState({});
@@ -519,6 +546,9 @@ export default function ConnectorsScreen({ active, onBack, project }) {
 
   const startCreate = (id) => {
     setCreating((prev) => ({ ...prev, [id]: true }));
+    // Phase 825: default the token's project to the active project so the common
+    // case (scope the token to what you're working on) needs no extra typing.
+    setProjectInputs((prev) => ({ ...prev, [id]: prev[id] || project || "" }));
     setTokenReveal((prev) => {
       const copy = { ...prev };
       delete copy[id];
@@ -528,6 +558,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
   const cancelCreate = (id) => {
     setCreating((prev) => ({ ...prev, [id]: false }));
     setLabelInputs((prev) => ({ ...prev, [id]: "" }));
+    setProjectInputs((prev) => ({ ...prev, [id]: "" }));
     setBusyErrs((prev) => {
       const copy = { ...prev };
       delete copy[id];
@@ -543,11 +574,13 @@ export default function ConnectorsScreen({ active, onBack, project }) {
     });
     setBusyBusy((prev) => ({ ...prev, [id]: true }));
     const label = labelInputs[id]?.trim() || undefined;
+    const project = projectInputs[id]?.trim() || undefined;
     try {
-      const result = await createCredential(id, label);
+      const result = await createCredential(id, label, project);
       setTokenReveal((prev) => ({ ...prev, [id]: result }));
       setCreating((prev) => ({ ...prev, [id]: false }));
       setLabelInputs((prev) => ({ ...prev, [id]: "" }));
+      setProjectInputs((prev) => ({ ...prev, [id]: "" }));
       // Refresh to show new credential in list
       load();
     } catch (err) {
@@ -739,6 +772,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
                   expanded={expanded}
                   creating={creating}
                   labelInputs={labelInputs}
+                  projectInputs={projectInputs}
                   tokenReveal={tokenReveal}
                   confirmRevoke={confirmRevoke}
                   busyBusy={busyBusy}
@@ -749,6 +783,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
                   onStartCreate={startCreate}
                   onCancelCreate={cancelCreate}
                   onSetLabelInput={(id, value) => setLabelInputs((prev) => ({ ...prev, [id]: value }))}
+                  onSetProjectInput={(id, value) => setProjectInputs((prev) => ({ ...prev, [id]: value }))}
                   onCreate={doCreate}
                   onRevoke={doRevoke}
                   onToggleConfirm={toggleConfirmRevoke}

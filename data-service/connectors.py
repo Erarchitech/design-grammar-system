@@ -63,6 +63,10 @@ class CredentialCreatePayload(BaseModel):
     """Request body for POST /connectors/{connector_id}/credentials."""
 
     label: str | None = None
+    # Phase 825 (CONNG-03): the token is project-scoped. The project bound here
+    # is what the heartbeat echoes back so the CONNECTOR component no longer needs
+    # a Project input. Missing → server defaults to "default-project".
+    project: str | None = None
 
 
 class CredentialCreatedResponse(BaseModel):
@@ -72,11 +76,29 @@ class CredentialCreatedResponse(BaseModel):
     token: str
 
 
+class Neo4jBundle(BaseModel):
+    """Neo4j connection bundle returned by the heartbeat (Phase 825, CONNG-03).
+
+    Derived from data-service env. `uri` is the HOST-facing bolt URI
+    (NEO4J_PUBLIC_URI) so an off-Docker connector (e.g. Grasshopper on the host)
+    can reach Neo4j — never the Docker-internal bolt://neo4j:7687.
+    """
+
+    uri: str
+    user: str
+    password: str
+    database: str
+
+
 class HeartbeatResponse(BaseModel):
     """Response for POST /connectors/heartbeat."""
 
     connector_id: str
     status: str
+    # Phase 825: project scope + connection bundle unlocked by a valid token.
+    # Optional so pre-825 clients that ignore them keep working.
+    project: str | None = None
+    neo4j: Neo4jBundle | None = None
 
 
 # ── Persistence (mirrors llm_gateway settings persistence) ──
@@ -129,8 +151,17 @@ def hash_token(token: str) -> str:
 # ── Credential Lifecycle ──
 
 
-def create_credential(connector_id: str, label: str | None = None) -> tuple[dict[str, Any], str]:
+def create_credential(
+    connector_id: str,
+    label: str | None = None,
+    project: str | None = None,
+) -> tuple[dict[str, Any], str]:
     """Create and persist a credential for a connector.
+
+    Args:
+        project: Project this token is scoped to (Phase 825, CONNG-03). Persisted
+            on the record and echoed by the heartbeat; defaults to
+            "default-project" when not supplied.
 
     Returns:
         Tuple of (persisted credential record, plaintext token). The plaintext
@@ -147,6 +178,7 @@ def create_credential(connector_id: str, label: str | None = None) -> tuple[dict
         "credential_id": uuid.uuid4().hex,
         "connector_id": connector_id,
         "label": label or "",
+        "project": project or "default-project",
         "token_hash": hash_token(token),
         "created_at": _utc_now_iso(),
         "revoked": False,

@@ -150,7 +150,8 @@ class TestHeartbeat:
         )
         assert response.status_code == 200
         body = response.json()
-        assert body == {"connector_id": "blender", "status": "active"}
+        assert body["connector_id"] == "blender"
+        assert body["status"] == "active"
 
         overview = client.get("/connectors").json()["connectors"]
         blender = next(c for c in overview if c["id"] == "blender")
@@ -189,6 +190,51 @@ class TestHeartbeat:
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 401
+
+
+# ── Phase 825 (CONNG-03): project-scoped token + connection bundle ──
+
+
+class TestHeartbeatBundle:
+    def test_created_project_is_echoed_by_heartbeat(self):
+        token = client.post(
+            "/connectors/grasshopper/credentials", json={"project": "urban-tower"}
+        ).json()["token"]
+        body = client.post(
+            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+        ).json()
+        assert body["project"] == "urban-tower"
+
+    def test_missing_project_defaults_to_default_project(self):
+        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        body = client.post(
+            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+        ).json()
+        assert body["project"] == "default-project"
+
+    def test_heartbeat_returns_host_facing_neo4j_bundle(self):
+        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        body = client.post(
+            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+        ).json()
+        bundle = body["neo4j"]
+        # Host-facing URI so an off-Docker connector can reach Neo4j — never the
+        # Docker-internal bolt://neo4j:7687 (Phase 825 ADR-825-2).
+        assert bundle["uri"] == "bolt://localhost:7687"
+        assert bundle["uri"] != "bolt://neo4j:7687"
+        assert bundle["user"] == "neo4j"
+        assert bundle["password"]
+        assert bundle["database"] == "neo4j"
+
+    def test_neo4j_public_uri_env_overrides_bundle_uri(self, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "NEO4J_PUBLIC_URI", "bolt://10.0.0.5:7687")
+        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        body = client.post(
+            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+        ).json()
+        assert body["neo4j"]["uri"] == "bolt://10.0.0.5:7687"
 
 
 # ── Status Derivation (CONNB-04) ──

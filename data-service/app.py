@@ -67,6 +67,13 @@ NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
 
+# Phase 825 (CONNG-03): host-facing bolt URI + database returned in the connector
+# heartbeat bundle. NEO4J_URI above is the Docker-internal address used by
+# data-service itself; an off-Docker connector (Grasshopper on the host) needs the
+# host-facing URI instead — hence a separate env, defaulting to localhost.
+NEO4J_PUBLIC_URI = os.getenv("NEO4J_PUBLIC_URI", "bolt://localhost:7687")
+NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
+
 # dg-reasoner sidecar (Plan 821-01 compose env; internal-only, D-12) --
 # reached exclusively through the thin proxy route below (D-06).
 DG_REASONER_URL = os.getenv("DG_REASONER_URL", "http://dg-reasoner:8000")
@@ -1108,7 +1115,8 @@ def create_connector_credential(connector_id: str, payload: CredentialCreatePayl
             404,
         )
     label = payload.label if payload else None
-    record, token = connectors.create_credential(connector_id, label)
+    project = payload.project if payload else None
+    record, token = connectors.create_credential(connector_id, label, project)
     return CredentialCreatedResponse(credential_id=record["credential_id"], token=token)
 
 
@@ -1150,6 +1158,16 @@ def connector_heartbeat(request: Request):
     return HeartbeatResponse(
         connector_id=record["connector_id"],
         status=connectors.derive_status(record["last_connection"]),
+        # Phase 825: unlock the project scope + host-facing Neo4j connection bundle
+        # for the authenticated connector. Old records without a project read as
+        # "default-project".
+        project=record.get("project") or "default-project",
+        neo4j=connectors.Neo4jBundle(
+            uri=NEO4J_PUBLIC_URI,
+            user=NEO4J_USER,
+            password=NEO4J_PASSWORD,
+            database=NEO4J_DATABASE,
+        ),
     )
 
 

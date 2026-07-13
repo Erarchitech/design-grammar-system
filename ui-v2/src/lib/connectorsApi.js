@@ -29,14 +29,19 @@ export function listConnectors() {
 }
 
 // POST /connectors/{connectorId}/credentials
-// Body: { label? } → { credential_id, token } (201, token shown once)
-export async function createCredential(connectorId, label) {
+// Body: { label?, project? } → { credential_id, token } (201, token shown once)
+// Phase 825 (CONNG-03): project scopes the token so the CONNECTOR component no
+// longer needs a Project input; the heartbeat echoes it back.
+export async function createCredential(connectorId, label, project) {
+  const body = {};
+  if (label) body.label = label;
+  if (project) body.project = project;
   const res = await fetch(
     `${base()}/connectors/${encodeURIComponent(connectorId)}/credentials`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(label ? { label } : {})
+      body: JSON.stringify(body)
     }
   );
   if (!res.ok) {
