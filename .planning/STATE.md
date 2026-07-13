@@ -1,16 +1,20 @@
 ---
 gsd_state_version: 1.0
 milestone: v9.0
-milestone_name: AI Workflow Intelligence
-status: planning
-last_updated: "2026-07-12T14:47:15.711Z"
+milestone_name: — AI Workflow Intelligence
+current_phase: 29
+current_phase_name: DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness
+status: executing
+stopped_at: Completed 29-05-PLAN.md (Task 1 checkpoint resolved reimport-repo-first, Tasks 2-3 auto, phase 29 complete)
+last_updated: "2026-07-12T20:52:05.856Z"
 last_activity: 2026-07-12
+last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 13
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 8
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
+  percent: 15
 ---
 
 # Project State
@@ -20,26 +24,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** v9.0 AI Workflow Intelligence reactivated 2026-07-12 (Phase 28 cloud LLM connector already shipped 2026-07-06). Next: plan Phase 29 (DG-Aware Context Layer)
+**Current focus:** Phase 29 — DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness)
 
 ## Current Position
 
-Phase: 29 — DG-Aware Context Layer (not yet planned)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-07-12 — Milestone v9.0 reactivated (phases 28,32-37 restored from milestones/v9.0-phases/; requirements restored; roadmap inlined)
+Phase: 29 (DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness)) — EXECUTING
+Plan: 5 of 5
+Status: Ready to execute
+Last activity: 2026-07-12 — Phase 29 execution started
 
 ## Deferred Items
 
-Items acknowledged and deferred at v8.2 milestone close on 2026-07-12 (override closeout — see MILESTONES.md `Known verification overrides: 3`):
+Deferred at v8.2 milestone close on 2026-07-12 (override closeout); **2 of 3 closed on 2026-07-13** (gap-closure session):
 
 | Category | Item | Status | Resume |
 |----------|------|--------|--------|
-| verification | Phase 822 (OWL 2 DL + Reasoner wiring) | human_needed | /gsd-verify-work 822 — manual frontend UAT Steps A–G (3 scenarios); backend gate 19/19 + 13/13 green |
-| verification | Phase 823 (SHACL Validation Layer) | no VERIFICATION.md | code-complete, closed via user "approved" checkpoint in 823-P06; no formal verification doc written |
-| verification | Phase 824 (CONNECTOR Credential) | human_needed | /gsd-verify-work 824 — 3 in-Rhino UAT checks (live Grasshopper + data-service) |
+| verification | Phase 822 (OWL 2 DL + Reasoner wiring) | **closed 2026-07-13 — passed** | All 3 frontend UAT scenarios executed live and passed (real kill-on-timeout → Inconclusive; Inconsistent verdict with human labels; Run/Cancel/Consistent click-through) — see archived 822-UAT.md; 822-VERIFICATION.md now `status: passed` |
+| verification | Phase 823 (SHACL Validation Layer) | **closed 2026-07-13 — passed** | Retroactive 823-VERIFICATION.md written (4/4 truths; fresh in-container suites dg-reasoner 39/39 + data-service 168/168, DG 234/234; live /shacl/validate round-trip) |
+| verification | Phase 824 (CONNECTOR Credential) | human_needed | /gsd-verify-work 824 — 3 in-Rhino UAT checks (live Grasshopper + data-service); the ONLY remaining v8.2 verification item |
 
-Phase 822/824 verification + UAT artifacts are archived under `.planning/milestones/v8.2-phases/`. The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are in `.planning/milestones/v8.2-phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) pass. Note: `dotnet test`/`dotnet build` ran clean on net9.0 **without** `DOTNET_ROLL_FORWARD` — the earlier "net9.0 runtime absent" blocker appears stale.
+The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are in `.planning/milestones/v8.2-phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) pass. Confirmed 2026-07-13: `dotnet test` runs clean on net9.0 without `DOTNET_ROLL_FORWARD` (the old "net9.0 runtime absent" blocker is stale — removed from Blockers). One intermittent order-dependent flake observed once in `DG.Tests.E2E.DesignStateValidationFlowTests.HappyPath_StatePublishAndRetrieve` (passes in isolation and on re-run) — follow-up task flagged.
 
 ## Performance Metrics
 
@@ -203,6 +207,18 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 823 Plan 05] SHACL DTOs live in DG.Core.Validation (public), not DG.Grasshopper.Validation (internal) -- DG.Tests (net9.0) cannot ProjectReference DG.Grasshopper (net7.0-windows7.0, NU1201 TFM incompatibility confirmed via probe restore)
 - [Phase ?]: [Phase 823 Plan 05] ValidatorComponent SHACL surfacing caps runtime message level at Warning/Remark, never Error, per D-15 -- Error stays reserved for the pre-existing publish-exception catch block
 - [Phase 823]: [Phase 823 Plan 06] Task 3 checkpoint:human-verify closed via user 'approved' response with no code changes -- state selection keys strictly on shaclReport.results.length, never a conforms boolean
+- [Phase ?]: [Phase 29 Plan 01]: Catalog resolves via DG_KNOWLEDGE_REPO_ROOT (Docker /mnt/repo mount) -- confirmed inside the running container, zero Dockerfile change needed
+- [Phase ?]: [Phase 29 Plan 01]: existence_count models D-12's builtin atom pair as swrlb:greaterThanOrEqual + swrlb:lessThan against a project-keyed ?count Var
+- [Phase ?]: [Phase 29 Plan 02]: SWRL_CONVENTIONS structured as four independently-addressable top-level keys (violation_inversion, atom_ordering, argument_rules, naming_quirks) rather than a single prose blob
+- [Phase ?]: [Phase 29 Plan 02]: Computgraph catalog reuses ontology/export_to_markdown_v7.py's OWL-walking helpers via importlib.util.spec_from_file_location (mirrors ontology/make_docs_v7.py's own driver) instead of writing a second OWL parser
+- [Phase ?]: [Phase 29 Plan 02]: RESEARCH.md Pitfall 4 (DOCTYPE entity block breaking ElementTree.parse) confirmed NOT to apply to DesignGrammar-V7.owl -- plain ET.parse() resolves the internal entity table natively, no custom resolver needed
+- [Phase 29 Plan 03]: assemble_context() + /context/assemble + /context/debug live and complete (all 3 tasks); ContextAssembleRequest.type kept as plain str (not Pydantic Literal), validated by assemble_context()'s own ValueError dispatch so unknown types surface as CONTEXT_TYPE_INVALID 422 (not FastAPI's generic validation error)
+- [Phase 29 Plan 03]: Task 3 checkpoint:human-verify closed via user "approved" response with no code changes -- the rule_edit Rule_Id-regenerate-on-numeric-change + old-atom MATCH-DELETE cleanup + ontology iri/SWRL_label-preserve convention (_RULE_EDIT_GUIDANCE, Pitfall 3 resolution) is locked as documented and frozen for Phase 31 RING-02's diff-preview design
+- [Phase 29]: GenerateCypherRequest.type kept as plain str (not Literal), matching 29-03's ContextAssembleRequest ValueError-dispatch precedent
+- [Phase 29]: Label extraction corrected to walk every :Label in a multi-label chain (n:LabelA:LabelB) -- the n8n JS precedent's greedy regex only captured the last label
+- [Phase 29]: generate_validated_cypher() validates request_type upfront before touching the adapter -- fails fast on an unknown type without a live LLM call
+- [Phase ?]: Task 1 (29-05) resolved as reimport-repo-first: live n8n rules-to-metagraph.json overwritten with repo content (Phase 28 LLM-gateway caller), reconciling drift (versionCounter 33->34)
+- [Phase ?]: n8n prompt nodes (rules-to-metagraph.json, graph-query-mcp.json) reduced to thin callers of /context/assemble + /context/generate-cypher; both live workflows re-synced and verified byte-identical to repo
 
 ### Research Flags (carry into planning)
 
@@ -216,16 +232,18 @@ Shipped from Phase 20 Plan 02:
 ### Pending Todos
 
 - **USER APPROVAL NEEDED**: run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` — v2.0-era validation runs (project TestA, 20 runs/1148 entities) invisible to data-service until then (auto-mode denied the bulk mutation)
-- **Reconcile n8n workflows**: live instance versions drifted ahead of `n8n/workflows/*.json` (user editor changes, versionCounter 22); repo JSONs carry the quote-syntax + project_name body-fallback fixes — export live → repo or re-import repo → live
-- Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted
-- Resume v9.0 AI Workflow Intelligence after v8.2 ships — Phase 28 (cloud-llm-connector, renumbered from 01 on 2026-07-08) executed and parked in .planning/milestones/v9.0-phases/28-cloud-llm-connector/; UAT item "E2E provider switch" still human-needed
-- Formal `/gsd-complete-milestone` pass for v8.1 still pending (all 7 phases complete and verified 2026-07-11, not yet archived)
+- Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted — note: `v8-ui-smoke` is currently the reasoner/SHACL verification fixture (822/823 evidence runs use it), so keep it until an alternative fixture project exists
+- Phase 28 UAT item "E2E provider switch" still human-needed (cloud-llm-connector, archived in .planning/milestones/v9.0-phases/28-cloud-llm-connector/)
+- Phase 824's 3 in-Rhino UAT checks — the only remaining v8.2 verification item (see Deferred Items)
+- Consider a phase (825–829 free block or v9.0 insert) for the reasoner value gap: post-ingest/edit consistency gate + taxonomy emission on ingest + staged-autonomy repair — analysis in `.planning/research/REASONER-VALUE-AND-AUTOREPAIR.md` (2026-07-13)
+- ~~Reconcile n8n workflows~~ — RESOLVED in Phase 29-05 (2026-07-12): both live workflows overwritten with repo content and re-verified byte-identical
+- ~~Formal `/gsd-complete-milestone` pass for v8.1~~ — RESOLVED 2026-07-13: MILESTONES.md entry written, retroactive VERIFICATION.md for 810–813, 813-01-SUMMARY, requirement checkboxes/traceability flipped, RETROSPECTIVE v8.1 section added
 
 ### Blockers/Concerns
 
-- .NET SDK 10.0.109 is installed on this machine (per 2026-06-23 session note); `dotnet test` requires `DOTNET_ROLL_FORWARD=LatestMajor` (net9.0 runtime absent — only 7/8/10). Verify once before Phase 821+ C#/sidecar changes land
 - Pending migration from v3.0 Phase 7 still applies: `migrations/2026-06-23_var_project_merge_key.cypher` has not been run against live Neo4j
-- v8.2 Phase 820 spike outcome (OntoGraph axiom-scoping decision) gates Phases 821–823 — do not start sidecar/translation/SHACL implementation before Phase 820's Key Decision is recorded
+- ~~net9.0 runtime absent / `DOTNET_ROLL_FORWARD` required~~ — STALE, removed 2026-07-13: `dotnet test` runs clean on net9.0 (confirmed twice: 824 verification and the 2026-07-13 gap-closure 234/234 run)
+- ~~Phase 820 spike gates 821–823~~ — RESOLVED: Phase 820's Key Decisions recorded (ADR-820-1/2); v8.2 shipped
 
 ### Quick Tasks Completed
 
@@ -248,11 +266,16 @@ Shipped from Phase 20 Plan 02:
 | Phase 823 P03 | 20min | 2 tasks | 2 files |
 | Phase 823 P05 | 35min | 3 tasks | 7 files |
 | Phase 823-shacl-validation-layer P06 | 10min | 3 tasks | 4 files |
+| Phase 29 P01 | 20min | 2 tasks | 3 files |
+| Phase 29 P02 | 25min | 2 tasks | 2 files |
+| Phase 29 P03 | 35min | 3 tasks | 3 files |
+| Phase 29 P04 | 50min | 2 tasks | 3 files |
+| Phase 29 P05 | 55min | 3 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T12:01:23.889Z
-Stopped at: Completed 823-03-PLAN.md (both tasks)
+Last session: 2026-07-12T18:38:10.338Z
+Stopped at: Completed 29-05-PLAN.md (Task 1 checkpoint resolved reimport-repo-first, Tasks 2-3 auto, phase 29 complete)
 Resume file: None
 
 ## Performance Metrics

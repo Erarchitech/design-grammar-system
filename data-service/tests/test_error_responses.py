@@ -21,9 +21,15 @@ def _assert_structured_body(body: dict) -> None:
     assert isinstance(body["code"], str)
 
 
+@patch("app._auto_configure_integration", return_value=None)
 @patch("app.get_integration_config", return_value=None)
-def test_publish_validation_missing_config(mock_cfg):
-    """POST /validation/publish with a non-existent project returns structured 404."""
+def test_publish_validation_missing_config(mock_cfg, mock_auto):
+    """POST /validation/publish with a non-existent project returns structured 404.
+
+    Patches both the persisted-config lookup AND the env-driven
+    _auto_configure_integration fallback — with SPECKLE_* env vars present
+    (e.g. in the container) the fallback would otherwise auto-configure and
+    the publish would proceed with 200."""
     response = client.post("/validation/publish", json={
         "project": "nonexistent-project-xyz",
         "rules": [],

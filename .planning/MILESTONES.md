@@ -4,6 +4,7 @@
 
 **Phases completed:** 5 phases, 19 plans, 44 tasks
 **Closeout:** override closeout — **Known verification overrides: 3** (Phases 822 & 824 in-app/in-Rhino UAT deferred; Phase 823 closed via user-approved checkpoint with no formal VERIFICATION.md — see STATE.md `## Deferred Items`)
+**Override status update (2026-07-13 gap-closure session):** 2 of 3 closed — Phase 822's three frontend UAT scenarios executed live and **passed** (822-UAT.md; 822-VERIFICATION.md now `passed`); Phase 823 received a formal retroactive **823-VERIFICATION.md** (`passed`, 4/4 — fresh in-container suites: dg-reasoner 39/39, data-service 168/168, DG 234/234). Phase 824's 3 in-Rhino checks remain the only open item (needs live Rhino/Grasshopper — 824-UAT.md).
 
 **Key accomplishments:**
 
@@ -12,6 +13,23 @@
 - **Phase 822** — Real OWL 2 DL consistency check (HermiT default engine) wired end-to-end into the Reasoner screen, replacing the v8.1 "integration pending" placeholder; `unsatisfiable_classes` enriched to `{iri,label}`; HermiT flipped to `integrated`. Backend gate green (dg-reasoner 19/19, data-service 13/13); manual frontend UAT deferred.
 - **Phase 823** — SHACL Validation Layer: 8 version-controlled data-integrity NodeShapes over the run-scoped ValidGraph ABox (with `owl:AllDifferent` UNA), `shaclReportJson` propagated across five spec/config surfaces + `spec/RULE-PARTITION-POLICY.md`; findings surface on the VALIDATOR component (capped Warning/Remark) and a Solibri-style SHACL Data Integrity panel in the ui-v2 Model screen.
 - **Phase 824** — CONNECTOR gains an additive platform-token heartbeat with in-canvas Error/Warning feedback and full token secrecy (hashed dedup key, persistent-data scrub, token-free outputs); component GUID and existing ports untouched; whole solution builds green against the Rhino 8 SDK.
+
+---
+
+## v8.1 Platform Setup Regions (Shipped: 2026-07-11)
+
+**Phases completed:** 7 phases, 7 plans (810–816; first milestone on the vX.Y → X·100+Y·10 phase-numbering convention)
+**Closeout:** all 7 phases executed and verified 2026-07-11; phase dirs archived to `milestones/v8.1-phases/` 2026-07-12. *(This entry was written 2026-07-13 during the gap-closure session — the formal `/gsd-complete-milestone` pass was skipped at ship time; retroactive VERIFICATION.md docs for Phases 810–813 and the 813 plan summary were added the same session.)*
+
+**Key accomplishments:**
+
+- **Phase 810** — Landing ring extended from 3 to 7 region callouts (AI Engine, Connectors, Reasoner, DG API Docs) with four new navigable screen layers on the standard 520ms fly grammar and back navigation; zero regression to the existing three regions.
+- **Phase 811** — AI Engine screen: provider/model/API-key setup over the Phase-28 LLM gateway (`/llm/settings`), key stored encrypted-at-rest and surfaced only as set/not-set, with a connection test.
+- **Phase 812** — Connector credential backend in data-service: 14-connector / 5-category registry, server-side `dgc_` tokens returned once and persisted hash-only, token-authenticated heartbeat, never-connected/active/stale status derivation; 18 lifecycle pytest tests.
+- **Phase 813** — Connectors screen: category-grouped connector cards with credential creation, copy-once token panel, activation status + last-connection dates, and two-step revoke.
+- **Phase 814** — Reasoner screen with HermiT/Pellet selection persisting server-side; placeholders explicitly labeled "integration pending" (replaced for HermiT by real reasoning in v8.2 Phase 822).
+- **Phase 815** — DG API Documentation region: Revit-API-style tree + detail browser over structured content modules (`import.meta.glob` auto-registration — new pages need zero viewer-code changes), covering credential auth, heartbeat/status, and validation publish end-to-end.
+- **Phase 816** — Integration & deployment: `/reasoner/` nginx + vite proxy routes added, full connector lifecycle proven E2E, container ships all seven regions with v8.0 screens intact (6/6 verification).
 
 ---
 

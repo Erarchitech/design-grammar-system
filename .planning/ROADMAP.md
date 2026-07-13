@@ -2,8 +2,8 @@
 
 ## Milestones
 
-- ✅ **v8.2 Connector Integration & Reasoning Engine** — Phases 820-824 (shipped 2026-07-12; override closeout — 822/823/824 verification deferred; wired Grasshopper CONNECTOR to platform-issued credentials and replaced Reasoner placeholders with real OWL 2 DL (HermiT) + SHACL validation via a new isolated `dg-reasoner` sidecar) → [requirements](milestones/v8.2-REQUIREMENTS.md) | [roadmap](milestones/v8.2-ROADMAP.md) | [phases](milestones/v8.2-phases/)
-- ✅ **v8.1 Platform Setup Regions** — Phases 810-816 (completed 2026-07-11; all 7 phases executed and verified; first milestone on the vX.Y → X·100+Y·10 phase-numbering convention; formal ship via `/gsd-complete-milestone` still pending) → [requirements](milestones/v8.1-REQUIREMENTS.md) | [roadmap](milestones/v8.1-ROADMAP.md) | [phases](milestones/v8.1-phases/)
+- ✅ **v8.2 Connector Integration & Reasoning Engine** — Phases 820-824 (shipped 2026-07-12; override closeout resolved 2026-07-13: 822 frontend UAT passed live + 823 retroactive VERIFICATION written — only 824's 3 in-Rhino checks remain deferred; wired Grasshopper CONNECTOR to platform-issued credentials and replaced Reasoner placeholders with real OWL 2 DL (HermiT) + SHACL validation via a new isolated `dg-reasoner` sidecar) → [requirements](milestones/v8.2-REQUIREMENTS.md) | [roadmap](milestones/v8.2-ROADMAP.md) | [phases](milestones/v8.2-phases/)
+- ✅ **v8.1 Platform Setup Regions** — Phases 810-816 (shipped 2026-07-11; all 7 phases executed and verified; first milestone on the vX.Y → X·100+Y·10 phase-numbering convention; formal milestone record completed 2026-07-13 — MILESTONES.md entry + retroactive VERIFICATION.md for Phases 810–813) → [requirements](milestones/v8.1-REQUIREMENTS.md) | [roadmap](milestones/v8.1-ROADMAP.md) | [phases](milestones/v8.1-phases/)
 - ✅ **v8.0 Design Grammars V2 UI** — Phases 21-27 (shipped 2026-07-07; Phase 27 Speckle 3D Embed added post-ship, completed 2026-07-08) → [requirements](milestones/v8.0-REQUIREMENTS.md) | [roadmap](milestones/v8.0-ROADMAP.md) | [phases](milestones/v8.0-phases/)
 - 🔄 **v9.0 AI Workflow Intelligence** — Phases 28-40 (active — reactivated 2026-07-12; Phase 28 shipped 2026-07-06; restructured 2026-07-08: GH canvas → Computgraph serialization pipeline elaborated into Phases 32-37; Phase 29 next)
 - 📋 **v10.0 Script Intelligence** — Phases 41-49 (planned 2026-07-08, isolated; activates after v9.0; renumbered from milestone-local 1-9) → [requirements](milestones/v10.0-REQUIREMENTS.md) | [roadmap](milestones/v10.0-ROADMAP.md)
@@ -16,7 +16,7 @@
 ---
 
 *v8.1 Platform Setup Regions detail archived to `milestones/v8.1-ROADMAP.md` on 2026-07-11 (all 7 phases complete and verified; phase dirs 810-816 archived to `milestones/v8.1-phases/` on 2026-07-12).*
-*v8.2 Connector Integration & Reasoning Engine detail archived to `milestones/v8.2-ROADMAP.md` on 2026-07-12 (5 phases, 19 plans; override closeout — Phases 822/823/824 verification deferred, see `MILESTONES.md` + `STATE.md` Deferred Items).*
+*v8.2 Connector Integration & Reasoning Engine detail archived to `milestones/v8.2-ROADMAP.md` on 2026-07-12 (5 phases, 19 plans; override closeout — Phases 822/823/824 verification deferred, see `MILESTONES.md` + `STATE.md` Deferred Items). Update 2026-07-13: 822 + 823 overrides closed (live UAT pass + retroactive verification); only 824's in-Rhino UAT remains.*
 
 ---
 
@@ -58,6 +58,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** LLMC-01, LLMC-02, LLMC-03, LLMC-04, LLMC-05, LLMC-06
 
 **Deliverables:** (built 2026-07-06)
+
 - `data-service/llm_gateway.py` — provider adapters (Anthropic Claude, OpenAI-compatible, Ollama) behind one `POST /llm/generate` contract
 - `data-service/app.py` — gateway endpoint + `GET/PUT/DELETE /llm/settings` + `POST /llm/settings/test` + `GET /llm/models`
 - Encrypted-at-rest key storage (Fernet, `LLM_MASTER_SECRET` env; key never in Neo4j, localStorage, or logs)
@@ -67,6 +68,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Success Criteria:** met — see `.planning/phases/28-cloud-llm-connector/28-VERIFICATION.md`
 
 **Plans:** 3 plans (complete)
+
 - [x] 28-01-PLAN.md — Gateway Core
 - [x] 28-02-PLAN.md — n8n Workflow Rewiring
 - [x] 28-03-PLAN.md — UI Settings Panel
@@ -82,6 +84,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** CTXA-01, CTXA-02, CTXA-03, CTXA-04, CTXA-05
 
 **Deliverables:**
+
 - `data-service/dg_context.py` — deterministic context assembler: selects relevant ontology V7 concepts per layer (Ontograph / Metagraph / Validgraph / **Computgraph**), SWRL atom patterns, and Cypher templates for the request type
 - `llm/cypher_catalog.json` (new, versioned) — parameterized standard Cypher expressions for common rule shapes: max/min limit, range, ratio, boolean requirement, existence/count — each with a worked SWRL + Cypher example
 - SWRL convention block in machine-readable form (violation-inverted body semantics, atom ordering, Var/Literal argument rules)
@@ -90,12 +93,35 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 - n8n prompt nodes reduced to thin callers of the context assembler
 
 **Success Criteria:**
+
 1. The ingest prompt for a "maximum height" rule demonstrably contains the max-limit Cypher template and the V7 concepts it references (inspectable via a debug endpoint)
 2. Deliberately corrupting the LLM output (wrong label, wrong kind value) is caught by the validator before execution and returned as a structured violation list
 3. Context selection is fully deterministic — same request, same context, no embeddings involved
 4. A natural-language graph query about design states answers correctly using v4 `kind` values with the new context layer active
 
-**Plans:** TBD
+**Plans:** 8 plans (5 complete + 3 gap-closure for UAT Success Criterion 4)
+**Wave 1**
+
+- [x] 29-01-PLAN.md — Cypher expression catalog (`llm/cypher_catalog.json`, 6 shapes) + `dg_context.py` defensive loader (CTXA-02)
+- [x] 29-02-PLAN.md — `dg_knowledge.py`: machine-readable SWRL conventions + Computgraph concept catalog parsed from DesignGrammar-V7.owl (CTXA-03, CTXA-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 29-03-PLAN.md — deterministic context assembler + `/context/assemble` + `/context/debug`; rule_edit Rule_Id convention resolved (CTXA-01, CTXA-05)
+
+**Wave 3** *(unblocked — Wave 2 complete)*
+
+- [x] 29-04-PLAN.md — Cypher validator + bounded retry loop + `/context/generate-cypher` (CTXA-04)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 29-05-PLAN.md — n8n prompt nodes reduced to thin callers + `spec/DATABASE.md` catalog note (CTXA-01, CTXA-04)
+
+**Wave 5** *(gap closure — UAT Success Criterion 4: "no design states were found" for ConfigurationC; root cause = assembler described aspirational :DesignState/:Run nodes, real shipped shape is :ValidationRun + statePayloadJson blob + HAS_ENTITY)*
+
+- [ ] 29-06-PLAN.md — converge `dg_context.py` VALIDGRAPH_CONCEPTS + `validate_cypher()` allow-lists to the real ValidationRun/statePayloadJson/HAS_ENTITY shape + live `fetch_existing_design_states()` helper (CTXA-01, CTXA-04)
+- [ ] 29-07-PLAN.md — forward `existing_design_states` into the n8n graph-query Cypher prompt + live re-sync (CTXA-01)
+- [ ] 29-08-PLAN.md — deploy + human-verify re-run of UAT Success Criterion 4 for ConfigurationC (CTXA-01, CTXA-04)
 
 ---
 
@@ -108,12 +134,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** ORCH-01, ORCH-02, ORCH-03, ORCH-04
 
 **Deliverables:**
+
 - Evaluation matrix: webhook parity, function-node equivalents, LLM provider support, self-host Docker footprint, state/retry handling, maintenance and community health, migration cost — n8n vs OpenClaw
 - Spike: the `graph-query` workflow ported to OpenClaw against the live stack, exercising the same `/n8n/webhook/dg/graph-query` contract behind the Nginx proxy
 - ADR in `DG_OBSIDIAN/knowledge/decisions/` recording the decision with explicit criteria
 - If go: phased migration plan — one workflow at a time, n8n kept running in parallel until parity is verified
 
 **Success Criteria:**
+
 1. The spike answers with evidence: can OpenClaw serve the DG webhook workflows (request → LLM gateway → Neo4j → response) with equivalent latency and error handling?
 2. The ADR states go/no-go, the criteria that decided it, and — on go — which milestone executes the migration
 3. No production workflow is switched in this phase; n8n remains the active orchestrator throughout v9.0 unless the ADR explicitly schedules cut-over inside Phase 31
@@ -131,12 +159,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** RING-01, RING-02, RING-03, RING-04, RING-05
 
 **Deliverables:**
+
 - Upgraded ingest workflow: gateway + context assembler + validator-feedback retry loop (bounded attempts, then actionable error)
 - Clarification loop: ambiguous rules return a clarification question to the UI instead of a guessed graph
 - Edit flow with preview: proposed atom changes rendered as old→new diff in the ui-v2 Graph screen before the MATCH-DELETE + re-create commit
 - Regression suite: reference rule set from `test/` fixtures run through both cloud and Ollama paths
 
 **Success Criteria:**
+
 1. The reference rule set ingests with a pass-rate ≥ the current Ollama baseline (measured, not assumed), and cloud-path results validate against the schema template with zero manual fixes
 2. Submitting "the building must not be too tall" yields a clarification question (which limit?), not a fabricated rule
 3. Editing a rule shows the atom diff; confirming applies it with old-atom cleanup intact; cancelling leaves the graph unchanged
@@ -155,6 +185,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** CGSR-01, CGSR-02, CGSR-03, CGSR-04
 
 **Deliverables:**
+
 - `DG/src/DG.Core/Models/Computgraph/` — GH-free object model mirroring the OWL: `CgObject`, `CgAlgorithm`, `CgProcedure`, `CgPattern` (nestable), `CgParameter` (kind: Variable/Constant/Emergent; dataType: Float/Integer/Text/Boolean/Geometry; slider domain where present), `CgInterface` (Input/Output), `CgNode` (raw canvas component), `CgWire`
 - `DG/src/DG.Core/Parsing/CanvasAnnotationParser.cs` — convention grammar: scribbles `OBJECT - <NAME>` / `<n>_ALGORITHM`; groups `<NN>_Proc - <Name>`, `<NN>_Pat_<k>[ <name>]`, `<NN>_Var_<Name>`, `<NN>_Const_<Name>`, `<NN>_Emg_<Name>`, `<NN>_IntF_<Name>`; non-conforming names classify as *untagged*, never guessed
 - `DG/src/DG.Core/Serialization/ComputgraphContextSerializer.cs` — versioned `cgContextJson v1` envelope (System.Text.Json, camelCase — same conventions as `DesignStatePayloadV2Serializer`)
@@ -162,12 +193,27 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 - xUnit fixture in `DG/tests/DG.Tests/`: the Frame example (screenshot ↔ `dg:Object_Frame` / `dgc:Algorithm_1` / `dgc:Proc_11`+`Proc_12` OWL individuals) as a serialized document
 
 **Success Criteria:**
+
 1. Parsing the annotated Frame fixture yields exactly: 1 Object ("FRAME"), 1 Algorithm, 2 Procedures ("11_Proc - 2D Truss Configuration", "12_Proc - 2D Footer Configuration"), the patterns/parameters/interfaces named in the convention — matching the OWL named individuals
 2. A group named outside the convention lands in the *untagged* set with its raw components intact — nothing is invented
 3. The serializer round-trips: `cgContextJson v1` → model → JSON is stable (idempotent re-serialization)
 4. All parser/serializer logic runs and passes tests without the Grasshopper SDK (DG.Core only)
 
-**Plans:** TBD
+**Plans:** 5 plans
+
+**Wave 1**
+
+- [ ] 32-01-PLAN.md — GH-free Computgraph object model + CgContext root + RawCanvas input contract (CGSR-01)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 32-02-PLAN.md — CanvasAnnotationParser: convention grammar → typed entities, untagged routing, Emr tolerance, nesting, dataType inference (CGSR-02)
+- [ ] 32-03-PLAN.md — ComputgraphContextSerializer: versioned cgContextJson v1 read/write, idempotent round-trip (CGSR-03)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 32-04-PLAN.md — CanvasContextExtractor (#if GRASSHOPPER_SDK): GH_Document traversal → RawCanvas + SerializeContext seam (CGSR-03)
+- [ ] 32-05-PLAN.md — Frame RawCanvas fixture + xUnit integration test proving all 4 success criteria (CGSR-01..04)
 
 ---
 
@@ -180,12 +226,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** BRDG-01, BRDG-02, BRDG-03, BRDG-04
 
 **Deliverables:**
+
 - `DG/src/DG.Grasshopper/Components/CanvasListenerComponent.cs` — **DG CANVAS LISTENER**: `TcpListener` on a configurable port (default **8720**), grasshopper-mcp wire protocol (newline-terminated JSON `{"type": ..., "parameters": {...}}`, UTF-8); commands: `get_canvas_context` (Phase 32 serializer), `get_selection` (selected object ids), `preview_structure` / `clear_preview` / `get_preview_status` (Phase 35 consumers); canvas access marshalled via `RhinoApp.InvokeOnUiThread`; on/off boolean input; status output
 - `data-service/gh_bridge.py` — TCP client (env `GH_BRIDGE_HOST` default `host.docker.internal`, `GH_BRIDGE_PORT` default `8720`), timeout + connection-refused mapped to actionable errors
 - `data-service/app.py` — `POST /computgraph/context/pull` (project + definition scope → live `cgContextJson`); new tools on the existing `POST /mcp` JSON-RPC server: `gh_get_context`, `gh_get_selection`, `gh_preview_structure`, `gh_clear_preview`
 - `docker-compose.yml` — `GH_BRIDGE_HOST/PORT` env + `extra_hosts: host.docker.internal:host-gateway` for data-service
 
 **Success Criteria:**
+
 1. With Rhino running and DG CANVAS LISTENER on, `POST /computgraph/context/pull` from inside the Docker network returns the live canvas as `cgContextJson v1`
 2. An MCP client calling `gh_get_context` via `POST /mcp` gets the same document (tools/list shows the four `gh_*` tools)
 3. Listener off / Rhino closed → data-service returns a What+Where+How-to-fix error, not a hang (bounded timeout)
@@ -204,12 +252,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** TAGC-01, TAGC-02, TAGC-03
 
 **Deliverables:**
+
 - `DG/src/DG.Grasshopper/Canvas/CanvasAnnotationStyles.cs` — the color/style constants per entity kind (procedure container, pattern orange, nested pattern purple, parameter pink, interface white — from the Frame reference)
 - `DG/src/DG.Grasshopper/Components/ObjectMarkerComponent.cs` — **DG OBJECT MARKER**: inputs Object name (+ optional `dg:Class` IRI from ONTOGRAPH), algorithm index; creates/updates the `OBJECT - <NAME>` and `<n>_ALGORITHM` scribbles; reads existing markers on re-run
 - `DG/src/DG.Grasshopper/Components/EntityTagComponent.cs` — **DG ENTITY TAG**: inputs kind (Proc/Pat/Var/Const/Emg/IntF via value list), name, optional procedure index; button-triggered: wraps the *current canvas selection* into a convention-named, convention-colored `GH_Group` (auto-increments indices, e.g. next free `11_Pat_k`); undoable via `GH_UndoRecord`
 - Both components `#if GRASSHOPPER_SDK` guarded, DG category/subcategory, `DgIcons` entries, GUID registration
 
 **Success Criteria:**
+
 1. Selecting a slider and tagging it as Var with name "SpansCount" under procedure 11 produces a pink group named `11_Var_SpansCount` — and the Phase 32 serializer reads it back as a `CgParameter` (Variable)
 2. DG OBJECT MARKER on an empty canvas creates the two scribbles; on an annotated canvas it reads and reports the existing Object/Algorithm without duplicating
 3. Manual tags survive the round-trip: tag → serialize → the tagged entity appears as ground truth (`source: tagged`) in `cgContextJson`
@@ -228,12 +278,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** RCGN-01, RCGN-02, RCGN-03, RCGN-04
 
 **Deliverables:**
+
 - `data-service/cg_recognition.py` — recognition pipeline: `cgContextJson` (tagged anchors + untagged nodes/wires) + Computgraph concept catalog + Frame few-shot example → LLM gateway → **proposed-structure JSON** (strict schema: entity kind, name suggestion, member component ids, confidence, rationale); schema-validated with bounded retry; `POST /computgraph/recognize`
 - Preview rendering: bridge command `preview_structure` draws the proposal as temporary `GH_Group`s + scribbles in a distinct preview style (dashed/desaturated + `[?]` name prefix), all inside one `GH_UndoRecord`
 - Confirm/reject flow: `DG/src/DG.Grasshopper/Components/StructureConfirmComponent.cs` — **DG STRUCTURE CONFIRM**: lists pending proposals per procedure; accept converts preview groups to permanent convention groups (Phase 34 styles), reject removes them cleanly; partial accept supported; `clear_preview` wipes all pending
 - Recognition report: entities it could not classify are listed as *unrecognized* with member ids — never invented, never silently dropped
 
 **Success Criteria:**
+
 1. On the Frame definition with only the Object marker + 2 procedure tags present, recognition proposes patterns/parameters/interfaces whose member sets match the reference annotation for ≥ the majority of blocks, each with confidence + rationale
 2. The proposal is visible on the canvas as preview groups; Ctrl+Z or `clear_preview` removes every trace
 3. Accepting proposal(s) yields permanent groups that the Phase 32 serializer parses identically to hand-made tags (`source: recognized` recorded)
@@ -252,6 +304,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** CGPD-01, CGPD-02, CGPD-03, CGPD-04, CGPD-05
 
 **Deliverables:**
+
 - `data-service/app.py` — `POST /computgraph/publish`: confirmed `cgContextJson` → Cypher; node labels `Object`, `Behavior`, `Algorithm`, `Procedure`, `Pattern`, `Parameter` (`paramKind`: Variable/Constant/Emergent; `dataType`), `Interface` (`ifaceType`: Input/Output) — all with `graph:'Computgraph'` + `project`; relationships `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`; optional `REFERS_TO` bridge Object→`Class` when a Class IRI was tagged
 - MERGE keys: stable entity ids derived from definition id + convention name (re-publish updates, never duplicates)
 - Provenance properties per node: `source` (tagged | recognized), `provider`/`model` (when recognized), `definitionId`, `publishedAt`
@@ -260,6 +313,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 - `ui-v2/src/graph/` + `ui-v2/src/screens/` — Computgraph layer in the datascape: distinct styling for the new labels, per-project filter toggle
 
 **Success Criteria:**
+
 1. Publishing the confirmed Frame structure yields the expected subgraph (1 Object–Behavior–Algorithm chain, 2 Procedures, patterns/parameters/interfaces with correct kinds), project-scoped
 2. Re-publishing the same definition changes zero node counts (MERGE idempotency verified by count query)
 3. Every Computgraph node answers a provenance query: source, model (if recognized), definition, timestamp
@@ -278,12 +332,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** SVAL-01, SVAL-02, SVAL-03
 
 **Deliverables:**
+
 - `data-service/cg_structure_checks.py` + `POST /computgraph/validate` — deterministic checks with entity references: annotation-convention compliance, orphan Patterns (no Procedure), Procedures without Interfaces, Parameters without dataType, dangling `PARAM_LINK`s, unreachable nodes
 - Rule-mapped structural checks: a mapping shape linking a `Rule` to structural requirements over the Computgraph (e.g. "a Frame algorithm must contain a Truss-configuration Procedure", "height must be a VariableParam") — evaluated via Cypher, reported pass/fail per rule with the offending/satisfying entities
 - `POST /computgraph/consult` — NL question + published Computgraph context (via `dg_context.py`) → gateway → grounded answer citing entity names; explicitly read-only
 - Report surface: validation report JSON consumable by ui-v2 (and printable from a GH panel via the bridge)
 
 **Success Criteria:**
+
 1. Deleting an Interface tag from the Frame structure and re-publishing makes `/computgraph/validate` flag the Procedure-without-Interface check with the exact procedure named
 2. A rule mapped to "must contain Procedure matching *Footer*" passes on Frame and fails on a copy published without the 12_Proc group
 3. "Which parameters drive the truss height?" via `/computgraph/consult` answers citing `11_Var_HTotal` (grounded in the graph, not hallucinated)
@@ -302,12 +358,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** GHIN-01, GHIN-02, GHIN-03, GHIN-04
 
 **Deliverables:**
+
 - Input-generation endpoint: rule (or design intent text) + published `Parameter` set (VariableParams with serialized slider domains) → N candidate parameter assignments, typed Number/Integer/Boolean only (standing v2.0 decision)
 - Candidates serialized as ParamState-compatible payloads (statePayloadJson v2) with provenance properties: source rule, provider/model, timestamp
 - ui-v2 review surface: candidate list with per-parameter values, accept/reject; accepted candidates stored as ParamStates
 - Application path: accepted ParamState applied on the canvas through the existing PARAMETER REINSTATE component — no new apply mechanism
 
 **Success Criteria:**
+
 1. For a max-height rule against the Frame definition, generated candidates keep every parameter inside its recognized slider domain and satisfy the rule's limit where determinable
 2. An accepted candidate round-trips: stored as ParamState → visible in VALIDATION GRAPH reads → applied via PARAMETER REINSTATE with per-parameter ReStatus reporting
 3. Nothing touches the canvas without explicit user acceptance — generation and application are strictly separated
@@ -326,12 +384,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** DSAV-01, DSAV-02, DSAV-03
 
 **Deliverables:**
+
 - Investigation note comparing trigger architectures: (a) capture-time hook in the DESIGN STATE / VALIDATOR components (GH-side), (b) data-service watcher on DesignState writes, (c) event-driven trigger on Neo4j ValidGraph writes — with latency, publish-flood, and Speckle-noise analysis for each
 - Working prototype of at least one path: capturing a new DesignState produces a validation Run without a manual VALIDATOR trigger
 - Guardrail design: debounce window, per-project rate limit, opt-in flag (auto-validation must be explicitly enabled per project)
 - ADR in `DG_OBSIDIAN/knowledge/decisions/` scoping full implementation to a future milestone
 
 **Success Criteria:**
+
 1. The prototype demonstrably closes the loop on live Docker: DesignState captured → Run appears in ValidGraph and (if enabled) publishes to Speckle — hands-off
 2. Rapid successive captures do not flood Speckle: the debounce/rate-limit design is validated in the prototype, not just described
 3. The ADR records the chosen architecture, the rejected options with reasons, and the follow-up milestone scope
@@ -349,12 +409,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Requirements:** INTG-01, INTG-02, INTG-03, INTG-04
 
 **Deliverables:**
+
 - E2E run: NL rule → cloud-LLM ingest (context layer + validation) → graph → GH validation → Speckle publish, on live Docker
 - E2E GH intelligence chain: object marked + entities tagged → LLM recognition → on-canvas preview → confirm → Computgraph publish → structure validation → generated inputs accepted → applied via PARAMETER REINSTATE → validation run (auto or manual per Phase 39 outcome)
 - Provider-switch drill: Claude ↔ OpenAI-compatible ↔ Ollama via settings only, mid-session, no restarts; LLM settings panel available in ui-v2 (port from legacy panel if not done earlier)
 - Docs: CLAUDE.md service map + schema tables + gotchas, `spec/DATABASE.md` Computgraph section, DG_OBSIDIAN notes (decisions from Phases 30 and 39 filed; DG Canvas Annotation Convention note), `docs/` component reference for the 4–5 new GH components, graphify refresh
 
 **Success Criteria:**
+
 1. Both E2E chains complete without errors in one session on live Docker
 2. Provider switching requires only the settings panel — verified for all three providers
 3. All 54 v9.0 requirements are checked off in v9.0-REQUIREMENTS.md with traceability complete
@@ -369,10 +431,10 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Cloud LLM Connector and Provider Abstraction | 3/3 | Complete | 2026-07-06 |
-| 29. DG-Aware Context Layer | 0/? | Not started | — |
+| 29. DG-Aware Context Layer | 5/5 | Complete   | 2026-07-12 |
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
-| 32. Computgraph Serialization Core | 0/? | Not started | — |
+| 32. Computgraph Serialization Core | 0/5 | Planned | — |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 0/? | Not started | — |
 | 34. Ontology Tagging Components and Manual Selection | 0/? | Not started | — |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |

@@ -229,9 +229,9 @@ export default function ReasonerScreen({ active, onBack, project }) {
               }}
             >
               Select the ontology reasoner used to evaluate design rules against the
-              Validation Graph. Selection persists across sessions but does{" "}
-              <strong>not</strong> yet change validation behavior — both reasoners are
-              shown as placeholders until their integration is elaborated.
+              Validation Graph. Selection persists across sessions. HermiT runs a live
+              schema-consistency check against the active project; reasoners marked{" "}
+              <strong>integration pending</strong> do not yet change validation behavior.
             </div>
           </div>
         )}

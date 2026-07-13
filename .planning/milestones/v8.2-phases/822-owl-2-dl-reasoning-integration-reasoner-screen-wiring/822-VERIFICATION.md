@@ -1,11 +1,28 @@
 ---
 phase: 822-owl-2-dl-reasoning-integration-reasoner-screen-wiring
 verified: 2026-07-12T00:00:00Z
-status: human_needed
-score: 1/4 must-haves verified
-behavior_unverified: 3
+reverified: 2026-07-13
+status: passed
+score: 4/4 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
 gaps: []
+reverification_note: >
+  2026-07-13 (v8.1/v8.2 gap-closure session): all 3 deferred UAT scenarios executed
+  against the live docker stack and PASSED — see 822-UAT.md for full evidence.
+  (1) Real kill-on-timeout proven end-to-end: DG_REASONER_TIMEOUT_SECONDS temporarily
+  90→1, real HermiT java subprocess launched and killed, route returned 504 within
+  ~1.5s of the click, UI rendered the achromatic "Inconclusive" verdict — never
+  green/red, never a hang; compose value restored, follow-up run consistent in 1999ms.
+  (2) Inconsistent verdict render proven live: 820-spike contradiction temporarily
+  seeded into ontology/dg-disjointness.ttl → "Schema inconsistent — 1 unsatisfiable
+  class." + Inconsistent badge + human label "SlidingDoor" only (no raw IRI); overlay
+  restored, re-run flipped back to Consistent (freshness, criterion 4).
+  (3) Full click-through: "Running… 0s" timer + Cancel + disabled Run at t+400ms;
+  Cancel mid-flight → distinct "× Run cancelled — no result."; uncancelled run →
+  "✓ Schema consistent" + Consistent badge + "Last checked just now".
+  One cosmetic defect found and fixed: stale v8.1 "both reasoners are placeholders"
+  intro copy in ReasonerScreen.jsx corrected to reflect the integrated HermiT check.
 behavior_unverified_items:
   - truth: "Criterion 1 — user clicks Run check and a real HermiT check executes, replacing the v8.1 placeholder"
     test: "In the live UI (http://localhost:8080), open Reasoner screen, click 'Run check' on the HermiT card"
@@ -34,9 +51,9 @@ human_verification:
 # Phase 822: OWL 2 DL Reasoning Integration — Reasoner Screen Wiring Verification Report
 
 **Phase Goal:** Users can run a real OWL 2 DL consistency check from the Reasoner screen and trust the result, replacing the v8.1 placeholder.
-**Verified:** 2026-07-12
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-07-12 (initial, backend-only) · **Re-verified:** 2026-07-13 (all 3 deferred UAT scenarios passed live — see frontmatter `reverification_note` + 822-UAT.md)
+**Status:** passed
+**Re-verification:** Yes — 2026-07-13 gap-closure session closed all 3 `human_verification` items below (kept for history)
 
 ## Pre-check: Branch Isolation
 

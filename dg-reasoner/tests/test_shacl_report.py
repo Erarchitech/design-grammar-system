@@ -29,7 +29,11 @@ DGV = Namespace("http://example.org/design-grammar/valid#")
 DGSH = Namespace("http://example.org/design-grammar/shapes#")
 EX = Namespace("http://example.org/ex#")
 
-SHAPES_PATH = Path(__file__).resolve().parents[2] / "ontology" / "dg-shapes.ttl"
+# Repo checkout layout: <repo>/dg-reasoner/tests/ -> parents[2] is the repo root.
+# Container image layout: /app/tests/ -> parents[2] is /, so fall back to the
+# volume-mounted production path (same file, docker-compose ./ontology:/app/ontology:ro).
+_repo_shapes = Path(__file__).resolve().parents[2] / "ontology" / "dg-shapes.ttl"
+SHAPES_PATH = _repo_shapes if _repo_shapes.exists() else Path("/app/ontology/dg-shapes.ttl")
 
 
 def _load_shapes() -> Graph:
