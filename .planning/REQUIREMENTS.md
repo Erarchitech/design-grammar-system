@@ -2,6 +2,7 @@
 
 **Defined:** 2026-07-03
 **Restructured:** 2026-07-08 — GHRC family (5 requirements) replaced by CGSR/BRDG/TAGC/RCGN/CGPD/SVAL families (23 requirements) elaborating the Grasshopper canvas → Computgraph serialization pipeline. Script generation/editing/consulting deferred to the v10 seed.
+**Extended:** 2026-07-13 — DGID family (6 requirements) added for inserted Phase 32.1 (Cross-Platform Identity and Mapping — DG ID)
 **Status:** Paused (Phase 28 complete 2026-07-06)
 **Core Value:** The architect controls which LLM runs the Design Grammar System — entering an API key to use a frontier cloud model or staying fully local — and that LLM understands the DG ontology, SWRL conventions, and standard Cypher shapes natively, extending AI assistance onto the Grasshopper canvas itself: the graph context of a script serializes into the ontology's Computgraph layer through architect tagging + LLM recognition + on-canvas confirmation, becomes browsable and structurally validatable against Design Rules, and drives generated script inputs.
 
@@ -20,11 +21,11 @@
 
 ### DG-Aware Context Layer (CTXA) — Phase 29
 
-- [ ] **CTXA-01**: Prompt assembly injects the relevant subset of the DG ontology V7 concept catalog (per graph layer: Ontograph, Metagraph, Validgraph, Computgraph) into every ingest and query request
-- [ ] **CTXA-02**: A versioned standard Cypher expression catalog covers the common rule shapes (max/min limit, range, ratio, boolean requirement, existence/count) with worked SWRL + Cypher examples, injected as few-shot context per request type
-- [ ] **CTXA-03**: SWRL conventions (violation-inverted body semantics, atom ordering, Var/Literal argument rules) exist in machine-readable form and are part of the assembled context
-- [ ] **CTXA-04**: Generated Cypher is validated against the current schema template (labels, relationship types, kind enums, property names, bracket nesting) before execution; violations return as structured feedback driving a bounded automatic retry loop
-- [ ] **CTXA-05**: Context selection is deterministic — schema and catalog lookup only, no embeddings (consistent with the standing no-RAG decision; revisit only if the deterministic layer proves insufficient)
+- [x] **CTXA-01**: Prompt assembly injects the relevant subset of the DG ontology V7 concept catalog (per graph layer: Ontograph, Metagraph, Validgraph, Computgraph) into every ingest and query request
+- [x] **CTXA-02**: A versioned standard Cypher expression catalog covers the common rule shapes (max/min limit, range, ratio, boolean requirement, existence/count) with worked SWRL + Cypher examples, injected as few-shot context per request type
+- [x] **CTXA-03**: SWRL conventions (violation-inverted body semantics, atom ordering, Var/Literal argument rules) exist in machine-readable form and are part of the assembled context
+- [x] **CTXA-04**: Generated Cypher is validated against the current schema template (labels, relationship types, kind enums, property names, bracket nesting) before execution; violations return as structured feedback driving a bounded automatic retry loop
+- [x] **CTXA-05**: Context selection is deterministic — schema and catalog lookup only, no embeddings (consistent with the standing no-RAG decision; revisit only if the deterministic layer proves insufficient)
 
 ### Orchestration Evaluation (ORCH) — Phase 30
 
@@ -47,6 +48,15 @@
 - [ ] **CGSR-02**: The DG Canvas Annotation Convention (scribbles `OBJECT - <NAME>` / `<n>_ALGORITHM`; groups `<NN>_Proc - <Name>`, `<NN>_Pat_<k>`, `<NN>_Var_<Name>`, `<NN>_Const_<Name>`, `<NN>_Emg_<Name>`, `<NN>_IntF_<Name>`) parses into typed Computgraph entities; non-conforming names classify as untagged — never guessed
 - [ ] **CGSR-03**: A canvas extractor serializes the live GH_Document — components, parameters (with slider domains), group membership including nesting, scribbles, and wire topology — into a versioned `cgContextJson v1` envelope
 - [ ] **CGSR-04**: The annotated Frame reference definition serializes to a structure matching its OWL named individuals (`dg:Object_Frame` → `dgc:Algorithm_1` → `dgc:Proc_11`/`Proc_12` with their patterns, parameters, interfaces), verified by an xUnit fixture
+
+### Cross-Platform Identity and Mapping (DGID) — Phase 32.1
+
+- [ ] **DGID-01**: Every design object extracted into the Computgraph (Object, Procedure, Pattern, Parameter, Interface) carries a platform-neutral `dgId` that is deterministic across re-extractions of the same definition, unique within a project, and documented in a versioned identity spec (`spec/DG-ID.md`: format, minting, rename/stability rules, collision policy)
+- [ ] **DGID-02**: A Neo4j identity registry binds each `dgId` to its per-platform representations (Grasshopper instance GUID, Revit UniqueId/ElementId, IFC GlobalId, Speckle applicationId) with connector provenance; representations attach and detach without changing the `dgId`
+- [ ] **DGID-03**: Counterpart objects across platforms resolve to one identity within a Design State — a Revit BIM wall generated from a Grasshopper parametric wall binds to the wall's existing `dgId`, and DesignState/ObjState payloads reference member objects by `dgId`
+- [ ] **DGID-04**: Properties computed on one platform attach to the shared identity and are readable from any bound representation — e.g. a Ladybug-derived insulation value written from Grasshopper is readable for the Revit panel representation — with every shared-property write carrying platform/connector/timestamp provenance
+- [ ] **DGID-05**: data-service exposes an identity API (mint/resolve/bind + shared-property read/write) over parameterized, project-isolated Cypher; unresolvable or ambiguously bound native ids return structured What+Where+How-to-fix errors, never a silent misbinding
+- [ ] **DGID-06**: The identity scheme is recorded in an ADR against the surveyed state of the art (Rhino.Inside.Revit element tracking/binding, Speckle applicationId vs hash id, IFC GlobalId, Revit UniqueId episode+ElementId, BHoM adapter ids) with explicit rationale for the DG connector architecture
 
 ### DG Canvas Bridge (BRDG) — Phase 33
 
@@ -118,6 +128,7 @@
 | Non-parametric input generation (geometry, text, trees) | ParamState payloads stay Number/Integer/Boolean per the v2.0 deterministic-reinstatement decision |
 | GH Cluster introspection (patterns inside clusters) | Convention maps Procedures to Groups; cluster internals are opaque in v9.0 — revisit with v10 |
 | Vendoring the third-party GH_MCP plugin | Native bridge decision (below); grasshopper-mcp is the protocol reference, not a dependency |
+| Revit connector implementation | Phase 32.1 defines the DG ID contract, registry, and identity API and proves them with a simulated second-platform consumer; the real Revit-side connector lands in a future milestone (dedicated connector milestone / v4.0 BOT bridge) |
 
 ---
 
@@ -133,6 +144,7 @@
 | **DG Canvas Annotation Convention is the contract** between architect, serializer, and LLM | Groups/scribbles named `OBJECT/ALGORITHM/NN_Proc/NN_Pat/Var/Const/Emg/IntF` map 1:1 to `dgc:` classes; the Frame example exists as OWL named individuals, giving fixture, convention, and ontology a single source of truth (confirmed 2026-07-08) |
 | **Tag → recognize → preview → confirm → publish**, in that order | The architect's manual tags are ground truth; the LLM only fills gaps; nothing reaches Neo4j without on-canvas confirmation — mirrors the RING clarification-over-guessing principle |
 | GH recognition writes to the Computgraph layer (`dgc:`) | The ontology reserved this layer for exactly this ("translation of design grammars into/from parametric definitions"); v9.0 is its first runtime consumer |
+| **Durable DG IDs are the cross-platform identity spine** — native platform ids (GH instance GUID, Revit UniqueId/ElementId, IFC GlobalId, Speckle applicationId) are representations *bound to* a dgId, never the identity itself | A GH parametric wall and the Revit wall generated from it are one design object in DG; no single-platform id survives the platform boundary, and cross-platform state (e.g. Ladybug-computed insulation surfacing on the Revit panel) needs an id that does (confirmed 2026-07-13) |
 | Generated inputs ride the existing ParamState → PARAMETER REINSTATE path | No parallel apply mechanism; reuse of the v7.0 state pipeline keeps provenance and status reporting |
 | Auto-validation is investigation-first | Trigger architecture and publish-flood guardrails must be prototyped before committing component changes |
 | Structure validation MVP is deterministic-first | Cypher checks + rule mapping are reproducible; the LLM only serves the read-only `/consult` endpoint — v10 expands from this seam |
@@ -148,6 +160,7 @@
 | ORCH-01 … ORCH-04 | Phase 30 | Pending |
 | RING-01 … RING-05 | Phase 31 | Pending |
 | CGSR-01 … CGSR-04 | Phase 32 | Pending |
+| DGID-01 … DGID-06 | Phase 32.1 | Pending |
 | BRDG-01 … BRDG-04 | Phase 33 | Pending |
 | TAGC-01 … TAGC-03 | Phase 34 | Pending |
 | RCGN-01 … RCGN-04 | Phase 35 | Pending |
@@ -158,8 +171,9 @@
 | INTG-01 … INTG-04 | Phase 40 | Pending |
 
 **Coverage:**
-- v9.0 requirements: 54 total (6 complete, 48 pending)
-- Mapped to phases: 54
+
+- v9.0 requirements: 60 total (6 complete, 54 pending)
+- Mapped to phases: 60
 - Unmapped: 0
 
 ---

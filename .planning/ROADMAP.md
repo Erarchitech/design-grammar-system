@@ -26,6 +26,7 @@
 **Restructured:** 2026-07-08 — Grasshopper canvas → Computgraph serialization elaborated: former Phase 5 (GH node recognition) expanded into Phases 32–37; former input-generation/auto-validation/E2E phases renumbered to 38/39/40. Script *generation/editing/consulting* deferred to v10.0 (`.planning/milestones/v10.0-ROADMAP.md`).
 **Renumbered:** 2026-07-08 — global phase numbering adopted: milestone-local 1–13 → **28–40**, continuing from v8.0's Phase 27 (repo convention: phase numbers continue across milestones).
 **Reactivated:** 2026-07-12 — resumed after v8.1/v8.2 shipped; phase directories moved from `milestones/v9.0-phases/` into `.planning/phases/` unchanged, requirements restored to `.planning/REQUIREMENTS.md`.
+**Extended:** 2026-07-13 — Phase 32.1 (Cross-Platform Identity and Mapping — DG ID) inserted after Phase 32; DGID requirement family (6 requirements) added. Extracted Computgraph objects carry a durable platform-neutral DG ID binding counterpart representations across connectors (Grasshopper ↔ Revit/IFC/Speckle) within one Design State.
 **Status:** Active (Phase 28 shipped 2026-07-06; Phase 29 next)
 **Depends on:** v7.0 (VALIDATOR rework, composed DesignState, PARAMETER REINSTATE, graph schema v4 — shipped 2026-07-05). v8.0 shipped 2026-07-07 — all UI deliverables in this roadmap target **`ui-v2/`** (the legacy `graph-viewer/` SPA is archived; Phase 28's settings panel predates the cutover and is revisited in the Phase 40 docs pass).
 
@@ -37,6 +38,7 @@ v9.0 upgrades the intelligence layer of the Design Grammar System along two axes
 
 2. **Grasshopper canvas intelligence** — the ontology's **Computgraph layer** (`dgc:` in `ontology/DesignGrammar-V7.owl`) gets its first runtime consumer. The graph context of a Grasshopper script is serialized to Neo4j as `Object → Behavior → Algorithm → Procedure → Pattern → Parameter/Interface`, via a pipeline the architect controls end-to-end on the canvas:
    - **Serialization core** (Phase 32): GH_Document traversal + the DG Canvas Annotation Convention parser (`OBJECT - FRAME`, `1_ALGORITHM`, `11_Proc`, `11_Pat_*`, `11_Var_/Const_/Emg_/IntF_*` — the Frame worked example, already modeled as OWL named individuals).
+   - **Cross-platform identity — DG ID** (Phase 32.1): every extracted design object carries a durable, platform-neutral `dgId`; native platform ids (GH instance GUID, Revit UniqueId, IFC GlobalId, Speckle applicationId) are *representations* bound to it in an identity registry, so counterpart objects (GH parametric wall ↔ generated Revit BIM wall) resolve to one identity within a Design State and share cross-platform properties (e.g. Ladybug-computed insulation readable from the Revit panel representation).
    - **DG Canvas Bridge** (Phase 33): a native adaptation of the [grasshopper-mcp](https://github.com/alfredatnycu/grasshopper-mcp) pattern — a TCP listener component in the DG plugin + a bridge client and `gh_*` MCP tools in data-service.
    - **Tagging components** (Phase 34): the architect marks known ontological entities on canvas (components + manual selection).
    - **LLM recognition + on-canvas preview** (Phase 35): AI guesses the untagged rest; the proposal appears as temporary groups/scribbles on the canvas for confirmation **before anything is published**.
@@ -45,7 +47,7 @@ v9.0 upgrades the intelligence layer of the Design Grammar System along two axes
 
 Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), the **DesignState auto-validation investigation** (Phase 39), and **E2E + docs** (Phase 40).
 
-**13 phases (28–40), estimated ~16–20 implementation sessions.**
+**14 phases (28–40 + 32.1), estimated ~17–21 implementation sessions.**
 
 ### Phases
 
@@ -217,6 +219,50 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 
 ---
 
+### Phase 32.1: Cross-Platform Identity and Mapping (DG ID)
+
+**Goal:** Every design object extracted into the Computgraph carries a durable, platform-neutral DG ID — the same conceptual object (a parametric wall in Grasshopper and the BIM wall generated from it in Revit) resolves to one identity within a Design State, and properties computed on one platform (e.g. Ladybug-derived insulation on a facade panel) attach to that identity and become readable from every other platform's bound representation.
+
+**Requires:** Phase 32 (Computgraph object model + `cgContextJson` envelope carry the `dgId`). Parallel-safe with Phases 33–35. Feeds Phase 36 (published nodes carry `dgId`), Phase 38 (generated inputs), and future connector milestones (Revit connector; v4.0 BOT bridge).
+
+**Requirements:** DGID-01, DGID-02, DGID-03, DGID-04, DGID-05, DGID-06
+
+**Deliverables:**
+
+- `spec/DG-ID.md` — the identity spec: `dgId` format + minting rules (deterministic re-mint for convention-tagged Computgraph entities; rename/stability semantics; collision policy), the cross-platform binding model, and shared-property semantics — written against the surveyed state of the art (Rhino.Inside.Revit element tracking/binding, Speckle `applicationId` vs hash `id`, IFC GlobalId, Revit UniqueId episode+ElementId, BHoM adapter ids)
+- `DG/src/DG.Core/Models/Identity/` — `DgId` value type + deterministic minting service (GH-free); Computgraph model entities (`CgObject`, `CgProcedure`, `CgPattern`, `CgParameter`, `CgInterface`) and the `cgContextJson` envelope gain `dgId` fields (Phase 32's versioned-contract rule applies)
+- Neo4j identity registry: `dgId` property on Computgraph nodes + a representation-binding shape (platform, native-id kind — GH instance GUID / Revit UniqueId / IFC GlobalId / Speckle applicationId — native-id value, connector, boundAt), project-isolated; DesignState/ObjState payloads reference member objects by `dgId`
+- `data-service/dg_identity.py` + identity API endpoints: resolve (native id → dgId), bind (attach a platform representation), shared-property read/write keyed by `dgId` with platform/connector/timestamp provenance — parameterized Cypher only
+- Cross-platform property-flow proof: an Emergent insulation parameter written from the GH side is readable via the identity API by a simulated Revit-side consumer (test fixture — the real Revit connector is a future milestone)
+- ADR in `DG_OBSIDIAN/knowledge/decisions/` recording the chosen scheme and the surveyed alternatives
+
+**Success Criteria:**
+
+1. Re-extracting the same annotated definition yields identical `dgId`s for every tagged entity (deterministic stability); the documented rename rules state exactly when identity is preserved vs re-minted
+2. Binding a simulated Revit representation (UniqueId) to the `dgId` of a GH-extracted wall lets either native id resolve to the same entity, and the containing DesignState references that `dgId`
+3. An insulation value written from the GH side is readable through the identity API keyed by `dgId` — with platform provenance — without Rhino running
+4. `spec/DG-ID.md` + the ADR document the scheme against Rhino.Inside.Revit element tracking, Speckle applicationId, IFC GlobalId, and Revit UniqueId approaches with explicit rationale for DG's connector architecture
+
+**Plans:** 7 plans
+
+**Wave 1**
+
+- [ ] 32.1-01-PLAN.md — DgId value type + deterministic minting service (SHA-256 over project|definitionId|cgId) + golden vector (DGID-01)
+- [ ] 32.1-02-PLAN.md — spec/DG-ID.md identity spec + ADR vs Rhino.Inside.Revit/Speckle/IFC/UniqueId/BHoM (DGID-01, DGID-06)
+- [ ] 32.1-03-PLAN.md — dg_identity.py + /identity mint/resolve/bind API, Representation registry, anti-misbinding 409 (DGID-02, DGID-03, DGID-05)
+
+**Wave 2** *(blocked on Wave 1; plan 05 also assumes Phase 32 artifacts exist)*
+
+- [ ] 32.1-04-PLAN.md — SharedProperty read/write API + simulated-Revit Ladybug-insulation property-flow proof (DGID-04, DGID-05)
+- [ ] 32.1-05-PLAN.md — dgId on Computgraph entities + CgContextDgIdAssigner + cgContextJson additive round-trip (DGID-01, DGID-03)
+- [ ] 32.1-06-PLAN.md — ObjState/statePayloadJson v2 additive dgId reference, v1/v2 backward-compat (DGID-03)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 32.1-07-PLAN.md — schema propagation: DATABASE.md, cypher_template, dataset_schema, CLAUDE.md tables, copilot-instructions, README, dg-shapes.ttl SHACL, dg_context.py allow-lists (DGID-01, DGID-02, DGID-04)
+
+---
+
 ### Phase 33: DG Canvas Bridge (grasshopper-mcp adaptation)
 
 **Goal:** data-service (and through it, any LLM/MCP client) can read the live Grasshopper canvas and drive on-canvas previews — via a native re-implementation of the grasshopper-mcp bridge pattern inside the DG plugin, no third-party plugin dependency.
@@ -299,14 +345,14 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 
 **Goal:** A confirmed canvas structure persists to Neo4j as the Computgraph layer — project-isolated, MERGE-idempotent, provenance-carrying — and is browsable as a distinct layer in the ui-v2 graph viewer.
 
-**Requires:** Phases 32 (serializer), 35 (confirmed structures; direct tagged-only publish works without 35).
+**Requires:** Phases 32 (serializer), 32.1 (`dgId` on every published entity), 35 (confirmed structures; direct tagged-only publish works without 35).
 
 **Requirements:** CGPD-01, CGPD-02, CGPD-03, CGPD-04, CGPD-05
 
 **Deliverables:**
 
 - `data-service/app.py` — `POST /computgraph/publish`: confirmed `cgContextJson` → Cypher; node labels `Object`, `Behavior`, `Algorithm`, `Procedure`, `Pattern`, `Parameter` (`paramKind`: Variable/Constant/Emergent; `dataType`), `Interface` (`ifaceType`: Input/Output) — all with `graph:'Computgraph'` + `project`; relationships `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`; optional `REFERS_TO` bridge Object→`Class` when a Class IRI was tagged
-- MERGE keys: stable entity ids derived from definition id + convention name (re-publish updates, never duplicates)
+- MERGE keys: stable entity ids derived from definition id + convention name (re-publish updates, never duplicates); every published node also carries its Phase 32.1 `dgId` so cross-platform representation bindings survive re-publish
 - Provenance properties per node: `source` (tagged | recognized), `provider`/`model` (when recognized), `definitionId`, `publishedAt`
 - Publish path from the plugin: **DG COMPUTGRAPH PUBLISH** component (or a confirm-then-publish output on DG STRUCTURE CONFIRM) following the `ValidationPublishClient` HTTP pattern
 - Schema propagation checklist: `cypher_template.txt`, `training/dataset_schema.json`, `spec/DATABASE.md`, `CLAUDE.md` schema tables, n8n/orchestrator prompts via the Phase 29 catalog
@@ -435,6 +481,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 0/5 | Planned | — |
+| 32.1 Cross-Platform Identity and Mapping (DG ID) | 0/7 | Planned | — |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 0/? | Not started | — |
 | 34. Ontology Tagging Components and Manual Selection | 0/? | Not started | — |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |
@@ -444,7 +491,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
 
-Dependency shape: `28 → 29 → 31` (31 also gated by 30's ADR); `28 → 30` (parallel to 29); `32 → 33 → 35`; `32 → 34 → 35` (33 ‖ 34); `29 → 35`; `{32,35} → 36 → 37`; `36 → 38`; `39` parallel to 30–38; all → `40`. **Phase 32 has no v9.0 dependencies and can start immediately.**
+Dependency shape: `28 → 29 → 31` (31 also gated by 30's ADR); `28 → 30` (parallel to 29); `32 → 32.1` (parallel-safe with 33–35); `32 → 33 → 35`; `32 → 34 → 35` (33 ‖ 34); `29 → 35`; `{32.1,35} → 36 → 37`; `36 → 38`; `39` parallel to 30–38; all → `40`. **Phase 32 has no v9.0 dependencies and can start immediately.**
 
 ### Files Modified Summary (projected)
 
@@ -458,7 +505,10 @@ Dependency shape: `28 → 29 → 31` (31 also gated by 30's ADR); `28 → 30` (p
 | `data-service/cg_structure_checks.py` | 37 | **New** — deterministic structural checks + rule-mapped checks |
 | `data-service/app.py` | 29, 33, 35, 36, 37, 38 | Context debug endpoint; `/computgraph/context/pull`, `gh_*` MCP tools; `/computgraph/recognize`; `/computgraph/publish`; `/computgraph/validate` + `/consult`; input generation |
 | `docker-compose.yml` | 30, 33 | OpenClaw spike container; `GH_BRIDGE_*` env + `extra_hosts` |
-| `DG/src/DG.Core/Models/Computgraph/*` | 32 | **New** — GH-free Computgraph object model |
+| `DG/src/DG.Core/Models/Computgraph/*` | 32, 32.1 | **New** — GH-free Computgraph object model (+ `dgId` fields in 32.1) |
+| `spec/DG-ID.md` | 32.1 | **New** — cross-platform identity spec (dgId format, minting, binding model, shared properties) |
+| `DG/src/DG.Core/Models/Identity/*` | 32.1 | **New** — DgId value type + deterministic minting service |
+| `data-service/dg_identity.py` | 32.1 | **New** — identity registry API (resolve/bind + shared-property read/write) |
 | `DG/src/DG.Core/Parsing/CanvasAnnotationParser.cs` | 32 | **New** — annotation-convention grammar |
 | `DG/src/DG.Core/Serialization/ComputgraphContextSerializer.cs` | 32 | **New** — cgContextJson v1 |
 | `DG/src/DG.Grasshopper/Canvas/CanvasContextExtractor.cs` | 32 | **New** — GH_Document traversal |

@@ -2,7 +2,7 @@
 
 **Milestone:** v9.0 AI Workflow Intelligence (restructured 2026-07-08)
 **Requirements:** CGPD-01..05
-**Depends on:** Phase 32 (serializer/ids); Phase 35 (confirmed structures — though a fully hand-tagged canvas can publish without Phase 35).
+**Depends on:** Phase 32 (serializer/ids); Phase 32.1 (cross-platform `dgId` — every published entity carries it); Phase 35 (confirmed structures — though a fully hand-tagged canvas can publish without Phase 35).
 
 ## What this phase is
 
@@ -13,7 +13,7 @@ Confirmed canvas structure becomes a persistent Neo4j subgraph — the ontology'
 1. **`POST /computgraph/publish`** (app.py): input = confirmed `cgContextJson v1` (only `source: tagged|recognized` entities; untagged never publishes). Label/relation mapping per `../32-computgraph-serialization-core/32-RESEARCH.md` §2:
    - Nodes: `Object` (`objectName`, optional `classIri`), `Behavior`, `Algorithm` (`algorithmName`, `algIndex`), `Procedure` (`procedureName`, `procIndex`), `Pattern` (`patternName`), `Parameter` (`parameterName`, `paramKind` ∈ Variable|Constant|Emergent, `dataType` ∈ Float|Integer|Text|Boolean|Geometry, `domainMin/Max/Step` when slider), `Interface` (`interfaceName`, `ifaceType` ∈ Input|Output) — every node `graph:'Computgraph'`, `project`
    - Relations: `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`; optional `REFERS_TO` from `Object` to the OntoGraph `Class` when `classIri` present (cross-layer bridge, mirrors Metagraph atoms → OntoGraph pattern)
-2. **MERGE keys:** `cgId` = deterministic id from Phase 32 (`cg:<alg>:<kind>:<conventionName>`) + `definitionId` + `project`. Re-publish updates properties, never duplicates (`MERGE (n:Pattern {cgId, definitionId, project})`). Entities absent from a re-publish are **not** auto-deleted in v9.0 — stale-entity cleanup is reported, deletion is explicit (avoid silent data loss; note in report).
+2. **MERGE keys:** `cgId` = deterministic id from Phase 32 (`cg:<alg>:<kind>:<conventionName>`) + `definitionId` + `project`. Re-publish updates properties, never duplicates (`MERGE (n:Pattern {cgId, definitionId, project})`). Entities absent from a re-publish are **not** auto-deleted in v9.0 — stale-entity cleanup is reported, deletion is explicit (avoid silent data loss; note in report). Every published node additionally carries its Phase 32.1 `dgId` property (cross-platform identity — representation bindings and shared properties key on it and must survive re-publish; see `spec/DG-ID.md`).
 3. **Provenance per node:** `source` (tagged | recognized), `provider`/`model` (recognized only, from the recognition response), `confidence` (recognized only), `definitionId`, `fileName`, `publishedAt` (ISO).
 4. **Plugin publish path (CGPD-05):** a `Publish` trigger on DG STRUCTURE CONFIRM (or a small **DG COMPUTGRAPH PUBLISH** component — decide in planning) that POSTs the confirmed context to `/computgraph/publish`, following the `ValidationPublishClient` pattern (static HttpClient, `dataServiceUrl` input, camelCase JSON, status output). Confirm→publish completes without leaving Grasshopper.
 5. **Schema propagation checklist** (the CLAUDE.md standing rule): `cypher_template.txt`, `training/dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md schema tables (add Computgraph rows to Node Labels + Relationships), n8n/orchestrator prompts via the Phase 29 catalog (Computgraph block), `.github/copilot-instructions.md`, README.md.

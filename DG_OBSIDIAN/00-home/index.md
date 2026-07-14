@@ -73,6 +73,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 822 monochromatic verdict mapping onto DSYS-01|Phase 822: Monochromatic verdict mapping — weight/opacity/glyph instead of green/amber hue]]
 - [[decisions/Phase 823 SHACL validation layer design decisions|Phase 823: SHACL Validation Layer — 8 design decisions]]
 - [[decisions/Phase 824 CONNECTOR credential integration decisions|Phase 824: CONNECTOR Credential Integration — 4 design decisions (DG.Core heartbeat logic, dgc_ prefix guard, heartbeat-only auth, additive-end input order)]]
+- [[decisions/Phase 32.1 DG ID cross-platform identity design|Phase 32.1 (v9.0): DG ID cross-platform identity — dgId wraps cgId, Representation registry, SharedProperty provenance, Revit binds via UniqueId not ElementId]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -92,6 +93,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/code-review-821-proxy-timeout-orphaned-jvms-arg-pos|Phase 821 code review: proxy timeout mismatch, orphaned JVMs, silent ARG.pos data loss]]
 - [[debugging/CR-01 validStatus truthy check causes false SHACL violations|CR-01: truthy valid_status check causes false-positive SHACL Violations on empty ValidStatus]]
 - [[debugging/graph-query-design-states-schema-mismatch|Phase 29 graph_query design-state bug: schema mismatch between aspirational :DesignState nodes and production ValidationRun.statePayloadJson]]
+- [[debugging/perplexity-mcp-parallel-call-crashes-browser-profile|Perplexity MCP: parallel calls crash the shared Chrome profile lock]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -198,6 +200,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 823 SHACL Validation Layer execution|2026-07-12 Phase 823 execution — SHACL Validation Layer, 6 plans across 4 waves]]
 - [[sessions/2026-07-12 Phase 824 CONNECTOR Credential Integration execution|2026-07-12 Phase 824 execution — CONNECTOR platform-token heartbeat, 2 plans, code-complete, in-Rhino UAT deferred]]
 - [[sessions/2026-07-12 Phase 29 UAT diagnosis and fix planning|2026-07-12 Phase 29 UAT diagnosis and fix planning — graph_query design-state schema mismatch root cause + 3 fix plans (29-06/29-07/29-08)]]
+- [[sessions/2026-07-13 Phase 32.1 DG ID cross-platform identity planning|2026-07-13 Phase 32.1 planning — DG ID cross-platform identity, Perplexity SOTA research (Rhino.Inside.Revit/Speckle/IFC/BHoM), 7 plans across 3 waves, verified]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
