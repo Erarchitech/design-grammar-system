@@ -110,13 +110,14 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Target audience is architects and urban planners]]
 - [[Product bridges natural language rules to graph-based validation]]
 
-### Publications (PhD Series)
-- [[publications/index|Publications index — PhD ITcon series]]
-- [[publications/Series coherence map|Карта согласованности серии T1–T4]]
-- [[publications/T1 — Онтологический фреймворк|T1 — Онтологический фреймворк]]
-- [[publications/T2 — Кодирование правил|T2 — Кодирование правил]]
-- [[publications/T3 — Отслеживание состояний|T3 — Отслеживание состояний]]
-- [[publications/T4 — Дизайн-пространство|T4 — Дизайн-пространство]]
+### Research (State of the Art)
+- [[research/index|Research MOC — SoA taxonomy, conspects, keywords]] (merged from 02_PhD_2024 vault, 2026-07-18)
+
+### Dissemination (Publications & Talks)
+- [[dissemination/index|Dissemination MOC — venue status board + ITcon series T1–T4]]
+- [[dissemination/consistency-map|Consistency map — публикации ↔ dev-артефакты]]
+- [[dissemination/Series coherence map|Карта согласованности серии T1–T4]]
+- [[dissemination/T1 — Онтологический фреймворк|T1]] · [[dissemination/T2 — Кодирование правил|T2]] · [[dissemination/T3 — Отслеживание состояний|T3]] · [[dissemination/T4 — Дизайн-пространство|T4]]
 
 ### Tools & Infrastructure
 - [[Graphify-CGD-Obsidian integration improvement plan|Graphify ↔ CGD ↔ Obsidian — план интеграции]]
@@ -202,7 +203,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 824 CONNECTOR Credential Integration execution|2026-07-12 Phase 824 execution — CONNECTOR platform-token heartbeat, 2 plans, code-complete, in-Rhino UAT deferred]]
 - [[sessions/2026-07-12 Phase 29 UAT diagnosis and fix planning|2026-07-12 Phase 29 UAT diagnosis and fix planning — graph_query design-state schema mismatch root cause + 3 fix plans (29-06/29-07/29-08)]]
 - [[sessions/2026-07-13 Phase 32.1 DG ID cross-platform identity planning|2026-07-13 Phase 32.1 planning — DG ID cross-platform identity, Perplexity SOTA research (Rhino.Inside.Revit/Speckle/IFC/BHoM), 7 plans across 3 waves, verified]]
-- [[sessions/2026-07-18 Phase 32.1 Wave 1 execution|2026-07-18 Phase 32.1 Wave 1 execution — DG ID minting core, spec+ADR, identity API; golden vector cross-language parity confirmed; Waves 2-3 ready]]
+- [[sessions/2026-07-18 Phase 32.1 Wave 1 execution|2026-07-18 Phase 32.1 Wave 1 — minting core, spec+ADR, identity API; golden vector confirmed]]
+- [[sessions/2026-07-18 Phase 32.1 complete — all 7 plans executed|2026-07-18 Phase 32.1 COMPLETE — 7/7 plans, 290 C# + 15 Python tests, cross-language parity verified]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive
