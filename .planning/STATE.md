@@ -13,7 +13,7 @@ progress:
   total_phases: 14
   completed_phases: 2
   total_plans: 23
-  completed_plans: 16
+  completed_plans: 17
   percent: 14
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 32.1 — Cross-Platform Identity and Mapping (DG ID)
-Plan: 05 (cross-platform-identity-and-mapping-dg-id) — completed
+Plan: 06 (cross-platform-identity-and-mapping-dg-id) — completed
 Status: Phase complete — ready for verification
-Last activity: 2026-07-18 — Plan 05 completed: DG ID wired into Computgraph serialization (additive DgId on 5 entity models, CgContextDgIdAssigner, serializer round-trip, backward compat)
+Last activity: 2026-07-18 — Plan 06 completed: ObjState DgId wiring + ObjStateDgIdTests (round-trip, backward-compat, minting parity); 290/290 tests green
 
 ## Deferred Items
 
