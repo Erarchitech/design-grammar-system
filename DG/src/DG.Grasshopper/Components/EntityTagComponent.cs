@@ -83,6 +83,15 @@ public sealed class EntityTagComponent : GH_Component
             {
                 try
                 {
+                    // Re-check inside the delegate (WR-02): AddedToDocument also fires
+                    // during file open, where wire topology may not be restored yet when
+                    // the outer guard ran -- by ScheduleSolution time restoration is
+                    // complete, so this is the authoritative "already wired" check.
+                    if (Params.Input.Count == 0 || Params.Input[0].Sources.Count > 0)
+                    {
+                        return;
+                    }
+
                     var valueList = new GH_ValueList();
                     valueList.CreateAttributes();
                     valueList.NickName = "Kind";
