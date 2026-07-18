@@ -306,6 +306,11 @@ NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
 
+# Mirrors app.py's VALIDATION_GRAPH constant (duplicated, not imported, for
+# the same circular-import reason _get_driver() is its own copy: app.py
+# imports dg_context, so dg_context cannot import app).
+VALIDATION_GRAPH = "ValidGraph"
+
 _EXISTING_ENTITIES_QUERY = (
     "MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) "
     "AND n.graph = 'OntoGraph' AND n.project = $project "
@@ -351,6 +356,99 @@ def fetch_existing_entities(project: str, session: Any = None) -> list[dict[str,
         return [dict(record) for record in result]
 
 
+# ── Live existing-design-states helper (Phase 29-06 gap closure: CTXA-01/04) ──
+#
+# Closes Phase 29 UAT Success Criterion 4: the graph_query context previously
+# carried only the aspirational Validgraph schema description, never any
+# LIVE ValidationRun data -- so the LLM had nothing to reason over except a
+# schema it could not verify against real data. This mirrors
+# fetch_existing_entities() (D-17) for the ValidGraph layer.
+
+
+def _summarize_state_payload(state_payload_json: str | None) -> dict[str, Any] | None:
+    """Lightweight port of app.py's `_project_state_summary()`, extended with
+    a per-kind (ObjState/ParamState/PropState) count breakdown so the
+    assembled context carries the v4 kind values a Cypher MATCH cannot
+    introspect from the opaque `statePayloadJson` string.
+
+    Returns None for absent, empty, or malformed payloads. Never raises.
+    """
+    if not state_payload_json:
+        return None
+    try:
+        parsed = json.loads(state_payload_json)
+    except (json.JSONDecodeError, ValueError, TypeError, RecursionError):
+        return None
+    if not isinstance(parsed, dict):
+        return None
+
+    if parsed.get("version") == "2":
+        return {
+            "stateId": parsed.get("stateId") or "",
+            "label": parsed.get("label"),
+            "capturedAtUtc": parsed.get("capturedAtUtc"),
+            "objStateCount": len(parsed.get("objStates") or []),
+            "paramStateCount": len(parsed.get("paramStates") or []),
+            "propStateCount": len(parsed.get("propStates") or []),
+        }
+
+    # v1 fallback (ParamState-only, no `version` field).
+    parameters = parsed.get("parameters")
+    return {
+        "stateId": parsed.get("stateId") or "",
+        "label": parsed.get("label"),
+        "capturedAtUtc": parsed.get("capturedAtUtc"),
+        "objStateCount": 0,
+        "paramStateCount": len(parameters) if isinstance(parameters, list) else 0,
+        "propStateCount": 0,
+    }
+
+
+_EXISTING_DESIGN_STATES_QUERY = (
+    "MATCH (run:ValidationRun {graph:$graph, project:$project}) "
+    "OPTIONAL MATCH (run)-[:HAS_ENTITY]->(ve:ValidationEntity) "
+    "RETURN run.runId AS runId, run.createdAt AS createdAt, "
+    "run.statePayloadJson AS statePayloadJson, run.ValidStatus AS validStatus, "
+    "run.SendStatus AS sendStatus, count(DISTINCT ve) AS entityCount "
+    "ORDER BY run.createdAt DESC, run.runId "
+    "LIMIT 25"
+)
+
+
+def fetch_existing_design_states(project: str, session: Any = None) -> list[dict[str, Any]]:
+    """Live per-project union of existing ValidationRun rows (mirrors
+    `list_validation_runs()`'s graph filter exactly, so this returns the SAME
+    runs the user sees in the Model Viewer), each parsed into a compact
+    {runId, createdAt, entityCount, validStatus, sendStatus, state} dict via
+    `_summarize_state_payload()`.
+
+    `$graph`/`$project` are bound parameters, never string-interpolated
+    (T-29-06 per-project isolation, same invariant as T-29-03a). `session` is
+    duck-typed identically to `fetch_existing_entities()` -- pass a
+    FixtureSession in unit tests, omit in production for a lazily-opened live
+    session. Ordering is deterministic (ORDER BY + LIMIT), preserving CTXA-05.
+    """
+    if session is not None:
+        result = session.run(_EXISTING_DESIGN_STATES_QUERY, graph=VALIDATION_GRAPH, project=project)
+        rows = [dict(record) for record in result]
+    else:
+        with _get_driver().session() as live_session:
+            result = live_session.run(_EXISTING_DESIGN_STATES_QUERY, graph=VALIDATION_GRAPH, project=project)
+            rows = [dict(record) for record in result]
+
+    return [
+        {
+            "runId": row.get("runId"),
+            "createdAt": row.get("createdAt"),
+            "entityCount": int(row.get("entityCount") or 0),
+            "validStatus": row.get("validStatus"),
+            "sendStatus": row.get("sendStatus"),
+            "state": _summarize_state_payload(row.get("statePayloadJson")),
+        }
+        for row in rows
+    ]
+
+
 # ── The assembler itself (Phase 29-03: CTXA-01/04/05) ──
 
 
@@ -394,6 +492,12 @@ def assemble_context(req: ContextAssembleRequest, session: Any = None) -> dict[s
 
     if req.type == "rule_edit":
         context["edit_guidance"] = dict(_RULE_EDIT_GUIDANCE)
+
+    if req.type == "graph_query":
+        # 29-06 gap closure: live ValidationRun/statePayloadJson data, so the
+        # LLM has real design-state data to reason over (D-17 pattern) --
+        # graph_query only, no extra Validgraph query on the ingest/edit path.
+        context["existing_design_states"] = fetch_existing_design_states(req.project, session=session)
 
     return context
 
