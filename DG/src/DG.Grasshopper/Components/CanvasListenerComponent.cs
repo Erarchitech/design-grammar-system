@@ -248,8 +248,10 @@ public sealed class CanvasListenerComponent : GH_Component
 
             try
             {
-                // Bounds a stuck client so the single-client slot is released (T-33-03, Pitfall 5).
-                client.ReceiveTimeout = ClientReceiveTimeoutMs;
+                // The stuck-client timeout (T-33-03, Pitfall 5) is enforced inside
+                // ServeClientAsync via a linked, self-cancelling token per read --
+                // Socket.ReceiveTimeout applies only to synchronous reads and would
+                // be a no-op against the async ReadLineAsync path used there.
                 await ServeClientAsync(client, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -273,7 +275,21 @@ public sealed class CanvasListenerComponent : GH_Component
 
         while (!ct.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(ct).ConfigureAwait(false);
+            // Bounds a stuck client so the single-client slot is released (T-33-03,
+            // Pitfall 5). Socket.ReceiveTimeout does NOT apply to async reads, so the
+            // idle timeout is enforced with a linked token that self-cancels instead.
+            using var readCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            readCts.CancelAfter(ClientReceiveTimeoutMs);
+            string? line;
+            try
+            {
+                line = await reader.ReadLineAsync(readCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                break; // idle client timed out -- release the single-client slot
+            }
+
             if (line is null)
             {
                 break;
