@@ -219,6 +219,57 @@ class TestEmptyResponse:
         assert exc_info.value.detail["code"] == "GH_BRIDGE_UNREACHABLE"
 
 
+# ── Malformed / truncated / non-object responses -> structured 502 (WR-04) ──
+
+
+class TestBadResponse:
+    def test_malformed_json_maps_to_structured_502(self, monkeypatch):
+        """Undecodable listener output is a structured GH_BRIDGE_BAD_RESPONSE,
+        not an unhandled json.JSONDecodeError 500 (T-33-06)."""
+        fake_sock = _FakeSocket(line="{not json}\n")
+        monkeypatch.setattr(
+            gh_bridge.socket, "create_connection", lambda address, timeout=None: fake_sock
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            gh_bridge.get_canvas_context("p1")
+
+        assert exc_info.value.status_code == 502
+        assert exc_info.value.detail["code"] == "GH_BRIDGE_BAD_RESPONSE"
+
+    def test_truncated_oversized_response_maps_to_structured_502(self, monkeypatch):
+        """readline(bound) returns a *truncated* fragment with no trailing newline
+        when the response exceeds the bound -- the fragment must not fall through
+        to json.loads as an unhandled 500."""
+        monkeypatch.setattr(gh_bridge, "MAX_RESPONSE_BYTES", 16)
+        truncated = '{"bridge": "dg",'  # exactly 16 chars, no trailing newline
+        assert len(truncated) == 16
+        fake_sock = _FakeSocket(line=truncated)
+        monkeypatch.setattr(
+            gh_bridge.socket, "create_connection", lambda address, timeout=None: fake_sock
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            gh_bridge.get_selection()
+
+        assert exc_info.value.status_code == 502
+        assert exc_info.value.detail["code"] == "GH_BRIDGE_BAD_RESPONSE"
+
+    def test_non_object_json_maps_to_structured_502(self, monkeypatch):
+        """A decodable but non-object response (e.g. a JSON array) must not
+        surface as an AttributeError 500 on envelope.get()."""
+        fake_sock = _FakeSocket(line="[1, 2, 3]\n")
+        monkeypatch.setattr(
+            gh_bridge.socket, "create_connection", lambda address, timeout=None: fake_sock
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            gh_bridge.get_canvas_context("p1")
+
+        assert exc_info.value.status_code == 502
+        assert exc_info.value.detail["code"] == "GH_BRIDGE_BAD_RESPONSE"
+
+
 # ── Source assertions (bounded reads, correct timeout wiring) ──
 
 

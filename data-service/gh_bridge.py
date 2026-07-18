@@ -53,7 +53,6 @@ def _call(command_type: str, parameters: dict) -> dict:
             line = buffered.readline(MAX_RESPONSE_BYTES)
             if not line:
                 raise ConnectionError("Bridge closed the connection without a response.")
-            envelope: dict[str, Any] = json.loads(line)
     except (ConnectionRefusedError, socket.timeout, OSError) as exc:
         raise _structured_error_response(
             f"Grasshopper bridge unreachable at {GH_BRIDGE_HOST}:{GH_BRIDGE_PORT}: {exc}",
@@ -61,6 +60,38 @@ def _call(command_type: str, parameters: dict) -> dict:
             "GH_BRIDGE_UNREACHABLE",
             503,
         ) from exc
+
+    # A readline() that hit the bound returns a *truncated* line with no trailing
+    # newline -- surface that as a structured 502 instead of letting the fragment
+    # fall through to json.loads and become an unhandled 500 (WR-04). Note the
+    # file object is text-mode, so the bound is a character count, not bytes.
+    if not line.endswith("\n") and len(line) >= MAX_RESPONSE_BYTES:
+        raise _structured_error_response(
+            f"Grasshopper bridge response exceeded the {MAX_RESPONSE_BYTES}-character bound.",
+            "Check the DG CANVAS LISTENER version (wire protocol v1).",
+            "GH_BRIDGE_BAD_RESPONSE",
+            502,
+        )
+
+    # Malformed or non-object responses must map to structured errors, never an
+    # unhandled 500 (T-33-06, WR-04).
+    try:
+        envelope: dict[str, Any] = json.loads(line)
+    except ValueError as exc:
+        raise _structured_error_response(
+            f"Grasshopper bridge returned a malformed response: {exc}",
+            "Check the DG CANVAS LISTENER version (wire protocol v1).",
+            "GH_BRIDGE_BAD_RESPONSE",
+            502,
+        ) from exc
+
+    if not isinstance(envelope, dict):
+        raise _structured_error_response(
+            "Grasshopper bridge returned a non-object response.",
+            "Check the DG CANVAS LISTENER version (wire protocol v1).",
+            "GH_BRIDGE_BAD_RESPONSE",
+            502,
+        )
 
     if envelope.get("status") == "error":
         err = envelope.get("error") or {}
