@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DG.Core.Models.Computgraph;
 using DG.Core.Serialization;
+using DG.Core.Services;
 
 namespace DG.Tests;
 
@@ -165,6 +166,123 @@ public sealed class ComputgraphContextSerializerTests
         var ex = Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize("not json"));
 
         Assert.Contains("JSON", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Serialize_WithDgIds_EmittedJsonContainsDgIdKey()
+    {
+        var context = CreateContext();
+        CgContextDgIdAssigner.AssignDgIds(context, "p1");
+
+        var json = ComputgraphContextSerializer.Serialize(context);
+
+        Assert.Contains("\"dgId\":\"dg:", json);
+    }
+
+    [Fact]
+    public void Deserialize_RoundTripWithDgIds_PreservesEachEntityDgId()
+    {
+        var context = CreateContext();
+        CgContextDgIdAssigner.AssignDgIds(context, "p1");
+
+        var json = ComputgraphContextSerializer.Serialize(context);
+        var roundTrip = ComputgraphContextSerializer.Deserialize(json);
+
+        Assert.Equal(context.Object!.DgId, roundTrip.Object!.DgId);
+
+        for (var i = 0; i < context.Algorithms.Count; i++)
+        {
+            for (var j = 0; j < context.Algorithms[i].Procedures.Count; j++)
+            {
+                var srcProc = context.Algorithms[i].Procedures[j];
+                var dstProc = roundTrip.Algorithms[i].Procedures[j];
+                Assert.Equal(srcProc.DgId, dstProc.DgId);
+
+                for (var k = 0; k < srcProc.Patterns.Count; k++)
+                    Assert.Equal(srcProc.Patterns[k].DgId, dstProc.Patterns[k].DgId);
+
+                for (var k = 0; k < srcProc.Parameters.Count; k++)
+                    Assert.Equal(srcProc.Parameters[k].DgId, dstProc.Parameters[k].DgId);
+
+                for (var k = 0; k < srcProc.Interfaces.Count; k++)
+                    Assert.Equal(srcProc.Interfaces[k].DgId, dstProc.Interfaces[k].DgId);
+            }
+        }
+    }
+
+    [Fact]
+    public void SerializeDeserialize_RoundTripWithDgIds_ShouldBeIdempotent()
+    {
+        var context = CreateContext();
+        CgContextDgIdAssigner.AssignDgIds(context, "p1");
+
+        var json = ComputgraphContextSerializer.Serialize(context);
+        var roundTripJson = ComputgraphContextSerializer.Serialize(ComputgraphContextSerializer.Deserialize(json));
+
+        Assert.Equal(json, roundTripJson);
+    }
+
+    [Fact]
+    public void Deserialize_BackwardCompatPre32_1_NoDgIdKeys_ShouldNotThrowAndLeaveDgIdNull()
+    {
+        var json = """
+            {
+              "schemaVersion": "cg-context-1",
+              "project": "p",
+              "definition": { "documentId": "d", "fileName": "f.gh", "capturedAt": "2026-01-01T00:00:00Z" },
+              "object": { "name": "FRAME", "classIri": null, "source": "tagged" },
+              "algorithms": [
+                {
+                  "index": 1,
+                  "name": "1_ALGORITHM",
+                  "procedures": [
+                    {
+                      "id": "cg:1:proc:11",
+                      "index": 11,
+                      "name": "2D Truss Configuration",
+                      "source": "tagged",
+                      "memberIds": [],
+                      "patterns": [
+                        { "id": "cg:1:pat:11_1", "label": "11_Pat_1", "name": null, "hostPatternId": null, "memberIds": [], "source": "tagged" }
+                      ],
+                      "parameters": [
+                        { "id": "cg:1:par:11_Var_SpansCount", "kind": "Variable", "name": "SpansCount", "dataType": null, "domain": null, "memberIds": [], "source": "tagged" }
+                      ],
+                      "interfaces": [
+                        { "id": "cg:1:intf:11_ParSplitAt", "name": "ParSplitAt", "ifaceType": "Output", "memberIds": [], "source": "tagged" }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "untagged": { "nodeIds": [], "groups": [] },
+              "nodes": [],
+              "wires": [],
+              "warnings": []
+            }
+            """;
+
+        var context = ComputgraphContextSerializer.Deserialize(json);
+
+        Assert.NotNull(context);
+        Assert.Null(context.Object!.DgId);
+
+        foreach (var algorithm in context.Algorithms)
+        {
+            foreach (var procedure in algorithm.Procedures)
+            {
+                Assert.Null(procedure.DgId);
+
+                foreach (var pattern in procedure.Patterns)
+                    Assert.Null(pattern.DgId);
+
+                foreach (var parameter in procedure.Parameters)
+                    Assert.Null(parameter.DgId);
+
+                foreach (var iface in procedure.Interfaces)
+                    Assert.Null(iface.DgId);
+            }
+        }
     }
 
     private static CgContext CreateContext()
