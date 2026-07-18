@@ -123,6 +123,8 @@ public sealed class CanvasAnnotationParserTests
 
         Assert.Null(context.Object);
         Assert.Empty(context.Algorithms);
+        Assert.Single(context.Untagged.Groups);
+        Assert.Equal("xx11_Proc - Junk", context.Untagged.Groups[0].Nickname);
     }
 
     [Fact]
@@ -139,6 +141,161 @@ public sealed class CanvasAnnotationParserTests
         Assert.Contains("@\"^(?<nn>\\d+)_Const_(?<name>.+)$\"", source);
         Assert.Contains("@\"^(?<nn>\\d+)_(?<tag>Emg|Emr)_(?<name>.+)$\"", source);
         Assert.Contains("@\"^(?<nn>\\d+)_IntF_(?<name>.+)$\"", source);
+    }
+
+    // --- Task 2: untagged routing, Emr tolerance, pattern nesting, dataType/domain inference ---
+
+    [Fact]
+    public void Parse_NonConformingGroupNickname_RoutesToUntaggedWithMembersIntactAndNoTypedEntity()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "My scratch group", MemberIds = { "u1", "u2" } } },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        Assert.Empty(context.Algorithms);
+        var untaggedGroup = Assert.Single(context.Untagged.Groups);
+        Assert.Equal("My scratch group", untaggedGroup.Nickname);
+        Assert.Equal(new List<string> { "u1", "u2" }, untaggedGroup.MemberIds);
+    }
+
+    [Fact]
+    public void Parse_UnclaimedNode_AppearsInUntaggedNodeIds()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Var_SpansCount", MemberIds = { "claimed1" } } },
+            Nodes =
+            {
+                new CgNode { InstanceId = "claimed1", Name = "Number Slider" },
+                new CgNode { InstanceId = "orphan1", Name = "Panel" },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        Assert.Contains("orphan1", context.Untagged.NodeIds);
+        Assert.DoesNotContain("claimed1", context.Untagged.NodeIds);
+    }
+
+    [Fact]
+    public void Parse_EmrTypo_NormalizesToEmergentAndAppendsWarning()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Emr_UpperChord" } },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var procedure = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+        Assert.Contains(procedure.Parameters, p => p.Kind == ParamKind.Emergent && p.Name == "UpperChord");
+        Assert.Contains(context.Warnings, w => w.Contains("Emr") && w.Contains("Emg"));
+    }
+
+    [Fact]
+    public void Parse_NestedPatternGroup_ResolvesHostPatternId()
+    {
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup
+                {
+                    Nickname = "11_Pat_TrussFrame",
+                    MemberIds = { "h1" },
+                    NestedGroupIds = { "11_Pat_TopChord" },
+                },
+                new RawGroup { Nickname = "11_Pat_TopChord", MemberIds = { "c1" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var procedure = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+        var host = procedure.Patterns.Single(p => p.Label == "11_Pat_TrussFrame");
+        var child = procedure.Patterns.Single(p => p.Label == "11_Pat_TopChord");
+
+        Assert.Equal(host.Id, child.HostPatternId);
+    }
+
+    [Fact]
+    public void Parse_IntegerSliderMember_InfersIntegerDataTypeAndDomain()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Var_SpansCount", MemberIds = { "s1" } } },
+            Nodes =
+            {
+                new CgNode
+                {
+                    InstanceId = "s1",
+                    Name = "Number Slider",
+                    Slider = new SliderDomain { Min = 1, Max = 20, Step = 1 },
+                    IsIntegerSlider = true,
+                },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 11)
+            .Parameters.Single(p => p.Name == "SpansCount");
+
+        Assert.Equal(ParamDataType.Integer, parameter.DataType);
+        Assert.NotNull(parameter.Domain);
+        Assert.Equal(1, parameter.Domain!.Min);
+        Assert.Equal(20, parameter.Domain.Max);
+        Assert.Equal(1, parameter.Domain.Step);
+    }
+
+    [Fact]
+    public void Parse_ConflictingMemberComponentTypes_UsesPrecedenceAndAppendsWarning()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Var_Mode", MemberIds = { "panel1", "slider1" } } },
+            Nodes =
+            {
+                new CgNode { InstanceId = "panel1", Name = "Panel" },
+                new CgNode
+                {
+                    InstanceId = "slider1",
+                    Name = "Number Slider",
+                    Slider = new SliderDomain { Min = 0, Max = 1, Step = 0.1 },
+                    IsIntegerSlider = false,
+                },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 11)
+            .Parameters.Single(p => p.Name == "Mode");
+
+        Assert.Equal(ParamDataType.Float, parameter.DataType);
+        Assert.Contains(context.Warnings, w => w.Contains("Mode") && w.Contains("conflicting"));
+    }
+
+    [Fact]
+    public void Parse_CyclicPatternNesting_StopsWithWarningInsteadOfHanging()
+    {
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup { Nickname = "11_Pat_A", MemberIds = { "a1" }, NestedGroupIds = { "11_Pat_B" } },
+                new RawGroup { Nickname = "11_Pat_B", MemberIds = { "b1" }, NestedGroupIds = { "11_Pat_A" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        Assert.Contains(
+            context.Warnings,
+            w => w.Contains("exceeded max depth") || w.Contains("cycle"));
     }
 
     private static string GetParserSourcePath([CallerFilePath] string testFilePath = "")
