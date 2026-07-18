@@ -93,6 +93,22 @@ public sealed class CanvasListenerComponent : GH_Component
         base.RemovedFromDocument(document);
     }
 
+    /// <summary>
+    /// RemovedFromDocument is NOT raised when the user closes the .gh file, so
+    /// without this override a running listener would keep port 8720 bound (and
+    /// keep serving a dead document) for the rest of the Rhino session (WR-01).
+    /// </summary>
+    public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+    {
+        if (context == GH_DocumentContext.Close || context == GH_DocumentContext.Unloaded)
+        {
+            StopListener();
+            _status = "Idle";
+        }
+
+        base.DocumentContextChanged(document, context);
+    }
+
     private CanvasCommandDispatcher BuildDispatcher()
     {
         var handlers = new Dictionary<string, Func<CanvasCommandRequest, object?>>
