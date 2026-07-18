@@ -193,6 +193,114 @@ class TestContextAssemble:
             assert key in context
 
 
+# ── Live existing-design-states helper + assemble_context wiring (Phase 29-06 gap closure) ──
+#
+# _summarize_state_payload() ports app.py's _project_state_summary() with a
+# v4 kind breakdown (objStateCount/paramStateCount/propStateCount) so the LLM
+# can answer "what design states exist" using v4 kind values, since the raw
+# statePayloadJson is an opaque string a Cypher MATCH cannot introspect.
+
+
+class TestExistingDesignStates:
+    _V2_PAYLOAD = json.dumps(
+        {
+            "version": "2",
+            "stateId": "OS_1",
+            "label": "ConfigC",
+            "capturedAtUtc": "2026-07-19T00:00:00Z",
+            "objStates": [{}],
+            "paramStates": [{}, {}],
+            "propStates": [{}, {}, {}],
+        }
+    )
+
+    def test_summarize_state_payload_v2_envelope_counts(self):
+        summary = dg_context._summarize_state_payload(self._V2_PAYLOAD)
+        assert summary == {
+            "stateId": "OS_1",
+            "label": "ConfigC",
+            "capturedAtUtc": "2026-07-19T00:00:00Z",
+            "objStateCount": 1,
+            "paramStateCount": 2,
+            "propStateCount": 3,
+        }
+
+    def test_summarize_state_payload_none_returns_none(self):
+        assert dg_context._summarize_state_payload(None) is None
+
+    def test_summarize_state_payload_malformed_json_returns_none(self):
+        assert dg_context._summarize_state_payload("{not json") is None
+
+    def test_summarize_state_payload_v1_fallback(self):
+        """A v1 payload (no `version` field, flat `parameters` list) maps to
+        paramStateCount only -- objStateCount/propStateCount are 0."""
+        v1_payload = json.dumps(
+            {"stateId": "DS_1", "label": "Legacy", "capturedAtUtc": "x", "parameters": [{}, {}]}
+        )
+        summary = dg_context._summarize_state_payload(v1_payload)
+        assert summary["paramStateCount"] == 2
+        assert summary["objStateCount"] == 0
+        assert summary["propStateCount"] == 0
+
+    def test_fetch_existing_design_states_returns_parsed_rows_and_binds_project(self):
+        row = {
+            "runId": "run-1",
+            "createdAt": "2026-07-19T00:00:00Z",
+            "statePayloadJson": self._V2_PAYLOAD,
+            "ValidStatus": [True],
+            "SendStatus": True,
+            "entityCount": 3,
+        }
+        session = FixtureSession(rows=[row])
+        result = dg_context.fetch_existing_design_states("ConfigurationC", session=session)
+
+        assert session.last_project == "ConfigurationC"
+        assert len(result) == 1
+        assert result[0]["runId"] == "run-1"
+        assert result[0]["createdAt"] == "2026-07-19T00:00:00Z"
+        assert result[0]["entityCount"] == 3
+        assert result[0]["state"]["stateId"] == "OS_1"
+        assert result[0]["state"]["objStateCount"] == 1
+
+    def test_assemble_context_graph_query_includes_existing_design_states(self):
+        """assemble_context() for graph_query puts parsed ValidationRun rows
+        under a top-level `existing_design_states` key (fixes the "no design
+        states were found" gap -- 29-UAT.md Success Criterion 4).
+
+        Note: FixtureSession.run() ignores query text and returns the same
+        configured rows for every call, so this row is also fed to
+        fetch_existing_entities -- assert only on existing_design_states here
+        (per plan note; test_graph_query_design_states_surfaces_v4_kind_enum
+        above stays unchanged with an empty FixtureSession())."""
+        row = {
+            "runId": "run-1",
+            "createdAt": "2026-07-19T00:00:00Z",
+            "statePayloadJson": self._V2_PAYLOAD,
+            "ValidStatus": [True],
+            "SendStatus": True,
+            "entityCount": 3,
+        }
+        req = dg_context.ContextAssembleRequest(
+            type="graph_query",
+            project="ConfigurationC",
+            rules_text=None,
+            question="What design states exist for ConfigurationC?",
+        )
+        context = dg_context.assemble_context(req, session=FixtureSession(rows=[row]))
+
+        assert "existing_design_states" in context
+        assert context["existing_design_states"][0]["runId"] == "run-1"
+        assert context["existing_design_states"][0]["state"]["objStateCount"] == 1
+
+    def test_assemble_context_rule_ingest_excludes_existing_design_states(self):
+        """graph_query-only: rule_ingest gets no extra Validgraph query."""
+        req = dg_context.ContextAssembleRequest(
+            type="rule_ingest", project="TestA", rules_text="Maximum height 75", question=None
+        )
+        context = dg_context.assemble_context(req, session=FixtureSession())
+        assert "existing_design_states" not in context
+
+
 # ── /context/assemble + /context/debug endpoints (Phase 29-03: D-01/D-04) ──
 
 
