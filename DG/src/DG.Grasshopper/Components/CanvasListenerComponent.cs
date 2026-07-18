@@ -286,7 +286,11 @@ public sealed class CanvasListenerComponent : GH_Component
     {
         using var stream = client.GetStream();
         var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-        using var reader = new StreamReader(stream, encoding);
+        // Bounded ingress (WR-02): StreamReader.ReadLineAsync buffers a newline-less
+        // line without bound, so the MaxRequestBytes guard in TryParse would only run
+        // after the damage is done. BoundedLineReader aborts the connection once the
+        // byte budget is exceeded before a '\n' is seen.
+        var reader = new BoundedLineReader(stream, CanvasBridgeProtocol.MaxRequestBytes);
         using var writer = new StreamWriter(stream, encoding) { NewLine = "\n", AutoFlush = true };
 
         while (!ct.IsCancellationRequested)
@@ -334,6 +338,79 @@ public sealed class CanvasListenerComponent : GH_Component
     {
         var doc = OnPingDocument();
         doc?.ScheduleSolution(1, _ => ExpireSolution(false));
+    }
+
+    /// <summary>
+    /// Reads newline-terminated UTF-8 lines from a stream with a hard per-line
+    /// byte budget (WR-02). Unlike <see cref="StreamReader.ReadLineAsync()"/>,
+    /// which accumulates a newline-less line without bound, this reader throws
+    /// <see cref="IOException"/> as soon as the budget is exceeded before a
+    /// '\n' is seen, so an abusive client cannot grow Rhino's memory.
+    /// </summary>
+    private sealed class BoundedLineReader
+    {
+        private readonly Stream _stream;
+        private readonly int _maxLineBytes;
+        private readonly byte[] _buffer = new byte[4096];
+        private int _start;
+        private int _end;
+
+        public BoundedLineReader(Stream stream, int maxLineBytes)
+        {
+            _stream = stream;
+            _maxLineBytes = maxLineBytes;
+        }
+
+        /// <summary>Returns the next line (without its terminator) or null on EOF.</summary>
+        public async Task<string?> ReadLineAsync(CancellationToken ct)
+        {
+            using var line = new MemoryStream();
+
+            while (true)
+            {
+                for (var i = _start; i < _end; i++)
+                {
+                    if (_buffer[i] == (byte)'\n')
+                    {
+                        line.Write(_buffer, _start, i - _start);
+                        _start = i + 1;
+                        return DecodeLine(line);
+                    }
+                }
+
+                line.Write(_buffer, _start, _end - _start);
+                _start = 0;
+                _end = 0;
+
+                if (line.Length > _maxLineBytes)
+                {
+                    throw new IOException(
+                        $"Request line exceeds the {_maxLineBytes}-byte bridge budget; closing connection.");
+                }
+
+                var read = await _stream.ReadAsync(_buffer.AsMemory(0, _buffer.Length), ct).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    return line.Length == 0 ? null : DecodeLine(line);
+                }
+
+                _end = read;
+            }
+        }
+
+        private static string DecodeLine(MemoryStream line)
+        {
+            var bytes = line.GetBuffer();
+            var length = (int)line.Length;
+
+            // Tolerate CRLF clients the same way StreamReader.ReadLine does.
+            if (length > 0 && bytes[length - 1] == (byte)'\r')
+            {
+                length--;
+            }
+
+            return Encoding.UTF8.GetString(bytes, 0, length);
+        }
     }
 }
 #else
