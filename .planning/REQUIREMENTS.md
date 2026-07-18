@@ -60,16 +60,16 @@
 
 ### DG Canvas Bridge (BRDG) — Phase 33
 
-- [ ] **BRDG-01**: A DG CANVAS LISTENER component hosts a TCP listener (configurable port, default 8720) speaking the grasshopper-mcp wire protocol (newline-terminated JSON `{type, parameters}`) with commands `get_canvas_context`, `get_selection`, `preview_structure`, `clear_preview`, `get_preview_status`
-- [ ] **BRDG-02**: data-service pulls the live canvas context from Rhino through a bridge client (`GH_BRIDGE_HOST`/`GH_BRIDGE_PORT` env, `host.docker.internal` from Docker) via `POST /computgraph/context/pull`
-- [ ] **BRDG-03**: The existing `POST /mcp` JSON-RPC server exposes `gh_get_context`, `gh_get_selection`, `gh_preview_structure`, `gh_clear_preview` tools so any MCP client (including the connected LLM) can read and preview against the canvas
-- [ ] **BRDG-04**: The bridge is safe and diagnosable: canvas access marshalled to the UI thread, bounded timeouts, clean socket shutdown on toggle-off, and listener-unreachable errors surfaced with the What+Where+How-to-fix pattern
+- [x] **BRDG-01**: A DG CANVAS LISTENER component hosts a TCP listener (configurable port, default 8720) speaking the grasshopper-mcp wire protocol (newline-terminated JSON `{type, parameters}`) with commands `get_canvas_context`, `get_selection`, `preview_structure`, `clear_preview`, `get_preview_status`
+- [x] **BRDG-02**: data-service pulls the live canvas context from Rhino through a bridge client (`GH_BRIDGE_HOST`/`GH_BRIDGE_PORT` env, `host.docker.internal` from Docker) via `POST /computgraph/context/pull`
+- [x] **BRDG-03**: The existing `POST /mcp` JSON-RPC server exposes `gh_get_context`, `gh_get_selection`, `gh_preview_structure`, `gh_clear_preview` tools so any MCP client (including the connected LLM) can read and preview against the canvas
+- [x] **BRDG-04**: The bridge is safe and diagnosable: canvas access marshalled to the UI thread, bounded timeouts, clean socket shutdown on toggle-off, and listener-unreachable errors surfaced with the What+Where+How-to-fix pattern
 
 ### Ontology Tagging Components (TAGC) — Phase 34
 
-- [ ] **TAGC-01**: A DG OBJECT MARKER component creates/updates the `OBJECT - <NAME>` and `<n>_ALGORITHM` scribbles (optionally bound to a `dg:Class` IRI) and reads existing markers without duplicating
-- [ ] **TAGC-02**: A DG ENTITY TAG component wraps the current manual canvas selection into a convention-named, convention-colored group for a chosen entity kind (Proc/Pat/Var/Const/Emg/IntF) with automatic index assignment, undoable via undo records
-- [ ] **TAGC-03**: Manual tags round-trip as ground truth: tagged entities appear in `cgContextJson` with `source: tagged` and are parsed identically by the serializer on every re-run
+- [x] **TAGC-01**: A DG OBJECT MARKER component creates/updates the `OBJECT - <NAME>` and `<n>_ALGORITHM` scribbles (optionally bound to a `dg:Class` IRI) and reads existing markers without duplicating
+- [x] **TAGC-02**: A DG ENTITY TAG component wraps the current manual canvas selection into a convention-named, convention-colored group for a chosen entity kind (Proc/Pat/Var/Const/Emg/IntF) with automatic index assignment, undoable via undo records
+- [x] **TAGC-03**: Manual tags round-trip as ground truth: tagged entities appear in `cgContextJson` with `source: tagged` and are parsed identically by the serializer on every re-run
 
 ### LLM Recognition and Proposal Preview (RCGN) — Phase 35
 

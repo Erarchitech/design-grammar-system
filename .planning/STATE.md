@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 32.1
-current_phase_name: DG ID
+current_phase: 34
+current_phase_name: ontology-tagging-components
 status: verifying
-stopped_at: Completed 32-02-PLAN.md (CanvasAnnotationParser + 15-fact unit matrix, both tasks committed)
-last_updated: "2026-07-18T13:19:39.521Z"
+stopped_at: Phase 34 executed; verification human_needed (deferred live-Rhino UAT) — resume with /gsd-verify-work 34
+last_updated: "2026-07-18T22:39:09.219Z"
 last_activity: 2026-07-18
-last_activity_desc: Phase 32 complete, transitioned to Phase 32.1
+last_activity_desc: Phase 34 execution started
 progress:
   total_phases: 14
-  completed_phases: 2
-  total_plans: 23
-  completed_plans: 17
-  percent: 14
+  completed_phases: 4
+  total_plans: 30
+  completed_plans: 26
+  percent: 29
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 32 — computgraph-serialization-core
+**Current focus:** Phase 34 — ontology-tagging-components
 
 ## Current Position
 
-Phase: 32.1 — Cross-Platform Identity and Mapping (DG ID)
-Plan: 06 (cross-platform-identity-and-mapping-dg-id) — completed
+Phase: 34 (ontology-tagging-components) — EXECUTING
+Plan: 3 of 3
 Status: Phase complete — ready for verification
-Last activity: 2026-07-18 — Plan 06 completed: ObjState DgId wiring + ObjStateDgIdTests (round-trip, backward-compat, minting parity); 290/290 tests green
+Last activity: 2026-07-18 — Phase 34 execution started
 
 ## Deferred Items
 
@@ -232,6 +232,15 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 32.1 Plan 01]: Golden vector (p1|frame.gh|cg:1:proc:11_Proc) -> dg:BC8E62EE137E2B56 anchors cross-language parity for data-service compute_dg_id (Plan 03)
 - [Phase ?]: dgId scheme documented: dg: + 16 hex SHA-256(project|definitionId|cgId), Revit binds UniqueId not ElementId, Representation/SharedProperty under graph:'Computgraph'
 - [Phase ?]: Rename re-mints by default (member-GUID carry-forward escape hatch deferred); shared-property conflict policy is last-write-wins for MVP
+- [Phase ?]: [Phase 33 Plan 01]: Wire envelope locked as {bridge:'dg',version:1,status,result|error:{message,code}} -- CanvasCommandDispatcher routes via an injected handler dictionary (no reflection) so v10 write commands require a deliberate code change to become reachable
+- [Phase Phase 33 Plan 03]: gh_bridge.py resolves the app.py<->gh_bridge circular import via a lazy in-function import of _structured_error_response inside _call(), not module-scope import
+- [Phase Phase 33 Plan 03]: gh_bridge errors propagate unwrapped through /mcp tools/call (never re-wrapped in a JSON-RPC error object), matching the existing neo4j_query precedent
+- [Phase ?]: [Phase 33 Plan 02]: CanvasListenerComponent lifecycle (dedup on Run+Port, StopListener on Run=false and RemovedFromDocument) mirrors ConnectorComponent exactly; canvas reads (get_canvas_context/get_selection) marshalled via RhinoApp.InvokeOnUiThread + TaskCompletionSource, socket write always stays on the background accept-loop thread
+- [Phase ?]: [Phase 33 Plan 02]: New ComponentGuid B0F26347-BB77-4593-A192-7BC3B0BC6169 assigned to CanvasListenerComponent (verified unique via repo-wide grep)
+- [Phase ?]: [Phase 34-01]: Additive-only grammar extraction -- CanvasAnnotationParser.cs never edited; consistency test enforces single-source-of-truth in both directions instead of interpolating constants into the parser's regexes
+- [Phase ?]: [Phase 34-01]: ProcIndex is the full NN token uniformly across all EntityTagKind values (NN < 10 rejected); Pattern naming idx slot is always auto-assigned integer with Name as optional trailing label
+- [Phase 34]: [Phase 34-02]: Task 3 (live-Rhino UAT) deferred to phase-level /gsd-verify-work per explicit user checkpoint response ('Defer live UAT, continue') -- same precedent as Phase 33; NOT self-approved as passed
+- [Phase 34]: [Phase 34-03]: Task 3 (live-Rhino UAT) deferred to phase-level /gsd-verify-work per explicit user checkpoint response ('Defer live UAT, continue') -- same precedent as Phase 33 and 34-02; NOT self-approved as passed
 
 ### Research Flags (carry into planning)
 
@@ -291,12 +300,18 @@ Shipped from Phase 20 Plan 02:
 | Phase 32 P05 | 30min | 2 tasks | 3 files |
 | Phase 32.1 P01 | 2min | 2 tasks | 3 files |
 | Phase 32.1 P02 | 15m | 2 tasks | 2 files |
+| Phase 33 P01 | 15min | - tasks | - files |
+| Phase 33 P03 | 12min | 2 tasks | 6 files |
+| Phase 33 P02 | 20min | 1 tasks | 2 files |
+| Phase 34 P01 | 25min | 2 tasks | 3 files |
+| Phase 34 P02 | 3min | 2 tasks | 3 files |
+| Phase 34 P03 | 10min | 2 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-18T13:18:30.638Z
-Stopped at: Completed 32-02-PLAN.md (CanvasAnnotationParser + 15-fact unit matrix, both tasks committed)
-Resume file: None
+Last session: 2026-07-18T22:39:09.202Z
+Stopped at: Phase 34 executed; verification human_needed (deferred live-Rhino UAT) — resume with /gsd-verify-work 34
+Resume file: .planning/phases/34-ontology-tagging-components/34-UAT.md
 
 ## Performance Metrics
 

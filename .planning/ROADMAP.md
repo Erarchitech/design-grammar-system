@@ -285,7 +285,21 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. Listener off / Rhino closed → data-service returns a What+Where+How-to-fix error, not a hang (bounded timeout)
 4. The listener never touches the canvas off the UI thread; toggling it off closes the socket cleanly and repeated on/off cycles don't leak ports
 
-**Plans:** TBD
+**Plans:** 3/4 plans executed
+
+Plans:
+**Wave 1**
+
+- [x] 33-01-PLAN.md — DG.Core bridge protocol + command dispatcher (wire contract, allow-list) [BRDG-01]
+- [x] 33-03-PLAN.md — gh_bridge.py client + /computgraph/context/pull + 4 gh_* MCP tools + docker-compose [BRDG-02, BRDG-03, BRDG-04]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 33-02-PLAN.md — DG CANVAS LISTENER component: TcpListener + UI-thread marshalling + lifecycle [BRDG-01, BRDG-04]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 33-04-PLAN.md — live in-Rhino end-to-end verification (human-verify) [BRDG-01..04]
 
 ---
 
@@ -311,7 +325,18 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. Manual tags survive the round-trip: tag → serialize → the tagged entity appears as ground truth (`source: tagged`) in `cgContextJson`
 4. Ctrl+Z removes a tag group cleanly (component uses undo records)
 
-**Plans:** TBD
+**Plans:** 3/3 plans complete
+**Wave 1**
+
+- [x] 34-01-PLAN.md — CanvasAnnotationGrammar token constants + CanvasAnnotationNameFactory (GH-free write path) + xUnit round-trip suite (Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 34-02-PLAN.md — DG OBJECT MARKER component: scribble create/report + dg.objectClassIri ValueTable metadata (Wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 34-03-PLAN.md — CanvasAnnotationStyles palette + DG ENTITY TAG component: selection→group, undo, nesting, guard rails (Wave 3)
 
 ---
 
@@ -482,8 +507,8 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
 | 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
-| 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 0/? | Not started | — |
-| 34. Ontology Tagging Components and Manual Selection | 0/? | Not started | — |
+| 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
+| 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |
 | 36. Computgraph Persistence and Graph Layer Display | 0/? | Not started | — |
 | 37. Script Structure Validation MVP | 0/? | Not started | — |
