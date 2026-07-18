@@ -5,6 +5,7 @@
 @prefix dgv: <http://example.org/design-grammar/valid#> .
 @prefix swrl: <http://www.w3.org/2003/11/swrl#> .
 @prefix ex: <http://example.org/design-grammar/ex#> .
+@prefix dgc: <http://example.org/design-grammar/comp#> .
 @prefix dgsh: <http://example.org/design-grammar/shapes#> .
 
 # ontology/dg-shapes.ttl
@@ -180,3 +181,108 @@ dgsh:ParamStateParameterCountShape_count
     sh:severity sh:Info ;
     sh:message "A parameter state was captured with zero parameters." ;
     dgsh:howToFix "This is tolerable (e.g. a design with no sliders/toggles) but worth double-checking the PARAMETER STATE wiring." .
+
+#############################################
+# 9. Representation — platform-native binding integrity (Phase 32.1)
+#############################################
+dgsh:RepresentationShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Representation ;
+    sh:property dgsh:RepresentationShape_platform,
+                dgsh:RepresentationShape_nativeIdKind,
+                dgsh:RepresentationShape_nativeId,
+                dgsh:RepresentationShape_project,
+                dgsh:RepresentationShape_connector .
+
+dgsh:RepresentationShape_platform
+    sh:path dgc:platform ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("Grasshopper" "Revit" "IFC" "Speckle") ;
+    sh:severity sh:Violation ;
+    sh:message "A Representation node has a missing or invalid platform value — must be one of Grasshopper, Revit, IFC, or Speckle." ;
+    dgsh:howToFix "Set the platform property to a valid value: Grasshopper, Revit, IFC, or Speckle." .
+
+dgsh:RepresentationShape_nativeIdKind
+    sh:path dgc:nativeIdKind ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("InstanceGuid" "UniqueId" "GlobalId" "ApplicationId") ;
+    sh:severity sh:Violation ;
+    sh:message "A Representation node has a missing or invalid nativeIdKind — must be one of InstanceGuid, UniqueId, GlobalId, or ApplicationId." ;
+    dgsh:howToFix "Set nativeIdKind to InstanceGuid (Grasshopper), UniqueId (Revit), GlobalId (IFC), or ApplicationId (Speckle)." .
+
+dgsh:RepresentationShape_nativeId
+    sh:path dgc:nativeId ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Representation node is missing its nativeId — every binding must carry a platform-native identifier." ;
+    dgsh:howToFix "Ensure the bind operation supplies the native platform identifier (instance GUID, UniqueId, GlobalId, or ApplicationId)." .
+
+dgsh:RepresentationShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Representation node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Representation node to the owning project." .
+
+dgsh:RepresentationShape_connector
+    sh:path dgc:connector ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Representation node is missing its connector provenance." ;
+    dgsh:howToFix "Set the connector property to the string identifying the binding source (e.g. gh-plugin, revit-sim)." .
+
+#############################################
+# 10. SharedProperty — cross-platform property integrity (Phase 32.1)
+#############################################
+dgsh:SharedPropertyShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:SharedProperty ;
+    sh:property dgsh:SharedPropertyShape_dgId,
+                dgsh:SharedPropertyShape_propertyName,
+                dgsh:SharedPropertyShape_project,
+                dgsh:SharedPropertyShape_platform,
+                dgsh:SharedPropertyShape_writtenAt .
+
+dgsh:SharedPropertyShape_dgId
+    sh:path dgc:dgId ;
+    sh:minCount 1 ;
+    sh:pattern "^dg:[0-9A-F]{16}$" ;
+    sh:severity sh:Violation ;
+    sh:message "A SharedProperty node has a missing or malformed dgId — must match the pattern dg: followed by 16 uppercase hex characters." ;
+    dgsh:howToFix "Mint the entity via /identity/mint before writing shared properties, or pass a valid dg:XXXX... (16 hex) value." .
+
+dgsh:SharedPropertyShape_propertyName
+    sh:path dgc:propertyName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A SharedProperty node is missing its propertyName — every shared property must name the value it carries." ;
+    dgsh:howToFix "Supply a propertyName string (e.g. 'insulation', 'uValue', 'area') when writing the shared property." .
+
+dgsh:SharedPropertyShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A SharedProperty node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the SharedProperty node to the owning project." .
+
+dgsh:SharedPropertyShape_platform
+    sh:path dgc:platform ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A SharedProperty node is missing its platform provenance — the system needs to know which platform computed this value." ;
+    dgsh:howToFix "Set the platform property to the platform that computed the value (Grasshopper, Revit, IFC, or Speckle)." .
+
+dgsh:SharedPropertyShape_writtenAt
+    sh:path dgc:writtenAt ;
+    sh:minCount 1 ;
+    sh:severity sh:Violation ;
+    sh:message "A SharedProperty node is missing its writtenAt timestamp — provenance requires a recorded write time." ;
+    dgsh:howToFix "Set writtenAt to the datetime when the value was computed and written." .
