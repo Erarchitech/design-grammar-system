@@ -1,5 +1,7 @@
 #if GRASSHOPPER_SDK
 using DG.Core.Models.Computgraph;
+using DG.Core.Parsing;
+using DG.Core.Serialization;
 using Grasshopper.GUI.Base;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
@@ -8,9 +10,11 @@ namespace DG.Grasshopper.Canvas;
 
 /// <summary>
 /// Traverses a live <see cref="GH_Document"/> into a GH-free <see cref="RawCanvas"/>
-/// (nodes, wires, groups with nesting, scribbles, slider domains) -- the GH-dependent
-/// half of CGSR-03. This is a PURE traversal: it never classifies scribble/group text
-/// into typed Computgraph entities (that stays in DG.Core's CanvasAnnotationParser,
+/// (nodes, wires, groups with nesting, scribbles, slider domains) and composes a
+/// one-call <see cref="SerializeContext"/> seam that chains the DG.Core parser +
+/// serializer into a cgContextJson v1 string -- the GH-dependent half of CGSR-03.
+/// The traversal itself is PURE: it never classifies scribble/group text into typed
+/// Computgraph entities (that stays in DG.Core's <see cref="CanvasAnnotationParser"/>,
 /// per CONTEXT.md decision #4).
 /// </summary>
 public static class CanvasContextExtractor
@@ -79,6 +83,18 @@ public static class CanvasContextExtractor
         }
 
         return raw;
+    }
+
+    /// <summary>
+    /// One-call seam: extract -&gt; parse -&gt; serialize. This is the entry point
+    /// Phase 33's DG CANVAS LISTENER (<c>get_canvas_context</c>) invokes; kept as a
+    /// thin composition so all classification/serialization logic stays in DG.Core.
+    /// </summary>
+    public static string SerializeContext(GH_Document? doc, string project)
+    {
+        var raw = ExtractRaw(doc, project);
+        var context = CanvasAnnotationParser.Parse(raw);
+        return ComputgraphContextSerializer.Serialize(context);
     }
 
     private static void TryAddNode(RawCanvas raw, IGH_DocumentObject obj)
@@ -249,6 +265,10 @@ namespace DG.Grasshopper.Canvas;
 public static class CanvasContextExtractor
 {
     public static RawCanvas ExtractRaw(object? doc, string project) =>
+        throw new PlatformNotSupportedException(
+            "CanvasContextExtractor requires the Grasshopper SDK (GRASSHOPPER_SDK).");
+
+    public static string SerializeContext(object? doc, string project) =>
         throw new PlatformNotSupportedException(
             "CanvasContextExtractor requires the Grasshopper SDK (GRASSHOPPER_SDK).");
 }
