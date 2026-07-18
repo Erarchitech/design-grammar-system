@@ -103,6 +103,10 @@ public sealed class CanvasListenerComponent : GH_Component
     /// RemovedFromDocument is NOT raised when the user closes the .gh file, so
     /// without this override a running listener would keep port 8720 bound (and
     /// keep serving a dead document) for the rest of the Rhino session (WR-01).
+    /// Note that Unloaded also fires on every document *tab switch*, not just
+    /// close, so the Loaded branch below schedules a re-solve: SolveInstance
+    /// then restarts the listener (Run=true sees a null accept-loop task) and
+    /// the Status output stops showing a stale "Listening ..." value.
     /// </summary>
     public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
     {
@@ -110,6 +114,13 @@ public sealed class CanvasListenerComponent : GH_Component
         {
             StopListener();
             _status = "Idle";
+        }
+        else if (context == GH_DocumentContext.Loaded)
+        {
+            // Re-activating a tab does not trigger a solve on its own, so the
+            // listener stopped by the matching Unloaded would silently stay dead
+            // while the Status output kept claiming "Listening" (iter-3 WR-01).
+            ScheduleRefresh();
         }
 
         base.DocumentContextChanged(document, context);
