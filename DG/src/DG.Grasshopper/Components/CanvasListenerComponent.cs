@@ -77,7 +77,13 @@ public sealed class CanvasListenerComponent : GH_Component
         else
         {
             var requestKey = CanvasListenerRequestKey.Build(run, port);
-            if (_acceptLoopTask is null || !string.Equals(_activeRequestKey, requestKey, StringComparison.Ordinal))
+
+            // _acceptLoopTask.IsCompleted repairs a loop that died without a
+            // deliberate Stop() (e.g. OS socket teardown) -- otherwise the
+            // component would report "Listening" forever with nothing bound (WR-06).
+            if (_acceptLoopTask is null
+                || _acceptLoopTask.IsCompleted
+                || !string.Equals(_activeRequestKey, requestKey, StringComparison.Ordinal))
             {
                 StartListener(port, requestKey);
             }
@@ -257,8 +263,16 @@ public sealed class CanvasListenerComponent : GH_Component
             {
                 break;
             }
-            catch (SocketException)
+            catch (SocketException ex)
             {
+                // Surface an unexpected socket death (not a deliberate Stop()) so
+                // the component does not keep claiming "Listening" while nothing
+                // is bound; the next solve sees IsCompleted and restarts (WR-06).
+                if (!ct.IsCancellationRequested)
+                {
+                    _status = $"Stopped: {ex.Message}";
+                }
+
                 break;
             }
 
