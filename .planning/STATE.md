@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 29
-current_phase_name: DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness
-status: executing
-stopped_at: Completed 29-05-PLAN.md (Task 1 checkpoint resolved reimport-repo-first, Tasks 2-3 auto, phase 29 complete)
-last_updated: "2026-07-12T20:52:05.856Z"
-last_activity: 2026-07-12
-last_activity_desc: Phase 29 execution started
+current_phase: 32.1
+current_phase_name: DG ID
+status: verifying
+stopped_at: Completed 32-02-PLAN.md (CanvasAnnotationParser + 15-fact unit matrix, both tasks committed)
+last_updated: "2026-07-18T13:19:39.521Z"
+last_activity: 2026-07-18
+last_activity_desc: Phase 32 complete, transitioned to Phase 32.1
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 15
+  total_plans: 23
+  completed_plans: 15
+  percent: 14
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 29 — DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness)
+**Current focus:** Phase 32 — computgraph-serialization-core
 
 ## Current Position
 
-Phase: 29 (DG-Aware Context Layer (SWRL + Ontology + Cypher Awareness)) — EXECUTING
-Plan: 5 of 5
-Status: Ready to execute
-Last activity: 2026-07-12 — Phase 29 execution started
+Phase: 32.1 — Cross-Platform Identity and Mapping (DG ID)
+Plan: Not started
+Status: Phase complete — ready for verification
+Last activity: 2026-07-18 — Phase 32 complete, transitioned to Phase 32.1
 
 ## Deferred Items
 
@@ -220,6 +220,18 @@ Shipped from Phase 20 Plan 02:
 - [Phase 29]: generate_validated_cypher() validates request_type upfront before touching the adapter -- fails fast on an unknown type without a live LLM call
 - [Phase ?]: Task 1 (29-05) resolved as reimport-repo-first: live n8n rules-to-metagraph.json overwritten with repo content (Phase 28 LLM-gateway caller), reconciling drift (versionCounter 33->34)
 - [Phase ?]: n8n prompt nodes (rules-to-metagraph.json, graph-query-mcp.json) reduced to thin callers of /context/assemble + /context/generate-cypher; both live workflows re-synced and verified byte-identical to repo
+- [Phase ?]: [Phase 32 Plan 01]: CgObject.Source stays a plain string ("tagged"|"recognized"), not enum -- matches freeform envelope value, Phase 35 adds recognized
+- [Phase ?]: [Phase 32 Plan 01]: SliderDomain and the three enums (ParamKind/ParamDataType/IfaceType) live alongside their owning entity file rather than separate files -- keeps file count at the plan's specified 10
+- [Phase ?]: [Phase 32 Plan 01]: CgDefinition shared by both CgContext and RawCanvas (not duplicated) -- both envelopes carry identical documentId/fileName/capturedAt semantics
+- [Phase ?]: [Phase 32 Plan 02]: CanvasAnnotationParser pattern-host resolution deferred until after immediate host ids are computed into a plain Dictionary, since CgPattern.HostPatternId is init-only
+- [Phase ?]: [Phase 32 Plan 02]: CgInterface.IfaceType defaults to Input for all parsed interfaces -- the NN_IntF_NAME grammar carries no Input/Output marker; Phase 35 recognition refines it
+- [Phase ?]: [Phase 32 Plan 03]: CgParameterDto.Kind (not ParamKind) so camelCase emits 'kind' matching cgContextJson v1 envelope verbatim (RESEARCH.md section 5)
+- [Phase ?]: [Phase 32 Plan 03]: Warnings sorted StringComparer.Ordinal alongside every other collection per plan's explicit instruction, prioritizing determinism/idempotency over warning-message sequence
+- [Phase 32-05]: Checked-in Frame RawCanvas fixture with descriptive-string node ids (not real GUID format) since nothing in the model/parser/serializer validates them as Guid — Readability over format realism for a hand-authored fixture; no downstream consumer parses these as System.Guid
+- [Phase ?]: [Phase 32.1 Plan 01]: DgIdMintingService uses classic string.IsNullOrWhiteSpace guards, not net8+ ArgumentException.ThrowIfNullOrWhiteSpace, because DG.Core multi-targets net7.0
+- [Phase ?]: [Phase 32.1 Plan 01]: Golden vector (p1|frame.gh|cg:1:proc:11_Proc) -> dg:BC8E62EE137E2B56 anchors cross-language parity for data-service compute_dg_id (Plan 03)
+- [Phase ?]: dgId scheme documented: dg: + 16 hex SHA-256(project|definitionId|cgId), Revit binds UniqueId not ElementId, Representation/SharedProperty under graph:'Computgraph'
+- [Phase ?]: Rename re-mints by default (member-GUID carry-forward escape hatch deferred); shared-property conflict policy is last-write-wins for MVP
 
 ### Research Flags (carry into planning)
 
@@ -272,11 +284,18 @@ Shipped from Phase 20 Plan 02:
 | Phase 29 P03 | 35min | 3 tasks | 3 files |
 | Phase 29 P04 | 50min | 2 tasks | 3 files |
 | Phase 29 P05 | 55min | 3 tasks | 3 files |
+| Phase 32 P01 | 20min | 2 tasks | 11 files |
+| Phase 32 P02 | 35min | 2 tasks | 2 files |
+| Phase 32 P03 | 25min | 2 tasks | 2 files |
+| Phase 32 P04 | 30min | 2 tasks | 1 files |
+| Phase 32 P05 | 30min | 2 tasks | 3 files |
+| Phase 32.1 P01 | 2min | 2 tasks | 3 files |
+| Phase 32.1 P02 | 15m | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-12T18:38:10.338Z
-Stopped at: Completed 29-05-PLAN.md (Task 1 checkpoint resolved reimport-repo-first, Tasks 2-3 auto, phase 29 complete)
+Last session: 2026-07-18T13:18:30.638Z
+Stopped at: Completed 32-02-PLAN.md (CanvasAnnotationParser + 15-fact unit matrix, both tasks committed)
 Resume file: None
 
 ## Performance Metrics

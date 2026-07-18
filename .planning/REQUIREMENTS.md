@@ -51,12 +51,12 @@
 
 ### Cross-Platform Identity and Mapping (DGID) — Phase 32.1
 
-- [ ] **DGID-01**: Every design object extracted into the Computgraph (Object, Procedure, Pattern, Parameter, Interface) carries a platform-neutral `dgId` that is deterministic across re-extractions of the same definition, unique within a project, and documented in a versioned identity spec (`spec/DG-ID.md`: format, minting, rename/stability rules, collision policy)
+- [x] **DGID-01**: Every design object extracted into the Computgraph (Object, Procedure, Pattern, Parameter, Interface) carries a platform-neutral `dgId` that is deterministic across re-extractions of the same definition, unique within a project, and documented in a versioned identity spec (`spec/DG-ID.md`: format, minting, rename/stability rules, collision policy)
 - [ ] **DGID-02**: A Neo4j identity registry binds each `dgId` to its per-platform representations (Grasshopper instance GUID, Revit UniqueId/ElementId, IFC GlobalId, Speckle applicationId) with connector provenance; representations attach and detach without changing the `dgId`
 - [ ] **DGID-03**: Counterpart objects across platforms resolve to one identity within a Design State — a Revit BIM wall generated from a Grasshopper parametric wall binds to the wall's existing `dgId`, and DesignState/ObjState payloads reference member objects by `dgId`
 - [ ] **DGID-04**: Properties computed on one platform attach to the shared identity and are readable from any bound representation — e.g. a Ladybug-derived insulation value written from Grasshopper is readable for the Revit panel representation — with every shared-property write carrying platform/connector/timestamp provenance
 - [ ] **DGID-05**: data-service exposes an identity API (mint/resolve/bind + shared-property read/write) over parameterized, project-isolated Cypher; unresolvable or ambiguously bound native ids return structured What+Where+How-to-fix errors, never a silent misbinding
-- [ ] **DGID-06**: The identity scheme is recorded in an ADR against the surveyed state of the art (Rhino.Inside.Revit element tracking/binding, Speckle applicationId vs hash id, IFC GlobalId, Revit UniqueId episode+ElementId, BHoM adapter ids) with explicit rationale for the DG connector architecture
+- [x] **DGID-06**: The identity scheme is recorded in an ADR against the surveyed state of the art (Rhino.Inside.Revit element tracking/binding, Speckle applicationId vs hash id, IFC GlobalId, Revit UniqueId episode+ElementId, BHoM adapter ids) with explicit rationale for the DG connector architecture
 
 ### DG Canvas Bridge (BRDG) — Phase 33
 

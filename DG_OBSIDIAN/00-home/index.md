@@ -74,6 +74,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 823 SHACL validation layer design decisions|Phase 823: SHACL Validation Layer — 8 design decisions]]
 - [[decisions/Phase 824 CONNECTOR credential integration decisions|Phase 824: CONNECTOR Credential Integration — 4 design decisions (DG.Core heartbeat logic, dgc_ prefix guard, heartbeat-only auth, additive-end input order)]]
 - [[decisions/Phase 32.1 DG ID cross-platform identity design|Phase 32.1 (v9.0): DG ID cross-platform identity — dgId wraps cgId, Representation registry, SharedProperty provenance, Revit binds via UniqueId not ElementId]]
+- [[decisions/DG ID cross-platform identity scheme|Phase 32.1 (v9.0): DG ID scheme ADR (DGID-06) — positioning against Rhino.Inside.Revit, Speckle, IFC GlobalId, Revit UniqueId, BHoM]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -201,6 +202,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-12 Phase 824 CONNECTOR Credential Integration execution|2026-07-12 Phase 824 execution — CONNECTOR platform-token heartbeat, 2 plans, code-complete, in-Rhino UAT deferred]]
 - [[sessions/2026-07-12 Phase 29 UAT diagnosis and fix planning|2026-07-12 Phase 29 UAT diagnosis and fix planning — graph_query design-state schema mismatch root cause + 3 fix plans (29-06/29-07/29-08)]]
 - [[sessions/2026-07-13 Phase 32.1 DG ID cross-platform identity planning|2026-07-13 Phase 32.1 planning — DG ID cross-platform identity, Perplexity SOTA research (Rhino.Inside.Revit/Speckle/IFC/BHoM), 7 plans across 3 waves, verified]]
+- [[sessions/2026-07-18 Phase 32.1 Wave 1 execution|2026-07-18 Phase 32.1 Wave 1 execution — DG ID minting core, spec+ADR, identity API; golden vector cross-language parity confirmed; Waves 2-3 ready]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 
 ### Archive

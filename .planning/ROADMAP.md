@@ -201,21 +201,21 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. The serializer round-trips: `cgContextJson v1` → model → JSON is stable (idempotent re-serialization)
 4. All parser/serializer logic runs and passes tests without the Grasshopper SDK (DG.Core only)
 
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 **Wave 1**
 
-- [ ] 32-01-PLAN.md — GH-free Computgraph object model + CgContext root + RawCanvas input contract (CGSR-01)
+- [x] 32-01-PLAN.md — GH-free Computgraph object model + CgContext root + RawCanvas input contract (CGSR-01)
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 32-02-PLAN.md — CanvasAnnotationParser: convention grammar → typed entities, untagged routing, Emr tolerance, nesting, dataType inference (CGSR-02)
-- [ ] 32-03-PLAN.md — ComputgraphContextSerializer: versioned cgContextJson v1 read/write, idempotent round-trip (CGSR-03)
+- [x] 32-02-PLAN.md — CanvasAnnotationParser: convention grammar → typed entities, untagged routing, Emr tolerance, nesting, dataType inference (CGSR-02)
+- [x] 32-03-PLAN.md — ComputgraphContextSerializer: versioned cgContextJson v1 read/write, idempotent round-trip (CGSR-03)
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 32-04-PLAN.md — CanvasContextExtractor (#if GRASSHOPPER_SDK): GH_Document traversal → RawCanvas + SerializeContext seam (CGSR-03)
-- [ ] 32-05-PLAN.md — Frame RawCanvas fixture + xUnit integration test proving all 4 success criteria (CGSR-01..04)
+- [x] 32-04-PLAN.md — CanvasContextExtractor (#if GRASSHOPPER_SDK): GH_Document traversal → RawCanvas + SerializeContext seam (CGSR-03)
+- [x] 32-05-PLAN.md — Frame RawCanvas fixture + xUnit integration test proving all 4 success criteria (CGSR-01..04)
 
 ---
 
@@ -243,12 +243,12 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. An insulation value written from the GH side is readable through the identity API keyed by `dgId` — with platform provenance — without Rhino running
 4. `spec/DG-ID.md` + the ADR document the scheme against Rhino.Inside.Revit element tracking, Speckle applicationId, IFC GlobalId, and Revit UniqueId approaches with explicit rationale for DG's connector architecture
 
-**Plans:** 7 plans
+**Plans:** 2/7 plans executed
 
 **Wave 1**
 
-- [ ] 32.1-01-PLAN.md — DgId value type + deterministic minting service (SHA-256 over project|definitionId|cgId) + golden vector (DGID-01)
-- [ ] 32.1-02-PLAN.md — spec/DG-ID.md identity spec + ADR vs Rhino.Inside.Revit/Speckle/IFC/UniqueId/BHoM (DGID-01, DGID-06)
+- [x] 32.1-01-PLAN.md — DgId value type + deterministic minting service (SHA-256 over project|definitionId|cgId) + golden vector (DGID-01)
+- [x] 32.1-02-PLAN.md — spec/DG-ID.md identity spec + ADR vs Rhino.Inside.Revit/Speckle/IFC/UniqueId/BHoM (DGID-01, DGID-06)
 - [ ] 32.1-03-PLAN.md — dg_identity.py + /identity mint/resolve/bind API, Representation registry, anti-misbinding 409 (DGID-02, DGID-03, DGID-05)
 
 **Wave 2** *(blocked on Wave 1; plan 05 also assumes Phase 32 artifacts exist)*
@@ -480,8 +480,8 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | 29. DG-Aware Context Layer | 5/5 | Complete   | 2026-07-12 |
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
-| 32. Computgraph Serialization Core | 0/5 | Planned | — |
-| 32.1 Cross-Platform Identity and Mapping (DG ID) | 0/7 | Planned | — |
+| 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
+| 32.1 Cross-Platform Identity and Mapping (DG ID) | 2/7 | In Progress|  |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 0/? | Not started | — |
 | 34. Ontology Tagging Components and Manual Selection | 0/? | Not started | — |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |
