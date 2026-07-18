@@ -18,4 +18,10 @@ public class ObjState
     public string? ClassIri { get; init; }
 
     public DateTimeOffset CapturedAtUtc { get; init; }
+
+    /// <summary>
+    /// Deterministic DG identity referencing the corresponding Computgraph entity.
+    /// Set by the DesignStateDgIdAssigner (Plan 06); null before assignment.
+    /// </summary>
+    public string? DgId { get; init; }
 }

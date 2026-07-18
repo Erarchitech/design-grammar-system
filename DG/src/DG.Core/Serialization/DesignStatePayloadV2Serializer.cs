@@ -256,6 +256,7 @@ public static class DesignStatePayloadV2Serializer
             ObjectRef = objState.ObjectRef,
             Label = objState.Label,
             CapturedAtUtc = objState.CapturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
+            DgId = objState.DgId,
         };
     }
 
@@ -326,6 +327,7 @@ public static class DesignStatePayloadV2Serializer
             ObjectRef = dto.ObjectRef ?? string.Empty,
             Label = dto.Label,
             CapturedAtUtc = capturedAt.ToUniversalTime(),
+            DgId = dto.DgId,
         };
     }
 
@@ -476,6 +478,8 @@ public static class DesignStatePayloadV2Serializer
         public string? Label { get; init; }
 
         public string? CapturedAtUtc { get; init; }
+
+        public string? DgId { get; init; }
     }
 
     private sealed class ParamStateDto
