@@ -264,6 +264,32 @@ class TestDeterminism:
         assert json.dumps(get_response.json(), sort_keys=False) == json.dumps(post_response.json(), sort_keys=False)
 
 
+# ── VALIDGRAPH_CONCEPTS -- real ValidationRun/statePayloadJson shape ──
+#
+# Phase 29-06 gap closure: converges the schema description fed to the LLM to
+# the REAL shipped shape (app.py store_validation_run()/list_validation_runs()),
+# not the aspirational :DesignState/:Run nodes that caused the "no design
+# states found" bug (29-UAT.md Success Criterion 4).
+
+
+class TestValidgraphConceptsRealShape:
+    def test_node_labels_describe_validationrun_not_designstate(self):
+        """VALIDGRAPH_CONCEPTS.node_labels reflects ValidationRun/ValidationEntity
+        (the real shape); DesignState/Run (aspirational, never-materialized nodes)
+        are removed."""
+        node_labels = dg_context.VALIDGRAPH_CONCEPTS["node_labels"]
+        assert "ValidationRun" in node_labels
+        assert "ValidationEntity" in node_labels
+        assert "DesignState" not in node_labels
+        assert "Run" not in node_labels
+
+    def test_design_state_kinds_preserved(self):
+        """design_state_kinds still describes the v4 kind enum -- now framed as
+        statePayloadJson entry kinds, not node labels (29-03's existing
+        assertion this preserves)."""
+        assert dg_context.VALIDGRAPH_CONCEPTS["design_state_kinds"] == ["ObjState", "ParamState", "PropState"]
+
+
 # ── validate_cypher() -- schema + verb-policy validator (Phase 29-04: CTXA-04) ──
 #
 # CTXA-04 is the phase's PRIMARY security control (T-29-01/T-29-02 mitigation,
@@ -375,6 +401,37 @@ class TestValidator:
     def test_unknown_request_type_raises_value_error(self):
         with pytest.raises(ValueError):
             dg_context.validate_cypher("MERGE (r:Rule {Rule_Id: 'X'})", "bogus_type")
+
+    # ── 29-06 gap closure: ValidationRun/HAS_ENTITY allow-list convergence ──
+
+    def test_validationrun_match_is_allowed_for_graph_query(self):
+        """The REAL shipped shape (ValidationRun.statePayloadJson, matching
+        app.py's store_validation_run()) validates clean for graph_query."""
+        cypher = "MATCH (run:ValidationRun {project:'p'}) RETURN run.statePayloadJson LIMIT 50"
+        result = dg_context.validate_cypher(cypher, "graph_query")
+        codes = {v["code"] for v in result["violations"]}
+        assert "unknown_label" not in codes
+
+    def test_has_entity_relationship_is_allowed_for_graph_query(self):
+        """HAS_ENTITY (ValidationRun -> ValidationEntity, app.py store_validation_run())
+        is an allowed relationship; ValidationEntity is an allowed label."""
+        cypher = "MATCH (run:ValidationRun)-[:HAS_ENTITY]->(ve:ValidationEntity) RETURN ve LIMIT 50"
+        result = dg_context.validate_cypher(cypher, "graph_query")
+        codes = {v["code"] for v in result["violations"]}
+        assert "unknown_label" not in codes
+        assert "unknown_relationship" not in codes
+
+    def test_designstate_match_is_rejected_as_unknown_label_for_graph_query(self):
+        """Regression guard for THIS gap: a MATCH (:DesignState ...) query --
+        the exact aspirational pattern the LLM was generating that silently
+        returned zero rows (29-UAT.md Success Criterion 4 root cause) -- must
+        now be rejected as unknown_label, turning a silent empty result into
+        corrective-feedback retry (CTXA-04, D-08)."""
+        cypher = "MATCH (ds:DesignState {project:'p'}) RETURN ds LIMIT 50"
+        result = dg_context.validate_cypher(cypher, "graph_query")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "unknown_label" in codes
 
 
 # ── generate_validated_cypher() -- bounded retry loop (Phase 29-04: D-06/D-07) ──
