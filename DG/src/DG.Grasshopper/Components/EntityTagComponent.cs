@@ -251,6 +251,14 @@ public sealed class EntityTagComponent : GH_Component
                 }
 
                 var core = g.MemberIds.Where(id => !groupGuids.Contains(id)).ToList();
+                if (core.Count == 0 && selectedCore.Count == 0)
+                {
+                    // Group-only pattern vs group-only selection: cores are vacuous --
+                    // compare the full member sets exactly (WR-11).
+                    return g.MemberIds.Count == selectedIds.Count
+                        && selectedIds.All(id => g.MemberIds.Contains(id));
+                }
+
                 return core.Count == selectedCore.Count && selectedCore.All(id => core.Contains(id));
             });
 
