@@ -313,6 +313,12 @@ public sealed class EntityTagComponent : GH_Component
             var updateRecord = new GH_UndoRecord("DG Tag Entity (update)");
             updateRecord.AddAction(new GH_GenericObjectAction(existingGroup));
 
+            // Detach from stale hosts (WR-01): if the group was previously nested inside a
+            // Pattern that no longer encloses the new selection, remove its guid from that
+            // host so colour and structural nesting cannot disagree. Each touched host is
+            // recorded in the same undo record BEFORE mutation.
+            DetachFromStaleHosts(currentDoc, existingGroup.InstanceGuid, hostGroupNickname, updateRecord);
+
             existingGroup.ObjectIDs.Clear();
             foreach (var obj in selected)
             {
@@ -321,7 +327,7 @@ public sealed class EntityTagComponent : GH_Component
 
             existingGroup.NickName = nickname;
             existingGroup.Colour = colour;
-            AttachToHost(currentDoc, hostGroupNickname, existingGroup.InstanceGuid);
+            AttachToHost(currentDoc, hostGroupNickname, existingGroup.InstanceGuid, updateRecord);
 
             currentDoc.UndoServer.PushUndoRecord(updateRecord);
             return;
@@ -340,12 +346,12 @@ public sealed class EntityTagComponent : GH_Component
 
         record.AddAction(new GH_AddObjectAction(group));
         currentDoc.AddObject(group, false);
-        AttachToHost(currentDoc, hostGroupNickname, group.InstanceGuid);
+        AttachToHost(currentDoc, hostGroupNickname, group.InstanceGuid, record);
 
         currentDoc.UndoServer.PushUndoRecord(record);
     }
 
-    private static void AttachToHost(GH_Document currentDoc, string? hostGroupNickname, Guid childGuid)
+    private static void AttachToHost(GH_Document currentDoc, string? hostGroupNickname, Guid childGuid, GH_UndoRecord record)
     {
         if (hostGroupNickname is null)
         {
@@ -357,7 +363,32 @@ public sealed class EntityTagComponent : GH_Component
 
         if (hostGroup is not null && !hostGroup.ObjectIDs.Contains(childGuid))
         {
+            // Record the host BEFORE mutating it (WR-01): undoing the tag must also
+            // restore the host Pattern's ObjectIDs, or the extractor would report a
+            // phantom nested-group id after undo.
+            record.AddAction(new GH_GenericObjectAction(hostGroup));
             hostGroup.AddObject(childGuid);
+        }
+    }
+
+    /// <summary>
+    /// Removes <paramref name="childGuid"/> from every Pattern group other than the newly
+    /// detected host that still lists it as a member (WR-01 -- re-tag must detach from a
+    /// stale host, not only attach to the new one). Each touched host is recorded in
+    /// <paramref name="record"/> before mutation so the whole re-tag is atomically undoable.
+    /// </summary>
+    private static void DetachFromStaleHosts(GH_Document currentDoc, Guid childGuid, string? newHostNickname, GH_UndoRecord record)
+    {
+        var staleHosts = currentDoc.Objects.OfType<GH_Group>()
+            .Where(g => g.NickName.Contains(CanvasAnnotationGrammar.PatternInfix, StringComparison.Ordinal))
+            .Where(g => newHostNickname is null || !string.Equals(g.NickName, newHostNickname, StringComparison.Ordinal))
+            .Where(g => g.ObjectIDs.Contains(childGuid))
+            .ToList();
+
+        foreach (var staleHost in staleHosts)
+        {
+            record.AddAction(new GH_GenericObjectAction(staleHost));
+            staleHost.RemoveObject(childGuid);
         }
     }
 
