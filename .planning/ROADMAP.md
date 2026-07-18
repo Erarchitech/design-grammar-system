@@ -254,7 +254,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 **Wave 2** *(blocked on Wave 1; plan 05 also assumes Phase 32 artifacts exist)*
 
 - [ ] 32.1-04-PLAN.md — SharedProperty read/write API + simulated-Revit Ladybug-insulation property-flow proof (DGID-04, DGID-05)
-- [ ] 32.1-05-PLAN.md — dgId on Computgraph entities + CgContextDgIdAssigner + cgContextJson additive round-trip (DGID-01, DGID-03)
+- [x] 32.1-05-PLAN.md — dgId on Computgraph entities + CgContextDgIdAssigner + cgContextJson additive round-trip (DGID-01, DGID-03)
 - [ ] 32.1-06-PLAN.md — ObjState/statePayloadJson v2 additive dgId reference, v1/v2 backward-compat (DGID-03)
 
 **Wave 3** *(blocked on Wave 2)*
@@ -481,7 +481,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
-| 32.1 Cross-Platform Identity and Mapping (DG ID) | 2/7 | In Progress|  |
+| 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 0/? | Not started | — |
 | 34. Ontology Tagging Components and Manual Selection | 0/? | Not started | — |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |
