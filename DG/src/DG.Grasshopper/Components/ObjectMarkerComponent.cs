@@ -111,13 +111,37 @@ public sealed class ObjectMarkerComponent : GH_Component
         var context = CanvasAnnotationParser.Parse(raw);
 
         var existingAlgorithm = context.Algorithms.FirstOrDefault(a => a.Index == algorithmIndex);
+        var classIri = ontologyClass?.Iri;
+
         if (context.Object is not null && existingAlgorithm is not null)
         {
-            // REPORT mode -- idempotent read-before-write (TAGC-01): the canvas is
-            // already annotated, so nothing is mutated.
+            // REPORT mode -- idempotent read-before-write (TAGC-01): scribbles are never
+            // duplicated. The Class IRI binding is still honoured on an already-annotated
+            // canvas (WR-06): a new/changed OntologyClass input updates dg.objectClassIri
+            // via a scheduled solution, and the current binding is reported in Status.
+            var storedIri = doc?.ValueTable.GetValue("dg.objectClassIri", string.Empty);
+            if (!string.IsNullOrWhiteSpace(classIri) && !string.Equals(storedIri, classIri, StringComparison.Ordinal))
+            {
+                doc?.ScheduleSolution(1, currentDoc =>
+                {
+                    try
+                    {
+                        currentDoc.ValueTable.SetValue("dg.objectClassIri", classIri);
+                    }
+                    catch (Exception ex)
+                    {
+                        Message = "Class binding failed";
+                        _lastError = $"Failed to bind Class IRI: {ex.Message}";
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastError);
+                    }
+                });
+                storedIri = classIri;
+            }
+
+            var classSuffix = string.IsNullOrWhiteSpace(storedIri) ? string.Empty : $" / Class: {storedIri}";
             da.SetData(0, context.Object.Name);
             da.SetData(1, existingAlgorithm.Index);
-            da.SetData(2, $"Read existing: OBJECT - {context.Object.Name} / {existingAlgorithm.Index}_ALGORITHM");
+            da.SetData(2, $"Read existing: OBJECT - {context.Object.Name} / {existingAlgorithm.Index}_ALGORITHM{classSuffix}");
             return;
         }
 
@@ -125,7 +149,6 @@ public sealed class ObjectMarkerComponent : GH_Component
         // forbids AddObject while a solution is in progress (RESEARCH.md Pitfall 1/A3).
         var needsObjectScribble = context.Object is null;
         var needsAlgorithmScribble = existingAlgorithm is null;
-        var classIri = ontologyClass?.Iri;
 
         // WR-03: a failure inside the previously scheduled mutation is carried in state --
         // re-emit it here so a re-solve (which wipes runtime messages) still shows it.
