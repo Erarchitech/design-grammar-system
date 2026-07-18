@@ -12,6 +12,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
 | `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config |
 | `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
+| `Computgraph` | Representation, SharedProperty | Cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) |
 
 ## Node Labels
 
@@ -107,6 +108,83 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - `statePayloadJson` — v2 projection for Model Viewer read-back
 - `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
 
+### Computgraph
+
+**dgId property** — Every Computgraph entity node (`:Algorithm`, `:Procedure`, `:Pattern`, `:Parameter`, `:Interface`) carries an optional `dgId` property (nullable on pre-32.1 nodes). Format: `dg:` followed by the first 16 uppercase hexadecimal characters of the SHA-256 digest over the UTF-8 bytes of `project|definitionId|cgId`. See `spec/DG-ID.md` for the normative identity specification and golden-vector parity contract.
+
+---
+
+**Representation** — A platform-native identifier bound to a dgId. One entity may have N representations across platforms.
+
+```
+(:Representation {
+   nativeId: "<platform-native identifier>",
+   platform: "Grasshopper",          // Grasshopper | Revit | IFC | Speckle
+   nativeIdKind: "InstanceGuid",     // InstanceGuid | UniqueId | GlobalId | ApplicationId
+   connector: "gh-plugin",
+   boundAt: datetime(),
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `nativeId` | string | The platform-native identifier value (merge key part) |
+| `platform` | enum | `Grasshopper` \| `Revit` \| `IFC` \| `Speckle` (merge key part) |
+| `nativeIdKind` | enum | `InstanceGuid` \| `UniqueId` \| `GlobalId` \| `ApplicationId` |
+| `connector` | string | The connector that created the binding (provenance) |
+| `boundAt` | datetime | When the binding was created (provenance) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(nativeId, platform, project)`
+- Written only by the data-service identity API (`PATCH /identity/bind`, `POST /identity/{dgId}/representations`)
+- Managed via `bind`/`detach` operations — never directly by LLM rule-ingest
+
+---
+
+**SharedProperty** — A cross-platform shared property value keyed by dgId and property name.
+
+```
+(:SharedProperty {
+   dgId: "dg:9F2A4C1E7B03D5A8",
+   propertyName: "insulation",
+   value: 2.4,
+   platform: "Grasshopper",
+   connector: "gh-plugin",
+   writtenAt: datetime(),
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `dgId` | string | Identity the property is attached to (merge key part) |
+| `propertyName` | string | The shared property name (merge key part) |
+| `value` | any | The computed value |
+| `platform` | string | Platform that computed the value (provenance) |
+| `connector` | string | Connector that wrote it (provenance) |
+| `writtenAt` | datetime | Write timestamp (provenance) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(dgId, propertyName, project)` — any bound platform sees the same value
+- Conflict policy: last-write-wins (MVP)
+- Written only by the data-service identity API (`POST /identity/{dgId}/properties`)
+- Cross-platform: a value written from Grasshopper is read identically "as Revit"
+
+---
+
+**Identity Registry (Phase 32.1)**
+
+The identity registry comprises the `Representation` and `SharedProperty` node labels, the `dgId` property on Computgraph entity nodes, and the `HAS_REPRESENTATION` / `HAS_SHARED_PROPERTY` relationships — all under `graph:'Computgraph'`. These nodes are written ONLY by the data-service identity API (`/identity/*` routes), never by LLM rule-ingest.
+
+**Recorded decision:** `dgId` gets **no OWL annotation property in V7**. It is runtime/persistence identity, not ontological vocabulary — the OWL file does not model identity bindings. Rationale: the ADR at `DG_OBSIDIAN/knowledge/decisions/DG ID cross-platform identity scheme.md`.
+
+**Normative spec:** `spec/DG-ID.md` — this database schema documents the structural shape; `DG-ID.md` is the normative contract for format, minting, rename/collision rules, the binding model, and shared-property semantics.
+
 ## Relationships
 
 | Relationship | From | To | Properties | Description |
@@ -118,6 +196,8 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `HAS_STATE` | DesignState | DesignState | — | Read-side composition: parent DesignState to ObjState/ParamState/PropState |
 | `TAGGED_WITH` | SpecNote | SpecTag | — | Note-to-tag association |
 | `INSTANCE_OF` | SpecNote/SpecSession | SpecClass | — | Instance-to-parent-class link |
+| `HAS_REPRESENTATION` | Computgraph entity | Representation | — | Entity → platform-native id binding |
+| `HAS_SHARED_PROPERTY` | Computgraph entity | SharedProperty | — | Entity → cross-platform property value |
 
 ## Rule ID Format
 

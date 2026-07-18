@@ -66,6 +66,31 @@ GRAPH SCHEMA (from dataset_schema v3)
   Run→DesignState relationship: (:Run)-[:VALIDATES]->(:DesignState)
            Cardinality: many Runs to one DesignState.
 
+  ~~ Identity-registry nodes (document-only — NOT emitted by LLM ingest) ~~
+
+  These nodes are written ONLY by the data-service identity API
+  (/identity/mint, /identity/bind, /identity/{dgId}/properties), never by LLM
+  rule-ingest. The ingest emits OntoGraph + Metagraph nodes only. This
+  subsection documents the registry shape for reader context.
+
+  Representation — key: (nativeId, platform, project)
+           graph: 'Computgraph'
+           props: nativeId, platform (Grasshopper|Revit|IFC|Speckle),
+                  nativeIdKind (InstanceGuid|UniqueId|GlobalId|ApplicationId),
+                  connector, boundAt
+
+  SharedProperty — key: (dgId, propertyName, project)
+           graph: 'Computgraph'
+           props: dgId, propertyName, value, platform, connector, writtenAt
+
+  Entity→Representation   relationship: (:Computgraph entity)-[:HAS_REPRESENTATION]->(:Representation)
+  Entity→SharedProperty  relationship: (:Computgraph entity)-[:HAS_SHARED_PROPERTY]->(:SharedProperty)
+
+  Every Computgraph entity node (Algorithm, Procedure, Pattern, Parameter,
+  Interface) may carry dgId — a deterministic platform-neutral identity
+  (format dg:<16 uppercase hex>, see spec/DG-ID.md), NOT emitted by LLM ingest.
+  The template's MERGE blocks must never create these nodes or relationships.
+
 SEMANTIC MAPPING (violation pattern)
 - "Maximum / at most / no more than X" → body uses swrlb:greaterThan(?val, X)
 - "Minimum / at least / no less than X" → body uses swrlb:lessThan(?val, X)

@@ -140,6 +140,54 @@
         "from": "Run",
         "to": "DesignState",
         "cardinality": "many Runs to one DesignState"
+      },
+      "note_identity_registry": "Representation & SharedProperty are document-only — NOT emitted by LLM ingest. Written only by the data-service identity API (/identity/ routes). The ingest emits OntoGraph + Metagraph nodes only. These entries document the registry node shapes for reader context.",
+      "Representation": {
+        "label": "Representation",
+        "key": {
+          "nativeId": "<platform-native identifier>",
+          "platform": "Grasshopper | Revit | IFC | Speckle",
+          "project": "default-project"
+        },
+        "props": {
+          "nativeId": "string",
+          "platform": "Grasshopper | Revit | IFC | Speckle",
+          "nativeIdKind": "InstanceGuid | UniqueId | GlobalId | ApplicationId",
+          "connector": "string",
+          "boundAt": "datetime",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "SharedProperty": {
+        "label": "SharedProperty",
+        "key": {
+          "dgId": "dg:<16 uppercase hex>",
+          "propertyName": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "propertyName": "string",
+          "value": "any",
+          "platform": "string",
+          "connector": "string",
+          "writtenAt": "datetime",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "IdentityRelationships": {
+        "HAS_REPRESENTATION": {
+          "type": "HAS_REPRESENTATION",
+          "from": "Computgraph entity",
+          "to": "Representation"
+        },
+        "HAS_SHARED_PROPERTY": {
+          "type": "HAS_SHARED_PROPERTY",
+          "from": "Computgraph entity",
+          "to": "SharedProperty"
+        }
       }
     },
     "atoms": [
