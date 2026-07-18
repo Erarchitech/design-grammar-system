@@ -171,13 +171,42 @@ METAGRAPH_CONCEPTS: dict[str, Any] = {
 VALIDGRAPH_CONCEPTS: dict[str, Any] = {
     "layer": "Validgraph",
     "graph_value": "ValidGraph",
-    "node_labels": ["DesignState", "Run"],
+    # 29-06 gap closure: describes the REAL shipped shape per app.py's
+    # store_validation_run()/list_validation_runs() -- DesignState/Run (the
+    # aspirational node labels the LLM's schema-correct-but-wrong
+    # MATCH (:DesignState ...) query targeted, per 29-UAT.md Success
+    # Criterion 4's debug session) are intentionally NOT here; no
+    # :DesignState nodes exist for live runs.
+    "node_labels": ["ValidationRun", "ValidationEntity", "IntegrationConfig"],
+    # Kinds of state ENTRIES inside statePayloadJson (see
+    # state_payload_json_shape below) -- NOT first-class node labels. Kept
+    # for backward compat with 29-03's existing assertion.
     "design_state_kinds": ["ObjState", "ParamState", "PropState"],
     "key_properties": {
-        "DesignState": "StateId+project",
-        "Run": "Run_Id+project",
+        "ValidationRun": "graph+project+runId",
+        "ValidationEntity": "graph+project+runId+ruleId+dgEntityId",
     },
-    "run_properties": ["ValidStatus", "SendStatus"],
+    "relationship_types": ["HAS_ENTITY"],
+    "run_properties": ["ValidStatus", "SendStatus", "status", "createdAt", "rulesJson", "statePayloadJson"],
+    "design_state_storage": (
+        "Design states are NOT separate graph nodes. Each validation run "
+        "MERGEs exactly one (:ValidationRun {graph:'ValidGraph', project, "
+        "runId}) node whose `statePayloadJson` property holds the whole "
+        "captured design-state snapshot serialized as a JSON string. Answer "
+        "a design-state question by MATCHing ValidationRun for the project "
+        "and reading run.statePayloadJson -- never by matching a "
+        ":DesignState node, since none exist for live runs."
+    ),
+    "state_payload_json_shape": {
+        "version": "2",
+        "stateId": "string",
+        "label": "string",
+        "capturedAtUtc": "ISO-8601 string",
+        "objStates": "list (ObjState entries)",
+        "paramStates": "list (ParamState entries)",
+        "propStates": "list (PropState entries)",
+        "v1_fallback": "pre-v2 payloads carry a flat `parameters` list instead of the three typed lists above",
+    },
 }
 
 
@@ -379,9 +408,10 @@ def assemble_context(req: ContextAssembleRequest, session: Any = None) -> dict[s
 # (graph-query-mcp.json) JS checks with a pytest-covered Python function.
 
 # Schema-level allow-lists, straight from cypher_template.txt's GRAPH SCHEMA
-# + OUTPUT RULES sections and CLAUDE.md's Relationships table (VALIDATES /
-# HAS_STATE are ValidGraph-side relationships documented there, not emitted
-# by LLM ingest, but still part of the schema the validator must recognize).
+# + OUTPUT RULES sections and CLAUDE.md's Relationships table. HAS_ENTITY
+# (ValidationRun -> ValidationEntity) is the REAL ValidGraph-side
+# relationship (app.py store_validation_run()); VALIDATES is also part of
+# the schema the validator must recognize, not emitted by LLM ingest.
 ALLOWED_LABELS: set[str] = {
     "Class",
     "DatatypeProperty",
@@ -391,8 +421,7 @@ ALLOWED_LABELS: set[str] = {
     "Atom",
     "Var",
     "Literal",
-    "DesignState",
-    "Run",
+    "ValidationRun",
     "IntegrationConfig",
     "ValidationEntity",
     "Representation",
@@ -404,7 +433,7 @@ ALLOWED_RELATIONSHIPS: set[str] = {
     "HAS_HEAD",
     "REFERS_TO",
     "ARG",
-    "HAS_STATE",
+    "HAS_ENTITY",
     "VALIDATES",
     "HAS_REPRESENTATION",
     "HAS_SHARED_PROPERTY",
@@ -429,7 +458,10 @@ ALLOWED_PROPERTIES: set[str] = {
 # DesignState.kind enum (v4/v7 schema) -- same three values already exposed
 # via VALIDGRAPH_CONCEPTS["design_state_kinds"] above; kept as its own
 # module-level constant here so the validator's bad_kind_enum check doesn't
-# need to reach back into the assembler's concept dict.
+# need to reach back into the assembler's concept dict. Note (29-06): these
+# values now describe statePayloadJson entry kinds, not a first-class
+# :DesignState node property -- the check below is moot for read-only
+# graph_query but harmless, kept as-is (out of this gap's scope).
 DESIGNSTATE_KINDS: set[str] = {"ObjState", "ParamState", "PropState"}
 
 # Verb policy (T-29-01/T-29-02 mitigation): rule_ingest/rule_edit may ONLY
@@ -575,7 +607,7 @@ def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
                     f"Relationship type '{rel}' is not one of the allowed "
                     f"schema relationships ({', '.join(sorted(ALLOWED_RELATIONSHIPS))}). "
                     f"Where: relationship '{rel}'. How to fix: use HAS_BODY/"
-                    f"HAS_HEAD/REFERS_TO/ARG (or HAS_STATE/VALIDATES for "
+                    f"HAS_HEAD/REFERS_TO/ARG (or HAS_ENTITY/VALIDATES for "
                     f"ValidGraph)."
                 ),
                 "path": rel,
