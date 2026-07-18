@@ -44,10 +44,10 @@
 
 ### Computgraph Serialization Core (CGSR) — Phase 32
 
-- [ ] **CGSR-01**: A GH-free object model in DG.Core mirrors the ontology's Computgraph layer — Algorithm, Procedure, Pattern (nestable), Parameter (Variable/Constant/Emergent kinds, dataType, slider domain), Interface (Input/Output), plus raw canvas nodes and wires — unit-tested without the Grasshopper SDK
-- [ ] **CGSR-02**: The DG Canvas Annotation Convention (scribbles `OBJECT - <NAME>` / `<n>_ALGORITHM`; groups `<NN>_Proc - <Name>`, `<NN>_Pat_<k>`, `<NN>_Var_<Name>`, `<NN>_Const_<Name>`, `<NN>_Emg_<Name>`, `<NN>_IntF_<Name>`) parses into typed Computgraph entities; non-conforming names classify as untagged — never guessed
-- [ ] **CGSR-03**: A canvas extractor serializes the live GH_Document — components, parameters (with slider domains), group membership including nesting, scribbles, and wire topology — into a versioned `cgContextJson v1` envelope
-- [ ] **CGSR-04**: The annotated Frame reference definition serializes to a structure matching its OWL named individuals (`dg:Object_Frame` → `dgc:Algorithm_1` → `dgc:Proc_11`/`Proc_12` with their patterns, parameters, interfaces), verified by an xUnit fixture
+- [x] **CGSR-01**: A GH-free object model in DG.Core mirrors the ontology's Computgraph layer — Algorithm, Procedure, Pattern (nestable), Parameter (Variable/Constant/Emergent kinds, dataType, slider domain), Interface (Input/Output), plus raw canvas nodes and wires — unit-tested without the Grasshopper SDK
+- [x] **CGSR-02**: The DG Canvas Annotation Convention (scribbles `OBJECT - <NAME>` / `<n>_ALGORITHM`; groups `<NN>_Proc - <Name>`, `<NN>_Pat_<k>`, `<NN>_Var_<Name>`, `<NN>_Const_<Name>`, `<NN>_Emg_<Name>`, `<NN>_IntF_<Name>`) parses into typed Computgraph entities; non-conforming names classify as untagged — never guessed
+- [x] **CGSR-03**: A canvas extractor serializes the live GH_Document — components, parameters (with slider domains), group membership including nesting, scribbles, and wire topology — into a versioned `cgContextJson v1` envelope
+- [x] **CGSR-04**: The annotated Frame reference definition serializes to a structure matching its OWL named individuals (`dg:Object_Frame` → `dgc:Algorithm_1` → `dgc:Proc_11`/`Proc_12` with their patterns, parameters, interfaces), verified by an xUnit fixture
 
 ### Cross-Platform Identity and Mapping (DGID) — Phase 32.1
 
@@ -159,7 +159,7 @@
 | CTXA-01 … CTXA-05 | Phase 29 | Pending |
 | ORCH-01 … ORCH-04 | Phase 30 | Pending |
 | RING-01 … RING-05 | Phase 31 | Pending |
-| CGSR-01 … CGSR-04 | Phase 32 | Pending |
+| CGSR-01 … CGSR-04 | Phase 32 | ✅ Complete (2026-07-18) |
 | DGID-01 … DGID-06 | Phase 32.1 | Pending |
 | BRDG-01 … BRDG-04 | Phase 33 | Pending |
 | TAGC-01 … TAGC-03 | Phase 34 | Pending |
