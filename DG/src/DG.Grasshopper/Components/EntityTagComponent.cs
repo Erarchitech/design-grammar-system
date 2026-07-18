@@ -344,11 +344,21 @@ public sealed class EntityTagComponent : GH_Component
             // recorded in the same undo record BEFORE mutation.
             DetachFromStaleHosts(currentDoc, existingGroup.InstanceGuid, hostGroupNickname, updateRecord);
 
-            existingGroup.ObjectIDs.Clear();
+            // WR-08: rebuild membership through the group's own AddObject/RemoveObject API
+            // instead of mutating the ObjectIDs collection directly -- Clear() bypasses the
+            // SDK's removal bookkeeping and would be a silent no-op if ObjectIDs ever
+            // returns a defensive copy (shrink-re-tag would then never remove members).
+            foreach (var id in existingGroup.ObjectIDs.ToList())
+            {
+                existingGroup.RemoveObject(id);
+            }
+
             foreach (var obj in selected)
             {
                 existingGroup.AddObject(obj.InstanceGuid);
             }
+
+            existingGroup.ExpireCaches();
 
             existingGroup.NickName = nickname;
             existingGroup.Colour = colour;
