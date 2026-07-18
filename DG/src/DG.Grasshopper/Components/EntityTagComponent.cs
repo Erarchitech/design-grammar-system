@@ -1,5 +1,6 @@
 #if GRASSHOPPER_SDK
 using System.Drawing;
+using System.Globalization;
 using DG.Core.Parsing;
 using DG.Grasshopper.Canvas;
 using Grasshopper.Kernel;
@@ -202,13 +203,30 @@ public sealed class EntityTagComponent : GH_Component
             }
         }
 
-        // Pattern auto-increment: next-free integer index under the given NN, only
-        // meaningful for Pat kind (CanvasAnnotationNameFactory.ForEntity requires it).
+        // Pattern index: re-tag detection first (CR-01) -- reuse the index of an existing
+        // NN_Pat_* group whose member set equals the current selection so the update branch
+        // in TagOrUpdateGroup fires instead of stacking a duplicate Pattern; otherwise
+        // auto-increment to the next-free integer index under the given NN
+        // (CanvasAnnotationNameFactory.ForEntity requires it for Pat).
         int? patternIndex = null;
+        string? retagTargetNickname = null;
         if (kind == EntityTagKind.Pat)
         {
-            var existingNicknames = raw.Groups.Select(g => g.Nickname);
-            patternIndex = CanvasAnnotationNameFactory.NextFreePatternIndex(existingNicknames, procIndex);
+            var patPrefix = procIndex.ToString(CultureInfo.InvariantCulture) + CanvasAnnotationGrammar.PatternInfix;
+            var existingPat = raw.Groups.FirstOrDefault(g =>
+                g.Nickname.StartsWith(patPrefix, StringComparison.Ordinal)
+                && g.MemberIds.Count == selectedIds.Count
+                && selectedIds.All(id => g.MemberIds.Contains(id)));
+
+            if (existingPat is not null && TryExtractPatternIndex(existingPat.Nickname, patPrefix, out var reusedIndex))
+            {
+                patternIndex = reusedIndex;
+                retagTargetNickname = existingPat.Nickname;
+            }
+            else
+            {
+                patternIndex = CanvasAnnotationNameFactory.NextFreePatternIndex(raw.Groups.Select(g => g.Nickname), procIndex);
+            }
         }
 
         string nickname;
@@ -229,8 +247,11 @@ public sealed class EntityTagComponent : GH_Component
         // Nesting detection: the selection is a (non-empty) subset of an existing
         // Pattern group's members -> native nesting (host group's ObjectIDs gains the new
         // group's InstanceGuid; CanvasContextExtractor.TryAddGroup picks it up as-is).
+        // The re-tag target is excluded so a re-tagged Pattern is never treated as its
+        // own host (CR-01).
         var hostGroupNickname = raw.Groups
             .Where(g => g.Nickname.Contains(CanvasAnnotationGrammar.PatternInfix, StringComparison.Ordinal))
+            .Where(g => retagTargetNickname is null || !string.Equals(g.Nickname, retagTargetNickname, StringComparison.Ordinal))
             .Where(g => g.MemberIds.Count > 0 && selectedIds.All(id => g.MemberIds.Contains(id)))
             .OrderBy(g => g.MemberIds.Count)
             .Select(g => g.Nickname)
@@ -246,7 +267,7 @@ public sealed class EntityTagComponent : GH_Component
         {
             try
             {
-                TagOrUpdateGroup(currentDoc, nickname, colour, selected, hostGroupNickname);
+                TagOrUpdateGroup(currentDoc, nickname, colour, selected, hostGroupNickname, retagTargetNickname);
                 global::Grasshopper.Instances.InvalidateCanvas();
             }
             catch (Exception ex)
@@ -277,10 +298,15 @@ public sealed class EntityTagComponent : GH_Component
         string nickname,
         Color colour,
         List<IGH_DocumentObject> selected,
-        string? hostGroupNickname)
+        string? hostGroupNickname,
+        string? retagTargetNickname)
     {
+        // Re-tag lookup: a Pat re-tag may carry a changed trailing label, so the existing
+        // group is found under its OLD nickname (retagTargetNickname) and renamed below
+        // (CR-01); all other kinds update strictly by identical nickname.
+        var lookupNickname = retagTargetNickname ?? nickname;
         var existingGroup = currentDoc.Objects.OfType<GH_Group>()
-            .FirstOrDefault(g => string.Equals(g.NickName, nickname, StringComparison.Ordinal));
+            .FirstOrDefault(g => string.Equals(g.NickName, lookupNickname, StringComparison.Ordinal));
 
         if (existingGroup is not null)
         {
@@ -293,6 +319,7 @@ public sealed class EntityTagComponent : GH_Component
                 existingGroup.AddObject(obj.InstanceGuid);
             }
 
+            existingGroup.NickName = nickname;
             existingGroup.Colour = colour;
             AttachToHost(currentDoc, hostGroupNickname, existingGroup.InstanceGuid);
 
@@ -332,6 +359,26 @@ public sealed class EntityTagComponent : GH_Component
         {
             hostGroup.AddObject(childGuid);
         }
+    }
+
+    /// <summary>
+    /// Extracts the integer idx token from an <c>NN_Pat_idx[ Label]</c> nickname -- the
+    /// inverse of the slice <see cref="CanvasAnnotationNameFactory.NextFreePatternIndex"/>
+    /// scans. Returns false for non-integer or non-positive idx tokens (they fall back to
+    /// auto-increment).
+    /// </summary>
+    private static bool TryExtractPatternIndex(string nickname, string patPrefix, out int index)
+    {
+        index = 0;
+        if (!nickname.StartsWith(patPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var remainder = nickname.Substring(patPrefix.Length);
+        var spaceIdx = remainder.IndexOf(' ');
+        var idxToken = spaceIdx >= 0 ? remainder.Substring(0, spaceIdx) : remainder;
+        return int.TryParse(idxToken, NumberStyles.None, CultureInfo.InvariantCulture, out index) && index > 0;
     }
 
     private static EntityTagKind? MapKind(string? raw) => raw?.Trim() switch
