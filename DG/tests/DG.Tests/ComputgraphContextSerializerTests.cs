@@ -82,6 +82,91 @@ public sealed class ComputgraphContextSerializerTests
         Assert.Throws<ArgumentNullException>(() => ComputgraphContextSerializer.Serialize(null!));
     }
 
+    [Fact]
+    public void Deserialize_RoundTrip_ShouldPreserveEntities()
+    {
+        var context = CreateContext();
+        var json = ComputgraphContextSerializer.Serialize(context);
+
+        var roundTrip = ComputgraphContextSerializer.Deserialize(json);
+
+        Assert.Equal(context.SchemaVersion, roundTrip.SchemaVersion);
+        Assert.Equal(context.Project, roundTrip.Project);
+        Assert.Equal(context.Definition.DocumentId, roundTrip.Definition.DocumentId);
+        Assert.Equal(context.Definition.FileName, roundTrip.Definition.FileName);
+        Assert.Equal(context.Definition.CapturedAt, roundTrip.Definition.CapturedAt);
+        Assert.NotNull(roundTrip.Object);
+        Assert.Equal(context.Object!.Name, roundTrip.Object!.Name);
+        Assert.Equal(context.Algorithms.Count, roundTrip.Algorithms.Count);
+
+        var procedure = roundTrip.Algorithms[0].Procedures[0];
+        Assert.Equal("cg:1:proc:11", procedure.Id);
+        Assert.Equal(2, procedure.MemberIds.Count);
+        Assert.Single(procedure.Parameters);
+        Assert.Equal(ParamKind.Variable, procedure.Parameters[0].Kind);
+        Assert.Equal(ParamDataType.Integer, procedure.Parameters[0].DataType);
+        Assert.NotNull(procedure.Parameters[0].Domain);
+        Assert.Equal(1, procedure.Parameters[0].Domain!.Min);
+        Assert.Single(procedure.Interfaces);
+        Assert.Equal(IfaceType.Output, procedure.Interfaces[0].IfaceType);
+        Assert.Single(procedure.Patterns);
+
+        Assert.Equal(context.Nodes.Count, roundTrip.Nodes.Count);
+        Assert.Equal(context.Wires.Count, roundTrip.Wires.Count);
+        Assert.Equal(context.Untagged.NodeIds.Count, roundTrip.Untagged.NodeIds.Count);
+        Assert.Equal(context.Untagged.Groups.Count, roundTrip.Untagged.Groups.Count);
+        Assert.Equal(context.Warnings.Count, roundTrip.Warnings.Count);
+    }
+
+    [Fact]
+    public void SerializeDeserialize_RoundTrip_ShouldBeIdempotent()
+    {
+        var context = CreateContext();
+        var json = ComputgraphContextSerializer.Serialize(context);
+
+        var roundTripJson = ComputgraphContextSerializer.Serialize(ComputgraphContextSerializer.Deserialize(json));
+
+        Assert.Equal(json, roundTripJson);
+    }
+
+    [Fact]
+    public void Deserialize_WhenSchemaVersionIsNotCgContext1_ShouldThrow()
+    {
+        var json = """
+            {
+              "schemaVersion": "cg-context-2",
+              "project": "p",
+              "definition": { "documentId": "d", "fileName": "f.gh", "capturedAt": "2026-01-01T00:00:00Z" },
+              "object": null,
+              "algorithms": [],
+              "untagged": { "nodeIds": [], "groups": [] },
+              "nodes": [],
+              "wires": [],
+              "warnings": []
+            }
+            """;
+
+        var ex = Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize(json));
+
+        Assert.Contains("cg-context-1", ex.Message);
+    }
+
+    [Fact]
+    public void Deserialize_WhenPayloadIsEmpty_ShouldThrow()
+    {
+        Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize(null!));
+        Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize(""));
+        Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize("   "));
+    }
+
+    [Fact]
+    public void Deserialize_WhenJsonIsMalformed_ShouldThrowInvalidOperationExceptionNotJsonException()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => ComputgraphContextSerializer.Deserialize("not json"));
+
+        Assert.Contains("JSON", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static CgContext CreateContext()
     {
         var context = new CgContext

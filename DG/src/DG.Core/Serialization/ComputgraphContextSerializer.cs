@@ -22,6 +22,39 @@ public static class ComputgraphContextSerializer
         return JsonSerializer.Serialize(dto, Options);
     }
 
+    public static CgContext Deserialize(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidOperationException("cgContext payload must not be empty.");
+        }
+
+        CgContextDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<CgContextDto>(json, Options);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException("cgContext payload is not valid JSON.", ex);
+        }
+
+        if (dto is null)
+        {
+            throw new InvalidOperationException("cgContext payload is empty.");
+        }
+
+        if (dto.SchemaVersion != "cg-context-1")
+        {
+            throw new InvalidOperationException(
+                $"Unsupported cgContext schema version. Expected 'cg-context-1', got '{dto.SchemaVersion ?? "null"}'.");
+        }
+
+        var context = FromDto(dto);
+        ValidateDeserialized(context);
+        return context;
+    }
+
     private static void ValidateContext(CgContext context)
     {
         if (context.SchemaVersion != "cg-context-1")
@@ -234,6 +267,274 @@ public static class ComputgraphContextSerializer
         IfaceType.Input => "Input",
         IfaceType.Output => "Output",
         _ => throw new InvalidOperationException($"Unsupported IfaceType: {ifaceType}"),
+    };
+
+    private static void ValidateDeserialized(CgContext context)
+    {
+        if (string.IsNullOrWhiteSpace(context.Definition.DocumentId))
+        {
+            throw new InvalidOperationException("Definition.DocumentId is required in deserialized cgContext.");
+        }
+
+        if (string.IsNullOrWhiteSpace(context.Definition.FileName))
+        {
+            throw new InvalidOperationException("Definition.FileName is required in deserialized cgContext.");
+        }
+    }
+
+    private static CgContext FromDto(CgContextDto dto)
+    {
+        var context = new CgContext
+        {
+            SchemaVersion = dto.SchemaVersion ?? string.Empty,
+            Project = dto.Project ?? string.Empty,
+            Definition = FromDto(dto.Definition ?? new CgDefinitionDto()),
+            Object = dto.Object is not null ? FromDto(dto.Object) : null,
+            Untagged = FromDto(dto.Untagged ?? new CgUntaggedDto()),
+        };
+
+        foreach (var algorithmDto in dto.Algorithms ?? Enumerable.Empty<CgAlgorithmDto>())
+        {
+            context.Algorithms.Add(FromDto(algorithmDto));
+        }
+
+        foreach (var nodeDto in dto.Nodes ?? Enumerable.Empty<CgNodeDto>())
+        {
+            context.Nodes.Add(FromDto(nodeDto));
+        }
+
+        foreach (var wireDto in dto.Wires ?? Enumerable.Empty<CgWireDto>())
+        {
+            context.Wires.Add(FromDto(wireDto));
+        }
+
+        foreach (var warning in dto.Warnings ?? Enumerable.Empty<string>())
+        {
+            context.Warnings.Add(warning);
+        }
+
+        return context;
+    }
+
+    private static CgDefinition FromDto(CgDefinitionDto dto)
+    {
+        return new CgDefinition
+        {
+            DocumentId = dto.DocumentId ?? string.Empty,
+            FileName = dto.FileName ?? string.Empty,
+            CapturedAt = dto.CapturedAt ?? string.Empty,
+        };
+    }
+
+    private static CgObject FromDto(CgObjectDto dto)
+    {
+        return new CgObject
+        {
+            Name = dto.Name ?? string.Empty,
+            ClassIri = dto.ClassIri,
+            Source = dto.Source ?? "tagged",
+        };
+    }
+
+    private static CgAlgorithm FromDto(CgAlgorithmDto dto)
+    {
+        var algorithm = new CgAlgorithm
+        {
+            Index = dto.Index,
+            Name = dto.Name ?? string.Empty,
+        };
+
+        foreach (var procedureDto in dto.Procedures ?? Enumerable.Empty<CgProcedureDto>())
+        {
+            algorithm.Procedures.Add(FromDto(procedureDto));
+        }
+
+        return algorithm;
+    }
+
+    private static CgProcedure FromDto(CgProcedureDto dto)
+    {
+        var procedure = new CgProcedure
+        {
+            Id = dto.Id ?? string.Empty,
+            Index = dto.Index,
+            Name = dto.Name ?? string.Empty,
+            Source = dto.Source ?? "tagged",
+        };
+
+        foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
+        {
+            procedure.MemberIds.Add(memberId);
+        }
+
+        foreach (var patternDto in dto.Patterns ?? Enumerable.Empty<CgPatternDto>())
+        {
+            procedure.Patterns.Add(FromDto(patternDto));
+        }
+
+        foreach (var parameterDto in dto.Parameters ?? Enumerable.Empty<CgParameterDto>())
+        {
+            procedure.Parameters.Add(FromDto(parameterDto));
+        }
+
+        foreach (var interfaceDto in dto.Interfaces ?? Enumerable.Empty<CgInterfaceDto>())
+        {
+            procedure.Interfaces.Add(FromDto(interfaceDto));
+        }
+
+        return procedure;
+    }
+
+    private static CgPattern FromDto(CgPatternDto dto)
+    {
+        var pattern = new CgPattern
+        {
+            Id = dto.Id ?? string.Empty,
+            Label = dto.Label ?? string.Empty,
+            Name = dto.Name,
+            HostPatternId = dto.HostPatternId,
+            Source = dto.Source ?? "tagged",
+        };
+
+        foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
+        {
+            pattern.MemberIds.Add(memberId);
+        }
+
+        return pattern;
+    }
+
+    private static CgParameter FromDto(CgParameterDto dto)
+    {
+        var parameter = new CgParameter
+        {
+            Id = dto.Id ?? string.Empty,
+            Kind = ParamKindFromDto(dto.Kind),
+            Name = dto.Name ?? string.Empty,
+            DataType = dto.DataType is not null ? ParamDataTypeFromDto(dto.DataType) : null,
+            Domain = dto.Domain is not null ? FromDto(dto.Domain) : null,
+            Source = dto.Source ?? "tagged",
+        };
+
+        foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
+        {
+            parameter.MemberIds.Add(memberId);
+        }
+
+        return parameter;
+    }
+
+    private static SliderDomain FromDto(SliderDomainDto dto)
+    {
+        return new SliderDomain
+        {
+            Min = dto.Min,
+            Max = dto.Max,
+            Step = dto.Step,
+        };
+    }
+
+    private static CgInterface FromDto(CgInterfaceDto dto)
+    {
+        var iface = new CgInterface
+        {
+            Id = dto.Id ?? string.Empty,
+            Name = dto.Name ?? string.Empty,
+            IfaceType = IfaceTypeFromDto(dto.IfaceType),
+            Source = dto.Source ?? "tagged",
+        };
+
+        foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
+        {
+            iface.MemberIds.Add(memberId);
+        }
+
+        return iface;
+    }
+
+    private static CgNode FromDto(CgNodeDto dto)
+    {
+        return new CgNode
+        {
+            InstanceId = dto.InstanceId ?? string.Empty,
+            ComponentGuid = dto.ComponentGuid ?? string.Empty,
+            Name = dto.Name ?? string.Empty,
+            Nickname = dto.Nickname ?? string.Empty,
+            Position = dto.Position ?? new double[2],
+            Slider = dto.Slider is not null ? FromDto(dto.Slider) : null,
+            IsIntegerSlider = dto.IsIntegerSlider,
+        };
+    }
+
+    private static CgWire FromDto(CgWireDto dto)
+    {
+        return new CgWire
+        {
+            FromNode = dto.FromNode ?? string.Empty,
+            FromParam = dto.FromParam ?? string.Empty,
+            ToNode = dto.ToNode ?? string.Empty,
+            ToParam = dto.ToParam ?? string.Empty,
+        };
+    }
+
+    private static CgUntagged FromDto(CgUntaggedDto dto)
+    {
+        var untagged = new CgUntagged();
+
+        foreach (var nodeId in dto.NodeIds ?? Enumerable.Empty<string>())
+        {
+            untagged.NodeIds.Add(nodeId);
+        }
+
+        foreach (var groupDto in dto.Groups ?? Enumerable.Empty<CgUntaggedGroupDto>())
+        {
+            untagged.Groups.Add(FromDto(groupDto));
+        }
+
+        return untagged;
+    }
+
+    private static CgUntaggedGroup FromDto(CgUntaggedGroupDto dto)
+    {
+        var group = new CgUntaggedGroup
+        {
+            Nickname = dto.Nickname ?? string.Empty,
+        };
+
+        foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
+        {
+            group.MemberIds.Add(memberId);
+        }
+
+        return group;
+    }
+
+    private static ParamKind ParamKindFromDto(string? value) => value switch
+    {
+        "Variable" => ParamKind.Variable,
+        "Constant" => ParamKind.Constant,
+        "Emergent" => ParamKind.Emergent,
+        _ => throw new InvalidOperationException(
+            $"Unsupported paramKind '{value ?? "null"}'. Allowed values are Variable, Constant, Emergent."),
+    };
+
+    private static ParamDataType ParamDataTypeFromDto(string? value) => value switch
+    {
+        "Float" => ParamDataType.Float,
+        "Integer" => ParamDataType.Integer,
+        "Text" => ParamDataType.Text,
+        "Boolean" => ParamDataType.Boolean,
+        "Geometry" => ParamDataType.Geometry,
+        _ => throw new InvalidOperationException(
+            $"Unsupported dataType '{value ?? "null"}'. Allowed values are Float, Integer, Text, Boolean, Geometry."),
+    };
+
+    private static IfaceType IfaceTypeFromDto(string? value) => value switch
+    {
+        "Input" => IfaceType.Input,
+        "Output" => IfaceType.Output,
+        _ => throw new InvalidOperationException(
+            $"Unsupported ifaceType '{value ?? "null"}'. Allowed values are Input, Output."),
     };
 
     private sealed class CgContextDto
