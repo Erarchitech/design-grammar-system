@@ -79,9 +79,12 @@ class DgIdentityError(Exception):
     that ``app.py`` maps to the matching structured HTTP response + status code.
     """
 
-    def __init__(self, message: str, code: str = "DGID_ERROR"):
+    def __init__(self, message: str, code: str = "DGID_ERROR", existing_dg_id: str | None = None):
         super().__init__(message)
         self.code = code
+        # For DGID_AMBIGUOUS_BINDING: the dgId the native id is already bound to,
+        # so the route layer can report it without parsing the message string.
+        self.existing_dg_id = existing_dg_id
 
 
 # ── Pydantic request/response models ──
@@ -214,6 +217,7 @@ def bind_representation(
         raise DgIdentityError(
             f"Native id '{native_id}' is already bound to dgId '{existing}'.",
             code="DGID_AMBIGUOUS_BINDING",
+            existing_dg_id=existing,
         )
 
     entity = session.run(

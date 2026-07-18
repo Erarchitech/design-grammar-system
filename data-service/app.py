@@ -60,6 +60,8 @@ from connectors import (
 
 import reasoner
 import dg_context
+import dg_identity
+from dg_identity import MintRequest, BindRepresentationRequest
 
 app = FastAPI()
 
@@ -1318,6 +1320,110 @@ def post_context_generate_cypher(payload: dg_context.GenerateCypherRequest):
     except Exception as exc:
         error_msg, hint, code = map_provider_error(exc)
         raise _structured_error_response(error_msg, hint, code, 502)
+
+
+# ---------------------------------------------------------------------------
+# Cross-platform identity registry endpoints (Phase 32.1: DGID-02/03/05)
+# ---------------------------------------------------------------------------
+#
+# Thin routes — no Cypher lives here. Each opens `with driver.session() as session:`
+# and delegates to dg_identity.py, translating DgIdentityError by its `code` into a
+# What+Where+How-to-fix structured response via _structured_error_response.
+
+
+def _dgid_not_found_error(dg_id: str) -> HTTPException:
+    return _structured_error_response(
+        f"No Computgraph entity found with dgId '{dg_id}'.",
+        "Verify the dgId was minted via /identity/mint or the publish path before resolving/binding.",
+        "DGID_NOT_FOUND",
+        404,
+    )
+
+
+def _ambiguous_binding_error(native_id: str, existing_dg_id: str) -> HTTPException:
+    return _structured_error_response(
+        f"Native id '{native_id}' is already bound to dgId '{existing_dg_id}'.",
+        "Detach the existing representation before re-binding, or confirm this is the intended object.",
+        "DGID_AMBIGUOUS_BINDING",
+        409,
+    )
+
+
+@app.post("/identity/mint")
+def post_identity_mint(payload: MintRequest):
+    """Deterministically mint + persist a dgId for a Computgraph entity.
+
+    Idempotent — safe to call unconditionally from the publish path; re-minting the
+    same (project, definitionId, cgId) triple returns the same dgId without
+    duplicating the node.
+    """
+    with driver.session() as session:
+        dg_id = dg_identity.mint_identity(
+            session, payload.project, payload.definition_id, payload.cg_id
+        )
+    return {"dgId": dg_id}
+
+
+@app.get("/identity/resolve")
+def get_identity_resolve(platform: str, native_id: str, project: str):
+    """Resolve a (platform, native_id) representation to its dgId (project-scoped)."""
+    with driver.session() as session:
+        dg_id = dg_identity.resolve_native_id(session, platform, native_id, project)
+    if dg_id is None:
+        raise _structured_error_response(
+            f"No dgId is bound to native id '{native_id}' on platform '{platform}' in project '{project}'.",
+            "Bind the native id via /identity/bind, or check the platform/project scope.",
+            "DGID_NOT_FOUND",
+            404,
+        )
+    return {"dgId": dg_id}
+
+
+@app.post("/identity/bind")
+def post_identity_bind(payload: BindRepresentationRequest):
+    """Bind a native-id representation to a dgId — never a silent repoint.
+
+    An existing binding to a DIFFERENT dgId returns a structured 409
+    DGID_AMBIGUOUS_BINDING; an unminted dgId returns 404 DGID_NOT_FOUND.
+    """
+    try:
+        with driver.session() as session:
+            representation = dg_identity.bind_representation(
+                session,
+                payload.dg_id,
+                payload.platform,
+                payload.native_id_kind,
+                payload.native_id,
+                payload.connector,
+                payload.project,
+            )
+    except dg_identity.DgIdentityError as exc:
+        if exc.code == "DGID_AMBIGUOUS_BINDING":
+            raise _ambiguous_binding_error(payload.native_id, exc.existing_dg_id or "")
+        raise _dgid_not_found_error(payload.dg_id)
+    return representation
+
+
+@app.get("/identity/{dg_id}/representations")
+def get_identity_representations(dg_id: str, project: str):
+    """List all platform representations bound to a dgId within a project."""
+    with driver.session() as session:
+        return dg_identity.list_representations(session, dg_id, project)
+
+
+@app.delete("/identity/{dg_id}/representations")
+def delete_identity_representation(dg_id: str, platform: str, native_id: str, project: str):
+    """Detach a representation from a dgId — removes ONLY the representation.
+
+    The route never writes the entity node, so the dgId is untouched (DGID-02); a
+    missing binding surfaces a structured 404 DGID_NOT_FOUND.
+    """
+    try:
+        with driver.session() as session:
+            dg_identity.detach_representation(session, dg_id, platform, native_id, project)
+    except dg_identity.DgIdentityError:
+        raise _dgid_not_found_error(dg_id)
+    return {"detached": True}
 
 
 @app.put("/integration/speckle/project/{project}")
