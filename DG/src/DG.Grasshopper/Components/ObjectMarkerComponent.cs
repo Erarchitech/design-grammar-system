@@ -1,6 +1,10 @@
 #if GRASSHOPPER_SDK
+using System.Drawing;
+using DG.Core.Models.Computgraph;
+using DG.Core.Parsing;
 using DG.Grasshopper.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
 
 namespace DG.Grasshopper.Components;
 
@@ -50,12 +54,120 @@ public sealed class ObjectMarkerComponent : GH_Component
         var objectName = string.Empty;
         da.GetData(0, ref objectName);
 
+        object? classInput = null;
+        da.GetData(1, ref classInput);
+        var ontologyClass = GhCastingHelpers.Unwrap<global::DG.OntologyClass>(classInput);
+
         var algorithmIndex = 1;
         da.GetData(2, ref algorithmIndex);
 
+        if (string.IsNullOrWhiteSpace(objectName))
+        {
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Warning,
+                "What: ObjectName is empty or whitespace. " +
+                "Where: ObjectMarkerComponent.SolveInstance. " +
+                "How to fix: supply a non-empty, non-whitespace ObjectName.");
+            da.SetData(0, objectName);
+            da.SetData(1, algorithmIndex);
+            da.SetData(2, "Warning: ObjectName is required.");
+            return;
+        }
+
+        if (algorithmIndex < 1 || algorithmIndex > 9)
+        {
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Warning,
+                "What: AlgorithmIndex is outside the valid single-digit range. " +
+                "Where: ObjectMarkerComponent.SolveInstance. " +
+                "How to fix: pass a value between 1 and 9.");
+            da.SetData(0, objectName);
+            da.SetData(1, algorithmIndex);
+            da.SetData(2, "Warning: AlgorithmIndex must be 1-9.");
+            return;
+        }
+
+        string objectScribbleText;
+        string algorithmScribbleText;
+        try
+        {
+            CanvasAnnotationNameFactory.ValidateName(objectName.Trim());
+            objectScribbleText = CanvasAnnotationNameFactory.ForObjectScribble(objectName);
+            algorithmScribbleText = CanvasAnnotationNameFactory.ForAlgorithmScribble(algorithmIndex);
+        }
+        catch (ArgumentException ex)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ex.Message);
+            da.SetData(0, objectName);
+            da.SetData(1, algorithmIndex);
+            da.SetData(2, $"Warning: {ex.Message}");
+            return;
+        }
+
+        var doc = OnPingDocument();
+        var raw = CanvasContextExtractor.ExtractRaw(doc, string.Empty);
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var existingAlgorithm = context.Algorithms.FirstOrDefault(a => a.Index == algorithmIndex);
+        if (context.Object is not null && existingAlgorithm is not null)
+        {
+            // REPORT mode -- idempotent read-before-write (TAGC-01): the canvas is
+            // already annotated, so nothing is mutated.
+            da.SetData(0, context.Object.Name);
+            da.SetData(1, existingAlgorithm.Index);
+            da.SetData(2, $"Read existing: OBJECT - {context.Object.Name} / {existingAlgorithm.Index}_ALGORITHM");
+            return;
+        }
+
+        // CREATE mode -- document mutation is deferred via ScheduleSolution: the GH SDK
+        // forbids AddObject while a solution is in progress (RESEARCH.md Pitfall 1/A3).
+        var needsObjectScribble = context.Object is null;
+        var needsAlgorithmScribble = existingAlgorithm is null;
+        var classIri = ontologyClass?.Iri;
+
+        doc?.ScheduleSolution(1, currentDoc =>
+        {
+            try
+            {
+                if (needsObjectScribble)
+                {
+                    AddScribble(currentDoc, objectScribbleText, new PointF(10f, 10f));
+                }
+
+                if (needsAlgorithmScribble)
+                {
+                    AddScribble(currentDoc, algorithmScribbleText, new PointF(10f, 60f));
+                }
+
+                if (!string.IsNullOrWhiteSpace(classIri))
+                {
+                    currentDoc.ValueTable.SetValue("dg.objectClassIri", classIri);
+                }
+
+                global::Grasshopper.Instances.InvalidateCanvas();
+            }
+            catch (Exception ex)
+            {
+                Message = "Scribble creation failed";
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to create scribble(s): {ex.Message}");
+            }
+
+            ExpireSolution(false);
+        });
+
         da.SetData(0, objectName);
         da.SetData(1, algorithmIndex);
-        da.SetData(2, "Idle");
+        da.SetData(2, $"Created: OBJECT - {objectName} / {algorithmIndex}_ALGORITHM");
+    }
+
+    private static void AddScribble(GH_Document doc, string text, PointF pivot)
+    {
+        var scrib = new GH_Scribble();
+        scrib.CreateAttributes();
+        scrib.Text = text;
+        scrib.Font = new Font("Microsoft Sans Serif", 30f, FontStyle.Regular);
+        scrib.Attributes.Pivot = pivot;
+        doc.AddObject(scrib, false);
     }
 }
 #else
