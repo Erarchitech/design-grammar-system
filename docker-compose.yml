@@ -56,9 +56,18 @@ services:
       N8N_INTERNAL_URL: http://n8n:5678
       LLM_MASTER_SECRET: ${LLM_MASTER_SECRET:-change-me-to-a-random-secret}
       DG_REASONER_URL: http://dg-reasoner:8000
+      # Phase 33 (BRDG-02): DG CANVAS LISTENER bridge -- the Windows-host
+      # Grasshopper process is reached via host.docker.internal, not a
+      # compose service name (it isn't containerized).
+      GH_BRIDGE_HOST: host.docker.internal
+      GH_BRIDGE_PORT: "8720"
     volumes:
       - ./data-service/data:/app/data
       - .:/mnt/repo:ro
+    extra_hosts:
+      # host-gateway resolves host.docker.internal on Linux hosts; harmless
+      # no-op on Docker Desktop (Windows/Mac), which already provides it.
+      - "host.docker.internal:host-gateway"
     depends_on:
       - neo4j
       - speckle-ingress

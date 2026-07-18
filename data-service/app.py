@@ -62,6 +62,7 @@ import reasoner
 import dg_context
 import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
+import gh_bridge
 
 app = FastAPI()
 
@@ -1262,6 +1263,30 @@ def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
 
 
 # ---------------------------------------------------------------------------
+# DG CANVAS LISTENER bridge (Phase 33 Plan 03: BRDG-02)
+# ---------------------------------------------------------------------------
+
+
+class ComputgraphContextPullRequest(BaseModel):
+    project: str
+
+
+@app.post("/computgraph/context/pull")
+def pull_computgraph_context(payload: ComputgraphContextPullRequest):
+    """Thin proxy to the live Grasshopper canvas via gh_bridge (BRDG-02).
+
+    Forwards to `gh_bridge.get_canvas_context`, stamps `project` onto the
+    returned document, and returns it as-is. Any bridge failure (refused/
+    timeout -> 503 GH_BRIDGE_UNREACHABLE, listener error envelope -> 502)
+    propagates unchanged -- gh_bridge already raises the structured error.
+    """
+    context = gh_bridge.get_canvas_context(payload.project)
+    if isinstance(context, dict):
+        context["project"] = payload.project
+    return context
+
+
+# ---------------------------------------------------------------------------
 # Context assembler endpoints (Phase 29: CTXA-01..05)
 # ---------------------------------------------------------------------------
 
@@ -1788,6 +1813,22 @@ async def mcp(request: Request):
                         "name": "neo4j_query",
                         "description": "Run a read-only Cypher query and return records.",
                     },
+                    {
+                        "name": "gh_get_context",
+                        "description": "Return the live Grasshopper canvas as cgContextJson v1.",
+                    },
+                    {
+                        "name": "gh_get_selection",
+                        "description": "Return currently-selected object instance GUIDs.",
+                    },
+                    {
+                        "name": "gh_preview_structure",
+                        "description": "Preview a proposed Computgraph structure on the canvas (stub in v9.0).",
+                    },
+                    {
+                        "name": "gh_clear_preview",
+                        "description": "Clear any active canvas preview (stub in v9.0).",
+                    },
                 ]
             },
         }
@@ -1846,6 +1887,39 @@ async def mcp(request: Request):
             "jsonrpc": "2.0",
             "id": req_id,
             "result": {"content": [{"type": "text", "text": "query"}], "data": data},
+        }
+
+    if tool_name == "gh_get_context":
+        project = arguments.get("project", "")
+        context = gh_bridge.get_canvas_context(project)  # raises _structured_error_response internally on failure
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"content": [{"type": "text", "text": "context"}], "data": context},
+        }
+
+    if tool_name == "gh_get_selection":
+        selection = gh_bridge.get_selection()
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"content": [{"type": "text", "text": "selection"}], "data": selection},
+        }
+
+    if tool_name == "gh_preview_structure":
+        preview = gh_bridge.preview_structure(arguments)
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"content": [{"type": "text", "text": "preview"}], "data": preview},
+        }
+
+    if tool_name == "gh_clear_preview":
+        cleared = gh_bridge.clear_preview()
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"content": [{"type": "text", "text": "preview-cleared"}], "data": cleared},
         }
 
     raise HTTPException(status_code=400, detail="Unknown tool name")
