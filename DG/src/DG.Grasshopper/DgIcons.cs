@@ -37,6 +37,8 @@ internal static class DgIcons
 
     public static Bitmap Label24 { get; } = Load("Label24.png");
 
+    public static Bitmap CanvasListener24 { get; } = Load("CanvasListener24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
