@@ -1,0 +1,99 @@
+{
+  "definition": {
+    "documentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "fileName": "frame.gh",
+    "capturedAt": "2026-07-08T00:00:00.0000000Z"
+  },
+  "project": "frame-demo",
+  "scribbles": [
+    { "text": "OBJECT - FRAME", "position": [0, 0] },
+    { "text": "1_ALGORITHM", "position": [0, 60] }
+  ],
+  "groups": [
+    { "nickname": "11_Proc - 2D Truss Configuration", "memberIds": [], "nestedGroupIds": [] },
+    { "nickname": "12_Proc - 2D Footer Configuration", "memberIds": [], "nestedGroupIds": [] },
+
+    { "nickname": "11_Pat_DivideLine", "memberIds": ["n-divide-curve"], "nestedGroupIds": ["11_Pat_TopChord"] },
+    { "nickname": "11_Pat_TopChord", "memberIds": ["n-topchord"], "nestedGroupIds": [] },
+    { "nickname": "12_Pat_1 Create footer bottom lines", "memberIds": ["n-footer-bottom"], "nestedGroupIds": [] },
+
+    { "nickname": "11_IntF_ParSplitAt", "memberIds": ["n-parsplit"], "nestedGroupIds": [] },
+    { "nickname": "11_IntF_TrussConfig", "memberIds": ["n-trussconfig-intf"], "nestedGroupIds": [] },
+    { "nickname": "11_IntF_MergeRes", "memberIds": ["n-mergeres"], "nestedGroupIds": [] },
+    { "nickname": "12_IntF_FooterFrame", "memberIds": ["n-footerframe-intf"], "nestedGroupIds": [] },
+
+    { "nickname": "11_Var_SpansCount", "memberIds": ["n-spanscount"], "nestedGroupIds": [] },
+    { "nickname": "11_Var_LenTotal", "memberIds": ["n-lentotal"], "nestedGroupIds": [] },
+    { "nickname": "11_Var_Mode", "memberIds": ["n-mode"], "nestedGroupIds": [] },
+    { "nickname": "11_Var_HTotal", "memberIds": ["n-htotal"], "nestedGroupIds": [] },
+    { "nickname": "12_Var_HFooter", "memberIds": ["n-hfooter"], "nestedGroupIds": [] },
+    { "nickname": "12_Var_FooterCount", "memberIds": ["n-footercount"], "nestedGroupIds": [] },
+
+    { "nickname": "11_Const_ptZero", "memberIds": ["n-ptzero"], "nestedGroupIds": [] },
+    { "nickname": "11_Const_vecY", "memberIds": ["n-vecy"], "nestedGroupIds": [] },
+    { "nickname": "11_Const_SplitPar", "memberIds": ["n-splitpar"], "nestedGroupIds": [] },
+    { "nickname": "11_Const_TrussConfig", "memberIds": ["n-trussconfig-const11"], "nestedGroupIds": [] },
+    { "nickname": "11_Const_Divider", "memberIds": ["n-divider"], "nestedGroupIds": [] },
+    { "nickname": "12_Const_IndList_1", "memberIds": ["n-indlist1"], "nestedGroupIds": [] },
+    { "nickname": "12_Const_IndList_2", "memberIds": ["n-indlist2"], "nestedGroupIds": [] },
+    { "nickname": "12_Const_TrussConfig", "memberIds": ["n-trussconfig-const12"], "nestedGroupIds": [] },
+
+    { "nickname": "11_Emg_DivPoints", "memberIds": ["n-divpoints"], "nestedGroupIds": [] },
+    { "nickname": "11_Emg_ParamAt", "memberIds": ["n-paramat"], "nestedGroupIds": [] },
+    { "nickname": "11_Emg_LineSDL", "memberIds": ["n-linesdl"], "nestedGroupIds": [] },
+    { "nickname": "11_Emr_UpperChord", "memberIds": ["n-upperchord"], "nestedGroupIds": [] },
+    { "nickname": "11_Emg_TopFrame", "memberIds": ["n-topframe"], "nestedGroupIds": [] },
+    { "nickname": "11_Emg_VertPost", "memberIds": ["n-vertpost"], "nestedGroupIds": [] },
+    { "nickname": "12_Emg_BottomLn", "memberIds": ["n-bottomln"], "nestedGroupIds": [] },
+    { "nickname": "12_Emg_TopLn", "memberIds": ["n-topln"], "nestedGroupIds": [] },
+    { "nickname": "12_Emg_FooterUnit", "memberIds": ["n-footerunit"], "nestedGroupIds": [] },
+    { "nickname": "12_Emg_FooterFrame", "memberIds": ["n-footerframe-emg"], "nestedGroupIds": [] },
+
+    { "nickname": "Scratch notes", "memberIds": ["n-scratch-01", "n-scratch-02"], "nestedGroupIds": [] }
+  ],
+  "nodes": [
+    { "instanceId": "n-divide-curve", "componentGuid": "guid-divide-curve", "name": "Divide Curve", "nickname": "Divide", "position": [100, 100] },
+    { "instanceId": "n-topchord", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "TopChord", "position": [140, 100] },
+    { "instanceId": "n-footer-bottom", "componentGuid": "guid-line", "name": "Line", "nickname": "FooterBottom", "position": [100, 400] },
+
+    { "instanceId": "n-parsplit", "componentGuid": "guid-param", "name": "Param", "nickname": "ParSplitAt", "position": [200, 100] },
+    { "instanceId": "n-trussconfig-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "TrussConfig", "position": [220, 100] },
+    { "instanceId": "n-mergeres", "componentGuid": "guid-param", "name": "Param", "nickname": "MergeRes", "position": [240, 100] },
+    { "instanceId": "n-footerframe-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "FooterFrame", "position": [220, 400] },
+
+    { "instanceId": "n-spanscount", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "SpansCount", "position": [10, 10], "slider": { "min": 1, "max": 20, "step": 1 }, "isIntegerSlider": true },
+    { "instanceId": "n-lentotal", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "LenTotal", "position": [10, 30] },
+    { "instanceId": "n-mode", "componentGuid": "guid-value-list", "name": "Value List", "nickname": "Mode", "position": [10, 50] },
+    { "instanceId": "n-htotal", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "HTotal", "position": [10, 70] },
+    { "instanceId": "n-hfooter", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "HFooter", "position": [10, 410] },
+    { "instanceId": "n-footercount", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "FooterCount", "position": [10, 430] },
+
+    { "instanceId": "n-ptzero", "componentGuid": "guid-construct-point", "name": "Construct Point", "nickname": "ptZero", "position": [30, 10] },
+    { "instanceId": "n-vecy", "componentGuid": "guid-unit-y", "name": "Unit Y", "nickname": "vecY", "position": [30, 30] },
+    { "instanceId": "n-splitpar", "componentGuid": "guid-panel", "name": "Panel", "nickname": "SplitPar", "position": [30, 50] },
+    { "instanceId": "n-trussconfig-const11", "componentGuid": "guid-panel", "name": "Panel", "nickname": "TrussConfig", "position": [30, 70] },
+    { "instanceId": "n-divider", "componentGuid": "guid-panel", "name": "Panel", "nickname": "Divider", "position": [30, 90] },
+    { "instanceId": "n-indlist1", "componentGuid": "guid-panel", "name": "Panel", "nickname": "IndList_1", "position": [30, 440] },
+    { "instanceId": "n-indlist2", "componentGuid": "guid-panel", "name": "Panel", "nickname": "IndList_2", "position": [30, 460] },
+    { "instanceId": "n-trussconfig-const12", "componentGuid": "guid-panel", "name": "Panel", "nickname": "TrussConfig", "position": [30, 480] },
+
+    { "instanceId": "n-divpoints", "componentGuid": "guid-panel", "name": "Panel", "nickname": "DivPoints", "position": [50, 10] },
+    { "instanceId": "n-paramat", "componentGuid": "guid-evaluate-curve", "name": "Evaluate Curve", "nickname": "ParamAt", "position": [50, 30] },
+    { "instanceId": "n-linesdl", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "LineSDL", "position": [50, 50] },
+    { "instanceId": "n-upperchord", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "UpperChord", "position": [50, 70] },
+    { "instanceId": "n-topframe", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "TopFrame", "position": [50, 90] },
+    { "instanceId": "n-vertpost", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "VertPost", "position": [50, 110] },
+    { "instanceId": "n-bottomln", "componentGuid": "guid-line", "name": "Line", "nickname": "BottomLn", "position": [50, 420] },
+    { "instanceId": "n-topln", "componentGuid": "guid-line", "name": "Line", "nickname": "TopLn", "position": [50, 440] },
+    { "instanceId": "n-footerunit", "componentGuid": "guid-panel", "name": "Panel", "nickname": "FooterUnit", "position": [50, 460] },
+    { "instanceId": "n-footerframe-emg", "componentGuid": "guid-panel", "name": "Panel", "nickname": "FooterFrame", "position": [50, 480] },
+
+    { "instanceId": "n-scratch-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "scribbled note 1", "position": [500, 500] },
+    { "instanceId": "n-scratch-02", "componentGuid": "guid-panel", "name": "Panel", "nickname": "scribbled note 2", "position": [520, 500] },
+
+    { "instanceId": "n-untagged-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "loose panel", "position": [700, 700] }
+  ],
+  "wires": [
+    { "fromNode": "n-divide-curve", "fromParam": "n-divide-curve-out0", "toNode": "n-parsplit", "toParam": "n-parsplit-in0" }
+  ]
+}
