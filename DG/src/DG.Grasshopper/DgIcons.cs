@@ -37,6 +37,9 @@ internal static class DgIcons
 
     public static Bitmap Label24 { get; } = Load("Label24.png");
 
+    // CanvasListener24.png is a Phase-19-convention placeholder (copy of the spare
+    // DesignState24.png resource) so DG CANVAS LISTENER does not render the pink-X
+    // missing-icon fallback (WR-07); replace with bespoke artwork when available.
     public static Bitmap CanvasListener24 { get; } = Load("CanvasListener24.png");
 
     private static Bitmap Load(string fileName)
