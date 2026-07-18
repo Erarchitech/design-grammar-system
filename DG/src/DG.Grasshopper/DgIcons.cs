@@ -47,6 +47,11 @@ internal static class DgIcons
     // (WR-07 precedent); replace with bespoke artwork when available.
     public static Bitmap ObjectMarker24 { get; } = Load("ObjectMarker24.png");
 
+    // EntityTag24.png is a Phase-34 placeholder (copy of the spare OntoGraph24.png
+    // resource) so DG ENTITY TAG does not render the pink-X missing-icon fallback
+    // (WR-07 precedent); replace with bespoke artwork when available.
+    public static Bitmap EntityTag24 { get; } = Load("EntityTag24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
