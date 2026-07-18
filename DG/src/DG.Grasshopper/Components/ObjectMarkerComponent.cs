@@ -155,17 +155,22 @@ public sealed class ObjectMarkerComponent : GH_Component
 
                 global::Grasshopper.Instances.InvalidateCanvas();
                 _lastError = null;
+
+                // WR-04: expire ONLY on success (the re-solve then lands in REPORT mode
+                // and terminates). Expiring on failure would re-enter CREATE mode, schedule
+                // another doomed mutation, and loop schedule->fail->expire without bound.
+                ExpireSolution(false);
             }
             catch (Exception ex)
             {
-                // WR-03: state-tracked so SolveInstance can re-emit the failure after the
-                // forced re-solve wipes this transient runtime message.
+                // WR-03: state-tracked so SolveInstance can re-emit the failure after any
+                // later re-solve wipes this transient runtime message. No ExpireSolution
+                // here -- the message survives, and the next attempt waits for a real
+                // user-triggered solve (input change/recompute) instead of self-retrying.
                 Message = "Scribble creation failed";
                 _lastError = $"Failed to create scribble(s): {ex.Message}";
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastError);
             }
-
-            ExpireSolution(false);
         });
 
         da.SetData(0, objectName);
