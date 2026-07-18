@@ -360,7 +360,23 @@ public sealed class CanvasListenerComponent : GH_Component
             // The dispatcher composes canvas reads (InvokeOnCanvas) internally where
             // applicable; the write below always runs on this background thread.
             var response = _dispatcher.Dispatch(line);
-            await writer.WriteLineAsync(response).ConfigureAwait(false);
+
+            // Bounded egress (iter-3 WR-02): a client that never reads lets TCP
+            // backpressure fill the loopback send buffer, and the token-less
+            // WriteLineAsync(string) overload would then block forever -- wedging
+            // the single-client slot beyond even toggle-off's reach (T-33-03 on
+            // the write side). The linked token makes the write observe both the
+            // send window and deliberate shutdown; AutoFlush rides the same call.
+            using var writeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            writeCts.CancelAfter(ClientReceiveTimeoutMs);
+            try
+            {
+                await writer.WriteLineAsync(response.AsMemory(), writeCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                break; // client stopped reading -- release the single-client slot
+            }
 
             ScheduleRefresh();
         }
