@@ -42,6 +42,11 @@ internal static class DgIcons
     // missing-icon fallback (WR-07); replace with bespoke artwork when available.
     public static Bitmap CanvasListener24 { get; } = Load("CanvasListener24.png");
 
+    // ObjectMarker24.png is a Phase-34 placeholder (copy of the spare OntoGraph24.png
+    // resource) so DG OBJECT MARKER does not render the pink-X missing-icon fallback
+    // (WR-07 precedent); replace with bespoke artwork when available.
+    public static Bitmap ObjectMarker24 { get; } = Load("ObjectMarker24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
