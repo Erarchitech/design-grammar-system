@@ -28,6 +28,7 @@ public sealed class EntityTagComponent : GH_Component
     private string _lastGroupName = string.Empty;
     private int _lastMemberCount;
     private string _status = "Idle";
+    private string? _lastError; // deferred-mutation failure, re-emitted post-expire (WR-03)
 
     public EntityTagComponent()
         : base(
@@ -141,9 +142,19 @@ public sealed class EntityTagComponent : GH_Component
 
         if (!isRisingEdge)
         {
+            // WR-03: the scheduled mutation ends with ExpireSolution, whose re-solve wipes
+            // runtime messages added inside the delegate -- so a deferred failure is carried
+            // in _lastError and re-emitted here on the post-expire pass.
+            if (_lastError is not null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastError);
+            }
+
             SetOutputs(da, _lastGroupName, _lastMemberCount, _status);
             return;
         }
+
+        _lastError = null; // new attempt -- stale deferred failure no longer applies
 
         var kind = MapKind(kindText);
         if (kind is null)
@@ -278,11 +289,16 @@ public sealed class EntityTagComponent : GH_Component
             {
                 TagOrUpdateGroup(currentDoc, nickname, colour, selected, hostGroupNickname, retagTargetNickname);
                 global::Grasshopper.Instances.InvalidateCanvas();
+                _lastError = null;
             }
             catch (Exception ex)
             {
+                // WR-03: a message added here would be wiped by the ExpireSolution re-solve,
+                // so the failure is carried in component state (_lastError/_status) and
+                // re-emitted from SolveInstance on the post-expire pass.
                 Message = "Tag failed";
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to create/update tag group: {ex.Message}");
+                _lastError = $"Failed to create/update tag group: {ex.Message}";
+                _status = $"Error: {_lastError}";
             }
 
             ExpireSolution(false);

@@ -19,6 +19,8 @@ namespace DG.Grasshopper.Components;
 /// </summary>
 public sealed class ObjectMarkerComponent : GH_Component
 {
+    private string? _lastError; // deferred-mutation failure, re-emitted on re-solve (WR-03)
+
     public ObjectMarkerComponent()
         : base(
             "DG OBJECT MARKER",
@@ -125,6 +127,13 @@ public sealed class ObjectMarkerComponent : GH_Component
         var needsAlgorithmScribble = existingAlgorithm is null;
         var classIri = ontologyClass?.Iri;
 
+        // WR-03: a failure inside the previously scheduled mutation is carried in state --
+        // re-emit it here so a re-solve (which wipes runtime messages) still shows it.
+        if (_lastError is not null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastError);
+        }
+
         doc?.ScheduleSolution(1, currentDoc =>
         {
             try
@@ -145,11 +154,15 @@ public sealed class ObjectMarkerComponent : GH_Component
                 }
 
                 global::Grasshopper.Instances.InvalidateCanvas();
+                _lastError = null;
             }
             catch (Exception ex)
             {
+                // WR-03: state-tracked so SolveInstance can re-emit the failure after the
+                // forced re-solve wipes this transient runtime message.
                 Message = "Scribble creation failed";
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to create scribble(s): {ex.Message}");
+                _lastError = $"Failed to create scribble(s): {ex.Message}";
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastError);
             }
 
             ExpireSolution(false);
