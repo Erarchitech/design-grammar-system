@@ -10,7 +10,18 @@
 
 ## Knowledge Vault
 
-This project uses an **Obsidian Knowledge Vault** at `DG_OBSIDIAN/` to persist architectural decisions, debugging notes, patterns, and session logs.
+This project uses an **Obsidian Knowledge Vault** at `DG_OBSIDIAN/` to persist architectural decisions, debugging notes, patterns, and session logs. Since 2026-07-18 it is also the unified PhD knowledge base (research + dissemination layers merged from Yandex vaults).
+
+### Knowledge routing (token economy — read indexes first, not folders)
+
+| Question about… | Entry point |
+|---|---|
+| Architecture, stack, deployment | `DG_OBSIDIAN/00-home/index.md` → atlas |
+| Decisions, debugging, patterns | `DG_OBSIDIAN/00-home/index.md` → knowledge/ |
+| State of the art, literature, SoA taxonomy | `DG_OBSIDIAN/research/index.md` |
+| Publications, presentations, paper↔dev consistency | `DG_OBSIDIAN/dissemination/index.md` and `dissemination/consistency-map.md` |
+
+**Do NOT search** (archived/generated/binary): `DG_OBSIDIAN/archive/`, `DG_OBSIDIAN/graphify/communities/`, `Publications/` (binaries; metadata lives in dissemination notes), `.planning/milestones/` (completed milestones), `graphify-out/`, `.secrets/`. PhD archive lives outside the repo at `Yandex.Disk\Studying\03_PHD\99_ARCHIVE`.
 
 ### Session Protocol
 
@@ -151,6 +162,8 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 | `Builtin` | Metagraph | `iri` | `label` |
 | `DesignState` | ValidGraph | `StateId` | `kind` (ObjState/ParamState/PropState) |
 | `Run` | ValidGraph | `Run_Id` | `Run_Id` |
+| `Representation` | Computgraph | `nativeId`+`platform`+`project` | `nativeId` |
+| `SharedProperty` | Computgraph | `dgId`+`propertyName`+`project` | `propertyName` |
 
 ### ValidGraph Labels
 
@@ -171,7 +184,11 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Relationships
 
-`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition)
+`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
+
+Every Computgraph entity node (Algorithm, Procedure, Pattern, Parameter, Interface) carries an optional `dgId` property — a deterministic platform-neutral identity (`dg:` + 16 uppercase hex). See `spec/DG-ID.md` for the normative specification (format, minting, collision policy, binding model).
+
+### Identity Registry (Computgraph)
 
 ### Rule ID Format
 

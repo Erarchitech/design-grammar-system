@@ -13,6 +13,7 @@ Use the v4 schema as the source of truth for all code changes, prompts, generate
 - `graph = 'Metagraph'` for rules, atoms, variables, literals, and builtins.
 - `graph = 'ValidGraph'` for validation runs, design states, and integration config.
 - `graph = 'SpecGraph'` for project spec storage (notes, tags, sessions).
+- `graph = 'Computgraph'` for identity-registry nodes (Representation, SharedProperty) — see spec/DG-ID.md.
 - Every persisted node must include `project` and `graph`.
 - DesignState persisted with `graph = 'ValidGraph'`, `kind` in {ObjState, ParamState, PropState}.
 
@@ -27,6 +28,9 @@ Use the v4 schema as the source of truth for all code changes, prompts, generate
 - `Literal`: key `lex` + `datatype`
 - `DesignState`: key `StateId`, `kind` {ObjState, ParamState, PropState}, `statePayloadJson` v2
 - `Run`: key `Run_Id`, `ValidStatus` (Boolean list per ObjState), `SendStatus` (single Boolean), `shaclReportJson` (per-run SHACL report envelope JSON string, sibling to `statePayloadJson`; absent on pre-Phase-823 runs — see `spec/RULE-PARTITION-POLICY.md`)
+- `Representation`: key `nativeId`+`platform`+`project`, graph `Computgraph`, props `nativeId`, `platform`, `nativeIdKind` (InstanceGuid|UniqueId|GlobalId|ApplicationId), `connector`, `boundAt`
+- `SharedProperty`: key `dgId`+`propertyName`+`project`, graph `Computgraph`, props `dgId`, `propertyName`, `value`, `platform`, `connector`, `writtenAt`
+- Every Computgraph entity node carries an optional `dgId` property (format `dg:` + 16 uppercase hex) — see `spec/DG-ID.md`
 
 ### Canonical relationships
 Use these relationship types in generated Cypher and UI assumptions:
@@ -35,6 +39,8 @@ Use these relationship types in generated Cypher and UI assumptions:
 - `REFERS_TO`
 - `ARG`
 - `HAS_STATE`: DesignState -> state nodes (read-side composition)
+- `HAS_REPRESENTATION`: Computgraph entity -> Representation (native-id binding)
+- `HAS_SHARED_PROPERTY`: Computgraph entity -> SharedProperty (cross-platform property)
 
 Do not use legacy assumptions like `Rule.id`, `Atom.id`, `Atom.Id`, `DatatypeProperty.label`, or `HAS_ATOM` unless you are explicitly writing a migration.
 

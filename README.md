@@ -199,7 +199,8 @@ Login with `neo4j / 12345678` unless changed.
   - Var: `name` (e.g. `?b`), Literal: `lex`, `datatype`
   - DesignState: `StateId`, `kind` (ObjState|ParamState|PropState), `statePayloadJson`
   - Run: `Run_Id`, `ValidStatus` (Boolean list), `SendStatus` (Boolean), `shaclReportJson` (per-run SHACL report envelope JSON string; absent on pre-Phase-823 runs — see `spec/RULE-PARTITION-POLICY.md`)
-- All nodes include `graph` (`OntoGraph` or `Metagraph` or `ValidGraph` or `SpecGraph`) and `project` (from `project_name`).
+- All nodes include `graph` (`OntoGraph` or `Metagraph` or `ValidGraph` or `SpecGraph` or `Computgraph`) and `project` (from `project_name`).
+- **Identity registry (Phase 32.1):** Computgraph entities carry a deterministic platform-neutral `dgId` (`dg:` + 16 uppercase hex). Platform representations (`Representation` nodes) and cross-platform shared properties (`SharedProperty` nodes) are registry nodes managed by the data-service `/identity/*` API. Normative spec: `spec/DG-ID.md`.
 
 ## Machine learning (LoRA) and training dataset
 This repo includes a complete LoRA fine-tuning pipeline to create a custom Ollama model for rule parsing.
