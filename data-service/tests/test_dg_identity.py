@@ -67,6 +67,8 @@ class FakeGraph:
         self.reps: list[dict] = []
         self.rep_index: dict[tuple[str, str, str], dict] = {}
         self.calls: list[tuple[str, str, dict]] = []
+        # Shared properties keyed by (dgid, property_name, project)
+        self.shared_props: dict[tuple[str, str, str], dict] = {}
 
     def execute(self, op: str, query: str, params: dict) -> list[dict]:
         self.calls.append((op, query, dict(params)))
@@ -139,6 +141,47 @@ class FakeGraph:
                 remaining.append(r)
             self.reps = remaining
             return []
+        if op == "SP_ENTITY_CHECK":
+            if self.entity_by_dgid.get((params["dgId"], params["project"])):
+                return [{"dgId": params["dgId"]}]
+            return []
+        if op == "SP_WRITE":
+            key = (params["dgId"], params["propertyName"], params["project"])
+            self.shared_props[key] = {
+                "dgId": params["dgId"],
+                "propertyName": params["propertyName"],
+                "value": params["value"],
+                "platform": params["platform"],
+                "connector": params["connector"],
+                "writtenAt": "2026-07-18T12:00:00Z",
+                "project": params["project"],
+            }
+            return []
+        if op == "SP_READ":
+            key = (params["dgId"], params["propertyName"], params["project"])
+            sp = self.shared_props.get(key)
+            if sp:
+                return [
+                    {
+                        "value": sp["value"],
+                        "platform": sp["platform"],
+                        "connector": sp["connector"],
+                        "written_at": sp["writtenAt"],
+                    }
+                ]
+            return []
+        if op == "SP_LIST":
+            return [
+                {
+                    "property_name": sp["propertyName"],
+                    "value": sp["value"],
+                    "platform": sp["platform"],
+                    "connector": sp["connector"],
+                    "written_at": sp["writtenAt"],
+                }
+                for sp in self.shared_props.values()
+                if sp["dgId"] == params["dgId"] and sp["project"] == params["project"]
+            ]
         return []
 
 
@@ -380,3 +423,148 @@ def test_list_representations_round_trip(registry):
     assert resp.status_code == 200
     platforms = {row["platform"] for row in resp.json()}
     assert platforms == {"Grasshopper", "Revit"}
+
+
+# ── shared-property cross-platform flow (DGID-04) ──
+
+
+def test_write_and_read_shared_property_cross_platform(registry):
+    """Ladybug-on-GH writes insulation; simulated Revit reads it via the shared dgId.
+
+    This is the HEADLINE PROOF of DGID-04: a property computed by one platform
+    (Grasshopper + Ladybug, writing insulation=0.035) is readable from ANY bound
+    representation (simulated Revit consumer, keyed only by dgId). No Rhino runs.
+    """
+    # 1. Mint an entity (the facade panel in both GH and Revit)
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "facade.gh", "cg:1:obj:panel_01")
+
+    # 2. Bind both a GH and a simulated Revit representation to the SAME dgId
+    dg_identity.bind_representation(
+        session, dg_id, "Grasshopper", "InstanceGuid", "gh-panel-01", "grasshopper", "proj"
+    )
+    dg_identity.bind_representation(
+        session, dg_id, "Revit", "UniqueId", "revit-panel-01", "revit", "proj"
+    )
+
+    # 3. GH side (Ladybug) computes and writes insulation = 0.035
+    resp_write = client.post(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj"},
+        json={
+            "property_name": "insulation",
+            "value": "0.035",
+            "platform": "Grasshopper",
+            "connector": "Ladybug",
+        },
+    )
+    assert resp_write.status_code == 200
+    assert resp_write.json()["value"] == "0.035"
+    assert resp_write.json()["platform"] == "Grasshopper"
+
+    # 4. Simulated Revit consumer reads the SAME property keyed only by dgId
+    #    (no GH instance running — the property flows through the shared dgId)
+    resp_read = client.get(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj", "property_name": "insulation"},
+    )
+    assert resp_read.status_code == 200
+    body = resp_read.json()
+    assert body["value"] == "0.035"
+    # Provenance confirms the GH-side origin
+    assert body["platform"] == "Grasshopper"
+    assert body["connector"] == "Ladybug"
+
+
+def test_write_and_read_multiple_properties(registry):
+    """Write two shared properties on one dgId; list both."""
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "panel.gh", "cg:1:obj:panel_01")
+
+    client.post(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj"},
+        json={
+            "property_name": "insulation",
+            "value": "0.04",
+            "platform": "Grasshopper",
+            "connector": "Ladybug",
+        },
+    )
+    client.post(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj"},
+        json={
+            "property_name": "u_value",
+            "value": "1.2",
+            "platform": "Grasshopper",
+            "connector": "Ladybug",
+        },
+    )
+
+    resp = client.get(f"/identity/{dg_id}/properties", params={"project": "proj"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    names = {p["property_name"] for p in data}
+    assert names == {"insulation", "u_value"}
+
+
+def test_write_shared_property_is_idempotent(registry):
+    """Writing the same (dgId, propertyName, project) twice updates in-place."""
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall_01")
+
+    client.post(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj"},
+        json={
+            "property_name": "insulation",
+            "value": "0.035",
+            "platform": "Grasshopper",
+            "connector": "Ladybug",
+        },
+    )
+    # Re-write with different value
+    client.post(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj"},
+        json={
+            "property_name": "insulation",
+            "value": "0.050",
+            "platform": "Grasshopper",
+            "connector": "Ladybug-v2",
+        },
+    )
+
+    resp = client.get(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj", "property_name": "insulation"},
+    )
+    assert resp.status_code == 200
+    # Last write wins
+    assert resp.json()["value"] == "0.050"
+    assert resp.json()["connector"] == "Ladybug-v2"
+
+
+def test_read_shared_property_not_found_for_unminted_dgid(registry):
+    """Reading a property for an unminted dgId returns structured 404 DGID_NOT_FOUND."""
+    resp = client.get(
+        "/identity/dg:0000000000000000/properties",
+        params={"project": "proj", "property_name": "insulation"},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["detail"]["code"] == "DGID_NOT_FOUND"
+
+
+def test_read_shared_property_missing_property_returns_not_found(registry):
+    """Reading a non-existent property name on a valid dgId returns 404."""
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "roof.gh", "cg:1:obj:roof_01")
+
+    resp = client.get(
+        f"/identity/{dg_id}/properties",
+        params={"project": "proj", "property_name": "nonexistent"},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["detail"]["code"] == "DGID_NOT_FOUND"

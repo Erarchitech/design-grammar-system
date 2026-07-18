@@ -139,6 +139,22 @@ class ResolveResponse(BaseModel):
     dg_id: str
 
 
+class SharedPropertyWriteRequest(BaseModel):
+    """Body for POST /identity/{dgId}/properties — write a shared property."""
+
+    property_name: str
+    value: str
+    platform: str
+    connector: str
+
+    @field_validator("platform")
+    @classmethod
+    def _platform_known(cls, v: str) -> str:
+        if v not in PLATFORMS:
+            raise ValueError(f"platform must be one of {PLATFORMS}, got {v!r}")
+        return v
+
+
 # ── Persistence helpers ──
 #
 # Each takes a duck-typed `session` (real neo4j Session, or a FixtureSession in tests)
@@ -324,3 +340,136 @@ def detach_representation(
         {"dgId": dg_id, "platform": platform, "nativeId": native_id, "project": project},
     )
     return True
+
+
+# ── Shared-property persistence (DGID-04) ──
+
+
+def write_shared_property(
+    session: Any,
+    dg_id: str,
+    property_name: str,
+    value: str,
+    platform: str,
+    connector: str,
+    project: str,
+) -> dict:
+    """Write (upsert) a shared property on a Computgraph entity keyed by dgId.
+
+    MERGEs a SharedProperty node on ``(dgId, propertyName, project)`` so any
+    bound platform representation (GH, Revit, … — the current writer or any
+    other) sees the SAME value when reading by dgId. Each write records
+    provenance (platform, connector, writtenAt).
+
+    Raises ``DgIdentityError(DGID_NOT_FOUND)`` when the dgId is not minted
+    (no Computgraph entity node carries it).
+    """
+    entity = session.run(
+        """
+        MATCH (e {dgId: $dgId, project: $project})
+        RETURN e.dgId AS dgId
+        LIMIT 1
+        // op=SP_ENTITY_CHECK
+        """,
+        {"dgId": dg_id, "project": project},
+    ).single()
+    if entity is None:
+        raise DgIdentityError(
+            f"No Computgraph entity found with dgId '{dg_id}'.",
+            code="DGID_NOT_FOUND",
+        )
+
+    session.run(
+        """
+        MATCH (e {dgId: $dgId, project: $project})
+        MERGE (sp:SharedProperty {dgId: $dgId, propertyName: $propertyName, project: $project})
+        ON CREATE SET sp.graph = 'Computgraph'
+        SET sp.value = $value,
+            sp.platform = $platform,
+            sp.connector = $connector,
+            sp.writtenAt = datetime()
+        MERGE (e)-[:HAS_SHARED_PROPERTY]->(sp)
+        // op=SP_WRITE
+        """,
+        {
+            "dgId": dg_id,
+            "propertyName": property_name,
+            "value": value,
+            "platform": platform,
+            "connector": connector,
+            "project": project,
+        },
+    )
+    return {
+        "dg_id": dg_id,
+        "property_name": property_name,
+        "value": value,
+        "platform": platform,
+        "connector": connector,
+    }
+
+
+def read_shared_property(
+    session: Any, dg_id: str, property_name: str, project: str
+) -> dict:
+    """Read one shared property by (dgId, propertyName, project).
+
+    Returns a dict with the value + provenance fields; raises
+    ``DgIdentityError(DGID_NOT_FOUND)`` when no such shared property exists.
+    """
+    result = session.run(
+        """
+        MATCH (e {dgId: $dgId, project: $project})-[:HAS_SHARED_PROPERTY]->(sp:SharedProperty {propertyName: $propertyName, project: $project})
+        RETURN sp.value AS value,
+               sp.platform AS platform,
+               sp.connector AS connector,
+               toString(sp.writtenAt) AS written_at
+        // op=SP_READ
+        """,
+        {
+            "dgId": dg_id,
+            "propertyName": property_name,
+            "project": project,
+        },
+    )
+    record = result.single()
+    if record is None:
+        raise DgIdentityError(
+            f"No shared property '{property_name}' found for dgId '{dg_id}'.",
+            code="DGID_NOT_FOUND",
+        )
+    return {
+        "dg_id": dg_id,
+        "property_name": property_name,
+        "value": record["value"],
+        "platform": record["platform"],
+        "connector": record["connector"],
+        "written_at": record["written_at"],
+    }
+
+
+def list_shared_properties(session: Any, dg_id: str, project: str) -> list[dict]:
+    """List all shared properties attached to a dgId within a project."""
+    result = session.run(
+        """
+        MATCH (e {dgId: $dgId, project: $project})-[:HAS_SHARED_PROPERTY]->(sp:SharedProperty {project: $project})
+        RETURN sp.propertyName AS property_name,
+               sp.value AS value,
+               sp.platform AS platform,
+               sp.connector AS connector,
+               toString(sp.writtenAt) AS written_at
+        // op=SP_LIST
+        """,
+        {"dgId": dg_id, "project": project},
+    )
+    return [
+        {
+            "dg_id": dg_id,
+            "property_name": rec["property_name"],
+            "value": rec["value"],
+            "platform": rec["platform"],
+            "connector": rec["connector"],
+            "written_at": rec["written_at"],
+        }
+        for rec in result
+    ]

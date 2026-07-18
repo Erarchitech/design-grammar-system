@@ -61,7 +61,7 @@ from connectors import (
 import reasoner
 import dg_context
 import dg_identity
-from dg_identity import MintRequest, BindRepresentationRequest
+from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
 
 app = FastAPI()
 
@@ -1424,6 +1424,46 @@ def delete_identity_representation(dg_id: str, platform: str, native_id: str, pr
     except dg_identity.DgIdentityError:
         raise _dgid_not_found_error(dg_id)
     return {"detached": True}
+
+
+@app.post("/identity/{dg_id}/properties")
+def post_identity_properties(dg_id: str, payload: SharedPropertyWriteRequest, project: str):
+    """Write (upsert) a cross-platform shared property on a dgId.
+
+    The property is keyed by (dgId, propertyName, project) — any bound platform
+    representation (GH writer, simulated Revit reader, …) sees the same value
+    when reading by dgId (DGID-04: Ladybug-insulation cross-platform flow).
+    """
+    try:
+        with driver.session() as session:
+            result = dg_identity.write_shared_property(
+                session,
+                dg_id,
+                payload.property_name,
+                payload.value,
+                payload.platform,
+                payload.connector,
+                project,
+            )
+    except dg_identity.DgIdentityError:
+        raise _dgid_not_found_error(dg_id)
+    return result
+
+
+@app.get("/identity/{dg_id}/properties")
+def get_identity_properties(dg_id: str, project: str, property_name: str = ""):
+    """Read shared properties attached to a dgId.
+
+    When ``property_name`` is provided, returns a single property dict; otherwise
+    returns a list of all shared properties on this dgId within ``project``.
+    """
+    try:
+        with driver.session() as session:
+            if property_name:
+                return dg_identity.read_shared_property(session, dg_id, property_name, project)
+            return dg_identity.list_shared_properties(session, dg_id, project)
+    except dg_identity.DgIdentityError as exc:
+        raise _dgid_not_found_error(dg_id)
 
 
 @app.put("/integration/speckle/project/{project}")
