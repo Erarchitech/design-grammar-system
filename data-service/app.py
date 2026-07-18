@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Path, Relationship
@@ -1889,9 +1890,13 @@ async def mcp(request: Request):
             "result": {"content": [{"type": "text", "text": "query"}], "data": data},
         }
 
+    # The gh_bridge calls below do blocking socket I/O (5 s connect + 30 s read
+    # worst case); /mcp is an async handler on the event loop, so they must run
+    # in the threadpool or a hung listener freezes the whole service (WR-05).
     if tool_name == "gh_get_context":
         project = arguments.get("project", "")
-        context = gh_bridge.get_canvas_context(project)  # raises _structured_error_response internally on failure
+        # raises _structured_error_response internally on failure
+        context = await run_in_threadpool(gh_bridge.get_canvas_context, project)
         return {
             "jsonrpc": "2.0",
             "id": req_id,
@@ -1899,7 +1904,7 @@ async def mcp(request: Request):
         }
 
     if tool_name == "gh_get_selection":
-        selection = gh_bridge.get_selection()
+        selection = await run_in_threadpool(gh_bridge.get_selection)
         return {
             "jsonrpc": "2.0",
             "id": req_id,
@@ -1907,7 +1912,7 @@ async def mcp(request: Request):
         }
 
     if tool_name == "gh_preview_structure":
-        preview = gh_bridge.preview_structure(arguments)
+        preview = await run_in_threadpool(gh_bridge.preview_structure, arguments)
         return {
             "jsonrpc": "2.0",
             "id": req_id,
@@ -1915,7 +1920,7 @@ async def mcp(request: Request):
         }
 
     if tool_name == "gh_clear_preview":
-        cleared = gh_bridge.clear_preview()
+        cleared = await run_in_threadpool(gh_bridge.clear_preview)
         return {
             "jsonrpc": "2.0",
             "id": req_id,
