@@ -270,6 +270,13 @@ public sealed class CanvasListenerComponent : GH_Component
                 // be a no-op against the async ReadLineAsync path used there.
                 await ServeClientAsync(client, ct).ConfigureAwait(false);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Deliberate shutdown (toggle-off / port-change restart) is not a
+                // client error -- leave _status alone so this late-running loop
+                // cannot overwrite a fresh "Idle"/"Listening" status (WR-03).
+                break;
+            }
             catch (Exception ex)
             {
                 // A single bad client must not kill the accept loop (T-33-02).
