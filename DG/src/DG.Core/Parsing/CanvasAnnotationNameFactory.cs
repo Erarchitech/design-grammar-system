@@ -40,6 +40,18 @@ public static class CanvasAnnotationNameFactory
                 nameof(name));
         }
 
+        // WR-07: the parser's ^OBJECT - (?<name>.+)$ regex is neither Singleline nor
+        // Multiline, so an embedded newline would silently break the factory's round-trip
+        // guarantee -- reject it here rather than relying on caller-side ValidateName.
+        if (name.Contains('\n') || name.Contains('\r'))
+        {
+            throw new ArgumentException(
+                "What: Object name contains a newline. " +
+                "Where: CanvasAnnotationNameFactory.ForObjectScribble. " +
+                "How to fix: remove line breaks from the Object name.",
+                nameof(name));
+        }
+
         return CanvasAnnotationGrammar.ObjectPrefix + name.Trim();
     }
 

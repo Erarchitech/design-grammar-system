@@ -56,6 +56,17 @@ public sealed class CanvasAnnotationNameFactoryTests
         Assert.Throws<ArgumentException>(() => CanvasAnnotationNameFactory.ForObjectScribble(name));
     }
 
+    [Theory]
+    [InlineData("FOO\nBAR")]
+    [InlineData("FOO\rBAR")]
+    [InlineData("FOO\r\nBAR")]
+    public void ForObjectScribble_NameWithNewline_ThrowsArgumentException(string name)
+    {
+        // WR-07: a newline inside the name cannot round-trip through the parser's
+        // non-Multiline OBJECT regex, so the factory itself must reject it.
+        Assert.Throws<ArgumentException>(() => CanvasAnnotationNameFactory.ForObjectScribble(name));
+    }
+
     [Fact]
     public void ForAlgorithmScribble_BuildsAlgorithmSuffixedText()
     {
