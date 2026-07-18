@@ -364,6 +364,14 @@ public sealed class EntityTagComponent : GH_Component
             // instead of mutating the ObjectIDs collection directly -- Clear() bypasses the
             // SDK's removal bookkeeping and would be a silent no-op if ObjectIDs ever
             // returns a defensive copy (shrink-re-tag would then never remove members).
+            // Child-group guids the equality predicate deliberately ignored (WR-09) must
+            // survive the rebuild, or a matched re-tag silently destroys nesting (WR-10).
+            var liveGroupGuids = currentDoc.Objects.OfType<GH_Group>()
+                .Select(g => g.InstanceGuid).ToHashSet();
+            var preservedChildIds = existingGroup.ObjectIDs
+                .Where(id => liveGroupGuids.Contains(id) && id != existingGroup.InstanceGuid)
+                .ToList();
+
             foreach (var id in existingGroup.ObjectIDs.ToList())
             {
                 existingGroup.RemoveObject(id);
@@ -371,7 +379,15 @@ public sealed class EntityTagComponent : GH_Component
 
             foreach (var obj in selected)
             {
-                existingGroup.AddObject(obj.InstanceGuid);
+                if (obj.InstanceGuid != existingGroup.InstanceGuid)
+                {
+                    existingGroup.AddObject(obj.InstanceGuid);
+                }
+            }
+
+            foreach (var childId in preservedChildIds.Where(id => !existingGroup.ObjectIDs.Contains(id)))
+            {
+                existingGroup.AddObject(childId);
             }
 
             existingGroup.ExpireCaches();
