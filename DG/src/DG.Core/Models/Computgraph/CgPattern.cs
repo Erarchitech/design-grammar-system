@@ -24,4 +24,10 @@ public class CgPattern
     public List<string> MemberIds { get; init; } = new();
 
     public string Source { get; init; } = "tagged";
+
+    /// <summary>
+    /// Deterministic DG identity minted by <see cref="DG.Core.Services.CgContextDgIdAssigner"/>.
+    /// Null until assigned; derived from <see cref="Id"/>.
+    /// </summary>
+    public string? DgId { get; set; }
 }

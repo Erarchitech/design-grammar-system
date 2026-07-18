@@ -21,4 +21,10 @@ public class CgProcedure
     public List<CgParameter> Parameters { get; init; } = new();
 
     public List<CgInterface> Interfaces { get; init; } = new();
+
+    /// <summary>
+    /// Deterministic DG identity minted by <see cref="DG.Core.Services.CgContextDgIdAssigner"/>.
+    /// Null until assigned; derived from <see cref="Id"/>.
+    /// </summary>
+    public string? DgId { get; set; }
 }

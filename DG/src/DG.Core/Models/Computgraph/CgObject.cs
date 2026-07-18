@@ -11,4 +11,10 @@ public class CgObject
     public string? ClassIri { get; init; }
 
     public string Source { get; init; } = "tagged";
+
+    /// <summary>
+    /// Deterministic DG identity minted by <see cref="DG.Core.Services.CgContextDgIdAssigner"/>.
+    /// Null until assigned; derived from <c>"obj:"</c> + <see cref="Name"/>.
+    /// </summary>
+    public string? DgId { get; set; }
 }
