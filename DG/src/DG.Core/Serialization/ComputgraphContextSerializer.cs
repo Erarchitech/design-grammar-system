@@ -121,6 +121,7 @@ public static class ComputgraphContextSerializer
             Name = obj.Name,
             ClassIri = obj.ClassIri,
             Source = obj.Source,
+            DgId = obj.DgId,
         };
     }
 
@@ -145,6 +146,7 @@ public static class ComputgraphContextSerializer
             Index = procedure.Index,
             Name = procedure.Name,
             Source = procedure.Source,
+            DgId = procedure.DgId,
             MemberIds = procedure.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Patterns = procedure.Patterns.OrderBy(p => p.Id, StringComparer.Ordinal).Select(ToDto).ToList(),
             Parameters = procedure.Parameters.OrderBy(p => p.Id, StringComparer.Ordinal).Select(ToDto).ToList(),
@@ -162,6 +164,7 @@ public static class ComputgraphContextSerializer
             HostPatternId = pattern.HostPatternId,
             MemberIds = pattern.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = pattern.Source,
+            DgId = pattern.DgId,
         };
     }
 
@@ -176,6 +179,7 @@ public static class ComputgraphContextSerializer
             Domain = parameter.Domain is not null ? ToDto(parameter.Domain) : null,
             MemberIds = parameter.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = parameter.Source,
+            DgId = parameter.DgId,
         };
     }
 
@@ -198,6 +202,7 @@ public static class ComputgraphContextSerializer
             IfaceType = IfaceTypeToDto(iface.IfaceType),
             MemberIds = iface.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = iface.Source,
+            DgId = iface.DgId,
         };
     }
 
@@ -333,6 +338,7 @@ public static class ComputgraphContextSerializer
             Name = dto.Name ?? string.Empty,
             ClassIri = dto.ClassIri,
             Source = dto.Source ?? "tagged",
+            DgId = dto.DgId,
         };
     }
 
@@ -360,6 +366,7 @@ public static class ComputgraphContextSerializer
             Index = dto.Index,
             Name = dto.Name ?? string.Empty,
             Source = dto.Source ?? "tagged",
+            DgId = dto.DgId,
         };
 
         foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
@@ -394,6 +401,7 @@ public static class ComputgraphContextSerializer
             Name = dto.Name,
             HostPatternId = dto.HostPatternId,
             Source = dto.Source ?? "tagged",
+            DgId = dto.DgId,
         };
 
         foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
@@ -414,6 +422,7 @@ public static class ComputgraphContextSerializer
             DataType = dto.DataType is not null ? ParamDataTypeFromDto(dto.DataType) : null,
             Domain = dto.Domain is not null ? FromDto(dto.Domain) : null,
             Source = dto.Source ?? "tagged",
+            DgId = dto.DgId,
         };
 
         foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
@@ -442,6 +451,7 @@ public static class ComputgraphContextSerializer
             Name = dto.Name ?? string.Empty,
             IfaceType = IfaceTypeFromDto(dto.IfaceType),
             Source = dto.Source ?? "tagged",
+            DgId = dto.DgId,
         };
 
         foreach (var memberId in dto.MemberIds ?? Enumerable.Empty<string>())
@@ -574,6 +584,8 @@ public static class ComputgraphContextSerializer
         public string? ClassIri { get; init; }
 
         public string? Source { get; init; }
+
+        public string? DgId { get; init; }
     }
 
     private sealed class CgAlgorithmDto
@@ -594,6 +606,8 @@ public static class ComputgraphContextSerializer
         public string? Name { get; init; }
 
         public string? Source { get; init; }
+
+        public string? DgId { get; init; }
 
         public List<string>? MemberIds { get; init; }
 
@@ -617,6 +631,8 @@ public static class ComputgraphContextSerializer
         public List<string>? MemberIds { get; init; }
 
         public string? Source { get; init; }
+
+        public string? DgId { get; init; }
     }
 
     private sealed class CgParameterDto
@@ -634,6 +650,8 @@ public static class ComputgraphContextSerializer
         public List<string>? MemberIds { get; init; }
 
         public string? Source { get; init; }
+
+        public string? DgId { get; init; }
     }
 
     private sealed class SliderDomainDto
@@ -656,6 +674,8 @@ public static class ComputgraphContextSerializer
         public List<string>? MemberIds { get; init; }
 
         public string? Source { get; init; }
+
+        public string? DgId { get; init; }
     }
 
     private sealed class CgNodeDto
