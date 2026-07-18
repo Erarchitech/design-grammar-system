@@ -228,15 +228,31 @@ public sealed class EntityTagComponent : GH_Component
         // in TagOrUpdateGroup fires instead of stacking a duplicate Pattern; otherwise
         // auto-increment to the next-free integer index under the given NN
         // (CanvasAnnotationNameFactory.ForEntity requires it for Pat).
+        // WR-09: the equality is computed over NON-group members, symmetric on both sides --
+        // a Pattern hosting a nested child group carries that child's InstanceGuid in
+        // MemberIds (AttachToHost adds it), which would false-negative an identical-selection
+        // re-tag and resurrect the CR-01 duplicate+nest. Filtering group guids from both the
+        // group's members and the selection also tolerates a drag-selection that happens to
+        // include the nested child group object itself.
         int? patternIndex = null;
         string? retagTargetNickname = null;
         if (kind == EntityTagKind.Pat)
         {
             var patPrefix = procIndex.ToString(CultureInfo.InvariantCulture) + CanvasAnnotationGrammar.PatternInfix;
+            var groupGuids = doc.Objects.OfType<GH_Group>()
+                .Select(g => g.InstanceGuid.ToString())
+                .ToHashSet(StringComparer.Ordinal);
+            var selectedCore = selectedIds.Where(id => !groupGuids.Contains(id)).ToList();
             var existingPat = raw.Groups.FirstOrDefault(g =>
-                g.Nickname.StartsWith(patPrefix, StringComparison.Ordinal)
-                && g.MemberIds.Count == selectedIds.Count
-                && selectedIds.All(id => g.MemberIds.Contains(id)));
+            {
+                if (!g.Nickname.StartsWith(patPrefix, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                var core = g.MemberIds.Where(id => !groupGuids.Contains(id)).ToList();
+                return core.Count == selectedCore.Count && selectedCore.All(id => core.Contains(id));
+            });
 
             if (existingPat is not null && TryExtractPatternIndex(existingPat.Nickname, patPrefix, out var reusedIndex))
             {
