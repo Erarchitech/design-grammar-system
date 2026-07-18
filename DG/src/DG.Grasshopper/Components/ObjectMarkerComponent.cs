@@ -173,9 +173,31 @@ public sealed class ObjectMarkerComponent : GH_Component
             }
         });
 
-        da.SetData(0, objectName);
+        // WR-05: report per-artifact truth -- in the mixed case an existing OBJECT scribble
+        // is deliberately kept, not re-created, so the outputs must reflect the identity
+        // actually on the canvas rather than claiming to have created it from the input.
+        var trimmedObjectName = objectName.Trim();
+        var canvasObjectName = context.Object?.Name ?? trimmedObjectName;
+
+        if (!needsObjectScribble && !string.Equals(canvasObjectName, trimmedObjectName, StringComparison.Ordinal))
+        {
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Warning,
+                $"What: the canvas already carries OBJECT - {canvasObjectName}, which differs from the input ObjectName '{trimmedObjectName}'. " +
+                "Where: ObjectMarkerComponent.SolveInstance. " +
+                "How to fix: the existing canvas identity is kept and reported -- delete the existing OBJECT scribble first to restamp it under the new name.");
+        }
+
+        var objectPart = needsObjectScribble
+            ? $"Created: OBJECT - {trimmedObjectName}"
+            : $"Kept existing: OBJECT - {canvasObjectName}";
+        var algorithmPart = needsAlgorithmScribble
+            ? $"Created: {algorithmIndex}_ALGORITHM"
+            : $"Kept existing: {algorithmIndex}_ALGORITHM";
+
+        da.SetData(0, canvasObjectName);
         da.SetData(1, algorithmIndex);
-        da.SetData(2, $"Created: OBJECT - {objectName} / {algorithmIndex}_ALGORITHM");
+        da.SetData(2, objectPart + "; " + algorithmPart);
     }
 
     private static void AddScribble(GH_Document doc, string text, PointF pivot)
