@@ -224,7 +224,12 @@ public sealed class StructureConfirmComponent : GH_Component
                     .FirstOrDefault(g => g.InstanceGuid == entry.GroupGuid);
                 if (group is not null)
                 {
-                    record.AddAction(new GH_GenericObjectAction(group));
+                    // WR-05: GH_GenericObjectAction only archives an object's STATE for
+                    // modify-undo -- it cannot resurrect an object removed from the document,
+                    // so Ctrl+Z would restore accepted groups but not rejected ones. The
+                    // removal counterpart to the listener's GH_AddObjectAction is
+                    // GH_RemoveObjectAction.
+                    record.AddAction(new GH_RemoveObjectAction(group));
                     currentDoc.RemoveObject(group, false);
                 }
 
