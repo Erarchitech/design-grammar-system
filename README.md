@@ -186,12 +186,14 @@ Login with `neo4j / 12345678` unless changed.
   - Metagraph: `Rule`, `Atom`, `Builtin`, `Var`, `Literal`
   - ValidGraph: `DesignState` (kind: ObjState/ParamState/PropState), `Run` (ValidStatus/SendStatus), `IntegrationConfig`, `ValidationEntity`
   - SpecGraph: `SpecNote`, `SpecTag`, `SpecSession`, `SpecClass`
+  - Computgraph: `Object`, `Behavior`, `Algorithm`, `Procedure`, `Pattern`, `Parameter`, `Interface`, `Representation`, `SharedProperty`
 - Relationships:
   - `HAS_DATA_PROPERTY`, `HAS_OBJECT_PROPERTY`
   - `HAS_BODY` (property: `order`), `HAS_HEAD` (property: `order`)
   - `REFERS_TO`
   - `ARG` (property: `pos`)
   - `HAS_STATE` (DesignState -> state nodes, read-side composition)
+  - Computgraph: `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Pattern→Interface), `PARAM_LINK` (Parameter→Parameter linking), `REFERS_TO` (Object→Class cross-layer bridge), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
   - Rule: `Rule_Id`, `SWRL` (SWRL expression), `RuleName`, `RuleDescription`, `kind` (violation)
@@ -200,7 +202,8 @@ Login with `neo4j / 12345678` unless changed.
   - DesignState: `StateId`, `kind` (ObjState|ParamState|PropState), `statePayloadJson`
   - Run: `Run_Id`, `ValidStatus` (Boolean list), `SendStatus` (Boolean), `shaclReportJson` (per-run SHACL report envelope JSON string; absent on pre-Phase-823 runs — see `spec/RULE-PARTITION-POLICY.md`)
 - All nodes include `graph` (`OntoGraph` or `Metagraph` or `ValidGraph` or `SpecGraph` or `Computgraph`) and `project` (from `project_name`).
-- **Identity registry (Phase 32.1):** Computgraph entities carry a deterministic platform-neutral `dgId` (`dg:` + 16 uppercase hex). Platform representations (`Representation` nodes) and cross-platform shared properties (`SharedProperty` nodes) are registry nodes managed by the data-service `/identity/*` API. Normative spec: `spec/DG-ID.md`.
+- **Computgraph runtime (Phase 36):** 7 runtime entity labels (Object, Behavior, Algorithm, Procedure, Pattern, Parameter, Interface) written by `POST /computgraph/publish`. Display properties: `objectName`/`algorithmName`/`procedureName`/`patternName`/`parameterName`/`interfaceName` respectively. Object optionally links to OntoGraph `Class` via `REFERS_TO` (cross-layer bridge).
+- **Identity registry (Phase 32.1):** Computgraph entity nodes (Object, Procedure, Pattern, Parameter, Interface) carry a deterministic platform-neutral `dgId` (`dg:` + 16 uppercase hex). Platform representations (`Representation` nodes) and cross-platform shared properties (`SharedProperty` nodes) are registry nodes managed by the data-service `/identity/*` API. Normative spec: `spec/DG-ID.md`.
 
 ## Machine learning (LoRA) and training dataset
 This repo includes a complete LoRA fine-tuning pipeline to create a custom Ollama model for rule parsing.

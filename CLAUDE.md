@@ -164,6 +164,13 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 | `Run` | ValidGraph | `Run_Id` | `Run_Id` |
 | `Representation` | Computgraph | `nativeId`+`platform`+`project` | `nativeId` |
 | `SharedProperty` | Computgraph | `dgId`+`propertyName`+`project` | `propertyName` |
+| `Object` | Computgraph | `cgId`+`definitionId`+`project` | `objectName` |
+| `Behavior` | Computgraph | `definitionId`+`project` | `definitionId` |
+| `Algorithm` | Computgraph | `cgId`+`definitionId`+`project` | `algorithmName` |
+| `Procedure` | Computgraph | `cgId`+`definitionId`+`project` | `procedureName` |
+| `Pattern` | Computgraph | `cgId`+`definitionId`+`project` | `patternName` |
+| `Parameter` | Computgraph | `cgId`+`definitionId`+`project` | `parameterName` |
+| `Interface` | Computgraph | `cgId`+`definitionId`+`project` | `interfaceName` |
 
 ### ValidGraph Labels
 
@@ -184,9 +191,9 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Relationships
 
-`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
+`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity; Object→Class cross-layer), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty), `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Pattern→Interface), `PARAM_LINK` (Parameter→Parameter linking)
 
-Every Computgraph entity node (Algorithm, Procedure, Pattern, Parameter, Interface) carries an optional `dgId` property — a deterministic platform-neutral identity (`dg:` + 16 uppercase hex). See `spec/DG-ID.md` for the normative specification (format, minting, collision policy, binding model).
+Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface) carries an optional `dgId` property — a deterministic platform-neutral identity (`dg:` + 16 uppercase hex). See `spec/DG-ID.md` for the normative specification (format, minting, collision policy, binding model).
 
 ### Identity Registry (Computgraph)
 
