@@ -11,7 +11,10 @@ export default function PropertiesTable({ rows = [], editable = true, onEdit, st
   const begin = (r) => {
     if (!canEdit || String(r.key).startsWith("<")) return;
     setEditingKey(r.key);
-    setDraft(String(r.value ?? ""));
+    // Drafts from the untruncated source (rawValue) when available, so
+    // committing an edit on a >200-char property doesn't write the
+    // truncated "…"-suffixed display value back to Neo4j (Phase 36 CR-02).
+    setDraft(String(r.rawValue ?? r.value ?? ""));
   };
   const cancel = () => {
     setEditingKey(null);

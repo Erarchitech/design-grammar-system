@@ -687,7 +687,10 @@ export default function GraphScreen({ active, onBack, project }) {
   const nodeOf = (h) => (h && rings[h.r] ? rings[h.r].nodes[h.i] : null);
   const hv = nodeOf(hover);
   const se = nodeOf(sel);
-  const rowsOf = (n, max) => (n ? n.props.slice(0, max).map((p) => ({ key: p[0], value: String(p[1]).length > 200 ? String(p[1]).slice(0, 200) + "…" : String(p[1]) })) : []);
+  const rowsOf = (n, max) => (n ? n.props.slice(0, max).map((p) => {
+    const full = String(p[1]);
+    return { key: p[0], value: full.length > 200 ? full.slice(0, 200) + "…" : full, rawValue: full };
+  }) : []);
   const conns = [];
   if (se && sel) {
     for (const e of rings[sel.r].edges) {
