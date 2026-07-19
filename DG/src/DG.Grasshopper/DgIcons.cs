@@ -57,6 +57,11 @@ internal static class DgIcons
     // (WR-07 precedent); replace with bespoke artwork when available.
     public static Bitmap StructureConfirm24 { get; } = Load("StructureConfirm24.png");
 
+    // ComputgraphPublish24.png is a Phase-36 placeholder (copy of the spare StructureConfirm24.png
+    // resource) so DG COMPUTGRAPH PUBLISH does not render the pink-X missing-icon fallback
+    // (WR-07 precedent); replace with bespoke artwork when available.
+    public static Bitmap ComputgraphPublish24 { get; } = Load("ComputgraphPublish24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
