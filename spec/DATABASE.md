@@ -146,6 +146,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - Merge key: `(cgId, definitionId, project)`
 - Written only by `POST /computgraph/publish`
 - `REFERS_TO` to OntoGraph `Class` when `classIri` is present (cross-layer bridge)
+- **Known gap (Phase 36 WR-06):** `provider`/`model`/`confidence` are read and written by `computgraph_publish.py` for every `recognized` entity (Object, Procedure, Pattern, Parameter, Interface), but none of the GH-side wire DTOs (`ComputgraphContextSerializer.cs` `Cg*Dto` types) carry these fields -- only `Source`/`DgId`. Until the DG.Core accept path and serializer are extended to transport them, every `recognized` entity published from Grasshopper gets `provider`/`model`/`confidence = null`, regardless of this table.
 
 ---
 

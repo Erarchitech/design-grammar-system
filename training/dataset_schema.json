@@ -210,7 +210,8 @@
           "publishedAt": "datetime",
           "graph": "Computgraph",
           "project": "default-project"
-        }
+        },
+        "note": "provider/model/confidence are read+written by computgraph_publish.py for recognized entities, but the GH-side Cg*Dto wire types (ComputgraphContextSerializer.cs) do not yet carry them -- always null on GH-originated publishes (Phase 36 WR-06)."
       },
       "Behavior": {
         "label": "Behavior",
