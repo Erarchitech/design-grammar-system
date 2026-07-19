@@ -111,20 +111,21 @@ class TestCallSuccess:
         sent = json.loads(sent_bytes.decode("utf-8").rstrip("\n"))
         assert sent == {"type": "get_canvas_context", "parameters": {"project": "p1"}}
 
-    def test_preview_structure_stub_returns_without_raising(self, monkeypatch):
-        """The preview_structure stub result (supported == False) flows through untouched."""
-        canned = _ok_envelope_line({"supported": False})
+    def test_preview_structure_forwards_listener_result(self, monkeypatch):
+        """The listener's live preview result (Phase 35 real handler) forwards
+        through untouched -- not the retired {"supported": False} stub shape."""
+        canned = _ok_envelope_line({"previewed": 2})
         fake_sock = _FakeSocket(line=canned)
         monkeypatch.setattr(
             gh_bridge.socket, "create_connection", lambda address, timeout=None: fake_sock
         )
 
-        result = gh_bridge.preview_structure({"nodes": []})
+        result = gh_bridge.preview_structure({"proposals": []})
 
-        assert result == {"supported": False}
+        assert result == {"previewed": 2}
 
-    def test_clear_preview_stub_returns_without_raising(self, monkeypatch):
-        canned = _ok_envelope_line({"supported": False})
+    def test_clear_preview_forwards_listener_result(self, monkeypatch):
+        canned = _ok_envelope_line({"cleared": True})
         fake_sock = _FakeSocket(line=canned)
         monkeypatch.setattr(
             gh_bridge.socket, "create_connection", lambda address, timeout=None: fake_sock
@@ -132,7 +133,7 @@ class TestCallSuccess:
 
         result = gh_bridge.clear_preview()
 
-        assert result == {"supported": False}
+        assert result == {"cleared": True}
 
 
 # ── Refusal / timeout -> bounded 503 GH_BRIDGE_UNREACHABLE ──

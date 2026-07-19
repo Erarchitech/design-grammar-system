@@ -61,6 +61,7 @@ from connectors import (
 
 import reasoner
 import dg_context
+import cg_recognition
 import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
 import gh_bridge
@@ -1285,6 +1286,48 @@ def pull_computgraph_context(payload: ComputgraphContextPullRequest):
     if isinstance(context, dict):
         context["project"] = payload.project
     return context
+
+
+# ---------------------------------------------------------------------------
+# Recognition pipeline (Phase 35: RCGN-01)
+# ---------------------------------------------------------------------------
+
+
+class RecognizeRequest(BaseModel):
+    """Request body for POST /computgraph/recognize.
+
+    `cg_context` is the cgContextJson v1 envelope (pull it live via
+    POST /computgraph/context/pull first, then post the result here -- keeps
+    this route synchronous, testable, and consistent with the no-message-queue
+    architecture decision). `procedure_index` optionally scopes recognition
+    to one procedure for large definitions.
+    """
+
+    cg_context: dict
+    procedure_index: int | None = None
+    project: str | None = None
+
+
+@app.post("/computgraph/recognize")
+def post_computgraph_recognize(payload: RecognizeRequest):
+    """Classify untagged canvas entities into a schema-valid proposed-structure
+    (RCGN-01), bounded-retry validated against the submitted cg_context
+    (RCGN-04: hard-rejects hallucinated/tagged-overlap member ids). Thin route
+    -- all logic delegates to cg_recognition.recognize_structure(), mirroring
+    post_context_generate_cypher()'s delegation + error-mapping shape.
+    """
+    try:
+        return cg_recognition.recognize_structure(payload.cg_context, payload.procedure_index)
+    except ValueError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check the submitted cg_context shape (cgContextJson v1 envelope).",
+            "RECOGNIZE_REQUEST_INVALID",
+            422,
+        )
+    except Exception as exc:
+        error_msg, hint, code = map_provider_error(exc)
+        raise _structured_error_response(error_msg, hint, code, 502)
 
 
 # ---------------------------------------------------------------------------

@@ -116,15 +116,19 @@ def get_selection() -> dict:
 
 
 def preview_structure(structure: dict) -> dict:
-    """Preview stub — returns `{"supported": False, ...}` until Phase 35."""
+    """Forward a recognized-structure preview request to the DG CANVAS
+    LISTENER and return its live preview result unchanged (e.g.
+    `{"previewed": N}`)."""
     return _call("preview_structure", structure)
 
 
 def clear_preview() -> dict:
-    """Clear-preview stub — returns `{"supported": False, ...}` until Phase 35."""
+    """Forward a clear-preview request to the DG CANVAS LISTENER and return
+    its live result unchanged (e.g. `{"cleared": True}`)."""
     return _call("clear_preview", {})
 
 
 def get_preview_status() -> dict:
-    """Preview-status stub — returns `{"supported": False, ...}` until Phase 35."""
+    """Forward a preview-status request to the DG CANVAS LISTENER and return
+    its live pending-proposal result unchanged."""
     return _call("get_preview_status", {})
