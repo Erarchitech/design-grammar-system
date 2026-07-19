@@ -376,4 +376,44 @@ public sealed class CanvasAnnotationNameFactoryTests
         Assert.Equal("Высота", parameter.Name);
         Assert.Equal("tagged", parameter.Source);
     }
+
+    // --- CR-01 (Phase 35 review): StripConventionPrefix bare-names LLM suggestedName values ---
+
+    [Theory]
+    [InlineData(EntityTagKind.IntF, "11_IntF_ParSplitAt", "ParSplitAt")]
+    [InlineData(EntityTagKind.IntF, "11_IntF_TrussConfig", "TrussConfig")]
+    [InlineData(EntityTagKind.Proc, "11_Proc - Frame", "Frame")]
+    [InlineData(EntityTagKind.Var, "12_Var_Height", "Height")]
+    [InlineData(EntityTagKind.Const, "11_Const_Count", "Count")]
+    [InlineData(EntityTagKind.Emg, "11_Emg_Area", "Area")]
+    [InlineData(EntityTagKind.Emg, "11_Emr_Area", "Area")] // tolerated Emr variant also stripped
+    [InlineData(EntityTagKind.Pat, "11_Pat_2 Truss", "Truss")] // idx token dropped, label kept
+    [InlineData(EntityTagKind.Pat, "11_Pat_2", "")] // idx-only Pat name has no label
+    [InlineData(EntityTagKind.IntF, "ParSplitAt", "ParSplitAt")] // already bare -- unchanged
+    [InlineData(EntityTagKind.IntF, "  11_IntF_ParSplitAt  ", "ParSplitAt")] // trims whitespace
+    public void StripConventionPrefix_ReturnsBareTrailingName(EntityTagKind kind, string suggestedName, string expected)
+    {
+        Assert.Equal(expected, CanvasAnnotationNameFactory.StripConventionPrefix(kind, suggestedName));
+    }
+
+    [Fact]
+    public void StripConventionPrefix_DoesNotStripMismatchedKindInfix()
+    {
+        // An IntF strip request must not touch a Var-shaped name -- ValidateName later
+        // rejects the leftover reserved infix, which is the correct signal for a
+        // kind/suggestedName mismatch.
+        Assert.Equal("11_Var_Height", CanvasAnnotationNameFactory.StripConventionPrefix(EntityTagKind.IntF, "11_Var_Height"));
+    }
+
+    [Fact]
+    public void StripConventionPrefix_ThenForEntity_RoundTripsFullConventionName()
+    {
+        // The exact accept-path composition StructureConfirmComponent uses: a
+        // convention-conformant LLM suggestedName must survive strip + re-derive without
+        // ValidateName throwing (CR-01 acceptance criterion).
+        var bare = CanvasAnnotationNameFactory.StripConventionPrefix(EntityTagKind.IntF, "11_IntF_ParSplitAt");
+        var nickname = CanvasAnnotationNameFactory.ForEntity(EntityTagKind.IntF, 11, bare);
+
+        Assert.Equal("11_IntF_ParSplitAt", nickname);
+    }
 }

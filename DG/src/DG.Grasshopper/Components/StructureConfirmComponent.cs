@@ -182,7 +182,12 @@ public sealed class StructureConfirmComponent : GH_Component
                 string nickname;
                 try
                 {
-                    nickname = CanvasAnnotationNameFactory.ForEntity(entry.Kind, entry.ProcedureIndex, entry.SuggestedName, patternIndex);
+                    // CR-01: the LLM emits suggestedName as a FULL convention name
+                    // ("11_IntF_ParSplitAt"); ForEntity expects the BARE trailing Name and
+                    // would reject the reserved infix (and double-prefix the result), so
+                    // strip the convention prefix before re-deriving the permanent name.
+                    var bareName = CanvasAnnotationNameFactory.StripConventionPrefix(entry.Kind, entry.SuggestedName);
+                    nickname = CanvasAnnotationNameFactory.ForEntity(entry.Kind, entry.ProcedureIndex, bareName, patternIndex);
                 }
                 catch (ArgumentException ex)
                 {

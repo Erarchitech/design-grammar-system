@@ -149,6 +149,86 @@ public static class CanvasAnnotationNameFactory
     }
 
     /// <summary>
+    /// Strips a leading convention prefix (<c>NN&lt;Infix&gt;</c>, e.g. <c>"11_IntF_"</c>) from
+    /// <paramref name="suggestedName"/> when present, returning the bare trailing Name that
+    /// <see cref="ForEntity"/> expects. Phase 35 LLM recognition is taught to emit
+    /// <c>suggestedName</c> as a FULL convention name (<c>"11_IntF_ParSplitAt"</c>); feeding
+    /// that full name straight back into <see cref="ForEntity"/> would trip
+    /// <see cref="ValidateName"/>'s reserved-infix rejection (and double-prefix the result),
+    /// so the confirm/accept path bare-names it here first (CR-01). For
+    /// <see cref="EntityTagKind.Emg"/> the tolerated <c>_Emr_</c> variant is also stripped;
+    /// for <see cref="EntityTagKind.Pat"/> a leading integer idx token after the infix is
+    /// dropped too -- <see cref="ForEntity"/> re-assigns a fresh index via its
+    /// <c>patternIndex</c> argument. A name with no recognizable leading prefix is returned
+    /// trimmed and otherwise unchanged.
+    /// </summary>
+    public static string StripConventionPrefix(EntityTagKind kind, string suggestedName)
+    {
+        var name = (suggestedName ?? string.Empty).Trim();
+        if (name.Length == 0)
+        {
+            return name;
+        }
+
+        var infixes = kind switch
+        {
+            EntityTagKind.Proc => new[] { CanvasAnnotationGrammar.ProcedureInfix },
+            EntityTagKind.Pat => new[] { CanvasAnnotationGrammar.PatternInfix },
+            EntityTagKind.Var => new[] { CanvasAnnotationGrammar.VariableInfix },
+            EntityTagKind.Const => new[] { CanvasAnnotationGrammar.ConstantInfix },
+            EntityTagKind.Emg => new[]
+            {
+                CanvasAnnotationGrammar.EmergentInfix,
+                CanvasAnnotationGrammar.EmergentToleratedInfix,
+            },
+            EntityTagKind.IntF => new[] { CanvasAnnotationGrammar.InterfaceInfix },
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown EntityTagKind."),
+        };
+
+        foreach (var infix in infixes)
+        {
+            var pos = name.IndexOf(infix, StringComparison.Ordinal);
+            if (pos <= 0 || !IsAllDigits(name, pos))
+            {
+                // Only a prefix of shape "<digits><infix>" at the very start counts as a
+                // convention prefix; anything else is left for ValidateName to judge.
+                continue;
+            }
+
+            var rest = name.Substring(pos + infix.Length);
+
+            if (kind == EntityTagKind.Pat)
+            {
+                // Full Pat names carry an idx slot ("NN_Pat_idx[ Label]") -- drop the idx
+                // token; ForEntity assigns a fresh one from its patternIndex argument.
+                var spaceIdx = rest.IndexOf(' ');
+                var idxToken = spaceIdx >= 0 ? rest.Substring(0, spaceIdx) : rest;
+                if (int.TryParse(idxToken, NumberStyles.None, CultureInfo.InvariantCulture, out _))
+                {
+                    rest = spaceIdx >= 0 ? rest.Substring(spaceIdx + 1) : string.Empty;
+                }
+            }
+
+            return rest.Trim();
+        }
+
+        return name;
+    }
+
+    private static bool IsAllDigits(string value, int endExclusive)
+    {
+        for (var i = 0; i < endExclusive; i++)
+        {
+            if (value[i] < '0' || value[i] > '9')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Computes the next-free integer Pattern index under the given NN token
     /// <paramref name="procIndex"/> by scanning <paramref name="existingGroupNicknames"/> for
     /// <c>NN_Pat_idx[...]</c> shapes, ignoring non-integer idx tokens. Returns 1 when no
