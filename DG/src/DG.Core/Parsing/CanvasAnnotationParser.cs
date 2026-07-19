@@ -115,7 +115,7 @@ public static class CanvasAnnotationParser
                     Id = ProcedureId(algDigit, nn),
                     Index = procIndex,
                     Name = procedureMatch.Groups["name"].Value.Trim(),
-                    Source = "tagged",
+                    Source = group.Recognized ? "recognized" : "tagged",
                     MemberIds = new List<string>(group.MemberIds),
                 });
             }
@@ -195,7 +195,7 @@ public static class CanvasAnnotationParser
                     DataType = dataType,
                     Domain = domain,
                     MemberIds = new List<string>(group.MemberIds),
-                    Source = "tagged",
+                    Source = group.Recognized ? "recognized" : "tagged",
                 });
 
                 claimedMemberIds.UnionWith(group.MemberIds);
@@ -219,7 +219,7 @@ public static class CanvasAnnotationParser
                     // conservative default; Phase 35 recognition/human-confirmation refines it.
                     IfaceType = IfaceType.Input,
                     MemberIds = new List<string>(group.MemberIds),
-                    Source = "tagged",
+                    Source = group.Recognized ? "recognized" : "tagged",
                 });
 
                 claimedMemberIds.UnionWith(group.MemberIds);
@@ -248,7 +248,7 @@ public static class CanvasAnnotationParser
                 Name = pending.Name,
                 HostPatternId = hostIdByGroup.TryGetValue(pending.Group, out var hostId) ? hostId : null,
                 MemberIds = new List<string>(pending.Group.MemberIds),
-                Source = "tagged",
+                Source = pending.Group.Recognized ? "recognized" : "tagged",
             };
             pending.Procedure.Patterns.Add(pattern);
             allPatterns.Add(pattern);
