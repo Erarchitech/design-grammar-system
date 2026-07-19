@@ -43,6 +43,7 @@ const CAPTIONS = {
   SpecSession: ["mode"],
   SpecClass: ["label"],
   Object: ["objectName"],
+  Behavior: ["definitionId"],
   Algorithm: ["algorithmName"],
   Procedure: ["procedureName"],
   Pattern: ["patternName"],
