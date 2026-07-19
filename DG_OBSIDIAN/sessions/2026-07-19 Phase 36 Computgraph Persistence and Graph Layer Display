@@ -1,0 +1,63 @@
+---
+tags: [session]
+date: 2026-07-19
+model: deepseek-v4-pro → claude-fable-5 → haiku
+---
+
+# Session: Phase 36 — Computgraph Persistence and Graph Layer Display
+
+**Model:** deepseek-v4-pro[1m] / claude-fable-5 (executor) → haiku (final)
+**Date:** 2026-07-19
+**Files changed:** 22
+
+## Summary
+
+Phase 36 executed autonomously via `/gsd-autonomous --only 36` — discussed → UI design contract → plan → execute → verify all within one session. Delivered the first runtime writer of the Computgraph layer: 4 plans across Wave 1 (all parallel, zero `files_modified` overlap), 12 code/doc commits + 1 fix commit.
+
+## Changed Files
+
+**New files:**
+- `data-service/computgraph_publish.py` — publish_structure (atomic MERGE-idempotent, server-computed dgId, Behavior synthesis, provenance, single-transaction)
+- `data-service/tests/test_computgraph_publish.py` — 5 pytest tests (publish, idempotency, provenance, dgId golden vector, untagged guard)
+- `DG/src/DG.Grasshopper/Validation/ComputgraphPublishContract.cs` — request/response DTOs
+- `DG/src/DG.Grasshopper/Validation/ComputgraphPublishClient.cs` — static HttpClient POST
+- `DG/src/DG.Grasshopper/Components/ComputgraphPublishComponent.cs` — rising-edge canvas publish
+- `DG/src/DG.Grasshopper/Properties/ComputgraphPublish24.png` — icon placeholder
+
+**Modified files:**
+- `data-service/app.py` — POST /computgraph/publish route
+- `DG/src/DG.Grasshopper/DgIcons.cs` — ComputgraphPublish24 enum entry
+- `ui-v2/src/graph/buildRings.js` — Computgraph layer (7 labels/3 orbits, casing fix)
+- `ui-v2/src/screens/GraphScreen.jsx` — 200-char contextJson truncation guard
+- `cypher_template.txt`, `training/dataset_schema.json`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl`, `CLAUDE.md`, `.github/copilot-instructions.md`, `README.md` — schema propagation (8 surfaces)
+- `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`
+
+## Results
+
+| Plan | Tasks | Tests | Status |
+|------|-------|-------|--------|
+| 36-01: POST /computgraph/publish + publish_structure | 3 | 5/5 pytest | ✅ Green |
+| 36-02: DG COMPUTGRAPH PUBLISH component | 2 | .NET build clean | ✅ Green |
+| 36-03: ui-v2 Computgraph layer display | 2 | Vite build clean | ✅ Green |
+| 36-04: Schema propagation (8 surfaces) | 2 | grep gates pass | ✅ Green |
+
+**Verification:** 15/15 must-haves ✓ — status `passed` after doc bug fixes.
+
+**Doc bugs found post-verification and fixed:**
+1. `HAS_INTERFACE` documented as `Pattern→Interface` → should be `Procedure→Interface` (runtime was correct)
+2. `PARAM_LINK` documented as `Parameter→Parameter` → should be `Parameter→Interface` (runtime was correct)
+3. Algorithm merge key documented as `(cgId, definitionId, project)` → should be `(algIndex, definitionId, project)` (Algorithm has no cgId per DGID-01 scope)
+
+## Design Decisions
+
+- **publish_structure uses `compute_dg_id()` NOT `mint_identity()`** — the registry's label-less anchor MERGE would create duplicate orphaned nodes against a labeled `MERGE (n:Pattern {cgId, ...})`. See [[decisions/Phase 36 Computgraph publish avoids mint_identity|decision]].
+- **Behavior synthesized server-side** — `CgObject` collapses Object/Behavior in cgContextJson v1; the publish endpoint creates Behavior with MERGE key `{definitionId, project}` (no cgId/dgId).
+- **One transaction via route-owned session** — route opens `driver.session()`, passes session to publish_structure; one `session.run(...).consume()` for the whole subgraph.
+- **200-char truncation guard** for `contextJson` in `rowsOf()` — prevents multi-KB property from breaking frosted detail panel layout.
+- **Threaded through 8 schema surfaces** with exact `graph:'Computgraph'` string, fixing the stale `"ComputGraph"` casing bug.
+
+## Next Steps
+
+- [[sessions/2026-07-19 Phase 35 review-fix-verify|Phase 35 session]] — earlier today, deferred UAT pending
+- Phase 37: Script Structure Validation MVP — next in v9.0 pipeline
+- Code review + UI review deferred (classifier unavailable at session end)

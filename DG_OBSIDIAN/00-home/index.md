@@ -75,6 +75,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 824 CONNECTOR credential integration decisions|Phase 824: CONNECTOR Credential Integration — 4 design decisions (DG.Core heartbeat logic, dgc_ prefix guard, heartbeat-only auth, additive-end input order)]]
 - [[decisions/Phase 32.1 DG ID cross-platform identity design|Phase 32.1 (v9.0): DG ID cross-platform identity — dgId wraps cgId, Representation registry, SharedProperty provenance, Revit binds via UniqueId not ElementId]]
 - [[decisions/DG ID cross-platform identity scheme|Phase 32.1 (v9.0): DG ID scheme ADR (DGID-06) — positioning against Rhino.Inside.Revit, Speckle, IFC GlobalId, Revit UniqueId, BHoM]]
+- [[decisions/Phase 36 Computgraph publish avoids mint_identity|Phase 36 (v9.0): Computgraph publish uses compute_dg_id, NOT mint_identity — prevents label-less MERGE anchor duplicates]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -95,6 +96,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/CR-01 validStatus truthy check causes false SHACL violations|CR-01: truthy valid_status check causes false-positive SHACL Violations on empty ValidStatus]]
 - [[debugging/graph-query-design-states-schema-mismatch|Phase 29 graph_query design-state bug: schema mismatch between aspirational :DesignState nodes and production ValidationRun.statePayloadJson]]
 - [[debugging/perplexity-mcp-parallel-call-crashes-browser-profile|Perplexity MCP: parallel calls crash the shared Chrome profile lock]]
+- [[debugging/Phase 36 schema doc bugs|Phase 36: Schema doc bugs — HAS_INTERFACE direction, PARAM_LINK direction, Algorithm merge key (runtime was correct, docs were stale)]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -206,8 +208,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-18 Phase 32.1 Wave 1 execution|2026-07-18 Phase 32.1 Wave 1 — minting core, spec+ADR, identity API; golden vector confirmed]]
 - [[sessions/2026-07-18 Phase 32.1 complete — all 7 plans executed|2026-07-18 Phase 32.1 COMPLETE — 7/7 plans, 290 C# + 15 Python tests, cross-language parity verified]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
+- [[sessions/2026-07-19 Phase 36 Computgraph Persistence and Graph Layer Display|2026-07-19 Phase 36 — Computgraph Persistence & Graph Layer Display (autonomous execution, 4 plans, 12 commits, 15/15 verified)]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
 
-> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. **v8.0 shipped (2026-07-07)**, Phase 27 (Speckle 3D embed) added post-ship 2026-07-08 — 7 phases (21–27), 28/28 requirements. **v8.1 complete (2026-07-11)** — 7 phases (810–816), 23 requirements, all 7 phases executed and verified; formal `/gsd-complete-milestone` archive still pending. **v8.2 initialized (2026-07-11)** — Connector Integration & Reasoning Engine, 5 phases (820–824), 7 requirements, ready to plan Phase 820. **v9.0 (Phases 28–40, paused)** and **v10.0 (Phases 41–49, isolated)** renumbered 2026-07-11 to continue global phase numbering.
+> ℹ️ **v7.0 milestone complete (2026-07-05).** 8 phases (13–20), 34 plans, 39 requirements satisfied. **v8.0 shipped (2026-07-07)**, Phase 27 (Speckle 3D embed) added post-ship 2026-07-08 — 7 phases (21–27), 28/28 requirements. **v8.1 complete (2026-07-11)** — 7 phases (810–816), 23 requirements, all 7 phases executed and verified; formal `/gsd-complete-milestone` archive still pending. **v8.2 initialized (2026-07-11)** — Connector Integration & Reasoning Engine, 5 phases (820–824), 7 requirements, ready to plan Phase 820. **v9.0 (Phases 28–40, paused)** — Phase 36 ✅ COMPLETE (2026-07-19). Phases 37 (context ready, needs plan) and 38–40 (need discuss). **v10.0 (Phases 41–49, isolated)** renumbered 2026-07-11 to continue global phase numbering.
