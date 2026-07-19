@@ -155,6 +155,23 @@ class TestValidator:
             result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())
             assert result == {"valid": True, "violations": []}, f"kind={good_kind!r}"
 
+    def test_duplicate_member_across_proposals_is_caught(self):
+        """WR-03: two proposals claiming the same node must be a hard reject --
+        accepting both would create the double-ownership state tagged_overlap
+        exists to prevent, one confirmation step later."""
+        first = self._proposal(memberIds=["n3", "n4"])
+        second = self._proposal(suggestedName="11_IntF_Other", memberIds=["n4"])
+        result = cg_recognition.validate_proposed_structure({"proposals": [first, second]}, _cg_context())
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "duplicate_member" in codes
+
+    def test_disjoint_proposals_are_valid(self):
+        first = self._proposal(memberIds=["n3"])
+        second = self._proposal(suggestedName="11_IntF_Other", memberIds=["n4"])
+        result = cg_recognition.validate_proposed_structure({"proposals": [first, second]}, _cg_context())
+        assert result == {"valid": True, "violations": []}
+
     def test_well_formed_untagged_proposal_is_valid(self):
         proposal = self._proposal(memberIds=["n3", "n4"])
         result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())

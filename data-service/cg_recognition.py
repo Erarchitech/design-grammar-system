@@ -101,8 +101,9 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
     and the bounded retry loop work unchanged. Never raises.
 
     Violation codes: `bad_shape`, `missing_field`, `invalid_kind`,
-    `unknown_member_id`, `tagged_overlap`, `too_many_proposals`,
-    `too_many_members`. Every message follows What+Where+How-to-fix phrasing.
+    `unknown_member_id`, `tagged_overlap`, `duplicate_member`,
+    `too_many_proposals`, `too_many_members`. Every message follows
+    What+Where+How-to-fix phrasing.
     """
     violations: list[dict[str, Any]] = []
 
@@ -230,6 +231,32 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
                     "path": path,
                 }
             )
+
+    # WR-03: cross-proposal duplicate check -- two proposals claiming the same
+    # node would preview as overlapping groups and, once both are accepted in
+    # DG STRUCTURE CONFIRM, produce the exact double-ownership state the
+    # tagged_overlap rule exists to prevent, just one confirmation step later.
+    seen: dict[str, int] = {}
+    for i, proposal in enumerate(proposals):
+        members = proposal.get("memberIds") if isinstance(proposal, dict) else None
+        if not isinstance(members, list):
+            continue
+        for m in members:
+            if m in seen:
+                violations.append(
+                    {
+                        "code": "duplicate_member",
+                        "message": (
+                            f"Member id {m!r} appears in proposals[{seen[m]}] "
+                            f"and proposals[{i}]. Where: "
+                            f"proposals[{i}].memberIds. How to fix: assign "
+                            f"each node to exactly one proposal."
+                        ),
+                        "path": f"proposals[{i}].memberIds",
+                    }
+                )
+            else:
+                seen[m] = i
 
     return {"valid": len(violations) == 0, "violations": violations}
 
