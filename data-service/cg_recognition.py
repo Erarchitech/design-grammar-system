@@ -254,3 +254,258 @@ def _extract_json(text: str | None) -> tuple[dict | None, str | None]:
         )
 
     return parsed, None
+
+
+# ── Frame few-shot fixture (Phase 35-02: A4 few-shot budget resolution) ──
+
+FRAME_FEWSHOT_FILE = Path(__file__).resolve().parent / "fixtures" / "frame_recognition_fewshot.json"
+
+_EMPTY_FEWSHOT: dict[str, Any] = {"input": {}, "expected": {"proposals": [], "unrecognized": []}}
+
+_fewshot_cache: dict[str, Any] | None = None
+
+
+def _load_frame_fewshot() -> dict[str, Any]:
+    """Load the bundled Frame few-shot fixture once, cached at module scope
+    (mirrors dg_context.load_cypher_catalog()'s defensive load pattern --
+    never raises on a missing or malformed file)."""
+    global _fewshot_cache
+    if _fewshot_cache is not None:
+        return _fewshot_cache
+    if not FRAME_FEWSHOT_FILE.exists():
+        _fewshot_cache = dict(_EMPTY_FEWSHOT)
+        return _fewshot_cache
+    try:
+        _fewshot_cache = json.loads(FRAME_FEWSHOT_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        _fewshot_cache = dict(_EMPTY_FEWSHOT)
+    return _fewshot_cache
+
+
+# ── _build_recognition_prompt() -- deterministic prompt assembly (Phase 35-02) ──
+
+_CONCEPT_CATALOG_MARKER = "=== COMPUTGRAPH CONCEPT CATALOG ==="
+_FEWSHOT_MARKER = "=== FRAME FEW-SHOT EXAMPLE ==="
+_TAGGED_ANCHOR_MARKER = "=== TAGGED ENTITIES (GROUND TRUTH -- DO NOT RENAME, SPLIT, OR ABSORB) ==="
+_UNTAGGED_MARKER = "=== UNTAGGED NODES TO CLASSIFY ==="
+_OUTPUT_INSTRUCTION_MARKER = "=== OUTPUT INSTRUCTIONS ==="
+
+_ENTITY_LABEL_BY_KEY: dict[str, str] = {
+    "patterns": "Pattern",
+    "parameters": "Parameter",
+    "interfaces": "Interface",
+}
+
+
+def _procedure_member_ids(cg_context: dict, procedure_index: int) -> set[str]:
+    ids: set[str] = set()
+    for algorithm in cg_context.get("algorithms") or []:
+        for procedure in algorithm.get("procedures") or []:
+            if isinstance(procedure, dict) and procedure.get("index") == procedure_index:
+                ids.update(procedure.get("memberIds") or [])
+    return ids
+
+
+def _filtered_untagged_node_ids(cg_context: dict, procedure_index: int | None) -> list[str]:
+    """Untagged node ids in scope for the prompt. With no `procedure_index`,
+    every untagged node is in scope. With one, scope narrows to untagged
+    nodes wired (one hop) to that procedure's tagged member ids -- the only
+    per-procedure signal cgContextJson v1's `untagged` block carries, since
+    untagged nodes have no procedure ownership field of their own."""
+    node_ids = list((cg_context.get("untagged") or {}).get("nodeIds") or [])
+    if procedure_index is None:
+        return node_ids
+
+    procedure_ids = _procedure_member_ids(cg_context, procedure_index)
+    if not procedure_ids:
+        return node_ids
+
+    node_id_set = set(node_ids)
+    adjacent: set[str] = set()
+    for wire in cg_context.get("wires") or []:
+        from_node = wire.get("fromNode")
+        to_node = wire.get("toNode")
+        if from_node in procedure_ids and to_node in node_id_set:
+            adjacent.add(to_node)
+        if to_node in procedure_ids and from_node in node_id_set:
+            adjacent.add(from_node)
+    return [n for n in node_ids if n in adjacent]
+
+
+def _filtered_untagged_groups(cg_context: dict, scoped_node_ids: list[str], procedure_index: int | None) -> list[dict]:
+    groups = (cg_context.get("untagged") or {}).get("groups") or []
+    if procedure_index is None:
+        return groups
+    scoped = set(scoped_node_ids)
+    return [g for g in groups if any(m in scoped for m in (g.get("memberIds") or []))]
+
+
+def _trimmed_node_lines(cg_context: dict, node_ids: list[str]) -> list[str]:
+    nodes_by_id = {
+        n.get("instanceId"): n for n in (cg_context.get("nodes") or []) if isinstance(n, dict)
+    }
+    lines: list[str] = []
+    for node_id in node_ids:
+        node = nodes_by_id.get(node_id)
+        if not node:
+            continue
+        lines.append(
+            f"- {node_id}: name={node.get('name')!r} nickname={node.get('nickname')!r} "
+            f"position={node.get('position')!r}"
+        )
+    return lines
+
+
+def _trimmed_wire_lines(cg_context: dict, node_ids: list[str]) -> list[str]:
+    scoped = set(node_ids)
+    lines: list[str] = []
+    for wire in cg_context.get("wires") or []:
+        if wire.get("fromNode") in scoped or wire.get("toNode") in scoped:
+            lines.append(
+                f"- {wire.get('fromNode')}.{wire.get('fromParam')} -> "
+                f"{wire.get('toNode')}.{wire.get('toParam')}"
+            )
+    return lines
+
+
+def _tagged_anchor_lines(cg_context: dict) -> list[str]:
+    lines: list[str] = []
+    for algorithm in cg_context.get("algorithms") or []:
+        for procedure in algorithm.get("procedures") or []:
+            if not isinstance(procedure, dict):
+                continue
+            if procedure.get("source") == "tagged":
+                lines.append(
+                    f"- Procedure '{procedure.get('name')}' (index "
+                    f"{procedure.get('index')}, id {procedure.get('id')}) "
+                    f"members: {procedure.get('memberIds')}"
+                )
+            for key, label in _ENTITY_LABEL_BY_KEY.items():
+                for entity in procedure.get(key) or []:
+                    if isinstance(entity, dict) and entity.get("source") == "tagged":
+                        name = entity.get("label") or entity.get("name")
+                        lines.append(
+                            f"- {label} '{name}' (id {entity.get('id')}) "
+                            f"members: {entity.get('memberIds')}"
+                        )
+    return lines
+
+
+def _build_recognition_prompt(cg_context: dict, procedure_index: int | None) -> str:
+    """Deterministically assemble the recognition prompt: concept catalog +
+    annotation-convention grammar, the Frame few-shot, tagged entities as
+    ground-truth anchors, the untagged nodes/wires/group hints (trimmed,
+    scoped to `procedure_index` when set), and an explicit JSON-only output
+    instruction. Fixed section order -- same request yields the same prompt
+    every time (mirrors CTXA-05's determinism discipline)."""
+    catalog = dg_knowledge.load_computgraph_catalog()
+    fewshot = _load_frame_fewshot()
+
+    scoped_node_ids = _filtered_untagged_node_ids(cg_context, procedure_index)
+    scoped_groups = _filtered_untagged_groups(cg_context, scoped_node_ids, procedure_index)
+
+    node_lines = _trimmed_node_lines(cg_context, scoped_node_ids) or ["(none)"]
+    wire_lines = _trimmed_wire_lines(cg_context, scoped_node_ids) or ["(none)"]
+    group_lines = [
+        f"- {g.get('nickname')}: members {g.get('memberIds')}" for g in scoped_groups
+    ] or ["(none)"]
+    anchor_lines = _tagged_anchor_lines(cg_context) or ["(none)"]
+
+    sections = [
+        _CONCEPT_CATALOG_MARKER,
+        f"entity_classes: {json.dumps(catalog.get('entity_classes'), sort_keys=True)}",
+        f"relations: {json.dumps(catalog.get('relations'), sort_keys=True)}",
+        f"enum_values: {json.dumps(catalog.get('enum_values'), sort_keys=True)}",
+        "annotation_convention (DG Canvas Annotation Convention grammar):",
+        json.dumps(catalog.get("annotation_convention"), sort_keys=True),
+        "",
+        _FEWSHOT_MARKER,
+        json.dumps(fewshot, sort_keys=True),
+        "",
+        _TAGGED_ANCHOR_MARKER,
+        *anchor_lines,
+        "",
+        _UNTAGGED_MARKER,
+        "Nodes:",
+        *node_lines,
+        "Wires:",
+        *wire_lines,
+        "Group hints:",
+        *group_lines,
+        "",
+        _OUTPUT_INSTRUCTION_MARKER,
+        (
+            "Output ONLY a single JSON object matching this shape: "
+            '{"proposals": [{"kind","suggestedName","procedureIndex",'
+            '"memberIds","confidence","rationale"}], "unrecognized": '
+            '[{"memberIds","reason"}]}. No markdown fences. No commentary. '
+            "No text before or after the JSON object."
+        ),
+    ]
+    return "\n".join(sections)
+
+
+def append_recognition_feedback(prompt: str, violations: list[dict[str, Any]]) -> str:
+    """Append structured violations to the ORIGINAL prompt as corrective
+    feedback for the next attempt (mirrors dg_context.append_corrective_feedback's
+    What+Where+How-to-fix vocabulary, retargeted at the JSON-only output
+    discipline)."""
+    lines = [
+        prompt,
+        "",
+        "--- CORRECTIVE FEEDBACK: the previous proposal failed validation ---",
+    ]
+    for violation in violations:
+        where = f" (at: {violation['path']})" if violation.get("path") else ""
+        lines.append(f"- [{violation['code']}] {violation['message']}{where}")
+    lines.append(
+        "Regenerate the proposal, fixing every violation listed above. Output "
+        "ONLY a single JSON object -- no markdown fences, no commentary."
+    )
+    return "\n".join(lines)
+
+
+# ── recognize_structure() -- bounded retry loop (Phase 35-02: mirrors CTXA-04) ──
+
+
+def recognize_structure(
+    cg_context: dict, procedure_index: int | None = None, max_retries: int = 2
+) -> dict:
+    """Classify untagged canvas entities into a schema-valid proposed-structure
+    object via the LLM gateway, with a bounded corrective-feedback retry
+    (mirrors `dg_context.generate_validated_cypher()`'s exact loop structure).
+
+    Resolves the active provider/adapter ONCE before the loop and calls
+    `adapter.generate()` in-process each attempt -- NEVER re-POSTs to
+    `/llm/generate` (RESEARCH.md Anti-pattern guard).
+
+    Returns `{"valid": True, "proposal": {...}, "attempts": N}` on success or
+    `{"valid": False, "violations": [...], "attempts": N}` after the bound is
+    exhausted (default `max_retries=2` => 3 attempts total).
+    """
+    prompt = _build_recognition_prompt(cg_context, procedure_index)
+
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+    provider, model, api_key = resolve_active_provider(settings, master_secret)
+    adapter = get_adapter(provider, settings.get("baseUrl"))
+
+    current_prompt = prompt
+    violations: list[dict[str, Any]] = []
+    for attempt in range(max_retries + 1):
+        req = GenerateRequest(prompt=current_prompt, model=model, provider=provider)
+        response = adapter.generate(req, api_key)
+
+        parsed, parse_error = _extract_json(response.text)
+        if parse_error:
+            violations = [{"code": "bad_json", "message": parse_error, "path": None}]
+            current_prompt = append_recognition_feedback(prompt, violations)
+            continue
+
+        result = validate_proposed_structure(parsed, cg_context)
+        if result["valid"]:
+            return {"valid": True, "proposal": parsed, "attempts": attempt + 1}
+        violations = result["violations"]
+        current_prompt = append_recognition_feedback(prompt, violations)
+
+    return {"valid": False, "violations": violations, "attempts": max_retries + 1}

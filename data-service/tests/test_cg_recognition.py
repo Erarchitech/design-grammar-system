@@ -342,10 +342,11 @@ class TestPrompt:
         prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
         size = len(prompt.encode("utf-8"))
         assert size > 0
-        # Locked budget -- generous headroom over the measured size at
-        # authoring time (catalog + fewshot + fixture context is bounded and
-        # OWL-file-derived, not user-scaled).
-        assert size < 40_000
+        # Locked budget: measured ~9.5KB at authoring time for this small
+        # fixture context (catalog + fewshot dominate; catalog is bounded and
+        # OWL-file-derived, not user-scaled). 20KB gives headroom for catalog
+        # growth while still catching an accidental unbounded-context leak.
+        assert size < 20_000
 
     def test_frame_fewshot_fixture_exists_and_is_valid_json(self):
         fewshot = cg_recognition._load_frame_fewshot()

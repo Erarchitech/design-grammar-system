@@ -1,0 +1,40 @@
+{
+  "description": "One trimmed Frame worked example: an untagged Param/Line SDL node pair wired from a tagged procedure member, correctly classified as an Interface proposal per the DG Canvas Annotation Convention (<NN>_IntF_<Name>). Drawn from DG/tests/DG.Tests/Fixtures/frame-cg-context.json.",
+  "input": {
+    "untagged": {
+      "nodeIds": ["n-parsplit", "n-trussconfig-intf"],
+      "groups": [
+        { "nickname": "11_IntF_ParSplitAt", "memberIds": ["n-parsplit"] },
+        { "nickname": "11_IntF_TrussConfig", "memberIds": ["n-trussconfig-intf"] }
+      ]
+    },
+    "nodes": [
+      { "instanceId": "n-parsplit", "componentGuid": "guid-param", "name": "Param", "nickname": "ParSplitAt", "position": [200, 100] },
+      { "instanceId": "n-trussconfig-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "TrussConfig", "position": [220, 100] }
+    ],
+    "wires": [
+      { "fromNode": "n-divide-curve", "fromParam": "p-out0", "toNode": "n-parsplit", "toParam": "p-in0" }
+    ]
+  },
+  "expected": {
+    "proposals": [
+      {
+        "kind": "Interface",
+        "suggestedName": "11_IntF_ParSplitAt",
+        "procedureIndex": 11,
+        "memberIds": ["n-parsplit"],
+        "confidence": 0.91,
+        "rationale": "Param node nicknamed 'ParSplitAt', wired from procedure 11's tagged members, matches the Interface naming grammar <NN>_IntF_<Name>."
+      },
+      {
+        "kind": "Interface",
+        "suggestedName": "11_IntF_TrussConfig",
+        "procedureIndex": 11,
+        "memberIds": ["n-trussconfig-intf"],
+        "confidence": 0.86,
+        "rationale": "Param node nicknamed 'TrussConfig' co-located with procedure 11's Interface group, matching <NN>_IntF_<Name>."
+      }
+    ],
+    "unrecognized": []
+  }
+}
