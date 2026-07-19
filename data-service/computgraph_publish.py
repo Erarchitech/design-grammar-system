@@ -152,6 +152,8 @@ def _build_publish_params(
 
     for algorithm in cg_context.get("algorithms") or []:
         alg_index = algorithm.get("index")
+        if alg_index is None:
+            raise ValueError("algorithm.index is required on every algorithm.")
         algorithm_rows.append(
             {
                 "index": alg_index,
@@ -161,7 +163,9 @@ def _build_publish_params(
         )
 
         for procedure in algorithm.get("procedures") or []:
-            proc_cg_id = procedure.get("id") or ""
+            proc_cg_id = procedure.get("id")
+            if not proc_cg_id:
+                raise ValueError(f"procedure.id is required (algorithm {alg_index}).")
             proc_source = procedure.get("source") or "tagged"
             procedure_rows.append(
                 {
@@ -178,7 +182,9 @@ def _build_publish_params(
             )
 
             for pattern in procedure.get("patterns") or []:
-                pat_cg_id = pattern.get("id") or ""
+                pat_cg_id = pattern.get("id")
+                if not pat_cg_id:
+                    raise ValueError(f"pattern.id is required (procedure {proc_cg_id!r}).")
                 pat_source = pattern.get("source") or "tagged"
                 pattern_rows.append(
                     {
@@ -197,7 +203,9 @@ def _build_publish_params(
                     pattern_host_rows.append({"childCgId": pat_cg_id, "hostCgId": host_id})
 
             for parameter in procedure.get("parameters") or []:
-                param_cg_id = parameter.get("id") or ""
+                param_cg_id = parameter.get("id")
+                if not param_cg_id:
+                    raise ValueError(f"parameter.id is required (procedure {proc_cg_id!r}).")
                 param_source = parameter.get("source") or "tagged"
                 kind = parameter.get("kind")
                 if kind not in _VALID_PARAM_KINDS:
@@ -232,7 +240,9 @@ def _build_publish_params(
                 )
 
             for iface in procedure.get("interfaces") or []:
-                iface_cg_id = iface.get("id") or ""
+                iface_cg_id = iface.get("id")
+                if not iface_cg_id:
+                    raise ValueError(f"interface.id is required (procedure {proc_cg_id!r}).")
                 iface_source = iface.get("source") or "tagged"
                 iface_type = iface.get("ifaceType")
                 if iface_type not in _VALID_IFACE_TYPES:
