@@ -32,7 +32,7 @@ Use the v4 schema as the source of truth for all code changes, prompts, generate
 - `SharedProperty`: key `dgId`+`propertyName`+`project`, graph `Computgraph`, props `dgId`, `propertyName`, `value`, `platform`, `connector`, `writtenAt`
 - `Object`: key `cgId`+`definitionId`+`project`, graph `Computgraph`, props `objectName`, `definitionId`, `source` (tagged|recognized), `dgId`, `publishedAt`; optional `classIri` (cross-layer to OntoGraph)
 - `Behavior`: key `definitionId`+`project`, graph `Computgraph`, props `definitionId`; structural node (no cgId/dgId)
-- `Algorithm`: key `cgId`+`definitionId`+`project`, graph `Computgraph`, props `algorithmName`, `algIndex`, `contextJson`
+- `Algorithm`: key `algIndex`+`definitionId`+`project`, graph `Computgraph`, props `algorithmName`, `algIndex`, `contextJson`
 - `Procedure`: key `cgId`+`definitionId`+`project`, graph `Computgraph`, props `procedureName`, `procIndex`, `cgId`, `dgId`
 - `Pattern`: key `cgId`+`definitionId`+`project`, graph `Computgraph`, props `patternName`, `cgId`, `dgId`
 - `Parameter`: key `cgId`+`definitionId`+`project`, graph `Computgraph`, props `parameterName`, `paramKind` (Variable|Constant|Emergent), `dataType` (Float|Integer|Text|Boolean|Geometry), `domainMin`/`domainMax`/`domainStep` (optional), `cgId`, `dgId`

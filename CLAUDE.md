@@ -166,7 +166,7 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 | `SharedProperty` | Computgraph | `dgId`+`propertyName`+`project` | `propertyName` |
 | `Object` | Computgraph | `cgId`+`definitionId`+`project` | `objectName` |
 | `Behavior` | Computgraph | `definitionId`+`project` | `definitionId` |
-| `Algorithm` | Computgraph | `cgId`+`definitionId`+`project` | `algorithmName` |
+| `Algorithm` | Computgraph | `algIndex`+`definitionId`+`project` | `algorithmName` |
 | `Procedure` | Computgraph | `cgId`+`definitionId`+`project` | `procedureName` |
 | `Pattern` | Computgraph | `cgId`+`definitionId`+`project` | `patternName` |
 | `Parameter` | Computgraph | `cgId`+`definitionId`+`project` | `parameterName` |
