@@ -44,6 +44,22 @@ from llm_gateway import (
 MAX_PROPOSALS = 200
 MAX_MEMBERS_PER_PROPOSAL = 1000
 
+# Kind vocabulary accepted on proposals (WR-02): both the catalog/prompt-taught
+# entity-class kinds (dg_knowledge annotation_convention "kind" values, e.g.
+# "Interface") and the C# EntityTagKind short names ("IntF") that
+# PreviewRegistry's ProposalDto.ToEntityTagKind() maps on the Grasshopper side.
+# "Algorithm" is deliberately absent -- proposals are group-level entities only.
+ALLOWED_PROPOSAL_KINDS = {
+    "Proc", "Procedure",
+    "Pat", "Pattern",
+    "Var", "VariableParam",
+    "Const", "ConstantParam",
+    "Emg", "EmergentParam",
+    "IntF", "Interface",
+}
+
+_ALLOWED_KIND_LOOKUP = {k.lower() for k in ALLOWED_PROPOSAL_KINDS}
+
 
 # ── validate_proposed_structure() -- mirrors validate_cypher()'s violation-list shape ──
 
@@ -84,9 +100,9 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
     the exact shape `validate_cypher()` returns, so `append_recognition_feedback`
     and the bounded retry loop work unchanged. Never raises.
 
-    Violation codes: `bad_shape`, `missing_field`, `unknown_member_id`,
-    `tagged_overlap`, `too_many_proposals`, `too_many_members`. Every message
-    follows What+Where+How-to-fix phrasing.
+    Violation codes: `bad_shape`, `missing_field`, `invalid_kind`,
+    `unknown_member_id`, `tagged_overlap`, `too_many_proposals`,
+    `too_many_members`. Every message follows What+Where+How-to-fix phrasing.
     """
     violations: list[dict[str, Any]] = []
 
@@ -147,6 +163,21 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
                             f"every proposal."
                         ),
                         "path": path,
+                    }
+                )
+
+        if "kind" in proposal:
+            kind = proposal.get("kind")
+            if not isinstance(kind, str) or kind.strip().lower() not in _ALLOWED_KIND_LOOKUP:
+                violations.append(
+                    {
+                        "code": "invalid_kind",
+                        "message": (
+                            f"Proposal 'kind' {kind!r} is not an allowed entity "
+                            f"kind. Where: {path}.kind. How to fix: use one of "
+                            f"{sorted(ALLOWED_PROPOSAL_KINDS)}."
+                        ),
+                        "path": f"{path}.kind",
                     }
                 )
 

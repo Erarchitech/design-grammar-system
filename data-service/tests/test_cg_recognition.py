@@ -136,6 +136,25 @@ class TestValidator:
         codes = {v["code"] for v in result["violations"]}
         assert "too_many_members" in codes
 
+    def test_invalid_kind_is_caught(self):
+        """WR-02: a present-but-bogus 'kind' previously sailed through
+        validation and only failed (or half-rendered) on the Grasshopper
+        side -- it must be a validator reject so the retry loop corrects it."""
+        for bad_kind in ("Widget", "7", 7, None):
+            proposal = self._proposal(kind=bad_kind)
+            result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())
+            assert result["valid"] is False, f"expected reject for kind={bad_kind!r}"
+            codes = {v["code"] for v in result["violations"]}
+            assert "invalid_kind" in codes, f"expected invalid_kind for kind={bad_kind!r}"
+
+    def test_both_short_and_catalog_kind_names_are_accepted(self):
+        """WR-02: the prompt teaches catalog kinds ('Interface'); the C# side
+        also accepts EntityTagKind short names ('IntF') -- both must validate."""
+        for good_kind in ("IntF", "Interface", "Proc", "Procedure", "Pattern", "VariableParam"):
+            proposal = self._proposal(kind=good_kind)
+            result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())
+            assert result == {"valid": True, "violations": []}, f"kind={good_kind!r}"
+
     def test_well_formed_untagged_proposal_is_valid(self):
         proposal = self._proposal(memberIds=["n3", "n4"])
         result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())

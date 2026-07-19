@@ -96,15 +96,31 @@ internal sealed record ProposalDto(
     string Rationale)
 {
     /// <summary>
-    /// Maps the raw wire <see cref="Kind"/> string (e.g. "Proc", "Pat", "Var", "Const", "Emg",
-    /// "IntF" -- case-insensitive) to the typed <see cref="EntityTagKind"/> enum. Throws for an
-    /// unrecognized kind rather than guessing (mirrors CanvasAnnotationParser's "never guess").
+    /// Maps the raw wire <see cref="Kind"/> string to the typed <see cref="EntityTagKind"/>
+    /// enum, case-insensitively. Accepts both the EntityTagKind short names ("Proc", "Pat",
+    /// "Var", "Const", "Emg", "IntF") and the catalog entity-class kinds cg_recognition.py's
+    /// prompt actually teaches the LLM ("Procedure", "Pattern", "VariableParam",
+    /// "ConstantParam", "EmergentParam", "Interface"). Explicit switch instead of
+    /// <see cref="Enum.TryParse{TEnum}(string, bool, out TEnum)"/> (WR-02): TryParse also
+    /// accepts numeric strings ("7" parses to an UNDEFINED enum value), which bypassed the
+    /// caller's guard-and-continue and let <c>CanvasAnnotationStyles.ForKind</c> throw
+    /// mid-render. Throws for anything unrecognized rather than guessing (mirrors
+    /// CanvasAnnotationParser's "never guess").
     /// </summary>
     public EntityTagKind ToEntityTagKind() =>
-        Enum.TryParse<EntityTagKind>(Kind, ignoreCase: true, out var parsed)
-            ? parsed
-            : throw new ArgumentOutOfRangeException(
-                nameof(Kind), Kind, "Unknown proposal Kind -- expected one of the EntityTagKind names.");
+        (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "proc" or "procedure" => EntityTagKind.Proc,
+            "pat" or "pattern" => EntityTagKind.Pat,
+            "var" or "variableparam" => EntityTagKind.Var,
+            "const" or "constantparam" => EntityTagKind.Const,
+            "emg" or "emergentparam" => EntityTagKind.Emg,
+            "intf" or "interface" => EntityTagKind.IntF,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(Kind),
+                Kind,
+                "Unknown proposal Kind -- expected an EntityTagKind name or a catalog entity-class kind."),
+        };
 }
 #else
 namespace DG.Grasshopper.Canvas;
