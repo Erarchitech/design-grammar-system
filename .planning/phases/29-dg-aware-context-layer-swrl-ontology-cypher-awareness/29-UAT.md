@@ -1,16 +1,14 @@
 ---
-status: testing
+status: resolved
 phase: 29-dg-aware-context-layer-swrl-ontology-cypher-awareness
 source: [29-VERIFICATION.md]
 started: 2026-07-12T21:40:00Z
-updated: 2026-07-19T00:20:00Z
+updated: 2026-07-20T00:00:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: Success Criterion 4 — Live end-to-end natural-language design-state query
-awaiting: manual verification after user pastes n8n/workflows/graph-query-mcp.json into n8n
+[testing complete]
 
 ## Tests
 
@@ -21,7 +19,20 @@ expected: The graph_query webhook returns a correct answer that references v4 De
   LLM-answer-synthesis path end-to-end. Requires a configured LLM provider
   (Anthropic/OpenAI/Ollama) and real project data — cannot be exercised by static
   grep/pytest.
-result: pending
+result: pass
+verified: |
+  2026-07-20 — Live re-run confirmed both halves of SC4:
+  (1) Routing: docker compose logs showed the exact required sequence for the live
+  graph-query webhook call — POST /context/assemble 200, POST /context/generate-cypher 200,
+  POST /mcp 200, POST /llm/generate 200. The n8n paste-in fix (re-syncing
+  graph-query-mcp.json) resolved the stale-workflow routing bug.
+  (2) Grounded answer: fetched GET /execution-result/210 — the synthesized answer cited a
+  real runId (a547014ebd824a269c36fd681eb4b1ec), a real timestamp, and real
+  statePayloadJson content with stateId DS_44B87E4ED3060032 and ObjState entries
+  (OS_... prefixes) — the correct v4 ID scheme, not a "no design states found" hallucination.
+  Cosmetic, non-blocking: one state label rendered "ConfigurationС" with a Cyrillic С
+  (U+0421) instead of Latin C — looks like a pre-existing data-entry artifact, not caused
+  by this fix; not investigated further.
 note: |
   CODE FIX APPLIED AND DATA-SERVICE-VERIFIED (29-06 + 29-07, committed).
   - validate_cypher() now rejects :DesignState (both `{...}` and bare `)` forms) as
@@ -47,13 +58,13 @@ severity: major
 ## Summary
 
 total: 1
-passed: 0
+passed: 1
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
-## Gaps
+## Gaps (historical — resolved 2026-07-20, kept for record)
 
 - truth: "The graph_query webhook returns a correct answer that references v4 DesignState kind values (ObjState/ParamState/PropState) sourced from a live Neo4j project, exercising the full n8n -> POST /context/assemble -> POST /context/generate-cypher -> Neo4j -> LLM-answer-synthesis path end-to-end."
   status: fix-applied-pending-manual-verification
