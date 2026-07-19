@@ -7,7 +7,12 @@ namespace DG.Grasshopper.Validation;
 
 internal static class ComputgraphPublishClient
 {
-    private static readonly HttpClient HttpClient = new();
+    // Bounded timeout (Phase 36 WR-09): Publish runs synchronously on the GH
+    // solver thread (.GetAwaiter().GetResult()); the default 100s HttpClient
+    // timeout would freeze Rhino's UI for up to 100s if data-service accepts
+    // the TCP connection but stalls (container restarting, Neo4j blocked
+    // mid-transaction).
+    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -22,21 +27,33 @@ internal static class ComputgraphPublishClient
             CgContext = JsonSerializer.Deserialize<JsonElement>(cgContextJson),
         };
 
-        using var response = HttpClient.PostAsJsonAsync(endpoint, request, JsonOptions).GetAwaiter().GetResult();
-        var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-        if (!response.IsSuccessStatusCode)
+        HttpResponseMessage response;
+        try
         {
-            throw new InvalidOperationException($"Computgraph publish failed ({(int)response.StatusCode}): {body}");
+            response = HttpClient.PostAsJsonAsync(endpoint, request, JsonOptions).GetAwaiter().GetResult();
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("Computgraph publish failed: data-service did not respond within 15s.");
         }
 
-        var parsed = JsonSerializer.Deserialize<ComputgraphPublishResponse>(body, JsonOptions);
-        if (parsed is null)
+        using (response)
         {
-            throw new InvalidOperationException("Computgraph publish failed: backend returned an empty response.");
-        }
+            var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
-        return parsed;
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException($"Computgraph publish failed ({(int)response.StatusCode}): {body}");
+            }
+
+            var parsed = JsonSerializer.Deserialize<ComputgraphPublishResponse>(body, JsonOptions);
+            if (parsed is null)
+            {
+                throw new InvalidOperationException("Computgraph publish failed: backend returned an empty response.");
+            }
+
+            return parsed;
+        }
     }
 
     private static string NormalizeUrl(string dataServiceUrl)
