@@ -5,7 +5,7 @@
 
 // Fixed layer order (mockup order); only layers present in the data render.
 // KnowledgeGraph is pre-v7 data that may coexist with SpecGraph.
-const LAYER_ORDER = ["OntoGraph", "Metagraph", "KnowledgeGraph", "SpecGraph", "ComputGraph", "ValidGraph"];
+const LAYER_ORDER = ["OntoGraph", "Metagraph", "KnowledgeGraph", "SpecGraph", "Computgraph", "ValidGraph"];
 
 // Orbit assignment per layer: label → orbit index. Unlisted labels fall to
 // the outer orbit. Orbit display names derive from the labels actually seen.
@@ -14,7 +14,7 @@ const ORBITS = {
   Metagraph: { Rule: 0, Atom: 1, Var: 2, Literal: 2, Builtin: 2 },
   KnowledgeGraph: { KnowledgeClass: 0, KnowledgeNote: 1, KnowledgeTag: 2, KnowledgeSession: 2 },
   SpecGraph: { SpecClass: 0, SpecNote: 1, SpecTag: 2, SpecSession: 2 },
-  ComputGraph: { Pattern: 0, Parameter: 1, Interface: 2 },
+  Computgraph: { Object: 0, Behavior: 0, Algorithm: 0, Procedure: 1, Pattern: 1, Parameter: 2, Interface: 2 },
   ValidGraph: { ValidationRun: 0, Run: 0, DesignState: 1, ValidationEntity: 2, IntegrationConfig: 2 }
 };
 
@@ -41,7 +41,13 @@ const CAPTIONS = {
   SpecNote: ["title"],
   SpecTag: ["name"],
   SpecSession: ["mode"],
-  SpecClass: ["label"]
+  SpecClass: ["label"],
+  Object: ["objectName"],
+  Algorithm: ["algorithmName"],
+  Procedure: ["procedureName"],
+  Pattern: ["patternName"],
+  Parameter: ["parameterName"],
+  Interface: ["interfaceName"]
 };
 
 const TAU = 6.283185307;
