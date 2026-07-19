@@ -184,3 +184,171 @@ class TestExtractJson:
         parsed, error = cg_recognition._extract_json("[1, 2, 3]")
         assert parsed is None
         assert error
+
+
+# ── recognize_structure() -- bounded-retry loop (Phase 35-02: mirrors CTXA-04) ──
+
+_VALID_PROPOSAL_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "11_IntF_TopChord",
+                "procedureIndex": 11,
+                "memberIds": ["n4"],
+                "confidence": 0.88,
+                "rationale": "Line SDL node wired from the tagged procedure member n1.",
+            }
+        ],
+        "unrecognized": [],
+    }
+)
+
+# Invalid: memberIds references an id absent from the submitted context.
+_INVALID_PROPOSAL_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "Bogus",
+                "procedureIndex": 11,
+                "memberIds": ["n999"],
+                "confidence": 0.5,
+                "rationale": "hallucinated id",
+            }
+        ],
+        "unrecognized": [],
+    }
+)
+
+_MALFORMED_JSON_TEXT = "this is not json at all"
+
+
+class _FakeAdapterForRetry:
+    """Stand-in for an llm_gateway LLMAdapter -- returns queued response texts
+    in order and records every prompt it was called with (mirrors
+    test_dg_context.py's own _FakeAdapterForRetry precedent, retargeted at
+    cg_recognition)."""
+
+    def __init__(self, texts: list[str]):
+        self._texts = list(texts)
+        self.prompts_seen: list[str] = []
+        self.call_count = 0
+
+    def generate(self, req, api_key):
+        self.call_count += 1
+        self.prompts_seen.append(req.prompt)
+        text = self._texts.pop(0)
+        return GenerateResponse(text=text, provider="fake", model="fake-model", usage={})
+
+
+class TestRetryLoop:
+    def test_first_attempt_valid_returns_attempts_1_no_retry(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert result["attempts"] == 1
+        assert result["proposal"] == json.loads(_VALID_PROPOSAL_TEXT)
+        assert fake_adapter.call_count == 1
+
+    def test_malformed_json_then_valid_retries_and_succeeds_at_attempt_2(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_MALFORMED_JSON_TEXT, _VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        original_prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert result["attempts"] == 2
+        assert fake_adapter.call_count == 2
+        # First prompt is the ORIGINAL, unmodified prompt (not accumulated).
+        assert fake_adapter.prompts_seen[0] == original_prompt
+        # Second prompt carries corrective feedback appended to the ORIGINAL
+        # prompt -- not the first prompt plus two feedback blocks.
+        assert fake_adapter.prompts_seen[1].startswith(original_prompt)
+        assert "CORRECTIVE FEEDBACK" in fake_adapter.prompts_seen[1]
+        assert "bad_json" in fake_adapter.prompts_seen[1]
+
+    def test_all_three_attempts_fail_returns_final_violations_bounded_at_3(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_INVALID_PROPOSAL_TEXT, _INVALID_PROPOSAL_TEXT, _INVALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        assert result["attempts"] == 3
+        assert len(result["violations"]) > 0
+        assert fake_adapter.call_count == 3
+
+    def test_retry_loop_never_calls_llm_generate_http_endpoint(self, monkeypatch):
+        """The retry loop must call the adapter in-process -- never re-POST to
+        /llm/generate (RESEARCH.md Anti-pattern guard)."""
+        import httpx
+
+        def fail_post(*args, **kwargs):
+            raise AssertionError("recognize_structure must not re-POST to /llm/generate")
+
+        monkeypatch.setattr(httpx, "post", fail_post)
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+
+
+# ── _build_recognition_prompt() -- deterministic prompt assembly ──
+
+
+class TestPrompt:
+    _REQUIRED_MARKERS = (
+        cg_recognition._CONCEPT_CATALOG_MARKER,
+        cg_recognition._FEWSHOT_MARKER,
+        cg_recognition._TAGGED_ANCHOR_MARKER,
+        cg_recognition._UNTAGGED_MARKER,
+        cg_recognition._OUTPUT_INSTRUCTION_MARKER,
+    )
+
+    def test_prompt_contains_every_required_section_marker(self):
+        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        for marker in self._REQUIRED_MARKERS:
+            assert marker in prompt
+
+    def test_prompt_contains_annotation_convention_grammar(self):
+        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        assert "IntF" in prompt or "annotation_convention" in prompt
+
+    def test_prompt_contains_json_only_output_instruction(self):
+        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        assert "JSON" in prompt
+        assert "no markdown fences" in prompt.lower() or "markdown" in prompt.lower()
+
+    def test_procedure_index_filters_untagged_scope_to_wired_nodes(self):
+        """n4 is wired to the tagged procedure-11 member n1; n3 is unrelated."""
+        unfiltered = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        assert "n3" in unfiltered
+        assert "n4" in unfiltered
+
+        filtered = cg_recognition._build_recognition_prompt(_cg_context(), 11)
+        assert "n4" in filtered
+        assert "n3" not in filtered
+
+    def test_prompt_byte_size_is_measured_and_under_locked_budget(self):
+        """A4 resolution: measure the assembled prompt size and lock it as an
+        assertion so future catalog growth is a deliberate, visible change."""
+        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        size = len(prompt.encode("utf-8"))
+        assert size > 0
+        # Locked budget -- generous headroom over the measured size at
+        # authoring time (catalog + fewshot + fixture context is bounded and
+        # OWL-file-derived, not user-scaled).
+        assert size < 40_000
+
+    def test_frame_fewshot_fixture_exists_and_is_valid_json(self):
+        fewshot = cg_recognition._load_frame_fewshot()
+        assert "input" in fewshot
+        assert "expected" in fewshot
+        assert isinstance(fewshot["expected"].get("proposals"), list)
