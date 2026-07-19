@@ -73,16 +73,16 @@
 
 ### LLM Recognition and Proposal Preview (RCGN) — Phase 35
 
-- [ ] **RCGN-01**: A recognition pipeline classifies untagged canvas entities into Computgraph proposals via the LLM gateway, using the architect's tags as ground-truth anchors plus the Computgraph concept catalog and the Frame few-shot example; output is schema-validated (kind, name, member ids, confidence, rationale) with a bounded retry loop
-- [ ] **RCGN-02**: Proposals render on the Grasshopper canvas as temporary preview groups and scribbles in a visually distinct style, created inside an undo record — fully removable via undo or `clear_preview`
-- [ ] **RCGN-03**: The architect confirms, partially accepts, or rejects proposals on the canvas (DG STRUCTURE CONFIRM); accepted proposals convert to permanent convention groups indistinguishable from manual tags (with `source: recognized` provenance); rejected ones are removed cleanly
-- [ ] **RCGN-04**: Nothing is published to Neo4j without explicit on-canvas confirmation; blocks the LLM cannot classify are reported as unrecognized with member ids — never invented, never silently dropped
+- [x] **RCGN-01**: A recognition pipeline classifies untagged canvas entities into Computgraph proposals via the LLM gateway, using the architect's tags as ground-truth anchors plus the Computgraph concept catalog and the Frame few-shot example; output is schema-validated (kind, name, member ids, confidence, rationale) with a bounded retry loop
+- [x] **RCGN-02**: Proposals render on the Grasshopper canvas as temporary preview groups and scribbles in a visually distinct style, created inside an undo record — fully removable via undo or `clear_preview`
+- [x] **RCGN-03**: The architect confirms, partially accepts, or rejects proposals on the canvas (DG STRUCTURE CONFIRM); accepted proposals convert to permanent convention groups indistinguishable from manual tags (with `source: recognized` provenance); rejected ones are removed cleanly
+- [x] **RCGN-04**: Nothing is published to Neo4j without explicit on-canvas confirmation; blocks the LLM cannot classify are reported as unrecognized with member ids — never invented, never silently dropped
 
 ### Computgraph Persistence and Display (CGPD) — Phase 36
 
-- [ ] **CGPD-01**: `POST /computgraph/publish` persists a confirmed structure to Neo4j as the Computgraph layer — labels `Object|Behavior|Algorithm|Procedure|Pattern|Parameter|Interface` with `graph:'Computgraph'` and project isolation; relationships `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`
-- [ ] **CGPD-02**: Publishing is MERGE-idempotent on stable entity ids (definition id + convention name): re-publishing the same definition creates zero duplicate nodes (verified by count query)
-- [ ] **CGPD-03**: Every published node carries provenance — `source` (tagged | recognized), provider/model when recognized, definition id, timestamp — queryable via Cypher
+- [x] **CGPD-01**: `POST /computgraph/publish` persists a confirmed structure to Neo4j as the Computgraph layer — labels `Object|Behavior|Algorithm|Procedure|Pattern|Parameter|Interface` with `graph:'Computgraph'` and project isolation; relationships `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`
+- [x] **CGPD-02**: Publishing is MERGE-idempotent on stable entity ids (definition id + convention name): re-publishing the same definition creates zero duplicate nodes (verified by count query)
+- [x] **CGPD-03**: Every published node carries provenance — `source` (tagged | recognized), provider/model when recognized, definition id, timestamp — queryable via Cypher
 - [ ] **CGPD-04**: The ui-v2 graph viewer renders the Computgraph layer with distinct styling, filterable per project; the schema propagation checklist (`cypher_template.txt`, `dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md, orchestrator prompts) is completed for the new labels
 - [ ] **CGPD-05**: A publish path exists from the plugin (DG COMPUTGRAPH PUBLISH trigger following the ValidationPublishClient HTTP pattern) so the confirm→publish flow completes without leaving Grasshopper
 

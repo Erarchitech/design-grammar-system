@@ -362,7 +362,18 @@ Plans:
 3. Accepting proposal(s) yields permanent groups that the Phase 32 serializer parses identically to hand-made tags (`source: recognized` recorded)
 4. Nothing is written to Neo4j in this phase's flow until explicit confirmation; unrecognized blocks appear in the report
 
-**Plans:** TBD
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 35-01-PLAN.md — Recognition backend: cg_recognition.py (validator, _extract_json, bounded-retry recognize_structure) + POST /computgraph/recognize + bridge docstrings/tests (RCGN-01, RCGN-04)
+- [x] 35-02-PLAN.md — Preview foundation: shared PreviewRegistry + `[?] ` style prefix + additive source:recognized ValueTable→parser propagation (RCGN-02, RCGN-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 35-03-PLAN.md — CanvasListenerComponent preview handlers: preview_structure/clear_preview/get_preview_status render groups+scribble in one undo record (RCGN-02)
+- [x] 35-04-PLAN.md — DG STRUCTURE CONFIRM component: list/accept/reject/partial-accept, preview→permanent + source:recognized marker (RCGN-03)
 
 ---
 
@@ -390,7 +401,16 @@ Plans:
 3. Every Computgraph node answers a provenance query: source, model (if recognized), definition, timestamp
 4. The ui-v2 graph viewer shows the Computgraph layer distinctly and filters it per project
 
-**Plans:** TBD
+**Plans:** 1/4 plans executed
+
+All four plans are independent (zero `files_modified` overlap — Python / C# / JS / docs) and run in a single parallel wave; the label/relationship set is locked by CONTEXT.md so display + schema-propagation do not wait on the backend code.
+
+**Wave 1** *(all parallel)*
+
+- [x] 36-01-PLAN.md — `POST /computgraph/publish` + `computgraph_publish.py` (atomic MERGE-idempotent write, inline dgId, Behavior synthesis, provenance, stale-entity report) + pytest suite (CGPD-01, CGPD-02, CGPD-03)
+- [ ] 36-02-PLAN.md — DG COMPUTGRAPH PUBLISH component + ComputgraphPublishClient/Contract (ValidationPublishClient pattern, re-extract-before-publish) (CGPD-05)
+- [ ] 36-03-PLAN.md — ui-v2 Computgraph layer: buildRings.js casing fix + orbits/captions + GraphScreen rowsOf truncation guard (CGPD-04, display)
+- [ ] 36-04-PLAN.md — schema propagation checklist across 8 surfaces + stale `dgId`-on-`:Algorithm` doc fix (CGPD-04, checklist)
 
 ---
 
@@ -509,8 +529,8 @@ Plans:
 | 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
-| 35. LLM Recognition and On-Canvas Proposal Preview | 0/? | Not started | — |
-| 36. Computgraph Persistence and Graph Layer Display | 0/? | Not started | — |
+| 35. LLM Recognition and On-Canvas Proposal Preview | 4/4 | Complete   | 2026-07-19 |
+| 36. Computgraph Persistence and Graph Layer Display | 1/4 | In Progress|  |
 | 37. Script Structure Validation MVP | 0/? | Not started | — |
 | 38. AI-Generated Grasshopper Script Inputs | 0/? | Not started | — |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |

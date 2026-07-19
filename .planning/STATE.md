@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 35
-current_phase_name: llm-recognition-canvas-preview
-status: verifying
-stopped_at: Completed 35-04-PLAN.md
-last_updated: "2026-07-19T10:00:58.764Z"
+current_phase: 36
+current_phase_name: Computgraph Persistence and Graph Layer Display
+status: executing
+stopped_at: Phase 36 UI-SPEC approved
+last_updated: "2026-07-19T13:10:40.898Z"
 last_activity: 2026-07-19
-last_activity_desc: Phase 35 execution started
+last_activity_desc: Phase 36 execution started
 progress:
   total_phases: 14
   completed_phases: 6
-  total_plans: 34
-  completed_plans: 33
+  total_plans: 38
+  completed_plans: 34
   percent: 43
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 35 — llm-recognition-canvas-preview
+**Current focus:** Phase 36 — Computgraph Persistence and Graph Layer Display
 
 ## Current Position
 
-Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-07-19 — Phase 35 execution started
+Phase: 36 (Computgraph Persistence and Graph Layer Display) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-19 — Phase 36 execution started
 
 ## Deferred Verification
 
@@ -262,6 +262,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase 35-03]: InvokeOnCanvasWrite is a private instance method (not static) since it must call the inherited OnPingDocument() to get the live GH_Document -- mirrors InvokeOnCanvas's TaskCompletionSource shape but mutates directly on the UI thread (no ScheduleSolution, per the plan's locked decision) and calls InvalidateCanvas() before resolving
 - [Phase 35-03]: ParseProposals synthesizes a per-request index-based proposalId (p0, p1, ...) since cg_recognition.py's wire proposal shape carries no id field, while PreviewRegistry.RegisterAll (Plan 35-02, frozen) requires one to zip against created group guids
 - [Phase 35-04]: [Phase 35-04]: PreviewEntry (frozen from Plan 35-02) extended with an additive ProcedureIndex field, sourced from ProposalDto.ProcedureIndex -- CanvasAnnotationNameFactory.ForEntity requires procIndex >= 10 for every EntityTagKind, not only Pat, and the frozen record had no way to carry it from proposal to confirm time
+- [Phase ?]: contextJson strips untagged data before serialization (T-36-02 compliance)
 
 ### Research Flags (carry into planning)
 
@@ -333,12 +334,13 @@ Shipped from Phase 20 Plan 02:
 | Phase 35 P02 | 12min | 3 tasks | 6 files |
 | Phase 35 P03 | 9min | 2 tasks | 1 files |
 | Phase 35 P04 | 10min | 2 tasks | 4 files |
+| Phase 36-computgraph-persistence-display P01 | 15m | - tasks | - files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T10:00:58.747Z
-Stopped at: Completed 35-04-PLAN.md
-Resume file: None
+Last session: 2026-07-19T13:10:40.871Z
+Stopped at: Phase 36 UI-SPEC approved
+Resume file: .planning/phases/36-computgraph-persistence-display/36-UI-SPEC.md
 
 ## Performance Metrics
 
