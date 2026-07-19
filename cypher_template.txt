@@ -86,10 +86,59 @@ GRAPH SCHEMA (from dataset_schema v3)
   Entity→Representation   relationship: (:Computgraph entity)-[:HAS_REPRESENTATION]->(:Representation)
   Entity→SharedProperty  relationship: (:Computgraph entity)-[:HAS_SHARED_PROPERTY]->(:SharedProperty)
 
-  Every Computgraph entity node (Algorithm, Procedure, Pattern, Parameter,
+  Every Computgraph entity node (Object, Procedure, Pattern, Parameter,
   Interface) may carry dgId — a deterministic platform-neutral identity
   (format dg:<16 uppercase hex>, see spec/DG-ID.md), NOT emitted by LLM ingest.
   The template's MERGE blocks must never create these nodes or relationships.
+
+  ~~ Computgraph runtime nodes (document-only — NOT emitted by LLM ingest) ~~
+
+  These nodes are written ONLY by the POST /computgraph/publish endpoint
+  (data-service/app.py), not by LLM rule-ingest. This subsection documents the
+  Computgraph runtime labels, properties, and relationships for reader context.
+
+  Node labels (all graph:'Computgraph', project):
+
+  Object — key: (cgId, definitionId, project)  [display: objectName]
+           optional: classIri (cross-layer link to OntoGraph Class)
+           props: objectName, classIri, dgId, source (tagged|recognized),
+                  provider, model, confidence, definitionId, fileName, publishedAt
+
+  Behavior — key: (definitionId, project)  [display: none]
+           props: definitionId
+           NOTE: structural node — no cgId/dgId
+
+  Algorithm — key: (cgId, definitionId, project)  [display: algorithmName]
+           props: algorithmName, algIndex, contextJson
+
+  Procedure — key: (cgId, definitionId, project)  [display: procedureName]
+           props: procedureName, procIndex, cgId, dgId
+
+  Pattern — key: (cgId, definitionId, project)  [display: patternName]
+           props: patternName, cgId, dgId
+
+  Parameter — key: (cgId, definitionId, project)  [display: parameterName]
+           props: parameterName, paramKind (Variable|Constant|Emergent),
+                  dataType (Float|Integer|Text|Boolean|Geometry),
+                  domainMin, domainMax, domainStep (optional), cgId, dgId
+
+  Interface — key: (cgId, definitionId, project)  [display: interfaceName]
+           props: interfaceName, ifaceType (Input|Output), cgId, dgId
+
+  Relationships:
+
+  HAS_BEHAVIOR     (Object→Behavior)
+  HAS_ALGORITHM    (Behavior→Algorithm)
+  HAS_PROCEDURE    (Algorithm→Procedure)
+  HAS_PATTERN      (Procedure→Pattern)
+  PATTERN_HOST_TO  (Pattern→Pattern, nesting)
+  HAS_PARAMETER    (Procedure→Parameter)
+  HAS_INTERFACE    (Pattern→Interface)
+  PARAM_LINK       (Parameter→Parameter, linking)
+  REFERS_TO        (Object→Class, cross-layer bridge to OntoGraph)
+
+  Entity→Representation  relationship: (:Computgraph entity)-[:HAS_REPRESENTATION]->(:Representation)
+  Entity→SharedProperty  relationship: (:Computgraph entity)-[:HAS_SHARED_PROPERTY]->(:SharedProperty)
 
 SEMANTIC MAPPING (violation pattern)
 - "Maximum / at most / no more than X" → body uses swrlb:greaterThan(?val, X)

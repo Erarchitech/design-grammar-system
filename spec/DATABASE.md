@@ -12,7 +12,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
 | `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config |
 | `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
-| `Computgraph` | Representation, SharedProperty | Cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) |
+| `Computgraph` | Object, Behavior, Algorithm, Procedure, Pattern, Parameter, Interface, Representation, SharedProperty | Computgraph runtime entities (Phase 36) + cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) |
 
 ## Node Labels
 
@@ -110,7 +110,199 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 
 ### Computgraph
 
-**dgId property** — Every Computgraph entity node (`:Algorithm`, `:Procedure`, `:Pattern`, `:Parameter`, `:Interface`) carries an optional `dgId` property (nullable on pre-32.1 nodes). Format: `dg:` followed by the first 16 uppercase hexadecimal characters of the SHA-256 digest over the UTF-8 bytes of `project|definitionId|cgId`. See `spec/DG-ID.md` for the normative identity specification and golden-vector parity contract.
+**dgId property** — Every Computgraph entity node (`:Object`, `:Procedure`, `:Pattern`, `:Parameter`, `:Interface`) carries an optional `dgId` property (nullable on pre-32.1 nodes). Format: `dg:` followed by the first 16 uppercase hexadecimal characters of the SHA-256 digest over the UTF-8 bytes of `project|definitionId|cgId`. See `spec/DG-ID.md` for the normative identity specification and golden-vector parity contract.
+
+---
+
+**Object** — A design object, tagged or recognized from the canvas.
+```
+(:Object {
+   objectName: "Building",
+   classIri: "ex:Building",        // optional, cross-layer to OntoGraph Class
+   source: "tagged",               // tagged | recognized
+   definitionId: "abc-123-def",
+   fileName: "model.gh",
+   publishedAt: datetime(),
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `objectName` | string | Display name of the object (display property) |
+| `classIri` | string | Optional cross-layer link to OntoGraph `Class.iri` |
+| `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `source` | enum | `tagged` \| `recognized` |
+| `provider` | string | AI provider (recognized only) |
+| `model` | string | AI model (recognized only) |
+| `confidence` | float | Recognition confidence (recognized only) |
+| `definitionId` | string | Definition id from Phase 30/35 serialization |
+| `fileName` | string | Source canvas file name |
+| `publishedAt` | datetime | When the node was published |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
+- `REFERS_TO` to OntoGraph `Class` when `classIri` is present (cross-layer bridge)
+
+---
+
+**Behavior** — A computational behavior (structural, no cgId or dgId).
+```
+(:Behavior {
+   definitionId: "abc-123-def",
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `definitionId` | string | Definition id from serialization (key part) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(definitionId, project)`
+- Structural node — no cgId or dgId
+- Written only by `POST /computgraph/publish`
+
+---
+
+**Algorithm** — A specific algorithm within a behavior.
+```
+(:Algorithm {
+   algorithmName: "BuildingHeightChecker",
+   algIndex: 0,
+   contextJson: '{...}',
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `algorithmName` | string | Algorithm display name (display property) |
+| `algIndex` | int | Index within the behavior |
+| `contextJson` | string | Full canvas context JSON for reconstruction |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
+
+---
+
+**Procedure** — A procedure within an algorithm.
+```
+(:Procedure {
+   procedureName: "CheckHeight",
+   procIndex: 0,
+   cgId: "cg:alg:kind:CheckHeight",
+   dgId: "dg:9F2A4C1E7B03D5A8",
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `procedureName` | string | Procedure display name (display property) |
+| `procIndex` | int | Index within the algorithm |
+| `cgId` | string | Deterministic Computgraph node id |
+| `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
+
+---
+
+**Pattern** — A design pattern within a procedure.
+```
+(:Pattern {
+   patternName: "HeightConstraint",
+   cgId: "cg:alg:kind:HeightConstraint",
+   dgId: "dg:3B7D9F1A6C2E8045",
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `patternName` | string | Pattern display name (display property) |
+| `cgId` | string | Deterministic Computgraph node id |
+| `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
+- `PATTERN_HOST_TO` enables pattern nesting
+
+---
+
+**Parameter** — A parameter driving a procedure.
+```
+(:Parameter {
+   parameterName: "maxHeight",
+   paramKind: "Variable",
+   dataType: "Float",
+   domainMin: 0.0,
+   domainMax: 100.0,
+   domainStep: 0.5,
+   cgId: "cg:alg:kind:maxHeight",
+   dgId: "dg:8E6F2C1A9B7D3045",
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `parameterName` | string | Parameter display name (display property) |
+| `paramKind` | enum | `Variable` \| `Constant` \| `Emergent` |
+| `dataType` | enum | `Float` \| `Integer` \| `Text` \| `Boolean` \| `Geometry` |
+| `domainMin` | number | Lower bound (optional, slider parameters) |
+| `domainMax` | number | Upper bound (optional, slider parameters) |
+| `domainStep` | number | Step size (optional, slider parameters) |
+| `cgId` | string | Deterministic Computgraph node id |
+| `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
+- `PARAM_LINK` links parameters across procedures
+
+---
+
+**Interface** — A pattern interface (input or output).
+```
+(:Interface {
+   interfaceName: "heightValue",
+   ifaceType: "Input",
+   cgId: "cg:alg:kind:heightValue",
+   dgId: "dg:1C4E7F3A9B2D8056",
+   graph: "Computgraph",
+   project: "1"
+})
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `interfaceName` | string | Interface display name (display property) |
+| `ifaceType` | enum | `Input` \| `Output` |
+| `cgId` | string | Deterministic Computgraph node id |
+| `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `graph` | string | Always `Computgraph` |
+| `project` | string | Project isolation key (merge key part) |
+
+- Merge key: `(cgId, definitionId, project)`
+- Written only by `POST /computgraph/publish`
 
 ---
 
@@ -192,12 +384,22 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 | `HAS_BODY` | Rule | Atom | `order` (int) | Body atoms (conditions) |
 | `HAS_HEAD` | Rule | Atom | `order` (int) | Head atoms (conclusions) |
 | `REFERS_TO` | Atom | Class/DatatypeProperty/ObjectProperty/Builtin | — | What the atom references |
+| `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 | `ARG` | Atom | Var/Literal | `pos` (int, 1-indexed) | Atom arguments |
 | `HAS_STATE` | DesignState | DesignState | — | Read-side composition: parent DesignState to ObjState/ParamState/PropState |
 | `TAGGED_WITH` | SpecNote | SpecTag | — | Note-to-tag association |
 | `INSTANCE_OF` | SpecNote/SpecSession | SpecClass | — | Instance-to-parent-class link |
 | `HAS_REPRESENTATION` | Computgraph entity | Representation | — | Entity → platform-native id binding |
 | `HAS_SHARED_PROPERTY` | Computgraph entity | SharedProperty | — | Entity → cross-platform property value |
+| `HAS_BEHAVIOR` | Object | Behavior | — | Object → behavior decomposition |
+| `HAS_ALGORITHM` | Behavior | Algorithm | — | Behavior → algorithm decomposition |
+| `HAS_PROCEDURE` | Algorithm | Procedure | — | Algorithm → procedure decomposition |
+| `HAS_PATTERN` | Procedure | Pattern | — | Procedure → pattern decomposition |
+| `PATTERN_HOST_TO` | Pattern | Pattern | — | Pattern nesting (sub-patterns) |
+| `HAS_PARAMETER` | Procedure | Parameter | — | Procedure → parameter link |
+| `HAS_INTERFACE` | Pattern | Interface | — | Pattern → interface link |
+| `PARAM_LINK` | Parameter | Parameter | — | Cross-procedure parameter linking |
+| `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 
 ## Rule ID Format
 

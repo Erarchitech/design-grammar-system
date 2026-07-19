@@ -286,3 +286,253 @@ dgsh:SharedPropertyShape_writtenAt
     sh:severity sh:Violation ;
     sh:message "A SharedProperty node is missing its writtenAt timestamp — provenance requires a recorded write time." ;
     dgsh:howToFix "Set writtenAt to the datetime when the value was computed and written." .
+
+#############################################
+# 11. Object — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:ObjectShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Object ;
+    sh:property dgsh:ObjectShape_objectName,
+                dgsh:ObjectShape_source,
+                dgsh:ObjectShape_definitionId,
+                dgsh:ObjectShape_publishedAt,
+                dgsh:ObjectShape_project .
+
+dgsh:ObjectShape_objectName
+    sh:path dgc:objectName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Object node is missing its objectName — every design object must have a display name." ;
+    dgsh:howToFix "Ensure the tagged/recognized entity carries an objectName before publishing." .
+
+dgsh:ObjectShape_source
+    sh:path dgc:source ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("tagged" "recognized") ;
+    sh:severity sh:Violation ;
+    sh:message "An Object node has a missing or invalid source — must be 'tagged' or 'recognized'." ;
+    dgsh:howToFix "Set source to 'tagged' for manually tagged entities or 'recognized' for AI-recognized ones." .
+
+dgsh:ObjectShape_definitionId
+    sh:path dgc:definitionId ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Object node is missing its definitionId — every Computgraph entity must carry a definition identifier." ;
+    dgsh:howToFix "Supply the definitionId from the Phase 30/35 serialization output." .
+
+dgsh:ObjectShape_publishedAt
+    sh:path dgc:publishedAt ;
+    sh:minCount 1 ;
+    sh:severity sh:Violation ;
+    sh:message "An Object node is missing its publishedAt timestamp — provenance requires a recorded publish time." ;
+    dgsh:howToFix "Set publishedAt to the datetime when the publish endpoint posts the Computgraph subgraph." .
+
+dgsh:ObjectShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Object node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Object node to the owning project." .
+
+#############################################
+# 12. Behavior — Computgraph structural node (Phase 36)
+#############################################
+dgsh:BehaviorShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Behavior ;
+    sh:property dgsh:BehaviorShape_definitionId,
+                dgsh:BehaviorShape_project .
+
+dgsh:BehaviorShape_definitionId
+    sh:path dgc:definitionId ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Behavior node is missing its definitionId — every Computgraph entity must carry a definition identifier." ;
+    dgsh:howToFix "Supply the definitionId from the serialization output." .
+
+dgsh:BehaviorShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Behavior node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Behavior node to the owning project." .
+
+#############################################
+# 13. Algorithm — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:AlgorithmShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Algorithm ;
+    sh:property dgsh:AlgorithmShape_algorithmName,
+                dgsh:AlgorithmShape_algIndex,
+                dgsh:AlgorithmShape_project .
+
+dgsh:AlgorithmShape_algorithmName
+    sh:path dgc:algorithmName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Algorithm node is missing its algorithmName — every algorithm must have a display name." ;
+    dgsh:howToFix "Ensure the entity carries an algorithmName before publishing." .
+
+dgsh:AlgorithmShape_algIndex
+    sh:path dgc:algIndex ;
+    sh:minCount 1 ;
+    sh:datatype xsd:integer ;
+    sh:severity sh:Violation ;
+    sh:message "An Algorithm node is missing its algIndex — every algorithm must carry its position within the behavior." ;
+    dgsh:howToFix "Set algIndex to the integer position of this algorithm within its parent behavior." .
+
+dgsh:AlgorithmShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Algorithm node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Algorithm node to the owning project." .
+
+#############################################
+# 14. Procedure — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:ProcedureShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Procedure ;
+    sh:property dgsh:ProcedureShape_procedureName,
+                dgsh:ProcedureShape_procIndex,
+                dgsh:ProcedureShape_project .
+
+dgsh:ProcedureShape_procedureName
+    sh:path dgc:procedureName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Procedure node is missing its procedureName — every procedure must have a display name." ;
+    dgsh:howToFix "Ensure the entity carries a procedureName before publishing." .
+
+dgsh:ProcedureShape_procIndex
+    sh:path dgc:procIndex ;
+    sh:minCount 1 ;
+    sh:datatype xsd:integer ;
+    sh:severity sh:Violation ;
+    sh:message "A Procedure node is missing its procIndex — every procedure must carry its position within the algorithm." ;
+    dgsh:howToFix "Set procIndex to the integer position of this procedure within its parent algorithm." .
+
+dgsh:ProcedureShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Procedure node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Procedure node to the owning project." .
+
+#############################################
+# 15. Pattern — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:PatternShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Pattern ;
+    sh:property dgsh:PatternShape_patternName,
+                dgsh:PatternShape_project .
+
+dgsh:PatternShape_patternName
+    sh:path dgc:patternName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Pattern node is missing its patternName — every pattern must have a display name." ;
+    dgsh:howToFix "Ensure the entity carries a patternName before publishing." .
+
+dgsh:PatternShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Pattern node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Pattern node to the owning project." .
+
+#############################################
+# 16. Parameter — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:ParameterShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Parameter ;
+    sh:property dgsh:ParameterShape_parameterName,
+                dgsh:ParameterShape_paramKind,
+                dgsh:ParameterShape_dataType,
+                dgsh:ParameterShape_project .
+
+dgsh:ParameterShape_parameterName
+    sh:path dgc:parameterName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Parameter node is missing its parameterName — every parameter must have a display name." ;
+    dgsh:howToFix "Ensure the entity carries a parameterName before publishing." .
+
+dgsh:ParameterShape_paramKind
+    sh:path dgc:paramKind ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("Variable" "Constant" "Emergent") ;
+    sh:severity sh:Violation ;
+    sh:message "A Parameter node has a missing or invalid paramKind — must be Variable, Constant, or Emergent." ;
+    dgsh:howToFix "Set paramKind to Variable (user-adjustable), Constant (fixed), or Emergent (derived during computation)." .
+
+dgsh:ParameterShape_dataType
+    sh:path dgc:dataType ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("Float" "Integer" "Text" "Boolean" "Geometry") ;
+    sh:severity sh:Violation ;
+    sh:message "A Parameter node has a missing or invalid dataType — must be Float, Integer, Text, Boolean, or Geometry." ;
+    dgsh:howToFix "Set dataType to one of the supported types: Float, Integer, Text, Boolean, or Geometry." .
+
+dgsh:ParameterShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "A Parameter node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Parameter node to the owning project." .
+
+#############################################
+# 17. Interface — Computgraph runtime entity (Phase 36)
+#############################################
+dgsh:InterfaceShape
+    a sh:NodeShape ;
+    sh:targetClass dgc:Interface ;
+    sh:property dgsh:InterfaceShape_interfaceName,
+                dgsh:InterfaceShape_ifaceType,
+                dgsh:InterfaceShape_project .
+
+dgsh:InterfaceShape_interfaceName
+    sh:path dgc:interfaceName ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Interface node is missing its interfaceName — every interface must have a display name." ;
+    dgsh:howToFix "Ensure the entity carries an interfaceName before publishing." .
+
+dgsh:InterfaceShape_ifaceType
+    sh:path dgc:ifaceType ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("Input" "Output") ;
+    sh:severity sh:Violation ;
+    sh:message "An Interface node has a missing or invalid ifaceType — must be Input or Output." ;
+    dgsh:howToFix "Set ifaceType to Input (receiving data) or Output (producing data)." .
+
+dgsh:InterfaceShape_project
+    sh:path dgc:project ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Violation ;
+    sh:message "An Interface node is missing the project property — every node must carry project isolation." ;
+    dgsh:howToFix "Set project on the Interface node to the owning project." .

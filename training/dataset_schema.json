@@ -188,6 +188,172 @@
           "from": "Computgraph entity",
           "to": "SharedProperty"
         }
+      },
+      "note_computgraph_runtime": "Computgraph runtime nodes are document-only — NOT emitted by LLM ingest. Written ONLY by data-service POST /computgraph/publish. These entries document the runtime node shapes for reader context.",
+      "Object": {
+        "label": "Object",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "objectName": "string",
+          "classIri": "string (optional, ex:<ClassName>)",
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "source": "string (tagged | recognized)",
+          "provider": "string (recognized only, optional)",
+          "model": "string (recognized only, optional)",
+          "confidence": "number (recognized only, optional)",
+          "definitionId": "string",
+          "fileName": "string (optional)",
+          "publishedAt": "datetime",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "Behavior": {
+        "label": "Behavior",
+        "key": {
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "definitionId": "string",
+          "graph": "Computgraph",
+          "project": "default-project"
+        },
+        "note": "Structural node — no cgId/dgId"
+      },
+      "Algorithm": {
+        "label": "Algorithm",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "algorithmName": "string",
+          "algIndex": "integer",
+          "contextJson": "string (JSON)",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "Procedure": {
+        "label": "Procedure",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "procedureName": "string",
+          "procIndex": "integer",
+          "cgId": "string (cg:<alg>:<kind>:<conventionName>)",
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "Pattern": {
+        "label": "Pattern",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "patternName": "string",
+          "cgId": "string (cg:<alg>:<kind>:<conventionName>)",
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "Parameter": {
+        "label": "Parameter",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "parameterName": "string",
+          "paramKind": "Variable | Constant | Emergent",
+          "dataType": "Float | Integer | Text | Boolean | Geometry",
+          "domainMin": "number (optional)",
+          "domainMax": "number (optional)",
+          "domainStep": "number (optional)",
+          "cgId": "string (cg:<alg>:<kind>:<conventionName>)",
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "Interface": {
+        "label": "Interface",
+        "key": {
+          "cgId": "<cg:<alg>:<kind>:<conventionName>>",
+          "definitionId": "string",
+          "project": "default-project"
+        },
+        "props": {
+          "interfaceName": "string",
+          "ifaceType": "Input | Output",
+          "cgId": "string (cg:<alg>:<kind>:<conventionName>)",
+          "dgId": "string (dg:<16 uppercase hex>)",
+          "graph": "Computgraph",
+          "project": "default-project"
+        }
+      },
+      "ComputgraphRelationships": {
+        "HAS_BEHAVIOR": {
+          "type": "HAS_BEHAVIOR",
+          "from": "Object",
+          "to": "Behavior"
+        },
+        "HAS_ALGORITHM": {
+          "type": "HAS_ALGORITHM",
+          "from": "Behavior",
+          "to": "Algorithm"
+        },
+        "HAS_PROCEDURE": {
+          "type": "HAS_PROCEDURE",
+          "from": "Algorithm",
+          "to": "Procedure"
+        },
+        "HAS_PATTERN": {
+          "type": "HAS_PATTERN",
+          "from": "Procedure",
+          "to": "Pattern"
+        },
+        "PATTERN_HOST_TO": {
+          "type": "PATTERN_HOST_TO",
+          "from": "Pattern",
+          "to": "Pattern"
+        },
+        "HAS_PARAMETER": {
+          "type": "HAS_PARAMETER",
+          "from": "Procedure",
+          "to": "Parameter"
+        },
+        "HAS_INTERFACE": {
+          "type": "HAS_INTERFACE",
+          "from": "Pattern",
+          "to": "Interface"
+        },
+        "PARAM_LINK": {
+          "type": "PARAM_LINK",
+          "from": "Parameter",
+          "to": "Parameter"
+        },
+        "REFERS_TO": {
+          "type": "REFERS_TO",
+          "from": "Object",
+          "to": "Class",
+          "note": "Cross-layer bridge to OntoGraph"
+        }
       }
     },
     "atoms": [
