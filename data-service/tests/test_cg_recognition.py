@@ -172,6 +172,46 @@ class TestValidator:
         result = cg_recognition.validate_proposed_structure({"proposals": [first, second]}, _cg_context())
         assert result == {"valid": True, "violations": []}
 
+    def test_unrecognized_with_hallucinated_id_is_caught(self):
+        """WR-06: 'never invented' is a validator guarantee -- ids in the
+        unrecognized block must exist in the submitted context."""
+        parsed = {
+            "proposals": [self._proposal()],
+            "unrecognized": [{"memberIds": ["n999"], "reason": "unclear cluster"}],
+        }
+        result = cg_recognition.validate_proposed_structure(parsed, _cg_context())
+        assert result["valid"] is False
+        violations = [v for v in result["violations"] if v["code"] == "unknown_member_id"]
+        assert violations
+        assert violations[0]["path"] == "unrecognized[0].memberIds"
+
+    def test_unrecognized_shape_and_bounds_are_validated(self):
+        """WR-06: unrecognized must be a list of {memberIds, reason} objects,
+        bounded like proposals."""
+        ctx = _cg_context()
+        base = {"proposals": [self._proposal()]}
+
+        result = cg_recognition.validate_proposed_structure({**base, "unrecognized": "nope"}, ctx)
+        assert {"bad_shape"} <= {v["code"] for v in result["violations"]}
+
+        result = cg_recognition.validate_proposed_structure({**base, "unrecognized": ["not a dict"]}, ctx)
+        assert {"bad_shape"} <= {v["code"] for v in result["violations"]}
+
+        result = cg_recognition.validate_proposed_structure({**base, "unrecognized": [{"memberIds": ["n4"]}]}, ctx)
+        assert {"missing_field"} <= {v["code"] for v in result["violations"]}
+
+        too_many = [{"memberIds": [], "reason": "x"}] * (cg_recognition.MAX_PROPOSALS + 1)
+        result = cg_recognition.validate_proposed_structure({**base, "unrecognized": too_many}, ctx)
+        assert {"too_many_unrecognized"} <= {v["code"] for v in result["violations"]}
+
+    def test_valid_unrecognized_block_passes(self):
+        parsed = {
+            "proposals": [self._proposal()],
+            "unrecognized": [{"memberIds": ["n4"], "reason": "ambiguous wiring"}],
+        }
+        result = cg_recognition.validate_proposed_structure(parsed, _cg_context())
+        assert result == {"valid": True, "violations": []}
+
     def test_well_formed_untagged_proposal_is_valid(self):
         proposal = self._proposal(memberIds=["n3", "n4"])
         result = cg_recognition.validate_proposed_structure({"proposals": [proposal]}, _cg_context())

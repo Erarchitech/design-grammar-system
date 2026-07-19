@@ -102,8 +102,11 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
 
     Violation codes: `bad_shape`, `missing_field`, `invalid_kind`,
     `unknown_member_id`, `tagged_overlap`, `duplicate_member`,
-    `too_many_proposals`, `too_many_members`. Every message follows
-    What+Where+How-to-fix phrasing.
+    `too_many_proposals`, `too_many_members`, `too_many_unrecognized`. Every
+    message follows What+Where+How-to-fix phrasing. The `unrecognized` block
+    is validated too (WR-06): entries must be `{memberIds, reason}` objects
+    whose ids exist in the submitted context -- "never invented" is a
+    validator guarantee, not a prompt instruction.
     """
     violations: list[dict[str, Any]] = []
 
@@ -257,6 +260,102 @@ def validate_proposed_structure(parsed: dict, cg_context: dict) -> dict:
                 )
             else:
                 seen[m] = i
+
+    # WR-06: the module contract promises unrecognized member ids are "never
+    # invented" -- enforce it as a validator check (shape, size bound, and
+    # unknown_member_id), not a prompt instruction alone. Downstream consumers
+    # (Phase 36 publish, UI) reasonably trust ids in a "validated" response.
+    unrecognized = parsed.get("unrecognized")
+    if unrecognized is not None:
+        if not isinstance(unrecognized, list):
+            violations.append(
+                {
+                    "code": "bad_shape",
+                    "message": (
+                        "'unrecognized' must be a list of "
+                        '{"memberIds", "reason"} objects. Where: top-level '
+                        "'unrecognized' key. How to fix: return "
+                        '{"proposals": [...], "unrecognized": [...]}.'
+                    ),
+                    "path": "unrecognized",
+                }
+            )
+        elif len(unrecognized) > MAX_PROPOSALS:
+            violations.append(
+                {
+                    "code": "too_many_unrecognized",
+                    "message": (
+                        f"'unrecognized' contains {len(unrecognized)} entries, "
+                        f"exceeding the {MAX_PROPOSALS} bound. Where: "
+                        f"top-level 'unrecognized' list. How to fix: merge "
+                        f"related nodes into fewer entries."
+                    ),
+                    "path": "unrecognized",
+                }
+            )
+        else:
+            for i, entry in enumerate(unrecognized):
+                entry_path = f"unrecognized[{i}]"
+                if not isinstance(entry, dict):
+                    violations.append(
+                        {
+                            "code": "bad_shape",
+                            "message": f"Entry at {entry_path} is not an object.",
+                            "path": entry_path,
+                        }
+                    )
+                    continue
+
+                for field in ("memberIds", "reason"):
+                    if field not in entry:
+                        violations.append(
+                            {
+                                "code": "missing_field",
+                                "message": (
+                                    f"Unrecognized entry is missing required "
+                                    f"field '{field}'. Where: {entry_path}. "
+                                    f"How to fix: include memberIds and reason "
+                                    f"on every unrecognized entry."
+                                ),
+                                "path": entry_path,
+                            }
+                        )
+
+                entry_members = entry.get("memberIds")
+                if not isinstance(entry_members, list):
+                    entry_members = []
+
+                if len(entry_members) > MAX_MEMBERS_PER_PROPOSAL:
+                    violations.append(
+                        {
+                            "code": "too_many_members",
+                            "message": (
+                                f"Unrecognized entry references "
+                                f"{len(entry_members)} member ids, exceeding "
+                                f"the {MAX_MEMBERS_PER_PROPOSAL} bound. Where: "
+                                f"{entry_path}.memberIds. How to fix: split "
+                                f"into smaller entries."
+                            ),
+                            "path": f"{entry_path}.memberIds",
+                        }
+                    )
+                    continue
+
+                unknown = [m for m in entry_members if m not in known_ids]
+                if unknown:
+                    violations.append(
+                        {
+                            "code": "unknown_member_id",
+                            "message": (
+                                f"Unrecognized entry references ids not "
+                                f"present in the submitted context: {unknown}. "
+                                f"Where: {entry_path}.memberIds. How to fix: "
+                                f"only reference ids from the submitted "
+                                f"cg_context's nodes -- never invent ids."
+                            ),
+                            "path": f"{entry_path}.memberIds",
+                        }
+                    )
 
     return {"valid": len(violations) == 0, "violations": violations}
 
