@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 34
-current_phase_name: ontology-tagging-components
-status: verifying
-stopped_at: Phase 34 executed; verification human_needed (deferred live-Rhino UAT) — resume with /gsd-verify-work 34
-last_updated: "2026-07-18T22:39:09.219Z"
+current_phase: 29
+current_phase_name: dg-aware-context-layer-swrl-ontology-cypher-awareness
+status: executing
+stopped_at: Phase 29 Plan 06 executed; SUMMARY complete
+last_updated: "2026-07-18T23:16:46.727Z"
 last_activity: 2026-07-18
-last_activity_desc: Phase 34 execution started
+last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 14
   completed_phases: 4
   total_plans: 30
-  completed_plans: 26
+  completed_plans: 28
   percent: 29
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 34 — ontology-tagging-components
+**Current focus:** Phase 29 — dg-aware-context-layer-swrl-ontology-cypher-awareness
 
 ## Current Position
 
-Phase: 34 (ontology-tagging-components) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-07-18 — Phase 34 execution started
+Phase: 29 (dg-aware-context-layer-swrl-ontology-cypher-awareness) — EXECUTING
+Plan: 8 of 8
+Status: Ready to execute
+Last activity: 2026-07-18 — Phase 29 execution started
 
 ## Deferred Items
 
@@ -241,6 +241,11 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 34-01]: ProcIndex is the full NN token uniformly across all EntityTagKind values (NN < 10 rejected); Pattern naming idx slot is always auto-assigned integer with Name as optional trailing label
 - [Phase 34]: [Phase 34-02]: Task 3 (live-Rhino UAT) deferred to phase-level /gsd-verify-work per explicit user checkpoint response ('Defer live UAT, continue') -- same precedent as Phase 33; NOT self-approved as passed
 - [Phase 34]: [Phase 34-03]: Task 3 (live-Rhino UAT) deferred to phase-level /gsd-verify-work per explicit user checkpoint response ('Defer live UAT, continue') -- same precedent as Phase 33 and 34-02; NOT self-approved as passed
+- [Phase 29]: Converged VALIDGRAPH_CONCEPTS + validate_cypher allow-lists to the real ValidationRun/statePayloadJson/HAS_ENTITY shape (DesignState/Run/HAS_STATE removed) -- fixes the graph_query 'no design states found' gap by rejecting the aspirational query pattern as unknown_label
+- [Phase 29]: Added fetch_existing_design_states() + _summarize_state_payload() live helper (D-17 pattern) wired into assemble_context() for graph_query only, giving the LLM real per-project ValidationRun data with a v4 ObjState/ParamState/PropState count breakdown
+- [Phase 29]: FLAGGED BACKLOG (not implemented): materializing first-class :DesignState graph nodes in store_validation_run() (direction b) needs explicit human sign-off and its own phase per CLAUDE.md
+- [Phase 29]: Build Cypher Prompt node forwards existing_design_states (29-06) into the graph_query CONTEXT block with a ValidationRun/statePayloadJson guidance bullet
+- [Phase 29]: n8n live-sync PATCH body scoped to {name, nodes, connections, settings} only, avoiding round-tripping server-managed GET envelope fields back as a write
 
 ### Research Flags (carry into planning)
 
@@ -306,12 +311,14 @@ Shipped from Phase 20 Plan 02:
 | Phase 34 P01 | 25min | 2 tasks | 3 files |
 | Phase 34 P02 | 3min | 2 tasks | 3 files |
 | Phase 34 P03 | 10min | 2 tasks | 4 files |
+| Phase 29 P06 | 15min | 2 tasks | 2 files |
+| Phase 29 P07 | 20min | 2 tasks | 1 files |
 
 ## Session Continuity
 
-Last session: 2026-07-18T22:39:09.202Z
-Stopped at: Phase 34 executed; verification human_needed (deferred live-Rhino UAT) — resume with /gsd-verify-work 34
-Resume file: .planning/phases/34-ontology-tagging-components/34-UAT.md
+Last session: 2026-07-18T23:16:46.710Z
+Stopped at: Phase 29 Plan 06 executed; SUMMARY complete
+Resume file: .planning/phases/29-dg-aware-context-layer-swrl-ontology-cypher-awareness/29-07-PLAN.md
 
 ## Performance Metrics
 

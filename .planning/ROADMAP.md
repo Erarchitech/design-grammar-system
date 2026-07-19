@@ -101,7 +101,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. Context selection is fully deterministic — same request, same context, no embeddings involved
 4. A natural-language graph query about design states answers correctly using v4 `kind` values with the new context layer active
 
-**Plans:** 8 plans (5 complete + 3 gap-closure for UAT Success Criterion 4)
+**Plans:** 8/8 plans complete
 **Wave 1**
 
 - [x] 29-01-PLAN.md — Cypher expression catalog (`llm/cypher_catalog.json`, 6 shapes) + `dg_context.py` defensive loader (CTXA-02)
@@ -121,9 +121,9 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 
 **Wave 5** *(gap closure — UAT Success Criterion 4: "no design states were found" for ConfigurationC; root cause = assembler described aspirational :DesignState/:Run nodes, real shipped shape is :ValidationRun + statePayloadJson blob + HAS_ENTITY)*
 
-- [ ] 29-06-PLAN.md — converge `dg_context.py` VALIDGRAPH_CONCEPTS + `validate_cypher()` allow-lists to the real ValidationRun/statePayloadJson/HAS_ENTITY shape + live `fetch_existing_design_states()` helper (CTXA-01, CTXA-04)
-- [ ] 29-07-PLAN.md — forward `existing_design_states` into the n8n graph-query Cypher prompt + live re-sync (CTXA-01)
-- [ ] 29-08-PLAN.md — deploy + human-verify re-run of UAT Success Criterion 4 for ConfigurationC (CTXA-01, CTXA-04)
+- [x] 29-06-PLAN.md — converge `dg_context.py` VALIDGRAPH_CONCEPTS + `validate_cypher()` allow-lists to the real ValidationRun/statePayloadJson/HAS_ENTITY shape + live `fetch_existing_design_states()` helper (CTXA-01, CTXA-04)
+- [x] 29-07-PLAN.md — forward `existing_design_states` into the n8n graph-query Cypher prompt + live re-sync (CTXA-01)
+- [x] 29-08-PLAN.md — deploy + human-verify re-run of UAT Success Criterion 4 for ConfigurationC (CTXA-01, CTXA-04)
 
 ---
 
@@ -502,7 +502,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Cloud LLM Connector and Provider Abstraction | 3/3 | Complete | 2026-07-06 |
-| 29. DG-Aware Context Layer | 5/5 | Complete   | 2026-07-12 |
+| 29. DG-Aware Context Layer | 8/8 | Complete   | 2026-07-19 |
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
