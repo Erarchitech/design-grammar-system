@@ -44,6 +44,7 @@ internal static class PreviewRegistry
                 groupGuid,
                 proposal.ToEntityTagKind(),
                 proposal.SuggestedName,
+                proposal.ProcedureIndex,
                 proposal.Confidence,
                 proposal.Rationale);
 
@@ -64,13 +65,19 @@ internal static class PreviewRegistry
 
 /// <summary>
 /// A single pending preview: the created (not-yet-confirmed) group's GUID plus the proposal
-/// data needed to render/confirm/reject it.
+/// data needed to render/confirm/reject it. <see cref="ProcedureIndex"/> (Plan 35-04 addition)
+/// carries the proposal's enclosing NN token forward so <c>DG STRUCTURE CONFIRM</c>'s accept
+/// path can re-derive a convention-conformant permanent nickname via
+/// <see cref="CanvasAnnotationNameFactory.ForEntity"/>, which requires it for every
+/// <see cref="EntityTagKind"/> -- it would otherwise be lost once <see cref="ProposalDto"/> is
+/// projected into this record.
 /// </summary>
 internal sealed record PreviewEntry(
     string ProposalId,
     Guid GroupGuid,
     EntityTagKind Kind,
     string SuggestedName,
+    int ProcedureIndex,
     double Confidence,
     string Rationale);
 

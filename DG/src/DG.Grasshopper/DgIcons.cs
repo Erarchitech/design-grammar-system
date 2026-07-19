@@ -52,6 +52,11 @@ internal static class DgIcons
     // (WR-07 precedent); replace with bespoke artwork when available.
     public static Bitmap EntityTag24 { get; } = Load("EntityTag24.png");
 
+    // StructureConfirm24.png is a Phase-35 placeholder (copy of the spare OntoGraph24.png
+    // resource) so DG STRUCTURE CONFIRM does not render the pink-X missing-icon fallback
+    // (WR-07 precedent); replace with bespoke artwork when available.
+    public static Bitmap StructureConfirm24 { get; } = Load("StructureConfirm24.png");
+
     private static Bitmap Load(string fileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
