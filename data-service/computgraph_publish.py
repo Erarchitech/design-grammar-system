@@ -167,12 +167,18 @@ def _build_publish_params(
             if not proc_cg_id:
                 raise ValueError(f"procedure.id is required (algorithm {alg_index}).")
             proc_source = procedure.get("source") or "tagged"
+            proc_index = procedure.get("index")
+            if proc_index is None:
+                raise ValueError(
+                    f"procedure.index is required (procedure {proc_cg_id!r}) -- "
+                    "ProcedureShape_procIndex requires it (sh:minCount 1)."
+                )
             procedure_rows.append(
                 {
                     "cgId": proc_cg_id,
                     "algIndex": alg_index,
                     "name": procedure.get("name") or "",
-                    "index": procedure.get("index"),
+                    "index": proc_index,
                     "dgId": compute_dg_id(project, definition_id, proc_cg_id),
                     "source": proc_source,
                     "provider": procedure.get("provider") if proc_source == "recognized" else None,
@@ -214,9 +220,10 @@ def _build_publish_params(
                         f"Allowed values: {sorted(_VALID_PARAM_KINDS)}."
                     )
                 data_type = parameter.get("dataType")
-                if data_type is not None and data_type not in _VALID_PARAM_DATA_TYPES:
+                if data_type not in _VALID_PARAM_DATA_TYPES:
                     raise ValueError(
                         f"Unsupported dataType {data_type!r} on parameter {param_cg_id!r}. "
+                        f"ParameterShape_dataType requires it (sh:minCount 1). "
                         f"Allowed values: {sorted(_VALID_PARAM_DATA_TYPES)}."
                     )
                 domain = parameter.get("domain") or {}
