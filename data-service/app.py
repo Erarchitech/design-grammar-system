@@ -1339,13 +1339,17 @@ def post_computgraph_recognize(payload: RecognizeRequest):
 class ComputgraphPublishRequest(BaseModel):
     """Body for POST /computgraph/publish.
 
-    `cg_context` is the confirmed cgContextJson v1 envelope (carries dgId per
+    `cgContext` is the confirmed cgContextJson v1 envelope (carries dgId per
     entity stamped by CgContextDgIdAssigner before serialization). The route
     recomputes dgId server-side regardless of any client-stamped value.
+
+    Field is camelCase (not `cg_context`) to match ComputgraphPublishClient's
+    JsonNamingPolicy.CamelCase wire format -- same convention as
+    ValidationPublishRequest.statePayloadJson/ruleResults above.
     """
 
     project: str
-    cg_context: dict
+    cgContext: dict
 
 
 @app.post("/computgraph/publish")
@@ -1360,12 +1364,12 @@ def post_computgraph_publish(payload: ComputgraphPublishRequest):
     try:
         with driver.session() as session:
             return computgraph_publish.publish_structure(
-                session, payload.project, payload.cg_context
+                session, payload.project, payload.cgContext
             )
     except ValueError as exc:
         raise _structured_error_response(
             str(exc),
-            "Check the submitted cg_context shape (cgContextJson v1 envelope).",
+            "Check the submitted cgContext shape (cgContextJson v1 envelope).",
             "COMPUTGRAPH_PUBLISH_REQUEST_INVALID",
             422,
         )
