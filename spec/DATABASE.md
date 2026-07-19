@@ -189,7 +189,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `graph` | string | Always `Computgraph` |
 | `project` | string | Project isolation key (merge key part) |
 
-- Merge key: `(cgId, definitionId, project)`
+- Merge key: `(algIndex, definitionId, project)`
 - Written only by `POST /computgraph/publish`
 
 ---
@@ -397,8 +397,8 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 | `HAS_PATTERN` | Procedure | Pattern | — | Procedure → pattern decomposition |
 | `PATTERN_HOST_TO` | Pattern | Pattern | — | Pattern nesting (sub-patterns) |
 | `HAS_PARAMETER` | Procedure | Parameter | — | Procedure → parameter link |
-| `HAS_INTERFACE` | Pattern | Interface | — | Pattern → interface link |
-| `PARAM_LINK` | Parameter | Parameter | — | Cross-procedure parameter linking |
+| `HAS_INTERFACE` | Procedure | Interface | — | Procedure → interface link |
+| `PARAM_LINK` | Parameter | Interface | — | Parameter → interface, wire-derived |
 | `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 
 ## Rule ID Format

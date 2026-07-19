@@ -191,7 +191,7 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Relationships
 
-`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity; Object→Class cross-layer), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty), `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Pattern→Interface), `PARAM_LINK` (Parameter→Parameter linking)
+`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity; Object→Class cross-layer), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty), `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived)
 
 Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface) carries an optional `dgId` property — a deterministic platform-neutral identity (`dg:` + 16 uppercase hex). See `spec/DG-ID.md` for the normative specification (format, minting, collision policy, binding model).
 

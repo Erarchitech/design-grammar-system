@@ -340,13 +340,13 @@
         },
         "HAS_INTERFACE": {
           "type": "HAS_INTERFACE",
-          "from": "Pattern",
+          "from": "Procedure",
           "to": "Interface"
         },
         "PARAM_LINK": {
           "type": "PARAM_LINK",
           "from": "Parameter",
-          "to": "Parameter"
+          "to": "Interface"
         },
         "REFERS_TO": {
           "type": "REFERS_TO",

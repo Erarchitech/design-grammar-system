@@ -54,8 +54,8 @@ Use these relationship types in generated Cypher and UI assumptions:
 - `HAS_PATTERN`: Procedure -> Pattern (decomposition)
 - `PATTERN_HOST_TO`: Pattern -> Pattern (nesting)
 - `HAS_PARAMETER`: Procedure -> Parameter (linking)
-- `HAS_INTERFACE`: Pattern -> Interface (linking)
-- `PARAM_LINK`: Parameter -> Parameter (cross-procedure linking)
+- `HAS_INTERFACE`: Procedure -> Interface (linking)
+- `PARAM_LINK`: Parameter -> Interface (wire-derived linking)
 - `REFERS_TO`: Object -> Class (cross-layer bridge, when classIri present)
 
 Do not use legacy assumptions like `Rule.id`, `Atom.id`, `Atom.Id`, `DatatypeProperty.label`, or `HAS_ATOM` unless you are explicitly writing a migration.

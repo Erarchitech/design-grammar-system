@@ -108,7 +108,7 @@ GRAPH SCHEMA (from dataset_schema v3)
            props: definitionId
            NOTE: structural node — no cgId/dgId
 
-  Algorithm — key: (cgId, definitionId, project)  [display: algorithmName]
+  Algorithm — key: (algIndex, definitionId, project)  [display: algorithmName]
            props: algorithmName, algIndex, contextJson
 
   Procedure — key: (cgId, definitionId, project)  [display: procedureName]
@@ -133,8 +133,8 @@ GRAPH SCHEMA (from dataset_schema v3)
   HAS_PATTERN      (Procedure→Pattern)
   PATTERN_HOST_TO  (Pattern→Pattern, nesting)
   HAS_PARAMETER    (Procedure→Parameter)
-  HAS_INTERFACE    (Pattern→Interface)
-  PARAM_LINK       (Parameter→Parameter, linking)
+  HAS_INTERFACE    (Procedure→Interface)
+  PARAM_LINK       (Parameter→Interface, wire-derived linking)
   REFERS_TO        (Object→Class, cross-layer bridge to OntoGraph)
 
   Entity→Representation  relationship: (:Computgraph entity)-[:HAS_REPRESENTATION]->(:Representation)

@@ -193,7 +193,7 @@ Login with `neo4j / 12345678` unless changed.
   - `REFERS_TO`
   - `ARG` (property: `pos`)
   - `HAS_STATE` (DesignState -> state nodes, read-side composition)
-  - Computgraph: `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Pattern→Interface), `PARAM_LINK` (Parameter→Parameter linking), `REFERS_TO` (Object→Class cross-layer bridge), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
+  - Computgraph: `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived), `REFERS_TO` (Object→Class cross-layer bridge), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
   - Rule: `Rule_Id`, `SWRL` (SWRL expression), `RuleName`, `RuleDescription`, `kind` (violation)
