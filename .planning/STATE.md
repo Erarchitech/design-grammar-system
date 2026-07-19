@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 29
-current_phase_name: dg-aware-context-layer-swrl-ontology-cypher-awareness
-status: executing
-stopped_at: Phase 29 Plan 06 executed; SUMMARY complete
-last_updated: "2026-07-18T23:16:46.727Z"
-last_activity: 2026-07-18
-last_activity_desc: Phase 29 execution started
+current_phase: 35
+current_phase_name: llm-recognition-canvas-preview
+status: verifying
+stopped_at: Completed 35-04-PLAN.md
+last_updated: "2026-07-19T10:00:58.764Z"
+last_activity: 2026-07-19
+last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 14
-  completed_phases: 4
-  total_plans: 30
-  completed_plans: 28
-  percent: 29
+  completed_phases: 6
+  total_plans: 34
+  completed_plans: 33
+  percent: 43
 ---
 
 # Project State
@@ -24,14 +24,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 29 — dg-aware-context-layer-swrl-ontology-cypher-awareness
+**Current focus:** Phase 35 — llm-recognition-canvas-preview
 
 ## Current Position
 
-Phase: 29 (dg-aware-context-layer-swrl-ontology-cypher-awareness) — EXECUTING
-Plan: 8 of 8
-Status: Ready to execute
-Last activity: 2026-07-18 — Phase 29 execution started
+Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
+Plan: 4 of 4
+Status: Phase complete — ready for verification
+Last activity: 2026-07-19 — Phase 35 execution started
+
+## Deferred Verification
+
+| Phase | State | Resume |
+|-------|-------|--------|
+| 35 | verification_deferred_human | /gsd-verify-work 35 |
+
+Phase 35 (LLM Recognition and On-Canvas Proposal Preview) is code-complete as of 2026-07-19: 4/4 plans executed, code-review fix loop closed (CR-01 + WR-01..06 fixed, iter-2 re-review 0 Critical/0 Warning), dotnet 370/370, in-container pytest 251/251. Six live-Rhino UAT items are in `.planning/phases/35-llm-recognition-canvas-preview/35-UAT.md`.
 
 ## Deferred Items
 
@@ -246,6 +254,14 @@ Shipped from Phase 20 Plan 02:
 - [Phase 29]: FLAGGED BACKLOG (not implemented): materializing first-class :DesignState graph nodes in store_validation_run() (direction b) needs explicit human sign-off and its own phase per CLAUDE.md
 - [Phase 29]: Build Cypher Prompt node forwards existing_design_states (29-06) into the graph_query CONTEXT block with a ValidationRun/statePayloadJson guidance bullet
 - [Phase 29]: n8n live-sync PATCH body scoped to {name, nodes, connections, settings} only, avoiding round-tripping server-managed GET envelope fields back as a write
+- [Phase ?]: [Phase 35 Plan 01]: cg_recognition.py mirrors dg_context.generate_validated_cypher()'s bounded-retry structure verbatim; validate_proposed_structure reuses validate_cypher()'s exact {valid,violations} shape
+- [Phase ?]: [Phase 35 Plan 01]: procedure_index-scoped untagged filtering uses one-hop wire adjacency to the procedure's tagged member ids -- cgContextJson v1's untagged block has no procedure-ownership field of its own
+- [Phase ?]: [Phase 35 Plan 01]: Frame few-shot kept to one trimmed worked example (measured prompt ~9.5KB, locked under a 20KB test budget, A4 resolution)
+- [Phase ?]: [Phase 35 Plan 02]: PreviewRegistry uses ConcurrentDictionary<string,PreviewEntry>; RegisterAll zips (proposalId,groupGuid) against ProposalDto by id, skipping unmatched pairs rather than throwing
+- [Phase ?]: [Phase 35 Plan 02]: source:recognized persists via GH_Document.ValueTable keyed dg.recognized.<groupInstanceGuid>, the ObjectMarkerComponent/dg.objectClassIri precedent -- not an in-memory listener dictionary or sidecar file
+- [Phase 35-03]: InvokeOnCanvasWrite is a private instance method (not static) since it must call the inherited OnPingDocument() to get the live GH_Document -- mirrors InvokeOnCanvas's TaskCompletionSource shape but mutates directly on the UI thread (no ScheduleSolution, per the plan's locked decision) and calls InvalidateCanvas() before resolving
+- [Phase 35-03]: ParseProposals synthesizes a per-request index-based proposalId (p0, p1, ...) since cg_recognition.py's wire proposal shape carries no id field, while PreviewRegistry.RegisterAll (Plan 35-02, frozen) requires one to zip against created group guids
+- [Phase 35-04]: [Phase 35-04]: PreviewEntry (frozen from Plan 35-02) extended with an additive ProcedureIndex field, sourced from ProposalDto.ProcedureIndex -- CanvasAnnotationNameFactory.ForEntity requires procIndex >= 10 for every EntityTagKind, not only Pat, and the frozen record had no way to carry it from proposal to confirm time
 
 ### Research Flags (carry into planning)
 
@@ -313,12 +329,16 @@ Shipped from Phase 20 Plan 02:
 | Phase 34 P03 | 10min | 2 tasks | 4 files |
 | Phase 29 P06 | 15min | 2 tasks | 2 files |
 | Phase 29 P07 | 20min | 2 tasks | 1 files |
+| Phase 35 P01 | 25min | 3 tasks | 6 files |
+| Phase 35 P02 | 12min | 3 tasks | 6 files |
+| Phase 35 P03 | 9min | 2 tasks | 1 files |
+| Phase 35 P04 | 10min | 2 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-18T23:16:46.710Z
-Stopped at: Phase 29 Plan 06 executed; SUMMARY complete
-Resume file: .planning/phases/29-dg-aware-context-layer-swrl-ontology-cypher-awareness/29-07-PLAN.md
+Last session: 2026-07-19T10:00:58.747Z
+Stopped at: Completed 35-04-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
