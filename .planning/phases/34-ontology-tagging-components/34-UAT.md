@@ -29,23 +29,34 @@ result: [pending]
 
 ### 3. DG ENTITY TAG — tag→parse→undo round-trip, nesting, guard rails
 expected: Kind value list auto-appears wired (Proc/Pat/Var/Const/Emg/IntF). Select a slider, Kind=Var, Name="SpansCount", ProcIndex=11, press Tag → PINK group "11_Var_SpansCount" wraps the slider. Phase 32 extractor (get_canvas_context) reports it as CgParameter kind:Variable source:tagged. Ctrl+Z removes the group cleanly. Tagging a selection inside an existing 11_Pat_* group renders PURPLE nested with HostPatternId. Empty selection → Warning, no group. Name="Foo_Var_Bar" (reserved infix) → Warning, no group.
-result: [pending]
+result: pass — verified 2026-07-20: empty-selection warning, reserved-infix warning, pink tag + clean Ctrl+Z, purple nesting all confirmed on Frame definition. (Note: ProcIndex has no Optional flag, so GH's own "failed to collect data" fires if unwired — wire a value before testing; not a component bug.)
 
 ### 4. DG ENTITY TAG — group colors and icon vs Frame reference (aesthetic)
 expected: CanvasAnnotationStyles palette (Procedure near-white, Pattern orange, NestedPattern purple, Parameter pink, Interface near-white) and EntityTag24 icon are [ASSUMED] placeholders — compare against the Frame reference and note hex adjustments (low functional risk)
-result: [pending]
+result: pass — palette confirmed correct 2026-07-20. Icons (ObjectMarker24/EntityTag24) currently reuse icons from other components — placeholder-adjustment deferred by user to later work, no functional risk.
 
 ### 5. Fix-chain regression check (WR-10/WR-11) — re-tag a child-hosting Pattern
 expected: Create a Pattern group that hosts a nested tagged entity (child group). Re-tag the SAME core selection (label-only change) → the existing group is updated in place (no duplicate, no self-nest) AND the nested child group stays nested (purple, still a member of the host). Also: a Pattern consisting only of nested groups is not hijacked by an unrelated group-only selection.
-result: [pending]
+result: pass — same-core-selection re-tag confirmed in place, no duplicate, nested child stays nested. Gap found (see Gaps below): PARTIAL reselection (dropping a member) is not handled gracefully.
 
 ## Summary
 
 total: 5
-passed: 0
+passed: 3
 issues: 0
-pending: 5
+pending: 2
 skipped: 0
 blocked: 0
 
 ## Gaps
+
+- **Partial-reselection re-tag creates a stray nested duplicate instead of updating.** [EntityTagComponent.cs:246-263](DG/src/DG.Grasshopper/Components/EntityTagComponent.cs#L246-L263)
+  requires the re-tag selection's core members to be an *exact* set match against the existing
+  Pattern group's core members. If a user drops even one member on re-tag, `existingPat` lookup
+  misses (no index reuse → new pattern index minted), and the nesting-detection pass then nests the
+  new group inside the *old* Pattern (whose members still fully contain the partial selection) since
+  `retagTargetNickname` is null and doesn't exclude it as a host. Net: silent duplicate-nested-in-original
+  group instead of an update or a warning. Not exercised by test 5 (which only specifies "SAME core
+  selection"), discovered manually 2026-07-20. Needs a decision: warn on partial-match re-tag, or
+  extend the match to tolerate a superset/subset with a confirmation step. Not yet triaged into a
+  backlog item.

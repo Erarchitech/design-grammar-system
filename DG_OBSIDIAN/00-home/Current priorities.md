@@ -25,7 +25,7 @@ date: 2026-07-12
 
 ## Upcoming
 
-- **v9.0 UAT Pipeline (Groups 3–4)** — Resume with Group 3 (Phase 34 guard-rails + undo + aesthetic on Frame definition in Rhino). Group 4 (Phase 35 recognition + Phase 36 publish + ui-v2 display) is the main E2E spine; see `.planning/phases/v9.0-PIPELINE-UAT.md` for unified test structure and dedup map showing how later phases transitively re-prove earlier ones.
+- **v9.0 UAT Pipeline (Group 4)** — ✅ Group 3 COMPLETE (2026-07-20): Phase 34 guard-rails + undo + aesthetic verified on Frame definition. Partial-reselection edge case documented as known limitation (deferred). Ready for Group 4 (Phase 35 recognition + Phase 36 publish + ui-v2 display) — the main E2E spine; see `.planning/phases/v9.0-PIPELINE-UAT.md` for unified test structure and dedup map showing how later phases transitively re-prove earlier ones.
 - **v8.2 Complete:** Phase 824 (CONNECTOR Credential Integration) in-Rhino UAT → `/gsd-complete-milestone v8.2`
 - **v9.0 AI Workflow Intelligence — Phases 28-40** — Phases 37 (Script Structure Validation MVP) next after UAT. Phase 38 (AI-Generated Inputs) planned. Phases 39–40 deferred (auto-validation investigation, E2E + docs).
 - **v4.0 BOT Ontology Bridge** — After v9.0
