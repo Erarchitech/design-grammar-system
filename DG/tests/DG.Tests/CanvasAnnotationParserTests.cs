@@ -298,6 +298,37 @@ public sealed class CanvasAnnotationParserTests
             w => w.Contains("exceeded max depth") || w.Contains("cycle"));
     }
 
+    [Theory]
+    [InlineData("1_Proc - Foo")]
+    [InlineData("1_Pat_1")]
+    [InlineData("1_Var_X")]
+    [InlineData("1_Const_X")]
+    [InlineData("1_Emg_X")]
+    [InlineData("1_IntF_X")]
+    [InlineData("99999999999_Proc - Overflow")] // digits overflow int -- same non-throw guarantee
+    public void Parse_MalformedNnToken_RoutesGroupToUntaggedWithWarningInsteadOfThrowing(string nickname)
+    {
+        // WR-04: a user-typed single-digit NN matches the grammar regexes (\d+) but
+        // cannot be decomposed into algorithm digit + procedure ordinal. The old
+        // SplitNn threw FormatException out of Parse(), taking down the entire
+        // canvas-context extraction over one malformed nickname.
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup { Nickname = nickname, MemberIds = { "n1" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var untagged = Assert.Single(context.Untagged.Groups);
+        Assert.Equal(nickname, untagged.Nickname);
+        Assert.Equal(new[] { "n1" }, untagged.MemberIds);
+        Assert.Empty(context.Algorithms); // no phantom algorithm/procedure minted from a bad NN
+        Assert.Contains(context.Warnings, w => w.Contains(nickname) && w.Contains("NN token"));
+    }
+
     private static string GetParserSourcePath([CallerFilePath] string testFilePath = "")
     {
         var testsDir = Path.GetDirectoryName(testFilePath)!;

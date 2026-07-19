@@ -65,6 +65,22 @@ public static class CanvasAnnotationParser
         var untaggedGroups = new List<CgUntaggedGroup>();
         var claimedMemberIds = new HashSet<string>(StringComparer.Ordinal);
 
+        // WR-04: an NN token the grammar regexes accept (\d+) but TryParseNn cannot
+        // decompose (single digit, or digits overflowing int) must not crash Parse() --
+        // the parser contract is "throws only for a null raw". Route the group to the
+        // untagged set with a warning naming the offending nickname instead.
+        void RouteMalformedNn(string nickname, string nn, RawGroup group)
+        {
+            warnings.Add(
+                $"Group '{nickname}' has a malformed NN token '{nn}' -- need at least two digits " +
+                "(algorithm digit + procedure ordinal); routed to untagged.");
+            untaggedGroups.Add(new CgUntaggedGroup
+            {
+                Nickname = nickname,
+                MemberIds = new List<string>(group.MemberIds),
+            });
+        }
+
         // 1. Scribbles: OBJECT and ALGORITHM declarations.
         foreach (var scribble in raw.Scribbles)
         {
@@ -104,8 +120,12 @@ public static class CanvasAnnotationParser
             }
 
             var nn = procedureMatch.Groups["nn"].Value;
-            var (algDigit, _) = SplitNn(nn);
-            var procIndex = int.Parse(nn, CultureInfo.InvariantCulture);
+            if (!TryParseNn(nn, out var algDigit, out var procIndex))
+            {
+                RouteMalformedNn(group.Nickname ?? string.Empty, nn, group);
+                continue;
+            }
+
             var algorithm = GetOrCreateAlgorithm(algorithms, algDigit);
 
             if (algorithm.Procedures.All(p => p.Index != procIndex))
@@ -142,8 +162,12 @@ public static class CanvasAnnotationParser
             {
                 var nn = patternMatch.Groups["nn"].Value;
                 var idx = patternMatch.Groups["idx"].Value;
-                var (algDigit, _) = SplitNn(nn);
-                var procIndex = int.Parse(nn, CultureInfo.InvariantCulture);
+                if (!TryParseNn(nn, out var algDigit, out var procIndex))
+                {
+                    RouteMalformedNn(nickname, nn, group);
+                    continue;
+                }
+
                 var procedure = GetOrCreateProcedure(algorithms, algDigit, procIndex);
 
                 pendingPatterns.Add(new PendingPattern(
@@ -170,8 +194,12 @@ public static class CanvasAnnotationParser
                         : (ParamKind.Emergent, "emg", emergentMatch);
 
                 var nn = match.Groups["nn"].Value;
-                var (algDigit, _) = SplitNn(nn);
-                var procIndex = int.Parse(nn, CultureInfo.InvariantCulture);
+                if (!TryParseNn(nn, out var algDigit, out var procIndex))
+                {
+                    RouteMalformedNn(nickname, nn, group);
+                    continue;
+                }
+
                 var procedure = GetOrCreateProcedure(algorithms, algDigit, procIndex);
                 var name = match.Groups["name"].Value.Trim();
 
@@ -206,8 +234,12 @@ public static class CanvasAnnotationParser
             if (interfaceMatch.Success)
             {
                 var nn = interfaceMatch.Groups["nn"].Value;
-                var (algDigit, _) = SplitNn(nn);
-                var procIndex = int.Parse(nn, CultureInfo.InvariantCulture);
+                if (!TryParseNn(nn, out var algDigit, out var procIndex))
+                {
+                    RouteMalformedNn(nickname, nn, group);
+                    continue;
+                }
+
                 var procedure = GetOrCreateProcedure(algorithms, algDigit, procIndex);
                 var name = interfaceMatch.Groups["name"].Value.Trim();
 
@@ -281,14 +313,27 @@ public static class CanvasAnnotationParser
     }
 
     /// <summary>
-    /// Decomposes an NN token into its algorithm digit and procedure ordinal
-    /// (e.g. "11" -&gt; alg 1, ordinal 1; "12" -&gt; alg 1, ordinal 2).
+    /// Decomposes an NN token into its algorithm digit and full procedure index
+    /// (e.g. "11" -&gt; alg 1, procIndex 11; "12" -&gt; alg 1, procIndex 12). Returns false --
+    /// never throws -- for a token that cannot be decomposed: fewer than two digits (the
+    /// grammar regexes accept a bare "1" via <c>\d+</c>) or digits that overflow
+    /// <see cref="int"/>. Replaces the old SplitNn, whose <c>int.Parse(nn.Substring(1))</c>
+    /// threw <see cref="FormatException"/> on a single-digit token and let one malformed
+    /// user-typed nickname abort the entire canvas-context extraction (WR-04).
     /// </summary>
-    private static (int Algorithm, int ProcedureOrdinal) SplitNn(string nn)
+    private static bool TryParseNn(string nn, out int algorithm, out int procIndex)
     {
-        var algDigit = int.Parse(nn.Substring(0, 1), CultureInfo.InvariantCulture);
-        var ordinal = int.Parse(nn.Substring(1), CultureInfo.InvariantCulture);
-        return (algDigit, ordinal);
+        algorithm = 0;
+
+        if (nn.Length < 2
+            || !int.TryParse(nn, NumberStyles.None, CultureInfo.InvariantCulture, out procIndex))
+        {
+            procIndex = 0;
+            return false;
+        }
+
+        algorithm = nn[0] - '0';
+        return true;
     }
 
     private static CgAlgorithm GetOrCreateAlgorithm(List<CgAlgorithm> algorithms, int index)
