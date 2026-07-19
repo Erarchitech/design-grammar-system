@@ -287,6 +287,13 @@ public sealed class CanvasListenerComponent : GH_Component
 
         return InvokeOnCanvasWrite(doc =>
         {
+            // WR-01: proposal ids are synthesized per request (p0, p1, ...), so a second
+            // preview_structure call would overwrite the registry entries while the first
+            // call's groups (and legend) stayed on canvas -- unreachable by clear_preview
+            // and invisible to DG STRUCTURE CONFIRM. Auto-clear the previous preview
+            // before rendering the new one.
+            RemovePendingPreviewObjects(doc);
+
             var created = new List<(string proposalId, Guid groupGuid)>();
             var record = new GH_UndoRecord("DG structure proposal");
 
@@ -352,33 +359,49 @@ public sealed class CanvasListenerComponent : GH_Component
     {
         return InvokeOnCanvasWrite(doc =>
         {
-            var removed = 0;
-
-            foreach (var entry in PreviewRegistry.Pending)
-            {
-                var obj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == entry.GroupGuid);
-                if (obj is not null)
-                {
-                    doc.RemoveObject(obj, false);
-                    removed++;
-                }
-            }
-
-            if (_previewLegendGuid is { } legendGuid)
-            {
-                var legendObj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == legendGuid);
-                if (legendObj is not null)
-                {
-                    doc.RemoveObject(legendObj, false);
-                }
-
-                _previewLegendGuid = null;
-            }
-
-            PreviewRegistry.Clear();
+            var removed = RemovePendingPreviewObjects(doc);
 
             return (object?)new { cleared = removed };
         });
+    }
+
+    /// <summary>
+    /// Removes every currently-pending preview group (via <see cref="PreviewRegistry.Pending"/>)
+    /// plus the legend scribble stashed by the last <see cref="HandlePreviewStructure"/> call
+    /// from <paramref name="doc"/>, then empties the registry. Shared by
+    /// <see cref="HandleClearPreview"/> and the auto-clear at the top of
+    /// <see cref="HandlePreviewStructure"/>'s render (WR-01). Must run inside an
+    /// <see cref="InvokeOnCanvasWrite"/> delegate (UI thread). Returns the number of preview
+    /// groups actually removed.
+    /// </summary>
+    private int RemovePendingPreviewObjects(GH_Document doc)
+    {
+        var removed = 0;
+
+        foreach (var entry in PreviewRegistry.Pending)
+        {
+            var obj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == entry.GroupGuid);
+            if (obj is not null)
+            {
+                doc.RemoveObject(obj, false);
+                removed++;
+            }
+        }
+
+        if (_previewLegendGuid is { } legendGuid)
+        {
+            var legendObj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == legendGuid);
+            if (legendObj is not null)
+            {
+                doc.RemoveObject(legendObj, false);
+            }
+
+            _previewLegendGuid = null;
+        }
+
+        PreviewRegistry.Clear();
+
+        return removed;
     }
 
     /// <summary>
