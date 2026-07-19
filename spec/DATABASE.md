@@ -276,7 +276,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 
 - Merge key: `(cgId, definitionId, project)`
 - Written only by `POST /computgraph/publish`
-- `PARAM_LINK` links parameters across procedures
+- `PARAM_LINK` connects this parameter to the Interface nodes its wires feed (wire-derived)
 
 ---
 
