@@ -1,10 +1,17 @@
 #if GRASSHOPPER_SDK
+using System.Drawing;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using DG.Core.Bridge;
+using DG.Core.Parsing;
 using DG.Grasshopper.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Undo;
+using Grasshopper.Kernel.Undo.Actions;
 using Rhino;
 
 namespace DG.Grasshopper.Components;
@@ -32,6 +39,11 @@ public sealed class CanvasListenerComponent : GH_Component
 
     private volatile string _status = "Idle";
     private volatile string _lastCommand = string.Empty;
+
+    // Legend scribble created by the last preview_structure call -- stashed here (rather
+    // than in PreviewRegistry, which only tracks per-proposal group guids) so
+    // clear_preview can remove it deterministically (35-PLAN.md Task 2).
+    private Guid? _previewLegendGuid;
 
     public CanvasListenerComponent()
         : base(
@@ -132,9 +144,9 @@ public sealed class CanvasListenerComponent : GH_Component
         {
             [CanvasBridgeCommands.GetCanvasContext] = HandleGetCanvasContext,
             [CanvasBridgeCommands.GetSelection] = HandleGetSelection,
-            [CanvasBridgeCommands.PreviewStructure] = _ => CanvasCommandDispatcher.StubResult(CanvasBridgeCommands.PreviewStructure),
-            [CanvasBridgeCommands.ClearPreview] = _ => CanvasCommandDispatcher.StubResult(CanvasBridgeCommands.ClearPreview),
-            [CanvasBridgeCommands.GetPreviewStatus] = _ => CanvasCommandDispatcher.StubResult(CanvasBridgeCommands.GetPreviewStatus),
+            [CanvasBridgeCommands.PreviewStructure] = HandlePreviewStructure,
+            [CanvasBridgeCommands.ClearPreview] = HandleClearPreview,
+            [CanvasBridgeCommands.GetPreviewStatus] = HandleGetPreviewStatus,
         };
 
         return new CanvasCommandDispatcher(handlers);
@@ -199,6 +211,248 @@ public sealed class CanvasListenerComponent : GH_Component
 
         return tcs.Task.GetAwaiter().GetResult();
     }
+
+    /// <summary>
+    /// Runs <paramref name="work"/> on Rhino's UI thread with the live document and blocks
+    /// the calling (background accept-loop) thread until it completes -- the write
+    /// counterpart to <see cref="InvokeOnCanvas"/>. Per this plan's locked decision
+    /// (35-PLAN.md plan_decisions #2), the delegate mutates <see cref="GH_Document"/>
+    /// directly on the UI thread rather than via <c>ScheduleSolution</c>: the bridge
+    /// command does not run inside another component's <c>SolveInstance</c>, so there is
+    /// no in-progress solution to defer around. After <paramref name="work"/> returns,
+    /// <see cref="Grasshopper.Instances.InvalidateCanvas"/> forces the redraw before the
+    /// <see cref="TaskCompletionSource{TResult}"/> resolves, so the TCP response is sent
+    /// only after the preview objects genuinely exist on canvas. A null document (no
+    /// active canvas) resolves to a structured "no document" result instead of invoking
+    /// <paramref name="work"/> with null; any exception raised by <paramref name="work"/>
+    /// itself is captured on the task, mirroring <see cref="InvokeOnCanvas"/>.
+    /// </summary>
+    private object? InvokeOnCanvasWrite(Func<GH_Document, object?> work)
+    {
+        var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        RhinoApp.InvokeOnUiThread(new Action(() =>
+        {
+            try
+            {
+                var doc = OnPingDocument();
+                if (doc is null)
+                {
+                    tcs.SetResult((object?)new { ok = false, message = "No active document." });
+                    return;
+                }
+
+                var result = work(doc);
+                global::Grasshopper.Instances.InvalidateCanvas();
+                tcs.SetResult(result);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        }));
+
+        return tcs.Task.GetAwaiter().GetResult();
+    }
+
+    private object? HandleGetPreviewStatus(CanvasCommandRequest request)
+    {
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument();
+            var pending = PreviewRegistry.Pending.Select(e => new
+            {
+                proposalId = e.ProposalId,
+                kind = e.Kind.ToString(),
+                suggestedName = e.SuggestedName,
+                confidence = e.Confidence,
+                memberCount = doc?.Objects.OfType<GH_Group>()
+                    .FirstOrDefault(g => g.InstanceGuid == e.GroupGuid)?.ObjectIDs.Count ?? 0,
+            }).ToList();
+
+            return (object?)new { pending };
+        });
+    }
+
+    /// <summary>
+    /// Draws one desaturated, <c>[?] </c>-prefixed <see cref="GH_Group"/> per proposal plus
+    /// one text-only scribble legend, all inside a single <see cref="GH_UndoRecord"/>
+    /// ("DG structure proposal") so one Ctrl+Z wipes every trace (RCGN-02). Registers the
+    /// created groups into <see cref="PreviewRegistry"/> so <c>DG STRUCTURE CONFIRM</c>
+    /// (Plan 35-04) can see them.
+    /// </summary>
+    private object? HandlePreviewStructure(CanvasCommandRequest request)
+    {
+        var proposals = ParseProposals(request);
+
+        return InvokeOnCanvasWrite(doc =>
+        {
+            var created = new List<(string proposalId, Guid groupGuid)>();
+            var record = new GH_UndoRecord("DG structure proposal");
+
+            foreach (var proposal in proposals)
+            {
+                EntityTagKind kind;
+                try
+                {
+                    kind = proposal.ToEntityTagKind();
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    // Unknown/unrecognized kind string -- guard-and-continue rather than
+                    // aborting the whole preview render over one malformed proposal.
+                    continue;
+                }
+
+                var group = new GH_Group();
+                group.CreateAttributes();
+                var confidencePercent = (proposal.Confidence * 100d).ToString("F0", CultureInfo.InvariantCulture);
+                group.NickName = $"{CanvasAnnotationStyles.PreviewPrefix}{proposal.SuggestedName} ({confidencePercent}%)";
+                group.Colour = CanvasAnnotationStyles.Preview(CanvasAnnotationStyles.ForKind(kind, nested: false));
+
+                foreach (var memberId in proposal.MemberIds)
+                {
+                    // Guard-and-continue (T-35-08): unparseable/absent member ids are
+                    // skipped rather than throwing out of the render.
+                    if (Guid.TryParse(memberId, out var memberGuid))
+                    {
+                        group.AddObject(memberGuid);
+                    }
+                }
+
+                record.AddAction(new GH_AddObjectAction(group));
+                doc.AddObject(group, false);
+                created.Add((proposal.ProposalId, group.InstanceGuid));
+            }
+
+            var legend = new GH_Scribble();
+            legend.CreateAttributes();
+            legend.Text = $"[?] {created.Count} proposal(s) pending -- run DG STRUCTURE CONFIRM";
+            legend.Font = new Font("Microsoft Sans Serif", 20f, FontStyle.Regular);
+            record.AddAction(new GH_AddObjectAction(legend));
+            doc.AddObject(legend, false);
+
+            doc.UndoServer.PushUndoRecord(record);
+
+            PreviewRegistry.RegisterAll(created, proposals);
+            _previewLegendGuid = legend.InstanceGuid;
+
+            return (object?)new { previewed = created.Count };
+        });
+    }
+
+    /// <summary>
+    /// Removes every currently-pending preview group (via <see cref="PreviewRegistry.Pending"/>)
+    /// plus the legend scribble stashed by the last <see cref="HandlePreviewStructure"/> call,
+    /// then empties the registry. Programmatic removal -- not wrapped in a
+    /// <see cref="GH_UndoRecord"/> (the single-undo contract only applies to the render, not
+    /// to this explicit clear).
+    /// </summary>
+    private object? HandleClearPreview(CanvasCommandRequest request)
+    {
+        return InvokeOnCanvasWrite(doc =>
+        {
+            var removed = 0;
+
+            foreach (var entry in PreviewRegistry.Pending)
+            {
+                var obj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == entry.GroupGuid);
+                if (obj is not null)
+                {
+                    doc.RemoveObject(obj, false);
+                    removed++;
+                }
+            }
+
+            if (_previewLegendGuid is { } legendGuid)
+            {
+                var legendObj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == legendGuid);
+                if (legendObj is not null)
+                {
+                    doc.RemoveObject(legendObj, false);
+                }
+
+                _previewLegendGuid = null;
+            }
+
+            PreviewRegistry.Clear();
+
+            return (object?)new { cleared = removed };
+        });
+    }
+
+    /// <summary>
+    /// Parses the <c>{"proposals":[...]}</c> bridge command parameters (35-PLAN.md
+    /// plan_decisions #1 -- <c>unrecognized[]</c> is report-only and never rendered) into
+    /// <see cref="ProposalDto"/> records. The wire proposal shape (cg_recognition.py) has no
+    /// proposal id of its own, so a stable per-request index-based id (<c>p0</c>, <c>p1</c>,
+    /// ...) is synthesized here so <see cref="PreviewRegistry.RegisterAll"/> can zip
+    /// (proposalId, groupGuid) pairs against these <see cref="ProposalDto"/>s by id.
+    /// Malformed entries are skipped (guard-and-continue), never thrown.
+    /// </summary>
+    private static List<ProposalDto> ParseProposals(CanvasCommandRequest request)
+    {
+        var result = new List<ProposalDto>();
+
+        if (request.Parameters.ValueKind != JsonValueKind.Object
+            || !request.Parameters.TryGetProperty("proposals", out var proposalsElement)
+            || proposalsElement.ValueKind != JsonValueKind.Array)
+        {
+            return result;
+        }
+
+        var index = 0;
+        foreach (var item in proposalsElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                index++;
+                continue;
+            }
+
+            var kind = TryGetJsonString(item, "kind");
+            var suggestedName = TryGetJsonString(item, "suggestedName");
+            var rationale = TryGetJsonString(item, "rationale");
+
+            var procedureIndex = item.TryGetProperty("procedureIndex", out var procEl)
+                && procEl.ValueKind == JsonValueKind.Number
+                && procEl.TryGetInt32(out var parsedProcIndex)
+                ? parsedProcIndex
+                : 0;
+
+            var confidence = item.TryGetProperty("confidence", out var confEl)
+                && confEl.ValueKind == JsonValueKind.Number
+                && confEl.TryGetDouble(out var parsedConfidence)
+                ? parsedConfidence
+                : 0d;
+
+            var memberIds = new List<string>();
+            if (item.TryGetProperty("memberIds", out var membersEl) && membersEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var member in membersEl.EnumerateArray())
+                {
+                    if (member.ValueKind == JsonValueKind.String)
+                    {
+                        var memberId = member.GetString();
+                        if (!string.IsNullOrEmpty(memberId))
+                        {
+                            memberIds.Add(memberId);
+                        }
+                    }
+                }
+            }
+
+            result.Add(new ProposalDto($"p{index}", kind, suggestedName, procedureIndex, memberIds, confidence, rationale));
+            index++;
+        }
+
+        return result;
+    }
+
+    private static string TryGetJsonString(JsonElement obj, string key) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
 
     private void StartListener(int port, string requestKey)
     {
