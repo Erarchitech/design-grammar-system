@@ -57,5 +57,12 @@ internal static class CanvasAnnotationStyles
     /// </summary>
     public static Color Preview(Color baseColor) =>
         Color.FromArgb(140, baseColor.R, baseColor.G, baseColor.B);
+
+    /// <summary>
+    /// Phase 35 preview name-prefix (RCGN-02): prepended to a pending LLM-suggested entity's
+    /// display name so an unconfirmed proposal is visually distinct from a real tagged group
+    /// name at a glance, alongside the desaturated <see cref="Preview(Color)"/> color.
+    /// </summary>
+    public const string PreviewPrefix = "[?] ";
 }
 #endif
