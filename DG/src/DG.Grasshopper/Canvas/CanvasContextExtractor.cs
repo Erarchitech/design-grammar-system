@@ -74,7 +74,7 @@ public static class CanvasContextExtractor
 
         foreach (var group in groupsByGuid.Values)
         {
-            TryAddGroup(raw, group, groupsByGuid);
+            TryAddGroup(raw, group, groupsByGuid, doc);
         }
 
         foreach (var obj in doc.Objects)
@@ -164,7 +164,8 @@ public static class CanvasContextExtractor
         }
     }
 
-    private static void TryAddGroup(RawCanvas raw, GH_Group group, IReadOnlyDictionary<Guid, GH_Group> groupsByGuid)
+    private static void TryAddGroup(
+        RawCanvas raw, GH_Group group, IReadOnlyDictionary<Guid, GH_Group> groupsByGuid, GH_Document? doc)
     {
         try
         {
@@ -186,11 +187,17 @@ public static class CanvasContextExtractor
                 }
             }
 
+            // Phase 35 (RCGN-03): a document ValueTable marker keyed dg.recognized.<groupGuid>
+            // (the ObjectMarkerComponent/dg.objectClassIri precedent -- survives .gh save/reopen)
+            // records that this group came from a confirmed LLM structure proposal.
+            var recognized = doc?.ValueTable.GetValue($"dg.recognized.{group.InstanceGuid}", "false") == "true";
+
             raw.Groups.Add(new RawGroup
             {
                 Nickname = group.NickName ?? string.Empty,
                 MemberIds = memberIds,
                 NestedGroupIds = nestedGroupIds,
+                Recognized = recognized,
             });
         }
         catch

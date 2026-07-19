@@ -14,6 +14,15 @@ public class RawGroup
 
     /// <summary>Child group ids nested inside this group.</summary>
     public List<string> NestedGroupIds { get; init; } = new();
+
+    /// <summary>
+    /// True when the document ValueTable carries a <c>dg.recognized.&lt;groupInstanceGuid&gt;</c>
+    /// marker for this group (Phase 35, RCGN-03) -- set by the extractor's ValueTable read,
+    /// consumed by <see cref="DG.Core.Parsing.CanvasAnnotationParser"/> to set the group-derived
+    /// typed entity's <c>Source</c> to <c>"recognized"</c> instead of <c>"tagged"</c>. Additive
+    /// only; defaults to false (unmarked groups stay tagged).
+    /// </summary>
+    public bool Recognized { get; init; }
 }
 
 /// <summary>
