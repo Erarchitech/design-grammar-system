@@ -1373,6 +1373,13 @@ def post_computgraph_publish(payload: ComputgraphPublishRequest):
             "COMPUTGRAPH_PUBLISH_REQUEST_INVALID",
             422,
         )
+    except Exception as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check Neo4j availability and the publish payload.",
+            "COMPUTGRAPH_PUBLISH_FAILED",
+            502,
+        )
 
 
 # ---------------------------------------------------------------------------
