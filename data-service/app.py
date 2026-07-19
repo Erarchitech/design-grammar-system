@@ -65,6 +65,7 @@ import cg_recognition
 import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
 import gh_bridge
+import computgraph_publish
 
 app = FastAPI()
 
@@ -1328,6 +1329,46 @@ def post_computgraph_recognize(payload: RecognizeRequest):
     except Exception as exc:
         error_msg, hint, code = map_provider_error(exc)
         raise _structured_error_response(error_msg, hint, code, 502)
+
+
+# ---------------------------------------------------------------------------
+# Computgraph publish endpoint (Phase 36-01: CGPD-01/02/03)
+# ---------------------------------------------------------------------------
+
+
+class ComputgraphPublishRequest(BaseModel):
+    """Body for POST /computgraph/publish.
+
+    `cg_context` is the confirmed cgContextJson v1 envelope (carries dgId per
+    entity stamped by CgContextDgIdAssigner before serialization). The route
+    recomputes dgId server-side regardless of any client-stamped value.
+    """
+
+    project: str
+    cg_context: dict
+
+
+@app.post("/computgraph/publish")
+def post_computgraph_publish(payload: ComputgraphPublishRequest):
+    """Publish a confirmed cgContextJson v1 envelope as a Computgraph subgraph.
+
+    Thin route -- opens its own session (so the whole write is one
+    transaction), delegates to computgraph_publish.publish_structure(), and
+    returns {status, publishedCounts, staleEntityIds}. Structured error on
+    malformed input (CGPD-01/02/03).
+    """
+    try:
+        with driver.session() as session:
+            return computgraph_publish.publish_structure(
+                session, payload.project, payload.cg_context
+            )
+    except ValueError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check the submitted cg_context shape (cgContextJson v1 envelope).",
+            "COMPUTGRAPH_PUBLISH_REQUEST_INVALID",
+            422,
+        )
 
 
 # ---------------------------------------------------------------------------
