@@ -21,7 +21,7 @@ date: 2026-07-12
 5. **v10.0 Script Intelligence — Phases 41-49** — Fully planned, isolated.
 6. **v4.0 BOT Ontology Bridge** — Planned, isolated, needs renumbering (50+) per [[decisions/Global phase numbering continues across milestones|global numbering]].
 7. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
-8. **T1 submission preparation** — форматирование по ITcon Author Guidelines, DOI-ссылки, рецензирование научным руководителем.
+8. **T1 submission preparation** — ✅ R9→R10 revision COMPLETE (2026-07-20). Resolved all 42 reviewer comments (Miguel Azenha, 8 major + 16 section + 9 figure + 9 editorial). Draft grew 6.4k→8.5k words (15→18 pp), added 5 tables + new Figure 7 (populated subgraph), removed old metrics figure. All factual claims (queries, reasoner output, ontology counts) verified against live Neo4j/dg-reasoner/OWL. See [[sessions/2026-07-20 T1 ITcon R9→R10 revision — 42 comments resolved|session]] and `Publications/T1_ITcon_R10_Revision_Log.md`. Open items: Figure relayout (C1–C7), namespace minting (A7), companion-paper citation policy check (A6).
 
 ## Upcoming
 
