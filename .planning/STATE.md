@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — AI Workflow Intelligence
-current_phase: 36
-current_phase_name: Computgraph Persistence and Graph Layer Display
+current_phase: 37
+current_phase_name: Script Structure Validation MVP
 status: executing
 stopped_at: Phase 36 UI-SPEC approved
-last_updated: "2026-07-19T13:10:40.898Z"
+last_updated: "2026-07-19T13:52:42.470Z"
 last_activity: 2026-07-19
-last_activity_desc: Phase 36 execution started
+last_activity_desc: Phase 36 complete, transitioned to Phase 37
 progress:
   total_phases: 14
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 38
-  completed_plans: 34
-  percent: 43
+  completed_plans: 37
+  percent: 50
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 36 (Computgraph Persistence and Graph Layer Display) — EXECUTING
-Plan: 2 of 4
+Phase: 37 — Script Structure Validation MVP
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-07-19 — Phase 36 execution started
+Last activity: 2026-07-23 - Completed quick task 260723-s82: Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light)
 
 ## Deferred Verification
 
@@ -296,6 +296,7 @@ Shipped from Phase 20 Plan 02:
 | 260711-gtz | Decrease the size of title in the landing page so it fits the ring | 2026-07-11 | c60f541 | [260711-gtz-decrease-the-size-of-title-in-the-landin](./quick/260711-gtz-decrease-the-size-of-title-in-the-landin/) |
 | 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
+| 260723-s82 | Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light) | 2026-07-23 | 963159c | [260723-s82-fix-graph-viewer-core-animation-theme-aw](./quick/260723-s82-fix-graph-viewer-core-animation-theme-aw/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 | Phase 821 P01 | 40min | 2 tasks | 8 files |
