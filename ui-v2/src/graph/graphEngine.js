@@ -93,9 +93,10 @@ export default class GraphEngine {
     /* thinking-core state (core sphere + streams — see startThinking/stopThinking) */
     this._think = 0; // current intensity 0..1
     this._thinkTarget = 0;
-    this._thinkVideo = null;
-    this._thinkVideoReady = false;
-    this._thinkVideoFailed = false;
+    this._thinkImg = null;
+    this._thinkImgReady = false;
+    this._thinkImgFailed = false;
+    this._onThinkTheme = null;
 
     /* core→node stream + emergence state (see snapshotNodeIds/emitNewNodeStreams) */
     this._growth = null; // sequential core→orbits growth stream (see emitNewNodeStreams)
@@ -151,7 +152,7 @@ export default class GraphEngine {
   start() {
     this._stop = false;
     this.resize();
-    this._initThinkVideo();
+    this._initThinkImg();
     this._onResize = () => this.resize();
     window.addEventListener("resize", this._onResize);
     this.bind();
@@ -161,6 +162,12 @@ export default class GraphEngine {
     this._stop = true;
     cancelAnimationFrame(this._raf);
     window.removeEventListener("resize", this._onResize);
+    if (this._onThinkTheme) window.removeEventListener("dg-theme", this._onThinkTheme);
+    this._onThinkTheme = null;
+    if (this._thinkImg) this._thinkImg.remove();
+    this._thinkImg = null;
+    this._thinkImgReady = false;
+    this._thinkImgFailed = false;
     this.unbind();
   }
   setVisible(v) {
@@ -198,46 +205,51 @@ export default class GraphEngine {
   }
 
   /* ---------------- thinking core ---------------- */
-  _initThinkVideo() {
-    if (this._thinkVideo) return; // idempotent — created once per engine instance
+  _thinkSrc() {
+    // theme-matched transparent-background loops (see docs/DG_Think_Animation-*.gif)
+    return document.documentElement.dataset.theme === "dark" ? "/dg-think-dark.gif" : "/dg-think-light.gif";
+  }
+  _initThinkImg() {
+    if (this._thinkImg) return; // idempotent — created once per engine run
+    const canvas = this.els.canvas;
+    if (!canvas || !canvas.parentElement) return;
     try {
-      const v = document.createElement("video");
-      v.muted = true;
-      v.loop = true;
-      v.playsInline = true;
-      v.preload = "auto";
-      const onReady = () => {
-        this._thinkVideoReady = true;
-      };
-      v.addEventListener("canplay", onReady);
-      v.addEventListener("loadeddata", onReady);
-      v.addEventListener("error", () => {
-        this._thinkVideoFailed = true;
+      const img = document.createElement("img");
+      img.alt = "";
+      img.decoding = "async";
+      // An animated GIF blitted through drawImage() freezes on frame 1, so the
+      // core renders as a DOM overlay instead: inserted right after the canvas
+      // it shares the canvas's stacking layer and sits below the UI panels
+      // that follow in the DOM. The GIF background is transparent, so no
+      // backdrop/composite is needed — this is what removes the dark contour.
+      Object.assign(img.style, {
+        position: "absolute",
+        left: "0",
+        top: "0",
+        opacity: "0",
+        pointerEvents: "none",
+        willChange: "transform, opacity"
       });
-      this._thinkVideo = v;
-      // Fetch to a blob URL instead of assigning the network URL directly:
-      // Chrome defers <video> network loading in background tabs (and fires
-      // non-fatal "stalled"), which would strand the sphere on its fallback.
-      // A blob source is local data, so the element loads immediately.
-      fetch("/dg-think-sphere.mp4")
-        .then((r) => {
-          if (!r.ok) throw new Error(String(r.status));
-          return r.blob();
-        })
-        .then((b) => {
-          v.src = URL.createObjectURL(b);
-          // if a turn started before the blob arrived, start playback now —
-          // play() called before src exists is a no-op and leaves frame 0 stuck
-          if (this._thinkTarget > 0) {
-            const p = v.play();
-            if (p && typeof p.catch === "function") p.catch(() => {});
-          }
-        })
-        .catch(() => {
-          this._thinkVideoFailed = true;
-        });
+      img.addEventListener("load", () => {
+        this._thinkImgReady = true;
+        this._thinkImgFailed = false;
+      });
+      img.addEventListener("error", () => {
+        this._thinkImgFailed = true; // procedural canvas glow takes over
+      });
+      img.src = this._thinkSrc();
+      canvas.insertAdjacentElement("afterend", img);
+      this._thinkImg = img;
+      // live theme switches swap the loop variant (dark↔light)
+      this._onThinkTheme = () => {
+        if (!this._thinkImg) return;
+        this._thinkImgReady = false;
+        this._thinkImgFailed = false;
+        this._thinkImg.src = this._thinkSrc();
+      };
+      window.addEventListener("dg-theme", this._onThinkTheme);
     } catch {
-      this._thinkVideoFailed = true;
+      this._thinkImgFailed = true;
     }
   }
   startThinking() {
@@ -246,11 +258,6 @@ export default class GraphEngine {
     // camera is saved and restored once the whole sequence settles
     if (!this._camSaved) this._camSaved = { ...this._camT };
     this._camT = { x: 0, y: 0, s: 2.6 };
-    const v = this._thinkVideo;
-    if (v && !this._thinkVideoFailed) {
-      const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-    }
   }
   stopThinking() {
     this._thinkTarget = 0;
@@ -262,18 +269,7 @@ export default class GraphEngine {
     const target = this._growth && !this._growth.done ? Math.max(this._thinkTarget, 0.6) : this._thinkTarget;
     const k = Math.min(1, dt * 4);
     this._think += (target - this._think) * k;
-    if (this._think < 0.01 && target === 0) {
-      this._think = 0;
-      if (this._thinkVideo && !this._thinkVideo.paused) this._thinkVideo.pause();
-    } else if (this._think > 0.01) {
-      // self-heal: keep the loop actually running while the sphere is visible
-      // (covers play()/src races and browser-initiated pauses)
-      const v = this._thinkVideo;
-      if (v && this._thinkVideoReady && v.paused) {
-        const p = v.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      }
-    }
+    if (this._think < 0.01 && target === 0) this._think = 0;
     // restore the pre-think camera once the sphere is gone and streaming ended
     if (
       this._camSaved &&
@@ -287,57 +283,45 @@ export default class GraphEngine {
   }
   drawThinkingCore(cx, cy, base, t) {
     const ctx = this._ctx;
-    if (!ctx || this._think < 0.005) return;
+    const img = this._thinkImg;
+    if (!ctx || this._think < 0.005) {
+      if (img) img.style.opacity = "0";
+      return;
+    }
     const R = base * 0.066;
-    // local dark backdrop first — the light paper canvas needs a black field
-    // for the white wisps to glow against under a "lighter" composite
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    bg.addColorStop(0, `rgba(8,8,12,${0.92 * this._think})`);
-    bg.addColorStop(1, "rgba(8,8,12,0)");
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, TAU);
-    ctx.fill();
-
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = this._think;
-    if (this._thinkVideoReady && !this._thinkVideoFailed) {
-      // Clip the video to a circle: the mp4 is a square frame whose near-black
-      // corners still leak a faint square under "lighter" (limited-range H.264
-      // black is not exactly 0). The sphere's wisps sit well inside R, so the
-      // circular clip removes the square without touching the sphere. Draw the
-      // video slightly oversized (2.2R) so the sphere fills the clipped disc.
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, 0, TAU);
-      ctx.clip();
-      const vR = R * 1.1;
-      ctx.drawImage(this._thinkVideo, cx - vR, cy - vR, 2 * vR, 2 * vR);
-      ctx.restore();
+    if (img && this._thinkImgReady && !this._thinkImgFailed) {
+      // Transparent-background GIF overlay — no backdrop, no composite, no
+      // clip. cx/cy are CSS px (the canvas transform is DPR-only), so they
+      // map 1:1 onto the overlay, which shares the canvas's origin. Draw at
+      // 2.2R square, matching the old video's draw size.
+      const S = 2.2 * R;
+      img.style.width = S + "px";
+      img.style.height = S + "px";
+      img.style.transform = `translate(${cx - S / 2}px, ${cy - S / 2}px)`;
+      img.style.opacity = String(this._think);
     } else {
-      // procedural fallback — pulsing near-white glow + faint rim strokes
-      const glowA = this._think * (0.55 + 0.25 * Math.sin(t * 2.2));
+      if (img) img.style.opacity = "0";
+      // procedural fallback — theme-aware pulsing glow + faint rim strokes
+      // (plain source-over: ink on paper in light mode, light ink in dark)
+      const c = document.documentElement.dataset.theme === "dark" ? "240,240,240" : "10,10,10";
+      const glowA = this._think * (0.35 + 0.15 * Math.sin(t * 2.2));
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-      glow.addColorStop(0, `rgba(245,245,248,${glowA})`);
-      glow.addColorStop(1, "rgba(245,245,248,0)");
+      glow.addColorStop(0, `rgba(${c},${glowA})`);
+      glow.addColorStop(1, `rgba(${c},0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, TAU);
       ctx.fill();
-      ctx.strokeStyle = `rgba(245,245,248,${glowA * 0.5})`;
+      ctx.strokeStyle = `rgba(${c},${glowA * 0.5})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(cx, cy, R * 0.7, 0, TAU);
       ctx.stroke();
-      ctx.strokeStyle = `rgba(245,245,248,${glowA * 0.3})`;
+      ctx.strokeStyle = `rgba(${c},${glowA * 0.3})`;
       ctx.beginPath();
       ctx.arc(cx, cy, R * 0.9, 0, TAU);
       ctx.stroke();
     }
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
 
     // Task 2 populates drawStreams(); guarded for the same reason as above.
     if (this.drawStreams) this.drawStreams(cx, cy, base, t);
