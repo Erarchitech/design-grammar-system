@@ -1,9 +1,13 @@
 ---
 tags: [home, priorities]
-date: 2026-07-12
+date: 2026-07-18
 ---
 
 # Current Priorities
+
+## Recently Completed
+
+0. **PhD Knowledge Base Consolidation** — ✅ 2026-07-18. Vault merge: `research/` (78 mig notes + SoA taxonomy) + `dissemination/` (publications status board, T1–T4, consistency map). Archive cleanup: 52 old revisions + 25 temp files + course bulk. Secrets secured (`.secrets/`). Full audit trail in [[MIGRATION-LOG|MIGRATION-LOG.md]]. Pending: key rotation, git commit. See [[sessions/2026-07-18 PhD knowledge base consolidation and vault merge|session]].
 
 ## Active
 
@@ -25,7 +29,7 @@ date: 2026-07-12
 
 ## Upcoming
 
-- **v9.0 UAT Pipeline (Group 4)** — ✅ Group 3 COMPLETE (2026-07-20): Phase 34 guard-rails + undo + aesthetic verified on Frame definition. Partial-reselection edge case documented as known limitation (deferred). Ready for Group 4 (Phase 35 recognition + Phase 36 publish + ui-v2 display) — the main E2E spine; see `.planning/phases/v9.0-PIPELINE-UAT.md` for unified test structure and dedup map showing how later phases transitively re-prove earlier ones.
+- **v9.0 UAT Pipeline (Group 4)** — ✅ Group 3 COMPLETE (2026-07-20): Phase 34 guard-rails + undo + aesthetic verified on Frame definition. 🔄 Group 4 IN PROGRESS (2026-07-25): tested on UrbanBlock (Frame fixture is JSON-only, no `.gh` file); plumbing passes (recognize→preview→validate cycle), 4 findings documented (token-truncation, silent fallback, recognition quality gap on DeepSeek, re-preview undo crash). Tests 4.1–4.2 passing with synthetic proposals; tests 4.3–4.5 pending. See `.planning/phases/35-llm-recognition-canvas-preview/35-UAT.md` and debugging notes.
 - **v8.2 Complete:** Phase 824 (CONNECTOR Credential Integration) in-Rhino UAT → `/gsd-complete-milestone v8.2`
 - **v9.0 AI Workflow Intelligence — Phases 28-40** — Phases 37 (Script Structure Validation MVP) next after UAT. Phase 38 (AI-Generated Inputs) planned. Phases 39–40 deferred (auto-validation investigation, E2E + docs).
 - **v4.0 BOT Ontology Bridge** — After v9.0
