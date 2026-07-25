@@ -120,7 +120,7 @@ export default function Combobox({
       {shown.length === 0 && (
         <div
           className="dg-annotation dg-annotation--muted"
-          style={{ padding: "8px 8px", fontSize: 10, whiteSpace: "nowrap" }}
+          style={{ flex: "none", padding: "8px 8px", fontSize: 10, whiteSpace: "nowrap" }}
         >
           {emptyLabel}
         </div>
@@ -138,6 +138,11 @@ export default function Combobox({
             onMouseEnter={() => setActive(k)}
             title={String(o)}
             style={{
+              // flex: "none" is load-bearing: this is a column flex container
+              // with a maxHeight, so without it the rows shrink below their
+              // content height once the list overflows and the text overlaps
+              // instead of scrolling.
+              flex: "none",
               padding: "6px 8px",
               borderRadius: 6,
               cursor: "pointer",
@@ -156,7 +161,7 @@ export default function Combobox({
       {truncated > 0 && (
         <div
           className="dg-annotation dg-annotation--muted"
-          style={{ padding: "6px 8px", fontSize: 9, whiteSpace: "nowrap", borderTop: "1px solid var(--color-hairline)" }}
+          style={{ flex: "none", padding: "6px 8px", fontSize: 9, whiteSpace: "nowrap", borderTop: "1px solid var(--color-hairline)" }}
         >
           +{truncated} more · keep typing to narrow
         </div>
