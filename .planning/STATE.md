@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 Phase: 37 — Script Structure Validation MVP
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-07-23 - Completed quick task 260723-s82: Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light)
+Last activity: 2026-07-23 - Completed quick task 260723-tgi: Graph Viewer search bar adaptive value dropdown (new Combobox primitive)
 
 ## Deferred Verification
 
@@ -297,6 +297,7 @@ Shipped from Phase 20 Plan 02:
 | 260711-shf | Fold Session History panel on outside click | 2026-07-11 | 06c0dd1 | [260711-shf-fold-session-history-on-outside-click](./quick/260711-shf-fold-session-history-on-outside-click/) |
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
 | 260723-s82 | Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light) | 2026-07-23 | 963159c | [260723-s82-fix-graph-viewer-core-animation-theme-aw](./quick/260723-s82-fix-graph-viewer-core-animation-theme-aw/) |
+| 260723-tgi | Graph Viewer search bar: adaptive value dropdown listing all unique values for the selected field | 2026-07-23 | f132719 | [260723-tgi-in-graph-viewer-for-search-bar-add-dropd](./quick/260723-tgi-in-graph-viewer-for-search-bar-add-dropd/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 | Phase 821 P01 | 40min | 2 tasks | 8 files |
