@@ -76,6 +76,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 32.1 DG ID cross-platform identity design|Phase 32.1 (v9.0): DG ID cross-platform identity — dgId wraps cgId, Representation registry, SharedProperty provenance, Revit binds via UniqueId not ElementId]]
 - [[decisions/DG ID cross-platform identity scheme|Phase 32.1 (v9.0): DG ID scheme ADR (DGID-06) — positioning against Rhino.Inside.Revit, Speckle, IFC GlobalId, Revit UniqueId, BHoM]]
 - [[decisions/Phase 36 Computgraph publish avoids mint_identity|Phase 36 (v9.0): Computgraph publish uses compute_dg_id, NOT mint_identity — prevents label-less MERGE anchor duplicates]]
+- [[decisions/Graph Viewer search bar adaptive value dropdown|Graph Viewer search bar: Combobox primitive — data-derived value list, open-ended (free text preserved), no engine changes]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -97,6 +98,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/graph-query-design-states-schema-mismatch|Phase 29 graph_query design-state bug: schema mismatch between aspirational :DesignState nodes and production ValidationRun.statePayloadJson]]
 - [[debugging/perplexity-mcp-parallel-call-crashes-browser-profile|Perplexity MCP: parallel calls crash the shared Chrome profile lock]]
 - [[debugging/Phase 36 schema doc bugs|Phase 36: Schema doc bugs — HAS_INTERFACE direction, PARAM_LINK direction, Algorithm merge key (runtime was correct, docs were stale)]]
+- [[debugging/Column flex dropdown rows overlap instead of scrolling|Column flex + maxHeight: rows compress instead of scrolling (text overlaps, no scrollbar) — fix with flex: none on children]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -209,6 +211,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-18 Phase 32.1 complete — all 7 plans executed|2026-07-18 Phase 32.1 COMPLETE — 7/7 plans, 290 C# + 15 Python tests, cross-language parity verified]]
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 - [[sessions/2026-07-19 Phase 36 Computgraph Persistence and Graph Layer Display|2026-07-19 Phase 36 — Computgraph Persistence & Graph Layer Display (autonomous execution, 4 plans, 12 commits, 15/15 verified)]]
+- [[sessions/2026-07-25 Graph Viewer search bar adaptive value dropdown|2026-07-25 Graph Viewer search bar — adaptive value dropdown (quick 260723-tgi, new Combobox primitive, flex-shrink overlap fix)]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
