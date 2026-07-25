@@ -8,6 +8,7 @@ import {
   Button,
   Chip,
   Collapsible,
+  Combobox,
   Input,
   Progress,
   PropertiesTable,
@@ -728,6 +729,31 @@ export default function GraphScreen({ active, onBack, project }) {
       )
     : [{ value: "*", label: "Any field" }];
 
+  // Every distinct value present in the active ring for the selected field —
+  // feeds the search bar's value dropdown so it adapts to `searchProp`.
+  // "Any field" unions labels + all property values; "Label" uses node labels;
+  // a specific key uses only that property's values. Sorted naturally so
+  // numeric-ish values (75, 100) don't order lexicographically.
+  const fieldValues = React.useMemo(() => {
+    if (!ringN) return [];
+    const seen = new Set();
+    for (const n of ringN.nodes) {
+      if (searchProp === "*") {
+        if (n.label) seen.add(String(n.label));
+        for (const p of n.props) {
+          const v = p[1];
+          if (v !== null && v !== undefined && String(v) !== "") seen.add(String(v));
+        }
+      } else if (searchProp === "__label") {
+        if (n.label) seen.add(String(n.label));
+      } else {
+        const kv = n.props.find((p) => p[0] === searchProp);
+        if (kv && kv[1] !== null && kv[1] !== undefined && String(kv[1]) !== "") seen.add(String(kv[1]));
+      }
+    }
+    return [...seen].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  }, [ringN, searchProp]);
+
   return (
     <div style={{ position: "absolute", inset: 0, background: "var(--color-canvas)" }}>
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none" }} />
@@ -1127,13 +1153,21 @@ export default function GraphScreen({ active, onBack, project }) {
             }}
             style={{ height: 32, width: 136, fontSize: 12, padding: "0 30px 0 12px" }}
           />
-          <SearchField
+          <Combobox
             placeholder={"filter by " + (searchProp === "*" ? "any field" : searchProp === "__label" ? "label" : searchProp) + "…"}
             value={q}
+            options={fieldValues}
+            openDirection="up"
+            emptyLabel={fieldValues.length ? "No matching values" : "No values in this layer"}
             onChange={(e) => {
               setQ(e.target.value);
               setFilterOn(!!e.target.value);
               setFilterQ(e.target.value);
+            }}
+            onPick={(v) => {
+              setQ(v);
+              setFilterOn(!!v);
+              setFilterQ(v);
             }}
             style={{ width: 184 }}
           />

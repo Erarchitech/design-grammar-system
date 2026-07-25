@@ -3,6 +3,7 @@
 
 export { default as Button } from "./forms/Button.jsx";
 export { default as Checkbox } from "./forms/Checkbox.jsx";
+export { default as Combobox } from "./forms/Combobox.jsx";
 export { default as Input } from "./forms/Input.jsx";
 export { default as SearchField } from "./forms/SearchField.jsx";
 export { default as Select } from "./forms/Select.jsx";
