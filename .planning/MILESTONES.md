@@ -92,6 +92,20 @@ Two axes: (1) LLM infrastructure — provider-agnostic cloud LLM connector (user
 
 ---
 
+## v9.1 DG Canvas Chatbot Node (Future)
+
+**Status:** Planned (isolated) — defined 2026-07-27; activates via `/gsd-new-milestone` after v9.0's Phases 32–36 are verified. Does not modify `.planning/phases/`, STATE.md, or PROJECT.md's Current Milestone.
+**Defined:** 2026-07-27
+
+Reassembles the five v9.0 canvas-intelligence components (DG CANVAS LISTENER, DG ENTITY TAG, DG OBJECT MARKER, DG STRUCTURE CONFIRM, DG COMPUTGRAPH PUBLISH) into a **single chatbot node**, by analogy with the [Ant](https://rhino-ant.ai/) add-in. Dropping the node starts the canvas bridge automatically — no `Run` toggle, no `Port` wiring; double-clicking opens a native Eto.Forms chat window whose header shows the platform-selected LLM, the active project, and the listener status. The Grasshopper selection *is* the context: the architect asks about highlighted components in plain language, and a `/dg-` slash-command namespace (autocomplete, argument hints, `/dg-help`) drives tagging, marking, recognition, confirmation, and publishing through deterministic handlers — never through the LLM. The chatbot can also volunteer its own recognised entities for a selection. All five superseded components keep their GUIDs and behaviour as deprecated, ribbon-hidden fallbacks, so **no saved `.gh` file breaks** — deliberately unlike the v7.0 CLASSIFICATOR removal and the v8.2 Phase 825 CONNECTOR GUID break.
+
+Scope boundary: the chatbot writes DG artefacts only. Creating or rewiring native Grasshopper components, script generation, and script editing remain v10.0's scope.
+
+**Phases planned:** 8 (Phases 910–917, 41 requirements)
+→ [Requirements](v9.1-REQUIREMENTS.md) | [Roadmap](v9.1-ROADMAP.md) | [Research](../research/v9.1-CHATBOT-NODE-RESEARCH.md)
+
+---
+
 ## v10.0 Script Intelligence (Future)
 
 **Status:** Planned (isolated) — activates via `/gsd-new-milestone` after v9.0 ships

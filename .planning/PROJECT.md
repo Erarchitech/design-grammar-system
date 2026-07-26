@@ -55,6 +55,8 @@ Architects can express design constraints in plain language and instantly valida
 - [ ] Phases 32–37: Grasshopper canvas → Computgraph serialization pipeline (serialization core, DG canvas bridge, tagging, LLM recognition + on-canvas preview, persistence/display, structure-validation MVP)
 - [ ] Phases 38–40: AI-generated script inputs, DesignState auto-validation investigation, E2E + docs
 
+**Defined but NOT activated: v9.1 DG Canvas Chatbot Node** (Phases 910–917, 41 requirements; `.planning/milestones/v9.1-REQUIREMENTS.md` + `v9.1-ROADMAP.md`, defined 2026-07-27) — reassembles the five v9.0 canvas-intelligence components into one auto-listening chatbot node with an Eto chat window and a `/dg-` slash-command namespace (Ant analogy). Isolated like v10.0/v4.0: it does not touch `.planning/phases/`, STATE.md, or this Current Milestone section. Activates via `/gsd-new-milestone` once v9.0 Phases 32–36 are verified.
+
 ### Out of Scope
 
 <!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
@@ -152,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-12 — v8.2 Connector Integration & Reasoning Engine complete (Phases 820–824, override closeout); v9.0 AI Workflow Intelligence reactivated (Phase 29 next)*
+*Last updated: 2026-07-27 — v9.1 DG Canvas Chatbot Node defined as an isolated future milestone (Phases 910–917); v9.0 AI Workflow Intelligence remains the active milestone (Phase 35 executing)*
