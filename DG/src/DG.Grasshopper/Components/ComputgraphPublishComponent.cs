@@ -99,6 +99,29 @@ public sealed class ComputgraphPublishComponent : GH_Component
             // Read-before-write: re-extract fresh from the live canvas (T-36-A3).
             var raw = CanvasContextExtractor.ExtractRaw(doc, project);
             var context = CanvasAnnotationParser.Parse(raw);
+
+            // Pre-flight: data-service rejects the ENTIRE payload when a single parameter has no
+            // dataType (ParameterShape_dataType, sh:minCount 1), so one untypeable group would
+            // silently block every other valid node. Fail here instead, naming the culprits (F5).
+            var untypedParameters = context.Algorithms
+                .SelectMany(a => a.Procedures)
+                .SelectMany(p => p.Parameters)
+                .Where(p => p.DataType is null)
+                .Select(p => p.Id)
+                .ToList();
+
+            if (untypedParameters.Count > 0)
+            {
+                _status = $"What: {untypedParameters.Count} parameter group(s) have no inferable dataType, and " +
+                          "the data-service rejects the whole payload when even one is missing. " +
+                          "Where: DG COMPUTGRAPH PUBLISH.PublishCanvas. " +
+                          "How to fix: Give each listed group a typeable source (Number Slider, Value List, Panel, " +
+                          "Boolean Toggle, or a bare Number/Integer/Text/geometry param), or ungroup it. " +
+                          $"Parameters: {string.Join(", ", untypedParameters)}";
+                _staleEntityIds = new List<string>();
+                return;
+            }
+
             CgContextDgIdAssigner.AssignDgIds(context, project);
             var cgContextJson = ComputgraphContextSerializer.Serialize(context);
 

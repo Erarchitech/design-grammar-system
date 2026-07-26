@@ -280,6 +280,96 @@ public sealed class CanvasAnnotationParserTests
     }
 
     [Fact]
+    public void Parse_BareNumberMember_InfersFloatDataTypeWithoutWarning()
+    {
+        // F5 repro: a bare Number component is an ordinary Constant source, but it used to infer
+        // no dataType at all -- which 422s the entire publish payload.
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "12_Const_Num", MemberIds = { "n1" } } },
+            Nodes = { new CgNode { InstanceId = "n1", Name = "Number" } },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 12)
+            .Parameters.Single(p => p.Name == "Num");
+
+        Assert.Equal(ParamDataType.Float, parameter.DataType);
+        Assert.Empty(context.Warnings);
+    }
+
+    [Theory]
+    [InlineData("Integer", ParamDataType.Integer)]
+    [InlineData("Text", ParamDataType.Text)]
+    [InlineData("Brep", ParamDataType.Geometry)]
+    [InlineData("Curve", ParamDataType.Geometry)]
+    public void Parse_BarePrimitiveParamMember_InfersMatchingDataType(string componentName, ParamDataType expected)
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Emg_Result", MemberIds = { "p1" } } },
+            Nodes = { new CgNode { InstanceId = "p1", Name = componentName } },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 11)
+            .Parameters.Single(p => p.Name == "Result");
+
+        Assert.Equal(expected, parameter.DataType);
+    }
+
+    [Fact]
+    public void Parse_SliderAndBareNumberMembers_PrefersSliderWithoutConflictWarning()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Var_SpanWidth", MemberIds = { "s1", "n1" } } },
+            Nodes =
+            {
+                new CgNode
+                {
+                    InstanceId = "s1",
+                    Name = "Number Slider",
+                    Slider = new SliderDomain { Min = 0, Max = 10, Step = 0.5 },
+                    IsIntegerSlider = false,
+                },
+                new CgNode { InstanceId = "n1", Name = "Number" },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 11)
+            .Parameters.Single(p => p.Name == "SpanWidth");
+
+        Assert.Equal(ParamDataType.Float, parameter.DataType);
+        Assert.NotNull(parameter.Domain);
+        Assert.DoesNotContain(context.Warnings, w => w.Contains("conflicting"));
+    }
+
+    [Fact]
+    public void Parse_UntypeableMember_LeavesDataTypeNullButWarns()
+    {
+        var raw = new RawCanvas
+        {
+            Groups = { new RawGroup { Nickname = "11_Const_Mystery", MemberIds = { "x1" } } },
+            Nodes = { new CgNode { InstanceId = "x1", Name = "Series" } },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+
+        var parameter = context.Algorithms.Single().Procedures.Single(p => p.Index == 11)
+            .Parameters.Single(p => p.Name == "Mystery");
+
+        Assert.Null(parameter.DataType);
+        Assert.Contains(
+            context.Warnings,
+            w => w.Contains("11_Const_Mystery") && w.Contains("dataType is unset"));
+    }
+
+    [Fact]
     public void Parse_CyclicPatternNesting_StopsWithWarningInsteadOfHanging()
     {
         var raw = new RawCanvas

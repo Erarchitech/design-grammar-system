@@ -51,6 +51,44 @@ public static class CanvasAnnotationParser
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
+    /// Widget members -- an explicit authoring choice, so they outrank the primitive tier.
+    /// </summary>
+    private static readonly PrimaryComponentKind[] WidgetPrecedence =
+    {
+        PrimaryComponentKind.Slider,
+        PrimaryComponentKind.ValueList,
+        PrimaryComponentKind.Panel,
+        PrimaryComponentKind.Boolean,
+    };
+
+    /// <summary>
+    /// Bare GH primitive params -- the fallback tier consulted only when a parameter group holds
+    /// no widget member. Without it an ordinary Constant source (a bare Number) infers no dataType
+    /// at all and the whole publish payload is rejected (F5).
+    /// </summary>
+    private static readonly PrimaryComponentKind[] PrimitivePrecedence =
+    {
+        PrimaryComponentKind.Number,
+        PrimaryComponentKind.Integer,
+        PrimaryComponentKind.Text,
+        PrimaryComponentKind.Geometry,
+    };
+
+    private const string WidgetPrecedenceLabel = "slider > value list > panel > boolean";
+
+    private const string PrimitivePrecedenceLabel = "number > integer > text > geometry";
+
+    /// <summary>
+    /// GH geometry param names, matched exactly -- a geometry-valued Emergent parameter is as
+    /// common as a numeric Constant and is otherwise untypeable.
+    /// </summary>
+    private static readonly HashSet<string> GeometryParamNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Geometry", "Point", "Vector", "Plane", "Line", "Circle", "Arc", "Curve",
+        "Surface", "Brep", "Mesh", "SubD", "Box", "Rectangle", "Transform",
+    };
+
+    /// <summary>
     /// Classifies a <see cref="RawCanvas"/> into a populated <see cref="CgContext"/>.
     /// Throws only for a null <paramref name="raw"/> (API-boundary guard); unrecognized
     /// scribble/group text is routed to the untagged set and never guessed.
@@ -447,26 +485,51 @@ public static class CanvasAnnotationParser
     private static (ParamDataType? DataType, SliderDomain? Domain, string? Warning) InferParameterDataType(
         string parameterNickname, IEnumerable<CgNode> memberNodes)
     {
-        var classified = memberNodes
+        var members = memberNodes.ToList();
+        var classified = members
             .Select(n => (Node: n, Kind: ClassifyNodeKind(n)))
             .Where(t => t.Kind != PrimaryComponentKind.None)
             .ToList();
 
-        if (classified.Count == 0)
+        // Widget members (slider / value list / panel / toggle) are a deliberate authoring choice, so
+        // they win outright over bare primitive params, which are only a fallback tier. Keeping the
+        // two tiers separate also keeps the conflict warning from firing on the common
+        // "slider wired through a Number param" shape.
+        var tier = classified.Where(c => WidgetPrecedence.Contains(c.Kind)).ToList();
+        var precedence = WidgetPrecedence;
+        var precedenceLabel = WidgetPrecedenceLabel;
+
+        if (tier.Count == 0)
         {
-            return (null, null, null);
+            tier = classified.Where(c => PrimitivePrecedence.Contains(c.Kind)).ToList();
+            precedence = PrimitivePrecedence;
+            precedenceLabel = PrimitivePrecedenceLabel;
         }
 
-        var distinctKinds = classified.Select(c => c.Kind).Distinct().ToList();
+        if (tier.Count == 0)
+        {
+            // A null dataType is fatal downstream -- data-service rejects the WHOLE publish payload
+            // when one parameter lacks it (ParameterShape_dataType, sh:minCount 1). Never let that
+            // leave the parser silently; the author must see it on the context pull. Member-less
+            // groups stay quiet (tag-then-populate is a normal workflow) -- the publish component's
+            // pre-flight catches those instead.
+            return members.Count == 0
+                ? (null, null, null)
+                : (null, null,
+                    $"Parameter '{parameterNickname}' has no member component the parser can type " +
+                    $"(expected {WidgetPrecedenceLabel}, or a Number/Integer/Text/geometry param); " +
+                    "dataType is unset and publishing will reject the payload.");
+        }
+
+        var distinctKinds = tier.Select(c => c.Kind).Distinct().ToList();
         string? warning = distinctKinds.Count > 1
             ? $"Parameter '{parameterNickname}' has conflicting member component types " +
-              $"({string.Join(", ", distinctKinds)}); resolved via precedence slider > value list > panel > boolean."
+              $"({string.Join(", ", distinctKinds)}); resolved via precedence {precedenceLabel}."
             : null;
 
-        var primary = classified.FirstOrDefault(c => c.Kind == PrimaryComponentKind.Slider).Node
-            ?? classified.FirstOrDefault(c => c.Kind == PrimaryComponentKind.ValueList).Node
-            ?? classified.FirstOrDefault(c => c.Kind == PrimaryComponentKind.Panel).Node
-            ?? classified.FirstOrDefault(c => c.Kind == PrimaryComponentKind.Boolean).Node;
+        var primary = precedence
+            .Select(kind => tier.FirstOrDefault(c => c.Kind == kind).Node)
+            .FirstOrDefault(n => n is not null);
 
         if (primary is null)
         {
@@ -479,12 +542,16 @@ public static class CanvasAnnotationParser
             return (dataType, primary.Slider, warning);
         }
 
-        var primaryKind = ClassifyNodeKind(primary);
-        var textOrBoolean = primaryKind == PrimaryComponentKind.Boolean
-            ? ParamDataType.Boolean
-            : ParamDataType.Text;
+        var inferred = ClassifyNodeKind(primary) switch
+        {
+            PrimaryComponentKind.Boolean => ParamDataType.Boolean,
+            PrimaryComponentKind.Number => ParamDataType.Float,
+            PrimaryComponentKind.Integer => ParamDataType.Integer,
+            PrimaryComponentKind.Geometry => ParamDataType.Geometry,
+            _ => ParamDataType.Text,
+        };
 
-        return (textOrBoolean, null, warning);
+        return (inferred, null, warning);
     }
 
     private static PrimaryComponentKind ClassifyNodeKind(CgNode node)
@@ -511,6 +578,29 @@ public static class CanvasAnnotationParser
             return PrimaryComponentKind.Boolean;
         }
 
+        // Fallback tier: bare GH primitive params carry no widget UI but still imply a dataType.
+        // Matched on the exact param name so "Number Slider"-style widgets never land here.
+        if (name.Equals("Number", StringComparison.OrdinalIgnoreCase))
+        {
+            return PrimaryComponentKind.Number;
+        }
+
+        if (name.Equals("Integer", StringComparison.OrdinalIgnoreCase))
+        {
+            return PrimaryComponentKind.Integer;
+        }
+
+        if (name.Equals("Text", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("String", StringComparison.OrdinalIgnoreCase))
+        {
+            return PrimaryComponentKind.Text;
+        }
+
+        if (GeometryParamNames.Contains(name))
+        {
+            return PrimaryComponentKind.Geometry;
+        }
+
         return PrimaryComponentKind.None;
     }
 
@@ -529,6 +619,10 @@ public static class CanvasAnnotationParser
         ValueList,
         Slider,
         Boolean,
+        Number,
+        Integer,
+        Text,
+        Geometry,
     }
 
     private sealed record PendingPattern(

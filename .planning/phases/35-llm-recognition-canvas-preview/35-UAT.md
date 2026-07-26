@@ -127,6 +127,35 @@ members OR emit a warning at parse time AND validate at accept time, plus consid
 than all-or-nothing publish rejection. Severity: high (blocks the terminal integration gate on a
 realistic canvas). Cross-phase: 34 (parser) / 35 (accept) / 36 (publish).
 
+**Status 2026-07-26 — fixed (a) + (b) via `/gsd-audit-fix`; (c) left open by design.**
+- (a) `InferParameterDataType` now has a two-tier precedence. Widget members (slider > value list >
+  panel > boolean) still win outright; when a group holds none, a **primitive fallback tier**
+  (number > integer > text > geometry) types bare GH params — `Number`→Float, `Integer`→Integer,
+  `Text`/`String`→Text, and the 15 exact geometry param names→Geometry. The F5 repro
+  (`12_Const_Num` holding a bare Number) now infers Float. Splitting the tiers also keeps the
+  pre-existing "conflicting member component types" warning from firing on the very common
+  slider-plus-Number-param shape.
+- (a′) When members are present but none type, the parser no longer returns silently: it appends a
+  `…dataType is unset and publishing will reject the payload` warning, so the context pull stops
+  looking clean. Member-less groups stay quiet on purpose (tag-then-populate is a normal workflow) —
+  they are caught by the pre-flight below instead.
+- (b) `ComputgraphPublishComponent.PublishCanvas` gained a pre-flight that refuses to POST when any
+  parameter still has a null dataType, naming every offending id in a What/Where/How-to-fix status.
+  This is the accept-side guard in effect: an unpublishable group is now reported locally and
+  actionably instead of arriving as a server 422 that discards the whole payload.
+- (c) **Still open — per-entity instead of all-or-nothing publish rejection.** Deliberately not
+  taken: partial-write semantics change the `/computgraph/publish` response contract and interact
+  with MERGE idempotency and stale-entity reporting. That is a design decision, not a mechanical
+  fix. With (a) and (b) in place it is no longer on the critical path — the wholesale 422 is now
+  unreachable from the canvas, since the publish component fails first.
+- Verification: 7 new xUnit cases in `CanvasAnnotationParserTests` (bare-Number→Float; Integer/Text/
+  Brep/Curve theory; slider-beats-bare-Number with no conflict warning; untypeable-member warning).
+  Full suite **375 pass / 2 fail**, the 2 being the documented `DesignStateValidationFlowTests`
+  order-dependency flake (both pass in isolation — re-confirmed). `DG.sln` Release builds clean with
+  `GRASSHOPPER_SDK` defined, so the pre-flight is real-path compiled, not the `#else` stub.
+- **Not re-run on Rhino.** The canvas-level repro (re-group the `Num` Const that was ungrouped as the
+  original workaround, then publish) still needs a live pass to close this on-fixture.
+
 ## Gaps
 
 - Tests 1/2/6 not run on the intended Frame fixture (no Frame `.gh` exists — JSON fixtures
