@@ -1,0 +1,374 @@
+{
+  "corpus": "frame_ablated",
+  "sourceContext": "frame_ablated.context.json",
+  "contextSha256": "94ad4311b618682a93daa75b532d65c002666ba3016f1fcec900b73697722e32",
+  "annotatedBy": "architect-researcher",
+  "annotatedAt": "2026-07-08",
+  "frozenAtCommit": "73348afb63d05b5f96f4c527a6d5a38652397b09",
+  "ipClass": "own",
+  "tier0Evidence": false,
+  "corpusVersion": 1,
+  "blocks": [
+    {
+      "id": "b01",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "Divider",
+      "memberIds": [
+        "n-divider"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b02",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "SplitPar",
+      "memberIds": [
+        "n-splitpar"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b03",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "TrussConfig",
+      "memberIds": [
+        "n-trussconfig-const11"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b04",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "ptZero",
+      "memberIds": [
+        "n-ptzero"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b05",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "vecY",
+      "memberIds": [
+        "n-vecy"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b06",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "DivPoints",
+      "memberIds": [
+        "n-divpoints"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b07",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "LineSDL",
+      "memberIds": [
+        "n-linesdl"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b08",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "ParamAt",
+      "memberIds": [
+        "n-paramat"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b09",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "TopFrame",
+      "memberIds": [
+        "n-topframe"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b10",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "VertPost",
+      "memberIds": [
+        "n-vertpost"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b11",
+      "kind": "EmergentParam",
+      "procedureIndex": 11,
+      "name": "UpperChord",
+      "memberIds": [
+        "n-upperchord"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b12",
+      "kind": "Interface",
+      "procedureIndex": 11,
+      "name": "MergeRes",
+      "memberIds": [
+        "n-mergeres"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b13",
+      "kind": "Interface",
+      "procedureIndex": 11,
+      "name": "ParSplitAt",
+      "memberIds": [
+        "n-parsplit"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b14",
+      "kind": "Interface",
+      "procedureIndex": 11,
+      "name": "TrussConfig",
+      "memberIds": [
+        "n-trussconfig-intf"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b15",
+      "kind": "Pattern",
+      "procedureIndex": 11,
+      "name": "DivideLine",
+      "memberIds": [
+        "n-divide-curve"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b16",
+      "kind": "Pattern",
+      "procedureIndex": 11,
+      "name": "TopChord",
+      "memberIds": [
+        "n-topchord"
+      ],
+      "hostBlockId": "b15",
+      "publishable": true
+    },
+    {
+      "id": "b17",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "HTotal",
+      "memberIds": [
+        "n-htotal"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b18",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "LenTotal",
+      "memberIds": [
+        "n-lentotal"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b19",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "Mode",
+      "memberIds": [
+        "n-mode"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b20",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "SpansCount",
+      "memberIds": [
+        "n-spanscount"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b21",
+      "kind": "ConstantParam",
+      "procedureIndex": 12,
+      "name": "IndList_1",
+      "memberIds": [
+        "n-indlist1"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b22",
+      "kind": "ConstantParam",
+      "procedureIndex": 12,
+      "name": "IndList_2",
+      "memberIds": [
+        "n-indlist2"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b23",
+      "kind": "ConstantParam",
+      "procedureIndex": 12,
+      "name": "TrussConfig",
+      "memberIds": [
+        "n-trussconfig-const12"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b24",
+      "kind": "EmergentParam",
+      "procedureIndex": 12,
+      "name": "BottomLn",
+      "memberIds": [
+        "n-bottomln"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b25",
+      "kind": "EmergentParam",
+      "procedureIndex": 12,
+      "name": "FooterFrame",
+      "memberIds": [
+        "n-footerframe-emg"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b26",
+      "kind": "EmergentParam",
+      "procedureIndex": 12,
+      "name": "FooterUnit",
+      "memberIds": [
+        "n-footerunit"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b27",
+      "kind": "EmergentParam",
+      "procedureIndex": 12,
+      "name": "TopLn",
+      "memberIds": [
+        "n-topln"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b28",
+      "kind": "Interface",
+      "procedureIndex": 12,
+      "name": "FooterFrame",
+      "memberIds": [
+        "n-footerframe-intf"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b29",
+      "kind": "Pattern",
+      "procedureIndex": 12,
+      "name": "1 Create footer bottom lines",
+      "memberIds": [
+        "n-footer-bottom"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b30",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "FooterCount",
+      "memberIds": [
+        "n-footercount"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b31",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "HFooter",
+      "memberIds": [
+        "n-hfooter"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    }
+  ],
+  "abstainExpected": [
+    {
+      "memberIds": [
+        "n-untagged-01"
+      ],
+      "reason": "isolated panel, no wires in or out -- cannot distinguish a constant from an abandoned experiment"
+    },
+    {
+      "memberIds": [
+        "n-scratch-01"
+      ],
+      "reason": "member of the non-conforming \u0027Scratch notes\u0027 group, no wires in or out -- a text annotation, not a functional component"
+    },
+    {
+      "memberIds": [
+        "n-scratch-02"
+      ],
+      "reason": "member of the non-conforming \u0027Scratch notes\u0027 group, no wires in or out -- a text annotation, not a functional component"
+    }
+  ]
+}
