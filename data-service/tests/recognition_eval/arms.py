@@ -44,7 +44,48 @@ if _DATA_SERVICE_ROOT not in sys.path:
 
 import cg_recognition  # noqa: E402
 import cg_topology  # noqa: E402
+import llm_gateway  # noqa: E402
 from llm_gateway import StructuredOutputCapability  # noqa: E402
+
+# 35-AI-SPEC.md 5's arms table "provider" column ("deepseek"/"anthropic") is
+# a plain provenance label on `Arm`, NOT an `llm_gateway.get_adapter()`
+# provider tag. DeepSeek has no adapter class of its own (`get_adapter`
+# registers exactly `anthropic`/`openai`/`ollama`) -- it is served through
+# the OpenAI-compatible Chat Completions API with a custom base_url, exactly
+# how the live `/llm/settings` panel already configures it. The single
+# source of truth for that translation lives here (35-15) so both the live
+# record-mode driver (`live_sweep.py`, which also needs a real API key) and
+# the replay-only report sweep (`report.py`, which must NEVER touch a
+# secret) agree on which real provider/base_url an arm resolves to.
+REAL_ADAPTER_MAP: "dict[str, tuple[str, str | None]]" = {
+    "deepseek": ("openai", "https://api.deepseek.com/v1"),
+    "anthropic": ("anthropic", None),
+}
+
+
+def resolve_real_negotiated_mode(arm: "Arm") -> str:
+    """The REAL structured-output mode this arm's (real provider, model,
+    base_url) actually negotiates -- NEVER the naive `"json_schema_strict"
+    if arm.structured_output else "none"` assumption, which 400s outright
+    against DeepSeek (`llm_gateway.negotiate_structured_output`'s own
+    docstring calls this "the DeepSeek trap": served through `OpenAIAdapter`
+    so it LOOKS like OpenAI, but only accepts `response_format:
+    {"type":"json_object"}`, never `json_schema`/`strict` -- confirmed live
+    running arm A4 during 35-15 Task 2, `400 "This response_format type is
+    unavailable now"`).
+
+    Pure and hermetic: for every provider label in `REAL_ADAPTER_MAP`
+    (`openai`/`anthropic`), `negotiate_structured_output` branches on
+    `base_url`/model prefix alone, no network call -- only its `ollama`
+    branch would probe a live endpoint, and no arm uses that label. Safe to
+    call from `report.py`'s replay-only, no-secrets sweep as well as from
+    `live_sweep.py`'s record-mode driver, so both compute the identical
+    cassette key.
+    """
+    if not arm.structured_output:
+        return "none"
+    real_tag, base_url = REAL_ADAPTER_MAP.get(arm.provider, (arm.provider, None))
+    return llm_gateway.negotiate_structured_output(real_tag, arm.model, base_url).mode
 
 # Path resolution mirrors dg_knowledge.py's _REPO_ROOT: inside the
 # data-service Docker container the repo root (with its .git directory) is
@@ -278,6 +319,8 @@ def run_arm(
     corpus: "Any",
     adapter: "Any",
     few_shot_examples_override: "list[dict[str, Any]] | None" = None,
+    api_key_override: "str | None" = None,
+    negotiated_mode_override: "str | None" = None,
 ) -> dict:
     """Invoke `cg_recognition.recognize_structure()` with `arm`'s artifacts
     patched in (system prompt, few-shot fixture, provider/model/adapter
@@ -296,6 +339,38 @@ def run_arm(
     resolution. `None` (the default) preserves every existing caller's
     behavior byte-for-byte.
 
+    `api_key_override` (35-15): when supplied, is the literal string
+    `resolve_active_provider` returns as the API key, REPLACING the
+    `"test-api-key"` placeholder below. That placeholder is harmless for
+    every replay-mode caller (`CassetteAdapter` in replay mode never calls
+    `.generate()` on the wrapped adapter, so the key value is never used),
+    but it is fatal for a REAL wrapped adapter in record/live mode --
+    `recognize_structure()` reads the key from `resolve_active_provider`,
+    not from whatever key was used to construct `adapter`, so leaving this
+    patched to the placeholder would send a literal "test-api-key" as the
+    Bearer/x-api-key header on every live call (401, discovered live during
+    35-15 Task 1). `None` (the default) preserves the placeholder for every
+    existing caller.
+
+    `negotiated_mode_override` (35-15): when supplied, REPLACES the naive
+    `"json_schema_strict" if arm.structured_output else "none"` default
+    below. That default is a placeholder correct only for a provider that
+    always supports strict schemas -- it is WRONG for DeepSeek, which
+    `llm_gateway.negotiate_structured_output`'s own docstring calls out by
+    name ("the DeepSeek trap": served through `OpenAIAdapter` so it LOOKS
+    like OpenAI, but only accepts `response_format: {"type":"json_object"}`,
+    never `json_schema`/`strict`). Forcing `json_schema_strict` against the
+    real DeepSeek API 400s outright (`"This response_format type is
+    unavailable now"`, discovered live running arm A4 during 35-15 Task 2).
+    A live-mode caller resolves the REAL mode via
+    `llm_gateway.negotiate_structured_output(real_provider, arm.model,
+    base_url)` and passes it here so both the patched
+    `negotiate_structured_output` and the returned provenance's
+    `negotiatedMode` reflect what was actually sent. `None` (the default)
+    preserves the placeholder for every replay-mode caller, where no live
+    request is ever made and the exact mode string only affects the
+    cassette key.
+
     Returns `{"result": <recognize_structure() return value>, "provenance":
     {...}}` -- the provenance block is a plain dict `corpus.assert_provenance`
     accepts directly (not nested further).
@@ -307,7 +382,11 @@ def run_arm(
             system_prompt=artifacts.system_prompt,
             few_shot_sha=artifacts.few_shot_sha,
         )
-    negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
+    if negotiated_mode_override is not None:
+        negotiated_mode = negotiated_mode_override
+    else:
+        negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
+    resolved_api_key = api_key_override if api_key_override is not None else "test-api-key"
 
     original_get_adapter = cg_recognition.get_adapter
     original_negotiate = cg_recognition.negotiate_structured_output
@@ -323,7 +402,7 @@ def run_arm(
             lambda provider, model, base_url=None: StructuredOutputCapability(mode=negotiated_mode)
         )
         cg_recognition.resolve_active_provider = (
-            lambda settings, master_secret: (arm.provider, arm.model, "test-api-key")
+            lambda settings, master_secret: (arm.provider, arm.model, resolved_api_key)
         )
         cg_recognition.load_persisted_llm_settings = lambda: {}
         cg_recognition.build_recognition_system_prompt = lambda: artifacts.system_prompt

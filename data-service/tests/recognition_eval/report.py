@@ -233,16 +233,19 @@ def run_report_sweep(
                 skipped.append(SkippedRow(corpus=corpus_name, arm_id=arm_id, reason="unknown arm id"))
                 continue
 
+            negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
             adapter = cassette_module.CassetteAdapter(
                 arm_id,
                 None,
-                negotiated_mode="json_schema_strict" if arm.structured_output else "none",
+                negotiated_mode=negotiated_mode,
                 prompt_version=cg_recognition.PROMPT_VERSION,
                 ip_class=corpus_obj.ip_class,
                 mode="replay",
             )
             try:
-                outcome = arms_module.run_arm(arm, corpus_obj, adapter)
+                outcome = arms_module.run_arm(
+                    arm, corpus_obj, adapter, negotiated_mode_override=negotiated_mode
+                )
                 corpus_module.assert_provenance(outcome["provenance"])
             except cassette_module.CassetteMissError as exc:
                 skipped.append(SkippedRow(corpus=corpus_name, arm_id=arm_id, reason=f"cassette miss: {exc}"))

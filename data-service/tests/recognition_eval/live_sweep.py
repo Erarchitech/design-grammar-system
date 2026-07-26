@@ -53,19 +53,16 @@ from recognition_eval import cassette as cassette_module  # noqa: E402
 from recognition_eval import corpus as corpus_module  # noqa: E402
 from recognition_eval import report as report_module  # noqa: E402
 
-# 35-AI-SPEC.md 5's arms table "provider" column ("deepseek"/"anthropic") is
-# a plain provenance label declared on `arms.Arm`, NOT an
-# `llm_gateway.get_adapter()` provider tag. DeepSeek has no adapter class of
-# its own (llm_gateway.py `get_adapter` registers exactly `anthropic`,
-# `openai`, `ollama`) -- it is served through the OpenAI-compatible Chat
-# Completions API with a custom base_url, exactly how the live `/llm/settings`
-# panel already configures it (`{"provider":"openai","baseUrl":
-# "https://api.deepseek.com/v1"}`, confirmed live during this plan's
-# execution). This map is the single place that translation happens.
-REAL_ADAPTER_MAP: "dict[str, tuple[str, str | None]]" = {
-    "deepseek": ("openai", "https://api.deepseek.com/v1"),
-    "anthropic": ("anthropic", None),
-}
+# The provider-label -> (real llm_gateway tag, base_url) map lives in
+# `arms.py` (35-15) so both this live driver (which also needs a real
+# decrypted API key) and `report.py`'s replay-only sweep (which must NEVER
+# touch a secret) resolve the identical real provider/base_url -- and,
+# critically, the identical negotiated structured-output mode, or a cassette
+# recorded here would MISS on replay under a different computed key
+# (discovered live: report.py's own prior `"json_schema_strict" if
+# arm.structured_output` assumption produced a cassette-key mismatch against
+# arm A4's real recording).
+REAL_ADAPTER_MAP = arms_module.REAL_ADAPTER_MAP
 
 # List pricing looked up at 2026-07-27 (api-docs.deepseek.com/quick_start/pricing
 # for deepseek-chat cache-miss rate; Anthropic's published Sonnet rate for
@@ -88,7 +85,7 @@ class LiveCredentialError(RuntimeError):
     as the requested arm, which would falsify that arm's provenance."""
 
 
-def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str]":
+def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str, str | None]":
     """Resolve a REAL (not eval-mocked) adapter + decrypted API key for
     `arm`, for use only under `RECOGNITION_EVAL_MODE=record`/`live`. Never
     returns the eval harness's own `"test-api-key"` placeholder literal --
@@ -100,9 +97,9 @@ def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str
     regardless of whether `arms.run_arm()` has patched `cg_recognition` for
     an unrelated, concurrently-running call.
 
-    Returns `(adapter, api_key, real_provider_tag)`. Raises
-    `LiveCredentialError` if the persisted settings don't match this arm's
-    required real provider/base_url, or no key can be decrypted.
+    Returns `(adapter, api_key, real_provider_tag, resolved_base_url)`.
+    Raises `LiveCredentialError` if the persisted settings don't match this
+    arm's required real provider/base_url, or no key can be decrypted.
     """
     if arm.provider not in REAL_ADAPTER_MAP:
         raise LiveCredentialError(
@@ -137,8 +134,9 @@ def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str
             "LLM_MASTER_SECRET, or apiKey missing/corrupt)."
         )
 
-    adapter = llm_gateway.get_adapter(real_tag, required_base_url or persisted_base_url)
-    return adapter, api_key, real_tag
+    resolved_base_url = required_base_url or persisted_base_url
+    adapter = llm_gateway.get_adapter(real_tag, resolved_base_url)
+    return adapter, api_key, real_tag, resolved_base_url
 
 
 def estimate_usd_cost(real_provider: str, model: "str | None", usage: "dict[str, Any] | None") -> float:
@@ -331,14 +329,21 @@ def run_live_sweep(
                 continue
 
             try:
-                real_adapter, api_key, real_provider = resolve_live_adapter_and_key(arm)
+                real_adapter, api_key, real_provider, _real_base_url = resolve_live_adapter_and_key(arm)
             except LiveCredentialError as exc:
                 outcomes.append(
                     ArmCorpusOutcome(arm_id=arm_id, corpus=corpus_name, status="skipped_credentials", detail=str(exc))
                 )
                 continue
 
-            negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
+            # Shared with report.py (arms.resolve_real_negotiated_mode) so
+            # both the record path and the replay path compute the IDENTICAL
+            # negotiated mode -- and therefore the identical cassette key.
+            # NEVER assume "json_schema_strict" just because
+            # `arm.structured_output` is True: that assumption 400s outright
+            # against DeepSeek ("This response_format type is unavailable
+            # now", discovered live running A4 during 35-15 Task 2).
+            negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
 
             perm_examples: "list[list[dict[str, Any]] | None]"
             if permutations > 1:
@@ -366,7 +371,14 @@ def run_live_sweep(
                     mode=resolved_mode,
                 )
 
-                outcome = arms_module.run_arm(arm, corpus_obj, cassette_adapter, few_shot_examples_override=override)
+                outcome = arms_module.run_arm(
+                    arm,
+                    corpus_obj,
+                    cassette_adapter,
+                    few_shot_examples_override=override,
+                    api_key_override=api_key,
+                    negotiated_mode_override=negotiated_mode,
+                )
                 corpus_module.assert_provenance(outcome["provenance"])  # refuses to score an incomplete row
 
                 result = outcome["result"]
