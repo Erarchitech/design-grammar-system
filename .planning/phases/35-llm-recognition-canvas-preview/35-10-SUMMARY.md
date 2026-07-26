@@ -155,3 +155,10 @@ None -- no external service configuration required.
 ---
 *Phase: 35-llm-recognition-canvas-preview*
 *Completed: 2026-07-26*
+
+## Self-Check: PASSED
+
+- FOUND: data-service/cg_topology.py
+- FOUND: data-service/tests/test_cg_topology.py
+- FOUND: .planning/phases/35-llm-recognition-canvas-preview/35-10-SUMMARY.md
+- FOUND commits: 9906e0a, 53c1fa7, 29b2c4b, 7d50a43, c5b3752
