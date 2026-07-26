@@ -1,0 +1,447 @@
+{
+  "corpus": "urbanblock_slice",
+  "sourceContext": "urbanblock_slice.context.json",
+  "contextSha256": "9ac7ad8a076d144cc5ff887ad8d9fb927ff45f32c8c4223b13ebd431127551fe",
+  "annotatedBy": "architect-researcher",
+  "annotatedAt": "2026-07-26",
+  "frozenAtCommit": "c15c32861c4c567a5ddbf17b771def1d8045b064",
+  "ipClass": "own",
+  "tier0Evidence": true,
+  "corpusVersion": 1,
+  "blocks": [
+    {
+      "id": "b01",
+      "kind": "ConstantParam",
+      "procedureIndex": 11,
+      "name": "LeafCont",
+      "memberIds": [
+        "f23be078-1c50-484a-ac8b-9cd2c2721843"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b02",
+      "kind": "Interface",
+      "procedureIndex": 11,
+      "name": "BaseRegion",
+      "memberIds": [
+        "da8d7863-3b62-4deb-8f77-0b111cedea28"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b03",
+      "kind": "Interface",
+      "procedureIndex": 11,
+      "name": "PlotTotalArea",
+      "memberIds": [
+        "5a610488-9858-45b4-b59b-11c45f1a4199"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b04",
+      "kind": "Pattern",
+      "procedureIndex": 11,
+      "name": "PlotTotalArea",
+      "memberIds": [
+        "4bf9393e-c603-4de1-a9ba-6f1ece8a2e13",
+        "d0487a4f-c56e-40f0-8f99-6f60680eb89f",
+        "d4c39eda-b133-4a49-bff5-9149dcf52740"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b05",
+      "kind": "Pattern",
+      "procedureIndex": 11,
+      "name": "RegionConfig",
+      "memberIds": [
+        "070a8090-7cb8-4432-9bd7-eb6cdf80939e",
+        "a954180f-8011-4869-a11c-2a7575888a0e",
+        "b5943ff1-d8be-4039-bad9-98fd9b70c6be",
+        "b8dc0b1c-808d-411f-960e-4a51f130b363",
+        "d706a827-afa8-428b-bad5-99448cd29e2b",
+        "ff3ac34c-1ea8-4c7e-9b0f-358aff1f14ad"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b06",
+      "kind": "Pattern",
+      "procedureIndex": 11,
+      "name": "RegionDivider",
+      "memberIds": [
+        "0473a514-c934-47a3-8915-ba1581c5b53d",
+        "a92dec49-63fc-4851-a2c1-8f8bc284d8db",
+        "f89e549b-02fb-4947-bf23-3550dfb82307"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b07",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "Count",
+      "memberIds": [
+        "c533c6df-b527-439e-96d1-32f6d0f9e509"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b08",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "Degrees",
+      "memberIds": [
+        "44cb9960-97fe-4bf6-b658-893775adfdb7"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b09",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "Factor",
+      "memberIds": [
+        "86cbbd1e-0ec9-4fb1-bbec-acd3023094b7"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b10",
+      "kind": "VariableParam",
+      "procedureIndex": 11,
+      "name": "Seed",
+      "memberIds": [
+        "5e1b86f5-d380-4147-aa33-b0441b6b89b6"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b11",
+      "kind": "Interface",
+      "procedureIndex": 12,
+      "name": "AllRegions",
+      "memberIds": [
+        "0e122469-ea44-413e-a77d-334d48768e46"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b12",
+      "kind": "Interface",
+      "procedureIndex": 12,
+      "name": "DomainCuttedRegions",
+      "memberIds": [
+        "1c07f46d-aa93-4653-be04-8f5bb09278d2"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b13",
+      "kind": "Interface",
+      "procedureIndex": 12,
+      "name": "Indexes",
+      "memberIds": [
+        "50fad856-83cd-4d23-81ff-a88e0e616113"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b14",
+      "kind": "Interface",
+      "procedureIndex": 12,
+      "name": "SurroundingTest",
+      "memberIds": [
+        "70ea278c-3298-4de9-a791-f7a6f825b81f"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b15",
+      "kind": "Pattern",
+      "procedureIndex": 12,
+      "name": "DistrictSurroundingFilter",
+      "memberIds": [
+        "55cb94f2-3006-47c5-ae91-566529a4a67a",
+        "b2b4de50-9195-4c1d-9f9b-cf8996785d73",
+        "d593adfb-3a67-46a5-a668-3edadd974892"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b16",
+      "kind": "Pattern",
+      "procedureIndex": 12,
+      "name": "DomainCut",
+      "memberIds": [
+        "4999b039-22ea-43b8-85f0-72171e4899bc",
+        "be66ab91-258e-4c78-83fb-63b80ee2d726"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b17",
+      "kind": "Pattern",
+      "procedureIndex": 12,
+      "name": "OpenSpaceDomainOfRegions",
+      "memberIds": [
+        "81d1fab2-0c43-4100-b90c-9e6f7ab9d46f",
+        "896f64d3-fff3-4628-b80d-a0afe2d8071b",
+        "94a4fefa-24b9-46f3-8110-83d905f9457b",
+        "c0a721ec-ed85-4f07-a29c-2d7787e9c954",
+        "c5a2bd6f-22d7-4626-ae21-0f3f36b640fa",
+        "c6fd037b-975f-4202-9f89-b80ebd8a3dec",
+        "dae0e544-f6d2-4b8d-810f-c5894f34a8a3",
+        "e2e41f0a-ee52-44f7-a978-df16e9e6c11b",
+        "fcc3652e-1f75-4a9e-8b3a-c246e21d3de9"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b18",
+      "kind": "Pattern",
+      "procedureIndex": 12,
+      "name": "Randomizer",
+      "memberIds": [
+        "9a8f347a-03b0-40a9-917d-f6175bb6ef78",
+        "ecf43931-2c7f-4850-ad7b-ab29b8652d45"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b19",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "Multiplier1",
+      "memberIds": [
+        "7df26f3e-1020-4fbc-b787-c49ce627449c"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b20",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "Multiplier2",
+      "memberIds": [
+        "f4beceb9-57c1-462a-b990-d207e7d7f2be"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b21",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "Seed",
+      "memberIds": [
+        "8e01bfc7-e4d3-48cd-b1cc-2cecce3cf29f"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b22",
+      "kind": "VariableParam",
+      "procedureIndex": 12,
+      "name": "StepSize",
+      "memberIds": [
+        "ca428525-67cc-4c94-bc84-cacb9b392154"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b23",
+      "kind": "ConstantParam",
+      "procedureIndex": 13,
+      "name": "VectorZ",
+      "memberIds": [
+        "f681d5dc-ace8-4e1d-aaef-293e160283ff"
+      ],
+      "hostBlockId": null,
+      "publishable": false
+    },
+    {
+      "id": "b24",
+      "kind": "EmergentParam",
+      "procedureIndex": 13,
+      "name": "Buildings",
+      "memberIds": [
+        "a77cc7e0-a7a4-4088-a4b5-d4a83099fdcf"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b25",
+      "kind": "Pattern",
+      "procedureIndex": 13,
+      "name": "Extruder",
+      "memberIds": [
+        "84dc75b7-d968-4216-ae0a-5d7d25bae2ad",
+        "9d177367-1321-432e-ad38-181bdbfb60b6",
+        "e7e071c0-4367-4934-ade6-b0ced094e5f2"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b26",
+      "kind": "Pattern",
+      "procedureIndex": 13,
+      "name": "HeightAssign",
+      "memberIds": [
+        "56af63e9-6a55-45d5-8ddd-84004dd1030c",
+        "bb05763d-a912-4cd8-b8e3-9a3e872c2bbf",
+        "eb537b09-b657-45ee-8d22-6049580f3ae7"
+      ],
+      "hostBlockId": "b25",
+      "publishable": true
+    },
+    {
+      "id": "b27",
+      "kind": "Pattern",
+      "procedureIndex": 13,
+      "name": "Randomizer",
+      "memberIds": [
+        "a35aa2e1-fd79-4077-b05d-d993da47562a",
+        "e5980b1d-b6c0-4a00-8606-a000bad78881"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b28",
+      "kind": "VariableParam",
+      "procedureIndex": 13,
+      "name": "FLOORH",
+      "memberIds": [
+        "f6387f39-ca8c-4297-9dfc-f9927f7cdcd7"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b29",
+      "kind": "VariableParam",
+      "procedureIndex": 13,
+      "name": "Seed",
+      "memberIds": [
+        "86d4c0f8-b6a0-4b7d-b864-858bdd9406b1"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b30",
+      "kind": "EmergentParam",
+      "procedureIndex": 17,
+      "name": "OpenSpaceArea",
+      "memberIds": [
+        "672403bb-6de2-472c-9080-9c29b6634b4c"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b31",
+      "kind": "Pattern",
+      "procedureIndex": 17,
+      "name": "OpenSpaceAreaCalc",
+      "memberIds": [
+        "23faf484-a1d5-47d2-87e1-1bdf1e884a53",
+        "93a48ba4-2e7b-403a-ae4b-59f870bd9d67",
+        "ab514741-36a2-4afa-9f13-60ce4fdea228",
+        "c3168623-5424-41e1-ba84-dcd6766ec1e1"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    },
+    {
+      "id": "b32",
+      "kind": "Pattern",
+      "procedureIndex": 17,
+      "name": "OpenSpaceRegions",
+      "memberIds": [
+        "1553fee1-f667-400d-a69b-e38014a5a685",
+        "b9373b82-b919-44a3-998c-fd31d2bc89c5",
+        "e7629da8-a186-46f2-a163-da5301e8e481",
+        "f4bdea58-7e9c-451c-9975-fbd2c902ff09"
+      ],
+      "hostBlockId": null,
+      "publishable": true
+    }
+  ],
+  "abstainExpected": [
+    {
+      "memberIds": [
+        "39074e80-006c-467a-bd60-d02b991d45db"
+      ],
+      "reason": "isolated Number Slider, no wires in or out -- cannot distinguish a live tagged parameter from an abandoned trial slider"
+    },
+    {
+      "memberIds": [
+        "9d1dec5f-5ce8-4d87-b414-50780c7f5cfd"
+      ],
+      "reason": "isolated Panel, no wires in or out -- a text annotation with no functional role, not a tagged constant"
+    },
+    {
+      "memberIds": [
+        "a8a7a155-8da1-4ce3-ab43-482777bef91f"
+      ],
+      "reason": "isolated CLASSIFICATOR, no wires in or out -- a fully-removed legacy component (no replacement GUID per CLAUDE.md) that cannot be assigned any live entity role"
+    },
+    {
+      "memberIds": [
+        "b16e70bb-9a08-4584-a861-5a8d6d86f331"
+      ],
+      "reason": "isolated CONNECTOR, no wires in or out -- a placeholder relay with neither an upstream source nor a downstream consumer, not a functioning Interface"
+    },
+    {
+      "memberIds": [
+        "c4ad320b-9c9c-4d77-8a92-7a6ad890742d"
+      ],
+      "reason": "isolated Panel, no wires in or out -- a text annotation with no functional role, not a tagged constant"
+    },
+    {
+      "memberIds": [
+        "d0bb6e7c-f452-4c40-acd8-924eb3c7bd16"
+      ],
+      "reason": "isolated CONNECTOR, no wires in or out -- a placeholder relay with neither an upstream source nor a downstream consumer, not a functioning Interface"
+    },
+    {
+      "memberIds": [
+        "f7daf9fc-13a3-4d5a-a942-3e413ff5c6e9"
+      ],
+      "reason": "isolated CONNECTOR, no wires in or out -- a placeholder relay with neither an upstream source nor a downstream consumer, not a functioning Interface"
+    },
+    {
+      "memberIds": [
+        "fd8d9c09-d90e-4caf-b7e8-7062075c342e"
+      ],
+      "reason": "isolated Panel, no wires in or out -- a text annotation with no functional role, not a tagged constant"
+    }
+  ]
+}
