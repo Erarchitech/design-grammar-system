@@ -18,6 +18,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import pytest  # noqa: E402
+
 import cg_topology  # noqa: E402
 
 
@@ -81,6 +83,131 @@ def _empty_procedure_ctx() -> dict:
     return ctx
 
 
+# ── Enriched Frame fixture, reshaped from frame-cg-context.json (35-05) into
+# cgContextJson v1's algorithms[].procedures[] / untagged{nodeIds,groups}
+# shape. Same 34 nodes and 33 wires; 11_Proc/12_Proc own their real members;
+# untagged is exactly the abstainExpected set (n-untagged-01, n-scratch-01,
+# n-scratch-02). ──
+
+_FRAME_NODES = [
+    {"instanceId": "n-divide-curve", "componentGuid": "guid-divide-curve", "name": "Divide Curve", "nickname": "Divide", "position": [100, 100]},
+    {"instanceId": "n-topchord", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "TopChord", "position": [140, 100]},
+    {"instanceId": "n-footer-bottom", "componentGuid": "guid-line", "name": "Line", "nickname": "FooterBottom", "position": [100, 400]},
+    {"instanceId": "n-parsplit", "componentGuid": "guid-param", "name": "Param", "nickname": "ParSplitAt", "position": [200, 100]},
+    {"instanceId": "n-trussconfig-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "TrussConfig", "position": [220, 100]},
+    {"instanceId": "n-mergeres", "componentGuid": "guid-param", "name": "Param", "nickname": "MergeRes", "position": [240, 100]},
+    {"instanceId": "n-footerframe-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "FooterFrame", "position": [220, 400]},
+    {"instanceId": "n-spanscount", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "SpansCount",
+     "position": [10, 10], "slider": {"min": 1, "max": 20, "step": 1}, "isIntegerSlider": True},
+    {"instanceId": "n-lentotal", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "LenTotal", "position": [10, 30]},
+    {"instanceId": "n-mode", "componentGuid": "guid-value-list", "name": "Value List", "nickname": "Mode", "position": [10, 50]},
+    {"instanceId": "n-htotal", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "HTotal", "position": [10, 70]},
+    {"instanceId": "n-hfooter", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "HFooter", "position": [10, 410]},
+    {"instanceId": "n-footercount", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "FooterCount", "position": [10, 430]},
+    {"instanceId": "n-ptzero", "componentGuid": "guid-construct-point", "name": "Construct Point", "nickname": "ptZero", "position": [30, 10]},
+    {"instanceId": "n-vecy", "componentGuid": "guid-unit-y", "name": "Unit Y", "nickname": "vecY", "position": [30, 30]},
+    {"instanceId": "n-splitpar", "componentGuid": "guid-panel", "name": "Panel", "nickname": "SplitPar", "position": [30, 50]},
+    {"instanceId": "n-trussconfig-const11", "componentGuid": "guid-panel", "name": "Panel", "nickname": "TrussConfig", "position": [30, 70]},
+    {"instanceId": "n-divider", "componentGuid": "guid-panel", "name": "Panel", "nickname": "Divider", "position": [30, 90]},
+    {"instanceId": "n-indlist1", "componentGuid": "guid-panel", "name": "Panel", "nickname": "IndList_1", "position": [30, 440]},
+    {"instanceId": "n-indlist2", "componentGuid": "guid-panel", "name": "Panel", "nickname": "IndList_2", "position": [30, 460]},
+    {"instanceId": "n-trussconfig-const12", "componentGuid": "guid-panel", "name": "Panel", "nickname": "TrussConfig", "position": [30, 480]},
+    {"instanceId": "n-divpoints", "componentGuid": "guid-panel", "name": "Panel", "nickname": "DivPoints", "position": [50, 10]},
+    {"instanceId": "n-paramat", "componentGuid": "guid-evaluate-curve", "name": "Evaluate Curve", "nickname": "ParamAt", "position": [50, 30]},
+    {"instanceId": "n-linesdl", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "LineSDL", "position": [50, 50]},
+    {"instanceId": "n-upperchord", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "UpperChord", "position": [50, 70]},
+    {"instanceId": "n-topframe", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "TopFrame", "position": [50, 90]},
+    {"instanceId": "n-vertpost", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "VertPost", "position": [50, 110]},
+    {"instanceId": "n-bottomln", "componentGuid": "guid-line", "name": "Line", "nickname": "BottomLn", "position": [50, 420]},
+    {"instanceId": "n-topln", "componentGuid": "guid-line", "name": "Line", "nickname": "TopLn", "position": [50, 440]},
+    {"instanceId": "n-footerunit", "componentGuid": "guid-panel", "name": "Panel", "nickname": "FooterUnit", "position": [50, 460]},
+    {"instanceId": "n-footerframe-emg", "componentGuid": "guid-panel", "name": "Panel", "nickname": "FooterFrame", "position": [50, 480]},
+    {"instanceId": "n-scratch-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "scribbled note 1", "position": [500, 500]},
+    {"instanceId": "n-scratch-02", "componentGuid": "guid-panel", "name": "Panel", "nickname": "scribbled note 2", "position": [520, 500]},
+    {"instanceId": "n-untagged-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "loose panel", "position": [700, 700]},
+]
+
+_FRAME_WIRES = [
+    {"fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-topchord", "toParam": "in0"},
+    {"fromNode": "n-vecy", "fromParam": "out0", "toNode": "n-topchord", "toParam": "in1"},
+    {"fromNode": "n-lentotal", "fromParam": "out0", "toNode": "n-topchord", "toParam": "in2"},
+    {"fromNode": "n-topchord", "fromParam": "out0", "toNode": "n-divide-curve", "toParam": "in0"},
+    {"fromNode": "n-spanscount", "fromParam": "out0", "toNode": "n-divide-curve", "toParam": "in1"},
+    {"fromNode": "n-divider", "fromParam": "out0", "toNode": "n-divide-curve", "toParam": "in2"},
+    {"fromNode": "n-divide-curve", "fromParam": "out0", "toNode": "n-parsplit", "toParam": "in0"},
+    {"fromNode": "n-divide-curve", "fromParam": "out1", "toNode": "n-divpoints", "toParam": "in0"},
+    {"fromNode": "n-divide-curve", "fromParam": "out2", "toNode": "n-mergeres", "toParam": "in0"},
+    {"fromNode": "n-parsplit", "fromParam": "out0", "toNode": "n-paramat", "toParam": "in1"},
+    {"fromNode": "n-topchord", "fromParam": "out0", "toNode": "n-paramat", "toParam": "in0"},
+    {"fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-linesdl", "toParam": "in0"},
+    {"fromNode": "n-mergeres", "fromParam": "out0", "toNode": "n-linesdl", "toParam": "in1"},
+    {"fromNode": "n-htotal", "fromParam": "out0", "toNode": "n-linesdl", "toParam": "in2"},
+    {"fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-upperchord", "toParam": "in0"},
+    {"fromNode": "n-splitpar", "fromParam": "out0", "toNode": "n-upperchord", "toParam": "in1"},
+    {"fromNode": "n-htotal", "fromParam": "out0", "toNode": "n-upperchord", "toParam": "in2"},
+    {"fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-topframe", "toParam": "in0"},
+    {"fromNode": "n-trussconfig-const11", "fromParam": "out0", "toNode": "n-topframe", "toParam": "in1"},
+    {"fromNode": "n-htotal", "fromParam": "out0", "toNode": "n-topframe", "toParam": "in2"},
+    {"fromNode": "n-mode", "fromParam": "out0", "toNode": "n-trussconfig-intf", "toParam": "in0"},
+    {"fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-vertpost", "toParam": "in0"},
+    {"fromNode": "n-trussconfig-intf", "fromParam": "out0", "toNode": "n-vertpost", "toParam": "in1"},
+    {"fromNode": "n-htotal", "fromParam": "out0", "toNode": "n-vertpost", "toParam": "in2"},
+    {"fromNode": "n-indlist1", "fromParam": "out0", "toNode": "n-footer-bottom", "toParam": "in0"},
+    {"fromNode": "n-indlist2", "fromParam": "out0", "toNode": "n-footer-bottom", "toParam": "in1"},
+    {"fromNode": "n-footer-bottom", "fromParam": "out0", "toNode": "n-footerframe-intf", "toParam": "in0"},
+    {"fromNode": "n-footerframe-intf", "fromParam": "out0", "toNode": "n-topln", "toParam": "in0"},
+    {"fromNode": "n-trussconfig-const12", "fromParam": "out0", "toNode": "n-topln", "toParam": "in1"},
+    {"fromNode": "n-footer-bottom", "fromParam": "out0", "toNode": "n-bottomln", "toParam": "in0"},
+    {"fromNode": "n-indlist2", "fromParam": "out0", "toNode": "n-bottomln", "toParam": "in1"},
+    {"fromNode": "n-hfooter", "fromParam": "out0", "toNode": "n-footerunit", "toParam": "in0"},
+    {"fromNode": "n-footercount", "fromParam": "out0", "toNode": "n-footerframe-emg", "toParam": "in0"},
+]
+
+_PROC_11_MEMBERS = [
+    "n-divide-curve", "n-topchord", "n-parsplit", "n-trussconfig-intf", "n-mergeres",
+    "n-spanscount", "n-lentotal", "n-mode", "n-htotal", "n-ptzero", "n-vecy", "n-splitpar",
+    "n-trussconfig-const11", "n-divider", "n-divpoints", "n-paramat", "n-linesdl",
+    "n-upperchord", "n-topframe", "n-vertpost",
+]
+
+_PROC_12_MEMBERS = [
+    "n-footer-bottom", "n-footerframe-intf", "n-hfooter", "n-footercount", "n-indlist1",
+    "n-indlist2", "n-trussconfig-const12", "n-bottomln", "n-topln", "n-footerunit",
+    "n-footerframe-emg",
+]
+
+
+def _frame_cg_context() -> dict:
+    return {
+        "nodes": _FRAME_NODES,
+        "algorithms": [
+            {
+                "index": 1,
+                "name": "1_ALGORITHM",
+                "procedures": [
+                    {
+                        "id": "cg:1:proc:11", "index": 11, "name": "2D Truss Configuration",
+                        "source": "tagged", "memberIds": list(_PROC_11_MEMBERS),
+                        "patterns": [], "parameters": [], "interfaces": [],
+                    },
+                    {
+                        "id": "cg:1:proc:12", "index": 12, "name": "2D Footer Configuration",
+                        "source": "tagged", "memberIds": list(_PROC_12_MEMBERS),
+                        "patterns": [], "parameters": [], "interfaces": [],
+                    },
+                ],
+            }
+        ],
+        "untagged": {
+            "nodeIds": ["n-scratch-01", "n-scratch-02", "n-untagged-01"],
+            "groups": [
+                {"nickname": "Scratch notes", "memberIds": ["n-scratch-01", "n-scratch-02"]},
+            ],
+        },
+        "wires": _FRAME_WIRES,
+    }
+
+
 # ── scope_untagged() ──
 
 
@@ -129,3 +256,75 @@ class TestOutputTokenBudget:
 
     def test_ceiling_at_large_residual(self):
         assert cg_topology.output_token_budget(1000) == 8192
+
+
+# ── widget_kind() -- C# ClassifyNodeKind parity table ──
+
+_WIDGET_KIND_CASES = [
+    ("slider present wins over any name", {"name": "Number Slider", "slider": {"min": 0, "max": 1, "step": 0.01}}, "Slider"),
+    ("value list substring, case-insensitive", {"name": "123 value LIST widget"}, "ValueList"),
+    ("panel substring, case-insensitive", {"name": "Big PANEL"}, "Panel"),
+    ("toggle substring, case-insensitive", {"name": "toggle switch"}, "Boolean"),
+    ("number exact match", {"name": "Number"}, "Number"),
+    ("integer exact match", {"name": "Integer"}, "Integer"),
+    ("text exact match", {"name": "Text"}, "Text"),
+    ("string exact match maps to Text", {"name": "String"}, "Text"),
+    ("geometry exact match", {"name": "Line"}, "Geometry"),
+    ("geometry exact match, another member", {"name": "Curve"}, "Geometry"),
+    ("unmatched geometry-ish name stays None", {"name": "Construct Point"}, "None"),
+    ("number-slider exact-match trap: no slider field, name != 'Number'", {"name": "Number Slider"}, "None"),
+    ("missing name defaults to None", {}, "None"),
+]
+
+
+class TestWidgetKindParity:
+    @pytest.mark.parametrize("label,node,expected", _WIDGET_KIND_CASES)
+    def test_parity_case(self, label, node, expected):
+        assert cg_topology.widget_kind(node) == expected, label
+
+
+# ── extract_features() ──
+
+
+class TestExtractFeatures:
+    def test_frame_spanscount_has_zero_in_degree(self):
+        features = cg_topology.extract_features(_frame_cg_context(), ["n-spanscount"])
+        assert features["n-spanscount"].in_degree == 0
+        assert features["n-spanscount"].out_degree > 0
+        assert features["n-spanscount"].widget_kind == "Slider"
+
+    def test_frame_emg_grouped_node_has_zero_out_degree(self):
+        features = cg_topology.extract_features(_frame_cg_context(), ["n-linesdl"])
+        assert features["n-linesdl"].out_degree == 0
+        assert features["n-linesdl"].in_degree > 0
+
+    def test_frame_abstain_nodes_are_fully_isolated(self):
+        node_ids = ["n-untagged-01", "n-scratch-01", "n-scratch-02"]
+        features = cg_topology.extract_features(_frame_cg_context(), node_ids)
+        for node_id in node_ids:
+            assert features[node_id].in_degree == 0, node_id
+            assert features[node_id].out_degree == 0, node_id
+
+    def test_frame_scratch_nodes_share_a_group(self):
+        features = cg_topology.extract_features(_frame_cg_context(), ["n-scratch-01", "n-scratch-02"])
+        assert features["n-scratch-01"].group_id == "Scratch notes"
+        assert features["n-scratch-01"].group_member_count == 2
+        assert features["n-scratch-02"].group_member_count == 2
+
+    def test_adjacent_tagged_procedures_via_one_hop_wire(self):
+        features = cg_topology.extract_features(_small_ctx(), ["n4"])
+        assert features["n4"].adjacent_tagged_procedures == [11]
+
+    def test_isolated_untagged_node_has_no_adjacent_procedures(self):
+        features = cg_topology.extract_features(_small_ctx(), ["n3"])
+        assert features["n3"].adjacent_tagged_procedures == []
+
+    def test_module_never_reads_nested_group_ids(self):
+        source = open(cg_topology.__file__, "r", encoding="utf-8").read()
+        assert "nestedGroupIds" not in source
+
+    def test_malformed_context_returns_empty_features_without_raising(self):
+        features = cg_topology.extract_features({}, ["missing"])
+        assert features["missing"].in_degree == 0
+        assert features["missing"].out_degree == 0
+        assert features["missing"].widget_kind == "None"
