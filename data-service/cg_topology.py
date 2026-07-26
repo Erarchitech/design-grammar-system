@@ -399,3 +399,48 @@ def classify(features: "dict[str, NodeFeatures]") -> Tier0Result:
             residual.append(node_id)
 
     return Tier0Result(decided=decided, residual=residual)
+
+
+# ── merge() -- order-stable Tier-0 + Tier-1 composition (G13) ──
+
+
+def merge(tier0_decided: "list[dict]", parsed: dict) -> dict:
+    """Compose Tier-0 decided rows with Tier-1's parsed proposals into one
+    `{"proposals": [...], "unrecognized": [...]}` object.
+
+    G13 contract, stated once: proposal ids are synthesized C#-side as
+    `p0, p1, ...` by ARRAY POSITION (`CanvasListenerComponent.cs:416-473`,
+    `PreviewRegistry.RegisterAll`), so array order is identity across the
+    bridge. `merge()` on the same input must therefore produce a
+    byte-identical order every time -- Tier-0 rows first, sorted
+    deterministically by `(procedureIndex, kind, memberIds[0])` so the order
+    never depends on caller-supplied list order; Tier-1 proposals follow,
+    UNMODIFIED, in the order the model returned them.
+
+    Never deduplicates, drops, or re-keys: a Tier-1 proposal claiming a node
+    Tier 0 already decided SURVIVES into the merged object, so
+    `validate_proposed_structure`'s `duplicate_member` check catches it and
+    the retry loop gets actionable feedback. Silently dropping it would hide
+    a real model error.
+    """
+    decided = list(tier0_decided or [])
+    decided_sorted = sorted(
+        decided,
+        key=lambda p: (
+            p.get("procedureIndex", 0) if isinstance(p, dict) else 0,
+            p.get("kind", "") if isinstance(p, dict) else "",
+            ((p.get("memberIds") or [""])[0]) if isinstance(p, dict) else "",
+        ),
+    )
+
+    parsed_dict = parsed if isinstance(parsed, dict) else {}
+    tier1_proposals = parsed_dict.get("proposals")
+    tier1_proposals = list(tier1_proposals) if isinstance(tier1_proposals, list) else []
+
+    unrecognized = parsed_dict.get("unrecognized")
+    unrecognized = list(unrecognized) if isinstance(unrecognized, list) else []
+
+    return {
+        "proposals": decided_sorted + tier1_proposals,
+        "unrecognized": unrecognized,
+    }

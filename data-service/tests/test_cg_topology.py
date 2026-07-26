@@ -13,6 +13,7 @@ cg_topology consumes.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -20,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest  # noqa: E402
 
+import cg_recognition  # noqa: E402
 import cg_schemas  # noqa: E402
 import cg_topology  # noqa: E402
 
@@ -496,3 +498,84 @@ class TestClassifyShapeAndRationale:
         result = cg_topology.classify(features)
         assert result.decided == []
         assert sorted(result.residual) == sorted(node_ids)
+
+
+# ── merge() -- order-stable Tier-0 + Tier-1 composition (G13) ──
+
+
+def _tier1_proposal(**overrides) -> dict:
+    base = {
+        "kind": "Pattern",
+        "suggestedName": "11_Pat_Something",
+        "procedureIndex": 11,
+        "memberIds": ["n-b"],
+        "confidence": 0.8,
+        "rationale": "grouped compute chain",
+    }
+    base.update(overrides)
+    return base
+
+
+def _tier0_row(**overrides) -> dict:
+    base = {
+        "kind": "Var",
+        "suggestedName": "11_Var_A",
+        "procedureIndex": 11,
+        "memberIds": ["n-a"],
+        "confidence": 1.0,
+        "rationale": "in-degree 0, out-degree 1, widget=Slider",
+    }
+    base.update(overrides)
+    return base
+
+
+class TestMerge:
+    def test_merge_is_byte_identical_on_repeat_calls(self):
+        decided = [_tier0_row()]
+        parsed = {"proposals": [_tier1_proposal()], "unrecognized": []}
+        first = json.dumps(cg_topology.merge(decided, parsed))
+        second = json.dumps(cg_topology.merge(decided, parsed))
+        assert first == second
+
+    def test_merge_order_is_stable_under_shuffled_tier0_input(self):
+        row_a = _tier0_row(memberIds=["n-a"], procedureIndex=11, kind="Var")
+        row_b = _tier0_row(memberIds=["n-b"], procedureIndex=11, kind="Const", suggestedName="11_Const_B")
+        row_c = _tier0_row(memberIds=["n-c"], procedureIndex=12, kind="Emg", suggestedName="12_Emg_C")
+        parsed = {"proposals": [], "unrecognized": []}
+
+        baseline = cg_topology.merge([row_a, row_b, row_c], parsed)
+        shuffled = cg_topology.merge([row_c, row_a, row_b], parsed)
+
+        assert [p["memberIds"] for p in shuffled["proposals"]] == [p["memberIds"] for p in baseline["proposals"]]
+
+    def test_tier0_rows_precede_tier1_rows(self):
+        decided = [_tier0_row()]
+        parsed = {"proposals": [_tier1_proposal()], "unrecognized": []}
+        merged = cg_topology.merge(decided, parsed)
+        assert merged["proposals"][0]["memberIds"] == ["n-a"]
+        assert merged["proposals"][1]["memberIds"] == ["n-b"]
+
+    def test_tier1_overlap_with_tier0_survives_and_is_caught_by_validator(self):
+        decided = [_tier0_row(memberIds=["n-a"])]
+        overlapping = _tier1_proposal(memberIds=["n-a", "n-b"])
+        parsed = {"proposals": [overlapping], "unrecognized": []}
+
+        merged = cg_topology.merge(decided, parsed)
+
+        # Not dropped: the overlapping Tier-1 proposal is present verbatim.
+        assert any(p["memberIds"] == ["n-a", "n-b"] for p in merged["proposals"])
+
+        cg_context = {
+            "nodes": [{"instanceId": "n-a"}, {"instanceId": "n-b"}],
+            "algorithms": [],
+        }
+        validation = cg_recognition.validate_proposed_structure(merged, cg_context)
+        assert validation["valid"] is False
+        assert any(v["code"] == "duplicate_member" for v in validation["violations"])
+
+    def test_merge_passes_through_unrecognized_and_handles_malformed_parsed(self):
+        merged = cg_topology.merge([], {"proposals": [], "unrecognized": [{"memberIds": ["n-z"], "reason": "isolated"}]})
+        assert merged["unrecognized"] == [{"memberIds": ["n-z"], "reason": "isolated"}]
+
+        merged_malformed = cg_topology.merge([], None)
+        assert merged_malformed == {"proposals": [], "unrecognized": []}
