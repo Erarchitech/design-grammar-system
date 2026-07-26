@@ -5,16 +5,16 @@ milestone_name: AI Workflow Intelligence
 current_phase: 35
 current_phase_name: llm-recognition-canvas-preview
 status: executing
-stopped_at: "Completed 35-13-PLAN.md (recognition eval harness driver: cassette.py, arms.py, report.py, SC1 gate + A0 validity checks, 52 new tests)"
-last_updated: "2026-07-26T21:31:46.108Z"
+stopped_at: "Completed 35-15-PLAN.md (live recognition eval sweep: record-mode driver built, A0/A1-A4/permutation sweep run against real DeepSeek, SC1 verdict blocked-on-provider-availability, 35-UAT.md test 1 closed)"
+last_updated: "2026-07-26T22:20:07.423Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 14
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 50
-  completed_plans: 48
-  percent: 43
+  completed_plans: 49
+  percent: 50
 ---
 
 # Project State
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
-Plan: 1 of 16
-Status: Executing Phase 35
+Plan: 2 of 16
+Status: Ready to execute
 Last activity: 2026-07-27 — Phase 35 execution started
 
 ## Deferred Verification
@@ -82,6 +82,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 35 P12 | 35min | 4 tasks | 4 files |
 | Phase 35 P14 | 35min | 2 tasks | 2 files |
 | Phase 35 P13 | ~1h10m | 4 tasks | 6 files |
+| Phase 35 P15 | ~50min | 4 tasks | 27 files |
 
 ## Accumulated Context
 
@@ -298,6 +299,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 35-13]: resolve_arm_artifacts() resolves the pre-35-08 few-shot fixture sha via git log/show at run time (matching commit subject '35-08'), never hardcoded -- raises loudly if unresolvable
 - [Phase ?]: [Phase 35-13]: data-service container needed git installed (Dockerfile) + _REPO_ROOT switched to the DG_KNOWLEDGE_REPO_ROOT/mnt-repo convention (dg_knowledge.py precedent) -- rebuilt once
 - [Phase ?]: [Phase 35-13]: SC1 gate (assert_sc1_gate) and A0 validity check (assert_a0_validity) are pure functions unit-tested with synthetic numbers; the real (corpus x arm) driver test is skip-gated behind --corpus/--arm since no cassettes exist until 35-15 records them
+- [Phase ?]: 35-15: Built the missing record-mode LLM sweep driver (35-13 asserted it existed; it did not) as an in-plan deviation -- REAL_ADAPTER_MAP + resolve_real_negotiated_mode in arms.py is now the single source of truth for provider-label -> real adapter/base_url translation, used by both live_sweep.py (record) and report.py (replay)
+- [Phase ?]: 35-15: SC1 measured DeepSeek-only (A0-A4; A0f/A5 skipped, no frontier key configured) -- reported as still blocked on provider availability per the plan's own pre-registered fallback, not computed as pass/fail from an incomplete arm set
+- [Phase ?]: 35-15: A0's validity verdict is read from a G7 guardrail block (valid:False) on Corpus B, not the literal assert_a0_validity() shape written before Phase 35-12's G7 existed -- G7's own trigger condition encodes UAT F3's signature, so the block is harness-validated evidence, not a harness defect
 
 ### Research Flags (carry into planning)
 
@@ -375,8 +379,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:50:40.409Z
-Stopped at: Completed 35-13-PLAN.md (recognition eval harness driver: cassette.py, arms.py, report.py, SC1 gate + A0 validity checks, 52 new tests)
+Last session: 2026-07-26T22:20:07.404Z
+Stopped at: Completed 35-15-PLAN.md (live recognition eval sweep: record-mode driver built, A0/A1-A4/permutation sweep run against real DeepSeek, SC1 verdict blocked-on-provider-availability, 35-UAT.md test 1 closed)
 Resume file: None
 
 ## Performance Metrics
