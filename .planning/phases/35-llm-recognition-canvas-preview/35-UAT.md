@@ -54,12 +54,19 @@ comparison against the fixture.
    examples in the live prompt are drawn from it. Grading on it would be train/test
    contamination on top of the `tier0Evidence: false` circularity that Corpus B exists to
    escape (AI-SPEC §1b). Corpus B stays on an independently-authored canvas.
-2. **Corpus A could be re-grounded.** Plan 35-05 had to hand-repair `frame-cg-context.json`
-   (34 nodes, originally 1 wire, both `_Proc` groups member-less). A live pull would replace a
-   reconstruction with a capture. Blocked on: Corpus A is frozen (`contextSha256`,
-   `frozenAtCommit`) and 35-11 is closed — this is a re-plan decision, not an edit.
+2. **Corpus A stays as-is — DECIDED 2026-07-26 (architect).** Re-grounding it on a live pull
+   was considered and declined. Plan 35-05's hand-repaired `frame-cg-context.json` (34 nodes,
+   originally 1 wire, both `_Proc` groups member-less) remains the frozen Corpus A. Its
+   `contextSha256` / `frozenAtCommit` are untouched and 35-11 stays closed. Any future
+   re-grounding is a new plan, not an edit to this one.
 3. **UAT test 1 could finally run on Frame.** It has never been executed on the intended
    fixture; the recovered file makes that possible once a frontier-class model is available.
+
+**Binaries stay out of git — DECIDED 2026-07-26 (architect).** Neither file is committed.
+`.gitignore` now carries `*.gh` / `*.3dm` (no such file was tracked anywhere in the repo, so
+the rule shadows nothing) to stop a broad `git add` from sweeping the 20 MB `.3dm` into
+history, which could only be undone by rewriting it. The files live on disk at the paths in
+the table above; this note is their provenance record.
 
 **Session 2 (2026-07-25, same day)** continued Group 4.3-4.6 on the same UrbanBlock_V7 canvas with a
 fresh 5-proposal synthetic payload chosen to make the publish gate meaningful: real untagged GUIDs for
