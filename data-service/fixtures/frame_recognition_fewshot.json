@@ -1,40 +1,162 @@
 {
-  "description": "One trimmed Frame worked example: an untagged Param/Line SDL node pair wired from a tagged procedure member, correctly classified as an Interface proposal per the DG Canvas Annotation Convention (<NN>_IntF_<Name>). Drawn from DG/tests/DG.Tests/Fixtures/frame-cg-context.json.",
-  "input": {
-    "untagged": {
-      "nodeIds": ["n-parsplit", "n-trussconfig-intf"],
-      "groups": [
-        { "nickname": "11_IntF_ParSplitAt", "memberIds": ["n-parsplit"] },
-        { "nickname": "11_IntF_TrussConfig", "memberIds": ["n-trussconfig-intf"] }
-      ]
-    },
-    "nodes": [
-      { "instanceId": "n-parsplit", "componentGuid": "guid-param", "name": "Param", "nickname": "ParSplitAt", "position": [200, 100] },
-      { "instanceId": "n-trussconfig-intf", "componentGuid": "guid-param", "name": "Param", "nickname": "TrussConfig", "position": [220, 100] }
-    ],
-    "wires": [
-      { "fromNode": "n-divide-curve", "fromParam": "p-out0", "toNode": "n-parsplit", "toParam": "p-in0" }
-    ]
-  },
-  "expected": {
-    "proposals": [
-      {
-        "kind": "Interface",
-        "suggestedName": "11_IntF_ParSplitAt",
-        "procedureIndex": 11,
-        "memberIds": ["n-parsplit"],
-        "confidence": 0.91,
-        "rationale": "Param node nicknamed 'ParSplitAt', wired from procedure 11's tagged members, matches the Interface naming grammar <NN>_IntF_<Name>."
+  "description": "Counterexample-shaped few-shot demonstrations for Computgraph structure recognition. Every example deliberately shows a NON-conforming input name being classified from wiring alone, so the demonstration teaches generation rather than lookup. Node ids come from the Frame worked example (DG/tests/DG.Tests/Fixtures/frame-cg-context.json) but the nicknames are rewritten to non-canonical forms on purpose: the model must not be able to read the answer off a name.",
+  "promptVersion": "r35.4",
+  "exampleOrderNote": "Example ORDER is deliberate and is swept as 3 permutations by the eval harness (Lu et al., ACL 2022 -- permuting the same demonstrations swings accuracy from near-SOTA to near-chance). The abstention example sits in the middle, not last, so abstaining does not read as an afterthought. Do not reorder casually; pin and justify any change here.",
+  "examples": [
+    {
+      "input": {
+        "untagged": {
+          "nodeIds": ["n-spanscount"],
+          "groups": [
+            { "nickname": "loose bits", "memberIds": ["n-spanscount"] }
+          ]
+        },
+        "nodes": [
+          { "instanceId": "n-spanscount", "componentGuid": "guid-number-slider", "name": "Number Slider", "nickname": "num2", "slider": { "min": 1, "max": 20, "step": 1 }, "isIntegerSlider": true }
+        ],
+        "wires": [
+          { "fromNode": "n-spanscount", "fromParam": "out0", "toNode": "n-divide-curve", "toParam": "in1" }
+        ],
+        "taggedProcedures": [
+          { "index": 11, "name": "2D Truss Configuration", "memberIds": ["n-divide-curve"] }
+        ]
       },
-      {
-        "kind": "Interface",
-        "suggestedName": "11_IntF_TrussConfig",
-        "procedureIndex": 11,
-        "memberIds": ["n-trussconfig-intf"],
-        "confidence": 0.86,
-        "rationale": "Param node nicknamed 'TrussConfig' co-located with procedure 11's Interface group, matching <NN>_IntF_<Name>."
+      "expected": {
+        "proposals": [
+          {
+            "kind": "VariableParam",
+            "suggestedName": "11_Var_SpanCount",
+            "procedureIndex": 11,
+            "memberIds": ["n-spanscount"],
+            "confidence": 0.88,
+            "rationale": "Integer slider, in-degree 0, out-degree 1, driving the count input of procedure 11's tagged Divide Curve."
+          }
+        ],
+        "unrecognized": []
       }
-    ],
-    "unrecognized": []
-  }
+    },
+    {
+      "input": {
+        "untagged": {
+          "nodeIds": ["n-divide-curve", "n-topchord"],
+          "groups": [
+            { "nickname": "curve stuff", "memberIds": ["n-divide-curve", "n-topchord"] }
+          ]
+        },
+        "nodes": [
+          { "instanceId": "n-divide-curve", "componentGuid": "guid-divide-curve", "name": "Divide Curve", "nickname": "c1" },
+          { "instanceId": "n-topchord", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "ln" }
+        ],
+        "wires": [
+          { "fromNode": "n-divide-curve", "fromParam": "out0", "toNode": "n-topchord", "toParam": "in0" }
+        ],
+        "taggedProcedures": [
+          { "index": 11, "name": "2D Truss Configuration", "memberIds": ["n-parsplit"] }
+        ]
+      },
+      "expected": {
+        "proposals": [
+          {
+            "kind": "Pattern",
+            "suggestedName": "11_Pat_DivideLine",
+            "procedureIndex": 11,
+            "memberIds": ["n-divide-curve", "n-topchord"],
+            "confidence": 0.74,
+            "rationale": "Divide Curve feeds the Line SDL directly and nothing else consumes it; the two implement one operation, so the helper belongs inside."
+          }
+        ],
+        "unrecognized": []
+      }
+    },
+    {
+      "input": {
+        "untagged": {
+          "nodeIds": ["n-untagged-01", "n-scratch-01"],
+          "groups": []
+        },
+        "nodes": [
+          { "instanceId": "n-untagged-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "loose panel" },
+          { "instanceId": "n-scratch-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "tmp" }
+        ],
+        "wires": [],
+        "taggedProcedures": [
+          { "index": 11, "name": "2D Truss Configuration", "memberIds": ["n-parsplit"] }
+        ]
+      },
+      "expected": {
+        "proposals": [],
+        "unrecognized": [
+          {
+            "memberIds": ["n-untagged-01", "n-scratch-01"],
+            "reason": "Isolated: no wires in or out, and no group membership. Cannot distinguish a constant from an abandoned experiment."
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "untagged": {
+          "nodeIds": ["n-parsplit"],
+          "groups": [
+            { "nickname": "param stuff", "memberIds": ["n-parsplit"] }
+          ]
+        },
+        "nodes": [
+          { "instanceId": "n-parsplit", "componentGuid": "guid-param", "name": "Param", "nickname": "at" }
+        ],
+        "wires": [
+          { "fromNode": "n-divide-curve", "fromParam": "out0", "toNode": "n-parsplit", "toParam": "in0" },
+          { "fromNode": "n-parsplit", "fromParam": "out0", "toNode": "n-footer-bottom", "toParam": "in0" }
+        ],
+        "taggedProcedures": [
+          { "index": 11, "name": "2D Truss Configuration", "memberIds": ["n-divide-curve"] },
+          { "index": 12, "name": "2D Footer Configuration", "memberIds": ["n-footer-bottom"] }
+        ]
+      },
+      "expected": {
+        "proposals": [
+          {
+            "kind": "Interface",
+            "suggestedName": "11_IntF_SplitParameter",
+            "procedureIndex": 11,
+            "memberIds": ["n-parsplit"],
+            "confidence": 0.66,
+            "rationale": "Bare Param, one input from procedure 11's tagged Divide Curve, one output into procedure 12 -- a pass-through at a procedure boundary."
+          }
+        ],
+        "unrecognized": []
+      }
+    },
+    {
+      "input": {
+        "untagged": {
+          "nodeIds": ["n-linesdl"],
+          "groups": []
+        },
+        "nodes": [
+          { "instanceId": "n-linesdl", "componentGuid": "guid-line-sdl", "name": "Line SDL", "nickname": "out3" }
+        ],
+        "wires": [
+          { "fromNode": "n-ptzero", "fromParam": "out0", "toNode": "n-linesdl", "toParam": "in0" },
+          { "fromNode": "n-vecy", "fromParam": "out0", "toNode": "n-linesdl", "toParam": "in1" }
+        ],
+        "taggedProcedures": [
+          { "index": 12, "name": "2D Footer Configuration", "memberIds": ["n-ptzero", "n-vecy"] }
+        ]
+      },
+      "expected": {
+        "proposals": [
+          {
+            "kind": "EmergentParam",
+            "suggestedName": "12_Emg_ChordLine",
+            "procedureIndex": 12,
+            "memberIds": ["n-linesdl"],
+            "confidence": 0.81,
+            "rationale": "Two inputs from procedure 12's tagged members, out-degree 0 -- terminal computed geometry, nothing downstream consumes it."
+          }
+        ],
+        "unrecognized": []
+      }
+    }
+  ]
 }

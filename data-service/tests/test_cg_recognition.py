@@ -425,7 +425,30 @@ class TestPrompt:
         assert size < 20_000
 
     def test_frame_fewshot_fixture_exists_and_is_valid_json(self):
+        # Phase 35-08 replaced the single {input, expected} blob with a LIST of
+        # heterogeneous, counterexample-shaped examples: the old fixture's two
+        # Interface demonstrations both had convention-conforming input names
+        # and grammar-citing rationales, which is what taught the model to read
+        # the convention as a filter (UAT F3). The list shape also makes a later
+        # dynamic-retrieval selector a one-line change.
         fewshot = cg_recognition._load_frame_fewshot()
-        assert "input" in fewshot
-        assert "expected" in fewshot
-        assert isinstance(fewshot["expected"].get("proposals"), list)
+        assert "examples" in fewshot
+        examples = fewshot["examples"]
+        assert isinstance(examples, list) and len(examples) >= 4
+        assert all("input" in e and "expected" in e for e in examples)
+        assert all(isinstance(e["expected"].get("proposals"), list) for e in examples)
+
+    def test_frame_fewshot_rationales_never_cite_the_grammar(self):
+        # The regression guard for UAT F3's root cause: a demonstration that
+        # justifies a proposal by the naming grammar teaches the model to
+        # reject every untagged node, since untagged nodes never match it.
+        fewshot = cg_recognition._load_frame_fewshot()
+        rationales = [
+            p["rationale"].lower()
+            for e in fewshot["examples"]
+            for p in e["expected"]["proposals"]
+        ]
+        assert rationales
+        for rationale in rationales:
+            assert "grammar" not in rationale
+            assert "convention" not in rationale
