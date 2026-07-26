@@ -1309,16 +1309,37 @@ class RecognizeRequest(BaseModel):
     project: str | None = None
 
 
+def _violation_hint(message: str) -> str:
+    """Extract the 'How to fix' clause from a cg_recognition violation
+    message (What+Where+How-to-fix phrasing) rather than duplicating the
+    guidance text a second time in the route."""
+    marker = "How to fix:"
+    idx = message.find(marker)
+    if idx == -1:
+        return "See the violation message for details."
+    return message[idx + len(marker) :].strip()
+
+
 @app.post("/computgraph/recognize")
 def post_computgraph_recognize(payload: RecognizeRequest):
     """Classify untagged canvas entities into a schema-valid proposed-structure
-    (RCGN-01), bounded-retry validated against the submitted cg_context
-    (RCGN-04: hard-rejects hallucinated/tagged-overlap member ids). Thin route
-    -- all logic delegates to cg_recognition.recognize_structure(), mirroring
+    (RCGN-01) via the two-tier Tier-0 (deterministic topology)/Tier-1 (LLM)
+    pipeline (Phase 35-12), bounded-retry validated against the submitted
+    cg_context (RCGN-04: hard-rejects hallucinated/tagged-overlap member
+    ids). Thin route -- all logic delegates to
+    cg_recognition.recognize_structure(), mirroring
     post_context_generate_cypher()'s delegation + error-mapping shape.
+
+    A `tier: "0"` response means Tier 0 decided every candidate and the LLM
+    was never called. Non-retryable Tier-1 outcomes (`output_truncated`,
+    `grammar_as_filter`, `provider_refusal`) return HTTP 200 with
+    `valid: false` -- they are model-run outcomes the caller must be able to
+    read alongside `attempts`/`violations`, and a 502 would discard that
+    context. Only `empty_procedure_scope` -- a CALLER error, not a model
+    failure -- is mapped to a 422.
     """
     try:
-        return cg_recognition.recognize_structure(payload.cg_context, payload.procedure_index)
+        result = cg_recognition.recognize_structure(payload.cg_context, payload.procedure_index)
     except ValueError as exc:
         raise _structured_error_response(
             str(exc),
@@ -1329,6 +1350,21 @@ def post_computgraph_recognize(payload: RecognizeRequest):
     except Exception as exc:
         error_msg, hint, code = map_provider_error(exc)
         raise _structured_error_response(error_msg, hint, code, 502)
+
+    if not result.get("valid"):
+        empty_scope_violation = next(
+            (v for v in (result.get("violations") or []) if v.get("code") == "empty_procedure_scope"),
+            None,
+        )
+        if empty_scope_violation is not None:
+            raise _structured_error_response(
+                empty_scope_violation["message"],
+                _violation_hint(empty_scope_violation["message"]),
+                "RECOGNIZE_EMPTY_PROCEDURE_SCOPE",
+                422,
+            )
+
+    return result
 
 
 # ---------------------------------------------------------------------------

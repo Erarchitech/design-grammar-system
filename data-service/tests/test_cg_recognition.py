@@ -20,10 +20,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 import cg_recognition  # noqa: E402
 import cg_topology  # noqa: E402
+from app import app  # noqa: E402
 from llm_gateway import GenerateResponse, StructuredOutputCapability  # noqa: E402
+
+client = TestClient(app, raise_server_exceptions=False)
 
 
 @pytest.fixture(autouse=True)
@@ -828,6 +832,84 @@ class TestGuardrails:
         prompt_sent = fake_adapter.prompts_seen[0]
         assert prompt_sent not in caplog.text
         assert "sk-super-secret-key" not in caplog.text
+
+
+# ── POST /computgraph/recognize route (Phase 35-12 Task 4) ──
+
+
+class TestRecognizeRoute:
+    def test_members_less_procedure_returns_actionable_422(self, monkeypatch):
+        monkeypatch.setattr(
+            cg_recognition, "get_adapter", lambda provider, base_url=None: _FakeAdapterForRetry([])
+        )
+
+        response = client.post(
+            "/computgraph/recognize",
+            json={"cg_context": _cg_context(), "procedure_index": 999},
+        )
+
+        assert response.status_code == 422
+        detail = response.json()["detail"]
+        assert "999" in detail["error"]
+        assert detail["hint"]
+        assert detail["code"] == "RECOGNIZE_EMPTY_PROCEDURE_SCOPE"
+
+    def test_tier0_only_recognition_returns_200_without_calling_the_adapter(self, monkeypatch):
+        call_tracker = {"called": False}
+
+        def _tracking_get_adapter(provider, base_url=None):
+            call_tracker["called"] = True
+            return _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+
+        monkeypatch.setattr(cg_recognition, "get_adapter", _tracking_get_adapter)
+
+        ctx = _cg_context()
+        ctx["untagged"] = {
+            "nodeIds": ["n4"],
+            "groups": [{"nickname": "wired thing group", "memberIds": ["n4"]}],
+        }
+
+        response = client.post("/computgraph/recognize", json={"cg_context": ctx})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["tier"] == "0"
+        assert call_tracker["called"] is False
+
+    def test_output_truncated_returns_200_with_valid_false_not_502(self, monkeypatch):
+        monkeypatch.setattr(
+            cg_recognition,
+            "get_adapter",
+            lambda provider, base_url=None: _FakeAdapterForRetry([_TRUNCATED_RESPONSE]),
+        )
+
+        response = client.post("/computgraph/recognize", json={"cg_context": _cg_context()})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["valid"] is False
+        codes = {v["code"] for v in body["violations"]}
+        assert "output_truncated" in codes
+
+    def test_grammar_as_filter_returns_200_with_valid_false_not_502(self, monkeypatch):
+        monkeypatch.setattr(
+            cg_recognition,
+            "get_adapter",
+            lambda provider, base_url=None: _FakeAdapterForRetry(
+                [_ZERO_PROPOSALS_SIX_CANDIDATES_TEXT, _ZERO_PROPOSALS_SIX_CANDIDATES_TEXT]
+            ),
+        )
+
+        response = client.post(
+            "/computgraph/recognize",
+            json={"cg_context": _isolated_candidates_context(6, "m")},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["valid"] is False
+        codes = {v["code"] for v in body["violations"]}
+        assert "grammar_as_filter" in codes
 
 
 # ── _build_recognition_prompt() -- deterministic prompt assembly ──
