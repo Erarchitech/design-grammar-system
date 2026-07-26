@@ -1,7 +1,8 @@
 ---
 tags: [debugging, computgraph, parser, publish, phase-34, phase-35, phase-36]
 date: 2026-07-25
-status: open
+updated: 2026-07-26
+status: fixed
 ---
 
 # F5 — Bare Number component infers null dataType with no warning, 422s the whole publish
@@ -39,8 +40,25 @@ Allowed values: ['Boolean', 'Float', 'Geometry', 'Integer', 'Text'].
 
 **Cross-phase:** 34 (parser) → 35 (accept, no validation) → 36 (publish, SHACL rejects everything).
 
+## Fix Applied (2026-07-26)
+
+Implemented all three parts:
+
+1. **Parser inference (commit `028ff0e`):** Two-tier precedence. Widgets (slider > value list > panel > toggle) still win; when absent, a new **primitive fallback tier** (Number > Integer > Text > geometry) types bare GH params. `Number`→Float, `Integer`→Integer, `Text`/`String`→Text, 15 exact geometry names→Geometry.
+   
+2. **Parse-time warning:** Members present but untypeable now append `"…dataType is unset and publishing will reject the payload"` instead of returning silently. Member-less groups stay quiet (tag-then-populate is normal).
+
+3. **Accept-time + publish-side validation:**
+   - Phase 35 (parallel session, commit `ae6d805`): G12 gate blocks individual proposals whose dataType cannot be inferred; offender stays PENDING so the architect can fix the canvas and re-apply.
+   - Phase 36 (commit `028ff0e`): `DG COMPUTGRAPH PUBLISH` pre-flights null dataTypes, names them in status, refuses to POST.
+
+**Verification:** 384/384 C# tests pass. Live-verified on Rhino: `cg:1:const:11_Const_Num` (bare Number) publishes as Constant/Float; subgraph went 11→12 nodes. MERGE idempotency re-confirmed.
+
+**Part (c) deliberately not taken:** Per-entity publish rejection would change the response contract and interact with MERGE idempotency + stale-entity reporting — a design call, not a fix. Off the critical path now that the pre-flight catches it first.
+
 ## Related
 
 - [[debugging/Phase 36 provider-model-confidence never persisted (F6)]]
-- `.planning/phases/35-llm-recognition-canvas-preview/35-UAT.md` test 4
-- `.planning/phases/36-computgraph-persistence-display/36-UAT.md` test 1
+- [[sessions/2026-07-26 Phase 35 F5 fix — dataType inference on bare params]]
+- `.planning/phases/35-llm-recognition-canvas-preview/35-UAT.md` F5 status
+- `.planning/phases/36-computgraph-persistence-display/36-UAT.md` SC3
