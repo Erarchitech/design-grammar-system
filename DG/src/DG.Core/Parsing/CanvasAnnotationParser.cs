@@ -482,6 +482,28 @@ public static class CanvasAnnotationParser
         }
     }
 
+    /// <summary>
+    /// Public seam over <see cref="InferParameterDataType"/> so a caller can ask, BEFORE
+    /// committing to a parameter entity, the same question the parser will ask at
+    /// context-pull time: can this member set be assigned a <see cref="ParamDataType"/>?
+    /// </summary>
+    /// <remarks>
+    /// Exists for the accept-time publishability gate (Phase 35, guardrail G12). A null
+    /// <c>DataType</c> is fatal three phases later -- the SHACL-backed publish rejects the
+    /// WHOLE payload when one parameter lacks it (ParameterShape_dataType, sh:minCount 1),
+    /// so 11 valid entities cannot land because of 1 invalid one, and the architect reads
+    /// that as "the AI made me break my publish" (UAT F5). Asking here moves the failure to
+    /// the moment they can still act on it.
+    /// <para>
+    /// This delegates rather than re-implements on purpose: a second copy of the inference
+    /// rules in the Grasshopper layer would drift from this one, and a divergence between
+    /// what the gate accepts and what the parser types is exactly how F5 happens again.
+    /// </para>
+    /// </remarks>
+    public static (ParamDataType? DataType, SliderDomain? Domain, string? Warning) TryInferParameterDataType(
+        string parameterNickname, IEnumerable<CgNode> memberNodes) =>
+        InferParameterDataType(parameterNickname, memberNodes);
+
     private static (ParamDataType? DataType, SliderDomain? Domain, string? Warning) InferParameterDataType(
         string parameterNickname, IEnumerable<CgNode> memberNodes)
     {

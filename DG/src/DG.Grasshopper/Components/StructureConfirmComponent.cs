@@ -152,6 +152,7 @@ public sealed class StructureConfirmComponent : GH_Component
             var record = new GH_UndoRecord("DG confirm structure");
             var accepted = 0;
             var rejected = 0;
+            var blocked = 0;
 
             foreach (var id in acceptIds)
             {
@@ -174,6 +175,36 @@ public sealed class StructureConfirmComponent : GH_Component
                 // canvas, never the possibly-stale LLM suggestedName -- avoids a collision if
                 // the architect tagged something between recognition and confirmation.
                 var raw = CanvasContextExtractor.ExtractRaw(currentDoc, string.Empty);
+
+                // G12 -- accept-time publishability gate (UAT F5). A proposed parameter whose
+                // member set the parser cannot type yields a null dataType, and Phase 36's
+                // SHACL-backed publish then rejects the WHOLE payload over that one entity,
+                // three phases away from the cause. Ask the parser the same question now,
+                // while the architect can still act on it. Per-entity and deliberately NOT
+                // all-or-nothing: this blocks one proposal and lets the rest of the Apply land.
+                if (IsParameterKind(entry.Kind))
+                {
+                    var memberIds = group.ObjectIDs.Select(objectId => objectId.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var memberNodes = raw.Nodes.Where(n => memberIds.Contains(n.InstanceId)).ToList();
+
+                    var (dataType, _, typeWarning) = CanvasAnnotationParser.TryInferParameterDataType(
+                        entry.SuggestedName, memberNodes);
+
+                    if (dataType is null && memberNodes.Count > 0)
+                    {
+                        var offenders = string.Join(", ", memberNodes.Select(n => $"'{n.Nickname}' ({n.Name})"));
+                        AddRuntimeMessage(
+                            GH_RuntimeMessageLevel.Warning,
+                            $"What: Proposal '{id}' ({entry.SuggestedName}) was NOT accepted -- the parser cannot infer a dataType " +
+                            $"for its member component(s): {offenders}. {typeWarning} " +
+                            "Where: StructureConfirmComponent accept-time publishability gate (G12). " +
+                            "How to fix: add a typeable member (a slider, value list, panel, toggle, or a bare Number/Integer/Text/geometry param) " +
+                            "to that group, or reject the proposal and tag it manually with DG ENTITY TAG. " +
+                            "The proposal stays PENDING so you can re-Apply after fixing it.");
+                        blocked++;
+                        continue;
+                    }
+                }
 
                 int? patternIndex = entry.Kind == EntityTagKind.Pat
                     ? CanvasAnnotationNameFactory.NextFreePatternIndex(raw.Groups.Select(g => g.Nickname), entry.ProcedureIndex)
@@ -243,7 +274,10 @@ public sealed class StructureConfirmComponent : GH_Component
             }
 
             global::Grasshopper.Instances.InvalidateCanvas();
-            _status = $"Accepted {accepted}, rejected {rejected}, {PreviewRegistry.Pending.Count} pending";
+            // The blocked segment appears only when it is non-zero, so the common case reads
+            // exactly as before.
+            var blockedSegment = blocked > 0 ? $"blocked {blocked}, " : string.Empty;
+            _status = $"Accepted {accepted}, rejected {rejected}, {blockedSegment}{PreviewRegistry.Pending.Count} pending";
             ExpireSolution(false);
         }
         catch (Exception ex)
@@ -252,6 +286,15 @@ public sealed class StructureConfirmComponent : GH_Component
             _status = $"Error: {ex.Message}";
         }
     }
+
+    /// <summary>
+    /// True for the three kinds that carry a <c>dataType</c> and are therefore subject to the
+    /// G12 accept-time publishability gate. <c>Proc</c> and <c>Pat</c> carry no dataType, and
+    /// <c>IntF</c> carries an <c>ifaceType</c> instead -- gating them would block on a property
+    /// they do not have.
+    /// </summary>
+    private static bool IsParameterKind(EntityTagKind kind) =>
+        kind is EntityTagKind.Var or EntityTagKind.Const or EntityTagKind.Emg;
 
     /// <summary>
     /// True when <paramref name="group"/>'s members are a non-empty subset of another Pattern

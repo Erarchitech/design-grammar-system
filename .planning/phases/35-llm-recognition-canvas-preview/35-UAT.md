@@ -59,12 +59,16 @@ result: pass — 2026-07-25 (session 2). After the mixed Apply of test 4, a sing
 expected: Run preview_structure twice in a row (second call auto-clears the first preview). Pressing Ctrl+Z twice walks the two undo records without leaving orphan groups or resurrecting cleared previews inconsistently.
 result: pass — 2026-07-26 (synthetic proposals, UrbanBlock_V7, post-fix build; was FAIL on 2026-07-25). Two `preview_structure` calls in ONE listener session: `AlphaOne (90%)` + `AlphaTwo (80%)` then `BetaOne (70%)`. A `/computgraph/context/pull` between the calls proved the auto-clear really ran (canvas went `[?] AlphaOne, [?] AlphaTwo` → `[?] BetaOne`). Ctrl+Z #1 removed `BetaOne` and **restored both Alphas + the `2 proposal(s)` legend**; Ctrl+Z #2 removed them with **no "Undo failed" dialog**. Post-press pull: zero preview groups remaining. The newly-covered `preview → clear_preview → Ctrl+Z` path was verified in the same session (`GammaOne`/`GammaTwo`, `cleared: 2`): one Ctrl+Z restored both, a second removed them, no dialog. Original 2026-07-25 failure and root cause: the auto-clear removed the first preview's objects via `doc.RemoveObject(obj, false)` while leaving that preview's undo record (R1) on GH's stack, so Ctrl+Z #2 hit an add-action targeting already-deleted objects. **Testing note for future re-runs:** F4 only reproduces when `preview_structure` runs twice in the SAME listener session — a first attempt after a Rhino restart did not exercise it (the restart empties `PreviewRegistry`, so the auto-clear had nothing to remove), though it did re-confirm that single-preview undo is unregressed on the fixed build.
 
+### 7. Accept-time publishability gate (G12 / UAT F5)
+expected: Accepting a mixed set where one Var/Const/Emg proposal's members cannot be typed by the parser blocks THAT proposal only — it stays pending with a Warning naming the offending component — while every other proposal in the same Apply converts to a permanent convention group; Status reports the blocked count.
+result: pending — code complete 2026-07-26 (35-09: CanvasAnnotationParser.TryInferParameterDataType public seam + per-entity gate in StructureConfirmComponent, Release build clean, 384 DG tests pass). Needs a live Rhino session to observe. Note: since 028ff0e types bare Number/Integer/Text/geometry params, a member the parser genuinely cannot type is now needed to trigger it (e.g. a component in neither the widget nor the primitive tier); the unit tests cover the inference contract directly.
+
 ## Summary
 
-total: 6
+total: 7
 passed: 5
 issues: 0
-pending: 0
+pending: 1
 skipped: 0
 blocked: 1
 

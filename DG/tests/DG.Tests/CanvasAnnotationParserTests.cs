@@ -424,4 +424,61 @@ public sealed class CanvasAnnotationParserTests
         var testsDir = Path.GetDirectoryName(testFilePath)!;
         return Path.GetFullPath(Path.Combine(testsDir, "..", "..", "src", "DG.Core", "Parsing", "CanvasAnnotationParser.cs"));
     }
+
+    // ── Phase 35-09: TryInferParameterDataType public seam (guardrail G12) ──
+
+    private static CgNode Node(string id, string name, SliderDomain? slider = null, bool isInt = false) =>
+        new() { InstanceId = id, Name = name, Nickname = id, Slider = slider, IsIntegerSlider = isInt };
+
+    [Fact]
+    public void TryInferParameterDataType_SliderMember_YieldsDataTypeAndDomain()
+    {
+        var domain = new SliderDomain { Min = 1, Max = 20, Step = 1 };
+        var (dataType, resolved, warning) = CanvasAnnotationParser.TryInferParameterDataType(
+            "11_Var_SpansCount", new[] { Node("n1", "Number Slider", domain, isInt: true) });
+
+        Assert.Equal(ParamDataType.Integer, dataType);
+        Assert.NotNull(resolved);
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void TryInferParameterDataType_BareNumberMember_YieldsFloat()
+    {
+        // The F5 case, fixed in 028ff0e: a bare Number is an entirely ordinary
+        // Constant source and used to yield a silent null dataType.
+        var (dataType, domain, warning) = CanvasAnnotationParser.TryInferParameterDataType(
+            "12_Const_Num", new[] { Node("n1", "Number") });
+
+        Assert.Equal(ParamDataType.Float, dataType);
+        Assert.Null(domain);
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void TryInferParameterDataType_UntypeableMember_YieldsNullWithWarning()
+    {
+        // A component in neither the widget nor the primitive tier. This is what the
+        // accept-time gate must block on -- publishing it would 422 the whole payload.
+        var (dataType, domain, warning) = CanvasAnnotationParser.TryInferParameterDataType(
+            "11_Const_Mystery", new[] { Node("n1", "Solar Position") });
+
+        Assert.Null(dataType);
+        Assert.Null(domain);
+        Assert.NotNull(warning);
+        Assert.Contains("dataType is unset", warning!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryInferParameterDataType_NoMembers_StaysQuiet()
+    {
+        // Tag-then-populate is a normal authoring workflow, so an empty group must not
+        // warn -- the publish component's pre-flight catches those instead.
+        var (dataType, domain, warning) = CanvasAnnotationParser.TryInferParameterDataType(
+            "11_Var_Empty", Array.Empty<CgNode>());
+
+        Assert.Null(dataType);
+        Assert.Null(domain);
+        Assert.Null(warning);
+    }
 }
