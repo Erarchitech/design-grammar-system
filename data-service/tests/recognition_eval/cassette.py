@@ -185,6 +185,24 @@ class CassetteAdapter:
                 f"CassetteAdapter (arm={self.arm_id!r})."
             )
 
+        # Fail closed on the eval harness's own placeholder key. `run_arm`
+        # patches `resolve_active_provider` to hand back the literal
+        # "test-api-key" whenever no `api_key_override` is passed -- harmless
+        # in replay (the wrapped adapter is never called) but fatal here: it
+        # would go out to a real provider as `Authorization: Bearer
+        # test-api-key` / `x-api-key: test-api-key` and 401. Enforcing the
+        # pairing at the boundary that KNOWS it is live means a future second
+        # live caller cannot reintroduce the bug by forgetting the keyword.
+        # No-op for every replay test, which returns above.
+        if api_key in (None, "", "test-api-key"):
+            raise CassetteWriteError(
+                f"refusing to make a live call with a placeholder/empty "
+                f"api_key (arm={self.arm_id!r}, mode={self.mode!r}). Pass a "
+                f"real decrypted key through "
+                f"arms.run_arm(..., api_key_override=<key>) -- see "
+                f"live_sweep.resolve_live_adapter_and_key."
+            )
+
         response = self._wrapped.generate(req, api_key, options)
 
         if self.mode == "record":

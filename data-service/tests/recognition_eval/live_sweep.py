@@ -31,9 +31,11 @@ Design constraints carried over from `arms.py`/`cassette.py` (35-13):
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +77,26 @@ USD_PER_MTOK: "dict[tuple[str, str], dict[str, float]]" = {
     ("openai", "deepseek-chat"): {"input": 0.27, "output": 1.10},
     ("anthropic", "claude-sonnet-5"): {"input": 3.00, "output": 15.00},
 }
+
+
+def mask_url(url: "str | None") -> str:
+    """Reduce a base_url to `scheme://host` for logging. `baseUrl` is not a
+    secret by design, but the OpenAI-compatible endpoints `REAL_ADAPTER_MAP`
+    exists to support routinely carry the credential IN the URL (gateway/proxy
+    path segments, Azure's `?api-key=`, self-hosted routers with an embedded
+    token), and this value reaches stdout and CI logs. Mirrors the project's
+    own `llm_gateway.mask_key` convention: never interpolate a
+    possibly-credentialed value verbatim."""
+    if not url:
+        return repr(url)
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return "<unparseable-url>"
+    if not parsed.hostname:
+        return "<masked-url>"
+    scheme = f"{parsed.scheme}://" if parsed.scheme else ""
+    return f"{scheme}{parsed.hostname}/..." if (parsed.path.strip("/") or parsed.query) else f"{scheme}{parsed.hostname}"
 
 
 class LiveCredentialError(RuntimeError):
@@ -119,9 +141,9 @@ def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str
         raise LiveCredentialError(
             f"arm {arm.id!r} (provenance provider={arm.provider!r}) needs a "
             f"real adapter provider={real_tag!r}"
-            + (f" baseUrl={required_base_url!r}" if required_base_url else "")
+            + (f" baseUrl={mask_url(required_base_url)}" if required_base_url else "")
             + f", but the persisted LLM settings are provider={persisted_provider!r} "
-            f"baseUrl={persisted_base_url!r}. Configure the matching "
+            f"baseUrl={mask_url(persisted_base_url)}. Configure the matching "
             "provider via the LLM Settings panel (POST /llm/settings) "
             "before recording this arm."
         )
@@ -139,19 +161,38 @@ def resolve_live_adapter_and_key(arm: "arms_module.Arm") -> "tuple[Any, str, str
     return adapter, api_key, real_tag, resolved_base_url
 
 
-def estimate_usd_cost(real_provider: str, model: "str | None", usage: "dict[str, Any] | None") -> float:
+def estimate_usd_cost_priced(
+    real_provider: str, model: "str | None", usage: "dict[str, Any] | None"
+) -> "tuple[float, bool]":
     """Approximate USD cost from a REAL usage dict (`prompt_tokens`/
-    `completion_tokens`, both real token counts from the live response) and
-    a looked-up $/MTok rate. Returns 0.0 for an unlisted (provider, model)
-    pair rather than raising -- a missing price must never block recording."""
+    `completion_tokens`, both real token counts from the live response) and a
+    looked-up $/MTok rate.
+
+    Returns `(cost, priced)`. A missing price must never block recording, so
+    an unlisted (provider, model) pair still yields 0.0 -- but it is flagged
+    `priced=False` rather than being indistinguishable from a genuinely free
+    call. `USD_PER_MTOK` has exactly two entries, so a model rename, an
+    OpenAI-compatible endpoint swap, or an Anthropic response echoing a dated
+    model id (`claude-sonnet-5-2026xxxx`) would otherwise under-report the
+    headline cost by exactly the unpriced volume while still looking
+    authoritative -- the same silent drop the rest of this harness (cassette
+    misses, provenance refusal, `SkippedRow`) is built to refuse."""
     if not usage or not model:
-        return 0.0
+        return 0.0, False
     rates = USD_PER_MTOK.get((real_provider, model))
     if rates is None:
-        return 0.0
+        return 0.0, False
     prompt_tokens = usage.get("prompt_tokens", 0) or 0
     completion_tokens = usage.get("completion_tokens", 0) or 0
-    return (prompt_tokens / 1_000_000.0) * rates["input"] + (completion_tokens / 1_000_000.0) * rates["output"]
+    cost = (prompt_tokens / 1_000_000.0) * rates["input"] + (completion_tokens / 1_000_000.0) * rates["output"]
+    return cost, True
+
+
+def estimate_usd_cost(real_provider: str, model: "str | None", usage: "dict[str, Any] | None") -> float:
+    """Cost-only view of `estimate_usd_cost_priced` (kept for callers that
+    only need the number). Prefer the `_priced` variant anywhere the result is
+    reported, so an unpriced call is never presented as a free one."""
+    return estimate_usd_cost_priced(real_provider, model, usage)[0]
 
 
 @dataclass(frozen=True)
@@ -168,6 +209,11 @@ class AttemptCost:
     completion_tokens: int
     total_tokens: int
     usd_cost: float
+    priced: bool = True
+    """False when no `USD_PER_MTOK` rate existed for this (provider, model) --
+    `usd_cost` is then 0.0 because the price is UNKNOWN, not because the call
+    was free. Reported separately so the headline total is never silently
+    short by the unpriced volume."""
 
 
 class UsageTrackingAdapter:
@@ -197,6 +243,7 @@ class UsageTrackingAdapter:
     def generate(self, req: "Any", api_key: "str | None", options: "Any" = None) -> "Any":
         response = self._wrapped.generate(req, api_key, options)
         usage = response.usage or {}
+        usd_cost, priced = estimate_usd_cost_priced(self._real_provider, response.model, usage)
         self._sink.append(
             AttemptCost(
                 arm_id=self._arm_id,
@@ -207,7 +254,8 @@ class UsageTrackingAdapter:
                 prompt_tokens=usage.get("prompt_tokens", 0) or 0,
                 completion_tokens=usage.get("completion_tokens", 0) or 0,
                 total_tokens=usage.get("total_tokens", 0) or 0,
-                usd_cost=estimate_usd_cost(self._real_provider, response.model, usage),
+                usd_cost=usd_cost,
+                priced=priced,
             )
         )
         return response
@@ -217,25 +265,50 @@ class UsageTrackingAdapter:
 
 
 def few_shot_permutations(examples: "list[dict[str, Any]]", n: int = 3) -> "list[list[dict[str, Any]]]":
-    """3 FIXED, deterministic orderings of a few-shot example list (never a
-    random shuffle -- reproducibility requires the same orderings every
-    run, per `frame_recognition_fewshot.json`'s own `exampleOrderNote` and
-    35-AI-SPEC.md 5's "Example-order sub-sweep": Lu et al. ACL 2022 --
-    permuting the same demonstrations swings accuracy from near-SOTA to
-    near-chance).
+    """Up to `n` FIXED, deterministic, PAIRWISE-DISTINCT orderings of a
+    few-shot example list (never a random shuffle -- reproducibility requires
+    the same orderings every run, per `frame_recognition_fewshot.json`'s own
+    `exampleOrderNote` and 35-AI-SPEC.md 5's "Example-order sub-sweep": Lu et
+    al. ACL 2022 -- permuting the same demonstrations swings accuracy from
+    near-SOTA to near-chance).
 
-    Permutation 0: the as-authored order, unchanged.
-    Permutation 1: fully reversed.
-    Permutation 2: rotated by half the list length (a different adjacency
-    structure than a plain reversal -- the abstention example's neighbors
-    change on every one of the 3 orderings).
+    Candidate 0: the as-authored order, unchanged.
+    Candidate 1: fully reversed (needs >= 2 examples to differ).
+    Candidate 2: rotated by half the list length (needs >= 3 to differ from
+    both of the above -- a different adjacency structure than a plain
+    reversal, so the abstention example's neighbors change on every ordering).
+
+    **Duplicates are dropped, and that is the whole point.** Branching on `n`
+    alone (the previous behavior) returned 3 IDENTICAL lists for a 1-example
+    few-shot fixture, which arms A0/A0f use: `reversed([x]) == [x]`, and
+    `k = 1//2 or 1` made the rotation `[x][1:] + [x][:1] == [x]` too. Every
+    duplicate is a separately-billed live request that collides on the same
+    cassette key (so the run looks like it produced 3 recordings and produced
+    1) and, worst of all, lands in the report as an independent ordering --
+    manufacturing a "M1 is stable across example orderings" result from a
+    sub-sweep that never varied the order.
+
+    Returns at least one ordering (the as-authored one) for any input,
+    including an empty example list. Callers that asked for more orderings
+    than exist must surface the shortfall by name -- see `run_live_sweep`.
     """
-    perms: "list[list[dict[str, Any]]]" = [list(examples)]
-    if n >= 2:
-        perms.append(list(reversed(examples)))
-    if n >= 3 and examples:
-        k = len(examples) // 2 or 1
-        perms.append(list(examples[k:]) + list(examples[:k]))
+    if n < 1:
+        raise ValueError(f"n must be >= 1 (got {n!r}): a sweep of zero orderings measures nothing.")
+
+    candidates: "list[list[dict[str, Any]]]" = [list(examples)]
+    if len(examples) >= 2:
+        candidates.append(list(reversed(examples)))
+    if len(examples) >= 3:
+        k = len(examples) // 2
+        candidates.append(list(examples[k:]) + list(examples[:k]))
+
+    seen: "set[str]" = set()
+    perms: "list[list[dict[str, Any]]]" = []
+    for candidate in candidates:
+        fingerprint = json.dumps(candidate, sort_keys=True, default=str)
+        if fingerprint not in seen:
+            seen.add(fingerprint)
+            perms.append(candidate)
     return perms[:n]
 
 
@@ -247,9 +320,23 @@ class ArmCorpusOutcome:
 
     arm_id: str
     corpus: str
-    status: str  # "recorded" | "skipped_credentials" | "skipped_invalid" | "skipped_corpus_load_failed"
+    status: str
+    """One of `OUTCOME_STATUSES`. `"failed"` means the combo raised after the
+    money was already spent -- the attempt's cost is still in
+    `LiveSweepResult.costs`."""
     detail: str
     permutations: "list[dict[str, Any]]" = field(default_factory=list)
+
+
+OUTCOME_STATUSES = frozenset(
+    {
+        "recorded",
+        "failed",
+        "skipped_credentials",
+        "skipped_invalid",
+        "skipped_corpus_load_failed",
+    }
+)
 
 
 @dataclass
@@ -265,6 +352,30 @@ class LiveSweepResult:
     def total_tokens(self) -> int:
         return sum(c.total_tokens for c in self.costs)
 
+    @property
+    def unpriced(self) -> "list[AttemptCost]":
+        """Calls whose (provider, model) had no `USD_PER_MTOK` rate. Non-empty
+        means `total_usd_cost` is an UNDER-estimate by exactly this volume."""
+        return [c for c in self.costs if not c.priced]
+
+    def cost_summary(self) -> str:
+        """One-line accounting suitable for stdout/CI. Always names the
+        unpriced volume rather than letting it vanish into the total."""
+        line = (
+            f"total tokens={self.total_tokens} "
+            f"approx_usd_cost={self.total_usd_cost:.4f} over {len(self.costs)} call(s)"
+        )
+        unpriced = self.unpriced
+        if unpriced:
+            pairs = sorted({f"{c.real_provider}/{c.model}" for c in unpriced})
+            line += (
+                f" -- WARNING: {len(unpriced)} call(s), "
+                f"{sum(c.total_tokens for c in unpriced)} tokens UNPRICED "
+                f"(no rate for {', '.join(pairs)}); the total above is an "
+                "under-estimate by that volume"
+            )
+        return line
+
 
 def run_live_sweep(
     arm_ids: "list[str]",
@@ -277,7 +388,7 @@ def run_live_sweep(
     harness's `"test-api-key"` placeholder) for every requested (arm,
     corpus) combo, recording each attempt's response into a cassette via
     `CassetteAdapter(mode=...)` and scoring it immediately with
-    `report._compute_scored_row` (reused, not re-implemented) so a
+    `report.compute_scored_row` (reused, not re-implemented) so a
     permutation sub-sweep's per-ordering M1 is available without a second
     replay pass.
 
@@ -291,6 +402,15 @@ def run_live_sweep(
             f"run_live_sweep requires RECOGNITION_EVAL_MODE=record or =live "
             f"(got {resolved_mode!r}). Set the env var explicitly -- this "
             "driver never falls back to replay."
+        )
+
+    # Validate at the entry point rather than letting `permutations=0` or a
+    # negative value fall through to the single-ordering branch: the operator's
+    # requested sweep size must never silently differ from what gets billed.
+    if permutations < 1:
+        raise ValueError(
+            f"permutations must be >= 1 (got {permutations!r}): a sweep of "
+            "zero orderings measures nothing."
         )
 
     outcomes: "list[ArmCorpusOutcome]" = []
@@ -343,61 +463,103 @@ def run_live_sweep(
             # `arm.structured_output` is True: that assumption 400s outright
             # against DeepSeek ("This response_format type is unavailable
             # now", discovered live running A4 during 35-15 Task 2).
-            negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
+            # Everything below has already passed the credential gate, so any
+            # failure from here on happens AFTER money may have been spent.
+            # Isolate it per-combo: an httpx 429/500, a ProvenanceError, a
+            # RuntimeError from resolve_arm_artifacts' git subprocess or a
+            # malformed-JSON blob must not propagate out of the loop, because
+            # `LiveSweepResult` is only constructed at the end -- an escaping
+            # exception would destroy the entire accumulated cost/token record
+            # along with the frame, and (loop order being `for corpus: for
+            # arm:`) would lose every remaining corpus too. This is what makes
+            # the module docstring's "it never crashes the whole sweep" true
+            # for more than just credential mismatches.
+            try:
+                negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
 
-            perm_examples: "list[list[dict[str, Any]] | None]"
-            if permutations > 1:
-                base_artifacts = arms_module.resolve_arm_artifacts(arm)
-                perm_examples = list(few_shot_permutations(base_artifacts.few_shot_examples, n=permutations))
-            else:
-                perm_examples = [None]
-
-            perm_rows: "list[dict[str, Any]]" = []
-            for perm_idx, override in enumerate(perm_examples):
-                tracking_adapter = UsageTrackingAdapter(
-                    real_adapter,
-                    costs,
-                    arm_id=arm_id,
-                    corpus=corpus_name,
-                    permutation_index=perm_idx,
-                    real_provider=real_provider,
-                )
-                cassette_adapter = cassette_module.CassetteAdapter(
-                    arm_id,
-                    tracking_adapter,
-                    negotiated_mode=negotiated_mode,
-                    prompt_version=cg_recognition.PROMPT_VERSION,
-                    ip_class=corpus_obj.ip_class,
-                    mode=resolved_mode,
-                )
-
-                outcome = arms_module.run_arm(
-                    arm,
-                    corpus_obj,
-                    cassette_adapter,
-                    few_shot_examples_override=override,
-                    api_key_override=api_key,
-                    negotiated_mode_override=negotiated_mode,
-                )
-                corpus_module.assert_provenance(outcome["provenance"])  # refuses to score an incomplete row
-
-                result = outcome["result"]
-                row: "dict[str, Any]" = {
-                    "permutation_index": perm_idx,
-                    "valid": bool(result.get("valid")),
-                }
-                if result.get("valid"):
-                    scored = report_module._compute_scored_row(corpus_obj, arm, outcome)
-                    row["m1"] = scored.m1
-                    row["m1_successes"] = scored.m1_successes
-                    row["n_blocks"] = scored.n_blocks
-                    row["grammar_citation_rate"] = scored.grammar_citation_rate
+                perm_examples: "list[list[dict[str, Any]] | None]"
+                shortfall_detail = ""
+                if permutations > 1:
+                    base_artifacts = arms_module.resolve_arm_artifacts(arm)
+                    distinct = few_shot_permutations(base_artifacts.few_shot_examples, n=permutations)
+                    perm_examples = list(distinct)
+                    if len(distinct) < permutations:
+                        # Name the shortfall instead of silently running fewer
+                        # orderings -- or, worse, duplicate ones presented as
+                        # independent samples. A reader of these rows must be
+                        # able to tell "M1 was stable across 3 orderings" from
+                        # "there was only ever 1 ordering to vary".
+                        shortfall_detail = (
+                            f"requested {permutations} orderings but only "
+                            f"{len(distinct)} distinct ordering(s) exist "
+                            f"(few-shot list has {len(base_artifacts.few_shot_examples)} "
+                            "example(s)); ran the distinct ones only"
+                        )
                 else:
-                    row["violations"] = result.get("violations")
-                perm_rows.append(row)
+                    perm_examples = [None]
+
+                perm_rows: "list[dict[str, Any]]" = []
+                for perm_idx, override in enumerate(perm_examples):
+                    tracking_adapter = UsageTrackingAdapter(
+                        real_adapter,
+                        costs,
+                        arm_id=arm_id,
+                        corpus=corpus_name,
+                        permutation_index=perm_idx,
+                        real_provider=real_provider,
+                    )
+                    cassette_adapter = cassette_module.CassetteAdapter(
+                        arm_id,
+                        tracking_adapter,
+                        negotiated_mode=negotiated_mode,
+                        prompt_version=cg_recognition.PROMPT_VERSION,
+                        ip_class=corpus_obj.ip_class,
+                        mode=resolved_mode,
+                    )
+
+                    outcome = arms_module.run_arm(
+                        arm,
+                        corpus_obj,
+                        cassette_adapter,
+                        few_shot_examples_override=override,
+                        api_key_override=api_key,
+                        negotiated_mode_override=negotiated_mode,
+                    )
+                    corpus_module.assert_provenance(outcome["provenance"])  # refuses to score an incomplete row
+
+                    result = outcome["result"]
+                    row: "dict[str, Any]" = {
+                        "permutation_index": perm_idx,
+                        "valid": bool(result.get("valid")),
+                    }
+                    if result.get("valid"):
+                        scored = report_module.compute_scored_row(corpus_obj, arm, outcome)
+                        row["m1"] = scored.m1
+                        row["m1_successes"] = scored.m1_successes
+                        row["n_blocks"] = scored.n_blocks
+                        row["grammar_citation_rate"] = scored.grammar_citation_rate
+                    else:
+                        row["violations"] = result.get("violations")
+                    perm_rows.append(row)
+            except Exception as exc:  # noqa: BLE001 -- deliberate: see comment above
+                outcomes.append(
+                    ArmCorpusOutcome(
+                        arm_id=arm_id,
+                        corpus=corpus_name,
+                        status="failed",
+                        detail=f"{type(exc).__name__}: {exc}",
+                    )
+                )
+                continue
 
             outcomes.append(
-                ArmCorpusOutcome(arm_id=arm_id, corpus=corpus_name, status="recorded", detail="", permutations=perm_rows)
+                ArmCorpusOutcome(
+                    arm_id=arm_id,
+                    corpus=corpus_name,
+                    status="recorded",
+                    detail=shortfall_detail,
+                    permutations=perm_rows,
+                )
             )
 
     return LiveSweepResult(outcomes=outcomes, costs=costs)

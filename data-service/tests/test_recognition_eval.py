@@ -314,10 +314,45 @@ class TestArms:
             mode="live",
         )
 
-        outcome = arms_module.run_arm(arms_module.ARMS["A0"], corpus, adapter)
+        # `mode="live"` reaches CassetteAdapter's real-call branch, which now
+        # refuses the harness's `"test-api-key"` placeholder outright. Passing
+        # an explicit key is exactly the pairing a real live caller must
+        # honour, so this stub run exercises the same seam.
+        outcome = arms_module.run_arm(
+            arms_module.ARMS["A0"], corpus, adapter, api_key_override="stub-key-not-a-real-credential"
+        )
 
         corpus_module.assert_provenance(outcome["provenance"])
         assert outcome["result"]["valid"] is True
+
+    def test_live_mode_refuses_the_placeholder_api_key(self):
+        """WR-06: `run_arm` patches `resolve_active_provider` to return the
+        literal "test-api-key" whenever no override is passed. That is
+        harmless in replay but would go out to a real provider as a Bearer /
+        x-api-key header on the live path. The refusal must live at the
+        boundary that knows it is live, not in one caller's memory."""
+        corpus = corpus_module.Corpus(
+            name="stub",
+            context=_minimal_cg_context(),
+            blocks=[],
+            abstain_expected=[],
+            tier0_evidence=True,
+            ip_class="own",
+            corpus_version=1,
+            frozen_at_commit="deadbeef",
+            context_sha256="dummy",
+        )
+        adapter = cassette_module.CassetteAdapter(
+            "A0",
+            _FakeRealAdapter([]),
+            negotiated_mode="none",
+            prompt_version="test",
+            ip_class=corpus.ip_class,
+            mode="live",
+        )
+
+        with pytest.raises(cassette_module.CassetteWriteError, match="placeholder/empty api_key"):
+            arms_module.run_arm(arms_module.ARMS["A0"], corpus, adapter)
 
     def test_arms_module_never_forks_recognize_structure(self):
         source = Path(arms_module.__file__).read_text(encoding="utf-8")
@@ -637,6 +672,95 @@ class TestEndToEndDriver:
                 provenance_ok=True,
                 threshold=request.config.getoption("sc1_gate"),
             )
+
+
+# ── live_sweep.py pure helpers -- free, hermetic, no marker needed. These
+# cover the money-and-measurement invariants that a paid, marker-gated test
+# cannot practically assert. ──
+
+
+class TestLiveSweepHelpers:
+    def test_permutations_are_pairwise_distinct(self):
+        """CR-01: branching on `n` alone returned 3 IDENTICAL orderings for a
+        1-example few-shot list (`reversed([x]) == [x]`, and `k = 1//2 or 1`
+        made the rotation a no-op too). Arms A0/A0f use exactly such a list.
+        Each duplicate is a separately-billed live call that collides on the
+        same cassette key and then lands in the report as an independent
+        ordering -- manufacturing an example-order stability result from a
+        sub-sweep that never varied the order."""
+        for examples, expected in (([], 1), ([{"a": 1}], 1), ([{"a": 1}, {"b": 2}], 2)):
+            perms = live_sweep_module.few_shot_permutations(examples, n=3)
+            assert len(perms) == expected, (examples, perms)
+            fingerprints = {json.dumps(p, sort_keys=True, default=str) for p in perms}
+            assert len(fingerprints) == len(perms), f"duplicate ordering emitted for {examples!r}"
+
+    def test_permutations_still_yields_three_for_a_real_multi_example_list(self):
+        examples = [{"i": i} for i in range(5)]
+        perms = live_sweep_module.few_shot_permutations(examples, n=3)
+        assert len(perms) == 3
+        assert len({json.dumps(p, sort_keys=True) for p in perms}) == 3
+        assert perms[0] == examples, "permutation 0 must be the as-authored order"
+
+    def test_permutations_rejects_a_nonpositive_count(self):
+        """WR-03: `--permutations=0` previously fell through to the
+        single-ordering branch, silently billing a different sweep than the
+        operator asked for."""
+        for bad in (0, -1):
+            with pytest.raises(ValueError, match="must be >= 1"):
+                live_sweep_module.few_shot_permutations([{"a": 1}], n=bad)
+
+    def test_run_live_sweep_rejects_a_nonpositive_permutation_count(self):
+        with pytest.raises(ValueError, match="must be >= 1"):
+            live_sweep_module.run_live_sweep(["A0"], ["frame_ablated"], permutations=0, mode="record")
+
+    def test_unpriced_calls_are_flagged_not_silently_free(self):
+        """WR-02: an unlisted (provider, model) yields 0.0, which is
+        indistinguishable from a genuinely free call unless it is flagged.
+        `USD_PER_MTOK` has two entries, so a model rename or an endpoint swap
+        would otherwise under-report the headline cost by exactly the unpriced
+        volume while still looking authoritative."""
+        usage = {"prompt_tokens": 1000, "completion_tokens": 500, "total_tokens": 1500}
+
+        cost, priced = live_sweep_module.estimate_usd_cost_priced("openai", "deepseek-chat", usage)
+        assert priced is True and cost > 0.0
+
+        cost, priced = live_sweep_module.estimate_usd_cost_priced("openai", "some-renamed-model", usage)
+        assert priced is False and cost == 0.0
+
+    def test_cost_summary_names_the_unpriced_volume(self):
+        def _attempt(model, priced, usd):
+            return live_sweep_module.AttemptCost(
+                arm_id="A0", corpus="c", permutation_index=0, real_provider="openai",
+                model=model, prompt_tokens=10, completion_tokens=5, total_tokens=15,
+                usd_cost=usd, priced=priced,
+            )
+
+        clean = live_sweep_module.LiveSweepResult(outcomes=[], costs=[_attempt("deepseek-chat", True, 0.01)])
+        assert "UNPRICED" not in clean.cost_summary()
+
+        dirty = live_sweep_module.LiveSweepResult(
+            outcomes=[], costs=[_attempt("deepseek-chat", True, 0.01), _attempt("mystery-model", False, 0.0)]
+        )
+        summary = dirty.cost_summary()
+        assert "UNPRICED" in summary and "openai/mystery-model" in summary
+
+    def test_mask_url_drops_credential_bearing_path_segments(self):
+        """WR-08: the OpenAI-compatible endpoints REAL_ADAPTER_MAP exists to
+        support routinely carry the credential in the URL, and this value
+        reaches stdout and CI logs."""
+        masked = live_sweep_module.mask_url("https://gateway.example.com/tok_SECRET123/v1")
+        assert "SECRET123" not in masked
+        assert "gateway.example.com" in masked
+
+    def test_credential_error_does_not_echo_the_raw_base_url(self, monkeypatch):
+        monkeypatch.setattr(
+            live_sweep_module.llm_gateway,
+            "load_persisted_llm_settings",
+            lambda: {"provider": "anthropic", "baseUrl": "https://gw.example.com/tok_SECRET123/v1"},
+        )
+        with pytest.raises(live_sweep_module.LiveCredentialError) as excinfo:
+            live_sweep_module.resolve_live_adapter_and_key(arms_module.ARMS["A4"])
+        assert "SECRET123" not in str(excinfo.value)
 
 
 # ── live_sweep.py (35-15 deviation) -- the record-mode driver 35-13-SUMMARY.md

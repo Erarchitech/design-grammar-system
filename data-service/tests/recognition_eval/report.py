@@ -128,11 +128,22 @@ def _e8_publishability_failures(match_result, corpus_obj: "Any") -> tuple[int, s
     return failures, note
 
 
-def _compute_scored_row(
+def compute_scored_row(
     corpus_obj: "Any",
     arm: "arms_module.Arm",
     outcome: "dict[str, Any]",
 ) -> ScoredRow:
+    """Score one `run_arm` outcome into a `ScoredRow`.
+
+    PUBLIC on purpose: `live_sweep.run_live_sweep` is a hard consumer of this
+    exact `(corpus_obj, arm, outcome) -> ScoredRow` signature and of
+    `ScoredRow`'s field set, so it can score a permutation in-process rather
+    than re-implementing the metric stack. It was previously underscore-private,
+    which meant a routine refactor of this module's internals would silently
+    break the record path -- a path exercised only by a paid, marker-gated
+    test, so the break would have surfaced mid-metered-run. Treat the signature
+    as a contract with `live_sweep.py`.
+    """
     result = outcome["result"]
     proposal = result["proposal"]
     proposals = proposal.get("proposals") or []
@@ -265,7 +276,7 @@ def run_report_sweep(
                 )
                 continue
 
-            scored.append(_compute_scored_row(corpus_obj, arm, outcome))
+            scored.append(compute_scored_row(corpus_obj, arm, outcome))
 
     return scored, skipped
 
