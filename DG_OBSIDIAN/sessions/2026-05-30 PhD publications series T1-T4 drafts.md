@@ -62,6 +62,6 @@ date: 2026-05-30
 
 ## Related Notes
 
-- [[publications/index]]
-- [[publications/Series coherence map]]
-- [[publications/T4 — Дизайн-пространство]]
+- [[dissemination/index]]
+- [[dissemination/Series coherence map]]
+- [[dissemination/T4 — Дизайн-пространство]]

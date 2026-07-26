@@ -77,6 +77,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/DG ID cross-platform identity scheme|Phase 32.1 (v9.0): DG ID scheme ADR (DGID-06) — positioning against Rhino.Inside.Revit, Speckle, IFC GlobalId, Revit UniqueId, BHoM]]
 - [[decisions/Phase 36 Computgraph publish avoids mint_identity|Phase 36 (v9.0): Computgraph publish uses compute_dg_id, NOT mint_identity — prevents label-less MERGE anchor duplicates]]
 - [[decisions/Graph Viewer search bar adaptive value dropdown|Graph Viewer search bar: Combobox primitive — data-derived value list, open-ended (free text preserved), no engine changes]]
+- [[decisions/Phase 35 recognition quality remediation — hybrid Tier 0 Tier 1 architecture and pytest eval|Phase 35 (v9.0): Hybrid Tier 0 deterministic + Tier 1 LLM; pytest fixture-driven eval; labelling flywheel; sub-model training deferred]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -99,6 +100,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/perplexity-mcp-parallel-call-crashes-browser-profile|Perplexity MCP: parallel calls crash the shared Chrome profile lock]]
 - [[debugging/Phase 36 schema doc bugs|Phase 36: Schema doc bugs — HAS_INTERFACE direction, PARAM_LINK direction, Algorithm merge key (runtime was correct, docs were stale)]]
 - [[debugging/Column flex dropdown rows overlap instead of scrolling|Column flex + maxHeight: rows compress instead of scrolling (text overlaps, no scrollbar) — fix with flex: none on children]]
+- [[debugging/Phase 35 F3 grammar-as-filter inversion — the few-shot itself teaches the failure|Phase 35 F3: the sole few-shot example demonstrates grammar-as-filter; model faithfully executes the failure mode. Fixed by: system prompt + grammar-stated-twice + counterexample few-shot]]
 - [[debugging/Phase 35-36 dataType inference gap breaks publish (F5)|F5: bare Number component infers null dataType with no warning — accepted proposal 422s the whole Phase 36 publish]]
 - [[debugging/Phase 36 provider-model-confidence never persisted (F6)|F6: provider/model/confidence structurally unpersistable for recognized nodes — accept path drops them, models have no such fields]]
 - [[debugging/Phase 36 data-service image predated the phase (F7)|F7: data-service image predated Phase 36 — /computgraph/publish 404'd until rebuilt]]
