@@ -37,6 +37,7 @@ from llm_gateway import GenerateRequest, GenerateResponse  # noqa: E402
 from recognition_eval import arms as arms_module  # noqa: E402
 from recognition_eval import cassette as cassette_module  # noqa: E402
 from recognition_eval import corpus as corpus_module  # noqa: E402
+from recognition_eval import report as report_module  # noqa: E402
 from recognition_eval import scoring as scoring_module  # noqa: E402
 
 
@@ -608,3 +609,103 @@ class TestEndToEndDriver:
                 provenance_ok=True,
                 threshold=request.config.getoption("sc1_gate"),
             )
+
+
+# ── report.py (Task 4) -- rendering tested with synthetic rows, independent
+# of whether a real corpus x arm sweep can succeed today ──
+
+
+class TestReport:
+    def _synthetic_scored_row(self, **overrides) -> report_module.ScoredRow:
+        base = dict(
+            corpus="urbanblock_slice",
+            arm_id="A3",
+            claim="The shipping configuration.",
+            provenance={
+                "promptVersion": "r35.4",
+                "provider": "deepseek",
+                "model": "deepseek-chat",
+                "temperature": 0.0,
+                "negotiatedMode": "none",
+                "contextSha256": "abc",
+                "frozenAtCommit": "def",
+                "corpusVersion": 1,
+                "armId": "A3",
+                "fewShotSha": None,
+            },
+            tier0_evidence=True,
+            n_blocks=30,
+            m1=0.70,
+            m1_successes=21,
+            m2=0.80,
+            mean_jaccard=0.75,
+            member_edit_distance=12,
+            m5={"ratio": 1.0, "fragmentation": 1.0, "fusion": 1.0},
+            e3_strict=0.9,
+            e3_collapsed=0.95,
+            e3_intf_false_positive_rate=0.0,
+            abstention_recall=1.0,
+            abstention_precision=1.0,
+            silent_drop_count=0,
+            brier=0.05,
+            ece_value=0.03,
+            ece_bins=[{"lower": 0.0, "upper": 0.2, "count": 0, "confidence_sum": 0.0, "outcome_sum": 0.0}],
+            grammar_citation_rate=0.0,
+            e8_publishability_failures=0,
+            e8_note="proxy metric",
+        )
+        base.update(overrides)
+        return report_module.ScoredRow(**base)
+
+    def test_render_markdown_contains_m1_wilson_interval_and_n(self):
+        markdown = report_module.render_markdown([self._synthetic_scored_row()], [], sc1_gate_threshold=0.60)
+        assert "Wilson 95% CI" in markdown
+        assert "n=30" in markdown
+
+    def test_render_markdown_contains_ece_with_per_bin_counts(self):
+        markdown = report_module.render_markdown([self._synthetic_scored_row()], [], sc1_gate_threshold=0.60)
+        assert "ECE=" in markdown
+        assert "n=0" in markdown  # the synthetic bin's count, proving per-bin counts are rendered
+
+    def test_render_markdown_reports_ship_gate_and_claim_threshold_as_two_lines(self):
+        markdown = report_module.render_markdown([self._synthetic_scored_row()], [], sc1_gate_threshold=0.60)
+        assert "Ship gate" in markdown
+        assert "Claim threshold" in markdown
+
+    def test_render_markdown_has_not_measured_section_naming_skipped_combos_and_uncalibrated_dims(self):
+        skipped = [report_module.SkippedRow(corpus="urbanblock_slice", arm_id="A0", reason="cassette miss")]
+        markdown = report_module.render_markdown([], skipped, sc1_gate_threshold=0.60)
+        assert "## Not measured in this run" in markdown
+        assert "urbanblock_slice x A0" in markdown
+        assert "E4-name" in markdown
+        assert "E7-soft" in markdown
+
+    def test_render_markdown_stamps_evidence_false_for_frame_ablated(self):
+        row = self._synthetic_scored_row(corpus="frame_ablated", tier0_evidence=False)
+        markdown = report_module.render_markdown([row], [], sc1_gate_threshold=0.60)
+        assert "evidence: false" in markdown
+
+    def test_render_markdown_never_leaks_prompt_body_or_api_key(self):
+        markdown = report_module.render_markdown([self._synthetic_scored_row()], [], sc1_gate_threshold=0.60)
+        assert "sk-" not in markdown
+        assert "promptBody" not in markdown
+
+    def test_render_json_round_trips_scored_and_skipped_rows(self):
+        skipped = [report_module.SkippedRow(corpus="frame_ablated", arm_id="A1", reason="cassette miss")]
+        payload = report_module.render_json([self._synthetic_scored_row()], skipped)
+        assert payload["scored"][0]["corpus"] == "urbanblock_slice"
+        assert payload["skipped"][0]["reason"] == "cassette miss"
+        assert "frame_ablated x A1" in payload["notMeasured"]["skippedCombos"]
+        assert "sk-" not in json.dumps(payload)
+
+    def test_main_writes_markdown_and_json_and_exits_0(self, tmp_path):
+        out_path = tmp_path / "eval-report.md"
+
+        exit_code = report_module.main(["--out", str(out_path), "--corpora", "frame_ablated", "--arms", "A0"])
+
+        assert exit_code == 0
+        assert out_path.exists()
+        assert out_path.with_suffix(".json").exists()
+        markdown = out_path.read_text(encoding="utf-8")
+        assert "sk-" not in markdown
+        assert "## Not measured in this run" in markdown  # no cassette recorded yet as of 35-13
