@@ -129,4 +129,68 @@ public sealed class FrameFixtureTests
         Assert.Equal(s1, s2);
         Assert.Contains("\"schemaVersion\":\"cg-context-1\"", s1, StringComparison.Ordinal);
     }
+
+    private static RawCanvas LoadRawFixture()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "frame-cg-context.json");
+        var raw = JsonSerializer.Deserialize<RawCanvas>(File.ReadAllText(path), FixtureOptions);
+        Assert.NotNull(raw);
+        return raw!;
+    }
+
+    /// <summary>
+    /// Phase 35-05 regression guard. These three nodes are the corpus's
+    /// <c>abstainExpected</c> set: the honest answer for a fully isolated node is
+    /// <c>unrecognized</c>, and they are the only positive test case abstention
+    /// recall has. Wiring any of them would silently delete that evidence, and the
+    /// deletion would look like an improvement (more nodes classifiable).
+    /// </summary>
+    [Fact]
+    public void Frame_AbstainNodes_StayIsolated()
+    {
+        var raw = LoadRawFixture();
+
+        foreach (var id in new[] { "n-untagged-01", "n-scratch-01", "n-scratch-02" })
+        {
+            Assert.DoesNotContain(raw.Wires, w => w.FromNode == id || w.ToNode == id);
+        }
+    }
+
+    /// <summary>
+    /// Phase 35-05 regression guard. Empty procedure membership is the live trigger
+    /// for UAT F2 -- per-procedure scoping silently widens to the whole canvas when
+    /// the requested procedure has no members, turning an intended 14-node call into
+    /// a 214-node one and then into the F1 truncation.
+    /// </summary>
+    [Fact]
+    public void Frame_Procedures_OwnTheirMembers()
+    {
+        var context = ParseFixture();
+
+        var procedures = context.Algorithms.SelectMany(a => a.Procedures).ToList();
+
+        Assert.Equal(2, procedures.Count);
+        Assert.All(procedures, p => Assert.NotEmpty(p.MemberIds));
+        Assert.Equal(20, procedures.Single(p => p.Index == 11).MemberIds.Count);
+        Assert.Equal(11, procedures.Single(p => p.Index == 12).MemberIds.Count);
+    }
+
+    /// <summary>
+    /// Phase 35-05: the fixture must carry enough real dataflow for degree to be a
+    /// meaningful signal. A single-wire fixture collapses every topology rule to
+    /// abstain, which would score the deterministic tier as useless for reasons that
+    /// have nothing to do with the rules.
+    /// </summary>
+    [Fact]
+    public void Frame_Fixture_CarriesRealWiring()
+    {
+        var raw = LoadRawFixture();
+
+        Assert.True(raw.Wires.Count >= 25, $"expected >= 25 wires, found {raw.Wires.Count}");
+        Assert.All(raw.Wires, w =>
+        {
+            Assert.Contains(raw.Nodes, n => n.InstanceId == w.FromNode);
+            Assert.Contains(raw.Nodes, n => n.InstanceId == w.ToNode);
+        });
+    }
 }
