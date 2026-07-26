@@ -83,8 +83,8 @@
 - [x] **CGPD-01**: `POST /computgraph/publish` persists a confirmed structure to Neo4j as the Computgraph layer — labels `Object|Behavior|Algorithm|Procedure|Pattern|Parameter|Interface` with `graph:'Computgraph'` and project isolation; relationships `HAS_BEHAVIOR`, `HAS_ALGORITHM`, `HAS_PROCEDURE`, `HAS_PATTERN`, `PATTERN_HOST_TO`, `HAS_PARAMETER`, `HAS_INTERFACE`, `PARAM_LINK`
 - [x] **CGPD-02**: Publishing is MERGE-idempotent on stable entity ids (definition id + convention name): re-publishing the same definition creates zero duplicate nodes (verified by count query)
 - [x] **CGPD-03**: Every published node carries provenance — `source` (tagged | recognized), provider/model when recognized, definition id, timestamp — queryable via Cypher
-- [ ] **CGPD-04**: The ui-v2 graph viewer renders the Computgraph layer with distinct styling, filterable per project; the schema propagation checklist (`cypher_template.txt`, `dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md, orchestrator prompts) is completed for the new labels
-- [ ] **CGPD-05**: A publish path exists from the plugin (DG COMPUTGRAPH PUBLISH trigger following the ValidationPublishClient HTTP pattern) so the confirm→publish flow completes without leaving Grasshopper
+- [x] **CGPD-04**: The ui-v2 graph viewer renders the Computgraph layer with distinct styling, filterable per project; the schema propagation checklist (`cypher_template.txt`, `dataset_schema.json`, `spec/DATABASE.md`, CLAUDE.md, orchestrator prompts) is completed for the new labels
+- [x] **CGPD-05**: A publish path exists from the plugin (DG COMPUTGRAPH PUBLISH trigger following the ValidationPublishClient HTTP pattern) so the confirm→publish flow completes without leaving Grasshopper
 
 ### Script Structure Validation (SVAL) — Phase 37
 

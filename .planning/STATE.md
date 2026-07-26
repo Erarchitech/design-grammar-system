@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 35
 current_phase_name: LLM Recognition and On-Canvas Proposal Preview
 status: executing
-stopped_at: "Completed 35-10-PLAN.md (Tier-0 topology recognizer: scope/features/classify/merge)"
-last_updated: "2026-07-26T12:16:25.110Z"
+stopped_at: "Completed 35-11-PLAN.md (recognition eval substrate: Corpus A + stdlib-only scoring core + corpus loader)"
+last_updated: "2026-07-26T12:44:25.845Z"
 last_activity: 2026-07-26
 last_activity_desc: "Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate"
 progress:
   total_phases: 14
   completed_phases: 6
   total_plans: 50
-  completed_plans: 44
+  completed_plans: 45
   percent: 43
 ---
 
@@ -77,6 +77,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 |------|----------|-------|-------|
 | Phase 35 P16 | 25min | 3 tasks | 2 files |
 | Phase 35 P10 | 55min | 4 tasks | 2 files |
+| Phase 35 P11 | ~2h | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -282,6 +283,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: contextJson strips untagged data before serialization (T-36-02 compliance)
 - [Phase ?]: [Phase 35-16]: ComputeHostPatternIds primary-path host lookup now filters to pending-pattern candidates and picks the innermost by ascending MemberIds.Count instead of FirstOrDefault over all groups — fixes a silent, order-dependent nesting-drop bug flagged during 35-05; Frame fixture and Corpus A confirmed unaffected (direct-nesting only)
 - [Phase ?]: [Phase 35-10]: cg_topology.py Tier 0 -- scope_untagged/extract_features/widget_kind/classify/merge/output_token_budget, R1-R6 rule table with C#-parity-pinned widget_kind and honest abstention (closes UAT F2 at source)
+- [Phase ?]: 35-11: Corpus A generator is C# (CanvasAnnotationParser+ComputgraphContextSerializer), not Python -- production RawCanvas=>cgContextJson path lives entirely in C#
+- [Phase ?]: 35-11: frozenAtCommit/annotatedAt pinned at true emit time and reused thereafter, not recomputed per test run -- keeps the golden-file comparison stable across unrelated future commits
 
 ### Research Flags (carry into planning)
 
@@ -359,8 +362,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-26T12:16:25.080Z
-Stopped at: Completed 35-10-PLAN.md (Tier-0 topology recognizer: scope/features/classify/merge)
+Last session: 2026-07-26T12:44:25.815Z
+Stopped at: Completed 35-11-PLAN.md (recognition eval substrate: Corpus A + stdlib-only scoring core + corpus loader)
 Resume file: None
 
 ## Performance Metrics
