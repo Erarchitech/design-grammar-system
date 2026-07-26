@@ -24,7 +24,7 @@ import argparse
 import json
 import os
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -87,6 +87,10 @@ class ScoredRow:
     grammar_citation_rate: float
     e8_publishability_failures: int
     e8_note: str
+    permutation_index: int = 0
+    """Which few-shot ordering produced this row (0 == the as-authored order).
+    Only ever non-zero when `run_report_sweep(..., permutations=N)` replayed
+    the example-order sub-sweep."""
 
 
 @dataclass(frozen=True)
@@ -221,11 +225,35 @@ def compute_scored_row(
 def run_report_sweep(
     corpora: "list[str]",
     arm_ids: "list[str]",
+    *,
+    permutations: int = 1,
 ) -> "tuple[list[ScoredRow], list[SkippedRow]]":
     """Attempt every (corpus x arm) combo via a replay `CassetteAdapter`.
     A cassette miss or an incomplete-provenance refusal becomes a
     `SkippedRow`, never a crash -- so a report can always be produced, even
-    before any cassette has been recorded (35-15's job)."""
+    before any cassette has been recorded (35-15's job).
+
+    `permutations > 1` additionally replays the few-shot example-order
+    sub-sweep, emitting one `ScoredRow` per (corpus x arm x ordering). Without
+    it, the permutation cassettes that ARE committed (arm A3 has 6 of its 7
+    recordings from the sub-sweep) were unreachable by any code in the repo:
+    `run_live_sweep` scored each ordering in-process and persisted nothing but
+    the cassette, and this — the only replay-side scorer — always replayed the
+    as-authored order. The per-ordering M1 figures therefore lived only in
+    pytest stdout and whatever was hand-copied into `35-EVAL-REPORT.md`, which
+    made the sub-sweep the one result in a "goes in the thesis appendix"
+    harness that could not be regenerated from committed state.
+
+    Orderings come from `arms.few_shot_permutations`, the same generator the
+    record path uses, so the replayed orderings are byte-identical to the
+    recorded ones and hit the same cassette keys.
+    """
+    if permutations < 1:
+        raise ValueError(
+            f"permutations must be >= 1 (got {permutations!r}): a sweep of "
+            "zero orderings measures nothing."
+        )
+
     scored: "list[ScoredRow]" = []
     skipped: "list[SkippedRow]" = []
 
@@ -245,38 +273,71 @@ def run_report_sweep(
                 continue
 
             negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
-            adapter = cassette_module.CassetteAdapter(
-                arm_id,
-                None,
-                negotiated_mode=negotiated_mode,
-                prompt_version=cg_recognition.PROMPT_VERSION,
-                ip_class=corpus_obj.ip_class,
-                mode="replay",
-            )
-            try:
-                outcome = arms_module.run_arm(
-                    arm, corpus_obj, adapter, negotiated_mode_override=negotiated_mode
-                )
-                corpus_module.assert_provenance(outcome["provenance"])
-            except cassette_module.CassetteMissError as exc:
-                skipped.append(SkippedRow(corpus=corpus_name, arm_id=arm_id, reason=f"cassette miss: {exc}"))
-                continue
-            except corpus_module.ProvenanceError as exc:
-                skipped.append(SkippedRow(corpus=corpus_name, arm_id=arm_id, reason=f"provenance incomplete: {exc}"))
-                continue
 
-            result = outcome["result"]
-            if not result.get("valid"):
-                skipped.append(
-                    SkippedRow(
-                        corpus=corpus_name,
-                        arm_id=arm_id,
-                        reason=f"recognition run invalid: {result.get('violations')}",
+            # Same generator the record path used, so the replayed orderings
+            # are byte-identical to the recorded ones and hit the same keys.
+            overrides: "list[list[dict[str, Any]] | None]"
+            if permutations > 1:
+                try:
+                    base_artifacts = arms_module.resolve_arm_artifacts(arm)
+                except Exception as exc:  # noqa: BLE001 -- git resolution can fail; never crash the report
+                    skipped.append(
+                        SkippedRow(
+                            corpus=corpus_name,
+                            arm_id=arm_id,
+                            reason=f"few-shot artifact resolution failed: {type(exc).__name__}: {exc}",
+                        )
                     )
+                    continue
+                overrides = list(
+                    arms_module.few_shot_permutations(base_artifacts.few_shot_examples, n=permutations)
                 )
-                continue
+            else:
+                overrides = [None]
 
-            scored.append(compute_scored_row(corpus_obj, arm, outcome))
+            for perm_idx, override in enumerate(overrides):
+                # Only label rows when the sub-sweep actually ran, so a normal
+                # single-ordering report is unchanged.
+                label = f"{corpus_name} x {arm_id}" + (f" (ordering {perm_idx})" if permutations > 1 else "")
+                adapter = cassette_module.CassetteAdapter(
+                    arm_id,
+                    None,
+                    negotiated_mode=negotiated_mode,
+                    prompt_version=cg_recognition.PROMPT_VERSION,
+                    ip_class=corpus_obj.ip_class,
+                    mode="replay",
+                )
+                try:
+                    outcome = arms_module.run_arm(
+                        arm,
+                        corpus_obj,
+                        adapter,
+                        few_shot_examples_override=override,
+                        negotiated_mode_override=negotiated_mode,
+                    )
+                    corpus_module.assert_provenance(outcome["provenance"])
+                except cassette_module.CassetteMissError as exc:
+                    skipped.append(SkippedRow(corpus=label, arm_id=arm_id, reason=f"cassette miss: {exc}"))
+                    continue
+                except corpus_module.ProvenanceError as exc:
+                    skipped.append(SkippedRow(corpus=label, arm_id=arm_id, reason=f"provenance incomplete: {exc}"))
+                    continue
+
+                result = outcome["result"]
+                if not result.get("valid"):
+                    skipped.append(
+                        SkippedRow(
+                            corpus=label,
+                            arm_id=arm_id,
+                            reason=f"recognition run invalid: {result.get('violations')}",
+                        )
+                    )
+                    continue
+
+                row = compute_scored_row(corpus_obj, arm, outcome)
+                if perm_idx:
+                    row = replace(row, permutation_index=perm_idx)
+                scored.append(row)
 
     return scored, skipped
 
@@ -411,12 +472,22 @@ def main(argv: "list[str] | None" = None) -> int:
         help="Comma-separated arm ids to sweep.",
     )
     parser.add_argument("--sc1-gate", type=float, default=DEFAULT_SC1_GATE_THRESHOLD)
+    parser.add_argument(
+        "--permutations",
+        type=int,
+        default=1,
+        help=(
+            "Replay the few-shot example-order sub-sweep, emitting one row per "
+            "(corpus x arm x ordering). Requires the permutation cassettes to "
+            "have been recorded; missing ones become SkippedRows."
+        ),
+    )
     args = parser.parse_args(argv)
 
     corpora = [c.strip() for c in args.corpora.split(",") if c.strip()]
     arm_ids = [a.strip() for a in args.arms.split(",") if a.strip()]
 
-    scored, skipped = run_report_sweep(corpora, arm_ids)
+    scored, skipped = run_report_sweep(corpora, arm_ids, permutations=args.permutations)
     markdown = render_markdown(scored, skipped, sc1_gate_threshold=args.sc1_gate)
     json_payload = render_json(scored, skipped)
 

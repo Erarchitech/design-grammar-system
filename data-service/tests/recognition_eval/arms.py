@@ -104,6 +104,54 @@ def resolve_real_negotiated_mode(arm: "Arm") -> str:
     real_tag, base_url = REAL_ADAPTER_MAP[arm.provider]
     return llm_gateway.negotiate_structured_output(real_tag, arm.model, base_url).mode
 
+def few_shot_permutations(examples: "list[dict[str, Any]]", n: int = 3) -> "list[list[dict[str, Any]]]":
+    """Up to `n` FIXED, deterministic, PAIRWISE-DISTINCT orderings of a
+    few-shot example list (never a random shuffle -- reproducibility requires
+    the same orderings every run, per `frame_recognition_fewshot.json`'s own
+    `exampleOrderNote` and 35-AI-SPEC.md 5's "Example-order sub-sweep": Lu et
+    al. ACL 2022 -- permuting the same demonstrations swings accuracy from
+    near-SOTA to near-chance).
+
+    Candidate 0: the as-authored order, unchanged.
+    Candidate 1: fully reversed (needs >= 2 examples to differ).
+    Candidate 2: rotated by half the list length (needs >= 3 to differ from
+    both of the above -- a different adjacency structure than a plain
+    reversal, so the abstention example's neighbors change on every ordering).
+
+    **Duplicates are dropped, and that is the whole point.** Branching on `n`
+    alone (the previous behavior) returned 3 IDENTICAL lists for a 1-example
+    few-shot fixture, which arms A0/A0f use: `reversed([x]) == [x]`, and
+    `k = 1//2 or 1` made the rotation `[x][1:] + [x][:1] == [x]` too. Every
+    duplicate is a separately-billed live request that collides on the same
+    cassette key (so the run looks like it produced 3 recordings and produced
+    1) and, worst of all, lands in the report as an independent ordering --
+    manufacturing a "M1 is stable across example orderings" result from a
+    sub-sweep that never varied the order.
+
+    Returns at least one ordering (the as-authored one) for any input,
+    including an empty example list. Callers that asked for more orderings
+    than exist must surface the shortfall by name -- see `run_live_sweep`.
+    """
+    if n < 1:
+        raise ValueError(f"n must be >= 1 (got {n!r}): a sweep of zero orderings measures nothing.")
+
+    candidates: "list[list[dict[str, Any]]]" = [list(examples)]
+    if len(examples) >= 2:
+        candidates.append(list(reversed(examples)))
+    if len(examples) >= 3:
+        k = len(examples) // 2
+        candidates.append(list(examples[k:]) + list(examples[:k]))
+
+    seen: "set[str]" = set()
+    perms: "list[list[dict[str, Any]]]" = []
+    for candidate in candidates:
+        fingerprint = json.dumps(candidate, sort_keys=True, default=str)
+        if fingerprint not in seen:
+            seen.add(fingerprint)
+            perms.append(candidate)
+    return perms[:n]
+
+
 # Path resolution mirrors dg_knowledge.py's _REPO_ROOT: inside the
 # data-service Docker container the repo root (with its .git directory) is
 # mounted read-only at /mnt/repo (docker-compose.yml's `.:/mnt/repo:ro`

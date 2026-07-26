@@ -99,6 +99,12 @@ def mask_url(url: "str | None") -> str:
     return f"{scheme}{parsed.hostname}/..." if (parsed.path.strip("/") or parsed.query) else f"{scheme}{parsed.hostname}"
 
 
+# The literal `test_recognition_eval.py` setdefault()s at import so the free
+# replay suite can run without any real configuration. It must never reach a
+# record/live sweep, where it silently decrypts nothing.
+_PLACEHOLDER_MASTER_SECRET = "test-master-secret"
+
+
 class LiveCredentialError(RuntimeError):
     """Raised when an arm's real provider/API key cannot be resolved from
     the persisted LLM settings -- e.g. an `anthropic` arm (A0f/A5) requested
@@ -264,52 +270,12 @@ class UsageTrackingAdapter:
         return self._wrapped.list_models(api_key)
 
 
-def few_shot_permutations(examples: "list[dict[str, Any]]", n: int = 3) -> "list[list[dict[str, Any]]]":
-    """Up to `n` FIXED, deterministic, PAIRWISE-DISTINCT orderings of a
-    few-shot example list (never a random shuffle -- reproducibility requires
-    the same orderings every run, per `frame_recognition_fewshot.json`'s own
-    `exampleOrderNote` and 35-AI-SPEC.md 5's "Example-order sub-sweep": Lu et
-    al. ACL 2022 -- permuting the same demonstrations swings accuracy from
-    near-SOTA to near-chance).
-
-    Candidate 0: the as-authored order, unchanged.
-    Candidate 1: fully reversed (needs >= 2 examples to differ).
-    Candidate 2: rotated by half the list length (needs >= 3 to differ from
-    both of the above -- a different adjacency structure than a plain
-    reversal, so the abstention example's neighbors change on every ordering).
-
-    **Duplicates are dropped, and that is the whole point.** Branching on `n`
-    alone (the previous behavior) returned 3 IDENTICAL lists for a 1-example
-    few-shot fixture, which arms A0/A0f use: `reversed([x]) == [x]`, and
-    `k = 1//2 or 1` made the rotation `[x][1:] + [x][:1] == [x]` too. Every
-    duplicate is a separately-billed live request that collides on the same
-    cassette key (so the run looks like it produced 3 recordings and produced
-    1) and, worst of all, lands in the report as an independent ordering --
-    manufacturing a "M1 is stable across example orderings" result from a
-    sub-sweep that never varied the order.
-
-    Returns at least one ordering (the as-authored one) for any input,
-    including an empty example list. Callers that asked for more orderings
-    than exist must surface the shortfall by name -- see `run_live_sweep`.
-    """
-    if n < 1:
-        raise ValueError(f"n must be >= 1 (got {n!r}): a sweep of zero orderings measures nothing.")
-
-    candidates: "list[list[dict[str, Any]]]" = [list(examples)]
-    if len(examples) >= 2:
-        candidates.append(list(reversed(examples)))
-    if len(examples) >= 3:
-        k = len(examples) // 2
-        candidates.append(list(examples[k:]) + list(examples[:k]))
-
-    seen: "set[str]" = set()
-    perms: "list[list[dict[str, Any]]]" = []
-    for candidate in candidates:
-        fingerprint = json.dumps(candidate, sort_keys=True, default=str)
-        if fingerprint not in seen:
-            seen.add(fingerprint)
-            perms.append(candidate)
-    return perms[:n]
+# Lives in `arms.py` (the module that owns few-shot artifact resolution) so
+# `report.py` can reuse it for the replay-side permutation sweep without
+# importing this module -- `live_sweep` already imports `report`, so the other
+# direction would be a cycle. Re-exported here: this is where the record path
+# and every existing caller/test look for it.
+few_shot_permutations = arms_module.few_shot_permutations
 
 
 @dataclass
@@ -411,6 +377,24 @@ def run_live_sweep(
         raise ValueError(
             f"permutations must be >= 1 (got {permutations!r}): a sweep of "
             "zero orderings measures nothing."
+        )
+
+    # Fail loudly BEFORE spending anything if the master secret is the test
+    # suite's own placeholder. `test_recognition_eval.py` runs
+    # `os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")` at
+    # import, so an operator who runs the documented record command without
+    # exporting the REAL secret would otherwise get a fake one injected: every
+    # `resolve_active_provider` decrypt returns no key, every arm skips with a
+    # credential error, and the run completes having recorded nothing while
+    # looking like it ran. A misconfigured record run must be an error, not a
+    # silent no-op.
+    if os.environ.get("LLM_MASTER_SECRET", "") == _PLACEHOLDER_MASTER_SECRET:
+        raise LiveCredentialError(
+            f"LLM_MASTER_SECRET is the test placeholder "
+            f"({_PLACEHOLDER_MASTER_SECRET!r}), which cannot decrypt any real "
+            "persisted API key -- every arm would skip and the sweep would "
+            "record nothing. Export the REAL master secret before running a "
+            "record/live sweep."
         )
 
     outcomes: "list[ArmCorpusOutcome]" = []

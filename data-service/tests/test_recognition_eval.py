@@ -580,21 +580,34 @@ class TestConftestOptions:
         # these assertions structurally unable to hold; skip rather than
         # falsely fail when an override is active, exactly like
         # TestEndToEndDriver's own --corpus/--arm skip precedent above.
-        if (
-            request.config.getoption("corpus") is not None
-            or request.config.getoption("arm") is not None
-            or request.config.getoption("arms") is not None
-        ):
+        # Guard EVERY option this test asserts, not just three of the five --
+        # the previous guard omitted sc1_gate/permutations while lines below
+        # assert exactly those, so `pytest --permutations=3` (a documented
+        # knob) failed a test that has nothing to do with the run.
+        expected_defaults = {
+            "corpus": None,
+            "arm": None,
+            "arms": None,
+            "sc1_gate": 0.60,
+            "permutations": 1,
+        }
+        overridden = [
+            name
+            for name, default in expected_defaults.items()
+            if request.config.getoption(name) != default
+        ]
+        if overridden:
             pytest.skip(
                 "cannot verify registered DEFAULTS in a session where "
-                "--corpus/--arm/--arms were explicitly passed (pytest CLI "
-                "options are process-global, not per-test)."
+                f"{overridden} were explicitly passed (pytest CLI options are "
+                "process-global, not per-test)."
             )
-        assert request.config.getoption("corpus") is None
-        assert request.config.getoption("arm") is None
-        assert request.config.getoption("arms") is None
-        assert request.config.getoption("sc1_gate") == pytest.approx(0.60)
-        assert request.config.getoption("permutations") == 1
+        for name, default in expected_defaults.items():
+            actual = request.config.getoption(name)
+            if isinstance(default, float):
+                assert actual == pytest.approx(default), name
+            else:
+                assert actual == default, name
 
 
 # ── The real (corpus x arm) driver, wired through cassette replay (Task 3) ──
@@ -752,6 +765,29 @@ class TestLiveSweepHelpers:
         assert "SECRET123" not in masked
         assert "gateway.example.com" in masked
 
+    def test_report_sweep_can_replay_the_permutation_subsweep(self):
+        """WR-04: the permutation cassettes are committed (arm A3 recorded its
+        sub-sweep), but no code in the repo could re-score them --
+        `run_live_sweep` scored each ordering in-process and persisted nothing
+        but the cassette, and `run_report_sweep`, the only replay-side scorer,
+        always replayed the as-authored order. The per-ordering M1 figures
+        lived only in pytest stdout. In a harness whose output goes in a thesis
+        appendix, the sub-sweep was the one result not reproducible from
+        committed state."""
+        single, _ = report_module.run_report_sweep(["urbanblock_slice"], ["A3"], permutations=1)
+        if not single:
+            pytest.skip("no committed cassette for urbanblock_slice x A3")
+
+        scored, skipped = report_module.run_report_sweep(["urbanblock_slice"], ["A3"], permutations=3)
+        assert not skipped, skipped
+        assert len(scored) == 3, "expected one ScoredRow per distinct ordering"
+        assert [r.permutation_index for r in scored] == [0, 1, 2]
+        assert scored[0].m1 == single[0].m1, "ordering 0 must reproduce the as-authored row"
+
+    def test_report_sweep_rejects_a_nonpositive_permutation_count(self):
+        with pytest.raises(ValueError, match="must be >= 1"):
+            report_module.run_report_sweep(["urbanblock_slice"], ["A3"], permutations=0)
+
     def test_credential_error_does_not_echo_the_raw_base_url(self, monkeypatch):
         monkeypatch.setattr(
             live_sweep_module.llm_gateway,
@@ -807,24 +843,40 @@ class TestLiveRecordSweep:
             print(f"[{outcome.corpus} x {outcome.arm_id}] {outcome.status}: {outcome.detail}")
             for row in outcome.permutations:
                 print(f"    permutation {row['permutation_index']}: {row}")
-        print(
-            f"[live_sweep] total tokens={result.total_tokens} "
-            f"approx_usd_cost={result.total_usd_cost:.4f} over {len(result.costs)} call(s)"
-        )
+        print(f"[live_sweep] {result.cost_summary()}")
 
         # Every requested combo must be accounted for -- either recorded or
         # skipped with a named, expected reason. An unrecognized status
         # would mean a combo silently vanished, which is exactly what the
         # rest of this harness (cassette misses, provenance refusal) exists
         # to prevent.
-        allowed_statuses = {
-            "recorded",
-            "skipped_credentials",
-            "skipped_invalid",
-            "skipped_corpus_load_failed",
-        }
-        unexpected = [o for o in result.outcomes if o.status not in allowed_statuses]
+        unexpected = [o for o in result.outcomes if o.status not in live_sweep_module.OUTCOME_STATUSES]
         assert not unexpected, unexpected
+
+        # The status check above CANNOT FAIL ON ITS OWN: `status` is assigned
+        # at a handful of sites in live_sweep.py using exactly the literals in
+        # OUTCOME_STATUSES, so as the only assertion in this test it was a
+        # tautology -- a paid record run in which every combo was skipped for
+        # credentials exited green, having spent nothing and recorded nothing,
+        # indistinguishable in CI from a successful record. (pytest captures
+        # and discards the prints above on a pass, so the operator saw a green
+        # dot and no data.) That failure mode is live: this module calls
+        # os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret") at
+        # import, so a record run without the REAL secret exported decrypts
+        # nothing and skips every arm. Assert the run actually MEASURED
+        # something.
+        failed = [o for o in result.outcomes if o.status == "failed"]
+        assert not failed, f"combo(s) failed after spending money: {[(o.arm_id, o.corpus, o.detail) for o in failed]}"
+
+        recorded = [o for o in result.outcomes if o.status == "recorded"]
+        assert recorded, (
+            "record sweep produced ZERO recordings -- nothing was measured. "
+            "Most likely LLM_MASTER_SECRET is not the real one (this module "
+            "setdefault()s a fake at import), so every decrypt returned no "
+            "key. Skips: "
+            f"{[(o.arm_id, o.corpus, o.status, o.detail) for o in result.outcomes]}"
+        )
+        assert result.costs, "recordings exist but no token usage was captured -- cost accounting is broken"
 
 
 # ── report.py (Task 4) -- rendering tested with synthetic rows, independent
