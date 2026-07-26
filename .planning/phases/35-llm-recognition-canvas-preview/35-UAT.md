@@ -16,15 +16,50 @@ awaiting: a frontier-class LLM (Anthropic/OpenAI) — the only remaining blocker
 ## Test conditions (2026-07-25 session)
 
 Group 4 of `.planning/phases/v9.0-PIPELINE-UAT.md` was run against the **UrbanBlock_V7**
-canvas, NOT the Frame fixture — the Frame definition exists only as JSON test fixtures
-(`DG/tests/DG.Tests/Fixtures/frame-cg-context.json`,
-`data-service/fixtures/frame_recognition_fewshot.json`); there is no Frame `.gh` file on
-disk (whole-profile scan negative). Active LLM: DeepSeek via the OpenAI-compatible adapter
+canvas, NOT the Frame fixture — at the time the Frame definition was believed to exist only
+as JSON test fixtures (`DG/tests/DG.Tests/Fixtures/frame-cg-context.json`,
+`data-service/fixtures/frame_recognition_fewshot.json`), with no Frame `.gh` file on disk
+(whole-profile scan negative). **Superseded 2026-07-26 — see "Frame source recovered" below.**
+Active LLM: DeepSeek via the OpenAI-compatible adapter
 (`deepseek-chat`, then `deepseek-v4-pro`). Because live recognition produced no usable
 proposals (see finding F3), tests 2 and 6 were exercised with a **synthetic proposals
 payload** (real untagged UrbanBlock node GUIDs, kinds Var/Const/Pat/Emg/IntF) posted
 straight to `gh_preview_structure` — the LLM was bypassed. This validates the
 preview/undo mechanism but NOT recognition quality, and not on the intended fixture.
+
+## Frame source recovered (2026-07-26)
+
+The "no Frame `.gh` on disk" finding above is **wrong**. Two candidate source files were
+located by the architect outside the scanned tree:
+
+| File | Size | Git |
+|---|---|---|
+| `docs/Bridge_Truss_V4_OntologyMapping.gh` | 126 KB | untracked, not ignored |
+| `docs/Truss_Joint_V4_RH7.3dm` | 20.4 MB | untracked, not ignored |
+
+**Identity is plausible but NOT mechanically confirmed.** Supporting evidence: Corpus A's two
+procedures are `2D Truss Configuration` / `2D Footer Configuration`, and
+`frame_recognition_fewshot.json` cites `Truss` ×4, `Footer` ×2, `DivideLine` ×1. Against it:
+`frame-cg-context.json` records `definition.fileName = "frame.gh"`, a different name.
+
+That name is weak evidence either way — the fixture's whole `definition` block is synthetic:
+`documentId` is `3fa85f64-5717-4562-b3fc-2c963f66afa6` (the canonical Swagger placeholder UUID)
+and `capturedAt` is a round midnight timestamp. It was hand-authored, not captured. Confirming
+identity requires a real `/computgraph/context/pull` off the recovered file and a node-GUID
+comparison against the fixture.
+
+**Consequences:**
+
+1. **Not usable as Corpus B.** Corpus A is derived from this same definition, and the few-shot
+   examples in the live prompt are drawn from it. Grading on it would be train/test
+   contamination on top of the `tier0Evidence: false` circularity that Corpus B exists to
+   escape (AI-SPEC §1b). Corpus B stays on an independently-authored canvas.
+2. **Corpus A could be re-grounded.** Plan 35-05 had to hand-repair `frame-cg-context.json`
+   (34 nodes, originally 1 wire, both `_Proc` groups member-less). A live pull would replace a
+   reconstruction with a capture. Blocked on: Corpus A is frozen (`contextSha256`,
+   `frozenAtCommit`) and 35-11 is closed — this is a re-plan decision, not an edit.
+3. **UAT test 1 could finally run on Frame.** It has never been executed on the intended
+   fixture; the recovered file makes that possible once a frontier-class model is available.
 
 **Session 2 (2026-07-25, same day)** continued Group 4.3-4.6 on the same UrbanBlock_V7 canvas with a
 fresh 5-proposal synthetic payload chosen to make the publish gate meaningful: real untagged GUIDs for
