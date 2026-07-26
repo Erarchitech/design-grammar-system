@@ -99,6 +99,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/perplexity-mcp-parallel-call-crashes-browser-profile|Perplexity MCP: parallel calls crash the shared Chrome profile lock]]
 - [[debugging/Phase 36 schema doc bugs|Phase 36: Schema doc bugs — HAS_INTERFACE direction, PARAM_LINK direction, Algorithm merge key (runtime was correct, docs were stale)]]
 - [[debugging/Column flex dropdown rows overlap instead of scrolling|Column flex + maxHeight: rows compress instead of scrolling (text overlaps, no scrollbar) — fix with flex: none on children]]
+- [[debugging/Phase 35-36 dataType inference gap breaks publish (F5)|F5: bare Number component infers null dataType with no warning — accepted proposal 422s the whole Phase 36 publish]]
+- [[debugging/Phase 36 provider-model-confidence never persisted (F6)|F6: provider/model/confidence structurally unpersistable for recognized nodes — accept path drops them, models have no such fields]]
+- [[debugging/Phase 36 data-service image predated the phase (F7)|F7: data-service image predated Phase 36 — /computgraph/publish 404'd until rebuilt]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -212,6 +215,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[inbox/Model viewer needs rotation fix and validation management|Inbox items]]
 - [[sessions/2026-07-19 Phase 36 Computgraph Persistence and Graph Layer Display|2026-07-19 Phase 36 — Computgraph Persistence & Graph Layer Display (autonomous execution, 4 plans, 12 commits, 15/15 verified)]]
 - [[sessions/2026-07-25 Graph Viewer search bar adaptive value dropdown|2026-07-25 Graph Viewer search bar — adaptive value dropdown (quick 260723-tgi, new Combobox primitive, flex-shrink overlap fix)]]
+- [[sessions/2026-07-26 v9.0 UAT Group 4 E2E spine — publish, idempotency, provenance|2026-07-26 v9.0 UAT Group 4 E2E spine — publish/idempotency/provenance verified on UrbanBlock, 3 new findings (F5/F6/F7)]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
