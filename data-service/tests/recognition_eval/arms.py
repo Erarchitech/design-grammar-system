@@ -1,0 +1,339 @@
+"""The A0-A5 ablation arm definitions for the recognition eval harness
+(Phase 35-13, 35-AI-SPEC.md 5 "Ablation arms -- turning the spec's causal
+claims into evidence").
+
+Arms are configurations injected at the adapter and artifact boundary,
+NEVER a forked pipeline: an arm supplies which few-shot fixture content to
+use, whether a system prompt is set, whether Tier 0 runs, which
+provider/model, and whether structured output is negotiated. `run_arm()`
+patches those artifacts into `cg_recognition.recognize_structure()` at the
+exact seams it already exposes (module-level loader functions, the
+resolved-once provider/adapter/negotiated-mode triple, and
+`cg_topology.classify`) rather than duplicating any of its retry-loop,
+validation, or merge logic.
+
+A0/A0f need the *as-shipped* prompt -- the pre-35-08 few-shot fixture and
+the no-system-prompt condition -- which no longer exists in the working
+tree (35-08 replaced it). `resolve_arm_artifacts()` reads it out of git by
+resolving, AT RUN TIME, the commit that last touched
+`data-service/fixtures/frame_recognition_fewshot.json` before the 35-08
+replacement. It never hardcodes a guessed sha: an A0 that silently ran the
+FIXED prompt instead of the broken one would invalidate the entire sweep,
+so failure to resolve the sha raises rather than falling back to the
+current fixture.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+# data-service/tests/recognition_eval/arms.py -> parents[2] == data-service/,
+# where cg_recognition.py/cg_topology.py live. Inserted defensively (mirrors
+# scoring.py/cassette.py) so this module imports correctly regardless of the
+# invoking test's cwd/sys.path setup.
+_DATA_SERVICE_ROOT = str(Path(__file__).resolve().parents[2])
+if _DATA_SERVICE_ROOT not in sys.path:
+    sys.path.insert(0, _DATA_SERVICE_ROOT)
+
+import cg_recognition  # noqa: E402
+import cg_topology  # noqa: E402
+from llm_gateway import StructuredOutputCapability  # noqa: E402
+
+# Path resolution mirrors dg_knowledge.py's _REPO_ROOT: inside the
+# data-service Docker container the repo root (with its .git directory) is
+# mounted read-only at /mnt/repo (docker-compose.yml's `.:/mnt/repo:ro`
+# volume + `DG_KNOWLEDGE_REPO_ROOT: /mnt/repo` env var). Outside the
+# container the env var is unset and this falls back to the path computed
+# relative to this file (parents[3] == repo root).
+_REPO_ROOT = Path(os.getenv("DG_KNOWLEDGE_REPO_ROOT", str(Path(__file__).resolve().parents[3])))
+
+_FEWSHOT_FIXTURE_RELATIVE_PATH = "data-service/fixtures/frame_recognition_fewshot.json"
+
+# The 35-08 commit subject line replaced the fixture with the counterexample
+# shape ("feat(35-08): system prompt + counterexample few-shot ..."). Matching
+# on the phase tag in the subject, not a hardcoded sha, is what makes this
+# resolution survive a rebase/renumber of the commit itself.
+_REPLACEMENT_COMMIT_MARKER = re.compile(r"35-08", re.IGNORECASE)
+
+_pre_35_08_sha_cache: "str | None" = None
+
+
+def _run_git(args: "list[str]") -> str:
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=str(_REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"git {' '.join(args)!r} failed: {exc}") from exc
+    return proc.stdout
+
+
+def _resolve_pre_35_08_fewshot_sha() -> str:
+    """Resolve, via `git log` at run time, the commit that last touched the
+    few-shot fixture BEFORE the 35-08 replacement commit. Never a hardcoded
+    guess: raises loudly if the replacement commit or an earlier commit
+    cannot be found, rather than silently returning the CURRENT (fixed)
+    fixture's history entry."""
+    global _pre_35_08_sha_cache
+    if _pre_35_08_sha_cache is not None:
+        return _pre_35_08_sha_cache
+
+    output = _run_git(["log", "--format=%H %s", "--", _FEWSHOT_FIXTURE_RELATIVE_PATH])
+    lines = [ln for ln in output.splitlines() if ln.strip()]
+
+    replacement_idx = None
+    for i, line in enumerate(lines):
+        if _REPLACEMENT_COMMIT_MARKER.search(line):
+            replacement_idx = i
+            break
+
+    if replacement_idx is None or replacement_idx + 1 >= len(lines):
+        raise RuntimeError(
+            "could not resolve the pre-35-08 few-shot fixture commit: no "
+            "commit matching '35-08' was found in "
+            f"{_FEWSHOT_FIXTURE_RELATIVE_PATH}'s git history (or no earlier "
+            f"commit exists before it). History checked: {lines!r} -- "
+            "refusing to fall back to the CURRENT (fixed) fixture, since "
+            "that would silently invalidate arm A0's negative-control role."
+        )
+
+    _pre_35_08_sha_cache = lines[replacement_idx + 1].split(" ", 1)[0]
+    return _pre_35_08_sha_cache
+
+
+def _read_git_blob(sha: str, relative_path: str) -> str:
+    return _run_git(["show", f"{sha}:{relative_path}"])
+
+
+@dataclass(frozen=True)
+class Arm:
+    """One ablation arm configuration (35-AI-SPEC.md 5's arms table)."""
+
+    id: str
+    description: str
+    claim: str
+    few_shot_source: str  # "as_shipped" | "counterexample"
+    system_prompt: bool
+    tier0: bool
+    provider: str
+    model: str
+    structured_output: bool
+
+
+ARMS: "dict[str, Arm]" = {
+    "A0": Arm(
+        id="A0",
+        description="As-shipped: current few-shot, no system prompt, no Tier 0, deepseek-chat.",
+        claim=(
+            "Negative control, and the harness's own validity test. A0 must "
+            "reproduce F3 -- near-zero M1 with high grammar_citation_rate. "
+            "If A0 does not fail this way, the harness is wrong, not the "
+            "model, and no other arm's number can be trusted. Run this first."
+        ),
+        few_shot_source="as_shipped",
+        system_prompt=False,
+        tier0=False,
+        provider="deepseek",
+        model="deepseek-chat",
+        structured_output=False,
+    ),
+    "A0f": Arm(
+        id="A0f",
+        description="A0's prompt, unchanged, on claude-sonnet-5.",
+        claim=(
+            "Completes the 2x2: does a frontier model override a bad "
+            "demonstration on its own?"
+        ),
+        few_shot_source="as_shipped",
+        system_prompt=False,
+        tier0=False,
+        provider="anthropic",
+        model="claude-sonnet-5",
+        structured_output=False,
+    ),
+    "A1": Arm(
+        id="A1",
+        description="A0 + counterexample-shaped few-shot (fixture replacement only).",
+        claim=(
+            "Section 4b.3's central claim: fixing the demonstration is the "
+            "highest-impact change."
+        ),
+        few_shot_source="counterexample",
+        system_prompt=False,
+        tier0=False,
+        provider="deepseek",
+        model="deepseek-chat",
+        structured_output=False,
+    ),
+    "A2": Arm(
+        id="A2",
+        description="A1 + system prompt with grammar-as-target / grammar-anti-filter double framing.",
+        claim="Isolates the req.system defect (D1/D2) from the fixture defect.",
+        few_shot_source="counterexample",
+        system_prompt=True,
+        tier0=False,
+        provider="deepseek",
+        model="deepseek-chat",
+        structured_output=False,
+    ),
+    "A3": Arm(
+        id="A3",
+        description="A2 + Tier 0 (deterministic pre-classifier + feature-enriched candidate lines).",
+        claim="The shipping configuration. Also isolates D5 (impoverished node features).",
+        few_shot_source="counterexample",
+        system_prompt=True,
+        tier0=True,
+        provider="deepseek",
+        model="deepseek-chat",
+        structured_output=False,
+    ),
+    "A4": Arm(
+        id="A4",
+        description="A3 + negotiated provider-native structured outputs.",
+        claim=(
+            "Whether constrained decoding buys anything once the prompt is "
+            "sane, or only converts bad_json retries into content retries (D3)."
+        ),
+        few_shot_source="counterexample",
+        system_prompt=True,
+        tier0=True,
+        provider="deepseek",
+        model="deepseek-chat",
+        structured_output=True,
+    ),
+    "A5": Arm(
+        id="A5",
+        description="A3 on claude-sonnet-5.",
+        claim="Cost decision: is the cheap deployed provider sufficient once the prompt is fixed?",
+        few_shot_source="counterexample",
+        system_prompt=True,
+        tier0=True,
+        provider="anthropic",
+        model="claude-sonnet-5",
+        structured_output=False,
+    ),
+}
+
+
+@dataclass(frozen=True)
+class ArmArtifacts:
+    """The concrete few-shot content and system-prompt text resolved for one
+    arm, plus the git sha the as-shipped fixture was read from (None for a
+    counterexample arm, since that content lives in the working tree)."""
+
+    few_shot_examples: "list[dict[str, Any]]"
+    system_prompt: str
+    few_shot_sha: "str | None"
+
+
+def resolve_arm_artifacts(arm: Arm) -> ArmArtifacts:
+    """Resolve the concrete few-shot examples and system-prompt text for
+    `arm`. For `few_shot_source == "as_shipped"`, reads the pre-35-08 fixture
+    out of git (never the working tree) via `git show <sha>:<path>` and
+    raises if the sha cannot be resolved -- see `_resolve_pre_35_08_fewshot_sha`.
+    """
+    if arm.few_shot_source == "as_shipped":
+        sha = _resolve_pre_35_08_fewshot_sha()
+        raw = _read_git_blob(sha, _FEWSHOT_FIXTURE_RELATIVE_PATH)
+        payload = json.loads(raw)
+        # Pre-35-08 shape is a single {description, input, expected} example,
+        # not the post-35-08 {description, promptVersion, examples[]} list --
+        # wrap it so callers always see a uniform list[dict] shape.
+        if isinstance(payload, dict) and isinstance(payload.get("examples"), list):
+            examples = payload["examples"]
+        else:
+            examples = [payload]
+        few_shot_sha = sha
+    elif arm.few_shot_source == "counterexample":
+        examples = cg_recognition._load_frame_fewshot()
+        few_shot_sha = None
+    else:
+        raise ValueError(f"unknown few_shot_source {arm.few_shot_source!r} on arm {arm.id!r}")
+
+    system_prompt = cg_recognition.build_recognition_system_prompt() if arm.system_prompt else ""
+
+    return ArmArtifacts(few_shot_examples=examples, system_prompt=system_prompt, few_shot_sha=few_shot_sha)
+
+
+def _no_tier0_classify(features: "dict[str, cg_topology.NodeFeatures]") -> cg_topology.Tier0Result:
+    """Bypass Tier 0 entirely: every scoped candidate becomes residual, so an
+    arm with `tier0=False` measures Tier 1 alone over the whole scope."""
+    return cg_topology.Tier0Result(decided=[], residual=list(features.keys()))
+
+
+def run_arm(arm: Arm, corpus: "Any", adapter: "Any") -> dict:
+    """Invoke `cg_recognition.recognize_structure()` with `arm`'s artifacts
+    patched in (system prompt, few-shot fixture, provider/model/adapter
+    resolution) and Tier 0 bypassed when `arm.tier0` is False.
+
+    Patches module-level attributes on `cg_recognition`/`cg_topology`
+    directly (save/restore via try/finally) rather than requiring a pytest
+    `monkeypatch` fixture, so this is callable both from a test and from the
+    standalone `record`-mode CLI sweep. Never forks `recognize_structure`.
+
+    Returns `{"result": <recognize_structure() return value>, "provenance":
+    {...}}` -- the provenance block is a plain dict `corpus.assert_provenance`
+    accepts directly (not nested further).
+    """
+    artifacts = resolve_arm_artifacts(arm)
+    negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
+
+    original_get_adapter = cg_recognition.get_adapter
+    original_negotiate = cg_recognition.negotiate_structured_output
+    original_resolve_provider = cg_recognition.resolve_active_provider
+    original_load_settings = cg_recognition.load_persisted_llm_settings
+    original_build_system_prompt = cg_recognition.build_recognition_system_prompt
+    original_load_fewshot = cg_recognition._load_frame_fewshot
+    original_classify = cg_topology.classify
+
+    try:
+        cg_recognition.get_adapter = lambda provider, base_url=None: adapter
+        cg_recognition.negotiate_structured_output = (
+            lambda provider, model, base_url=None: StructuredOutputCapability(mode=negotiated_mode)
+        )
+        cg_recognition.resolve_active_provider = (
+            lambda settings, master_secret: (arm.provider, arm.model, "test-api-key")
+        )
+        cg_recognition.load_persisted_llm_settings = lambda: {}
+        cg_recognition.build_recognition_system_prompt = lambda: artifacts.system_prompt
+        cg_recognition._load_frame_fewshot = lambda: artifacts.few_shot_examples
+
+        if not arm.tier0:
+            cg_topology.classify = _no_tier0_classify
+        # else: real cg_topology.classify runs unpatched -- the shipping path.
+
+        result = cg_recognition.recognize_structure(corpus.context)
+    finally:
+        cg_recognition.get_adapter = original_get_adapter
+        cg_recognition.negotiate_structured_output = original_negotiate
+        cg_recognition.resolve_active_provider = original_resolve_provider
+        cg_recognition.load_persisted_llm_settings = original_load_settings
+        cg_recognition.build_recognition_system_prompt = original_build_system_prompt
+        cg_recognition._load_frame_fewshot = original_load_fewshot
+        cg_topology.classify = original_classify
+
+    provenance = {
+        "promptVersion": cg_recognition.PROMPT_VERSION if arm.system_prompt else "no-system-prompt",
+        "provider": arm.provider,
+        "model": arm.model,
+        "temperature": 0.0,
+        "negotiatedMode": negotiated_mode,
+        "contextSha256": corpus.context_sha256,
+        "frozenAtCommit": corpus.frozen_at_commit,
+        "corpusVersion": corpus.corpus_version,
+        "armId": arm.id,
+        "fewShotSha": artifacts.few_shot_sha,
+    }
+    return {"result": result, "provenance": provenance}

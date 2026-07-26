@@ -31,7 +31,9 @@ import pytest  # noqa: E402
 
 from llm_gateway import GenerateRequest, GenerateResponse  # noqa: E402
 
+from recognition_eval import arms as arms_module  # noqa: E402
 from recognition_eval import cassette as cassette_module  # noqa: E402
+from recognition_eval import corpus as corpus_module  # noqa: E402
 
 
 class _FakeRealAdapter:
@@ -190,3 +192,127 @@ class TestCassette:
                 "A0", None, negotiated_mode="none", prompt_version="r1",
                 ip_class="own", mode="bogus",
             )
+
+
+# ── TestArms (Task 2) ──
+
+
+def _minimal_cg_context() -> dict:
+    """A tiny hand-built cgContextJson v1 shape -- one tagged procedure
+    member, two untagged nodes -- just enough for `run_arm` to exercise
+    Tier-0-bypass + Tier-1 merge without depending on a real corpus fixture."""
+    return {
+        "nodes": [
+            {"instanceId": "n1", "componentGuid": "g1", "name": "Param", "nickname": "ParSplitAt"},
+            {"instanceId": "n3", "componentGuid": "g3", "name": "Panel", "nickname": "loose panel"},
+            {"instanceId": "n4", "componentGuid": "g4", "name": "Line SDL", "nickname": "TopChord"},
+        ],
+        "algorithms": [
+            {
+                "index": 1,
+                "name": "1_ALGORITHM",
+                "procedures": [
+                    {
+                        "id": "cg:1:proc:11",
+                        "index": 11,
+                        "name": "2D Truss Configuration",
+                        "source": "tagged",
+                        "memberIds": ["n1"],
+                        "patterns": [],
+                        "parameters": [],
+                        "interfaces": [],
+                    }
+                ],
+            }
+        ],
+        "untagged": {
+            "nodeIds": ["n3", "n4"],
+            "groups": [
+                {"nickname": "loose panel group", "memberIds": ["n3"]},
+                {"nickname": "wired thing group", "memberIds": ["n4"]},
+            ],
+        },
+        "wires": [
+            {"fromNode": "n1", "fromParam": "p_out", "toNode": "n4", "toParam": "p_in"},
+        ],
+    }
+
+
+class TestArms:
+    def test_arms_registry_contains_exact_ids(self):
+        assert set(arms_module.ARMS.keys()) == {"A0", "A0f", "A1", "A2", "A3", "A4", "A5"}
+
+    def test_a0_is_the_negative_control_configuration(self):
+        a0 = arms_module.ARMS["A0"]
+        assert a0.few_shot_source == "as_shipped"
+        assert a0.system_prompt is False
+        assert a0.tier0 is False
+        assert a0.model == "deepseek-chat"
+
+    def test_a3_is_the_shipping_configuration(self):
+        a3 = arms_module.ARMS["A3"]
+        assert a3.few_shot_source == "counterexample"
+        assert a3.system_prompt is True
+        assert a3.tier0 is True
+
+    def test_resolve_arm_artifacts_a0_uses_the_as_shipped_grammar_citing_fixture(self):
+        artifacts = arms_module.resolve_arm_artifacts(arms_module.ARMS["A0"])
+        serialized = json.dumps(artifacts.few_shot_examples).lower()
+        assert "grammar" in serialized
+        assert artifacts.few_shot_sha is not None
+
+    def test_resolve_arm_artifacts_a3_uses_the_counterexample_fixture_no_grammar(self):
+        artifacts = arms_module.resolve_arm_artifacts(arms_module.ARMS["A3"])
+        serialized = json.dumps(artifacts.few_shot_examples).lower()
+        assert "grammar" not in serialized
+
+    def test_resolve_arm_artifacts_raises_when_sha_cannot_be_resolved(self, monkeypatch):
+        def _boom():
+            raise RuntimeError("simulated: no matching commit in history")
+
+        monkeypatch.setattr(arms_module, "_resolve_pre_35_08_fewshot_sha", _boom)
+        with pytest.raises(RuntimeError):
+            arms_module.resolve_arm_artifacts(arms_module.ARMS["A0"])
+
+    def test_run_arm_returns_provenance_corpus_assert_provenance_accepts(self):
+        corpus = corpus_module.Corpus(
+            name="test-fixture",
+            context=_minimal_cg_context(),
+            blocks=[],
+            abstain_expected=[],
+            tier0_evidence=True,
+            ip_class="own",
+            corpus_version=1,
+            frozen_at_commit="deadbeef",
+            context_sha256="dummy",
+        )
+        fake_response = GenerateResponse(
+            text=json.dumps(
+                {
+                    "proposals": [],
+                    "unrecognized": [
+                        {"memberIds": ["n3", "n4"], "reason": "test stub -- not evaluated for real classification"}
+                    ],
+                }
+            ),
+            provider="deepseek",
+            model="deepseek-chat",
+            usage={},
+        )
+        adapter = cassette_module.CassetteAdapter(
+            "A0",
+            _FakeRealAdapter([fake_response]),
+            negotiated_mode="none",
+            prompt_version="test",
+            ip_class=corpus.ip_class,
+            mode="live",
+        )
+
+        outcome = arms_module.run_arm(arms_module.ARMS["A0"], corpus, adapter)
+
+        corpus_module.assert_provenance(outcome["provenance"])
+        assert outcome["result"]["valid"] is True
+
+    def test_arms_module_never_forks_recognize_structure(self):
+        source = Path(arms_module.__file__).read_text(encoding="utf-8")
+        assert source.count("def recognize_structure") == 0
