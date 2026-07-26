@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest  # noqa: E402
 
+import cg_schemas  # noqa: E402
 import cg_topology  # noqa: E402
 
 
@@ -328,3 +329,170 @@ class TestExtractFeatures:
         assert features["missing"].in_degree == 0
         assert features["missing"].out_degree == 0
         assert features["missing"].widget_kind == "None"
+
+
+# ── classify() -- R1-R6 rule table, one PASS and one ABSTAIN per rule ──
+
+
+def _features(
+    instance_id="n1",
+    name="",
+    nickname="n1",
+    in_degree=0,
+    out_degree=0,
+    widget="None",
+    group_id=None,
+    group_member_count=0,
+    adjacent=(11,),
+) -> cg_topology.NodeFeatures:
+    return cg_topology.NodeFeatures(
+        instance_id=instance_id,
+        name=name,
+        nickname=nickname,
+        component_guid="g",
+        widget_kind=widget,
+        in_degree=in_degree,
+        out_degree=out_degree,
+        group_id=group_id,
+        group_member_count=group_member_count,
+        adjacent_tagged_procedures=list(adjacent),
+    )
+
+
+class TestClassifyR1Var:
+    def test_r1_pass_slider_with_no_upstream_decides_var(self):
+        f = _features(widget="Slider", in_degree=0, nickname="SpansCount")
+        result = cg_topology.classify({"n1": f})
+        assert result.residual == []
+        assert result.decided[0]["kind"] == "Var"
+        assert result.decided[0]["confidence"] == 1.0
+
+    def test_r1_abstain_when_widget_has_upstream(self):
+        # A Slider with an upstream wire is not an architect-driven input by
+        # this signal, and its degree profile also fails R2/R3/R4.
+        f = _features(widget="Slider", in_degree=1, out_degree=1)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyR2Const:
+    def test_r2_pass_source_only_non_widget_decides_const(self):
+        # Const is not restricted to widgets -- Construct Point/Unit Y style.
+        f = _features(widget="None", in_degree=0, out_degree=2, name="Construct Point")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided[0]["kind"] == "Const"
+
+    def test_r2_abstain_when_widget_kind_disqualifies(self):
+        # widget_kind Number is neither R1's set nor R2's {Panel, None}.
+        f = _features(widget="Number", in_degree=0, out_degree=1)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+    def test_r2_defers_to_residual_when_shared_with_pattern_group(self):
+        f = _features(widget="None", in_degree=0, out_degree=1, group_member_count=3)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyR3Emg:
+    def test_r3_pass_clean_sink_decides_emg(self):
+        f = _features(widget="Geometry", in_degree=1, out_degree=0, name="Line SDL")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided[0]["kind"] == "Emg"
+
+    def test_r3_abstain_when_not_a_sink(self):
+        f = _features(widget="Geometry", in_degree=1, out_degree=1, name="Evaluate Curve")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+    def test_r3_defers_to_residual_when_shared_with_pattern_group(self):
+        f = _features(widget="Geometry", in_degree=1, out_degree=0, group_member_count=2)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyR4Interface:
+    def test_r4_pass_bare_param_relay_decides_intf(self):
+        f = _features(widget="None", in_degree=1, out_degree=1, name="Param", nickname="ParSplitAt")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided[0]["kind"] == "IntF"
+
+    def test_r4_abstain_when_not_a_bare_param(self):
+        # Same degree profile, but not a bare GH `Param` component -- would
+        # swallow ordinary compute-chain nodes if allowed through.
+        f = _features(widget="None", in_degree=1, out_degree=1, name="Divide Curve")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyR5Isolated:
+    def test_r5_pass_fully_isolated_node_abstains(self):
+        f = _features(widget="None", in_degree=0, out_degree=0)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+    def test_r5_isolated_widget_is_owned_by_r1_not_r5(self):
+        # First-match-wins: an isolated Slider still matches R1's condition
+        # (in_degree == 0 and widget in {Slider, ValueList, Boolean}) before
+        # R5 is ever considered.
+        f = _features(widget="Slider", in_degree=0, out_degree=0)
+        result = cg_topology.classify({"n1": f})
+        assert result.decided[0]["kind"] == "Var"
+
+
+class TestClassifyR6Everything:
+    def test_r6_pass_multi_io_compute_node_abstains(self):
+        f = _features(widget="None", in_degree=2, out_degree=3, name="Divide Curve")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+    def test_r6_abstain_boundary_not_isolated_but_no_earlier_rule_matches(self):
+        f = _features(widget="Panel", in_degree=1, out_degree=1, name="Panel")
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyProcedureAttribution:
+    def test_abstains_when_no_adjacent_tagged_procedure(self):
+        f = _features(widget="Slider", in_degree=0, adjacent=())
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+    def test_abstains_when_multiple_adjacent_tagged_procedures(self):
+        f = _features(widget="Slider", in_degree=0, adjacent=(11, 12))
+        result = cg_topology.classify({"n1": f})
+        assert result.decided == []
+        assert result.residual == ["n1"]
+
+
+class TestClassifyShapeAndRationale:
+    def test_decided_rows_validate_as_structure_proposal(self):
+        f1 = _features(instance_id="n1", widget="Slider", in_degree=0, nickname="SpansCount")
+        f2 = _features(instance_id="n2", widget="None", in_degree=0, out_degree=1, name="Construct Point", nickname="ptZero")
+        result = cg_topology.classify({"n1": f1, "n2": f2})
+        cg_schemas.ProposedStructure.model_validate({"proposals": result.decided, "unrecognized": []})
+
+    def test_decided_rows_have_full_confidence_and_mechanical_rationale(self):
+        f = _features(widget="Slider", in_degree=0)
+        result = cg_topology.classify({"n1": f})
+        row = result.decided[0]
+        assert row["confidence"] == 1.0
+        assert "in-degree" in row["rationale"] or "out-degree" in row["rationale"]
+        assert "grammar" not in row["rationale"].lower()
+
+    def test_frame_abstain_nodes_land_in_residual(self):
+        node_ids = ["n-untagged-01", "n-scratch-01", "n-scratch-02"]
+        features = cg_topology.extract_features(_frame_cg_context(), node_ids)
+        result = cg_topology.classify(features)
+        assert result.decided == []
+        assert sorted(result.residual) == sorted(node_ids)

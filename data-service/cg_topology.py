@@ -294,3 +294,108 @@ def extract_features(cg_context: dict, node_ids: "list[str]") -> "dict[str, Node
             adjacent_tagged_procedures=sorted(node_to_procedures.get(node_id, set())),
         )
     return features
+
+
+# ── classify() -- the R1-R6 rule table (AI-SPEC.md Section 4), honest abstention ──
+
+
+@dataclass
+class Tier0Result:
+    decided: "list[dict]"
+    residual: "list[str]"
+
+
+# R1's widget set: an interactive widget with no upstream IS an
+# architect-driven input.
+_R1_WIDGETS = {"Slider", "ValueList", "Boolean"}
+
+# R2's widget set: Const is NOT restricted to widgets -- Frame's constants
+# include `Construct Point` and `Unit Y` (widget_kind == "None"), so "None"
+# must not disqualify R2.
+_R2_WIDGETS = {"Panel", "None"}
+
+
+def _mechanical_rationale(features: NodeFeatures) -> str:
+    """A MECHANICAL rationale citing only the deciding features. The word
+    'grammar' must never appear here -- that is Tier 1's prompt surface, not
+    Tier 0's deterministic evidence."""
+    return f"in-degree {features.in_degree}, out-degree {features.out_degree}, widget={features.widget_kind}"
+
+
+def _decide_row(kind: str, features: NodeFeatures) -> "dict | None":
+    """Build a `cg_schemas.StructureProposal`-shaped row, or abstain (`None`)
+    when the procedure attribution is ambiguous.
+
+    Abstain when `adjacent_tagged_procedures` is empty or has more than one
+    entry -- procedure attribution is E4's silently-wrong failure mode and a
+    guess here persists into Neo4j. This is checked even after a rule's
+    topological condition matches, because a correct `kind` decision paired
+    with a guessed `procedureIndex` is still a wrong proposal.
+    """
+    procedures = features.adjacent_tagged_procedures
+    if len(procedures) != 1:
+        return None
+    procedure_index = procedures[0]
+    name_part = features.nickname or features.instance_id
+    return {
+        "kind": kind,
+        "suggestedName": f"{procedure_index}_{kind}_{name_part}",
+        "procedureIndex": procedure_index,
+        "memberIds": [features.instance_id],
+        "confidence": 1.0,
+        "rationale": _mechanical_rationale(features),
+    }
+
+
+def classify(features: "dict[str, NodeFeatures]") -> Tier0Result:
+    """Apply R1-R6 in order, first match wins. R1-R4 decide (subject to the
+    procedure-attribution abstention in `_decide_row` and, for R2/R3, the
+    Pattern-evidence deferral below); R5 (fully isolated) and R6 (everything
+    else, including all Procedure/Pattern grouping) abstain into `residual`
+    by falling through every rule -- no explicit R5/R6 branch is needed
+    because both mean "no earlier rule matched".
+
+    R2/R3 deferral: when a node shares its untagged group with >= 1 other
+    node (`group_member_count > 1`), that is Pattern evidence, not a
+    Constant/Emergent signal -- defer to Tier 1 rather than decide.
+    """
+    decided: list[dict] = []
+    residual: list[str] = []
+
+    for node_id, f in features.items():
+        row: "dict | None" = None
+
+        if f.in_degree == 0 and f.widget_kind in _R1_WIDGETS:
+            # R1: architect-driven input widget with no upstream -> Var.
+            row = _decide_row("Var", f)
+        elif (
+            f.in_degree == 0
+            and f.out_degree > 0
+            and f.widget_kind in _R2_WIDGETS
+            and f.group_member_count <= 1
+        ):
+            # R2: source-only, no widget-or-Panel objection, not shared with
+            # a Pattern group -> Const.
+            row = _decide_row("Const", f)
+        elif f.out_degree == 0 and f.in_degree > 0 and f.group_member_count <= 1:
+            # R3: clean sink, not shared with a Pattern group -> Emg.
+            row = _decide_row("Emg", f)
+        elif (
+            f.in_degree == 1
+            and f.out_degree == 1
+            and f.widget_kind == "None"
+            and f.name.startswith("Param")
+        ):
+            # R4: bare GH `Param` relay, single in/out -> IntF. Restricted to
+            # bare Param components on purpose -- a general pass-through rule
+            # would swallow ordinary single-in/single-out compute nodes,
+            # which are Pattern members.
+            row = _decide_row("IntF", f)
+        # else: R5 (fully isolated) or R6 (everything else) -- abstain.
+
+        if row is not None:
+            decided.append(row)
+        else:
+            residual.append(node_id)
+
+    return Tier0Result(decided=decided, residual=residual)
