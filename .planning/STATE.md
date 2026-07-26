@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: AI Workflow Intelligence
 current_phase: 35
-current_phase_name: LLM Recognition and On-Canvas Proposal Preview
+current_phase_name: llm-recognition-canvas-preview
 status: executing
-stopped_at: "Completed 35-11-PLAN.md (recognition eval substrate: Corpus A + stdlib-only scoring core + corpus loader)"
-last_updated: "2026-07-26T12:44:25.845Z"
+stopped_at: Completed 35-12-PLAN.md (two-tier Tier-0/Tier-1 recognition orchestrator + guardrails G6/G7/G10/G11)
+last_updated: "2026-07-26T14:16:01.301Z"
 last_activity: 2026-07-26
-last_activity_desc: "Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate"
+last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 14
   completed_phases: 6
   total_plans: 50
-  completed_plans: 45
+  completed_plans: 46
   percent: 43
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 36 — Computgraph Persistence and Graph Layer Display
+**Current focus:** Phase 35 — llm-recognition-canvas-preview
 
 ## Current Position
 
-Phase: 35 — LLM Recognition and On-Canvas Proposal Preview (SC1 quality remediation)
-Plan: 11 remediation plans (35-05..35-15) across 5 waves, plus 35-16 (Wave 2, parser host-resolution fix flagged during 35-05)
-Status: Wave 1 (35-05..35-09) executed; 35-16 executed 2026-07-26 (ComputeHostPatternIds order-independence fix, commits 1ce96d6/c6eabee)
-Last activity: 2026-07-26 - Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate
+Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
+Plan: 2 of 16
+Status: Ready to execute
+Last activity: 2026-07-26 — Phase 35 execution started
 
 ## Deferred Verification
 
@@ -78,6 +78,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 35 P16 | 25min | 3 tasks | 2 files |
 | Phase 35 P10 | 55min | 4 tasks | 2 files |
 | Phase 35 P11 | ~2h | 3 tasks | 7 files |
+| Phase 35 P12 | 35min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -285,6 +286,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 35-10]: cg_topology.py Tier 0 -- scope_untagged/extract_features/widget_kind/classify/merge/output_token_budget, R1-R6 rule table with C#-parity-pinned widget_kind and honest abstention (closes UAT F2 at source)
 - [Phase ?]: 35-11: Corpus A generator is C# (CanvasAnnotationParser+ComputgraphContextSerializer), not Python -- production RawCanvas=>cgContextJson path lives entirely in C#
 - [Phase ?]: 35-11: frozenAtCommit/annotatedAt pinned at true emit time and reused thereafter, not recomputed per test run -- keeps the golden-file comparison stable across unrelated future commits
+- [Phase ?]: [Phase 35-12]: recognize_structure() rewired to two-tier Tier-0/Tier-1 orchestrator with system-prompt split, Pydantic structured-output layer, and guardrails G6/G7/G10/G11; validate_proposed_structure() left byte-for-byte unchanged, still runs post-merge
+- [Phase ?]: [Phase 35-12]: GRAMMAR_CITATION_PATTERNS moved to cg_recognition (production) and imported by tests/recognition_eval/scoring.py (test-only) so the online G7 guard and offline grammar_citation_rate metric can never disagree
 
 ### Research Flags (carry into planning)
 
@@ -362,8 +365,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-26T12:44:25.815Z
-Stopped at: Completed 35-11-PLAN.md (recognition eval substrate: Corpus A + stdlib-only scoring core + corpus loader)
+Last session: 2026-07-26T14:16:01.282Z
+Stopped at: Completed 35-12-PLAN.md (two-tier Tier-0/Tier-1 recognition orchestrator + guardrails G6/G7/G10/G11)
 Resume file: None
 
 ## Performance Metrics

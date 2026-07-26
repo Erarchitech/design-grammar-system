@@ -362,7 +362,7 @@ Plans:
 3. Accepting proposal(s) yields permanent groups that the Phase 32 serializer parses identically to hand-made tags (`source: recognized` recorded)
 4. Nothing is written to Neo4j in this phase's flow until explicit confirmation; unrecognized blocks appear in the report
 
-**Plans:** 12/16 plans executed
+**Plans:** 13/16 plans executed
 
 *Plans 35-01..04 shipped 2026-07-19 (RCGN-01..04 all implemented). Plans 35-05..15 are the **SC1 quality remediation** planned 2026-07-26 against `35-AI-SPEC.md`: SC1 / UAT test 1 is `blocked` — recognition plumbing passes end-to-end but quality was never validated, and on the only live model exercised (`deepseek-chat`) it returned 0 proposals from 14 scoped candidates with circular "does not match grammar" rationales. Root cause verified by inspection: the sole few-shot fixture demonstrates the exact failure it produces, compounded by `req.system` never being set. The remediation replaces pure-LLM extraction with a **two-tier hybrid** (deterministic topology pre-classifier + LLM over the semantic residue), fixes the demonstration and adds the system prompt, promotes UAT findings F1/F2/F5 to enforced guardrails, closes the F4 undo crash, and stands up an offline eval harness that turns SC1 into a number pytest computes.*
 
@@ -395,7 +395,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 35-12-PLAN.md — `cg_recognition.py` two-tier orchestrator: system prompt + Tier-0 decisions block + feature candidate lines, Pydantic layer, post-merge validation, guardrails G6/G7/G8/G9/G10/G11, redacted per-attempt logging (RCGN-01, RCGN-04)
+- [x] 35-12-PLAN.md — `cg_recognition.py` two-tier orchestrator: system prompt + Tier-0 decisions block + feature candidate lines, Pydantic layer, post-merge validation, guardrails G6/G7/G8/G9/G10/G11, redacted per-attempt logging (RCGN-01, RCGN-04)
 
 **Wave 4** *(blocked on Wave 3; 35-13 ‖ 35-14)*
 
@@ -568,7 +568,7 @@ All four plans are independent (zero `files_modified` overlap — Python / C# / 
 | 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
-| 35. LLM Recognition and On-Canvas Proposal Preview | 12/16 | In Progress|  |
+| 35. LLM Recognition and On-Canvas Proposal Preview | 13/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 0/? | Not started | — |
 | 38. AI-Generated Grasshopper Script Inputs | 0/? | Not started | — |
