@@ -78,6 +78,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 36 Computgraph publish avoids mint_identity|Phase 36 (v9.0): Computgraph publish uses compute_dg_id, NOT mint_identity — prevents label-less MERGE anchor duplicates]]
 - [[decisions/Graph Viewer search bar adaptive value dropdown|Graph Viewer search bar: Combobox primitive — data-derived value list, open-ended (free text preserved), no engine changes]]
 - [[decisions/Phase 35 recognition quality remediation — hybrid Tier 0 Tier 1 architecture and pytest eval|Phase 35 (v9.0): Hybrid Tier 0 deterministic + Tier 1 LLM; pytest fixture-driven eval; labelling flywheel; sub-model training deferred]]
+- [[decisions/Phase 35 Corpus A frozen as-is, Frame Truss binaries not committed|Phase 35 (v9.0): Corpus A not re-grounded on recovered Frame/Truss source; *.gh/*.3dm gitignored (20 MB .3dm never committed)]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -105,6 +106,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/Phase 36 provider-model-confidence never persisted (F6)|F6: provider/model/confidence structurally unpersistable for recognized nodes — accept path drops them, models have no such fields]]
 - [[debugging/Phase 36 data-service image predated the phase (F7)|F7: data-service image predated Phase 36 — /computgraph/publish 404'd until rebuilt]]
 - [[debugging/Phase 35 latent parser bug — pattern host resolved by document order|Latent: ComputeHostPatternIds picks a host by document order, so a Procedure listing a transitively-nested pattern silently drops PATTERN_HOST_TO. Fix planned as 35-16]]
+- [[debugging/Phase 35 R4 interface rule unreachable on live Grasshopper data|Phase 35: R4 Interface rule matches on `name.startswith("Param")`, but no real GH component ever displays as "Param..." — rule is unreachable on live canvases, and its only test feeds a fictitious name that hides the bug]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -220,6 +222,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-25 Graph Viewer search bar adaptive value dropdown|2026-07-25 Graph Viewer search bar — adaptive value dropdown (quick 260723-tgi, new Combobox primitive, flex-shrink overlap fix)]]
 - [[sessions/2026-07-26 v9.0 UAT Group 4 E2E spine — publish, idempotency, provenance|2026-07-26 v9.0 UAT Group 4 E2E spine — publish/idempotency/provenance verified on UrbanBlock, 3 new findings (F5/F6/F7)]]
 - [[sessions/2026-07-26 Phase 35 SC1 remediation — planning and Wave 1 execution|2026-07-26 Phase 35 SC1 remediation — 12 plans authored, Wave 1 executed (7 commits): schemas, gateway controls, the prompt/few-shot fix, fixture repair, G12 gate]]
+- [[sessions/2026-07-26 Phase 35 Wave 3 execution — two-tier orchestrator, Corpus B frozen, R4 defect found|2026-07-26 Phase 35 Wave 3 execution — 35-12 two-tier orchestrator (433 tests), Corpus B hand-annotated + frozen on live UrbanBlock_V7 (4 pull round-trips), Frame/Truss source recovered, R4 rule found unreachable on live data]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
