@@ -357,12 +357,14 @@ Plans:
 
 **Success Criteria:**
 
-1. On the Frame definition with only the Object marker + 2 procedure tags present, recognition proposes patterns/parameters/interfaces whose member sets match the reference annotation for ≥ the majority of blocks, each with confidence + rationale
-2. The proposal is visible on the canvas as preview groups; Ctrl+Z or `clear_preview` removes every trace
+1. On the Frame definition with only the Object marker + 2 procedure tags present, recognition proposes patterns/parameters/interfaces whose member sets match the reference annotation for ≥ the majority of blocks, each with confidence + rationale — **BLOCKED** (plumbing passes; quality unvalidated on available models). Gradeable form fixed by the remediation: M1 exact member-set match ≥ 0.60 on Corpus B / arm A3, conjunct with zero anchor violations, zero silent drops, `grammar_citation_rate` 0.00, confidence-spread check passing and complete provenance. Closed by plan 35-15
+2. The proposal is visible on the canvas as preview groups; Ctrl+Z or `clear_preview` removes every trace — pass for a single preview; the **re-preview** case (UAT F4) crashed on the second Ctrl+Z and is fixed by plan 35-09
 3. Accepting proposal(s) yields permanent groups that the Phase 32 serializer parses identically to hand-made tags (`source: recognized` recorded)
 4. Nothing is written to Neo4j in this phase's flow until explicit confirmation; unrecognized blocks appear in the report
 
-**Plans:** 4/4 plans complete
+**Plans:** 4/15 plans complete
+
+*Plans 35-01..04 shipped 2026-07-19 (RCGN-01..04 all implemented). Plans 35-05..15 are the **SC1 quality remediation** planned 2026-07-26 against `35-AI-SPEC.md`: SC1 / UAT test 1 is `blocked` — recognition plumbing passes end-to-end but quality was never validated, and on the only live model exercised (`deepseek-chat`) it returned 0 proposals from 14 scoped candidates with circular "does not match grammar" rationales. Root cause verified by inspection: the sole few-shot fixture demonstrates the exact failure it produces, compounded by `req.system` never being set. The remediation replaces pure-LLM extraction with a **two-tier hybrid** (deterministic topology pre-classifier + LLM over the semantic residue), fixes the demonstration and adds the system prompt, promotes UAT findings F1/F2/F5 to enforced guardrails, closes the F4 undo crash, and stands up an offline eval harness that turns SC1 into a number pytest computes.*
 
 Plans:
 **Wave 1**
@@ -374,6 +376,42 @@ Plans:
 
 - [x] 35-03-PLAN.md — CanvasListenerComponent preview handlers: preview_structure/clear_preview/get_preview_status render groups+scribble in one undo record (RCGN-02)
 - [x] 35-04-PLAN.md — DG STRUCTURE CONFIRM component: list/accept/reject/partial-accept, preview→permanent + source:recognized marker (RCGN-03)
+
+#### SC1 quality remediation (planned 2026-07-26)
+
+**Wave 1** *(all 5 parallel — zero files_modified overlap)*
+
+- [ ] 35-05-PLAN.md — Frame fixture repair: fill the two empty `_Proc` groups (the live UAT F2 trigger) + component-semantics wiring, in two freeze-ordered commits before `cg_topology.py` exists (RCGN-01)
+- [ ] 35-06-PLAN.md — `cg_schemas.py`: Pydantic v2 output contract + `to_strict_json_schema()` provider-subset emitter + pydantic declared in requirements.txt (RCGN-01)
+- [ ] 35-07-PLAN.md — `llm_gateway.py`: internal-only `GenerationOptions`, `negotiate_structured_output()`, per-provider max-token spelling, pinned temperature (defect D6), `truncated`/`finish_reason` (RCGN-01)
+- [ ] 35-08-PLAN.md — Prompt artifacts: `prompts/recognition_system.md` (grammar-as-target + grammar-anti-filter double framing, PROMPT_VERSION r35.4) + counterexample-shaped few-shot replacement (RCGN-01)
+- [ ] 35-09-PLAN.md — Canvas UAT defect closure: F4 re-preview undo-record coherence + G12 per-entity accept-time publishability gate + public parser seam (RCGN-02, RCGN-03)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 35-10-PLAN.md — `cg_topology.py` Tier 0: scope_untagged (F2 fix), feature extraction, R1–R6 rules with honest abstention, order-stable merge (G13), output_token_budget (RCGN-01)
+- [ ] 35-11-PLAN.md — Eval substrate: Corpus A `frame_ablated` via a C# golden-file emitter + stdlib-only scoring core (Jaccard/greedy matching, M1–M9, Wilson/Brier/ECE) + provenance and freeze checks (RCGN-01)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 35-12-PLAN.md — `cg_recognition.py` two-tier orchestrator: system prompt + Tier-0 decisions block + feature candidate lines, Pydantic layer, post-merge validation, guardrails G6/G7/G8/G9/G10/G11, redacted per-attempt logging (RCGN-01, RCGN-04)
+
+**Wave 4** *(blocked on Wave 3; 35-13 ‖ 35-14)*
+
+- [ ] 35-13-PLAN.md — Eval harness: cassette record/replay (replay default, loud miss), arms A0–A5, conjunctive SC1 gate, report emitter (RCGN-01)
+- [ ] 35-14-PLAN.md — Corpus B `urbanblock_slice`: live pull + architect annotation through the tagging UI, composition checklist, frozen in its own commit — the SC1 evidence corpus (RCGN-01)
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 35-15-PLAN.md — A0 negative control (harness validity gate), full ablation sweep + permutation sub-sweep, SC1 ship-gate and claim-threshold verdicts, 35-UAT.md closeout (RCGN-01..04)
+
+**Cross-cutting constraints:**
+
+- `validate_proposed_structure()` is the RCGN-04 safety contract and stays UNCHANGED — the Pydantic layer sits in front of it, never instead of it, and it runs POST-merge so a Tier-1 proposal claiming a node Tier 0 already decided is still caught
+- Provider resolved ONCE before the retry loop, `adapter.generate()` in-process — never a re-POST to `/llm/generate`, which would let a settings change silently switch models between attempts
+- Reference corpora are frozen in commits touching no prompt, few-shot or Tier-0 file — if a reference and an artifact it grades change together, the run is void, not merely suspect
+- Corpus A can never be Tier-0 evidence (`tier0Evidence: false`): its wiring is authored by the same hand as the rules. Every headline SC1 figure comes from Corpus B
+- Deferred and named rather than dropped: LLM-judge calibration (E4-name/E7-soft reported but excluded from SC1), the test–retest self-agreement ceiling, the external-peer agreement floor, and the AI-SPEC §7 production monitoring streams / review queue
 
 ---
 
@@ -401,16 +439,16 @@ Plans:
 3. Every Computgraph node answers a provenance query: source, model (if recognized), definition, timestamp
 4. The ui-v2 graph viewer shows the Computgraph layer distinctly and filters it per project
 
-**Plans:** 1/4 plans executed
+**Plans:** 4/4 plans complete
 
 All four plans are independent (zero `files_modified` overlap — Python / C# / JS / docs) and run in a single parallel wave; the label/relationship set is locked by CONTEXT.md so display + schema-propagation do not wait on the backend code.
 
 **Wave 1** *(all parallel)*
 
 - [x] 36-01-PLAN.md — `POST /computgraph/publish` + `computgraph_publish.py` (atomic MERGE-idempotent write, inline dgId, Behavior synthesis, provenance, stale-entity report) + pytest suite (CGPD-01, CGPD-02, CGPD-03)
-- [ ] 36-02-PLAN.md — DG COMPUTGRAPH PUBLISH component + ComputgraphPublishClient/Contract (ValidationPublishClient pattern, re-extract-before-publish) (CGPD-05)
-- [ ] 36-03-PLAN.md — ui-v2 Computgraph layer: buildRings.js casing fix + orbits/captions + GraphScreen rowsOf truncation guard (CGPD-04, display)
-- [ ] 36-04-PLAN.md — schema propagation checklist across 8 surfaces + stale `dgId`-on-`:Algorithm` doc fix (CGPD-04, checklist)
+- [x] 36-02-PLAN.md — DG COMPUTGRAPH PUBLISH component + ComputgraphPublishClient/Contract (ValidationPublishClient pattern, re-extract-before-publish) (CGPD-05)
+- [x] 36-03-PLAN.md — ui-v2 Computgraph layer: buildRings.js casing fix + orbits/captions + GraphScreen rowsOf truncation guard (CGPD-04, display)
+- [x] 36-04-PLAN.md — schema propagation checklist across 8 surfaces + stale `dgId`-on-`:Algorithm` doc fix (CGPD-04, checklist)
 
 ---
 
@@ -529,8 +567,8 @@ All four plans are independent (zero `files_modified` overlap — Python / C# / 
 | 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
-| 35. LLM Recognition and On-Canvas Proposal Preview | 4/4 | Complete   | 2026-07-19 |
-| 36. Computgraph Persistence and Graph Layer Display | 1/4 | In Progress|  |
+| 35. LLM Recognition and On-Canvas Proposal Preview | 4/15 | In Progress (SC1 remediation planned 2026-07-26) | — |
+| 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 0/? | Not started | — |
 | 38. AI-Generated Grasshopper Script Inputs | 0/? | Not started | — |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |

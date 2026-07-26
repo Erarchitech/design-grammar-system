@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 37 — Script Structure Validation MVP
-Plan: Not started
+Phase: 35 — LLM Recognition and On-Canvas Proposal Preview (SC1 quality remediation)
+Plan: 11 remediation plans (35-05..35-15) across 5 waves
 Status: Ready to execute
-Last activity: 2026-07-23 - Completed quick task 260723-tgi: Graph Viewer search bar adaptive value dropdown (new Combobox primitive)
+Last activity: 2026-07-26 - Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate
 
 ## Deferred Verification
 
@@ -39,7 +39,17 @@ Last activity: 2026-07-23 - Completed quick task 260723-tgi: Graph Viewer search
 |-------|-------|--------|
 | 35 | verification_deferred_human | /gsd-verify-work 35 |
 
-Phase 35 (LLM Recognition and On-Canvas Proposal Preview) is code-complete as of 2026-07-19: 4/4 plans executed, code-review fix loop closed (CR-01 + WR-01..06 fixed, iter-2 re-review 0 Critical/0 Warning), dotnet 370/370, in-container pytest 251/251. Six live-Rhino UAT items are in `.planning/phases/35-llm-recognition-canvas-preview/35-UAT.md`.
+Phase 35 (LLM Recognition and On-Canvas Proposal Preview) was code-complete as of 2026-07-19: 4/4 plans executed, code-review fix loop closed (CR-01 + WR-01..06 fixed, iter-2 re-review 0 Critical/0 Warning), dotnet 370/370, in-container pytest 251/251. Live-Rhino UAT ran 2026-07-25 and returned **4 pass / 1 FAIL / 1 blocked** — see `35-UAT.md`. Reopened for SC1 quality remediation on 2026-07-26: 11 plans (35-05..35-15) planned against `35-AI-SPEC.md`. Resume with `/gsd-execute-phase 35`; `/gsd-verify-work 35` applies after Wave 5.
+
+**Deferred, named rather than dropped** (carried out of the 35 remediation scope by explicit decision — re-surface at verify-phase):
+
+| Item | Why deferred | Consequence if left undone |
+|------|--------------|----------------------------|
+| LLM-judge calibration (≥ 0.7 agreement on ≥ 20 human labels) | Needs human labelling effort beyond the remediation | Eval dimensions E4-name and E7-soft stay reported-but-excluded from the SC1 figure |
+| Test–retest self-agreement ceiling | Needs a ≥ 4-week blind re-annotation gap | At n = 1, M1 without a self-agreement ceiling is not fully interpretable — must be stated on the number |
+| External-peer agreement floor | Needs a second computational designer, one session on 10–20 blocks | "The author says these boundaries are right" stays unmeasured against any independent floor |
+| AI-SPEC §7 production monitoring (`recognition_runs.jsonl` / `recognition_labels.jsonl` + review queue) | Instrument, not a quality fix; Tier-2 flywheel has no data yet | G10's 0.5 confidence floor stays a labelled guess instead of being derived from an accept-rate curve |
+| Frame `.gh` rebuild | No Frame `.gh` exists on disk (whole-profile scan negative); Corpus A is the JSON-derived substitute | UAT tests 1/2/6 remain closed on UrbanBlock rather than on the intended Frame fixture |
 
 ## Deferred Items
 
