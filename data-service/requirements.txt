@@ -1,6 +1,7 @@
 cryptography
 fastapi
 httpx
+pydantic>=2.7,<3
 neo4j
 pytest
 specklepy==3.2.4
