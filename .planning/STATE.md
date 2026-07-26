@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 35
 current_phase_name: llm-recognition-canvas-preview
 status: executing
-stopped_at: Completed 35-12-PLAN.md (two-tier Tier-0/Tier-1 recognition orchestrator + guardrails G6/G7/G10/G11)
-last_updated: "2026-07-26T14:16:01.301Z"
+stopped_at: "Completed 35-14-PLAN.md (Corpus B urbanblock_slice frozen: 32 blocks, 8 abstain, tier0Evidence:true; FM-2/R4 defect documented)"
+last_updated: "2026-07-26T20:01:48.583Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 14
   completed_phases: 6
   total_plans: 50
-  completed_plans: 46
+  completed_plans: 47
   percent: 43
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
-Plan: 2 of 16
+Plan: 3 of 16
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 35 execution started
 
@@ -79,6 +79,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 35 P10 | 55min | 4 tasks | 2 files |
 | Phase 35 P11 | ~2h | 3 tasks | 7 files |
 | Phase 35 P12 | 35min | 4 tasks | 4 files |
+| Phase 35 P14 | 35min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -288,6 +289,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 35-11: frozenAtCommit/annotatedAt pinned at true emit time and reused thereafter, not recomputed per test run -- keeps the golden-file comparison stable across unrelated future commits
 - [Phase ?]: [Phase 35-12]: recognize_structure() rewired to two-tier Tier-0/Tier-1 orchestrator with system-prompt split, Pydantic structured-output layer, and guardrails G6/G7/G10/G11; validate_proposed_structure() left byte-for-byte unchanged, still runs post-merge
 - [Phase ?]: [Phase 35-12]: GRAMMAR_CITATION_PATTERNS moved to cg_recognition (production) and imported by tests/recognition_eval/scoring.py (test-only) so the online G7 guard and offline grammar_citation_rate metric can never disagree
+- [Phase ?]: [Phase 35-14]: Corpus B (urbanblock_slice) scoped to 4 procedures (not the plan's stated 2-3) -- node/block counts clear the plan's own floor, accepted as a deviation
+- [Phase ?]: [Phase 35-14]: Nested-Pattern reference blocks subtract the child's memberIds from the host's raw tagged memberIds (no id in two blocks); also filters out phantom nested-Group instanceIds absent from context.nodes[] -- both mechanical, not hand-edited
+- [Phase ?]: [Phase 35-14]: FM-2 confirmed uncovered -- traced to a real Tier-0 R4 defect (cg_topology.py matches name.startswith('Param'), but the C# extractor's Name is the GH display name, never 'Param...'); R4's own test uses a synthetic name real GH never produces. Not fixed here per freeze protocol (cg_topology.py untouched in the reference commit) -- flagged for a follow-up plan
 
 ### Research Flags (carry into planning)
 
@@ -365,8 +369,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-26T14:16:01.282Z
-Stopped at: Completed 35-12-PLAN.md (two-tier Tier-0/Tier-1 recognition orchestrator + guardrails G6/G7/G10/G11)
+Last session: 2026-07-26T20:01:48.564Z
+Stopped at: Completed 35-14-PLAN.md (Corpus B urbanblock_slice frozen: 32 blocks, 8 abstain, tier0Evidence:true; FM-2/R4 defect documented)
 Resume file: None
 
 ## Performance Metrics
