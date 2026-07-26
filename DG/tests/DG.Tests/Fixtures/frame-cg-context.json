@@ -10,8 +10,12 @@
     { "text": "1_ALGORITHM", "position": [0, 60] }
   ],
   "groups": [
-    { "nickname": "11_Proc - 2D Truss Configuration", "memberIds": [], "nestedGroupIds": [] },
-    { "nickname": "12_Proc - 2D Footer Configuration", "memberIds": [], "nestedGroupIds": [] },
+    { "nickname": "11_Proc - 2D Truss Configuration",
+      "memberIds": ["n-divide-curve", "n-topchord", "n-parsplit", "n-trussconfig-intf", "n-mergeres", "n-spanscount", "n-lentotal", "n-mode", "n-htotal", "n-ptzero", "n-vecy", "n-splitpar", "n-trussconfig-const11", "n-divider", "n-divpoints", "n-paramat", "n-linesdl", "n-upperchord", "n-topframe", "n-vertpost"],
+      "nestedGroupIds": ["11_Pat_DivideLine", "11_IntF_ParSplitAt", "11_IntF_TrussConfig", "11_IntF_MergeRes", "11_Var_SpansCount", "11_Var_LenTotal", "11_Var_Mode", "11_Var_HTotal", "11_Const_ptZero", "11_Const_vecY", "11_Const_SplitPar", "11_Const_TrussConfig", "11_Const_Divider", "11_Emg_DivPoints", "11_Emg_ParamAt", "11_Emg_LineSDL", "11_Emr_UpperChord", "11_Emg_TopFrame", "11_Emg_VertPost"] },
+    { "nickname": "12_Proc - 2D Footer Configuration",
+      "memberIds": ["n-footer-bottom", "n-footerframe-intf", "n-hfooter", "n-footercount", "n-indlist1", "n-indlist2", "n-trussconfig-const12", "n-bottomln", "n-topln", "n-footerunit", "n-footerframe-emg"],
+      "nestedGroupIds": ["12_Pat_1 Create footer bottom lines", "12_IntF_FooterFrame", "12_Var_HFooter", "12_Var_FooterCount", "12_Const_IndList_1", "12_Const_IndList_2", "12_Const_TrussConfig", "12_Emg_BottomLn", "12_Emg_TopLn", "12_Emg_FooterUnit", "12_Emg_FooterFrame"] },
 
     { "nickname": "11_Pat_DivideLine", "memberIds": ["n-divide-curve"], "nestedGroupIds": ["11_Pat_TopChord"] },
     { "nickname": "11_Pat_TopChord", "memberIds": ["n-topchord"], "nestedGroupIds": [] },
