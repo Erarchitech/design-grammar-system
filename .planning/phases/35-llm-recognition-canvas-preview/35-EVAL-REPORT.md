@@ -307,6 +307,35 @@ computing the wrong negotiated-mode assumption for its own cassette-key lookup, 
 of the DeepSeek `response_format` bug described in Task 2; fixed in the same commit as the live driver
 fix and reverified clean before this report was finalized).
 
+Running the SC1-gate command exactly as documented (`--corpus=urbanblock_slice --arm=A3
+--sc1-gate=0.60`) produces **one failing test**:
+`TestEndToEndDriver::test_scores_one_corpus_arm_combo_via_replay`, with
+`AssertionError: SC1 gate FAILED -- conjunct(s) not satisfied: M1=0.031 < threshold 0.60`. **This is
+the expected, correct outcome, not a defect** -- `m1=0.03125` is the exact value replayed from the
+committed cassette, byte-identical to Task 2's recorded record-mode figure. The conjunctive gate
+(`assert_sc1_gate`) is doing precisely its documented job: failing loudly on the one conjunct
+(`M1`) that does not clear 0.60, while every other conjunct (E1=0, silent drops=0,
+grammar_citation_rate=0.00, confidence spread OK, provenance complete) is satisfied. Proving
+reproducibility does not require the gate to pass; it requires the replayed number to match the
+recorded one, which it does exactly.
+
+A second, unrelated pytest failure was found and fixed while confirming this:
+`TestConftestOptions::test_options_registered_with_expected_defaults` asserts that
+`--corpus`/`--arm`/`--arms` are `None` and `--sc1-gate`/`--permutations` hold their bare defaults --
+assertions that can only hold in a session where nothing overrode them. Because pytest CLI options are
+process-global for the whole invocation (not scoped per-test), running this plan's own documented
+`--corpus=urbanblock_slice --arm=A3 --sc1-gate=0.60` command exercises every test in
+`test_recognition_eval.py` in the SAME session, including this one -- which then correctly (by its own
+literal logic) failed, since the options were genuinely no longer at their defaults. This is a
+pre-existing test-isolation gap in 35-13's own suite (not something this plan's code changes caused;
+35-13-SUMMARY.md's own manual verification ran the identical CLI args and most likely hit the same
+collateral failure without flagging it, since its attention was on the expected `CassetteMissError`).
+Fixed with a `pytest.skip()` guard, mirroring `TestEndToEndDriver`'s own precedent: the test now skips
+(rather than falsely fails) whenever `--corpus`/`--arm`/`--arms` were explicitly passed, since it
+structurally cannot verify registered DEFAULTS under those conditions. After the fix, the identical
+command yields exactly one failure (the expected SC1-gate assertion above) and zero collateral
+failures.
+
 ### Fast gate
 
 `docker compose exec -T data-service python -m pytest tests/ -q -m "not live"` exits 0, 474 passed / 1

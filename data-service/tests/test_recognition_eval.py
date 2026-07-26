@@ -538,6 +538,23 @@ class TestConftestOptions:
             assert opt in help_text, f"{opt} not listed in pytest --help output"
 
     def test_options_registered_with_expected_defaults(self, request):
+        # pytest CLI options are process-global for the whole session -- this
+        # test can only verify DEFAULTS when nothing overrode them. 35-15's
+        # own documented Task 3 command (`--corpus=urbanblock_slice --arm=A3
+        # --sc1-gate=0.60`) runs this whole file in one session, which makes
+        # these assertions structurally unable to hold; skip rather than
+        # falsely fail when an override is active, exactly like
+        # TestEndToEndDriver's own --corpus/--arm skip precedent above.
+        if (
+            request.config.getoption("corpus") is not None
+            or request.config.getoption("arm") is not None
+            or request.config.getoption("arms") is not None
+        ):
+            pytest.skip(
+                "cannot verify registered DEFAULTS in a session where "
+                "--corpus/--arm/--arms were explicitly passed (pytest CLI "
+                "options are process-global, not per-test)."
+            )
         assert request.config.getoption("corpus") is None
         assert request.config.getoption("arm") is None
         assert request.config.getoption("arms") is None
