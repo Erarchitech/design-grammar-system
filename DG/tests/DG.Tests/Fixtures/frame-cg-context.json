@@ -98,6 +98,49 @@
     { "instanceId": "n-untagged-01", "componentGuid": "guid-panel", "name": "Panel", "nickname": "loose panel", "position": [700, 700] }
   ],
   "wires": [
-    { "fromNode": "n-divide-curve", "fromParam": "n-divide-curve-out0", "toNode": "n-parsplit", "toParam": "n-parsplit-in0" }
+    { "fromNode": "n-ptzero", "fromParam": "n-ptzero-out0", "toNode": "n-topchord", "toParam": "n-topchord-in0" },
+    { "fromNode": "n-vecy", "fromParam": "n-vecy-out0", "toNode": "n-topchord", "toParam": "n-topchord-in1" },
+    { "fromNode": "n-lentotal", "fromParam": "n-lentotal-out0", "toNode": "n-topchord", "toParam": "n-topchord-in2" },
+
+    { "fromNode": "n-topchord", "fromParam": "n-topchord-out0", "toNode": "n-divide-curve", "toParam": "n-divide-curve-in0" },
+    { "fromNode": "n-spanscount", "fromParam": "n-spanscount-out0", "toNode": "n-divide-curve", "toParam": "n-divide-curve-in1" },
+    { "fromNode": "n-divider", "fromParam": "n-divider-out0", "toNode": "n-divide-curve", "toParam": "n-divide-curve-in2" },
+
+    { "fromNode": "n-divide-curve", "fromParam": "n-divide-curve-out0", "toNode": "n-parsplit", "toParam": "n-parsplit-in0" },
+    { "fromNode": "n-divide-curve", "fromParam": "n-divide-curve-out1", "toNode": "n-divpoints", "toParam": "n-divpoints-in0" },
+    { "fromNode": "n-divide-curve", "fromParam": "n-divide-curve-out2", "toNode": "n-mergeres", "toParam": "n-mergeres-in0" },
+
+    { "fromNode": "n-parsplit", "fromParam": "n-parsplit-out0", "toNode": "n-paramat", "toParam": "n-paramat-in1" },
+    { "fromNode": "n-topchord", "fromParam": "n-topchord-out0", "toNode": "n-paramat", "toParam": "n-paramat-in0" },
+
+    { "fromNode": "n-ptzero", "fromParam": "n-ptzero-out0", "toNode": "n-linesdl", "toParam": "n-linesdl-in0" },
+    { "fromNode": "n-mergeres", "fromParam": "n-mergeres-out0", "toNode": "n-linesdl", "toParam": "n-linesdl-in1" },
+    { "fromNode": "n-htotal", "fromParam": "n-htotal-out0", "toNode": "n-linesdl", "toParam": "n-linesdl-in2" },
+
+    { "fromNode": "n-ptzero", "fromParam": "n-ptzero-out0", "toNode": "n-upperchord", "toParam": "n-upperchord-in0" },
+    { "fromNode": "n-splitpar", "fromParam": "n-splitpar-out0", "toNode": "n-upperchord", "toParam": "n-upperchord-in1" },
+    { "fromNode": "n-htotal", "fromParam": "n-htotal-out0", "toNode": "n-upperchord", "toParam": "n-upperchord-in2" },
+
+    { "fromNode": "n-ptzero", "fromParam": "n-ptzero-out0", "toNode": "n-topframe", "toParam": "n-topframe-in0" },
+    { "fromNode": "n-trussconfig-const11", "fromParam": "n-trussconfig-const11-out0", "toNode": "n-topframe", "toParam": "n-topframe-in1" },
+    { "fromNode": "n-htotal", "fromParam": "n-htotal-out0", "toNode": "n-topframe", "toParam": "n-topframe-in2" },
+
+    { "fromNode": "n-mode", "fromParam": "n-mode-out0", "toNode": "n-trussconfig-intf", "toParam": "n-trussconfig-intf-in0" },
+    { "fromNode": "n-ptzero", "fromParam": "n-ptzero-out0", "toNode": "n-vertpost", "toParam": "n-vertpost-in0" },
+    { "fromNode": "n-trussconfig-intf", "fromParam": "n-trussconfig-intf-out0", "toNode": "n-vertpost", "toParam": "n-vertpost-in1" },
+    { "fromNode": "n-htotal", "fromParam": "n-htotal-out0", "toNode": "n-vertpost", "toParam": "n-vertpost-in2" },
+
+    { "fromNode": "n-indlist1", "fromParam": "n-indlist1-out0", "toNode": "n-footer-bottom", "toParam": "n-footer-bottom-in0" },
+    { "fromNode": "n-indlist2", "fromParam": "n-indlist2-out0", "toNode": "n-footer-bottom", "toParam": "n-footer-bottom-in1" },
+
+    { "fromNode": "n-footer-bottom", "fromParam": "n-footer-bottom-out0", "toNode": "n-footerframe-intf", "toParam": "n-footerframe-intf-in0" },
+    { "fromNode": "n-footerframe-intf", "fromParam": "n-footerframe-intf-out0", "toNode": "n-topln", "toParam": "n-topln-in0" },
+    { "fromNode": "n-trussconfig-const12", "fromParam": "n-trussconfig-const12-out0", "toNode": "n-topln", "toParam": "n-topln-in1" },
+
+    { "fromNode": "n-footer-bottom", "fromParam": "n-footer-bottom-out0", "toNode": "n-bottomln", "toParam": "n-bottomln-in0" },
+    { "fromNode": "n-indlist2", "fromParam": "n-indlist2-out0", "toNode": "n-bottomln", "toParam": "n-bottomln-in1" },
+
+    { "fromNode": "n-hfooter", "fromParam": "n-hfooter-out0", "toNode": "n-footerunit", "toParam": "n-footerunit-in0" },
+    { "fromNode": "n-footercount", "fromParam": "n-footercount-out0", "toNode": "n-footerframe-emg", "toParam": "n-footerframe-emg-in0" }
   ]
 }
