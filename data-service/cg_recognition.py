@@ -26,6 +26,7 @@ Neo4j until Phase 36's confirmed-only publish.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,8 @@ from llm_gateway import (
     load_persisted_llm_settings,
     resolve_active_provider,
 )
+
+_LOG = logging.getLogger(__name__)
 
 
 # ── DoS bounds (Security V5) ──
@@ -413,37 +416,127 @@ def _extract_json(text: str | None) -> tuple[dict | None, str | None]:
     return parsed, None
 
 
-# ── Frame few-shot fixture (Phase 35-02: A4 few-shot budget resolution) ──
+# ── System prompt loader (Phase 35-12 Task 1: prompt split, role/task/grammar
+# framing moves out of the user prompt and into a real system prompt) ──
+
+SYSTEM_PROMPT_FILE = Path(__file__).resolve().parent / "prompts" / "recognition_system.md"
+
+
+def _parse_front_matter(text: str) -> tuple[dict[str, str], str]:
+    """Split a `---\\nkey: value\\n---\\nbody` file into `(front_matter, body)`.
+
+    Deliberately not a YAML parser -- the front matter here is a flat set of
+    scalar `key: value` pairs and pulling in a YAML dependency for that would
+    be a net-new dependency for one field. Never raises: text with no leading
+    `---` fence returns `({}, text)` unchanged.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, text
+    front_matter: dict[str, str] = {}
+    body_start: int | None = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            body_start = i + 1
+            break
+        if ":" in lines[i]:
+            key, _, value = lines[i].partition(":")
+            front_matter[key.strip()] = value.strip()
+    if body_start is None:
+        # Opening fence with no closing fence -- malformed, degrade to "no
+        # front matter" rather than guessing where the body starts.
+        return {}, text
+    return front_matter, "\n".join(lines[body_start:])
+
+
+_system_prompt_cache: str | None = None
+_prompt_version_cache: str | None = None
+
+
+def _load_system_prompt() -> tuple[str, str]:
+    """Load `prompts/recognition_system.md` once, cached at module scope --
+    mirrors `_load_frame_fewshot()`'s defensive load pattern: NEVER raises on
+    a missing or malformed file. On failure returns `("", "")` and logs a
+    warning, so a missing prompt file degrades recognition to pre-Phase-35
+    behaviour (no system prompt sent) rather than breaking it outright."""
+    global _system_prompt_cache, _prompt_version_cache
+    if _system_prompt_cache is not None:
+        return _system_prompt_cache, _prompt_version_cache or ""
+    if not SYSTEM_PROMPT_FILE.exists():
+        _LOG.warning("recognition_system_prompt_missing path=%s", SYSTEM_PROMPT_FILE)
+        _system_prompt_cache = ""
+        _prompt_version_cache = ""
+        return _system_prompt_cache, _prompt_version_cache
+    try:
+        raw = SYSTEM_PROMPT_FILE.read_text(encoding="utf-8")
+        front_matter, body = _parse_front_matter(raw)
+        _system_prompt_cache = body.strip()
+        _prompt_version_cache = front_matter.get("prompt_version", "")
+    except OSError:
+        _LOG.warning("recognition_system_prompt_load_failed path=%s", SYSTEM_PROMPT_FILE)
+        _system_prompt_cache = ""
+        _prompt_version_cache = ""
+    return _system_prompt_cache, _prompt_version_cache or ""
+
+
+def build_recognition_system_prompt() -> str:
+    """Return the recognition system prompt (front matter stripped), loaded
+    once and cached. Never raises -- returns `""` when the file is absent or
+    malformed. Passed as `GenerateRequest.system` by `recognize_structure()`;
+    role, task framing, and the grammar-is-not-a-filter guidance all live
+    here now, not in the user prompt (Phase 35-12 D-prompt-split)."""
+    body, _ = _load_system_prompt()
+    return body
+
+
+PROMPT_VERSION: str = _load_system_prompt()[1]
+
+
+# ── Frame few-shot fixture (Phase 35-02: A4 few-shot budget resolution;
+# Phase 35-08/35-12: adapted to the `{description, promptVersion, examples[]}`
+# shape) ──
 
 FRAME_FEWSHOT_FILE = Path(__file__).resolve().parent / "fixtures" / "frame_recognition_fewshot.json"
 
-_EMPTY_FEWSHOT: dict[str, Any] = {"input": {}, "expected": {"proposals": [], "unrecognized": []}}
+_EMPTY_FEWSHOT_EXAMPLES: list[dict[str, Any]] = []
 
-_fewshot_cache: dict[str, Any] | None = None
+_fewshot_cache: list[dict[str, Any]] | None = None
 
 
-def _load_frame_fewshot() -> dict[str, Any]:
+def _load_frame_fewshot() -> list[dict[str, Any]]:
     """Load the bundled Frame few-shot fixture once, cached at module scope
     (mirrors dg_context.load_cypher_catalog()'s defensive load pattern --
-    never raises on a missing or malformed file)."""
+    never raises on a missing or malformed file).
+
+    Returns the `examples` LIST from the fixture's `{description,
+    promptVersion, examples[]}` shape, not the whole fixture object --
+    returning a list rather than one blob is what makes a later
+    dynamic-retrieval example selector (pick a relevant subset instead of
+    always returning every example) a one-line change at the call site.
+    """
     global _fewshot_cache
     if _fewshot_cache is not None:
         return _fewshot_cache
     if not FRAME_FEWSHOT_FILE.exists():
-        _fewshot_cache = dict(_EMPTY_FEWSHOT)
+        _fewshot_cache = list(_EMPTY_FEWSHOT_EXAMPLES)
         return _fewshot_cache
     try:
-        _fewshot_cache = json.loads(FRAME_FEWSHOT_FILE.read_text(encoding="utf-8"))
+        payload = json.loads(FRAME_FEWSHOT_FILE.read_text(encoding="utf-8"))
+        examples = payload.get("examples") if isinstance(payload, dict) else None
+        _fewshot_cache = examples if isinstance(examples, list) else list(_EMPTY_FEWSHOT_EXAMPLES)
     except (OSError, ValueError):
-        _fewshot_cache = dict(_EMPTY_FEWSHOT)
+        _fewshot_cache = list(_EMPTY_FEWSHOT_EXAMPLES)
     return _fewshot_cache
 
 
-# ── _build_recognition_prompt() -- deterministic prompt assembly (Phase 35-02) ──
+# ── _build_recognition_prompt() -- deterministic prompt assembly (Phase
+# 35-02; Phase 35-12: rewired to the USER half only, over the two-tier
+# scope/features/tier0 inputs) ──
 
 _CONCEPT_CATALOG_MARKER = "=== COMPUTGRAPH CONCEPT CATALOG ==="
 _FEWSHOT_MARKER = "=== FRAME FEW-SHOT EXAMPLE ==="
 _TAGGED_ANCHOR_MARKER = "=== TAGGED ENTITIES (GROUND TRUTH -- DO NOT RENAME, SPLIT, OR ABSORB) ==="
+_TIER0_DECISIONS_MARKER = "=== ALREADY DECIDED BY TOPOLOGY (do not re-propose these ids) ==="
 _UNTAGGED_MARKER = "=== UNTAGGED NODES TO CLASSIFY ==="
 _OUTPUT_INSTRUCTION_MARKER = "=== OUTPUT INSTRUCTIONS ==="
 
@@ -497,19 +590,40 @@ def _filtered_untagged_groups(cg_context: dict, scoped_node_ids: list[str], proc
     return [g for g in groups if any(m in scoped for m in (g.get("memberIds") or []))]
 
 
-def _trimmed_node_lines(cg_context: dict, node_ids: list[str]) -> list[str]:
-    nodes_by_id = {
-        n.get("instanceId"): n for n in (cg_context.get("nodes") or []) if isinstance(n, dict)
-    }
+def _candidate_feature_lines(features: "dict[str, Any]", node_ids: list[str]) -> list[str]:
+    """One line per candidate, rendering DERIVED topology features (widget
+    kind, wiring degree, group, adjacent tagged procedure, name/nickname) --
+    not raw data. `position` is deliberately absent: it is FM-1's most
+    seductive and least reliable signal, and the model must decide from
+    graph evidence instead. `features` values are `cg_topology.NodeFeatures`
+    instances (typed as `Any` here to avoid a hard dataclass-shape coupling
+    in the type hint)."""
     lines: list[str] = []
     for node_id in node_ids:
-        node = nodes_by_id.get(node_id)
-        if not node:
+        f = features.get(node_id)
+        if f is None:
             continue
+        group = f.group_id if f.group_id else "none"
         lines.append(
-            f"- {node_id}: name={node.get('name')!r} nickname={node.get('nickname')!r} "
-            f"position={node.get('position')!r}"
+            f"- {node_id}: widget={f.widget_kind} in={f.in_degree} out={f.out_degree} "
+            f"group={group!r} adj_proc={f.adjacent_tagged_procedures} "
+            f"name={f.name!r} nick={f.nickname!r}"
         )
+    return lines
+
+
+def _tier0_decision_lines(tier0_decided: list[dict]) -> list[str]:
+    """One line per Tier-0 decision, so Tier 1 both avoids re-proposing an
+    already-decided id AND gets a free in-context worked example generated
+    from the architect's own canvas -- the strongest few-shot available,
+    since it is real evidence from this exact context, not a fixture."""
+    lines: list[str] = []
+    for row in tier0_decided:
+        if not isinstance(row, dict):
+            continue
+        member_ids = row.get("memberIds") or []
+        member_id = member_ids[0] if member_ids else "?"
+        lines.append(f"- {member_id} -> {row.get('kind')}  ({row.get('rationale')})")
     return lines
 
 
@@ -525,18 +639,48 @@ def _trimmed_wire_lines(cg_context: dict, node_ids: list[str]) -> list[str]:
     return lines
 
 
-def _tagged_anchor_lines(cg_context: dict) -> list[str]:
+def _tagged_anchor_lines(cg_context: dict, procedure_index: int | None = None) -> list[str]:
+    """Tagged (ground-truth) entities, as anchors Tier 1 must never rename,
+    split, or absorb into.
+
+    When `procedure_index` is set, this widens to also SUMMARIZE the rest of
+    the canvas rather than omit it: the target procedure gets its full
+    `memberIds` list (Tier 1 needs those ids to reason about adjacency), and
+    every OTHER tagged procedure/entity collapses to a one-line
+    name/index/member-count summary. On a mostly-tagged canvas the full
+    anchor block is the single largest prompt section and most of it is
+    irrelevant to the procedure actually being recognized.
+    """
     lines: list[str] = []
     for algorithm in cg_context.get("algorithms") or []:
         for procedure in algorithm.get("procedures") or []:
             if not isinstance(procedure, dict):
                 continue
+            proc_index = procedure.get("index")
+            is_target = procedure_index is not None and proc_index == procedure_index
+            summarize = procedure_index is not None and not is_target
+
             if procedure.get("source") == "tagged":
-                lines.append(
-                    f"- Procedure '{procedure.get('name')}' (index "
-                    f"{procedure.get('index')}, id {procedure.get('id')}) "
-                    f"members: {procedure.get('memberIds')}"
-                )
+                if summarize:
+                    member_count = len(procedure.get("memberIds") or [])
+                    lines.append(
+                        f"- Procedure '{procedure.get('name')}' (index "
+                        f"{proc_index}) member count: {member_count}"
+                    )
+                else:
+                    lines.append(
+                        f"- Procedure '{procedure.get('name')}' (index "
+                        f"{proc_index}, id {procedure.get('id')}) "
+                        f"members: {procedure.get('memberIds')}"
+                    )
+
+            if summarize:
+                # Nested entities of a non-target procedure are folded into
+                # that procedure's one-line summary above -- their own
+                # memberIds add no signal Tier 1 needs for a DIFFERENT
+                # procedure's residual candidates.
+                continue
+
             for key, label in _ENTITY_LABEL_BY_KEY.items():
                 for entity in procedure.get(key) or []:
                     if isinstance(entity, dict) and entity.get("source") == "tagged":
@@ -548,25 +692,46 @@ def _tagged_anchor_lines(cg_context: dict) -> list[str]:
     return lines
 
 
-def _build_recognition_prompt(cg_context: dict, procedure_index: int | None) -> str:
-    """Deterministically assemble the recognition prompt: concept catalog +
-    annotation-convention grammar, the Frame few-shot, tagged entities as
-    ground-truth anchors, the untagged nodes/wires/group hints (trimmed,
-    scoped to `procedure_index` when set), and an explicit JSON-only output
-    instruction. Fixed section order -- same request yields the same prompt
-    every time (mirrors CTXA-05's determinism discipline)."""
+def _build_recognition_prompt(
+    cg_context: dict,
+    scope: "Any",
+    features: "dict[str, Any]",
+    tier0: "Any",
+    negotiated_mode: str,
+) -> str:
+    """Deterministically assemble the USER half of the recognition prompt:
+    concept catalog + annotation-convention grammar, the Frame few-shot
+    examples, tagged entities as ground-truth anchors (scoped to
+    `scope.procedure_index`), the Tier-0 decisions block, the residual
+    candidate feature lines, the residual wire lines, group hints, and an
+    explicit JSON-only output instruction.
+
+    Deliberately does NOT restate the role, the task, or the grammar
+    anti-filter framing -- those live in `build_recognition_system_prompt()`
+    now (the system half). Stating the output contract twice in different
+    words is a real regression risk, not a harmless redundancy.
+
+    `scope`/`features`/`tier0` are `cg_topology.Scope`/`NodeFeatures`
+    dict/`Tier0Result` respectively (typed as `Any` here to avoid a hard
+    import-order coupling in the type hint). Fixed section order -- same
+    request yields the same prompt every time (CTXA-05's determinism
+    discipline).
+    """
     catalog = dg_knowledge.load_computgraph_catalog()
-    fewshot = _load_frame_fewshot()
+    fewshot_examples = _load_frame_fewshot()
 
-    scoped_node_ids = _filtered_untagged_node_ids(cg_context, procedure_index)
-    scoped_groups = _filtered_untagged_groups(cg_context, scoped_node_ids, procedure_index)
+    residual_ids = list(tier0.residual)
+    residual_set = set(residual_ids)
 
-    node_lines = _trimmed_node_lines(cg_context, scoped_node_ids) or ["(none)"]
-    wire_lines = _trimmed_wire_lines(cg_context, scoped_node_ids) or ["(none)"]
+    candidate_lines = _candidate_feature_lines(features, residual_ids) or ["(none)"]
+    wire_lines = _trimmed_wire_lines(cg_context, residual_ids) or ["(none)"]
     group_lines = [
-        f"- {g.get('nickname')}: members {g.get('memberIds')}" for g in scoped_groups
+        f"- {g.get('nickname')}: members {g.get('memberIds')}"
+        for g in scope.groups
+        if any(m in residual_set for m in (g.get("memberIds") or []))
     ] or ["(none)"]
-    anchor_lines = _tagged_anchor_lines(cg_context) or ["(none)"]
+    anchor_lines = _tagged_anchor_lines(cg_context, scope.procedure_index) or ["(none)"]
+    decision_lines = _tier0_decision_lines(tier0.decided)
 
     sections = [
         _CONCEPT_CATALOG_MARKER,
@@ -577,14 +742,20 @@ def _build_recognition_prompt(cg_context: dict, procedure_index: int | None) -> 
         json.dumps(catalog.get("annotation_convention"), sort_keys=True),
         "",
         _FEWSHOT_MARKER,
-        json.dumps(fewshot, sort_keys=True),
+        json.dumps(fewshot_examples, sort_keys=True),
         "",
         _TAGGED_ANCHOR_MARKER,
         *anchor_lines,
+    ]
+
+    if decision_lines:
+        sections += ["", _TIER0_DECISIONS_MARKER, *decision_lines]
+
+    sections += [
         "",
         _UNTAGGED_MARKER,
-        "Nodes:",
-        *node_lines,
+        "Candidates:",
+        *candidate_lines,
         "Wires:",
         *wire_lines,
         "Group hints:",
@@ -599,6 +770,20 @@ def _build_recognition_prompt(cg_context: dict, procedure_index: int | None) -> 
             "No text before or after the JSON object."
         ),
     ]
+
+    if negotiated_mode == "json_object":
+        # DeepSeek-shaped providers (reached through OpenAIAdapter via
+        # base_url) require the literal word "json" in the prompt and
+        # recommend a compact shape example -- branch on the NEGOTIATED
+        # MODE, never on `provider == "openai"` (llm_gateway.py's DeepSeek
+        # trap note).
+        sections.append(
+            "Return a valid json object. Example shape: "
+            '{"proposals": [{"kind": "Interface", "suggestedName": '
+            '"11_IntF_Example", "procedureIndex": 11, "memberIds": ["<id>"], '
+            '"confidence": 0.7, "rationale": "..."}], "unrecognized": []}'
+        )
+
     return "\n".join(sections)
 
 

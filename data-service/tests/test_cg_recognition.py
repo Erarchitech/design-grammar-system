@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import cg_recognition  # noqa: E402
+import cg_topology  # noqa: E402
 from llm_gateway import GenerateResponse  # noqa: E402
 
 
@@ -454,6 +455,37 @@ class TestRecognitionProvenance:
 # ── _build_recognition_prompt() -- deterministic prompt assembly ──
 
 
+def _prompt_inputs(cg_context: dict, procedure_index: "int | None" = None):
+    """Build the (scope, features, tier0) triple `_build_recognition_prompt`
+    now takes, the same way `recognize_structure` will -- via the real
+    `cg_topology` Tier-0 pipeline, not a hand-rolled stand-in."""
+    scope = cg_topology.scope_untagged(cg_context, procedure_index)
+    features = cg_topology.extract_features(cg_context, scope.node_ids)
+    tier0 = cg_topology.classify(features)
+    return scope, features, tier0
+
+
+def _prompt(cg_context: dict, procedure_index: "int | None" = None, negotiated_mode: str = "none") -> str:
+    scope, features, tier0 = _prompt_inputs(cg_context, procedure_index)
+    return cg_recognition._build_recognition_prompt(cg_context, scope, features, tier0, negotiated_mode)
+
+
+class TestSystemPrompt:
+    def test_prompt_version_matches_front_matter(self):
+        assert cg_recognition.PROMPT_VERSION == "r35.4"
+
+    def test_build_recognition_system_prompt_contains_not_a_filter(self):
+        prompt = cg_recognition.build_recognition_system_prompt()
+        assert "NOT A FILTER" in prompt
+
+    def test_build_recognition_system_prompt_degrades_gracefully_when_file_missing(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(cg_recognition, "SYSTEM_PROMPT_FILE", tmp_path / "missing.md")
+        monkeypatch.setattr(cg_recognition, "_system_prompt_cache", None)
+        monkeypatch.setattr(cg_recognition, "_prompt_version_cache", None)
+        result = cg_recognition.build_recognition_system_prompt()
+        assert result == ""
+
+
 class TestPrompt:
     _REQUIRED_MARKERS = (
         cg_recognition._CONCEPT_CATALOG_MARKER,
@@ -464,33 +496,94 @@ class TestPrompt:
     )
 
     def test_prompt_contains_every_required_section_marker(self):
-        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        prompt = _prompt(_cg_context())
         for marker in self._REQUIRED_MARKERS:
             assert marker in prompt
 
     def test_prompt_contains_annotation_convention_grammar(self):
-        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        prompt = _prompt(_cg_context())
         assert "IntF" in prompt or "annotation_convention" in prompt
 
     def test_prompt_contains_json_only_output_instruction(self):
-        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        prompt = _prompt(_cg_context())
         assert "JSON" in prompt
         assert "no markdown fences" in prompt.lower() or "markdown" in prompt.lower()
 
-    def test_procedure_index_filters_untagged_scope_to_wired_nodes(self):
+    def test_candidate_line_carries_features_not_position(self):
+        """n3 (an isolated Panel with no wires) matches none of Tier 0's
+        R1-R4 rules, so it abstains into the residual, where a derived
+        feature line must be rendered for it -- never a raw `position`."""
+        prompt = _prompt(_cg_context())
+        assert "widget=" in prompt
+        assert "in=" in prompt
+        assert "out=" in prompt
+        assert "adj_proc=" in prompt
+        assert "position=" not in prompt
+
+    def test_tier0_decisions_block_present_when_tier0_decides_something(self):
+        # n1 in _cg_context() is a bare 'Param' node with in=1/out=1 wired
+        # into n4 -- wait, n1 is TAGGED (procedure member), so it never
+        # reaches Tier 0 classification. Build a context with an untagged
+        # bare-Param node instead, wired 1-in/1-out to a single tagged
+        # procedure, to exercise R4 and populate tier0.decided.
+        ctx = _cg_context()
+        ctx["nodes"].append(
+            {"instanceId": "n5", "componentGuid": "g5", "name": "Param", "nickname": "relay"}
+        )
+        ctx["untagged"]["nodeIds"].append("n5")
+        ctx["wires"].append({"fromNode": "n1", "fromParam": "p_out", "toNode": "n5", "toParam": "p_in"})
+        ctx["wires"].append({"fromNode": "n5", "fromParam": "p_out", "toNode": "n2", "toParam": "p_in"})
+
+        prompt = _prompt(ctx)
+        assert cg_recognition._TIER0_DECISIONS_MARKER in prompt
+        assert "n5 -> IntF" in prompt
+
+    def test_procedure_index_filters_residual_scope_to_wired_nodes(self):
         """n4 is wired to the tagged procedure-11 member n1; n3 is unrelated."""
-        unfiltered = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        unfiltered = _prompt(_cg_context())
         assert "n3" in unfiltered
         assert "n4" in unfiltered
 
-        filtered = cg_recognition._build_recognition_prompt(_cg_context(), 11)
+        filtered = _prompt(_cg_context(), 11)
         assert "n4" in filtered
         assert "n3" not in filtered
+
+    def test_procedure_index_anchor_block_summarizes_other_procedures(self):
+        """With procedure_index=11 set, the anchor block shows full memberIds
+        for procedure 11 and a member COUNT (not the full list) for procedure
+        12."""
+        ctx = _cg_context()
+        ctx["algorithms"][0]["procedures"].append(
+            {
+                "id": "cg:1:proc:12",
+                "index": 12,
+                "name": "2D Footer Configuration",
+                "source": "tagged",
+                "memberIds": ["n6", "n7"],
+                "patterns": [],
+                "parameters": [],
+                "interfaces": [],
+            }
+        )
+        prompt = _prompt(ctx, 11)
+        assert "members: ['n1']" in prompt
+        assert "member count: 2" in prompt
+        assert "'n6', 'n7'" not in prompt
+
+    def test_prompt_is_deterministic_across_identical_calls(self):
+        ctx = _cg_context()
+        first = _prompt(ctx)
+        second = _prompt(ctx)
+        assert first == second
+
+    def test_json_object_mode_includes_lowercase_json_literal(self):
+        prompt = _prompt(_cg_context(), negotiated_mode="json_object")
+        assert "json" in prompt
 
     def test_prompt_byte_size_is_measured_and_under_locked_budget(self):
         """A4 resolution: measure the assembled prompt size and lock it as an
         assertion so future catalog growth is a deliberate, visible change."""
-        prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        prompt = _prompt(_cg_context())
         size = len(prompt.encode("utf-8"))
         assert size > 0
         # Locked budget: measured ~9.5KB at authoring time for this small
@@ -505,10 +598,9 @@ class TestPrompt:
         # Interface demonstrations both had convention-conforming input names
         # and grammar-citing rationales, which is what taught the model to read
         # the convention as a filter (UAT F3). The list shape also makes a later
-        # dynamic-retrieval selector a one-line change.
-        fewshot = cg_recognition._load_frame_fewshot()
-        assert "examples" in fewshot
-        examples = fewshot["examples"]
+        # dynamic-retrieval selector a one-line change. Phase 35-12:
+        # _load_frame_fewshot() now returns the `examples` list directly.
+        examples = cg_recognition._load_frame_fewshot()
         assert isinstance(examples, list) and len(examples) >= 4
         assert all("input" in e and "expected" in e for e in examples)
         assert all(isinstance(e["expected"].get("proposals"), list) for e in examples)
@@ -517,10 +609,10 @@ class TestPrompt:
         # The regression guard for UAT F3's root cause: a demonstration that
         # justifies a proposal by the naming grammar teaches the model to
         # reject every untagged node, since untagged nodes never match it.
-        fewshot = cg_recognition._load_frame_fewshot()
+        examples = cg_recognition._load_frame_fewshot()
         rationales = [
             p["rationale"].lower()
-            for e in fewshot["examples"]
+            for e in examples
             for p in e["expected"]["proposals"]
         ]
         assert rationales
