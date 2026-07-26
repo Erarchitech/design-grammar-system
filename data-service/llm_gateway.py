@@ -12,10 +12,12 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
@@ -50,12 +52,80 @@ class GenerateResponse(BaseModel):
         provider: Provider that served the request.
         model: Model that served the request.
         usage: Normalised token usage {prompt_tokens, completion_tokens, total_tokens}.
+        truncated: True when the provider stopped because the output cap was
+            hit (Anthropic stop_reason == 'max_tokens', OpenAI finish_reason ==
+            'length', Ollama done_reason == 'length'). Without this the UAT F1
+            truncation class is undetectable -- the adapters used to discard
+            the stop reason, so a JSON object cut off mid-write was
+            indistinguishable from malformed output.
+        finish_reason: The provider's raw stop reason, in the provider's own
+            spelling. 'refusal' is synthesised for an OpenAI refusal so callers
+            can raise a distinct violation instead of a misleading bad_json.
     """
 
     text: str
     provider: str
     model: str
     usage: dict
+    truncated: bool = False
+    finish_reason: str | None = None
+
+
+class GenerationOptions(BaseModel):
+    """INTERNAL-ONLY generation controls. Never a FastAPI request body.
+
+    These fields deliberately do NOT live on `GenerateRequest`, which IS the
+    request body of the public `POST /llm/generate` route -- anything added
+    there becomes attacker-controllable. `max_tokens: 1000000` would be a
+    cost-DoS and a raw `output_schema` dict would be an unvalidated
+    pass-through to the provider. Constructed only by in-process callers and
+    passed as `adapter.generate(req, api_key, options=...)`.
+
+    When omitted (or a field left None) each adapter reproduces its prior
+    behaviour exactly, so `/llm/generate`, the n8n workflows and
+    `dg_context.generate_validated_cypher()` are unaffected.
+
+    Attributes:
+        temperature: Sampling temperature. Pin to 0.0 for classification.
+            Uncontrolled on the cloud adapters before this (defect D6), which
+            made any recognition measurement an anecdote rather than a result.
+        max_tokens: Output cap, in the caller's units; each adapter translates
+            to its own spelling (Anthropic max_tokens, OpenAI
+            max_completion_tokens, Ollama options.num_predict).
+        output_schema: A provider-acceptable JSON Schema dict, already emitted
+            by `cg_schemas.to_strict_json_schema()`. None means "no constrained
+            decoding" -- the prose + validator path.
+    """
+
+    temperature: float | None = None
+    max_tokens: int | None = None
+    output_schema: dict | None = None
+
+
+class StructuredOutputCapability(BaseModel):
+    """What a given (provider, model, base_url) can actually enforce.
+
+    Capability DETECTION, never assumption. A provider that rejects an unknown
+    body key returns 400 and the whole recognition fails, whereas the prose
+    path merely performs worse -- so anything unrecognised must resolve to
+    'none', never to strict.
+
+    Attributes:
+        mode: One of 'json_schema_strict', 'tool_strict', 'json_object', 'none'.
+    """
+
+    mode: str = "none"
+
+    def schema_for(self, schema: dict | None) -> dict | None:
+        """Return `schema` only when the negotiated mode can enforce it.
+
+        Takes an already-emitted schema dict rather than a model class so this
+        module never imports `cg_schemas` -- the dependency arrow stays
+        recognition -> gateway, not the reverse.
+        """
+        if self.mode in ("json_schema_strict", "tool_strict"):
+            return schema
+        return None
 
 
 class LLMSettingsPayload(BaseModel):
@@ -125,6 +195,120 @@ SEED_MODELS: dict[str, list[str]] = {
 }
 
 
+# ── Generation-control helpers ──
+
+_LOG = logging.getLogger(__name__)
+
+
+def _resolved_max_tokens(options: "GenerationOptions | None", fallback: int) -> int:
+    """Caller-sized output cap, falling back to the pre-Phase-35 constant.
+
+    A hardcoded cap is the direct cause of UAT F1: a 214-node whole-canvas
+    proposal set exceeds 4096 output tokens, the JSON terminates mid-object,
+    and all three retry attempts burn on the same truncation. Callers size
+    this to the actual workload (cg_topology.output_token_budget).
+    """
+    if options is not None and options.max_tokens is not None:
+        return options.max_tokens
+    return fallback
+
+
+# Ollama gained top-level `format: <json schema>` on /api/generate in 0.5.0.
+_OLLAMA_STRUCTURED_OUTPUT_MIN_VERSION = (0, 5, 0)
+
+# Anthropic model families with GA structured outputs (output_config.format).
+_ANTHROPIC_STRUCTURED_PREFIXES = (
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "claude-opus-4-8",
+    "claude-haiku-4-5",
+    "claude-sonnet-4-5",
+)
+
+
+def _parse_version(raw: str) -> tuple[int, ...]:
+    parts: list[int] = []
+    for chunk in (raw or "").split("."):
+        digits = "".join(c for c in chunk if c.isdigit())
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts)
+
+
+def negotiate_structured_output(
+    provider: str,
+    model: str | None,
+    base_url: str | None = None,
+) -> StructuredOutputCapability:
+    """Decide what structured-output mode this (provider, model, base_url) supports.
+
+    Deliberately conservative: anything unrecognised resolves to 'none'. A
+    provider that rejects an unknown body key returns 400 and the whole
+    recognition fails; the prose + _extract_json + validator path merely
+    performs worse, and it stays the floor for DeepSeek and older Ollama.
+
+    Note the DeepSeek trap: DeepSeek is reached through OpenAIAdapter via
+    base_url, so it LOOKS like OpenAI while supporting only
+    response_format: {"type": "json_object"} -- no json_schema, no strict.
+    Never branch on `provider == "openai"` to decide strictness; branch on the
+    mode this function returns.
+    """
+    capability = _negotiate(provider, model, base_url)
+    # Log the negotiated mode on every call: without it an eval result is
+    # uninterpretable, because the enforcement path that produced it is
+    # invisible. Never log the key or any prompt content (LLMC-06).
+    _LOG.info(
+        "structured_output_negotiated provider=%s model=%s mode=%s",
+        provider,
+        model,
+        capability.mode,
+    )
+    return capability
+
+
+def _negotiate(
+    provider: str,
+    model: str | None,
+    base_url: str | None,
+) -> StructuredOutputCapability:
+    model_id = (model or "").lower()
+
+    if provider == "anthropic":
+        if model_id.startswith(_ANTHROPIC_STRUCTURED_PREFIXES):
+            return StructuredOutputCapability(mode="json_schema_strict")
+        return StructuredOutputCapability(mode="none")
+
+    if provider == "openai":
+        host = ""
+        if base_url:
+            try:
+                host = urlparse(base_url).hostname or ""
+            except ValueError:
+                host = ""
+        if not base_url or host == "api.openai.com":
+            return StructuredOutputCapability(mode="json_schema_strict")
+        # DeepSeek, Groq, Together, Azure -- parseability only.
+        return StructuredOutputCapability(mode="json_object")
+
+    if provider == "ollama":
+        probe_url = (base_url or "http://ollama:11434").rstrip("/")
+        try:
+            with httpx.Client(timeout=5.0) as client:
+                resp = client.get(f"{probe_url}/api/version")
+                resp.raise_for_status()
+                version = _parse_version(resp.json().get("version", ""))
+        except Exception:
+            # A local Ollama being down must DEGRADE the mode, never raise
+            # into recognition.
+            return StructuredOutputCapability(mode="none")
+        if version >= _OLLAMA_STRUCTURED_OUTPUT_MIN_VERSION:
+            return StructuredOutputCapability(mode="json_schema_strict")
+        return StructuredOutputCapability(mode="none")
+
+    return StructuredOutputCapability(mode="none")
+
+
 # ── LLMAdapter Abstract Base Class (Strategy Pattern) ──
 
 
@@ -136,8 +320,17 @@ class LLMAdapter(ABC):
     """
 
     @abstractmethod
-    def generate(self, req: GenerateRequest, api_key: str | None) -> GenerateResponse:
-        """Send a prompt to the provider and return a normalised response."""
+    def generate(
+        self,
+        req: GenerateRequest,
+        api_key: str | None,
+        options: "GenerationOptions | None" = None,
+    ) -> GenerateResponse:
+        """Send a prompt to the provider and return a normalised response.
+
+        `options` is internal-only (see GenerationOptions). When None, the
+        adapter reproduces its pre-Phase-35 behaviour exactly.
+        """
         ...
 
     @abstractmethod
@@ -160,7 +353,12 @@ class AnthropicAdapter(LLMAdapter):
     def __init__(self, base_url: str = "https://api.anthropic.com/v1") -> None:
         self.base_url = base_url
 
-    def generate(self, req: GenerateRequest, api_key: str | None) -> GenerateResponse:
+    def generate(
+        self,
+        req: GenerateRequest,
+        api_key: str | None,
+        options: "GenerationOptions | None" = None,
+    ) -> GenerateResponse:
         headers = {
             "x-api-key": api_key or "",
             "anthropic-version": "2023-06-01",
@@ -168,11 +366,21 @@ class AnthropicAdapter(LLMAdapter):
         }
         body: dict[str, Any] = {
             "model": req.model,
-            "max_tokens": 4096,
+            # Messages API REQUIRES max_tokens. 4096 is the pre-Phase-35
+            # default, kept as the fallback so omitting options is a no-op.
+            "max_tokens": _resolved_max_tokens(options, 4096),
             "messages": [{"role": "user", "content": req.prompt}],
         }
         if req.system:
             body["system"] = req.system
+        if options is not None and options.temperature is not None:
+            body["temperature"] = options.temperature
+        if options is not None and options.output_schema:
+            # GA as of 2026-07; prefer output_config.format over the older
+            # top-level output_format parameter and the beta header.
+            body["output_config"] = {
+                "format": {"type": "json_schema", "schema": options.output_schema}
+            }
 
         with httpx.Client(timeout=120.0) as client:
             resp = client.post(f"{self.base_url}/messages", json=body, headers=headers)
@@ -190,11 +398,14 @@ class AnthropicAdapter(LLMAdapter):
             "completion_tokens": usage_output,
             "total_tokens": usage_input + usage_output,
         }
+        stop_reason = data.get("stop_reason")
         return GenerateResponse(
             text=text,
             provider="anthropic",
             model=req.model or "",
             usage=usage,
+            truncated=stop_reason == "max_tokens",
+            finish_reason=stop_reason,
         )
 
     def list_models(self, api_key: str | None) -> list[str]:
@@ -219,7 +430,12 @@ class OpenAIAdapter(LLMAdapter):
     def __init__(self, base_url: str = "https://api.openai.com/v1") -> None:
         self.base_url = base_url
 
-    def generate(self, req: GenerateRequest, api_key: str | None) -> GenerateResponse:
+    def generate(
+        self,
+        req: GenerateRequest,
+        api_key: str | None,
+        options: "GenerationOptions | None" = None,
+    ) -> GenerateResponse:
         headers = {
             "Authorization": f"Bearer {api_key or ''}",
             "content-type": "application/json",
@@ -229,7 +445,24 @@ class OpenAIAdapter(LLMAdapter):
             messages.append({"role": "system", "content": req.system})
         messages.append({"role": "user", "content": req.prompt})
 
-        body = {"model": req.model, "messages": messages, "max_tokens": 4096}
+        # max_tokens is DEPRECATED and is rejected outright by o-series and
+        # GPT-5.x models -- max_completion_tokens is the current spelling.
+        body: dict[str, Any] = {
+            "model": req.model,
+            "messages": messages,
+            "max_completion_tokens": _resolved_max_tokens(options, 4096),
+        }
+        if options is not None and options.temperature is not None:
+            body["temperature"] = options.temperature
+        if options is not None and options.output_schema:
+            body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "proposed_structure",
+                    "strict": True,
+                    "schema": options.output_schema,
+                },
+            }
 
         with httpx.Client(timeout=120.0) as client:
             resp = client.post(
@@ -240,18 +473,28 @@ class OpenAIAdapter(LLMAdapter):
             resp.raise_for_status()
             data = resp.json()
 
-        text = data.get("choices", [{}])[0].get("message", {}).get("content") or ""
+        choice = (data.get("choices") or [{}])[0]
+        message = choice.get("message") or {}
+        text = message.get("content") or ""
         raw_usage = data.get("usage", {})
         usage = {
             "prompt_tokens": raw_usage.get("prompt_tokens", 0),
             "completion_tokens": raw_usage.get("completion_tokens", 0),
             "total_tokens": raw_usage.get("total_tokens", 0),
         }
+        finish_reason = choice.get("finish_reason")
+        # A refusal is NOT malformed output -- surfacing it as 'refusal' lets
+        # the caller raise a distinct violation instead of a misleading
+        # bad_json that would then burn retries re-asking the same question.
+        if message.get("refusal"):
+            finish_reason = "refusal"
         return GenerateResponse(
             text=text,
             provider="openai",
             model=req.model or "",
             usage=usage,
+            truncated=finish_reason == "length",
+            finish_reason=finish_reason,
         )
 
     def list_models(self, api_key: str | None) -> list[str]:
@@ -276,15 +519,32 @@ class OllamaAdapter(LLMAdapter):
     def __init__(self, base_url: str = "http://ollama:11434") -> None:
         self.base_url = base_url
 
-    def generate(self, req: GenerateRequest, api_key: str | None = None) -> GenerateResponse:
+    def generate(
+        self,
+        req: GenerateRequest,
+        api_key: str | None = None,
+        options: "GenerationOptions | None" = None,
+    ) -> GenerateResponse:
+        temperature = 0.1
+        if options is not None and options.temperature is not None:
+            temperature = options.temperature
+
         body: dict[str, Any] = {
             "model": req.model,
             "prompt": req.prompt,
             "stream": False,
-            "options": {"temperature": 0.1, "num_predict": 4096},
+            "options": {
+                "temperature": temperature,
+                # Ollama's spelling of the output cap.
+                "num_predict": _resolved_max_tokens(options, 4096),
+            },
         }
         if req.system:
             body["system"] = req.system
+        if options is not None and options.output_schema:
+            # /api/generate takes a top-level `format` object, so newer local
+            # models can be schema-constrained too.
+            body["format"] = options.output_schema
 
         with httpx.Client(timeout=300.0) as client:
             resp = client.post(f"{self.base_url}/api/generate", json=body)
@@ -299,11 +559,14 @@ class OllamaAdapter(LLMAdapter):
             "completion_tokens": eval_count,
             "total_tokens": prompt_eval + eval_count,
         }
+        done_reason = data.get("done_reason")
         return GenerateResponse(
             text=text,
             provider="ollama",
             model=req.model or "",
             usage=usage,
+            truncated=done_reason == "length",
+            finish_reason=done_reason,
         )
 
     def list_models(self, api_key: str | None = None) -> list[str]:

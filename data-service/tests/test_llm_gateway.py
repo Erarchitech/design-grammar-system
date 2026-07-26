@@ -22,11 +22,17 @@ os.environ["LLM_MASTER_SECRET"] = "test-master-secret"
 
 from app import app  # noqa: E402
 from llm_gateway import (  # noqa: E402
+    AnthropicAdapter,
+    GenerateRequest,
     GenerateResponse,
+    GenerationOptions,
+    OllamaAdapter,
+    OpenAIAdapter,
     _derive_key,
     decrypt_value,
     encrypt_value,
     mask_key,
+    negotiate_structured_output,
     resolve_active_provider,
 )
 
@@ -498,3 +504,178 @@ def test_module_imports():
         should_refresh_on_test,
     )  # noqa: F401
     assert get_adapter is not None
+
+
+# ── Phase 35-07: GenerationOptions, per-provider token spelling, truncation,
+#    and structured-output capability negotiation ──
+
+
+class _CapturingClient:
+    """Stands in for httpx.Client, recording the posted body and replaying a
+    canned provider payload. Used as a context manager exactly like the real
+    client so the adapters are exercised unmodified."""
+
+    captured: dict = {}
+
+    def __init__(self, payload: dict, **_kwargs):
+        self._payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_exc):
+        return False
+
+    def post(self, url, json=None, headers=None):
+        type(self).captured = {"url": url, "body": json, "headers": headers}
+        return _FakeResponse(self._payload)
+
+
+class _FakeResponse:
+    def __init__(self, payload: dict):
+        self._payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self._payload
+
+
+def _run_adapter(adapter, payload, options=None, system=None):
+    """Drive `adapter.generate` against a canned provider payload, returning
+    (GenerateResponse, posted_body)."""
+    req = GenerateRequest(prompt="p", system=system, model="m", provider="x")
+    with patch(
+        "llm_gateway.httpx.Client",
+        side_effect=lambda **kw: _CapturingClient(payload, **kw),
+    ):
+        resp = adapter.generate(req, "key", options=options)
+    return resp, _CapturingClient.captured["body"]
+
+
+class TestGenerationOptionsPlumbing:
+    def test_anthropic_defaults_unchanged_when_options_omitted(self):
+        _, body = _run_adapter(AnthropicAdapter(), {"content": [], "usage": {}})
+        assert body["max_tokens"] == 4096
+        assert "temperature" not in body
+        assert "output_config" not in body
+
+    def test_anthropic_honours_options(self):
+        opts = GenerationOptions(temperature=0.0, max_tokens=856, output_schema={"type": "object"})
+        _, body = _run_adapter(AnthropicAdapter(), {"content": [], "usage": {}}, opts)
+        assert body["max_tokens"] == 856
+        assert body["temperature"] == 0.0
+        assert body["output_config"]["format"]["type"] == "json_schema"
+
+    def test_openai_uses_max_completion_tokens_not_max_tokens(self):
+        opts = GenerationOptions(temperature=0.0, max_tokens=856)
+        _, body = _run_adapter(OpenAIAdapter(), {"choices": [{"message": {}}], "usage": {}}, opts)
+        assert body["max_completion_tokens"] == 856
+        assert "max_tokens" not in body
+
+    def test_openai_strict_schema_shape(self):
+        opts = GenerationOptions(output_schema={"type": "object"})
+        _, body = _run_adapter(OpenAIAdapter(), {"choices": [{"message": {}}], "usage": {}}, opts)
+        assert body["response_format"]["json_schema"]["strict"] is True
+        assert body["response_format"]["json_schema"]["name"] == "proposed_structure"
+
+    def test_openai_omits_response_format_without_schema(self):
+        _, body = _run_adapter(OpenAIAdapter(), {"choices": [{"message": {}}], "usage": {}})
+        assert "response_format" not in body
+
+    def test_ollama_temperature_falls_back_to_prior_default(self):
+        _, body = _run_adapter(OllamaAdapter(), {"response": ""})
+        assert body["options"]["temperature"] == 0.1
+        assert body["options"]["num_predict"] == 4096
+
+    def test_ollama_honours_options(self):
+        opts = GenerationOptions(temperature=0.0, max_tokens=512, output_schema={"type": "object"})
+        _, body = _run_adapter(OllamaAdapter(), {"response": ""}, opts)
+        assert body["options"]["temperature"] == 0.0
+        assert body["options"]["num_predict"] == 512
+        assert body["format"] == {"type": "object"}
+
+    def test_system_prompt_still_placed_per_provider(self):
+        _, a_body = _run_adapter(AnthropicAdapter(), {"content": [], "usage": {}}, system="S")
+        assert a_body["system"] == "S"
+        _, o_body = _run_adapter(OpenAIAdapter(), {"choices": [{"message": {}}], "usage": {}}, system="S")
+        assert o_body["messages"][0] == {"role": "system", "content": "S"}
+
+
+class TestTruncationDetection:
+    def test_anthropic_max_tokens_stop_reason(self):
+        resp, _ = _run_adapter(
+            AnthropicAdapter(), {"content": [], "usage": {}, "stop_reason": "max_tokens"}
+        )
+        assert resp.truncated is True
+        assert resp.finish_reason == "max_tokens"
+
+    def test_openai_length_finish_reason(self):
+        resp, _ = _run_adapter(
+            OpenAIAdapter(),
+            {"choices": [{"message": {}, "finish_reason": "length"}], "usage": {}},
+        )
+        assert resp.truncated is True
+        assert resp.finish_reason == "length"
+
+    def test_ollama_length_done_reason(self):
+        resp, _ = _run_adapter(OllamaAdapter(), {"response": "", "done_reason": "length"})
+        assert resp.truncated is True
+        assert resp.finish_reason == "length"
+
+    def test_normal_stop_is_not_truncated(self):
+        resp, _ = _run_adapter(
+            AnthropicAdapter(), {"content": [], "usage": {}, "stop_reason": "end_turn"}
+        )
+        assert resp.truncated is False
+        assert resp.finish_reason == "end_turn"
+
+    def test_openai_refusal_surfaces_distinctly(self):
+        # A refusal must not masquerade as bad_json -- the caller needs to
+        # raise a distinct violation rather than burn retries re-asking.
+        resp, _ = _run_adapter(
+            OpenAIAdapter(),
+            {
+                "choices": [{"message": {"refusal": "no"}, "finish_reason": "stop"}],
+                "usage": {},
+            },
+        )
+        assert resp.finish_reason == "refusal"
+        assert resp.truncated is False
+
+
+class TestStructuredOutputNegotiation:
+    def test_anthropic_recent_family_is_strict(self):
+        assert negotiate_structured_output("anthropic", "claude-sonnet-5", None).mode == "json_schema_strict"
+
+    def test_openai_default_base_url_is_strict(self):
+        assert negotiate_structured_output("openai", "gpt-4o", None).mode == "json_schema_strict"
+
+    def test_deepseek_via_base_url_is_json_object_only(self):
+        cap = negotiate_structured_output("openai", "deepseek-chat", "https://api.deepseek.com/v1")
+        assert cap.mode == "json_object"
+        # json_object mode must NOT be handed a schema -- it guarantees
+        # parseability only.
+        assert cap.schema_for({"type": "object"}) is None
+
+    def test_unknown_provider_falls_to_none(self):
+        cap = negotiate_structured_output("madeup", "x", None)
+        assert cap.mode == "none"
+        assert cap.schema_for({"a": 1}) is None
+
+    def test_strict_mode_passes_schema_through(self):
+        cap = negotiate_structured_output("anthropic", "claude-sonnet-5", None)
+        assert cap.schema_for({"a": 1}) == {"a": 1}
+
+    def test_unreachable_ollama_degrades_rather_than_raising(self):
+        with patch("llm_gateway.httpx.Client", side_effect=httpx.ConnectError("down")):
+            assert negotiate_structured_output("ollama", "llama3", None).mode == "none"
+
+
+class TestPublicRequestBodyUnchanged:
+    def test_generate_request_has_no_generation_controls(self):
+        # GenerateRequest IS the public POST /llm/generate body; adding
+        # max_tokens/temperature/output_schema there would make them
+        # attacker-controllable (cost-DoS, unvalidated provider pass-through).
+        assert set(GenerateRequest.model_fields) == {"prompt", "system", "model", "provider"}
