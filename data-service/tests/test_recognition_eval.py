@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -29,11 +30,14 @@ os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import pytest  # noqa: E402
 
+import cg_recognition  # noqa: E402
+import cg_topology  # noqa: E402
 from llm_gateway import GenerateRequest, GenerateResponse  # noqa: E402
 
 from recognition_eval import arms as arms_module  # noqa: E402
 from recognition_eval import cassette as cassette_module  # noqa: E402
 from recognition_eval import corpus as corpus_module  # noqa: E402
+from recognition_eval import scoring as scoring_module  # noqa: E402
 
 
 class _FakeRealAdapter:
@@ -316,3 +320,291 @@ class TestArms:
     def test_arms_module_never_forks_recognize_structure(self):
         source = Path(arms_module.__file__).read_text(encoding="utf-8")
         assert source.count("def recognize_structure") == 0
+
+
+# ── SC1 gate (Task 3) -- a pure, corpus/arm-agnostic conjunctive assertion so
+# its failing-conjunct behaviour is unit-testable with synthetic numbers,
+# independent of any cassette or corpus/arm run ──
+
+DEFAULT_SC1_GATE_THRESHOLD = 0.60
+
+
+def assert_sc1_gate(
+    *,
+    m1: float,
+    e1_violations: int,
+    silent_drop_count: int,
+    grammar_citation_rate: float,
+    confidence_spread_ok: bool,
+    provenance_ok: bool,
+    threshold: float = DEFAULT_SC1_GATE_THRESHOLD,
+) -> None:
+    """The SC1 ship gate (35-AI-SPEC.md 5 "SC1 pass threshold"): ONE
+    conjunctive assertion -- M1 >= threshold AND E1 violations == 0 AND
+    silent drops == 0 AND grammar_citation_rate == 0.00 AND the
+    confidence-spread check passes AND provenance is complete. Any single
+    conjunct failing fails the gate. Raises naming EVERY failing conjunct,
+    not just that the gate failed, so debugging starts from the actual
+    cause."""
+    failing: "list[str]" = []
+    if not (m1 >= threshold):
+        failing.append(f"M1={m1:.3f} < threshold {threshold:.2f}")
+    if e1_violations != 0:
+        failing.append(f"E1 violations={e1_violations} != 0")
+    if silent_drop_count != 0:
+        failing.append(f"silent_drop_count={silent_drop_count} != 0")
+    if grammar_citation_rate != 0.0:
+        failing.append(f"grammar_citation_rate={grammar_citation_rate:.3f} != 0.00")
+    if not confidence_spread_ok:
+        failing.append("confidence_spread_ok is False")
+    if not provenance_ok:
+        failing.append("provenance is incomplete")
+
+    if failing:
+        raise AssertionError("SC1 gate FAILED -- conjunct(s) not satisfied: " + "; ".join(failing))
+
+
+class TestSC1GateConjunction:
+    def test_all_conjuncts_pass_is_silent(self):
+        assert (
+            assert_sc1_gate(
+                m1=0.80,
+                e1_violations=0,
+                silent_drop_count=0,
+                grammar_citation_rate=0.0,
+                confidence_spread_ok=True,
+                provenance_ok=True,
+                threshold=0.60,
+            )
+            is None
+        )
+
+    def test_low_m1_fails_naming_that_conjunct(self):
+        with pytest.raises(AssertionError, match=r"M1=0\.400 < threshold 0\.60"):
+            assert_sc1_gate(
+                m1=0.40,
+                e1_violations=0,
+                silent_drop_count=0,
+                grammar_citation_rate=0.0,
+                confidence_spread_ok=True,
+                provenance_ok=True,
+                threshold=0.60,
+            )
+
+    def test_silent_drop_fails_separately_from_m1(self):
+        """M1 above threshold but silent_drop_count > 0 must still fail the
+        gate, and the message must name silent_drop_count, not M1."""
+        with pytest.raises(AssertionError) as excinfo:
+            assert_sc1_gate(
+                m1=0.80,
+                e1_violations=0,
+                silent_drop_count=3,
+                grammar_citation_rate=0.0,
+                confidence_spread_ok=True,
+                provenance_ok=True,
+                threshold=0.60,
+            )
+        message = str(excinfo.value)
+        assert "silent_drop_count=3" in message
+        assert "M1=" not in message
+
+    def test_multiple_failing_conjuncts_all_named(self):
+        with pytest.raises(AssertionError) as excinfo:
+            assert_sc1_gate(
+                m1=0.10,
+                e1_violations=1,
+                silent_drop_count=2,
+                grammar_citation_rate=0.5,
+                confidence_spread_ok=False,
+                provenance_ok=False,
+                threshold=0.60,
+            )
+        message = str(excinfo.value)
+        for fragment in (
+            "M1=",
+            "E1 violations",
+            "silent_drop_count",
+            "grammar_citation_rate",
+            "confidence_spread_ok",
+            "provenance",
+        ):
+            assert fragment in message, f"expected {fragment!r} in gate failure message"
+
+
+# ── A0 validity check (Task 3) -- also a pure function, for the same reason ──
+
+A0_M1_NEAR_ZERO_THRESHOLD = 0.10
+
+
+def assert_a0_validity(m1: float, grammar_citation_rate: float) -> None:
+    """A0 is the harness's OWN validity test (35-AI-SPEC.md 5): it must
+    reproduce UAT F3 -- near-zero M1 with a non-zero grammar_citation_rate.
+    If A0 does NOT fail this way, the HARNESS is wrong, not the model, and no
+    other arm's number can be trusted until this is fixed."""
+    if m1 <= A0_M1_NEAR_ZERO_THRESHOLD and grammar_citation_rate > 0.0:
+        return
+    raise AssertionError(
+        "A0 validity check FAILED: arm A0 (as-shipped few-shot, no system "
+        "prompt, no Tier 0, deepseek-chat) was expected to reproduce UAT F3 "
+        f"-- near-zero M1 (got {m1:.3f}, expected <= {A0_M1_NEAR_ZERO_THRESHOLD}) "
+        f"with a non-zero grammar_citation_rate (got {grammar_citation_rate:.3f}). "
+        "If A0 does NOT fail this way, the HARNESS is wrong, not the model -- "
+        "no other arm's number can be trusted until this is fixed."
+    )
+
+
+class TestA0ValidityCheck:
+    def test_passes_silently_when_a0_fails_as_expected(self):
+        assert assert_a0_validity(m1=0.03, grammar_citation_rate=0.75) is None
+
+    def test_raises_stating_harness_is_wrong_when_a0_does_not_fail(self):
+        with pytest.raises(AssertionError) as excinfo:
+            assert_a0_validity(m1=0.90, grammar_citation_rate=0.0)
+        message = str(excinfo.value).lower()
+        assert "harness" in message
+        assert "not the model" in message
+
+
+# ── E0/Tier-0-evidence stamping (Task 3) ──
+
+
+def stamp_e0_evidence(e0_rows: "list[dict]", tier0_evidence: bool) -> "list[dict]":
+    """Stamp every E0 row with `evidence: tier0_evidence`. Rows computed from
+    a corpus carrying `tier0Evidence: false` (Corpus A, `frame_ablated`) are
+    printed but excluded from every reported figure (report.py, Task 4, reads
+    this stamp to do the excluding)."""
+    return [{**row, "evidence": tier0_evidence} for row in e0_rows]
+
+
+def t0_gates_apply(tier0_evidence: bool) -> bool:
+    """Whether the T0-precision >= 0.98 / T0-contamination == 0 gates are
+    asserted for a corpus -- only True when `tier0_evidence` is True."""
+    return tier0_evidence
+
+
+class TestE0EvidenceStamping:
+    def test_frame_ablated_e0_rows_stamped_not_evidence(self):
+        corpus = corpus_module.load("frame_ablated")
+        assert corpus.tier0_evidence is False
+
+        stamped = stamp_e0_evidence([{"nodeId": "n1"}, {"nodeId": "n2"}], corpus.tier0_evidence)
+        assert all(row["evidence"] is False for row in stamped)
+        assert t0_gates_apply(corpus.tier0_evidence) is False
+
+    def test_urbanblock_slice_e0_rows_carry_evidence_true(self):
+        corpus = corpus_module.load("urbanblock_slice")
+        assert corpus.tier0_evidence is True
+
+        stamped = stamp_e0_evidence([{"nodeId": "n1"}], corpus.tier0_evidence)
+        assert all(row["evidence"] is True for row in stamped)
+        assert t0_gates_apply(corpus.tier0_evidence) is True
+
+
+# ── Provenance refusal (Task 3) ──
+
+
+class TestProvenanceRefusal:
+    def test_result_row_missing_negotiated_mode_is_refused(self):
+        incomplete_row = {
+            "promptVersion": "r1",
+            "provider": "anthropic",
+            "model": "m",
+            "temperature": 0.0,
+            "contextSha256": "x",
+            "frozenAtCommit": "y",
+            "corpusVersion": 1,
+            # negotiatedMode deliberately missing.
+        }
+        with pytest.raises(corpus_module.ProvenanceError):
+            corpus_module.assert_provenance(incomplete_row)
+
+
+# ── conftest.py CLI options (Task 3) ──
+
+
+class TestConftestOptions:
+    def test_pytest_help_lists_recognition_eval_options(self):
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "--help"],
+            cwd=str(Path(__file__).resolve().parent.parent),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        help_text = result.stdout
+        for opt in ("--corpus", "--arm", "--arms", "--sc1-gate", "--permutations"):
+            assert opt in help_text, f"{opt} not listed in pytest --help output"
+
+    def test_options_registered_with_expected_defaults(self, request):
+        assert request.config.getoption("corpus") is None
+        assert request.config.getoption("arm") is None
+        assert request.config.getoption("arms") is None
+        assert request.config.getoption("sc1_gate") == pytest.approx(0.60)
+        assert request.config.getoption("permutations") == 1
+
+
+# ── The real (corpus x arm) driver, wired through cassette replay (Task 3) ──
+
+
+class TestEndToEndDriver:
+    """Skipped by default: no cassettes are recorded yet as of 35-13 (they
+    are populated by 35-15's record sweep once Corpus B is frozen). Pass
+    `--corpus`/`--arm` explicitly once cassettes exist to actually run this
+    -- e.g. the CI command from 35-AI-SPEC.md 5:
+    `pytest tests/test_recognition_eval.py -q --corpus=urbanblock_slice
+    --arm=A3 --sc1-gate=0.60`."""
+
+    def test_scores_one_corpus_arm_combo_via_replay(self, request):
+        corpus_name = request.config.getoption("corpus")
+        arm_id = request.config.getoption("arm")
+        if not corpus_name or not arm_id:
+            pytest.skip(
+                "requires --corpus and --arm (e.g. --corpus=urbanblock_slice "
+                "--arm=A3); no cassettes are recorded yet as of 35-13 -- run "
+                "the 35-15 record sweep first."
+            )
+
+        corpus = corpus_module.load(corpus_name)
+        corpus_module.assert_context_unchanged(corpus)
+
+        arm = arms_module.ARMS[arm_id]
+        adapter = cassette_module.CassetteAdapter(
+            arm_id,
+            None,
+            negotiated_mode="json_schema_strict" if arm.structured_output else "none",
+            prompt_version=cg_recognition.PROMPT_VERSION,
+            ip_class=corpus.ip_class,
+            mode="replay",
+        )
+
+        outcome = arms_module.run_arm(arm, corpus, adapter)
+        corpus_module.assert_provenance(outcome["provenance"])  # refuses to score an incomplete row
+
+        result = outcome["result"]
+        assert result["valid"] is True, result.get("violations")
+
+        proposals = result["proposal"]["proposals"]
+        match_result = scoring_module.match_blocks(proposals, corpus.blocks)
+        m1 = scoring_module.m1_exact_rate(match_result)
+        rationales = [p.get("rationale", "") for p in proposals if isinstance(p, dict)]
+        grammar_rate = scoring_module.grammar_citation_rate(rationales)
+
+        if arm_id == "A0":
+            assert_a0_validity(m1=m1, grammar_citation_rate=grammar_rate)
+        elif arm_id == "A3":
+            residual_ids = cg_topology.scope_untagged(corpus.context, None).node_ids
+            silent_drops = scoring_module.silent_drop_count(
+                residual_ids, proposals, result["proposal"].get("unrecognized", [])
+            )
+            confidences = [
+                p.get("confidence") for p in proposals if isinstance(p.get("confidence"), (int, float))
+            ]
+            assert_sc1_gate(
+                m1=m1,
+                e1_violations=0,  # validate_proposed_structure() already passed above
+                silent_drop_count=silent_drops,
+                grammar_citation_rate=grammar_rate,
+                confidence_spread_ok=scoring_module.confidence_spread_ok(confidences),
+                provenance_ok=True,
+                threshold=request.config.getoption("sc1_gate"),
+            )
