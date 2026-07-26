@@ -81,10 +81,27 @@ def resolve_real_negotiated_mode(arm: "Arm") -> str:
     call from `report.py`'s replay-only, no-secrets sweep as well as from
     `live_sweep.py`'s record-mode driver, so both compute the identical
     cassette key.
+
+    That hermeticity claim is only true for labels actually IN
+    `REAL_ADAPTER_MAP`, so the precondition is enforced rather than assumed:
+    an unmapped label is refused up front instead of being silently reused as
+    a real adapter tag. Guessing would either mis-key every cassette for that
+    arm or -- for a label like `ollama` that `negotiate_structured_output`
+    probes over HTTP -- put a live network call on `report.py`'s replay-only,
+    no-secrets path, breaking the one guarantee this function's callers rely
+    on. `live_sweep.resolve_live_adapter_and_key` already refuses the
+    identical condition; the two now agree on the same input.
     """
+    if arm.provider not in REAL_ADAPTER_MAP:
+        raise ValueError(
+            f"arm {arm.id!r}: no REAL_ADAPTER_MAP entry for provenance label "
+            f"provider={arm.provider!r}; refusing to guess (a wrong guess "
+            "either mis-keys every cassette for this arm or puts a live probe "
+            "on the replay-only path). Add the mapping before using this arm."
+        )
     if not arm.structured_output:
         return "none"
-    real_tag, base_url = REAL_ADAPTER_MAP.get(arm.provider, (arm.provider, None))
+    real_tag, base_url = REAL_ADAPTER_MAP[arm.provider]
     return llm_gateway.negotiate_structured_output(real_tag, arm.model, base_url).mode
 
 # Path resolution mirrors dg_knowledge.py's _REPO_ROOT: inside the
@@ -385,7 +402,16 @@ def run_arm(
     if negotiated_mode_override is not None:
         negotiated_mode = negotiated_mode_override
     else:
-        negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
+        # NOT `"json_schema_strict" if arm.structured_output else "none"`.
+        # That naive default was a known-wrong placeholder: it is correct only
+        # for a provider that always supports strict schemas, and it is the
+        # exact bug that survived its own fix commit -- `report.py` was
+        # corrected to resolve the real mode while `TestEndToEndDriver` kept
+        # the placeholder, so arm A4 (real mode `json_object`) computed a
+        # cassette key no recording could ever match. Defaulting to the same
+        # single source of truth both callers already use means a caller that
+        # forgets the override gets the RIGHT mode instead of a wrong one.
+        negotiated_mode = resolve_real_negotiated_mode(arm)
     resolved_api_key = api_key_override if api_key_override is not None else "test-api-key"
 
     original_get_adapter = cg_recognition.get_adapter

@@ -587,16 +587,26 @@ class TestEndToEndDriver:
         corpus_module.assert_context_unchanged(corpus)
 
         arm = arms_module.ARMS[arm_id]
+        # Same single source of truth report.py uses. NEVER
+        # `"json_schema_strict" if arm.structured_output` here: negotiated_mode
+        # is one of the cassette-key inputs, and arm A4's REAL mode is
+        # `json_object` (DeepSeek rejects json_schema/strict outright), so the
+        # naive placeholder computed a key no recording could ever match --
+        # A4, the only arm this harness exists to distinguish, was the only one
+        # the driver could not replay.
+        negotiated_mode = arms_module.resolve_real_negotiated_mode(arm)
         adapter = cassette_module.CassetteAdapter(
             arm_id,
             None,
-            negotiated_mode="json_schema_strict" if arm.structured_output else "none",
+            negotiated_mode=negotiated_mode,
             prompt_version=cg_recognition.PROMPT_VERSION,
             ip_class=corpus.ip_class,
             mode="replay",
         )
 
-        outcome = arms_module.run_arm(arm, corpus, adapter)
+        outcome = arms_module.run_arm(
+            arm, corpus, adapter, negotiated_mode_override=negotiated_mode
+        )
         corpus_module.assert_provenance(outcome["provenance"])  # refuses to score an incomplete row
 
         result = outcome["result"]
