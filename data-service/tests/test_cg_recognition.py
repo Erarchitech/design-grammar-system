@@ -9,7 +9,9 @@ so no live LLM call is ever made.
 
 from __future__ import annotations
 
+import inspect
 import json
+import logging
 import os
 import sys
 
@@ -630,6 +632,202 @@ class TestRecognitionProvenance:
 
         assert result["provider"] == "ollama"
         assert result["model"] is None
+
+
+# ── Guardrails G6/G7/G10/G11 + per-attempt logging (Phase 35-12 Task 3) ──
+
+
+def _isolated_candidates_context(count: int, prefix: str) -> dict:
+    """A context with `count` fully isolated Panel nodes (no wires, no
+    groups) -- every one abstains at Tier 0 (none of R1-R4 match a node with
+    in_degree==0 and out_degree==0), so the whole set reaches Tier 1's
+    residual untouched."""
+    node_ids = [f"{prefix}{i}" for i in range(count)]
+    return {
+        "nodes": [
+            {"instanceId": nid, "componentGuid": f"g-{nid}", "name": "Panel", "nickname": nid}
+            for nid in node_ids
+        ],
+        "algorithms": [
+            {
+                "index": 1,
+                "name": "1_ALGORITHM",
+                "procedures": [
+                    {
+                        "id": "cg:1:proc:11",
+                        "index": 11,
+                        "name": "2D Truss Configuration",
+                        "source": "tagged",
+                        "memberIds": [],
+                        "patterns": [],
+                        "parameters": [],
+                        "interfaces": [],
+                    }
+                ],
+            }
+        ],
+        "untagged": {"nodeIds": node_ids, "groups": []},
+        "wires": [],
+    }
+
+
+_GRAMMAR_CITING_RATIONALE_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "11_IntF_Test",
+                "procedureIndex": 11,
+                "memberIds": ["n3"],
+                "confidence": 0.6,
+                "rationale": "does not match the Interface naming grammar",
+            }
+        ],
+        "unrecognized": [],
+    }
+)
+
+_ZERO_PROPOSALS_SIX_CANDIDATES_TEXT = json.dumps(
+    {
+        "proposals": [],
+        "unrecognized": [
+            {"memberIds": [f"m{i}" for i in range(6)], "reason": "isolated: no wires in or out"}
+        ],
+    }
+)
+
+_EMPTY_RESPONSE_TEXT = json.dumps({"proposals": [], "unrecognized": []})
+
+_LOW_CONFIDENCE_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "11_IntF_Test",
+                "procedureIndex": 11,
+                "memberIds": ["n3"],
+                "confidence": 0.4,
+                "rationale": "weak signal from wiring alone",
+            }
+        ],
+        "unrecognized": [],
+    }
+)
+
+_FIVE_FLAT_CONFIDENCE_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": f"11_IntF_K{i}",
+                "procedureIndex": 11,
+                "memberIds": [f"k{i}"],
+                "confidence": 0.9,
+                "rationale": f"isolated component k{i}, no wires in or out",
+            }
+            for i in range(5)
+        ],
+        "unrecognized": [],
+    }
+)
+
+
+class TestGuardrails:
+    def test_grammar_citing_rationale_triggers_g7_retry_on_first_attempt(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_GRAMMAR_CITING_RATIONALE_TEXT, _VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert result["attempts"] == 2
+        assert fake_adapter.call_count == 2
+        assert "OUTPUT TARGET" in fake_adapter.prompts_seen[1]
+        assert "grammar_as_filter" in fake_adapter.prompts_seen[1]
+
+    def test_zero_proposals_for_many_candidates_triggers_g7_structural_signature(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry(
+            [_ZERO_PROPOSALS_SIX_CANDIDATES_TEXT, _ZERO_PROPOSALS_SIX_CANDIDATES_TEXT]
+        )
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+        monkeypatch.setattr(
+            cg_recognition,
+            "resolve_active_provider",
+            lambda settings, master_secret: ("openai", "gpt-5", "sk-test"),
+        )
+
+        result = cg_recognition.recognize_structure(_isolated_candidates_context(6, "m"))
+
+        assert result["valid"] is False
+        # Exactly one targeted retry, then block -- never a third call.
+        assert fake_adapter.call_count == 2
+        violations = [v for v in result["violations"] if v["code"] == "grammar_as_filter"]
+        assert violations
+        assert cg_recognition.PROMPT_VERSION in violations[0]["message"]
+        assert "openai" in violations[0]["message"]
+
+    def test_unaddressed_candidate_retries_then_autofills_on_final_attempt(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_EMPTY_RESPONSE_TEXT, _EMPTY_RESPONSE_TEXT, _EMPTY_RESPONSE_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert fake_adapter.call_count == 3
+        assert "unaddressed_candidate" in fake_adapter.prompts_seen[1]
+        assert result["valid"] is True
+        assert "unaddressed_candidates_autofilled" in result["flags"]
+        unrecognized_entries = result["proposal"]["unrecognized"]
+        matching = [u for u in unrecognized_entries if "n3" in u["memberIds"]]
+        assert matching
+        assert matching[0]["reason"] == "not addressed by the model"
+
+    def test_low_confidence_proposal_is_demoted_not_blocked(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_LOW_CONFIDENCE_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        proposal_member_sets = [set(p["memberIds"]) for p in result["proposal"]["proposals"]]
+        assert {"n3"} not in proposal_member_sets
+        unrecognized_ids = {m for u in result["proposal"]["unrecognized"] for m in u["memberIds"]}
+        assert "n3" in unrecognized_ids
+
+    def test_confidence_floor_constant_is_a_labelled_guess(self):
+        assert cg_recognition.CONFIDENCE_FLOOR == 0.5
+        source = inspect.getsource(cg_recognition)
+        floor_region = source[source.index("CONFIDENCE_FLOOR = 0.5") : source.index("CONFIDENCE_FLOOR = 0.5") + 400]
+        assert "guess" in floor_region.lower()
+
+    def test_flat_confidence_across_five_proposals_flags_but_does_not_block(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_FIVE_FLAT_CONFIDENCE_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_isolated_candidates_context(5, "k"))
+
+        assert result["valid"] is True
+        assert "confidence_uninformative" in result["flags"]
+
+    def test_attempt_log_record_contains_metadata_and_never_leaks_prompt_or_key(self, monkeypatch, caplog):
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+        monkeypatch.setattr(
+            cg_recognition,
+            "resolve_active_provider",
+            lambda settings, master_secret: ("anthropic", "claude-x", "sk-super-secret-key"),
+        )
+
+        with caplog.at_level(logging.INFO, logger="cg_recognition"):
+            result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert "negotiated_mode" in caplog.text
+        assert "prompt_version" in caplog.text
+        assert "usage" in caplog.text
+        # Never leak the prompt body or the API key.
+        prompt_sent = fake_adapter.prompts_seen[0]
+        assert prompt_sent not in caplog.text
+        assert "sk-super-secret-key" not in caplog.text
 
 
 # ── _build_recognition_prompt() -- deterministic prompt assembly ──

@@ -821,10 +821,153 @@ def _schema_violations_from_pydantic(exc: ValidationError) -> list[dict[str, Any
     return violations
 
 
+# ── G7 grammar_as_filter -- the pattern set is defined ONCE here so
+# tests/recognition_eval/scoring.py's grammar_citation_rate (the offline
+# metric) can import it, rather than reimplementing it, and the online
+# guardrail and the offline metric can never disagree (UAT F3's live root
+# cause) ──
+
+GRAMMAR_CITATION_KEYWORDS: tuple[str, ...] = ("grammar", "convention", "does not match")
+GRAMMAR_CITATION_NAME_RE = re.compile(r"\b\d{2}_(Proc|Pat|Var|Const|Emg|Emr|IntF)_")
+
+GRAMMAR_CITATION_PATTERNS: dict[str, Any] = {
+    "keywords": GRAMMAR_CITATION_KEYWORDS,
+    "name_pattern": GRAMMAR_CITATION_NAME_RE,
+}
+
+
+def cites_grammar_as_reason(rationale: str) -> bool:
+    """G7's detector: keyword scan for 'grammar' / 'convention' / 'does not
+    match', plus a regex for a `<NN>_<Kind>_<Name>` form cited AS
+    justification (e.g. "matches 11_IntF_ParSplitAt")."""
+    if not rationale:
+        return False
+    lowered = rationale.lower()
+    if any(keyword in lowered for keyword in GRAMMAR_CITATION_KEYWORDS):
+        return True
+    return GRAMMAR_CITATION_NAME_RE.search(rationale) is not None
+
+
+def _grammar_as_filter_triggered(proposals: list[dict], residual_count: int) -> bool:
+    """G7 (35-AI-SPEC.md section 6): fires on a grammar-citing rationale OR
+    the structural signature -- zero proposals for >= 5 candidates, the
+    live SC1 root cause (UAT F3). Zero tolerance."""
+    rationales = [p.get("rationale", "") for p in proposals if isinstance(p, dict)]
+    if any(cites_grammar_as_reason(r) for r in rationales):
+        return True
+    return len(proposals) == 0 and residual_count >= 5
+
+
+# ── G6 unaddressed_candidate -- RCGN-04's "never silently dropped" ──
+
+
+def _unaddressed_candidates(merged: dict, residual_ids: list[str]) -> list[str]:
+    """Scoped candidate ids appearing in neither `proposals[].memberIds` nor
+    `unrecognized[].memberIds`."""
+    addressed: set[str] = set()
+    for p in merged.get("proposals") or []:
+        if isinstance(p, dict):
+            addressed.update(p.get("memberIds") or [])
+    for u in merged.get("unrecognized") or []:
+        if isinstance(u, dict):
+            addressed.update(u.get("memberIds") or [])
+    return [n for n in residual_ids if n not in addressed]
+
+
+# ── G10 confidence floor -- demotes, never blocks ──
+
+CONFIDENCE_FLOOR = 0.5
+# GUESS: this threshold is provisional and has NOT been derived from real
+# accept-rate-vs-confidence data. AI-SPEC.md section 7 calls for re-deriving
+# it once >= 50 flywheel records exist (recognition_runs.jsonl +
+# recognition_labels.jsonl review queue, deferred per STATE.md). Do not
+# treat 0.5 as calibrated -- it is a starting guess, stated as one in code
+# so nobody mistakes it for a measured value.
+
+
+def _demote_low_confidence(merged: dict, confidence_floor: float) -> None:
+    """G10: a proposal below `confidence_floor` is DEMOTED (never blocked)
+    into `unrecognized[]`, carrying the would-be kind as a hint. Mutates
+    `merged` in place."""
+    kept: list[dict] = []
+    for p in merged.get("proposals") or []:
+        confidence = p.get("confidence") if isinstance(p, dict) else None
+        if isinstance(confidence, (int, float)) and confidence < confidence_floor:
+            merged.setdefault("unrecognized", []).append(
+                {
+                    "memberIds": p.get("memberIds") or [],
+                    "reason": (
+                        f"confidence {confidence} is below the "
+                        f"{confidence_floor} floor (would-be kind: "
+                        f"{p.get('kind')})."
+                    ),
+                }
+            )
+        else:
+            kept.append(p)
+    merged["proposals"] = kept
+
+
+# ── G11 flat-confidence detector -- flags, never blocks ──
+
+
+def _confidence_is_flat(confidences: list[float]) -> bool:
+    """G11 (35-AI-SPEC.md section 6): True when >= 5 proposals carry a
+    single unique confidence value or a near-zero spread (population stdev
+    < 0.02) -- mirrors tests/recognition_eval/scoring.py's
+    confidence_spread_ok, inverted. A rendered percentage that carries no
+    information is worse than showing none."""
+    if len(confidences) < 5:
+        return False
+    if len(set(confidences)) == 1:
+        return True
+    return statistics.pstdev(confidences) < 0.02
+
+
+# ── Per-attempt structured logging (35-AI-SPEC.md section 4b) ──
+
+
+def _log_attempt(
+    attempt_number: int,
+    provider: str,
+    model: str | None,
+    negotiated_mode: str,
+    max_tokens: int,
+    usage: dict,
+    finish_reason: str | None,
+    tier0_decided_count: int,
+    tier1_residual_count: int,
+    violation_codes: list[str],
+    latency_ms: float,
+) -> None:
+    """One structured log record per Tier-1 attempt. NEVER logs
+    `current_prompt`, `system_prompt`, or the API key -- only attributable
+    run metadata (LLMC-06). JSON-serialized directly into the log MESSAGE
+    (not `extra=`) so every field is visible in captured log text, not only
+    on the LogRecord object."""
+    record = {
+        "attempt": attempt_number,
+        "provider": provider,
+        "model": model,
+        "negotiated_mode": negotiated_mode,
+        "prompt_version": PROMPT_VERSION,
+        "temperature": 0.0,
+        "max_tokens": max_tokens,
+        "usage": usage,
+        "finish_reason": finish_reason,
+        "tier0_decided_count": tier0_decided_count,
+        "tier1_residual_count": tier1_residual_count,
+        "violation_codes": violation_codes,
+        "latency_ms": round(latency_ms, 1),
+    }
+    _LOG.info("recognition_attempt %s", json.dumps(record, sort_keys=True, default=str))
+
+
 def recognize_structure(
     cg_context: dict,
     procedure_index: int | None = None,
     max_retries: int = 2,
+    confidence_floor: float = CONFIDENCE_FLOOR,
 ) -> dict:
     """Two-tier structure recognition: Tier 0 (`cg_topology`) decides what
     topology alone can decide with certainty; only the residual goes to
@@ -837,6 +980,16 @@ def recognize_structure(
     settings and could silently switch models between attempts, destroying
     eval reproducibility.
 
+    Four in-band guardrails run inside the Tier-1 loop, each promoting a UAT
+    finding into an enforced invariant: G6 `unaddressed_candidate` (retries,
+    then auto-fills into `unrecognized[]` on the final attempt, flagging
+    `unaddressed_candidates_autofilled`); G7 `grammar_as_filter` (retries
+    once with a targeted corrective message, then blocks with a diagnostic
+    naming the prompt version and provider); G10 (`confidence_floor`, a
+    provisional guess) demotes low-confidence proposals into
+    `unrecognized[]`; G11 flags (never blocks) an uninformative flat
+    confidence spread across >= 5 proposals.
+
     Returns one of:
     - `{"valid": False, "violations": [...], "attempts": 0}` -- `procedure_index`
       resolves to a tagged-but-member-less procedure (G9); the LLM is never
@@ -844,12 +997,14 @@ def recognize_structure(
     - `{"valid": True, "proposal": {...}, "attempts": 0, "tier": "0"}` --
       Tier 0 decided every candidate; the LLM is never called.
     - `{"valid": True, "proposal": {...}, "attempts": N, "tier": "0+1",
-      "provider": ..., "model": ...}` -- Tier 1 was invoked and its output,
-      merged with Tier 0's decisions, passed `validate_proposed_structure()`.
+      "provider": ..., "model": ..., "flags": [...]}` -- Tier 1 was invoked
+      and its output, merged with Tier 0's decisions, passed
+      `validate_proposed_structure()`. `flags` may contain
+      `unaddressed_candidates_autofilled` and/or `confidence_uninformative`.
     - `{"valid": False, "violations": [...], "attempts": N, "provider": ...,
-      "model": ...}` -- the retry bound was exhausted, or a non-retryable
-      Tier-1 outcome (`output_truncated`, `provider_refusal`) blocked
-      immediately.
+      "model": ..., "flags": [...]}` -- the retry bound was exhausted, or a
+      non-retryable Tier-1 outcome (`output_truncated`, `provider_refusal`,
+      a final-attempt `grammar_as_filter` block) ended the run immediately.
 
     `provider`/`model` are the resolved LLM identity behind the proposal
     (Phase 36 UAT F6). They are ALSO injected into the returned `proposal`
@@ -903,10 +1058,32 @@ def recognize_structure(
 
     current_prompt = prompt
     violations: list[dict[str, Any]] = []
+    flags: list[str] = []
+    g7_already_retried = False
 
     for attempt in range(max_retries + 1):
+        is_final_attempt = attempt == max_retries
+        flags = []
+
+        start = time.monotonic()
         req = GenerateRequest(prompt=current_prompt, system=system_prompt, model=model, provider=provider)
         response = adapter.generate(req, api_key, options=options)
+        latency_ms = (time.monotonic() - start) * 1000.0
+
+        def log_this(violation_codes: list[str]) -> None:
+            _log_attempt(
+                attempt + 1,
+                provider,
+                model,
+                caps.mode,
+                options.max_tokens,
+                response.usage,
+                response.finish_reason,
+                len(tier0.decided),
+                len(tier0.residual),
+                violation_codes,
+                latency_ms,
+            )
 
         if response.truncated:
             # G8: NO retry -- an identical scope truncates identically, so a
@@ -926,12 +1103,14 @@ def recognize_structure(
                     "path": None,
                 }
             ]
+            log_this(["output_truncated"])
             return {
                 "valid": False,
                 "violations": violations,
                 "attempts": attempt + 1,
                 "provider": provider,
                 "model": model,
+                "flags": flags,
             }
 
         if response.finish_reason == "refusal":
@@ -949,17 +1128,20 @@ def recognize_structure(
                     "path": None,
                 }
             ]
+            log_this(["provider_refusal"])
             return {
                 "valid": False,
                 "violations": violations,
                 "attempts": attempt + 1,
                 "provider": provider,
                 "model": model,
+                "flags": flags,
             }
 
         parsed, parse_error = _extract_json(response.text)
         if parse_error:
             violations = [{"code": "bad_json", "message": parse_error, "path": None}]
+            log_this(["bad_json"])
             current_prompt = append_recognition_feedback(prompt, violations)
             continue
 
@@ -967,17 +1149,105 @@ def recognize_structure(
             typed = cg_schemas.ProposedStructure.model_validate(parsed)
         except ValidationError as exc:
             violations = _schema_violations_from_pydantic(exc)
+            log_this([v["code"] for v in violations])
             current_prompt = append_recognition_feedback(prompt, violations)
             continue
 
         merged = cg_topology.merge(tier0.decided, typed.model_dump(mode="json"))
 
+        # G7 grammar_as_filter -- checked BEFORE G6, since a systemic
+        # filter-reading failure is usually also why nothing was addressed;
+        # its targeted diagnostic is more useful than a generic
+        # unaddressed_candidate retry for the same root cause.
+        if _grammar_as_filter_triggered(merged["proposals"], len(tier0.residual)):
+            if not g7_already_retried and not is_final_attempt:
+                g7_already_retried = True
+                violations = [
+                    {
+                        "code": "grammar_as_filter",
+                        "message": (
+                            "The naming convention is an OUTPUT TARGET, "
+                            "never a filter -- every untagged candidate is "
+                            "eligible regardless of its current name. "
+                            "Re-classify every candidate from graph "
+                            "evidence (wiring direction/degree, group "
+                            "membership, adjacent tagged procedure), not "
+                            "from whether its name already matches the "
+                            "convention."
+                        ),
+                        "path": None,
+                    }
+                ]
+                log_this(["grammar_as_filter"])
+                current_prompt = append_recognition_feedback(prompt, violations)
+                continue
+            violations = [
+                {
+                    "code": "grammar_as_filter",
+                    "message": (
+                        "the model is filtering by name instead of "
+                        f"classifying by topology -- prompt version "
+                        f"{PROMPT_VERSION}, provider {provider}."
+                    ),
+                    "path": None,
+                }
+            ]
+            log_this(["grammar_as_filter"])
+            return {
+                "valid": False,
+                "violations": violations,
+                "attempts": attempt + 1,
+                "provider": provider,
+                "model": model,
+                "flags": flags,
+            }
+
+        # G6 unaddressed_candidate.
+        missing = _unaddressed_candidates(merged, tier0.residual)
+        if missing:
+            if is_final_attempt:
+                for node_id in missing:
+                    merged.setdefault("unrecognized", []).append(
+                        {"memberIds": [node_id], "reason": "not addressed by the model"}
+                    )
+                flags.append("unaddressed_candidates_autofilled")
+            else:
+                violations = [
+                    {
+                        "code": "unaddressed_candidate",
+                        "message": (
+                            f"The following candidate ids were not "
+                            f"addressed in either proposals or unrecognized: "
+                            f"{missing}. Where: top-level proposal. How to "
+                            f"fix: include every scoped candidate id in "
+                            f"exactly one of proposals[].memberIds or "
+                            f"unrecognized[].memberIds."
+                        ),
+                        "path": None,
+                    }
+                ]
+                log_this(["unaddressed_candidate"])
+                current_prompt = append_recognition_feedback(prompt, violations)
+                continue
+
         result = validate_proposed_structure(merged, cg_context)
         if result["valid"]:
+            # G10: demote (never block) low-confidence proposals.
+            _demote_low_confidence(merged, confidence_floor)
+            # G11: flag (never block) an uninformative flat confidence spread.
+            confidences = [
+                p.get("confidence")
+                for p in merged["proposals"]
+                if isinstance(p, dict) and isinstance(p.get("confidence"), (int, float))
+            ]
+            if _confidence_is_flat(confidences):
+                flags.append("confidence_uninformative")
+
             # Stamp the run's LLM identity onto the validated proposal (F6).
             # Done AFTER validation so these keys can never influence it.
             merged["provider"] = provider
             merged["model"] = model
+            log_this([])
             return {
                 "valid": True,
                 "proposal": merged,
@@ -985,8 +1255,10 @@ def recognize_structure(
                 "tier": "0+1",
                 "provider": provider,
                 "model": model,
+                "flags": flags,
             }
         violations = result["violations"]
+        log_this([v["code"] for v in violations])
         current_prompt = append_recognition_feedback(prompt, violations)
 
     return {
@@ -995,4 +1267,5 @@ def recognize_structure(
         "attempts": max_retries + 1,
         "provider": provider,
         "model": model,
+        "flags": flags,
     }

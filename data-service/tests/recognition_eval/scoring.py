@@ -14,21 +14,36 @@ Net-new dependencies: zero. Jaccard, greedy matching, Brier, ECE and the
 Wilson interval are all implementable with `math`, `statistics` and
 `collections` alone -- no scipy, no numpy (35-AI-SPEC.md 2, 5).
 
-This module never imports anything from outside `recognition_eval/` or the
-standard library: it is test-only and must never become importable from
-production code (`data-service/tests/recognition_eval/` is not on the
-production import path -- see corpus.py's module docstring).
+This module is test-only and must never become importable from production
+code (`data-service/tests/recognition_eval/` is not on the production import
+path -- see corpus.py's module docstring, which forbids the OPPOSITE
+direction: production code importing eval code). The one sanctioned
+exception is the reverse -- this module importing `GRAMMAR_CITATION_PATTERNS`
+FROM `cg_recognition` (production), so guardrail G7's online detector and
+this module's offline `grammar_citation_rate` metric share one pattern set
+and can never disagree (Phase 35-12 plan decision). That is a normal
+test-imports-production dependency, not a freeze-protocol violation.
 """
 
 from __future__ import annotations
 
 import logging
 import math
-import re
 import statistics
+import sys
 from collections import Counter
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Iterable
+
+# data-service/tests/recognition_eval/scoring.py -> parents[2] == data-service/,
+# where cg_recognition.py lives. Inserted defensively so this module imports
+# correctly regardless of the invoking test's cwd/sys.path setup.
+_DATA_SERVICE_ROOT = str(Path(__file__).resolve().parents[2])
+if _DATA_SERVICE_ROOT not in sys.path:
+    sys.path.insert(0, _DATA_SERVICE_ROOT)
+
+from cg_recognition import GRAMMAR_CITATION_PATTERNS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -318,15 +333,15 @@ def abstention_precision(abstain_expected: list[dict], unrecognized: list[dict])
     return len(expected_ids & actual_ids) / len(actual_ids)
 
 
-_GRAMMAR_CITATION_KEYWORDS = ("grammar", "convention", "does not match")
-
-
 def _cites_grammar(rationale: str) -> bool:
+    """Reuses `cg_recognition.GRAMMAR_CITATION_PATTERNS` -- the SAME keyword
+    set and `<NN>_<Kind>_<Name>` regex guardrail G7 checks online -- so this
+    offline metric and the live guardrail can never drift apart."""
     lowered = rationale.lower()
-    if any(keyword in lowered for keyword in _GRAMMAR_CITATION_KEYWORDS):
+    if any(keyword in lowered for keyword in GRAMMAR_CITATION_PATTERNS["keywords"]):
         return True
     # <NN>_<Kind>_<Name> forms cited as evidence, e.g. "matches 11_IntF_ParSplitAt".
-    return re.search(r"\b\d{2}_(Proc|Pat|Var|Const|Emg|Emr|IntF)_", rationale) is not None
+    return GRAMMAR_CITATION_PATTERNS["name_pattern"].search(rationale) is not None
 
 
 def grammar_citation_rate(rationales: list[str]) -> float:
