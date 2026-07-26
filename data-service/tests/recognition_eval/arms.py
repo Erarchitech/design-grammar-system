@@ -273,7 +273,12 @@ def _no_tier0_classify(features: "dict[str, cg_topology.NodeFeatures]") -> cg_to
     return cg_topology.Tier0Result(decided=[], residual=list(features.keys()))
 
 
-def run_arm(arm: Arm, corpus: "Any", adapter: "Any") -> dict:
+def run_arm(
+    arm: Arm,
+    corpus: "Any",
+    adapter: "Any",
+    few_shot_examples_override: "list[dict[str, Any]] | None" = None,
+) -> dict:
     """Invoke `cg_recognition.recognize_structure()` with `arm`'s artifacts
     patched in (system prompt, few-shot fixture, provider/model/adapter
     resolution) and Tier 0 bypassed when `arm.tier0` is False.
@@ -283,11 +288,25 @@ def run_arm(arm: Arm, corpus: "Any", adapter: "Any") -> dict:
     `monkeypatch` fixture, so this is callable both from a test and from the
     standalone `record`-mode CLI sweep. Never forks `recognize_structure`.
 
+    `few_shot_examples_override` (35-15): when supplied, REPLACES the
+    resolved few-shot example list's order/content wholesale -- this is the
+    seam the permutation sub-sweep (35-AI-SPEC.md 5, "Example-order
+    sub-sweep") uses to run the same arm over 3 fixed example orderings
+    without touching `resolve_arm_artifacts()`'s own as-shipped-sha
+    resolution. `None` (the default) preserves every existing caller's
+    behavior byte-for-byte.
+
     Returns `{"result": <recognize_structure() return value>, "provenance":
     {...}}` -- the provenance block is a plain dict `corpus.assert_provenance`
     accepts directly (not nested further).
     """
     artifacts = resolve_arm_artifacts(arm)
+    if few_shot_examples_override is not None:
+        artifacts = ArmArtifacts(
+            few_shot_examples=few_shot_examples_override,
+            system_prompt=artifacts.system_prompt,
+            few_shot_sha=artifacts.few_shot_sha,
+        )
     negotiated_mode = "json_schema_strict" if arm.structured_output else "none"
 
     original_get_adapter = cg_recognition.get_adapter

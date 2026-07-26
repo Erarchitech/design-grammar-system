@@ -37,6 +37,7 @@ from llm_gateway import GenerateRequest, GenerateResponse  # noqa: E402
 from recognition_eval import arms as arms_module  # noqa: E402
 from recognition_eval import cassette as cassette_module  # noqa: E402
 from recognition_eval import corpus as corpus_module  # noqa: E402
+from recognition_eval import live_sweep as live_sweep_module  # noqa: E402
 from recognition_eval import report as report_module  # noqa: E402
 from recognition_eval import scoring as scoring_module  # noqa: E402
 
@@ -609,6 +610,70 @@ class TestEndToEndDriver:
                 provenance_ok=True,
                 threshold=request.config.getoption("sc1_gate"),
             )
+
+
+# ── live_sweep.py (35-15 deviation) -- the record-mode driver 35-13-SUMMARY.md
+# asserted was ready but never actually existed: no test here was ever marked
+# `@pytest.mark.live` before this class. Making a real, metered LLM call is
+# this class's entire purpose, so it is gated twice over: the `live` marker
+# (deselected by default per conftest.py) AND an explicit
+# RECOGNITION_EVAL_MODE=record/live check inside the test itself. ──
+
+
+class TestLiveRecordSweep:
+    @pytest.mark.live
+    def test_records_requested_arms_against_requested_corpora(self, request):
+        arms_opt = request.config.getoption("arms")
+        corpus_opt = request.config.getoption("corpus")
+        permutations = request.config.getoption("permutations")
+
+        if not arms_opt:
+            pytest.skip(
+                "requires --arms (e.g. --arms=A0,A1,A2,A3,A4); this test "
+                "never runs implicitly."
+            )
+
+        mode = os.environ.get("RECOGNITION_EVAL_MODE", "replay")
+        if mode not in ("record", "live"):
+            pytest.skip(
+                f"RECOGNITION_EVAL_MODE={mode!r} -- this test only records "
+                "with RECOGNITION_EVAL_MODE=record (or spot-checks with "
+                "=live). The default (replay) is intentionally a no-op here "
+                "so a bare `-m live` pass without the env var set does not "
+                "silently do nothing while looking like it ran."
+            )
+
+        arm_ids = [a.strip() for a in arms_opt.split(",") if a.strip()]
+        corpus_names = (
+            [corpus_opt] if corpus_opt else ["frame_ablated", "urbanblock_slice"]
+        )
+
+        result = live_sweep_module.run_live_sweep(
+            arm_ids, corpus_names, permutations=permutations, mode=mode
+        )
+
+        for outcome in result.outcomes:
+            print(f"[{outcome.corpus} x {outcome.arm_id}] {outcome.status}: {outcome.detail}")
+            for row in outcome.permutations:
+                print(f"    permutation {row['permutation_index']}: {row}")
+        print(
+            f"[live_sweep] total tokens={result.total_tokens} "
+            f"approx_usd_cost={result.total_usd_cost:.4f} over {len(result.costs)} call(s)"
+        )
+
+        # Every requested combo must be accounted for -- either recorded or
+        # skipped with a named, expected reason. An unrecognized status
+        # would mean a combo silently vanished, which is exactly what the
+        # rest of this harness (cassette misses, provenance refusal) exists
+        # to prevent.
+        allowed_statuses = {
+            "recorded",
+            "skipped_credentials",
+            "skipped_invalid",
+            "skipped_corpus_load_failed",
+        }
+        unexpected = [o for o in result.outcomes if o.status not in allowed_statuses]
+        assert not unexpected, unexpected
 
 
 # ── report.py (Task 4) -- rendering tested with synthetic rows, independent
