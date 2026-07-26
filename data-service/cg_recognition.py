@@ -1,10 +1,33 @@
 """LLM-driven Computgraph structure recognition (Phase 35: RCGN-01/RCGN-04).
 
+Two-tier orchestrator (Phase 35-12 SC1 remediation): `recognize_structure()`
+first resolves per-procedure scope and runs Tier 0 (`cg_topology`), a
+deterministic, no-LLM rule table over topology features -- an unchallengeable
+`confidence: 1.0` decision for whatever it can decide with certainty, honest
+abstention (`residual`) for everything else. Only the RESIDUAL goes to
+Tier 1, the LLM, over a prompt split into a real system half
+(`build_recognition_system_prompt()`, `prompts/recognition_system.md`) and a
+user half (`_build_recognition_prompt()`) carrying derived candidate
+features and the Tier-0 decisions as an in-context worked example. When the
+residual is empty the LLM is never called at all and the result carries
+`tier: "0"`.
+
 Mirrors `dg_context.py`'s `generate_validated_cypher()`/`validate_cypher()`
-structure verbatim -- this is NOT a new idiom. `recognize_structure()` calls
-the LLM gateway in-process via `resolve_active_provider()`/`get_adapter()`/
-`adapter.generate()`, exactly like `generate_validated_cypher()`, and NEVER
-re-POSTs to `/llm/generate` on retry. `validate_proposed_structure()` returns
+structure verbatim for the Tier-1 retry loop -- this is NOT a new idiom.
+`recognize_structure()` calls the LLM gateway in-process via
+`resolve_active_provider()`/`get_adapter()`/`adapter.generate()`, exactly
+like `generate_validated_cypher()`, and NEVER re-POSTs to `/llm/generate` on
+retry -- doing so would re-read settings and could silently switch models
+between attempts, destroying eval reproducibility. Provider/model/adapter
+are resolved ONCE before the loop.
+
+Pydantic (`cg_schemas.ProposedStructure`) sits BETWEEN `_extract_json()` and
+`validate_proposed_structure()`: it guarantees shape and value ranges (e.g.
+`confidence` in [0, 1]); `validate_proposed_structure()` runs POST-MERGE,
+UNCHANGED, and guarantees the RELATIONAL safety contract (RCGN-04) --
+`tagged_overlap`, `duplicate_member`, `unknown_member_id`, DoS bounds --
+rules that are relations between a proposal and the submitted context and
+cannot be expressed in a JSON Schema. `validate_proposed_structure()` returns
 the exact same `{"valid": bool, "violations": [{"code","message","path"}]}`
 shape as `validate_cypher()`, so `append_recognition_feedback()` (this
 module's `append_corrective_feedback()` analog) works unchanged across
@@ -28,14 +51,23 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
+import statistics
+import time
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
+import cg_schemas
+import cg_topology
 import dg_knowledge
 from llm_gateway import (
     GenerateRequest,
+    GenerationOptions,
     get_adapter,
     load_persisted_llm_settings,
+    negotiate_structured_output,
     resolve_active_provider,
 )
 
@@ -547,49 +579,6 @@ _ENTITY_LABEL_BY_KEY: dict[str, str] = {
 }
 
 
-def _procedure_member_ids(cg_context: dict, procedure_index: int) -> set[str]:
-    ids: set[str] = set()
-    for algorithm in cg_context.get("algorithms") or []:
-        for procedure in algorithm.get("procedures") or []:
-            if isinstance(procedure, dict) and procedure.get("index") == procedure_index:
-                ids.update(procedure.get("memberIds") or [])
-    return ids
-
-
-def _filtered_untagged_node_ids(cg_context: dict, procedure_index: int | None) -> list[str]:
-    """Untagged node ids in scope for the prompt. With no `procedure_index`,
-    every untagged node is in scope. With one, scope narrows to untagged
-    nodes wired (one hop) to that procedure's tagged member ids -- the only
-    per-procedure signal cgContextJson v1's `untagged` block carries, since
-    untagged nodes have no procedure ownership field of their own."""
-    node_ids = list((cg_context.get("untagged") or {}).get("nodeIds") or [])
-    if procedure_index is None:
-        return node_ids
-
-    procedure_ids = _procedure_member_ids(cg_context, procedure_index)
-    if not procedure_ids:
-        return node_ids
-
-    node_id_set = set(node_ids)
-    adjacent: set[str] = set()
-    for wire in cg_context.get("wires") or []:
-        from_node = wire.get("fromNode")
-        to_node = wire.get("toNode")
-        if from_node in procedure_ids and to_node in node_id_set:
-            adjacent.add(to_node)
-        if to_node in procedure_ids and from_node in node_id_set:
-            adjacent.add(from_node)
-    return [n for n in node_ids if n in adjacent]
-
-
-def _filtered_untagged_groups(cg_context: dict, scoped_node_ids: list[str], procedure_index: int | None) -> list[dict]:
-    groups = (cg_context.get("untagged") or {}).get("groups") or []
-    if procedure_index is None:
-        return groups
-    scoped = set(scoped_node_ids)
-    return [g for g in groups if any(m in scoped for m in (g.get("memberIds") or []))]
-
-
 def _candidate_feature_lines(features: "dict[str, Any]", node_ids: list[str]) -> list[str]:
     """One line per candidate, rendering DERIVED topology features (widget
     kind, wiring degree, group, adjacent tagged procedure, name/nickname) --
@@ -807,46 +796,166 @@ def append_recognition_feedback(prompt: str, violations: list[dict[str, Any]]) -
     return "\n".join(lines)
 
 
-# ── recognize_structure() -- bounded retry loop (Phase 35-02: mirrors CTXA-04) ──
+# ── recognize_structure() -- two-tier orchestrator (Phase 35-12: Tier 0
+# cg_topology + Tier 1 bounded LLM retry loop, mirrors CTXA-04) ──
+
+
+def _schema_violations_from_pydantic(exc: ValidationError) -> list[dict[str, Any]]:
+    """One `schema_violation` violation per Pydantic error, in the existing
+    What+Where+How-to-fix phrasing so `append_recognition_feedback` needs no
+    special-casing for this violation code."""
+    violations: list[dict[str, Any]] = []
+    for err in exc.errors():
+        loc = ".".join(str(p) for p in err.get("loc", ()))
+        violations.append(
+            {
+                "code": "schema_violation",
+                "message": (
+                    f"Proposal failed schema validation: {err.get('msg')}. "
+                    f"Where: {loc or '(top level)'}. How to fix: conform the "
+                    f"proposal to the required ProposedStructure shape."
+                ),
+                "path": loc,
+            }
+        )
+    return violations
 
 
 def recognize_structure(
-    cg_context: dict, procedure_index: int | None = None, max_retries: int = 2
+    cg_context: dict,
+    procedure_index: int | None = None,
+    max_retries: int = 2,
 ) -> dict:
-    """Classify untagged canvas entities into a schema-valid proposed-structure
-    object via the LLM gateway, with a bounded corrective-feedback retry
-    (mirrors `dg_context.generate_validated_cypher()`'s exact loop structure).
+    """Two-tier structure recognition: Tier 0 (`cg_topology`) decides what
+    topology alone can decide with certainty; only the residual goes to
+    Tier 1 (the LLM), bounded-retry validated (mirrors
+    `dg_context.generate_validated_cypher()`'s exact loop structure).
 
-    Resolves the active provider/adapter ONCE before the loop and calls
-    `adapter.generate()` in-process each attempt -- NEVER re-POSTs to
-    `/llm/generate` (RESEARCH.md Anti-pattern guard).
+    Resolves the active provider/adapter ONCE before the Tier-1 loop and
+    calls `adapter.generate()` in-process each attempt -- NEVER re-POSTs to
+    `/llm/generate` (RESEARCH.md Anti-pattern guard): a re-POST re-reads
+    settings and could silently switch models between attempts, destroying
+    eval reproducibility.
 
-    Returns `{"valid": True, "proposal": {...}, "attempts": N, "provider": ...,
-    "model": ...}` on success or `{"valid": False, "violations": [...],
-    "attempts": N, "provider": ..., "model": ...}` after the bound is exhausted
-    (default `max_retries=2` => 3 attempts total).
+    Returns one of:
+    - `{"valid": False, "violations": [...], "attempts": 0}` -- `procedure_index`
+      resolves to a tagged-but-member-less procedure (G9); the LLM is never
+      called.
+    - `{"valid": True, "proposal": {...}, "attempts": 0, "tier": "0"}` --
+      Tier 0 decided every candidate; the LLM is never called.
+    - `{"valid": True, "proposal": {...}, "attempts": N, "tier": "0+1",
+      "provider": ..., "model": ...}` -- Tier 1 was invoked and its output,
+      merged with Tier 0's decisions, passed `validate_proposed_structure()`.
+    - `{"valid": False, "violations": [...], "attempts": N, "provider": ...,
+      "model": ...}` -- the retry bound was exhausted, or a non-retryable
+      Tier-1 outcome (`output_truncated`, `provider_refusal`) blocked
+      immediately.
 
-    `provider`/`model` are the resolved LLM identity behind the proposal (Phase
-    36 UAT F6). They are ALSO injected into the returned `proposal` object, so a
-    caller can hand `result["proposal"]` straight to `gh_preview_structure`
-    without re-stitching provenance: the listener reads them off the top level of
-    the preview command, carries them through the PreviewRegistry, and
-    `DG STRUCTURE CONFIRM` stamps them into the canvas recognition marker. Before
-    F6 this identity was resolved here and then dropped, so every recognized node
-    published with `provider`/`model`/`confidence = null`.
+    `provider`/`model` are the resolved LLM identity behind the proposal
+    (Phase 36 UAT F6). They are ALSO injected into the returned `proposal`
+    object on the Tier-1 success path, so a caller can hand
+    `result["proposal"]` straight to `gh_preview_structure` without
+    re-stitching provenance.
     """
-    prompt = _build_recognition_prompt(cg_context, procedure_index)
+    scope = cg_topology.scope_untagged(cg_context, procedure_index)
+    if scope.empty_procedure:
+        return {
+            "valid": False,
+            "violations": [
+                {
+                    "code": "empty_procedure_scope",
+                    "message": (
+                        f"Procedure {procedure_index} has no tagged members "
+                        f"in the submitted context. Where: procedure_index="
+                        f"{procedure_index}. How to fix: tag that "
+                        f"procedure's members first, or omit procedure_index "
+                        f"to recognize across the whole canvas."
+                    ),
+                    "path": "procedure_index",
+                }
+            ],
+            "attempts": 0,
+        }
+
+    features = cg_topology.extract_features(cg_context, scope.node_ids)
+    tier0 = cg_topology.classify(features)
+
+    if not tier0.residual:
+        # Tier 0 decided every candidate -- the LLM is never called.
+        merged = cg_topology.merge(tier0.decided, {"proposals": [], "unrecognized": []})
+        return {"valid": True, "proposal": merged, "attempts": 0, "tier": "0"}
+
+    system_prompt = build_recognition_system_prompt()
 
     master_secret = os.getenv("LLM_MASTER_SECRET", "")
     settings = load_persisted_llm_settings()
     provider, model, api_key = resolve_active_provider(settings, master_secret)
     adapter = get_adapter(provider, settings.get("baseUrl"))
+    caps = negotiate_structured_output(provider, model, settings.get("baseUrl"))
+
+    prompt = _build_recognition_prompt(cg_context, scope, features, tier0, caps.mode)
+    schema = caps.schema_for(cg_schemas.to_strict_json_schema(cg_schemas.ProposedStructure))
+    options = GenerationOptions(
+        temperature=0.0,
+        max_tokens=cg_topology.output_token_budget(tier0.residual),
+        output_schema=schema,
+    )
 
     current_prompt = prompt
     violations: list[dict[str, Any]] = []
+
     for attempt in range(max_retries + 1):
-        req = GenerateRequest(prompt=current_prompt, model=model, provider=provider)
-        response = adapter.generate(req, api_key)
+        req = GenerateRequest(prompt=current_prompt, system=system_prompt, model=model, provider=provider)
+        response = adapter.generate(req, api_key, options=options)
+
+        if response.truncated:
+            # G8: NO retry -- an identical scope truncates identically, so a
+            # retry burns the most expensive call for zero value. Advise
+            # scoping instead.
+            violations = [
+                {
+                    "code": "output_truncated",
+                    "message": (
+                        f"The model's response was truncated at the "
+                        f"{options.max_tokens}-token cap with "
+                        f"{len(tier0.residual)} residual candidates in "
+                        f"scope. Where: the LLM response. How to fix: scope "
+                        f"recognition to a single procedure_index to reduce "
+                        f"the candidate count."
+                    ),
+                    "path": None,
+                }
+            ]
+            return {
+                "valid": False,
+                "violations": violations,
+                "attempts": attempt + 1,
+                "provider": provider,
+                "model": model,
+            }
+
+        if response.finish_reason == "refusal":
+            # A refusal is not malformed output -- surface it distinctly
+            # rather than burning retries on a misleading bad_json.
+            violations = [
+                {
+                    "code": "provider_refusal",
+                    "message": (
+                        "The model refused to generate a response for this "
+                        "request. Where: the LLM response. How to fix: "
+                        "review the submitted context for content the "
+                        "provider may be declining to process."
+                    ),
+                    "path": None,
+                }
+            ]
+            return {
+                "valid": False,
+                "violations": violations,
+                "attempts": attempt + 1,
+                "provider": provider,
+                "model": model,
+            }
 
         parsed, parse_error = _extract_json(response.text)
         if parse_error:
@@ -854,19 +963,26 @@ def recognize_structure(
             current_prompt = append_recognition_feedback(prompt, violations)
             continue
 
-        result = validate_proposed_structure(parsed, cg_context)
+        try:
+            typed = cg_schemas.ProposedStructure.model_validate(parsed)
+        except ValidationError as exc:
+            violations = _schema_violations_from_pydantic(exc)
+            current_prompt = append_recognition_feedback(prompt, violations)
+            continue
+
+        merged = cg_topology.merge(tier0.decided, typed.model_dump(mode="json"))
+
+        result = validate_proposed_structure(merged, cg_context)
         if result["valid"]:
-            # Stamp the run's LLM identity onto the validated proposal (F6). Done
-            # AFTER validation so these keys can never influence it, and only on
-            # the success path so an invalid proposal is never made to look
-            # attributable.
-            if isinstance(parsed, dict):
-                parsed["provider"] = provider
-                parsed["model"] = model
+            # Stamp the run's LLM identity onto the validated proposal (F6).
+            # Done AFTER validation so these keys can never influence it.
+            merged["provider"] = provider
+            merged["model"] = model
             return {
                 "valid": True,
-                "proposal": parsed,
+                "proposal": merged,
                 "attempts": attempt + 1,
+                "tier": "0+1",
                 "provider": provider,
                 "model": model,
             }

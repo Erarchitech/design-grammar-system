@@ -17,9 +17,24 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
+import pytest  # noqa: E402
+
 import cg_recognition  # noqa: E402
 import cg_topology  # noqa: E402
-from llm_gateway import GenerateResponse  # noqa: E402
+from llm_gateway import GenerateResponse, StructuredOutputCapability  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _no_network_structured_output_negotiation(monkeypatch):
+    """`recognize_structure` calls `negotiate_structured_output()`, which for
+    the Ollama fallback provider makes a real network probe. Tests must never
+    depend on that -- pin the negotiated mode to "none" everywhere unless a
+    test explicitly overrides it."""
+    monkeypatch.setattr(
+        cg_recognition,
+        "negotiate_structured_output",
+        lambda provider, model, base_url=None: StructuredOutputCapability(mode="none"),
+    )
 
 
 # ── Shared cg_context fixture (small hand-built cgContextJson v1 shape) ──
@@ -263,18 +278,26 @@ class TestExtractJson:
         assert error
 
 
-# ── recognize_structure() -- bounded-retry loop (Phase 35-02: mirrors CTXA-04) ──
+# ── recognize_structure() -- two-tier orchestrator (Phase 35-12: mirrors
+# CTXA-04's bounded Tier-1 retry loop) ──
+#
+# NOTE on _cg_context(): under the default (procedure_index=None) scope, Tier
+# 0 DECIDES n4 on its own (R3: clean sink, group_member_count <= 1, adjacent
+# to exactly one tagged procedure) -- only n3 (an isolated Panel) reaches
+# Tier 1's residual. Every fake LLM response below therefore targets n3, not
+# n4; a response claiming n4 is used deliberately in the duplicate_member
+# test below, since n4 is EXACTLY the id Tier 0 already decided.
 
 _VALID_PROPOSAL_TEXT = json.dumps(
     {
         "proposals": [
             {
                 "kind": "Interface",
-                "suggestedName": "11_IntF_TopChord",
+                "suggestedName": "11_IntF_LoosePanel",
                 "procedureIndex": 11,
-                "memberIds": ["n4"],
+                "memberIds": ["n3"],
                 "confidence": 0.88,
-                "rationale": "Line SDL node wired from the tagged procedure member n1.",
+                "rationale": "Isolated panel adjacent to procedure 11 in this scope.",
             }
         ],
         "unrecognized": [],
@@ -298,25 +321,118 @@ _INVALID_PROPOSAL_TEXT = json.dumps(
     }
 )
 
+# Schema-invalid: 'confidence' (a required field) is missing entirely.
+_SCHEMA_INVALID_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "11_IntF_Test",
+                "procedureIndex": 11,
+                "memberIds": ["n3"],
+                "rationale": "missing the confidence field",
+            }
+        ],
+        "unrecognized": [],
+    }
+)
+
+# Claims n4 -- an id Tier 0 already decided under the default scope.
+_DUPLICATE_WITH_TIER0_TEXT = json.dumps(
+    {
+        "proposals": [
+            {
+                "kind": "Interface",
+                "suggestedName": "11_IntF_Dup",
+                "procedureIndex": 11,
+                "memberIds": ["n4"],
+                "confidence": 0.7,
+                "rationale": "duplicate of a tier0 decision",
+            }
+        ],
+        "unrecognized": [{"memberIds": ["n3"], "reason": "unclear cluster"}],
+    }
+)
+
 _MALFORMED_JSON_TEXT = "this is not json at all"
+
+_TRUNCATED_RESPONSE = GenerateResponse(
+    text='{"proposals": [{"kind": "Interf',
+    provider="fake",
+    model="fake-model",
+    usage={"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+    truncated=True,
+    finish_reason="length",
+)
+
+_REFUSAL_RESPONSE = GenerateResponse(
+    text="",
+    provider="fake",
+    model="fake-model",
+    usage={},
+    truncated=False,
+    finish_reason="refusal",
+)
 
 
 class _FakeAdapterForRetry:
-    """Stand-in for an llm_gateway LLMAdapter -- returns queued response texts
-    in order and records every prompt it was called with (mirrors
+    """Stand-in for an llm_gateway LLMAdapter -- returns queued responses in
+    order and records every prompt/system it was called with (mirrors
     test_dg_context.py's own _FakeAdapterForRetry precedent, retargeted at
-    cg_recognition)."""
+    cg_recognition). Queue entries may be plain text (wrapped into a default
+    GenerateResponse) or a pre-built GenerateResponse (for truncated/refusal
+    scenarios)."""
 
-    def __init__(self, texts: list[str]):
-        self._texts = list(texts)
+    def __init__(self, responses: list):
+        self._responses = list(responses)
         self.prompts_seen: list[str] = []
+        self.systems_seen: list[str | None] = []
         self.call_count = 0
 
-    def generate(self, req, api_key):
+    def generate(self, req, api_key, options=None):
         self.call_count += 1
         self.prompts_seen.append(req.prompt)
-        text = self._texts.pop(0)
-        return GenerateResponse(text=text, provider="fake", model="fake-model", usage={})
+        self.systems_seen.append(req.system)
+        item = self._responses.pop(0)
+        if isinstance(item, GenerateResponse):
+            return item
+        return GenerateResponse(text=item, provider="fake", model="fake-model", usage={})
+
+
+class TestTierZero:
+    def test_empty_procedure_scope_blocks_without_calling_the_adapter(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        # Procedure 999 does not exist in the context -> zero tagged members.
+        result = cg_recognition.recognize_structure(_cg_context(), procedure_index=999)
+
+        assert result["valid"] is False
+        assert result["attempts"] == 0
+        codes = {v["code"] for v in result["violations"]}
+        assert "empty_procedure_scope" in codes
+        assert fake_adapter.call_count == 0
+
+    def test_tier0_decides_everything_skips_the_llm_entirely(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        # Scope this context to ONLY n4 -- R3 (clean sink, group_member_count
+        # <= 1, adjacent to exactly one tagged procedure) decides it, and
+        # nothing is left over for the LLM.
+        ctx = _cg_context()
+        ctx["untagged"] = {
+            "nodeIds": ["n4"],
+            "groups": [{"nickname": "wired thing group", "memberIds": ["n4"]}],
+        }
+
+        result = cg_recognition.recognize_structure(ctx)
+
+        assert result["valid"] is True
+        assert result["attempts"] == 0
+        assert result["tier"] == "0"
+        assert fake_adapter.call_count == 0
+        assert result["proposal"]["proposals"]
 
 
 class TestRetryLoop:
@@ -328,18 +444,22 @@ class TestRetryLoop:
 
         assert result["valid"] is True
         assert result["attempts"] == 1
-        # The LLM's own output is preserved verbatim; recognize_structure adds the
-        # run's provider/model on top (F6 -- see TestRecognitionProvenance).
+        assert result["tier"] == "0+1"
+        # The LLM's Tier-1 proposal is preserved verbatim (merged after Tier
+        # 0's own decided rows); recognize_structure adds the run's
+        # provider/model on top (F6 -- see TestRecognitionProvenance).
         expected = json.loads(_VALID_PROPOSAL_TEXT)
-        assert result["proposal"]["proposals"] == expected["proposals"]
-        assert result["proposal"]["unrecognized"] == expected["unrecognized"]
+        assert expected["proposals"][0] in result["proposal"]["proposals"]
         assert fake_adapter.call_count == 1
+        # system= is set on every request (the point of the prompt split).
+        assert fake_adapter.systems_seen[0]
+        assert "NOT A FILTER" in fake_adapter.systems_seen[0]
 
     def test_malformed_json_then_valid_retries_and_succeeds_at_attempt_2(self, monkeypatch):
         fake_adapter = _FakeAdapterForRetry([_MALFORMED_JSON_TEXT, _VALID_PROPOSAL_TEXT])
         monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
 
-        original_prompt = cg_recognition._build_recognition_prompt(_cg_context(), None)
+        original_prompt = _prompt(_cg_context())
         result = cg_recognition.recognize_structure(_cg_context())
 
         assert result["valid"] is True
@@ -363,6 +483,64 @@ class TestRetryLoop:
         assert result["attempts"] == 3
         assert len(result["violations"]) > 0
         assert fake_adapter.call_count == 3
+
+    def test_schema_invalid_proposal_retries_with_dotted_path_feedback(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_SCHEMA_INVALID_TEXT, _VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert result["attempts"] == 2
+        assert "schema_violation" in fake_adapter.prompts_seen[1]
+
+    def test_all_attempts_schema_invalid_reports_dotted_path(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_SCHEMA_INVALID_TEXT] * 3)
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        violations = [v for v in result["violations"] if v["code"] == "schema_violation"]
+        assert violations
+        assert "proposals.0.confidence" in violations[0]["path"]
+
+    def test_output_truncated_blocks_with_no_retry(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_TRUNCATED_RESPONSE])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        assert result["attempts"] == 1
+        codes = {v["code"] for v in result["violations"]}
+        assert "output_truncated" in codes
+        assert fake_adapter.call_count == 1
+
+    def test_provider_refusal_is_distinct_from_bad_json_with_no_retry(self, monkeypatch):
+        fake_adapter = _FakeAdapterForRetry([_REFUSAL_RESPONSE])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        assert result["attempts"] == 1
+        codes = {v["code"] for v in result["violations"]}
+        assert "provider_refusal" in codes
+        assert fake_adapter.call_count == 1
+
+    def test_tier1_claiming_a_tier0_decided_node_yields_duplicate_member(self, monkeypatch):
+        """A Tier-1 proposal claiming n4 (Tier 0 already decided it) must
+        SURVIVE the merge and be caught post-merge -- never silently dropped
+        (G13/RCGN-04)."""
+        fake_adapter = _FakeAdapterForRetry([_DUPLICATE_WITH_TIER0_TEXT] * 3)
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "duplicate_member" in codes
 
     def test_retry_loop_never_calls_llm_generate_http_endpoint(self, monkeypatch):
         """The retry loop must call the adapter in-process -- never re-POST to
@@ -421,8 +599,10 @@ class TestRecognitionProvenance:
 
         assert proposal["provider"] == "anthropic"
         assert proposal["model"] == "claude-opus-4-6"
-        # Injection must not disturb the validated payload.
-        assert proposal["proposals"] == json.loads(_VALID_PROPOSAL_TEXT)["proposals"]
+        # Injection must not disturb the validated payload -- the Tier-1
+        # proposal survives the merge verbatim, alongside Tier 0's own
+        # decided rows.
+        assert json.loads(_VALID_PROPOSAL_TEXT)["proposals"][0] in proposal["proposals"]
 
     def test_failure_path_also_reports_which_model_failed(self, monkeypatch):
         self._fake_settings(monkeypatch, "openai", "gpt-5")
