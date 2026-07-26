@@ -287,15 +287,21 @@ public sealed class CanvasListenerComponent : GH_Component
 
         return InvokeOnCanvasWrite(doc =>
         {
+            var created = new List<(string proposalId, Guid groupGuid)>();
+            var record = new GH_UndoRecord("DG structure proposal");
+
             // WR-01: proposal ids are synthesized per request (p0, p1, ...), so a second
             // preview_structure call would overwrite the registry entries while the first
             // call's groups (and legend) stayed on canvas -- unreachable by clear_preview
             // and invisible to DG STRUCTURE CONFIRM. Auto-clear the previous preview
             // before rendering the new one.
-            RemovePendingPreviewObjects(doc);
-
-            var created = new List<(string proposalId, Guid groupGuid)>();
-            var record = new GH_UndoRecord("DG structure proposal");
+            //
+            // IN-12/F4: the auto-clear shares THIS record, so undoing it re-adds the
+            // previous preview's objects. Removing them untracked (as this did before)
+            // left the previous render's own record holding GH_AddObjectActions for
+            // objects the document no longer owned, so the second Ctrl+Z threw
+            // "Undo failed: Object could not be found".
+            RemovePendingPreviewObjects(doc, record);
 
             foreach (var proposal in proposals)
             {
@@ -351,17 +357,23 @@ public sealed class CanvasListenerComponent : GH_Component
     /// <summary>
     /// Removes every currently-pending preview group (via <see cref="PreviewRegistry.Pending"/>)
     /// plus the legend scribble stashed by the last <see cref="HandlePreviewStructure"/> call,
-    /// then empties the registry. Programmatic removal -- not wrapped in a
-    /// <see cref="GH_UndoRecord"/> (the single-undo contract only applies to the render, not
-    /// to this explicit clear).
+    /// then empties the registry. Wrapped in its own <see cref="GH_UndoRecord"/>
+    /// ("DG clear preview") -- see <see cref="RemovePendingPreviewObjects"/> for why an
+    /// untracked removal is not safe here (IN-12/F4).
     /// </summary>
     private object? HandleClearPreview(CanvasCommandRequest request)
     {
         return InvokeOnCanvasWrite(doc =>
         {
-            var removed = RemovePendingPreviewObjects(doc);
+            var record = new GH_UndoRecord("DG clear preview");
+            var removal = RemovePendingPreviewObjects(doc, record);
 
-            return (object?)new { cleared = removed };
+            if (removal.Objects > 0)
+            {
+                doc.UndoServer.PushUndoRecord(record);
+            }
+
+            return (object?)new { cleared = removal.Groups };
         });
     }
 
@@ -371,20 +383,31 @@ public sealed class CanvasListenerComponent : GH_Component
     /// from <paramref name="doc"/>, then empties the registry. Shared by
     /// <see cref="HandleClearPreview"/> and the auto-clear at the top of
     /// <see cref="HandlePreviewStructure"/>'s render (WR-01). Must run inside an
-    /// <see cref="InvokeOnCanvasWrite"/> delegate (UI thread). Returns the number of preview
-    /// groups actually removed.
+    /// <see cref="InvokeOnCanvasWrite"/> delegate (UI thread).
     /// </summary>
-    private int RemovePendingPreviewObjects(GH_Document doc)
+    /// <param name="undoRecord">
+    /// Record that receives a <see cref="GH_RemoveObjectAction"/> per removed object.
+    /// Never null in practice: the preview objects were added under a live
+    /// "DG structure proposal" <see cref="GH_UndoRecord"/> holding a
+    /// <see cref="GH_AddObjectAction"/> for each of them, and undoing that record removes
+    /// its objects by instance -- so any untracked removal here leaves it pointing at
+    /// objects the document no longer owns and Ctrl+Z throws
+    /// "Undo failed: Object could not be found" (IN-12/F4).
+    /// </param>
+    /// <returns>How many preview groups, and how many objects in total, were removed.</returns>
+    private PreviewRemoval RemovePendingPreviewObjects(GH_Document doc, GH_UndoRecord undoRecord)
     {
-        var removed = 0;
+        var groups = 0;
+        var objects = 0;
 
         foreach (var entry in PreviewRegistry.Pending)
         {
             var obj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == entry.GroupGuid);
             if (obj is not null)
             {
-                doc.RemoveObject(obj, false);
-                removed++;
+                RemoveTracked(doc, obj, undoRecord);
+                groups++;
+                objects++;
             }
         }
 
@@ -393,7 +416,8 @@ public sealed class CanvasListenerComponent : GH_Component
             var legendObj = doc.Objects.FirstOrDefault(o => o.InstanceGuid == legendGuid);
             if (legendObj is not null)
             {
-                doc.RemoveObject(legendObj, false);
+                RemoveTracked(doc, legendObj, undoRecord);
+                objects++;
             }
 
             _previewLegendGuid = null;
@@ -401,8 +425,27 @@ public sealed class CanvasListenerComponent : GH_Component
 
         PreviewRegistry.Clear();
 
-        return removed;
+        return new PreviewRemoval(groups, objects);
     }
+
+    /// <summary>
+    /// Records the removal on <paramref name="undoRecord"/> BEFORE performing it -- the
+    /// action has to capture the object while the document still owns it (same ordering
+    /// as <c>StructureConfirmComponent.ApplyToDocument</c>'s reject branch, WR-05).
+    /// </summary>
+    private static void RemoveTracked(GH_Document doc, IGH_DocumentObject obj, GH_UndoRecord undoRecord)
+    {
+        undoRecord.AddAction(new GH_RemoveObjectAction(obj));
+        doc.RemoveObject(obj, false);
+    }
+
+    /// <summary>
+    /// Result of <see cref="RemovePendingPreviewObjects"/>: <paramref name="Groups"/> counts
+    /// only the preview groups (the number reported to <c>clear_preview</c> callers),
+    /// <paramref name="Objects"/> also counts the legend scribble (used to decide whether
+    /// there is anything worth pushing an undo record for).
+    /// </summary>
+    private readonly record struct PreviewRemoval(int Groups, int Objects);
 
     /// <summary>
     /// Parses the <c>{"proposals":[...]}</c> bridge command parameters (35-PLAN.md
