@@ -1,20 +1,20 @@
 ---
 gsd_state_version: 1.0
 milestone: v9.0
-milestone_name: — AI Workflow Intelligence
-current_phase: 37
-current_phase_name: Script Structure Validation MVP
+milestone_name: AI Workflow Intelligence
+current_phase: 35
+current_phase_name: LLM Recognition and On-Canvas Proposal Preview
 status: executing
-stopped_at: Phase 36 UI-SPEC approved
-last_updated: "2026-07-19T13:52:42.470Z"
-last_activity: 2026-07-19
-last_activity_desc: Phase 36 complete, transitioned to Phase 37
+stopped_at: Completed 35-16-PLAN.md (ComputeHostPatternIds order-independence fix)
+last_updated: "2026-07-26T11:39:08.793Z"
+last_activity: 2026-07-26
+last_activity_desc: "Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate"
 progress:
   total_phases: 14
-  completed_phases: 7
-  total_plans: 38
-  completed_plans: 37
-  percent: 50
+  completed_phases: 6
+  total_plans: 50
+  completed_plans: 43
+  percent: 43
 ---
 
 # Project State
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 35 — LLM Recognition and On-Canvas Proposal Preview (SC1 quality remediation)
-Plan: 11 remediation plans (35-05..35-15) across 5 waves
-Status: Ready to execute
+Plan: 11 remediation plans (35-05..35-15) across 5 waves, plus 35-16 (Wave 2, parser host-resolution fix flagged during 35-05)
+Status: Wave 1 (35-05..35-09) executed; 35-16 executed 2026-07-26 (ComputeHostPatternIds order-independence fix, commits 1ce96d6/c6eabee)
 Last activity: 2026-07-26 - Planned Phase 35 SC1 quality remediation from 35-AI-SPEC.md: two-tier hybrid recognition, prompt/few-shot fix, 8 promoted guardrails, offline eval harness with a conjunctive SC1 gate, plus the open UAT defects F4 (re-preview undo crash) and F5's accept-time gate
 
 ## Deferred Verification
@@ -70,6 +70,12 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 - Total plans completed: 36 (v7.0)
 - Average duration: —
 - Total execution time: —
+
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 35 P16 | 25min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -273,6 +279,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase 35-03]: ParseProposals synthesizes a per-request index-based proposalId (p0, p1, ...) since cg_recognition.py's wire proposal shape carries no id field, while PreviewRegistry.RegisterAll (Plan 35-02, frozen) requires one to zip against created group guids
 - [Phase 35-04]: [Phase 35-04]: PreviewEntry (frozen from Plan 35-02) extended with an additive ProcedureIndex field, sourced from ProposalDto.ProcedureIndex -- CanvasAnnotationNameFactory.ForEntity requires procIndex >= 10 for every EntityTagKind, not only Pat, and the frozen record had no way to carry it from proposal to confirm time
 - [Phase ?]: contextJson strips untagged data before serialization (T-36-02 compliance)
+- [Phase ?]: [Phase 35-16]: ComputeHostPatternIds primary-path host lookup now filters to pending-pattern candidates and picks the innermost by ascending MemberIds.Count instead of FirstOrDefault over all groups — fixes a silent, order-dependent nesting-drop bug flagged during 35-05; Frame fixture and Corpus A confirmed unaffected (direct-nesting only)
 
 ### Research Flags (carry into planning)
 
@@ -350,9 +357,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-19T13:10:40.871Z
-Stopped at: Phase 36 UI-SPEC approved
-Resume file: .planning/phases/36-computgraph-persistence-display/36-UI-SPEC.md
+Last session: 2026-07-26T11:39:08.763Z
+Stopped at: Completed 35-16-PLAN.md (ComputeHostPatternIds order-independence fix)
+Resume file: None
 
 ## Performance Metrics
 
