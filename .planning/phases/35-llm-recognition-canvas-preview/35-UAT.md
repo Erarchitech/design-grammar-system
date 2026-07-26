@@ -3,7 +3,7 @@ status: testing
 phase: 35-llm-recognition-canvas-preview
 source: [35-VERIFICATION.md]
 started: 2026-07-19T13:10:00Z
-updated: 2026-07-26T00:00:00Z
+updated: 2026-07-27T00:00:00Z
 ---
 
 ## Current Test
@@ -11,7 +11,7 @@ updated: 2026-07-26T00:00:00Z
 number: 1
 name: Frame recognition quality (ROADMAP SC1)
 expected: Recognition proposes entities whose member sets match the reference annotation for the majority of blocks, with confidence + rationale.
-awaiting: a frontier-class LLM (Anthropic/OpenAI) — the only remaining blocker; tests 2-6 are closed
+awaiting: a frontier-class LLM (Anthropic/OpenAI) to run arms A0f/A5 — DeepSeek-only measurement is now complete (35-15, 2026-07-27, see 35-EVAL-REPORT.md): A0 reproduces F3 (caught by G7); best DeepSeek M1 = 0.031 on urbanblock_slice (A1-A4 tied), ship gate FAILs on M1 alone; SC1 is blocked on provider availability, not resolved to a pass/fail verdict
 
 ## Test conditions (2026-07-25 session)
 
@@ -79,7 +79,7 @@ path** — everything from 4.3 onward is LLM-free.
 
 ### 1. Frame recognition quality (ROADMAP SC1)
 expected: On the Frame definition with only Object marker + 2 Proc tags, recognition proposes entities whose member sets match the reference annotation for ≥ the majority of blocks, each with confidence + rationale; unclassifiable blocks listed in unrecognized[] (needs live LLM via the gateway).
-result: blocked (quality unvalidated on available models) — 2026-07-25: PLUMBING PASSES end-to-end (bridge pull → procedure_index scoping → gateway → DeepSeek → JSON extract → schema validation; `valid:true, attempts:1` scoped to a tagged procedure). QUALITY could not be validated: `deepseek-chat` returned 0 proposals from 14 scoped candidates with circular "does not match grammar" rationales (F3); `deepseek-v4-pro` returned empty text ×3 on the large recognition prompt (F3) though it answers trivial prompts fine (probe: 28 completion tokens). Cold whole-canvas recognition (221/233 untagged) truncated JSON at the 4096-token cap ×3 (F1). Not run on the Frame fixture. Needs a frontier-class model (Anthropic/OpenAI) to grade SC1.
+result: blocked (provider availability) — 2026-07-27 (35-15, full data in 35-EVAL-REPORT.md): arm=A3, provider=deepseek (openai-compatible adapter, base_url=api.deepseek.com), model=deepseek-chat, corpus=urbanblock_slice, promptVersion=r35.4, M1=0.031 (Wilson 95% CI [0.006, 0.157], n=32); ship gate FAIL (M1 < 0.60, every other conjunct passes); claim threshold FAIL (Wilson lower bound 0.006, nowhere near 0.50). A0 reproduces F3's pathology on the required corpus (blocked by G7's grammar_as_filter guardrail, whose own trigger condition encodes F3's zero-proposals/residual>=5 signature) -- read as harness validated, not broken. A1/A2/A3 tie exactly on both corpora because Tier 0 abstains on every scoped candidate in this data (decided=0); A4's structured-output claim is untestable against DeepSeek (schema_for() returns None for its real json_object mode, so no response_format is ever sent -- wire-identical to A3). A0f/A5 (claude-sonnet-5) did not run -- no Anthropic/OpenAI key configured this session -- so the AI-SPEC F3 decision rule's three branches remain unresolved and SC1 stays blocked on provider availability, not resolved to a pass or fail.
 
 ### 2. Preview render + undo cleanliness (ROADMAP SC2)
 expected: preview_structure draws desaturated groups named `[?] <name> (<confidence>%)` + one scribble legend; a SINGLE Ctrl+Z removes every trace; clear_preview leaves no residue (no orphan groups/scribbles).
@@ -126,6 +126,13 @@ needs that advice (truncation before any valid parse) never sees it. Suggested f
 truncated-JSON and surface the scoping hint directly. Severity: medium (real large-canvas
 UX gap; the Frame fixture is small enough to never hit it).
 
+**Status 2026-07-26 -- resolved by G8.** `recognize_structure()`'s in-band `output_truncated`
+guardrail now fires on the FIRST truncated response and returns a violation naming the token
+cap and residual candidate count directly, advising scoping to a single `procedure_index` --
+with NO retry (an identical scope truncates identically, so retrying would burn the most
+expensive call for zero value). Confirmed present in the code path exercised by 35-15's live
+sweep.
+
 ### F2 — Silent full-scope fallback when procedure_index matches an empty/absent procedure
 `_filtered_untagged_node_ids` (cg_recognition.py:466-489) falls back to ALL untagged nodes
 when `_procedure_member_ids(procedure_index)` is empty — the caller believes they scoped and
@@ -133,6 +140,13 @@ did not, and silently hits F1. Reproduced live: a tagged Procedure 11 with 0 mem
 `procedure_index=11` to no-op back to all 214 untagged nodes. Suggested fix: return a
 distinct signal (or 422) when the requested procedure has no members, rather than silently
 widening scope. Severity: medium.
+
+**Status 2026-07-26 -- resolved by G9 (`empty_procedure_scope`).** `recognize_structure()` now
+checks `scope.empty_procedure` before calling the LLM at all and returns an explicit
+`empty_procedure_scope` violation naming the requested `procedure_index` and instructing the
+caller to tag that procedure's members first or omit `procedure_index` to recognize across the
+whole canvas -- the silent full-scope widening this finding described is gone; the caller is
+told, not left to discover it via F1.
 
 ### F3 — Recognition produces no usable proposals on the available DeepSeek models
 Two distinct failures on the same scoped prompt: `deepseek-chat` returned `valid:true` but
@@ -148,6 +162,19 @@ probe). Open question: is the grammar-as-filter inversion a prompt defect in
 `_build_recognition_prompt` or a model-capability limit? Not resolvable without a
 frontier-class model (Anthropic/OpenAI) on the identical prompt. Severity: high (blocks SC1
 quality validation on the deployed provider).
+
+**Status 2026-07-27 -- partially resolved (35-15).** The grammar-as-filter inversion is no
+longer silent: Phase 35-12's G7 guardrail (`_grammar_as_filter_triggered`) fires on the exact
+structural condition this finding names (a grammar-citing rationale, or zero proposals for
+>= 5 residual candidates) and blocks the run with a named violation instead of letting it
+pass as `valid:true`. Live-confirmed running arm A0 against `urbanblock_slice` (see
+`35-EVAL-REPORT.md` Task 1). The DeepSeek-side half of this finding's open question is now
+answered: fixing the prompt (arms A1/A2, the counterexample few-shot + system prompt) does
+NOT clear the ship gate on DeepSeek -- best M1 = 0.031, still an overwhelming failure, just
+past the point of being auto-blocked. **The other half remains open**: whether the residual
+failure is a DeepSeek capability ceiling or a prompt defect that a frontier model would also
+clear needs the `A0f`/`A5` (`claude-sonnet-5`) comparison, which did not run this session (no
+Anthropic/OpenAI key configured). Severity unchanged at high pending that comparison.
 
 ### F4 — Re-preview orphans the prior undo record → second Ctrl+Z crashes
 See test 6. The auto-clear at the top of `HandlePreviewStructure` (WR-01 fix for registry
@@ -250,15 +277,36 @@ realistic canvas). Cross-phase: 34 (parser) / 35 (accept) / 36 (publish).
 
 ## Gaps
 
-- Tests 1/2/6 not run on the intended Frame fixture (no Frame `.gh` exists — JSON fixtures
-  only). Test 2 verified with synthetic LLM-bypass proposals, so preview MECHANICS are proven
-  but recognition→preview integration is not. To fully close SC1/SC2 on-fixture: either
-  rebuild the Frame canvas in Rhino from `frame-cg-context.json` and save it as `frame.gh`,
-  or run against UrbanBlock with a frontier-class LLM configured.
+- **Frame `.gh` gap still open (unchanged since 2026-07-26).** Two candidate Frame source files
+  were recovered outside the scanned tree (see "Frame source recovered" above) but are **not
+  usable as Corpus B** -- Corpus A is already derived from the same definition and the live
+  prompt's few-shot examples are drawn from it, so grading recognition on it would be train/test
+  contamination on top of the `tier0Evidence: false` circularity Corpus B exists to escape. The
+  architect's 2026-07-26 decision (Corpus A stays frozen as-is; any re-grounding is a new plan)
+  still holds -- unchanged by this session. Tests 1/2/6 remain closed on UrbanBlock_V7, not Frame.
+- **Test 1 (SC1) measured DeepSeek-only, still blocked on provider availability (35-15,
+  2026-07-27).** A0 reproduces F3 (caught by G7); A1-A4 (fixed prompt) tie at best M1=0.031 on
+  `urbanblock_slice` -- far below the 0.60 ship gate and the 0.50 claim threshold. `A0f`/`A5`
+  (`claude-sonnet-5`) did not run: no Anthropic/OpenAI key is configured. Full data, per-arm
+  table, and the exact steps a future frontier-key run needs are in `35-EVAL-REPORT.md`.
+- **The AI-SPEC F3 decision rule is unresolved**, not selected into any of its three
+  pre-registered branches -- every branch needs an `A0f`/`A5` data point that does not exist yet.
+- **Tier 0 currently contributes nothing measurable on the two available corpora.**
+  `cg_topology.classify()` abstains on every scoped candidate in both `frame_ablated` (3/3
+  residual) and `urbanblock_slice` (37/37 residual), confirmed by A2 (`tier0=False`) and A3
+  (`tier0=True`) recording byte-identical prompts on both corpora. Consistent with, and extends,
+  35-14's documented Tier-0 rule R4 defect (bare-pass-through-Param unreachable on real GH data) --
+  a dedicated Tier-0 rule-coverage follow-up is warranted, not attempted here (out of this plan's
+  scope, which measures the pipeline as shipped).
+- **A4's structured-output claim is untestable against the deployed provider.** Once negotiated
+  correctly, DeepSeek's real capability (`json_object`) never receives a schema from
+  `StructuredOutputCapability.schema_for()` (only `json_schema_strict`/`tool_strict` do), so
+  `OpenAIAdapter` never emits a `response_format` body key at all for A4 on DeepSeek -- wire-
+  identical to A3. Answering A4's real question (does constrained decoding help) needs a provider
+  that actually enforces a schema, i.e. the same frontier key A0f/A5 need.
 - Tests 3/4/5 closed 2026-07-25 (session 2) on UrbanBlock with synthetic proposals — the accept path,
   nesting detection, durability across save+reopen and mixed-undo are all proven, but with LLM-authored
-  proposals never having reached the confirm gate. Only test 1 (quality) remains, and only for want of
-  a frontier-class model.
+  proposals never having reached the confirm gate.
 - Test 6 (F4) closed 2026-07-26 — code fix landed and live-verified on UrbanBlock_V7 (both the
   re-preview and the newly-covered `clear_preview` undo sequences). Still synthetic proposals, still
   not the Frame fixture; the preview/undo MECHANISM is now fully proven, recognition→preview
@@ -270,3 +318,17 @@ realistic canvas). Cross-phase: 34 (parser) / 35 (accept) / 36 (publish).
   see it; it just parses as an ordinary untagged group. One such leftover (`[?] 12_Var_TargetScr (92%)`,
   from an earlier session) sat on the canvas throughout the 2026-07-26 retest and had to be excluded by
   hand when reading results. Same root cause as the registry residual under F4.
+
+### Deferred, named rather than dropped (re-surface at verify-phase)
+
+Carried from `STATE.md`'s existing deferred-items table, re-recorded here so `query audit-uat`
+surfaces them alongside the test they gate rather than only in `STATE.md`:
+
+| Item | Why deferred | Consequence if left undone |
+|------|--------------|----------------------------|
+| LLM-judge calibration (>= 0.7 agreement on >= 20 human labels) | Needs human labelling effort beyond this remediation | E4-name and E7-soft stay reported-but-excluded from every SC1 figure |
+| Test-retest self-agreement ceiling | Needs a >= 4-week blind re-annotation gap | At n=1, any M1 figure is not fully interpretable without it -- stated on the number in `35-EVAL-REPORT.md` |
+| External-peer agreement floor | Needs a second computational designer, one session on 10-20 blocks | "The author says these boundaries are right" stays unmeasured against any independent floor |
+| AI-SPEC §7 production monitoring (`recognition_runs.jsonl`/`recognition_labels.jsonl` + review queue) | Instrument, not a quality fix; no data yet | G10's 0.5 confidence floor stays a labelled guess, not a derived value |
+| Frame `.gh` rebuild | No usable Frame `.gh` for Corpus B (train/test contamination); Corpus A stays frozen | Tests 1/2/6 remain closed on UrbanBlock_V7 rather than the intended Frame fixture |
+| **A0f/A5 frontier-arm sweep (new, 35-15)** | No Anthropic/OpenAI key configured this session | SC1 stays blocked (not resolved); the F3 decision rule's three branches stay unselected |

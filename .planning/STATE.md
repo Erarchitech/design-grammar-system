@@ -6,8 +6,8 @@ current_phase: 35
 current_phase_name: llm-recognition-canvas-preview
 status: executing
 stopped_at: "Completed 35-13-PLAN.md (recognition eval harness driver: cassette.py, arms.py, report.py, SC1 gate + A0 validity checks, 52 new tests)"
-last_updated: "2026-07-26T20:50:40.429Z"
-last_activity: 2026-07-26
+last_updated: "2026-07-26T21:31:46.108Z"
+last_activity: 2026-07-27
 last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 14
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
-Plan: 2 of 16
-Status: Ready to execute
-Last activity: 2026-07-26 — Phase 35 execution started
+Plan: 1 of 16
+Status: Executing Phase 35
+Last activity: 2026-07-27 — Phase 35 execution started
 
 ## Deferred Verification
 
@@ -49,7 +49,8 @@ Phase 35 (LLM Recognition and On-Canvas Proposal Preview) was code-complete as o
 | Test–retest self-agreement ceiling | Needs a ≥ 4-week blind re-annotation gap | At n = 1, M1 without a self-agreement ceiling is not fully interpretable — must be stated on the number |
 | External-peer agreement floor | Needs a second computational designer, one session on 10–20 blocks | "The author says these boundaries are right" stays unmeasured against any independent floor |
 | AI-SPEC §7 production monitoring (`recognition_runs.jsonl` / `recognition_labels.jsonl` + review queue) | Instrument, not a quality fix; Tier-2 flywheel has no data yet | G10's 0.5 confidence floor stays a labelled guess instead of being derived from an accept-rate curve |
-| Frame `.gh` rebuild | No Frame `.gh` exists on disk (whole-profile scan negative); Corpus A is the JSON-derived substitute | UAT tests 1/2/6 remain closed on UrbanBlock rather than on the intended Frame fixture |
+| Frame `.gh` rebuild | Two candidate Frame source files were recovered outside the scanned tree 2026-07-26, but are not usable as Corpus B (same definition Corpus A/the few-shot examples are drawn from — grading on it would be train/test contamination); Corpus A stays frozen as-is (architect decision 2026-07-26) | UAT tests 1/2/6 remain closed on UrbanBlock rather than on the intended Frame fixture |
+| A0f/A5 frontier-arm sweep (SC1 completion, new 2026-07-27) | No Anthropic/OpenAI key configured this session (35-15) — DeepSeek-only measurement complete (A0-A4: A0 reproduces F3, caught by G7; best M1=0.031 on urbanblock_slice, ship gate FAILs on M1 alone) | SC1 stays blocked on provider availability, not resolved to pass/fail; the AI-SPEC F3 decision rule's three branches remain unselected — see `35-EVAL-REPORT.md` |
 
 ## Deferred Items
 
