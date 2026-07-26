@@ -1,0 +1,2 @@
+
+- [2026-07-26 Phase 35 Wave 2 execution](sessions/2026-07-26%20Phase%2035%20Wave%202%20execution%20—%20Tier%200%20topology%20Corpus%20A%20parser%20fix.md) — All 3 Wave 2 plans delivered (35-16 order-independent host resolution, 35-10 Tier 0 topology, 35-11 Corpus A + scoring); 12/16 Phase 35 complete; concurrent Phase 36 work required hardened staging rules; one contamination escape (REQUIREMENTS.md) escaped despite precautions

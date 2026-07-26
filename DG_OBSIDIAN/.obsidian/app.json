@@ -1,1 +1,6 @@
-{}
+{
+  "userIgnoreFilters": [
+    "archive/",
+    "graphify/communities/"
+  ]
+}
