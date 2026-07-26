@@ -121,6 +121,9 @@ public static class ComputgraphContextSerializer
             Name = obj.Name,
             ClassIri = obj.ClassIri,
             Source = obj.Source,
+            Provider = obj.Provider,
+            Model = obj.Model,
+            Confidence = obj.Confidence,
             DgId = obj.DgId,
         };
     }
@@ -146,6 +149,9 @@ public static class ComputgraphContextSerializer
             Index = procedure.Index,
             Name = procedure.Name,
             Source = procedure.Source,
+            Provider = procedure.Provider,
+            Model = procedure.Model,
+            Confidence = procedure.Confidence,
             DgId = procedure.DgId,
             MemberIds = procedure.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Patterns = procedure.Patterns.OrderBy(p => p.Id, StringComparer.Ordinal).Select(ToDto).ToList(),
@@ -164,6 +170,9 @@ public static class ComputgraphContextSerializer
             HostPatternId = pattern.HostPatternId,
             MemberIds = pattern.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = pattern.Source,
+            Provider = pattern.Provider,
+            Model = pattern.Model,
+            Confidence = pattern.Confidence,
             DgId = pattern.DgId,
         };
     }
@@ -179,6 +188,9 @@ public static class ComputgraphContextSerializer
             Domain = parameter.Domain is not null ? ToDto(parameter.Domain) : null,
             MemberIds = parameter.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = parameter.Source,
+            Provider = parameter.Provider,
+            Model = parameter.Model,
+            Confidence = parameter.Confidence,
             DgId = parameter.DgId,
         };
     }
@@ -202,6 +214,9 @@ public static class ComputgraphContextSerializer
             IfaceType = IfaceTypeToDto(iface.IfaceType),
             MemberIds = iface.MemberIds.OrderBy(m => m, StringComparer.Ordinal).ToList(),
             Source = iface.Source,
+            Provider = iface.Provider,
+            Model = iface.Model,
+            Confidence = iface.Confidence,
             DgId = iface.DgId,
         };
     }
@@ -338,6 +353,9 @@ public static class ComputgraphContextSerializer
             Name = dto.Name ?? string.Empty,
             ClassIri = dto.ClassIri,
             Source = dto.Source ?? "tagged",
+            Provider = dto.Provider,
+            Model = dto.Model,
+            Confidence = dto.Confidence,
             DgId = dto.DgId,
         };
     }
@@ -366,6 +384,9 @@ public static class ComputgraphContextSerializer
             Index = dto.Index,
             Name = dto.Name ?? string.Empty,
             Source = dto.Source ?? "tagged",
+            Provider = dto.Provider,
+            Model = dto.Model,
+            Confidence = dto.Confidence,
             DgId = dto.DgId,
         };
 
@@ -401,6 +422,9 @@ public static class ComputgraphContextSerializer
             Name = dto.Name,
             HostPatternId = dto.HostPatternId,
             Source = dto.Source ?? "tagged",
+            Provider = dto.Provider,
+            Model = dto.Model,
+            Confidence = dto.Confidence,
             DgId = dto.DgId,
         };
 
@@ -422,6 +446,9 @@ public static class ComputgraphContextSerializer
             DataType = dto.DataType is not null ? ParamDataTypeFromDto(dto.DataType) : null,
             Domain = dto.Domain is not null ? FromDto(dto.Domain) : null,
             Source = dto.Source ?? "tagged",
+            Provider = dto.Provider,
+            Model = dto.Model,
+            Confidence = dto.Confidence,
             DgId = dto.DgId,
         };
 
@@ -451,6 +478,9 @@ public static class ComputgraphContextSerializer
             Name = dto.Name ?? string.Empty,
             IfaceType = IfaceTypeFromDto(dto.IfaceType),
             Source = dto.Source ?? "tagged",
+            Provider = dto.Provider,
+            Model = dto.Model,
+            Confidence = dto.Confidence,
             DgId = dto.DgId,
         };
 
@@ -585,6 +615,12 @@ public static class ComputgraphContextSerializer
 
         public string? Source { get; init; }
 
+        public string? Provider { get; init; }
+
+        public string? Model { get; init; }
+
+        public double? Confidence { get; init; }
+
         public string? DgId { get; init; }
     }
 
@@ -606,6 +642,12 @@ public static class ComputgraphContextSerializer
         public string? Name { get; init; }
 
         public string? Source { get; init; }
+
+        public string? Provider { get; init; }
+
+        public string? Model { get; init; }
+
+        public double? Confidence { get; init; }
 
         public string? DgId { get; init; }
 
@@ -632,6 +674,12 @@ public static class ComputgraphContextSerializer
 
         public string? Source { get; init; }
 
+        public string? Provider { get; init; }
+
+        public string? Model { get; init; }
+
+        public double? Confidence { get; init; }
+
         public string? DgId { get; init; }
     }
 
@@ -650,6 +698,12 @@ public static class ComputgraphContextSerializer
         public List<string>? MemberIds { get; init; }
 
         public string? Source { get; init; }
+
+        public string? Provider { get; init; }
+
+        public string? Model { get; init; }
+
+        public double? Confidence { get; init; }
 
         public string? DgId { get; init; }
     }
@@ -674,6 +728,12 @@ public static class ComputgraphContextSerializer
         public List<string>? MemberIds { get; init; }
 
         public string? Source { get; init; }
+
+        public string? Provider { get; init; }
+
+        public string? Model { get; init; }
+
+        public double? Confidence { get; init; }
 
         public string? DgId { get; init; }
     }

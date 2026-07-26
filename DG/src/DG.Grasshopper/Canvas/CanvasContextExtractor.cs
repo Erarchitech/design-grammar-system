@@ -189,15 +189,21 @@ public static class CanvasContextExtractor
 
             // Phase 35 (RCGN-03): a document ValueTable marker keyed dg.recognized.<groupGuid>
             // (the ObjectMarkerComponent/dg.objectClassIri precedent -- survives .gh save/reopen)
-            // records that this group came from a confirmed LLM structure proposal.
-            var recognized = doc?.ValueTable.GetValue($"dg.recognized.{group.InstanceGuid}", "false") == "true";
+            // records that this group came from a confirmed LLM structure proposal. Phase 36 UAT
+            // F6: the marker also carries WHICH model proposed it and how confident it was; a
+            // pre-F6 canvas holds the bare "true" literal and yields null provenance.
+            var provenance = RecognitionMarker.TryParse(
+                doc?.ValueTable.GetValue(RecognitionMarker.Key(group.InstanceGuid), RecognitionMarker.Absent));
 
             raw.Groups.Add(new RawGroup
             {
                 Nickname = group.NickName ?? string.Empty,
                 MemberIds = memberIds,
                 NestedGroupIds = nestedGroupIds,
-                Recognized = recognized,
+                Recognized = provenance is not null,
+                Provider = provenance?.Provider,
+                Model = provenance?.Model,
+                Confidence = provenance?.Confidence,
             });
         }
         catch

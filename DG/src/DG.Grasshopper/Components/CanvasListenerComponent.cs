@@ -455,6 +455,15 @@ public sealed class CanvasListenerComponent : GH_Component
     /// ...) is synthesized here so <see cref="PreviewRegistry.RegisterAll"/> can zip
     /// (proposalId, groupGuid) pairs against these <see cref="ProposalDto"/>s by id.
     /// Malformed entries are skipped (guard-and-continue), never thrown.
+    ///
+    /// <para>
+    /// Phase 36 UAT F6: <c>provider</c>/<c>model</c> identify the LLM behind the run. One
+    /// recognition run resolves ONE provider/model for every proposal it returns
+    /// (cg_recognition.recognize_structure), so they are read from the TOP LEVEL of the command
+    /// parameters -- the shape `/computgraph/recognize` now returns directly. A per-proposal
+    /// <c>provider</c>/<c>model</c> still wins where present, so a caller stitching proposals
+    /// from two runs into one preview does not lose either one's provenance.
+    /// </para>
     /// </summary>
     private static List<ProposalDto> ParseProposals(CanvasCommandRequest request)
     {
@@ -466,6 +475,9 @@ public sealed class CanvasListenerComponent : GH_Component
         {
             return result;
         }
+
+        var runProvider = TryGetJsonString(request.Parameters, "provider");
+        var runModel = TryGetJsonString(request.Parameters, "model");
 
         var index = 0;
         foreach (var item in proposalsElement.EnumerateArray())
@@ -479,6 +491,18 @@ public sealed class CanvasListenerComponent : GH_Component
             var kind = TryGetJsonString(item, "kind");
             var suggestedName = TryGetJsonString(item, "suggestedName");
             var rationale = TryGetJsonString(item, "rationale");
+
+            var provider = TryGetJsonString(item, "provider");
+            if (string.IsNullOrEmpty(provider))
+            {
+                provider = runProvider;
+            }
+
+            var model = TryGetJsonString(item, "model");
+            if (string.IsNullOrEmpty(model))
+            {
+                model = runModel;
+            }
 
             var procedureIndex = item.TryGetProperty("procedureIndex", out var procEl)
                 && procEl.ValueKind == JsonValueKind.Number
@@ -508,7 +532,16 @@ public sealed class CanvasListenerComponent : GH_Component
                 }
             }
 
-            result.Add(new ProposalDto($"p{index}", kind, suggestedName, procedureIndex, memberIds, confidence, rationale));
+            result.Add(new ProposalDto(
+                $"p{index}",
+                kind,
+                suggestedName,
+                procedureIndex,
+                memberIds,
+                confidence,
+                rationale,
+                string.IsNullOrEmpty(provider) ? null : provider,
+                string.IsNullOrEmpty(model) ? null : model));
             index++;
         }
 

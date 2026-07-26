@@ -146,7 +146,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - Merge key: `(cgId, definitionId, project)`
 - Written only by `POST /computgraph/publish`
 - `REFERS_TO` to OntoGraph `Class` when `classIri` is present (cross-layer bridge)
-- **Known gap (Phase 36 WR-06):** `provider`/`model`/`confidence` are read and written by `computgraph_publish.py` for every `recognized` entity (Object, Procedure, Pattern, Parameter, Interface), but none of the GH-side wire DTOs (`ComputgraphContextSerializer.cs` `Cg*Dto` types) carry these fields -- only `Source`/`DgId`. Until the DG.Core accept path and serializer are extended to transport them, every `recognized` entity published from Grasshopper gets `provider`/`model`/`confidence = null`, regardless of this table.
+- **Provenance transport (Phase 36 UAT F6, closed 2026-07-26):** `provider`/`model`/`confidence` are read and written by `computgraph_publish.py` for every `recognized` entity (Object, Procedure, Pattern, Parameter, Interface), and the full chain now supplies them. `POST /computgraph/recognize` returns the run's resolved `provider`/`model` (both at the top level and inside the returned `proposal`); the listener's `preview_structure` reads them off the command's top level into `PreviewRegistry`; `DG STRUCTURE CONFIRM` stamps provider/model/confidence into the `dg.recognized.<groupGuid>` ValueTable marker at accept time (`DG.Core.Parsing.RecognitionMarker`, a compact JSON value that survives `.gh` save/reopen); `CanvasContextExtractor` reads the marker back into `RawGroup`, and the parser + `ComputgraphContextSerializer.Cg*Dto` carry the three fields to the wire. **Backward compatibility:** a canvas confirmed before this change holds the legacy `"true"` marker and still publishes as `source: recognized` with `provider`/`model`/`confidence = null` — re-confirming those groups is the only way to attribute them. A run falling back to local Ollama has no model id, so it records `provider: "ollama"` with a null `model`.
 
 ---
 
@@ -168,6 +168,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - Merge key: `(definitionId, project)`
 - Structural node — no cgId or dgId
 - Written only by `POST /computgraph/publish`
+- **No `source` / `provider` / `model` / `confidence`** (Phase 36 UAT F6 secondary, resolved 2026-07-26). Behavior and Algorithm are synthesized server-side from the envelope's shape — no one tags or recognizes them, so there is no authorship to record. Provenance properties are scoped to the five *entity* labels (Object, Procedure, Pattern, Parameter, Interface), exactly as `dgId` is per `spec/DG-ID.md`. Phase 36 SC3's "every node answers a provenance query" should be read as *every entity node*; `definitionId` + `publishedAt` remain present on Behavior/Algorithm and are the only provenance those two can meaningfully carry.
 
 ---
 

@@ -636,9 +636,19 @@ def recognize_structure(
     `adapter.generate()` in-process each attempt -- NEVER re-POSTs to
     `/llm/generate` (RESEARCH.md Anti-pattern guard).
 
-    Returns `{"valid": True, "proposal": {...}, "attempts": N}` on success or
-    `{"valid": False, "violations": [...], "attempts": N}` after the bound is
-    exhausted (default `max_retries=2` => 3 attempts total).
+    Returns `{"valid": True, "proposal": {...}, "attempts": N, "provider": ...,
+    "model": ...}` on success or `{"valid": False, "violations": [...],
+    "attempts": N, "provider": ..., "model": ...}` after the bound is exhausted
+    (default `max_retries=2` => 3 attempts total).
+
+    `provider`/`model` are the resolved LLM identity behind the proposal (Phase
+    36 UAT F6). They are ALSO injected into the returned `proposal` object, so a
+    caller can hand `result["proposal"]` straight to `gh_preview_structure`
+    without re-stitching provenance: the listener reads them off the top level of
+    the preview command, carries them through the PreviewRegistry, and
+    `DG STRUCTURE CONFIRM` stamps them into the canvas recognition marker. Before
+    F6 this identity was resolved here and then dropped, so every recognized node
+    published with `provider`/`model`/`confidence = null`.
     """
     prompt = _build_recognition_prompt(cg_context, procedure_index)
 
@@ -661,8 +671,27 @@ def recognize_structure(
 
         result = validate_proposed_structure(parsed, cg_context)
         if result["valid"]:
-            return {"valid": True, "proposal": parsed, "attempts": attempt + 1}
+            # Stamp the run's LLM identity onto the validated proposal (F6). Done
+            # AFTER validation so these keys can never influence it, and only on
+            # the success path so an invalid proposal is never made to look
+            # attributable.
+            if isinstance(parsed, dict):
+                parsed["provider"] = provider
+                parsed["model"] = model
+            return {
+                "valid": True,
+                "proposal": parsed,
+                "attempts": attempt + 1,
+                "provider": provider,
+                "model": model,
+            }
         violations = result["violations"]
         current_prompt = append_recognition_feedback(prompt, violations)
 
-    return {"valid": False, "violations": violations, "attempts": max_retries + 1}
+    return {
+        "valid": False,
+        "violations": violations,
+        "attempts": max_retries + 1,
+        "provider": provider,
+        "model": model,
+    }

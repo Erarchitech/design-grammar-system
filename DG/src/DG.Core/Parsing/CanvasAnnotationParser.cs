@@ -174,6 +174,9 @@ public static class CanvasAnnotationParser
                     Index = procIndex,
                     Name = procedureMatch.Groups["name"].Value.Trim(),
                     Source = group.Recognized ? "recognized" : "tagged",
+                    Provider = group.Provider,
+                    Model = group.Model,
+                    Confidence = group.Confidence,
                     MemberIds = new List<string>(group.MemberIds),
                 });
             }
@@ -262,6 +265,9 @@ public static class CanvasAnnotationParser
                     Domain = domain,
                     MemberIds = new List<string>(group.MemberIds),
                     Source = group.Recognized ? "recognized" : "tagged",
+                    Provider = group.Provider,
+                    Model = group.Model,
+                    Confidence = group.Confidence,
                 });
 
                 claimedMemberIds.UnionWith(group.MemberIds);
@@ -290,6 +296,9 @@ public static class CanvasAnnotationParser
                     IfaceType = IfaceType.Input,
                     MemberIds = new List<string>(group.MemberIds),
                     Source = group.Recognized ? "recognized" : "tagged",
+                    Provider = group.Provider,
+                    Model = group.Model,
+                    Confidence = group.Confidence,
                 });
 
                 claimedMemberIds.UnionWith(group.MemberIds);
@@ -319,6 +328,9 @@ public static class CanvasAnnotationParser
                 HostPatternId = hostIdByGroup.TryGetValue(pending.Group, out var hostId) ? hostId : null,
                 MemberIds = new List<string>(pending.Group.MemberIds),
                 Source = pending.Group.Recognized ? "recognized" : "tagged",
+                Provider = pending.Group.Provider,
+                Model = pending.Group.Model,
+                Confidence = pending.Group.Confidence,
             };
             pending.Procedure.Patterns.Add(pattern);
             allPatterns.Add(pattern);

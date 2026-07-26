@@ -23,6 +23,22 @@ public class RawGroup
     /// only; defaults to false (unmarked groups stay tagged).
     /// </summary>
     public bool Recognized { get; init; }
+
+    /// <summary>
+    /// LLM provider that authored the accepted proposal behind this group, or null when the
+    /// group is tagged by hand or carries a legacy provenance-less marker
+    /// (<see cref="DG.Core.Parsing.RecognitionMarker"/>). Phase 36 UAT F6.
+    /// </summary>
+    public string? Provider { get; init; }
+
+    /// <summary>Model id that authored the accepted proposal. See <see cref="Provider"/>.</summary>
+    public string? Model { get; init; }
+
+    /// <summary>
+    /// Recognition confidence (0..1) the LLM reported for the accepted proposal.
+    /// See <see cref="Provider"/>.
+    /// </summary>
+    public double? Confidence { get; init; }
 }
 
 /// <summary>

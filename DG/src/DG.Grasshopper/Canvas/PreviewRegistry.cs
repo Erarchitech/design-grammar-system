@@ -46,7 +46,9 @@ internal static class PreviewRegistry
                 proposal.SuggestedName,
                 proposal.ProcedureIndex,
                 proposal.Confidence,
-                proposal.Rationale);
+                proposal.Rationale,
+                proposal.Provider,
+                proposal.Model);
 
             _entries[proposalId] = entry;
         }
@@ -71,6 +73,14 @@ internal static class PreviewRegistry
 /// <see cref="CanvasAnnotationNameFactory.ForEntity"/>, which requires it for every
 /// <see cref="EntityTagKind"/> -- it would otherwise be lost once <see cref="ProposalDto"/> is
 /// projected into this record.
+///
+/// <para>
+/// <see cref="Provider"/>/<see cref="Model"/> (Phase 36 UAT F6) identify the LLM that authored
+/// the proposal. Together with <see cref="Confidence"/> they are the payload
+/// <c>DG STRUCTURE CONFIRM</c> stamps into the <see cref="DG.Core.Parsing.RecognitionMarker"/> at
+/// accept time -- without them the accepted group would publish with a null
+/// <c>provider</c>/<c>model</c>/<c>confidence</c>, which is exactly what F6 reported.
+/// </para>
 /// </summary>
 internal sealed record PreviewEntry(
     string ProposalId,
@@ -79,7 +89,9 @@ internal sealed record PreviewEntry(
     string SuggestedName,
     int ProcedureIndex,
     double Confidence,
-    string Rationale);
+    string Rationale,
+    string? Provider = null,
+    string? Model = null);
 
 /// <summary>
 /// Wire-JSON carrier for one LLM structure proposal (cg_recognition.py's proposal shape) --
@@ -93,7 +105,9 @@ internal sealed record ProposalDto(
     int ProcedureIndex,
     IReadOnlyList<string> MemberIds,
     double Confidence,
-    string Rationale)
+    string Rationale,
+    string? Provider = null,
+    string? Model = null)
 {
     /// <summary>
     /// Maps the raw wire <see cref="Kind"/> string to the typed <see cref="EntityTagKind"/>

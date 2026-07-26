@@ -14,6 +14,19 @@ public class CgProcedure
 
     public string Source { get; init; } = "tagged";
 
+    /// <summary>
+    /// LLM provider that authored this entity when <see cref="Source"/> is <c>"recognized"</c>;
+    /// null for hand-tagged entities. Persisted as the Computgraph node's <c>provider</c>
+    /// property (Phase 36 UAT F6).
+    /// </summary>
+    public string? Provider { get; init; }
+
+    /// <summary>Model id behind a recognized entity. See <see cref="Provider"/>.</summary>
+    public string? Model { get; init; }
+
+    /// <summary>Recognition confidence (0..1) of a recognized entity. See <see cref="Provider"/>.</summary>
+    public double? Confidence { get; init; }
+
     public List<string> MemberIds { get; init; } = new();
 
     public List<CgPattern> Patterns { get; init; } = new();

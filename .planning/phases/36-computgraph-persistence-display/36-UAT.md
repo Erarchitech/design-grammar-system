@@ -11,7 +11,7 @@ updated: 2026-07-26T00:00:00Z
 number: 3
 name: Provenance is queryable per node (SC3)
 expected: Every Computgraph node answers a provenance query with source, provider/model when recognized, definitionId and publishedAt.
-awaiting: code fix for F6 — provider/model/confidence are structurally unpersistable today
+awaiting: LIVE re-run of test 3 in Rhino — F6's transport chain is code-fixed and seam-verified but has never executed on a real canvas
 
 ## Test conditions (2026-07-25 session)
 
@@ -48,7 +48,7 @@ result: pass — 2026-07-25. Re-published the unchanged canvas (pull → POST /c
 
 ### 3. Provenance is queryable per node (SC3)
 expected: Every Computgraph node answers a provenance query — source (tagged | recognized), provider/model (when source=recognized), definitionId, and publishedAt timestamp. A MATCH over the published Frame subgraph returns these properties for each node.
-result: PARTIAL — 2026-07-25. PASSES: `source` correct on all 9 entity nodes (5 tagged / 4 recognized, matching the canvas exactly), `definitionId` and `publishedAt` on all 11, `dgId` on all 9 entity nodes. The 2 nodes without dgId are Behavior and Algorithm, which is BY DESIGN — CLAUDE.md/spec/DG-ID.md scope dgId to Object/Procedure/Pattern/Parameter/Interface only. FAILS: `provider` / `model` / `confidence` are null on every recognized node, and this is structural, not an artefact of using synthetic proposals — see F6.
+result: PARTIAL — 2026-07-25. PASSES: `source` correct on all 9 entity nodes (5 tagged / 4 recognized, matching the canvas exactly), `definitionId` and `publishedAt` on all 11, `dgId` on all 9 entity nodes. The 2 nodes without dgId are Behavior and Algorithm, which is BY DESIGN — CLAUDE.md/spec/DG-ID.md scope dgId to Object/Procedure/Pattern/Parameter/Interface only. FAILS: `provider` / `model` / `confidence` are null on every recognized node, and this is structural, not an artefact of using synthetic proposals — see F6. **Status 2026-07-26: F6's transport chain is CODE-FIXED and seam-verified (see the F6 finding below), but this test has NOT been re-run live — it stays PARTIAL until a Rhino recognize→confirm→publish round on a real canvas returns a non-null provider/model/confidence from the provenance query.**
 
 ### 4. ui-v2 shows Computgraph layer distinctly + per-project filter (SC4)
 expected: The ui-v2 graph datascape (ui-v2/src/graph + ui-v2/src/screens) shows the Computgraph layer with distinct styling for the new labels (Object/Behavior/Algorithm/Procedure/Pattern/Parameter/Interface, correct casing via buildRings.js), correct orbit/caption placement (Behavior caption shows definitionId per WR-08), and a per-project filter toggle isolating the Computgraph layer for the active project. Hard-refresh (Ctrl+Shift+R) after any design-grammars container rebuild.
@@ -82,6 +82,42 @@ Secondary, folded in here: Behavior and Algorithm nodes carry no `source` proper
 says "every node". They are synthesized container nodes rather than tagged/recognized entities, so this
 is arguably correct-by-design — but the criterion and the implementation disagree and one of them
 should move.
+
+**F6 CODE-FIXED 2026-07-26 via `/gsd-audit-fix` — NOT yet live-verified.** The transport chain that was
+missing now exists end to end:
+
+1. `cg_recognition.recognize_structure()` returns the run's resolved `provider`/`model` (top level AND
+   injected into the returned `proposal`) — it resolved them all along and dropped them on the floor.
+2. `CanvasListenerComponent.ParseProposals` reads `provider`/`model` off the `preview_structure`
+   command's top level (per-proposal override wins) into `ProposalDto` → `PreviewEntry`.
+3. `StructureConfirmComponent`'s accept path writes them, plus the proposal's confidence, into the
+   `dg.recognized.<guid>` ValueTable marker via the new `DG.Core.Parsing.RecognitionMarker` — a compact
+   JSON value replacing the bare `"true"` literal that was discarding all three.
+4. `CanvasContextExtractor` parses the marker back into `RawGroup.Provider/Model/Confidence`;
+   `CanvasAnnotationParser` propagates onto all four entity kinds; `ComputgraphContextSerializer`'s
+   `Cg*Dto` types carry them to the wire.
+5. `computgraph_publish.py` needed NO change — it has always read these three keys.
+
+Backward compatibility: a pre-fix canvas holds the legacy `"true"` marker, still parses as
+`source: recognized`, and still publishes null provenance — re-confirming those groups is the only way
+to attribute them. An Ollama-fallback run records `provider: "ollama"` with a null `model`.
+
+Verification done: 16 new xUnit tests (`RecognitionProvenanceFlowTests`) pin the marker format
+(round-trip, legacy `"true"`, unreadable-value handling, the ValueTable key), parser propagation, and
+the wire round-trip; 4 new pytest cases pin the recognize response. The C#↔Python seam was checked for
+real — live `ComputgraphContextSerializer` output was fed through `computgraph_publish._build_publish_params`
+and produced `provider='anthropic' model='claude-opus-4-6' confidence=0.87` on the Procedure and
+Parameter rows. **Not verified: the two Grasshopper-only links (the marker write in
+StructureConfirmComponent, the marker read in CanvasContextExtractor) and marker survival across
+`.gh` save/reopen — `DG.Tests` cannot reference `DG.Grasshopper`, so these need the live Rhino run
+that test 3 is now awaiting. The data-service container also needs a rebuild for the recognize change
+(cf. F7).**
+
+Secondary resolved by moving the criterion, not the code: `spec/DATABASE.md`'s Behavior section now
+states that `source`/`provider`/`model`/`confidence` are scoped to the five *entity* labels, exactly as
+`dgId` already is per `spec/DG-ID.md`, and that SC3's "every node" reads as "every entity node".
+Inventing a third `source` enum value for synthesized containers would have contradicted the documented
+`tagged | recognized` enum and the `ObjectShape_source` SHACL `sh:in` constraint.
 
 ### F7 — Phase 36 was never deployed (see Test conditions)
 The running data-service image predated the phase; `/computgraph/publish` returned 404 on first

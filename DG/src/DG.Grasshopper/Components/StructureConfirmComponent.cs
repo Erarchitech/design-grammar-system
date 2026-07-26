@@ -238,7 +238,15 @@ public sealed class StructureConfirmComponent : GH_Component
                 group.Colour = CanvasAnnotationStyles.ForKind(entry.Kind, nested);
                 group.ExpireCaches();
 
-                currentDoc.ValueTable.SetValue($"dg.recognized.{group.InstanceGuid}", "true");
+                // F6: the marker carries the authoring provider/model + the proposal's confidence,
+                // not just a boolean. This is the ONLY channel those three reach the publish path
+                // through -- they are re-read by CanvasContextExtractor on the next context pull
+                // and land on the Computgraph node as provider/model/confidence. A proposal that
+                // arrived without provider/model still writes the legacy "true" literal (see
+                // RecognitionMarker.Serialize), so the marker never carries an empty envelope.
+                currentDoc.ValueTable.SetValue(
+                    RecognitionMarker.Key(group.InstanceGuid),
+                    RecognitionMarker.Serialize(entry.Provider, entry.Model, entry.Confidence));
 
                 PreviewRegistry.Remove(id);
                 accepted++;

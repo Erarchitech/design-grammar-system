@@ -327,7 +327,11 @@ class TestRetryLoop:
 
         assert result["valid"] is True
         assert result["attempts"] == 1
-        assert result["proposal"] == json.loads(_VALID_PROPOSAL_TEXT)
+        # The LLM's own output is preserved verbatim; recognize_structure adds the
+        # run's provider/model on top (F6 -- see TestRecognitionProvenance).
+        expected = json.loads(_VALID_PROPOSAL_TEXT)
+        assert result["proposal"]["proposals"] == expected["proposals"]
+        assert result["proposal"]["unrecognized"] == expected["unrecognized"]
         assert fake_adapter.call_count == 1
 
     def test_malformed_json_then_valid_retries_and_succeeds_at_attempt_2(self, monkeypatch):
@@ -374,6 +378,77 @@ class TestRetryLoop:
         result = cg_recognition.recognize_structure(_cg_context())
 
         assert result["valid"] is True
+
+
+# ── LLM provenance surfaced to the caller (Phase 36 UAT F6) ──
+
+
+class TestRecognitionProvenance:
+    """recognize_structure() resolves the run's provider/model and must SURFACE
+    them. Before F6 it resolved and dropped them, so the accept path had nothing
+    to stamp onto the canvas and computgraph_publish.py -- which has always read
+    provider/model/confidence -- could only ever write nulls.
+    """
+
+    def _fake_settings(self, monkeypatch, provider: str, model: str) -> None:
+        monkeypatch.setattr(
+            cg_recognition,
+            "resolve_active_provider",
+            lambda settings, master_secret: (provider, model, "sk-test"),
+        )
+
+    def test_success_returns_provider_and_model_at_top_level(self, monkeypatch):
+        self._fake_settings(monkeypatch, "anthropic", "claude-opus-4-6")
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is True
+        assert result["provider"] == "anthropic"
+        assert result["model"] == "claude-opus-4-6"
+
+    def test_success_injects_provider_and_model_into_the_proposal(self, monkeypatch):
+        """The proposal object is what a caller hands to gh_preview_structure, and
+        the listener reads provider/model off ITS top level -- so the identity has
+        to travel inside the proposal, not only beside it."""
+        self._fake_settings(monkeypatch, "anthropic", "claude-opus-4-6")
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        proposal = cg_recognition.recognize_structure(_cg_context())["proposal"]
+
+        assert proposal["provider"] == "anthropic"
+        assert proposal["model"] == "claude-opus-4-6"
+        # Injection must not disturb the validated payload.
+        assert proposal["proposals"] == json.loads(_VALID_PROPOSAL_TEXT)["proposals"]
+
+    def test_failure_path_also_reports_which_model_failed(self, monkeypatch):
+        self._fake_settings(monkeypatch, "openai", "gpt-5")
+        fake_adapter = _FakeAdapterForRetry([_INVALID_PROPOSAL_TEXT] * 3)
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["valid"] is False
+        assert result["provider"] == "openai"
+        assert result["model"] == "gpt-5"
+
+    def test_ollama_fallback_reports_provider_with_null_model(self, monkeypatch):
+        """No configured cloud key -> ("ollama", None, None). Provenance is then
+        partial, not absent, and the marker records exactly that."""
+        fake_adapter = _FakeAdapterForRetry([_VALID_PROPOSAL_TEXT])
+        monkeypatch.setattr(cg_recognition, "get_adapter", lambda provider, base_url=None: fake_adapter)
+        monkeypatch.setattr(
+            cg_recognition,
+            "resolve_active_provider",
+            lambda settings, master_secret: ("ollama", None, None),
+        )
+
+        result = cg_recognition.recognize_structure(_cg_context())
+
+        assert result["provider"] == "ollama"
+        assert result["model"] is None
 
 
 # ── _build_recognition_prompt() -- deterministic prompt assembly ──
