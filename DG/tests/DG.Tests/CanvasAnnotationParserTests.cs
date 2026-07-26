@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using DG.Core.Models.Computgraph;
 using DG.Core.Parsing;
 
@@ -480,5 +481,156 @@ public sealed class CanvasAnnotationParserTests
         Assert.Null(dataType);
         Assert.Null(domain);
         Assert.Null(warning);
+    }
+
+    // ── Phase 35-16: ComputeHostPatternIds order-independence fix ──
+    // Found during 35-05: a Procedure group's NestedGroupIds legitimately names a
+    // transitively-nested pattern (real GH containment is transitive), and when that
+    // Procedure group appears earlier in RawCanvas.Groups than the true parent pattern,
+    // the old FirstOrDefault-over-document-order picked the Procedure, the idByGroup
+    // lookup missed (a Procedure isn't a pending pattern), the strict-superset fallback
+    // found nothing, and the nesting was silently dropped.
+
+    private static CgContext ParseFrameFixtureForHostTests()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "frame-cg-context.json");
+        var json = File.ReadAllText(path);
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var raw = JsonSerializer.Deserialize<RawCanvas>(json, options);
+        Assert.NotNull(raw);
+        return CanvasAnnotationParser.Parse(raw!);
+    }
+
+    [Fact]
+    public void ComputeHostPatternIds_ProcedureNamesTransitivelyNestedPattern_DoesNotHijackHost()
+    {
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup
+                {
+                    Nickname = "11_Proc - Truss",
+                    NestedGroupIds = { "11_Pat_Outer", "11_Pat_Inner" },
+                },
+                new RawGroup
+                {
+                    Nickname = "11_Pat_Outer",
+                    MemberIds = { "n-a" },
+                    NestedGroupIds = { "11_Pat_Inner" },
+                },
+                new RawGroup { Nickname = "11_Pat_Inner", MemberIds = { "n-b" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+        var proc = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+        var outer = proc.Patterns.Single(p => p.Label == "11_Pat_Outer");
+        var inner = proc.Patterns.Single(p => p.Label == "11_Pat_Inner");
+
+        Assert.Equal(outer.Id, inner.HostPatternId);
+    }
+
+    [Fact]
+    public void ComputeHostPatternIds_IsOrderIndependent_AcrossGroupPermutations()
+    {
+        RawGroup Proc() => new()
+        {
+            Nickname = "11_Proc - Truss",
+            NestedGroupIds = { "11_Pat_Outer", "11_Pat_Inner" },
+        };
+        RawGroup Outer() => new()
+        {
+            Nickname = "11_Pat_Outer",
+            MemberIds = { "n-a" },
+            NestedGroupIds = { "11_Pat_Inner" },
+        };
+        RawGroup Inner() => new() { Nickname = "11_Pat_Inner", MemberIds = { "n-b" } };
+
+        var permutations = new List<List<RawGroup>>
+        {
+            new() { Proc(), Outer(), Inner() },
+            new() { Outer(), Proc(), Inner() },
+            new() { Inner(), Outer(), Proc() },
+            new() { Inner(), Proc(), Outer() },
+        };
+
+        foreach (var groups in permutations)
+        {
+            var raw = new RawCanvas { Groups = groups };
+            var context = CanvasAnnotationParser.Parse(raw);
+            var proc = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+            var inner = proc.Patterns.Single(p => p.Label == "11_Pat_Inner");
+            var host = proc.Patterns.Single(p => p.Id == inner.HostPatternId);
+
+            Assert.Equal("11_Pat_Outer", host.Label);
+        }
+    }
+
+    [Fact]
+    public void ComputeHostPatternIds_TransitiveDoubleNaming_InnermostPatternWins()
+    {
+        // A ⊃ B ⊃ C, with A AND B both naming C in NestedGroupIds (transitive
+        // containment). The correct host is the immediate parent B, not the
+        // outermost ancestor A.
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup
+                {
+                    Nickname = "11_Pat_A",
+                    MemberIds = { "a1", "a2", "a3" },
+                    NestedGroupIds = { "11_Pat_B", "11_Pat_C" },
+                },
+                new RawGroup
+                {
+                    Nickname = "11_Pat_B",
+                    MemberIds = { "b1", "b2" },
+                    NestedGroupIds = { "11_Pat_C" },
+                },
+                new RawGroup { Nickname = "11_Pat_C", MemberIds = { "c1" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+        var proc = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+        var a = proc.Patterns.Single(p => p.Label == "11_Pat_A");
+        var b = proc.Patterns.Single(p => p.Label == "11_Pat_B");
+        var c = proc.Patterns.Single(p => p.Label == "11_Pat_C");
+
+        Assert.Equal(b.Id, c.HostPatternId);
+        Assert.NotEqual(a.Id, c.HostPatternId);
+    }
+
+    [Fact]
+    public void ComputeHostPatternIds_FrameFixture_TopChordStillHostedByDivideLine()
+    {
+        var context = ParseFrameFixtureForHostTests();
+        var proc11 = context.Algorithms.Single(a => a.Index == 1).Procedures.Single(p => p.Index == 11);
+        var divideLine = proc11.Patterns.Single(p => p.Label == "11_Pat_DivideLine");
+        var topChord = proc11.Patterns.Single(p => p.Label == "11_Pat_TopChord");
+
+        Assert.Equal(divideLine.Id, topChord.HostPatternId);
+    }
+
+    [Fact]
+    public void ComputeHostPatternIds_NoNestedGroupIdsAnywhere_StrictSupersetFallbackStillResolves()
+    {
+        var raw = new RawCanvas
+        {
+            Groups =
+            {
+                new RawGroup { Nickname = "11_Pat_Outer", MemberIds = { "n-a", "n-b" } },
+                new RawGroup { Nickname = "11_Pat_Inner", MemberIds = { "n-b" } },
+            },
+        };
+
+        var context = CanvasAnnotationParser.Parse(raw);
+        var proc = context.Algorithms.Single().Procedures.Single(p => p.Index == 11);
+        var outer = proc.Patterns.Single(p => p.Label == "11_Pat_Outer");
+        var inner = proc.Patterns.Single(p => p.Label == "11_Pat_Inner");
+
+        Assert.Equal(outer.Id, inner.HostPatternId);
     }
 }
