@@ -3,7 +3,7 @@ status: testing
 phase: 35-llm-recognition-canvas-preview
 source: [35-VERIFICATION.md]
 started: 2026-07-19T13:10:00Z
-updated: 2026-07-25T00:00:00Z
+updated: 2026-07-26T00:00:00Z
 ---
 
 ## Current Test
@@ -11,7 +11,7 @@ updated: 2026-07-25T00:00:00Z
 number: 1
 name: Frame recognition quality (ROADMAP SC1)
 expected: Recognition proposes entities whose member sets match the reference annotation for the majority of blocks, with confidence + rationale.
-awaiting: a frontier-class LLM (Anthropic/OpenAI) — the only remaining blocker; tests 2-5 are closed
+awaiting: a frontier-class LLM (Anthropic/OpenAI) — the only remaining blocker; tests 2-6 are closed
 
 ## Test conditions (2026-07-25 session)
 
@@ -57,13 +57,13 @@ result: pass — 2026-07-25 (session 2). After the mixed Apply of test 4, a sing
 
 ### 6. Re-preview stale undo record (IN-12)
 expected: Run preview_structure twice in a row (second call auto-clears the first preview). Pressing Ctrl+Z twice walks the two undo records without leaving orphan groups or resurrecting cleared previews inconsistently.
-result: fail — awaiting live retest of the 2026-07-26 fix. 2026-07-25 (synthetic proposals, UrbanBlock): after the second preview auto-clears the first, the second Ctrl+Z throws Grasshopper's "Undo failed: Object could not be found". Root cause confirmed (F4): the auto-clear `RemovePendingPreviewObjects` removes the first preview's objects via `doc.RemoveObject(obj, false)` (no undo bookkeeping, CanvasListenerComponent.cs:386) but leaves the first preview's undo record (R1) on GH's stack. Ctrl+Z #1 undoes the second record fine; Ctrl+Z #2 undoes R1, whose add-action targets objects that were already deleted → not found. Fix applied 2026-07-26 (see F4 status) — needs a live Rhino re-run to flip to pass.
+result: pass — 2026-07-26 (synthetic proposals, UrbanBlock_V7, post-fix build; was FAIL on 2026-07-25). Two `preview_structure` calls in ONE listener session: `AlphaOne (90%)` + `AlphaTwo (80%)` then `BetaOne (70%)`. A `/computgraph/context/pull` between the calls proved the auto-clear really ran (canvas went `[?] AlphaOne, [?] AlphaTwo` → `[?] BetaOne`). Ctrl+Z #1 removed `BetaOne` and **restored both Alphas + the `2 proposal(s)` legend**; Ctrl+Z #2 removed them with **no "Undo failed" dialog**. Post-press pull: zero preview groups remaining. The newly-covered `preview → clear_preview → Ctrl+Z` path was verified in the same session (`GammaOne`/`GammaTwo`, `cleared: 2`): one Ctrl+Z restored both, a second removed them, no dialog. Original 2026-07-25 failure and root cause: the auto-clear removed the first preview's objects via `doc.RemoveObject(obj, false)` while leaving that preview's undo record (R1) on GH's stack, so Ctrl+Z #2 hit an add-action targeting already-deleted objects. **Testing note for future re-runs:** F4 only reproduces when `preview_structure` runs twice in the SAME listener session — a first attempt after a Rhino restart did not exercise it (the restart empties `PreviewRegistry`, so the auto-clear had nothing to remove), though it did re-confirm that single-preview undo is unregressed on the fixed build.
 
 ## Summary
 
 total: 6
-passed: 4
-issues: 1
+passed: 5
+issues: 0
 pending: 0
 skipped: 0
 blocked: 1
@@ -113,7 +113,10 @@ auto-clearing on re-preview, also invalidate/discard the previous preview's undo
 compose the clear + new render into one coherent record). Severity: medium (edge case, but a
 hard crash/breakpoint when hit).
 
-**Status 2026-07-26 — fixed via `/gsd-audit-fix` (option 2: one coherent record); awaiting live retest.**
+**F4 CLOSED 2026-07-26** — fixed via `/gsd-audit-fix` (option 2: one coherent record) and **live-verified
+on UrbanBlock_V7**; test 6 flipped FAIL → pass. Both the re-preview path and the newly-covered
+`clear_preview` path were exercised, each with a `/computgraph/context/pull` before and after every step
+so the canvas state is evidence, not recollection.
 - `RemovePendingPreviewObjects` now takes the `GH_UndoRecord` that owns the removal and adds a
   `GH_RemoveObjectAction` per object *before* calling `doc.RemoveObject(obj, false)` — the same
   record-then-remove ordering `StructureConfirmComponent.ApplyToDocument` uses for its reject branch
@@ -128,10 +131,16 @@ hard crash/breakpoint when hit).
   record (only when something was actually removed). **Behavior change:** the explicit clear is undoable
   where it previously was not; RCGN-02's "removes every trace" and test 2's 4.2b no-residue check are
   unaffected.
-- Verified: `dotnet build ./DG/DG.sln -c Release` → 0 warnings / 0 errors against the real Rhino 8
-  Grasshopper SDK; `dotnet test` → 377/377. The listener lives in `DG.Grasshopper`, which `DG.Tests`
-  does not reference (GH types need the Rhino runtime), so **there is no automated coverage of this
-  path — test 6 must be re-run in Rhino to flip to pass.**
+- Verified (automated): `dotnet build ./DG/DG.sln -c Release` → 0 warnings / 0 errors against the real
+  Rhino 8 Grasshopper SDK; `dotnet test` → 377/377. The listener lives in `DG.Grasshopper`, which
+  `DG.Tests` does not reference (GH types need the Rhino runtime), so **this path has no automated
+  coverage and can only ever be closed by a live Rhino run.**
+- Verified (live, 2026-07-26): binary provenance checked before testing — the deployed
+  `%APPDATA%\Grasshopper\Libraries\DG\DG.gha` is byte-identical to the post-fix Release build
+  (SHA256 `65927F65…`) and contains the new `"DG clear preview"` record string, and Rhino started
+  12:38:57 against a 12:33:03 `.gha`, so the running instance had the fixed code. Re-preview: two
+  previews → Ctrl+Z ×2, no dialog, canvas clean. Clear: preview → `clear_preview` (`cleared: 2`) →
+  Ctrl+Z ×2, no dialog, canvas clean. See test 6 for the full sequence.
 - Residual (not fixed, pre-existing, out of F4's scope): `PreviewRegistry` is not undo-aware. After
   Ctrl+Z #1 the canvas shows preview 1 while the registry still holds preview 2's entries, so
   `get_preview_status` and `clear_preview` are blind to the restored groups until Ctrl+Z #2 removes
@@ -177,8 +186,21 @@ realistic canvas). Cross-phase: 34 (parser) / 35 (accept) / 36 (publish).
   Full suite **375 pass / 2 fail**, the 2 being the documented `DesignStateValidationFlowTests`
   order-dependency flake (both pass in isolation — re-confirmed). `DG.sln` Release builds clean with
   `GRASSHOPPER_SDK` defined, so the pre-flight is real-path compiled, not the `#else` stub.
-- **Not re-run on Rhino.** The canvas-level repro (re-group the `Num` Const that was ungrouped as the
-  original workaround, then publish) still needs a live pass to close this on-fixture.
+- **Live retest 2026-07-26 — PASS. F5 closed.** Plugin redeployed to
+  `%APPDATA%\Grasshopper\Libraries\DG` (26.07 12:33) and Rhino restarted; the `Num` Const was
+  re-grouped on UrbanBlock_V7 and published. Context pull reported **0 warnings** (correct now — the
+  member types, so there is nothing to warn about) and the publish **succeeded**. Neo4j confirms the
+  previously-impossible node:
+
+  ```
+  cg:1:const:11_Const_Num | Num | Constant | Float | domain <null> | tagged | dg:D11F0CBE622F3039
+  ```
+
+  Null domain is correct — a bare Number param has no slider range. Published subgraph is now
+  **12 nodes** (Object 1, Behavior 1, Algorithm 1, Procedure 2, Pattern 2, Parameter 4, Interface 1)
+  vs. 11 on 2026-07-25; the Num Const is the +1 that used to sink the whole payload. No other
+  parameter changed: `11_Const_Gr` Integer, `12_Var_TargetScr` Integer, `12_Emg_Result` Text.
+- Still open from this finding: only **(c)**, per-entity publish rejection — off the critical path.
 
 ## Gaps
 
@@ -191,8 +213,14 @@ realistic canvas). Cross-phase: 34 (parser) / 35 (accept) / 36 (publish).
   nesting detection, durability across save+reopen and mixed-undo are all proven, but with LLM-authored
   proposals never having reached the confirm gate. Only test 1 (quality) remains, and only for want of
   a frontier-class model.
-- Test 6 (F4) — code fix landed 2026-07-26 (composed clear+render undo record; `clear_preview` now
-  pushes its own record too). It now needs exactly the retest it previously could not use: in Rhino,
-  `preview_structure` ×2 then Ctrl+Z ×2, plus the newly-covered `preview_structure` → `clear_preview`
-  → Ctrl+Z sequence. No automated coverage is possible — `DG.Tests` does not reference
+- Test 6 (F4) closed 2026-07-26 — code fix landed and live-verified on UrbanBlock_V7 (both the
+  re-preview and the newly-covered `clear_preview` undo sequences). Still synthetic proposals, still
+  not the Frame fixture; the preview/undo MECHANISM is now fully proven, recognition→preview
+  integration is not. No automated coverage is possible — `DG.Tests` does not reference
   `DG.Grasshopper`.
+- Observation from the F4 retest (not a blocker, no fix attempted): `PreviewRegistry` is in-process, so
+  a preview left on the canvas when Rhino closes becomes a **permanent orphan** on reopen — the restarted
+  listener's registry never knew it, so `clear_preview` cannot reach it and `DG STRUCTURE CONFIRM` cannot
+  see it; it just parses as an ordinary untagged group. One such leftover (`[?] 12_Var_TargetScr (92%)`,
+  from an earlier session) sat on the canvas throughout the 2026-07-26 retest and had to be excluded by
+  hand when reading results. Same root cause as the registry residual under F4.
