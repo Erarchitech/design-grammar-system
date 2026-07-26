@@ -411,25 +411,43 @@ public static class CanvasAnnotationParser
     }
 
     /// <summary>
-    /// Computes each pattern group's immediate host id: primary via another group's
-    /// <see cref="RawGroup.NestedGroupIds"/> naming this group's nickname, fallback via the
-    /// smallest strict-superset MemberIds match within the same procedure. Returns a map
-    /// keyed by <see cref="RawGroup"/> reference (patterns aren't constructed yet).
+    /// Computes each pattern group's immediate host id: primary via the innermost OTHER
+    /// pending pattern whose <see cref="RawGroup.NestedGroupIds"/> names this group's
+    /// nickname, fallback via the smallest strict-superset MemberIds match within the same
+    /// procedure. Returns a map keyed by <see cref="RawGroup"/> reference (patterns aren't
+    /// constructed yet).
+    /// <para>
+    /// The primary-path candidate set is restricted to groups that are THEMSELVES pending
+    /// patterns, and ties are broken by ascending <c>MemberIds.Count</c> (Phase 35-16, plan
+    /// 35-16-PLAN.md). A real GH extractor reports containment transitively, so a Procedure
+    /// group -- or an outer pattern -- can legitimately name a deeply nested child pattern
+    /// in its <see cref="RawGroup.NestedGroupIds"/>. Resolving by document order (the old
+    /// <c>FirstOrDefault</c> over ALL groups) made the outcome depend on where that
+    /// Procedure/outer-pattern group happened to sit in <see cref="RawCanvas.Groups"/>: if it
+    /// appeared before the true parent pattern, it won the lookup, the group turned out not
+    /// to be a pending pattern, the strict-superset fallback found nothing (disjoint member
+    /// sets), and the nesting was silently dropped. Filtering to pattern candidates and
+    /// picking the smallest (innermost) enclosing one makes the host the immediate parent
+    /// regardless of group order.
+    /// </para>
     /// </summary>
     private static Dictionary<RawGroup, string?> ComputeHostPatternIds(
         List<RawGroup> allGroups, List<PendingPattern> pendingPatterns)
     {
-        var idByGroup = pendingPatterns.ToDictionary(p => p.Group, p => p.Id);
         var result = new Dictionary<RawGroup, string?>();
 
         foreach (var pending in pendingPatterns)
         {
             string? hostId = null;
 
-            var hostGroup = allGroups.FirstOrDefault(g => g.NestedGroupIds.Contains(pending.Group.Nickname));
-            if (hostGroup is not null && idByGroup.TryGetValue(hostGroup, out var primaryHostId))
+            var hostPattern = pendingPatterns
+                .Where(p => !ReferenceEquals(p.Group, pending.Group))
+                .Where(p => p.Group.NestedGroupIds.Contains(pending.Group.Nickname))
+                .OrderBy(p => p.Group.MemberIds.Count)
+                .FirstOrDefault();
+            if (hostPattern is not null)
             {
-                hostId = primaryHostId;
+                hostId = hostPattern.Id;
             }
             else if (pending.Group.MemberIds.Count > 0)
             {
