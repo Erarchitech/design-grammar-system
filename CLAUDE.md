@@ -176,7 +176,7 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 | Label | Graph | Properties | Description |
 |-------|-------|-----------|-------------|
-| `DesignState` | ValidGraph | `StateId` (key), `kind` (ObjState/ParamState/PropState), `statePayloadJson` (v2 envelope) | 3-part design state composition |
+| `DesignState` | ValidGraph | `StateId` (key), `kind` (ObjState/ParamState/PropState), `statePayloadJson` (v2 envelope); optional `source`, `sourceRuleId`, `provider`, `model`, `determinabilityClass` (Phase 38, present only on AI-generated accepted candidates) | 3-part design state composition |
 | `Run` | ValidGraph | `Run_Id` (key), `ValidStatus` (Boolean list per ObjState), `SendStatus` (single Boolean) | Validation run metadata |
 | `IntegrationConfig` | ValidGraph | Speckle/project integration settings | External viewer integration |
 | `ValidationEntity` | ValidGraph | Per-entity validation results | Individual pass/fail records |
@@ -203,7 +203,7 @@ Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface)
 
 ### Schema Change Propagation
 
-When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), and any Cypher templates in Python/JS.
+When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), `llm/structure_rules.json` (carries `inputBindings`, a rule-referencing artifact, alongside `mappings` — Phase 38), and any Cypher templates in Python/JS.
 
 `shaclReportJson` (ValidationRun/Run node property, `spec/DATABASE.md`) is a schema-propagation surface itself — added Phase 823, sibling to `statePayloadJson`/`rulesJson`.
 
@@ -246,6 +246,8 @@ dotnet test .\DG\tests\DG.Tests\
 - **Conditional compilation** — `#if GRASSHOPPER_SDK` guards all GH-dependent code in DG.Grasshopper
 - **Canvas breakage** — old .gh files referencing CLASSIFICATOR/VALIDATION RUNS/old REINSTATE show missing-component placeholders. Re-wire per `docs/RELEASE-NOTES-v7.0.md`.
 - **Old component GUIDs in saved .gh files** — opening a v2.0 canvas without updating GUID mapping file causes missing components. The VALIDATION RUNS GUID (A7F2C3E1) is replaced by VALIDATION GRAPH (95fc9d32-307e-41fd-a158-bfae49a3dc2a). CLASSIFICATOR is fully removed — no replacement GUID.
+- **Standalone ParamStates are invisible to VALIDATION GRAPH before Phase 38 plan 38-05** — `Neo4jValidGraphRepository.RunsQuery` reads `(:ValidationRun)` nodes only. A `:DesignState` written by `POST /computgraph/candidates/accept` needs the additive second read and a dotnet rebuild before it appears on the canvas.
+- **`reinstateParameterId` is nullable and absent on pre-Phase-38 publishes** — treat its absence as "not resolvable", never as an error; the parameter is excluded from generation with a reported reason.
 
 ## Tech Stack Summary
 
