@@ -354,3 +354,155 @@ def read_rule_limit(session: Any, rule_id: str, project: str) -> RuleLimit | Non
         )
         return None
     return comparisons[0]
+
+
+# ── Determinability classification and parameter selection ──
+
+
+@dataclass(frozen=True)
+class RuleClassification:
+    """The answer to "which parameters, and is the limit checkable from them
+    alone" for one Rule, at one call."""
+
+    ruleId: str
+    determinability: str
+    parameterNames: tuple[str, ...]
+    metricExpression: str | None
+    monotoneIn: tuple[str, ...]
+    limit: RuleLimit | None
+    source: str
+
+
+def classify_rule(
+    session: Any,
+    rule_id: str,
+    project: str,
+    bindings: dict[str, dict[str, Any]],
+    parameter_overrides: list[str] | None = None,
+) -> RuleClassification:
+    """Classify one Rule's determinability and parameter scope.
+
+    Calls read_rule_limit first, so RuleNotFoundError surfaces before any
+    binding lookup is attempted. A rule absent from `bindings` classifies as
+    geometry-required with an empty parameter list and source="default" --
+    the safe direction (D-08). `parameter_overrides`, when non-empty, replaces
+    *which* parameters are in scope (source="override") but never changes the
+    determinability class itself: an architect may say which sliders matter,
+    but cannot declare a geometry-level rule checkable (D-06).
+
+    limit is forced to None whenever determinability is geometry-required,
+    regardless of what read_rule_limit found -- the single line that makes
+    D-09 structural rather than aspirational.
+    """
+    limit = read_rule_limit(session, rule_id, project)
+    binding = binding_for_rule(bindings, rule_id)
+
+    if binding is None:
+        return RuleClassification(
+            ruleId=rule_id,
+            determinability="geometry-required",
+            parameterNames=(),
+            metricExpression=None,
+            monotoneIn=(),
+            limit=None,
+            source="default",
+        )
+
+    determinability = binding["determinability"]
+    parameter_names = tuple(binding["parameters"])
+    metric_expression = binding.get("metricExpression")
+    monotone_in = tuple(binding.get("monotoneIn") or ())
+    source = "binding"
+
+    if parameter_overrides:
+        parameter_names = tuple(parameter_overrides)
+        source = "override"
+
+    if determinability == "geometry-required":
+        limit = None
+
+    return RuleClassification(
+        ruleId=rule_id,
+        determinability=determinability,
+        parameterNames=parameter_names,
+        metricExpression=metric_expression,
+        monotoneIn=monotone_in,
+        limit=limit,
+        source=source,
+    )
+
+
+# Computgraph Parameter.dataType -> ParamState value-slot type mapping.
+_DATATYPE_TO_STATE_TYPE: dict[str, str] = {
+    "Float": "Number",
+    "Integer": "Integer",
+    "Boolean": "Boolean",
+}
+_SUPPORTED_DATATYPES: frozenset[str] = frozenset(_DATATYPE_TO_STATE_TYPE)
+
+
+def _exclusion_reason(parameter: dict[str, Any]) -> str | None:
+    """The one reason (if any) a considered published parameter is excluded.
+    Order matches spec/API.md's excludedParameters[].reason vocabulary walk:
+    kind, then datatype, then domain, then reinstate-id resolvability. A
+    Boolean parameter has no numeric domain by nature and is explicitly
+    exempted from the domain check rather than relying on check ordering."""
+    if parameter.get("paramKind") != "Variable":
+        return "non-variable-kind"
+    data_type = parameter.get("dataType")
+    if data_type not in _SUPPORTED_DATATYPES:
+        return "unsupported-datatype"
+    if data_type != "Boolean" and (
+        parameter.get("domainMin") is None or parameter.get("domainMax") is None
+    ):
+        return "missing-domain"
+    reinstate_id = parameter.get("reinstateParameterId")
+    if not reinstate_id or not str(reinstate_id).strip():
+        return "unresolved-reinstate-id"
+    return None
+
+
+def select_parameters(
+    classification: RuleClassification, published_parameters: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Partition the published :Parameter rows into (bound, excluded) for one
+    classified rule.
+
+    When classification.parameterNames is non-empty, only parameters whose
+    parameterName matches are considered -- the rest are simply out of scope
+    and appear in neither list. When parameterNames is empty (the
+    geometry-required default), every eligible published parameter is
+    considered -- a geometry rule still gets candidates, it just never gets a
+    satisfaction claim (that guarantee lives in classify_rule's limit=None,
+    not here).
+
+    Each excluded entry carries {cgId, parameterName, reason}. Each bound
+    entry carries the full published row plus a stateType field holding the
+    mapped ParamState type. Both lists are sorted by parameterName for
+    deterministic responses.
+    """
+    if classification.parameterNames:
+        name_filter = set(classification.parameterNames)
+        considered = [p for p in published_parameters if p.get("parameterName") in name_filter]
+    else:
+        considered = list(published_parameters)
+
+    bound: list[dict[str, Any]] = []
+    excluded: list[dict[str, Any]] = []
+
+    for parameter in considered:
+        reason = _exclusion_reason(parameter)
+        if reason is not None:
+            excluded.append(
+                {
+                    "cgId": parameter.get("cgId"),
+                    "parameterName": parameter.get("parameterName"),
+                    "reason": reason,
+                }
+            )
+            continue
+        bound.append({**parameter, "stateType": _DATATYPE_TO_STATE_TYPE[parameter["dataType"]]})
+
+    bound.sort(key=lambda p: p.get("parameterName") or "")
+    excluded.sort(key=lambda p: p.get("parameterName") or "")
+    return bound, excluded
