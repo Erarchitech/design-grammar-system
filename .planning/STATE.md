@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: AI Workflow Intelligence
-current_phase: 38
-current_phase_name: ai-generated-grasshopper-script-inputs
-status: verifying
-stopped_at: Completed 38-07-PLAN.md
-last_updated: "2026-07-27T17:55:35.565Z"
+current_phase: 39
+current_phase_name: designstate-auto-validation-investigation
+status: executing
+stopped_at: Completed 39-01-PLAN.md
+last_updated: "2026-07-27T19:07:47.672Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 38 execution started
+last_activity_desc: Phase 39 execution started
 progress:
   total_phases: 14
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 68
-  completed_plans: 62
-  percent: 57
+  completed_plans: 63
+  percent: 64
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 38 — ai-generated-grasshopper-script-inputs
+**Current focus:** Phase 39 — designstate-auto-validation-investigation
 
 ## Current Position
 
-Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
-Plan: 7 of 7
-Status: Automated verification passed — awaiting human UAT (see 38-UAT.md)
-Last activity: 2026-07-27 — Phase 38 execution started
+Phase: 39 (designstate-auto-validation-investigation) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-07-27 — Phase 39 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
@@ -103,6 +103,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 38 P05 | ~55min | 4 tasks | 5 files |
 | Phase 38 P06 | ~1h10min | 4 tasks | 4 files |
 | Phase 38 P07 | ~1h40min | 4 tasks | 9 files |
+| Phase 39 P01 | ~30min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -351,6 +352,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 38-06]: data-service container rebuilt (no --no-cache) alongside design-grammars (--no-cache) since data-service has no source volume mount and was still running pre-38-04/38-05 code -- generate-inputs/candidates-accept routes are now live
 - [Phase ?]: [Phase 38-07]: Cassette keying is a fixed, human-readable scenario name with full prompt/system-text staleness comparison, not a content hash -- simpler for the eval harness's two fixed scenarios and equally precise
 - [Phase ?]: [Phase 38-07]: The two committed SC1-a/SC1-b cassettes are honestly labeled synthetic-authored (no live LLM credentials reachable from the host-side test process this session) -- their prompt/system text is genuine (generated via the real build_generation_prompt), only the response content is a hand-authored stand-in
+- [Phase ?]: [Phase 39-01]: COALESCE_QUERY additionally returns the kept row's statePayloadJson (beyond plan minimum) so poll_once() can call derive_valid_status() without a second read
 
 ### Research Flags (carry into planning)
 
@@ -429,8 +431,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T17:55:35.534Z
-Stopped at: Completed 38-07-PLAN.md
+Last session: 2026-07-27T19:07:47.652Z
+Stopped at: Completed 39-01-PLAN.md
 Resume file: None
 
 ## Performance Metrics

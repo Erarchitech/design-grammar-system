@@ -102,7 +102,7 @@
 ### DesignState Auto-Validation Investigation (DSAV) — Phase 39
 
 - [ ] **DSAV-01**: An investigation note compares trigger architectures (GH capture-time hook, data-service watcher, Neo4j write event) with latency, publish-flood, and Speckle-noise analysis
-- [ ] **DSAV-02**: A prototype demonstrates at least one path end-to-end: capturing a new DesignState produces a validation Run without a manual VALIDATOR trigger
+- [x] **DSAV-02**: A prototype demonstrates at least one path end-to-end: capturing a new DesignState produces a validation Run without a manual VALIDATOR trigger
 - [ ] **DSAV-03**: An ADR records the chosen architecture and guardrails (debounce window, per-project rate limit, per-project opt-in flag) and scopes full implementation to a follow-up milestone
 
 ### Integration (INTG) — Phase 40
