@@ -219,6 +219,10 @@ The artifact's `missing_measurements` list is **empty** — every scenario the p
 
 **Artifact `measured_at`: 2026-07-27T19:48:07.152293+00:00** (Speckle leg: 2026-07-27T20:04:58.896285+00:00).
 
+### A note on requirement traceability
+
+`REQUIREMENTS.md` carries the three DSAV requirements as individual checkboxes but records their traceability as a **single phase-level range row** — `DSAV-01 … DSAV-03 | Phase 39 | Pending`. The `requirements mark-complete` tooling cannot split a range row per-ID, so marking DSAV-02 complete after Wave 3 was a **no-op against the traceability table** even though the checkbox flipped. The same applies to DSAV-01 and DSAV-03 here: their checkboxes are authoritative, the range row is not, and the range row only becomes accurate once all three are done. Recorded so a later reader does not mistake a stale `Pending` in that table for unfinished work.
+
 ---
 
 ## See also
