@@ -20,4 +20,11 @@ public class CgNode
     public SliderDomain? Slider { get; init; }
 
     public bool IsIntegerSlider { get; init; }
+
+    /// <summary>
+    /// This component's own input params (instance GUID + NickName + Name + index), captured
+    /// so JOIN A (Computgraph Parameter -> reinstateParameterId) is resolvable. Optional and
+    /// empty for canvases captured before Phase 38.
+    /// </summary>
+    public List<CgNodeInputParam> InputParams { get; init; } = new();
 }

@@ -232,6 +232,20 @@ public static class ComputgraphContextSerializer
             Position = node.Position,
             Slider = node.Slider is not null ? ToDto(node.Slider) : null,
             IsIntegerSlider = node.IsIntegerSlider,
+            InputParams = node.InputParams.Count == 0
+                ? null
+                : node.InputParams.OrderBy(p => p.Index).Select(ToDto).ToArray(),
+        };
+    }
+
+    private static CgNodeInputParamDto ToDto(CgNodeInputParam inputParam)
+    {
+        return new CgNodeInputParamDto
+        {
+            InstanceId = inputParam.InstanceId,
+            Nickname = inputParam.Nickname,
+            Name = inputParam.Name,
+            Index = inputParam.Index,
         };
     }
 
@@ -494,7 +508,7 @@ public static class ComputgraphContextSerializer
 
     private static CgNode FromDto(CgNodeDto dto)
     {
-        return new CgNode
+        var node = new CgNode
         {
             InstanceId = dto.InstanceId ?? string.Empty,
             ComponentGuid = dto.ComponentGuid ?? string.Empty,
@@ -503,6 +517,24 @@ public static class ComputgraphContextSerializer
             Position = dto.Position ?? new double[2],
             Slider = dto.Slider is not null ? FromDto(dto.Slider) : null,
             IsIntegerSlider = dto.IsIntegerSlider,
+        };
+
+        foreach (var inputParamDto in dto.InputParams ?? Enumerable.Empty<CgNodeInputParamDto>())
+        {
+            node.InputParams.Add(FromDto(inputParamDto));
+        }
+
+        return node;
+    }
+
+    private static CgNodeInputParam FromDto(CgNodeInputParamDto dto)
+    {
+        return new CgNodeInputParam
+        {
+            InstanceId = dto.InstanceId ?? string.Empty,
+            Nickname = dto.Nickname ?? string.Empty,
+            Name = dto.Name ?? string.Empty,
+            Index = dto.Index,
         };
     }
 
@@ -753,6 +785,19 @@ public static class ComputgraphContextSerializer
         public SliderDomainDto? Slider { get; init; }
 
         public bool IsIntegerSlider { get; init; }
+
+        public CgNodeInputParamDto[]? InputParams { get; init; }
+    }
+
+    private sealed class CgNodeInputParamDto
+    {
+        public string? InstanceId { get; init; }
+
+        public string? Nickname { get; init; }
+
+        public string? Name { get; init; }
+
+        public int Index { get; init; }
     }
 
     private sealed class CgWireDto
