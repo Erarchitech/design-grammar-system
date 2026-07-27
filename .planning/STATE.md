@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 38
 current_phase_name: ai-generated-grasshopper-script-inputs
 status: executing
-stopped_at: Completed 38-04-PLAN.md
-last_updated: "2026-07-27T16:14:00.055Z"
+stopped_at: Completed 38-05-PLAN.md
+last_updated: "2026-07-27T17:13:24.656Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
   completed_phases: 8
   total_plans: 68
-  completed_plans: 59
+  completed_plans: 60
   percent: 57
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 38 execution started
 
@@ -100,6 +100,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 38 P02 | ~50min | 5 tasks | 8 files |
 | Phase 38 P03 | ~40min | 4 tasks | 4 files |
 | Phase 38 P04 | ~2h | 5 tasks | 8 files |
+| Phase 38 P05 | ~55min | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -342,6 +343,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: Tier 0 applies the rule limit's direction as a uniform bias across every numeric bound parameter (not per-metricExpression) -- exact for direct-parameter, an honest heuristic for monotone-bound; only the post-processing step computes authoritative rule satisfaction
 - [Phase ?]: candidate.parameters[].parameterId is the bound row's reinstateParameterId, never parameterName -- verified against the Frame fixture's deliberately divergent HTotal/Spans JOIN A pair
 - [Phase ?]: ruleSatisfaction for monotone-bound rules is computed via a hand-written ast.parse()-based restricted arithmetic evaluator against metricExpression -- never Python eval(), never asked of the model
+- [Phase ?]: [Phase 38-05]: compute_param_state_id hashes candidate content (sorted parameter pairs + sourceRuleId), never the per-request candidateId -- re-accepting the identical candidate produces the identical node
+- [Phase ?]: [Phase 38-05]: TryParseDesignState's v2 branch needed a JsonStringEnumConverter plus a manual per-ParamState Parameters backfill (not JsonObjectCreationHandling.Populate, which is .NET 8+ only and DG.Core multi-targets net7.0) -- without both, ParamState.Parameters silently deserialized empty with no exception
 
 ### Research Flags (carry into planning)
 
@@ -419,8 +422,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T16:14:00.033Z
-Stopped at: Completed 38-04-PLAN.md
+Last session: 2026-07-27T17:13:24.636Z
+Stopped at: Completed 38-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
