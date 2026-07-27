@@ -92,13 +92,13 @@ Request body: `{project: string, definitionId?: string}`
   ],
   "ruleResults": [
     {
-      "ruleId": "R_STRUCT_FRAME_TRUSS",
+      "ruleId": "R_STRUCT_FRAME_FOOTER_V",
       "operation": "requiresProcedure",
       "passed": false,
       "ruleExists": true,
-      "message": "Rule R_STRUCT_FRAME_TRUSS requires a Procedure matching 'Truss' under Algorithm 1, none found.",
+      "message": "No Procedure matching 'Footer' was found. Where: Procedures scoped to definitionId=frame.gh. How to fix: tag a Procedure whose name contains 'Footer' and re-publish.",
       "satisfyingEntities": [],
-      "offendingEntities": [{"label": "Algorithm", "cgId": null, "name": "1"}]
+      "offendingEntities": [{"label": "Algorithm", "cgId": "", "name": "1", "conventionName": ""}]
     }
   ],
   "counts": {"violation": 1, "warning": 1, "info": 0}
@@ -111,7 +111,7 @@ Response keys:
 - `checkedAt` (ISO 8601 UTC) — when this report was computed
 - `findings[]` — deterministic structural checks (SVAL-01); each item: `checkId`, `severity`, `message`, `entities[]`; each `entities[]` item: `label`, `cgId`, `name`, `conventionName`
 - `ruleResults[]` — rule-mapped structural checks (SVAL-02); each item: `ruleId`, `operation`, `passed`, `ruleExists`, `message`, `satisfyingEntities[]`, `offendingEntities[]`
-- `counts` — `{violation, warning, info}` integer keys, aggregated over `findings[]`
+- `counts` — `{violation, warning, info}` integer keys; `violation`/`info` are aggregated over `findings[]` severities, `warning` also includes every `ruleResults[]` entry with `passed: false` (rule-mapped failures are warning-severity per `spec/RULE-PARTITION-POLICY.md`)
 
 **`checkId` vocabulary (all seven):** `orphan_pattern`, `procedure_without_interface`, `dangling_param_link`, `algorithm_without_procedure`, `parameter_without_datatype`, `object_without_behavior`, `annotation_convention`
 
