@@ -9,6 +9,7 @@ This document is the **normative partition contract** between DG's two validatio
 - [What Belongs Where](#what-belongs-where-decision-table) -- decision table for future rule categories
 - [Precedence & Single-Authoring](#precedence--single-authoring-d-13) -- the remedy for disagreement is re-homing, never merging
 - [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) -- the third validation surface, evaluated by Cypher over the LPG-native Computgraph, that neither SWRL nor SHACL can reach
+- [Input Generation Bindings (Phase 38)](#input-generation-bindings-phase-38) -- the fourth rule-corpus consumer, which reads a Rule's SWRL threshold to bound AI-generated candidates and authors nothing
 - [Enforcement](#enforcement-d-14) -- documentation + review discipline this phase, linter deferred
 - [How SHACL Findings Surface](#how-shacl-findings-surface) -- severity mapping and message house style
 
@@ -90,6 +91,33 @@ Results are ephemeral -- recomputed per request, never persisted onto the existi
 
 ---
 
+## Input Generation Bindings (Phase 38)
+
+This is an addendum, not a new numbered decision -- no `D-` number is assigned, because no Phase 38 CONTEXT decision letter maps to a partition-policy decision.
+
+Phase 38 adds a **fourth consumer** of the rule corpus that is **not** a fourth validation system. Input generation *reads* a Rule's SWRL atoms to recover the numeric limit a candidate must respect, and *authors* nothing. The verdict on whether a design satisfies the rule remains the SWRL VALIDATOR's, after geometry solves.
+
+**Single-authoring is upheld by construction.** The threshold exists in exactly one place -- the Rule's `Literal` atom -- and is read at generation time, never denormalized into `llm/structure_rules.json` or any other artifact (D-10). Cross-reference `_FORBIDDEN_PARAM_KEYS` in `data-service/cg_structure_checks.py`: the same fence that keeps value thresholds out of structure rules keeps them out of input bindings.
+
+**Binding artifact shape and location.** The binding data lives in a **new sibling top-level key `inputBindings`** in the existing `llm/structure_rules.json`, NOT as new entries in `mappings[]`. Every `mappings[]` operation compiles to a Cypher *check* and `STRUCTURE_RULE_OPERATIONS` is a closed frozenset of four, whereas a binding is a *selector*, not a check -- a different shape belongs in a different key. `load_structure_rules()` returns the full payload and only requires `mappings` to be a list, so Phase 37's validator never sees the new key and needs zero changes (D-07).
+
+**`inputBindings` entry schema** (each entry is one object in the `inputBindings` array):
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `ruleId` | string | yes | A Metagraph `Rule_Id` |
+| `determinability` | enum | yes | `direct-parameter` \| `monotone-bound` \| `geometry-required` |
+| `parameters` | array of string | yes | The Computgraph parameter names the rule constrains |
+| `metricExpression` | string | only for `monotone-bound` | The expression relating the constrained metric to `parameters` |
+| `monotoneIn` | array of string | only for `monotone-bound` | The subset of `parameters` the metric is provably monotone increasing in |
+| `description` | string | yes | Human-readable summary |
+
+**The default.** A rule with no `inputBindings` entry is treated as `geometry-required` -- the safe direction, because it can only ever under-claim (D-08). An unmapped rule's `determinabilityClass` therefore defaults to `geometry-required`, never to `direct-parameter` or `monotone-bound`.
+
+**Scope fence.** An `inputBindings` entry declares *which parameters* and *what kind of determinability*. It must never carry a numeric limit, comparison operator, or threshold value. Those are SWRL scope, exactly as `_FORBIDDEN_PARAM_KEYS` fences `mappings[].params` above.
+
+---
+
 ## Enforcement (D-14)
 
 Enforcement in Phase 823 is **documentation and review discipline**, not tooling:
@@ -120,4 +148,4 @@ SHACL findings are mapped once, at the source, to DG's existing severity/message
 
 ## Consistency & Propagation
 
-This policy is coupled to the graph schema (`spec/DATABASE.md`) and the RDF mapping contract (`spec/LPG-OWL-MAPPING.md`). Any change to either -- new node labels, new relationship properties, new `Atom.type` values -- should trigger a review of whether the [decision table](#what-belongs-where-decision-table) needs a new row. See `CLAUDE.md`'s Schema Change Propagation checklist, which now references this document. A schema change that adds or reshapes a Computgraph node/relationship should also trigger a review of whether [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) needs a new row or an updated check.
+This policy is coupled to the graph schema (`spec/DATABASE.md`) and the RDF mapping contract (`spec/LPG-OWL-MAPPING.md`). Any change to either -- new node labels, new relationship properties, new `Atom.type` values -- should trigger a review of whether the [decision table](#what-belongs-where-decision-table) needs a new row. See `CLAUDE.md`'s Schema Change Propagation checklist, which now references this document. A schema change that adds or reshapes a Computgraph node/relationship should also trigger a review of whether [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) needs a new row or an updated check. The same schema change should also trigger a review of whether [Input Generation Bindings (Phase 38)](#input-generation-bindings-phase-38) needs updating -- a new or reshaped Rule category may need a new `inputBindings` entry, or may need its `determinability` reclassified.
