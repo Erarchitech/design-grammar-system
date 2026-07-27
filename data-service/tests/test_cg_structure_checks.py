@@ -40,6 +40,7 @@ from cg_fixtures import (  # noqa: E402
     PARAM_HTOTAL_CG_ID,
     PROC_11_CG_ID,
     PROC_11_NAME,
+    PROC_12_NAME,
     frame_cg_context,
     frame_with_normalization_warnings,
     frame_without_footer_procedure,
@@ -168,6 +169,94 @@ def test_convention_check_annotation_conventions_zero_findings_when_warnings_emp
     assert findings == []
 
 
+# ── Structure-rule mapping unit tier (no Neo4j) -- select with `-k structure_rules` ──
+#
+# Named to match neither `-k convention` nor `-k rule_mapped` so these run in
+# both invocations of the full suite but not inside either narrow selection.
+
+
+def test_structure_rules_missing_file_yields_empty_envelope(tmp_path, monkeypatch):
+    monkeypatch.setattr(checks, "STRUCTURE_RULES_FILE", tmp_path / "does-not-exist.json")
+    assert checks.load_structure_rules() == {"version": 0, "mappings": []}
+
+
+def test_structure_rules_invalid_json_yields_empty_envelope(tmp_path, monkeypatch):
+    path = tmp_path / "structure_rules.json"
+    path.write_text("{oops", encoding="utf-8")
+    monkeypatch.setattr(checks, "STRUCTURE_RULES_FILE", path)
+    assert checks.load_structure_rules() == {"version": 0, "mappings": []}
+
+
+def test_structure_rules_top_level_list_yields_empty_envelope(tmp_path, monkeypatch):
+    path = tmp_path / "structure_rules.json"
+    path.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
+    monkeypatch.setattr(checks, "STRUCTURE_RULES_FILE", path)
+    assert checks.load_structure_rules() == {"version": 0, "mappings": []}
+
+
+def test_structure_rules_mappings_not_a_list_yields_empty_envelope(tmp_path, monkeypatch):
+    path = tmp_path / "structure_rules.json"
+    path.write_text(json.dumps({"version": 1, "mappings": "oops"}), encoding="utf-8")
+    monkeypatch.setattr(checks, "STRUCTURE_RULES_FILE", path)
+    assert checks.load_structure_rules() == {"version": 0, "mappings": []}
+
+
+def test_structure_rules_real_shipped_file_has_four_valid_mappings():
+    payload = checks.load_structure_rules()
+    assert payload["version"] == 1
+    assert len(payload["mappings"]) == 4
+    assert len(checks.valid_structure_mappings(payload)) == 4
+
+
+@pytest.mark.parametrize("forbidden_key", sorted(checks._FORBIDDEN_PARAM_KEYS))
+def test_structure_rules_forbidden_param_key_is_rejected(forbidden_key):
+    payload = {
+        "version": 1,
+        "mappings": [
+            {
+                "ruleId": "R_STRUCT_TEST_V",
+                "operation": "requiresParameter",
+                "params": {forbidden_key: 3},
+            }
+        ],
+    }
+    assert checks.valid_structure_mappings(payload) == []
+
+
+def test_structure_rules_unknown_operation_is_rejected():
+    payload = {
+        "version": 1,
+        "mappings": [{"ruleId": "R_STRUCT_TEST_V", "operation": "requiresMagic", "params": {}}],
+    }
+    assert checks.valid_structure_mappings(payload) == []
+
+
+def test_structure_rules_empty_rule_id_is_rejected():
+    payload = {
+        "version": 1,
+        "mappings": [{"ruleId": "", "operation": "requiresProcedure", "params": {}}],
+    }
+    assert checks.valid_structure_mappings(payload) == []
+
+
+def test_structure_rules_params_as_string_is_rejected():
+    payload = {
+        "version": 1,
+        "mappings": [{"ruleId": "R_STRUCT_TEST_V", "operation": "requiresProcedure", "params": "oops"}],
+    }
+    assert checks.valid_structure_mappings(payload) == []
+
+
+def test_structure_rules_forbids_orphan_label_outside_allowlist_is_rejected():
+    payload = {
+        "version": 1,
+        "mappings": [
+            {"ruleId": "R_STRUCT_TEST_V", "operation": "forbidsOrphan", "params": {"label": "Rule"}}
+        ],
+    }
+    assert checks.valid_structure_mappings(payload) == []
+
+
 # ── Integration tier (live Neo4j, compose network) -- select with `-k structural` ──
 
 
@@ -245,3 +334,103 @@ class TestStructuralChecksIntegration:
         )
         after = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
         assert before == after
+
+
+# ── Rule-mapped checks integration tier (live Neo4j) -- select with `-k rule_mapped` ──
+
+
+class TestRuleMappedChecksIntegration:
+    """Requires the compose network (see module docstring). Reuses the same
+    `published_frame` session fixture as the structural-checks tier."""
+
+    pytestmark = pytest.mark.integration
+
+    def test_rule_mapped_footer_rule_passes_on_full_frame(self, published_frame):
+        results = checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        footer = next(r for r in results if r["ruleId"] == "R_STRUCT_FRAME_FOOTER_V")
+        assert footer["passed"] is True
+        satisfying_names = [e["name"] for e in footer["satisfyingEntities"]]
+        assert PROC_12_NAME in satisfying_names
+
+    def test_rule_mapped_footer_rule_fails_on_footer_less_copy(self, published_frame):
+        results = checks.evaluate_rule_mappings(
+            published_frame, FIXTURE_PROJECT, FRAME_NO_FOOTER_DEFINITION_ID
+        )
+        footer = next(r for r in results if r["ruleId"] == "R_STRUCT_FRAME_FOOTER_V")
+        assert footer["passed"] is False
+        assert footer["offendingEntities"] != []
+
+    def test_rule_mapped_footer_pass_fail_pair_differs_only_in_passed(self, published_frame):
+        full = next(
+            r
+            for r in checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+            if r["ruleId"] == "R_STRUCT_FRAME_FOOTER_V"
+        )
+        footer_less = next(
+            r
+            for r in checks.evaluate_rule_mappings(
+                published_frame, FIXTURE_PROJECT, FRAME_NO_FOOTER_DEFINITION_ID
+            )
+            if r["ruleId"] == "R_STRUCT_FRAME_FOOTER_V"
+        )
+        assert full["ruleId"] == footer_less["ruleId"]
+        assert full["operation"] == footer_less["operation"]
+        assert full["passed"] is True
+        assert footer_less["passed"] is False
+
+    def test_rule_mapped_height_parameter_rule_passes_via_cg_id_suffix_match(self, published_frame):
+        results = checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        height = next(r for r in results if r["ruleId"] == "R_STRUCT_FRAME_HEIGHT_VAR_V")
+        assert height["passed"] is True
+        matching = next(
+            (e for e in height["satisfyingEntities"] if e["cgId"] == PARAM_HTOTAL_CG_ID), None
+        )
+        assert matching is not None
+        assert matching["conventionName"].endswith("HTotal")
+
+    def test_rule_mapped_interface_rule_fails_on_interface_stripped_and_passes_on_full_frame(
+        self, published_frame
+    ):
+        stripped = next(
+            r
+            for r in checks.evaluate_rule_mappings(
+                published_frame, FIXTURE_PROJECT, FRAME_NO_INTERFACE_DEFINITION_ID
+            )
+            if r["ruleId"] == "R_STRUCT_PROC_INTERFACE_V"
+        )
+        assert stripped["passed"] is False
+        offending_names = [e["name"] for e in stripped["offendingEntities"]]
+        assert PROC_11_NAME in offending_names
+
+        full = next(
+            r
+            for r in checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+            if r["ruleId"] == "R_STRUCT_PROC_INTERFACE_V"
+        )
+        assert full["passed"] is True
+
+    def test_rule_mapped_rule_exists_false_for_all_seeded_rules_with_real_verdicts(self, published_frame):
+        results = checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        assert len(results) == 4
+        for result in results:
+            assert result["ruleExists"] is False
+            assert isinstance(result["passed"], bool)
+
+    def test_rule_mapped_determinism_repeated_calls_are_byte_identical(self, published_frame):
+        first = checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        second = checks.evaluate_rule_mappings(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        assert first == second
+
+    def test_rule_mapped_project_isolation_returns_no_fixture_entities(self, published_frame):
+        results = checks.evaluate_rule_mappings(
+            published_frame, "p37-structure-unused", FRAME_DEFINITION_ID
+        )
+        exists_style_operations = {"requiresProcedure", "requiresParameter"}
+        for result in results:
+            if result["operation"] in exists_style_operations:
+                assert result["passed"] is False
+                assert result["satisfyingEntities"] == []
+            all_entities = result["satisfyingEntities"] + result["offendingEntities"]
+            all_names = [e["name"] for e in all_entities]
+            assert PROC_11_NAME not in all_names
+            assert PROC_12_NAME not in all_names

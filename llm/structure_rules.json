@@ -22,8 +22,8 @@
     {
       "ruleId": "R_STRUCT_PROC_INTERFACE_V",
       "operation": "requiresInterface",
-      "params": {"ifaceType": "Input"},
-      "description": "Every Procedure must expose at least one input Interface."
+      "params": {},
+      "description": "Every Procedure must expose at least one Interface."
     }
   ]
 }
