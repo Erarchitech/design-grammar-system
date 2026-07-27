@@ -13,6 +13,7 @@ export { default as Textarea } from "./forms/Textarea.jsx";
 export { default as Avatar } from "./display/Avatar.jsx";
 export { default as Badge } from "./display/Badge.jsx";
 export { default as Callout } from "./display/Callout.jsx";
+export { default as CandidateTable } from "./display/CandidateTable.jsx";
 export { default as Chip } from "./display/Chip.jsx";
 export { default as CodeBlock } from "./display/CodeBlock.jsx";
 export { KVRow, StatBlock } from "./display/KVRow.jsx";
