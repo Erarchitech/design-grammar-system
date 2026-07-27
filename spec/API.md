@@ -62,6 +62,8 @@ Base URL: `/data-service` (via nginx proxy)
 | POST | `/computgraph/publish` | `{project, cgContext}` | Publish a confirmed `cgContextJson` v1 envelope as a Computgraph subgraph (shipped Phase 36; documented here only to close the doc gap). Returns `{status, publishedCounts, staleEntityIds}`. Errors: 422 `COMPUTGRAPH_PUBLISH_REQUEST_INVALID`, 502 `COMPUTGRAPH_PUBLISH_FAILED`. |
 | POST | `/computgraph/validate` | `{project, definitionId?}` | Run the deterministic, LLM-free structural + rule-mapped checks over the published Computgraph. See below. |
 | POST | `/computgraph/consult` | `{project, definitionId, question}` | Read-only, grounded LLM consult over the published Computgraph subgraph. See below. |
+| POST | `/computgraph/generate-inputs` | `{project, definitionId?, ruleId, candidateCount?, parameterOverrides?}` | Generate AI candidate parameter sets that respect a Metagraph Rule's SWRL threshold, from published Computgraph parameter bindings. Zero graph writes. See below. |
+| POST | `/computgraph/candidates/accept` | `{project, definitionId, ruleId, candidate}` | Persist one architect-accepted candidate from a `generate-inputs` response as a standalone, Run-less `ParamState` `DesignState`. The only write path for AI-generated candidates. See below. |
 
 #### `POST /computgraph/validate`
 
@@ -155,6 +157,156 @@ Response keys: `project`, `definitionId`, `publishedAt`, `question`, `answer`, `
 **Errors:** 422 `COMPUTGRAPH_CONSULT_REQUEST_INVALID`, 502 `COMPUTGRAPH_CONSULT_FAILED`.
 
 **Report surface:** the `/computgraph/validate` response is the report surface for this milestone, consumable directly over HTTP by a future ui-v2 panel. Printing it from a Grasshopper panel through the canvas bridge is a named deferred item — it requires a new dispatcher handler in `CanvasCommandDispatcher` and a plugin rebuild, disproportionate for an MVP whose report is already consumable over plain HTTP.
+
+#### `POST /computgraph/generate-inputs`
+
+Request body: `{project: string, definitionId?: string, ruleId: string, candidateCount?: integer, parameterOverrides?: string[]}`.
+
+**`definitionId` resolution rule** (when omitted) — identical to `validate`'s resolution rule:
+- exactly one published definition exists -> use it
+- zero published definitions -> 422 `COMPUTGRAPH_GENERATE_INPUTS_NO_DEFINITION`
+- more than one published definition -> 422 `COMPUTGRAPH_GENERATE_INPUTS_AMBIGUOUS_DEFINITION`, hint lists the available ids
+
+**`ruleId`** is **required** and must name an existing Metagraph `Rule` by `Rule_Id`; free design-intent text is out of scope (D-11). An unknown id is 422 `COMPUTGRAPH_GENERATE_INPUTS_RULE_NOT_FOUND`.
+
+**`candidateCount`** defaults to **4**, bounded to **1..8** inclusive (D-15); out of range is 422 `COMPUTGRAPH_GENERATE_INPUTS_REQUEST_INVALID`.
+
+**`parameterOverrides`** is the architect's binding override (D-06): an explicit list of Computgraph parameter names to generate over, replacing the declarative `inputBindings` selection (`spec/RULE-PARTITION-POLICY.md`) for this call only. If the override set resolves to zero eligible parameters, the response is 422 `COMPUTGRAPH_GENERATE_INPUTS_NO_ELIGIBLE_PARAMETERS`.
+
+200 response:
+
+```json
+{
+  "project": "p1",
+  "definitionId": "frame.gh",
+  "publishedAt": "2026-07-08T00:00:00Z",
+  "ruleId": "R_URB_HEIGHT_MAX_75_V",
+  "determinabilityClass": "monotone-bound",
+  "ruleLimit": 75,
+  "boundParameters": [
+    {
+      "cgId": "cg:1:param:11_Var_HTotal",
+      "dgId": "dg:8E6F2C1A9B7D3045",
+      "parameterName": "HTotal",
+      "reinstateParameterId": "HTotal",
+      "dataType": "Float",
+      "stateType": "Number",
+      "domainMin": 0.0,
+      "domainMax": 100.0,
+      "domainStep": 0.5
+    }
+  ],
+  "excludedParameters": [
+    {"cgId": "cg:1:param:11_Var_Notes", "parameterName": "Notes", "reason": "unsupported-datatype"}
+  ],
+  "candidates": [
+    {
+      "candidateId": "c0",
+      "strategy": "conservative",
+      "parameters": [
+        {"parameterId": "HTotal", "displayName": "HTotal", "type": "Number", "numberValue": 40.0, "integerValue": null, "booleanValue": null}
+      ],
+      "excludedParameters": [],
+      "ruleSatisfaction": {"claim": "satisfied", "basis": "HTotal=40.0 <= 75 (monotone-bound, direct read against ruleLimit)"},
+      "provenance": {
+        "source": "ai-generated",
+        "sourceRuleId": "R_URB_HEIGHT_MAX_75_V",
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "confidence": 0.82,
+        "definitionId": "frame.gh",
+        "publishedAt": "2026-07-08T00:00:00Z",
+        "strategy": "conservative",
+        "determinabilityClass": "monotone-bound",
+        "generatedAt": "2026-07-27T12:00:00Z"
+      },
+      "statePayload": {"stateKind": "ParamState", "paramStates": [{"parameterId": "HTotal", "displayName": "HTotal", "type": "Number", "numberValue": 40.0}]}
+    }
+  ],
+  "tier": 1,
+  "attempts": 1,
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "flags": []
+}
+```
+
+Response keys: `project`, `definitionId`, `publishedAt` (nullable, ISO 8601 UTC, sourced from the published nodes), `ruleId`, `determinabilityClass`, `ruleLimit` (nullable), `boundParameters[]`, `excludedParameters[]`, `candidates[]`, `tier` (0 or 1, which generation tier produced the final set), `attempts` (bounded-retry count), `provider`, `model`, `flags[]` (advisory strings, e.g. Tier-0-floor fallback).
+
+- `boundParameters[]` item keys: `cgId`, `dgId`, `parameterName`, `reinstateParameterId`, `dataType`, `stateType`, `domainMin`, `domainMax`, `domainStep`
+- `excludedParameters[]` item keys: `cgId`, `parameterName`, `reason`
+- `candidates[]` item keys: `candidateId`, `strategy`, `parameters[]`, `excludedParameters[]`, `ruleSatisfaction`, `provenance`, `statePayload`
+- `parameters[]` item keys: `parameterId`, `displayName`, `type`, `numberValue`, `integerValue`, `booleanValue` — `type` is one of `Number` | `Integer` | `Boolean` only, mirroring `DG.Core.Models.DesignStateParameter`
+- `ruleSatisfaction` keys: `claim` (`satisfied` | `violated` | `undeterminable`), `basis` (prose)
+- `provenance` keys: `source` (always `ai-generated`), `sourceRuleId`, `provider`, `model`, `confidence`, `definitionId`, `publishedAt`, `strategy`, `determinabilityClass`, `generatedAt`
+
+**`determinabilityClass` vocabulary (all three):** `direct-parameter`, `monotone-bound`, `geometry-required` — sourced from the matching `inputBindings` entry in `llm/structure_rules.json` (`spec/RULE-PARTITION-POLICY.md`); a rule with no `inputBindings` entry defaults to `geometry-required`.
+
+**`strategy` vocabulary (all four):** `conservative`, `balanced`, `exploratory`, `near-limit`.
+
+**`excludedParameters[].reason` vocabulary (all four):** `unresolved-reinstate-id`, `non-variable-kind`, `unsupported-datatype`, `missing-domain`.
+
+**Normative guarantees:**
+- Every value in every returned candidate satisfies `domainMin <= v <= domainMax` and is aligned to `domainStep`. There is **no partial result**: the response is all-valid or an error — never a mix (D-14).
+- Clamping is **not implemented**. An out-of-domain model value causes rejection and bounded retry, then 502 `COMPUTGRAPH_GENERATE_INPUTS_DOMAIN_VIOLATION` whose `hint` names each offending parameter and its domain, and whose response body carries the per-attempt violation list.
+- `parameters[].type` is one of `Number` | `Integer` | `Boolean` only. Computgraph `Text` and `Geometry` parameters never appear in `parameters[]`; they are reported in `excludedParameters[]` with reason `unsupported-datatype` (GHIN-02, D-05).
+- A parameter with no resolvable `reinstateParameterId` is excluded with reason `unresolved-reinstate-id` and named on the candidate — never silently dropped (D-04).
+- When `determinabilityClass` is `geometry-required`, **every** candidate's `ruleSatisfaction.claim` is `undeterminable`. The endpoint never reports `satisfied` for a rule it cannot check from parameters alone — this is the credibility invariant (D-09).
+- `ruleLimit` is read from the Rule's SWRL atoms at request time and is `null` for a `geometry-required` rule. It is never denormalized into any configuration file (D-10).
+- The endpoint performs **zero graph writes** and has no code path to the Grasshopper canvas bridge (GHIN-04, D-19, D-22) — no write, no bridge call.
+- The provider is resolved once per request; every retry attempt calls the same adapter in-process (D-16).
+
+##### SC1 acceptance thresholds
+
+These are normative numbers, measured on the Frame definition fixture over the phase's fixture rule set, and plan 38-07 asserts them:
+
+| # | Metric | Threshold |
+|---|---|---|
+| SC1-a | Candidates whose every parameter is in-domain and step-aligned | **100%** — any failure is a validator defect, not a quality score |
+| SC1-b | Candidates satisfying the rule limit, for `direct-parameter` and `monotone-bound` rules | **>= 75%** (3 of the default 4) |
+| SC1-c | Valid candidates returned when the LLM tier is stubbed to return nothing usable | **>= 1** (the Tier 0 floor, D-12) |
+| SC1-d | Minimum normalized pairwise L1 distance across the candidate set | **>= 0.10** (each parameter scaled to its own domain) |
+| SC1-e | Candidates claiming `satisfied` for a `geometry-required` rule | **exactly 0** |
+
+**Errors:** 422 `COMPUTGRAPH_GENERATE_INPUTS_REQUEST_INVALID`, 422 `COMPUTGRAPH_GENERATE_INPUTS_NO_DEFINITION`, 422 `COMPUTGRAPH_GENERATE_INPUTS_AMBIGUOUS_DEFINITION`, 422 `COMPUTGRAPH_GENERATE_INPUTS_RULE_NOT_FOUND`, 422 `COMPUTGRAPH_GENERATE_INPUTS_NO_ELIGIBLE_PARAMETERS`, 502 `COMPUTGRAPH_GENERATE_INPUTS_DOMAIN_VIOLATION`, 502 `COMPUTGRAPH_GENERATE_INPUTS_FAILED`. Every error body is the standard `{error, hint, code}` detail shape.
+
+#### `POST /computgraph/candidates/accept`
+
+Request body: `{project: string, definitionId: string, ruleId: string, candidate: <one candidates[] item>}` — `candidate` is exactly one item from a prior `generate-inputs` response's `candidates[]` array, round-tripped verbatim by the caller.
+
+The server **re-validates every parameter against the live published domains before writing** and rejects with 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_DOMAIN_VIOLATION` on any miss — the client round-trip is never trusted (T-38-01).
+
+200 response:
+
+```json
+{
+  "project": "p1",
+  "stateId": "DS_a1b2c3d4e5f6a7b8",
+  "kind": "ParamState",
+  "acceptedAt": "2026-07-27T12:05:00Z",
+  "parameterCount": 1,
+  "provenance": {
+    "source": "ai-generated",
+    "sourceRuleId": "R_URB_HEIGHT_MAX_75_V",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "confidence": 0.82,
+    "definitionId": "frame.gh",
+    "publishedAt": "2026-07-08T00:00:00Z",
+    "strategy": "conservative",
+    "determinabilityClass": "monotone-bound",
+    "generatedAt": "2026-07-27T12:00:00Z"
+  }
+}
+```
+
+Response keys: `project`, `stateId` (carries the `DS_` prefix, D-18), `kind` (always the literal `ParamState`), `acceptedAt`, `parameterCount`, `provenance`.
+
+**Normative guarantees:**
+- The write is a MERGE keyed by `StateId` + `project`, so re-accepting the same candidate is idempotent.
+- **Only accepted candidates are persisted** — a rejected candidate leaves no trace anywhere in the graph (D-19).
+
+**Errors:** 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_REQUEST_INVALID`, 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_DOMAIN_VIOLATION`, 502 `COMPUTGRAPH_ACCEPT_CANDIDATE_FAILED`. Every error body is the standard `{error, hint, code}` detail shape.
 
 ---
 
