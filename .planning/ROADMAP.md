@@ -476,7 +476,7 @@ All four plans are independent (zero `files_modified` overlap — Python / C# / 
 3. "Which parameters drive the truss height?" via `/computgraph/consult` answers citing `11_Var_HTotal` (grounded in the graph, not hallucinated)
 4. All structural checks are deterministic and LLM-free; only `/consult` calls the gateway
 
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -486,7 +486,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 37-03-PLAN.md — SVAL-01: `cg_structure_checks.py` seven deterministic checks + two-tier test suite
+- [x] 37-03-PLAN.md — SVAL-01: `cg_structure_checks.py` seven deterministic checks + two-tier test suite
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -593,7 +593,7 @@ Plans:
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
-| 37. Script Structure Validation MVP | 2/6 | In Progress|  |
+| 37. Script Structure Validation MVP | 3/6 | In Progress|  |
 | 38. AI-Generated Grasshopper Script Inputs | 0/? | Not started | — |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
