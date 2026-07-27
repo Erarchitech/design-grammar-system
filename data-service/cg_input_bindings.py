@@ -228,3 +228,129 @@ def binding_for_rule(bindings: dict[str, dict[str, Any]], rule_id: str) -> dict[
     caller (classify_rule) is what turns that None into the geometry-required
     default; this function makes no policy decision of its own."""
     return bindings.get(rule_id)
+
+
+# ── SWRL threshold extraction ──
+
+
+@dataclass(frozen=True)
+class RuleLimit:
+    """The numeric constraint a candidate must respect, decoded from a
+    Rule's violation-inverted SWRL body atom."""
+
+    operator: str
+    value: float
+    datatype: str
+    variableName: str
+
+
+# Violation-inverted body semantics (cypher_template.txt's SEMANTIC MAPPING
+# section): the body atom fires when the constraint is VIOLATED, so the
+# constraint the candidate must satisfy is the logical inverse of the body
+# builtin's own comparison.
+#   "maximum X"  -> body swrlb:greaterThan(?v, X)  -> constraint v <= X
+#   "minimum X"  -> body swrlb:lessThan(?v, X)      -> constraint v >= X
+#   "equal to X" -> body swrlb:notEqual(?v, X)       -> constraint v == X
+# The inclusive forms are decoded too, so a rule ingested with an inclusive
+# body comparison is not silently unmatched:
+#   body swrlb:greaterThanOrEqual(?v, X) -> constraint v < X
+#   body swrlb:lessThanOrEqual(?v, X)     -> constraint v > X
+BODY_BUILTIN_TO_CONSTRAINT: dict[str, str] = {
+    "swrlb:greaterThan": "<=",
+    "swrlb:lessThan": ">=",
+    "swrlb:notEqual": "==",
+    "swrlb:greaterThanOrEqual": "<",
+    "swrlb:lessThanOrEqual": ">",
+}
+
+
+class RuleNotFoundError(ValueError):
+    """Raised when no Rule node with the given Rule_Id exists in the given
+    project. The caller (a route handler) maps this onto 422
+    COMPUTGRAPH_GENERATE_INPUTS_RULE_NOT_FOUND."""
+
+
+def read_rule_limit(session: Any, rule_id: str, project: str) -> RuleLimit | None:
+    """Recover the numeric limit a candidate must respect from the Rule's own
+    SWRL atoms -- one parameterized, read-only Cypher call, never a write.
+
+    Resolution rules:
+    - No Rule node with this Rule_Id in this project -> raises
+      RuleNotFoundError.
+    - Rule exists but has no comparison BuiltinAtom -> returns None (not an
+      error -- the rule simply has nothing for a sampler to bound against).
+    - Exactly one comparison BuiltinAtom whose iri is recognized and whose
+      pos-2 argument is a Literal parsing to a float -> returns the RuleLimit
+      with the inverted operator.
+    - More than one such atom -> returns None and logs one warning. A
+      conjunction of bounds is legitimate SWRL, but this phase samples
+      against a single limit; honouring only the first would be exactly the
+      overclaim D-09 forbids, so the rule is demoted to unbounded sampling.
+    - A pos-2 argument that is a Var (not a Literal), or a lex that does not
+      parse as a float -> None with a warning.
+    """
+    result = session.run(
+        """
+        MATCH (r:Rule {Rule_Id: $ruleId, project: $project})
+        OPTIONAL MATCH (r)-[hb:HAS_BODY]->(a:Atom {type: 'BuiltinAtom'})
+        OPTIONAL MATCH (a)-[:ARG {`pos`: 1}]->(vArg:Var)
+        OPTIONAL MATCH (a)-[:ARG {`pos`: 2}]->(litArg:Literal)
+        RETURN a.iri AS builtinIri, hb.`order` AS bodyOrder,
+               vArg.name AS variableName, litArg.lex AS lex, litArg.datatype AS datatype
+        ORDER BY bodyOrder
+        // op=READ_RULE_LIMIT
+        """,
+        {"ruleId": rule_id, "project": project},
+    )
+    rows = list(result)
+    if not rows:
+        raise RuleNotFoundError(
+            f"No Rule node found for Rule_Id {rule_id!r} in project {project!r}."
+        )
+
+    comparisons: list[RuleLimit] = []
+    for row in rows:
+        builtin_iri = row.get("builtinIri")
+        if not builtin_iri or builtin_iri not in BODY_BUILTIN_TO_CONSTRAINT:
+            continue
+        variable_name = row.get("variableName")
+        lex = row.get("lex")
+        if not variable_name or lex is None:
+            logger.warning(
+                "Rule %s has a comparison BuiltinAtom %s whose pos-2 argument is not a "
+                "Literal with a value; demoting to unbounded.",
+                rule_id,
+                builtin_iri,
+            )
+            continue
+        try:
+            value = float(lex)
+        except (TypeError, ValueError):
+            logger.warning(
+                "Rule %s has a comparison BuiltinAtom %s whose Literal lex %r does not "
+                "parse as a float; demoting to unbounded.",
+                rule_id,
+                builtin_iri,
+                lex,
+            )
+            continue
+        comparisons.append(
+            RuleLimit(
+                operator=BODY_BUILTIN_TO_CONSTRAINT[builtin_iri],
+                value=value,
+                datatype=row.get("datatype") or "",
+                variableName=variable_name,
+            )
+        )
+
+    if not comparisons:
+        return None
+    if len(comparisons) > 1:
+        logger.warning(
+            "Rule %s has %d competing comparison BuiltinAtoms; demoting to unbounded "
+            "sampling rather than honouring only the first.",
+            rule_id,
+            len(comparisons),
+        )
+        return None
+    return comparisons[0]
