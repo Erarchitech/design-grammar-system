@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 38
 current_phase_name: ai-generated-grasshopper-script-inputs
 status: executing
-stopped_at: Completed 38-02-PLAN.md
-last_updated: "2026-07-27T15:16:41.256Z"
+stopped_at: Completed 38-03-PLAN.md
+last_updated: "2026-07-27T15:31:00.939Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
   completed_phases: 8
   total_plans: 68
-  completed_plans: 57
+  completed_plans: 58
   percent: 57
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 38 execution started
 
@@ -98,6 +98,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 37 P06 | 55min | 3 tasks | 4 files |
 | Phase 38 P01 | 25min | 4 tasks | 4 files |
 | Phase 38 P02 | ~50min | 5 tasks | 8 files |
+| Phase 38 P03 | ~40min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -335,6 +336,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 38-01]: inputBindings added as a new sibling top-level key in llm/structure_rules.json (not new mappings[] entries) -- a binding is a selector, not a Cypher check, keeping Phase 37's validator untouched
 - [Phase ?]: [Phase 38-02]: CgNodeDto.InputParams needed [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] (not just a nullable projection) to keep an unchanged canvas byte-identical to pre-Phase-38 JSON
 - [Phase ?]: [Phase 38-02]: derive_reinstate_parameter_ids refuses rather than guesses on zero-match or ambiguous multi-match; PARAMETER_STATE_COMPONENT_GUID is the single source of truth for the destination-component check
+- [Phase ?]: [Phase 38-03]: inputBindings seeded against real Rule_Ids (R_STRUCT_FRAME_HEIGHT_VAR_V direct-parameter, R_URB_HEIGHT_MAX_75_V monotone-bound) rather than synthetic placeholders, leaving other Phase 37 structural rules deliberately unmapped to exercise the geometry-required default against real data
+- [Phase ?]: [Phase 38-03]: classify_rule forces limit=None whenever determinability is geometry-required regardless of what read_rule_limit found on the graph -- the D-09 overclaiming guarantee is structural, not prompt discipline
 
 ### Research Flags (carry into planning)
 
@@ -412,8 +415,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T15:16:41.224Z
-Stopped at: Completed 38-02-PLAN.md
+Last session: 2026-07-27T15:30:50.973Z
+Stopped at: Completed 38-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
