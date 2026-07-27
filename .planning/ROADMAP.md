@@ -550,11 +550,24 @@ Plans:
 3. The ADR records the chosen architecture, the rejected options with reasons, and the follow-up milestone scope
 
 **Plans:** 5 plans
+**Wave 1**
 
 - [ ] 39-01-PLAN.md — Watcher core: `dsav_watcher.py` state machine, in-memory guardrails, pure `poll_once()`, host-tier unit suite
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 39-02-PLAN.md — `POST /designstate/capture` with connector-token auth and project scoping, FastAPI `lifespan` wiring, best-effort auto-publish adapter
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 39-03-PLAN.md — Live-Docker evidence harness: SC1 loop closure, SC2 collapse ratio and runs-per-minute, `39-EVIDENCE.json`
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 39-04-PLAN.md — The single D-11 Speckle publish leg plus blocking human confirmation
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 39-05-PLAN.md — DSAV-01 investigation note and DSAV-03 ADR filed to `DG_OBSIDIAN/knowledge/decisions/`
 
 ---
