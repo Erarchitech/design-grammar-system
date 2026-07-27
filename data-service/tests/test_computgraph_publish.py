@@ -21,12 +21,19 @@ import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(__file__))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import app as app_module  # noqa: E402
 import computgraph_publish  # noqa: E402
 from app import app  # noqa: E402
+from cg_fixtures import (  # noqa: E402
+    PARAM_HTOTAL_CG_ID,
+    PARAMETER_STATE_COMPONENT_GUID,
+    PARAMSTATE_SPANS_NICKNAME,
+    frame_cg_context,
+)
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -575,6 +582,162 @@ def test_dgid_matches_golden_vector():
 
 
 # ── T-36-02: untagged entities never reach the published store ──
+
+
+# ── JOIN A: derive_reinstate_parameter_ids and its refusal cases ──
+
+
+def test_derive_reinstate_ids_happy_path_with_divergent_names():
+    cg_context = frame_cg_context()
+
+    resolved = computgraph_publish.derive_reinstate_parameter_ids(cg_context)
+
+    spans_cg_id = "cg:1:param:11_Var_SpansCount"
+    assert spans_cg_id in resolved
+    assert resolved[spans_cg_id] == PARAMSTATE_SPANS_NICKNAME
+    # The whole point of JOIN A: the resolved value reads the NickName, not the
+    # parameter's own convention-derived name.
+    assert resolved[spans_cg_id] != "SpansCount"
+
+
+def test_derive_reinstate_ids_blank_nickname_falls_back_to_param_index():
+    cg_context = {
+        "algorithms": [
+            {
+                "procedures": [
+                    {
+                        "parameters": [
+                            {"id": "cg:1:param:blank", "memberIds": ["n-slider"]},
+                        ]
+                    }
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "instanceId": "n-paramstate-blank",
+                "componentGuid": PARAMETER_STATE_COMPONENT_GUID,
+                "inputParams": [
+                    {"instanceId": "n-in-0", "nickname": "First", "index": 0},
+                    {"instanceId": "n-in-1", "nickname": "", "index": 1},
+                    {"instanceId": "n-in-2", "nickname": "   ", "index": 2},
+                ],
+            }
+        ],
+        "wires": [
+            {"fromNode": "n-slider", "toNode": "n-paramstate-blank", "toParam": "n-in-2"},
+        ],
+    }
+
+    resolved = computgraph_publish.derive_reinstate_parameter_ids(cg_context)
+
+    assert resolved["cg:1:param:blank"] == "param_2"
+
+
+def test_derive_reinstate_ids_no_wire_is_omitted():
+    cg_context = frame_cg_context()
+
+    resolved = computgraph_publish.derive_reinstate_parameter_ids(cg_context)
+
+    # HTotal's slider member has no outgoing wire to any PARAMETER STATE input.
+    assert PARAM_HTOTAL_CG_ID not in resolved
+
+
+def test_derive_reinstate_ids_wire_to_non_paramstate_component_is_omitted():
+    cg_context = {
+        "algorithms": [
+            {
+                "procedures": [
+                    {
+                        "parameters": [
+                            {"id": "cg:1:param:ordinary", "memberIds": ["n-slider"]},
+                        ]
+                    }
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "instanceId": "n-ordinary",
+                "componentGuid": "11111111-1111-1111-1111-111111111111",
+                "inputParams": [
+                    {"instanceId": "n-in-0", "nickname": "NotParamState", "index": 0},
+                ],
+            }
+        ],
+        "wires": [
+            {"fromNode": "n-slider", "toNode": "n-ordinary", "toParam": "n-in-0"},
+        ],
+    }
+
+    resolved = computgraph_publish.derive_reinstate_parameter_ids(cg_context)
+
+    assert "cg:1:param:ordinary" not in resolved
+
+
+def test_derive_reinstate_ids_ambiguous_multi_match_is_omitted_with_one_warning(caplog):
+    cg_context = {
+        "algorithms": [
+            {
+                "procedures": [
+                    {
+                        "parameters": [
+                            {"id": "cg:1:param:ambiguous", "memberIds": ["n-slider"]},
+                        ]
+                    }
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "instanceId": "n-paramstate-a",
+                "componentGuid": PARAMETER_STATE_COMPONENT_GUID,
+                "inputParams": [{"instanceId": "n-in-a", "nickname": "NameA", "index": 0}],
+            },
+            {
+                "instanceId": "n-paramstate-b",
+                "componentGuid": PARAMETER_STATE_COMPONENT_GUID,
+                "inputParams": [{"instanceId": "n-in-b", "nickname": "NameB", "index": 0}],
+            },
+        ],
+        "wires": [
+            {"fromNode": "n-slider", "toNode": "n-paramstate-a", "toParam": "n-in-a"},
+            {"fromNode": "n-slider", "toNode": "n-paramstate-b", "toParam": "n-in-b"},
+        ],
+    }
+
+    with caplog.at_level("WARNING", logger="computgraph_publish"):
+        resolved = computgraph_publish.derive_reinstate_parameter_ids(cg_context)
+
+    assert "cg:1:param:ambiguous" not in resolved
+    ambiguity_warnings = [r for r in caplog.records if "ambiguous" in r.getMessage()]
+    assert len(ambiguity_warnings) == 1
+
+
+def test_derive_reinstate_ids_malformed_context_returns_empty_dict_no_raise():
+    assert computgraph_publish.derive_reinstate_parameter_ids({}) == {}
+    assert computgraph_publish.derive_reinstate_parameter_ids({"algorithms": None}) == {}
+
+
+def test_publish_row_carries_reinstate_parameter_id_including_none_for_unresolved():
+    cg_context = frame_cg_context()
+
+    params = computgraph_publish._build_publish_params(
+        cg_context["project"],
+        cg_context["definition"]["documentId"],
+        cg_context["definition"]["fileName"],
+        "2026-07-27T00:00:00Z",
+        cg_context,
+    )
+
+    rows_by_cg_id = {row["cgId"]: row for row in params["parameterRows"]}
+
+    spans_row = rows_by_cg_id["cg:1:param:11_Var_SpansCount"]
+    assert spans_row["reinstateParameterId"] == PARAMSTATE_SPANS_NICKNAME
+
+    htotal_row = rows_by_cg_id[PARAM_HTOTAL_CG_ID]
+    assert "reinstateParameterId" in htotal_row
+    assert htotal_row["reinstateParameterId"] is None
 
 
 def test_untagged_never_published():
