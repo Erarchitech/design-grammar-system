@@ -90,13 +90,18 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 (:DesignState {StateId: "OS_abc123", kind: "ObjState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
 (:DesignState {StateId: "DS_abc123", kind: "ParamState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
 (:DesignState {StateId: "PS_abc123", kind: "PropState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1"})
+(:DesignState {StateId: "DS_a1b2c3d4e5f6a7b8", kind: "ParamState", statePayloadJson: '{...}', graph: "ValidGraph", project: "1", source: "ai-generated", sourceRuleId: "R_URB_HEIGHT_MAX_75_V", provider: "anthropic", model: "claude-sonnet-4-6", confidence: 0.82, definitionId: "frame.gh", publishedAt: "2026-07-08T00:00:00Z", strategy: "conservative", determinabilityClass: "monotone-bound", generatedAt: "2026-07-27T12:00:00Z"})
 ```
 - `kind` = ObjState | ParamState | PropState
 - `statePayloadJson` = v2 JSON envelope with `objStates`/`paramStates`/`propStates` keys, each containing typed state arrays
 - StateId prefix: `OS_` for ObjState, `DS_` for ParamState, `PS_` for PropState
 - Persisted with `graph = 'ValidGraph'` (not Metagraph — corrected in v7.0)
-- Written only by VALIDATOR on publish; MERGE'd by StateId + project (dedup across runs)
-- No orphan DesignStates — always has >=1 linked Run
+- **Two writers** (amended Phase 38 — the prior single-writer-by-VALIDATOR claim no longer holds):
+  - the VALIDATOR publish path (unchanged) — MERGE'd by `StateId` + `project` (dedup across runs); and
+  - `POST /computgraph/candidates/accept` (Phase 38, GHIN-03/D-18/D-21), which writes a **standalone, Run-less** `ParamState` `DesignState` for an architect-accepted AI-generated candidate, carrying the provenance properties shown on the fourth example line above (`source`, `sourceRuleId`, `provider`, `model`, `confidence`, `definitionId`, `publishedAt`, `strategy`, `determinabilityClass`, `generatedAt`). MERGE keyed by `StateId` + `project` remains the rule for both writers, so re-accepting an AI candidate is equally idempotent.
+- **Standalone accepted candidates are not orphan defects.** A standalone `ParamState` written by `candidates/accept` has **no linked Run until the architect composes it into a validated DesignState and runs the VALIDATOR** — that is the intended lifecycle, not a data-integrity gap. Any consumer that previously assumed every `DesignState` has >=1 linked `Run` must now treat a missing `Run` link as "not yet validated," not as an error.
+
+**Reading standalone ParamStates:** `Neo4jValidGraphRepository.RunsQuery` (`DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs`) reads `(:ValidationRun)` nodes only — it never touches a `:DesignState` node directly. A standalone `:DesignState` written by `candidates/accept` is therefore **invisible to the VALIDATION GRAPH component** until the additive second read introduced in Phase 38 plan 38-05 ships (and the DG.Grasshopper plugin is rebuilt to pick it up). Note also the pre-existing `:ValidationRun` / `:Run` label drift: the code spelling is `:ValidationRun`, this document's convention is `:Run` — this is a known, pre-existing item that Phase 38 does not widen.
 
 **Run** — A validation run execution record
 ```
@@ -273,6 +278,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `domainStep` | number | Step size (optional, slider parameters) |
 | `cgId` | string | Deterministic Computgraph node id |
 | `dgId` | string | Platform-neutral identity (`dg:` + 16 uppercase hex) |
+| `reinstateParameterId` | string | **Nullable** by design. The PARAMETER STATE component's input NickName this Computgraph `Parameter` maps to, derived at publish time by walking slider → wire → PARAMETER STATE input param (Phase 38, D-01/D-02). An unresolvable mapping leaves this property absent rather than guessed (D-04) — a parameter with no `reinstateParameterId` is excluded from input generation with a reported reason, never silently dropped. Its absence on pre-Phase-38 published nodes is expected, never an error. |
 | `graph` | string | Always `Computgraph` |
 | `project` | string | Project isolation key (merge key part) |
 
@@ -541,3 +547,9 @@ write-verb policy — before any LLM-generated Cypher reaches Neo4j
 - `DatatypeProperty.label` → `DatatypeProperty.SWRL_label`
 - `Atom.id` / `Atom.Id` → `Atom.Atom_Id`
 - Added: `Atom.iri`, `Atom.SWRL_label`
+
+### Phase 38 (AI-generated Grasshopper script inputs)
+
+- Added: `Parameter.reinstateParameterId` (Computgraph, nullable) — the PARAMETER STATE input NickName a published Computgraph `Parameter` maps to
+- Added: a second, standalone-node `DesignState` writer, `POST /computgraph/candidates/accept` — writes a Run-less `ParamState` carrying provenance properties `source`, `sourceRuleId`, `provider`, `model`, `confidence`, `definitionId`, `publishedAt`, `strategy`, `determinabilityClass`, `generatedAt`
+- Amended: the DesignState single-writer invariant and the always-linked-Run invariant (both now two-writer / intended-Run-less-interim statements — see the DesignState block above)
