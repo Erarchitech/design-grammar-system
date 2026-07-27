@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -765,3 +766,136 @@ def run_structural_checks(session: Any, project: str, definition_id: str) -> lis
         return (finding["checkId"], first_cg_id, finding["message"])
 
     return sorted(findings, key=_sort_key)
+
+
+# ── Report surface (Phase 37 Plan 05): definition resolution, publishedAt,
+# and the POST /computgraph/validate report builder ──
+#
+# Everything below is reads only and consults no model of any kind -- this
+# is the only path anything outside data-service reaches SVAL-01/SVAL-02
+# through, and its determinism guarantee (see build_validation_report's
+# docstring) is what the report contract test pins.
+
+
+def list_definition_ids(session: Any, project: str) -> list[str]:
+    """Distinct definitionId values across the project's Computgraph-scoped
+    nodes, ordered ascending. One parameterized read -- mirrors
+    dg_context.fetch_existing_design_states' explicit ORDER BY determinism
+    discipline."""
+    result = session.run(
+        """
+        MATCH (n {project: $project, graph: 'Computgraph'})
+        WHERE n.definitionId IS NOT NULL
+        RETURN DISTINCT n.definitionId AS definitionId
+        ORDER BY definitionId
+        // op=CHECK_DEFINITION_IDS
+        """,
+        {"project": project},
+    )
+    return [row["definitionId"] for row in result]
+
+
+class DefinitionResolutionError(Exception):
+    """Raised only by resolve_definition_id() when an omitted definitionId
+    cannot be resolved unambiguously. `code` is the exact documented error
+    code (COMPUTGRAPH_VALIDATE_NO_DEFINITION or
+    COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION) the route maps onto its
+    response without re-deriving it. `available` is the sorted list of the
+    project's published definition ids -- empty for the no-definition case,
+    every id for the ambiguous case (so the route can list them in the
+    error hint)."""
+
+    def __init__(self, message: str, code: str, available: list[str]) -> None:
+        super().__init__(message)
+        self.code = code
+        self.available = available
+
+
+def resolve_definition_id(session: Any, project: str, definition_id: str | None = None) -> str:
+    """Resolve an optional definitionId to a concrete one, keeping the
+    report single-shaped rather than branching between a per-definition and
+    an aggregate form.
+
+    Returns the supplied id unchanged when one was given. When none was
+    given, lists the project's published definitions: exactly one means
+    return it; zero raises DefinitionResolutionError with the no-definition
+    code and an empty available list; more than one raises
+    DefinitionResolutionError with the ambiguous-definition code and the
+    sorted available list.
+    """
+    if definition_id:
+        return definition_id
+    available = list_definition_ids(session, project)
+    if len(available) == 1:
+        return available[0]
+    if len(available) == 0:
+        raise DefinitionResolutionError(
+            f"No published definition found for project '{project}'.",
+            "COMPUTGRAPH_VALIDATE_NO_DEFINITION",
+            [],
+        )
+    raise DefinitionResolutionError(
+        f"Multiple published definitions found for project '{project}'; specify definitionId.",
+        "COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION",
+        available,
+    )
+
+
+def fetch_published_at(session: Any, project: str, definition_id: str) -> str | None:
+    """Maximum publishedAt across the Computgraph nodes scoped to this
+    project and definitionId, in the same ISO 8601 format
+    computgraph_publish.py emits. None when nothing is published -- this is
+    the staleness signal the report carries relative to the live canvas."""
+    result = session.run(
+        """
+        MATCH (n {project: $project, definitionId: $definitionId, graph: 'Computgraph'})
+        RETURN max(n.publishedAt) AS publishedAt
+        // op=CHECK_PUBLISHED_AT
+        """,
+        {"project": project, "definitionId": definition_id},
+    )
+    row = result.single()
+    return row["publishedAt"] if row else None
+
+
+def build_validation_report(
+    session: Any, project: str, definition_id: str | None = None
+) -> dict[str, Any]:
+    """Assemble the POST /computgraph/validate report with exactly the keys
+    spec/API.md documents: project, definitionId, publishedAt, checkedAt,
+    findings, ruleResults, counts.
+
+    Resolves the definitionId (raising DefinitionResolutionError when it
+    cannot be resolved unambiguously), fetches publishedAt, runs the seven
+    SVAL-01 structural checks, and evaluates the SVAL-02 rule mappings.
+    `checkedAt` is the current UTC time in the same ISO 8601 format the
+    publish path emits. `counts` is an object with `violation`, `warning`
+    and `info` integer keys derived from the findings' severities -- a
+    severity with no findings is present with a zero value, never omitted,
+    so a consumer can index it unconditionally.
+
+    Determinism guarantee: for an unchanged graph, `findings` and
+    `ruleResults` are byte-identical across calls -- `checkedAt` is the only
+    field permitted to differ. This function performs reads only and
+    consults no model of any kind.
+    """
+    resolved_definition_id = resolve_definition_id(session, project, definition_id)
+    published_at = fetch_published_at(session, project, resolved_definition_id)
+    findings = run_structural_checks(session, project, resolved_definition_id)
+    rule_results = evaluate_rule_mappings(session, project, resolved_definition_id)
+
+    counts = {SEVERITY_VIOLATION: 0, SEVERITY_WARNING: 0, SEVERITY_INFO: 0}
+    for finding in findings:
+        severity = finding["severity"]
+        if severity in counts:
+            counts[severity] += 1
+
+    return {
+        "project": project,
+        "definitionId": resolved_definition_id,
+        "publishedAt": published_at,
+        "checkedAt": datetime.now(timezone.utc).isoformat(),
+        "findings": findings,
+        "ruleResults": rule_results,
+        "counts": counts,
+    }
