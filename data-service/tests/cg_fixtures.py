@@ -283,3 +283,181 @@ def _deepcopy(envelope: dict[str, Any]) -> dict[str, Any]:
     """Isolation guard reused by callers that need to mutate a builder's
     output without ever touching a previous return value in place."""
     return copy.deepcopy(envelope)
+
+
+# ── Phase 38 Plan 03: Input Generation Bindings (JOIN B) fixtures ──
+#
+# Plain-dict builders for cg_input_bindings.py's Tier 0 tests (and reused by
+# Plan 38-07). These model canned Neo4j rows (read_rule_limit's RETURN
+# shape) and inputBindings/published-:Parameter payloads -- a different
+# fixture family from the frame_cg_context() publish-envelope builders
+# above, since cg_input_bindings.py is tested against a fake session
+# returning canned rows directly, never a live publish.
+
+RULE_DIRECT_PARAM_ID = "R_STRUCT_FRAME_HEIGHT_VAR_V"
+RULE_MONOTONE_ID = "R_URB_HEIGHT_MAX_75_V"
+RULE_GEOMETRY_ID = "R_URB_SETBACK_MIN_3_V"  # deliberately absent from inputBindings
+RULE_UNKNOWN_ID = "R_DOES_NOT_EXIST_V"
+
+
+def rule_limit_row(
+    builtin_iri: str | None, variable_name: str | None, lex: str | None, datatype: str = "xsd:decimal"
+) -> dict[str, Any]:
+    """One canned row shaped exactly like cg_input_bindings.read_rule_limit's
+    RETURN clause (builtinIri, bodyOrder, variableName, lex, datatype)."""
+    return {
+        "builtinIri": builtin_iri,
+        "bodyOrder": 1,
+        "variableName": variable_name,
+        "lex": lex,
+        "datatype": datatype,
+    }
+
+
+def direct_param_limit_rows() -> list[dict[str, Any]]:
+    """RULE_DIRECT_PARAM_ID: a single readable swrlb:greaterThan(?htotal, 12)
+    body atom."""
+    return [rule_limit_row("swrlb:greaterThan", "?htotal", "12", "xsd:decimal")]
+
+
+def geometry_rule_limit_rows() -> list[dict[str, Any]]:
+    """RULE_GEOMETRY_ID: a real, readable swrlb:greaterThan(?height, 75) body
+    atom -- but RULE_GEOMETRY_ID is deliberately absent from
+    structure_rules_with_bindings(), so classify_rule() must still return
+    geometry-required with limit=None (the D-09 structural guarantee) even
+    though the graph fact itself is perfectly readable."""
+    return [rule_limit_row("swrlb:greaterThan", "?height", "75", "xsd:decimal")]
+
+
+def no_builtin_limit_rows() -> list[dict[str, Any]]:
+    """Rule exists but has no comparison BuiltinAtom at all -- the OPTIONAL
+    MATCH fan-out collapses to one all-null row."""
+    return [rule_limit_row(None, None, None, None)]
+
+
+def direct_param_binding() -> dict[str, Any]:
+    return {
+        "ruleId": RULE_DIRECT_PARAM_ID,
+        "determinability": "direct-parameter",
+        "parameters": ["HTotal"],
+        "description": "HTotal directly carries the Frame's total height; the rule's limit is "
+        "checkable from HTotal alone.",
+    }
+
+
+def monotone_binding() -> dict[str, Any]:
+    return {
+        "ruleId": RULE_MONOTONE_ID,
+        "determinability": "monotone-bound",
+        "parameters": ["HTotal", "SpansCount"],
+        "metricExpression": "HTotal + 0.1 * SpansCount",
+        "monotoneIn": ["HTotal"],
+        "description": "Overall building height is monotone increasing in HTotal.",
+    }
+
+
+def structure_rules_with_bindings() -> dict[str, Any]:
+    """A full llm/structure_rules.json-shaped payload carrying both seed
+    bindings, for load_input_bindings()'s happy path. RULE_GEOMETRY_ID is
+    deliberately absent."""
+    return {
+        "version": 1,
+        "mappings": [],
+        "inputBindings": [direct_param_binding(), monotone_binding()],
+    }
+
+
+def published_parameter_rows() -> list[dict[str, Any]]:
+    """Published :Parameter rows exercising every select_parameters()
+    exclusion reason, the full Float/Integer/Boolean/Text/Geometry type
+    table, and the Boolean-null-domain non-exclusion carve-out."""
+    return [
+        {
+            "cgId": "cg:1:param:11_Var_HTotal",
+            "dgId": "dg:AAAAAAAAAAAAAAAA",
+            "parameterName": "HTotal",
+            "reinstateParameterId": PARAMSTATE_SPANS_NICKNAME,
+            "paramKind": "Variable",
+            "dataType": "Float",
+            "domainMin": 0.5,
+            "domainMax": 12.0,
+            "domainStep": 0.1,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_SpansCount",
+            "dgId": "dg:BBBBBBBBBBBBBBBB",
+            "parameterName": "SpansCount",
+            "reinstateParameterId": "SpansCount",
+            "paramKind": "Variable",
+            "dataType": "Integer",
+            "domainMin": 1,
+            "domainMax": 20,
+            "domainStep": 1,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_IsCorner",
+            "dgId": "dg:CCCCCCCCCCCCCCCC",
+            "parameterName": "IsCorner",
+            "reinstateParameterId": "IsCorner",
+            "paramKind": "Variable",
+            "dataType": "Boolean",
+            "domainMin": None,
+            "domainMax": None,
+            "domainStep": None,
+        },
+        {
+            "cgId": "cg:1:param:11_Const_Label",
+            "dgId": "dg:DDDDDDDDDDDDDDDD",
+            "parameterName": "Label",
+            "reinstateParameterId": "Label",
+            "paramKind": "Constant",
+            "dataType": "Text",
+            "domainMin": None,
+            "domainMax": None,
+            "domainStep": None,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_Notes",
+            "dgId": "dg:EEEEEEEEEEEEEEEE",
+            "parameterName": "Notes",
+            "reinstateParameterId": "Notes",
+            "paramKind": "Variable",
+            "dataType": "Text",
+            "domainMin": None,
+            "domainMax": None,
+            "domainStep": None,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_Shape",
+            "dgId": "dg:FFFFFFFFFFFFFFFF",
+            "parameterName": "Shape",
+            "reinstateParameterId": "Shape",
+            "paramKind": "Variable",
+            "dataType": "Geometry",
+            "domainMin": None,
+            "domainMax": None,
+            "domainStep": None,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_NoDomain",
+            "dgId": "dg:0000000000000001",
+            "parameterName": "NoDomain",
+            "reinstateParameterId": "NoDomain",
+            "paramKind": "Variable",
+            "dataType": "Float",
+            "domainMin": None,
+            "domainMax": 5.0,
+            "domainStep": None,
+        },
+        {
+            "cgId": "cg:1:param:11_Var_Unresolved",
+            "dgId": "dg:0000000000000002",
+            "parameterName": "Unresolved",
+            "reinstateParameterId": None,
+            "paramKind": "Variable",
+            "dataType": "Float",
+            "domainMin": 0.0,
+            "domainMax": 1.0,
+            "domainStep": 0.1,
+        },
+    ]
