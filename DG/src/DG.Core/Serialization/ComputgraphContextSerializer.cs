@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DG.Core.Models.Computgraph;
 
 namespace DG.Core.Serialization;
@@ -786,6 +787,7 @@ public static class ComputgraphContextSerializer
 
         public bool IsIntegerSlider { get; init; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public CgNodeInputParamDto[]? InputParams { get; init; }
     }
 

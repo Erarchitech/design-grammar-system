@@ -285,6 +285,68 @@ public sealed class ComputgraphContextSerializerTests
         }
     }
 
+    [Fact]
+    public void Deserialize_RoundTrip_PreservesInputParams()
+    {
+        var context = CreateContext();
+        context.Nodes[0].InputParams.Add(new CgNodeInputParam
+        {
+            InstanceId = "guid-a-in-0",
+            Nickname = "Curve",
+            Name = "Curve",
+            Index = 0,
+        });
+        context.Nodes[0].InputParams.Add(new CgNodeInputParam
+        {
+            InstanceId = "guid-a-in-1",
+            Nickname = "N",
+            Name = "Number of segments",
+            Index = 1,
+        });
+
+        var json = ComputgraphContextSerializer.Serialize(context);
+        var roundTrip = ComputgraphContextSerializer.Deserialize(json);
+
+        var node = roundTrip.Nodes.Single(n => n.InstanceId == "guid-a");
+        Assert.Equal(2, node.InputParams.Count);
+        Assert.Equal("guid-a-in-0", node.InputParams[0].InstanceId);
+        Assert.Equal("Curve", node.InputParams[0].Nickname);
+        Assert.Equal("Curve", node.InputParams[0].Name);
+        Assert.Equal(0, node.InputParams[0].Index);
+        Assert.Equal("guid-a-in-1", node.InputParams[1].InstanceId);
+        Assert.Equal("N", node.InputParams[1].Nickname);
+        Assert.Equal("Number of segments", node.InputParams[1].Name);
+        Assert.Equal(1, node.InputParams[1].Index);
+    }
+
+    [Fact]
+    public void Deserialize_V1PayloadWithoutInputParamsKey_StillDeserializes()
+    {
+        var context = CreateContext();
+        var json = ComputgraphContextSerializer.Serialize(context);
+
+        Assert.DoesNotContain("inputParams", json);
+
+        var roundTrip = ComputgraphContextSerializer.Deserialize(json);
+
+        Assert.NotEmpty(roundTrip.Nodes);
+        foreach (var node in roundTrip.Nodes)
+        {
+            Assert.NotNull(node.InputParams);
+            Assert.Empty(node.InputParams);
+        }
+    }
+
+    [Fact]
+    public void Serialize_WithEmptyInputParams_ProducesNoInputParamsKey()
+    {
+        var context = CreateContext();
+
+        var json = ComputgraphContextSerializer.Serialize(context);
+
+        Assert.DoesNotContain("inputParams", json);
+    }
+
     private static CgContext CreateContext()
     {
         var context = new CgContext
