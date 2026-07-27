@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 37
 current_phase_name: script-structure-validation
 status: executing
-stopped_at: "Completed 37-01-PLAN.md (Wave 0 test substrate: cg_fixtures.py, consult_cassette.py, README.md, 37-VALIDATION.md wave_0_complete)"
-last_updated: "2026-07-27T10:21:23.136Z"
+stopped_at: Completed 37-02-PLAN.md (partition-policy addendum + Computgraph API contracts)
+last_updated: "2026-07-27T10:26:21.194Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 37 execution started
 progress:
   total_phases: 14
   completed_phases: 7
   total_plans: 56
-  completed_plans: 50
+  completed_plans: 51
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 37 (script-structure-validation) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 37 execution started
 
@@ -84,6 +84,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 35 P13 | ~1h10m | 4 tasks | 6 files |
 | Phase 35 P15 | ~50min | 4 tasks | 27 files |
 | Phase 37 P01 | ~45min | 3 tasks | 5 files |
+| Phase 37 P02 | ~20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -305,6 +306,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 35-15: A0's validity verdict is read from a G7 guardrail block (valid:False) on Corpus B, not the literal assert_a0_validity() shape written before Phase 35-12's G7 existed -- G7's own trigger condition encodes UAT F3's signature, so the block is harness-validated evidence, not a harness defect
 - [Phase ?]: [Phase 37-01]: PARAM_HTOTAL_CG_ID kept as cg:1:param:11_Var_HTotal (Phase 36 golden fixture's kindLiteral convention), not the raw CanvasAnnotationParser.ParamId() var literal -- envelope id scheme is produced by a separate serializer than the parser helper
 - [Phase ?]: [Phase 37-01]: FIXTURE_PROJECT (p37-structure) isolation convention established -- any test publishing into live Neo4j must scope itself to a project string no other suite uses
+- [Phase ?]: [Phase 37-02]: Computgraph Structural Checks addendum placed after Precedence & Single-Authoring (D-13) and before Enforcement (D-14), no D- number assigned (no Phase 37 CONTEXT.md decision letter maps to it)
+- [Phase ?]: [Phase 37-02]: spec/API.md documents POST /computgraph/publish with a one-line summary only (shipped Phase 36, closing a doc gap), full contracts written for the two new routes /computgraph/validate and /computgraph/consult
 
 ### Research Flags (carry into planning)
 
@@ -382,8 +385,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T10:21:23.117Z
-Stopped at: Completed 37-01-PLAN.md (Wave 0 test substrate: cg_fixtures.py, consult_cassette.py, README.md, 37-VALIDATION.md wave_0_complete)
+Last session: 2026-07-27T10:26:21.164Z
+Stopped at: Completed 37-02-PLAN.md (partition-policy addendum + Computgraph API contracts)
 Resume file: None
 
 ## Performance Metrics
