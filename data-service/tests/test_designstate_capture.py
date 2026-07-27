@@ -519,3 +519,38 @@ def test_auto_publish_run_is_callable_with_the_watcher_publish_fn_contract():
 
     signature = inspect.signature(app_module._auto_publish_run)
     signature.bind(FIXTURE_PROJECT, "run-1")  # raises TypeError if incompatible
+
+
+# ── D-10: the manual publish path stays byte-for-byte untouched ──────────────
+
+STORE_VALIDATION_RUN_SHA256 = "db6615b823d3247c313b3f5f4cc1bfb7302f33012f79cf92323e9147d11c2b01"
+
+
+def test_store_validation_run_source_hash_is_pinned():
+    """D-10 requires the shipped manual-publish persistence path to stay
+    byte-for-byte untouched by Phase 39, enforced here by a pinned source hash
+    rather than by inspection.
+
+    The hash was pinned during Phase 39 planning on 2026-07-27 over
+    `inspect.getsource(app.store_validation_run)` (4036 characters).
+
+    A failure here means one of exactly two things:
+      1. An accidental edit -- revert it; the auto-validation path must SET the
+         Speckle fields in place via AUTO_COMPLETE_PUBLISH_QUERY instead of
+         routing through this function.
+      2. A deliberate, approved change -- re-pin the hash in the very same
+         commit as the change, so the review gate D-10 wants is exercised
+         consciously rather than bypassed.
+    """
+    import hashlib
+    import inspect
+
+    import app as app_module
+
+    source = inspect.getsource(app_module.store_validation_run)
+    digest = hashlib.sha256(source.encode()).hexdigest()
+
+    assert digest == STORE_VALIDATION_RUN_SHA256, (
+        "store_validation_run changed (D-10). Revert the edit, or re-pin this "
+        f"hash deliberately in the same commit. Actual: {digest}"
+    )
