@@ -48,16 +48,24 @@ write; ``cg_context['untagged']`` is never touched (T-36-02).
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
 from dg_identity import compute_dg_id
+
+logger = logging.getLogger(__name__)
 
 GRAPH_NAME = "Computgraph"
 
 _VALID_PARAM_KINDS = {"Variable", "Constant", "Emergent"}
 _VALID_PARAM_DATA_TYPES = {"Float", "Integer", "Text", "Boolean", "Geometry"}
 _VALID_IFACE_TYPES = {"Input", "Output"}
+
+# DG.Grasshopper.Components.ParameterStateComponent.ComponentGuid (PARAMETER STATE).
+# JOIN A's derivation only accepts a wire landing on THIS component's input --
+# any other destination component is not a reinstate-matching target.
+PARAMETER_STATE_COMPONENT_GUID = "a2e8c4f1-6b3d-4a9c-8e5f-2d7b0c1a3f6e"
 
 
 def publish_structure(session: Any, project: str, cg_context: dict) -> dict:
@@ -119,6 +127,91 @@ def publish_structure(session: Any, project: str, cg_context: dict) -> dict:
     }
 
 
+def derive_reinstate_parameter_ids(cg_context: dict) -> dict[str, str]:
+    """Closes JOIN A: maps a Computgraph Parameter's ``cgId`` to the exact string
+    PARAMETER REINSTATE will match on at apply time.
+
+    The walk, for each Parameter in the envelope: collect its ``memberIds`` (the
+    slider component instance GUIDs it groups); find every wire whose
+    ``fromNode`` is one of those member ids; for each such wire, resolve
+    ``toNode`` against ``cg_context["nodes"]`` and require its ``componentGuid``
+    to equal ``PARAMETER_STATE_COMPONENT_GUID`` (any other destination is not a
+    reinstate target); then find the entry in that node's ``inputParams`` whose
+    ``instanceId`` equals the wire's ``toParam``. The resolved value is that
+    input param's ``nickname`` (trimmed) when non-blank, else ``param_{index}``
+    -- mirroring ``ParameterStateComponent.cs:68-71`` exactly.
+
+    Zero matches -> the parameter is omitted from the returned dict (D-04: never
+    guess). More than one distinct resolved value -> also omitted, plus one
+    redacted warning naming the cgId and the competing values (an ambiguous
+    join is not a join). Never raises: a malformed context returns ``{}``.
+    """
+    try:
+        return _derive_reinstate_parameter_ids(cg_context)
+    except Exception:  # noqa: BLE001 - derivation must never abort a publish
+        logger.warning("reinstateParameterId derivation failed on a malformed cg_context; returning {}.")
+        return {}
+
+
+def _derive_reinstate_parameter_ids(cg_context: dict) -> dict[str, str]:
+    nodes_by_instance_id: dict[str, dict] = {
+        node["instanceId"]: node
+        for node in cg_context.get("nodes") or []
+        if isinstance(node, dict) and node.get("instanceId")
+    }
+    wires = cg_context.get("wires") or []
+
+    result: dict[str, str] = {}
+
+    for algorithm in cg_context.get("algorithms") or []:
+        for procedure in algorithm.get("procedures") or []:
+            for parameter in procedure.get("parameters") or []:
+                cg_id = parameter.get("id")
+                member_ids = set(parameter.get("memberIds") or [])
+                if not cg_id or not member_ids:
+                    continue
+
+                resolved_values: set[str] = set()
+                for wire in wires:
+                    if not isinstance(wire, dict) or wire.get("fromNode") not in member_ids:
+                        continue
+
+                    to_node = nodes_by_instance_id.get(wire.get("toNode"))
+                    if to_node is None:
+                        continue
+
+                    component_guid = (to_node.get("componentGuid") or "").lower()
+                    if component_guid != PARAMETER_STATE_COMPONENT_GUID:
+                        continue
+
+                    to_param_id = wire.get("toParam")
+                    input_param = next(
+                        (
+                            ip
+                            for ip in (to_node.get("inputParams") or [])
+                            if isinstance(ip, dict) and ip.get("instanceId") == to_param_id
+                        ),
+                        None,
+                    )
+                    if input_param is None:
+                        continue
+
+                    nickname = (input_param.get("nickname") or "").strip()
+                    index = input_param.get("index", 0)
+                    resolved_values.add(nickname if nickname else f"param_{index}")
+
+                if len(resolved_values) == 1:
+                    result[cg_id] = next(iter(resolved_values))
+                elif len(resolved_values) > 1:
+                    logger.warning(
+                        "reinstateParameterId ambiguous for parameter %s: %d competing values",
+                        cg_id,
+                        len(resolved_values),
+                    )
+
+    return result
+
+
 # ── Row-building (pure, no DB access) ──
 
 
@@ -134,6 +227,7 @@ def _build_publish_params(
     never touched (T-36-02).
     """
     object_row = _object_row(cg_context.get("object"), project, definition_id)
+    reinstate_ids_by_cg_id = derive_reinstate_parameter_ids(cg_context)
 
     algorithm_rows: list[dict] = []
     procedure_rows: list[dict] = []
@@ -243,6 +337,7 @@ def _build_publish_params(
                         "model": parameter.get("model") if param_source == "recognized" else None,
                         "confidence": parameter.get("confidence") if param_source == "recognized" else None,
                         "memberIds": list(parameter.get("memberIds") or []),
+                        "reinstateParameterId": reinstate_ids_by_cg_id.get(param_cg_id),
                     }
                 )
 
@@ -534,6 +629,7 @@ def _publish_parameters(tx: Any, params: dict) -> None:
               p.domainMax = row.domainMax,
               p.domainStep = row.domainStep,
               p.dgId = row.dgId,
+              p.reinstateParameterId = row.reinstateParameterId,
               p.source = row.source,
               p.provider = row.provider,
               p.model = row.model,

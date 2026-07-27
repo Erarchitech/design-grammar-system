@@ -49,6 +49,15 @@ PROC_12_NAME = "2D Footer Configuration"
 
 PARAM_HTOTAL_CG_ID = "cg:1:param:11_Var_HTotal"
 
+# DG.Grasshopper.Components.ParameterStateComponent.ComponentGuid -- same literal
+# computgraph_publish.PARAMETER_STATE_COMPONENT_GUID matches against.
+PARAMETER_STATE_COMPONENT_GUID = "a2e8c4f1-6b3d-4a9c-8e5f-2d7b0c1a3f6e"
+
+# JOIN A fixture: the PARAMETER STATE input's NickName ("Spans") deliberately
+# differs from the Parameter's convention-derived name ("SpansCount") -- that
+# divergence is the entire point of JOIN A.
+PARAMSTATE_SPANS_NICKNAME = "Spans"
+
 
 def frame_cg_context(project: str = FIXTURE_PROJECT, definition_id: str = FRAME_DEFINITION_ID) -> dict[str, Any]:
     """A parser-faithful cgContextJson v1 envelope for the Frame fixture: 1
@@ -190,9 +199,31 @@ def frame_cg_context(project: str = FIXTURE_PROJECT, definition_id: str = FRAME_
                 {"nickname": "Scratch notes", "memberIds": ["n-scratch-01", "n-scratch-02"]},
             ],
         },
-        "nodes": [],
+        "nodes": [
+            {
+                "instanceId": "n-paramstate-1",
+                "componentGuid": PARAMETER_STATE_COMPONENT_GUID,
+                "name": "PARAMETER STATE",
+                "nickname": "PARAMSTATE",
+                "position": [0, 0],
+                "inputParams": [
+                    {
+                        "instanceId": "n-paramstate-1-in0",
+                        "nickname": PARAMSTATE_SPANS_NICKNAME,
+                        "name": "Value",
+                        "index": 0,
+                    }
+                ],
+            }
+        ],
         "wires": [
             {"fromNode": "n-spanscount", "fromParam": "out0", "toNode": "n-parsplit", "toParam": "in0"},
+            {
+                "fromNode": "n-spanscount",
+                "fromParam": "out0",
+                "toNode": "n-paramstate-1",
+                "toParam": "n-paramstate-1-in0",
+            },
         ],
         "warnings": [],
     }
