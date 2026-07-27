@@ -2,11 +2,13 @@ import React from "react";
 import {
   Badge,
   Button,
+  CandidateTable,
   Checkbox,
   Chip,
   CodeBlock,
   Collapsible,
   CollapsibleItem,
+  Input,
   KVRow,
   Panel,
   RunTile,
@@ -15,6 +17,7 @@ import {
   StatBlock
 } from "../components/index.js";
 import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
+import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib/inputGenApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 
 // ---- deterministic synthetic massing: degraded-mode fallback only. When
@@ -181,6 +184,19 @@ export default function ModelScreen({ active, onBack, project }) {
   const [view, setView] = React.useState(null); // validation view payload
   const [rule, setRule] = React.useState(null); // {ruleId, name, description, swrl}
   const [ruleId, setRuleId] = React.useState(null);
+
+  /* ---- AI input candidates (Phase 38, D-20/GHIN-04) ----
+     ruleForGen defaults to the screen's selected ruleId but is independently
+     overridable, so switching the AI-panel's target does not disturb the
+     rule the architect is inspecting validation results for. */
+  const [ruleForGen, setRuleForGen] = React.useState(null);
+  const [candidateCount, setCandidateCount] = React.useState(4);
+  const [paramOverrides, setParamOverrides] = React.useState("");
+  const [candidates, setCandidates] = React.useState(null); // full generate-inputs response, or null
+  const [genErr, setGenErr] = React.useState("");
+  const [genBusy, setGenBusy] = React.useState(false);
+  const [acceptedStates, setAcceptedStates] = React.useState([]); // [{candidateId, stateId}]
+  const [busyCandidateId, setBusyCandidateId] = React.useState(null);
   const [propMode, setPropMode] = React.useState("run");
   const [picked, setPicked] = React.useState(null); // dgEntityId
   const [pickedStatuses, setPickedStatuses] = React.useState([]);
@@ -369,6 +385,17 @@ export default function ModelScreen({ active, onBack, project }) {
       gone = true;
     };
   }, [ruleId, project, fetchRuleDetails]);
+
+  // AI input candidates: default the generation target to the selected rule
+  // and clear any stale candidate set when the architect switches rules.
+  // This effect only sets local state — it performs no generation and no
+  // acceptance call of any kind (GHIN-04/D-19: those happen only on an
+  // explicit button click, never on mount or on rule selection).
+  React.useEffect(() => {
+    setRuleForGen(ruleId);
+    setCandidates(null);
+    setGenErr("");
+  }, [ruleId]);
 
   // per-rule statuses for the picked instance
   React.useEffect(() => {
@@ -1020,6 +1047,129 @@ export default function ModelScreen({ active, onBack, project }) {
               <div style={{ marginTop: 10 }}>
                 <CodeBlock label="SWRL Expression">{rule?.swrl || "—"}</CodeBlock>
               </div>
+            </Panel>
+
+            {/* AI input candidates (D-20, GHIN-04): a panel on this existing
+                Model screen, reusing Panel/Badge/Callout/Button/Input only —
+                not a new screen, not the Graph screen. Generation and
+                acceptance are strictly separated: generateInputs runs only
+                on the Generate button click below, and acceptCandidate runs
+                only inside CandidateTable's onAccept click handler further
+                down — neither is ever called from an effect, on mount, or
+                on rule selection (SC3). Rejecting a candidate is a local
+                dismissal only (D-19) — CandidateTable issues no request for
+                it. */}
+            <Panel title="AI input candidates">
+              {!ruleId && (
+                <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+                  Select a rule first to generate candidate inputs for it.
+                </div>
+              )}
+              {ruleId && (
+                <>
+                  <KVRow label="Target rule" value={ruleForGen || ruleId} />
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginTop: 8, flexWrap: "wrap" }}>
+                    <Input
+                      label="Candidate count (1–8)"
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={candidateCount}
+                      onChange={(e) => {
+                        const n = Math.round(Number(e.target.value));
+                        const clamped = Number.isFinite(n) ? Math.max(1, Math.min(8, n)) : 4;
+                        setCandidateCount(clamped);
+                      }}
+                      style={{ width: 110 }}
+                    />
+                    <Input
+                      label="Parameter overrides (optional, comma-separated)"
+                      value={paramOverrides}
+                      onChange={(e) => setParamOverrides(e.target.value)}
+                      style={{ minWidth: 240 }}
+                    />
+                    <Button
+                      size="sm"
+                      disabled={genBusy}
+                      onClick={async () => {
+                        setGenErr("");
+                        setGenBusy(true);
+                        try {
+                          const overridesArr = paramOverrides
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean);
+                          const result = await generateInputs(
+                            project,
+                            null,
+                            ruleForGen || ruleId,
+                            candidateCount,
+                            overridesArr
+                          );
+                          setCandidates(result);
+                        } catch (err) {
+                          setGenErr(err.message + (err.hint ? " — " + err.hint : ""));
+                        } finally {
+                          setGenBusy(false);
+                        }
+                      }}
+                    >
+                      {genBusy ? "Generating…" : "Generate"}
+                    </Button>
+                  </div>
+                  {genErr && (
+                    <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)", marginTop: 8 }}>
+                      {genErr}
+                    </div>
+                  )}
+                  {candidates && (
+                    <div style={{ marginTop: 12 }}>
+                      <CandidateTable
+                        candidates={candidates.candidates}
+                        boundParameters={candidates.boundParameters}
+                        determinabilityClass={candidates.determinabilityClass}
+                        ruleLimit={candidates.ruleLimit}
+                        acceptedStateIds={acceptedStates.map((a) => a.candidateId)}
+                        busyCandidateId={busyCandidateId}
+                        onAccept={async (candidate) => {
+                          // The only call site of acceptCandidate in this file
+                          // — inside this click-triggered handler, never in
+                          // an effect (GHIN-04/D-19/SC3).
+                          setBusyCandidateId(candidate.candidateId);
+                          setGenErr("");
+                          try {
+                            const res = await acceptCandidate(
+                              project,
+                              candidates.definitionId,
+                              candidates.ruleId,
+                              candidate
+                            );
+                            setAcceptedStates((prev) =>
+                              prev.concat([{ candidateId: candidate.candidateId, stateId: res.stateId }])
+                            );
+                            // Refresh from the graph so the panel reflects
+                            // what was actually persisted, not only local
+                            // optimism.
+                            await fetchAcceptedCandidates(project, candidates.ruleId).catch(() => null);
+                          } catch (err) {
+                            setGenErr(err.message + (err.hint ? " — " + err.hint : ""));
+                          } finally {
+                            setBusyCandidateId(null);
+                          }
+                        }}
+                        onReject={(candidate) => {
+                          // Local dismissal only — issues no request (D-19).
+                          setCandidates((prev) =>
+                            prev
+                              ? { ...prev, candidates: prev.candidates.filter((c) => c.candidateId !== candidate.candidateId) }
+                              : prev
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </Panel>
           </>
         )}
