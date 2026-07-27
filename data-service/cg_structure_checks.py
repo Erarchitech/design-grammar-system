@@ -277,3 +277,93 @@ def check_objects_without_behavior(session: Any, project: str, definition_id: st
         for row in result
     ]
     return _sorted_by_first_cg_id(findings)
+
+
+# ── Annotation-convention check (JSON-envelope, not a graph pattern) ──
+
+
+def parse_context_warnings(context_json: str | None) -> list[str]:
+    """Pure function: parse an Algorithm.contextJson string property and
+    return its top-level `warnings` array as a list of strings.
+
+    Total function -- tolerates every degenerate input without raising: a
+    null/empty string, invalid JSON, a JSON document that isn't an object, or
+    a `warnings` key that is absent or not a list all return `[]`. A list
+    containing non-string members yields only the string members, order
+    preserved. No Neo4j dependency at all.
+    """
+    if not context_json:
+        return []
+    try:
+        payload = json.loads(context_json)
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(payload, dict):
+        return []
+    warnings = payload.get("warnings")
+    if not isinstance(warnings, list):
+        return []
+    return [warning for warning in warnings if isinstance(warning, str)]
+
+
+# This check reads a JSON property instead of matching a graph pattern
+# because the canvas parser's tolerated-variant normalization is resolved
+# during canvas parsing, before the envelope is even confirmed -- only the
+# parsed kind enum reaches the published Parameter node. A Cypher pattern
+# looking for the raw annotation string would never fire against any real
+# data; the only surviving record of a normalization event is the top-level
+# `warnings` array, preserved verbatim inside Algorithm.contextJson.
+def check_annotation_conventions(session: Any, project: str, definition_id: str) -> list[dict]:
+    result = session.run(
+        """
+        MATCH (a:Algorithm {project: $project, definitionId: $definitionId})
+        RETURN a.algIndex AS algIndex, a.algorithmName AS algorithmName, a.contextJson AS contextJson
+        ORDER BY a.algIndex
+        // op=CHECK_ALGORITHM_CONTEXT_JSON
+        """,
+        {"project": project, "definitionId": definition_id},
+    )
+    rows: list[tuple[int, str, dict[str, Any]]] = []
+    for row in result:
+        alg_index = row["algIndex"]
+        alg_name = row["algorithmName"] or str(alg_index)
+        for warning in parse_context_warnings(row["contextJson"]):
+            finding = _finding(
+                "annotation_convention",
+                SEVERITY_INFO,
+                warning,
+                f"Algorithm algIndex={alg_index}, name='{alg_name}'",
+                "correct the annotation tag on canvas and re-publish if the normalization was not intended.",
+                [_entity("Algorithm", "", alg_name)],
+            )
+            rows.append((alg_index, warning, finding))
+    rows.sort(key=lambda entry: (entry[0], entry[1]))
+    return [finding for _, _, finding in rows]
+
+
+# ── Aggregator ──
+
+
+def run_structural_checks(session: Any, project: str, definition_id: str) -> list[dict]:
+    """Run all seven SVAL-01 checks and return their combined findings in one
+    deterministically sorted list.
+
+    Guarantee: two calls against an unchanged graph return byte-identical
+    lists -- `findings` are sorted by (checkId, first entity's cgId,
+    message). This function performs reads only; it writes nothing.
+    """
+    findings: list[dict[str, Any]] = []
+    findings.extend(check_orphan_patterns(session, project, definition_id))
+    findings.extend(check_procedures_without_interface(session, project, definition_id))
+    findings.extend(check_dangling_param_links(session, project, definition_id))
+    findings.extend(check_algorithms_without_procedure(session, project, definition_id))
+    findings.extend(check_parameters_without_datatype(session, project, definition_id))
+    findings.extend(check_objects_without_behavior(session, project, definition_id))
+    findings.extend(check_annotation_conventions(session, project, definition_id))
+
+    def _sort_key(finding: dict[str, Any]) -> tuple[str, str, str]:
+        entities = finding.get("entities") or []
+        first_cg_id = entities[0]["cgId"] if entities else ""
+        return (finding["checkId"], first_cg_id, finding["message"])
+
+    return sorted(findings, key=_sort_key)
