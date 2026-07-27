@@ -286,7 +286,7 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. Listener off / Rhino closed → data-service returns a What+Where+How-to-fix error, not a hang (bounded timeout)
 4. The listener never touches the canvas off the UI thread; toggling it off closes the socket cleanly and repeated on/off cycles don't leak ports
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -300,7 +300,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 33-04-PLAN.md — live in-Rhino end-to-end verification (human-verify) [BRDG-01..04]
+- [x] 33-04-PLAN.md — live in-Rhino end-to-end verification (human-verify) [BRDG-01..04]
 
 ---
 
@@ -647,7 +647,7 @@ Plans:
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
 | 32.1 Cross-Platform Identity and Mapping (DG ID) | 7/7 | Complete    | 2026-07-18 |
-| 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
+| 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 4/4 | In Progress|  |
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
