@@ -25,5 +25,21 @@
       "params": {},
       "description": "Every Procedure must expose at least one Interface."
     }
+  ],
+  "inputBindings": [
+    {
+      "ruleId": "R_STRUCT_FRAME_HEIGHT_VAR_V",
+      "determinability": "direct-parameter",
+      "parameters": ["HTotal"],
+      "description": "HTotal is published as a variable float Parameter that directly carries the Frame's total height -- the rule's limit is checkable from HTotal alone."
+    },
+    {
+      "ruleId": "R_URB_HEIGHT_MAX_75_V",
+      "determinability": "monotone-bound",
+      "parameters": ["HTotal", "SpansCount"],
+      "metricExpression": "HTotal + 0.1 * SpansCount",
+      "monotoneIn": ["HTotal"],
+      "description": "Overall building height is monotone increasing in HTotal; SpansCount contributes a bounded secondary term the metric is not provably monotone in."
+    }
   ]
 }

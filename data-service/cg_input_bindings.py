@@ -1,0 +1,230 @@
+"""Input Generation Bindings -- JOIN B (Phase 38: GHIN-01).
+
+This module resolves two questions about a Metagraph Rule, and answers
+neither by guessing:
+
+1. *Which* Computgraph parameters does the rule actually constrain?
+2. *Is* the rule's numeric limit checkable from those parameters alone, or
+   does checking it require geometry this system never evaluated?
+
+It reads the rule's numeric threshold from the one place it is authored --
+the Rule's SWRL ``Literal`` atom, via a single parameterized read query --
+and it authors no threshold of its own. The declarative ``inputBindings``
+artifact this module loads (a new sibling top-level key in
+``llm/structure_rules.json``) is a *selector* (which parameters, what kind of
+determinability), never a *value* -- the same value-threshold fence
+``cg_structure_checks._FORBIDDEN_PARAM_KEYS`` established for
+``mappings[].params`` is re-applied here to ``inputBindings[]`` entries
+(``_FORBIDDEN_BINDING_KEYS``). See
+``spec/RULE-PARTITION-POLICY.md``'s "Input Generation Bindings (Phase 38)"
+addendum for the normative schema this loader validates against.
+
+Determinability can only ever be under-claimed: a rule with no binding
+entry -- or a binding whose class is ``geometry-required`` -- always carries
+``limit=None`` downstream, regardless of what ``read_rule_limit`` found on
+the graph. This is the structural mechanism (not a prompt instruction) that
+keeps the generator from ever claiming a geometry-dependent rule is
+satisfied (D-09).
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from cg_structure_checks import STRUCTURE_RULES_FILE as _STRUCTURE_RULES_FILE
+
+logger = logging.getLogger(__name__)
+
+# The three determinability classes an inputBindings entry (or the default)
+# may carry. "geometry-required" is the safe default for an unmapped rule --
+# it can only ever under-claim (D-08).
+DETERMINABILITY_CLASSES: frozenset[str] = frozenset(
+    {"direct-parameter", "monotone-bound", "geometry-required"}
+)
+
+# Value-threshold keys forbidden at any nesting level of an inputBindings
+# entry. Mirrors cg_structure_checks._FORBIDDEN_PARAM_KEYS' fence and
+# spec/RULE-PARTITION-POLICY.md's "Input Generation Bindings (Phase 38)"
+# scope fence: a binding selects parameters and determinability only -- a
+# numeric limit, comparison operator, or threshold value is SWRL scope and
+# must be expressed by editing the Rule's SWRL Literal instead (D-10).
+_FORBIDDEN_BINDING_KEYS: frozenset[str] = frozenset(
+    {"min", "max", "threshold", "value", "limit", "operator"}
+)
+
+
+class InputBindingError(ValueError):
+    """Raised for an ``inputBindings`` entry that IS present but malformed.
+
+    Absence -- of the file, the key, or a mapping for a given rule -- is
+    never an error; it degrades to the safe ``geometry-required`` default. A
+    present-but-wrong-shaped entry IS an error, because it would otherwise
+    silently change which parameters get generated for.
+    """
+
+
+def _find_forbidden_key(node: Any) -> str | None:
+    """Return the first forbidden key found anywhere inside `node` (any
+    nesting level of dict/list), or None if none is present."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in _FORBIDDEN_BINDING_KEYS:
+                return key
+            found = _find_forbidden_key(value)
+            if found is not None:
+                return found
+    elif isinstance(node, list):
+        for item in node:
+            found = _find_forbidden_key(item)
+            if found is not None:
+                return found
+    return None
+
+
+def _reject(rule_id: str, what: str, how_to_fix: str) -> None:
+    raise InputBindingError(
+        f"{what} Where: llm/structure_rules.json inputBindings[ruleId={rule_id!r}]. "
+        f"How to fix: {how_to_fix}"
+    )
+
+
+def _validate_binding_entry(entry: Any, already_seen: dict[str, dict[str, Any]]) -> None:
+    """Raise InputBindingError for any shape violation in one inputBindings
+    entry. Absence of the whole array/file is handled by the caller before
+    this is ever invoked -- this function only runs against entries that
+    exist."""
+    if not isinstance(entry, dict):
+        raise InputBindingError(
+            "An inputBindings entry is malformed: expected a JSON object. "
+            f"Where: llm/structure_rules.json inputBindings[]. Entry was {entry!r}. "
+            "How to fix: each entry must be an object carrying at least ruleId and determinability."
+        )
+
+    rule_id = entry.get("ruleId")
+    if not isinstance(rule_id, str) or not rule_id:
+        raise InputBindingError(
+            "An inputBindings entry is malformed: ruleId is missing or not a non-empty string. "
+            f"Where: llm/structure_rules.json inputBindings[]. Entry was {entry!r}. "
+            "How to fix: set ruleId to the Metagraph Rule_Id this binding maps."
+        )
+
+    forbidden_key = _find_forbidden_key(entry)
+    if forbidden_key is not None:
+        _reject(
+            rule_id,
+            f"Entry contains forbidden value-threshold key {forbidden_key!r}.",
+            "a binding selects parameters and determinability only -- express a numeric "
+            "limit by editing the Rule's SWRL Literal instead, never here.",
+        )
+
+    if rule_id in already_seen:
+        _reject(
+            rule_id,
+            "Duplicate ruleId in inputBindings -- last-wins is not permitted.",
+            "remove or merge the duplicate entry so each ruleId appears at most once.",
+        )
+
+    determinability = entry.get("determinability")
+    if determinability not in DETERMINABILITY_CLASSES:
+        _reject(
+            rule_id,
+            f"determinability {determinability!r} is not a recognized class.",
+            f"set determinability to one of {sorted(DETERMINABILITY_CLASSES)}.",
+        )
+
+    parameters = entry.get("parameters")
+    if (
+        not isinstance(parameters, list)
+        or not parameters
+        or not all(isinstance(p, str) and p for p in parameters)
+    ):
+        _reject(
+            rule_id,
+            "parameters is missing, empty, or contains a non-string/empty entry.",
+            "set parameters to a non-empty list of non-empty parameter-name strings.",
+        )
+
+    metric_expression = entry.get("metricExpression")
+    monotone_in = entry.get("monotoneIn")
+    if determinability == "monotone-bound":
+        if not isinstance(metric_expression, str) or not metric_expression:
+            _reject(
+                rule_id,
+                "determinability is monotone-bound but metricExpression is missing or empty.",
+                "set metricExpression to the expression relating the constrained metric to parameters.",
+            )
+        if (
+            not isinstance(monotone_in, list)
+            or not monotone_in
+            or not all(isinstance(m, str) and m for m in monotone_in)
+        ):
+            _reject(
+                rule_id,
+                "determinability is monotone-bound but monotoneIn is missing, empty, or malformed.",
+                "set monotoneIn to the non-empty subset of parameters the metric is provably "
+                "monotone increasing in.",
+            )
+        if not set(monotone_in).issubset(set(parameters)):
+            _reject(
+                rule_id,
+                "monotoneIn contains a name absent from parameters.",
+                "monotoneIn must be a subset of parameters.",
+            )
+    elif metric_expression or monotone_in:
+        _reject(
+            rule_id,
+            f"metricExpression/monotoneIn are set but determinability is {determinability!r}, "
+            "not monotone-bound.",
+            "only a monotone-bound entry may carry metricExpression/monotoneIn.",
+        )
+
+
+def load_input_bindings(path: str | Path | None = None) -> dict[str, dict[str, Any]]:
+    """Read the ``inputBindings`` array from ``llm/structure_rules.json`` (or
+    an explicit override `path`, for tests) and return it as a dict keyed by
+    ``ruleId``.
+
+    Resolves the default path exactly the way
+    ``cg_structure_checks.load_structure_rules()`` does -- literally reusing
+    its ``STRUCTURE_RULES_FILE`` constant -- so the two loaders can never
+    diverge on which file they read (D-07).
+
+    Never raises for absence: a missing file, an unreadable file, invalid
+    JSON, a payload that isn't an object, or a missing/non-list
+    ``inputBindings`` key all return ``{}``. A missing binding for a given
+    rule is the safe direction (the rule defaults to ``geometry-required``
+    downstream) so there is nothing to raise about.
+
+    Raises ``InputBindingError`` for a malformed entry that IS present --
+    absence is fine, a wrong shape is not, because it silently changes which
+    parameters get generated for.
+    """
+    resolved = Path(path) if path is not None else _STRUCTURE_RULES_FILE
+    if not resolved.exists():
+        return {}
+    try:
+        payload = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    raw_bindings = payload.get("inputBindings")
+    if not isinstance(raw_bindings, list):
+        return {}
+
+    bindings: dict[str, dict[str, Any]] = {}
+    for entry in raw_bindings:
+        _validate_binding_entry(entry, bindings)
+        bindings[entry["ruleId"]] = entry
+    return bindings
+
+
+def binding_for_rule(bindings: dict[str, dict[str, Any]], rule_id: str) -> dict[str, Any] | None:
+    """Plain lookup. Returns None for a rule absent from `bindings` -- the
+    caller (classify_rule) is what turns that None into the geometry-required
+    default; this function makes no policy decision of its own."""
+    return bindings.get(rule_id)
