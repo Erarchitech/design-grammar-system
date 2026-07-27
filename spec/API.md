@@ -55,6 +55,107 @@ Base URL: `/data-service` (via nginx proxy)
 | GET | `/validation/view/{project}/{run_id}` | — | Specific run manifest |
 | GET | `/validation/view/{project}/{run_id}/{rule_id}` | — | Rule-filtered entity sets |
 
+### Computgraph
+
+| Method | Path | Body | Description |
+|--------|------|------|-------------|
+| POST | `/computgraph/publish` | `{project, cgContext}` | Publish a confirmed `cgContextJson` v1 envelope as a Computgraph subgraph (shipped Phase 36; documented here only to close the doc gap). Returns `{status, publishedCounts, staleEntityIds}`. Errors: 422 `COMPUTGRAPH_PUBLISH_REQUEST_INVALID`, 502 `COMPUTGRAPH_PUBLISH_FAILED`. |
+| POST | `/computgraph/validate` | `{project, definitionId?}` | Run the deterministic, LLM-free structural + rule-mapped checks over the published Computgraph. See below. |
+| POST | `/computgraph/consult` | `{project, definitionId, question}` | Read-only, grounded LLM consult over the published Computgraph subgraph. See below. |
+
+#### `POST /computgraph/validate`
+
+Request body: `{project: string, definitionId?: string}`
+
+**`definitionId` resolution rule** (when omitted): resolve the project's published definitions —
+- exactly one published definition exists -> use it
+- zero published definitions -> 422 `COMPUTGRAPH_VALIDATE_NO_DEFINITION`
+- more than one published definition -> 422 `COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION`, hint lists the available ids
+
+200 response:
+
+```json
+{
+  "project": "p1",
+  "definitionId": "frame.gh",
+  "publishedAt": "2026-07-08T00:00:00Z",
+  "checkedAt": "2026-07-27T12:00:00Z",
+  "findings": [
+    {
+      "checkId": "procedure_without_interface",
+      "severity": "violation",
+      "message": "Procedure '11_Proc' has no Interface. Where: Procedure cgId=cg:1:proc:11_Proc. How to fix: tag at least one IntF_ group under this Procedure and re-publish.",
+      "entities": [
+        {"label": "Procedure", "cgId": "cg:1:proc:11_Proc", "name": "11_Proc", "conventionName": "11_Proc"}
+      ]
+    }
+  ],
+  "ruleResults": [
+    {
+      "ruleId": "R_STRUCT_FRAME_TRUSS",
+      "operation": "requiresProcedure",
+      "passed": false,
+      "ruleExists": true,
+      "message": "Rule R_STRUCT_FRAME_TRUSS requires a Procedure matching 'Truss' under Algorithm 1, none found.",
+      "satisfyingEntities": [],
+      "offendingEntities": [{"label": "Algorithm", "cgId": null, "name": "1"}]
+    }
+  ],
+  "counts": {"violation": 1, "warning": 1, "info": 0}
+}
+```
+
+Response keys:
+- `project`, `definitionId` — echo the resolved scope
+- `publishedAt` (nullable, ISO 8601 UTC) — sourced from the published nodes, so staleness relative to the live canvas is visible
+- `checkedAt` (ISO 8601 UTC) — when this report was computed
+- `findings[]` — deterministic structural checks (SVAL-01); each item: `checkId`, `severity`, `message`, `entities[]`; each `entities[]` item: `label`, `cgId`, `name`, `conventionName`
+- `ruleResults[]` — rule-mapped structural checks (SVAL-02); each item: `ruleId`, `operation`, `passed`, `ruleExists`, `message`, `satisfyingEntities[]`, `offendingEntities[]`
+- `counts` — `{violation, warning, info}` integer keys, aggregated over `findings[]`
+
+**`checkId` vocabulary (all seven):** `orphan_pattern`, `procedure_without_interface`, `dangling_param_link`, `algorithm_without_procedure`, `parameter_without_datatype`, `object_without_behavior`, `annotation_convention`
+
+**Rule-mapped `operation` vocabulary (all four):** `requiresProcedure`, `requiresParameter`, `requiresInterface`, `forbidsOrphan`
+
+**Invariants:**
+- **Deterministic:** `findings` and `ruleResults` are byte-identical across repeated calls against an unchanged graph; `checkedAt` is the only permitted varying field.
+- **LLM-free:** this endpoint never calls the LLM gateway.
+
+**Errors:** 422 `COMPUTGRAPH_VALIDATE_REQUEST_INVALID`, 422 `COMPUTGRAPH_VALIDATE_NO_DEFINITION`, 422 `COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION`, 502 `COMPUTGRAPH_VALIDATE_FAILED`. Every error body is the standard `{error, hint, code}` detail shape.
+
+#### `POST /computgraph/consult`
+
+Request body: `{project: string, definitionId: string, question: string}` — both ids required.
+
+200 response:
+
+```json
+{
+  "project": "p1",
+  "definitionId": "frame.gh",
+  "publishedAt": "2026-07-08T00:00:00Z",
+  "question": "Which parameters drive the truss height?",
+  "answer": "The truss height is driven by 11_Var_HTotal (Variable, Float)...",
+  "grounded": true,
+  "groundedCount": 1,
+  "citedEntities": ["11_Var_HTotal"],
+  "ungroundedMentions": [],
+  "subgraphEntityCount": 42,
+  "truncated": false
+}
+```
+
+Response keys: `project`, `definitionId`, `publishedAt`, `question`, `answer`, `grounded` (boolean), `groundedCount` (integer), `citedEntities` (sorted array of entity names found in both the answer and the subgraph), `ungroundedMentions` (sorted array of convention-shaped tokens found in the answer but absent from the subgraph), `subgraphEntityCount`, `truncated` (true when the subgraph exceeded the prompt entity cap).
+
+**Behavioural guarantees:**
+- **Read-only:** the endpoint is strictly read-only and never executes any Cypher derived from the model's output.
+- **Flag, don't block:** a grounding miss sets `grounded` to `false` and populates `ungroundedMentions`, but still returns 200.
+- **Staleness visible:** `publishedAt` is always present, so an answer computed from a stale publish is visibly stale.
+
+**Errors:** 422 `COMPUTGRAPH_CONSULT_REQUEST_INVALID`, 502 `COMPUTGRAPH_CONSULT_FAILED`.
+
+**Report surface:** the `/computgraph/validate` response is the report surface for this milestone, consumable directly over HTTP by a future ui-v2 panel. Printing it from a Grasshopper panel through the canvas bridge is a named deferred item — it requires a new dispatcher handler in `CanvasCommandDispatcher` and a plugin rebuild, disproportionate for an MVP whose report is already consumable over plain HTTP.
+
 ---
 
 ## n8n Webhooks (port 5678)
