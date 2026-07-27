@@ -101,9 +101,9 @@
 
 ### DesignState Auto-Validation Investigation (DSAV) — Phase 39
 
-- [ ] **DSAV-01**: An investigation note compares trigger architectures (GH capture-time hook, data-service watcher, Neo4j write event) with latency, publish-flood, and Speckle-noise analysis
+- [x] **DSAV-01**: An investigation note compares trigger architectures (GH capture-time hook, data-service watcher, Neo4j write event) with latency, publish-flood, and Speckle-noise analysis
 - [x] **DSAV-02**: A prototype demonstrates at least one path end-to-end: capturing a new DesignState produces a validation Run without a manual VALIDATOR trigger
-- [ ] **DSAV-03**: An ADR records the chosen architecture and guardrails (debounce window, per-project rate limit, per-project opt-in flag) and scopes full implementation to a follow-up milestone
+- [x] **DSAV-03**: An ADR records the chosen architecture and guardrails (debounce window, per-project rate limit, per-project opt-in flag) and scopes full implementation to a follow-up milestone
 
 ### Integration (INTG) — Phase 40
 
@@ -167,7 +167,7 @@
 | CGPD-01 … CGPD-05 | Phase 36 | Pending |
 | SVAL-01 … SVAL-03 | Phase 37 | ✅ Complete (2026-07-27) |
 | GHIN-01 … GHIN-04 | Phase 38 | Pending |
-| DSAV-01 … DSAV-03 | Phase 39 | Pending |
+| DSAV-01 … DSAV-03 | Phase 39 | ✅ Complete (2026-07-28) |
 | INTG-01 … INTG-04 | Phase 40 | Pending |
 
 **Coverage:**

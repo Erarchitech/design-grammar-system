@@ -4,17 +4,17 @@ milestone: v9.0
 milestone_name: AI Workflow Intelligence
 current_phase: 39
 current_phase_name: designstate-auto-validation-investigation
-status: executing
-stopped_at: Completed 39-04-PLAN.md (human-verify gate passed)
-last_updated: "2026-07-27T20:54:49.120Z"
+status: verifying
+stopped_at: Completed 39-05-PLAN.md — Phase 39 fully executed (5/5), ready for verification
+last_updated: "2026-07-27T21:08:33.713Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 39 execution started
 progress:
   total_phases: 14
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 68
-  completed_plans: 66
-  percent: 64
+  completed_plans: 67
+  percent: 71
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 39 (designstate-auto-validation-investigation) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-27 — Phase 39 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
@@ -107,6 +107,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 39 P02 | 45min | 3 tasks | 2 files |
 | Phase 39 P03 | ~60min | 2 tasks | 3 files |
 | Phase 39 P04 | ~50min | 2 tasks | 4 files |
+| Phase 39 P05 | ~40min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -364,6 +365,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 39-04: the publish leg's preflight probes the dev stack for working Speckle config rather than requiring a provider:'Speckle' row on the synthetic fixture project — a literal probe would record a false-negative 'blocked' (T-39-12 cuts both ways)
 - [Phase ?]: 39-04: the published run row deleted by a routine suite run was NOT recreated by hand and the leg was NOT re-run — D-11 permits exactly one publish-enabled run; the Speckle version is the durable evidence
 - [Phase ?]: 39-04: operator authorized live-marking test_dsav_live_loop.py (a Wave 3 file) so routine suite runs cannot scrub phase evidence
+- [Phase ?]: Phase 39 (39-05): the DSAV-03 ADR cites Phase 823 D-823-02 (non-fatal SHACL proxy in publish path) as the degrade-never-raise precedent D-08 departs from — the plan named D-823-03, which is UI state gating on results.length, an unrelated decision
+- [Phase ?]: Phase 39 (39-05): 39-03-SUMMARY's ~1.5s dg-reasoner round-trip figure is NOT reproduced as fact — 2.0s debounce + 1.5s exceeds the artifact's recorded 2.679s total; the investigation note derives path (a)'s latency floor from artifact arithmetic (2.679 - 2.0 = 0.679s upper bound) and labels the summary figure summary-sourced
+- [Phase ?]: Phase 39 (39-05): F-39-01 is recorded in both deliverables as an OPEN, unresolved design question — auto-run verdicts are structurally sound but report all-false ValidStatus regardless of the design, so auto-validation does not yet produce meaningful pass/fail verdicts; two candidate fixes named, neither evaluated
 
 ### Research Flags (carry into planning)
 
@@ -442,8 +446,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T20:54:49.087Z
-Stopped at: Completed 39-04-PLAN.md (human-verify gate passed)
+Last session: 2026-07-27T21:08:33.668Z
+Stopped at: Completed 39-05-PLAN.md — Phase 39 fully executed (5/5), ready for verification
 Resume file: None
 
 ## Performance Metrics
