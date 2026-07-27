@@ -437,10 +437,20 @@ def _mapping_rejection_reason(entry: Any) -> str | None:
                 f"params contains value-threshold key(s) {forbidden} -- "
                 "this expresses SWRL scope, not a structural check"
             )
-        if operation == "forbidsOrphan":
-            label = params.get("label")
-            if label is not None and label not in _COMPUTGRAPH_ORPHAN_LABELS:
-                return f"label {label!r} is not a recognized Computgraph entity label"
+    # Require the operation-specific mandatory param -- without it the
+    # evaluator falls back to a "" default that makes the Cypher template
+    # (CONTAINS '' / $label IN labels(n) with label='') silently
+    # always-pass instead of actually checking anything (WR-01).
+    if operation in ("requiresProcedure", "requiresParameter"):
+        name_pattern = params.get("namePattern") if isinstance(params, dict) else None
+        if not isinstance(name_pattern, str) or not name_pattern.strip():
+            return f"operation {operation!r} requires a non-empty params.namePattern"
+    if operation == "forbidsOrphan":
+        label = params.get("label") if isinstance(params, dict) else None
+        if not label:
+            return "operation 'forbidsOrphan' requires params.label"
+        if label not in _COMPUTGRAPH_ORPHAN_LABELS:
+            return f"label {label!r} is not a recognized Computgraph entity label"
     return None
 
 
