@@ -169,24 +169,60 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 root.ValueKind == JsonValueKind.Object &&
                 root.EnumerateObject().Any(p => p.Name is "objStates" or "paramStates" or "propStates"))
             {
-                // v2 payload — deserialize as full DesignState. A
-                // JsonStringEnumConverter is required here (Rule 1 fix,
-                // Phase 38 plan 38-05 Task 3): DesignStateParameter.Type is
-                // a C# enum, and System.Text.Json's default enum handling
-                // only accepts an integer, not the lowercase string
-                // ("number"/"integer"/"boolean") that
-                // DesignStatePayloadV2Serializer.Serialize actually emits
-                // (via ParameterDto.Type) -- without this converter, any
-                // ParamState/PropState carrying a non-empty Parameters list
-                // fails to deserialize and this whole method silently
-                // returns null, defeating the very round-trip this plan
-                // exists to make reachable.
+                // v2 payload — deserialize as full DesignState. Two fixes
+                // here (Rule 1, Phase 38 plan 38-05 Task 3), both required
+                // for a ParamState carrying real parameters to round-trip
+                // through this path at all:
+                //   1. A JsonStringEnumConverter: DesignStateParameter.Type
+                //      is a C# enum, and System.Text.Json's default enum
+                //      handling only accepts an integer, never the
+                //      lowercase string ("number"/"integer"/"boolean") a
+                //      writer emits.
+                //   2. A manual per-ParamState backfill of Parameters (see
+                //      below): ParamState.Parameters is exposed via a
+                //      getter-only Collection<T> (by design, so callers
+                //      cannot replace the instance). System.Text.Json's
+                //      default handling for a getter-only collection member
+                //      SILENTLY SKIPS populating it instead of throwing --
+                //      `JsonObjectCreationHandling.Populate` would fix this
+                //      in one line, but that API is .NET 8+ only and
+                //      DG.Core multi-targets net7.0 (the actual Grasshopper
+                //      plugin runtime), so it is deliberately not used here.
+                // Without both, this whole method silently returns a
+                // DesignState with empty ParamStates[].Parameters, defeating
+                // the very round-trip this plan exists to make reachable.
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                     Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
                 };
-                return JsonSerializer.Deserialize<DesignState>(statePayloadJson, options);
+                var designState = JsonSerializer.Deserialize<DesignState>(statePayloadJson, options);
+                if (designState is not null
+                    && root.TryGetProperty("paramStates", out var paramStatesElement)
+                    && paramStatesElement.ValueKind == JsonValueKind.Array)
+                {
+                    var rawParamStates = paramStatesElement.EnumerateArray().ToList();
+                    for (var i = 0; i < designState.ParamStates.Count && i < rawParamStates.Count; i++)
+                    {
+                        if (!rawParamStates[i].TryGetProperty("parameters", out var parametersElement)
+                            || parametersElement.ValueKind != JsonValueKind.Array)
+                        {
+                            continue;
+                        }
+
+                        foreach (var parameterElement in parametersElement.EnumerateArray())
+                        {
+                            var parameter = JsonSerializer.Deserialize<DesignStateParameter>(
+                                parameterElement.GetRawText(), options);
+                            if (parameter is not null)
+                            {
+                                designState.ParamStates[i].Parameters.Add(parameter);
+                            }
+                        }
+                    }
+                }
+
+                return designState;
             }
 
             // v1 payload — ParamState-only format

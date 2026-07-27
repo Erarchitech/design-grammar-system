@@ -154,4 +154,63 @@ public sealed class Neo4jValidGraphRepositoryTests
         var result = Neo4jValidGraphRepository.ParseTimestamp("");
         Assert.Equal(DateTimeOffset.MinValue, result);
     }
+
+    // ── Phase 38 plan 38-05 Task 4: standalone-DesignState read tests ──
+
+    [Fact]
+    public void StandaloneStatesQuery_ShouldTargetParamStateOnValidGraphScopedToProject()
+    {
+        var query = Neo4jValidGraphRepository.GetStandaloneStatesQueryForTesting();
+        Assert.Contains("kind:'ParamState'", query);
+        Assert.Contains("graph:'ValidGraph'", query);
+        Assert.Contains("project:$project", query);
+        // No string-interpolated project literal anywhere in the query text.
+        Assert.DoesNotContain("project:'", query);
+    }
+
+    [Fact]
+    public void TryParseDesignState_WithAcceptCandidateWriterEnvelope_ParsesWithMatchingStateIdAndParameter()
+    {
+        // Literal fixture matching cg_paramstate_store.py's
+        // _build_state_payload_json envelope shape verbatim (Phase 38 plan
+        // 38-05 Task 1) -- the cheapest possible guard on the Python-writer /
+        // C#-reader cross-language contract. A drift between the two sides
+        // fails here rather than in Rhino.
+        const string json = """
+            {"version":"2","stateId":"DS_A1B2C3D4E5F6A7B8","label":null,"capturedAtUtc":"2026-07-27T12:05:00Z","objStates":[],"paramStates":[{"stateId":"DS_A1B2C3D4E5F6A7B8","capturedAtUtc":"2026-07-27T12:05:00Z","parameters":[{"parameterId":"HTotal","displayName":"HTotal","type":"number","numberValue":40.0,"integerValue":null,"booleanValue":null}]}],"propStates":[]}
+            """;
+
+        var result = Neo4jValidGraphRepository.TryParseDesignState(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("DS_A1B2C3D4E5F6A7B8", result!.StateId);
+        Assert.Single(result.ParamStates);
+        Assert.Single(result.ParamStates[0].Parameters);
+        var parameter = result.ParamStates[0].Parameters.First();
+        Assert.Equal("HTotal", parameter.ParameterId);
+        Assert.Equal(DesignStateParameterType.Number, parameter.Type);
+        Assert.Equal(40.0, parameter.NumberValue);
+    }
+
+    [Fact]
+    public void DesignStates_RunDerivedAndStandaloneStateWithSameStateId_YieldsOneEntry()
+    {
+        // Mirrors GetRunsAsync's own ordering: run-derived states are
+        // collected first, then the additive standalone read (Task 3)
+        // appends to the same list BEFORE the StateId dedup block runs
+        // (D-04) -- a candidate that has since been validated into a run
+        // must not be listed twice.
+        var runDerivedState = new DesignState { StateId = "DS_shared" };
+        var standaloneState = new DesignState { StateId = "DS_shared" };
+        var otherStandaloneState = new DesignState { StateId = "DS_only_standalone" };
+
+        var allStates = new List<DesignState> { runDerivedState, standaloneState, otherStandaloneState };
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var distinct = allStates.Where(s => seen.Add(s.StateId)).ToList();
+
+        Assert.Equal(2, distinct.Count);
+        Assert.Contains(distinct, s => s.StateId == "DS_shared");
+        Assert.Contains(distinct, s => s.StateId == "DS_only_standalone");
+    }
 }

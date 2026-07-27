@@ -129,25 +129,33 @@ def _flatten_parameters(parameter_views: list[dict[str, Any]]) -> dict[str, Any]
 
 
 def _build_state_payload_json(state_id: str, accepted_at: str, parameter_views: list[dict[str, Any]]) -> str:
-    """The v2 `statePayloadJson` envelope `DesignStatePayloadV2Serializer`
-    (DG.Core) and `Neo4jValidGraphRepository.TryParseDesignState` (the
-    additive standalone read, plan 38-05 Task 3) both understand: a
-    top-level `objStates`/`paramStates`/`propStates` triad, `StateId` and an
-    ISO-8601 `CapturedAtUtc` at both the top level and on the nested
-    ParamState -- the two invariants `DesignStatePayloadV2Serializer`'s
-    `Deserialize()` enforces (`spec/DATABASE.md`, `DesignStatePayloadV2Serializer.cs:132-144`).
+    """The v2 `statePayloadJson` envelope `Neo4jValidGraphRepository.
+    TryParseDesignState`'s v2 branch (the additive standalone read, plan
+    38-05 Task 3) reads directly onto the `DG.Core.Models.DesignState`/
+    `ParamState`/`DesignStateParameter` CLR shape -- so each parameter is
+    written with the model's OWN camelCase property names
+    (`parameterId`, `displayName`, `type`, `numberValue`, `integerValue`,
+    `booleanValue`), never the condensed `{type, value}` pair
+    `DesignStatePayloadV2Serializer`'s private DTOs use for ITS OWN
+    Serialize()/Deserialize() round-trip -- those are a different shape for
+    a different call path. `StateId` and an ISO-8601 `CapturedAtUtc` are set
+    at both the top level and on the nested ParamState, matching the
+    invariants `DesignStatePayloadV2Serializer.cs:132-144` documents.
     """
     parameters: list[dict[str, Any]] = []
     for view in parameter_views:
         json_type = _TYPE_TO_JSON_TYPE.get((view.get("type") or "").strip())
         if json_type is None:
             continue
+        value = _extract_value(view)
         parameters.append(
             {
                 "parameterId": view.get("parameterId"),
                 "displayName": view.get("displayName") or view.get("parameterId"),
                 "type": json_type,
-                "value": _extract_value(view),
+                "numberValue": value if json_type == "number" else None,
+                "integerValue": value if json_type == "integer" else None,
+                "booleanValue": value if json_type == "boolean" else None,
             }
         )
 
