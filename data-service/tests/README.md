@@ -89,6 +89,9 @@ Auto-Validation watcher (`dsav_watcher.py`).
   `store_validation_run` is byte-for-byte unchanged.
 - `test_dsav_live_loop.py` (**integration tier**, 6 tests) — the live-Docker
   evidence driver. See its own section below.
+- `test_dsav_publish_leg.py` (**integration + live tiers**, 1 test) — the
+  single deliberate Speckle publish. **It writes to a real Speckle server.**
+  See its own section below before running it.
 
 ### `p39-autoval` fixture-project reservation
 
@@ -125,12 +128,53 @@ rename cannot silently start trampling another suite's rows.
   there. It deliberately writes no evidence artifact when nothing was
   measured.
 
+### `test_dsav_publish_leg.py` — mints a real Speckle version
+
+This is the only module in the repository that creates a **real version on the
+Speckle server**. Everything above it runs persist-only.
+
+- **It is `live`-marked, and that marker is the safety mechanism.** `conftest.py`
+  deselects every `live` item unless the caller passes an explicit `-m`
+  expression, so a bare `pytest tests/ -q` can never mint a Speckle version by
+  accident. Note the corollary: a broad `-m live` (e.g. for the recognition
+  eval) **will** collect it. Select it by path when you mean it:
+
+  ```bash
+  docker compose exec -T data-service python -m pytest \
+      tests/test_dsav_publish_leg.py -q -m "integration and live"
+  ```
+
+- **It turns the per-project `publishEnabled` flag on for exactly one capture**
+  and resets it in unconditional teardown, then deletes both the
+  `provider:'AutoValidation'` and `provider:'Speckle'` `IntegrationConfig` rows
+  for `p39-autoval`. Teardown asserts zero `AutoValidation` rows remain: leaving
+  the flag on would turn every future capture into a Speckle version.
+- **It publishes into whichever Speckle project the dev stack already has
+  configured.** `p39-autoval` is a synthetic string with no Speckle project of
+  its own, so the module discovers an existing `provider:'Speckle'`
+  `IntegrationConfig` row, proves the project and base model are readable with
+  the write token, and points the fixture project at that same real Speckle
+  project. One near-empty version is appended to that project's `dg-validation`
+  model per run.
+- **If Speckle is unconfigured it fails loudly rather than skipping**, with
+  `speckle_config_missing` or `speckle_token_missing` in the message, and
+  records a `blocked` evidence entry. No number is ever synthesized and Speckle
+  is never mocked.
+- **Its evidence goes to `/app/data/dsav-publish-evidence.json`**
+  (`DSAV_PUBLISH_EVIDENCE_PATH`) — a separate file, so it can never overwrite
+  the Wave 3 `dsav-evidence.json`. Speckle project and version ids are
+  recorded; tokens never are.
+- Phase 39 ran it **once**, on 2026-07-27, minting Speckle version
+  `2ab708e884`. Re-running it mints another one.
+
 **Measured 2026-07-27 (both tiers, after rebuilding the image):**
 
 | Tier | Command | Result |
 |------|---------|--------|
 | Host | `python -m pytest data-service/tests/ -q` | 699 passed, 4 failed, 1 skipped, 1 deselected, 31 errors in 36.35s |
 | Container | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, 1 deselected in 204.56s |
+| Container (after Wave 4) | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, **2** deselected in 206.17s |
+| Container (publish leg) | `… python -m pytest tests/test_dsav_publish_leg.py -q -m "integration and live"` | 1 passed in 7.32s |
 
 Both tiers now collect **736** — the container has caught up with the host.
 The host tier's 4 failures are the documented `test_dg_context.py` baseline;

@@ -226,6 +226,56 @@
         }
       },
       "assumed_flag": "39-RESEARCH.md A2 discharged: all eight constants executed against live Neo4j without a Cypher error and produced the expected row shapes."
+    },
+    "speckle_publish": {
+      "status": "published",
+      "run_id": "0afe92c2e2324a85a988d42c4ffedc95",
+      "validation_version_id": "2ab708e884",
+      "speckle_project_id": "44088eefc6",
+      "validation_model_id": "a6d1e0c5da",
+      "base_model_id": "4c546c0771",
+      "base_version_id": "9ff670f197",
+      "model_viewer_url": "http://localhost:8080/model-viewer/?project=p39-autoval&runId=0afe92c2e2324a85a988d42c4ffedc95",
+      "validation_resource_url": "http://localhost:8090/projects/44088eefc6/models/a6d1e0c5da@2ab708e884",
+      "speckle_base_url": "http://localhost:8090",
+      "versions_minted": 1,
+      "captures_issued": 1,
+      "speckle_versions_per_capture": 1.0,
+      "captured_at": "2026-07-27T20:04:53.204018+00:00",
+      "completed_at": "2026-07-27T20:04:57.502692+00:00",
+      "trigger": "auto",
+      "verdict_source": "shacl",
+      "send_status": true,
+      "valid_status": [
+        false,
+        false
+      ],
+      "obj_state_count": 2,
+      "validation_entity_count": 0,
+      "verdict_state_before_publish": {
+        "status": "completed",
+        "completedAt": "2026-07-27T20:04:57.502692+00:00",
+        "sendStatus": false,
+        "validationVersionId": null
+      },
+      "ordering": "P-07 inverted relative to the manual path: the run reached 'completed' with its verdict durable BEFORE the publish leg ran, and its status was observed to stay 'completed' throughout.",
+      "speckle_config_source": "the dev stack's existing Speckle configuration, discovered from DG project 'nonexistent-project-xyz' and re-pointed at 'p39-autoval'; p39-autoval is a synthetic phase-reserved project string with no Speckle project of its own",
+      "note": "The published version carries an empty entity and rules payload by construction: a captured DesignState envelope has no per-entity geometry and no failedRuleIds, so the version is a state-level marker rather than a coloured overlay. That emptiness is itself the Speckle-noise characteristic being measured — with the flag on, the observed auto-run Speckle-noise rate is 1 Speckle version per capture that survives debounce and the rate limiter, each version a near-empty commit appended to the project's dg-validation model.",
+      "configuration": {
+        "debounce_window_seconds": 2.0,
+        "rate_limit_per_minute": 3,
+        "max_attempts": 3,
+        "publish_enabled": true,
+        "poll_interval_seconds": 2.0,
+        "complete_deadline_seconds": 40.0,
+        "publish_deadline_seconds": 60.0
+      },
+      "source": "data-service/tests/test_dsav_publish_leg.py",
+      "measured_at": "2026-07-27T20:04:58.896285+00:00",
+      "teardown": {
+        "publish_enabled_reset_to": false,
+        "auto_validation_config_rows_remaining": 0
+      }
     }
   },
   "findings": [
