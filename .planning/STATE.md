@@ -11,10 +11,10 @@ last_activity: 2026-07-27
 last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
-  completed_phases: 9
+  completed_phases: 8
   total_plans: 68
   completed_plans: 62
-  percent: 64
+  percent: 57
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
 Plan: 7 of 7
-Status: Phase complete — ready for verification
+Status: Automated verification passed — awaiting human UAT (see 38-UAT.md)
 Last activity: 2026-07-27 — Phase 38 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists

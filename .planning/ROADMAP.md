@@ -652,7 +652,7 @@ Plans:
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 6/6 | In Progress|  |
-| 38. AI-Generated Grasshopper Script Inputs | 7/7 | Complete   | 2026-07-27 |
+| 38. AI-Generated Grasshopper Script Inputs | 7/7 | Verifying  |  |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
 
