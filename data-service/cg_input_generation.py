@@ -630,6 +630,64 @@ def _value_from_generated_param(p: "cg_schemas.GeneratedParameterValue") -> Any:
     return None
 
 
+def _count_and_strategy_violations(
+    candidate_assignments: list[dict[str, Any]], count: int
+) -> list[dict[str, Any]]:
+    """WR-01: the system prompt and `build_generation_prompt` require
+    exactly `count` candidates, one per non-repeating strategy drawn from
+    `cg_input_sampler.STRATEGIES`. Neither the schema
+    (`GeneratedCandidate.strategy` is deliberately typed `str`, not a
+    `Literal`) nor the domain/diversity checks enforce this -- without this
+    check a short response, or one reusing a strategy string, passes
+    straight through as a Tier-1 success with no retry."""
+    violations: list[dict[str, Any]] = []
+    if len(candidate_assignments) != count:
+        violations.append(
+            {
+                "parameterId": None,
+                "code": "candidate-count-mismatch",
+                "message": (
+                    f"Expected exactly {count} candidates but got {len(candidate_assignments)}. "
+                    f"Where: candidates[] length. How to fix: produce exactly {count} candidates, "
+                    f"one per strategy, never fewer, never more."
+                ),
+            }
+        )
+
+    seen_strategies: dict[str, int] = {}
+    for index, assignment in enumerate(candidate_assignments):
+        strategy = assignment.get("strategy")
+        if strategy not in cg_input_sampler.STRATEGIES:
+            violations.append(
+                {
+                    "parameterId": None,
+                    "code": "invalid-strategy",
+                    "message": (
+                        f"candidates[{index}].strategy is {strategy!r}, which is not one of "
+                        f"{cg_input_sampler.STRATEGIES}. Where: candidates[{index}].strategy. "
+                        f"How to fix: use one of the listed strategy names exactly."
+                    ),
+                }
+            )
+            continue
+        seen_strategies[strategy] = seen_strategies.get(strategy, 0) + 1
+
+    duplicates = sorted(s for s, n in seen_strategies.items() if n > 1)
+    if duplicates:
+        violations.append(
+            {
+                "parameterId": None,
+                "code": "duplicate-strategy",
+                "message": (
+                    f"Strategy value(s) repeated across candidates: {', '.join(duplicates)}. "
+                    f"Where: candidates[].strategy. How to fix: use each strategy at most once "
+                    f"across the whole candidate set."
+                ),
+            }
+        )
+    return violations
+
+
 def _diversity_violations(candidate_assignments: list[dict[str, Any]], bound: list[dict[str, Any]]) -> list[dict[str, Any]]:
     violations: list[dict[str, Any]] = []
     n = len(candidate_assignments)
@@ -802,6 +860,15 @@ def generate_inputs(
                 response.finish_reason, sorted({v["code"] for v in domain_violations}), latency_ms,
             )
             current_prompt = append_domain_feedback(prompt, domain_violations)
+            continue
+
+        count_strategy_violations = _count_and_strategy_violations(candidate_assignments, count)
+        if count_strategy_violations:
+            _log_attempt(
+                attempts, provider, model, caps.mode, options.max_tokens, response.usage,
+                response.finish_reason, sorted({v["code"] for v in count_strategy_violations}), latency_ms,
+            )
+            current_prompt = append_domain_feedback(prompt, count_strategy_violations)
             continue
 
         diversity_violations = _diversity_violations(candidate_assignments, bound)
