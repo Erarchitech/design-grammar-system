@@ -1471,6 +1471,48 @@ def post_computgraph_validate(payload: ComputgraphValidateRequest):
         )
 
 
+class ComputgraphConsultRequest(BaseModel):
+    """Body for POST /computgraph/consult. Unlike ComputgraphValidateRequest,
+    `definitionId` has no resolution fallback here -- spec/API.md documents
+    all three fields as required, so a missing one is rejected by FastAPI's
+    own request-body validation before any session is opened."""
+
+    project: str
+    definitionId: str
+    question: str
+
+
+@app.post("/computgraph/consult")
+def post_computgraph_consult(payload: ComputgraphConsultRequest):
+    """Read-only, grounded LLM consult over one published Computgraph
+    subgraph (Phase 37 Plan 06: SVAL-03).
+
+    Thin route -- opens one session, delegates to
+    dg_context.consult_computgraph(), and returns its result directly.
+    Executes nothing derived from the model's output; the endpoint never
+    writes anything.
+    """
+    try:
+        with driver.session() as session:
+            return dg_context.consult_computgraph(
+                payload.project, payload.definitionId, payload.question, session=session
+            )
+    except ValueError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check the project, definitionId and question fields on the request body.",
+            "COMPUTGRAPH_CONSULT_REQUEST_INVALID",
+            422,
+        )
+    except Exception as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check Neo4j availability and the configured LLM provider.",
+            "COMPUTGRAPH_CONSULT_FAILED",
+            502,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Context assembler endpoints (Phase 29: CTXA-01..05)
 # ---------------------------------------------------------------------------
