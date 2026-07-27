@@ -889,6 +889,14 @@ def build_validation_report(
         severity = finding["severity"]
         if severity in counts:
             counts[severity] += 1
+    # SVAL-02 rule-mapped failures are warning-severity per
+    # spec/RULE-PARTITION-POLICY.md's "Computgraph Structural Checks (Phase
+    # 37)" addendum: "a rule-mapped structural requirement that fails while
+    # the graph itself is well-formed" is `warning`. ruleResults entries
+    # carry no `severity` field of their own (only `passed`), so a failing
+    # entry is rolled into counts.warning here rather than at the findings
+    # loop above.
+    counts[SEVERITY_WARNING] += sum(1 for result in rule_results if not result["passed"])
 
     return {
         "project": project,
