@@ -66,6 +66,7 @@ import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
 import gh_bridge
 import computgraph_publish
+import cg_structure_checks
 
 app = FastAPI()
 
@@ -1414,6 +1415,58 @@ def post_computgraph_publish(payload: ComputgraphPublishRequest):
             str(exc),
             "Check Neo4j availability and the publish payload.",
             "COMPUTGRAPH_PUBLISH_FAILED",
+            502,
+        )
+
+
+class ComputgraphValidateRequest(BaseModel):
+    """Body for POST /computgraph/validate. `definitionId` is optional --
+    when omitted, cg_structure_checks.resolve_definition_id() resolves it
+    against the project's published definitions. No validators beyond the
+    type declarations -- domain validation raises from the delegate, not the
+    model, matching ComputgraphPublishRequest's plainness."""
+
+    project: str
+    definitionId: str | None = None
+
+
+@app.post("/computgraph/validate")
+def post_computgraph_validate(payload: ComputgraphValidateRequest):
+    """Run the deterministic, LLM-free structural + rule-mapped checks over
+    the published Computgraph and return the documented report.
+
+    Thin route -- opens one session, delegates to
+    cg_structure_checks.build_validation_report(), and returns its result
+    directly. Performs no write and never calls the LLM gateway.
+    """
+    try:
+        with driver.session() as session:
+            return cg_structure_checks.build_validation_report(
+                session, payload.project, payload.definitionId
+            )
+    except cg_structure_checks.DefinitionResolutionError as exc:
+        if exc.code == "COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION":
+            hint = (
+                "Multiple definitions are published for this project -- "
+                f"retry with one of: {', '.join(exc.available)}."
+            )
+        elif exc.code == "COMPUTGRAPH_VALIDATE_NO_DEFINITION":
+            hint = "Publish this definition first through POST /computgraph/publish."
+        else:
+            hint = "Publish this definition first through POST /computgraph/publish."
+        raise _structured_error_response(str(exc), hint, exc.code, 422)
+    except ValueError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check the project and definitionId fields on the request body.",
+            "COMPUTGRAPH_VALIDATE_REQUEST_INVALID",
+            422,
+        )
+    except Exception as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check Neo4j availability.",
+            "COMPUTGRAPH_VALIDATE_FAILED",
             502,
         )
 
