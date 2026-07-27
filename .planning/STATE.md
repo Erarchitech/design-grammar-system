@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: AI Workflow Intelligence
-current_phase: 33
-current_phase_name: grasshopper-mcp adaptation
+current_phase: 37
+current_phase_name: script-structure-validation
 status: executing
-stopped_at: "Completed 35-15-PLAN.md (live recognition eval sweep: record-mode driver built, A0/A1-A4/permutation sweep run against real DeepSeek, SC1 verdict blocked-on-provider-availability, 35-UAT.md test 1 closed)"
-last_updated: "2026-07-27T09:34:41.928Z"
+stopped_at: "Completed 37-01-PLAN.md (Wave 0 test substrate: cg_fixtures.py, consult_cassette.py, README.md, 37-VALIDATION.md wave_0_complete)"
+last_updated: "2026-07-27T10:21:23.136Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 32.1 complete, transitioned to Phase 33
+last_activity_desc: Phase 37 execution started
 progress:
   total_phases: 14
   completed_phases: 7
-  total_plans: 50
-  completed_plans: 49
+  total_plans: 56
+  completed_plans: 50
   percent: 50
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 32.1 — cross-platform-identity-and-mapping-dg-id
+**Current focus:** Phase 37 — script-structure-validation
 
 ## Current Position
 
-Phase: 33 — DG Canvas Bridge (grasshopper-mcp adaptation)
-Plan: Not started
+Phase: 37 (script-structure-validation) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-07-27 — Phase 32.1 complete, transitioned to Phase 33
+Last activity: 2026-07-27 — Phase 37 execution started
 
 ## Deferred Verification
 
@@ -83,6 +83,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 35 P14 | 35min | 2 tasks | 2 files |
 | Phase 35 P13 | ~1h10m | 4 tasks | 6 files |
 | Phase 35 P15 | ~50min | 4 tasks | 27 files |
+| Phase 37 P01 | ~45min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -302,6 +303,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 35-15: Built the missing record-mode LLM sweep driver (35-13 asserted it existed; it did not) as an in-plan deviation -- REAL_ADAPTER_MAP + resolve_real_negotiated_mode in arms.py is now the single source of truth for provider-label -> real adapter/base_url translation, used by both live_sweep.py (record) and report.py (replay)
 - [Phase ?]: 35-15: SC1 measured DeepSeek-only (A0-A4; A0f/A5 skipped, no frontier key configured) -- reported as still blocked on provider availability per the plan's own pre-registered fallback, not computed as pass/fail from an incomplete arm set
 - [Phase ?]: 35-15: A0's validity verdict is read from a G7 guardrail block (valid:False) on Corpus B, not the literal assert_a0_validity() shape written before Phase 35-12's G7 existed -- G7's own trigger condition encodes UAT F3's signature, so the block is harness-validated evidence, not a harness defect
+- [Phase ?]: [Phase 37-01]: PARAM_HTOTAL_CG_ID kept as cg:1:param:11_Var_HTotal (Phase 36 golden fixture's kindLiteral convention), not the raw CanvasAnnotationParser.ParamId() var literal -- envelope id scheme is produced by a separate serializer than the parser helper
+- [Phase ?]: [Phase 37-01]: FIXTURE_PROJECT (p37-structure) isolation convention established -- any test publishing into live Neo4j must scope itself to a project string no other suite uses
 
 ### Research Flags (carry into planning)
 
@@ -379,8 +382,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-26T22:20:07.404Z
-Stopped at: Completed 35-15-PLAN.md (live recognition eval sweep: record-mode driver built, A0/A1-A4/permutation sweep run against real DeepSeek, SC1 verdict blocked-on-provider-availability, 35-UAT.md test 1 closed)
+Last session: 2026-07-27T10:21:23.117Z
+Stopped at: Completed 37-01-PLAN.md (Wave 0 test substrate: cg_fixtures.py, consult_cassette.py, README.md, 37-VALIDATION.md wave_0_complete)
 Resume file: None
 
 ## Performance Metrics

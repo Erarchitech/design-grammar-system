@@ -88,9 +88,9 @@
 
 ### Script Structure Validation (SVAL) — Phase 37
 
-- [ ] **SVAL-01**: Deterministic, LLM-free structural checks run over the published Computgraph via Cypher — convention compliance, orphan Patterns, Procedures without Interfaces, untyped Parameters, dangling links — each finding referencing the exact entities
-- [ ] **SVAL-02**: Design Rules can be mapped to script-structure requirements (e.g. required Procedure/Parameter presence) and evaluated over the Computgraph, reported pass/fail per rule with supporting entities
-- [ ] **SVAL-03**: `POST /computgraph/consult` answers natural-language questions about a published script structure using Computgraph context through the gateway — answers grounded in graph entities, read-only
+- [x] **SVAL-01**: Deterministic, LLM-free structural checks run over the published Computgraph via Cypher — convention compliance, orphan Patterns, Procedures without Interfaces, untyped Parameters, dangling links — each finding referencing the exact entities
+- [x] **SVAL-02**: Design Rules can be mapped to script-structure requirements (e.g. required Procedure/Parameter presence) and evaluated over the Computgraph, reported pass/fail per rule with supporting entities
+- [x] **SVAL-03**: `POST /computgraph/consult` answers natural-language questions about a published script structure using Computgraph context through the gateway — answers grounded in graph entities, read-only
 
 ### Grasshopper Input Generation (GHIN) — Phase 38
 

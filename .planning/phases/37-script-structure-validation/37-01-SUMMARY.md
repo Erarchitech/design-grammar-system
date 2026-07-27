@@ -161,3 +161,7 @@ None - no external service configuration required.
 ---
 *Phase: 37-script-structure-validation*
 *Completed: 2026-07-27*
+
+## Self-Check: PASSED
+
+All created files confirmed present on disk (`cg_fixtures.py`, `test_cg_fixtures.py`, `consult_cassette.py`, `README.md`, `37-VALIDATION.md`, `37-01-SUMMARY.md`); all four task/summary commit hashes (`ee17ef0`, `02ab366`, `2e9539a`, `0d0d4cd`) confirmed present in `git log --oneline --all`.
