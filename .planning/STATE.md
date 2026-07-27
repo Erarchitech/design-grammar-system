@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 39
 current_phase_name: designstate-auto-validation-investigation
 status: executing
-stopped_at: Completed 39-02-PLAN.md
-last_updated: "2026-07-27T19:23:00.035Z"
+stopped_at: Completed 39-03-PLAN.md (live-Docker SC1/SC2 measurement)
+last_updated: "2026-07-27T19:57:35.352Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 39 execution started
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 68
-  completed_plans: 64
+  completed_plans: 65
   percent: 64
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 39 (designstate-auto-validation-investigation) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 39 execution started
 
@@ -105,6 +105,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 38 P07 | ~1h40min | 4 tasks | 9 files |
 | Phase 39 P01 | ~30min | 2 tasks | 3 files |
 | Phase 39 P02 | 45min | 3 tasks | 2 files |
+| Phase 39 P03 | ~60min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -356,6 +357,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 39-01]: COALESCE_QUERY additionally returns the kept row's statePayloadJson (beyond plan minimum) so poll_once() can call derive_valid_status() without a second read
 - [Phase ?]: Phase 39-02: ensure_spec_indexes migrated off the deprecated startup-event decorator into the new FastAPI lifespan — Starlette runs on_startup handlers only through its default lifespan, so supplying lifespan= would have silently disabled the SpecGraph index bootstrap
 - [Phase ?]: Phase 39-02: _auto_publish_run's valid_status parameter defaulted to None — poll_once calls publish_fn(project, run_id) with two positionals, so the plan's 3-required-arg signature would have TypeError'd on every auto-publish
+- [Phase ?]: 39-03: runs-per-minute burst uses a 4-captures-then-8s-idle cycle, not a uniform 1Hz stream — a uniform stream against the 5s debounce re-arms it forever and would measure 0 runs/min (debounce starvation) instead of the rate limiter
+- [Phase ?]: 39-03: F-39-01 — auto-runs are SHACL-validated before their own ValidStatus is written, so every auto-run self-violates RunStatusShape_valid and P-02's unmapped fallback flips every ObjState false; measured, left open for the DSAV-03 ADR
+- [Phase ?]: 39-03: evidence artifacts record unmeasured scenarios as explicit holes (missing_measurements) and write nothing at all when nothing was observed — a fabricated datapoint silently corrupts the ADR that cites the file
 
 ### Research Flags (carry into planning)
 
@@ -434,8 +438,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T19:22:59.999Z
-Stopped at: Completed 39-02-PLAN.md
+Last session: 2026-07-27T19:57:35.331Z
+Stopped at: Completed 39-03-PLAN.md (live-Docker SC1/SC2 measurement)
 Resume file: None
 
 ## Performance Metrics
