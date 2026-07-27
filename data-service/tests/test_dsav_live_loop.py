@@ -8,10 +8,19 @@ SHACL sidecar. Everything Waves 1 and 2 asserted with a fixture session or a
 `TestClient` is re-asserted here through HTTP + bolt.
 
 Run it inside the compose network -- the `neo4j` and `dg-reasoner` hostnames
-resolve nowhere else:
+resolve nowhere else -- and select it explicitly, because it is `live`-marked
+and therefore deselected by a bare `pytest` run:
 
     docker compose exec -T data-service python -m pytest \
-        tests/test_dsav_live_loop.py -q -m integration
+        tests/test_dsav_live_loop.py -q -m "integration and live"
+
+The `live` marker was added after Phase 39 Wave 4 (operator-authorized at the
+39-04 checkpoint). This module's `live_session` fixture DELETES every
+`:ValidationRun` and `:IntegrationConfig` scoped to `p39-autoval` at both
+setup and teardown. While the module was `integration`-only, a routine
+`pytest tests/ -q` collected it and silently destroyed the phase's published
+run row -- the very evidence Wave 4 had just measured. The marker makes
+running this module a deliberate act, matching `test_dsav_publish_leg.py`.
 
 **The image must be rebuilt first.** `data-service/tests/` has no live bind
 mount, so this file (and `dsav_watcher.py`, `dsav_fixtures.py`) is invisible
@@ -53,8 +62,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dsav_watcher  # noqa: E402
 from dsav_fixtures import FIXTURE_PROJECT, capture_envelope, capture_envelope_json  # noqa: E402
 
-# Every test in this module needs the compose network.
-pytestmark = pytest.mark.integration
+# `integration` = needs the compose network. `live` = it mutates shared live
+# state (it scrubs every p39-autoval row) and so must never be collected by a
+# bare `pytest` run. Same convention as `test_dsav_publish_leg.py`, so both
+# modules behave identically under `-m "integration and live"`.
+pytestmark = [pytest.mark.integration, pytest.mark.live]
 
 # ── T-39-10 isolation guard ─────────────────────────────────────────────────
 # Every write this module performs is scoped to this one project string, and

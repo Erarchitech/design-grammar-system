@@ -87,8 +87,8 @@ Auto-Validation watcher (`dsav_watcher.py`).
   `POST /designstate/capture` auth/project-binding/payload-cap matrix, the
   `lifespan` watcher wiring, and a pinned-source-hash guard proving
   `store_validation_run` is byte-for-byte unchanged.
-- `test_dsav_live_loop.py` (**integration tier**, 6 tests) — the live-Docker
-  evidence driver. See its own section below.
+- `test_dsav_live_loop.py` (**integration + live**, 6 tests) — the live-Docker
+  evidence driver. It scrubs shared live rows; see its own section below.
 - `test_dsav_publish_leg.py` (**integration + live tiers**, 1 test) — the
   single deliberate Speckle publish. **It writes to a real Speckle server.**
   See its own section below before running it.
@@ -104,6 +104,20 @@ rename cannot silently start trampling another suite's rows.
 
 ### `test_dsav_live_loop.py` — extra requirements
 
+- **It is `live`-marked, so select it explicitly:**
+
+  ```bash
+  docker compose exec -T data-service python -m pytest \
+      tests/test_dsav_live_loop.py -q -m "integration and live"
+  ```
+
+  The marker was added after Phase 39 Wave 4 (operator-authorized at the 39-04
+  checkpoint). This module's `live_session` fixture **deletes every
+  `:ValidationRun` and `:IntegrationConfig` scoped to `p39-autoval`** at both
+  setup and teardown. While it was `integration`-only, a routine
+  `pytest tests/ -q` collected it and silently destroyed the published run row
+  Wave 4 had just measured. `live` makes running it a deliberate act — the
+  same convention `test_dsav_publish_leg.py` uses.
 - **Needs the full compose stack, including `dg-reasoner`.** Unlike the other
   integration tests it does not only need Neo4j: it drives HTTP against the
   running uvicorn process (whose `lifespan` owns the watcher daemon) and
@@ -173,8 +187,16 @@ Speckle server**. Everything above it runs persist-only.
 |------|---------|--------|
 | Host | `python -m pytest data-service/tests/ -q` | 699 passed, 4 failed, 1 skipped, 1 deselected, 31 errors in 36.35s |
 | Container | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, 1 deselected in 204.56s |
-| Container (after Wave 4) | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, **2** deselected in 206.17s |
-| Container (publish leg) | `… python -m pytest tests/test_dsav_publish_leg.py -q -m "integration and live"` | 1 passed in 7.32s |
+| Container (Wave 4, publish leg added) | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, **2** deselected in 206.17s |
+| Container (Wave 4, after `live`-marking the live loop) | `docker compose exec -T data-service python -m pytest tests/ -q` | **728** passed, 1 skipped, **8** deselected in **8.88s** |
+| Container (live loop, selected) | `… python -m pytest tests/test_dsav_live_loop.py -q -m "integration and live"` | 6 passed in 192.74s |
+| Container (publish leg, selected) | `… python -m pytest tests/test_dsav_publish_leg.py -q -m "integration and live"` | 1 passed in 7.32s |
+
+The default in-container run drops from 734 to **728 passed** and from 2 to
+**8 deselected**: the six `test_dsav_live_loop.py` tests moved out of default
+collection. That is the intended effect of the `live` marker, not a
+regression — they still pass when selected, and the bare run is now 23×
+faster because those six were nearly all of its wall-clock.
 
 Both tiers now collect **736** — the container has caught up with the host.
 The host tier's 4 failures are the documented `test_dg_context.py` baseline;
