@@ -43,6 +43,8 @@ from typing import Any
 from neo4j import GraphDatabase
 from pydantic import BaseModel
 
+import cg_recognition
+import cg_structure_checks
 import dg_knowledge
 from llm_gateway import (
     GenerateRequest,
@@ -944,3 +946,274 @@ class GenerateCypherRequest(BaseModel):
     project: str | None = None
     model: str | None = None
     provider: str | None = None
+
+
+# ── Computgraph subgraph fetch for POST /computgraph/consult (Phase 37 Plan
+# 06: SVAL-03) ──
+#
+# NOT a fourth CONTEXT_REQUEST_TYPES value: assemble_context()'s project-wide
+# static concept bundling (Ontograph/Metagraph/Validgraph/Computgraph
+# catalog + live OntoGraph/ValidGraph fetches) is irrelevant to a single-
+# definition structural question, and touching that dispatch risks the
+# existing rule-ingest and graph-query paths (37-RESEARCH.md
+# "/computgraph/consult Context Assembly"). This is its own dedicated
+# function instead, mirroring fetch_existing_entities()/
+# fetch_existing_design_states()'s dual-mode session + explicit ORDER BY
+# determinism discipline (D-17 pattern). Every match in both queries below
+# binds BOTH `project` and `definitionId` on every node in the pattern --
+# not only on the root -- so a mis-scoped relationship can never pull in
+# another project's or another definition's node (T-37-01/T-37-03).
+
+# Bounds prompt size for a pathologically large definition -- entities
+# beyond this cap never enter the assembled subgraph (and therefore never
+# reach the prompt); the response marks `truncated: true` instead of
+# silently dropping entities without a signal (T-37-04).
+CONSULT_MAX_ENTITIES = 300
+
+# Object -> Behavior -> Algorithm -> Procedure spine (Phase 36 Output
+# Contract: HAS_BEHAVIOR/HAS_ALGORITHM/HAS_PROCEDURE, always present).
+# OPTIONAL MATCH at every step so a definition with an Object but no
+# Algorithms yet still returns the Object row instead of nothing.
+_COMPUTGRAPH_SUBGRAPH_QUERY = (
+    "MATCH (o:Object {project: $project, definitionId: $definitionId}) "
+    "OPTIONAL MATCH (o)-[:HAS_BEHAVIOR]->(b:Behavior {project: $project, definitionId: $definitionId}) "
+    "OPTIONAL MATCH (b)-[:HAS_ALGORITHM]->(a:Algorithm {project: $project, definitionId: $definitionId}) "
+    "OPTIONAL MATCH (a)-[:HAS_PROCEDURE]->(pr:Procedure {project: $project, definitionId: $definitionId}) "
+    "RETURN o.cgId AS objectCgId, o.objectName AS objectName, o.publishedAt AS publishedAt, "
+    "a.algIndex AS algIndex, a.algorithmName AS algorithmName, "
+    "pr.cgId AS procCgId, pr.procedureName AS procedureName, pr.procIndex AS procIndex "
+    "ORDER BY a.algIndex, pr.procIndex, pr.cgId "
+    "// op=CONSULT_FETCH_SUBGRAPH"
+)
+
+# Per-Procedure children (Pattern/Parameter/Interface, Phase 36 Output
+# Contract: HAS_PATTERN/HAS_PARAMETER/HAS_INTERFACE, always present) plus
+# each Parameter's PARAM_LINK-linked Interface cgId (only when a wire
+# connects them). One query literal built from three UNION ALL branches
+# (never three independent OPTIONAL MATCHes off the same `pr` -- that would
+# cross-join patterns x parameters x interfaces) with one ORDER BY applied
+# to the combined result, scoped by both `project` and `definitionId` on
+# every node in every branch.
+_COMPUTGRAPH_SUBGRAPH_CHILDREN_QUERY = (
+    "MATCH (pr:Procedure {project: $project, definitionId: $definitionId})"
+    "-[:HAS_PATTERN]->(child:Pattern {project: $project, definitionId: $definitionId}) "
+    "RETURN pr.cgId AS procCgId, pr.procIndex AS procIndex, 'Pattern' AS childLabel, "
+    "child.cgId AS childCgId, child.patternName AS childName, "
+    "null AS childKind, null AS childDataType, null AS linkedInterfaceCgId "
+    "UNION ALL "
+    "MATCH (pr:Procedure {project: $project, definitionId: $definitionId})"
+    "-[:HAS_PARAMETER]->(child:Parameter {project: $project, definitionId: $definitionId}) "
+    "OPTIONAL MATCH (child)-[:PARAM_LINK]->(li:Interface {project: $project, definitionId: $definitionId}) "
+    "RETURN pr.cgId AS procCgId, pr.procIndex AS procIndex, 'Parameter' AS childLabel, "
+    "child.cgId AS childCgId, child.parameterName AS childName, "
+    "child.paramKind AS childKind, child.dataType AS childDataType, li.cgId AS linkedInterfaceCgId "
+    "UNION ALL "
+    "MATCH (pr:Procedure {project: $project, definitionId: $definitionId})"
+    "-[:HAS_INTERFACE]->(child:Interface {project: $project, definitionId: $definitionId}) "
+    "RETURN pr.cgId AS procCgId, pr.procIndex AS procIndex, 'Interface' AS childLabel, "
+    "child.cgId AS childCgId, child.interfaceName AS childName, "
+    "child.ifaceType AS childKind, null AS childDataType, null AS linkedInterfaceCgId "
+    "ORDER BY procIndex, procCgId, childCgId "
+    "// op=CONSULT_FETCH_CHILDREN"
+)
+
+
+def _consult_entity(label: str, cg_id: str | None, name: str | None) -> dict[str, Any]:
+    """The normative entity dict every consult-subgraph node uses -- same
+    shape as cg_structure_checks._entity(), independently built here because
+    that helper is private to its module. `conventionName` is derived by
+    reusing cg_structure_checks.convention_name_from_cg_id() (imported, not
+    duplicated): the publish path writes only the bare name onto the
+    display-name property, so the convention token an architect actually
+    typed on canvas exists nowhere else in the graph."""
+    cg_id = cg_id or ""
+    return {
+        "label": label,
+        "cgId": cg_id,
+        "name": name or "",
+        "conventionName": cg_structure_checks.convention_name_from_cg_id(cg_id),
+    }
+
+
+def fetch_computgraph_subgraph(project: str, definition_id: str, session: Any = None) -> dict[str, Any]:
+    """Live, definitionId-scoped read of the published Computgraph (the
+    first live read of this graph partition -- Phase 36 only ever *writes*
+    Computgraph; nothing before this function ever reads it back).
+
+    `session` is duck-typed identically to `fetch_existing_entities()`/
+    `fetch_existing_design_states()`: pass an injected session in tests for
+    zero live Neo4j, omit it in production for a lazily-opened session
+    against this module's own driver.
+
+    Returns a nested dict with keys `project`, `definitionId`,
+    `publishedAt`, `object`, `algorithms`, `entityNames`, `entityCount` and
+    `truncated`. `algorithms` is a list of `{algIndex, name, procedures}`,
+    each procedure a `{cgId, name, conventionName, patterns, parameters,
+    interfaces}` -- every entity in the whole structure carries `cgId`,
+    published display `name`, and a `conventionName` derived from the
+    cgId's last segment (T-37-01/T-37-03 mitigations rely on every node
+    pattern above binding both `project` and `definitionId`).
+
+    `entityNames` is the grounding vocabulary: the sorted, deduplicated
+    union of every retained entity's display name and convention name.
+    `entityCount` is the untruncated total; when it exceeds
+    `CONSULT_MAX_ENTITIES`, only the first entities in the deterministic
+    query order are retained in `object`/`algorithms`/`entityNames` and
+    `truncated` is set true -- truncation bounds what actually reaches the
+    prompt (T-37-04), not only the reported vocabulary.
+
+    Every collection here is either sorted or query-ordered -- no set
+    iteration order, no hash-dependent dict order -- so two calls against
+    an unchanged graph return equal dicts.
+    """
+    if session is not None:
+        spine_rows = [dict(record) for record in session.run(_COMPUTGRAPH_SUBGRAPH_QUERY, project=project, definitionId=definition_id)]
+        child_rows = [dict(record) for record in session.run(_COMPUTGRAPH_SUBGRAPH_CHILDREN_QUERY, project=project, definitionId=definition_id)]
+    else:
+        with _get_driver().session() as live_session:
+            spine_rows = [
+                dict(record)
+                for record in live_session.run(_COMPUTGRAPH_SUBGRAPH_QUERY, project=project, definitionId=definition_id)
+            ]
+            child_rows = [
+                dict(record)
+                for record in live_session.run(
+                    _COMPUTGRAPH_SUBGRAPH_CHILDREN_QUERY, project=project, definitionId=definition_id
+                )
+            ]
+
+    object_cg_id: str | None = None
+    object_name: str | None = None
+    published_at: str | None = None
+    # algIndex -> {"algIndex", "name", "procedures": {procCgId: {...}}, "procedure_order": [...]}
+    algorithms_by_index: dict[Any, dict[str, Any]] = {}
+    alg_order: list[Any] = []
+
+    for row in spine_rows:
+        if object_cg_id is None and row.get("objectCgId") is not None:
+            object_cg_id = row["objectCgId"]
+            object_name = row.get("objectName")
+            published_at = row.get("publishedAt")
+        alg_index = row.get("algIndex")
+        if alg_index is None:
+            continue
+        if alg_index not in algorithms_by_index:
+            algorithms_by_index[alg_index] = {
+                "algIndex": alg_index,
+                "name": row.get("algorithmName") or "",
+                "procedures": {},
+                "procedure_order": [],
+            }
+            alg_order.append(alg_index)
+        alg_entry = algorithms_by_index[alg_index]
+        proc_cg_id = row.get("procCgId")
+        if proc_cg_id is not None and proc_cg_id not in alg_entry["procedures"]:
+            alg_entry["procedures"][proc_cg_id] = {
+                "cgId": proc_cg_id,
+                "name": row.get("procedureName") or "",
+                "procIndex": row.get("procIndex"),
+                "patterns": [],
+                "parameters": [],
+                "interfaces": [],
+            }
+            alg_entry["procedure_order"].append(proc_cg_id)
+
+    # procCgId -> algIndex, so a children-query row can find its owning
+    # algorithm without a third query. cgId is a MERGE key, so it is unique
+    # within (project, definitionId).
+    proc_to_alg: dict[Any, Any] = {
+        proc_cg_id: alg_index
+        for alg_index, alg_entry in algorithms_by_index.items()
+        for proc_cg_id in alg_entry["procedure_order"]
+    }
+
+    for row in child_rows:
+        proc_cg_id = row.get("procCgId")
+        alg_index = proc_to_alg.get(proc_cg_id)
+        child_cg_id = row.get("childCgId")
+        if alg_index is None or child_cg_id is None:
+            continue
+        proc_entry = algorithms_by_index[alg_index]["procedures"][proc_cg_id]
+        child_label = row.get("childLabel")
+        child_name = row.get("childName")
+        if child_label == "Pattern":
+            proc_entry["patterns"].append(_consult_entity("Pattern", child_cg_id, child_name))
+        elif child_label == "Parameter":
+            entry = _consult_entity("Parameter", child_cg_id, child_name)
+            entry["paramKind"] = row.get("childKind") or ""
+            entry["dataType"] = row.get("childDataType") or ""
+            entry["linkedInterfaceCgId"] = row.get("linkedInterfaceCgId") or ""
+            proc_entry["parameters"].append(entry)
+        elif child_label == "Interface":
+            entry = _consult_entity("Interface", child_cg_id, child_name)
+            entry["ifaceType"] = row.get("childKind") or ""
+            proc_entry["interfaces"].append(entry)
+
+    object_entity = _consult_entity("Object", object_cg_id, object_name) if object_cg_id else None
+
+    # Flat, canonical-order entity list (object, then each algorithm, then
+    # each of its procedures with their patterns/parameters/interfaces) --
+    # this single ordered list drives both entityNames and the truncation
+    # cutoff, so the prompt renderer and the reported vocabulary can never
+    # disagree about what was retained.
+    flat_entities: list[tuple[tuple[str, Any], dict[str, Any]]] = []
+    if object_entity is not None:
+        flat_entities.append((("Object", object_cg_id), object_entity))
+
+    for alg_index in alg_order:
+        alg_entry = algorithms_by_index[alg_index]
+        flat_entities.append(
+            (("Algorithm", alg_index), {"label": "Algorithm", "cgId": "", "name": alg_entry["name"], "conventionName": ""})
+        )
+        for proc_cg_id in alg_entry["procedure_order"]:
+            proc = alg_entry["procedures"][proc_cg_id]
+            flat_entities.append((("Procedure", proc_cg_id), _consult_entity("Procedure", proc_cg_id, proc["name"])))
+            for pattern in proc["patterns"]:
+                flat_entities.append((("Pattern", pattern["cgId"]), pattern))
+            for parameter in proc["parameters"]:
+                flat_entities.append((("Parameter", parameter["cgId"]), parameter))
+            for interface in proc["interfaces"]:
+                flat_entities.append((("Interface", interface["cgId"]), interface))
+
+    entity_count = len(flat_entities)
+    truncated = entity_count > CONSULT_MAX_ENTITIES
+    kept = flat_entities[:CONSULT_MAX_ENTITIES] if truncated else flat_entities
+    kept_keys = {key for key, _ in kept}
+
+    entity_names = sorted(
+        {value for _, entity in kept for value in (entity["name"], entity["conventionName"]) if value}
+    )
+
+    algorithms_out: list[dict[str, Any]] = []
+    for alg_index in alg_order:
+        if ("Algorithm", alg_index) not in kept_keys:
+            continue
+        alg_entry = algorithms_by_index[alg_index]
+        procedures_out: list[dict[str, Any]] = []
+        for proc_cg_id in alg_entry["procedure_order"]:
+            if ("Procedure", proc_cg_id) not in kept_keys:
+                continue
+            proc = alg_entry["procedures"][proc_cg_id]
+            procedures_out.append(
+                {
+                    "cgId": proc_cg_id,
+                    "name": proc["name"],
+                    "conventionName": cg_structure_checks.convention_name_from_cg_id(proc_cg_id),
+                    "patterns": [p for p in proc["patterns"] if ("Pattern", p["cgId"]) in kept_keys],
+                    "parameters": [p for p in proc["parameters"] if ("Parameter", p["cgId"]) in kept_keys],
+                    "interfaces": [i for i in proc["interfaces"] if ("Interface", i["cgId"]) in kept_keys],
+                }
+            )
+        algorithms_out.append({"algIndex": alg_index, "name": alg_entry["name"], "procedures": procedures_out})
+
+    return {
+        "project": project,
+        "definitionId": definition_id,
+        "publishedAt": published_at,
+        "object": object_entity or {"label": "Object", "cgId": "", "name": "", "conventionName": ""},
+        "algorithms": algorithms_out,
+        "entityNames": entity_names,
+        "entityCount": entity_count,
+        "truncated": truncated,
+    }
+
