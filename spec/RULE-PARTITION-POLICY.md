@@ -8,6 +8,7 @@ This document is the **normative partition contract** between DG's two validatio
 - [Partition Line](#partition-line-d-12) -- what SWRL owns vs. what SHACL owns
 - [What Belongs Where](#what-belongs-where-decision-table) -- decision table for future rule categories
 - [Precedence & Single-Authoring](#precedence--single-authoring-d-13) -- the remedy for disagreement is re-homing, never merging
+- [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) -- the third validation surface, evaluated by Cypher over the LPG-native Computgraph, that neither SWRL nor SHACL can reach
 - [Enforcement](#enforcement-d-14) -- documentation + review discipline this phase, linter deferred
 - [How SHACL Findings Surface](#how-shacl-findings-surface) -- severity mapping and message house style
 
@@ -44,6 +45,8 @@ The distinguishing question: **does this constraint express a real-world design 
 | Object/count/enum comparisons between design entities | "Corridor width must exceed 1.2 meters" | **SWRL** | Architect-authored geometric/parametric comparison against BIM data -- same pattern as height/area rules |
 | Boolean run-record completeness | "`Run` has both `ValidStatus` (list) and `SendStatus` (boolean)" | **SHACL** | Run-record shape invariant enforced regardless of project content |
 | Identity-registry data integrity | "`Representation.platform` ∈ {Grasshopper, Revit, IFC, Speckle}; `SharedProperty.dgId` matches `dg:` + 16 uppercase hex" | **SHACL** | Structural data-integrity constraints on Computgraph registry node properties (phase 32.1) — platform/nativeIdKind enum membership, dgId format pattern, required provenance fields; no architect-authored business content, purely schema conformance of the identity layer |
+| Script/Computgraph structural shape (LPG-native, no RDF projection) | "Every `Procedure` has at least one `Interface`"; "no orphan `Pattern`" | **Cypher (`data-service/cg_structure_checks.py`)** | Computgraph is a Neo4j LPG partition with no RDF/OWL translation, unlike ValidGraph/Metagraph, so the SHACL path cannot reach this data; the checks are LLM-free Cypher pattern-matches over the published graph, analogous in spirit to SHACL's data-integrity role but scoped to a layer SHACL cannot address |
+| Rule-mapped script-structure requirement | "A Frame `Algorithm` must contain a *Truss* `Procedure`" | **Cypher, referencing a Metagraph `Rule` by id (`llm/structure_rules.json`)** | Architect-authored intent like SWRL but evaluated against Computgraph shape rather than BIM geometry or parameters; the SWRL violation-inverted-body-atom machinery has no Computgraph equivalent, and `Rule_Id` is reused as a foreign key only, never SWRL semantics |
 
 **Test for new rule categories not listed above:** if the constraint could only be evaluated by inspecting BIM geometry, project parameters, or an architect's stated intent, it belongs to SWRL. If the constraint holds purely by inspecting the shape of the graph data (labels, required properties, enum domains, reference resolvability) with zero project-specific business content, it belongs to SHACL.
 
@@ -63,6 +66,27 @@ The distinguishing question: **does this constraint express a real-world design 
 - For **data integrity** (is this graph data well-formed and interpretable?) -- **SHACL is authoritative.**
 
 These two questions are orthogonal by construction (per the partition line above), so this split is a clarification of scope, not a conflict-resolution mechanism.
+
+---
+
+## Computgraph Structural Checks (Phase 37)
+
+This is an addendum, not a new numbered decision -- no `D-` number is assigned, because no Phase 37 CONTEXT decision letter maps to this point.
+
+A third validation surface evaluates the **Computgraph** -- the Object / Behavior / Algorithm / Procedure / Pattern / Parameter / Interface LPG layer established in Phase 36 -- which has no RDF/OWL projection.
+
+Neither of the two existing systems has a path to that data: the SWRL VALIDATOR evaluates BIM and parameter data against the Metagraph Rule corpus, and SHACL evaluates the OntoGraph/Metagraph RDF ABox through `ontology/dg-shapes.ttl`. Structural and rule-mapped script-structure checks are therefore evaluated by deterministic, parameterized Cypher in `data-service/cg_structure_checks.py`, and reported through the same `violation` / `warning` / `info` severity mapping the SHACL section already defines below -- see [How SHACL Findings Surface](#how-shacl-findings-surface) rather than a new taxonomy.
+
+**Severity assignment for this third system:**
+- `violation` -- structural breakage that would make the script uninterpretable to downstream tooling (orphan Pattern, Procedure without Interface, dangling `PARAM_LINK`, Algorithm without Procedure)
+- `warning` -- a rule-mapped structural requirement that fails while the graph itself is well-formed
+- `info` -- annotation-convention normalization surfaced from the publish envelope's preserved warnings
+
+This is not a fourth reconciliation problem: the single-authoring principle extends to the third system by construction, because its subject graph is disjoint from the other two -- no rule can exist in two of the three systems simultaneously.
+
+The scope boundary that keeps it that way: the structure-rule vocabulary is restricted to presence, kind, type and relationship checks. A value-threshold comparison over Computgraph data is SWRL scope, not a structural check, and must never appear in a `llm/structure_rules.json` mapping entry's parameters.
+
+Results are ephemeral -- recomputed per request, never persisted onto the existing `Run` node, because a script-structure snapshot and a BIM design-state run are different subjects.
 
 ---
 
@@ -96,4 +120,4 @@ SHACL findings are mapped once, at the source, to DG's existing severity/message
 
 ## Consistency & Propagation
 
-This policy is coupled to the graph schema (`spec/DATABASE.md`) and the RDF mapping contract (`spec/LPG-OWL-MAPPING.md`). Any change to either -- new node labels, new relationship properties, new `Atom.type` values -- should trigger a review of whether the [decision table](#what-belongs-where-decision-table) needs a new row. See `CLAUDE.md`'s Schema Change Propagation checklist, which now references this document.
+This policy is coupled to the graph schema (`spec/DATABASE.md`) and the RDF mapping contract (`spec/LPG-OWL-MAPPING.md`). Any change to either -- new node labels, new relationship properties, new `Atom.type` values -- should trigger a review of whether the [decision table](#what-belongs-where-decision-table) needs a new row. See `CLAUDE.md`'s Schema Change Propagation checklist, which now references this document. A schema change that adds or reshapes a Computgraph node/relationship should also trigger a review of whether [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) needs a new row or an updated check.
