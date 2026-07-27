@@ -244,23 +244,23 @@ Plus **AI-generated script inputs** (Phase 38, rides Computgraph parameters), th
 3. An insulation value written from the GH side is readable through the identity API keyed by `dgId` — with platform provenance — without Rhino running
 4. `spec/DG-ID.md` + the ADR document the scheme against Rhino.Inside.Revit element tracking, Speckle applicationId, IFC GlobalId, and Revit UniqueId approaches with explicit rationale for DG's connector architecture
 
-**Plans:** 2/7 plans executed
+**Plans:** 7/7 plans complete
 
 **Wave 1**
 
 - [x] 32.1-01-PLAN.md — DgId value type + deterministic minting service (SHA-256 over project|definitionId|cgId) + golden vector (DGID-01)
 - [x] 32.1-02-PLAN.md — spec/DG-ID.md identity spec + ADR vs Rhino.Inside.Revit/Speckle/IFC/UniqueId/BHoM (DGID-01, DGID-06)
-- [ ] 32.1-03-PLAN.md — dg_identity.py + /identity mint/resolve/bind API, Representation registry, anti-misbinding 409 (DGID-02, DGID-03, DGID-05)
+- [x] 32.1-03-PLAN.md — dg_identity.py + /identity mint/resolve/bind API, Representation registry, anti-misbinding 409 (DGID-02, DGID-03, DGID-05)
 
 **Wave 2** *(blocked on Wave 1; plan 05 also assumes Phase 32 artifacts exist)*
 
-- [ ] 32.1-04-PLAN.md — SharedProperty read/write API + simulated-Revit Ladybug-insulation property-flow proof (DGID-04, DGID-05)
+- [x] 32.1-04-PLAN.md — SharedProperty read/write API + simulated-Revit Ladybug-insulation property-flow proof (DGID-04, DGID-05)
 - [x] 32.1-05-PLAN.md — dgId on Computgraph entities + CgContextDgIdAssigner + cgContextJson additive round-trip (DGID-01, DGID-03)
-- [ ] 32.1-06-PLAN.md — ObjState/statePayloadJson v2 additive dgId reference, v1/v2 backward-compat (DGID-03)
+- [x] 32.1-06-PLAN.md — ObjState/statePayloadJson v2 additive dgId reference, v1/v2 backward-compat (DGID-03)
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 32.1-07-PLAN.md — schema propagation: DATABASE.md, cypher_template, dataset_schema, CLAUDE.md tables, copilot-instructions, README, dg-shapes.ttl SHACL, dg_context.py allow-lists (DGID-01, DGID-02, DGID-04)
+- [x] 32.1-07-PLAN.md — schema propagation: DATABASE.md, cypher_template, dataset_schema, CLAUDE.md tables, copilot-instructions, README, dg-shapes.ttl SHACL, dg_context.py allow-lists (DGID-01, DGID-02, DGID-04)
 
 ---
 
@@ -566,7 +566,7 @@ All four plans are independent (zero `files_modified` overlap — Python / C# / 
 | 30. Orchestration Evaluation — n8n vs OpenClaw | 0/? | Not started | — |
 | 31. Rules Ingestion and Editing Workflow Upgrade | 0/? | Not started | — |
 | 32. Computgraph Serialization Core | 5/5 | Complete    | 2026-07-18 |
-| 32.1 Cross-Platform Identity and Mapping (DG ID) | 3/7 | In Progress| 2026-07-18 |
+| 32.1 Cross-Platform Identity and Mapping (DG ID) | 7/7 | Complete    | 2026-07-18 |
 | 33. DG Canvas Bridge (grasshopper-mcp adaptation) | 3/4 | In Progress|  |
 | 34. Ontology Tagging Components and Manual Selection | 3/3 | Complete   | 2026-07-18 |
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |

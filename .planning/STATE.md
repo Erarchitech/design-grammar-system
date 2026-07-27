@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: AI Workflow Intelligence
-current_phase: 35
-current_phase_name: llm-recognition-canvas-preview
-status: executing
+current_phase: 33
+current_phase_name: grasshopper-mcp adaptation
+status: planning
 stopped_at: "Completed 35-15-PLAN.md (live recognition eval sweep: record-mode driver built, A0/A1-A4/permutation sweep run against real DeepSeek, SC1 verdict blocked-on-provider-availability, 35-UAT.md test 1 closed)"
-last_updated: "2026-07-26T22:20:07.423Z"
+last_updated: "2026-07-27T08:26:44.851Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 35 execution started
+last_activity_desc: Phase 32.1 complete, transitioned to Phase 33
 progress:
   total_phases: 14
   completed_phases: 7
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 35 — llm-recognition-canvas-preview
+**Current focus:** Phase 32.1 — cross-platform-identity-and-mapping-dg-id
 
 ## Current Position
 
-Phase: 35 (llm-recognition-canvas-preview) — EXECUTING
-Plan: 2 of 16
-Status: Ready to execute
-Last activity: 2026-07-27 — Phase 35 execution started
+Phase: 33 — DG Canvas Bridge (grasshopper-mcp adaptation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-27 — Phase 32.1 complete, transitioned to Phase 33
 
 ## Deferred Verification
 
