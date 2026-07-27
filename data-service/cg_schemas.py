@@ -128,6 +128,63 @@ class ProposedStructure(BaseModel):
     )
 
 
+# ── Generated-candidate output contract (Phase 38: GHIN-03) ──
+#
+# D-17, stated plainly: this schema conveys SHAPE ONLY. `to_strict_json_schema`
+# strips `minimum`/`maximum` below (L205-221 at the time this note was
+# written), and the real bounds here are per-parameter and dynamic anyway --
+# no wire schema could express them. Domain enforcement is
+# `cg_input_sampler.validate_candidate`, not this contract. Anyone tempted to
+# add a numeric-bound Field constraint to `GeneratedParameterValue` should
+# read this note first: it would be silently stripped at the wire boundary
+# and would give a false impression that the model's raw output is
+# bounds-checked here.
+
+
+class GeneratedParameterValue(BaseModel):
+    """One parameter value inside a generated candidate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    parameterId: str = Field(
+        description="The bound parameter's reinstateParameterId, copied verbatim -- never invented."
+    )
+    type: str = Field(
+        description=(
+            "One of 'Number' | 'Integer' | 'Boolean'. Not a Literal -- validity is checked by "
+            "cg_input_sampler.validate_candidate against the actual bound parameter set, not "
+            "the wire schema (mirrors dg_context.py's ContextAssembleRequest.type convention)."
+        )
+    )
+    numberValue: "float | None" = Field(None, description="Set only when type == 'Number'.")
+    integerValue: "int | None" = Field(None, description="Set only when type == 'Integer'.")
+    booleanValue: "bool | None" = Field(None, description="Set only when type == 'Boolean'.")
+
+
+class GeneratedCandidate(BaseModel):
+    """One proposed parameter assignment for a rule's bound parameters."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    strategy: str = Field(
+        description="One of 'conservative' | 'balanced' | 'exploratory' | 'near-limit'."
+    )
+    rationale: str = Field(description="A one-sentence rationale for this candidate's values.")
+    parameters: list[GeneratedParameterValue] = Field(
+        description="One entry per bound parameter this candidate assigns a value to."
+    )
+
+
+class GeneratedCandidateSet(BaseModel):
+    """The complete generation output: exactly one candidate per requested strategy."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    candidates: list[GeneratedCandidate] = Field(
+        description="One entry per candidate. Do not pad this list."
+    )
+
+
 # ── Provider-acceptable JSON Schema emission ──
 
 # Keywords neither OpenAI strict nor Anthropic accept in a structured-output
