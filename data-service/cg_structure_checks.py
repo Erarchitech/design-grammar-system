@@ -67,6 +67,13 @@ def _entity(label: str, cg_id: str, name: str) -> dict[str, Any]:
     }
 
 
+def _compose_message(what: str, where: str, how_to_fix: str) -> str:
+    """The shared What + Where + How-to-fix composer. Every SVAL-01 finding
+    and every SVAL-02 rule-mapping result message is built through this
+    function -- no message is ever composed inline."""
+    return f"{what} Where: {where}. How to fix: {how_to_fix}"
+
+
 def _finding(
     check_id: str,
     severity: str,
@@ -80,11 +87,10 @@ def _finding(
     ``validate_cypher`` violation messages already use (``dg_context.py``).
     Every check calls this -- no check builds a message string inline.
     """
-    message = f"{what} Where: {where}. How to fix: {how_to_fix}"
     return {
         "checkId": check_id,
         "severity": severity,
-        "message": message,
+        "message": _compose_message(what, where, how_to_fix),
         "entities": entities,
     }
 
@@ -460,6 +466,277 @@ def structure_rule_ids() -> tuple[str, ...]:
 # Call structure_rule_ids() directly if the file's contents might have
 # changed since import (e.g. in tests).
 STRUCTURE_RULE_IDS: tuple[str, ...] = structure_rule_ids()
+
+
+# ── Structure-rule mapping artifact (SVAL-02): operation templates + evaluator ──
+#
+# Each operation compiles to exactly one static, parameterized Cypher
+# template, keyed by the operation name and looked up in this fixed dict --
+# never built or edited at runtime, never string-interpolated (T-37-01). A
+# mapping entry supplies bound parameter values only.
+
+_OPERATION_TEMPLATES: dict[str, str] = {
+    "requiresProcedure": """
+        MATCH (pr:Procedure {project: $project, definitionId: $definitionId})
+        WHERE pr.procedureName CONTAINS $namePattern
+        RETURN pr.cgId AS cgId, pr.procedureName AS name
+        ORDER BY pr.cgId
+        // op=RULE_REQUIRES_PROCEDURE
+    """,
+    "requiresParameter": """
+        MATCH (p:Parameter {project: $project, definitionId: $definitionId})
+        WHERE (p.parameterName CONTAINS $namePattern OR p.cgId CONTAINS $namePattern)
+          AND ($paramKind IS NULL OR p.paramKind = $paramKind)
+          AND ($dataType IS NULL OR p.dataType = $dataType)
+        RETURN p.cgId AS cgId, p.parameterName AS name
+        ORDER BY p.cgId
+        // op=RULE_REQUIRES_PARAMETER
+    """,
+    # For-all requirement, unlike the two exists-style templates above and
+    # below: this passes only when EVERY scoped Procedure has a match. Do
+    # not "simplify" this into an exists check -- a single matching
+    # Interface anywhere in the definition must not make the rule pass.
+    "requiresInterface": """
+        MATCH (pr:Procedure {project: $project, definitionId: $definitionId})
+        OPTIONAL MATCH (pr)-[:HAS_INTERFACE]->(i:Interface {project: $project, definitionId: $definitionId})
+          WHERE $ifaceType IS NULL OR i.ifaceType = $ifaceType
+        WITH pr, collect(DISTINCT i) AS matched
+        RETURN pr.cgId AS cgId, pr.procedureName AS name, size(matched) > 0 AS hasMatch
+        ORDER BY pr.cgId
+        // op=RULE_REQUIRES_INTERFACE
+    """,
+    "forbidsOrphan": """
+        MATCH (n {project: $project, definitionId: $definitionId})
+        WHERE $label IN labels(n)
+          AND NOT ()-[:HAS_BEHAVIOR|HAS_ALGORITHM|HAS_PROCEDURE|HAS_PATTERN|HAS_PARAMETER|HAS_INTERFACE]->(n)
+        RETURN n.cgId AS cgId,
+               coalesce(n.patternName, n.procedureName, n.parameterName, n.interfaceName,
+                        n.algorithmName, n.objectName, '') AS name
+        ORDER BY n.cgId
+        // op=RULE_FORBIDS_ORPHAN
+    """,
+}
+
+
+def _offending_algorithms(session: Any, project: str, definition_id: str) -> list[dict[str, Any]]:
+    """Every Algorithm in scope, rendered as SVAL-01's Algorithm entity shape
+    (cgId="" -- Algorithm carries none in the Phase 36 contract). Used as the
+    offendingEntities for an exists-style rule (requiresProcedure /
+    requiresParameter) that found no match anywhere in the definitionId."""
+    result = session.run(
+        """
+        MATCH (a:Algorithm {project: $project, definitionId: $definitionId})
+        RETURN a.algIndex AS algIndex, a.algorithmName AS name
+        ORDER BY a.algIndex
+        // op=RULE_SCOPE_ALGORITHMS
+        """,
+        {"project": project, "definitionId": definition_id},
+    )
+    return [_entity("Algorithm", "", (row["name"] or str(row["algIndex"]))) for row in result]
+
+
+def _eval_requires_procedure(
+    session: Any, project: str, definition_id: str, params: dict[str, Any]
+) -> tuple[bool, list[dict[str, Any]], list[dict[str, Any]], str]:
+    name_pattern = params.get("namePattern", "")
+    result = session.run(
+        _OPERATION_TEMPLATES["requiresProcedure"],
+        {"project": project, "definitionId": definition_id, "namePattern": name_pattern},
+    )
+    satisfying = [_entity("Procedure", row["cgId"], row["name"]) for row in result]
+    passed = len(satisfying) > 0
+    what = (
+        f"A Procedure matching '{name_pattern}' was found."
+        if passed
+        else f"No Procedure matching '{name_pattern}' was found."
+    )
+    where = f"Procedures scoped to definitionId={definition_id}"
+    how_to_fix = (
+        "no action needed."
+        if passed
+        else f"tag a Procedure whose name contains '{name_pattern}' and re-publish."
+    )
+    offending = [] if passed else _offending_algorithms(session, project, definition_id)
+    return passed, satisfying, offending, _compose_message(what, where, how_to_fix)
+
+
+def _eval_requires_parameter(
+    session: Any, project: str, definition_id: str, params: dict[str, Any]
+) -> tuple[bool, list[dict[str, Any]], list[dict[str, Any]], str]:
+    name_pattern = params.get("namePattern", "")
+    result = session.run(
+        _OPERATION_TEMPLATES["requiresParameter"],
+        {
+            "project": project,
+            "definitionId": definition_id,
+            "namePattern": name_pattern,
+            "paramKind": params.get("paramKind"),
+            "dataType": params.get("dataType"),
+        },
+    )
+    satisfying = [_entity("Parameter", row["cgId"], row["name"]) for row in result]
+    passed = len(satisfying) > 0
+    what = (
+        f"A Parameter matching '{name_pattern}' was found."
+        if passed
+        else f"No Parameter matching '{name_pattern}' was found."
+    )
+    where = f"Parameters scoped to definitionId={definition_id}"
+    how_to_fix = (
+        "no action needed."
+        if passed
+        else (
+            f"publish a Parameter whose name or convention token contains '{name_pattern}' "
+            "with the required kind and dataType, and re-publish."
+        )
+    )
+    offending = [] if passed else _offending_algorithms(session, project, definition_id)
+    return passed, satisfying, offending, _compose_message(what, where, how_to_fix)
+
+
+def _eval_requires_interface(
+    session: Any, project: str, definition_id: str, params: dict[str, Any]
+) -> tuple[bool, list[dict[str, Any]], list[dict[str, Any]], str]:
+    result = session.run(
+        _OPERATION_TEMPLATES["requiresInterface"],
+        {"project": project, "definitionId": definition_id, "ifaceType": params.get("ifaceType")},
+    )
+    satisfying: list[dict[str, Any]] = []
+    offending: list[dict[str, Any]] = []
+    for row in result:
+        entity = _entity("Procedure", row["cgId"], row["name"])
+        (satisfying if row["hasMatch"] else offending).append(entity)
+    passed = len(offending) == 0
+    what = (
+        "Every Procedure has at least one matching Interface."
+        if passed
+        else "At least one Procedure has no matching Interface."
+    )
+    where = f"Procedures scoped to definitionId={definition_id}"
+    how_to_fix = (
+        "no action needed."
+        if passed
+        else "tag an IntF_ group of the required ifaceType under each offending Procedure and re-publish."
+    )
+    return passed, satisfying, offending, _compose_message(what, where, how_to_fix)
+
+
+def _eval_forbids_orphan(
+    session: Any, project: str, definition_id: str, params: dict[str, Any]
+) -> tuple[bool, list[dict[str, Any]], list[dict[str, Any]], str]:
+    label = params.get("label", "")
+    result = session.run(
+        _OPERATION_TEMPLATES["forbidsOrphan"],
+        {"project": project, "definitionId": definition_id, "label": label},
+    )
+    offending = [_entity(label, row["cgId"], row["name"]) for row in result]
+    passed = len(offending) == 0
+    what = (
+        f"No orphan {label} nodes were found."
+        if passed
+        else f"{len(offending)} orphan {label} node(s) were found."
+    )
+    where = f"{label} nodes scoped to definitionId={definition_id}"
+    how_to_fix = (
+        "no action needed."
+        if passed
+        else f"re-tag each offending {label} under its owning entity and re-publish."
+    )
+    return passed, [], offending, _compose_message(what, where, how_to_fix)
+
+
+_OPERATION_EVALUATORS = {
+    "requiresProcedure": _eval_requires_procedure,
+    "requiresParameter": _eval_requires_parameter,
+    "requiresInterface": _eval_requires_interface,
+    "forbidsOrphan": _eval_forbids_orphan,
+}
+
+
+def _rule_exists_in_metagraph(session: Any, project: str, rule_id: str) -> bool:
+    """Soft foreign-key probe: a missing Rule node is NOT an error and does
+    not skip evaluation -- the structural requirement is still evaluated and
+    reported, with ruleExists=False."""
+    result = session.run(
+        """
+        MATCH (r:Rule {Rule_Id: $ruleId, project: $project})
+        RETURN count(r) > 0 AS ruleExists
+        // op=RULE_EXISTS_METAGRAPH
+        """,
+        {"ruleId": rule_id, "project": project},
+    )
+    row = result.single()
+    return bool(row["ruleExists"]) if row else False
+
+
+def _rejected_mapping_result(entry: Any) -> dict[str, Any]:
+    """A distinct, obvious signal for a mapping that failed
+    valid_structure_mappings' checks -- visible in the report rather than
+    silently absent, but never mistaken for a genuine structural failure."""
+    rule_id = entry.get("ruleId") if isinstance(entry, dict) else None
+    operation = entry.get("operation") if isinstance(entry, dict) else None
+    reason = _mapping_rejection_reason(entry) or "mapping entry failed structural validation"
+    message = _compose_message(
+        "INVALID MAPPING -- not evaluated.",
+        "structure_rules.json mapping entry",
+        f"{reason}.",
+    )
+    return {
+        "ruleId": rule_id if isinstance(rule_id, str) else "",
+        "operation": operation if isinstance(operation, str) else "",
+        "passed": False,
+        "ruleExists": False,
+        "message": message,
+        "satisfyingEntities": [],
+        "offendingEntities": [],
+    }
+
+
+def evaluate_rule_mappings(
+    session: Any, project: str, definition_id: str, payload: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """Evaluate every mapping in the structure-rules artifact against the
+    published Computgraph, returning one pass/fail report per mapping.
+
+    Reads only -- writes nothing, consults no model. For each mapping that
+    passes valid_structure_mappings(), this runs one Metagraph existence
+    probe (a missing Rule node sets ruleExists=False but never skips
+    evaluation -- Rule_Id is a soft foreign key) plus one run of the
+    operation's static template. A mapping that fails valid_structure_mappings
+    is reported as passed=False with an explanatory message instead of being
+    silently dropped. Results are sorted by (ruleId, operation) so repeated
+    calls are byte-identical.
+    """
+    if payload is None:
+        payload = load_structure_rules()
+    raw_mappings = payload.get("mappings") if isinstance(payload, dict) else None
+    if not isinstance(raw_mappings, list):
+        raw_mappings = []
+
+    results: list[dict[str, Any]] = []
+    for entry in raw_mappings:
+        if _mapping_rejection_reason(entry) is not None:
+            results.append(_rejected_mapping_result(entry))
+            continue
+        rule_id = entry["ruleId"]
+        operation = entry["operation"]
+        params = entry.get("params") or {}
+        rule_exists = _rule_exists_in_metagraph(session, project, rule_id)
+        evaluator = _OPERATION_EVALUATORS[operation]
+        passed, satisfying, offending, message = evaluator(session, project, definition_id, params)
+        results.append(
+            {
+                "ruleId": rule_id,
+                "operation": operation,
+                "passed": passed,
+                "ruleExists": rule_exists,
+                "message": message,
+                "satisfyingEntities": satisfying,
+                "offendingEntities": offending,
+            }
+        )
+
+    return sorted(results, key=lambda r: (r["ruleId"], r["operation"]))
 
 
 # ── Aggregator ──
