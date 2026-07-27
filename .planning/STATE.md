@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: AI Workflow Intelligence
-current_phase: 37
-current_phase_name: script-structure-validation
-status: executing
-stopped_at: Phase 38 context gathered
-last_updated: "2026-07-27T14:36:19.859Z"
+current_phase: 38
+current_phase_name: ai-generated-grasshopper-script-inputs
+status: planned
+stopped_at: Phase 38 planned — 7 plans in 5 waves, ready to execute
+last_updated: "2026-07-27T17:30:00.000Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 37 execution started
+last_activity_desc: Phase 38 planned — 7 plans in 5 waves
 progress:
   total_phases: 14
   completed_phases: 8
@@ -24,14 +24,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 37 — script-structure-validation
+**Current focus:** Phase 38 — ai-generated-grasshopper-script-inputs
 
 ## Current Position
 
-Phase: 37 (script-structure-validation) — EXECUTING
-Plan: 6 of 6
+Phase: 38 (ai-generated-grasshopper-script-inputs) — PLANNED
+Plan: 0 of 7
 Status: Ready to execute
-Last activity: 2026-07-27 — Phase 37 execution started
+Last activity: 2026-07-27 — Phase 38 planned (7 plans, 5 waves)
+
+**Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
+Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
+`37-VERIFICATION.md`, `37-UAT.md`, `37-REVIEW.md`, with `data-service/cg_structure_checks.py`,
+`llm/structure_rules.json` and both `/computgraph/validate` and `/computgraph/consult` live in
+`app.py`. Same drift class as the Phase 32.1 correction recorded in PROJECT.md. Worth fixing in
+the ROADMAP progress table independently of Phase 38.
 
 ## Deferred Verification
 
