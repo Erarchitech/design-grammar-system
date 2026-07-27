@@ -56,6 +56,12 @@ def pytest_configure(config: pytest.Config) -> None:
         "live: makes a live LLM call. Excluded by default -- pass -m live to run "
         "(and RECOGNITION_EVAL_MODE=record or =live).",
     )
+    config.addinivalue_line(
+        "markers",
+        "integration: requires the compose network -- the `neo4j` hostname only "
+        "resolves there (not from the host). Not deselected by default; select "
+        "explicitly with `-k structural` or `-m integration` inside the container.",
+    )
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list) -> None:

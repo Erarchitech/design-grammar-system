@@ -1,0 +1,247 @@
+"""Two-tier test suite for cg_structure_checks.py (Phase 37 Plan 03: SVAL-01).
+
+Unit tier (`-k convention`): pure-Python coverage of parse_context_warnings,
+convention_name_from_cg_id, _finding/_entity's normative key shapes, and
+check_annotation_conventions against a minimal session double. No Neo4j, no
+container -- this is the per-commit gate.
+
+Integration tier (`-k structural`, `integration` marker): publishes the
+Frame envelope and its two mutated variants (cg_fixtures.py, Phase 37 Plan
+01) into live Neo4j, then proves every graph-pattern check, the SC1
+exact-procedure naming, determinism, and project/definitionId scoping.
+Requires the compose network -- the `neo4j` hostname only resolves there
+(same constraint test_dg_context.py's Neo4j-dependent tests already
+document). Run via:
+
+    docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k structural -q
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(__file__))
+
+os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
+
+import app as app_module  # noqa: E402
+import cg_structure_checks as checks  # noqa: E402
+import computgraph_publish  # noqa: E402
+from cg_fixtures import (  # noqa: E402
+    FIXTURE_PROJECT,
+    FRAME_DEFINITION_ID,
+    FRAME_NO_FOOTER_DEFINITION_ID,
+    FRAME_NO_INTERFACE_DEFINITION_ID,
+    PARAM_HTOTAL_CG_ID,
+    PROC_11_CG_ID,
+    PROC_11_NAME,
+    frame_cg_context,
+    frame_with_normalization_warnings,
+    frame_without_footer_procedure,
+    frame_without_interface,
+)
+
+
+# ── Unit tier (no Neo4j, no container) -- select with `-k convention` ──
+
+
+def test_convention_name_from_cg_id_extracts_last_segment_for_parameter():
+    assert checks.convention_name_from_cg_id(PARAM_HTOTAL_CG_ID) == "11_Var_HTotal"
+
+
+def test_convention_name_from_cg_id_extracts_last_segment_for_procedure():
+    assert checks.convention_name_from_cg_id(PROC_11_CG_ID) == "11"
+
+
+def test_convention_name_from_cg_id_empty_input_returns_empty_string():
+    assert checks.convention_name_from_cg_id("") == ""
+
+
+def test_convention_finding_and_entity_have_normative_key_sets():
+    """Matches spec/API.md's `entities[]` item shape
+    ({label, cgId, name, conventionName}) and `findings[]` item shape
+    ({checkId, severity, message, entities})."""
+    entity = checks._entity("Procedure", PROC_11_CG_ID, PROC_11_NAME)
+    assert set(entity) == {"label", "cgId", "name", "conventionName"}
+    assert entity["conventionName"] == "11"
+
+    finding = checks._finding(
+        "procedure_without_interface",
+        checks.SEVERITY_VIOLATION,
+        "Procedure has no Interface.",
+        "Procedure cgId=cg:1:proc:11",
+        "tag at least one IntF_ group and re-publish.",
+        [entity],
+    )
+    assert set(finding) == {"checkId", "severity", "message", "entities"}
+    assert finding["message"] == (
+        "Procedure has no Interface. Where: Procedure cgId=cg:1:proc:11. "
+        "How to fix: tag at least one IntF_ group and re-publish."
+    )
+
+
+def test_convention_parse_context_warnings_none_returns_empty():
+    assert checks.parse_context_warnings(None) == []
+
+
+def test_convention_parse_context_warnings_empty_string_returns_empty():
+    assert checks.parse_context_warnings("") == []
+
+
+def test_convention_parse_context_warnings_invalid_json_returns_empty():
+    assert checks.parse_context_warnings("{oops") == []
+
+
+def test_convention_parse_context_warnings_non_dict_json_returns_empty():
+    assert checks.parse_context_warnings("[]") == []
+
+
+def test_convention_parse_context_warnings_missing_key_returns_empty():
+    assert checks.parse_context_warnings(json.dumps({"a": 1})) == []
+
+
+def test_convention_parse_context_warnings_not_a_list_returns_empty():
+    assert checks.parse_context_warnings(json.dumps({"warnings": "x"})) == []
+
+
+def test_convention_parse_context_warnings_filters_non_string_members():
+    payload = json.dumps({"warnings": ["a", 2, "b"]})
+    assert checks.parse_context_warnings(payload) == ["a", "b"]
+
+
+def test_convention_parse_context_warnings_happy_path_preserves_order():
+    payload = json.dumps({"warnings": ["first warning", "second warning"]})
+    assert checks.parse_context_warnings(payload) == ["first warning", "second warning"]
+
+
+def _algorithm_row(envelope: dict, alg_index: int = 1, alg_name: str = "1_ALGORITHM") -> dict:
+    """Build a canned Algorithm row the way computgraph_publish.py actually
+    writes contextJson: the full envelope minus `untagged`, JSON-dumped."""
+    storage_ctx = {k: v for k, v in envelope.items() if k != "untagged"}
+    return {
+        "algIndex": alg_index,
+        "algorithmName": alg_name,
+        "contextJson": json.dumps(storage_ctx, sort_keys=True),
+    }
+
+
+class _CannedAlgorithmSession:
+    """Minimal session double for check_annotation_conventions. The check
+    makes exactly one read call, so a small object exposing `run` and
+    returning a canned row list is sufficient and honest -- not the
+    write-oriented FakeGraph harness (that mirrors computgraph_publish.py's
+    MERGE writes, which this check never issues)."""
+
+    def __init__(self, rows: list[dict]) -> None:
+        self._rows = rows
+
+    def run(self, query: str, params: dict) -> list[dict]:
+        del query, params
+        return list(self._rows)
+
+
+def test_convention_check_annotation_conventions_fires_one_finding_per_warning():
+    envelope = frame_with_normalization_warnings()
+    session = _CannedAlgorithmSession([_algorithm_row(envelope)])
+
+    findings = checks.check_annotation_conventions(session, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+
+    assert len(findings) == len(envelope["warnings"])
+    for finding in findings:
+        assert finding["checkId"] == "annotation_convention"
+        assert finding["severity"] == checks.SEVERITY_INFO
+    assert [f["message"].split(" Where:")[0] for f in findings] == sorted(envelope["warnings"])
+
+
+def test_convention_check_annotation_conventions_zero_findings_when_warnings_empty():
+    envelope = frame_cg_context()
+    assert envelope["warnings"] == []
+    session = _CannedAlgorithmSession([_algorithm_row(envelope)])
+
+    findings = checks.check_annotation_conventions(session, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+
+    assert findings == []
+
+
+# ── Integration tier (live Neo4j, compose network) -- select with `-k structural` ──
+
+
+@pytest.fixture(scope="session")
+def published_frame():
+    """Opens a real driver session and publishes all three envelope variants
+    (full Frame, interface-stripped, footer-less) under FIXTURE_PROJECT,
+    idempotently -- every node scoped to FIXTURE_PROJECT is deleted first so
+    reruns never accumulate stale data. Torn down the same way."""
+    with app_module.driver.session() as session:
+        session.run(
+            "MATCH (n {project: $project, graph: 'Computgraph'}) DETACH DELETE n",
+            {"project": FIXTURE_PROJECT},
+        )
+        computgraph_publish.publish_structure(session, FIXTURE_PROJECT, frame_cg_context())
+        computgraph_publish.publish_structure(session, FIXTURE_PROJECT, frame_without_interface())
+        computgraph_publish.publish_structure(session, FIXTURE_PROJECT, frame_without_footer_procedure())
+        yield session
+        session.run(
+            "MATCH (n {project: $project, graph: 'Computgraph'}) DETACH DELETE n",
+            {"project": FIXTURE_PROJECT},
+        )
+
+
+class TestStructuralChecksIntegration:
+    """Requires the compose network (see module docstring)."""
+
+    pytestmark = pytest.mark.integration
+
+    def test_structural_full_frame_has_zero_violation_findings(self, published_frame):
+        """The well-formed baseline -- if this doesn't hold, one of the
+        checks has a false positive and every downstream assertion here is
+        worthless."""
+        findings = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        violations = [f for f in findings if f["severity"] == checks.SEVERITY_VIOLATION]
+        assert violations == []
+
+    def test_structural_interface_stripped_variant_flags_exact_procedure(self, published_frame):
+        findings = checks.run_structural_checks(
+            published_frame, FIXTURE_PROJECT, FRAME_NO_INTERFACE_DEFINITION_ID
+        )
+        matches = [f for f in findings if f["checkId"] == "procedure_without_interface"]
+        assert len(matches) == 1
+        entities = matches[0]["entities"]
+        assert len(entities) == 1
+        # SC1: the exact procedure must be identifiable by both name and cgId.
+        assert entities[0]["name"] == PROC_11_NAME
+        assert entities[0]["cgId"] == PROC_11_CG_ID
+
+    def test_structural_defensive_checks_are_wired_and_non_firing(self, published_frame):
+        for definition_id in (
+            FRAME_DEFINITION_ID,
+            FRAME_NO_INTERFACE_DEFINITION_ID,
+            FRAME_NO_FOOTER_DEFINITION_ID,
+        ):
+            assert checks.check_parameters_without_datatype(published_frame, FIXTURE_PROJECT, definition_id) == []
+            assert checks.check_objects_without_behavior(published_frame, FIXTURE_PROJECT, definition_id) == []
+
+    def test_structural_determinism_repeated_calls_are_byte_identical(self, published_frame):
+        first = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        second = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        assert first == second
+
+    def test_structural_project_isolation_returns_empty_for_unknown_project(self, published_frame):
+        findings = checks.run_structural_checks(published_frame, "p37-structure-unused", FRAME_DEFINITION_ID)
+        assert findings == []
+
+    def test_structural_footer_less_publish_does_not_change_full_frame_findings(self, published_frame):
+        """Proves the definitionId scope separates the two definitions
+        inside one project: re-publishing the footer-less variant must not
+        bleed into the full Frame's definitionId-scoped findings."""
+        before = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        computgraph_publish.publish_structure(
+            published_frame, FIXTURE_PROJECT, frame_without_footer_procedure()
+        )
+        after = checks.run_structural_checks(published_frame, FIXTURE_PROJECT, FRAME_DEFINITION_ID)
+        assert before == after
