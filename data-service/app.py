@@ -69,6 +69,7 @@ import computgraph_publish
 import cg_structure_checks
 import cg_input_bindings
 import cg_input_generation
+import cg_paramstate_store
 
 app = FastAPI()
 
@@ -1607,6 +1608,66 @@ def post_computgraph_generate_inputs(payload: ComputgraphGenerateInputsRequest):
             str(exc),
             "Check Neo4j availability and the configured LLM provider.",
             "COMPUTGRAPH_GENERATE_INPUTS_FAILED",
+            502,
+        )
+
+
+class ComputgraphAcceptCandidateRequest(BaseModel):
+    """Body for POST /computgraph/candidates/accept. `definitionId` is
+    **required** here -- unlike ComputgraphGenerateInputsRequest, there is no
+    resolution fallback, because accepting against an ambiguously-resolved
+    definition would write a node bound to a definition the caller did not
+    name. `candidate` is exactly one item from a prior generate-inputs
+    response's candidates[] array, round-tripped verbatim by the caller."""
+
+    project: str
+    definitionId: str
+    ruleId: str
+    candidate: dict
+
+
+@app.post("/computgraph/candidates/accept")
+def post_computgraph_accept_candidate(payload: ComputgraphAcceptCandidateRequest):
+    """Persist one architect-accepted AI-generated candidate as a standalone
+    `ParamState` DesignState (Phase 38: GHIN-02/03/04).
+
+    Two guarantees this route's contract makes: the server re-validates
+    every parameter against the LIVE published domains before writing --
+    the client round-trip is never trusted (T-38-17) -- and this is the
+    ONLY route in the phase that writes anything; POST
+    /computgraph/generate-inputs performs zero writes.
+
+    Thin route -- opens one session, delegates to
+    cg_paramstate_store.accept_candidate(), and returns its result directly.
+    """
+    try:
+        with driver.session() as session:
+            return cg_paramstate_store.accept_candidate(
+                session, payload.project, payload.definitionId, payload.ruleId, payload.candidate
+            )
+    except cg_paramstate_store.CandidateDomainViolation as exc:
+        offending = sorted({v.get("parameterId") for v in exc.violations if v.get("parameterId")})
+        hint = (
+            "Re-validation against the live published domains found violations for: "
+            f"{', '.join(offending) if offending else '(see violations)'}. Re-generate the "
+            "candidate against the current domains rather than editing it by hand."
+        )
+        raise _structured_error_response(
+            str(exc), hint, "COMPUTGRAPH_ACCEPT_CANDIDATE_DOMAIN_VIOLATION", 422
+        )
+    except (cg_paramstate_store.CandidateRequestInvalid, ValueError) as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check that candidate is exactly one item round-tripped verbatim from a prior "
+            "generate-inputs response, and that project/definitionId/ruleId are correct.",
+            "COMPUTGRAPH_ACCEPT_CANDIDATE_REQUEST_INVALID",
+            422,
+        )
+    except Exception as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check Neo4j availability.",
+            "COMPUTGRAPH_ACCEPT_CANDIDATE_FAILED",
             502,
         )
 
