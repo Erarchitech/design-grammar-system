@@ -80,6 +80,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 35 recognition quality remediation — hybrid Tier 0 Tier 1 architecture and pytest eval|Phase 35 (v9.0): Hybrid Tier 0 deterministic + Tier 1 LLM; pytest fixture-driven eval; labelling flywheel; sub-model training deferred]]
 - [[decisions/Phase 35 Corpus A frozen as-is, Frame Truss binaries not committed|Phase 35 (v9.0): Corpus A not re-grounded on recovered Frame/Truss source; *.gh/*.3dm gitignored (20 MB .3dm never committed)]]
 - [[decisions/Phase 37 structure validation — rule-mapping file-first, severity taxonomy, ephemeral results|Phase 37 (v9.0): Rule-mapping file-first (`llm/structure_rules.json`), severity taxonomy reuses SHACL, results ephemeral for MVP]]
+- [[decisions/Phase 39 DesignState auto-validation — data-service watcher, SHACL verdict, guardrails|Phase 39 (v9.0): DesignState auto-validation — data-service watcher (paths a/c empirically blocked), SHACL verdict as the only server-side judge, three per-project guardrails; SHACL/SWRL coverage gap is the headline open finding]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
