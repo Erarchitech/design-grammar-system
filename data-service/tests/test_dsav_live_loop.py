@@ -453,6 +453,12 @@ def evidence_writer():
     datapoint silently corrupts the ADR that cites this file."""
     yield
     measurements = {k: v for k, v in MEASUREMENTS.items() if k != "software_context"}
+    if not measurements:
+        # Nothing was observed (e.g. this module was collected on the host
+        # tier, where `neo4j` does not resolve). Writing an artifact of pure
+        # nulls would be worse than writing none: Plan 05 cites this file as
+        # measured fact.
+        return
     payload = {
         "phase": 39,
         "measured_at": _now_utc().isoformat(),

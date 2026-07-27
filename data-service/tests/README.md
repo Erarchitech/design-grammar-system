@@ -70,6 +70,74 @@ docker compose build --no-cache data-service && docker compose up -d data-servic
   suites sharing one Neo4j instance never cross-contaminate each other's node
   counts or assertions.
 
+## Phase 39 additions
+
+Two host-tier modules and one integration module, all for the DesignState
+Auto-Validation watcher (`dsav_watcher.py`).
+
+- `dsav_fixtures.py` — DesignState v2 envelope builders, `dg-reasoner` SHACL
+  verdict builders, and `DsavFixtureSession`, a duck-typed Neo4j session that
+  dispatches by *query identity* (`poll_once()` issues several distinct
+  queries per tick, unlike the single-query doubles elsewhere in this suite).
+  No pytest import, no Neo4j, no `app` import — pure data.
+- `test_dsav_watcher.py` (host tier, 18 tests) — the whole capture → debounce
+  → coalesce → verdict → complete/fail state machine with zero live Neo4j,
+  zero thread and zero `time.sleep`.
+- `test_designstate_capture.py` (host tier, 22 tests) — the
+  `POST /designstate/capture` auth/project-binding/payload-cap matrix, the
+  `lifespan` watcher wiring, and a pinned-source-hash guard proving
+  `store_validation_run` is byte-for-byte unchanged.
+- `test_dsav_live_loop.py` (**integration tier**, 6 tests) — the live-Docker
+  evidence driver. See its own section below.
+
+### `p39-autoval` fixture-project reservation
+
+Phase 39 reserves the live-Neo4j project string **`p39-autoval`**
+(`dsav_fixtures.FIXTURE_PROJECT`), per the Phase 37 rule above. It must stay
+distinct from `p37-structure` (`cg_fixtures.py`), `p1`
+(`test_computgraph_publish.py`'s `GOLDEN_PROJECT`) and `default-project`;
+`test_dsav_live_loop.py` asserts that distinctness at import time so a
+rename cannot silently start trampling another suite's rows.
+
+### `test_dsav_live_loop.py` — extra requirements
+
+- **Needs the full compose stack, including `dg-reasoner`.** Unlike the other
+  integration tests it does not only need Neo4j: it drives HTTP against the
+  running uvicorn process (whose `lifespan` owns the watcher daemon) and
+  closes the loop through a real SHACL round-trip to the sidecar.
+- **The image must be rebuilt before it can see the new files** — the same
+  staleness gotcha documented above, but load-bearing here: a stale image
+  runs neither the new tests nor the `lifespan`-started watcher they measure.
+- **It writes its evidence to `/app/data/dsav-evidence.json`**, not into the
+  repository, because `/mnt/repo` is mounted read-only. The host sees it at
+  `data-service/data/dsav-evidence.json` (a gitignored directory that also
+  holds connector credentials and encrypted LLM settings — copy out only the
+  evidence file, never commit anything else from there). The path is
+  overridable via `DSAV_EVIDENCE_PATH`; the HTTP target via
+  `DSAV_TARGET_BASE_URL`.
+- **It takes ~3m10s**, most of it deliberate wall-clock: a 60-second
+  runs-per-minute measurement window plus two rate-limit-window drains.
+- **Restart `data-service` between consecutive measured runs.** The watcher's
+  rate-limit window lives in that process's memory (D-15), so a re-run inside
+  60 seconds can start against a partly-full limiter.
+- On the **host** tier this module produces 6 errors rather than skips, the
+  same convention as `test_cg_structure_checks.py` — `neo4j` does not resolve
+  there. It deliberately writes no evidence artifact when nothing was
+  measured.
+
+**Measured 2026-07-27 (both tiers, after rebuilding the image):**
+
+| Tier | Command | Result |
+|------|---------|--------|
+| Host | `python -m pytest data-service/tests/ -q` | 699 passed, 4 failed, 1 skipped, 1 deselected, 31 errors in 36.35s |
+| Container | `docker compose exec -T data-service python -m pytest tests/ -q` | 734 passed, 1 skipped, 1 deselected in 204.56s |
+
+Both tiers now collect **736** — the container has caught up with the host.
+The host tier's 4 failures are the documented `test_dg_context.py` baseline;
+its 31 errors are the 25 pre-existing `neo4j`-DNS integration errors plus
+this phase's 6 live-loop tests. All 36 resolve inside the compose network,
+which is why the container tier is fully green.
+
 ## The runner finding
 
 There is no standing CI job. `.github/` has no `workflows/` directory, so
