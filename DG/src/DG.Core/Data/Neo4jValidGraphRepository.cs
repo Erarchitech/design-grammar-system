@@ -234,9 +234,16 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 ParamStates = new List<ParamState> { paramState },
             };
         }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        catch (Exception)
         {
-            // Malformed payload — return null rather than crash
+            // Malformed payload — return null rather than crash. Broadened
+            // (WR-03) from `JsonException or InvalidOperationException`:
+            // this try block also wraps the v1 fallback
+            // (DesignStateJsonSerializer.Deserialize), and a malformed but
+            // non-JSON-invalid v1 payload throwing any other exception type
+            // must not propagate out of TryParseDesignState into
+            // GetRunsAsync's ForEachAsync callback, where it would fail the
+            // entire response for every run, not just the one bad payload.
             return null;
         }
     }
