@@ -1,8 +1,8 @@
 ---
 phase: 39
 slug: designstate-auto-validation-investigation
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-27
 ---
@@ -43,7 +43,17 @@ created: 2026-07-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| *(populated by the planner — one row per task)* | | | | | | | | | ⬜ pending |
+| 39-01-T1 | 01 | 1 | DSAV-02 | T-39-03, T-39-05 | Retries bounded by an attempt counter; guardrail counters held in-process so polling never write-amplifies against Neo4j | unit (import + symbol contract) | `python -c "import sys; sys.path.insert(0, 'data-service'); import dsav_watcher as w; assert callable(w.poll_once)"` | ❌ created by this task | ⬜ pending |
+| 39-01-T2 | 01 | 1 | DSAV-02 | T-39-03, T-39-05 | Debounce collapse, rate-limit skip, and the D-08 attempt ladder are asserted deterministically | unit | `python -m pytest data-service/tests/test_dsav_watcher.py -q` | ❌ created by this task | ⬜ pending |
+| 39-02-T1 | 02 | 2 | DSAV-02 | T-39-01, T-39-02, T-39-06, T-39-07 | Bearer connector-token auth, strict project binding, generic 403, payload size cap | unit (TestClient) | `python -m pytest data-service/tests/test_designstate_capture.py -q -k "auth or mismatch or accepted"` | ❌ created by 39-02-T3 | ⬜ pending |
+| 39-02-T2 | 02 | 2 | DSAV-02 | T-39-04, T-39-08 | Publish reachable only behind the opt-in flag and non-fatal; watcher start/stop failures never take down the service | unit | `python -m pytest data-service/tests/test_designstate_capture.py -q -k "lifespan or publish or store_validation_run"` | ❌ created by 39-02-T3 | ⬜ pending |
+| 39-02-T3 | 02 | 2 | DSAV-02 | T-39-01, T-39-02, T-39-06 | Full rejection matrix (missing, malformed, unknown, revoked, cross-project) plus the pinned D-10 source-hash guard | unit | `python -m pytest data-service/tests/test_designstate_capture.py -q` | ❌ created by this task | ⬜ pending |
+| 39-03-T1 | 03 | 3 | DSAV-01, DSAV-02 | T-39-01, T-39-02, T-39-04, T-39-10 | Measured path is the authenticated path; every write scoped to `p39-autoval`; all runs persist-only with `SendStatus` false | integration / E2E | `docker compose exec -T data-service python -m pytest tests/test_dsav_live_loop.py -q -m integration` | ❌ created by this task | ⬜ pending |
+| 39-03-T2 | 03 | 3 | DSAV-01 | T-39-09, T-39-12 | Committed evidence carries no token; measurements are machine-written, not hand-typed | CLI assertion | `python -c "import json; d=json.load(open('.planning/phases/39-designstate-auto-validation-investigation/39-EVIDENCE.json')); assert d['measurements']['sc1_loop_closure']['latency_seconds'] > 0"` | ❌ created by this task | ⬜ pending |
+| 39-04-T1 | 04 | 4 | DSAV-02 | T-39-04, T-39-11, T-39-12 | Exactly one publish-enabled run phase-wide; flag reset and config row deleted in teardown; a blocked Speckle stack is recorded, never faked | integration + live | `docker compose exec -T data-service python -m pytest tests/test_dsav_publish_leg.py -q -m "integration and live"` | ❌ created by this task | ⬜ pending |
+| 39-04-T2 | 04 | 4 | DSAV-02 | T-39-11 | Operator confirms the Speckle version is real and that no `provider:'AutoValidation'` row is left enabled | manual (blocking checkpoint) | human-check — see Manual-Only Verifications below | n/a | ⬜ pending |
+| 39-05-T1 | 05 | 5 | DSAV-01 | T-39-12 | Every path-(b) number is transcribed from the evidence artifact and mechanically re-checked against it | CLI assertion | `python -m pytest data-service/tests/ -q` plus the note-transcription check in 39-05-PLAN.md Task 1 | ❌ created by this task | ⬜ pending |
+| 39-05-T2 | 05 | 5 | DSAV-03 | T-39-13, T-39-03 | Vault index edited scope-wise, not rewritten; the restart-resettable rate limit is recorded as an explicit residual | CLI assertion | the ADR section/front-matter check in 39-05-PLAN.md Task 2 | ❌ created by this task | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,9 +63,11 @@ created: 2026-07-27
 
 ## Wave 0 Requirements
 
-- [ ] `data-service/tests/` — new test module for the watcher's pure poll function, following the `FixtureSession` duck-type pattern in `tests/test_dg_context.py` (no mocking library)
-- [ ] Isolated fixture project string — per the Phase 37-01 convention (`FIXTURE_PROJECT`), any test publishing into live Neo4j must scope itself to a project string no other suite uses. Pick one for Phase 39 and pin it.
-- [ ] No framework install needed — pytest already present in the data-service image
+- [ ] `data-service/tests/test_dsav_watcher.py` — the watcher's pure poll function, following the `FixtureSession` duck-type pattern in `tests/test_dg_context.py` (no mocking library). **Closed by 39-01-T2 (Wave 1).**
+- [ ] `data-service/tests/test_designstate_capture.py` — capture-endpoint auth matrix and the D-10 source-hash guard. **Closed by 39-02-T3 (Wave 2).**
+- [ ] `data-service/tests/test_dsav_live_loop.py` — the live-Docker evidence-capture methodology gap: burst captures, read back row timestamps, persist measured numbers. **Closed by 39-03-T1 (Wave 3).**
+- [ ] Isolated fixture project string — pinned as **`p39-autoval`** in `data-service/tests/dsav_fixtures.py` (planner decision P-03), distinct from `p37-structure`, `p1` and `default-project`. **Closed by 39-01-T2 (Wave 1).**
+- [ ] No framework install needed — pytest already present in the data-service image. Confirmed: the phase installs zero new packages.
 
 ---
 
@@ -83,12 +95,12 @@ The three roadmap success criteria are **evidence-bearing** — SC1 and SC2 requ
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
-- [ ] SC1 and SC2 evidence artifacts are produced as **measured numbers**, not descriptions
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 10 of 11 tasks carry an automated command; the single exception is the blocking human checkpoint 39-04-T2, whose automatable half is fully covered by 39-04-T1
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references — every ❌ row above names the task that creates the file
+- [x] No watch-mode flags
+- [x] Feedback latency < 90s — host-tier modules run in seconds; the two live modules run inside the documented 60–90s in-container envelope
+- [x] SC1 and SC2 evidence artifacts are produced as **measured numbers**, not descriptions — `39-EVIDENCE.json` is machine-written by 39-03-T1 and mechanically re-checked by 39-03-T2 and 39-05-T1
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** planner-complete 2026-07-27 — execution pending. Table rows flip from ⬜ to ✅ as `/gsd-execute-phase 39` lands each task.
