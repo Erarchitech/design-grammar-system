@@ -70,6 +70,7 @@ import cg_structure_checks
 import cg_input_bindings
 import cg_input_generation
 import cg_paramstate_store
+import dsav_watcher
 
 app = FastAPI()
 
@@ -92,6 +93,14 @@ DG_REASONER_URL = os.getenv("DG_REASONER_URL", "http://dg-reasoner:8000")
 # slow/hung sidecar degrades the publish hot path to a status dict instead of
 # hanging it; unlike DG_REASONER_TIMEOUT_SECONDS this call is a non-fatal sidecar.
 DG_SHACL_HTTP_TIMEOUT_SECONDS = float(os.getenv("DG_SHACL_HTTP_TIMEOUT_SECONDS", "15"))
+
+# Phase 39 (DSAV-02, T-39-07): UTF-8 byte cap on the caller-supplied
+# statePayloadJson accepted by POST /designstate/capture. A capture writes an
+# unbounded caller-controlled string straight into ValidGraph, so the only
+# thing standing between an authenticated connector and an arbitrarily large
+# Neo4j property is this cap. 1 MiB comfortably fits a real DesignState v2
+# envelope.
+DSAV_MAX_STATE_PAYLOAD_BYTES = int(os.getenv("DSAV_MAX_STATE_PAYLOAD_BYTES", "1048576"))
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -228,6 +237,27 @@ class ValidationPublishRequest(BaseModel):
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
     entities: list[ValidationPublishEntityPayload] = Field(default_factory=list)
+
+
+class DesignStateCaptureRequest(BaseModel):
+    """Body of POST /designstate/capture (Phase 39, DSAV-02).
+
+    A deliberate subset of ValidationPublishRequest: no rules, no entities, no
+    validStatus -- a capture carries only the raw DesignState snapshot, and the
+    verdict is derived later by the watcher from SHACL, never supplied by the
+    caller. Unlike on the publish request, statePayloadJson is required and
+    non-empty here: a capture with no state is meaningless.
+    """
+
+    project: str
+    statePayloadJson: str = Field(min_length=1)
+
+
+class DesignStateCaptureResponse(BaseModel):
+    runId: str
+    project: str
+    status: str
+    capturedAt: str
 
 
 class FolderIngestRequest(BaseModel):
@@ -1983,6 +2013,83 @@ def _persist_shacl_report(project: str, run_id: str, report_json: str) -> None:
             "runId": run_id,
             "shaclReportJson": report_json,
         },
+    )
+
+
+@app.post("/designstate/capture", status_code=202)
+def capture_design_state(request: Request, payload: DesignStateCaptureRequest):
+    """Accept a DesignState snapshot for later automatic validation (DSAV-02).
+
+    This is Phase 39's only new public surface. It is the simulated-client
+    capture path of D-02: driven by curl and pytest, with no Grasshopper
+    component wiring and no live Rhino behind it -- the GH-side capture client
+    is deferred to a follow-up milestone.
+
+    Authentication is the inline connector-token check of P-01. The token is
+    resolved through the connectors module's `authenticate_token`, deliberately
+    NOT through its `record_heartbeat`: the latter stamps `last_connection` on
+    the credential, which would misrepresent capture traffic as liveness.
+    The credential's bound `project` must equal the body's `project` exactly
+    (T-39-02) -- no other endpoint accepts a caller-supplied project alongside
+    a connector token, so this comparison is new logic, not a borrowed idiom.
+
+    202, not 200: a capture only ever *enqueues* work. Whether it ever produces
+    a validation run at all depends on the per-project
+    `IntegrationConfig{provider:'AutoValidation'}` row, which is absent -- and
+    therefore disabled -- by default (D-13). A capture into a project with no
+    such row is accepted, written, and never picked up.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[len("Bearer "):].strip() if auth_header.startswith("Bearer ") else ""
+    record = connectors.authenticate_token(token) if token.startswith(connectors.TOKEN_PREFIX) else None
+    if record is None:
+        raise _structured_error_response(
+            "Invalid or revoked connector token.",
+            "Create a new credential via POST /connectors/{connector_id}/credentials.",
+            "CONNECTOR_AUTH_FAILED",
+            401,
+        )
+
+    # T-39-02. The message is deliberately generic (T-39-06): it names neither
+    # the credential's bound project nor the requested one, so this endpoint
+    # cannot be used to probe which projects exist or which project a stolen
+    # token belongs to.
+    if (record.get("project") or "default-project") != payload.project:
+        raise _structured_error_response(
+            "This connector token is not authorized for the requested project.",
+            "Create a credential scoped to the project you are capturing into, via "
+            "POST /connectors/{connector_id}/credentials.",
+            "CAPTURE_PROJECT_MISMATCH",
+            403,
+        )
+
+    # T-39-07.
+    if len(payload.statePayloadJson.encode("utf-8")) > DSAV_MAX_STATE_PAYLOAD_BYTES:
+        raise _structured_error_response(
+            "Captured DesignState payload is too large.",
+            f"Reduce the snapshot below the {DSAV_MAX_STATE_PAYLOAD_BYTES} byte limit, or raise "
+            "DSAV_MAX_STATE_PAYLOAD_BYTES on the data-service container.",
+            "CAPTURE_PAYLOAD_TOO_LARGE",
+            413,
+        )
+
+    run_id = uuid.uuid4().hex
+    captured_at = datetime.now(timezone.utc).isoformat()
+
+    # All Cypher for this path lives in dsav_watcher, the single writer of
+    # CAPTURE_QUERY -- no query is embedded here.
+    dsav_watcher.capture_state(
+        project=payload.project,
+        run_id=run_id,
+        state_payload_json=payload.statePayloadJson,
+        captured_at=captured_at,
+    )
+
+    return DesignStateCaptureResponse(
+        runId=run_id,
+        project=payload.project,
+        status="captured",
+        capturedAt=captured_at,
     )
 
 
