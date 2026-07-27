@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path as FilePath
 from typing import Any
@@ -72,7 +74,51 @@ import cg_input_generation
 import cg_paramstate_store
 import dsav_watcher
 
-app = FastAPI()
+
+# Phase 39 (DSAV-02): the first startup hook in this file to use `lifespan`.
+# There was no `lifespan` and no `threading` usage in data-service before this
+# phase; `ensure_spec_indexes` was registered with the startup-event decorator
+# deprecated in FastAPI 0.93.
+#
+# Those two mechanisms are mutually exclusive, not additive: Starlette only runs
+# the `on_startup` handlers through the DEFAULT lifespan it installs when no
+# `lifespan=` is passed. Supplying one replaces that default outright, and any
+# startup-event handler is then registered but silently never invoked. So
+# `ensure_spec_indexes` is called here explicitly and its decorator was removed
+# -- keeping the decorator would have quietly disabled the SpecGraph index
+# bootstrap and `init_ollama_models()` at startup.
+#
+# The watcher thread is `daemon=True` purely as a container-kill safety net;
+# the stop event plus the bounded `join` in `stop_watcher()` is what actually
+# makes it deterministically stoppable.
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Late module-global lookups on purpose: `ensure_spec_indexes`,
+    # `_call_shacl_validate` and `_auto_publish_run` are all defined further
+    # down this module, and this body runs at startup, long after import.
+    ensure_spec_indexes()
+    try:
+        dsav_watcher.start_watcher(
+            shacl_fn=_call_shacl_validate,
+            publish_fn=_auto_publish_run,
+        )
+    except Exception:
+        # T-39-08: a watcher that cannot start must never prevent the service
+        # from serving. Auto-validation is an opt-in background feature; the
+        # rest of data-service does not depend on it.
+        logging.getLogger(__name__).exception(
+            "dsav_watcher: start_watcher failed; continuing without auto-validation"
+        )
+
+    yield
+
+    try:
+        dsav_watcher.stop_watcher(timeout=5.0)
+    except Exception:
+        logging.getLogger(__name__).exception("dsav_watcher: stop_watcher failed during shutdown")
+
+
+app = FastAPI(lifespan=lifespan)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -908,9 +954,16 @@ def generate_note_id(project: str, source_path: str) -> str:
     return hashlib.sha256(f"{project}:{source_path}".encode()).hexdigest()[:16]
 
 
-@app.on_event("startup")
 def ensure_spec_indexes():
-    """Create full-text index and parent class hub nodes for SpecGraph."""
+    """Create full-text index and parent class hub nodes for SpecGraph.
+
+    Invoked from the `lifespan` context manager at the top of this module.
+    Phase 39 removed this function's deprecated startup-event decorator: once
+    an explicit `lifespan=` is passed to the FastAPI constructor, Starlette
+    never runs `on_startup` handlers, so leaving the decorator in place would
+    have made this a no-op at runtime. Behavior is unchanged -- same call, same
+    startup moment, same unguarded propagation if Neo4j is unreachable.
+    """
     init_ollama_models()
     with driver.session() as session:
         session.run(
@@ -2014,6 +2067,132 @@ def _persist_shacl_report(project: str, run_id: str, report_json: str) -> None:
             "shaclReportJson": report_json,
         },
     )
+
+
+# Phase 39 (DSAV-02, P-07): SET the Speckle identifiers in place on a run the
+# watcher has ALREADY completed. Same MERGE-key + SET-in-place template as
+# _persist_shacl_report, and deliberately the same field names
+# store_validation_run writes, so list_validation_runs and build_view_payload
+# read an auto-published run identically to a manual one.
+AUTO_COMPLETE_PUBLISH_QUERY = """
+MERGE (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
+SET
+    run.speckleProjectId = $speckleProjectId,
+    run.baseModelId = $baseModelId,
+    run.baseVersionId = $baseVersionId,
+    run.validationModelId = $validationModelId,
+    run.validationVersionId = $validationVersionId,
+    run.modelViewerUrl = $modelViewerUrl,
+    run.baseResourceUrl = $baseResourceUrl,
+    run.validationResourceUrl = $validationResourceUrl,
+    run.SendStatus = true
+"""
+
+
+def _auto_publish_run(
+    project: str, run_id: str, valid_status: list[bool] | None = None
+) -> dict[str, Any]:
+    """Best-effort Speckle publish for an auto-validated run (P-07).
+
+    Ordering is inverted relative to the manual path on purpose. The manual
+    `publish_validation` route mints a Speckle version BEFORE persisting and
+    404s outright with SPECKLE_CONFIG_MISSING when Speckle is unconfigured. An
+    auto-run completes and persists its verdict FIRST, and this adapter is
+    reached only afterwards, and only when the per-project `publishEnabled`
+    flag is on. Every failure -- missing config, missing write token, Speckle
+    unreachable -- is swallowed and reported in the return value; the run stays
+    `completed`. That is what makes D-09's persist-only default structural and
+    removes the Speckle hard dependency, so auto-validation works on projects
+    with no Speckle wiring at all.
+
+    Never raises. Always returns `{"status": "published" | "skipped" | "error",
+    ...}` with a `reason` on the non-success branches.
+
+    `valid_status` is accepted but unused: the verdict is already durably on
+    the run by the time this is called. It carries a default because
+    `dsav_watcher.poll_once` invokes `publish_fn(project, run_id)` with exactly
+    two positional arguments.
+
+    The published version is a state-level marker: `rules` and `entities` are
+    empty by construction, because a captured DesignState envelope carries no
+    per-entity geometry and no failedRuleIds. For D-11 that is precisely the
+    Speckle-noise data point being measured, not a missing feature.
+    """
+    config = get_integration_config(project)
+    if config is None:
+        # Deliberately NOT falling through to _auto_configure_integration the
+        # way the manual route does: D-13 rejects extending that implicit-create
+        # precedent, and an auto-run must never silently provision Speckle
+        # configuration for a project.
+        return {"status": "skipped", "reason": "speckle_config_missing", "runId": run_id}
+
+    settings = get_speckle_settings()
+    if not settings.write_token:
+        return {"status": "skipped", "reason": "speckle_token_missing", "runId": run_id}
+
+    try:
+        config = normalize_speckle_project_config_payload(config)
+        client = build_client(settings.internal_url, settings.write_token)
+        validation_model_id = get_or_create_validation_model_id(
+            client,
+            config.speckleProjectId,
+            config.validationModelId,
+        )
+        base_version_id = get_latest_model_version_id(
+            client, config.speckleProjectId, config.baseModelId
+        )
+        publish_result = publish_validation_version(
+            settings,
+            dg_project=project,
+            speckle_project_id=config.speckleProjectId,
+            base_model_id=config.baseModelId,
+            base_version_id=base_version_id,
+            validation_model_id=validation_model_id,
+            run_id=run_id,
+            rules=[],
+            entities=[],
+        )
+
+        write_query(
+            AUTO_COMPLETE_PUBLISH_QUERY,
+            {
+                "graph": VALIDATION_GRAPH,
+                "project": project,
+                "runId": run_id,
+                "speckleProjectId": config.speckleProjectId,
+                "baseModelId": config.baseModelId,
+                "baseVersionId": publish_result["baseVersionId"],
+                "validationModelId": publish_result["validationModelId"],
+                "validationVersionId": publish_result["validationVersionId"],
+                "modelViewerUrl": publish_result["modelViewerUrl"],
+                "baseResourceUrl": publish_result["baseResourceUrl"],
+                "validationResourceUrl": publish_result["validationResourceUrl"],
+            },
+        )
+
+        # Persist a newly created validation model id so the next auto-run
+        # reuses it, exactly as publish_validation does.
+        upsert_integration_config(
+            project,
+            SpeckleProjectConfigPayload(
+                speckleProjectId=config.speckleProjectId,
+                baseModelId=config.baseModelId,
+                baseModelName=config.baseModelName,
+                validationModelId=validation_model_id,
+            ),
+        )
+
+        return {
+            "status": "published",
+            "runId": run_id,
+            "validationModelId": publish_result["validationModelId"],
+            "validationVersionId": publish_result["validationVersionId"],
+            "modelViewerUrl": publish_result["modelViewerUrl"],
+        }
+    except Exception as exc:
+        # The verdict is already persisted; a publish failure must not cost the
+        # run, and must never propagate into the watcher tick.
+        return {"status": "error", "reason": type(exc).__name__, "runId": run_id}
 
 
 @app.post("/designstate/capture", status_code=202)
