@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "mappings": [
+    {
+      "ruleId": "R_STRUCT_FRAME_FOOTER_V",
+      "operation": "requiresProcedure",
+      "params": {"namePattern": "Footer"},
+      "description": "A Frame Algorithm must contain a Footer-configuration Procedure."
+    },
+    {
+      "ruleId": "R_STRUCT_FRAME_HEIGHT_VAR_V",
+      "operation": "requiresParameter",
+      "params": {"namePattern": "HTotal", "paramKind": "Variable", "dataType": "Float"},
+      "description": "Total height must be published as a variable float Parameter."
+    },
+    {
+      "ruleId": "R_STRUCT_NO_ORPHAN_PATTERN_V",
+      "operation": "forbidsOrphan",
+      "params": {"label": "Pattern"},
+      "description": "No Pattern may exist without an owning Procedure."
+    },
+    {
+      "ruleId": "R_STRUCT_PROC_INTERFACE_V",
+      "operation": "requiresInterface",
+      "params": {"ifaceType": "Input"},
+      "description": "Every Procedure must expose at least one input Interface."
+    }
+  ]
+}

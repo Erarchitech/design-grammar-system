@@ -24,6 +24,8 @@ another definition's findings.
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 from typing import Any
 
 SEVERITY_VIOLATION = "violation"
@@ -339,6 +341,125 @@ def check_annotation_conventions(session: Any, project: str, definition_id: str)
             rows.append((alg_index, warning, finding))
     rows.sort(key=lambda entry: (entry[0], entry[1]))
     return [finding for _, _, finding in rows]
+
+
+# ── Structure-rule mapping artifact (SVAL-02): declarative loader ──
+#
+# llm/structure_rules.json maps a Metagraph Rule_Id onto a structural
+# requirement over the published Computgraph. Rule_Id is joined as a soft
+# foreign key only -- SWRL semantics never leak into this module (T-37-10);
+# see spec/RULE-PARTITION-POLICY.md's Computgraph Structural Checks section.
+
+STRUCTURE_RULES_FILE = (
+    Path(os.getenv("DG_KNOWLEDGE_REPO_ROOT", str(Path(__file__).resolve().parent.parent)))
+    / "llm"
+    / "structure_rules.json"
+)
+
+# The four operation names a mapping entry's "operation" field may name.
+STRUCTURE_RULE_OPERATIONS: frozenset[str] = frozenset(
+    {"requiresProcedure", "requiresParameter", "requiresInterface", "forbidsOrphan"}
+)
+
+# Parameter keys that would express a numeric value comparison rather than a
+# structural presence/kind/type/relationship check. A mapping using any of
+# these keys is expressing SWRL scope (Pitfall 3, 37-RESEARCH.md) and must
+# never be evaluated by this module.
+_FORBIDDEN_PARAM_KEYS: frozenset[str] = frozenset(
+    {
+        "min",
+        "max",
+        "greaterThan",
+        "lessThan",
+        "greaterThanOrEqual",
+        "lessThanOrEqual",
+        "threshold",
+        "value",
+    }
+)
+
+# Computgraph entity labels a forbidsOrphan mapping's "label" param may name.
+# Restricting to this fixed allow-list keeps an invalid label from ever
+# reaching Cypher (T-37-01) -- Object is excluded because it is the
+# Computgraph root and structurally has no owner.
+_COMPUTGRAPH_ORPHAN_LABELS: frozenset[str] = frozenset(
+    {"Behavior", "Algorithm", "Procedure", "Pattern", "Parameter", "Interface"}
+)
+
+_EMPTY_STRUCTURE_RULES: dict[str, Any] = {"version": 0, "mappings": []}
+
+
+def load_structure_rules() -> dict[str, Any]:
+    """Read the structure-rule mapping artifact from STRUCTURE_RULES_FILE.
+
+    Mirrors dg_context.load_cypher_catalog() exactly -- defensive by design,
+    never raises. A missing file, an unreadable file, invalid JSON, or a
+    payload that is not an object whose "mappings" key is a list all
+    degrade to the empty envelope {"version": 0, "mappings": []}.
+    """
+    if not STRUCTURE_RULES_FILE.exists():
+        return dict(_EMPTY_STRUCTURE_RULES)
+    try:
+        payload = json.loads(STRUCTURE_RULES_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return dict(_EMPTY_STRUCTURE_RULES)
+    if not isinstance(payload, dict) or not isinstance(payload.get("mappings"), list):
+        return dict(_EMPTY_STRUCTURE_RULES)
+    return payload
+
+
+def _mapping_rejection_reason(entry: Any) -> str | None:
+    """Return None when `entry` is a safe-to-evaluate mapping, else a short
+    human-readable reason it was rejected. Shared by valid_structure_mappings
+    (silent filter) and evaluate_rule_mappings (surfaced in the report)."""
+    if not isinstance(entry, dict):
+        return "mapping entry is not an object"
+    rule_id = entry.get("ruleId")
+    if not isinstance(rule_id, str) or not rule_id:
+        return "ruleId is missing or not a non-empty string"
+    operation = entry.get("operation")
+    if operation not in STRUCTURE_RULE_OPERATIONS:
+        return f"operation {operation!r} is not one of {sorted(STRUCTURE_RULE_OPERATIONS)}"
+    params = entry.get("params")
+    if params is not None:
+        if not isinstance(params, dict):
+            return "params must be an object"
+        forbidden = sorted(_FORBIDDEN_PARAM_KEYS & set(params))
+        if forbidden:
+            return (
+                f"params contains value-threshold key(s) {forbidden} -- "
+                "this expresses SWRL scope, not a structural check"
+            )
+        if operation == "forbidsOrphan":
+            label = params.get("label")
+            if label is not None and label not in _COMPUTGRAPH_ORPHAN_LABELS:
+                return f"label {label!r} is not a recognized Computgraph entity label"
+    return None
+
+
+def valid_structure_mappings(payload: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Filter a loaded structure-rules payload down to the mappings safe to
+    evaluate. Deterministic, preserves input order. Rejection is silent at
+    this layer -- evaluate_rule_mappings() surfaces the reason."""
+    if payload is None:
+        payload = load_structure_rules()
+    mappings = payload.get("mappings") if isinstance(payload, dict) else None
+    if not isinstance(mappings, list):
+        return []
+    return [entry for entry in mappings if _mapping_rejection_reason(entry) is None]
+
+
+def structure_rule_ids() -> tuple[str, ...]:
+    """Derived tuple of accepted ruleIds from the currently-loaded structure
+    rules file (recomputed from disk on each call)."""
+    return tuple(entry["ruleId"] for entry in valid_structure_mappings())
+
+
+# Derived ruleId index, computed once at import time from the real artifact
+# on disk (mirrors dg_context.py's CYPHER_SHAPE_IDS module-constant pattern).
+# Call structure_rule_ids() directly if the file's contents might have
+# changed since import (e.g. in tests).
+STRUCTURE_RULE_IDS: tuple[str, ...] = structure_rule_ids()
 
 
 # ── Aggregator ──
