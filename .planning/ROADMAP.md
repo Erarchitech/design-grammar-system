@@ -479,11 +479,25 @@ All four plans are independent (zero `files_modified` overlap — Python / C# / 
 **Plans:** 6 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 37-01-PLAN.md — Wave 0 test substrate: parser-faithful Frame fixture variants, network-free consult adapter double, two-tier run story
 - [ ] 37-02-PLAN.md — Partition-policy addendum (Computgraph as a third validation system) + normative validate/consult JSON contracts in spec/API.md
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 37-03-PLAN.md — SVAL-01: `cg_structure_checks.py` seven deterministic checks + two-tier test suite
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 37-04-PLAN.md — SVAL-02: `llm/structure_rules.json` + defensive loader + four operation templates + rule evaluator
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 37-05-PLAN.md — `POST /computgraph/validate` route, report builder, report contract test
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 37-06-PLAN.md — SVAL-03: `POST /computgraph/consult` subgraph fetch, grounding post-check, cassette test suite, phase gate
 
 ---
