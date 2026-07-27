@@ -274,3 +274,7 @@ None. The compose stack was already running; `data-service` was rebuilt twice (o
 ---
 *Phase: 39-designstate-auto-validation-investigation*
 *Completed: 2026-07-27*
+
+## Self-Check: PASSED
+
+All claimed files exist on disk (`test_dsav_publish_leg.py`, `test_dsav_live_loop.py`, `39-EVIDENCE.json`, `39-04-SUMMARY.md`) and all four commits (`a7b347c`, `171504d`, `c37a8bc`, `b834544`) are present in git history.

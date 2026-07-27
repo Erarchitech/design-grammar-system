@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 39
 current_phase_name: designstate-auto-validation-investigation
 status: executing
-stopped_at: Completed 39-03-PLAN.md (live-Docker SC1/SC2 measurement)
-last_updated: "2026-07-27T19:57:35.352Z"
+stopped_at: Completed 39-04-PLAN.md (human-verify gate passed)
+last_updated: "2026-07-27T20:54:49.120Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 39 execution started
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 68
-  completed_plans: 65
+  completed_plans: 66
   percent: 64
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 39 (designstate-auto-validation-investigation) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 39 execution started
 
@@ -106,6 +106,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 39 P01 | ~30min | 2 tasks | 3 files |
 | Phase 39 P02 | 45min | 3 tasks | 2 files |
 | Phase 39 P03 | ~60min | 2 tasks | 3 files |
+| Phase 39 P04 | ~50min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -360,6 +361,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 39-03: runs-per-minute burst uses a 4-captures-then-8s-idle cycle, not a uniform 1Hz stream — a uniform stream against the 5s debounce re-arms it forever and would measure 0 runs/min (debounce starvation) instead of the rate limiter
 - [Phase ?]: 39-03: F-39-01 — auto-runs are SHACL-validated before their own ValidStatus is written, so every auto-run self-violates RunStatusShape_valid and P-02's unmapped fallback flips every ObjState false; measured, left open for the DSAV-03 ADR
 - [Phase ?]: 39-03: evidence artifacts record unmeasured scenarios as explicit holes (missing_measurements) and write nothing at all when nothing was observed — a fabricated datapoint silently corrupts the ADR that cites the file
+- [Phase ?]: 39-04: the publish leg's preflight probes the dev stack for working Speckle config rather than requiring a provider:'Speckle' row on the synthetic fixture project — a literal probe would record a false-negative 'blocked' (T-39-12 cuts both ways)
+- [Phase ?]: 39-04: the published run row deleted by a routine suite run was NOT recreated by hand and the leg was NOT re-run — D-11 permits exactly one publish-enabled run; the Speckle version is the durable evidence
+- [Phase ?]: 39-04: operator authorized live-marking test_dsav_live_loop.py (a Wave 3 file) so routine suite runs cannot scrub phase evidence
 
 ### Research Flags (carry into planning)
 
@@ -438,8 +442,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T19:57:35.331Z
-Stopped at: Completed 39-03-PLAN.md (live-Docker SC1/SC2 measurement)
+Last session: 2026-07-27T20:54:49.087Z
+Stopped at: Completed 39-04-PLAN.md (human-verify gate passed)
 Resume file: None
 
 ## Performance Metrics
