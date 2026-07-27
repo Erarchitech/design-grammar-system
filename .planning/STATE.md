@@ -4,17 +4,17 @@ milestone: v9.0
 milestone_name: AI Workflow Intelligence
 current_phase: 38
 current_phase_name: ai-generated-grasshopper-script-inputs
-status: executing
-stopped_at: Completed 38-06-PLAN.md
-last_updated: "2026-07-27T17:30:16.118Z"
+status: verifying
+stopped_at: Completed 38-07-PLAN.md
+last_updated: "2026-07-27T17:55:35.565Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 68
-  completed_plans: 61
-  percent: 57
+  completed_plans: 62
+  percent: 64
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-27 — Phase 38 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
@@ -102,6 +102,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 38 P04 | ~2h | 5 tasks | 8 files |
 | Phase 38 P05 | ~55min | 4 tasks | 5 files |
 | Phase 38 P06 | ~1h10min | 4 tasks | 4 files |
+| Phase 38 P07 | ~1h40min | 4 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -348,6 +349,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 38-05]: TryParseDesignState's v2 branch needed a JsonStringEnumConverter plus a manual per-ParamState Parameters backfill (not JsonObjectCreationHandling.Populate, which is .NET 8+ only and DG.Core multi-targets net7.0) -- without both, ParamState.Parameters silently deserialized empty with no exception
 - [Phase ?]: [Phase 38-06]: acceptedStateIds tracked by candidateId within a single generate-inputs response, not the server's content-hashed StateId -- avoids duplicating cg_paramstate_store.compute_param_state_id client-side in a presentational component
 - [Phase ?]: [Phase 38-06]: data-service container rebuilt (no --no-cache) alongside design-grammars (--no-cache) since data-service has no source volume mount and was still running pre-38-04/38-05 code -- generate-inputs/candidates-accept routes are now live
+- [Phase ?]: [Phase 38-07]: Cassette keying is a fixed, human-readable scenario name with full prompt/system-text staleness comparison, not a content hash -- simpler for the eval harness's two fixed scenarios and equally precise
+- [Phase ?]: [Phase 38-07]: The two committed SC1-a/SC1-b cassettes are honestly labeled synthetic-authored (no live LLM credentials reachable from the host-side test process this session) -- their prompt/system text is genuine (generated via the real build_generation_prompt), only the response content is a hand-authored stand-in
 
 ### Research Flags (carry into planning)
 
@@ -426,8 +429,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T17:30:16.098Z
-Stopped at: Completed 38-06-PLAN.md
+Last session: 2026-07-27T17:55:35.534Z
+Stopped at: Completed 38-07-PLAN.md
 Resume file: None
 
 ## Performance Metrics
