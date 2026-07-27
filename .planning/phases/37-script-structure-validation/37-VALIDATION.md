@@ -3,7 +3,7 @@ phase: 37
 slug: script-structure-validation
 status: draft
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-07-27
 ---
 
@@ -22,7 +22,7 @@ created: 2026-07-27
 | **Config file** | none dedicated — suites live in `data-service/tests/` |
 | **Quick run command** | `python -m pytest data-service/tests/test_cg_structure_checks.py -q` (unit tier, no Neo4j) |
 | **Full suite command** | `docker compose exec data-service python -m pytest tests/ -q` (integration tier, live Neo4j) |
-| **Estimated runtime** | unit tier ~5–15s; in-container full suite TBD — **measure at Wave 0** and replace this row |
+| **Measured runtime** | unit tier (host, `python -m pytest data-service/tests/ -q`): 492 passed / 4 failed (pre-existing `test_dg_context.py` Neo4j-dependent, expected on host) / 1 skipped / 1 deselected in 25.93s. Integration tier (`docker compose exec data-service python -m pytest tests/ -q`): 474 passed / 1 skipped / 1 deselected in 6.70s (real 8.2s). See `data-service/tests/README.md` for the full run story, including the container-image-staleness gotcha the integration-tier count reveals. |
 
 **Two-tier split is mandatory, not stylistic.** Research Pitfall 2: `test_computgraph_publish.py`'s `FakeGraph` duck-type only simulates fixed MERGE writes — it cannot validate arbitrary Cypher pattern-matching. SVAL-01/02 correctness therefore requires a real Neo4j inside the compose network. The `neo4j` hostname does not resolve from the host (same constraint already documented for `test_dg_context.py`'s 4 Neo4j-dependent tests).
 
@@ -58,10 +58,10 @@ created: 2026-07-27
 
 ## Wave 0 Requirements
 
-- [ ] `data-service/tests/test_cg_structure_checks.py` — covers SVAL-01/SVAL-02. Needs **both** a FakeGraph-style route-shape tier and a live-Neo4j integration tier (Pitfall 2: FakeGraph cannot substitute for real Cypher pattern-match correctness)
-- [ ] Second published Frame variant fixture — Interface removed from `11_Proc`, and/or `12_Proc` group absent. Reuse `test_computgraph_publish.py`'s `_frame_cg_context()` builder, mutating the entity out before `publish_structure()`
-- [ ] Cassette/fixture LLM response for `/consult` — mirror `data-service/tests/recognition_eval/cassette.py`'s record/replay pattern so SC3 is testable without a live LLM call
-- [ ] **Confirm the integration-test run story.** Determine whether `data-service/tests/` run against live Neo4j in any standing job, or only ad hoc via `docker compose exec`. If there is no standing runner, this phase's integration tier needs a documented manual/local run step — same status as `test_dg_context.py`'s existing 4 Neo4j-dependent tests
+- [x] `data-service/tests/test_cg_structure_checks.py` — covers SVAL-01/SVAL-02. Needs **both** a FakeGraph-style route-shape tier and a live-Neo4j integration tier (Pitfall 2: FakeGraph cannot substitute for real Cypher pattern-match correctness) — (closed by `cg_fixtures.py`'s parser-faithful envelope builders, which every later `test_cg_structure_checks.py` publishes; the check module itself is a later Phase 37 plan's artifact, out of this plan's scope)
+- [x] Second published Frame variant fixture — Interface removed from `11_Proc`, and/or `12_Proc` group absent. Reuse `test_computgraph_publish.py`'s `_frame_cg_context()` builder, mutating the entity out before `publish_structure()` — (closed by `cg_fixtures.frame_without_interface()` and `cg_fixtures.frame_without_footer_procedure()`)
+- [x] Cassette/fixture LLM response for `/consult` — mirror `data-service/tests/recognition_eval/cassette.py`'s record/replay pattern so SC3 is testable without a live LLM call — (closed by `consult_cassette.ConsultCassetteAdapter`, citing both a grounded `11_Var_HTotal` and an ungrounded `11_Var_HGhost` token)
+- [x] **Confirm the integration-test run story.** Determine whether `data-service/tests/` run against live Neo4j in any standing job, or only ad hoc via `docker compose exec`. If there is no standing runner, this phase's integration tier needs a documented manual/local run step — same status as `test_dg_context.py`'s existing 4 Neo4j-dependent tests — (closed by `data-service/tests/README.md`: no standing CI job exists — `.github/` has no `workflows/` directory — both tiers are measured, timed, and documented as manual pre-PR steps)
 
 ---
 
@@ -79,9 +79,9 @@ created: 2026-07-27
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
+- [x] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
-- [ ] Feedback latency measured and recorded (replaces the TBD row above)
+- [x] Feedback latency measured and recorded (replaces the placeholder runtime row above)
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
