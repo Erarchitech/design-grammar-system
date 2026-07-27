@@ -588,7 +588,7 @@ Plans:
 2. Rapid successive captures do not flood Speckle: the debounce/rate-limit design is validated in the prototype, not just described
 3. The ADR records the chosen architecture, the rejected options with reasons, and the follow-up milestone scope
 
-**Plans:** 5/5 plans executed
+**Plans:** 5/5 plans complete
 **Wave 1**
 
 - [x] 39-01-PLAN.md — Watcher core: `dsav_watcher.py` state machine, in-memory guardrails, pure `poll_once()`, host-tier unit suite
@@ -653,7 +653,7 @@ Plans:
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 6/6 | In Progress|  |
 | 38. AI-Generated Grasshopper Script Inputs | 7/7 | Verifying  |  |
-| 39. DesignState Auto-Validation Investigation | 5/5 | In Progress|  |
+| 39. DesignState Auto-Validation Investigation | 5/5 | Complete    | 2026-07-28 |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
 
 Dependency shape: `28 → 29 → 31` (31 also gated by 30's ADR); `28 → 30` (parallel to 29); `32 → 32.1` (parallel-safe with 33–35); `32 → 33 → 35`; `32 → 34 → 35` (33 ‖ 34); `29 → 35`; `{32.1,35} → 36 → 37`; `36 → 38`; `39` parallel to 30–38; all → `40`. **Phase 32 has no v9.0 dependencies and can start immediately.**
