@@ -275,6 +275,22 @@
       "teardown": {
         "publish_enabled_reset_to": false,
         "auto_validation_config_rows_remaining": 0
+      },
+      "row_lifecycle": {
+        "run_row_present_at_measurement": true,
+        "run_row_present_now": false,
+        "deleted_by": "data-service/tests/test_dsav_live_loop.py::live_session (_scrub at setup and teardown)",
+        "how": "The Wave 3 driver is `integration`-marked but NOT `live`-marked, so a bare in-container `pytest tests/ -q` collects it, and its module fixture deletes every :ValidationRun and :IntegrationConfig scoped to p39-autoval. That bare suite run was executed ~4 minutes after the publish leg as an acceptance check (the criterion 'the live module must NOT collect the publish leg'), and it destroyed the published run row as a side effect.",
+        "verified_immediately_after_the_leg": {
+          "send_status_true_rows": 1,
+          "auto_validation_config_rows": 0
+        },
+        "verified_now": {
+          "send_status_true_rows": 0,
+          "validation_run_rows_for_project": 0,
+          "auto_validation_config_rows": 0
+        },
+        "consequence": "The Neo4j-side proof of this publish is no longer queryable; the Speckle-side proof is durable and independent. Speckle version 2ab708e884 in project 44088eefc6 / model a6d1e0c5da carries message 'DG validation run 0afe92c2e2324a85a988d42c4ffedc95' and created_at 2026-07-27T20:04:58.470Z, 0.97 s after the row's completedAt of 20:04:57.503Z. The run row was NOT recreated by hand and the publish leg was NOT re-run: D-11 permits exactly one publish-enabled run in the phase, and re-running would mint a second Speckle version, so the deletion is reported rather than repaired."
       }
     }
   },
