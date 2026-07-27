@@ -165,7 +165,7 @@
 | TAGC-01 … TAGC-03 | Phase 34 | Pending |
 | RCGN-01 … RCGN-04 | Phase 35 | Pending |
 | CGPD-01 … CGPD-05 | Phase 36 | Pending |
-| SVAL-01 … SVAL-03 | Phase 37 | Pending |
+| SVAL-01 … SVAL-03 | Phase 37 | ✅ Complete (2026-07-27) |
 | GHIN-01 … GHIN-04 | Phase 38 | Pending |
 | DSAV-01 … DSAV-03 | Phase 39 | Pending |
 | INTG-01 … INTG-04 | Phase 40 | Pending |

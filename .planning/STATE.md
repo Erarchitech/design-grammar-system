@@ -4,17 +4,17 @@ milestone: v9.0
 milestone_name: AI Workflow Intelligence
 current_phase: 37
 current_phase_name: script-structure-validation
-status: executing
-stopped_at: Completed 37-05-PLAN.md (POST /computgraph/validate report surface SVAL-01/SVAL-02)
-last_updated: "2026-07-27T11:16:43.177Z"
+status: verifying
+stopped_at: Completed 37-06-PLAN.md
+last_updated: "2026-07-27T11:45:02.612Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 37 execution started
 progress:
   total_phases: 14
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 56
-  completed_plans: 54
-  percent: 50
+  completed_plans: 55
+  percent: 57
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 37 (script-structure-validation) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-27 — Phase 37 execution started
 
 ## Deferred Verification
@@ -88,6 +88,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 37 P03 | 30min | 3 tasks | 3 files |
 | Phase 37 P04 | ~20min | 3 tasks | 3 files |
 | Phase 37 P05 | ~25min | 3 tasks | 3 files |
+| Phase 37 P06 | 55min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -318,6 +319,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 37-05]: DefinitionResolutionError.code carries the literal documented error-code string end to end -- the route branches on it only for hint text, never re-derives the code mapping
 - [Phase ?]: [Phase 37-05]: list_definition_ids()/fetch_published_at() match the generic {project, graph:'Computgraph'} node shape rather than enumerating all seven entity labels -- one query covers the whole subgraph since every Computgraph node type sets graph/definitionId/publishedAt at publish time
 - [Phase ?]: [Phase 37-05]: Added a second isolated fixture project (p37-structure-single, one published definition) alongside FIXTURE_PROJECT's three, so both branches of the definitionId resolution rule have a live counterpart
+- [Phase ?]: fetch_computgraph_subgraph() is a standalone function outside CONTEXT_REQUEST_TYPES, mirroring fetch_existing_entities()'s dual-mode session pattern rather than overloading the general context assembler
+- [Phase ?]: Consult truncation (CONSULT_MAX_ENTITIES) bounds the actual nested subgraph structure fed to the prompt, not only the reported entityNames vocabulary
 
 ### Research Flags (carry into planning)
 
@@ -395,8 +398,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T11:16:43.157Z
-Stopped at: Completed 37-05-PLAN.md (POST /computgraph/validate report surface SVAL-01/SVAL-02)
+Last session: 2026-07-27T11:45:02.580Z
+Stopped at: Completed 37-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
