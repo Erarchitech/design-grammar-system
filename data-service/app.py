@@ -67,6 +67,8 @@ from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWr
 import gh_bridge
 import computgraph_publish
 import cg_structure_checks
+import cg_input_bindings
+import cg_input_generation
 
 app = FastAPI()
 
@@ -1509,6 +1511,102 @@ def post_computgraph_consult(payload: ComputgraphConsultRequest):
             str(exc),
             "Check Neo4j availability and the configured LLM provider.",
             "COMPUTGRAPH_CONSULT_FAILED",
+            502,
+        )
+
+
+class ComputgraphGenerateInputsRequest(BaseModel):
+    """Body for POST /computgraph/generate-inputs. `definitionId` resolves
+    the same way ComputgraphValidateRequest's does (omit for the project's
+    sole published definition). No validators beyond the type declarations
+    -- domain validation, including the 1..8 candidateCount bound, raises
+    from the delegate (cg_input_generation.generate_inputs), matching the
+    sibling Computgraph request models' documented plainness."""
+
+    project: str
+    definitionId: "str | None" = None
+    ruleId: str
+    candidateCount: "int | None" = None
+    parameterOverrides: "list[str] | None" = None
+
+
+@app.post("/computgraph/generate-inputs")
+def post_computgraph_generate_inputs(payload: ComputgraphGenerateInputsRequest):
+    """Generate AI candidate parameter sets for a Metagraph Rule from
+    published Computgraph parameter bindings (Phase 38: GHIN-01..04).
+
+    Thin route -- opens one session, delegates to
+    cg_input_generation.generate_inputs(), and returns its result directly.
+    Performs no write and has no code path to the Grasshopper canvas bridge
+    (GHIN-04) -- enforced structurally by test_cg_input_boundary.py's
+    ast-based import-closure assertion over the generation modules, not by
+    this docstring alone. candidateCount's 1..8 bound is enforced ONLY
+    inside cg_input_generation.generate_inputs(), never re-checked here.
+    """
+    try:
+        with driver.session() as session:
+            return cg_input_generation.generate_inputs(
+                session,
+                payload.project,
+                payload.definitionId,
+                payload.ruleId,
+                candidate_count=payload.candidateCount,
+                parameter_overrides=payload.parameterOverrides,
+            )
+    except cg_structure_checks.DefinitionResolutionError as exc:
+        if exc.code == "COMPUTGRAPH_VALIDATE_AMBIGUOUS_DEFINITION":
+            hint = (
+                "Multiple definitions are published for this project -- "
+                f"retry with one of: {', '.join(exc.available)}."
+            )
+            code = "COMPUTGRAPH_GENERATE_INPUTS_AMBIGUOUS_DEFINITION"
+        else:
+            hint = "Publish this definition first through POST /computgraph/publish."
+            code = "COMPUTGRAPH_GENERATE_INPUTS_NO_DEFINITION"
+        raise _structured_error_response(str(exc), hint, code, 422)
+    except cg_input_bindings.RuleNotFoundError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check that ruleId names an existing Metagraph Rule by Rule_Id in this project.",
+            "COMPUTGRAPH_GENERATE_INPUTS_RULE_NOT_FOUND",
+            422,
+        )
+    except cg_input_generation.NoEligibleParametersError as exc:
+        reasons = sorted({row.get("reason") for row in exc.excluded if row.get("reason")})
+        hint = (
+            "No published parameter is eligible for this rule. Exclusion reasons "
+            f"encountered: {', '.join(reasons) if reasons else 'none (zero candidate parameters exist)'}."
+        )
+        raise _structured_error_response(
+            str(exc), hint, "COMPUTGRAPH_GENERATE_INPUTS_NO_ELIGIBLE_PARAMETERS", 422
+        )
+    except cg_input_bindings.InputBindingError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check llm/structure_rules.json's inputBindings entry for this rule.",
+            "COMPUTGRAPH_GENERATE_INPUTS_REQUEST_INVALID",
+            422,
+        )
+    except ValueError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check candidateCount is between 1 and 8, and the other request fields.",
+            "COMPUTGRAPH_GENERATE_INPUTS_REQUEST_INVALID",
+            422,
+        )
+    except cg_input_generation.DomainViolationExhaustedError as exc:
+        raise _structured_error_response(
+            str(exc),
+            "The deterministic Tier 0 sampler could not produce a candidate; check the "
+            "resolved bound parameters' domains.",
+            "COMPUTGRAPH_GENERATE_INPUTS_DOMAIN_VIOLATION",
+            502,
+        )
+    except Exception as exc:
+        raise _structured_error_response(
+            str(exc),
+            "Check Neo4j availability and the configured LLM provider.",
+            "COMPUTGRAPH_GENERATE_INPUTS_FAILED",
             502,
         )
 
