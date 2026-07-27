@@ -130,6 +130,10 @@ None - no external service configuration required. This plan is documentation-on
 - Plan 38-07 (SC1 measurement) has five literal numeric thresholds to assert against, closing the ambiguity that caused Phase 35's quality-measurement gap.
 - No blockers.
 
+## Self-Check: PASSED
+
+All 4 modified files and all 5 commit hashes (b5808ed, 04c4117, 39f77e1, e006105, 846fd25) verified present.
+
 ---
 *Phase: 38-ai-generated-grasshopper-script-inputs*
 *Completed: 2026-07-27*

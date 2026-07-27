@@ -4,16 +4,16 @@ milestone: v9.0
 milestone_name: AI Workflow Intelligence
 current_phase: 38
 current_phase_name: ai-generated-grasshopper-script-inputs
-status: planned
-stopped_at: Phase 38 planned — 7 plans in 5 waves, ready to execute
-last_updated: "2026-07-27T17:30:00.000Z"
+status: executing
+stopped_at: Completed 38-01-PLAN.md
+last_updated: "2026-07-27T15:01:48.923Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 38 planned — 7 plans in 5 waves
+last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
   completed_phases: 8
-  total_plans: 56
-  completed_plans: 55
+  total_plans: 68
+  completed_plans: 56
   percent: 57
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 38 (ai-generated-grasshopper-script-inputs) — PLANNED
-Plan: 0 of 7
+Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-07-27 — Phase 38 planned (7 plans, 5 waves)
+Last activity: 2026-07-27 — Phase 38 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
@@ -96,6 +96,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 37 P04 | ~20min | 3 tasks | 3 files |
 | Phase 37 P05 | ~25min | 3 tasks | 3 files |
 | Phase 37 P06 | 55min | 3 tasks | 4 files |
+| Phase 38 P01 | 25min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -328,6 +329,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 37-05]: Added a second isolated fixture project (p37-structure-single, one published definition) alongside FIXTURE_PROJECT's three, so both branches of the definitionId resolution rule have a live counterpart
 - [Phase ?]: fetch_computgraph_subgraph() is a standalone function outside CONTEXT_REQUEST_TYPES, mirroring fetch_existing_entities()'s dual-mode session pattern rather than overloading the general context assembler
 - [Phase ?]: Consult truncation (CONSULT_MAX_ENTITIES) bounds the actual nested subgraph structure fed to the prompt, not only the reported entityNames vocabulary
+- [Phase ?]: [Phase 38-01]: spec/API.md fixes SC1 as five literal numeric thresholds (100%/>=75%/>=1/>=0.10/exactly 0) instead of prose, closing the Phase 35 measure-quality-late failure mode before any generation code exists
+- [Phase ?]: [Phase 38-01]: spec/DATABASE.md's DesignState invariants amended as a two-writer statement (VALIDATOR publish + POST /computgraph/candidates/accept) with a Run-less-until-composed lifecycle clarification, not deleted outright
+- [Phase ?]: [Phase 38-01]: inputBindings added as a new sibling top-level key in llm/structure_rules.json (not new mappings[] entries) -- a binding is a selector, not a Cypher check, keeping Phase 37's validator untouched
 
 ### Research Flags (carry into planning)
 
@@ -405,9 +409,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T14:02:35.599Z
-Stopped at: Phase 38 context gathered
-Resume file: .planning/phases/38-ai-generated-grasshopper-script-inputs/38-CONTEXT.md
+Last session: 2026-07-27T15:01:48.904Z
+Stopped at: Completed 38-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 

@@ -94,10 +94,10 @@
 
 ### Grasshopper Input Generation (GHIN) — Phase 38
 
-- [ ] **GHIN-01**: Given a rule (or design-intent text) plus the published Computgraph Parameter structure, AI proposes candidate input parameter sets for the Grasshopper script, respecting serialized slider domains
-- [ ] **GHIN-02**: Candidates are ParamState-compatible payloads (Number/Integer/Boolean only, per the standing v2.0 typed-state decision) applicable through the existing PARAMETER REINSTATE component
-- [ ] **GHIN-03**: Every generated candidate carries provenance: source rule, provider/model, timestamp — queryable in the graph
-- [ ] **GHIN-04**: Generation and application are strictly separated — nothing reaches the canvas without explicit user acceptance of a candidate
+- [x] **GHIN-01**: Given a rule (or design-intent text) plus the published Computgraph Parameter structure, AI proposes candidate input parameter sets for the Grasshopper script, respecting serialized slider domains
+- [x] **GHIN-02**: Candidates are ParamState-compatible payloads (Number/Integer/Boolean only, per the standing v2.0 typed-state decision) applicable through the existing PARAMETER REINSTATE component
+- [x] **GHIN-03**: Every generated candidate carries provenance: source rule, provider/model, timestamp — queryable in the graph
+- [x] **GHIN-04**: Generation and application are strictly separated — nothing reaches the canvas without explicit user acceptance of a candidate
 
 ### DesignState Auto-Validation Investigation (DSAV) — Phase 39
 

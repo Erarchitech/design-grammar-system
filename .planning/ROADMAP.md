@@ -524,26 +524,40 @@ Plans:
 3. Nothing touches the canvas without explicit user acceptance — generation and application are strictly separated
 4. Provenance is queryable: `MATCH` on generated ParamStates returns rule, model, and timestamp for each
 
-**Plans:** 7 plans in 5 waves
+**Plans:** 1/7 plans executed
+
+- [x] 38-01-PLAN.md
+- [ ] 38-02-PLAN.md
+- [ ] 38-03-PLAN.md
+- [ ] 38-04-PLAN.md
+- [ ] 38-05-PLAN.md
+- [ ] 38-06-PLAN.md
+- [ ] 38-07-PLAN.md
 
 **Wave 1**
+
 - `38-01` — Normative contracts: `/computgraph/generate-inputs` + `/computgraph/candidates/accept` in `spec/API.md`, ValidGraph schema amendment in `spec/DATABASE.md`, `inputBindings` spec in `spec/RULE-PARTITION-POLICY.md`, and the five SC1 numeric thresholds
 
 **Wave 2** *(blocked on Wave 1 completion)*
+
 - `38-02` — JOIN A: additive `CgNode.InputParams` capture + `reinstateParameterId` derived and persisted at publish
 - `38-03` — JOIN B: `inputBindings` loader with the value-threshold fence, SWRL limit reader, determinability classifier
 
 **Wave 3** *(blocked on Wave 2 completion)*
+
 - `38-04` — Generation core: Tier 0 deterministic sampler + dynamic domain validator, Tier 1 orchestrator with bounded retry, the generate route, and the GHIN-04 import-boundary test
 
 **Wave 4** *(blocked on Wave 3 completion)*
+
 - `38-05` — Accept + persist: first `:DesignState` writer with server-side re-validation, plus the additive standalone-ParamState read in `Neo4jValidGraphRepository`
 
 **Wave 5** *(blocked on Wave 4 completion)*
+
 - `38-06` — ui-v2 candidate review panel on the Model screen
 - `38-07` — SC1 quality harness (cassette-backed), phase UAT, VALIDATION sign-off
 
 **Cross-cutting constraints:**
+
 - Generation performs zero graph writes and has no import path to `gh_bridge` — asserted by an `ast`-based import-closure test (GHIN-04, D-22), and it must keep passing after plan 38-05 introduces the writer
 - Clamping is not implemented anywhere: an out-of-domain value is rejected and retried, never repaired (D-14)
 - A `geometry-required` rule never yields a candidate claiming `satisfied` — enforced in the classifier, not the prompt (D-09)
@@ -638,7 +652,7 @@ Plans:
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 6/6 | In Progress|  |
-| 38. AI-Generated Grasshopper Script Inputs | 0/? | Not started | — |
+| 38. AI-Generated Grasshopper Script Inputs | 1/7 | In Progress|  |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
 
