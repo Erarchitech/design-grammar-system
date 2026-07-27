@@ -259,7 +259,12 @@ def _validate_request_shape(candidate: dict[str, Any]) -> dict[str, Any]:
 
 
 def accept_candidate(
-    session: Any, project: str, definition_id: str, rule_id: str, candidate: dict[str, Any]
+    session: Any,
+    project: str,
+    definition_id: str,
+    rule_id: str,
+    candidate: dict[str, Any],
+    parameter_overrides: "list[str] | None" = None,
 ) -> dict[str, Any]:
     """Persist one architect-accepted candidate as a standalone `ParamState`
     `:DesignState` (D-18), after re-validating it against the LIVE published
@@ -275,6 +280,16 @@ def accept_candidate(
     `statePayloadJson` envelope, and MERGE the standalone `:DesignState`
     node in one parameterized write.
 
+    `parameter_overrides`, when non-empty, MUST be the same list passed to
+    `cg_input_generation.generate_inputs()` for this candidate (round-tripped
+    by the caller from the generate-inputs request) -- it is threaded
+    through to `cg_input_bindings.classify_rule()` unchanged so accept-time
+    re-classification resolves the SAME bound-parameter scope generation
+    used, rather than silently falling back to the rule's default
+    `inputBindings` scope (CR-01: without this, any candidate generated with
+    an override is unconditionally rejected here as unknown/missing
+    parameters).
+
     Only accepted candidates are persisted (D-19): every exception path
     above raises before `session.run()` is ever called for the write.
     """
@@ -282,7 +297,9 @@ def accept_candidate(
 
     published_parameters = _list_published_parameters(session, project, definition_id)
     bindings = cg_input_bindings.load_input_bindings()
-    classification = cg_input_bindings.classify_rule(session, rule_id, project, bindings)
+    classification = cg_input_bindings.classify_rule(
+        session, rule_id, project, bindings, parameter_overrides
+    )
     bound, _excluded = cg_input_bindings.select_parameters(classification, published_parameters)
 
     flat_parameters = _flatten_parameters(candidate["parameters"])

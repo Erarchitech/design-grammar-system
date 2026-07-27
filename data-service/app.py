@@ -1624,6 +1624,7 @@ class ComputgraphAcceptCandidateRequest(BaseModel):
     definitionId: str
     ruleId: str
     candidate: dict
+    parameterOverrides: "list[str] | None" = None
 
 
 @app.post("/computgraph/candidates/accept")
@@ -1637,13 +1638,25 @@ def post_computgraph_accept_candidate(payload: ComputgraphAcceptCandidateRequest
     ONLY route in the phase that writes anything; POST
     /computgraph/generate-inputs performs zero writes.
 
+    `parameterOverrides`, when present, MUST be the same list the caller
+    passed to POST /computgraph/generate-inputs to generate this candidate
+    (CR-01) -- accept-time re-classification needs the identical override
+    scope to resolve the same bound-parameter set, or a candidate generated
+    with an override is unconditionally rejected as unknown/missing
+    parameters.
+
     Thin route -- opens one session, delegates to
     cg_paramstate_store.accept_candidate(), and returns its result directly.
     """
     try:
         with driver.session() as session:
             return cg_paramstate_store.accept_candidate(
-                session, payload.project, payload.definitionId, payload.ruleId, payload.candidate
+                session,
+                payload.project,
+                payload.definitionId,
+                payload.ruleId,
+                payload.candidate,
+                parameter_overrides=payload.parameterOverrides,
             )
     except cg_paramstate_store.CandidateDomainViolation as exc:
         offending = sorted({v.get("parameterId") for v in exc.violations if v.get("parameterId")})
