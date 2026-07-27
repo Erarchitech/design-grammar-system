@@ -1,6 +1,7 @@
-"""Invariant tests for the Phase 37 Wave 0 Frame fixture builders
-(`cg_fixtures.py`). No Neo4j, no `app` import -- these assert the fixture
-builders behave as documented, independent of any live infrastructure.
+"""Invariant tests for the Phase 37 Wave 0 test substrate: Frame fixture
+builders (`cg_fixtures.py`) and the deterministic consult LLM adapter double
+(`consult_cassette.py`). No Neo4j, no `app` import -- these assert both
+modules behave as documented, independent of any live infrastructure.
 """
 
 from __future__ import annotations
@@ -8,9 +9,21 @@ from __future__ import annotations
 import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.dirname(__file__))
 
+os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
+
 import cg_fixtures as f  # noqa: E402
+from consult_cassette import (  # noqa: E402
+    CONSULT_CASSETTE_DIR,
+    DEFAULT_CONSULT_ANSWER,
+    ConsultCassetteAdapter,
+    ConsultCassetteMiss,
+)
+
+
+# ── cg_fixtures.py builder invariants ──
 
 
 def test_full_envelope_has_two_procedures_and_two_parameters_on_proc_11():
@@ -71,3 +84,51 @@ def test_builders_are_deep_copy_isolated():
     second_no_footer = f.frame_without_footer_procedure()
     assert first_no_footer == second_no_footer
     assert first_no_footer is not second_no_footer
+
+
+# ── consult_cassette.py adapter-double invariants ──
+
+
+def test_consult_cassette_adapter_returns_pinned_default_and_records_call():
+    from llm_gateway import GenerateRequest
+
+    adapter = ConsultCassetteAdapter()
+    req = GenerateRequest(prompt="Which parameters drive the truss height?", model="claude-sonnet", provider="anthropic")
+    response = adapter.generate(req, api_key=None)
+
+    assert response.text == DEFAULT_CONSULT_ANSWER
+    assert len(adapter.calls) == 1
+    assert adapter.calls[0]["prompt"] == req.prompt
+    assert adapter.calls[0]["model"] == req.model
+    assert adapter.calls[0]["provider"] == req.provider
+
+
+def test_consult_cassette_adapter_responses_dict_wins_over_default():
+    from llm_gateway import GenerateRequest
+
+    custom_answer = "A custom canned answer citing 11_Var_HTotal."
+    prompt = "Custom prompt"
+    adapter = ConsultCassetteAdapter(responses={prompt: custom_answer})
+
+    req = GenerateRequest(prompt=prompt, model="claude-sonnet", provider="anthropic")
+    response = adapter.generate(req, api_key=None)
+
+    assert response.text == custom_answer
+
+
+def test_consult_cassette_adapter_raises_on_miss_when_configured():
+    from llm_gateway import GenerateRequest
+
+    adapter = ConsultCassetteAdapter(responses={}, raise_on_miss=True)
+    req = GenerateRequest(prompt="An unrecorded prompt", model="claude-sonnet", provider="anthropic")
+
+    try:
+        adapter.generate(req, api_key=None)
+        assert False, "expected ConsultCassetteMiss"
+    except ConsultCassetteMiss:
+        pass
+
+
+def test_consult_cassette_dir_is_a_fixtures_consult_path():
+    assert CONSULT_CASSETTE_DIR.name == "consult"
+    assert CONSULT_CASSETTE_DIR.parent.name == "fixtures"
