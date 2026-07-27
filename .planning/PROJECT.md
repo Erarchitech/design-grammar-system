@@ -53,6 +53,7 @@ Architects can express design constraints in plain language and instantly valida
 - [ ] Phase 29: DG-Aware Context Layer (SWRL + ontology + Cypher awareness) — **next to plan**
 - [ ] Phases 30–31: Orchestration evaluation (n8n vs OpenClaw) + rules ingest/edit rebuild on the context layer
 - [ ] Phases 32–37: Grasshopper canvas → Computgraph serialization pipeline (serialization core, DG canvas bridge, tagging, LLM recognition + on-canvas preview, persistence/display, structure-validation MVP)
+  - [x] Phase 32.1: Cross-Platform Identity and Mapping (DG ID) — shipped 2026-07-18, phase-verified 2026-07-27 (7/7 plans, DGID-01..06 all met); code review flagged 2 unresolved Critical findings (registry-anchor/publish-path label mismatch risking orphaned duplicate nodes; unescaped `|` in the cross-language hash join) — see `32.1-REVIEW.md`
 - [ ] Phases 38–40: AI-generated script inputs, DesignState auto-validation investigation, E2E + docs
 
 **Defined but NOT activated: v9.1 DG Canvas Chatbot Node** (Phases 910–917, 41 requirements; `.planning/milestones/v9.1-REQUIREMENTS.md` + `v9.1-ROADMAP.md`, defined 2026-07-27) — reassembles the five v9.0 canvas-intelligence components into one auto-listening chatbot node with an Eto chat window and a `/dg-` slash-command namespace (Ant analogy). Isolated like v10.0/v4.0: it does not touch `.planning/phases/`, STATE.md, or this Current Milestone section. Activates via `/gsd-new-milestone` once v9.0 Phases 32–36 are verified.
@@ -154,4 +155,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-27 — v9.1 DG Canvas Chatbot Node defined as an isolated future milestone (Phases 910–917); v9.0 AI Workflow Intelligence remains the active milestone (Phase 35 executing)*
+*Last updated: 2026-07-27 — Phase 32.1 (Cross-Platform Identity and Mapping, DG ID) closed out: verified 7/7 plans complete and DGID-01..06 met (work had actually finished 2026-07-18; ROADMAP/REQUIREMENTS tracking had drifted stale and is now corrected). v9.1 DG Canvas Chatbot Node defined as an isolated future milestone (Phases 910–917); v9.0 AI Workflow Intelligence remains the active milestone (Phase 35 executing)*
