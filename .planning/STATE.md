@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 38
 current_phase_name: ai-generated-grasshopper-script-inputs
 status: executing
-stopped_at: Completed 38-01-PLAN.md
-last_updated: "2026-07-27T15:01:48.923Z"
+stopped_at: Completed 38-02-PLAN.md
+last_updated: "2026-07-27T15:16:41.256Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 38 execution started
 progress:
   total_phases: 14
   completed_phases: 8
   total_plans: 68
-  completed_plans: 56
+  completed_plans: 57
   percent: 57
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 38 (ai-generated-grasshopper-script-inputs) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 38 execution started
 
@@ -97,6 +97,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 37 P05 | ~25min | 3 tasks | 3 files |
 | Phase 37 P06 | 55min | 3 tasks | 4 files |
 | Phase 38 P01 | 25min | 4 tasks | 4 files |
+| Phase 38 P02 | ~50min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -332,6 +333,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 38-01]: spec/API.md fixes SC1 as five literal numeric thresholds (100%/>=75%/>=1/>=0.10/exactly 0) instead of prose, closing the Phase 35 measure-quality-late failure mode before any generation code exists
 - [Phase ?]: [Phase 38-01]: spec/DATABASE.md's DesignState invariants amended as a two-writer statement (VALIDATOR publish + POST /computgraph/candidates/accept) with a Run-less-until-composed lifecycle clarification, not deleted outright
 - [Phase ?]: [Phase 38-01]: inputBindings added as a new sibling top-level key in llm/structure_rules.json (not new mappings[] entries) -- a binding is a selector, not a Cypher check, keeping Phase 37's validator untouched
+- [Phase ?]: [Phase 38-02]: CgNodeDto.InputParams needed [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] (not just a nullable projection) to keep an unchanged canvas byte-identical to pre-Phase-38 JSON
+- [Phase ?]: [Phase 38-02]: derive_reinstate_parameter_ids refuses rather than guesses on zero-match or ambiguous multi-match; PARAMETER_STATE_COMPONENT_GUID is the single source of truth for the destination-component check
 
 ### Research Flags (carry into planning)
 
@@ -409,8 +412,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T15:01:48.904Z
-Stopped at: Completed 38-01-PLAN.md
+Last session: 2026-07-27T15:16:41.224Z
+Stopped at: Completed 38-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
