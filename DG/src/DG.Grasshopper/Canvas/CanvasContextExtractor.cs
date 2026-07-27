@@ -112,6 +112,7 @@ public static class CanvasContextExtractor
                 Slider = TryReadSliderDomain(obj),
                 IsIntegerSlider = obj is GH_NumberSlider integerCandidate
                     && integerCandidate.Slider.Type == GH_SliderAccuracy.Integer,
+                InputParams = ReadInputParams(obj),
             });
         }
         catch
@@ -145,6 +146,52 @@ public static class CanvasContextExtractor
             // Guard-and-continue: a degenerate slider yields no domain rather than aborting the node.
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reads this component's own input params (instance GUID + NickName + Name + index),
+    /// mirroring exactly what <c>ParameterStateComponent.cs:60-80</c> reads to derive
+    /// ParameterId, so JOIN A (Computgraph Parameter -&gt; reinstateParameterId) has a
+    /// substrate to walk. A floating param or a slider has no Params.Input collection
+    /// and returns an empty list.
+    /// </summary>
+    private static List<CgNodeInputParam> ReadInputParams(IGH_DocumentObject obj)
+    {
+        var result = new List<CgNodeInputParam>();
+
+        if (obj is not IGH_Component component)
+        {
+            return result;
+        }
+
+        try
+        {
+            var inputs = component.Params.Input;
+            for (var i = 0; i < inputs.Count; i++)
+            {
+                try
+                {
+                    var ghParam = inputs[i];
+                    result.Add(new CgNodeInputParam
+                    {
+                        InstanceId = ghParam.InstanceGuid.ToString(),
+                        Nickname = ghParam.NickName ?? string.Empty,
+                        Name = ghParam.Name ?? string.Empty,
+                        Index = i,
+                    });
+                }
+                catch
+                {
+                    // Guard-and-continue (T-32-10): a single unreadable input param cannot abort the scan.
+                }
+            }
+        }
+        catch
+        {
+            // Guard-and-continue: a total failure to read Params.Input returns an empty list.
+        }
+
+        return result;
     }
 
     private static void TryAddScribble(RawCanvas raw, GH_Scribble scribble)
