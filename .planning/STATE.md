@@ -5,15 +5,15 @@ milestone_name: AI Workflow Intelligence
 current_phase: 37
 current_phase_name: script-structure-validation
 status: executing
-stopped_at: Completed 37-03-PLAN.md (cg_structure_checks.py SVAL-01 checks + two-tier test suite)
-last_updated: "2026-07-27T10:42:41.225Z"
+stopped_at: Completed 37-04-PLAN.md (structure_rules.json + rule-mapping evaluator SVAL-02)
+last_updated: "2026-07-27T11:03:09.170Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 37 execution started
 progress:
   total_phases: 14
   completed_phases: 7
   total_plans: 56
-  completed_plans: 52
+  completed_plans: 53
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 37 (script-structure-validation) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 37 execution started
 
@@ -86,6 +86,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 37 P01 | ~45min | 3 tasks | 5 files |
 | Phase 37 P02 | ~20min | 2 tasks | 2 files |
 | Phase 37 P03 | 30min | 3 tasks | 3 files |
+| Phase 37 P04 | ~20min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -310,6 +311,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 37-02]: Computgraph Structural Checks addendum placed after Precedence & Single-Authoring (D-13) and before Enforcement (D-14), no D- number assigned (no Phase 37 CONTEXT.md decision letter maps to it)
 - [Phase ?]: [Phase 37-02]: spec/API.md documents POST /computgraph/publish with a one-line summary only (shipped Phase 36, closing a doc gap), full contracts written for the two new routes /computgraph/validate and /computgraph/consult
 - [Phase ?]: [Phase 37-03]: Algorithm entities carry cgId='' with algIndex rendered into name (Algorithm has no cgId in the Phase 36 contract); parameter_without_datatype/object_without_behavior kept as deliberate defensive guards though currently unreachable post-publish; run_structural_checks sorts by (checkId, first entity cgId, message) for the byte-identical determinism guarantee
+- [Phase ?]: [Phase 37-04]: R_STRUCT_PROC_INTERFACE_V mapping dropped its ifaceType:Input filter (params now {}) -- the Frame fixture's procedure 12 only ever has an Output interface, so the for-all requiresInterface check could never pass the full Frame with that filter bound; fixed to 'every Procedure exposes at least one Interface' without altering the frozen cg_fixtures.py builders
+- [Phase ?]: [Phase 37-04]: _FORBIDDEN_PARAM_KEYS fixed to {min, max, greaterThan, lessThan, greaterThanOrEqual, lessThanOrEqual, threshold, value} -- pinned by a test parameterized over the frozenset so widening the module automatically widens coverage (T-37-10)
+- [Phase ?]: [Phase 37-04]: forbidsOrphan's Computgraph entity allow-list excludes Object (root, structurally ownerless); requiresInterface implemented as a for-all check (documented in-code, distinct from requiresProcedure/requiresParameter's exists semantics)
 
 ### Research Flags (carry into planning)
 
@@ -387,8 +391,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-27T10:42:41.193Z
-Stopped at: Completed 37-03-PLAN.md (cg_structure_checks.py SVAL-01 checks + two-tier test suite)
+Last session: 2026-07-27T11:03:09.147Z
+Stopped at: Completed 37-04-PLAN.md (structure_rules.json + rule-mapping evaluator SVAL-02)
 Resume file: None
 
 ## Performance Metrics
