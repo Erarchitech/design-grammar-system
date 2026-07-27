@@ -1,8 +1,8 @@
 ---
 phase: 37
 slug: script-structure-validation
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-27
 ---
@@ -39,18 +39,19 @@ created: 2026-07-27
 
 ## Per-Task Verification Map
 
-*Task-level rows are populated after `/gsd-plan-phase` emits PLAN.md files (task IDs do not exist yet). The requirement-level contract below is the binding interim map — every task the planner writes must trace to one of these rows.*
-
-| Req / SC | Behavior | Test Type | Automated Command | File Exists | Status |
-|----------|----------|-----------|-------------------|-------------|--------|
-| SVAL-01 | Orphan Pattern, Procedure-without-Interface, dangling `PARAM_LINK`, Algorithm-without-Procedure — each detected with exact entity references | integration (live Neo4j) | `docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k structural -q` | ❌ W0 | ⬜ pending |
-| SVAL-01 | Convention compliance (`Emg`/`Emr` normalization) surfaced from `Algorithm.contextJson.warnings` — **not** a live Cypher pattern match | unit (synthetic contextJson string) | `python -m pytest data-service/tests/test_cg_structure_checks.py -k convention -q` | ❌ W0 | ⬜ pending |
-| SVAL-02 | Rule-mapped check passes on full Frame, fails on a copy missing `12_Proc` | integration (two published Frame variants) | `docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k rule_mapped -q` | ❌ W0 | ⬜ pending |
-| SVAL-03 | `/consult` answer cites `11_Var_HTotal`, grounded not hallucinated | integration w/ cassette LLM adapter (no live LLM in CI) | `python -m pytest data-service/tests/test_computgraph_consult.py -q` | ❌ W0 | ⬜ pending |
-| SVAL-01/02 | **Determinism** — repeated `/computgraph/validate` calls produce byte-identical findings | integration, run twice, assert equality | folded into the structural-check integration test | ❌ W0 | ⬜ pending |
-| SC2 | Rule mapped to `*Footer*` passes on full Frame, fails on the `12_Proc`-less copy | automated (two synthetic `_frame_cg_context()` envelopes published to test Neo4j) | folded into `-k rule_mapped` | ❌ W0 | ⬜ pending |
-| SC3 | `/consult` cites `11_Var_HTotal` | automated (cassette fixture) | folded into the consult integration test | ❌ W0 | ⬜ pending |
-| SC4 | Validate path is LLM-free; `/consult` is the only gateway caller | automated grep gate | `grep -c "llm_gateway\|adapter.generate" data-service/cg_structure_checks.py` → expect `0` | — | ⬜ pending |
+| Plan-Task | Req / SC | Behavior | Test Type | Automated Command | Status |
+|-----------|----------|----------|-----------|-------------------|--------|
+| 37-03 Task 1/2 | SVAL-01 | Orphan Pattern, Procedure-without-Interface, dangling `PARAM_LINK`, Algorithm-without-Procedure — each detected with exact entity references | integration (live Neo4j) | `docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k structural -q` | ✅ green |
+| 37-03 Task 2 | SVAL-01 | Convention compliance (`Emg`/`Emr` normalization) surfaced from `Algorithm.contextJson.warnings` — **not** a live Cypher pattern match | unit (synthetic contextJson string) | `python -m pytest data-service/tests/test_cg_structure_checks.py -k convention -q` | ✅ green |
+| 37-04 Task 1/2 | SVAL-02 | Rule-mapped check passes on full Frame, fails on a copy missing `12_Proc` | integration (two published Frame variants) | `docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k rule_mapped -q` | ✅ green |
+| 37-05 Task 1/2 | SVAL-01/02 | `POST /computgraph/validate` report contract, definition resolution, structured errors | unit + integration | `docker compose exec data-service python -m pytest tests/test_cg_structure_checks.py -k report_contract -q` | ✅ green |
+| 37-06 Task 1 | SVAL-03 | `fetch_computgraph_subgraph()` — dual-mode, deterministic, project+definitionId-scoped Computgraph read | unit (signature/query-tag checks) + integration | `python -m pytest data-service/tests/test_computgraph_consult.py -q` (host tier) | ✅ green |
+| 37-06 Task 2 | SVAL-03 | Prompt assembly, grounding post-check, `POST /computgraph/consult` route | unit | `python -m pytest data-service/tests/test_computgraph_consult.py -q` (host tier) | ✅ green |
+| 37-06 Task 3 | SVAL-03 | `/consult` answer cites `11_Var_HTotal`, grounded not hallucinated | integration w/ cassette LLM adapter (no live LLM in CI) | `docker compose exec data-service python -m pytest tests/test_computgraph_consult.py -q` | ✅ green |
+| 37-03/37-05 | SVAL-01/02 | **Determinism** — repeated `/computgraph/validate` calls produce byte-identical findings | integration, run twice, assert equality | folded into the structural-check integration test | ✅ green |
+| 37-04 Task 3 | SC2 | Rule mapped to `*Footer*` passes on full Frame, fails on the `12_Proc`-less copy | automated (two synthetic `_frame_cg_context()` envelopes published to test Neo4j) | folded into `-k rule_mapped` | ✅ green |
+| 37-06 Task 3 | SC3 | `/consult` cites `11_Var_HTotal` | automated (cassette fixture) | folded into `TestConsultIntegration` | ✅ green |
+| 37-03/37-06 | SC4 | Validate path is LLM-free; `/consult` is the only gateway caller | automated grep gate | `grep -v '^\s*#' data-service/cg_structure_checks.py \| grep -c 'llm_gateway\|adapter.generate'` → `0` | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,15 +74,17 @@ created: 2026-07-27
 
 **Note:** SC2 and SC3 were initially scoped as manual but research established both are automatable (SC2 via two synthetic published envelopes; SC3 via a cassette LLM fixture). Only SC1 is genuinely human-verify. Precedent: Phases 33, 34-02, and 34-03 all deferred live-Rhino UAT to phase-level `/gsd-verify-work` rather than self-approving.
 
+**Resume point:** SC1's live-Rhino human-verify checkpoint is deferred to phase-level `/gsd-verify-work 37` — the automated tier (37-05/37-06's integration suites, including 37-05's interface-stripped-variant test) already proves the check and consult logic against synthetic published envelopes; only the canvas-edit-and-re-publish loop through the real DG plugin remains, and it is not self-approved here.
+
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
 - [x] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
+- [x] No watch-mode flags
 - [x] Feedback latency measured and recorded (replaces the placeholder runtime row above)
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] Nyquist compliance flag set `true` in frontmatter
 
-**Approval:** pending
+**Approval:** approved — automated tier green (host: 573+ tests incl. 12 host-safe `test_computgraph_consult.py` cases; container: 573 passed, 0 failures per `docker compose exec data-service python -m pytest tests/ -q`). SC1's live-Rhino half deferred to `/gsd-verify-work 37`, not self-approved.
