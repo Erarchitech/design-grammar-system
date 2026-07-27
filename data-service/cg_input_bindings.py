@@ -503,6 +503,24 @@ def select_parameters(
             continue
         bound.append({**parameter, "stateType": _DATATYPE_TO_STATE_TYPE[parameter["dataType"]]})
 
+    if classification.parameterNames:
+        # WR-02: a name in parameterNames (from the rule's inputBindings
+        # entry, or an architect-supplied parameterOverrides list) that
+        # matches no published :Parameter row produces no row in
+        # `considered` at all, so it never reaches `_exclusion_reason()`
+        # and silently vanishes from both bound[] and excluded[] -- surface
+        # it explicitly instead, matching this module's "never silently
+        # drop" discipline.
+        found_names = {p.get("parameterName") for p in considered}
+        for missing_name in sorted(name_filter - found_names):
+            excluded.append(
+                {
+                    "cgId": None,
+                    "parameterName": missing_name,
+                    "reason": "not-published",
+                }
+            )
+
     bound.sort(key=lambda p: p.get("parameterName") or "")
     excluded.sort(key=lambda p: p.get("parameterName") or "")
     return bound, excluded
