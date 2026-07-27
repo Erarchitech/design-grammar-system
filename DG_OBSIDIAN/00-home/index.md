@@ -79,6 +79,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Graph Viewer search bar adaptive value dropdown|Graph Viewer search bar: Combobox primitive — data-derived value list, open-ended (free text preserved), no engine changes]]
 - [[decisions/Phase 35 recognition quality remediation — hybrid Tier 0 Tier 1 architecture and pytest eval|Phase 35 (v9.0): Hybrid Tier 0 deterministic + Tier 1 LLM; pytest fixture-driven eval; labelling flywheel; sub-model training deferred]]
 - [[decisions/Phase 35 Corpus A frozen as-is, Frame Truss binaries not committed|Phase 35 (v9.0): Corpus A not re-grounded on recovered Frame/Truss source; *.gh/*.3dm gitignored (20 MB .3dm never committed)]]
+- [[decisions/Phase 37 structure validation — rule-mapping file-first, severity taxonomy, ephemeral results|Phase 37 (v9.0): Rule-mapping file-first (`llm/structure_rules.json`), severity taxonomy reuses SHACL, results ephemeral for MVP]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
