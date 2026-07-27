@@ -395,6 +395,11 @@ export default function ModelScreen({ active, onBack, project }) {
     setRuleForGen(ruleId);
     setCandidates(null);
     setGenErr("");
+    // CR-02: candidateId is only unique within one generate-inputs
+    // response (c0..cN-1, reused verbatim by the next response) — clear
+    // acceptedStates alongside candidates so an unrelated future candidate
+    // never inherits a stale "already accepted" badge.
+    setAcceptedStates([]);
   }, [ruleId]);
 
   // per-rule statuses for the picked instance
@@ -1094,6 +1099,11 @@ export default function ModelScreen({ active, onBack, project }) {
                       onClick={async () => {
                         setGenErr("");
                         setGenBusy(true);
+                        // CR-02: a fresh response reuses the same c0..cN-1
+                        // candidateId values as any prior response — reset
+                        // acceptedStates so a new, never-accepted candidate
+                        // never renders as falsely already-accepted.
+                        setAcceptedStates([]);
                         try {
                           const overridesArr = paramOverrides
                             .split(",")
