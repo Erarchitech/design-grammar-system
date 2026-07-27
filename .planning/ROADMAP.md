@@ -524,12 +524,12 @@ Plans:
 3. Nothing touches the canvas without explicit user acceptance — generation and application are strictly separated
 4. Provenance is queryable: `MATCH` on generated ParamStates returns rule, model, and timestamp for each
 
-**Plans:** 3/7 plans executed
+**Plans:** 4/7 plans executed
 
 - [x] 38-01-PLAN.md
 - [x] 38-02-PLAN.md
 - [x] 38-03-PLAN.md
-- [ ] 38-04-PLAN.md
+- [x] 38-04-PLAN.md
 - [ ] 38-05-PLAN.md
 - [ ] 38-06-PLAN.md
 - [ ] 38-07-PLAN.md
@@ -652,7 +652,7 @@ Plans:
 | 35. LLM Recognition and On-Canvas Proposal Preview | 16/16 | In Progress|  |
 | 36. Computgraph Persistence and Graph Layer Display | 4/4 | Complete    | 2026-07-19 |
 | 37. Script Structure Validation MVP | 6/6 | In Progress|  |
-| 38. AI-Generated Grasshopper Script Inputs | 3/7 | In Progress|  |
+| 38. AI-Generated Grasshopper Script Inputs | 4/7 | In Progress|  |
 | 39. DesignState Auto-Validation Investigation | 0/? | Not started | — |
 | 40. E2E Validation and Docs | 0/? | Not started | — |
 
