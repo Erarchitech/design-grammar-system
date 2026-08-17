@@ -529,6 +529,53 @@ class TestValidator:
         assert "unknown_label" not in codes
         assert "unknown_relationship" not in codes
 
+    def test_bracket_pseudo_label_is_caught(self):
+        """The exact statement Neo4j rejected with Neo.ClientError.Statement.SyntaxError
+        during a live rules-ingest: square brackets where a `:Label` belongs. Brackets
+        are balanced and no `:Label` exists to extract, so neither has_valid_nesting()
+        nor the label allow-list sees it -- it reached Neo4j, failed the whole
+        transaction, and wrote zero nodes while the workflow reported success."""
+        cypher = (
+            "MERGE (DP_AreaM2 [DatatypeProperty] {iri: 'ex:hasAreaM2', range: 'xsd:decimal'})\n"
+            "SET DP_AreaM2.SWRL_label = 'hasAreaM2'"
+        )
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "malformed_node_pattern" in codes
+
+    def test_bracket_pseudo_label_without_variable_is_caught(self):
+        cypher = "MERGE ([Rule] {Rule_Id: 'R_X_V'})"
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result["valid"] is False
+        codes = {v["code"] for v in result["violations"]}
+        assert "malformed_node_pattern" in codes
+
+    def test_list_property_value_is_not_a_malformed_node_pattern(self):
+        """A `[...]` list as a property VALUE is legal Cypher -- the malformed-node
+        check must not fire on it (false positives block valid ingests)."""
+        cypher = (
+            "MERGE (run:ValidationRun {Run_Id: 'RUN_1', project: 'p'})\n"
+            "SET run.ValidStatus = [true, false]"
+        )
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        codes = {v["code"] for v in result["violations"]}
+        assert "malformed_node_pattern" not in codes
+
+    def test_relationship_type_inside_quoted_string_is_not_extracted(self):
+        """A SWRL body stored as a quoted property value contains `swrlb:greaterThan`;
+        greedy rel extraction captured that instead of the real relationship type,
+        so corrective feedback named a relationship that does not exist in the
+        Cypher and the retry loop could not converge."""
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_X_V'})\n"
+            "MERGE (a:Atom {Atom_Id: 'R_X_V_A1'})\n"
+            "MERGE (r)-[:HAS_BODY {`order`: 1, swrl: "
+            "'Building(?b)^hasAreaM2(?b,?a)^swrlb:greaterThan(?a,45)'}]->(a)"
+        )
+        rels = dg_context._extract_relationships(cypher)
+        assert rels == {"HAS_BODY"}
+
     def test_designstate_match_is_rejected_as_unknown_label_for_graph_query(self):
         """Regression guard for THIS gap: a MATCH (:DesignState ...) query --
         the exact aspirational pattern the LLM was generating that silently

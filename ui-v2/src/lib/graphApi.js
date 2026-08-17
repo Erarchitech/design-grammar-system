@@ -150,7 +150,7 @@ async function pollExecution(url, { onProgress, intervalMs = 1500, timeoutMs = 1
       const data = await res.json().catch(() => null);
       const status = data?.status || "running";
       if (status === "completed") return data?.payload || {};
-      if (status === "failed") throw new Error("Workflow failed.");
+      if (status === "failed") throw new Error(data?.message || "Workflow failed.");
       if (status === "cancelled") throw new Error("Workflow cancelled.");
       if (onProgress) onProgress(data);
     }

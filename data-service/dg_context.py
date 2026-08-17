@@ -594,8 +594,20 @@ _LABEL_CHAIN_PATTERN = re.compile(r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?((?::[A-Za-z
 _SINGLE_LABEL_PATTERN = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)")
 
 # Relationship-type extraction -- port of "Parse Cypher"'s relRegex, splitting
-# pipe-separated types (HAS_BODY|HAS_HEAD) into individual entries.
-_REL_TYPE_PATTERN = re.compile(r"-\s*\[[^\]]*:\s*([A-Za-z_][A-Za-z0-9_|]*)")
+# pipe-separated types (HAS_BODY|HAS_HEAD) into individual entries. `[^\]:]*`
+# stops at the FIRST colon inside the bracket: the original `[^\]]*` was greedy
+# and captured the last colon-name instead, so `-[:HAS_BODY {swrl: '...swrlb:
+# greaterThan(...)'}]` reported the relationship as `greaterThan` and corrective
+# feedback named a relationship the Cypher never contained.
+_REL_TYPE_PATTERN = re.compile(r"-\s*\[[^\]:]*:\s*([A-Za-z_][A-Za-z0-9_|]*)")
+
+# Node pattern opening with a `[` where a `:Label` or `{props}` belongs, e.g.
+# `MERGE (DP_AreaM2 [DatatypeProperty] {...})`. Neo4j rejects this with
+# Neo.ClientError.Statement.SyntaxError and rolls back the WHOLE transaction,
+# so a single occurrence writes zero nodes. Invisible to the two checks that
+# would otherwise catch a bad label: brackets are balanced, and there is no
+# `:Label` for the allow-list to extract.
+_MALFORMED_NODE_PATTERN = re.compile(r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?\s*\[")
 
 # var -> label map (first `(var:Label` occurrence wins) -- lets a later
 # `var.prop = ...` SET clause be resolved back to the node's label.
@@ -619,6 +631,10 @@ _KIND_SET_PATTERN = re.compile(r"(\w+)\.kind\s*=\s*'([^']*)'")
 _DOT_ASSIGN_PATTERN = re.compile(r"(\w+)\.(\w+)\s*=")
 
 
+def _strip_quoted(cypher: str) -> str:
+    return re.sub(r"'[^']*'", "", cypher)
+
+
 def has_valid_nesting(cypher: str) -> bool:
     """Port of n8n's hasValidNesting() (rules-to-metagraph.json "Parse LLM
     Output" node functionCode) -- strips quoted strings first (so a stray
@@ -626,7 +642,7 @@ def has_valid_nesting(cypher: str) -> bool:
     verifies every (), {}, [] opened is closed in the same order. Ported
     near-verbatim; do NOT re-derive from scratch (this function is already
     battle-tested against live LLM output noise per RESEARCH.md)."""
-    unquoted = re.sub(r"'[^']*'", "", cypher)
+    unquoted = _strip_quoted(cypher)
     stack: list[str] = []
     pairs = {"(": ")", "{": "}", "[": "]"}
     closers = {")", "}", "]"}
@@ -648,7 +664,7 @@ def _extract_labels(cypher: str) -> set[str]:
 
 def _extract_relationships(cypher: str) -> set[str]:
     rels: set[str] = set()
-    for match in _REL_TYPE_PATTERN.finditer(cypher):
+    for match in _REL_TYPE_PATTERN.finditer(_strip_quoted(cypher)):
         rels.update(part.strip() for part in match.group(1).split("|") if part.strip())
     return rels
 
@@ -688,6 +704,23 @@ def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
                     "fix: ensure every (), {}, [] opened is closed, in the "
                     "same order."
                 ),
+            }
+        )
+
+    for match in _MALFORMED_NODE_PATTERN.finditer(_strip_quoted(cypher)):
+        violations.append(
+            {
+                "code": "malformed_node_pattern",
+                "message": (
+                    "A node pattern opens with '[' where a ':Label' or '{props}' "
+                    "belongs, e.g. MERGE (x [Label] {...}). Where: "
+                    f"'{match.group(0).strip()}' in the generated Cypher. How to "
+                    "fix: write the label with a colon and no brackets -- MERGE "
+                    "(x:Label {...}). Square brackets are for relationships "
+                    "(-[:REL]->) and list values only; Neo4j rejects this with a "
+                    "syntax error and rolls back the entire transaction."
+                ),
+                "path": match.group(0).strip(),
             }
         )
 
