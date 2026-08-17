@@ -162,6 +162,22 @@ class LLMSettingsResponse(BaseModel):
     baseUrl: str | None = None
 
 
+class TestConnectionPayload(BaseModel):
+    """Optional request body for POST /llm/settings/test.
+
+    Lets the settings panel test the provider currently selected in the form
+    rather than whatever happens to be persisted. Only one API key is stored at
+    a time, so a request naming a provider other than the saved one must carry
+    its own `apiKey` -- borrowing the saved provider's key made every provider
+    in the dropdown report a successful connection.
+    """
+
+    provider: str | None = None
+    model: str | None = None
+    apiKey: str | None = None
+    baseUrl: str | None = None
+
+
 class TestResult(BaseModel):
     """Response body for POST /llm/settings/test.
 

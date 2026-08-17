@@ -419,6 +419,79 @@ class TestConnection:
 
     @patch("app.get_adapter")
     @patch("app.load_persisted_llm_settings")
+    def test_untested_provider_does_not_borrow_the_saved_providers_key(
+        self, mock_load, mock_get_adapter
+    ):
+        """Only one API key is stored at a time, so testing a DIFFERENT provider
+        than the saved one must not reuse the saved key -- otherwise the panel
+        reports success for every provider in the dropdown while the user only
+        holds a key for one of them."""
+        encrypted = encrypt_value("sk-deepseek", "test-master-secret")
+        mock_load.return_value = {
+            "provider": "openai",
+            "model": "deepseek-v4-pro",
+            "apiKey": encrypted,
+        }
+
+        response = client.post("/llm/settings/test", json={"provider": "anthropic"})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["success"] is False
+        assert "anthropic" in (body["error"] or "")
+        mock_get_adapter.assert_not_called()
+
+    @patch("app.list_models_for_provider", return_value=["m1"])
+    @patch("app.get_adapter")
+    @patch("app.load_persisted_llm_settings")
+    def test_requested_provider_matching_saved_provider_uses_saved_key(
+        self, mock_load, mock_get_adapter, mock_models
+    ):
+        encrypted = encrypt_value("sk-deepseek", "test-master-secret")
+        mock_load.return_value = {
+            "provider": "openai",
+            "model": "deepseek-v4-pro",
+            "apiKey": encrypted,
+        }
+        mock_get_adapter.return_value = MagicMock()
+
+        response = client.post("/llm/settings/test", json={"provider": "openai"})
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+    @patch("app.list_models_for_provider", return_value=["llama3.1:latest"])
+    @patch("app.get_adapter")
+    @patch("app.load_persisted_llm_settings")
+    def test_ollama_is_testable_without_an_api_key(
+        self, mock_load, mock_get_adapter, mock_models
+    ):
+        """Ollama runs locally and takes no key -- reachability is the test.
+        Demanding a key made the local provider permanently untestable."""
+        mock_load.return_value = {}
+        mock_get_adapter.return_value = MagicMock()
+
+        response = client.post("/llm/settings/test", json={"provider": "ollama"})
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+    @patch("app.list_models_for_provider", return_value=["m1"])
+    @patch("app.get_adapter")
+    @patch("app.load_persisted_llm_settings")
+    def test_key_supplied_in_body_tests_that_provider_without_saving(
+        self, mock_load, mock_get_adapter, mock_models
+    ):
+        """A key typed into the panel but not yet saved is testable."""
+        mock_load.return_value = {}
+        mock_get_adapter.return_value = MagicMock()
+
+        response = client.post(
+            "/llm/settings/test",
+            json={"provider": "anthropic", "model": "claude-sonnet-5", "apiKey": "sk-new"},
+        )
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+    @patch("app.get_adapter")
+    @patch("app.load_persisted_llm_settings")
     def test_connection_provider_error(self, mock_load, mock_get_adapter):
         """POST /llm/settings/test with bad key returns error (not crash)."""
         encrypted = encrypt_value("sk-bad", "test-master-secret")

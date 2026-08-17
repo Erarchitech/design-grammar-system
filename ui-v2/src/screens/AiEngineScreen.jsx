@@ -99,7 +99,12 @@ export default function AiEngineScreen({ active, onBack, project }) {
     setTesting(true);
     setTestResult(null);
     try {
-      const result = await testConnection();
+      const selection = {};
+      if (provider) selection.provider = provider;
+      if (model) selection.model = model;
+      if (apiKey.trim()) selection.apiKey = apiKey.trim();
+      if (baseUrl.trim()) selection.baseUrl = baseUrl.trim();
+      const result = await testConnection(selection);
       setTestResult(result);
     } catch (err) {
       setTestResult({ success: false, error: err.message || "Connection test failed" });
@@ -431,7 +436,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                   <Button
                     variant="secondary"
                     onClick={handleTest}
-                    disabled={testing || !keyConfigured}
+                    disabled={testing || (!keyConfigured && !apiKey.trim())}
                   >
                     {testing ? "Testing…" : "Test Connection"}
                   </Button>

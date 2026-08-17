@@ -38,6 +38,7 @@ from llm_gateway import (
     LLMSettingsResponse,
     GenerateRequest,
     GenerateResponse,
+    TestConnectionPayload,
     TestResult,
     get_adapter,
     load_persisted_llm_settings,
@@ -1128,9 +1129,18 @@ def llm_generate(req: GenerateRequest):
         raise _structured_error_response(error_msg, hint, code, 502)
 
 
+# Local provider — reachability is the whole test, there is no key to check.
+KEYLESS_PROVIDER = "ollama"
+
+
 @app.post("/llm/settings/test")
-def test_llm_settings():
-    """Test saved LLM configuration with a minimal provider call.
+def test_llm_settings(payload: TestConnectionPayload | None = None):
+    """Test an LLM configuration with a minimal provider call.
+
+    With no body, tests the saved configuration. With a body, tests the provider
+    named there -- the settings panel sends its current selection so a provider
+    the user holds no key for fails honestly instead of passing on the saved
+    provider's key.
 
     Returns success/failure with latency measurement and live model list.
     """
@@ -1138,18 +1148,42 @@ def test_llm_settings():
     settings = load_persisted_llm_settings()
 
     provider, model, api_key = resolve_active_provider(settings, master_secret)
+    base_url = settings.get("baseUrl")
 
-    if not api_key:
+    if payload and payload.provider:
+        requested = payload.provider
+        if payload.baseUrl:
+            base_url = payload.baseUrl
+        if payload.apiKey:
+            api_key = payload.apiKey
+        elif requested == KEYLESS_PROVIDER:
+            api_key = None
+        elif requested != provider:
+            # One key slot, and it belongs to `provider` — not to `requested`.
+            return TestResult(
+                success=False,
+                error=(
+                    f"No API key configured for {requested}. Enter a key for "
+                    f"{requested} and save it, or test the saved provider instead."
+                ),
+            )
+        model = payload.model or (model if requested == provider else None)
+        provider = requested
+
+    # Only an EXPLICIT ollama request skips the key check; with no body at all the
+    # unconfigured-gateway contract stays "No API key configured" rather than
+    # silently probing whatever the fallback provider happens to be.
+    if not api_key and not (payload and payload.provider == KEYLESS_PROVIDER):
         return TestResult(success=False, error="No API key configured")
 
     start = time.time()
     try:
-        adapter = get_adapter(provider, settings.get("baseUrl"))
+        adapter = get_adapter(provider, base_url)
         test_req = GenerateRequest(prompt="test", model=model)
         adapter.generate(test_req, api_key)
         latency_ms = (time.time() - start) * 1000.0
 
-        models = list_models_for_provider(provider, api_key, settings.get("baseUrl"))
+        models = list_models_for_provider(provider, api_key, base_url)
 
         return TestResult(success=True, latencyMs=latency_ms, models=models)
     except Exception as exc:

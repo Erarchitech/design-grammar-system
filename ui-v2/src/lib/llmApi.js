@@ -44,8 +44,16 @@ export async function saveSettings(payload) {
 }
 
 // POST /llm/settings/test → { success, latencyMs, models, error }
-export async function testConnection() {
-  const res = await fetch("/llm/settings/test", { method: "POST" });
+// `selection` carries the form's current provider/model/baseUrl (and a typed but
+// unsaved key). Without it the backend tests the persisted config, which reports
+// success for whichever provider is selected even when its key belongs to
+// another provider.
+export async function testConnection(selection = {}) {
+  const res = await fetch("/llm/settings/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(selection)
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
