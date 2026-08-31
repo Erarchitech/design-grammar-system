@@ -37,6 +37,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[SWRL parsing is bespoke regex not vendor OWL library]]
 - [[Project isolation uses property filtering not separate databases]]
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
+- [[knowledge/decisions/DesignState movement typing requires design-space membership|DesignState movement typing needs design-space membership]] — pairwise state diffs cannot type FBS movement
 - [[Passwords hashed client-side with SubtleCrypto SHA-256]]
 - [[Validation results publish to Speckle as overlay versions]]
 - [[Violation rules invert the constraint in SWRL body]]
@@ -132,6 +133,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[dissemination/consistency-map|Consistency map — публикации ↔ dev-артефакты]]
 - [[dissemination/Series coherence map|Карта согласованности серии T1–T4]]
 - [[dissemination/T1 — Онтологический фреймворк|T1]] · [[dissemination/T2 — Кодирование правил|T2]] · [[dissemination/T3 — Отслеживание состояний|T3]] · [[dissemination/T4 — Дизайн-пространство|T4]]
+- **Revision rounds:** [[dissemination/revisions/T1 R11-R12 — integrity restoration|T1 R11→R12 — integrity restoration]] · [[dissemination/revisions/T1 R14.3 — R14.4 package port and C45 resolution|T1 R14.3 — R14.4 package port and C45]]
 
 ### Tools & Infrastructure
 - [[Graphify-CGD-Obsidian integration improvement plan|Graphify ↔ CGD ↔ Obsidian — план интеграции]]
