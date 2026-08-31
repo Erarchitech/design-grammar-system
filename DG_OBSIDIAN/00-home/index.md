@@ -227,6 +227,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-07-26 v9.0 UAT Group 4 E2E spine — publish, idempotency, provenance|2026-07-26 v9.0 UAT Group 4 E2E spine — publish/idempotency/provenance verified on UrbanBlock, 3 new findings (F5/F6/F7)]]
 - [[sessions/2026-07-26 Phase 35 SC1 remediation — planning and Wave 1 execution|2026-07-26 Phase 35 SC1 remediation — 12 plans authored, Wave 1 executed (7 commits): schemas, gateway controls, the prompt/few-shot fix, fixture repair, G12 gate]]
 - [[sessions/2026-07-26 Phase 35 Wave 3 execution — two-tier orchestrator, Corpus B frozen, R4 defect found|2026-07-26 Phase 35 Wave 3 execution — 35-12 two-tier orchestrator (433 tests), Corpus B hand-annotated + frozen on live UrbanBlock_V7 (4 pull round-trips), Frame/Truss source recovered, R4 rule found unreachable on live data]]
+- [[sessions/2026-08-31 T1 ITcon tone revision — rhetorical register neutralisation|2026-08-31 T1 ITcon tone revision — 99 edits neutralising evaluative language, clefts 12→1, promotional adjectives 7→0]]
+- [[sessions/2026-08-31 T1 R14.3 — R14.4 package port, FBS mapping and C45|2026-08-31 T1 R14.3 — R14.4 S2 port (FBS↔Design State mapping) and C45 resolved on a corrected, non-linear model; R14.4's derivation rule rejected as unsound]]
+- [[sessions/2026-08-31 T1 R14.3 — C55 repository reference and the ontology deposit|2026-08-31 T1 R14.3 — C55 resolved; citable deposit Erarchitech/design-grammar-ontology v1.0.1 created (Apache-2.0 + CC BY 4.0), Table 3 and Annex C recounted against it]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
