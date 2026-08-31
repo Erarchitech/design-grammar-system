@@ -942,3 +942,128 @@ AVAILABILITY paragraph, and the inserted reference. Nothing else in the document
 **Backups, in order:** `R14.3_BACKUP_before_C55.docx` (19:54, pre-C55) ·
 `R14.3_BACKUP_before_C55_v2.docx` (20:10, after Word's overwrite) ·
 `R14.3_BACKUP_before_C55_final.docx` (20:42, the base actually edited).
+
+---
+
+# PART 5 — C89: naming the upper-bound pattern
+
+## Clause
+
+**Comment (Evgenii Ermolenko [2], 2026-08-31 — the newest in the file), § 3.4, anchored to
+`lower-bound pattern`:**
+
+> The upper-bound pattern is not clearly stated earlier. Need to add an upper-bound pattern
+
+Comment numbering is extraction-order and **not stable** — the earlier
+`Publications/work/R14.3_extracted_comments.md` uses `C89` for a different, 2026-08-23 comment.
+This part is keyed to the anchor text and date above. In `comments.xml` the anchoring range
+belongs to `w:id="86"`.
+
+## The defect — verified, not assumed
+
+Checked against the live bytes of the file at the time of the edit (the author saved over the
+manuscript at 20:43, mid-analysis; every finding below was re-verified after that save).
+
+| # | Finding |
+|---|---|
+| F1 | The string `upper-bound` occurs **nowhere** in the manuscript. |
+| F2 | `[164]` — "**The complementary lower-bound pattern** is exemplified by the constraint that a street maintains a minimum width of 18 metres:" — definite article plus *complementary*, with no antecedent anywhere before it. |
+| F3 | The upper-bound clause exists; only its **name** was missing. `[161]`: `Building(?b) ∧ hasHeightM(?b, ?h) ∧ swrlb:greaterThan(?h, 75.0) → violatesMaxHeight(?b, true)`. |
+| F4 | `[160]` introduced it as an unlabelled example: "For example, the regulation that the maximum building height is 75 meters is encoded as:". |
+| F5 | The pair is first *named* 25 paragraphs later, in § 4 `[189]`: "a versioned catalogue of rule shapes, each pairing a constraint form — upper bound, lower bound, range, ratio, count, boolean requirement". § 3.4 was therefore forward-referencing § 4's vocabulary. |
+| F6 | § 3.4 carries **three** vocabularies for one distinction: `maximum`/`minimum` (`[160]`, `[166]`), `upper-bound`/`lower-bound` (`[164]`, `[189]`), `swrlb:greaterThan`/`swrlb:lessThan` (`[161]`, `[165]`, `[166]`). |
+| F7 | `[166]` does not repair the antecedent — it states the mechanics but sits *after* `[164]` and uses the max/min vocabulary. |
+
+This is a naming/antecedent defect, not a missing rule — the same class as the dangling `moment`
+repaired in PART 1.
+
+## Ambiguity put to the author
+
+"Need to add an upper-bound pattern" admits two readings: **name the existing clause**, or **add a
+new clause**. Reading 2 is weak against F3. The author selected the naming reading (option A1).
+
+## Edit
+
+### E7 — [P160] § 3.4 — name the upper-bound pattern — **STATUS: FIXED**
+
+- **From:** `For example, the regulation that the maximum building height is 75 meters is encoded as:`
+- **To:** `The upper-bound pattern is exemplified by the regulation that the maximum building height is 75 metres:`
+
+Mirrors `[164]`'s construction word for word, producing a matched pair and keeping the author's own
+phrasing of the regulation. Applied with `docx_replace.py` (`1/1 replacement(s) applied as
+declared`), disambiguated by the in-paragraph token `violation-first semantics`.
+
+`meters` → `metres` was **separately approved** — an unrequested change, but one falling inside the
+span being rewritten, and it aligns the unit with `[164]`.
+
+## C86 and C88 — DECLINED by the author
+
+Both collided with E7: they ask to substitute the very example E7 names.
+
+| Label | Ask | Disposition |
+|---|---|---|
+| C86 (08-23, `[161]`) | "Substitute examples of rules. Facade grid typology rules instead of max building height and MinDistance" | **DECLINED** — answered by the facade block already added at `[167]`–`[174]`; the height/width examples are retained. |
+| C88 (08-30, `[163]`) | "Substitute example of anatomy of SWRL rule from building height to the similar rule from Façade Grid typology rules" | **DECLINED** — Figure 6 keeps the building-height anatomy. |
+
+The decline makes E7 stable: the clause it names will not be substituted in a later round.
+
+**Supporting observation, recorded during analysis:** of the four facade clauses, only panel
+slenderness (`[174]`, `greaterThan(?r, 4.0)`) is a bound at all, and it is an *upper* bound. The
+facade set supplies no lower-bound example, so a wholesale substitution would have stranded `[164]`
+exactly as C89 describes. The decline avoids that.
+
+**Anchor consequence, not a defect:** C86's comment range (`w:id="86"`) wrapped the sentence E7
+rewrote, so that anchor now points at the reworded text. It still marks the same sentence position,
+which is where C86's request applied.
+
+## Traceability comment
+
+`w:id="201"`, author `Scientific Paper Revision Agent`, initials `SPRA`, nested inside C86's range:
+
+> [C89] Upper-bound pattern named here, so that the complementary lower-bound pattern introduced
+> with the street-width example has an antecedent; the construction mirrors it. Unit spelling
+> aligned to metres. Author-approved 2026-08-31 (option A1).
+
+Written into all four comment parts — `comments.xml`, `commentsExtended.xml`, `commentsIds.xml`,
+`commentsExtensible.xml` — plus `commentRangeStart`/`End`/`Reference` in `document.xml`, so the
+comment carries a durable id rather than relying on Word to regenerate one.
+
+## Verification
+
+Against `scratchpad/R14.3_BACKUP_before_C89.docx` (taken 20:46, byte-identical to the author's
+20:43 save):
+
+| Metric | Before | After | |
+|---|---|---|---|
+| package parts | 31 | 31 | unchanged |
+| paragraphs | 384 | 384 | unchanged |
+| `w:ins` | 139 | 139 | unchanged |
+| `w:del` | 12 | 12 | unchanged |
+| `commentRangeStart` / `End` / `Reference` | 51 | 52 | +1, as declared |
+| comments | 51 | 52 | +1, as declared |
+
+- **Paragraph text diff: `[160]` only.** No other paragraph differs.
+- All 21 XML parts parse; the file opens cleanly in `python-docx` (211 paragraphs, 6 tables).
+- `validate_docx.py` output **identical** to the backup — the table-caption `[FAIL]` and the
+  Table 6 `[WARN]` are pre-existing.
+- Word was **closed** before the write: the `~$_ITcon_DG_Draft_R14.3.docx` lock present at the start
+  of the session was gone by 20:43, and the backup hash matched the live file exactly. (PART 4's
+  operational lesson applied.)
+
+**Backup:** `scratchpad/R14.3_BACKUP_before_C89.docx` ·
+working copies in `Publications/work/upper-bound/`.
+
+## Out-of-scope observations — noticed, not fixed
+
+Per the workflow's scope rule, these are recorded rather than corrected:
+
+- **F6** — the three vocabularies for the bound distinction in § 3.4. Aligning `[166]`'s
+  "Minimum constraints … maximum constraints" onto the bound vocabulary was offered as option C and
+  **not** selected; `[166]` carries no comment.
+- `[175]` — `The four clauses vary in their focus—namely, a typology, a traversed relation, a
+  property of a whole, and a computed ratio. — while sharing one structure` — a stray full stop plus
+  em dash leaves the sentence broken mid-clause. No comment covers it.
+- `[160]` — `SWRL clauses of the form Body - Head` uses a hyphen where the paper elsewhere uses `→`.
+- `[189]` calls these *rule shapes* / *constraint forms* rather than *patterns*; `pattern` is also
+  carrying `violation-pattern encoding` and `hasGridPattern`. `[164]` had already committed to
+  `lower-bound pattern`, so E7 followed that choice.
