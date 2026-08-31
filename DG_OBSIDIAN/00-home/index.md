@@ -38,6 +38,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[Project isolation uses property filtering not separate databases]]
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
 - [[knowledge/decisions/DesignState movement typing requires design-space membership|DesignState movement typing needs design-space membership]] — pairwise state diffs cannot type FBS movement
+- [[knowledge/decisions/Cited artefacts go to a separate deposit, not the development repository|Cited artefacts go to a separate deposit]] — papers never cite the dev repo; two-licence pattern, verify counts against the deposit
+- [[knowledge/debugging/Word silently reverts scripted docx edits while the file is open|Word silently reverts scripted .docx edits]] — a `~$` lock is not advisory; rebuild, never restore
 - [[Passwords hashed client-side with SubtleCrypto SHA-256]]
 - [[Validation results publish to Speckle as overlay versions]]
 - [[Violation rules invert the constraint in SWRL body]]
