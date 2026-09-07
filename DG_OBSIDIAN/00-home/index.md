@@ -39,6 +39,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[LLM prompts embed schema constraints instead of fine-tuning]]
 - [[knowledge/decisions/DesignState movement typing requires design-space membership|DesignState movement typing needs design-space membership]] — pairwise state diffs cannot type FBS movement
 - [[knowledge/decisions/Cited artefacts go to a separate deposit, not the development repository|Cited artefacts go to a separate deposit]] — papers never cite the dev repo; two-licence pattern, verify counts against the deposit
+- [[knowledge/decisions/Alignment modules over extension modules in the DG ontology|Alignment modules over extension modules]] — three alignment modules, none extension; `top:` for relations, IFC/bSDD for classification, BOT subsumed rather than bridged; `ontology/` must be rebuilt to match
 - [[knowledge/debugging/Word silently reverts scripted docx edits while the file is open|Word silently reverts scripted .docx edits]] — a `~$` lock is not advisory; rebuild, never restore
 - [[Passwords hashed client-side with SubtleCrypto SHA-256]]
 - [[Validation results publish to Speckle as overlay versions]]
@@ -232,6 +233,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-08-31 T1 ITcon tone revision — rhetorical register neutralisation|2026-08-31 T1 ITcon tone revision — 99 edits neutralising evaluative language, clefts 12→1, promotional adjectives 7→0]]
 - [[sessions/2026-08-31 T1 R14.3 — R14.4 package port, FBS mapping and C45|2026-08-31 T1 R14.3 — R14.4 S2 port (FBS↔Design State mapping) and C45 resolved on a corrected, non-linear model; R14.4's derivation rule rejected as unsound]]
 - [[sessions/2026-08-31 T1 R14.3 — C55 repository reference and the ontology deposit|2026-08-31 T1 R14.3 — C55 resolved; citable deposit Erarchitech/design-grammar-ontology v1.0.1 created (Apache-2.0 + CC BY 4.0), Table 3 and Annex C recounted against it]]
+- [[sessions/2026-09-07 T1 R15.2 — AU-R151-TOPO alignment-module architecture|2026-09-07 T1 R15.2 — `AU-R151-TOPO` at the gate: Topologic's published OWL ontology found, three alignment modules replace three extension modules, BOT subsumed, IFC via bSDD; 20 edits + Figure 2, joint apply planned]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
