@@ -6,6 +6,8 @@
 **Status:** Paused (Phase 28 complete 2026-07-06)
 **Core Value:** The architect controls which LLM runs the Design Grammar System — entering an API key to use a frontier cloud model or staying fully local — and that LLM understands the DG ontology, SWRL conventions, and standard Cypher shapes natively, extending AI assistance onto the Grasshopper canvas itself: the graph context of a script serializes into the ontology's Computgraph layer through architect tagging + LLM recognition + on-canvas confirmation, becomes browsable and structurally validatable against Design Rules, and drives generated script inputs.
 
+> **V8 evidence boundary:** Phase 40's closeout preflight must keep the V8 publication contract separate from the full future v11.0 migration. E2E completion is evidence within declared evaluator scopes; provider switching does not establish model-output equivalence; deterministic claims apply only to fixed formal artifacts and execution configurations; missing or unavailable evidence is not an implicit compliance failure or pass.
+
 ---
 
 ## v9.0 Requirements
@@ -107,10 +109,10 @@
 
 ### Integration (INTG) — Phase 40
 
-- [ ] **INTG-01**: E2E on live Docker with a cloud provider: NL rule → context-assembled ingest → validated Cypher → graph → Grasshopper validation → Speckle publish
-- [ ] **INTG-02**: Switching provider (Claude ↔ OpenAI-compatible ↔ Ollama) requires only the settings panel — no container restarts, no workflow edits
-- [ ] **INTG-03**: E2E GH intelligence chain: object marked + entities tagged → LLM recognition → on-canvas preview → confirmed → published to Computgraph → structure-validated → accepted generated inputs applied via PARAMETER REINSTATE → validation run recorded
-- [ ] **INTG-04**: CLAUDE.md, spec/, and DG_OBSIDIAN document the gateway, settings, bridge, annotation convention, Computgraph layer, new GH components, and the Phase 30/39 ADRs; graphify refreshed
+- [ ] **INTG-01**: E2E on live Docker with a cloud provider: NL rule → context-assembled ingest → validated Cypher → graph → Grasshopper validation → Speckle publish, with each evaluator and evidence scope recorded; completion does not claim universal regulatory compliance or complete OWL/RDF equivalence
+- [ ] **INTG-02**: Switching provider (Claude ↔ OpenAI-compatible ↔ Ollama) requires only the settings panel — no container restarts, no workflow edits; the check proves routing/configuration behavior, not equivalent model outputs
+- [ ] **INTG-03**: E2E GH intelligence chain: object marked + entities tagged → LLM recognition → on-canvas preview → confirmed → published to Computgraph → structure-validated → accepted generated inputs applied via PARAMETER REINSTATE → validation run recorded, with model-dependent, live-environment, and non-verdict outcomes distinguished
+- [ ] **INTG-04**: CLAUDE.md, spec/, and DG_OBSIDIAN document the gateway, settings, bridge, annotation convention, Computgraph layer, new GH components, Phase 30/39 ADRs, and the V8 TBox/ABox/LPG/RDF/SHACL/SWRL evidence boundaries; graphify is refreshed with source-commit scope recorded
 
 ---
 

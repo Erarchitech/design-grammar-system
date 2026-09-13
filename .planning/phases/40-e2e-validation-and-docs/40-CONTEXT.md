@@ -22,6 +22,8 @@ one docs sweep, one traceability close-out.
 - Docs: CLAUDE.md, `spec/`, `DG_OBSIDIAN/`, a v9.0 component reference, graphify refresh
 - Requirement traceability close-out for the whole v9.0 milestone
 
+**V8 publication-contract preflight gate:** Phase 40 performs a narrow closeout preflight for the future v11.0 contract. It checks V8 version and filenames, five-layer terminology, scope-bearing count language, TBox/ABox/LPG/RDF/SHACL/HermiT/determinism evidence boundaries, literal namespace/DOI status, and graphify source-commit scope. It does not import the full v11.0 bundle, perform the repository-wide migration, or create active v11.0 phase directories. E2E success is evidence within declared evaluator scopes; provider switching does not prove model-output equivalence; missing or unavailable evidence is recorded as a non-verdict disposition.
+
 **Out of scope** (locked during discussion):
 
 - Executing Phases 30 or 31 — they are deferred with a written record, not built here

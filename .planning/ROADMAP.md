@@ -8,6 +8,7 @@
 - 🔄 **v9.0 AI Workflow Intelligence** — Phases 28-40 (active — reactivated 2026-07-12; Phase 28 shipped 2026-07-06; restructured 2026-07-08: GH canvas → Computgraph serialization pipeline elaborated into Phases 32-37; Phase 29 next)
 - 📋 **v9.1 DG Canvas Chatbot Node** — Phases 910-917 (defined 2026-07-27, isolated; activates after v9.0's Phases 32–36 are verified; reassembles the five v9.0 canvas-intelligence components into one auto-listening chatbot node with an Eto chat window and a `/dg-` slash-command namespace — Ant-analogy, no `.gh` breakage) → [requirements](milestones/v9.1-REQUIREMENTS.md) | [roadmap](milestones/v9.1-ROADMAP.md)
 - 📋 **v10.0 Script Intelligence** — Phases 41-49 (planned 2026-07-08, isolated; activates after v9.0; renumbered from milestone-local 1-9) → [requirements](milestones/v10.0-REQUIREMENTS.md) | [roadmap](milestones/v10.0-ROADMAP.md)
+- 📋 **v11.0 V8 Publication Contract Alignment** — Phases 1101-1109 (planned 2026-09-13, isolated; full cross-milestone contract/publication synchronization after v10.0; activation gates apply to v9.0 Phase 40, v9.1, and v10.0) → [requirements](milestones/v11.0-REQUIREMENTS.md) | [roadmap](milestones/v11.0-ROADMAP.md)
 - 📋 **v4.0 BOT Ontology Bridge** — Phases 1-4 (planned) → [requirements](milestones/v4.0-REQUIREMENTS.md) | [roadmap](milestones/v4.0-ROADMAP.md)
 - ✅ **v7.0 Update of DG Addin for Grasshopper** — Phases 13-20 (shipped 2026-07-05) → [requirements](milestones/v7.0-REQUIREMENTS.md) | [roadmap](milestones/v7.0-ROADMAP.md) | [phases](milestones/v7.0-phases/)
 - ⛔ **v3.0 Typed Variables and Composable Design State** — Superseded 2026-07-02 (Phase 7 shipped, carried into v7.0) → [archive](milestones/v3.0-ROADMAP.md)
@@ -619,6 +620,8 @@ Plans:
 
 **Requirements:** INTG-01, INTG-02, INTG-03, INTG-04
 
+**V8 publication-contract preflight gate:** Phase 40 may perform only a narrow preflight for the future v11.0 contract: verify V8 version and filenames, five-layer terminology, scope-bearing count language, TBox/ABox/SHACL/HermiT/determinism evidence boundaries, literal namespace/DOI status, and graphify source-commit scope. This gate does not import the v11.0 bundle, perform the full repository migration, or create active v11.0 phase directories.
+
 **Deliverables:**
 
 - E2E run: NL rule → cloud-LLM ingest (context layer + validation) → graph → GH validation → Speckle publish, on live Docker
@@ -628,9 +631,9 @@ Plans:
 
 **Success Criteria:**
 
-1. Both E2E chains complete without errors in one session on live Docker
-2. Provider switching requires only the settings panel — verified for all three providers
-3. All 54 v9.0 requirements are checked off in v9.0-REQUIREMENTS.md with traceability complete
+1. Both E2E chains complete without unexpected errors in one session on live Docker, with evaluator scope and blocked-not-failed evidence recorded explicitly
+2. Provider switching requires only the settings panel — verified for all three providers; this proves routing/configuration behavior, not output equivalence
+3. All v9.0 requirements are checked off or carry a written deferral in v9.0-REQUIREMENTS.md with traceability complete
 4. `grep -ri "ollama" CLAUDE.md spec/` presents Ollama as the fallback provider, not the sole LLM path
 
 **Plans:** TBD

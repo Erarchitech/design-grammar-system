@@ -56,6 +56,17 @@ date: 2026-07-18
 7. **Migration pending on live Neo4j** — `migrations/2026-06-23_var_project_merge_key.cypher` still needs to run against a live Neo4j.
 8. **T1 submission preparation** — ✅ R9→R10 revision COMPLETE (2026-07-20). Resolved all 42 reviewer comments (Miguel Azenha, 8 major + 16 section + 9 figure + 9 editorial). Draft grew 6.4k→8.5k words (15→18 pp), added 5 tables + new Figure 7 (populated subgraph), removed old metrics figure. All factual claims (queries, reasoner output, ontology counts) verified against live Neo4j/dg-reasoner/OWL. See [[sessions/2026-07-20 T1 ITcon R9→R10 revision — 42 comments resolved|session]] and `Publications/T1_ITcon_R10_Revision_Log.md`. Open items: Figure relayout (C1–C7), namespace minting (A7), companion-paper citation policy check (A6).
 
+## Current v11.0 planning state
+
+- **Milestone v11.0 — V8 Publication Contract Alignment** — ✅ planned 2026-09-13 as an isolated future milestone with phases 1101–1109 and 37 requirements. Full scope: publication bundle, runtime/spec synchronization, fail-closed evidence semantics, TBox/ABox/LPG/RDF/SHACL/SWRL boundaries, R15.4 claim alignment, Obsidian/dissemination/graphify propagation, and final release verification. No v11.0 activation or implementation has started. Phase plans are stored under `.planning/milestones/v11.0-phases/`; the active v9.0 state remains unchanged.
+- **Early gates:** Phase 40 has a narrow V8 preflight; v9.1 and v10.0 have activation gates; v10.0 Phase 47 has a rule-partition prerequisite. Plan-check review completed and dependency/evidence/dirty-tree corrections applied.
+- **Next:** finish/verify v9.0 Phase 40 as appropriate, then activate future milestones only through deliberate GSD transitions. Do not copy the full v11.0 scope into v9.1 or v10.0.
+
+## Current T1 ITcon R15.4 state
+
+- **T1 ITcon R15.4 G-series revision** — ✅ G1A (§2.2), G2A (§3.2), and G3 (§4, terminology, evidence boundary, §5.4 calibration) applied to `Publications/T1_ITcon_DG_Draft_R15.4.docx`. Verified: ZIP/XML integrity, 37 package parts, 222 body paragraphs, 6 tables, 5 tracked insertions, 0 tracked deletions, sequential Table 1–6 captions, namespace integrity, and byte-preservation of all package parts except `word/document.xml`. SHA-256: `75df78936bc0c97765f826802a7f66af1af1cb34f38c823d01934dd1582fd1ba`.
+- **Open before next revision:** manually open R15.4 in Word; visually inspect §2.2, §3.2, §4, §5.4, Table 3, Figure 2, and Figure 10; decide whether to add an explicit Figure 10 citation; regenerate the PDF after the final DOCX is accepted.
+
 ## Upcoming
 
 - **v9.0 UAT Pipeline (Group 4)** — ✅ Group 3 COMPLETE (2026-07-20): Phase 34 guard-rails + undo + aesthetic verified on Frame definition. ✅ Group 4 COMPLETE (2026-07-26): tested on UrbanBlock (Frame fixture is still JSON-only, no `.gh` file). 4.1 plumbing passes (quality blocked on frontier LLM), 4.2–4.6 all PASS. Terminal gate 36 SC1: 12 nodes/13 rels, MERGE idempotency, all 4 parameters with non-null dataType. **F4+F5 CLOSED 2026-07-26:** re-preview undo crash (parallel `ae6d805`), bare Number/Integer/Text/geometry inference (`028ff0e` + `85796df`), G12 accept-time gate (`ae6d805`). Outstanding audit items 12→3 (F1 truncation, F3 model quality, F6 provenance). Only 35 test 1 remains open (LLM quality). See [[debugging/Phase 35 F5 — bare Number component inferring null dataType|F5]] and [[sessions/2026-07-26 Phase 35 F5 fix — dataType inference on bare params|session]].
