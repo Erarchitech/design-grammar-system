@@ -1,0 +1,79 @@
+<mxfile host="Electron" version="27.0.9">
+  <diagram id="fig02mapH14" name="Figure 2 — Reuse and alignment mapping H14">
+    <mxGraphModel dx="1600" dy="1500" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title1" value="&lt;b&gt;External knowledge sources and computational resources&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=26;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="24" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="title2" value="&lt;b&gt;Design Grammar ontology and alignment artefacts&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=26;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="24" width="680" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="fbs" value="&lt;b&gt;FBS — Gero (1990)&lt;/b&gt;&lt;br&gt;Function–Behaviour–Structure decomposition" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="80" width="620" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="dcm" value="&lt;b&gt;DCM — Lin (2016)&lt;/b&gt;&lt;br&gt;Body→Head criterion form; semantic, topological and geometric split;&lt;br&gt;Algorithm–Procedure–Pattern–Parameter–Interface hierarchy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="194" width="620" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="topologicpy" value="&lt;b&gt;TopologicPy&lt;/b&gt;&lt;br&gt;computational library for non-manifold topology and spatial analysis&lt;br&gt;derives spatial-topology entities and relations from geometry" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F7F3FB;strokeColor=#7A5C9E;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="348" width="620" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="topovocab" value="&lt;b&gt;Published TopologicPy vocabulary / ontology&lt;/b&gt;&lt;br&gt;where applicable: external identifiers and published terms&lt;br&gt;kept distinct from the computational library and DG alignment artefact" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7A5C9E;strokeWidth=2;dashed=1;dashPattern=6 6;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="502" width="620" height="122" as="geometry" />
+        </mxCell>
+        <mxCell id="bot" value="&lt;b&gt;BOT — Building Topology Ontology&lt;/b&gt;&lt;br&gt;Rasmussen et al. (2020)&lt;br&gt;building-scale semantic topology terms: Site, Building, Storey, Space, Zone, Element" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F6F8;strokeColor=#4D7C8A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="646" width="620" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="ifc" value="&lt;b&gt;IFC — buildingSMART&lt;/b&gt;&lt;br&gt;ISO 16739-1:2024; classes referenced through bSDD identifiers&lt;br&gt;BIM exchange and classification context" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="800" width="620" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="standards" value="&lt;b&gt;W3C SWRL / OWL 2 / SHACL&lt;/b&gt;&lt;br&gt;and the OGC standards stack" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="938" width="620" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="other" value="&lt;b&gt;Addressed by other means&lt;/b&gt;&lt;br&gt;geometry: carried with the object as a platform representation (OMG / FOG)&lt;br&gt;property states: recorded by Design State at validation checkpoints (OPM)&lt;br&gt;element classification: carried by the IFC classification alignment (BPO context)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7A5C9E;strokeWidth=2;dashed=1;dashPattern=6 6;align=left;verticalAlign=middle;spacing=8;fontSize=21;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="60" y="1052" width="620" height="176" as="geometry" />
+        </mxCell>
+        <mxCell id="core" value="&lt;b&gt;Core band&lt;/b&gt;&lt;br&gt;Object, Function, Behaviour, Structure, Geometry, Topology" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="80" width="680" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="comput" value="&lt;b&gt;ComputGraph&lt;/b&gt;&lt;br&gt;Algorithm, Procedure, Pattern, Parameter, Interface" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="194" width="680" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="topalign" value="&lt;b&gt;Topology alignment artefact&lt;/b&gt;&lt;br&gt;typed correspondences and provenance&lt;br&gt;connects TopologicPy-derived analytical evidence with BOT semantic topology terms where entity types and intended building semantics satisfy the mapping" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F7F3FB;strokeColor=#7A5C9E;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=22;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="348" width="680" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="topology" value="&lt;b&gt;Topology (core concept)&lt;/b&gt;&lt;br&gt;receives geometry-derived spatial-topology evidence and semantic building-topology references" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="550" width="680" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="ontograph" value="&lt;b&gt;Ontograph — minted classes&lt;/b&gt;&lt;br&gt;shared organisational semantic grounding&lt;br&gt;typed identity links retain source ownership and provenance" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="704" width="680" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="classalign" value="&lt;b&gt;Classification alignment artefact&lt;/b&gt;&lt;br&gt;graded SKOS matches and bSDD identifier references from Ontograph classes to IFC classes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="874" width="680" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="metagraph" value="&lt;b&gt;Metagraph + standards alignment artefact&lt;/b&gt;&lt;br&gt;Rule, Atom, Var, Literal, Builtin; mapping axioms to the W3C/OGC standards stack" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=23;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="1028" width="680" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="dgobject" value="&lt;b&gt;DG Object and typed identity links&lt;/b&gt;&lt;br&gt;shared identity carrier for semantic description, BIM/parametric representations, and spatial-topology evidence" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF7E6;strokeColor=#B8860B;strokeWidth=2;align=left;verticalAlign=middle;spacing=8;fontSize=22;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="1182" width="680" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fbs" value="absorbed into core" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5C9E;strokeWidth=2;endArrow=block;endFill=1;fontSize=21;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="fbs" target="core" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_dcm" value="absorbed: criterion form and hierarchy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5C9E;strokeWidth=2;endArrow=block;endFill=1;fontSize=21;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="dcm" target="comput" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_toplib" value="computes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5C9E;strokeWidth=2;endArrow=block;endFill=1;fontSize=21;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="topologicpy" target="topalign" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_vocab" value="published terms, where applicable" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;dashPattern=6 6;strokeColor=#7A5C9E;strokeWidth=2;endArrow=open;endFill=0;fontSize=20;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="topovocab" target="topalign" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_bot" value="semantic building topology" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4D7C8A;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#4D7C8A;labelBackgroundColor=#FFFFFF;" parent="1" source="bot" target="topalign" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_ifc" value="classification by reference" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#1A1A1A;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#1A1A1A;labelBackgroundColor=#FFFFFF;" parent="1" source="ifc" target="classalign" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_std" value="standards alignment" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5C9E;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="standards" target="metagraph" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_topology" value="typed evidence and references" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5C9E;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#7A5C9E;labelBackgroundColor=#FFFFFF;" parent="1" source="topalign" target="topology" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_bot_onto" value="semantic grounding through DG Object" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;dashPattern=6 6;strokeColor=#4D7C8A;strokeWidth=2;endArrow=open;endFill=0;fontSize=20;fontColor=#4D7C8A;labelBackgroundColor=#FFFFFF;" parent="1" source="topalign" target="ontograph" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_class" value="references" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#1A1A1A;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#1A1A1A;labelBackgroundColor=#FFFFFF;" parent="1" source="classalign" target="ontograph" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_core_obj" value="shared identity carrier" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B8860B;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#B8860B;labelBackgroundColor=#FFFFFF;" parent="1" source="ontograph" target="dgobject" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_top_obj" value="analytical evidence" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B8860B;strokeWidth=2;endArrow=block;endFill=1;fontSize=20;fontColor=#B8860B;labelBackgroundColor=#FFFFFF;" parent="1" source="topology" target="dgobject" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="legend" value="&lt;b&gt;Reading key&lt;/b&gt;&lt;br&gt;solid coloured arrows: typed contribution or mapping&lt;br&gt;dashed arrows: conditional or indirect correspondence&lt;br&gt;TopologicPy computes; BOT provides semantic building topology; the DG alignment artefact records the conditional correspondence" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7A5C9E;strokeWidth=1.5;align=left;verticalAlign=middle;spacing=8;fontSize=20;fontColor=#1A1A1A;" parent="1" vertex="1">
+          <mxGeometry x="850" y="1320" width="680" height="112" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

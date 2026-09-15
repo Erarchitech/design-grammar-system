@@ -65,7 +65,7 @@ date: 2026-07-18
 ## Current T1 ITcon R15.4 state
 
 - **T1 ITcon R15.4 G-series revision** — ✅ G1A (§2.2), G2A (§3.2), and G3 (§4, terminology, evidence boundary, §5.4 calibration) applied to `Publications/T1_ITcon_DG_Draft_R15.4.docx`. Verified: ZIP/XML integrity, 37 package parts, 222 body paragraphs, 6 tables, 5 tracked insertions, 0 tracked deletions, sequential Table 1–6 captions, namespace integrity, and byte-preservation of all package parts except `word/document.xml`. SHA-256: `75df78936bc0c97765f826802a7f66af1af1cb34f38c823d01934dd1582fd1ba`.
-- **Open before next revision:** manually open R15.4 in Word; visually inspect §2.2, §3.2, §4, §5.4, Table 3, Figure 2, and Figure 10; decide whether to add an explicit Figure 10 citation; regenerate the PDF after the final DOCX is accepted.
+- **Open before next revision:** manually open R15.4 in Word; visually inspect §2.2, §3.2, §4, §5.4, Table 3, Figure 2, and Figure 10; decide whether to add an explicit Figure 10 citation; regenerate the PDF after the final DOCX is accepted. H14 and the bounded §2.2/§3.1/§3.2 architecture wording are now applied through Word MCP; proposed Figure 2 H14 remains at `Publications/figures/R15.4_proposed/` pending figure approval and insertion.
 
 ## Upcoming
 

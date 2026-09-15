@@ -235,6 +235,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-08-31 T1 R14.3 — C55 repository reference and the ontology deposit|2026-08-31 T1 R14.3 — C55 resolved; citable deposit Erarchitech/design-grammar-ontology v1.0.1 created (Apache-2.0 + CC BY 4.0), Table 3 and Annex C recounted against it]]
 - [[sessions/2026-09-07 T1 R15.2 — AU-R151-TOPO alignment-module architecture|2026-09-07 T1 R15.2 — `AU-R151-TOPO` at the gate: Topologic's published OWL ontology found, three alignment modules replace three extension modules, BOT subsumed, IFC via bSDD; 20 edits + Figure 2, joint apply planned]]
 - [[sessions/2026-09-13 v11.0 V8 publication contract planning|2026-09-13 v11.0 — V8 publication contract milestone and phases 1101–1109 planned; early activation gates defined]]
+- [[sessions/2026-09-14 T1 ITcon R15.4 — architecture and figures planning|2026-09-14 T1 ITcon R15.4 — architecture and figures planning]]
+- [[sessions/2026-09-15 T1 ITcon R15.4 — H14 and architecture wording|2026-09-15 T1 ITcon R15.4 — H14 and architecture wording]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
