@@ -529,6 +529,86 @@ class TestValidator:
         assert "unknown_label" not in codes
         assert "unknown_relationship" not in codes
 
+
+# ── Positive shape checks -- output that is not Cypher at all ──────────────
+# Every other validator rule is NEGATIVE (it looks for a forbidden
+# label/verb/bracket), so prose, a refusal or an empty string used to violate
+# nothing and pass as valid; the pipeline then wrote zero nodes while
+# reporting success. Observed live: mimo-v2.5-pro intermittently answers
+# "Building height is maximum 60 m" with an essay on why height limits exist
+# instead of Cypher.
+class TestCypherShapeIsRequired:
+    def test_empty_output_is_caught(self):
+        result = dg_context.validate_cypher("", "rule_ingest")
+        assert result["valid"] is False
+        assert "empty_output" in {v["code"] for v in result["violations"]}
+
+    def test_whitespace_only_output_is_caught(self):
+        result = dg_context.validate_cypher("   \n\t ", "rule_ingest")
+        assert result["valid"] is False
+        assert "empty_output" in {v["code"] for v in result["violations"]}
+
+    def test_prose_instead_of_cypher_is_caught(self):
+        """The live failure: an explanatory essay, no Cypher anywhere."""
+        prose = (
+            "You're referring to a common regulation in urban planning. A "
+            "**60-meter maximum building height** is a frequent rule in many "
+            "cities and zones.\n\n### Why Limit Building Height to 60m?\n\n"
+            "1. **Fire Safety:** Fire department aerial ladders often have a "
+            "maximum operational reach around 50-60 meters."
+        )
+        result = dg_context.validate_cypher(prose, "rule_ingest")
+        assert result["valid"] is False
+        assert "no_cypher_statement" in {v["code"] for v in result["violations"]}
+
+    def test_model_refusal_is_caught(self):
+        result = dg_context.validate_cypher("I cannot help with that request.", "rule_ingest")
+        assert result["valid"] is False
+        assert "no_cypher_statement" in {v["code"] for v in result["violations"]}
+
+    def test_empty_markdown_fence_is_caught(self):
+        result = dg_context.validate_cypher("```cypher\n```", "rule_ingest")
+        assert result["valid"] is False
+        assert "no_cypher_statement" in {v["code"] for v in result["violations"]}
+
+    def test_real_ingest_cypher_still_passes(self):
+        """The check must not reject legitimate output."""
+        cypher = (
+            "MERGE (c:Class {iri: 'ex:Building'})\n"
+            "SET c.label = 'Building', c.project = 'p', c.graph = 'OntoGraph'\n\n"
+            "MERGE (r:Rule {Rule_Id: 'R_URB_HEIGHT_MAX_60_V'})\n"
+            "SET r.project = 'p', r.graph = 'Metagraph'"
+        )
+        result = dg_context.validate_cypher(cypher, "rule_ingest")
+        assert result == {"valid": True, "violations": []}
+
+    def test_lowercase_merge_still_passes(self):
+        """Verb detection elsewhere is case-insensitive; stay consistent."""
+        result = dg_context.validate_cypher(
+            "merge (r:Rule {Rule_Id: 'R_X_V'}) set r.project = 'p'", "rule_ingest"
+        )
+        assert result["valid"] is True
+
+    def test_merge_only_inside_a_string_literal_does_not_count(self):
+        """A quoted 'MERGE' is data, not a statement -- _strip_quoted() runs first."""
+        result = dg_context.validate_cypher(
+            "Here is the statement you asked about: 'MERGE (r:Rule)'", "rule_ingest"
+        )
+        assert result["valid"] is False
+        assert "no_cypher_statement" in {v["code"] for v in result["violations"]}
+
+    def test_graph_query_prose_is_caught(self):
+        result = dg_context.validate_cypher("Here is an explanation of your graph.", "graph_query")
+        assert result["valid"] is False
+        assert "no_cypher_statement" in {v["code"] for v in result["violations"]}
+
+    def test_graph_query_read_query_still_passes(self):
+        """graph_query is read-only, so it must NOT be required to contain MERGE."""
+        result = dg_context.validate_cypher(
+            "MATCH (r:Rule {project: 'p'}) RETURN r.Rule_Id LIMIT 50", "graph_query"
+        )
+        assert result == {"valid": True, "violations": []}
+
     def test_bracket_pseudo_label_is_caught(self):
         """The exact statement Neo4j rejected with Neo.ClientError.Statement.SyntaxError
         during a live rules-ingest: square brackets where a `:Label` belongs. Brackets

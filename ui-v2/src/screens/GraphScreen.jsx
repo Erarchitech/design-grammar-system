@@ -2,13 +2,14 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
   Chip,
   Collapsible,
   Combobox,
+  Dialog,
   Input,
   Progress,
   PropertiesTable,
@@ -607,9 +608,28 @@ export default function GraphScreen({ active, onBack, project }) {
     }
   };
 
+  // "delete this rule" / "удали правило" in Edit mode. Matched here rather than
+  // sent to the LLM: the model only ever has to decide WHICH rule, never to
+  // write the destructive Cypher, so the verb policy stays the backend's.
+  // A bare mention ("...but don't delete it") must not fire, so the intent has
+  // to lead the prompt.
+  const DELETE_INTENT = /^\s*(?:please\s+)?(?:delete|remove|drop|удали(?:ть)?|удалите)\b/i;
+
   const sendPrompt = () => {
     const txt = promptVal.trim();
     if (!txt) return;
+
+    if (mode === 2 && DELETE_INTENT.test(txt)) {
+      setPromptVal("");
+      // A single explicit R_… needs no model call; anything else — including
+      // conditional phrasing like "all height rules above 50 m" — goes to the
+      // resolver, which reasons over the project's rules to pick the matches.
+      const named = txt.match(/\bR_[A-Z0-9_]+\b/g) || [];
+      if (named.length === 1) void openDeleteDialog(named[0]);
+      else void openDeleteFromPrompt(txt);
+      return;
+    }
+
     setPromptVal("");
     void runTurn(mode, txt, editRuleId);
   };
@@ -722,6 +742,108 @@ export default function GraphScreen({ active, onBack, project }) {
       setLoadErr(err.message || "Property update failed");
     }
   };
+
+  // ── Rule deletion ────────────────────────────────────────────────────────
+  // Two steps, always: fetch a preview of what would go, show it, delete only
+  // on explicit confirmation. Shared Literal/Var nodes are kept by the backend
+  // (other rules still point at them) and the dialog says so, because
+  // "delete the rule and its atoms" reads as if everything below it goes.
+  const [delOpen, setDelOpen] = React.useState(false);
+  const [delBusy, setDelBusy] = React.useState(false);
+  const [delErr, setDelErr] = React.useState("");
+  const [delTarget, setDelTarget] = React.useState(null); // { ruleId } — set by menu or prompt
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const kebabRef = React.useRef(null);
+
+  // Fold the actions menu on any click outside it (same pattern as the
+  // Session History / session panels above).
+  React.useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (ev) => {
+      if (kebabRef.current && !kebabRef.current.contains(ev.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
+
+  // A new selection invalidates the menu (it belonged to the previous node).
+  React.useEffect(() => {
+    setMenuOpen(false);
+  }, [se?.neoId]);
+
+  // Both entry points converge on one list of previews: the header menu
+  // resolves to exactly one rule, a prompt may resolve to several.
+  const [delMatches, setDelMatches] = React.useState([]); // [{ruleId, atoms, orphaned, shared, swrl}]
+  const [delReason, setDelReason] = React.useState("");
+  const [delGhosts, setDelGhosts] = React.useState([]); // ids the model invented — shown, never deleted
+  const [delResolving, setDelResolving] = React.useState(false);
+
+  const resetDialog = () => {
+    setDelMatches([]);
+    setDelReason("");
+    setDelGhosts([]);
+    setDelErr("");
+  };
+
+  // Header menu → a single known rule.
+  const openDeleteDialog = async (ruleId) => {
+    if (!ruleId || !project) return;
+    setDelTarget({ kind: "rule", ruleId });
+    setDelOpen(true);
+    resetDialog();
+    setDelResolving(true);
+    try {
+      setDelMatches([await fetchRuleDeletePreview(project, ruleId)]);
+    } catch (err) {
+      setDelErr(err.message || "Could not load deletion preview");
+    } finally {
+      setDelResolving(false);
+    }
+  };
+
+  // Edit prompt → the LLM selects which rules match; it never writes Cypher.
+  const openDeleteFromPrompt = async (request) => {
+    if (!request || !project) return;
+    setDelTarget({ kind: "prompt", request });
+    setDelOpen(true);
+    resetDialog();
+    setDelResolving(true);
+    try {
+      const res = await resolveRuleDeletion(project, request);
+      setDelMatches(res.matches || []);
+      setDelReason(res.reason || "");
+      setDelGhosts(res.hallucinated || []);
+    } catch (err) {
+      setDelErr(err.message || "Could not resolve the deletion request");
+    } finally {
+      setDelResolving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!project || delMatches.length === 0) return;
+    setDelBusy(true);
+    setDelErr("");
+    try {
+      await bulkDeleteRules(project, delMatches.map((m) => m.ruleId));
+      setDelOpen(false);
+      setDelTarget(null);
+      resetDialog();
+      engineRef.current?.clearSel();
+      await loadGraph(); // refetch rings so the deleted nodes leave the datascape
+    } catch (err) {
+      setDelErr(err.message || "Delete failed");
+    } finally {
+      setDelBusy(false);
+    }
+  };
+
+  // Rule_Id of the current selection, when a Rule node is selected.
+  const selectedRuleId = React.useMemo(() => {
+    if (!se || se.kind !== "Rule") return null;
+    const row = (se.props || []).find(([k]) => k === "Rule_Id");
+    return row ? String(row[1]) : se.label || null;
+  }, [se]);
 
   const searchProps = ringN
     ? [{ value: "*", label: "Any field" }, { value: "__label", label: "Label" }].concat(
@@ -912,7 +1034,67 @@ export default function GraphScreen({ active, onBack, project }) {
         {se && selBig && (
           <div className="dg-frost" style={{ borderRadius: "var(--radius-cards)", padding: 18, boxShadow: "var(--shadow-panel)", height: "70vh", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 12, overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <Chip selected>{se.kind}</Chip>
+              <div ref={kebabRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
+                <Chip selected>{se.kind}</Chip>
+                {selectedRuleId && (
+                  <button
+                    onClick={() => setMenuOpen((v) => !v)}
+                    title="Rule actions"
+                    aria-label="Rule actions"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    style={{
+                      border: "1px solid var(--color-hairline)",
+                      borderRadius: "var(--radius-nested)",
+                      background: "transparent",
+                      cursor: "pointer",
+                      color: "var(--text-muted)",
+                      font: "400 13px/1 var(--font-sans)",
+                      padding: "3px 7px"
+                    }}
+                  >
+                    ⋯
+                  </button>
+                )}
+                {menuOpen && selectedRuleId && (
+                  <div
+                    role="menu"
+                    className="dg-frost"
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 6px)",
+                      left: 0,
+                      zIndex: 9,
+                      minWidth: 190,
+                      padding: 4,
+                      borderRadius: "var(--radius-nested)",
+                      boxShadow: "var(--shadow-panel)"
+                    }}
+                  >
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openDeleteDialog(selectedRuleId);
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        color: "var(--color-signal-ink)",
+                        font: "400 13px/1.3 var(--font-sans)",
+                        padding: "8px 10px",
+                        borderRadius: "var(--radius-nested)"
+                      }}
+                    >
+                      Delete rule…
+                    </button>
+                  </div>
+                )}
+              </div>
               <div onClick={() => engineRef.current?.clearSel()} style={{ cursor: "pointer", fontSize: 15, color: "var(--text-muted)", lineHeight: 1, padding: 4 }}>
                 ✕
               </div>
@@ -1132,8 +1314,14 @@ export default function GraphScreen({ active, onBack, project }) {
                 }}
                 style={{ flex: "1 1 auto", minWidth: 60 }}
               />
-              <Button size="sm" onClick={sendPrompt} disabled={busy || (mode === 2 && !editRuleId)}>
-                {mode === 0 ? "Ingest" : mode === 1 ? "Query" : "Apply Edit"}
+              {/* A delete prompt names its own rule, so it does not need the
+                  Edit picker — keep the button live for that case. */}
+              <Button
+                size="sm"
+                onClick={sendPrompt}
+                disabled={busy || (mode === 2 && !editRuleId && !DELETE_INTENT.test(promptVal))}
+              >
+                {mode === 0 ? "Ingest" : mode === 1 ? "Query" : DELETE_INTENT.test(promptVal) ? "Delete Rule" : "Apply Edit"}
               </Button>
             </div>
           </div>
@@ -1190,6 +1378,97 @@ export default function GraphScreen({ active, onBack, project }) {
               </span>
             </div>
             <canvas ref={mapRef} width="150" height="150" style={{ width: 150, height: 150, display: "block", borderRadius: 6, cursor: "crosshair" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Rule deletion confirmation — the single gate for BOTH entry points
+          (the header actions menu and an Edit-mode delete prompt). Nothing is
+          removed until the user has seen this list and pressed Delete. */}
+      {delOpen && (
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.28)" }}
+          onClick={() => {
+            if (!delBusy) setDelOpen(false);
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dialog
+              title={delMatches.length > 1 ? `Delete ${delMatches.length} rules?` : "Delete rule?"}
+              onClose={delBusy ? undefined : () => setDelOpen(false)}
+              style={{ width: 420, maxHeight: "80vh", overflow: "auto" }}
+              footer={
+                <>
+                  <Button variant="outline" disabled={delBusy} onClick={() => setDelOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={delBusy || delResolving || delMatches.length === 0}
+                    onClick={confirmDelete}
+                  >
+                    {delBusy ? "Deleting…" : delMatches.length > 1 ? `Delete ${delMatches.length}` : "Delete"}
+                  </Button>
+                </>
+              }
+            >
+              {delTarget?.kind === "prompt" && (
+                <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+                  “{delTarget.request}”
+                </div>
+              )}
+
+              {delErr && (
+                <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>{delErr}</div>
+              )}
+
+              {delResolving && (
+                <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 12 }}>
+                  {delTarget?.kind === "prompt" ? "Finding matching rules…" : "Loading preview…"}
+                </div>
+              )}
+
+              {!delResolving && !delErr && delMatches.length === 0 && (
+                <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
+                  No rules matched that request. Nothing will be deleted.
+                </div>
+              )}
+
+              {delReason && delMatches.length > 0 && (
+                <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>{delReason}</div>
+              )}
+
+              {delMatches.map((m) => (
+                <div
+                  key={m.ruleId}
+                  style={{ display: "flex", flexDirection: "column", gap: 6, paddingBottom: 10, borderBottom: "1px solid var(--color-hairline)" }}
+                >
+                  <div style={{ font: "500 13px/1.3 var(--font-mono)" }}>{m.ruleId}</div>
+                  {m.swrl && (
+                    <div style={{ font: "400 11px/1.4 var(--font-mono)", color: "var(--text-muted)", wordBreak: "break-word" }}>
+                      {m.swrl}
+                    </div>
+                  )}
+                  <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+                    {m.atoms.length} atom{m.atoms.length === 1 ? "" : "s"}
+                    {m.orphaned.length > 0 && ` · also deletes ${m.orphaned.map((a) => String(a.value)).join(", ")}`}
+                    {m.shared.length > 0 && ` · keeps ${m.shared.map((a) => String(a.value)).join(", ")} (used elsewhere)`}
+                  </div>
+                </div>
+              ))}
+
+              {delGhosts.length > 0 && (
+                <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>
+                  Ignored — no such rule in this project: {delGhosts.join(", ")}
+                </div>
+              )}
+
+              {delMatches.length > 0 && (
+                <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
+                  This cannot be undone.
+                </div>
+              )}
+            </Dialog>
           </div>
         </div>
       )}

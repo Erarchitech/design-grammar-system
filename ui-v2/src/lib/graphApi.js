@@ -89,6 +89,94 @@ export async function fetchRules(project) {
   return rowsOf(json).map(([ruleId, text]) => ({ ruleId, text }));
 }
 
+// GET /rules/{project}/{ruleId}/delete-preview → what a delete would remove.
+// Read-only: fetch it, show the user, and only then call deleteRule().
+// `shared` args are referenced by other rules and are deliberately KEPT.
+export async function fetchRuleDeletePreview(project, ruleId) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(
+    `${dataServiceUrl}/rules/${encodeURIComponent(project)}/${encodeURIComponent(ruleId)}/delete-preview`
+  );
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// DELETE /rules/{project}/{ruleId} → removes the Rule, its Atoms, and any
+// Literal/Var orphaned by that. Destructive and not undoable: only call this
+// after the user has confirmed against fetchRuleDeletePreview() output.
+export async function deleteRule(project, ruleId) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(
+    `${dataServiceUrl}/rules/${encodeURIComponent(project)}/${encodeURIComponent(ruleId)}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// POST /rules/resolve-deletion → { matches[], reason, hallucinated[] }
+// Resolves a natural-language deletion request ("all height rules above 50 m")
+// to concrete rules, each with its own delete preview. Selection only —
+// deletes nothing.
+export async function resolveRuleDeletion(project, request) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(`${dataServiceUrl}/rules/resolve-deletion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, request })
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// POST /rules/bulk-delete → deletes the confirmed Rule_Ids. Destructive.
+export async function bulkDeleteRules(project, ruleIds) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(`${dataServiceUrl}/rules/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, ruleIds })
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchProjects() {
   const json = await executeCypher(
     "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"

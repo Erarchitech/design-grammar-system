@@ -2842,6 +2842,215 @@ def delete_knowledge_note(note_id: str):
     return {"status": "deleted", "noteId": note_id}
 
 
+# ---------------------------------------------------------------------------
+# Rule deletion (Rule + its Atoms + ORPHANED Literal/Var)
+# ---------------------------------------------------------------------------
+#
+# Literal and Var nodes are SHARED across rules by design -- MERGE on `lex`/
+# `name` means the Literal 'true' and the Var '?b' are single nodes every rule
+# points at. Measured on a live project: deleting one height rule would orphan
+# Literal '75' (0 other referrers) but Literal 'true' had 12 referrers and Var
+# '?b' had 6. Deleting shared args unconditionally silently breaks every other
+# rule, so both the preview and the delete count referrers first and touch only
+# what nothing else points at.
+#
+# The delete runs as fixed, parameterized Cypher here -- the LLM never writes
+# the destructive statement, it only resolves which Rule_Id the user meant.
+
+_RULE_DELETE_SCOPE = (
+    "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) "
+    "OPTIONAL MATCH (r)-[:HAS_BODY|HAS_HEAD]->(a:Atom) "
+    "OPTIONAL MATCH (a)-[:ARG]->(x) WHERE x:Literal OR x:Var "
+)
+
+
+def _rule_delete_preview(project: str, rule_id: str) -> dict[str, Any] | None:
+    """What deleting `rule_id` would remove. None when the rule does not exist.
+
+    `orphaned` args are referenced by no OTHER rule and will be deleted;
+    `shared` args stay because another rule still points at them.
+    """
+    exists = read_single(
+        "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) RETURN r.Rule_Id AS ruleId",
+        {"ruleId": rule_id, "project": project},
+    )
+    if exists is None:
+        return None
+
+    atoms = read_many(
+        _RULE_DELETE_SCOPE + "RETURN DISTINCT a.Atom_Id AS atomId, a.SWRL_label AS swrlLabel",
+        {"ruleId": rule_id, "project": project},
+    )
+    args = read_many(
+        _RULE_DELETE_SCOPE
+        + "WITH DISTINCT x, r WHERE x IS NOT NULL "
+        "WITH x, r, count { (other:Rule)-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:ARG]->(x) "
+        "                   WHERE other <> r } AS otherRefs "
+        "RETURN labels(x)[0] AS label, coalesce(x.lex, x.name) AS value, otherRefs "
+        "ORDER BY label, value",
+        {"ruleId": rule_id, "project": project},
+    )
+
+    return {
+        "project": project,
+        "ruleId": rule_id,
+        "atoms": [a for a in atoms if a.get("atomId") is not None],
+        "orphaned": [a for a in args if (a.get("otherRefs") or 0) == 0],
+        "shared": [a for a in args if (a.get("otherRefs") or 0) > 0],
+    }
+
+
+@app.get("/rules/{project}/{rule_id}/delete-preview")
+def preview_rule_deletion(project: str, rule_id: str):
+    """Exactly what a delete would remove -- the confirmation dialog's source.
+
+    Read-only: call it, show the user, and only then call DELETE.
+    """
+    preview = _rule_delete_preview(project, rule_id)
+    if preview is None:
+        raise _structured_error_response(
+            f"Rule '{rule_id}' not found in project '{project}'.",
+            "Check the Rule_Id; it is case-sensitive.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+    return preview
+
+
+@app.delete("/rules/{project}/{rule_id}")
+def delete_rule(project: str, rule_id: str):
+    """Delete a Rule, its Atoms, and any Literal/Var left orphaned by that.
+
+    Destructive and not undoable -- callers confirm with the user first
+    (the preview endpoint above exists for that).
+    """
+    preview = _rule_delete_preview(project, rule_id)
+    if preview is None:
+        raise _structured_error_response(
+            f"Rule '{rule_id}' not found in project '{project}'.",
+            "Check the Rule_Id; it is case-sensitive.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+
+    # Orphan check runs inside the same statement as the delete: computing it
+    # here from the preview would race another ingest writing a rule that
+    # starts referencing one of these args between the two calls.
+    write_query(
+        _RULE_DELETE_SCOPE
+        + "WITH r, collect(DISTINCT a) AS atoms, collect(DISTINCT x) AS args "
+        "UNWIND (CASE WHEN args = [] THEN [null] ELSE args END) AS arg "
+        "WITH r, atoms, arg WHERE arg IS NULL OR NOT EXISTS { "
+        "    MATCH (other:Rule)-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:ARG]->(arg) "
+        "    WHERE other <> r } "
+        "WITH r, atoms, collect(arg) AS orphans "
+        "FOREACH (n IN atoms | DETACH DELETE n) "
+        "FOREACH (n IN orphans | DETACH DELETE n) "
+        "DETACH DELETE r",
+        {"ruleId": rule_id, "project": project},
+    )
+
+    return {
+        "status": "deleted",
+        "project": project,
+        "ruleId": rule_id,
+        "deletedAtoms": len(preview["atoms"]),
+        "deletedArgs": len(preview["orphaned"]),
+        "keptSharedArgs": len(preview["shared"]),
+    }
+
+
+class RuleDeleteResolvePayload(BaseModel):
+    project: str
+    request: str
+
+
+@app.post("/rules/resolve-deletion")
+def resolve_rule_deletion(payload: RuleDeleteResolvePayload):
+    """Resolve a natural-language deletion request to concrete Rule_Ids, with a
+    per-rule preview of what removing each would take with it.
+
+    Selection only -- deletes nothing. The LLM picks WHICH rules match (it
+    never writes Cypher); DELETE below removes them with fixed parameterized
+    statements. An invented Rule_Id cannot match a real rule, and comes back
+    under `hallucinated` so the caller can show it rather than act on it.
+    """
+    request_text = (payload.request or "").strip()
+    if not request_text:
+        raise _structured_error_response(
+            "Deletion request is empty.",
+            "Describe which rules to delete, e.g. 'all height rules above 50 m'.",
+            "REQUEST_EMPTY",
+            422,
+        )
+
+    try:
+        selection = dg_context.select_rules_for_deletion(payload.project, request_text)
+    except Exception as exc:  # provider/auth/network failure
+        error_msg, hint, code = map_provider_error(exc)
+        raise _structured_error_response(error_msg, hint, code, 502) from exc
+
+    matches = []
+    for rule in selection["matched"]:
+        preview = _rule_delete_preview(payload.project, rule["ruleId"])
+        if preview is None:
+            continue  # deleted between selection and preview
+        matches.append({**preview, "swrl": rule.get("swrl", ""), "description": rule.get("description", "")})
+
+    return {
+        "project": payload.project,
+        "request": request_text,
+        "reason": selection["reason"],
+        "hallucinated": selection["hallucinated"],
+        "matches": matches,
+    }
+
+
+class RuleBulkDeletePayload(BaseModel):
+    project: str
+    ruleIds: list[str]
+
+
+@app.post("/rules/bulk-delete")
+def bulk_delete_rules(payload: RuleBulkDeletePayload):
+    """Delete an explicit list of Rule_Ids the user has confirmed.
+
+    Takes ids, never a natural-language request: the confirmation the user gave
+    was against a resolved list, so this endpoint re-deletes exactly that list
+    and nothing it re-derives on its own. Each id goes through the same
+    single-rule path, so the orphan rule is applied per rule and in order --
+    an arg shared only between two rules in the same batch is correctly
+    orphaned by the time the second one is removed.
+    """
+    if not payload.ruleIds:
+        raise _structured_error_response(
+            "No rules given to delete.",
+            "Pass the ruleIds confirmed from /rules/resolve-deletion.",
+            "REQUEST_EMPTY",
+            422,
+        )
+
+    deleted: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for rule_id in payload.ruleIds:
+        try:
+            deleted.append(delete_rule(payload.project, rule_id))
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {}
+            if detail.get("code") == "RULE_NOT_FOUND":
+                missing.append(rule_id)
+                continue
+            raise
+
+    return {
+        "status": "deleted",
+        "project": payload.project,
+        "deleted": deleted,
+        "missing": missing,
+        "deletedRules": len(deleted),
+    }
+
+
 @app.get("/knowledge/sessions/{project}")
 def list_knowledge_sessions(project: str):
     rows = read_many(

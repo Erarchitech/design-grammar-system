@@ -586,6 +586,16 @@ _WRITE_QUERY_PATTERN = re.compile(r"\b(CREATE|MERGE|DELETE|SET|REMOVE|DROP)\b", 
 # per cypher_template.txt/CONTEXT.md ("reject DELETE/REMOVE/DETACH/DROP").
 _ALL_VERB_PATTERN = re.compile(r"\b(MERGE|SET|CREATE|DELETE|REMOVE|DETACH|DROP)\b", re.IGNORECASE)
 
+# Positive shape checks: every other rule here is NEGATIVE (it looks for a
+# forbidden label/verb/bracket), so output that contains no Cypher at all --
+# an empty string, a refusal, or the prose essay an LLM sometimes returns
+# instead of code -- violates nothing and passes as valid. The pipeline then
+# executes it and writes zero nodes silently. Same failure class commit
+# 107969f addressed downstream ("stop rule ingestion silently writing zero
+# nodes"); these two patterns close it at the validation step.
+_MERGE_PATTERN = re.compile(r"\bMERGE\b", re.IGNORECASE)
+_READ_CLAUSE_PATTERN = re.compile(r"\b(MATCH|RETURN)\b", re.IGNORECASE)
+
 # Label extraction -- port of graph-query-mcp.json's "Parse Cypher" labelRegex,
 # extended to walk EVERY `:Label` in a multi-label chain (n:LabelA:LabelB),
 # not just the last one (the original JS regex only captures the final
@@ -693,6 +703,49 @@ def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
         raise ValueError(f"Unknown request type: {request_type}")
 
     violations: list[dict[str, Any]] = []
+
+    # Positive shape checks run FIRST: when the model returns prose, a refusal
+    # or nothing at all, this is the violation worth reporting -- the negative
+    # checks below all pass vacuously on such output.
+    if not cypher or not cypher.strip():
+        violations.append(
+            {
+                "code": "empty_output",
+                "message": (
+                    "The generated Cypher is empty. Where: the full response. "
+                    "How to fix: emit the Cypher statements themselves; an "
+                    "empty response would write zero nodes while reporting "
+                    "success."
+                ),
+            }
+        )
+    elif request_type in ("rule_ingest", "rule_edit"):
+        if not _MERGE_PATTERN.search(_strip_quoted(cypher)):
+            violations.append(
+                {
+                    "code": "no_cypher_statement",
+                    "message": (
+                        f"No MERGE statement found, so this {request_type} "
+                        "response would write nothing. Where: the full "
+                        "response. How to fix: return only Cypher -- MERGE/SET "
+                        "statements per cypher_template.txt -- with no prose, "
+                        "explanation or commentary around it."
+                    ),
+                }
+            )
+    elif request_type == "graph_query":
+        if not _READ_CLAUSE_PATTERN.search(_strip_quoted(cypher)):
+            violations.append(
+                {
+                    "code": "no_cypher_statement",
+                    "message": (
+                        "No MATCH or RETURN clause found, so this graph_query "
+                        "response is not a runnable query. Where: the full "
+                        "response. How to fix: return only a read-only "
+                        "MATCH/RETURN query, with no prose or commentary."
+                    ),
+                }
+            )
 
     if not has_valid_nesting(cypher):
         violations.append(
@@ -1414,4 +1467,144 @@ def consult_computgraph(
         "ungroundedMentions": grounding["ungroundedMentions"],
         "subgraphEntityCount": subgraph.get("entityCount"),
         "truncated": subgraph.get("truncated"),
+    }
+
+
+# ── Semantic rule selection for deletion (conditional prompt deletes) ────────
+#
+# "delete every height rule above 50 m" cannot be matched by a regex: the
+# criterion is semantic and open-ended. But letting the LLM emit the DETACH
+# DELETE itself would hand destructive Cypher to a model (T-29-01), so the two
+# halves are split:
+#
+#   1. The LLM only SELECTS -- it sees the project's rules and returns the
+#      Rule_Ids that match, as JSON. It never writes Cypher.
+#   2. app.py deletes those ids with the same fixed, parameterized statement
+#      the single-rule delete already uses, behind the same confirmation.
+#
+# A hallucinated id is therefore harmless: it simply will not match a real
+# rule, and the caller sees it listed as unmatched rather than acted on.
+
+_RULES_FOR_SELECTION_QUERY = """
+MATCH (r:Rule {project: $project})
+RETURN r.Rule_Id AS ruleId,
+       coalesce(r.SWRL, '') AS swrl,
+       coalesce(r.RuleDescription, r.description, '') AS description
+ORDER BY r.Rule_Id
+"""
+
+_RULE_SELECTION_SYSTEM = (
+    "You select which of a project's design rules match a deletion request. "
+    "Respond with JSON only -- no prose, no code fences. Shape: "
+    '{"ruleIds": ["R_...", ...], "reason": "<one short sentence>"}. '
+    "Include a rule ONLY if it genuinely matches the request. "
+    "Numeric comparisons refer to the threshold embedded in the rule "
+    "(Rule_Id format R_<DOMAIN>_<PROPERTY>_<LIMIT>_V, and the literal in the "
+    "SWRL body). If nothing matches, return an empty ruleIds list. "
+    "Never invent a Rule_Id that is not in the provided list."
+)
+
+
+def fetch_rules_for_selection(project: str, session: Any = None) -> list[dict[str, Any]]:
+    """Rule_Id + SWRL + description for every rule in a project -- the candidate
+    list the selector reasons over."""
+    if session is not None:
+        result = session.run(_RULES_FOR_SELECTION_QUERY, project=project)
+        return [dict(record) for record in result]
+    with _get_driver().session() as live_session:
+        result = live_session.run(_RULES_FOR_SELECTION_QUERY, project=project)
+        return [dict(record) for record in result]
+
+
+def _parse_selection_response(text: str, known_ids: set[str]) -> dict[str, Any]:
+    """Pull {ruleIds, reason} out of an LLM response, tolerating code fences and
+    surrounding prose, and drop any id that is not a real rule in this project.
+
+    Returns `hallucinated` separately so the caller can surface it rather than
+    silently swallowing a model mistake.
+    """
+    raw = (text or "").strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-zA-Z]*\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw).strip()
+
+    parsed: Any = None
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group(0))
+            except (ValueError, TypeError):
+                parsed = None
+
+    if not isinstance(parsed, dict):
+        return {"ruleIds": [], "reason": "", "hallucinated": [], "parsed": False}
+
+    candidates = parsed.get("ruleIds")
+    if not isinstance(candidates, list):
+        candidates = []
+
+    selected: list[str] = []
+    hallucinated: list[str] = []
+    for item in candidates:
+        rule_id = str(item).strip()
+        if not rule_id:
+            continue
+        if rule_id in known_ids:
+            if rule_id not in selected:
+                selected.append(rule_id)
+        elif rule_id not in hallucinated:
+            hallucinated.append(rule_id)
+
+    reason = parsed.get("reason")
+    return {
+        "ruleIds": selected,
+        "reason": str(reason).strip() if isinstance(reason, str) else "",
+        "hallucinated": hallucinated,
+        "parsed": True,
+    }
+
+
+def select_rules_for_deletion(
+    project: str, request: str, session: Any = None
+) -> dict[str, Any]:
+    """Resolve a natural-language deletion request to concrete Rule_Ids.
+
+    Selection only -- nothing is deleted here. Returns the matched rules (with
+    their SWRL text so a confirmation dialog can show what they actually say),
+    plus any ids the model invented, which are reported and never acted on.
+    """
+    rules = fetch_rules_for_selection(project, session=session)
+    if not rules:
+        return {"project": project, "request": request, "matched": [], "reason": "", "hallucinated": []}
+
+    known = {r["ruleId"]: r for r in rules}
+
+    catalogue = "\n".join(
+        f"- {r['ruleId']}: {r['swrl'] or r['description'] or '(no text)'}" for r in rules
+    )
+    prompt = (
+        f"Deletion request: {request}\n\n"
+        f"Rules in project '{project}':\n{catalogue}\n\n"
+        "Which of these rules does the request ask to delete?"
+    )
+
+    master_secret = os.getenv("LLM_MASTER_SECRET", "")
+    settings = load_persisted_llm_settings()
+    provider, model, api_key = resolve_active_provider(settings, master_secret)
+    adapter = get_adapter(provider, settings.get("baseUrl"))
+    response = adapter.generate(
+        GenerateRequest(prompt=prompt, system=_RULE_SELECTION_SYSTEM, model=model, provider=provider),
+        api_key,
+    )
+
+    outcome = _parse_selection_response(response.text, set(known))
+    return {
+        "project": project,
+        "request": request,
+        "matched": [known[rid] for rid in outcome["ruleIds"]],
+        "reason": outcome["reason"],
+        "hallucinated": outcome["hallucinated"],
     }
