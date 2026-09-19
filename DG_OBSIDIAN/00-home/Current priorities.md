@@ -64,10 +64,20 @@ date: 2026-07-18
 - **Early gates:** Phase 40 has a narrow V8 preflight; v9.1 and v10.0 have activation gates; v10.0 Phase 47 has a rule-partition prerequisite. Plan-check review completed and dependency/evidence/dirty-tree corrections applied.
 - **Next:** finish/verify v9.0 Phase 40 as appropriate, then activate future milestones only through deliberate GSD transitions. Do not copy the full v11.0 scope into v9.1 or v10.0.
 
-## Current T1 ITcon R15.4 state
+## Current T1 ITcon R15.6 state
+
+- **T1 ITcon R15.6 — Title and Keywords Finalisation** — ✅ 2026-09-19. **Complete.** Новое название (100 символов, 2 строки вместо 3, соответствие требованиям ITcon):
+  ```
+  THE DESIGN GRAMMAR ONTOLOGY: A SEMANTIC CORE FOR
+  DESIGN-INTENT PERSISTENCE AND RULE-BASED VALIDATION
+  ```
+  **Убрано:** CROSS-PLATFORM (противоречит §2.4, пересечение с precedent work), DATA-DRIVEN (декоративное). **Добавлено:** PERSISTENCE (ключевой вопрос §7). Обновлены три места: cover page, заголовок статьи, REFERENCE-строка. Целостность подтверждена: 220 para = 220, 6 tables, 13 images, line numbering в 2 разделах.
+
+  **Ключевые слова (рекомендация):** Design Grammars; SWRL; Compliance Checking; openBIM; Design State (5 слов, соответствие лимиту ITcon 2026). Текущее состояние: 7 слов (выше лимита). Окончательное решение за пользователем.
+
+  **Осталось:** ключевые слова — выбрать 5 из текущего набора или согласиться с рекомендацией; заполнить OJS-форму с рекомендациями рецензентов (5 human reviewers, разные организации); пересчитать нумерацию страниц footer'а (cover page сдвигает на единицу); сборка финального PDF.
 
 - **T1 ITcon R15.4 G-series revision** — ✅ G1A (§2.2), G2A (§3.2), and G3 (§4, terminology, evidence boundary, §5.4 calibration) applied to `Publications/T1_ITcon_DG_Draft_R15.4.docx`. Verified: ZIP/XML integrity, 37 package parts, 222 body paragraphs, 6 tables, 5 tracked insertions, 0 tracked deletions, sequential Table 1–6 captions, namespace integrity, and byte-preservation of all package parts except `word/document.xml`. SHA-256: `75df78936bc0c97765f826802a7f66af1af1cb34f38c823d01934dd1582fd1ba`.
-- **Open before next revision:** manually open R15.4 in Word; visually inspect §2.2, §3.2, §4, §5.4, Table 3, Figure 2, and Figure 10; decide whether to add an explicit Figure 10 citation; regenerate the PDF after the final DOCX is accepted. H14 and the bounded §2.2/§3.1/§3.2 architecture wording are now applied through Word MCP; proposed Figure 2 H14 remains at `Publications/figures/R15.4_proposed/` pending figure approval and insertion.
 
 ## Upcoming
 
