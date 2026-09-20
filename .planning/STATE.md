@@ -5,10 +5,10 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
 status: ready_to_plan
-stopped_at: v9.0 override closeout complete; v12.0 activation after control-plane reconciliation
-last_updated: "2026-09-19T23:30:00+01:00"
+stopped_at: Phase 1200 context gathered (blocked on GATE12-01 reconciliation)
+last_updated: "2026-09-20T00:12:35.423Z"
 last_activity: 2026-09-19
-last_activity_desc: v9.0 archived with accepted debt; v12.0 isolated package activated; standalone GSD control-plane reconciliation is the next action
+last_activity_desc: v9.0 override closeout complete; v12.0 package activated with accepted carry-forward debt
 progress:
   total_phases: 6
   completed_phases: 0
@@ -448,9 +448,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-07-28T19:49:12.323Z
-Stopped at: Phase 40 context gathered
-Resume file: .planning/phases/40-e2e-validation-and-docs/40-CONTEXT.md
+Last session: 2026-09-20T00:12:35.406Z
+Stopped at: Phase 1200 context gathered (blocked on GATE12-01 reconciliation)
+Resume file: .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-CONTEXT.md
 
 ## Performance Metrics
 
