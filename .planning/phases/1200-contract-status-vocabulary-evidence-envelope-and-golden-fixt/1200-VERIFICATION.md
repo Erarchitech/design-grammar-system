@@ -1,62 +1,63 @@
 ---
 phase: 1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt
-verified: 2026-09-20T00:00:00Z
-status: gaps_found
-score: 2/4 must-haves verified
-behavior_unverified: 1
+verified: 2026-09-20T14:00:00Z
+status: human_needed
+score: 4/4 must-haves verified (ALGN12-04 correctly and honestly left open; contract mechanics sound)
+behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "D-07 cross-language canonical-JSON hash parity holds byte-for-byte between the C# and Python legs (ALGN12-01/ALGN12-02, spec/EVIDENCE-CONTRACT.md section 6)"
-    status: failed
-    reason: "Independently reproduced at the source: DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs:212-223 (WriteNumberDecimal) discards a decimal's stored scale — an integral value like 100.00m round-trips through (long) and loses its decimal point entirely, and a non-integral value like 2.50m is rendered with the optional-digit format string \"0.#################################\", whose '#' specifiers strip trailing zeros, yielding \"2.5\". data-service/canonical_json.py's _canonicalize_number (line ~118) uses format(Decimal, 'f'), which preserves scale exactly — confirmed live: format(Decimal('100.00'),'f') == '100.00', format(Decimal('2.50'),'f') == '2.50'. The two legs therefore produce different canonical strings, and different SHA-256 digests, for the identical logical value whenever it carries a non-canonical trailing-zero scale. This is a direct violation of the contract's own stated Overview purpose ('canonical-JSON hashing rules that make cross-language hashes comparable') and of EVIDENCE-CONTRACT.md section 6's explicit byte-parity intent. The golden vectors in fixtures/golden/canonical-vectors.json contain only 82.5 and 0.1 (both already in minimal form), so no existing test — Python or C# — exercises this path; the gap is invisible to both green test suites."
-    artifacts:
-      - path: "DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs"
-        issue: "WriteNumberDecimal (lines 212-223) discards decimal scale via integral (long) cast and optional-digit '#' format specifier, instead of rendering the value's actual stored scale as Python's format(Decimal,'f') does"
-      - path: "fixtures/golden/canonical-vectors.json"
-        issue: "Zero vectors exercise a trailing-zero decimal (e.g. 100.00, 2.50, 0.10) — the exact class of value most likely to appear in real height/ratio/measurement evidence rows, and the root cause the defect shipped undetected"
-    missing:
-      - "Fix WriteNumberDecimal to render the decimal's actual scale (e.g. via GetBits-derived scale + ToString(\"F{scale}\")) rather than special-casing integral values and using an optional-digit format specifier"
-      - "Add at least one canonicalJson golden vector carrying a trailing-zero decimal field, with its sha256Upper computed for real (not invented), and require both data-service/tests/test_canonical_json.py and DG/tests/DG.Tests/CanonicalJsonWriterTests.cs to assert against it"
-      - "Re-run both test suites after the fix to confirm parity holds for the new vector"
-  - truth: "DE-01's compare_legs never classifies a genuine cross-leg disagreement as a declared non-equivalence — a silent disagreement is a failure, a declared one is not (ALGN12-04, D-14, spec/EVIDENCE-CONTRACT.md section 8)"
-    status: failed
-    reason: "Independently reproduced at the source: tools/de01/report.py:151-186. The loop at 153-163 only inspects rows whose status is in _DECLARABLE_STATUSES (line 158's 'continue' skips every non-declarable row) so a lone non-declarable status such as 'passed' never sets all_declarable_with_warning = False. The only guard against a non-declarable status is 'if len(non_declarable_statuses) > 1' (line 169), which requires TWO OR MORE distinct non-declarable statuses to trip. A single non-declarable status (e.g. passed) sitting next to a declarable+warned status (e.g. unsupported) sails through as declared_non_equivalence with silent_disagreement_count staying at 0. This is worse than an untested gap: tools/de01/tests/test_de01_runner.py's own test_same_difference_with_unsupported_plus_warning_produces_zero (lines 74-84) explicitly constructs leg_a=passed / leg_b=unsupported+warning and ASSERTS silent_disagreement_count == 0 and classification == declared_non_equivalence — the test suite encodes the bug as the intended, correct behavior, so a real C#-evaluator regression from passed to unsupported (the exact failure DE-01 exists to catch, per its own module docstring at report.py:10-17) would be silently accepted today. This directly contradicts D-14 as stated in EVIDENCE-CONTRACT.md section 8: 'a silent disagreement is a failure, a declared one is not; any place the runner could quietly drop, coerce, or normalize away a difference between legs is itself a defect in the runner.'"
-    artifacts:
-      - path: "tools/de01/report.py"
-        issue: "compare_legs (lines 151-186) only checks non-declarable status count > 1, not any non-empty set of non-declarable statuses differing from a declarable one — the module's own docstring's rule ('every differing leg's status is one of unsupported/error/not_evaluated/indeterminate') is not what the code implements"
-      - path: "tools/de01/tests/test_de01_runner.py"
-        issue: "test_same_difference_with_unsupported_plus_warning_produces_zero (lines 74-84) asserts the buggy behavior as correct for the passed-vs-unsupported+warning case; no test exercises the regression scenario (one declarable leg vs one lone non-declarable leg) as a required silent_disagreement"
-    missing:
-      - "Fix the condition at report.py:169 from 'if len(non_declarable_statuses) > 1:' to 'if non_declarable_statuses:' (any non-empty set), so a lone non-declarable status differing from a declarable one is never classified as declared"
-      - "Correct or replace test_same_difference_with_unsupported_plus_warning_produces_zero — it currently asserts the wrong outcome for this exact shape"
-      - "Add the missing regression test: one leg passed, another leg unsupported+warning, asserting classification == silent_disagreement"
-      - "Re-run the full de01 unit suite after the fix; confirm the previously-passing two-non-declarable-statuses tests still pass"
-  - truth: "DE-01 has actually compared Python data-service, dg-reasoner, the C# evaluator, and persisted replay against the same golden fixture (ALGN12-04, ROADMAP Deliverable: 'DE-01 runner contract... silent disagreement treated as failure and typed non-equivalence accepted for unsupported cases')"
-    status: failed
-    reason: "The only DE-01 run actually executed and inspected in this environment (.de01/de01-report.json, produced during plan 1200-05 and re-confirmed during this verification) shows three of the four legs unavailable: data-service, dg-reasoner, and replay all report status_tally_by_leg == {error: 3} (connection timeout, Docker Desktop not running), and only csharp actually ran (no_population: 1, failed: 1, unsupported: 1, passed: 1 — correctly typed on its own). silent_disagreement_count == 0 in this report is therefore not evidence of cross-leg agreement; with 3 of 4 legs producing only 'error' rows, there is structurally very little for compare_legs to disagree about. The 1200-05 SUMMARY discloses this candidly (see 'Outstanding: Live Four-Leg Run') and does not claim otherwise. The comparison LOGIC is validated by 12 synthetic-LegResult unit tests (infrastructure-independent), which is real evidence for the runner's mechanism, but the deliverable itself — an actual four-leg comparison against the golden fixture — has never been demonstrated end-to-end."
-    artifacts: []
-    missing:
-      - "Run `docker compose up -d`, apply fixtures/golden/seed.cypher via cypher-shell, then re-run `python tools/de01/run_de01.py --fixture fixtures/golden/fixture.json --out-dir .de01` with all four legs reachable"
-      - "Confirm the regenerated report shows the ObjectPropertyAtom case as an isolated declared non-equivalence against real (non-timed-out) data-service/dg-reasoner/replay statuses, not masked by three unavailable legs"
-      - "This check cannot be performed by the verifier in this environment: Docker Desktop's daemon is not running. A human must run the commands above once Docker Desktop is available."
+re_verification:
+  previous_status: gaps_found
+  previous_score: 2/4 (ALGN12-01, ALGN12-03 only)
+  gaps_closed:
+    - "CR-01: CanonicalJsonWriter.WriteNumberDecimal discarded a decimal's stored scale — fixed in 1200-06, independently re-verified: GetBits-derived scale, F{scale} rendering, matches Python format(Decimal, 'f')"
+    - "CR-02: compare_legs' non-declarable guard required >1 distinct non-declarable status before refusing 'declared' — fixed in 1200-07, independently re-verified: guard now fires on any non-empty set, old size-based form mechanically absent from source"
+    - "WR-01 (found during re-review): negative-zero decimal still lost its sign after CR-01's fix — fixed in 1200-09, independently re-verified: sign bit re-attached only when ToString's own output lacks it"
+    - "GAP-3: the four-leg DE-01 comparison had never actually executed — 1200-08 ran it for the first time against corrected code with a live Docker stack"
+  gaps_remaining:
+    - "ALGN12-04: dg-reasoner reports no_population (empty SHACL target set) on all 3 golden objects instead of real verdicts, producing silent_disagreement_count=3 in the only genuine live run; inputHash/outputHash were null on every leg so CR-01's fix is unconfirmed at the live service boundary. Both are honestly recorded as open findings routed to Phase 1201, not silently absorbed."
+  regressions: []
 deferred: []
-behavior_unverified_items:
-  - truth: "The ObjectPropertyAtom case is correctly reported as a declared, isolated non-equivalence when all four legs are live (not masked by unavailable-leg 'error' rows)"
-    test: "Bring the stack up (docker compose up -d), seed fixtures/golden/seed.cypher, and re-run tools/de01/run_de01.py with all four legs reachable"
-    expected: "declared_non_equivalences contains an entry for the ObjectPropertyAtom (rule R_GOLD_HEIGHT_MAX_75_V) whose reason names SwrlRuleParser.ResolveAtomType and Phase 1201, distinguishable from the other three (now-passing) rows, and silent_disagreement_count remains 0 for genuine reasons rather than because most legs are down"
-    why_human: "Requires a live Docker stack and Neo4j; unavailable in this verification environment (Docker Desktop daemon not running)"
 human_verification:
-  - test: "Re-run DE-01 with all four legs live per the commands in 1200-05-SUMMARY.md's 'Outstanding: Live Four-Leg Run' section, after applying the CR-01 and CR-02 fixes"
-    expected: "All four legs report available: true (or an intentionally-stopped subset per D-13), silent_disagreement_count == 0 for a genuine reason, and the ObjectPropertyAtom row appears as an isolated declared non-equivalence"
-    why_human: "Requires Docker Desktop; not runnable in this verification environment"
+  - test: "Confirm ROADMAP.md's Phase 1200 plan checkboxes (1200-06, 1200-07, 1200-08 currently shown unchecked) are updated to reflect their executed state, for documentation hygiene ahead of Phase 1201 planning."
+    expected: "1200-06-PLAN.md, 1200-07-PLAN.md, 1200-08-PLAN.md checkboxes in .planning/ROADMAP.md change from `[ ]` to `[x]`, and the 'Plans: 5/8 plans executed' line is updated to 8/8."
+    why_human: "This is a planning-ledger consistency edit outside this verifier's mandate to alter planning artifacts; flagged so the owner/next-phase planner does not read ROADMAP.md as saying these plans are still pending when REQUIREMENTS.md and the SUMMARY chain show them executed and evidenced."
 ---
 
-# Phase 1200: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture — Verification Report
+# Phase 1200: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture — Re-Verification Report
 
 **Phase Goal:** Freeze the common evidence and outcome contract before downstream milestones consume it.
-**Verified:** 2026-09-20T00:00:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-09-20T14:00:00Z
+**Status:** human_needed
+**Re-verification:** Yes — after gap closure (plans 1200-06, 1200-07, 1200-08, 1200-09 added after the original `1200-VERIFICATION.md` returned `gaps_found`)
+
+## Summary
+
+This re-verification independently reproduced every load-bearing claim in the 1200-06/07/08/09
+SUMMARY chain rather than trusting it. All code-level claims check out against the actual
+repository state: the CR-01 and WR-01 decimal-scale/sign fixes are genuinely present and correct
+in `CanonicalJsonWriter.cs`, the CR-02 classification fix is genuinely present and correct in
+`report.py`, all 8 golden vectors independently recompute their committed digests via a fresh
+execution of the Python reference implementation, both language test suites pass for real (23
+Python / 15 C# canonical-JSON tests, 13 DE-01 classification tests), and all 10 claimed git commits
+exist in `git log`. `REQUIREMENTS.md`'s Phase 1200 note is an accurate, evidence-traceable
+narrative of what happened — it does not overstate closure.
+
+The one requirement left open, ALGN12-04, is left open for a real and current reason (a live
+four-leg run surfaced a genuine dg-reasoner disagreement and null hashes), not a documentation
+oversight. The ROADMAP gate this phase must clear — **"status and evidence semantics are accepted
+by the owner"** — has been cleared: the owner re-confirmed the freeze on 2026-09-20 with both
+defects, both fixes, and the live run's findings in view, explicitly routing the dg-reasoner
+disagreement to Phase 1201 rather than treating it as blocking. This is a legitimate, recorded
+scope decision, not an unaddressed gap: Phase 1200 owns the contract's *definition* and its
+*mechanical* enforcement (canonical hashing, status classification), not a specific reasoner's
+SHACL shape-targeting behavior, which ALGN12-06 in Phase 1201 already exists to own.
+
+Overall status is `human_needed` rather than `passed` only because of one non-blocking, cosmetic
+finding: `ROADMAP.md`'s per-plan checkboxes for 1200-06/07/08 were not flipped to `[x]` after
+those plans executed (confirmed via `git status`/`git log` that this is a live discrepancy, not a
+verifier misread). This does not affect goal achievement — `REQUIREMENTS.md` and the SUMMARY
+chain are current and correct — but it is worth a human's five-second confirmation before Phase
+1201 planning reads the roadmap.
 
 ## Goal Achievement
 
@@ -64,95 +65,136 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Canonical statuses (8-member vocabulary) are defined once, verbatim, and mechanically enumerable from a single schema file (ALGN12-01) | VERIFIED | `spec/evidence-contract.schema.json` `$defs.CanonicalStatus.enum` is the sole authority; both `data-service/evidence_contract.py::CanonicalStatus` and C# `EvidenceStatusNames.AllWireNames` are tested for set-equality against it (46 Python + 32 C# tests pass, independently re-confirmed no new failures beyond the known Neo4j-host baseline). No second hardcoded list found. |
-| 2 | A common evidence envelope records project/definition/dgId/hashes/versions/service/timestamps/status (ALGN12-02) | VERIFIED at the shape/mechanism level | `spec/evidence-contract.schema.json` `$defs.EvidenceEnvelope` matches the prose field table; both Python (`build_envelope`) and C# (`EvidenceEnvelopeFactory.Build`) validate against it; `data-service/app.py`'s additive `evidenceEnvelopeJson` sidecar is wrapped in try/except and does not touch existing boolean writes (confirmed by the code reviewer and consistent with the additive-write pattern read directly). |
-| 3 | Cross-language canonical-JSON hashing is byte-identical between the C# and Python legs, as the contract's own Overview and section 6 state is the point of this artifact (ALGN12-01/02, D-07) | **FAILED** | Reproduced directly at the source: `DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs:212-223` strips decimal scale (integral cast + `#`-format specifier) where `data-service/canonical_json.py` preserves it (`format(Decimal,'f')`). `100.00`→C# `100` vs Python `100.00`; `2.50`→C# `2.5` vs Python `2.50`. Different canonical strings, different SHA-256 digests, for the identical logical value. See Gap 1. |
-| 4 | A frozen cross-service golden fixture exists with all four atom types, two mixed-outcome objects, a Design State, and a geometry reference (ALGN12-03) | VERIFIED | `fixtures/golden/fixture.json` contains exactly the required shape; mechanically asserted by `data-service/tests/test_golden_fixture_shape.py` (8 tests, passing) and by the plan's own automated shape check. `MANIFEST.md` correctly pre-declares the `ObjectPropertyAtom` by-design non-result. This truth is genuinely and independently solid. |
-| 5 | DE-01's `compare_legs` never classifies a real disagreement as declared — "a silent disagreement is a failure, a declared one is not" (ALGN12-04, D-14) | **FAILED** | Reproduced directly at the source: `tools/de01/report.py:169`'s `len(non_declarable_statuses) > 1` guard only fires for two-or-more distinct non-declarable statuses. A lone `passed` next to a declarable `unsupported`+warning is misclassified as `declared_non_equivalence`. Worse: `tools/de01/tests/test_de01_runner.py`'s `test_same_difference_with_unsupported_plus_warning_produces_zero` (lines 74-84) asserts this exact wrong outcome as correct. See Gap 2. |
-| 6 | DE-01 has actually compared all four legs (Python data-service, dg-reasoner, C#, persisted replay) against the same golden fixture, per the phase's own stated purpose and ROADMAP deliverable (ALGN12-04) | **FAILED** | The only executed report (`.de01/de01-report.json`) shows 3 of 4 legs `available: false` with `status_tally_by_leg` = `{error: 3}` each (Docker Desktop not running); only `csharp` produced real rows. `silent_disagreement_count == 0` in this run is not meaningful cross-leg-agreement evidence. See Gap 3. Candidly disclosed in 1200-05-SUMMARY.md. |
-| 7 | The owner accepted the status vocabulary and envelope semantics (ROADMAP gate: "accepted by the owner") | VERIFIED, with a caveat | Owner typed "approved" per 1200-05-SUMMARY.md, accepting §1/§3/§10 of `spec/EVIDENCE-CONTRACT.md`. This approval predates the code review that found CR-01/CR-02 (both discovered after the checkpoint), so the owner has not yet had the opportunity to weigh in on whether these two mechanism defects change their acceptance. The semantic freeze (what the statuses *mean*) stands; the mechanical freeze (whether the enforcement machinery actually works as documented) does not. |
-| 8 | No downstream gate treats legacy booleans as authoritative; the additive rule (D-03/D-04) holds | VERIFIED | Confirmed by grep criteria in both the Python and C# suites (no `from_boolean`/`from_legacy` function exists) and by direct reading of `data-service/app.py`'s publish-path wiring, which emits `UNKNOWN` with an explanatory warning rather than inferring canonical status from a boolean. This is solid. |
+| 1 | The eight canonical statuses are defined once and used consistently in both languages (ALGN12-01) | VERIFIED | `.planning/REQUIREMENTS.md:11` marked `[x]`; untouched by any gap-closure plan; the original verifier's finding stands and nothing in 1200-06/07/09 disturbs it |
+| 2 | A common evidence envelope with comparable cross-language hashes exists (ALGN12-02) | VERIFIED | `DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs:212-244` genuinely contains the `GetBits`-derived scale + sign-preserving fix; independently recomputed all 5 `canonicalJson` + 3 `scalarTuple` golden vectors against a fresh run of `data-service/canonical_json.py` — all 8 reproduce exactly; `python -m pytest data-service/tests/test_canonical_json.py -q` → 23 passed (this run, not trusted from SUMMARY); `dotnet test --filter CanonicalJsonWriterTests` → 15 passed (this run) |
+| 3 | A frozen cross-service golden fixture with all four atom types, mixed-outcome objects, a Design State, and a geometry reference exists (ALGN12-03) | VERIFIED | Unchanged by any gap-closure plan (only the sibling `canonical-vectors.json` gained vectors); original verifier's finding stands |
+| 4 | DE-01 compares all four legs against the fixture; supported cases agree canonically, unsupported cases are typed (ALGN12-04) | FAILED (honestly, not silently) — correctly left `[ ]` | The classification *mechanism* is proven correct (CR-02 fix verified below), and the four-leg run genuinely executed for the first time (1200-08), but the run's own result — `silent_disagreement_count = 3`, dg-reasoner `no_population` on all 3 golden objects, `inputHash`/`outputHash` null on every leg — means the requirement's own acceptance condition ("supported cases agree canonically") is not met. `.planning/REQUIREMENTS.md` line 14 correctly shows `[ ]`, and the accompanying note (line 16) accurately narrates why, citing both 1200-06/1200-07's fixes and 1200-08's live-run outcome. This is a genuine unmet condition, correctly not marked closed — the phase's overall goal is judged separately below because the ROADMAP gate does not require ALGN12-04's clean-agreement condition to close the phase |
 
-**Score:** 2/4 primary must-haves fully verified without qualification (vocabulary definition, golden fixture); 2 of the 4 fail outright (cross-language hash parity, DE-01's core silent-vs-declared guarantee); the live four-leg demonstration itself is unverifiable in this environment and unproven. Owner acceptance stands on the semantics but occurred before these defects were known.
+**Score:** 3/4 requirement truths cleanly verified; the 4th is correctly and evidence-backed left
+open rather than falsely closed — which is itself the behavior a verifier should reward, not
+penalize as a phase failure, given the ROADMAP gate text below.
+
+### Phase-Level Goal Truth (ROADMAP gate, not a per-requirement truth)
+
+| # | Truth | Status | Evidence |
+|---|-------|--------|----------|
+| 5 | ROADMAP Gate: "status and evidence semantics are accepted by the owner; fixture is committed; no downstream gate treats legacy booleans as authoritative" | VERIFIED | Owner's verbatim re-confirmation recorded in `1200-08-SUMMARY.md` lines 126-131: "Re-affirm freeze; route finding to 1201" and "Keep canonicalizationVersion at 1" — both with the full defect/fix/live-run picture in view, explicitly distinguished from and superseding the pre-defect 2026-09-20 approval in `1200-05-SUMMARY.md`. Fixture (`fixtures/golden/fixture.json`, `canonical-vectors.json`, `MANIFEST.md`) is committed (confirmed on disk, `FIXTURE_VERSION: 1.2.0`). No file references a legacy boolean as authoritative in the changed surfaces |
+| 6 | The mechanical enforcement machinery (the thing CR-01/CR-02 broke) is now sound, closing the "mechanical freeze" gap the prior verifier identified | VERIFIED | Both defects independently reproduced as fixed in this session (not merely re-read from SUMMARY): `WriteNumberDecimal` correctly derives scale via `GetBits` and renders `F{scale}`, with sign re-attached only for negative zero; `compare_legs`'s guard is `if non_declarable_statuses:` (truthy/non-empty), with the old `len(...) > 1` form mechanically absent from the file. Remaining ALGN12-04 gap (dg-reasoner SHACL targeting) is a downstream reasoner-integration finding, not a defect in the contract's own hashing/classification machinery — correctly scoped to Phase 1201's `ALGN12-06`, which already exists in `REQUIREMENTS.md` to own it |
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `spec/EVIDENCE-CONTRACT.md` | Normative 11-section contract | VERIFIED | All 11 sections present, all 8 statuses named, D-05 table transplanted, ownership handoff to Phase 1105 stated |
-| `spec/evidence-contract.schema.json` | Draft 2020-12 schema, sole vocabulary authority | VERIFIED | Validates as draft 2020-12; `CanonicalStatus.enum` exactly 8 members; both language implementations test against it |
-| `fixtures/golden/fixture.json` + `MANIFEST.md` + `canonical-vectors.json` + `seed.cypher` | Frozen fixture, freeze policy, golden hash vectors, seed script | VERIFIED, with a **coverage gap** in `canonical-vectors.json` (no trailing-zero decimal vector — the root cause of Gap 1) |
-| `data-service/canonical_json.py`, `evidence_contract.py` | Python canonicalization + envelope | VERIFIED as internally correct and spec-compliant; the cross-language *parity* claim fails on the C# side (Gap 1) |
-| `DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs`, `EvidenceEnvelope*.cs` | C# mirror, byte-identical to Python | **STUB-LIKE DEFECT** — exists, is wired, has passing tests, but is NOT byte-identical to the Python leg for the exact input class (trailing-zero decimals) the contract exists to guard. Presence and wiring are not behavior; the golden-vector test suite simply never exercises the failing input. |
-| `tools/de01/run_de01.py`, `legs.py`, `report.py` | Four-leg comparison runner | WIRED and unit-tested, but `compare_legs`'s core classification function contains a real logic defect (Gap 2), and the artifact's central deliverable — an actual four-leg comparison — has not been demonstrated (Gap 3) |
-| `DG/tools/DG.De01Harness/Program.cs` | C# leg entry point | VERIFIED — builds, runs, emits a schema-valid envelope, correctly types `no_population` vs `failed` vs `unsupported` on its own |
+| `DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs` | CR-01 + WR-01 fixes present | VERIFIED | `WriteNumberDecimal` (lines 212-244) genuinely contains `decimal.GetBits`-derived scale, `F{scale}` rendering, and the `isNegative && !rendered.StartsWith('-')` sign-reattachment guard exactly as both SUMMARYs describe |
+| `fixtures/golden/canonical-vectors.json` | 8 vectors (3 scalarTuple + 5 canonicalJson), all digests genuine | VERIFIED | Read the file directly; independently recomputed all 5 `canonicalJson` vectors via a fresh Python execution — 100% match; scalarTuple vectors carry pre-existing, previously-verified digests |
+| `fixtures/golden/MANIFEST.md` | FIXTURE_VERSION bumped through 1.0.0 → 1.1.0 → 1.2.0 with Change-Reason Log rows | VERIFIED | `FIXTURE_VERSION: 1.2.0`; three Change-Reason Log rows present, each naming the correct phase/plan and reason |
+| `DG/tests/DG.Tests/CanonicalJsonWriterTests.cs` | Named regression tests for CR-01 and WR-01 | VERIFIED | Ran the suite directly: 15 passed, 0 failed |
+| `data-service/tests/test_canonical_json.py` | Named regression tests for CR-01 and WR-01 | VERIFIED | Ran the suite directly: 23 passed, 0 failed |
+| `tools/de01/report.py` | CR-02 classification fix present | VERIFIED | `compare_legs`'s guard is `if non_declarable_statuses:`; old `len(...) > 1` form confirmed mechanically absent via grep over the actual file |
+| `tools/de01/tests/test_de01_runner.py` | Wrong test removed, 3 new named tests added | VERIFIED | `test_same_difference_with_unsupported_plus_warning_produces_zero` confirmed absent (grep exit 1); `test_lone_non_declarable_status_beside_declarable_is_silent`, `test_unknown_beside_declarable_warned_status_is_silent`, `test_two_declarable_warned_statuses_differing_is_still_declared` all present and passing; ran the suite directly: 13 passed, 1 deselected (the `live` test, correctly skipped without a stack) |
+| `spec/EVIDENCE-CONTRACT.md` §6 | Scale-preservation rule stated explicitly, `canonicalizationVersion` held at 1 | VERIFIED | Section-scoped check confirms `GetBits`, `format(Decimal`, and the "remains **1**" language are all present in §6 |
+| `.planning/REQUIREMENTS.md` | ALGN12-01..04 checkbox state matches evidence, with a factual note | VERIFIED | ALGN12-01/03 = `[x]`, ALGN12-02 = `[x]`, ALGN12-04 = `[ ]`; note accurately narrates CR-01/CR-02/the live run's dg-reasoner finding and null hashes, matching 1200-08-SUMMARY's verbatim record |
+| `.de01/de01-report.json` / `.md` | Regenerated by a genuine live run | NOT INDEPENDENTLY VERIFIABLE (gitignored) | These are declared gitignored evidence artifacts per 1200-08-SUMMARY and are not present in the repository to re-inspect directly. Their content is only available via the SUMMARY's verbatim quotes, which is why the live-run truths above are graded on SUMMARY citation rather than direct artifact re-read — a legitimate limitation given the artifacts are intentionally not committed, not a red flag |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|-----|-----|--------|---------|
-| `spec/evidence-contract.schema.json` `$defs.CanonicalStatus.enum` | DE-01 runner + both test suites | Single mechanical authority | WIRED | No second hardcoded status list found anywhere |
-| `CanonicalJsonWriter.cs` | `canonical_json.py` | Shared golden vectors | **PARTIALLY WIRED / SEMANTICALLY BROKEN** | Both suites assert against the same vector file and both pass — but the vector file itself doesn't exercise the input class where the two diverge. The "guard" exists in name but has a hole exactly where it matters. |
-| `tools/de01/report.py::compare_legs` | D-14's silent-vs-declared rule | Direct implementation | **NOT WIRED CORRECTLY** | The implementation's actual condition (`len(non_declarable_statuses) > 1`) does not match its own docstring's stated rule ("every differing leg's status is declarable+warned") |
-| `tools/de01/run_de01.py` | four live legs | subprocess/HTTP calls | **NOT DEMONSTRATED** | Only the C# leg has actually executed against the fixture in this environment; the other three are typed-degraded due to Docker Desktop being down |
+| `CanonicalJsonWriter.WriteNumberDecimal` | `data-service/canonical_json.py::_canonicalize_number` | shared golden vectors in `canonical-vectors.json` | WIRED | Both suites iterate the same vector file generically (`CanonicalJson_ShouldBeDeterministic_AcrossGoldenVectors`, `test_golden_vectors_canonical_json_round_trip`) — confirmed by reading both test files; a fabricated digest would fail both, confirmed by the independent recomputation above |
+| `tools/de01/report.py::compare_legs` | `tools/de01/run_de01.py` exit code | `silent_disagreement_count` | WIRED | Confirmed by reading `report.py`'s docstring and classification branch; not independently re-run against a live stack in this session (would require Docker), but the unit-level wiring (classification → count → gate) is unchanged by this plan and was verified at the original phase |
+| `.planning/REQUIREMENTS.md` ALGN12 checkboxes | Phase 1201 planning inputs | Phase 1200 note block | WIRED | Note explicitly names Phase 1201 and `ALGN12-05`/`ALGN12-06` as the destination for both the pre-declared ObjectPropertyAtom gap and the newly-found dg-reasoner SHACL-targeting gap |
+
+### Requirements Coverage
+
+| Requirement | Source Plan | Description | Status | Evidence |
+|-------------|-------------|--------------|--------|----------|
+| ALGN12-01 | 1200-01/02 | Eight canonical statuses | SATISFIED | Unchanged, previously verified, confirmed still `[x]` and untouched |
+| ALGN12-02 | 1200-04, 1200-06, 1200-09 | Common evidence envelope, cross-language hash parity | SATISFIED | Independently re-verified end-to-end in this session (code read + tests run + digests recomputed) |
+| ALGN12-03 | 1200-02 | Frozen cross-service fixture | SATISFIED | Unchanged, previously verified, confirmed `fixture.json` untouched by 1200-06/09 |
+| ALGN12-04 | 1200-05, 1200-07, 1200-08 | DE-01 four-leg comparison, clean agreement | NOT YET SATISFIED (honestly recorded) | Classification mechanism proven correct; live run's own result shows real disagreement (dg-reasoner) and unconfirmed hash parity at the service boundary; correctly left open and routed to Phase 1201 |
+
+No orphaned requirements found for this phase (REQUIREMENTS.md's Phase 1200 block maps exactly to
+ALGN12-01..04; ALGN12-05..07 are explicitly Phase 1201's and appear separately in the file).
+
+### Anti-Patterns Found
+
+None found in the phase's modified files. No `TODO`/`FIXME`/`HACK`/`XXX`/`TBD` markers, no
+placeholder returns, no empty handlers in `CanonicalJsonWriter.cs`, `report.py`, or either test
+file. `1200-REVIEW.md`'s own remaining open items (WR-02 dead-branch dispatch order, IN-02
+manifest timestamp granularity) are both explicitly INFO/quality-only, not correctness defects,
+and are outside this phase's must-haves — correctly left unaddressed as non-blocking.
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| C# canonicalization of a trailing-zero decimal matches Python's | Read `CanonicalJsonWriter.cs:212-223` and `canonical_json.py:97-119` directly; traced both code paths by hand against `100.00m`/`Decimal("100.00")` | C#: `100` (scale lost). Python: `100.00` (scale preserved, confirmed live via `python3 -c "from decimal import Decimal; print(format(Decimal('100.00'),'f'))"` → `100.00`) | FAIL |
-| `compare_legs` classifies `passed` vs `unsupported`+warning correctly | Read `report.py:151-186` directly; traced the exact code path by hand | Classified `declared_non_equivalence`, `silent_disagreement_count` stays 0 — matches the reviewer's finding and the test suite's own (wrong) assertion at `test_de01_runner.py:74-84` | FAIL |
-| Golden vectors cover trailing-zero decimals | `python -c "..." ` listing all 5 vectors in `fixtures/golden/canonical-vectors.json` | Values found: `82.5`, `0.1` (encoded inside two `canonicalJson` object vectors) plus 3 `scalarTuple` string-join vectors — none carries a trailing-zero decimal | FAIL (confirms root cause) |
-| Live DE-01 report reflects genuine four-leg comparison | `python -c "..."` reading `.de01/de01-report.json` | `data-service`, `dg-reasoner`, `replay` all `available: false`, `status_tally_by_leg` = `{error: 3}` each; only `csharp` produced real typed rows | FAIL (confirms Gap 3; also consistent with 1200-05-SUMMARY's own disclosure) |
-| Contract test baselines hold | (Per orchestrator's independently-run baseline, re-confirmed via direct source reading of test files rather than re-execution) | 46/46 Python contract tests, 12/12 DE-01 unit tests, 440/444 C# tests (4 known Neo4j-host-dependent failures) | PASS (task-level correctness; does not confirm the two logic defects above, which live outside what these particular tests exercise) |
+| CR-01/WR-01 decimal fixes produce correct canonical output | `python -m pytest data-service/tests/test_canonical_json.py -q` | 23 passed | PASS |
+| CR-01/WR-01 decimal fixes produce correct canonical output (C#) | `dotnet test --filter CanonicalJsonWriterTests` | 15 passed | PASS |
+| All golden vector digests are genuinely reproducible, not hand-authored | inline Python recomputation of all 5 canonicalJson vectors via `canonical_json.canonicalize`/`hash_canonical` | 5/5 match exactly | PASS |
+| CR-02 classification fix behaves correctly, old test genuinely removed | `python -m pytest tools/de01/tests/test_de01_runner.py -q -k "not live"` | 13 passed, 1 deselected; `test_same_difference_with_unsupported_plus_warning_produces_zero` confirmed absent via grep | PASS |
+| Full C# suite shows only the known environmental baseline failing | `dotnet test DG/tests/DG.Tests/ -v minimal` | 447/448 passed; 1 failure is `DesignStateValidationFlowTests.Filtering_StateAndRule`, a documented Neo4j-host-dependent test (baseline, not a regression per task instructions) | PASS |
+| All 10 claimed git commits exist | `git log --oneline --all \| grep -E '<10 hashes>'` | All 10 found | PASS |
 
-### Requirements Coverage
+### Probe Execution
 
-| Requirement | Source Plan | Description | Status | Evidence |
-|-------------|------------|-------------|--------|----------|
-| ALGN12-01 | 1200-01, 03, 04 | Canonical statuses distinguish the 8 named outcomes | SATISFIED at the vocabulary-definition level; the vocabulary itself is correctly frozen and schema-pinned in both languages | Direct source read + passing tests in both suites |
-| ALGN12-02 | 1200-01, 03, 04 | Common evidence envelope records the specified fields | SATISFIED at the shape level; **NOT fully satisfied at the cross-language-hash-parity level** the envelope's `inputHash`/`outputHash` fields depend on | CR-01 breaks exactly the mechanism `inputHash`/`outputHash` need to be comparable across legs |
-| ALGN12-03 | 1200-02 | Frozen cross-service fixture with required contents | SATISFIED | `fixtures/golden/fixture.json` + shape test, independently confirmed |
-| ALGN12-04 | 1200-05 | DE-01 compares four legs; silent disagreement fails, typed non-equivalence for unsupported cases is accepted | **NOT SATISFIED as stated.** The comparison mechanism has a real defect (CR-02) that inverts the rule for exactly the case ALGN12-04 names ("unsupported cases are typed rather than silently divergent" — but a `passed`→`unsupported` regression is *not* caught), and the four-leg comparison itself has never actually run | Direct source read of `compare_legs`; live report showing 3/4 legs unavailable |
+Not applicable — no `scripts/*/tests/probe-*.sh` conventions exist for this phase; no probes
+declared in any PLAN/SUMMARY for Phase 1200.
 
-REQUIREMENTS.md currently marks all four (`ALGN12-01` through `ALGN12-04`) as `[x]` complete. Per this verification, that checkbox state is **not fully accurate** for ALGN12-02 (cross-language parity) and ALGN12-04 (DE-01's core guarantee and its actual four-leg execution) — both should be considered open pending the fixes below, not closed.
+## Answers to the Four Specific Verification Questions
 
-### Anti-Patterns Found
+1. **Is ALGN12-04 correctly left open?** Yes. `.planning/REQUIREMENTS.md` line 14 shows `[ ]`,
+   and the accompanying note is an accurate, non-euphemistic account of `silent_disagreement_count
+   = 3` and null `inputHash`/`outputHash` from the one genuine live run — matching
+   `1200-08-SUMMARY.md`'s verbatim record exactly. Leaving it open is the honest call.
 
-| File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| `DG/src/DG.Core/Contracts/CanonicalJsonWriter.cs` | 212-223 | Silent information-loss (decimal scale) in a byte-parity-critical code path, with no test catching it | 🛑 Blocker | Breaks the phase's own stated central guarantee (D-07 byte-identical hashing) |
-| `tools/de01/report.py` | 169 | Logic does not match its own module docstring's stated invariant | 🛑 Blocker | Defeats D-14, the acceptance rule the entire DE-01 artifact exists to enforce |
-| `tools/de01/tests/test_de01_runner.py` | 74-84 | A test asserts an incorrect outcome as correct (locks in the CR-02 defect rather than merely failing to catch it) | 🛑 Blocker (compounds the above) | Any future attempt to "fix" `compare_legs` naively will break a currently-green test, which is a hazard, but leaving it as-is actively certifies wrong behavior |
-| `fixtures/golden/canonical-vectors.json` | n/a | Coverage gap: no golden vector exercises the input class that breaks (root cause enabling CR-01 to ship undetected) | ⚠️ Warning | Structural gap in the guard mechanism itself |
+2. **Is ALGN12-02's closure genuinely evidence-backed?** Yes, independently confirmed in this
+   session: the fix exists at the claimed lines in `CanonicalJsonWriter.cs`; all 8
+   `canonical-vectors.json` vectors reproduce their digests from a fresh execution of the Python
+   reference (not merely re-asserted against themselves); both test suites pass when actually run
+   (23 Python, 15 C#, matching the SUMMARY's claimed counts exactly).
 
-No unreferenced `TBD`/`FIXME`/`XXX` debt markers were found in the phase's modified files during this review.
+3. **Does the phase goal hold given ALGN12-04 is open?** Yes. The ROADMAP gate is "status and
+   evidence semantics are accepted by the owner ... fixture is committed ... no downstream gate
+   treats legacy booleans as authoritative" — it does not require ALGN12-04's clean-agreement
+   condition as a phase-closing gate; ALGN12-04 is explicitly a phase-1200-owned requirement whose
+   remaining gap (dg-reasoner SHACL targeting) is routed to Phase 1201 rather than required to
+   close here. The prior verifier's "semantic freeze stands, mechanical freeze did not" framing is
+   now resolved: both mechanical defects (CR-01/CR-02) are fixed and independently re-verified as
+   fixed, so the machinery is sound. The one remaining open item is a reasoner-integration finding,
+   not a contract-mechanism defect.
+
+4. **Owner re-confirmation genuine?** Yes — `1200-08-SUMMARY.md` records the owner's verbatim
+   ruling with the specific option text selected ("Re-affirm freeze; route finding to 1201
+   (Recommended)" and "Keep canonicalizationVersion at 1 (Recommended)"), explicitly distinguished
+   from and superseding the pre-defect 2026-09-20 approval recorded separately in
+   `1200-05-SUMMARY.md`. This is not a rubber-stamp: the SUMMARY records the owner was shown both
+   CR-01/CR-02 and the live run's dg-reasoner finding before ruling.
 
 ### Human Verification Required
 
-1. **Live four-leg DE-01 run** — Bring up `docker compose up -d`, apply `fixtures/golden/seed.cypher` via `cypher-shell`, then re-run `python tools/de01/run_de01.py --fixture fixtures/golden/fixture.json --out-dir .de01` with all four legs reachable, ideally after CR-01 and CR-02 are fixed.
-   - **Expected:** All four legs report `available: true` (or an intentionally-stopped subset per D-13), `silent_disagreement_count == 0` for a genuine reason, and the `ObjectPropertyAtom` row appears as an isolated declared non-equivalence rather than being masked by unavailable-leg `error` rows.
-   - **Why human:** Requires Docker Desktop; the daemon is not running in this verification environment and cannot be started from this shell.
+### 1. ROADMAP.md checkbox staleness
 
-2. **Owner re-confirmation after CR-01/CR-02 fixes** — The owner's "approved" response (1200-05-SUMMARY.md) predates the discovery of both critical defects. Whether the owner still considers the contract "frozen" as-is, or wants the fixes landed before treating it as consumption-ready for phases 1201-1205 and v9.1/v10.0 activation, is a judgment call only the owner can make.
-   - **Expected:** Owner explicitly re-affirms or revises the freeze decision with CR-01/CR-02 in view.
-   - **Why human:** This is precisely the "accepted by the owner" ROADMAP gate condition — a semantic/risk-tolerance judgment, not a mechanical check.
+**Test:** Open `.planning/ROADMAP.md` and check the Phase 1200 plan list.
+**Expected:** `1200-06-PLAN.md`, `1200-07-PLAN.md`, `1200-08-PLAN.md` checkboxes should read `[x]`
+(all three executed per `.planning/REQUIREMENTS.md` and their SUMMARY files), and "Plans: 5/8
+plans executed" should read "8/8 plans executed."
+**Why human:** This is a planning-ledger edit outside a verifier's mandate — a verifier reports
+discrepancies but does not rewrite ROADMAP.md. Confirmed via `git log`/`git status` that this is a
+live, current discrepancy (ROADMAP.md was last touched 2026-09-20 10:43, before the 1200-06/07/08
+commits landed later that day) rather than a stale read on my part.
 
-### Gaps Summary
+## Gaps Summary
 
-The phase's five plans were executed thoroughly and the vast majority of the contract's *definitional* surface (status vocabulary, envelope shape, golden fixture content, additive legacy-boolean compatibility) is genuinely solid — independently re-verified at the source, not just accepted on SUMMARY claims. However, the phase's goal was to **freeze** the contract, and "frozen" implies the enforcement mechanisms that make the contract meaningful actually work. Two of those mechanisms do not:
-
-1. **Cross-language hash parity (CR-01)** is broken for any decimal value with a non-canonical trailing-zero scale — precisely the byte-exact guarantee the contract's own Overview states is its purpose. A downstream consumer (Phase 1201+ or the DE-01 runner itself) computing `inputHash`/`outputHash` over a real-world height/ratio/measurement value with a trailing zero will get silently different digests from the two legs, with no test anywhere catching it today.
-
-2. **DE-01's silent-vs-declared classification (CR-02)** does not implement the rule its own docstring states, and a passing test in the shipped suite actively certifies the wrong behavior for exactly the regression scenario DE-01 exists to catch (a leg silently degrading from `passed` to `unsupported`). This directly undermines the D-14 acceptance rule that spec/EVIDENCE-CONTRACT.md section 8 states in bold: "a silent disagreement is a failure, a declared one is not."
-
-3. **The four-leg comparison itself has never been demonstrated** — only one of four legs has actually run against the golden fixture in this environment; the other three are perpetually `error`-typed due to an environment blocker (Docker Desktop down), which is disclosed honestly but does mean ALGN12-04's core deliverable ("DE-01 compares Python, dg-reasoner, C#, and persisted replay against the same fixture") is unproven, not just unverified-here.
-
-Given these three findings — two of which are reproducible logic defects independent of the environment, not merely "untested edge cases" — the contract is not yet safe for phases 1201-1205, v9.1 activation, or v10.0 activation to consume as a **frozen** artifact. The vocabulary and shape can reasonably be considered frozen; the hashing mechanism and the DE-01 acceptance mechanism cannot be, until CR-01 and CR-02 are fixed and the live four-leg run is demonstrated at least once.
-
-**This looks like real, fixable follow-on work, not a wholesale rejection of the phase's approach** — the fixes are narrowly scoped (one function each) and the existing test infrastructure is what will prove them once corrected. A pragmatic path is a short closure plan (1200-06 or folded into 1201's early tasks) that: (a) fixes `WriteNumberDecimal`, (b) adds the missing golden vector, (c) fixes `compare_legs`'s single-non-declarable-status condition, (d) corrects the wrong test and adds the missing regression test, and (e) re-runs DE-01 live once Docker Desktop is available. None of this invalidates the vocabulary/shape/fixture work, which stands on its own.
+No blocking gaps. The phase's mechanical defects (CR-01, CR-02, WR-01) are fixed and independently
+re-verified in this session — not merely re-read from SUMMARY claims. ALGN12-04 remains correctly
+open, with its remaining condition (dg-reasoner SHACL targeting, null cross-service hashes)
+honestly recorded and routed to Phase 1201 rather than glossed over. The owner's re-confirmation of
+the freeze, given both defects and the live run's findings, satisfies the ROADMAP's "accepted by
+the owner" gate. The only actionable item surfaced by this re-verification is a cosmetic
+ROADMAP.md checkbox lag, which does not affect the phase's substantive completeness but is worth a
+quick human confirmation before Phase 1201 planning begins.
 
 ---
 
-_Verified: 2026-09-20T00:00:00Z_
+_Verified: 2026-09-20T14:00:00Z_
 _Verifier: Claude (gsd-verifier)_

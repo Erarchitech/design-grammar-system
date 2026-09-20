@@ -52,7 +52,7 @@ v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LL
 
 **Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
 
-**Plans:** 5/8 plans executed — 3 gap-closure plans added after `1200-VERIFICATION.md` returned `gaps_found`
+**Plans:** 9/9 plans executed — 3 gap-closure plans added after `1200-VERIFICATION.md` returned `gaps_found` (06/07/08), plus a 4th (09) after `1200-REVIEW.md` found WR-01
 
 Plans:
 **Wave 1**
@@ -71,12 +71,16 @@ Plans:
 
 **Wave 4** *(gap closure — blocked on Wave 3 completion; 06 and 07 are independent of each other)*
 
-- [ ] 1200-06-PLAN.md — GAP-1/CR-01: preserve decimal scale in `CanonicalJsonWriter`, add trailing-zero golden vector, state the rule in §6 (wave 4)
-- [ ] 1200-07-PLAN.md — GAP-2/CR-02: fire `compare_legs`' non-declarable guard on any non-empty set; replace the test that certified the defect (wave 4)
+- [x] 1200-06-PLAN.md — GAP-1/CR-01: preserve decimal scale in `CanonicalJsonWriter`, add trailing-zero golden vector, state the rule in §6 (wave 4)
+- [x] 1200-07-PLAN.md — GAP-2/CR-02: fire `compare_legs`' non-declarable guard on any non-empty set; replace the test that certified the defect (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 1200-08-PLAN.md — GAP-3: live four-leg DE-01 run (human, Docker required), REQUIREMENTS.md reconciliation, owner re-confirmation (wave 5)
+- [x] 1200-08-PLAN.md — GAP-3: live four-leg DE-01 run (human, Docker required), REQUIREMENTS.md reconciliation, owner re-confirmation (wave 5)
+
+**Wave 6** *(gap closure — blocked on Wave 4 completion; raised by `1200-REVIEW.md` WR-01)*
+
+- [x] 1200-09-PLAN.md — WR-01/IN-01: preserve negative-zero sign in `CanonicalJsonWriter`, add negative-zero and ordinary-negative golden vectors (wave 6)
 
 ### Phase 1201: Rule Parser and Evaluator Conformance
 
