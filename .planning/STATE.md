@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
 status: executing
-stopped_at: Completed 1200-03-PLAN.md
-last_updated: "2026-09-20T08:04:06.796Z"
+stopped_at: Completed 1200-04-PLAN.md
+last_updated: "2026-09-20T08:14:04.775Z"
 last_activity: 2026-09-20
 last_activity_desc: Phase 1200 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
@@ -118,6 +118,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1200 P01 | ~15min | 3 tasks | 5 files |
 | Phase 1200 P02 | ~15min | 3 tasks | 7 files |
 | Phase 1200 P03 | ~35min | 3 tasks | 6 files |
+| Phase 1200 P04 | ~6min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -385,6 +386,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 1200-02]: dg-reasoner fixture mount kept narrow (./fixtures:/app/fixtures:ro), not a broader /mnt/repo-style mount, per T-1200-08 accept/low disposition
 - [Phase ?]: validate_envelope dumps with exclude_none=True since the schema types optional scalar fields as bare string with no null alternative
 - [Phase ?]: _build_publish_evidence_envelope derives failed/passed status directly from failedRuleIds/passedRuleIds membership; UNKNOWN with a warning only when neither list has a signal (D-04)
+- [Phase ?]: [Phase 1200-04]: EvidenceEnvelopeFactory's empty-row roll-up default is NotEvaluated (per this plan's explicit spec), intentionally distinct from the Python leg's NoPopulation default in evidence_contract.py -- documented as per-implementation, not a divergence bug
+- [Phase ?]: [Phase 1200-04]: CanonicalJsonWriter walks System.Text.Json.Nodes.JsonNode directly (no JsonSerializer.Serialize delegation), reproducing all 5 shared golden vectors byte-exact and digest-exact identically to data-service/canonical_json.py
 
 ### Research Flags (carry into planning)
 
@@ -465,8 +468,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-20T08:04:06.764Z
-Stopped at: Completed 1200-03-PLAN.md
+Last session: 2026-09-20T08:14:04.758Z
+Stopped at: Completed 1200-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
