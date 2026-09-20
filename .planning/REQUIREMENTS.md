@@ -8,8 +8,8 @@
 
 ## Contract and evidence (Phase 1200)
 
-- [ ] **ALGN12-01**: Canonical statuses distinguish `passed`, `failed`, `unknown`, `not_evaluated`, `no_population`, `unsupported`, `indeterminate`, and `error`.
-- [ ] **ALGN12-02**: A common evidence envelope records project, definition, dgId/source representation, input/output hashes, schema/ontology/rule/shape versions, service/version, provider/model where applicable, timestamps, warnings, and status.
+- [x] **ALGN12-01**: Canonical statuses distinguish `passed`, `failed`, `unknown`, `not_evaluated`, `no_population`, `unsupported`, `indeterminate`, and `error`.
+- [x] **ALGN12-02**: A common evidence envelope records project, definition, dgId/source representation, input/output hashes, schema/ontology/rule/shape versions, service/version, provider/model where applicable, timestamps, warnings, and status.
 - [ ] **ALGN12-03**: A frozen cross-service fixture contains all four atom types, two objects with mixed outcomes, a Design State, and a geometry reference.
 - [ ] **ALGN12-04**: DE-01 compares Python, dg-reasoner, C#, and persisted replay against the same fixture; supported cases agree canonically and unsupported cases are typed rather than silently divergent.
 

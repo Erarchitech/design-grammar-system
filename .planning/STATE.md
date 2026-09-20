@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1200
-current_phase_name: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
-status: ready_to_execute
-stopped_at: Phase 1200 planned — 5 plans in 3 waves; ready to execute
-last_updated: "2026-09-20T12:00:00.000Z"
+current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
+status: executing
+stopped_at: Completed 1200-01-PLAN.md
+last_updated: "2026-09-20T07:35:17.517Z"
 last_activity: 2026-09-20
-last_activity_desc: Phase 1200 planned — 5 plans in 3 waves; plan-checker passed (0 blockers)
+last_activity_desc: Phase 1200 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -24,19 +24,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
+**Current focus:** Phase 1200 — contract-status-vocabulary-evidence-envelope-and-golden-fixt
 
 ## Current Position
 
-Phase: 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
-Plan: 0/5 complete
-Status: **Ready to execute** — 5 plans in 3 waves; plan-checker passed (1 warning, 0 blockers, warning resolved)
+Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-20 — Phase 1200 planned (research + patterns + validation + 5 plans)
+Last activity: 2026-09-20 — Phase 1200 execution started
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
@@ -115,6 +115,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 39 P04 | ~50min | 2 tasks | 4 files |
 | Phase 39 P05 | ~40min | 2 tasks | 3 files |
 | Phase 33 P04 | ~20min | 2 tasks | 0 files |
+| Phase 1200 P01 | ~15min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -376,6 +377,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: Phase 39 (39-05): 39-03-SUMMARY's ~1.5s dg-reasoner round-trip figure is NOT reproduced as fact — 2.0s debounce + 1.5s exceeds the artifact's recorded 2.679s total; the investigation note derives path (a)'s latency floor from artifact arithmetic (2.679 - 2.0 = 0.679s upper bound) and labels the summary figure summary-sourced
 - [Phase ?]: Phase 39 (39-05): F-39-01 is recorded in both deliverables as an OPEN, unresolved design question — auto-run verdicts are structurally sound but report all-false ValidStatus regardless of the design, so auto-validation does not yet produce meaningful pass/fail verdicts; two candidate fixes named, neither evaluated
 - [Phase ?]: [Phase 33 (33-04)]: Live in-Rhino end-to-end verification (Task 2 checkpoint:human-verify, gate=blocking) answered by the project user running all six checks personally in their own Rhino/Grasshopper session -- all four ROADMAP Phase 33 success criteria confirmed live; not simulated or self-approved by the executor
+- [Phase ?]: [Phase 1200-01]: Followed plan's locked decisions D-01..D-16 verbatim; schema is single-file draft 2020-12 with 3 $defs; bounded D-16 propagation touched only spec/DATABASE.md, CLAUDE.md, .planning/REQUIREMENTS.md
 
 ### Research Flags (carry into planning)
 
@@ -455,9 +457,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-20T00:12:35.406Z
-Stopped at: Phase 1200 context gathered (blocked on GATE12-01 reconciliation)
-Resume file: .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-CONTEXT.md
+Last session: 2026-09-20T07:35:17.488Z
+Stopped at: Completed 1200-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
