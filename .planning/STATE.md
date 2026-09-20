@@ -6,15 +6,15 @@ current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
 status: executing
 stopped_at: Gap-closure plans 1200-06..08 created from 1200-VERIFICATION.md (gaps_found); waves 4-5 unexecuted
-last_updated: "2026-09-20T09:47:04.070Z"
+last_updated: "2026-09-20T11:20:54.868Z"
 last_activity: 2026-09-20
-last_activity_desc: Phase 1200 gap-closure planned (1200-06..08)
+last_activity_desc: Phase 1200 execution started
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 5
+  completed_phases: 0
+  total_plans: 8
   completed_plans: 5
-  percent: 17
+  percent: 0
 ---
 
 # Project State
@@ -28,15 +28,19 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
-Plan: 5 of 8 executed (1200-06..08 are gap closure, pending)
-Status: Ready to execute
+Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED
+Plan: 9 of 9
+Status: Phase 1200 executed and re-verified; contract frozen with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-20 — Phase 1200 execution started
+Last activity: 2026-09-20 — Phase 1200 executed (9/9 plans). Gap-closure plans 06/07 fixed CR-01
+(cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
+the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
+finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
+the live run in view.
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
