@@ -19,7 +19,7 @@
 
 ## Parser and evaluator conformance (Phase 1201)
 
-- [ ] **ALGN12-05**: ObjectPropertyAtom and malformed/unsupported syntax have explicit parser outcomes and regression fixtures.
+- [x] **ALGN12-05**: ObjectPropertyAtom and malformed/unsupported syntax have explicit parser outcomes and regression fixtures.
 - [ ] **ALGN12-06**: Unsupported built-ins and predicate forms never collapse into ordinary failed verdicts.
 - [ ] **ALGN12-07**: Documentation and tests distinguish the schema-level SWRL subset from the bounded C# evaluator; no full-reasoner claim is made.
 

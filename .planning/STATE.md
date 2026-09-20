@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
 status: executing
-stopped_at: Gap-closure plans 1200-06..08 created from 1200-VERIFICATION.md (gaps_found); waves 4-5 unexecuted
-last_updated: "2026-09-20T11:20:54.868Z"
+stopped_at: Completed 1201-03-PLAN.md
+last_updated: "2026-09-20T21:19:36.955Z"
 last_activity: 2026-09-20
-last_activity_desc: Phase 1200 execution started
+last_activity_desc: Phase 1200 executed (9/9 plans). Gap-closure plans 06/07 fixed CR-01
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 8
-  completed_plans: 5
-  percent: 0
+  completed_phases: 1
+  total_plans: 15
+  completed_plans: 13
+  percent: 17
 ---
 
 # Project State
@@ -124,6 +124,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1200 P03 | ~35min | 3 tasks | 6 files |
 | Phase 1200 P04 | ~6min | 3 tasks | 8 files |
 | Phase 1200 P05 | ~10min | 1 tasks | 1 files |
+| Phase 1201 P03 | 55min | 5 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -395,6 +396,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 1200-04]: CanonicalJsonWriter walks System.Text.Json.Nodes.JsonNode directly (no JsonSerializer.Serialize delegation), reproducing all 5 shared golden vectors byte-exact and digest-exact identically to data-service/canonical_json.py
 - [Phase ?]: [Phase 1200-05]: Owner approved (2026-09-20) spec/EVIDENCE-CONTRACT.md sections 1, 3, and 10 (status vocabulary, evidence envelope shape, v11.0 Phase 1105 handoff split) -- frozen for phases 1201-1205 and v11.0 propagation work
 - [Phase ?]: [Phase 1200-05]: Corrected the prior checkpoint's framing -- the report's 3 declared_non_equivalences are all 'leg unavailable' timeouts (data-service/dg-reasoner/replay), not the ObjectPropertyAtom case standing alone; that case appears nested inside OBJ_GOLD_FAIL's declared non-equivalence, not isolated
+- [Phase ?]: Parser TryParse (D-01): SwrlRuleParser stays static; TryParse(expr, resolver=null) never throws; Parse is a thin wrapper that still throws for empty/arrow-arity/atom-regex but not for an unresolvable predicate kind.
+- [Phase ?]: ObjectPropertyAtom now reachable (D-02): ResolveAtomType resolves >=2-arg non-swrlb predicates via IPredicateKindResolver; unresolved predicates become UnsupportedAtom, never a guessed DataPropertyAtom.
+- [Phase ?]: Quote-aware linear scanners replace naive Split('^')/Split(',') in SwrlRuleParser (SplitArgs, new SplitAtomChain) to avoid regex backtracking DoS and to correctly handle ^^ datatype-suffix literals colliding with the atom-conjunction separator.
 
 ### Research Flags (carry into planning)
 
@@ -476,8 +480,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-20T09:06:41.503Z
-Stopped at: Completed 1200-05-PLAN.md (Task 4 owner-approved, phase 1200 fully executed)
+Last session: 2026-09-20T21:19:36.938Z
+Stopped at: Completed 1201-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
