@@ -44,7 +44,11 @@ public sealed class RuleEvaluator
                 RuleDescription = rule.Description,
                 Passed = EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.NoPopulation),
                 Status = EvidenceStatus.NoPopulation,
-                Message = "No variable bindings were provided.",
+                // D-06 (Phase 1201 plan 02): this is a real, distinguishable evaluation outcome —
+                // the rule was evaluated and its binding population was empty — not a failure and
+                // not a non-evaluation. Wording deliberately avoids "violated"/"failed" so it does
+                // not read as a verdict.
+                Message = "Rule evaluated with an empty binding population: no bindings were provided.",
             };
         }
 
@@ -55,6 +59,7 @@ public sealed class RuleEvaluator
         var failingBindings = new List<BindingRow>();
         var outcomes = new List<BindingOutcome>(bindings.Count);
         string? unsupportedDetail = null;
+        string? unknownDetail = null;
         string? firstErrorDetail = null;
 
         foreach (var binding in bindings)
@@ -66,11 +71,21 @@ public sealed class RuleEvaluator
             }
             catch (Exception ex)
             {
-                // A genuine unexpected fault (not one of the typed non-verdicts EvaluateBody/
-                // EvaluateAtom/EvaluateBuiltin return directly) is surfaced as Error. It still
-                // counts as a failing binding below, matching this evaluator's pre-existing
-                // behavior for exceptions reaching this catch-all (D-08's narrowing of exactly
-                // what can still reach this catch is plan 02's scope, not this tracer slice's).
+                // Phase 1201 plan 02: this catch is now reachable only by a genuine unexpected
+                // fault in the evaluation mechanism itself (e.g. a literal that fails to parse in
+                // ParseLiteral, or any other fault neither EvaluateBody nor EvaluateAtom nor
+                // EvaluateBuiltin turns into a typed BindingOutcome). The four outcomes that used
+                // to reach here as thrown exceptions no longer do:
+                //   - empty binding population -> handled above, before this loop even starts (D-06)
+                //   - a missing/unresolvable variable binding -> Unknown, returned directly by
+                //     EvaluateAtom/ResolveArgValue via TryResolveArg (D-08)
+                //   - an ObjectPropertyAtom/UnsupportedAtom/unrecognized atom type -> Unsupported,
+                //     returned directly by EvaluateAtom's dispatch (D-14)
+                //   - an unsupported or malformed builtin -> Unsupported, returned directly by
+                //     EvaluateBuiltin (D-07, plan 01)
+                // A genuine unexpected fault is a mechanism error, per the contract's `error`
+                // semantics, and is still counted as a failing binding here — converting it into a
+                // crash inside a Grasshopper-hosted process would be a regression.
                 outcome = new BindingOutcome(EvidenceStatus.Error, ex.Message);
                 firstErrorDetail ??= ex.Message;
             }
@@ -85,6 +100,10 @@ public sealed class RuleEvaluator
             {
                 unsupportedDetail = outcome.Detail;
             }
+            else if (outcome.Status == EvidenceStatus.Unknown && unknownDetail is null)
+            {
+                unknownDetail = outcome.Detail;
+            }
         }
 
         var status = StatusRollup.Rollup(outcomes.Select(o => o.Status));
@@ -95,6 +114,7 @@ public sealed class RuleEvaluator
             EvidenceStatus.Error => firstErrorDetail ?? "Rule evaluation encountered an unexpected error.",
             EvidenceStatus.Failed => $"Rule violated by {failingBindings.Count} binding(s).",
             EvidenceStatus.Unsupported => unsupportedDetail ?? "Rule uses a construct outside the implemented SWRL subset.",
+            EvidenceStatus.Unknown => unknownDetail ?? "Rule evaluation could not resolve a variable binding.",
             EvidenceStatus.Passed => "Rule passed for all bindings.",
             _ => $"Rule evaluation resolved to {status}.",
         };
@@ -134,6 +154,24 @@ public sealed class RuleEvaluator
         return new BindingOutcome(EvidenceStatus.Failed, null);
     }
 
+    /// <summary>
+    /// Dispatches on <see cref="Atom.Type"/> (ordinal-ignore-case), in this deliberate order
+    /// (Phase 1201 plan 02, D-14 Pitfall-1 guard):
+    /// <list type="bullet">
+    /// <item><c>BuiltinAtom</c> -> <see cref="EvaluateBuiltin"/>, as before.</item>
+    /// <item><c>ObjectPropertyAtom</c> and <c>UnsupportedAtom</c> -> a typed
+    /// <see cref="EvidenceStatus.Unsupported"/> refusal, regardless of whether every variable
+    /// resolves. Plan 03 teaches the parser to emit these types; without this branch they would
+    /// fall through to the variable-availability check below and — if every variable happened to
+    /// resolve — report as satisfied, which is exactly the false general-reasoner claim D-14
+    /// disclaims. Recognizing an atom type is not the same as evaluating it.</item>
+    /// <item><c>ClassAtom</c> and <c>DataPropertyAtom</c> -> the existing variable-availability
+    /// check, unchanged in behavior except that a missing variable now returns a typed
+    /// <see cref="EvidenceStatus.Unknown"/> outcome (D-08) instead of throwing.</item>
+    /// <item>anything else (an atom type string this evaluator does not recognize at all) ->
+    /// the same typed <see cref="EvidenceStatus.Unsupported"/> refusal as the second bullet.</item>
+    /// </list>
+    /// </summary>
     private static BindingOutcome EvaluateAtom(Atom atom, BindingRow binding)
     {
         if (atom.Type.Equals("BuiltinAtom", StringComparison.OrdinalIgnoreCase))
@@ -141,15 +179,27 @@ public sealed class RuleEvaluator
             return EvaluateBuiltin(atom, binding);
         }
 
+        if (atom.Type.Equals("ObjectPropertyAtom", StringComparison.OrdinalIgnoreCase)
+            || atom.Type.Equals("UnsupportedAtom", StringComparison.OrdinalIgnoreCase))
+        {
+            return ObjectPropertyOrUnsupportedOutcome(atom);
+        }
+
+        if (!atom.Type.Equals("ClassAtom", StringComparison.OrdinalIgnoreCase)
+            && !atom.Type.Equals("DataPropertyAtom", StringComparison.OrdinalIgnoreCase))
+        {
+            // An atom type string that is none of the four known kinds. Refuse rather than
+            // silently falling through to the availability check below.
+            return ObjectPropertyOrUnsupportedOutcome(atom);
+        }
+
         foreach (var arg in atom.Args.Where(a => a.Kind == ArgKind.Variable))
         {
-            if (!TryResolveVariableValue(arg.Value, binding, out var value) || value is null)
+            if (!TryResolveArg(arg, binding, out _, out var unknownDetail))
             {
-                // D-08 (missing variable binding -> a typed `unknown` non-verdict) is explicitly
-                // plan 02's scope, not this tracer slice's. Preserve today's throw-and-collapse
-                // behavior here unchanged; EvaluateRule's catch-all below still counts it as a
-                // failing binding, matching the pre-existing RuleEvaluatorTests assertions.
-                throw new InvalidOperationException($"Missing binding for variable {arg.Value}.");
+                // D-08: binding resolution was attempted and could not resolve. A typed
+                // Unknown non-verdict, not a thrown exception and not a failing binding.
+                return new BindingOutcome(EvidenceStatus.Unknown, unknownDetail);
             }
         }
 
@@ -158,6 +208,25 @@ public sealed class RuleEvaluator
         // inversion (see EvaluateBody), a matching atom is represented as Failed so the body walk
         // continues toward a rule-level violation.
         return new BindingOutcome(EvidenceStatus.Failed, null);
+    }
+
+    /// <summary>
+    /// The D-14 typed refusal for an <c>ObjectPropertyAtom</c>, an explicit <c>UnsupportedAtom</c>,
+    /// or any atom type string this evaluator does not recognize. Deliberately does not attempt to
+    /// resolve the atom's variables first — the refusal is driven by atom type alone, proving (per
+    /// this task's behavior spec) that even a fully-bound atom of this type is refused rather than
+    /// reported as satisfied.
+    /// </summary>
+    private static BindingOutcome ObjectPropertyOrUnsupportedOutcome(Atom atom)
+    {
+        var predicate = atom.PredicateIri ?? atom.PredicateLabel ?? string.Empty;
+        return new BindingOutcome(
+            EvidenceStatus.Unsupported,
+            $"What: this atom's predicate ('{predicate}') is an object property, which this " +
+            $"evaluator recognizes but does not evaluate. " +
+            $"Where: atom '{atom.Id}', predicate '{predicate}'. " +
+            $"How to fix: express the constraint using a datatype property and one of the " +
+            $"supported comparison builtins, or accept this typed non-verdict.");
     }
 
     private static BindingOutcome EvaluateBuiltin(Atom atom, BindingRow binding)
@@ -183,16 +252,14 @@ public sealed class RuleEvaluator
                 $"({string.Join(", ", SupportedBuiltins.Names)}), or accept this typed non-verdict.");
         }
 
-        object? left;
-        object? right;
-        try
+        if (!TryResolveArg(args[0], binding, out var left, out var leftUnknownDetail))
         {
-            left = ResolveArgValue(args[0], binding);
-            right = ResolveArgValue(args[1], binding);
+            return new BindingOutcome(EvidenceStatus.Unknown, leftUnknownDetail);
         }
-        catch (InvalidOperationException ex)
+
+        if (!TryResolveArg(args[1], binding, out var right, out var rightUnknownDetail))
         {
-            return new BindingOutcome(EvidenceStatus.Unknown, ex.Message);
+            return new BindingOutcome(EvidenceStatus.Unknown, rightUnknownDetail);
         }
 
         if (TryToDecimal(left, out var leftDec) && TryToDecimal(right, out var rightDec))
@@ -242,19 +309,37 @@ public sealed class RuleEvaluator
             ? new BindingOutcome(EvidenceStatus.Failed, null)
             : new BindingOutcome(EvidenceStatus.Passed, null);
 
-    private static object? ResolveArgValue(AtomArg arg, BindingRow binding)
+    /// <summary>
+    /// Try-shape resolution of a single atom argument (Phase 1201 plan 02, D-08). Named after the
+    /// existing <see cref="TryResolveVariableValue"/> in this same file so the file stays
+    /// internally consistent — both are net7.0-safe <c>Try*</c> shapes already in production here.
+    /// A variable argument that is absent from the binding row yields <c>false</c> with a
+    /// What+Where+How-to-fix <paramref name="unknownDetail"/> (the <see cref="EvidenceStatus.Unknown"/>
+    /// wording pattern from <c>ErrorMessageTemplates</c>) rather than throwing. A literal argument
+    /// always resolves.
+    /// </summary>
+    private static bool TryResolveArg(AtomArg arg, BindingRow binding, out object? value, out string? unknownDetail)
     {
         if (arg.Kind == ArgKind.Variable)
         {
-            if (!TryResolveVariableValue(arg.Value, binding, out var value))
+            if (!TryResolveVariableValue(arg.Value, binding, out value))
             {
-                throw new InvalidOperationException($"Missing binding for variable {arg.Value}.");
+                unknownDetail =
+                    $"What: the variable '{arg.Value}' that the rule body references has no value " +
+                    $"in this binding row. " +
+                    $"Where: variable '{arg.Value}', atom argument position {arg.Pos}. " +
+                    $"How to fix: supply the value for that variable in the binding source, or " +
+                    $"accept this typed non-verdict.";
+                return false;
             }
 
-            return value;
+            unknownDetail = null;
+            return true;
         }
 
-        return ParseLiteral(arg.Value, arg.Datatype);
+        value = ParseLiteral(arg.Value, arg.Datatype);
+        unknownDetail = null;
+        return true;
     }
 
     private static bool TryResolveVariableValue(string variableName, BindingRow binding, out object? value)
