@@ -112,6 +112,50 @@ public sealed class CanonicalJsonWriterTests
     }
 
     [Fact]
+    public void Canonicalize_ShouldPreserveNegativeZeroSign()
+    {
+        // WR-01 direct reproduction: decimal.ToString("F2") renders -0.00m as "0.00", dropping the
+        // sign, while the normative Python reference format(Decimal("-0.00"), "f") yields "-0.00".
+        // Negative zero is reachable at runtime from ordinary arithmetic (see the computed cases
+        // below), not only from the GetBits constructor.
+        var constructed = new JsonObject { ["margin"] = new decimal(0, 0, 0, true, 2) };
+        var subtracted = new JsonObject { ["margin"] = 0m - 0.00m };
+        var multiplied = new JsonObject { ["margin"] = -1m * 0.00m };
+
+        Assert.Equal("{\"margin\":-0.00}", CanonicalJsonWriter.Canonicalize(constructed));
+        Assert.Equal("{\"margin\":-0.00}", CanonicalJsonWriter.Canonicalize(subtracted));
+        Assert.Equal("{\"margin\":-0.00}", CanonicalJsonWriter.Canonicalize(multiplied));
+
+        // Scale-0 negative zero takes the no-decimal-point branch and must still keep its sign,
+        // matching format(Decimal("-0"), "f") == "-0".
+        var scaleZero = new JsonObject { ["margin"] = new decimal(0, 0, 0, true, 0) };
+        Assert.Equal("{\"margin\":-0}", CanonicalJsonWriter.Canonicalize(scaleZero));
+
+        // Positive zero must be untouched by the sign-reattachment branch.
+        var positiveZero = new JsonObject { ["margin"] = 0.00m };
+        Assert.Equal("{\"margin\":0.00}", CanonicalJsonWriter.Canonicalize(positiveZero));
+    }
+
+    [Fact]
+    public void Canonicalize_ShouldRenderOrdinaryNegativeDecimal_WithSingleSign()
+    {
+        // Regression guard for the WR-01 fix: ToString already emits the sign for every non-zero
+        // negative value, so the sign-reattachment branch must not double-prepend ("--12.50").
+        var obj = new JsonObject
+        {
+            ["delta"] = -12.50m,
+            ["offset"] = -0.5m,
+            ["count"] = -7m,
+            ["large"] = -2000000000000000m,
+        };
+
+        var canonical = CanonicalJsonWriter.Canonicalize(obj);
+
+        Assert.Equal("{\"count\":-7,\"delta\":-12.50,\"large\":-2000000000000000,\"offset\":-0.5}", canonical);
+        Assert.DoesNotContain("--", canonical);
+    }
+
+    [Fact]
     public void Canonicalize_ShouldRejectDouble()
     {
         var obj = new JsonObject { ["height"] = 82.5d };

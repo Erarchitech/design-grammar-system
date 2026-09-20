@@ -218,16 +218,29 @@ public static class CanonicalJsonWriter
         // integrality, so 100.00m stays "100.00" and 2.50m stays "2.50".
         var bits = decimal.GetBits(value);
         var scale = (bits[3] >> 16) & 0xFF;
+        var isNegative = (bits[3] & unchecked((int)0x80000000)) != 0;
 
-        if (scale == 0)
-        {
+        var rendered = scale == 0
             // Scale-0 decimal: no decimal point, matching format(Decimal("3"), "f") == "3".
-            sb.Append(value.ToString(CultureInfo.InvariantCulture));
-            return;
+            ? value.ToString(CultureInfo.InvariantCulture)
+            // Fixed-point string with exactly `scale` fractional digits, never scientific notation.
+            : value.ToString("F" + scale.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+
+        // decimal.ToString normalizes negative zero's sign away (-0.00m renders as "0.00", -0m as
+        // "0"), but Python's format(Decimal, "f") — the normative reference rendering, see
+        // spec/EVIDENCE-CONTRACT.md rule 2 — preserves it ("-0.00", "-0"). Re-attach the sign from
+        // the decimal's own sign bit to keep the two legs byte-identical (1200-REVIEW.md WR-01).
+        //
+        // The `!StartsWith('-')` guard is load-bearing: for every *non-zero* negative value
+        // ToString already emits the sign itself (-12.50m -> "-12.50"), so re-prefixing
+        // unconditionally would produce "--12.50". Negative zero is the only input whose sign bit
+        // is set but whose rendered form lacks the sign, so this branch fires for it alone.
+        if (isNegative && !rendered.StartsWith('-'))
+        {
+            rendered = "-" + rendered;
         }
 
-        // Fixed-point string with exactly `scale` fractional digits, never scientific notation.
-        sb.Append(value.ToString("F" + scale.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture));
+        sb.Append(rendered);
     }
 
     private static void WriteString(string s, StringBuilder sb)
