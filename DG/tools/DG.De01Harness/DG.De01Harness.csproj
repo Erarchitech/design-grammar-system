@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DG.De01Harness</RootNamespace>
+    <AssemblyName>DG.De01Harness</AssemblyName>
+  </PropertyGroup>
+
+  <!--
+    DE-01's C# leg (plan 1200-05, Task 1). Deliberately minimal: references DG.Core only,
+    no Grasshopper dependency, no xunit, no Neo4j driver. Emits exactly one EvidenceEnvelope
+    as JSON on stdout so tools/de01/legs.py's run_leg_csharp adapter can parse it unconditionally.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DG.Core\DG.Core.csproj" />
+  </ItemGroup>
+
+</Project>
