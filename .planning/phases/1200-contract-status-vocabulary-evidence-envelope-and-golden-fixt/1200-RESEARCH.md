@@ -516,7 +516,10 @@ philosophy is not new to this repo, it is being generalized from one already-shi
 
 **If this table is empty:** N/A — see rows above.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both questions were resolved by the Phase 1200 planner (plans committed `0dd066b`).
+> The original analysis is retained below, each question annotated with its resolution.
 
 1. **Does the C# leg's canonicalization helper live in `DG.Core` as new shared infrastructure, or
    inline in the DE-01 runner only?**
@@ -533,6 +536,11 @@ philosophy is not new to this repo, it is being generalized from one already-shi
      the latter reading is more consistent with "1200 does not migrate the codebase," but D-06
      ("envelope emitted at every stage boundary") arguably requires *some* code path in `DG.Core`
      to actually construct the envelope object, even if evaluation logic itself is untouched.
+   - **RESOLVED (plan `1200-04-PLAN.md`, "Planner decision — RESEARCH.md Open Question 1"):**
+     the canonicalization helper and envelope DTO live in **`DG.Core/Contracts/`**, not the
+     harness. D-06 (envelope emitted at every stage boundary) needs the evaluator's own
+     emission path, and contract types belong in `DG.Core` per house style. Scope-bounded:
+     the types are added; the evaluator is **not** migrated onto them (that is 1201's).
 
 2. **Where does the DE-01 runner physically live and in what language?**
    - What we know: D-12 locks "standalone runner + thin CI-invocable wrapper"; no existing
@@ -546,6 +554,11 @@ philosophy is not new to this repo, it is being generalized from one already-shi
      shell out to a small C# console harness (a new minimal `DG.Core`-referencing console app,
      or `dotnet test --filter` against a dedicated DE-01 xunit test) for the C# leg, then read its
      JSON stdout. This keeps the "structured comparison report" (D-12) in one place.
+   - **RESOLVED (plan `1200-05-PLAN.md`, "Planner decision — RESEARCH.md Open Question 2"):**
+     a Python orchestrator at `tools/de01/` drives the data-service and dg-reasoner legs over
+     HTTP and shells out to a new minimal `DG/tools/DG.De01Harness/` console app for the C#
+     leg, reading its JSON stdout. Report is a JSON + Markdown pair under `.de01/`. No CI
+     workflow is created (`.github/workflows/` is absent — Pitfall 5).
 
 ## Environment Availability
 
