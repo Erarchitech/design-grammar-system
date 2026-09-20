@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-grammar-system/spec/evidence-contract.schema.json",
+  "title": "Design Grammar System Evidence Envelope",
+  "description": "Machine-readable shape annex for spec/EVIDENCE-CONTRACT.md. This file is authoritative for SHAPE only (field names, types, required-ness); spec/EVIDENCE-CONTRACT.md is authoritative for MEANING (what each canonical status asserts, ordering/identity rules, canonicalization rules, DE-01 acceptance). On conflict, schema wins for shape and prose wins for semantics (D-01). $defs.CanonicalStatus.enum is the single mechanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.",
+  "$ref": "#/$defs/EvidenceEnvelope",
+  "$defs": {
+    "CanonicalStatus": {
+      "type": "string",
+      "description": "The frozen 8-member canonical status vocabulary (D-02). No renaming, no additions, no merging outside a phase that explicitly revises this contract.",
+      "enum": [
+        "passed",
+        "failed",
+        "unknown",
+        "not_evaluated",
+        "no_population",
+        "unsupported",
+        "indeterminate",
+        "error"
+      ]
+    },
+    "EvidenceRow": {
+      "type": "object",
+      "description": "Per-(rule,object) evidence row. Rows are addressed by the (ruleId, objectId) identity pair -- see spec/EVIDENCE-CONTRACT.md section 4.",
+      "properties": {
+        "ruleId": {
+          "type": "string",
+          "description": "The Metagraph Rule_Id this row evaluates."
+        },
+        "objectId": {
+          "type": "string",
+          "description": "The identity of the object/entity this row evaluates the rule against."
+        },
+        "canonicalStatus": {
+          "$ref": "#/$defs/CanonicalStatus"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Row-scoped, human-readable warnings in the What+Where+How-to-fix style."
+        },
+        "inputHash": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$",
+          "description": "SHA-256 hex digest (uppercase) of this row's canonicalized input, where the envelope-level hash is insufficiently granular."
+        },
+        "outputHash": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$",
+          "description": "SHA-256 hex digest (uppercase) of this row's canonicalized output."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Free-text elaboration, e.g. which binding failed or which builtin was unsupported."
+        }
+      },
+      "required": ["ruleId", "objectId", "canonicalStatus"],
+      "additionalProperties": false
+    },
+    "EvidenceEnvelope": {
+      "type": "object",
+      "description": "The evidence envelope a stage emits to report the outcome of evaluating one or more rules against a design. Emitted at every stage boundary that produces or transforms a verdict (D-06), not only at final persistence.",
+      "properties": {
+        "contractVersion": {
+          "type": "string",
+          "description": "The EVIDENCE_CONTRACT_VERSION this envelope was produced against."
+        },
+        "canonicalizationVersion": {
+          "type": "integer",
+          "description": "The CANONICALIZATION_VERSION used to compute any hashes in this envelope."
+        },
+        "project": {
+          "type": "string",
+          "description": "The project scope this evidence belongs to."
+        },
+        "definitionId": {
+          "type": "string",
+          "description": "The Computgraph/design definition this evidence was produced for."
+        },
+        "serviceName": {
+          "type": "string",
+          "description": "The producing service, e.g. dg-grasshopper-evaluator, data-service, dg-reasoner."
+        },
+        "serviceVersion": {
+          "type": "string",
+          "description": "The producing service's version identifier."
+        },
+        "emittedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC 3339 UTC timestamp (Z suffix) of when this envelope was produced."
+        },
+        "stage": {
+          "type": "string",
+          "description": "The pipeline stage boundary this envelope was emitted at."
+        },
+        "canonicalStatus": {
+          "$ref": "#/$defs/CanonicalStatus",
+          "description": "The envelope-level roll-up status across rows."
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceRow"
+          },
+          "description": "The per-(rule,object) result rows, ordered lexicographically ascending by objectId, ties broken by ruleId (spec/EVIDENCE-CONTRACT.md section 4)."
+        },
+        "dgId": {
+          "type": "string",
+          "pattern": "^dg:[0-9A-F]{16}$",
+          "description": "The dg:-prefixed identity (spec/DG-ID.md) of the subject entity, where resolvable."
+        },
+        "sourceRepresentation": {
+          "type": ["object", "null"],
+          "description": "The native-platform representation this evidence traces back to (Grasshopper/Revit/IFC/Speckle), where applicable."
+        },
+        "inputHash": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$",
+          "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized input."
+        },
+        "outputHash": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$",
+          "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized output."
+        },
+        "schemaVersion": {
+          "type": "string",
+          "description": "Version of the graph schema in effect."
+        },
+        "ontologyVersion": {
+          "type": "string",
+          "description": "owl:versionInfo of the OWL ontology in effect."
+        },
+        "ruleVersion": {
+          "type": "string",
+          "description": "Version/identity marker of the rule corpus evaluated."
+        },
+        "shapeVersion": {
+          "type": "string",
+          "description": "Version of the SHACL shapes (ontology/dg-shapes.ttl) in effect, where applicable."
+        },
+        "provider": {
+          "type": "string",
+          "description": "LLM provider, where an LLM was involved in producing this stage's evidence."
+        },
+        "model": {
+          "type": "string",
+          "description": "LLM model identifier, where applicable."
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Envelope-scoped, human-readable warnings in the What+Where+How-to-fix style."
+        }
+      },
+      "required": [
+        "contractVersion",
+        "canonicalizationVersion",
+        "project",
+        "definitionId",
+        "serviceName",
+        "serviceVersion",
+        "emittedAt",
+        "stage",
+        "canonicalStatus",
+        "rows"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
