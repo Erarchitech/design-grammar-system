@@ -1,4 +1,5 @@
 using DG.Core.Contracts;
+using DG.Core.Data;
 using DG.Core.Models;
 using DG.Core.Parsing;
 
@@ -259,5 +260,46 @@ public sealed class SwrlRuleParserTryParseTests
         Assert.Equal("xsd:decimal", atom.Args[3].Datatype);
         Assert.Equal("xsd:string", atom.Args[4].Datatype);
         Assert.Null(atom.Args[4].Language);
+    }
+
+    // --- Task 4: Neo4jPredicateKindResolver, constructed from an in-memory snapshot (no live
+    // Neo4j required -- the `neo4j` hostname resolves only inside the compose network). ---
+
+    [Fact]
+    public void Neo4jPredicateKindResolver_KnownObjectProperty_ResolvesAsObjectProperty()
+    {
+        var resolver = Neo4jPredicateKindResolver.FromSnapshotForTesting(
+            new Dictionary<string, PredicateKind>(StringComparer.Ordinal)
+            {
+                ["adjacentTo"] = PredicateKind.ObjectProperty,
+            });
+
+        Assert.True(resolver.TryGetKind("adjacentTo", out var kind));
+        Assert.Equal(PredicateKind.ObjectProperty, kind);
+    }
+
+    [Fact]
+    public void Neo4jPredicateKindResolver_KnownDatatypeProperty_ResolvesAsDatatypeProperty()
+    {
+        var resolver = Neo4jPredicateKindResolver.FromSnapshotForTesting(
+            new Dictionary<string, PredicateKind>(StringComparer.Ordinal)
+            {
+                ["hasHeightM"] = PredicateKind.DatatypeProperty,
+            });
+
+        Assert.True(resolver.TryGetKind("hasHeightM", out var kind));
+        Assert.Equal(PredicateKind.DatatypeProperty, kind);
+    }
+
+    [Fact]
+    public void Neo4jPredicateKindResolver_AbsentIri_ResolvesAsUnresolvable()
+    {
+        var resolver = Neo4jPredicateKindResolver.FromSnapshotForTesting(
+            new Dictionary<string, PredicateKind>(StringComparer.Ordinal)
+            {
+                ["hasHeightM"] = PredicateKind.DatatypeProperty,
+            });
+
+        Assert.False(resolver.TryGetKind("someUnregisteredPredicate", out _));
     }
 }
