@@ -14,7 +14,7 @@ This document is the **normative partition contract** between DG's two validatio
 - [Enforcement](#enforcement-d-14) -- documentation + review discipline this phase, linter deferred
 - [How SHACL Findings Surface](#how-shacl-findings-surface) -- severity mapping and message house style
 
-Related specs: `spec/LPG-OWL-MAPPING.md` (§"ValidGraph to RDF Sketch" -- the RDF ABox this policy's SHACL side validates), `spec/DATABASE.md` (§Graph Separation -- the LPG schema SHACL shapes constrain), `ontology/dg-shapes.ttl` (the SHACL shapes artifact this policy governs the contents of).
+Related specs: `spec/LPG-OWL-MAPPING.md` (§"ValidGraph to RDF Sketch" -- the RDF ABox this policy's SHACL side validates), `spec/DATABASE.md` (§Graph Separation -- the LPG schema SHACL shapes constrain), `ontology/dg-shapes.ttl` (the SHACL shapes artifact this policy governs the contents of), `spec/SWRL-SUBSET.md` (Phase 1201 -- the implemented C# evaluator subset within the SWRL side of this policy's partition line).
 
 ---
 

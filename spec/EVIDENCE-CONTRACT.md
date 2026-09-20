@@ -39,7 +39,9 @@ Related specs: `spec/evidence-contract.schema.json` (the machine-readable annex 
 **shape**; this document is authoritative for **meaning**, per D-01), `spec/DATABASE.md`
 (§`:Run` node — the `evidenceEnvelopeJson` sidecar), `spec/DG-ID.md` (the `dgId` format the
 envelope's identity fields reference), `spec/RULE-PARTITION-POLICY.md` (this document's structural
-analog and the closest existing normative cross-service contract).
+analog and the closest existing normative cross-service contract), `spec/SWRL-SUBSET.md` (the
+implemented C# SWRL parser/evaluator subset boundary — Phase 1201, which subset of this document's
+status vocabulary each unsupported SWRL construct actually yields).
 
 ---
 
@@ -387,8 +389,10 @@ propagate — a standalone handoff document would itself drift from the contract
 ## 11. Consistency & Propagation
 
 This contract is coupled to `spec/DATABASE.md` (the `:Run` node's `evidenceEnvelopeJson`
-sidecar), `spec/evidence-contract.schema.json` (the machine-readable shape annex), and
-`spec/DG-ID.md` (the `dgId` format referenced by the envelope's identity fields). Any change to the
+sidecar), `spec/evidence-contract.schema.json` (the machine-readable shape annex),
+`spec/DG-ID.md` (the `dgId` format referenced by the envelope's identity fields), and
+`spec/SWRL-SUBSET.md` (which SWRL constructs map to which status in this vocabulary — Phase 1201).
+Any change to the
 status vocabulary, the envelope field table, or the canonicalization rules in this document should
 trigger a review of whether `spec/evidence-contract.schema.json` needs a matching update (and vice
 versa — per D-01, a shape/prose conflict is resolved schema-wins-for-shape,

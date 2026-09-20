@@ -79,6 +79,7 @@ DE-01 legs read `fixtures/golden/` directly.
 | `fixture.json` | The frozen cross-service fixture: one rule (`R_GOLD_HEIGHT_MAX_75_V`), four atom types, three objects (`OBJ_GOLD_PASS`, `OBJ_GOLD_FAIL`, `OBJ_GOLD_EMPTY`), a three-kind Design State, a geometry reference, and an ordered `expectedOutcomes` table. |
 | `seed.cypher` | Scripted, dev-only Neo4j seed path (D-10) projecting `fixture.json` into a live graph for the persisted-replay DE-01 leg, with an idempotent `DETACH DELETE` teardown. |
 | `canonical-vectors.json` | At least 5 golden input/expected-digest pairs for the canonical-hash implementations (`spec/EVIDENCE-CONTRACT.md` § 6), duplicated as literal assertions into both the Python and C# test suites (plans 1200-03/1200-04). |
+| `parser/` | **Additive, added Phase 1201 plan 04 (D-16).** A separate table-driven SWRL parser conformance corpus (`parser/cases.json`), read only by `DG/tests/DG.Tests/SwrlSubsetConformanceTests.cs`. This is **not** the frozen fixture above and does **not** alter this file's freeze policy — see `parser/README.md` for its own (lighter) change-reason convention. |
 
 ## Fixture identifiers
 

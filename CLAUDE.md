@@ -211,6 +211,8 @@ When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schem
 
 **Evidence and status contract:** `spec/EVIDENCE-CONTRACT.md` governs the canonical validation-outcome status vocabulary and the evidence envelope shape — consult it before adding, renaming, or reinterpreting a validation outcome status or an evidence field, and update it if a schema change shifts the envelope.
 
+**SWRL subset boundary:** `spec/SWRL-SUBSET.md` governs which SWRL atom types the parser recognizes, which builtins the C# evaluator implements, and which status each unsupported construct yields — consult it before adding a builtin, adding an atom type, or changing which construct yields which status, and update it (including its two machine-checked fenced blocks) if such a change shifts the boundary.
+
 ## Common Commands
 
 ```bash
