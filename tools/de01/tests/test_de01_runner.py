@@ -125,6 +125,85 @@ class TestCompareLegsSilentDisagreement:
         assert len(result.declared_non_equivalences) == 1
         assert result.rows[0].classification == "declared_non_equivalence"
 
+    def test_warned_abstention_beside_agreeing_evaluators_is_declared(self):
+        """Phase 1201 supplemental path. A leg that abstains with a written reason,
+        beside two or more legs that evaluated and AGREE, is a declared
+        non-equivalence -- not a silent one.
+
+        This is the dg-reasoner shape: spec/RULE-PARTITION-POLICY.md assigns
+        quantitative rules to the SWRL VALIDATOR, so SHACL reports not_evaluated on
+        every such rule by design. Under the CR-02 guard alone every row on a
+        quantitative fixture is silent forever, and D-11's gate can only be reached
+        by making a leg claim a verdict it cannot justify."""
+        legs = {
+            "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "b": LegResult("b", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "c": LegResult(
+                "c",
+                True,
+                _envelope([_row("R1", "OBJ1", "not_evaluated", warnings=["SHACL cannot express height > 75"])]),
+            ),
+        }
+        result = compare_legs(legs)
+        assert result.silent_disagreement_count == 0
+        assert len(result.declared_non_equivalences) == 1
+        assert result.rows[0].classification == "declared_non_equivalence"
+        assert "height > 75" in result.rows[0].reason
+
+    def test_warned_abstention_against_a_single_evaluator_is_still_silent(self):
+        """CR-02 preservation, stated as its own test. The supplemental path above
+        requires a consensus of at least TWO agreeing evaluating legs. With only one
+        evaluating leg there is no consensus to discount the abstention against, so
+        the pair stays silent -- which is exactly CR-02's 1-vs-1 shape.
+
+        If someone ever drops the two-leg floor, CR-02's own reproductions and this
+        test fail together."""
+        legs = {
+            "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "b": LegResult(
+                "b",
+                True,
+                _envelope([_row("R1", "OBJ1", "not_evaluated", warnings=["declared reason"])]),
+            ),
+        }
+        result = compare_legs(legs)
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_abstention_beside_disagreeing_evaluators_is_still_silent(self):
+        """The evaluating legs must AGREE. An abstention cannot paper over a real
+        divergence between two legs that both produced a verdict -- that is the
+        precise thing DE-01 exists to catch, and it stays silent no matter how well
+        the third leg explains itself."""
+        legs = {
+            "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "b": LegResult("b", True, _envelope([_row("R1", "OBJ1", "failed")])),
+            "c": LegResult(
+                "c",
+                True,
+                _envelope([_row("R1", "OBJ1", "not_evaluated", warnings=["declared reason"])]),
+            ),
+        }
+        result = compare_legs(legs)
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_unwarned_abstention_beside_agreeing_evaluators_is_silent(self):
+        """The warning requirement holds on the supplemental path too. An abstention
+        with no written reason is undeclared by definition, so it cannot be
+        discounted however many legs agree around it."""
+        legs = {
+            "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "b": LegResult("b", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            "c": LegResult("c", True, _envelope([_row("R1", "OBJ1", "not_evaluated")])),
+        }
+        result = compare_legs(legs)
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
     def test_declarable_status_without_warning_is_still_silent(self):
         """A declarable-vocabulary status (unsupported/error/not_evaluated/indeterminate)
         with NO warning does not get a free pass -- the warning requirement is real,

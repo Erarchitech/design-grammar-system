@@ -185,9 +185,43 @@ def compare_legs(leg_results: dict[str, LegResult]) -> ComparisonResult:
             if non_declarable_statuses:
                 all_declarable_with_warning = False
 
-            if all_declarable_with_warning and reasons:
+            # Supplemental declared path (Phase 1201). The guard above is correct
+            # for a disagreement *between evaluating legs*, but it also catches a
+            # different shape it was never aimed at: a leg that legitimately
+            # abstains, with a written reason, beside legs that evaluated and
+            # agree. spec/RULE-PARTITION-POLICY.md assigns quantitative rules to
+            # the SWRL VALIDATOR, so dg-reasoner reports `not_evaluated` on every
+            # such rule by design -- under the guard alone, every row on a
+            # quantitative fixture is silent forever and the gate can never reach
+            # zero except by making a leg claim a verdict it cannot justify.
+            #
+            # An abstention is discounted ONLY against a genuine consensus: at
+            # least two legs that did evaluate, all reporting the same status.
+            # The two-leg floor is what preserves CR-02. Its reproductions are
+            # 1-vs-1 pairs (`passed` vs warned `unsupported`; `unknown` vs warned
+            # `unsupported`) -- with a single evaluating leg there is no consensus
+            # to appeal to, so those stay silent, exactly as plan 1200-07 requires.
+            # This never widens _DECLARABLE_STATUSES and never relaxes the guard;
+            # it adds a second, narrower way to be declared.
+            consensus_reason: str | None = None
+            if not all_declarable_with_warning:
+                abstained: list[str] = []
+                evaluated: list[str] = []
+                for leg_name, leg_data in per_leg.items():
+                    if not leg_data.get("present"):
+                        continue
+                    for row in leg_data["rows"]:
+                        status = row["canonicalStatus"]
+                        if status in _DECLARABLE_STATUSES and row["warnings"]:
+                            abstained.append(f"{leg_name}: {row['warnings'][0]}")
+                        else:
+                            evaluated.append(status)
+                if abstained and len(evaluated) >= 2 and len(set(evaluated)) == 1:
+                    consensus_reason = "; ".join(abstained)
+
+            if (all_declarable_with_warning and reasons) or consensus_reason:
                 classification = "declared_non_equivalence"
-                reason = "; ".join(reasons)
+                reason = consensus_reason or "; ".join(reasons)
                 declared.append(
                     {
                         "ruleId": rule_id,
