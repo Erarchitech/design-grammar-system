@@ -4,15 +4,15 @@ milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
-status: ready_to_plan
-stopped_at: GATE12-01 control-plane reconciliation complete; Phase 1200 ready to plan
-last_updated: "2026-09-20T12:00:00+01:00"
+status: ready_to_execute
+stopped_at: Phase 1200 planned — 5 plans in 3 waves; ready to execute
+last_updated: "2026-09-20T12:00:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: GATE12-01 standalone control-plane reconciliation executed — 8 auto items reconciled, 3 manual left open, 2 skip unchanged; Phase 1200 unblocked
+last_activity_desc: Phase 1200 planned — 5 plans in 3 waves; plan-checker passed (0 blockers)
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
+  total_plans: 5
   completed_plans: 0
   percent: 0
 ---
@@ -29,14 +29,14 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
-Plan: Not started
-Status: **Ready to plan** — GATE12-01 standalone control-plane reconciliation COMPLETE (2026-09-20)
+Plan: 0/5 complete
+Status: **Ready to execute** — 5 plans in 3 waves; plan-checker passed (1 warning, 0 blockers, warning resolved)
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-20 — GATE12-01 control-plane reconciliation executed; Phase 1200 unblocked
+Last activity: 2026-09-20 — Phase 1200 planned (research + patterns + validation + 5 plans)
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
