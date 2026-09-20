@@ -203,11 +203,13 @@ Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface)
 
 ### Schema Change Propagation
 
-When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), `llm/structure_rules.json` (carries `inputBindings`, a rule-referencing artifact, alongside `mappings` — Phase 38), and any Cypher templates in Python/JS.
+When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), `llm/structure_rules.json` (carries `inputBindings`, a rule-referencing artifact, alongside `mappings` — Phase 38), `spec/EVIDENCE-CONTRACT.md`, and any Cypher templates in Python/JS.
 
-`shaclReportJson` (ValidationRun/Run node property, `spec/DATABASE.md`) is a schema-propagation surface itself — added Phase 823, sibling to `statePayloadJson`/`rulesJson`.
+`shaclReportJson`/`evidenceEnvelopeJson` (ValidationRun/Run node properties, `spec/DATABASE.md`) are schema-propagation surfaces themselves — `shaclReportJson` added Phase 823, `evidenceEnvelopeJson` added Phase 1200, both sibling to `statePayloadJson`/`rulesJson`.
 
 **Rule partition policy:** `spec/RULE-PARTITION-POLICY.md` governs which validation system (SWRL VALIDATOR vs. SHACL) owns a given rule category — consult it before adding a new SHACL shape or a new SWRL rule category, and update it if a schema change shifts the partition line.
+
+**Evidence and status contract:** `spec/EVIDENCE-CONTRACT.md` governs the canonical validation-outcome status vocabulary and the evidence envelope shape — consult it before adding, renaming, or reinterpreting a validation outcome status or an evidence field, and update it if a schema change shifts the envelope.
 
 ## Common Commands
 

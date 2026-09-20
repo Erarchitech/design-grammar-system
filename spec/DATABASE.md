@@ -10,7 +10,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 |---------------|-------------|---------|
 | `OntoGraph` | Class, DatatypeProperty, ObjectProperty | Domain ontology terms |
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
-| `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config |
+| `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config; see [IntegrationConfig](#integrationconfig) |
 | `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
 | `Computgraph` | Object, Behavior, Algorithm, Procedure, Pattern, Parameter, Interface, Representation, SharedProperty | Computgraph runtime entities (Phase 36) + cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) |
 
@@ -106,12 +106,37 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 **Run** — A validation run execution record
 ```
 (:Run {Run_Id: "VRUN_abc123", ValidStatus: [true, false, true], SendStatus: true, statePayloadJson: '{...}', shaclReportJson: '{...}', graph: "ValidGraph", project: "1"})
+(:Run {runId: "VRUN_auto123", status: "completed", trigger: "auto", verdictSource: "shacl", capturedAt: "2026-07-28T19:44:51.686809Z", completedAt: "2026-07-28T19:44:54.365992Z", attempts: 0, SendStatus: false, graph: "ValidGraph", project: "1"})
 ```
-- `Run_Id` — unique identifier for the validation run
+- `Run_Id` — unique identifier for the manual validation run; auto-validation code uses the `runId` spelling on `:ValidationRun` nodes (known `:ValidationRun` / `:Run` label/property drift)
 - `ValidStatus` — Boolean list, one element per ObjState in the validated DesignState, index-matched to ObjState order
-- `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success)
+- `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success). On the auto path it is initialized to `false` by `CAPTURE_QUERY`; the same property is used, not a second field
 - `statePayloadJson` — v2 projection for Model Viewer read-back
 - `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
+- `evidenceEnvelopeJson` — JSON string holding the canonical Evidence Envelope (`contractVersion`, `canonicalizationVersion`, `canonicalStatus`, `rows[]`, and the rest of the field table) defined by `spec/EVIDENCE-CONTRACT.md`; sibling property to `statePayloadJson`/`shaclReportJson`, written by a producing stage when it emits typed canonical-status evidence for this run. **Absence means not recorded, never an error** — the same rule as `shaclReportJson` — since this phase (1200) defines the envelope without migrating every producer onto it. `spec/EVIDENCE-CONTRACT.md` is the authority for this property's content; this document records only its presence and placement.
+- `trigger` — string, literal `auto` on auto-validation runs; written by `CAPTURE_QUERY`, `COMPLETE_QUERY`, and `FAIL_QUERY`. It distinguishes an auto-produced run from the manual VALIDATOR path; absent on manual and all pre-Phase-39 runs, which is normal
+- `verdictSource` — string, literal `shacl`, written by `COMPLETE_QUERY`; absent when no auto-validation completion has written it
+- `capturedAt` — ISO-8601 string, set by `POST /designstate/capture` through `CAPTURE_QUERY`, which also copies it to `createdAt`; absent on manual runs
+- `completedAt` — ISO-8601 string, written by `COMPLETE_QUERY` when the watcher finishes SHACL validation; absent until completion
+- `attempts` — integer, initialized to `0` by `CAPTURE_QUERY` and incremented by `FAIL_QUERY`; bounded by `IntegrationConfig.maxAttempts`; absent on manual and pre-Phase-39 runs
+- `lastError` — string, written by `FAIL_QUERY`, containing the most recent failed-attempt reason; absent until an auto attempt fails
+- `status` — enum `captured`, `completed`, `superseded`, or `failed`, written initially by `CAPTURE_QUERY`, changed to `superseded` by `COALESCE_QUERY` for stale captured rows, to `completed` by `COMPLETE_QUERY`, and to `captured` or terminal `failed` by `FAIL_QUERY`. Legal transitions are `captured → superseded`, `captured → completed`, `captured → captured` (retry), and `captured → failed` when `nextAttempts >= maxAttempts`; `COALESCE_QUERY` only supersedes stale rows that are still `captured`
+
+All seven auto-validation properties above are optional on the document-level `:Run` contract: absence means the row is a manual or pre-Phase-39 run, never an error. Auto-runs are SHACL-validated before their own `ValidStatus` is written, so every auto-run self-violates `RunStatusShape_valid` and the conservative unmapped fallback flips every ObjState false; this is finding **F-39-01**, recorded in `.planning/phases/v9.0-PIPELINE-UAT.md`. The fix is scoped to a follow-up milestone; Phase 40 documents the behavior without changing validation logic.
+
+**IntegrationConfig** — Per-project integration settings for an external consumer, discriminated by `provider`; the Phase 39 `AutoValidation` variant carries the watcher's guardrails.
+```
+(:IntegrationConfig {graph: "ValidGraph", provider: "AutoValidation", project: "1", enabled: true, publishEnabled: false, debounceWindowSeconds: 2.0, rateLimitPerMinute: 30, maxAttempts: 3, updatedAt: "2026-07-28T19:44:51.686809Z"})
+```
+- Merge key: `(graph, provider, project)` — one row per project per provider
+- `provider` — discriminator; `AUTO_VALIDATION_PROVIDER` in `data-service/dsav_watcher.py` has the literal value `AutoValidation`
+- `enabled` — boolean per-project opt-in flag
+- `publishEnabled` — boolean controlling whether the auto-run also publishes to Speckle
+- `debounceWindowSeconds` — float debounce guardrail
+- `rateLimitPerMinute` — integer per-project rate-limit guardrail
+- `maxAttempts` — integer retry bound used to bound `Run.attempts`
+- `updatedAt` — ISO-8601 string written by `CONFIG_UPSERT_QUERY`
+- A missing `IntegrationConfig` row means auto-validation is disabled for that project. The row is never implicitly created; `get_auto_validation_config` returns `None` for an absent row.
 
 ### Computgraph
 
@@ -391,6 +416,7 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 |-------------|------|-----|-----------|-------------|
 | `HAS_BODY` | Rule | Atom | `order` (int) | Body atoms (conditions) |
 | `HAS_HEAD` | Rule | Atom | `order` (int) | Head atoms (conclusions) |
+| `SUPERSEDED_BY` | Rule | Rule | `supersededAt` (ISO string), `actor` (string), `prompt` (string) | Debug session rule-ingest-no-conflict-check (2026-09-19): Replace/Update provenance from the ingest conflict-check gate. Old rule points to its replacement; never deleted. Rule-corpus readers (SWRL VALIDATOR's `Neo4jRuleRepository.RulesQuery`, the conflict check itself, semantic rule deletion's selection catalogue) exclude any Rule with an outgoing `SUPERSEDED_BY` edge — see `spec/RULE-PARTITION-POLICY.md`'s "Corpus-Level Authoring-Time Conflict Check" addendum |
 | `REFERS_TO` | Atom | Class/DatatypeProperty/ObjectProperty/Builtin | — | What the atom references |
 | `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 | `ARG` | Atom | Var/Literal | `pos` (int, 1-indexed) | Atom arguments |
@@ -541,6 +567,7 @@ write-verb policy — before any LLM-generated Cypher reaches Neo4j
 - `ValidationGraph` → `ValidGraph` (graph property value)
 - Added: `Run.ValidStatus` (Boolean list per ObjState)
 - Added: `Run.SendStatus` (single Boolean per Run)
+- Phase 40: documented Phase 39 auto-validation `Run` properties and the `IntegrationConfig{provider:'AutoValidation'}` subsection to close runbook decision D4
 
 **Legacy → v3 (historical):**
 - `Rule.id` → `Rule.Rule_Id`

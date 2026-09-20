@@ -13,6 +13,8 @@
 - [ ] **ALGN12-03**: A frozen cross-service fixture contains all four atom types, two objects with mixed outcomes, a Design State, and a geometry reference.
 - [ ] **ALGN12-04**: DE-01 compares Python, dg-reasoner, C#, and persisted replay against the same fixture; supported cases agree canonically and unsupported cases are typed rather than silently divergent.
 
+**Ownership split (D-15):** Phase 1200 owns the evidence envelope and status vocabulary *definition*, at `spec/EVIDENCE-CONTRACT.md`. v11.0 Phase 1105 owns *propagation* of that definition across the `CLAUDE.md` § Schema Change Propagation list (`cypher_template.txt`, `training/dataset_schema.json`, n8n workflow prompts, `ui-v2` config, `.github/copilot-instructions.md`, `README.md`, `ontology/dg-shapes.ttl`, `llm/structure_rules.json`). Coordinate, do not duplicate.
+
 ## Parser and evaluator conformance (Phase 1201)
 
 - [ ] **ALGN12-05**: ObjectPropertyAtom and malformed/unsupported syntax have explicit parser outcomes and regression fixtures.
