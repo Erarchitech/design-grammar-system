@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-grammar-system/tools/de01/report_schema.json",
+  "title": "DE-01 Cross-Service Evidence Report",
+  "description": "Machine-readable shape of the DE-01 runner's own JSON report (tools/de01/report.py::emit_json_report). $defs.CanonicalStatus below is a same-document local $def, not an independently-authored second copy of the vocabulary: a plain `jsonschema.validate(instance, schema)` call (this file's own <verify> contract, and the invocation every operator/CI runs) cannot resolve a cross-file $ref to spec/evidence-contract.schema.json without a caller-supplied Registry, since jsonschema 4.18+ requires explicit retrieval for any $ref outside the current document. tools/de01/tests/test_de01_runner.py::test_report_schema_canonical_status_matches_contract_schema asserts this enum stays byte-identical to spec/evidence-contract.schema.json's $defs.CanonicalStatus.enum, so a drift is caught mechanically rather than by review alone -- $defs.CanonicalStatus.enum in spec/evidence-contract.schema.json remains the single authored source of truth; this is a pinned mirror, not a second authority.",
+  "$defs": {
+    "CanonicalStatus": {
+      "type": "string",
+      "description": "Pinned mirror of spec/evidence-contract.schema.json's $defs.CanonicalStatus.enum (D-02's frozen 8-member vocabulary) -- see this schema's top-level description for why this is a same-document $def rather than a cross-file $ref.",
+      "enum": [
+        "passed",
+        "failed",
+        "unknown",
+        "not_evaluated",
+        "no_population",
+        "unsupported",
+        "indeterminate",
+        "error"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "de01ReportVersion": {
+      "type": "string",
+      "description": "Version of this report's own shape."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp of when this report was generated."
+    },
+    "fixtureVersion": {
+      "type": "string",
+      "description": "fixtures/golden/MANIFEST.md's FIXTURE_VERSION this run was driven against."
+    },
+    "contractVersion": {
+      "type": "string",
+      "description": "spec/EVIDENCE-CONTRACT.md's EVIDENCE_CONTRACT_VERSION in effect for this run."
+    },
+    "canonicalizationVersion": {
+      "type": "integer",
+      "description": "The CANONICALIZATION_VERSION in effect for this run."
+    },
+    "legs": {
+      "type": "object",
+      "description": "Per-leg availability and identity, keyed by leg name (data-service, dg-reasoner, csharp, replay).",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": ["string", "null"]
+          },
+          "serviceName": {
+            "type": ["string", "null"]
+          },
+          "serviceVersion": {
+            "type": ["string", "null"]
+          },
+          "stage": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["available"],
+        "additionalProperties": false
+      }
+    },
+    "comparison_rows": {
+      "type": "array",
+      "description": "One entry per (ruleId, objectId) pair seen in any leg's envelope, ordered ascending by objectId, ties broken by ruleId (spec/EVIDENCE-CONTRACT.md section 4).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": {
+            "type": "string"
+          },
+          "objectId": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["agreement", "declared_non_equivalence", "silent_disagreement"]
+          },
+          "reason": {
+            "type": ["string", "null"]
+          },
+          "perLeg": {
+            "type": "object",
+            "description": "Keyed by leg name. Each value is either {present: false} or {present: true, rows: [...]} -- a leg with no row for this pair is recorded as absent, never omitted.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "canonicalStatus": {
+                        "$ref": "#/$defs/CanonicalStatus"
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "inputHash": {
+                        "type": ["string", "null"]
+                      },
+                      "outputHash": {
+                        "type": ["string", "null"]
+                      },
+                      "detail": {
+                        "type": ["string", "null"]
+                      },
+                      "serviceName": {
+                        "type": ["string", "null"]
+                      },
+                      "serviceVersion": {
+                        "type": ["string", "null"]
+                      }
+                    },
+                    "required": ["canonicalStatus"]
+                  }
+                }
+              },
+              "required": ["present"]
+            }
+          }
+        },
+        "required": ["ruleId", "objectId", "classification", "perLeg"]
+      }
+    },
+    "declared_non_equivalences": {
+      "type": "array",
+      "description": "Typed, reasoned divergences -- present in the vocabulary of unsupported/error/not_evaluated/indeterminate, each carrying a non-empty warning.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": {
+            "type": "string"
+          },
+          "objectId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/CanonicalStatus"
+            }
+          }
+        },
+        "required": ["ruleId", "objectId", "reason", "statuses"]
+      }
+    },
+    "status_tally_by_leg": {
+      "type": "object",
+      "description": "Per-leg, per-status row counts.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer"
+        }
+      }
+    },
+    "silent_disagreement_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The DE-01 gate value (D-14). Must be 0 for the golden fixture to accept DE-01."
+    }
+  },
+  "required": [
+    "de01ReportVersion",
+    "generatedAt",
+    "fixtureVersion",
+    "contractVersion",
+    "canonicalizationVersion",
+    "legs",
+    "comparison_rows",
+    "declared_non_equivalences",
+    "status_tally_by_leg",
+    "silent_disagreement_count"
+  ],
+  "additionalProperties": false
+}
