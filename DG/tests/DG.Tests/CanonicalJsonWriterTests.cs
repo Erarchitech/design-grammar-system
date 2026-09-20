@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using DG.Core.Contracts;
 
 namespace DG.Tests;
@@ -140,6 +141,7 @@ public sealed class CanonicalJsonWriterTests
         var vectors = doc.RootElement.GetProperty("vectors");
 
         var canonicalJsonVectorCount = 0;
+        var sawTrailingZeroDecimal = false;
 
         foreach (var vector in vectors.EnumerateArray())
         {
@@ -160,9 +162,15 @@ public sealed class CanonicalJsonWriterTests
 
             Assert.Equal(expectedCanonical, actualCanonical);
             Assert.Equal(expectedDigest, actualDigest);
+
+            if (expectedCanonical is not null && Regex.IsMatch(expectedCanonical, @":-?\d+\.\d*0[,}]"))
+            {
+                sawTrailingZeroDecimal = true;
+            }
         }
 
         Assert.True(canonicalJsonVectorCount > 0, "Expected at least one canonicalJson vector in the golden fixture — the test cannot pass vacuously.");
+        Assert.True(sawTrailingZeroDecimal, "Expected at least one canonicalJson vector's canonical string to carry a trailing-zero decimal (CR-01 regression coverage) — the test would silently pass if that vector were removed.");
     }
 
     [Fact]

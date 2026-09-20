@@ -1,6 +1,6 @@
 # fixtures/golden/ — Freeze Manifest
 
-**FIXTURE_VERSION: `1.0.0`**
+**FIXTURE_VERSION: `1.1.0`**
 **Freeze date: 2026-09-20**
 
 This is the single source of truth for the one frozen cross-service golden fixture that all
@@ -56,6 +56,7 @@ DE-01 legs read `fixtures/golden/` directly.
 | Version | Date | Reason | Changed by |
 |---|---|---|---|
 | 1.0.0 | 2026-09-20 | Initial freeze — Phase 1200 Plan 02. One rule, four atom types (including the deliberately-unsupported `ObjectPropertyAtom`), two mixed-outcome objects plus one zero-binding object, a three-kind Design State, and a geometry reference. | Phase 1200-02 executor |
+| 1.1.0 | 2026-09-20 | Additive: one new `canonicalJson` vector appended to `canonical-vectors.json` closing the CR-01 coverage gap — a decimal whose stored scale carries trailing zeros (`height:100.00`, `ratio:2.50`), which the C# leg's old integral-cast/optional-digit `WriteNumberDecimal` silently rendered without scale, diverging from Python's `format(Decimal, "f")`. No existing vector's `value`, `canonical`, or `sha256Upper` was edited. | Phase 1200-06 executor |
 
 ---
 

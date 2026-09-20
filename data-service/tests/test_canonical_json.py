@@ -1,6 +1,7 @@
 """Tests for canonical_json.py (Phase 1200 Plan 03, ALGN12-01/spec/EVIDENCE-CONTRACT.md section 6)."""
 import json
 import os
+import re
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -132,6 +133,23 @@ def test_golden_vectors_canonical_json_round_trip():
         assert canonical == vector["canonical"], f"canonical string mismatch for {vector['description']}"
         digest = hash_canonical(vector["value"])
         assert digest == vector["sha256Upper"], f"digest mismatch for {vector['description']}"
+
+
+def test_canonicalize_preserves_trailing_zero_decimal_scale():
+    # CR-01 direct reproduction: a decimal's stored scale (including trailing zeros) is part
+    # of its canonical form, exactly mirroring format(Decimal, "f").
+    value = {"amount": Decimal("100.00"), "ratio": Decimal("2.50")}
+    assert canonicalize(value) == '{"amount":100.00,"ratio":2.50}'
+
+
+def test_golden_vectors_include_a_trailing_zero_decimal():
+    # Guards against silently reopening the CR-01 coverage gap: if the trailing-zero vector is
+    # ever removed from canonical-vectors.json, this fails instead of the gap going unnoticed.
+    vectors = [v for v in _load_golden_vectors() if v["kind"] == "canonicalJson"]
+    trailing_zero_hits = [
+        v for v in vectors if re.search(r":-?\d+\.\d*0[,}]", v["canonical"])
+    ]
+    assert trailing_zero_hits, "no canonicalJson golden vector carries a trailing-zero decimal"
 
 
 def test_serializer_does_not_delegate_to_json_dumps():

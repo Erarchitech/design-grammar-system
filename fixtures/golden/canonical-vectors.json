@@ -63,6 +63,18 @@
       "_authoring_note": "The 'note' value as authored for this vector is the NFD-decomposed form of 'Cafe' + combining U+0301; the canonical field below is computed AFTER NFC normalization per rule 4, so it renders as the precomposed U+00E9 form.",
       "canonical": "{\"aStatus\":\"no_population\",\"bindingCount\":0,\"note\":\"Café\",\"ratio\":0.1,\"zObjectId\":\"OBJ_GOLD_EMPTY\"}",
       "sha256Upper": "82811E1569BD49D251D2BF13456BB48D616FDDE41DA9214ACB884D1411120EC7"
+    },
+    {
+      "kind": "canonicalJson",
+      "description": "CR-01 regression vector: a decimal whose stored scale carries trailing zeros must render identically on both legs -- height:100.00 (an integral value at scale 2, the case the old C# integral fast-path silently rounded to 100) and ratio:2.50 (a non-integral value at scale 2, the case the old C# 0.# format silently trimmed to 2.5). Also exercises a plain integer (bindingCount:3, still no decimal point) and a string (ruleId), plus key ordering.",
+      "value": {
+        "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+        "height": 100.00,
+        "bindingCount": 3,
+        "ratio": 2.50
+      },
+      "canonical": "{\"bindingCount\":3,\"height\":100.00,\"ratio\":2.50,\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\"}",
+      "sha256Upper": "6EA1772055E52D43A03B942ACD8EB9FC61FC7FD5AC22E987B2700866A855C8FF"
     }
   ]
 }
