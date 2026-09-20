@@ -10,6 +10,7 @@ This document is the **normative partition contract** between DG's two validatio
 - [Precedence & Single-Authoring](#precedence--single-authoring-d-13) -- the remedy for disagreement is re-homing, never merging
 - [Computgraph Structural Checks (Phase 37)](#computgraph-structural-checks-phase-37) -- the third validation surface, evaluated by Cypher over the LPG-native Computgraph, that neither SWRL nor SHACL can reach
 - [Input Generation Bindings (Phase 38)](#input-generation-bindings-phase-38) -- the fourth rule-corpus consumer, which reads a Rule's SWRL threshold to bound AI-generated candidates and authors nothing
+- [Corpus-Level Authoring-Time Conflict Check](#corpus-level-authoring-time-conflict-check-debug-session-rule-ingest-no-conflict-check-2026-09-19) -- the fifth surface, a pre-write gate that detects a new rule's grounding signature colliding with an existing rule, closing a paper §4 preview/confirm conformance gap
 - [Enforcement](#enforcement-d-14) -- documentation + review discipline this phase, linter deferred
 - [How SHACL Findings Surface](#how-shacl-findings-surface) -- severity mapping and message house style
 
@@ -27,7 +28,7 @@ Per `.planning/REQUIREMENTS.md`'s Out-of-Scope table: **"Replacing the SWRL VALI
 
 **The SWRL VALIDATOR owns architect-authored design-compliance rules** -- quantitative geometry/parameter constraints originating from natural-language ingestion (`POST /n8n/webhook/dg/rules-ingest` -> LLM -> SWRL atoms -> the metagraph `Rule` corpus). These are business rules: they encode what a *specific project* or *regulation* requires (e.g. "maximum building height is 75 meters"), they are dynamically authored per project, and their evaluation follows DG's established violation-inverted-body-atom semantics (see `spec/DATABASE.md` §Violation Pattern).
 
-**SHACL owns structural data-integrity of instance data** -- schema conformance of the DesignState/Run/Rule graph structure itself (ValidGraph and Metagraph node/relationship shape), independent of any project's business content. These are integrity invariants: they hold for *every* project regardless of what design-compliance rules that project has authored (e.g. "every `PropState` must reference a resolvable `DataProperty`").
+**SHACL owns structural data-integrity of instance data** -- schema conformance of the DesignState/Run/Rule graph structure itself (ValidGraph and Metagraph node/relationship shape), independent of any project's business content. These are integrity invariants: they hold for *every* project regardless of what a *specific project* or *regulation* requires (e.g. "every `PropState` must reference a resolvable `DataProperty`"). The Phase 39 auto-validation path remains on this SHACL side of the boundary; its known pre-write `RunStatusShape_valid` self-violation is documented as **F-39-01** in `spec/DATABASE.md`, not repaired by changing the partition policy or shape logic.
 
 The distinguishing question: **does this constraint express a real-world design requirement (architect intent), or a structural precondition for the data to be interpretable at all (system integrity)?** The former is SWRL's domain; the latter is SHACL's.
 
@@ -115,6 +116,28 @@ Phase 38 adds a **fourth consumer** of the rule corpus that is **not** a fourth 
 **The default.** A rule with no `inputBindings` entry is treated as `geometry-required` -- the safe direction, because it can only ever under-claim (D-08). An unmapped rule's `determinabilityClass` therefore defaults to `geometry-required`, never to `direct-parameter` or `monotone-bound`.
 
 **Scope fence.** An `inputBindings` entry declares *which parameters* and *what kind of determinability*. It must never carry a numeric limit, comparison operator, or threshold value. Those are SWRL scope, exactly as `_FORBIDDEN_PARAM_KEYS` fences `mappings[].params` above.
+
+---
+
+## Corpus-Level Authoring-Time Conflict Check (debug session rule-ingest-no-conflict-check, 2026-09-19)
+
+This is an addendum, not a new numbered decision -- no `D-` number is assigned, because no CONTEXT decision letter maps to a partition-policy decision for this fix.
+
+This is a **fifth surface**, alongside SWRL VALIDATOR, SHACL, Computgraph Structural Checks (Phase 37), and Input Generation Bindings (Phase 38). It is **not a validation system** in the sense the first two are (it never judges whether a design satisfies a rule, and never judges the structural shape of the graph) -- it is an **authoring-time gate** that runs once, before a new `Rule` is ever written, closing a conformance gap between paper T1 ITcon R15.6 §4's normative five-stage authoring process (`tag -> recognise -> preview -> confirm -> publish`) and a shipped pipeline that implemented only `tag -> recognise -> publish`.
+
+**What it checks.** Whether an about-to-be-authored rule shares its **(Class, DatatypeProperty, comparator)** grounding signature with a `Rule` already in the project's corpus -- the paper's own grounding triple ([P138]: "the identified constraint type ... determines the corresponding sequence of SWRL atoms"). Comparator is part of the key by construction, so the sanctioned min+max range decomposition ([P109]: "range constraints are broken down into separate lower and upper constraints") is never flagged -- a `swrlb:lessThan` rule and a `swrlb:greaterThan` rule on the same Class+DatatypeProperty are two different grounding signatures, not a collision.
+
+**Why it is neither SWRL nor SHACL.** Per the [Partition Line](#partition-line-d-12) and [decision table](#what-belongs-where-decision-table) above: SHACL validates a Rule node's own *shape* (`Rule_Id` format, atom order) and "never evaluates whether the rule's SWRL logic is correct" -- this check compares TWO rules' semantic content to each other, which is neither a shape check nor a design-compliance evaluation against BIM/parameter data. SWRL owns evaluating a design against a rule, not comparing rules to each other. This check's subject is the rule corpus itself, at authoring time, before either system ever sees the new rule.
+
+**Deliberately LLM-free.** Unlike semantic rule deletion's `select_rules_for_deletion()` (which reasons over open-ended NL deletion requests), this check resolves grounding deterministically: `data-service/dg_context.check_rule_conflict()` derives a candidate (Class, DatatypeProperty, comparator) triple from the incoming NL text using ONLY vocabulary this project's own Rule corpus already references (`fetch_project_rule_vocabulary()`, deliberately not `fetch_existing_entities()` alone -- see that function's docstring for the cross-project OntoGraph-tagging quirk it avoids), plus a fixed comparator-keyword table per [P109]. An unresolved/ambiguous grounding always reports "no conflict" rather than guessing -- a false negative degrades to the pre-fix behavior (silent duplicate), while a false positive would block legitimate authoring outright; the two failure modes are not symmetric, so ambiguity resolves toward the less disruptive one.
+
+**Where it runs.** A new synchronous `POST /rules/check-conflict` in `data-service`, called by the `ui-v2` client BEFORE it POSTs to the n8n `rules-ingest` webhook. The n8n workflow and its execution model are unmodified. The dialog (Replace / Update / Keep both / Cancel) is pure client state in `ui-v2` -- no new n8n execution status, no resume endpoint -- mirroring the two-call split semantic rule deletion already established (`resolve-deletion` selection-only, `bulk-delete` confirm-only).
+
+**Replace/Update never deletes.** Per [P129] ("versioned proposals, operator or ontology-steward approval, provenance recording") and [P139] ("approved results are recorded in the project graph together with provenance"), choosing Replace or Update records a new `SUPERSEDED_BY` relationship (old `Rule` -> new `Rule`) with `supersededAt`/`actor`/`prompt` provenance properties, instead of deleting the old `Rule`. Keep both authors the new rule with no supersede edge, and records `acceptedOverlapWith`/`acceptedOverlapAt`/`acceptedOverlapBy` properties on the new rule as a provenance-only annotation. Cancel writes nothing.
+
+**Superseded-rule exclusion is load-bearing, not cosmetic.** A superseded rule that remained visible to the SWRL VALIDATOR's rule-corpus loader would keep firing alongside its replacement -- reproducing the exact bug this gate exists to close, in a new form. `WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }` is therefore applied in three places: `DG.Core.Data.Neo4jRuleRepository.RulesQuery` (C#, the SWRL VALIDATOR's own corpus loader), `dg_context._RULE_CONFLICT_QUERY` (so a past revision cannot collide with itself forever), and `dg_context._RULES_FOR_SELECTION_QUERY` (so semantic rule deletion cannot re-select an already-retired rule).
+
+**Schema change.** `SUPERSEDED_BY` is a new Metagraph relationship type. Per CLAUDE.md's Schema Change Propagation checklist, this addendum is accompanied by updates to `spec/DATABASE.md`, `ontology/dg-shapes.ttl`, `cypher_template.txt`, `training/dataset_schema.json`, `.github/copilot-instructions.md`, and `README.md`.
 
 ---
 

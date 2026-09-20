@@ -38,6 +38,13 @@ DE01_HARNESS_CSPROJ = REPO_ROOT / "DG" / "tools" / "DG.De01Harness" / "DG.De01Ha
 SEED_CYPHER_PATH = REPO_ROOT / "fixtures" / "golden" / "seed.cypher"
 FIXTURE_PROJECT = "DG-1200-GOLDEN"
 FIXTURE_RULE_ID = "R_GOLD_HEIGHT_MAX_75_V"
+# The seeded Run node's Run_Id (fixtures/golden/seed.cypher, "Step 7: Run node for the
+# replay leg" -- `MERGE (run:Run {Run_Id: 'RUN_GOLD_1200', ...})`). fixture.json (frozen,
+# D-11) carries no run id field at all -- the run identity lives only in the seed script,
+# the same way FIXTURE_PROJECT/FIXTURE_RULE_ID above are declared as constants rather than
+# read out of the fixture. Any leg that needs to address the seeded ValidGraph ABox by
+# run id reads it from here, never hardcoded a second time at the call site.
+FIXTURE_RUN_ID = "RUN_GOLD_1200"
 
 
 @dataclass
@@ -312,25 +319,88 @@ def run_leg_dg_reasoner(fixture: dict[str, Any], config: dict[str, Any]) -> LegR
     """POST to ``/shacl/validate`` and map the ``{conforms, results, counts}``
     envelope (dg-reasoner/reasoning.py::run_shacl) to canonical statuses.
 
-    Mapping decision (documented inline, per the plan's explicit instruction):
-    ``conforms: None`` with an ``error`` key (dg-reasoner's own D-09 timeout shape)
-    maps to ``CanonicalStatus.ERROR`` carrying the reason. A conforming report with
-    zero focus-node results maps to ``CanonicalStatus.NO_POPULATION`` rather than
-    ``passed`` -- pySHACL reports ``conforms: true`` for an empty target set, and
-    that exact collapsed-status defect (an empty population silently reading as a
-    pass) is what this whole contract exists to separate out (spec/EVIDENCE-CONTRACT.md
-    section 1's ``no_population`` semantics). A non-empty, conforming report maps to
-    ``passed`` for every fixture object; a violation naming a given focus label maps
-    that object to ``failed``, everything else conforming stays ``passed``.
+    **D-09 fix.** The POST body carries both ``project`` and ``run_id``.
+    ``run_shacl``'s own docstring (dg-reasoner/reasoning.py:473-479) states that
+    *without* ``run_id`` it validates the project-level Metagraph/OntoGraph export
+    only -- the run's ValidGraph ABox (``build_valid_graph``) is unioned in *only*
+    when ``run_id`` is supplied. The seeded golden ``Object`` nodes
+    (``OBJ_GOLD_PASS``/``OBJ_GOLD_FAIL``) live in that ABox, so omitting ``run_id``
+    (the bug this fixes) made ``dgc:ObjectShape`` target a class absent from the
+    graph pySHACL actually validated -- zero focus nodes, ``conforms=true``, and
+    every row misreported as ``no_population`` regardless of whether the seed had
+    even been applied. ``run_id`` is read from the fixture the same way ``project``
+    and ``rule`` already are; the golden fixture (frozen, D-11) has no ``runId``
+    field of its own, so the fallback is the same seeded value
+    ``fixtures/golden/seed.cypher`` writes, declared once as ``FIXTURE_RUN_ID``
+    rather than re-hardcoded at this call site. A fixture that truly carries no
+    run id at all (a future, non-frozen fixture with an empty ``runId``) does not
+    silently fall back to the defective project-only call -- it degrades to a
+    typed ``error`` explaining why (see below), because silently reverting to that
+    call shape is exactly how this defect survived a whole phase.
+
+    Mapping decisions (documented inline, per the plan's explicit instruction):
+
+    - ``conforms: None`` with an ``error`` key (dg-reasoner's own D-09 timeout shape)
+      maps to ``CanonicalStatus.ERROR`` carrying the reason.
+    - A conforming report with zero focus-node results maps to
+      ``CanonicalStatus.NO_POPULATION`` rather than ``passed`` -- pySHACL reports
+      ``conforms: true`` for an empty target set, and that exact collapsed-status
+      defect (an empty population silently reading as a pass) is what this whole
+      contract exists to separate out (spec/EVIDENCE-CONTRACT.md section 1's
+      ``no_population`` semantics). **Post-D-09-fix reading:** with ``run_id`` now
+      supplied, a zero-result conforming report here means either the seed was
+      never applied or the run id does not match anything in Neo4j -- not that the
+      population is genuinely empty. See ``tools/de01/README.md``'s replay-leg
+      seed precondition; the same precondition now applies to this leg.
+    - **D-10.** A non-empty, conforming report maps every fixture object to
+      ``CanonicalStatus.NOT_EVALUATED``, not ``passed``. SHACL validated
+      *structural* conformance; it cannot express the fixture's quantitative rule
+      ("height > 75") -- ``spec/RULE-PARTITION-POLICY.md`` reserves that to the
+      SWRL VALIDATOR. Claiming ``passed`` here would assert the business rule was
+      evaluated and satisfied, which is false. Each such row carries a non-empty
+      warning naming the partition-policy reason, which is what makes this a
+      declared non-equivalence rather than a silent one when compared against
+      another leg's real ``passed``/``failed`` verdict (``tools/de01/report.py``'s
+      ``compare_legs`` only declares a difference when every differing status is
+      both in ``_DECLARABLE_STATUSES`` and warned).
+    - A violation naming a given focus label still maps that object to ``failed``
+      -- a genuine structural finding is still a verdict, not a non-result.
     """
     base_url = config.get("dg_reasoner_url", "http://localhost:8001")
     project = fixture["project"]
     rule_id = fixture["rule"]["Rule_Id"]
     object_ids = [obj["objectId"] for obj in fixture["objects"]]
+    run_id = fixture.get("runId") or FIXTURE_RUN_ID
+
+    if not run_id:
+        return LegResult(
+            leg_name="dg-reasoner",
+            available=False,
+            envelope=_synthesize_error_envelope(
+                "dg-reasoner",
+                service_name="dg-reasoner",
+                service_version="unknown",
+                stage="shacl.validate",
+                reason=(
+                    "the fixture carries no run id (fixture['runId'] absent and no "
+                    "FIXTURE_RUN_ID fallback available). Without run_id, "
+                    "dg-reasoner/reasoning.py::run_shacl validates the project-level "
+                    "Metagraph/OntoGraph export only -- it cannot see the run's "
+                    "ValidGraph ABox, so the seeded golden Object nodes would be "
+                    "invisible to pySHACL. Refusing to send the project-only request "
+                    "rather than silently reproducing the D-09 defect."
+                ),
+                rule_ids=[rule_id],
+                object_ids=object_ids,
+            ),
+            error="missing run id: cannot address the ValidGraph ABox without one",
+        )
 
     try:
         with httpx.Client(timeout=httpx.Timeout(connect=2.0, read=95.0, write=2.0, pool=2.0)) as client:
-            response = client.post(f"{base_url}/shacl/validate", json={"project": project})
+            response = client.post(
+                f"{base_url}/shacl/validate", json={"project": project, "run_id": run_id}
+            )
     except httpx.RequestError as exc:
         return LegResult(
             leg_name="dg-reasoner",
@@ -437,10 +507,15 @@ def run_leg_dg_reasoner(fixture: dict[str, Any], config: dict[str, Any]) -> LegR
                 objectId=object_id,
                 canonicalStatus=evidence_contract.CanonicalStatus.NO_POPULATION,
                 warnings=[
-                    "dg-reasoner reported conforms=true with zero SHACL findings -- mapped to "
-                    "no_population (not passed) because pySHACL's empty-target-set conforms=true "
-                    "is the exact collapsed-status behavior this contract's vocabulary exists to "
-                    "separate out."
+                    "What: dg-reasoner reported conforms=true with zero SHACL findings, mapped to "
+                    "no_population (not passed) because pySHACL's empty-target-set conforms=true is "
+                    "the exact collapsed-status behavior this contract's vocabulary exists to "
+                    "separate out. Where: run_id was supplied (post-D-09-fix call shape), so this is "
+                    "no longer explained by the project-only export missing the ValidGraph ABox. How "
+                    "to fix: verify fixtures/golden/seed.cypher has been applied against this Neo4j "
+                    "and that its Run_Id matches the run_id this leg sent -- an unseeded graph or a "
+                    "mismatched run id is the remaining explanation for a zero-result conforming "
+                    "report, not a genuinely empty population."
                 ],
             )
             for object_id in object_ids
@@ -454,6 +529,7 @@ def run_leg_dg_reasoner(fixture: dict[str, Any], config: dict[str, Any]) -> LegR
         rows = []
         for object_id in object_ids:
             if object_id in violated_labels:
+                # A genuine structural finding is still a verdict -- unaffected by D-10.
                 rows.append(
                     evidence_contract.EvidenceRow(
                         ruleId=rule_id,
@@ -462,11 +538,32 @@ def run_leg_dg_reasoner(fixture: dict[str, Any], config: dict[str, Any]) -> LegR
                     )
                 )
             else:
+                # D-10: SHACL validated structural conformance, not the fixture's
+                # quantitative rule ("height > 75"). spec/RULE-PARTITION-POLICY.md
+                # reserves quantitative rules to the SWRL VALIDATOR, so this leg has
+                # no genuine opinion on whether the business rule passed -- mapping
+                # this to `passed` would falsely claim it was evaluated and
+                # satisfied. not_evaluated is the declarable, honest status, and the
+                # non-empty warning is what makes report.py's compare_legs classify
+                # the resulting cross-leg difference as declared_non_equivalence
+                # rather than silent_disagreement.
                 rows.append(
                     evidence_contract.EvidenceRow(
                         ruleId=rule_id,
                         objectId=object_id,
-                        canonicalStatus=evidence_contract.CanonicalStatus.PASSED,
+                        canonicalStatus=evidence_contract.CanonicalStatus.NOT_EVALUATED,
+                        warnings=[
+                            f"What: SHACL validated structural conformance for {object_id} and found "
+                            f"no violation, but has no opinion on rule {rule_id}'s quantitative "
+                            "condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative "
+                            "rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not "
+                            "SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot "
+                            "express this comparison. How to fix: nothing to fix here -- this is a "
+                            "declared non-equivalence, not a defect. Encoding the height rule as a "
+                            "SHACL shape to force agreement with the other legs would violate the "
+                            "rule-partition policy by evaluating the same business rule twice in two "
+                            "systems."
+                        ],
                     )
                 )
 

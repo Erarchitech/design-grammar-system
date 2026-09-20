@@ -13,6 +13,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -21,7 +22,8 @@ TOOLS_DE01_DIR = REPO_ROOT / "tools" / "de01"
 if str(TOOLS_DE01_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DE01_DIR))
 
-from legs import LegResult  # noqa: E402
+import legs  # noqa: E402
+from legs import LegResult, run_leg_dg_reasoner  # noqa: E402
 from report import compare_legs  # noqa: E402
 
 
@@ -252,6 +254,362 @@ class TestReportSchemaCanonicalStatusPinning:
         contract_enum = set(contract_schema["$defs"]["CanonicalStatus"]["enum"])
         report_enum = set(report_schema["$defs"]["CanonicalStatus"]["enum"])
         assert report_enum == contract_enum
+
+
+def _minimal_fixture(run_id_value: object = "unset") -> dict:
+    """A minimal fixture dict shaped like fixtures/golden/fixture.json's schema,
+    for driving run_leg_dg_reasoner offline (no live dg-reasoner). ``run_id_value``
+    of the sentinel ``"unset"`` omits the ``runId`` key entirely (fixture.json's
+    real, frozen shape -- it carries no run id field at all); pass ``None`` or a
+    string to set the key explicitly.
+    """
+    fixture = {
+        "project": "DG-1200-GOLDEN",
+        "rule": {"Rule_Id": "R_GOLD_HEIGHT_MAX_75_V"},
+        "objects": [
+            {"objectId": "OBJ_GOLD_PASS"},
+            {"objectId": "OBJ_GOLD_FAIL"},
+            {"objectId": "OBJ_GOLD_EMPTY"},
+        ],
+    }
+    if run_id_value != "unset":
+        fixture["runId"] = run_id_value
+    return fixture
+
+
+def _mock_response(json_body: dict, status_code: int = 200) -> MagicMock:
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = json_body
+    return response
+
+
+class TestRunLegDgReasonerRunId:
+    """Task 1 (D-09): run_leg_dg_reasoner must post run_id, sourced from the
+    fixture with a fallback to the seeded FIXTURE_RUN_ID constant, and must never
+    silently revert to the old project-only call shape when a run id is
+    genuinely unavailable."""
+
+    def test_posted_body_includes_run_id_from_fixture_fallback(self):
+        """fixture.json (frozen, D-11) carries no runId field -- the fallback to
+        FIXTURE_RUN_ID (the seed.cypher value) is what must appear in the posted
+        body, not a bare {"project": project}."""
+        captured = {}
+
+        def fake_post(url, json):
+            captured["url"] = url
+            captured["json"] = json
+            return _mock_response({"conforms": True, "results": []})
+
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.post.side_effect = fake_post
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_dg_reasoner(_minimal_fixture(), config={})
+
+        assert captured["json"] == {"project": "DG-1200-GOLDEN", "run_id": legs.FIXTURE_RUN_ID}
+        assert result.available is True
+
+    def test_posted_body_includes_run_id_explicitly_set_on_fixture(self):
+        """When a fixture DOES carry a runId (a future, non-frozen fixture), that
+        value wins over the FIXTURE_RUN_ID fallback."""
+        captured = {}
+
+        def fake_post(url, json):
+            captured["json"] = json
+            return _mock_response({"conforms": True, "results": []})
+
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.post.side_effect = fake_post
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            run_leg_dg_reasoner(_minimal_fixture(run_id_value="SOME_OTHER_RUN"), config={})
+
+        assert captured["json"]["run_id"] == "SOME_OTHER_RUN"
+
+    def test_defective_project_only_call_shape_is_gone(self):
+        """grep -c 'json={"project": project}' tools/de01/legs.py must be 0 --
+        this test drives the same code path and asserts the actual posted body
+        is never bare project-only, from the live source rather than a grep."""
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.post.return_value = _mock_response({"conforms": True, "results": []})
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            run_leg_dg_reasoner(_minimal_fixture(), config={})
+
+        _, kwargs = mock_client.post.call_args
+        assert kwargs["json"] != {"project": "DG-1200-GOLDEN"}
+        assert "run_id" in kwargs["json"]
+
+    def test_missing_run_id_on_both_fixture_and_constant_degrades_to_typed_error(self):
+        """If a fixture explicitly sets runId to a falsy value AND (hypothetically)
+        FIXTURE_RUN_ID were also empty, the leg must not fall back to the
+        defective project-only POST -- it must return a typed, unavailable
+        LegResult explaining why. Exercised here by patching FIXTURE_RUN_ID to
+        empty alongside a fixture with no runId, so both sources are genuinely
+        absent."""
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+
+        with patch.object(legs, "FIXTURE_RUN_ID", ""), patch.object(
+            legs.httpx, "Client", return_value=mock_client
+        ):
+            result = run_leg_dg_reasoner(_minimal_fixture(run_id_value=None), config={})
+
+        assert result.available is False
+        assert result.error is not None and "run id" in result.error.lower()
+        # The guard must fire before any HTTP call is attempted.
+        mock_client.post.assert_not_called()
+        rows = result.envelope["rows"]
+        assert rows, "typed error envelope must still carry rows for every fixture pair"
+        assert all(row["canonicalStatus"] == "error" for row in rows)
+        assert all(row["warnings"] for row in rows)
+
+
+class TestRunLegDgReasonerNotEvaluatedMapping:
+    """Task 2 (D-10): a conforming report against a non-empty target set maps to
+    not_evaluated with a warning, never passed. A violation still maps to
+    failed."""
+
+    def test_conforming_nonempty_report_maps_to_not_evaluated_with_warning(self):
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        # conforms=True with a non-empty results list that has no violations --
+        # e.g. an Info/Warning-only report (D-18) -- is still "conforming and
+        # non-empty" for this leg's purposes.
+        mock_client.post.return_value = _mock_response(
+            {"conforms": True, "results": [{"severity": "Info", "focusLabel": "OBJ_GOLD_PASS"}]}
+        )
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_dg_reasoner(_minimal_fixture(), config={})
+
+        assert result.available is True
+        rows = result.envelope["rows"]
+        assert rows, "expected rows in the envelope"
+        for row in rows:
+            assert row["canonicalStatus"] == "not_evaluated"
+            assert row["warnings"], "not_evaluated rows must carry a non-empty warning (D-10)"
+            warning_text = " ".join(row["warnings"]).lower()
+            assert "partition" in warning_text or "rule_partition" in warning_text.replace(
+                "-", "_"
+            ) or "swrl validator" in warning_text
+
+    def test_violation_naming_a_focus_node_still_maps_to_failed(self):
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.post.return_value = _mock_response(
+            {
+                "conforms": False,
+                "results": [
+                    {"severity": "violation", "focusLabel": "OBJ_GOLD_FAIL"},
+                ],
+            }
+        )
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_dg_reasoner(_minimal_fixture(), config={})
+
+        rows_by_object = {row["objectId"]: row for row in result.envelope["rows"]}
+        assert rows_by_object["OBJ_GOLD_FAIL"]["canonicalStatus"] == "failed"
+        # Every other object in this conforming-elsewhere report is not_evaluated,
+        # not passed -- SHACL still has no opinion on the quantitative rule.
+        assert rows_by_object["OBJ_GOLD_PASS"]["canonicalStatus"] == "not_evaluated"
+        assert rows_by_object["OBJ_GOLD_EMPTY"]["canonicalStatus"] == "not_evaluated"
+
+
+class TestNotEvaluatedVsGenuineVerdictClassification:
+    """Task 2's disagreement-classification behavior, verified empirically against
+    the live (unmodified, CR-02-guarded) compare_legs rather than assumed.
+
+    **Deviation from the plan's stated expectation, recorded here and in the plan
+    06 handoff.** The plan's objective and Task 2's behavior bullets assert that
+    "the resulting disagreement between dg-reasoner's not_evaluated and the other
+    legs' passed/failed classifies as declared_non_equivalence, not
+    silent_disagreement." Empirically this is FALSE for not_evaluated vs failed
+    (and vs passed): `_DECLARABLE_STATUSES` is `{unsupported, error, not_evaluated,
+    indeterminate}` -- `failed` and `passed` are deliberately NOT declarable
+    (CR-02, report.py:174-186: "Any non-declarable status participating in a
+    difference makes that difference silent, regardless of ... what the other legs
+    reported"). Since one leg reporting a declarable-and-warned status can never
+    outweigh another leg's non-declarable status, not_evaluated vs failed/passed is
+    unconditionally silent_disagreement under the current, correct, unmodified
+    guard -- there is no configuration of warnings that makes it declared.
+
+    This is NOT a defect in Task 2's mapping change (not_evaluated is still the
+    semantically honest status per D-10, and still strictly better than the
+    previous `passed`, which would have been non-declarable too and produced the
+    exact same silent classification). It means the OBJ_GOLD_FAIL pair is expected
+    to still show up in plan 06's live DE-01 re-run as a silent_disagreement
+    between dg-reasoner (not_evaluated) and the legs that genuinely evaluate the
+    quantitative rule (failed) -- see this plan's SUMMARY for the full account."""
+
+    def test_not_evaluated_with_warning_vs_failed_is_silent_not_declared(self):
+        """Ground truth, not the plan's aspiration: failed is not declarable, so
+        CR-02's guard makes this silent regardless of the not_evaluated row's
+        warning."""
+        dg_reasoner_leg = LegResult(
+            "dg-reasoner",
+            True,
+            _envelope(
+                [
+                    _row(
+                        "R_GOLD_HEIGHT_MAX_75_V",
+                        "OBJ_GOLD_FAIL",
+                        "not_evaluated",
+                        warnings=["SHACL has no opinion on this quantitative rule (partition policy)"],
+                    )
+                ]
+            ),
+        )
+        csharp_leg = LegResult(
+            "csharp",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", "failed")]),
+        )
+        result = compare_legs({"dg-reasoner": dg_reasoner_leg, "csharp": csharp_leg})
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_not_evaluated_with_warning_vs_passed_is_also_silent_not_declared(self):
+        """Same guard, same outcome against passed -- confirms this is general to
+        any non-declarable status, not specific to failed."""
+        dg_reasoner_leg = LegResult(
+            "dg-reasoner",
+            True,
+            _envelope(
+                [
+                    _row(
+                        "R_GOLD_HEIGHT_MAX_75_V",
+                        "OBJ_GOLD_PASS",
+                        "not_evaluated",
+                        warnings=["SHACL has no opinion on this quantitative rule (partition policy)"],
+                    )
+                ]
+            ),
+        )
+        csharp_leg = LegResult(
+            "csharp",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed")]),
+        )
+        result = compare_legs({"dg-reasoner": dg_reasoner_leg, "csharp": csharp_leg})
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_not_evaluated_vs_not_evaluated_both_warned_is_agreement(self):
+        """When both legs genuinely have nothing to say (e.g. two SHACL-only
+        legs), matching not_evaluated statuses are a plain agreement -- not a
+        declared non-equivalence, since there is no disagreement to declare."""
+        dg_reasoner_leg = LegResult(
+            "dg-reasoner",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "not_evaluated", warnings=["reason a"])]),
+        )
+        other_leg = LegResult(
+            "other",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "not_evaluated", warnings=["reason b"])]),
+        )
+        result = compare_legs({"dg-reasoner": dg_reasoner_leg, "other": other_leg})
+        assert result.rows[0].classification == "agreement"
+        assert result.silent_disagreement_count == 0
+
+    def test_not_evaluated_without_warning_vs_failed_is_still_silent(self):
+        """Guard against a regression that drops the warning requirement: an
+        unwarned not_evaluated is still a silent disagreement against a genuine
+        verdict, same as any other declarable-status-without-warning case."""
+        dg_reasoner_leg = LegResult(
+            "dg-reasoner",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", "not_evaluated", warnings=[])]),
+        )
+        csharp_leg = LegResult(
+            "csharp",
+            True,
+            _envelope([_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", "failed")]),
+        )
+        result = compare_legs({"dg-reasoner": dg_reasoner_leg, "csharp": csharp_leg})
+        assert result.silent_disagreement_count == 1
+        assert result.rows[0].classification == "silent_disagreement"
+
+
+class TestDeclarableStatusesUnchanged:
+    """Explicit guard mirroring the plan's git diff check: _DECLARABLE_STATUSES
+    must remain byte-identical to its pre-plan content -- passed must never be
+    added."""
+
+    def test_declarable_statuses_is_exactly_the_frozen_set(self):
+        import report as report_module
+
+        assert report_module._DECLARABLE_STATUSES == {
+            "unsupported",
+            "error",
+            "not_evaluated",
+            "indeterminate",
+        }
+        assert "passed" not in report_module._DECLARABLE_STATUSES
+
+
+class TestCompareLegsHashFallback:
+    """Task 3 (D-12): row-level inputHash/outputHash fall back to the envelope's
+    when the row carries none; row-level wins when present; absent-on-both stays
+    None, never an empty string."""
+
+    def test_row_with_no_hash_falls_back_to_envelope_level_hash(self):
+        envelope = _envelope([_row("R1", "OBJ1", "passed")])
+        envelope["inputHash"] = "envelope-input-hash"
+        envelope["outputHash"] = "envelope-output-hash"
+        leg_a = LegResult("a", True, envelope)
+        result = compare_legs({"a": leg_a})
+        row_data = result.rows[0].per_leg["a"]["rows"][0]
+        assert row_data["inputHash"] == "envelope-input-hash"
+        assert row_data["outputHash"] == "envelope-output-hash"
+
+    def test_row_level_hash_wins_over_envelope_level_hash(self):
+        row = _row("R1", "OBJ1", "passed")
+        row["inputHash"] = "row-input-hash"
+        row["outputHash"] = "row-output-hash"
+        envelope = _envelope([row])
+        envelope["inputHash"] = "envelope-input-hash"
+        envelope["outputHash"] = "envelope-output-hash"
+        leg_a = LegResult("a", True, envelope)
+        result = compare_legs({"a": leg_a})
+        row_data = result.rows[0].per_leg["a"]["rows"][0]
+        assert row_data["inputHash"] == "row-input-hash"
+        assert row_data["outputHash"] == "row-output-hash"
+
+    def test_absent_on_both_row_and_envelope_stays_none_not_empty_string(self):
+        envelope = _envelope([_row("R1", "OBJ1", "passed")])
+        leg_a = LegResult("a", True, envelope)
+        result = compare_legs({"a": leg_a})
+        row_data = result.rows[0].per_leg["a"]["rows"][0]
+        assert row_data["inputHash"] is None
+        assert row_data["outputHash"] is None
+
+    def test_partial_fallback_input_hash_present_output_hash_absent(self):
+        """The two fields fall back independently -- one populated at the row
+        level does not mask the other's fallback."""
+        row = _row("R1", "OBJ1", "passed")
+        row["inputHash"] = "row-input-hash"
+        envelope = _envelope([row])
+        envelope["outputHash"] = "envelope-output-hash"
+        leg_a = LegResult("a", True, envelope)
+        result = compare_legs({"a": leg_a})
+        row_data = result.rows[0].per_leg["a"]["rows"][0]
+        assert row_data["inputHash"] == "row-input-hash"
+        assert row_data["outputHash"] == "envelope-output-hash"
 
 
 # ── Wrapper test: run the real runner against the golden fixture ────────────────

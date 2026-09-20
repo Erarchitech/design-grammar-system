@@ -118,17 +118,27 @@ def compare_legs(leg_results: dict[str, LegResult]) -> ComparisonResult:
             # Multiple rows for the same pair (e.g. the C#-leg synthesized
             # ObjectPropertyAtom row) are all recorded; the pair's classification
             # walks every row this leg reported for it, not just the first.
+            #
+            # D-12 hash fallback: row-level inputHash/outputHash are populated by no
+            # call site today (only the envelope-level hash is real, computed by the
+            # C# harness via CanonicalJsonWriter.HashCanonical -- DG/tools/DG.De01Harness/
+            # Program.cs:284,294). A row that carries its own hash keeps it (row-level
+            # wins); a row with none falls back to the envelope's, so 1200's CR-01
+            # decimal-scale fix is observable at this report boundary instead of
+            # reading null everywhere. Absent-on-both stays None, never "" -- an empty
+            # string would be indistinguishable from a real hash of empty content.
+            envelope = leg_results[leg_name].envelope
             per_leg[leg_name] = {
                 "present": True,
                 "rows": [
                     {
                         "canonicalStatus": row["canonicalStatus"],
                         "warnings": row.get("warnings") or [],
-                        "inputHash": row.get("inputHash"),
-                        "outputHash": row.get("outputHash"),
+                        "inputHash": row.get("inputHash") or envelope.get("inputHash"),
+                        "outputHash": row.get("outputHash") or envelope.get("outputHash"),
                         "detail": row.get("detail"),
-                        "serviceName": leg_results[leg_name].envelope.get("serviceName"),
-                        "serviceVersion": leg_results[leg_name].envelope.get("serviceVersion"),
+                        "serviceName": envelope.get("serviceName"),
+                        "serviceVersion": envelope.get("serviceVersion"),
                     }
                     for row in leg_rows
                 ],
