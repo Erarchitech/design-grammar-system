@@ -83,6 +83,45 @@ expected in that run. Two separate things; this phase owns both.
 Also routed here by decision (Area 3 Q4): the `inputHash`/`outputHash` `null`-at-the-live-boundary
 problem from the same run.
 
+### Root cause — DIAGNOSED and independently verified (2026-09-20)
+
+Research (`1201-RESEARCH.md`) traced it, and the orchestrator verified both halves directly on disk:
+
+- `tools/de01/legs.py:333` — `run_leg_dg_reasoner` calls
+  `POST /shacl/validate` with **`json={"project": project}` only. It never passes `run_id`.**
+- `dg-reasoner/reasoning.py:473-479` — `run_shacl`'s own docstring states that **without**
+  `run_id` it validates "the project-level Metagraph/OntoGraph export only"; the run's ValidGraph
+  ABox (`build_valid_graph`) is unioned in **only when `run_id` is supplied**.
+
+The seeded golden `Object` nodes (`OBJ_GOLD_PASS` / `OBJ_GOLD_FAIL`) live in that ValidGraph/
+Computgraph ABox. So `dgc:ObjectShape` targets a class **absent from the graph pySHACL actually
+validates** → zero findings → `conforms=true` → the leg reports `no_population`. This is not a
+shapes-authoring bug; it is a missing argument at the call site.
+
+**Consequence for planning:** D-09 is a **small, well-localized fix**, not the open-ended shape
+rewrite it looked like. Do not rewrite `ontology/dg-shapes.ttl` on a guess.
+
+### New risk surfaced by research — plan for it explicitly
+
+Passing `run_id` will make the leg genuinely evaluate, but **SHACL still cannot express
+"height > 75"**: `spec/RULE-PARTITION-POLICY.md` reserves quantitative rules to the SWRL
+VALIDATOR. So the fix is expected to surface a *new*, different disagreement on `OBJ_GOLD_FAIL`
+(SHACL structural completeness `passed` vs the real height-violation `failed`).
+
+`passed` is **not** in `tools/de01/report.py`'s `_DECLARABLE_STATUSES`, so such a disagreement
+would be classified `silent_disagreement` and fail D-11's gate.
+
+**Recommended handling (planner to confirm against the code):** have the dg-reasoner leg adapter
+map "SHACL has nothing meaningful to say about this business rule" to **`not_evaluated`** — which
+is already declarable — rather than `passed`. That keeps `report.py`'s classification logic
+untouched and is semantically honest under the D-05 table. **Do not widen
+`_DECLARABLE_STATUSES` to include `passed`** — that would weaken the gate for every future run,
+which D-10 forbids.
+
+**Verification status:** root cause HIGH confidence (code + the actual `.de01/de01-report.json`
+artifact agree). Whether the `run_id` fix alone reaches `silent_disagreement_count = 0`, or leaves
+one declared non-equivalence, **requires a live compose stack to settle** — see D-11.
+
 </routed_finding>
 
 <decisions>
@@ -158,11 +197,30 @@ Four grey areas were presented as batch proposal tables and **all four were acce
   — **Reversibility:** one-way.
 
 **Consequence the planner must handle:** with D-06/D-07/D-08, a single rule evaluated over many
-bindings can yield a *mix* of per-binding outcomes. The plan must decide and document how
+bindings can yield a *mix* of per-binding outcomes. The plan must apply and document how
 per-binding statuses aggregate to one rule-level `Status` — and the aggregation rule must not let
-an `unsupported` or `unknown` binding silently become `failed`. Suggested precedence
-(planner may refine, but must state it): `error` > `unsupported` > `unknown` > `indeterminate` >
-`failed` > `no_population` > `not_evaluated` > `passed`.
+an `unsupported` or `unknown` binding silently become `failed`.
+
+> **CORRECTION (2026-09-20, post-research — supersedes this context's first draft).**
+> An earlier draft of this paragraph proposed the precedence
+> `error > unsupported > unknown > indeterminate > failed > no_population > not_evaluated > passed`
+> and invited the planner to refine it. **That was wrong and is withdrawn.** A roll-up precedence
+> is **already shipped, and is byte-identical in both languages** — verified on disk 2026-09-20:
+>
+> - `DG/src/DG.Core/Contracts/EvidenceEnvelopeFactory.cs:25-35` (`RollupPrecedence`)
+> - `data-service/evidence_contract.py:87-96` (`_ROLLUP_PRECEDENCE`)
+>
+> The shipped order is:
+>
+> `error` > `failed` > `indeterminate` > `unsupported` > `unknown` > `not_evaluated` >
+> `no_population` > `passed`
+>
+> **The planner MUST adopt the shipped order verbatim and MUST NOT introduce a second table.**
+> Authoring a disagreeing precedence would manufacture exactly the cross-language drift this
+> milestone exists to eliminate. The C# doc-comment is explicit that it is implemented as an
+> ordered list "never by boolean arithmetic or a max/min over enum ordinal values" — preserve
+> that property. If the shipped order ever appears wrong, that is a finding to raise against
+> `spec/EVIDENCE-CONTRACT.md`, **not** something to fix locally in this phase.
 
 ### dg-reasoner SHACL Targeting (routed finding)
 
