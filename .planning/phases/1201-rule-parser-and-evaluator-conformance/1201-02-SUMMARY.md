@@ -111,23 +111,42 @@ plan's explicit instruction not to depend on plan 03's parser changes.
 | RuleEvaluatorTests | `dotnet test --filter "FullyQualifiedName~RuleEvaluator"` | **11 passed, 0 failed** |
 | ValidationPublishPackageBuilderTests | `dotnet test --filter "FullyQualifiedName~ValidationPublishPackageBuilder"` | **7 passed, 0 failed** |
 | Release build, both TFMs | `dotnet build DG/DG.sln -c Release` | **0 warnings, 0 errors** — `net7.0` and `net9.0` both emitted for `DG.Core` |
-| Full `.NET` test suite | `dotnet test DG/tests/DG.Tests/` | **465 passed, 0 failed, 465 total** (run twice for stability; see note below) |
+| Full `.NET` test suite | `dotnet test DG/tests/DG.Tests/` | **run 5 times: 465/0/465, 465/0/465, 464/1/465, 4/0/4 (filtered E2E retry), 465/0/465** (see note below) |
 | No `InvalidOperationException`/`NotSupportedException` left in RuleEvaluator | `grep -cE 'throw new (NotSupportedException\|InvalidOperationException)' DG/src/DG.Core/Validation/RuleEvaluator.cs` | **0** |
 | Exactly one precedence table | `grep -rn "EvidenceStatus.Indeterminate," DG/src/DG.Core/ --include=*.cs \| wc -l` | **1** |
 | Frozen fixture untouched | `git diff --stat fixtures/golden/fixture.json` | **empty** |
 
 **Note on the E2E test count vs. the plan's stated baseline (451 passed / 3 failed / 454 total,
-0 or exactly 4 known-Neo4j-dependent failures allowed):** the full suite ran **465/465 passing with
-zero failures**, better than either baseline. When I first filtered to only
-`DG.Tests.E2E.DesignStateValidationFlowTests`, one of the four failed transiently
-(`HappyPath_StatePublishAndRetrieve`, an `Assert.True()` failure at line 93/110); re-running the same
-filtered set immediately after showed **4/4 passing**, and the full suite run twice in a row both
-times reported 465/465. This is consistent with the plan's stated environment note that "the compose
-stack is UP" — a transient Neo4j connection blip, not a regression introduced by this plan's changes
-(none of this plan's files touch Neo4j connectivity). Test count moved from plan 01's reported 454 to
-465, so this plan added 11 tests: `RuleEvaluatorTests` went from 3 `[Fact]`s to 11 (8 new, 1 renamed
-and rewritten — see Deviations below — 3 unchanged from plan 01/earlier), and
-`ValidationPublishPackageBuilderTests` went from 4 `[Fact]`s to 7 (3 new).
+0 or exactly 4 known-Neo4j-dependent failures allowed):** I ran the full suite four times across this
+session to get a true read on stability, since the compose stack is up per the plan's environment
+note:
+
+1. `465 passed, 0 failed, 465 total`
+2. `465 passed, 0 failed, 465 total`
+3. `464 passed, 1 failed, 465 total` — `DG.Tests.E2E.DesignStateValidationFlowTests.HappyPath_StatePublishAndRetrieve`
+   failed with `Assert.True() Failure: Expected: True Actual: False` at line 93/110.
+4. (filtered to only `~E2E`, immediately after run 3) `4 passed, 0 failed, 4 total` — the same test
+   that failed in run 3 passed with zero code changes in between.
+5. (full suite again) `465 passed, 0 failed, 465 total`.
+
+`DesignStateValidationFlowTests` (`DG/tests/DG.Tests/E2E/DesignStateValidationFlowTests.cs`) opens a
+live Bolt connection to `bolt://localhost:7687` and an `HttpClient` against `http://localhost:8000`
+in `InitializeAsync` — a real dependency on the live compose stack's Neo4j and data-service
+containers, neither of which this plan's files (`DG.Core/Validation`, `DG.Core/Models`) touch or
+could affect. The intermittent single failure is consistent with the plan's own framing of this test
+class as environment-dependent, not a regression: this plan changed zero lines outside
+`DG.Core/Validation/RuleEvaluator.cs`, `DG.Core/Validation/ValidationPublishPackageBuilder.cs`, and
+`DG.Core/Models/ValidationPublishRuleResult.cs`, none of which this E2E test's assertion path
+exercises differently before/after this plan. Reporting the actual measured spread here rather than
+picking the two clean runs, per this plan's "do not manufacture agreement" instruction — the honest
+reading is: this plan introduced zero new failures, and the pre-existing Neo4j-dependent flakiness is
+exactly what the plan's baseline already carved out (albeit manifesting as an intermittent 1-of-4
+inside that test class rather than a consistent 4-of-4, which is a looser environment than the
+plan anticipated, not a stricter one).
+
+Test count moved from plan 01's reported 454 to 465, so this plan added 11 tests:
+`RuleEvaluatorTests` went from 3 `[Fact]`s to 11 (8 new, 1 renamed and rewritten — see Deviations
+below), and `ValidationPublishPackageBuilderTests` went from 4 `[Fact]`s to 7 (3 new).
 
 ## Guards held
 
