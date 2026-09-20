@@ -1,0 +1,98 @@
+{
+  "_comment": "Phase 1201 plan 04 (D-16) table-driven parser conformance corpus. Read exclusively by DG/tests/DG.Tests/SwrlSubsetConformanceTests.cs -- see README.md in this directory. This corpus is separate from and additive to the frozen fixtures/golden/fixture.json (1200 D-11); it is NOT frozen the same way -- see README.md for what does and does not require a Change-Reason Log entry.",
+  "cases": [
+    {
+      "id": "object-property-atom-resolved",
+      "description": "A >=2-arg, non-swrlb: predicate resolved by a supplied resolver as an ObjectProperty parses to ObjectPropertyAtom (D-02, first reachable case) and the overall parse is a clean passed with no diagnostics.",
+      "expression": "adjacentTo(?a,?b) -> flagged(?a)",
+      "resolverConfig": { "adjacentTo": "ObjectProperty" },
+      "expectedStatus": "passed",
+      "expectedAtomTypes": ["ObjectPropertyAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": []
+    },
+    {
+      "id": "object-property-atom-null-resolver",
+      "description": "The same adjacentTo(?a,?b) predicate parsed with the null-object resolver (no resolverConfig entries) cannot be resolved and yields UnsupportedAtom plus an unresolvable-predicate-kind diagnostic, rolling up to unsupported. This is the default behavior of Parse()/TryParse() with no resolver argument, and the second half of D-02 that must be locked down alongside the resolved case above.",
+      "expression": "adjacentTo(?a,?b) -> flagged(?a)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind"]
+    },
+    {
+      "id": "malformed-arity",
+      "description": "An atom whose text does not match the required predicate(args) shape (here, an unbalanced/missing opening parenthesis) yields a typed non-verdict -- UnsupportedAtom plus an atom-regex-miss diagnostic -- never a thrown exception.",
+      "expression": "hasHeightM ?b,?h) -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["atom-regex-miss"]
+    },
+    {
+      "id": "quoted-comma",
+      "description": "A quoted literal containing an embedded comma splits into the correct two-argument count, with the comma preserved inside the literal value rather than being treated as an argument separator.",
+      "expression": "hasLabel(?b,\"Tower, North\") -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind"],
+      "expectedArgCount": 2,
+      "expectedFirstAtomSecondArgValue": "Tower, North"
+    },
+    {
+      "id": "escaping",
+      "description": "A backslash-escaped quote embedded inside a quoted literal is unescaped rather than terminating the literal early or being left in the value verbatim.",
+      "expression": "hasLabel(?b,\"Tower \\\"North\\\"\") -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind"],
+      "expectedArgCount": 2,
+      "expectedFirstAtomSecondArgValue": "Tower \"North\""
+    },
+    {
+      "id": "duplicate-arrows",
+      "description": "An expression containing more than one '->' yields a typed error (arrow-arity) with no rule produced, never a thrown exception.",
+      "expression": "a(?x) -> b(?x) -> c(?x)",
+      "resolverConfig": {},
+      "expectedStatus": "error",
+      "expectedAtomTypes": null,
+      "expectedDiagnosticCodes": ["arrow-arity"],
+      "expectRuleNull": true
+    },
+    {
+      "id": "datatype-literal",
+      "description": "A quoted literal with an explicit ^^datatype suffix records that datatype verbatim (xsd:decimal) rather than re-inferring it from the lexical form (which would otherwise also infer xsd:decimal here, but the point is the explicit value is what is recorded -- see the language-literal case for a suffix that would otherwise be mis-inferred).",
+      "expression": "hasHeightM(?b,\"75.5\"^^xsd:decimal) -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind"],
+      "expectedArgCount": 2,
+      "expectedFirstAtomSecondArgValue": "75.5",
+      "expectedFirstAtomSecondArgDatatype": "xsd:decimal"
+    },
+    {
+      "id": "language-literal",
+      "description": "A quoted literal with an @lang suffix records the language tag and defaults its datatype to xsd:string, distinguishing it from the unsuffixed inference chain that would otherwise never set Language at all.",
+      "expression": "hasLabel(?b,\"Tower\"@en) -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind"],
+      "expectedArgCount": 2,
+      "expectedFirstAtomSecondArgValue": "Tower",
+      "expectedFirstAtomSecondArgDatatype": "xsd:string",
+      "expectedFirstAtomSecondArgLanguage": "en"
+    },
+    {
+      "id": "unsupported-syntax",
+      "description": "An unrecognized/malformed atom conjoined with a well-formed atom in the same body is emitted as UnsupportedAtom for the malformed atom while the surrounding well-formed atom is preserved intact (D-03: never dropped) -- the rule is still produced with both atoms present, one typed unsupported and one typed normally.",
+      "expression": "hasHeightM(?b,?h) ^ badatomtext -> flagged(?b)",
+      "resolverConfig": {},
+      "expectedStatus": "unsupported",
+      "expectedAtomTypes": ["UnsupportedAtom", "UnsupportedAtom", "ClassAtom"],
+      "expectedDiagnosticCodes": ["unresolvable-predicate-kind", "atom-regex-miss"]
+    }
+  ]
+}
