@@ -287,10 +287,27 @@ def _fixture_entities_payload(fixture: dict[str, Any]) -> list[dict[str, Any]]:
         statuses = outcomes_by_object.get(object_id, set())
         failed_rule_ids = [rule_id] if "failed" in statuses else []
         passed_rule_ids = [rule_id] if "passed" in statuses else []
-        # no_population / unsupported-only objects intentionally leave both lists
-        # empty but still carry the rule id in ruleIds -- this is exactly the
-        # "attached but no richer outcome" case D-04 requires mapping to `unknown`
-        # with a warning, not inferred as passed/failed.
+        # The legacy failedRuleIds/passedRuleIds pair cannot express no_population,
+        # unsupported, not_evaluated or indeterminate, so an object carrying one of
+        # those leaves both lists empty. Before Phase 1201 that was the whole story
+        # and the row degraded to `unknown` -- the fixture declares no_population for
+        # OBJ_GOLD_EMPTY, so the leg was reporting a status the fixture contradicts.
+        # canonicalStatuses (Phase 1201, additive) lets the producer state the typed
+        # outcome it already knows. The legacy lists are still populated unchanged, so
+        # a service that ignores the new field behaves exactly as before.
+        canonical_statuses: dict[str, str] = {}
+        if statuses:
+            # An object with several declared outcomes (OBJ_GOLD_FAIL is both `failed`
+            # and, for the C# leg's ObjectPropertyAtom branch, `unsupported`) resolves
+            # by walking the one shared precedence tuple rather than picking
+            # arbitrarily. Reusing evidence_contract._ROLLUP_PRECEDENCE -- the same
+            # ordering DG.Core's StatusRollup mirrors -- keeps this from becoming a
+            # second, drifting precedence table.
+            declared = {evidence_contract.CanonicalStatus(s) for s in statuses}
+            for candidate in evidence_contract._ROLLUP_PRECEDENCE:
+                if candidate in declared:
+                    canonical_statuses[rule_id] = candidate.value
+                    break
         entities.append(
             {
                 "dgEntityId": object_id,
@@ -300,6 +317,7 @@ def _fixture_entities_payload(fixture: dict[str, Any]) -> list[dict[str, Any]]:
                 "failedRuleIds": failed_rule_ids,
                 "passedRuleIds": passed_rule_ids,
                 "overallStatus": "unknown",
+                "canonicalStatuses": canonical_statuses,
             }
         )
     return entities

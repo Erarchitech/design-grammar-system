@@ -275,6 +275,14 @@ class ValidationPublishEntityPayload(BaseModel):
     failedRuleIds: list[str] = Field(default_factory=list)
     passedRuleIds: list[str] = Field(default_factory=list)
     overallStatus: str = "unknown"
+    # Phase 1201 (D-03 additive / D-04): {ruleId: canonical status wire name} for
+    # producers that already know the typed outcome. The legacy
+    # failedRuleIds/passedRuleIds lists cannot express no_population, unsupported,
+    # not_evaluated or indeterminate, so a producer that has one had no way to say
+    # so and the row degraded to `unknown`. Absent or unparseable entries keep the
+    # pre-1201 behavior exactly; this never infers a canonical status from a legacy
+    # boolean, it only stops discarding one the producer supplied.
+    canonicalStatuses: dict[str, str] | None = None
 
 
 class ValidationPublishRequest(BaseModel):
@@ -2137,29 +2145,61 @@ def persist_evidence_envelope(project: str, run_id: str, envelope_json: str) -> 
     )
 
 
+def _parse_supplied_canonical_status(
+    raw: Any,
+) -> "evidence_contract.CanonicalStatus | None":
+    """Parse a producer-supplied canonical status wire name, or None.
+
+    Returns None for absent, non-string, or unrecognized values so the caller falls
+    back to the legacy boolean path. Deliberately total: a malformed entry degrades
+    to the pre-1201 behavior instead of failing the publish, matching the contract's
+    own rule that an absent envelope means "not recorded", never an error.
+    """
+    if not isinstance(raw, str):
+        return None
+    try:
+        return evidence_contract.CanonicalStatus(raw.strip())
+    except ValueError:
+        return None
+
+
 def _build_publish_evidence_envelope(
     project: str, run_id: str, entity_dicts: list[dict[str, Any]]
 ) -> "evidence_contract.EvidenceEnvelope":
     """Build the evidence envelope for the `/validation/publish` stage boundary.
 
-    Each row's `canonicalStatus` is derived directly from the evaluation outcome the
-    publish path already has: an entity's rule id appearing in `failedRuleIds` is a
-    genuine evaluated violation (`failed`); appearing in `passedRuleIds` (and not also
-    failed) is a genuine evaluated pass (`passed`). Where a rule id is attached to the
-    entity's `ruleIds` but present in neither list -- the publish path has no richer
-    outcome for it, only the absence of a boolean signal -- the row is emitted as
+    Precedence: a canonical status the producer supplied in `canonicalStatuses`
+    (Phase 1201) wins outright. Only when none was supplied does the legacy boolean
+    discrimination run: an entity's rule id appearing in `failedRuleIds` is a genuine
+    evaluated violation (`failed`); appearing in `passedRuleIds` (and not also failed)
+    is a genuine evaluated pass (`passed`). Where a rule id is attached to the entity's
+    `ruleIds` but present in neither list -- the publish path has no richer outcome for
+    it, only the absence of a boolean signal -- the row is emitted as
     `CanonicalStatus.UNKNOWN` with an explanatory warning, per D-04: never guess
     `passed`/`failed` from a missing/collapsed boolean.
+
+    Reading a supplied status is not a D-04 violation: D-04 forbids *inferring* a
+    canonical status from a legacy boolean, which is the opposite direction. Before
+    Phase 1201 a producer that knew an outcome the boolean pair cannot express
+    (`no_population`, `unsupported`, `not_evaluated`, `indeterminate`) had no way to
+    say so, and the row degraded to `unknown` -- losing information that already
+    existed. An unparseable wire name falls through to the legacy path rather than
+    raising, so a malformed entry can never turn a publish into an error.
     """
     rows: list[evidence_contract.EvidenceRow] = []
     for entity in entity_dicts:
         dg_entity_id = entity.get("dgEntityId", "")
         failed_rule_ids = set(entity.get("failedRuleIds") or [])
         passed_rule_ids = set(entity.get("passedRuleIds") or [])
+        supplied_statuses = entity.get("canonicalStatuses") or {}
         all_rule_ids = entity.get("ruleIds") or []
         seen_rule_ids = set(all_rule_ids) | failed_rule_ids | passed_rule_ids
         for rule_id in seen_rule_ids:
-            if rule_id in failed_rule_ids:
+            supplied = _parse_supplied_canonical_status(supplied_statuses.get(rule_id))
+            if supplied is not None:
+                status = supplied
+                warnings = []
+            elif rule_id in failed_rule_ids:
                 status = evidence_contract.CanonicalStatus.FAILED
                 warnings: list[str] = []
             elif rule_id in passed_rule_ids:
