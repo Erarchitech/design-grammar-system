@@ -74,6 +74,7 @@ import cg_input_bindings
 import cg_input_generation
 import cg_paramstate_store
 import dsav_watcher
+import evidence_contract
 
 
 # Phase 39 (DSAV-02): the first startup hook in this file to use `lifespan`.
@@ -155,6 +156,11 @@ EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
 WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
 VALIDATION_GRAPH = "ValidGraph"
 SPEC_GRAPH = "SpecGraph"
+# Phase 1200 (D-06): the serviceVersion this data-service instance stamps into every
+# evidence envelope it emits. Bump when this file's publish-path evidence-producing
+# behavior changes meaningfully, independent of EVIDENCE_CONTRACT_VERSION (which
+# versions the envelope shape/vocabulary itself, not this producer).
+EVIDENCE_SERVICE_VERSION = "1.0.0"
 DATA_DIR = FilePath(os.getenv("DG_DATA_DIR", "/app/data"))
 SPECKLE_SETTINGS_FILE = DATA_DIR / "speckle-settings.json"
 KNOWLEDGE_REPO_ROOT = FilePath(os.getenv("DG_KNOWLEDGE_REPO_ROOT", "/mnt/repo"))
@@ -660,7 +666,8 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
             run.ValidStatus AS validStatus,
             run.SendStatus AS sendStatus,
             run.createdAt AS createdAt,
-            run.shaclReportJson AS shaclReportJson
+            run.shaclReportJson AS shaclReportJson,
+            run.evidenceEnvelopeJson AS evidenceEnvelopeJson
         ORDER BY run.createdAt DESC
         LIMIT 1
     """
@@ -887,6 +894,24 @@ def _parse_shacl_report(shacl_report_json: str | None) -> dict[str, Any] | None:
     return parsed if isinstance(parsed, dict) else None
 
 
+def parse_evidence_envelope(evidence_envelope_json: str | None) -> dict[str, Any] | None:
+    """Parse a persisted `evidenceEnvelopeJson` string into a dict for the view payload.
+
+    Returns None for absent/empty/malformed JSON or a non-object payload -- never
+    raises. Pre-1200 runs (no evidenceEnvelopeJson property) and corrupt data both
+    degrade to the same quiet not-checked state (D-08), never an error. Mirrors
+    `_parse_shacl_report` exactly (Phase 823, D-17's same degrade-to-quiet
+    convention).
+    """
+    if not evidence_envelope_json:
+        return None
+    try:
+        parsed = json.loads(evidence_envelope_json)
+    except (TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str, list[str]], rule_id: str | None = None) -> dict[str, Any]:
     settings = get_speckle_settings()
     rules = json.loads(run["rulesJson"]) if run.get("rulesJson") else []
@@ -908,6 +933,7 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
         "rules": rules,
         "objectSets": object_sets,
         "shaclReport": _parse_shacl_report(run.get("shaclReportJson")),
+        "evidenceEnvelope": parse_evidence_envelope(run.get("evidenceEnvelopeJson")),
     }
 
 
@@ -2082,6 +2108,90 @@ def _call_shacl_validate(project: str, run_id: str) -> dict[str, Any]:
     return {"status": "ok", **body}
 
 
+def persist_evidence_envelope(project: str, run_id: str, envelope_json: str) -> None:
+    """Persist an evidence envelope JSON string as `evidenceEnvelopeJson` on the
+    ValidationRun node.
+
+    Additive, second write after `store_validation_run` -- ordering of the Speckle
+    publish + store_validation_run is unchanged. Parameterized MERGE/SET keyed by
+    {graph, project, runId}, never string-interpolated -- identical shape to
+    `_persist_shacl_report`. Implements D-06 (emission point) / D-08 (additive
+    sidecar, absence and corruption both read as not-recorded).
+
+    A failure here (Neo4j error, serialization issue upstream) is logged and
+    swallowed by the caller's wrapper -- an envelope that fails to persist degrades
+    to not-recorded, exactly as an absent property does, and must never break the
+    publish path that was working before this phase.
+    """
+    write_query(
+        """
+        MERGE (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
+        SET run.evidenceEnvelopeJson = $evidenceEnvelopeJson
+        """,
+        {
+            "graph": VALIDATION_GRAPH,
+            "project": project,
+            "runId": run_id,
+            "evidenceEnvelopeJson": envelope_json,
+        },
+    )
+
+
+def _build_publish_evidence_envelope(
+    project: str, run_id: str, entity_dicts: list[dict[str, Any]]
+) -> "evidence_contract.EvidenceEnvelope":
+    """Build the evidence envelope for the `/validation/publish` stage boundary.
+
+    Each row's `canonicalStatus` is derived directly from the evaluation outcome the
+    publish path already has: an entity's rule id appearing in `failedRuleIds` is a
+    genuine evaluated violation (`failed`); appearing in `passedRuleIds` (and not also
+    failed) is a genuine evaluated pass (`passed`). Where a rule id is attached to the
+    entity's `ruleIds` but present in neither list -- the publish path has no richer
+    outcome for it, only the absence of a boolean signal -- the row is emitted as
+    `CanonicalStatus.UNKNOWN` with an explanatory warning, per D-04: never guess
+    `passed`/`failed` from a missing/collapsed boolean.
+    """
+    rows: list[evidence_contract.EvidenceRow] = []
+    for entity in entity_dicts:
+        dg_entity_id = entity.get("dgEntityId", "")
+        failed_rule_ids = set(entity.get("failedRuleIds") or [])
+        passed_rule_ids = set(entity.get("passedRuleIds") or [])
+        all_rule_ids = entity.get("ruleIds") or []
+        seen_rule_ids = set(all_rule_ids) | failed_rule_ids | passed_rule_ids
+        for rule_id in seen_rule_ids:
+            if rule_id in failed_rule_ids:
+                status = evidence_contract.CanonicalStatus.FAILED
+                warnings: list[str] = []
+            elif rule_id in passed_rule_ids:
+                status = evidence_contract.CanonicalStatus.PASSED
+                warnings = []
+            else:
+                status = evidence_contract.CanonicalStatus.UNKNOWN
+                warnings = [
+                    f"Rule '{rule_id}' for object '{dg_entity_id}' has no evaluated "
+                    "pass/fail outcome from this publish path -- the upstream "
+                    "producer has not yet been migrated to emit a canonical status "
+                    "(D-04: never inferred from a legacy boolean)."
+                ]
+            rows.append(
+                evidence_contract.EvidenceRow(
+                    ruleId=rule_id,
+                    objectId=dg_entity_id,
+                    canonicalStatus=status,
+                    warnings=warnings,
+                )
+            )
+
+    return evidence_contract.build_envelope(
+        project=project,
+        definition_id=run_id,
+        service_name="data-service",
+        service_version=EVIDENCE_SERVICE_VERSION,
+        stage="validation.publish",
+        rows=rows,
+    )
+
+
 def _persist_shacl_report(project: str, run_id: str, report_json: str) -> None:
     """Persist a SHACL status dict as `shaclReportJson` on the ValidationRun node.
 
@@ -2391,6 +2501,26 @@ def publish_validation(payload: ValidationPublishRequest):
             _persist_shacl_report(payload.project, run_id, json.dumps(shacl_result))
         except Exception:
             shacl_result = {"status": "unavailable"}
+
+        # Evidence envelope sidecar (Phase 1200, D-06/D-08) -- additive third write
+        # after store_validation_run, following _persist_shacl_report's exact
+        # non-fatal shape. A build/validate/persist failure here is logged and
+        # swallowed: the envelope degrades to not-recorded, exactly like an absent
+        # property, and must never change the publish response/status that was
+        # working before this phase.
+        try:
+            envelope = _build_publish_evidence_envelope(payload.project, run_id, entity_dicts)
+            evidence_contract.validate_envelope(envelope)
+            persist_evidence_envelope(
+                payload.project, run_id, envelope.model_dump_json(exclude_none=True)
+            )
+        except Exception:
+            logging.getLogger(__name__).warning(
+                "Evidence envelope build/validate/persist failed for run %s -- "
+                "degrading to not-recorded (D-08).",
+                run_id,
+                exc_info=True,
+            )
 
         return {
             "status": "published",
@@ -3048,6 +3178,334 @@ def bulk_delete_rules(payload: RuleBulkDeletePayload):
         "deleted": deleted,
         "missing": missing,
         "deletedRules": len(deleted),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Rule ingest conflict check (debug session rule-ingest-no-conflict-check,
+# 2026-09-19) -- the missing preview/confirm stage of paper T1 ITcon R15.6
+# §4's five-stage authoring process (tag -> recognise -> preview -> confirm
+# -> publish). The UI calls this endpoint BEFORE POSTing to the n8n
+# rules-ingest webhook; n8n and its workflow are unmodified (Decision 1).
+#
+# Deliberately synchronous and LLM-free (unlike deletion's select_rules_for_
+# deletion): the conflict key -- (Class, DatatypeProperty, comparator) -- is
+# a deterministic grounding fact per paper [P138], resolved by
+# dg_context.check_rule_conflict() against this project's own known
+# vocabulary. See that function's docstring for the ambiguity policy: an
+# unresolved grounding always reports "no conflict", never guesses.
+# ---------------------------------------------------------------------------
+
+
+class RuleConflictCheckPayload(BaseModel):
+    project: str
+    rules_text: str
+
+
+@app.post("/rules/check-conflict")
+def check_rule_conflict(payload: RuleConflictCheckPayload):
+    """Preview stage: does `rules_text` collide with a Rule already in the
+    project's corpus? Read-only -- writes nothing, matching the read-only
+    contract of /rules/resolve-deletion above.
+    """
+    rules_text = (payload.rules_text or "").strip()
+    if not rules_text:
+        raise _structured_error_response(
+            "rules_text is empty.",
+            "Provide the natural-language rule text to check.",
+            "REQUEST_EMPTY",
+            422,
+        )
+
+    return dg_context.check_rule_conflict(payload.project, rules_text)
+
+
+# ---------------------------------------------------------------------------
+# Rule supersession (Decision 3: Replace/Update never deletes). A
+# SUPERSEDED_BY edge (old -> new) plus provenance is recorded on the OLD
+# rule; the NEW rule is authored through the normal ingest path (unchanged)
+# immediately afterward by the caller (ui-v2), or -- for "Keep both" -- the
+# new rule is authored with no supersede edge at all, just a provenance flag
+# recording that the architect knowingly accepted the overlap.
+#
+# Schema change: SUPERSEDED_BY is a new Metagraph relationship type. Per
+# CLAUDE.md's Schema Change Propagation list this also touches
+# spec/DATABASE.md, ontology/dg-shapes.ttl, cypher_template.txt,
+# training/dataset_schema.json, .github/copilot-instructions.md, README.md
+# (updated alongside this change, not deferred).
+#
+# Superseded-rule exclusion is enforced in THREE places, not just here:
+#   1. This endpoint's own precondition check (a rule cannot supersede, or
+#      be superseded by, an already-superseded rule -- no chains-of-chains
+#      ambiguity).
+#   2. dg_context._RULE_CONFLICT_QUERY (WHERE NOT EXISTS SUPERSEDED_BY) --
+#      so a past revision does not collide with itself forever.
+#   3. DG.Core.Data.Neo4jRuleRepository.RulesQuery (C#, the SWRL VALIDATOR's
+#      own rule-corpus loader) -- see that file's diff; a superseded rule
+#      that stayed visible there would still fire at validation time,
+#      reproducing the exact bug this fix closes in a new form.
+# ---------------------------------------------------------------------------
+
+
+# Publishability precondition (debug session rule-ingest-no-conflict-check,
+# UAT round 2, 2026-09-19): live browser UAT found that Rule_Id existence
+# alone is NOT proof a rule is safe to hand enforcement over to. A real n8n
+# ingest wrote a structurally-shaped Rule (correct HAS_BODY/HAS_HEAD/order)
+# that was nonetheless untagged -- no `graph:'Metagraph'` on the Rule node,
+# no `graph`/`SWRL_label` on any of its Atoms. supersede_rule()'s old
+# precondition (`MATCH (r:Rule {Rule_Id: ..., project: ...})`) matched this
+# stub happily, created the SUPERSEDED_BY edge, and the project was left
+# with NO enforceable rule at all: the old rule was excluded from the SWRL
+# VALIDATOR's corpus by the new supersession filter (working as designed),
+# while the "replacement" was ALSO invisible to that same corpus query
+# (Neo4jRuleRepository.RulesQuery matches on `graph:'Metagraph'`) --
+# strictly worse than the original silent-duplicate-rules bug.
+#
+# This query checks exactly the three things Neo4jRuleRepository.RulesQuery/
+# AtomsQuery (C#) actually require for a rule to be visible and evaluable:
+# the Rule itself tagged Metagraph, at least one HAS_BODY atom, at least one
+# HAS_HEAD atom, and EVERY one of those atoms also tagged Metagraph (a rule
+# with a correctly-tagged Rule node but untagged atoms is just as invisible
+# to AtomsQuery as one with no atoms at all -- this is what the real UAT
+# case hit).
+_RULE_PUBLISHABILITY_QUERY = """
+MATCH (r:Rule {Rule_Id: $ruleId, project: $project})
+OPTIONAL MATCH (r)-[:HAS_BODY]->(bodyAtom:Atom)
+OPTIONAL MATCH (r)-[:HAS_HEAD]->(headAtom:Atom)
+RETURN
+    coalesce(r.graph, '') = 'Metagraph' AS ruleTagged,
+    count(DISTINCT bodyAtom) AS bodyAtomCount,
+    count(DISTINCT headAtom) AS headAtomCount,
+    count(DISTINCT bodyAtom) + count(DISTINCT headAtom)
+        - count(DISTINCT CASE WHEN coalesce(bodyAtom.graph, '') = 'Metagraph' THEN bodyAtom END)
+        - count(DISTINCT CASE WHEN coalesce(headAtom.graph, '') = 'Metagraph' THEN headAtom END)
+        AS untaggedAtomCount
+"""
+
+
+def _require_publishable_rule(rule_id: str, project: str) -> None:
+    """Raise a structured 409 (RULE_NOT_PUBLISHABLE) naming the first failed
+    precondition if `rule_id` is not safe to let take over enforcement from
+    another rule. Raises nothing (returns normally) if the rule is
+    publishable. Never partially applies anything -- purely a read-only
+    check, called BEFORE any write in supersede_rule().
+    """
+    row = read_single(_RULE_PUBLISHABILITY_QUERY, {"ruleId": rule_id, "project": project})
+    # row is None only if the Rule itself doesn't exist -- callers already
+    # checked existence before calling this, but fail closed defensively.
+    if row is None or not row.get("ruleTagged"):
+        raise _structured_error_response(
+            f"Rule '{rule_id}' cannot supersede another rule: it is not tagged graph:'Metagraph'.",
+            "Re-ingest or manually tag this rule with graph:'Metagraph' before it can take over "
+            "enforcement -- an untagged rule is invisible to the SWRL VALIDATOR's rule corpus.",
+            "RULE_NOT_PUBLISHABLE",
+            409,
+        )
+    if not row.get("bodyAtomCount"):
+        raise _structured_error_response(
+            f"Rule '{rule_id}' cannot supersede another rule: it has no HAS_BODY atoms.",
+            "Re-ingest this rule -- a rule with no body atoms can never evaluate to a violation.",
+            "RULE_NOT_PUBLISHABLE",
+            409,
+        )
+    if not row.get("headAtomCount"):
+        raise _structured_error_response(
+            f"Rule '{rule_id}' cannot supersede another rule: it has no HAS_HEAD atoms.",
+            "Re-ingest this rule -- a rule with no head atom can never set a violation flag.",
+            "RULE_NOT_PUBLISHABLE",
+            409,
+        )
+    if row.get("untaggedAtomCount"):
+        raise _structured_error_response(
+            f"Rule '{rule_id}' cannot supersede another rule: "
+            f"{row['untaggedAtomCount']} of its atoms are not tagged graph:'Metagraph'.",
+            "Re-ingest this rule, or manually tag its Atom nodes with graph:'Metagraph' -- "
+            "an untagged atom is invisible to the SWRL VALIDATOR even if the Rule node itself "
+            "is correctly tagged.",
+            "RULE_NOT_PUBLISHABLE",
+            409,
+        )
+
+
+class RuleSupersedePayload(BaseModel):
+    project: str
+    oldRuleId: str
+    newRuleId: str
+    prompt: str = ""
+    actor: str = ""
+
+
+@app.post("/rules/supersede")
+def supersede_rule(payload: RuleSupersedePayload):
+    """Record that `newRuleId` supersedes `oldRuleId`. Call this AFTER the
+    new rule has been written by the normal ingest path (n8n rules-ingest),
+    so both Rule nodes exist when the edge is created.
+
+    Idempotent: re-running with the same pair is a no-op MERGE, not an
+    error, so a retried request after a network blip does not create a
+    duplicate edge or double-write provenance.
+
+    Refuses (409 RULE_NOT_PUBLISHABLE, see `_require_publishable_rule()`) if
+    `newRuleId` exists but is not actually usable by the SWRL VALIDATOR --
+    missing `graph:'Metagraph'` on the Rule and/or its atoms, or missing
+    HAS_BODY/HAS_HEAD atoms entirely. This precondition exists BECAUSE a
+    real n8n ingest can produce exactly this: a Rule_Id that exists and has
+    correctly-ordered atoms, but with none of it tagged. Without this check,
+    supersession would exclude the old (working) rule from the validator
+    corpus while its "replacement" stays invisible to that same corpus --
+    net loss of enforcement, strictly worse than not superseding at all.
+    The old rule is NEVER touched until this check passes; nothing is
+    partially applied.
+    """
+    old_id = (payload.oldRuleId or "").strip()
+    new_id = (payload.newRuleId or "").strip()
+    if not old_id or not new_id:
+        raise _structured_error_response(
+            "oldRuleId and newRuleId are both required.",
+            "Pass the Rule_Id being replaced and the Rule_Id of its replacement.",
+            "REQUEST_EMPTY",
+            422,
+        )
+    if old_id == new_id:
+        raise _structured_error_response(
+            f"oldRuleId and newRuleId are the same ('{old_id}').",
+            "A rule cannot supersede itself.",
+            "SUPERSEDE_SELF",
+            422,
+        )
+
+    old_rule = read_single(
+        "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) "
+        "RETURN r.Rule_Id AS ruleId, "
+        "EXISTS { (r)-[:SUPERSEDED_BY]->() } AS alreadySuperseded",
+        {"ruleId": old_id, "project": payload.project},
+    )
+    if old_rule is None:
+        raise _structured_error_response(
+            f"Rule '{old_id}' not found in project '{payload.project}'.",
+            "Check the Rule_Id; it is case-sensitive.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+    if old_rule.get("alreadySuperseded"):
+        raise _structured_error_response(
+            f"Rule '{old_id}' has already been superseded.",
+            "Refresh the conflict check -- it should now point at the current rule, not this one.",
+            "ALREADY_SUPERSEDED",
+            409,
+        )
+
+    new_rule = read_single(
+        "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) RETURN r.Rule_Id AS ruleId",
+        {"ruleId": new_id, "project": payload.project},
+    )
+    if new_rule is None:
+        raise _structured_error_response(
+            f"Rule '{new_id}' not found in project '{payload.project}'.",
+            "Author the replacement rule first (normal ingest), then call this endpoint.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+
+    _require_publishable_rule(new_id, payload.project)
+
+    now = datetime.now(timezone.utc).isoformat()
+    write_query(
+        "MATCH (old:Rule {Rule_Id: $oldId, project: $project}) "
+        "MATCH (new:Rule {Rule_Id: $newId, project: $project}) "
+        "MERGE (old)-[s:SUPERSEDED_BY]->(new) "
+        "SET s.supersededAt = $supersededAt, s.actor = $actor, s.prompt = $prompt",
+        {
+            "oldId": old_id,
+            "newId": new_id,
+            "project": payload.project,
+            "supersededAt": now,
+            "actor": (payload.actor or "").strip(),
+            "prompt": (payload.prompt or "").strip()[:2000],
+        },
+    )
+
+    return {
+        "status": "superseded",
+        "project": payload.project,
+        "oldRuleId": old_id,
+        "newRuleId": new_id,
+        "supersededAt": now,
+    }
+
+
+class RuleAcceptOverlapPayload(BaseModel):
+    project: str
+    ruleId: str
+    conflictsWith: list[str] = Field(default_factory=list)
+    actor: str = ""
+
+
+@app.post("/rules/accept-overlap")
+def accept_rule_overlap(payload: RuleAcceptOverlapPayload):
+    """'Keep both' provenance: record that the architect knowingly authored
+    `ruleId` despite it overlapping with `conflictsWith`, without superseding
+    anything. Call AFTER the new rule has been written by the normal ingest
+    path.
+
+    Deliberately NOT given the same publishability precondition as
+    supersede_rule() (debug session rule-ingest-no-conflict-check, UAT round
+    2): this endpoint never disarms anything -- it only SETs provenance
+    properties on the new rule itself and creates no SUPERSEDED_BY edge, so
+    a malformed new rule degrades to the pre-existing "malformed rule is
+    invisible to the validator" gap (already tracked as a separate,
+    out-of-scope follow-up), never to "the OLD rule stops being enforced."
+    The two endpoints have different blast radii by design.
+
+    This does not gate or block anything -- it is a provenance annotation
+    only (paper [P129]/[P139]: "approved results are recorded in the
+    project graph together with provenance"), so a future audit can
+    distinguish "two rules overlap because nobody noticed" from "two rules
+    overlap because an architect reviewed the conflict and chose to keep
+    both".
+    """
+    rule_id = (payload.ruleId or "").strip()
+    if not rule_id:
+        raise _structured_error_response(
+            "ruleId is required.",
+            "Pass the Rule_Id of the newly authored rule.",
+            "REQUEST_EMPTY",
+            422,
+        )
+
+    rule = read_single(
+        "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) RETURN r.Rule_Id AS ruleId",
+        {"ruleId": rule_id, "project": payload.project},
+    )
+    if rule is None:
+        raise _structured_error_response(
+            f"Rule '{rule_id}' not found in project '{payload.project}'.",
+            "Author the rule first (normal ingest), then call this endpoint.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+    write_query(
+        "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) "
+        "SET r.acceptedOverlapWith = $conflictsWith, "
+        "    r.acceptedOverlapAt = $acceptedAt, "
+        "    r.acceptedOverlapBy = $actor",
+        {
+            "ruleId": rule_id,
+            "project": payload.project,
+            "conflictsWith": payload.conflictsWith,
+            "acceptedAt": now,
+            "actor": (payload.actor or "").strip(),
+        },
+    )
+
+    return {
+        "status": "overlap-accepted",
+        "project": payload.project,
+        "ruleId": rule_id,
+        "conflictsWith": payload.conflictsWith,
+        "acceptedAt": now,
     }
 
 

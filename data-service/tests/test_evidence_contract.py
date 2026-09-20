@@ -1,4 +1,5 @@
 """Tests for evidence_contract.py (Phase 1200 Plan 03, ALGN12-01/ALGN12-02)."""
+import json
 import os
 import sys
 
@@ -16,6 +17,12 @@ from evidence_contract import (
     load_contract_schema,
     to_legacy_boolean,
     validate_envelope,
+)
+
+from app import (
+    _build_publish_evidence_envelope,
+    parse_evidence_envelope,
+    persist_evidence_envelope,
 )
 
 
@@ -205,3 +212,119 @@ def test_no_boolean_to_canonical_inference_function_exists():
     source = module_path.read_text(encoding="utf-8")
     pattern = re.compile(r"def .*bool.*-> CanonicalStatus|from_legacy|from_boolean")
     assert not pattern.search(source)
+
+
+# --- app.py additive sidecar: persist_evidence_envelope / parse_evidence_envelope ---
+
+
+class TestPersistEvidenceEnvelope:
+    def test_persist_uses_parameterized_query_with_all_four_keys(self, monkeypatch):
+        import app as app_module
+
+        captured = {}
+
+        def fake_write_query(query, parameters=None):
+            captured["query"] = query
+            captured["parameters"] = parameters
+
+        monkeypatch.setattr(app_module, "write_query", fake_write_query)
+
+        envelope_json = json.dumps({"contractVersion": "1.0.0"})
+        persist_evidence_envelope("proj-a", "run-1", envelope_json)
+
+        assert "$evidenceEnvelopeJson" in captured["query"]
+        assert "$project" in captured["query"]
+        assert "$runId" in captured["query"]
+        assert "proj-a" not in captured["query"]  # never string-interpolated
+        assert "run-1" not in captured["query"]
+        assert set(captured["parameters"].keys()) == {"graph", "project", "runId", "evidenceEnvelopeJson"}
+        assert captured["parameters"] == {
+            "graph": app_module.VALIDATION_GRAPH,
+            "project": "proj-a",
+            "runId": "run-1",
+            "evidenceEnvelopeJson": envelope_json,
+        }
+
+    def test_persist_touches_only_evidenceenvelopejson(self):
+        """git diff / grep-verifiable acceptance criterion: the write body only sets
+        evidenceEnvelopeJson -- no ValidStatus/SendStatus/statePayloadJson/shaclReportJson
+        appears in this function's query text."""
+        from pathlib import Path
+
+        module_path = Path(__file__).resolve().parent.parent / "app.py"
+        source = module_path.read_text(encoding="utf-8")
+        # Isolate the function body between its def line and the next top-level def.
+        start = source.index("def persist_evidence_envelope(")
+        end = source.index("\ndef ", start + 1)
+        body = source[start:end]
+        assert "ValidStatus" not in body
+        assert "SendStatus" not in body
+        assert "statePayloadJson" not in body
+        assert "shaclReportJson" not in body
+        assert "SET run.evidenceEnvelopeJson = $evidenceEnvelopeJson" in body
+
+
+class TestParseEvidenceEnvelope:
+    def test_returns_none_for_none_empty_malformed_and_array(self):
+        assert parse_evidence_envelope(None) is None
+        assert parse_evidence_envelope("") is None
+        assert parse_evidence_envelope("not json") is None
+        assert parse_evidence_envelope("[1,2]") is None
+
+    def test_returns_parsed_dict_for_well_formed_envelope_json(self):
+        envelope_json = json.dumps({"contractVersion": "1.0.0", "canonicalStatus": "passed"})
+        result = parse_evidence_envelope(envelope_json)
+        assert result == {"contractVersion": "1.0.0", "canonicalStatus": "passed"}
+
+    def test_never_raises_on_garbage_input(self):
+        for garbage in ["{", "}", "{not:json}", "\x00\x01", "[" * 1000]:
+            try:
+                parse_evidence_envelope(garbage)
+            except Exception as e:
+                pytest.fail(f"parse_evidence_envelope raised on input {garbage!r}: {e}")
+
+
+class TestBuildPublishEvidenceEnvelope:
+    def test_failed_and_passed_rule_ids_map_to_genuine_statuses(self):
+        entity_dicts = [
+            {
+                "dgEntityId": "OBJ_1",
+                "ruleIds": ["R_A", "R_B"],
+                "failedRuleIds": ["R_A"],
+                "passedRuleIds": ["R_B"],
+            }
+        ]
+        envelope = _build_publish_evidence_envelope("proj-a", "run-1", entity_dicts)
+        by_rule = {row.ruleId: row for row in envelope.rows}
+        assert by_rule["R_A"].canonicalStatus == CanonicalStatus.FAILED
+        assert by_rule["R_B"].canonicalStatus == CanonicalStatus.PASSED
+        assert by_rule["R_A"].warnings == []
+        assert by_rule["R_B"].warnings == []
+
+    def test_rule_with_no_boolean_signal_emits_unknown_with_warning(self):
+        entity_dicts = [
+            {
+                "dgEntityId": "OBJ_1",
+                "ruleIds": ["R_C"],
+                "failedRuleIds": [],
+                "passedRuleIds": [],
+            }
+        ]
+        envelope = _build_publish_evidence_envelope("proj-a", "run-1", entity_dicts)
+        assert len(envelope.rows) == 1
+        row = envelope.rows[0]
+        assert row.canonicalStatus == CanonicalStatus.UNKNOWN
+        assert len(row.warnings) == 1
+        assert "R_C" in row.warnings[0]
+
+    def test_envelope_validates_against_schema(self):
+        entity_dicts = [
+            {
+                "dgEntityId": "OBJ_1",
+                "ruleIds": ["R_A"],
+                "failedRuleIds": ["R_A"],
+                "passedRuleIds": [],
+            }
+        ]
+        envelope = _build_publish_evidence_envelope("proj-a", "run-1", entity_dicts)
+        validate_envelope(envelope)  # must not raise
