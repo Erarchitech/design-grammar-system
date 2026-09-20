@@ -8,15 +8,17 @@ namespace DG.Core.Validation;
 public sealed class RuleEvaluator
 {
     /// <summary>
-    /// A single binding's typed outcome (Phase 1201 D-05/D-07/D-08). <see cref="Status"/> is one of
-    /// exactly three values here: <see cref="EvidenceStatus.Failed"/> (the body matched — a
-    /// violation, per the violation-pattern inversion), <see cref="EvidenceStatus.Passed"/> (the
-    /// body did not match — no violation for this binding), or a typed non-verdict
-    /// (<see cref="EvidenceStatus.Unsupported"/>, <see cref="EvidenceStatus.Unknown"/>, or
-    /// <see cref="EvidenceStatus.Error"/>) when evaluation could not reach a verdict at all. This
-    /// replaces the former bool-or-throw shape so an unsupported construct or an unresolvable
-    /// binding is a distinct, non-throwing outcome rather than an exception caught and silently
-    /// counted as an ordinary rule violation.
+    /// A single binding's typed outcome (Phase 1201 D-05/D-07/D-08/D-14). <see cref="Status"/> is
+    /// either a verdict — <see cref="EvidenceStatus.Failed"/> (the body matched — a violation, per
+    /// the violation-pattern inversion) or <see cref="EvidenceStatus.Passed"/> (the body did not
+    /// match — no violation for this binding) — or a typed non-verdict
+    /// (<see cref="EvidenceStatus.Unsupported"/> for an unsupported builtin or an
+    /// ObjectPropertyAtom/UnsupportedAtom/unrecognized atom type, <see cref="EvidenceStatus.Unknown"/>
+    /// for an unresolvable variable binding, or <see cref="EvidenceStatus.Error"/> for a genuine
+    /// unexpected fault) when evaluation could not reach a verdict at all. This replaces the former
+    /// bool-or-throw shape so an unsupported construct or an unresolvable binding is a distinct,
+    /// non-throwing outcome rather than an exception caught and silently counted as an ordinary
+    /// rule violation.
     /// </summary>
     private readonly record struct BindingOutcome(EvidenceStatus Status, string? Detail);
 
