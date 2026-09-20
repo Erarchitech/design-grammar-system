@@ -1,0 +1,300 @@
+{
+  "de01ReportVersion": "1.0.0",
+  "generatedAt": "2026-09-20T23:12:29Z",
+  "fixtureVersion": "1.0.0",
+  "contractVersion": "1.0.0",
+  "canonicalizationVersion": 1,
+  "legs": {
+    "data-service": {
+      "available": true,
+      "error": null,
+      "serviceName": "data-service",
+      "serviceVersion": "1.0.0",
+      "stage": "validation.publish"
+    },
+    "dg-reasoner": {
+      "available": true,
+      "error": null,
+      "serviceName": "dg-reasoner",
+      "serviceVersion": "unknown",
+      "stage": "shacl.validate"
+    },
+    "csharp": {
+      "available": true,
+      "error": null,
+      "serviceName": "dg-core-evaluator",
+      "serviceVersion": "1.0.0.0",
+      "stage": "de01.csharp-leg.evaluate"
+    },
+    "replay": {
+      "available": true,
+      "error": null,
+      "serviceName": "data-service",
+      "serviceVersion": "1.0.0",
+      "stage": "validation.view.replay"
+    }
+  },
+  "comparison_rows": [
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_EMPTY",
+      "classification": "declared_non_equivalence",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_EMPTY and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.",
+      "perLeg": {
+        "data-service": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "no_population",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        },
+        "dg-reasoner": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "not_evaluated",
+              "warnings": [
+                "What: SHACL validated structural conformance for OBJ_GOLD_EMPTY and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems."
+              ],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-reasoner",
+              "serviceVersion": "unknown"
+            }
+          ]
+        },
+        "csharp": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "no_population",
+              "warnings": [],
+              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-core-evaluator",
+              "serviceVersion": "1.0.0.0"
+            }
+          ]
+        },
+        "replay": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "no_population",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_FAIL",
+      "classification": "declared_non_equivalence",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_FAIL and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.; csharp: What: atom 'R_GOLD_HEIGHT_MAX_75_V_A4' (ObjectPropertyAtom, belongsToDistrict(?b, ?d)) has no resolvable type on the C# leg. Where: DG.Core.Parsing.SwrlRuleParser.ResolveAtomType has no ObjectPropertyAtom branch (returns only BuiltinAtom/ClassAtom/DataPropertyAtom). How to fix: Phase 1201's ALGN12-05 adds the missing branch. This is a pre-declared, by-design non-result -- see fixtures/golden/MANIFEST.md 'Expected non-results by design' -- not a fixture defect or a DE-01 failure.",
+      "perLeg": {
+        "data-service": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "failed",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        },
+        "dg-reasoner": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "not_evaluated",
+              "warnings": [
+                "What: SHACL validated structural conformance for OBJ_GOLD_FAIL and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems."
+              ],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-reasoner",
+              "serviceVersion": "unknown"
+            }
+          ]
+        },
+        "csharp": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "failed",
+              "warnings": [],
+              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-core-evaluator",
+              "serviceVersion": "1.0.0.0"
+            },
+            {
+              "canonicalStatus": "unsupported",
+              "warnings": [
+                "What: atom 'R_GOLD_HEIGHT_MAX_75_V_A4' (ObjectPropertyAtom, belongsToDistrict(?b, ?d)) has no resolvable type on the C# leg. Where: DG.Core.Parsing.SwrlRuleParser.ResolveAtomType has no ObjectPropertyAtom branch (returns only BuiltinAtom/ClassAtom/DataPropertyAtom). How to fix: Phase 1201's ALGN12-05 adds the missing branch. This is a pre-declared, by-design non-result -- see fixtures/golden/MANIFEST.md 'Expected non-results by design' -- not a fixture defect or a DE-01 failure."
+              ],
+              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "outputHash": null,
+              "detail": "R_GOLD_HEIGHT_MAX_75_V_A4",
+              "serviceName": "dg-core-evaluator",
+              "serviceVersion": "1.0.0.0"
+            }
+          ]
+        },
+        "replay": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "failed",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_PASS",
+      "classification": "declared_non_equivalence",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_PASS and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.",
+      "perLeg": {
+        "data-service": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "passed",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        },
+        "dg-reasoner": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "not_evaluated",
+              "warnings": [
+                "What: SHACL validated structural conformance for OBJ_GOLD_PASS and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems."
+              ],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-reasoner",
+              "serviceVersion": "unknown"
+            }
+          ]
+        },
+        "csharp": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "passed",
+              "warnings": [],
+              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "dg-core-evaluator",
+              "serviceVersion": "1.0.0.0"
+            }
+          ]
+        },
+        "replay": {
+          "present": true,
+          "rows": [
+            {
+              "canonicalStatus": "passed",
+              "warnings": [],
+              "inputHash": null,
+              "outputHash": null,
+              "detail": null,
+              "serviceName": "data-service",
+              "serviceVersion": "1.0.0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "declared_non_equivalences": [
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_EMPTY",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_EMPTY and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.",
+      "statuses": [
+        "no_population",
+        "not_evaluated"
+      ]
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_FAIL",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_FAIL and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.; csharp: What: atom 'R_GOLD_HEIGHT_MAX_75_V_A4' (ObjectPropertyAtom, belongsToDistrict(?b, ?d)) has no resolvable type on the C# leg. Where: DG.Core.Parsing.SwrlRuleParser.ResolveAtomType has no ObjectPropertyAtom branch (returns only BuiltinAtom/ClassAtom/DataPropertyAtom). How to fix: Phase 1201's ALGN12-05 adds the missing branch. This is a pre-declared, by-design non-result -- see fixtures/golden/MANIFEST.md 'Expected non-results by design' -- not a fixture defect or a DE-01 failure.",
+      "statuses": [
+        "failed",
+        "not_evaluated",
+        "unsupported"
+      ]
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_PASS",
+      "reason": "dg-reasoner: What: SHACL validated structural conformance for OBJ_GOLD_PASS and found no violation, but has no opinion on rule R_GOLD_HEIGHT_MAX_75_V's quantitative condition. Where: spec/RULE-PARTITION-POLICY.md assigns quantitative rules (e.g. this fixture's 'height > 75') to the SWRL VALIDATOR, not SHACL -- dg-reasoner/reasoning.py::run_shacl's pySHACL pipeline cannot express this comparison. How to fix: nothing to fix here -- this is a declared non-equivalence, not a defect. Encoding the height rule as a SHACL shape to force agreement with the other legs would violate the rule-partition policy by evaluating the same business rule twice in two systems.",
+      "statuses": [
+        "not_evaluated",
+        "passed"
+      ]
+    }
+  ],
+  "status_tally_by_leg": {
+    "data-service": {
+      "no_population": 1,
+      "failed": 1,
+      "passed": 1
+    },
+    "dg-reasoner": {
+      "not_evaluated": 3
+    },
+    "csharp": {
+      "no_population": 1,
+      "failed": 1,
+      "unsupported": 1,
+      "passed": 1
+    },
+    "replay": {
+      "no_population": 1,
+      "failed": 1,
+      "passed": 1
+    }
+  },
+  "silent_disagreement_count": 0
+}
