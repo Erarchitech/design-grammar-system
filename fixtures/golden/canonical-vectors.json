@@ -1,0 +1,68 @@
+{
+  "canonicalizationVersion": 1,
+  "_comment": "Shared golden vectors for the canonical-hash implementations (spec/EVIDENCE-CONTRACT.md section 6). Mirrors the DgIdMintingService/compute_dg_id golden-vector convention: these literals are duplicated as literal assertions into both the data-service and DG.Tests suites (plans 1200-03/1200-04), not imported from this file at test-run time. Every sha256Upper below is the real, recomputed SHA-256 uppercase hex digest of the accompanying joined/canonical string's UTF-8 bytes -- verified by fixtures/golden/../1200-02-PLAN.md Task 1's automated check, which recomputes and compares rather than trusting the literal.",
+  "vectors": [
+    {
+      "kind": "scalarTuple",
+      "description": "The existing shipped dgId golden vector (STATE.md / DgIdMintingService / compute_dg_id parity anchor) -- reproduced here so cross-checking the shared scalar-tuple hashing convention against fixtures/golden's own object dgIds is possible without re-deriving it.",
+      "parts": [
+        "p1",
+        "frame.gh",
+        "cg:1:proc:11_Proc"
+      ],
+      "joined": "p1|frame.gh|cg:1:proc:11_Proc",
+      "sha256Upper": "BC8E62EE137E2B562825D4E7AF01F52174727730A1C313B1873FFC4AA7F291B1"
+    },
+    {
+      "kind": "scalarTuple",
+      "description": "dgId minting input for fixtures/golden/fixture.json's OBJ_GOLD_PASS object (project|definitionId|cgId), truncated-to-16-hex form is fixture.json's OBJ_GOLD_PASS.dgId = dg:57C65BE15E8E368B.",
+      "parts": [
+        "DG-1200-GOLDEN",
+        "def-golden-01",
+        "cg:1:obj:01_Pass"
+      ],
+      "joined": "DG-1200-GOLDEN|def-golden-01|cg:1:obj:01_Pass",
+      "sha256Upper": "57C65BE15E8E368BD1EA6D367AA4CAC48FD2256E73AE201595F1F52422AF8587"
+    },
+    {
+      "kind": "scalarTuple",
+      "description": "dgId minting input for fixtures/golden/fixture.json's OBJ_GOLD_FAIL object; truncated-to-16-hex form is fixture.json's OBJ_GOLD_FAIL.dgId = dg:729E143958721742.",
+      "parts": [
+        "DG-1200-GOLDEN",
+        "def-golden-01",
+        "cg:1:obj:02_Fail"
+      ],
+      "joined": "DG-1200-GOLDEN|def-golden-01|cg:1:obj:02_Fail",
+      "sha256Upper": "729E143958721742B17D50A03FC733BF91EA818D2427218F9FBAE74D5163DCBC"
+    },
+    {
+      "kind": "canonicalJson",
+      "description": "Nested-payload canonicalization exercising key ordering (out-of-order input keys sorted ascending by Unicode code point), integer formatting (count:3, no decimal point), fixed-point decimal formatting (height:82.5, not 82.50 or 82.5000...), and a non-ASCII character that must NOT be escaped (the c-cedilla in Facade and e-acute in Cafe, already in precomposed NFC form).",
+      "value": {
+        "warnings": [
+          "binding unresolved for var h"
+        ],
+        "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+        "height": 82.5,
+        "count": 3,
+        "label": "Façade Café"
+      },
+      "canonical": "{\"count\":3,\"height\":82.5,\"label\":\"Façade Café\",\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\",\"warnings\":[\"binding unresolved for var h\"]}",
+      "sha256Upper": "7751C1AC5E7C020A7802C93A479801FACC7CACEA72A9285C4BF77D1760FA69A5"
+    },
+    {
+      "kind": "canonicalJson",
+      "description": "Nested-payload canonicalization exercising Unicode NFC normalization: 'note' is authored in decomposed NFD form (e + combining acute accent) and must be normalized to precomposed NFC before hashing, per rule 4. Also exercises a zero integer, a fixed-point decimal (0.1, not 0.10 or 1e-1), and key ordering.",
+      "value": {
+        "zObjectId": "OBJ_GOLD_EMPTY",
+        "aStatus": "no_population",
+        "note": "Café",
+        "bindingCount": 0,
+        "ratio": 0.1
+      },
+      "_authoring_note": "The 'note' value as authored for this vector is the NFD-decomposed form of 'Cafe' + combining U+0301; the canonical field below is computed AFTER NFC normalization per rule 4, so it renders as the precomposed U+00E9 form.",
+      "canonical": "{\"aStatus\":\"no_population\",\"bindingCount\":0,\"note\":\"Café\",\"ratio\":0.1,\"zObjectId\":\"OBJ_GOLD_EMPTY\"}",
+      "sha256Upper": "82811E1569BD49D251D2BF13456BB48D616FDDE41DA9214ACB884D1411120EC7"
+    }
+  ]
+}
