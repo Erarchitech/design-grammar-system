@@ -1,3 +1,4 @@
+using DG.Core.Contracts;
 using DG.Core.Models;
 using DG.Core.Validation;
 
