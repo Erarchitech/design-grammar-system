@@ -211,15 +211,23 @@ public static class CanonicalJsonWriter
 
     private static void WriteNumberDecimal(decimal value, StringBuilder sb, string path)
     {
-        if (decimal.Round(value) == value && Math.Abs(value) < 1_000_000_000_000_000m && value == Math.Truncate(value))
+        // The decimal's stored scale is preserved deliberately, mirroring Python's
+        // format(Decimal, "f") — trailing zeros are part of the value's canonical form, not
+        // noise to be trimmed. Scale is read directly from the decimal's own bit representation
+        // (bits 16-23 of the fourth int returned by decimal.GetBits) rather than inferred from
+        // integrality, so 100.00m stays "100.00" and 2.50m stays "2.50".
+        var bits = decimal.GetBits(value);
+        var scale = (bits[3] >> 16) & 0xFF;
+
+        if (scale == 0)
         {
-            // Integral decimal: no decimal point, no leading zeros.
-            sb.Append(((long)value).ToString(CultureInfo.InvariantCulture));
+            // Scale-0 decimal: no decimal point, matching format(Decimal("3"), "f") == "3".
+            sb.Append(value.ToString(CultureInfo.InvariantCulture));
             return;
         }
 
-        // Non-integer: fixed-point string via InvariantCulture, never scientific notation.
-        sb.Append(value.ToString("0.#################################", CultureInfo.InvariantCulture));
+        // Fixed-point string with exactly `scale` fractional digits, never scientific notation.
+        sb.Append(value.ToString("F" + scale.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture));
     }
 
     private static void WriteString(string s, StringBuilder sb)

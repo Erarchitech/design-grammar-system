@@ -88,6 +88,29 @@ public sealed class CanonicalJsonWriterTests
     }
 
     [Fact]
+    public void Canonicalize_ShouldPreserveTrailingZeroScale()
+    {
+        var obj = new JsonObject { ["amount"] = 100.00m, ["ratio"] = 2.50m };
+
+        var canonical = CanonicalJsonWriter.Canonicalize(obj);
+
+        Assert.Equal("{\"amount\":100.00,\"ratio\":2.50}", canonical);
+    }
+
+    [Fact]
+    public void Canonicalize_ShouldRenderIntegralDecimal_WithNoDecimalPoint()
+    {
+        var scaleZero = new JsonObject { ["count"] = 3m };
+        var aboveOldCutoff = new JsonObject { ["count"] = 2000000000000000m };
+
+        var scaleZeroCanonical = CanonicalJsonWriter.Canonicalize(scaleZero);
+        var aboveOldCutoffCanonical = CanonicalJsonWriter.Canonicalize(aboveOldCutoff);
+
+        Assert.Equal("{\"count\":3}", scaleZeroCanonical);
+        Assert.Equal("{\"count\":2000000000000000}", aboveOldCutoffCanonical);
+    }
+
+    [Fact]
     public void Canonicalize_ShouldRejectDouble()
     {
         var obj = new JsonObject { ["height"] = 82.5d };
