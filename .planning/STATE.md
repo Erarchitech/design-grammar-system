@@ -4,11 +4,11 @@ milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
-status: verifying
-stopped_at: Completed 1200-05-PLAN.md (Task 4 owner-approved, phase 1200 fully executed)
-last_updated: "2026-09-20T09:06:41.520Z"
+status: executing
+stopped_at: Gap-closure plans 1200-06..08 created from 1200-VERIFICATION.md (gaps_found); waves 4-5 unexecuted
+last_updated: "2026-09-20T09:47:04.070Z"
 last_activity: 2026-09-20
-last_activity_desc: Phase 1200 execution started
+last_activity_desc: Phase 1200 gap-closure planned (1200-06..08)
 progress:
   total_phases: 6
   completed_phases: 1
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
+Plan: 5 of 8 executed (1200-06..08 are gap closure, pending)
+Status: Ready to execute
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
