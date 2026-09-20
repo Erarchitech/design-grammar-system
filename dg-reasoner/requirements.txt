@@ -11,3 +11,6 @@ pytest
 # same one data-service uses) instead of pulling in an unreviewed new package.
 starlette<1.0.0
 httpx
+# Phase 1200 (D-01): validates this service's evidence envelope against the
+# contract schema annex (spec/evidence-contract.schema.json).
+jsonschema>=4.20,<5

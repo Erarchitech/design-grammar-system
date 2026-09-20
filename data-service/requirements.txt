@@ -6,3 +6,6 @@ neo4j
 pytest
 specklepy==3.2.4
 uvicorn
+# Phase 1200 (D-01): mechanical enforcement of the evidence envelope contract --
+# validates envelopes against spec/evidence-contract.schema.json.
+jsonschema>=4.20,<5

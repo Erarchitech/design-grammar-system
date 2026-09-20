@@ -26,6 +26,10 @@ services:
       DG_REASONER_TIMEOUT_SECONDS: 90
     volumes:
       - ./ontology:/app/ontology:ro
+      # Phase 1200 (D-09): dg-reasoner has no repo-root mount, unlike
+      # data-service's `.:/mnt/repo:ro`, so the shared golden fixture would
+      # otherwise be invisible inside this container.
+      - ./fixtures:/app/fixtures:ro
     depends_on:
       - neo4j
 
