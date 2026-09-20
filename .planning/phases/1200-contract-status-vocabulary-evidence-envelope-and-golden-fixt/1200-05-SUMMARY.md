@@ -196,6 +196,14 @@ None - no external service configuration required beyond the outstanding Docker 
 - Phase 1201 (ALGN12-05/ALGN12-06) has a concrete, evidence-backed starting point: `SwrlRuleParser.ResolveAtomType` needs an `ObjectPropertyAtom` branch, and `RuleEvaluator.cs`'s zero-binding/no-result collapse-to-`false` behaviors need the `no_population`/`not_evaluated` split this contract defines.
 - **Blocker carried forward:** the live four-leg DE-01 run should be re-executed once Docker Desktop is available, to confirm the `ObjectPropertyAtom` declared non-equivalence and cross-service agreement hold when all four legs are actually reachable — not just typed-degraded. This does not block Phase 1200's completion (the owner approved the contract on the evidence available), but it is open work, not silently resolved.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-05-SUMMARY.md`
+- FOUND: `3337e80` (this plan's metadata/Task-4 commit)
+- FOUND: `00a1aa4` (Task 1)
+- FOUND: `bbaa9ea` (Task 2)
+- FOUND: `af01dfe` (Task 3)
+
 ---
 *Phase: 1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt*
 *Completed: 2026-09-20*

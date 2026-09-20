@@ -4,17 +4,17 @@ milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
-status: executing
-stopped_at: Completed 1200-04-PLAN.md
-last_updated: "2026-09-20T08:14:04.775Z"
+status: verifying
+stopped_at: Completed 1200-05-PLAN.md (Task 4 owner-approved, phase 1200 fully executed)
+last_updated: "2026-09-20T09:06:41.520Z"
 last_activity: 2026-09-20
 last_activity_desc: Phase 1200 execution started
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
-  percent: 0
+  completed_plans: 5
+  percent: 17
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
@@ -119,6 +119,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1200 P02 | ~15min | 3 tasks | 7 files |
 | Phase 1200 P03 | ~35min | 3 tasks | 6 files |
 | Phase 1200 P04 | ~6min | 3 tasks | 8 files |
+| Phase 1200 P05 | ~10min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -388,6 +389,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: _build_publish_evidence_envelope derives failed/passed status directly from failedRuleIds/passedRuleIds membership; UNKNOWN with a warning only when neither list has a signal (D-04)
 - [Phase ?]: [Phase 1200-04]: EvidenceEnvelopeFactory's empty-row roll-up default is NotEvaluated (per this plan's explicit spec), intentionally distinct from the Python leg's NoPopulation default in evidence_contract.py -- documented as per-implementation, not a divergence bug
 - [Phase ?]: [Phase 1200-04]: CanonicalJsonWriter walks System.Text.Json.Nodes.JsonNode directly (no JsonSerializer.Serialize delegation), reproducing all 5 shared golden vectors byte-exact and digest-exact identically to data-service/canonical_json.py
+- [Phase ?]: [Phase 1200-05]: Owner approved (2026-09-20) spec/EVIDENCE-CONTRACT.md sections 1, 3, and 10 (status vocabulary, evidence envelope shape, v11.0 Phase 1105 handoff split) -- frozen for phases 1201-1205 and v11.0 propagation work
+- [Phase ?]: [Phase 1200-05]: Corrected the prior checkpoint's framing -- the report's 3 declared_non_equivalences are all 'leg unavailable' timeouts (data-service/dg-reasoner/replay), not the ObjectPropertyAtom case standing alone; that case appears nested inside OBJ_GOLD_FAIL's declared non-equivalence, not isolated
 
 ### Research Flags (carry into planning)
 
@@ -416,6 +419,7 @@ Shipped from Phase 20 Plan 02:
 - ~~Phase 820 spike gates 821–823~~ — RESOLVED: Phase 820's Key Decisions recorded (ADR-820-1/2); v8.2 shipped
 - 38-06: no live Neo4j fixture pairs a published Computgraph definition with a Rule an inputBindings entry maps to -- publish into v8-ui-smoke (has R_URB_HEIGHT_MAX_75_V) or add a rule into urbanblock-uat (has a published definition) before plan 38-07's live UAT
 - Live docker compose exec verification for dg-reasoner's fixture mount deferred -- Docker Desktop's engine was not running in the execution environment (client present, daemon unreachable). Human with running Docker Desktop should run: docker compose up -d dg-reasoner && docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json
+- Live four-leg DE-01 run outstanding: Docker Desktop unavailable in this environment prevented data-service/dg-reasoner/replay legs from executing during the golden-fixture run; only the csharp leg ran (silent_disagreement_count=0, no_population correctly distinguished from failed). Re-run tools/de01/run_de01.py once Docker Desktop is up and fixtures/golden/seed.cypher is applied.
 
 ### Quick Tasks Completed
 
@@ -468,8 +472,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-20T08:14:04.758Z
-Stopped at: Completed 1200-04-PLAN.md
+Last session: 2026-09-20T09:06:41.503Z
+Stopped at: Completed 1200-05-PLAN.md (Task 4 owner-approved, phase 1200 fully executed)
 Resume file: None
 
 ## Performance Metrics

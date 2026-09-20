@@ -52,7 +52,7 @@ v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LL
 
 **Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -67,7 +67,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 1200-05-PLAN.md — DE-01 runner across four legs, dual-format report, owner acceptance gate (wave 3)
+- [x] 1200-05-PLAN.md — DE-01 runner across four legs, dual-format report, owner acceptance gate (wave 3)
 
 ### Phase 1201: Rule Parser and Evaluator Conformance
 
