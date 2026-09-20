@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
 status: executing
-stopped_at: Completed 1200-01-PLAN.md
-last_updated: "2026-09-20T07:35:17.517Z"
+stopped_at: Completed 1200-02-PLAN.md
+last_updated: "2026-09-20T07:44:06.490Z"
 last_activity: 2026-09-20
 last_activity_desc: Phase 1200 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
@@ -116,6 +116,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 39 P05 | ~40min | 2 tasks | 3 files |
 | Phase 33 P04 | ~20min | 2 tasks | 0 files |
 | Phase 1200 P01 | ~15min | 3 tasks | 5 files |
+| Phase 1200 P02 | ~15min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -378,6 +379,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: Phase 39 (39-05): F-39-01 is recorded in both deliverables as an OPEN, unresolved design question — auto-run verdicts are structurally sound but report all-false ValidStatus regardless of the design, so auto-validation does not yet produce meaningful pass/fail verdicts; two candidate fixes named, neither evaluated
 - [Phase ?]: [Phase 33 (33-04)]: Live in-Rhino end-to-end verification (Task 2 checkpoint:human-verify, gate=blocking) answered by the project user running all six checks personally in their own Rhino/Grasshopper session -- all four ROADMAP Phase 33 success criteria confirmed live; not simulated or self-approved by the executor
 - [Phase ?]: [Phase 1200-01]: Followed plan's locked decisions D-01..D-16 verbatim; schema is single-file draft 2020-12 with 3 $defs; bounded D-16 propagation touched only spec/DATABASE.md, CLAUDE.md, .planning/REQUIREMENTS.md
+- [Phase ?]: [Phase 1200-02]: OBJ_GOLD_EMPTY assigned class ex:Site (not ex:Building) so the rule's ClassAtom structurally never matches -- no_population asserted by construction, not just labeled
+- [Phase ?]: [Phase 1200-02]: ObjectPropertyAtom included in fixture.json and seed.cypher at the data level; MANIFEST.md pre-declares the C#-leg unsupported/error result as by-design (Phase 1201 ALGN12-05), not a fixture defect
+- [Phase ?]: [Phase 1200-02]: dg-reasoner fixture mount kept narrow (./fixtures:/app/fixtures:ro), not a broader /mnt/repo-style mount, per T-1200-08 accept/low disposition
 
 ### Research Flags (carry into planning)
 
@@ -405,6 +409,7 @@ Shipped from Phase 20 Plan 02:
 - ~~net9.0 runtime absent / `DOTNET_ROLL_FORWARD` required~~ — STALE, removed 2026-07-13: `dotnet test` runs clean on net9.0 (confirmed twice: 824 verification and the 2026-07-13 gap-closure 234/234 run)
 - ~~Phase 820 spike gates 821–823~~ — RESOLVED: Phase 820's Key Decisions recorded (ADR-820-1/2); v8.2 shipped
 - 38-06: no live Neo4j fixture pairs a published Computgraph definition with a Rule an inputBindings entry maps to -- publish into v8-ui-smoke (has R_URB_HEIGHT_MAX_75_V) or add a rule into urbanblock-uat (has a published definition) before plan 38-07's live UAT
+- Live docker compose exec verification for dg-reasoner's fixture mount deferred -- Docker Desktop's engine was not running in the execution environment (client present, daemon unreachable). Human with running Docker Desktop should run: docker compose up -d dg-reasoner && docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json
 
 ### Quick Tasks Completed
 
@@ -457,8 +462,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-20T07:35:17.488Z
-Stopped at: Completed 1200-01-PLAN.md
+Last session: 2026-09-20T07:44:06.460Z
+Stopped at: Completed 1200-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics

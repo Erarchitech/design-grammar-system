@@ -52,13 +52,13 @@ v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LL
 
 **Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 1200-01-PLAN.md — Publish `spec/EVIDENCE-CONTRACT.md` + JSON Schema annex; bounded propagation (wave 1)
-- [ ] 1200-02-PLAN.md — Frozen golden fixture, Neo4j seed, manifest, canonical golden vectors, fixture reachability (wave 1)
+- [x] 1200-02-PLAN.md — Frozen golden fixture, Neo4j seed, manifest, canonical golden vectors, fixture reachability (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
