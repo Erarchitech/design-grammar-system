@@ -57,6 +57,7 @@ Use these relationship types in generated Cypher and UI assumptions:
 - `HAS_INTERFACE`: Procedure -> Interface (linking)
 - `PARAM_LINK`: Parameter -> Interface (wire-derived linking)
 - `REFERS_TO`: Object -> Class (cross-layer bridge, when classIri present)
+- `SUPERSEDED_BY`: Rule -> Rule (Replace/Update provenance from the ingest conflict-check gate; props `supersededAt`/`actor`/`prompt`) — **server-authored only** (`POST /rules/supersede`), NEVER emit this in LLM-generated ingest Cypher; every Rule-corpus read for validation/selection must exclude it via `WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }`
 
 Do not use legacy assumptions like `Rule.id`, `Atom.id`, `Atom.Id`, `DatatypeProperty.label`, or `HAS_ATOM` unless you are explicitly writing a migration.
 
@@ -114,8 +115,8 @@ Any code that reads, renders, queries, validates, or exports the graph must be c
 - **n8n** (`n8nio/n8n`): Two workflows:
   - `n8n/workflows/rules-to-metagraph.json` → `/webhook/dg/rules-ingest`
   - `n8n/workflows/graph-query-mcp.json` → `/webhook/dg/graph-query`
-- **Ollama** (`ollama/ollama:latest`): LLM inference, GPU-enabled, port 11435→11434. Default model: `llama3.1:latest` (env `OLLAMA_MODEL`).
-- **data-service** (FastAPI): MCP endpoint (`/mcp`) plus in-memory execution tracking (`/execution-result`).
+- **data-service** (FastAPI): provider-agnostic LLM gateway in `data-service/llm_gateway.py` plus MCP endpoint (`/mcp`) and in-memory execution tracking (`/execution-result`). The gateway exposes `/llm/generate`, resolves saved settings, and supports Anthropic, OpenAI-compatible (configurable base URL), and local Ollama adapters.
+- **Ollama** (`ollama/ollama:latest`): optional local gateway provider, GPU-enabled, port 11435→11434; n8n does not call it directly. It is the zero-config fallback when no cloud API key is configured.
 - **design-grammars** (Nginx): Static SPA + reverse proxy for `/neo4j`, `/n8n`, `/data-service`. Port 8080. Build context: `./graph-viewer`.
 
 ### UI application — Design Grammars (`graph-viewer/index.html`)

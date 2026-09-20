@@ -47,6 +47,21 @@ GRAPH SCHEMA (from dataset_schema v3)
   Literal — key: lex + datatype
            props: project, graph='Metagraph'
 
+  ~~ Rule supersession (document-only — NOT emitted by LLM ingest) ~~
+
+  SUPERSEDED_BY relationship — key: (Rule)-[:SUPERSEDED_BY]->(Rule)
+           props: supersededAt (ISO string), actor (string), prompt (string)
+           Written ONLY by POST /rules/supersede (data-service/app.py), never by
+           LLM rule-ingest. Records that a Replace/Update action from the
+           ingest conflict-check gate (debug session
+           rule-ingest-no-conflict-check, 2026-09-19) retired an old Rule in
+           favor of a new one WITHOUT deleting it — see
+           spec/RULE-PARTITION-POLICY.md's "Corpus-Level Authoring-Time
+           Conflict Check" addendum. Any Rule-corpus read for validation MUST
+           exclude a Rule with an outgoing SUPERSEDED_BY edge
+           (WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }), or a superseded
+           rule keeps firing alongside its replacement.
+
   ~~ DesignState & Run (document-only — NOT emitted by LLM ingest) ~~
 
   These nodes are written only by VALIDATOR-on-publish, not by LLM rule-ingest.

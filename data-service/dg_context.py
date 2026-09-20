@@ -1485,8 +1485,14 @@ def consult_computgraph(
 # A hallucinated id is therefore harmless: it simply will not match a real
 # rule, and the caller sees it listed as unmatched rather than acted on.
 
+# WHERE NOT EXISTS SUPERSEDED_BY (debug session rule-ingest-no-conflict-check,
+# 2026-09-19): a superseded rule is a historical record, not a live rule the
+# architect would mean by a deletion request -- excluding it here also
+# prevents "delete all height rules" from re-selecting a rule the conflict
+# gate already retired via Replace/Update.
 _RULES_FOR_SELECTION_QUERY = """
 MATCH (r:Rule {project: $project})
+WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }
 RETURN r.Rule_Id AS ruleId,
        coalesce(r.SWRL, '') AS swrl,
        coalesce(r.RuleDescription, r.description, '') AS description
@@ -1607,4 +1613,349 @@ def select_rules_for_deletion(
         "matched": [known[rid] for rid in outcome["ruleIds"]],
         "reason": outcome["reason"],
         "hallucinated": outcome["hallucinated"],
+    }
+
+
+# ── Corpus-level authoring-time conflict check (debug session
+# rule-ingest-no-conflict-check, 2026-09-19) ─────────────────────────────────
+#
+# Closes a conformance gap between paper T1 ITcon R15.6 §4's normative
+# five-stage authoring process (tag -> recognise -> preview -> confirm ->
+# publish) and the shipped rule-ingest pipeline, which implemented only
+# tag -> recognise -> publish. This module adds the missing preview/confirm
+# data: a deterministic (LLM-free) check for whether an about-to-be-authored
+# rule shares its (Class, DatatypeProperty, comparator) grounding signature
+# -- the paper's own grounding triple, [P138] -- with a Rule already in the
+# project's corpus.
+#
+# Deliberately NOT an LLM call, unlike select_rules_for_deletion() above:
+# deletion targets are open-ended NL ("delete all height rules above 50m")
+# and genuinely need semantic judgment; conflict grounding is a lookup
+# against a small, already-known per-project vocabulary (fetch_existing_
+# entities), so a keyword/token match is precise here in a way it would not
+# be for whole-sentence-vs-whole-sentence similarity (which is explicitly
+# NOT used -- two rules phrased completely differently ("Building height
+# maximum is 50 m" vs "max height of buildings: 50m") must still resolve to
+# the same grounding, and fuzzy text similarity would both miss that and
+# false-positive on unrelated rules sharing common words).
+#
+# Ambiguity policy: if grounding cannot be confidently resolved (no matching
+# Class, no matching DatatypeProperty, or no unambiguous comparator keyword),
+# this returns "no conflict" rather than guessing. A false negative here
+# degrades to today's shipped behavior (silent duplicate); a false positive
+# would block legitimate authoring outright -- the two failure modes are not
+# symmetric, so ambiguity resolves toward the less disruptive one.
+
+# Comparator keyword table, case-insensitive substring match, per paper
+# [P109] (§3.4 "one atomic constraint per rule node"): "Minimum constraints
+# are implemented using swrlb:lessThan, maximum constraints with
+# swrlb:greaterThan, and equality constraints with swrlb:notEqual."
+# Longer/more specific phrases are listed so a phrase match beats a bare
+# "max"/"min" substring inside an unrelated word (checked in this order).
+_COMPARATOR_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "swrlb:greaterThan",
+        (
+            "no more than",
+            "not exceed",
+            "not to exceed",
+            "at most",
+            "upper bound",
+            "maximum",
+            "max",
+        ),
+    ),
+    (
+        "swrlb:lessThan",
+        (
+            "no less than",
+            "not less than",
+            "at least",
+            "lower bound",
+            "minimum",
+            "min",
+        ),
+    ),
+    (
+        "swrlb:notEqual",
+        (
+            "must be equal to",
+            "must equal",
+            "shall be",
+            "equal to",
+            "equals",
+            "must be",
+        ),
+    ),
+)
+
+
+def _resolve_comparator(text: str) -> str | None:
+    """Deterministic keyword match -> one of the three sanctioned SWRL
+    comparator builtins, or None if zero or more-than-one comparator family
+    matched (ambiguous -- caller must treat this as "cannot resolve
+    grounding", never guess).
+    """
+    haystack = (text or "").lower()
+    matched = [
+        comparator
+        for comparator, keywords in _COMPARATOR_KEYWORDS
+        if any(keyword in haystack for keyword in keywords)
+    ]
+    if len(matched) != 1:
+        return None
+    return matched[0]
+
+
+# Splits BOTH on non-alphanumeric separators AND camelCase word boundaries
+# (lower->upper, or a run of uppercase followed by a lowercase, e.g.
+# 'hasHeightM' -> 'has'/'Height'/'M', 'HTTPServer' -> 'HTTP'/'Server') --
+# required because DatatypeProperty.SWRL_label is camelCase per
+# cypher_template.txt naming convention (ex:hasHeightM), while rule NL text
+# is space-separated ("Building height maximum"). Verified live: without the
+# camelCase split, 'hasHeightM' tokenizes to the single opaque token
+# 'hasheightm', which can never be a subset of a real sentence's tokens --
+# this is what silently defeated grounding resolution end-to-end before this
+# fix (caught by live verification against the running stack, not a test).
+_CAMEL_BOUNDARY_PATTERN = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+# A number immediately followed by a unit letter/word with no space
+# ('50m', '45sqm', '28m2') is common NL shorthand that would otherwise glue
+# the unit onto the number as one opaque token, hiding the unit token a
+# DatatypeProperty label like 'hasHeightM' needs to match against.
+_NUMBER_UNIT_BOUNDARY_PATTERN = re.compile(r"(?<=[0-9])(?=[a-zA-Z])")
+_TOKEN_SPLIT_PATTERN = re.compile(r"[^a-zA-Z0-9]+")
+
+# Structural naming-convention prefixes that carry no semantic content for
+# matching purposes (every DatatypeProperty in this schema is prefixed
+# 'has'/'is'/'violates' per cypher_template.txt) -- stripped as whole tokens
+# so 'hasHeightM' contributes {height, m} to the match set, not
+# {has, height, m}, avoiding a spurious 'has' token inflating overlap scores
+# against unrelated properties that also happen to be Data*Properties.
+_STRUCTURAL_TOKENS = frozenset({"has", "is", "violates"})
+
+
+def _singularize(token: str) -> str:
+    """Trivial plural->singular normalization ('buildings' -> 'building') so
+    a Class label written singular (the schema convention -- see
+    cypher_template.txt's `<CLASS_NAME>` examples, always singular) still
+    matches an architect's plural phrasing ("maximum height of buildings").
+    Deliberately NOT a real stemmer -- only strips a bare trailing 's' after
+    3+ chars, which covers the common case without the false-stem risk of a
+    real stemmer (e.g. never touches 'm', 'ies', or already-short tokens).
+    """
+    if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+def _tokenize(text: str) -> set[str]:
+    camel_split = _CAMEL_BOUNDARY_PATTERN.sub(" ", text or "")
+    unit_split = _NUMBER_UNIT_BOUNDARY_PATTERN.sub(" ", camel_split)
+    return {
+        _singularize(tok)
+        for tok in _TOKEN_SPLIT_PATTERN.split(unit_split.lower())
+        if tok and tok not in _STRUCTURAL_TOKENS
+    }
+
+
+def _resolve_grounding(
+    rules_text: str, existing_entities: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Resolve free-text `rules_text` onto a candidate (Class iri,
+    DatatypeProperty iri, comparator iri) triple, using ONLY the vocabulary
+    passed in `existing_entities` -- never invents a Class/Property that
+    is not already known. See `check_rule_conflict()` for where this
+    vocabulary actually comes from (a project's own Rule corpus, NOT
+    `fetch_existing_entities()` -- see that function's caller-side note on
+    the cross-project OntoGraph tagging quirk this deliberately avoids).
+
+    Token-overlap match against each candidate entity's own display label
+    (Class.label, DatatypeProperty.SWRL_label) -- NOT whole-sentence
+    similarity between two rule descriptions. This is a small, precise
+    search space (a handful of known vocabulary terms), unlike matching two
+    free-text rules against each other.
+
+    Returns None (ambiguous / unresolved) rather than a low-confidence
+    guess whenever a Class or DatatypeProperty candidate is not a
+    reasonably unique, reasonably confident match, or the comparator is
+    ambiguous. A None result means the caller reports "no conflict".
+    """
+    comparator = _resolve_comparator(rules_text)
+    if comparator is None:
+        return None
+
+    text_tokens = _tokenize(rules_text)
+    if not text_tokens:
+        return None
+
+    def best_match(node_label: str, display_key: str) -> tuple[str, int] | None:
+        best_iri: str | None = None
+        best_score = 0
+        ambiguous = False
+        for entity in existing_entities:
+            if entity.get("nodeLabel") != node_label:
+                continue
+            display = entity.get(display_key) or ""
+            entity_tokens = _tokenize(display)
+            if not entity_tokens:
+                continue
+            overlap = entity_tokens & text_tokens
+            if not overlap:
+                continue
+            # Require every token of the entity's own label to appear in the
+            # rule text -- a partial/fuzzy overlap is exactly the false-
+            # positive risk the coordinator flagged, so this is strict
+            # subset containment, not a similarity score threshold.
+            if entity_tokens <= text_tokens:
+                score = len(entity_tokens)
+                if score > best_score:
+                    best_iri = entity.get("iri")
+                    best_score = score
+                    ambiguous = False
+                elif score == best_score and entity.get("iri") != best_iri:
+                    ambiguous = True
+        if best_iri is None or ambiguous:
+            return None
+        return best_iri, best_score
+
+    class_match = best_match("Class", "label")
+    prop_match = best_match("DatatypeProperty", "swrl_label")
+    if class_match is None or prop_match is None:
+        return None
+
+    return {
+        "classIri": class_match[0],
+        "propertyIri": prop_match[0],
+        "comparatorIri": comparator,
+    }
+
+
+# Vocabulary actually REFERENCED by this project's own (non-superseded) Rule
+# corpus -- deliberately NOT fetch_existing_entities()/_EXISTING_ENTITIES_QUERY,
+# which filters candidate Class/DatatypeProperty nodes by their OWN `project`
+# property. That property reflects whichever project's ingest FIRST created
+# the iri via MERGE, not every project whose Rules reference it (verified
+# live: a real project's own Rule referenced ex:Building/ex:hasHeightM nodes
+# tagged with a DIFFERENT project's name -- fetch_existing_entities() for
+# that project returned neither, which silently defeated grounding
+# resolution for exactly the rule this endpoint most needs to catch).
+# Traverses FROM the Rule (whose own `project` property is reliable and
+# already how every other Rule query in this codebase scopes) OUT to
+# whatever the atoms REFERS_TO, matching by iri value only -- sidestepping
+# the tag quirk entirely, the same fix already applied to _RULE_CONFLICT_QUERY
+# below.
+_PROJECT_RULE_VOCAB_QUERY = """
+MATCH (r:Rule {project: $project, graph: 'Metagraph'})
+WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }
+MATCH (r)-[:HAS_BODY]->(a:Atom)-[:REFERS_TO]->(x)
+WHERE x:Class OR x:DatatypeProperty
+RETURN DISTINCT labels(x)[0] AS nodeLabel, x.iri AS iri,
+       coalesce(x.label, '') AS label, coalesce(x.SWRL_label, '') AS swrl_label
+ORDER BY nodeLabel, iri
+"""
+
+
+def fetch_project_rule_vocabulary(project: str, session: Any = None) -> list[dict[str, Any]]:
+    """Class/DatatypeProperty entities this project's OWN rule corpus body
+    atoms reference, keyed the same shape `fetch_existing_entities()`
+    returns (nodeLabel/iri/label/swrl_label) so `_resolve_grounding()` can
+    treat either source identically. See `_PROJECT_RULE_VOCAB_QUERY` for why
+    this is a separate query from `fetch_existing_entities()`.
+    """
+    if session is not None:
+        result = session.run(_PROJECT_RULE_VOCAB_QUERY, project=project)
+        return [dict(record) for record in result]
+    with _get_driver().session() as live_session:
+        result = live_session.run(_PROJECT_RULE_VOCAB_QUERY, project=project)
+        return [dict(record) for record in result]
+
+
+_RULE_CONFLICT_QUERY = """
+MATCH (r:Rule {project: $project, graph: 'Metagraph'})
+WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }
+MATCH (r)-[:HAS_BODY]->(classAtom:Atom {type: 'ClassAtom'})-[:REFERS_TO]->(:Class {iri: $classIri})
+MATCH (classAtom)-[:ARG]->(entityVar:Var)
+MATCH (r)-[:HAS_BODY]->(propAtom:Atom {type: 'DataPropertyAtom'})-[:REFERS_TO]->(:DatatypeProperty {iri: $propertyIri})
+MATCH (propAtom)-[:ARG {pos: 1}]->(entityVar)
+MATCH (propAtom)-[:ARG {pos: 2}]->(valueVar:Var)
+MATCH (r)-[:HAS_BODY]->(cmpAtom:Atom {type: 'BuiltinAtom'})-[:REFERS_TO]->(:Builtin {iri: $comparatorIri})
+MATCH (cmpAtom)-[:ARG {pos: 1}]->(valueVar)
+OPTIONAL MATCH (cmpAtom)-[:ARG {pos: 2}]->(lit:Literal)
+RETURN DISTINCT r.Rule_Id AS ruleId,
+       coalesce(r.SWRL, '') AS swrl,
+       coalesce(r.RuleDescription, r.description, '') AS description,
+       lit.lex AS currentValue
+ORDER BY r.Rule_Id
+"""
+
+# Strips the "edit Rule_Id: R_..._V — " prefix Neo4jRuleRepository.cs's
+# CleanDescription() also strips server-side for the C# reader -- ports the
+# same regex so a dialog built from THIS endpoint's description does not
+# show the raw edit-audit prefix to the architect.
+_EDIT_PREFIX_PATTERN = re.compile(
+    r"^edit\s+Rule_Id:\s*\S+\s*[—–-]\s*", re.IGNORECASE
+)
+
+
+def _clean_description(raw: str) -> str:
+    return _EDIT_PREFIX_PATTERN.sub("", raw or "").strip()
+
+
+def check_rule_conflict(
+    project: str, rules_text: str, session: Any = None
+) -> dict[str, Any]:
+    """The corpus-level authoring-time conflict check itself.
+
+    Returns {"conflict": bool, "grounding": {...} | None, "matches": [...]}.
+    `matches` is empty and `grounding` is None whenever grounding could not
+    be confidently resolved (ambiguous NL, or the project has no matching
+    vocabulary yet) -- this is intentionally indistinguishable from "no
+    conflict found" to the caller, which is correct: an unresolved grounding
+    can, by construction, collide with nothing.
+
+    Vocabulary source for grounding resolution is the UNION of (a) this
+    project's own Rule corpus's referenced Class/DatatypeProperty entities
+    (`fetch_project_rule_vocabulary` -- the primary source, and the one that
+    actually matters for catching a collision, since a match against a term
+    with zero rules using it could never collide with anything) and (b) this
+    project's own OntoGraph-tagged vocabulary (`fetch_existing_entities` --
+    the same list `assemble_context()` shows the LLM, kept as a secondary
+    source so grounding also works for a genuinely new-to-the-corpus but
+    already-declared term). Deduplicated by iri, source (a) taking priority
+    on a collision between the two (a rule-corpus hit is a stronger, more
+    directly relevant signal than a bare vocabulary declaration).
+    """
+    rule_vocab = fetch_project_rule_vocabulary(project, session=session)
+    seen_iris = {entity["iri"] for entity in rule_vocab if entity.get("iri")}
+    ontograph_vocab = fetch_existing_entities(project, session=session)
+    combined_entities = rule_vocab + [
+        entity for entity in ontograph_vocab if entity.get("iri") not in seen_iris
+    ]
+    grounding = _resolve_grounding(rules_text, combined_entities)
+    if grounding is None:
+        return {"project": project, "grounding": None, "conflict": False, "matches": []}
+
+    if session is not None:
+        result = session.run(_RULE_CONFLICT_QUERY, project=project, **grounding)
+        rows = [dict(record) for record in result]
+    else:
+        with _get_driver().session() as live_session:
+            result = live_session.run(_RULE_CONFLICT_QUERY, project=project, **grounding)
+            rows = [dict(record) for record in result]
+
+    matches = [
+        {
+            "ruleId": row["ruleId"],
+            "swrl": row.get("swrl", ""),
+            "description": _clean_description(row.get("description", "")),
+            "currentValue": row.get("currentValue"),
+        }
+        for row in rows
+    ]
+
+    return {
+        "project": project,
+        "grounding": grounding,
+        "conflict": len(matches) > 0,
+        "matches": matches,
     }

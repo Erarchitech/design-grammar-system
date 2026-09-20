@@ -20,8 +20,17 @@ public sealed class Neo4jRuleRepository : IRuleRepository
 
     private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
 
+    // WHERE NOT EXISTS SUPERSEDED_BY (debug session rule-ingest-no-conflict-check,
+    // 2026-09-19): a Replace/Update action from the new ingest conflict-check gate
+    // records provenance via an old-Rule -[:SUPERSEDED_BY]-> new-Rule edge instead
+    // of deleting the old Rule outright (paper [P129]/[P139] -- versioned
+    // proposals, provenance recording, never silent overwrite). The SWRL
+    // VALIDATOR's corpus MUST exclude a superseded rule, or it keeps firing
+    // alongside its replacement -- the exact bug the conflict-check gate exists to
+    // close, reproduced in a new form if this filter is ever removed.
     private const string RulesQuery = """
         MATCH (r:Rule {graph:'Metagraph', project:$project})
+        WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }
         RETURN
             r.Rule_Id AS id,
             coalesce(r.RuleName, r.title, r.name, r.Rule_Id) AS name,

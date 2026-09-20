@@ -1,7 +1,7 @@
 # design-grammar-system
 
 This repo provides a Docker-based pipeline for:
-- converting natural-language design rules into SWRL + atomic rule atoms with Ollama,
+- converting natural-language design rules into SWRL + atomic rule atoms through a provider-agnostic LLM gateway (Anthropic, OpenAI-compatible, or local Ollama),
 - generating a domain ontology from the same rules,
 - storing the ontology and rules in Neo4j,
 - querying the graph via a natural-language MCP workflow,
@@ -37,11 +37,20 @@ docker compose up -d
 ```
 Or save them once in the DG home page `Speckle Settings` card. `data-service` persists those local-only settings and reuses them after restarts.
 
-2) Ensure an Ollama model exists:
+2) Configure the LLM provider (optional for the zero-config local fallback):
+
+The provider-agnostic gateway lives in `data-service/llm_gateway.py` and exposes one generation contract. Select Anthropic, OpenAI-compatible (custom base URL supported), or Ollama in the ui-v2 AI Engine settings panel (`ui-v2/src/screens/AiEngineScreen.jsx`), or via `PUT /llm/settings`. API keys are encrypted at rest under `LLM_MASTER_SECRET`, never written to Neo4j, browser localStorage, or logs, and returned only masked. With no API key configured, the gateway falls back to local Ollama with the pre-v9.0 behavior. Switching provider requires no container restart and no workflow edit.
+
+For a local Ollama setup:
 ```
 docker exec -it ollama ollama pull llama3.1
 ```
-The workflows default to `llama3.1-dg:latest`. Either create that model (see `training/README.md`), override `ollama_model` per request, or change `OLLAMA_MODEL` in `docker-compose.yml`.
+The local fallback uses the configured Ollama model; LoRA assets below remain local-Ollama-only.
+
+## LLM providers
+
+The n8n workflows call data-service rather than a provider directly. `POST /llm/generate` resolves the active provider and model from saved settings, and the gateway's adapters normalize responses across Anthropic, OpenAI-compatible, and Ollama providers. The settings panel is the normal operator surface for provider, model, API key, and base URL configuration.
+
 
 3) Import n8n workflows:
 ```
@@ -110,17 +119,15 @@ Optional (defaults shown):
 - `neo4j_user` (`neo4j`)
 - `neo4j_password` (`12345678`)
 - `neo4j_url` (`http://neo4j:7474`)
-- `ollama_model` (`llama3.1-dg:latest`)
-- `ollama_url` (`http://ollama:11434`)
-- `ollama_keep_alive` (`30m`)
 - `data_service_url` (`http://data-service:8000`)
+
+Provider and model are resolved by the data-service gateway from saved settings; legacy `ollama_model`, `ollama_url`, and `ollama_keep_alive` workflow defaults are retained for compatibility but are not the gateway's routing contract.
 
 Example:
 ```powershell
 $body = @{
   rules_text = "grid size of urban block is between 12 and 48 m; maximum height of buildings in the block is 75 m; minimum hours of direct sunlight for each building is 2.8 hours per day; minimum dimension for each building is 12 m; site coverage ratio allowed range is between 0.45 and 0.60; minimum floor area of the building is 8000 square meters; all residential buildings must be at least 10 meters apart; commercial buildings must be at least 6 meters apart."
   project_name = "urban-block-case-study"
-  ollama_model = "llama3.1"
 } | ConvertTo-Json
 
 Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/dg/rules-ingest" `
@@ -138,10 +145,10 @@ Required:
 
 Optional:
 - `project_name` (adds a project filter when provided)
-- `ollama_model` (`llama3.1-dg:latest`)
-- `ollama_url` (`http://ollama:11434`)
 - `mcp_url` (`http://data-service:8000/mcp`)
 - `data_service_url` (`http://data-service:8000`)
+
+Provider and model are resolved by the data-service gateway from saved settings; legacy `ollama_model` and `ollama_url` fields remain accepted for compatibility but are not the gateway's routing contract.
 
 Example:
 ```powershell
@@ -193,6 +200,7 @@ Login with `neo4j / 12345678` unless changed.
   - `REFERS_TO`
   - `ARG` (property: `pos`)
   - `HAS_STATE` (DesignState -> state nodes, read-side composition)
+  - `SUPERSEDED_BY` (Rule -> Rule, properties: `supersededAt`/`actor`/`prompt` — Replace/Update provenance from the ingest conflict-check gate; server-authored only via `POST /rules/supersede`, never emitted by LLM ingest; excluded from every Rule-corpus read used for validation/selection)
   - Computgraph: `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived), `REFERS_TO` (Object→Class cross-layer bridge), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
@@ -206,7 +214,7 @@ Login with `neo4j / 12345678` unless changed.
 - **Identity registry (Phase 32.1):** Computgraph entity nodes (Object, Procedure, Pattern, Parameter, Interface) carry a deterministic platform-neutral `dgId` (`dg:` + 16 uppercase hex). Platform representations (`Representation` nodes) and cross-platform shared properties (`SharedProperty` nodes) are registry nodes managed by the data-service `/identity/*` API. Normative spec: `spec/DG-ID.md`.
 
 ## Machine learning (LoRA) and training dataset
-This repo includes a complete LoRA fine-tuning pipeline to create a custom Ollama model for rule parsing.
+This repo includes a complete LoRA fine-tuning pipeline for the optional local-Ollama provider. The standing architecture decision is prompt + context-layer engineering rather than fine-tuning for cloud providers; these assets do not define the gateway's provider contract.
 
 ### Dataset
 - Location: `training/training_dataset.json`

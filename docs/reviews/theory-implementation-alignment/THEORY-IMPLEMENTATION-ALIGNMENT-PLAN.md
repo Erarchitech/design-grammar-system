@@ -17,6 +17,8 @@
 
 **NO-GO for unqualified claims** that the current runtime is a full SWRL/OWL reasoner, a complete cross-platform BIM connector, a lossless geometry/state replay engine, a production CDE governance system, or a universally deterministic LLM-enabled pipeline. Those claims are contradicted or materially weakened by the inspected implementation and must either be narrowed, marked proposed, or supported by new experiments before publication.
 
+**Planning consequence:** the shared contract work cannot wait until after v9.1/v10.0. v9.1 and v10.0 consume serializer, provenance, status, identity, and rule-partition surfaces already implicated by this audit; their activation gates should require the contract foundation (v12.0 1200–1203 plus the v11.0 boundary checks) rather than allowing v12.0 to remain a post-feature cleanup milestone.
+
 ### 1.2 What is already aligned
 
 * The paper's violation-first rule representation has a concrete implementation path: natural-language rule ingestion, validated graph persistence, typed rule/atom structures, bounded comparison evaluation, and validation publication. The backend inventory describes this as P1 and the C# audit describes the corresponding parser/binding/evaluation path [audit: evidence/backend-inventory.json:13-38; audit: parts/csharp.md:139-155].
@@ -106,7 +108,7 @@ The baseline is not one reasoning engine. It is a partitioned system: LLM-assist
 
 ## 4. Complete Paper Claim Map
 
-The complete 50-record claim register is maintained in `evidence/paper-claims.json` with stable `PAPER-C-001` through `PAPER-C-050` IDs and all requested fields. The table below is the compact decision-facing map of 22 major claim families; the JSON register is the exhaustive claim-by-claim deliverable.
+The complete 50-record claim register is maintained in `evidence/paper-claims.json` with stable `PAPER-C-001` through `PAPER-C-050` IDs and all requested fields. The table below is the compact decision-facing map of 22 major claim families; its shorthand `PAPER-C01`–`PAPER-C22` labels map by number to the canonical hyphenated JSON IDs. The JSON register is the exhaustive claim-by-claim deliverable.
 
 The following claim map assigns stable `PAPER-C` IDs to the paper's substantive claim families. Each row cites the paper paragraphs that define the claim and gives the evidence status that should appear in the revised manuscript.
 
