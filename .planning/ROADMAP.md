@@ -52,7 +52,7 @@ v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LL
 
 **Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -62,7 +62,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 1200-03-PLAN.md — Python leg: canonical JSON, typed status + envelope models, additive sidecar persistence (wave 2)
+- [x] 1200-03-PLAN.md — Python leg: canonical JSON, typed status + envelope models, additive sidecar persistence (wave 2)
 - [ ] 1200-04-PLAN.md — C# leg: `EvidenceStatus`, `CanonicalJsonWriter`, envelope DTO, cross-language hash parity (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*

@@ -166,3 +166,18 @@ None - no external service configuration required.
 ---
 *Phase: 1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt*
 *Completed: 2026-09-20*
+
+## Self-Check: PASSED
+
+All created files and task commit hashes verified present on disk and in git log:
+- FOUND: data-service/canonical_json.py
+- FOUND: data-service/evidence_contract.py
+- FOUND: data-service/tests/test_canonical_json.py
+- FOUND: data-service/tests/test_evidence_contract.py
+- FOUND: data-service/tests/test_golden_fixture_shape.py
+- FOUND: .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-03-SUMMARY.md
+- FOUND: 5fc5920 (Task 1 commit)
+- FOUND: 5394954 (Task 2 commit)
+- FOUND: 44cd61f (Task 3 commit)
+- FOUND: b94afe8 (Task 3 correction commit)
+- FOUND: a1026ef (plan metadata commit)
