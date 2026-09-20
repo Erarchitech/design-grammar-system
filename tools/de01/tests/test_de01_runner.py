@@ -71,12 +71,52 @@ class TestCompareLegsSilentDisagreement:
         assert result.declared_non_equivalences == []
         assert result.rows[0].classification == "silent_disagreement"
 
-    def test_same_difference_with_unsupported_plus_warning_produces_zero(self):
+    def test_lone_non_declarable_status_beside_declarable_is_silent(self):
+        """CR-02 regression: the exact defect DE-01 exists to catch. One leg
+        reports a genuine verdict (``passed``) and the other degrades to
+        ``unsupported`` with a warning. The docstring's rule (report.py lines
+        4-17) requires EVERY differing leg's status to be declarable-and-warned
+        before a difference is declared -- ``passed`` is not itself a declarable
+        non-result, so wrapping the other leg's status in a warning does not make
+        this pair's difference declared. It must count as a silent disagreement."""
         leg_a = LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")]))
         leg_b = LegResult(
             "b",
             True,
             _envelope([_row("R1", "OBJ1", "unsupported", warnings=["no branch for this atom type"])]),
+        )
+        result = compare_legs({"a": leg_a, "b": leg_b})
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_unknown_beside_declarable_warned_status_is_silent(self):
+        """Reviewer's second reproduction (1200-REVIEW.md CR-02): ``unknown`` is a
+        genuine binding-resolution outcome under D-05, not a non-result, so a
+        difference against a declarable-and-warned status on another leg behaves
+        the same way ``passed`` does -- silent, not declared."""
+        leg_a = LegResult("a", True, _envelope([_row("R1", "OBJ1", "unknown")]))
+        leg_b = LegResult(
+            "b",
+            True,
+            _envelope([_row("R1", "OBJ1", "unsupported", warnings=["no branch for this atom type"])]),
+        )
+        result = compare_legs({"a": leg_a, "b": leg_b})
+        assert result.silent_disagreement_count == 1
+        assert result.declared_non_equivalences == []
+        assert result.rows[0].classification == "silent_disagreement"
+
+    def test_two_declarable_warned_statuses_differing_is_still_declared(self):
+        """Over-correction guard: two DIFFERING statuses that are both declarable
+        and both warned must still classify as a declared non-equivalence. Without
+        this test, firing the guard on any non-empty set of non-declarable
+        statuses could be satisfied by a trivially over-strict implementation that
+        collapses every difference into silent."""
+        leg_a = LegResult(
+            "a", True, _envelope([_row("R1", "OBJ1", "unsupported", warnings=["reason a"])])
+        )
+        leg_b = LegResult(
+            "b", True, _envelope([_row("R1", "OBJ1", "error", warnings=["reason b"])])
         )
         result = compare_legs({"a": leg_a, "b": leg_b})
         assert result.silent_disagreement_count == 0
