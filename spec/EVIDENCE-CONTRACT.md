@@ -257,7 +257,21 @@ in order, and are versioned by `canonicalizationVersion`:
    Non-integers are rendered as fixed-point decimal strings via `decimal` (C#) / `Decimal`
    (Python) — never via `double`/`float` — because IEEE-754 "shortest round-trip" formatting
    diverges between .NET and Python. This mirrors `RuleEvaluator.cs`'s existing `TryToDecimal`
-   convention, which already routes all numeric rule evaluation through C# `decimal`.
+   convention, which already routes all numeric rule evaluation through C# `decimal`. A
+   decimal's **stored scale is preserved exactly**: trailing zeros in the fractional part are
+   part of the canonical rendering and are never trimmed (`100.00` stays `100.00`, `2.50` stays
+   `2.50`), and a value with scale zero renders with no decimal point at all. The two reference
+   renderings are Python's `format(Decimal, "f")` and C#'s
+   `ToString("F" + scale, CultureInfo.InvariantCulture)` with `scale` taken from
+   `decimal.GetBits(value)`. An optional-digit format specifier (e.g. `"0.#####"`) and an
+   integral-value fast-path cast (e.g. casting to `long` when the value is mathematically whole)
+   are both **non-conforming** on the C# side, because both discard the stored scale — this was
+   CR-01, a defect in which the C# leg's canonical rendering silently dropped trailing zeros and
+   diverged from the Python leg for the same logical decimal value. This is a **clarification of
+   this rule's existing intent, not a change to it**: Python has preserved scale since this
+   contract was written, and this rule's stated purpose is byte-parity between legs — therefore
+   `canonicalizationVersion` remains **1**, and no already-recorded hash is invalidated by this
+   clarification.
 3. **Whitespace.** No insignificant whitespace. The canonical form uses the minimal separators:
    Python `json.dumps(..., separators=(",", ":"))`; C# `JsonSerializerOptions { WriteIndented =
    false }` (the .NET default).
