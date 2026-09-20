@@ -1,6 +1,6 @@
 # fixtures/golden/ — Freeze Manifest
 
-**FIXTURE_VERSION: `1.1.0`**
+**FIXTURE_VERSION: `1.2.0`**
 **Freeze date: 2026-09-20**
 
 This is the single source of truth for the one frozen cross-service golden fixture that all
@@ -57,6 +57,7 @@ DE-01 legs read `fixtures/golden/` directly.
 |---|---|---|---|
 | 1.0.0 | 2026-09-20 | Initial freeze — Phase 1200 Plan 02. One rule, four atom types (including the deliberately-unsupported `ObjectPropertyAtom`), two mixed-outcome objects plus one zero-binding object, a three-kind Design State, and a geometry reference. | Phase 1200-02 executor |
 | 1.1.0 | 2026-09-20 | Additive: one new `canonicalJson` vector appended to `canonical-vectors.json` closing the CR-01 coverage gap — a decimal whose stored scale carries trailing zeros (`height:100.00`, `ratio:2.50`), which the C# leg's old integral-cast/optional-digit `WriteNumberDecimal` silently rendered without scale, diverging from Python's `format(Decimal, "f")`. No existing vector's `value`, `canonical`, or `sha256Upper` was edited. | Phase 1200-06 executor |
+| 1.2.0 | 2026-09-20 | Additive: two new `canonicalJson` vectors appended to `canonical-vectors.json` closing `1200-REVIEW.md`'s WR-01 and IN-01. WR-01 — a negative-zero decimal (`margin:-0.00`), which C#'s `decimal.ToString("F{scale}")` silently normalized to `"0.00"` while Python's `format(Decimal, "f")` preserves `"-0.00"`, reopening for negative zero the exact parity gap 1.1.0 closed for ordinary values. IN-01 — an ordinary-negative vector (`delta:-12.50`, `offset:-0.5`, `count:-7`), since no pre-1.2.0 vector exercised any negative value, so neither the WR-01 divergence nor a plainer sign regression was testable. Scale-2 negative zero is deliberate: a bare `-0` is a JSON integer and both legs' parsers drop its sign before canonicalization runs. `canonicalizationVersion` stays `1` — the six normalization rules are unchanged; this bump is coverage-only. No existing vector's `value`, `canonical`, or `sha256Upper` was edited. | Phase 1200-09 executor |
 
 ---
 

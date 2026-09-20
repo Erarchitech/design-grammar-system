@@ -75,6 +75,29 @@
       },
       "canonical": "{\"bindingCount\":3,\"height\":100.00,\"ratio\":2.50,\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\"}",
       "sha256Upper": "6EA1772055E52D43A03B942ACD8EB9FC61FC7FD5AC22E987B2700866A855C8FF"
+    },
+    {
+      "kind": "canonicalJson",
+      "description": "WR-01 regression vector: a negative-zero decimal must keep its sign on both legs -- margin:-0.00 is the case C#'s decimal.ToString(\"F2\") silently normalized to \"0.00\" while Python's format(Decimal(\"-0.00\"), \"f\") yields \"-0.00\". Negative zero is reachable from ordinary arithmetic (0m - 0.00m, -1m * 0.00m), e.g. a margin computed as actual-limit that nets to zero from the negative side. Scale 2 is deliberate: a bare -0 is an integer in JSON and both legs' parsers drop its sign before canonicalization ever runs, so only a scaled negative zero can round-trip through this fixture.",
+      "value": {
+        "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+        "margin": -0.00,
+        "bindingCount": 2
+      },
+      "canonical": "{\"bindingCount\":2,\"margin\":-0.00,\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\"}",
+      "sha256Upper": "BB8E8891926C76987EFA9682D8D91327CA2A16E7D221A61E964F00CB65E39339"
+    },
+    {
+      "kind": "canonicalJson",
+      "description": "IN-01 regression vector: ordinary negative values, which no pre-1200-09 vector exercised at all. delta:-12.50 (negative with trailing-zero scale), offset:-0.5, and count:-7 (negative integer, no decimal point) together guard against a sign-handling regression on non-zero negatives -- in particular against the WR-01 fix double-prepending a sign that ToString already emits (\"--12.50\").",
+      "value": {
+        "delta": -12.50,
+        "offset": -0.5,
+        "count": -7,
+        "status": "failed"
+      },
+      "canonical": "{\"count\":-7,\"delta\":-12.50,\"offset\":-0.5,\"status\":\"failed\"}",
+      "sha256Upper": "E7A9C3A7179A516A2CBA1C9260A5314275AF3DE42C999117D1B24B7507486824"
     }
   ]
 }

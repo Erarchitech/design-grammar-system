@@ -1,4 +1,5 @@
 """Tests for canonical_json.py (Phase 1200 Plan 03, ALGN12-01/spec/EVIDENCE-CONTRACT.md section 6)."""
+import hashlib
 import json
 import os
 import re
@@ -150,6 +151,55 @@ def test_golden_vectors_include_a_trailing_zero_decimal():
         v for v in vectors if re.search(r":-?\d+\.\d*0[,}]", v["canonical"])
     ]
     assert trailing_zero_hits, "no canonicalJson golden vector carries a trailing-zero decimal"
+
+
+def test_canonicalize_preserves_negative_zero_sign():
+    # WR-01 reference behavior: format(Decimal, "f") keeps negative zero's sign. This is the
+    # normative side of the parity contract -- the C# leg's WriteNumberDecimal was the one that
+    # dropped it (decimal.ToString("F2") renders -0.00m as "0.00"), and was fixed to match this.
+    assert canonicalize(Decimal("-0.00")) == "-0.00"
+    assert canonicalize(Decimal("-0")) == "-0"
+    assert canonicalize({"margin": Decimal("-0.00")}) == '{"margin":-0.00}'
+    # Positive zero is unaffected.
+    assert canonicalize(Decimal("0.00")) == "0.00"
+
+
+def test_canonicalize_renders_ordinary_negative_decimal_with_single_sign():
+    # IN-01: no pre-1200-09 vector exercised any negative value, so a plain sign regression
+    # (or a double-prepended sign on the C# leg) would have gone uncaught on both legs.
+    value = {"delta": Decimal("-12.50"), "offset": Decimal("-0.5"), "count": -7}
+    canonical = canonicalize(value)
+    assert canonical == '{"count":-7,"delta":-12.50,"offset":-0.5}'
+    assert "--" not in canonical
+
+
+def test_golden_vectors_include_negative_zero_and_ordinary_negative():
+    # Guards against silently reopening the WR-01/IN-01 coverage gap: if either vector is removed
+    # from canonical-vectors.json, this fails instead of the gap going unnoticed.
+    vectors = [v for v in _load_golden_vectors() if v["kind"] == "canonicalJson"]
+    negative_zero_hits = [v for v in vectors if re.search(r":-0(\.0+)?[,}]", v["canonical"])]
+    ordinary_negative_hits = [
+        v for v in vectors if re.search(r":-(?!0(\.0+)?[,}])\d", v["canonical"])
+    ]
+    assert negative_zero_hits, "no canonicalJson golden vector carries a negative-zero decimal"
+    assert ordinary_negative_hits, "no canonicalJson golden vector carries an ordinary negative value"
+
+
+def test_golden_vector_negative_digests_are_independently_reproducible():
+    # Recompute each negative-carrying vector's digest from the canonical string rather than
+    # trusting the recorded literal -- the same double-check the fixture's own _comment requires.
+    vectors = [
+        v
+        for v in _load_golden_vectors()
+        if v["kind"] == "canonicalJson" and re.search(r":-\d", v["canonical"])
+    ]
+    assert len(vectors) >= 2, "expected at least the WR-01 and IN-01 negative vectors"
+    for vector in vectors:
+        canonical = canonicalize(vector["value"])
+        assert canonical == vector["canonical"], f"canonical mismatch for {vector['description']}"
+        recomputed = hashlib.sha256(canonical.encode("utf-8")).hexdigest().upper()
+        assert recomputed == vector["sha256Upper"], f"digest mismatch for {vector['description']}"
+        assert hash_canonical(vector["value"]) == recomputed
 
 
 def test_serializer_does_not_delegate_to_json_dumps():
