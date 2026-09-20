@@ -6,21 +6,49 @@ namespace DG.Tests;
 
 public sealed class RuleEvaluatorTests
 {
+    // Phase 1201 plan 03, D-02: these tests used to rely on RuleEvaluator.EvaluateRule's
+    // rule.BodyAtoms.Count == 0 fallback silently parsing rule.Swrl via SwrlRuleParser.Parse with
+    // no resolver, which used to guess `hasHeightM(?b,?h)` as DataPropertyAtom. After plan 03,
+    // SwrlRuleParser.Parse called with no resolver correctly reports an unresolvable ≥2-arg
+    // predicate as UnsupportedAtom instead of guessing (the exact defect D-02 exists to end) — so a
+    // rule relying on implicit SWRL-text parsing with no resolver injected now evaluates as
+    // Unsupported, not Failed/Passed. RuleEvaluator itself has no resolver-injection point (that is
+    // out of this plan's file scope — RuleEvaluator.cs belongs to plan 02), so these tests are
+    // rewritten to pre-populate rule.BodyAtoms directly (as the file's later D-14 tests already do)
+    // rather than depend on implicit, resolver-less SWRL parsing to produce a DataPropertyAtom.
+    // This is named explicitly here per the plan's deviation protocol, not quietly edited.
+
+    private static Atom BuildingClassAtom() => Build("ClassAtom", "Building", ("?b", ArgKind.Variable));
+
+    private static Atom HeightDataPropertyAtom() => Build(
+        "DataPropertyAtom", "hasHeightM", ("?b", ArgKind.Variable), ("?h", ArgKind.Variable));
+
+    private static Atom GreaterThanBuiltinAtom() => Build(
+        "BuiltinAtom", "swrlb:greaterThan", ("?h", ArgKind.Variable), ("75", ArgKind.Literal));
+
+    private static Atom Build(string type, string predicate, params (string Value, ArgKind Kind)[] args)
+    {
+        var atom = new Atom
+        {
+            Id = $"Body_{predicate}",
+            Type = type,
+            PredicateIri = predicate,
+            PredicateLabel = predicate,
+        };
+        var pos = 1;
+        foreach (var (value, kind) in args)
+        {
+            atom.Args.Add(new AtomArg { Pos = pos++, Kind = kind, Value = value, Datatype = kind == ArgKind.Literal ? "xsd:integer" : null });
+        }
+
+        return atom;
+    }
+
     [Fact]
     public void EvaluateRule_ShouldFailWhenHeightExceedsLimit()
     {
         var evaluator = new RuleEvaluator();
-        var rule = new Rule
-        {
-            Id = "R_URB_HEIGHT_MAX_75_V",
-            Name = "Maximum Building Height",
-            Description = "Maximum height is 75 m",
-            Kind = "violation",
-            Swrl = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Text = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Project = "default-project",
-            Graph = "Metagraph",
-        };
+        var rule = HeightRule();
 
         var bindings = new List<BindingRow>
         {
@@ -38,17 +66,7 @@ public sealed class RuleEvaluatorTests
     public void EvaluateRule_ShouldMatchBindingsWithoutQuestionMarkPrefix()
     {
         var evaluator = new RuleEvaluator();
-        var rule = new Rule
-        {
-            Id = "R_URB_HEIGHT_MAX_75_V",
-            Name = "Maximum Building Height",
-            Description = "Maximum height is 75 m",
-            Kind = "violation",
-            Swrl = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Text = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Project = "default-project",
-            Graph = "Metagraph",
-        };
+        var rule = HeightRule();
 
         var bindings = new List<BindingRow>
         {
@@ -73,17 +91,7 @@ public sealed class RuleEvaluatorTests
     public void EvaluateRule_ShouldReturnUnknownWhenVariableIsMissing()
     {
         var evaluator = new RuleEvaluator();
-        var rule = new Rule
-        {
-            Id = "R_URB_HEIGHT_MAX_75_V",
-            Name = "Maximum Building Height",
-            Description = "Maximum height is 75 m",
-            Kind = "violation",
-            Swrl = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Text = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-            Project = "default-project",
-            Graph = "Metagraph",
-        };
+        var rule = HeightRule();
 
         var bindings = new List<BindingRow>
         {
@@ -102,17 +110,24 @@ public sealed class RuleEvaluatorTests
     // -> unknown) behaviors, plus the two-binding rollup interactions the plan's behavior spec
     // requires. ---
 
-    private static Rule HeightRule() => new()
+    private static Rule HeightRule()
     {
-        Id = "R_URB_HEIGHT_MAX_75_V",
-        Name = "Maximum Building Height",
-        Description = "Maximum height is 75 m",
-        Kind = "violation",
-        Swrl = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-        Text = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
-        Project = "default-project",
-        Graph = "Metagraph",
-    };
+        var rule = new Rule
+        {
+            Id = "R_URB_HEIGHT_MAX_75_V",
+            Name = "Maximum Building Height",
+            Description = "Maximum height is 75 m",
+            Kind = "violation",
+            Swrl = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
+            Text = "Building(?b)^hasHeightM(?b,?h)^swrlb:greaterThan(?h,75)->violatesMaxHeight(?b,true)",
+            Project = "default-project",
+            Graph = "Metagraph",
+        };
+        rule.BodyAtoms.Add(BuildingClassAtom());
+        rule.BodyAtoms.Add(HeightDataPropertyAtom());
+        rule.BodyAtoms.Add(GreaterThanBuiltinAtom());
+        return rule;
+    }
 
     [Fact]
     public void EvaluateRule_ShouldReturnNoPopulationForEmptyBindings()
