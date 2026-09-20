@@ -8,11 +8,11 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v9.0 AI Workflow Intelligence (active)
+## Current Milestone: v12.0 Theory–Implementation Alignment (activated after v9.0 override closeout)
 
 **v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — Phases 822/823/824 verification deferred; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
 
-**Now:** **v9.0 AI Workflow Intelligence** (Phases 28–40) reactivated 2026-07-12 — Phase 28 (cloud LLM connector) already shipped; **Phase 29 (DG-Aware Context Layer)** is the next phase to plan. Phase directories moved from `milestones/v9.0-phases/` into `.planning/phases/`; roadmap detail inlined in `ROADMAP.md`; requirements restored to `.planning/REQUIREMENTS.md`.
+**Now:** **v12.0 Theory–Implementation Alignment** is activated as an isolated milestone package after v9.0 override closeout. The next action is standalone GSD control-plane reconciliation, followed by Phase 1200 planning. v9.0 artifacts are archived under `.planning/milestones/v9.0-phases/`; v12.0 roadmap and requirements are active.
 
 ## Requirements
 
@@ -47,7 +47,7 @@ Architects can express design constraints in plain language and instantly valida
 
 <!-- Current scope. Building toward these. -->
 
-**Active milestone: v9.0 AI Workflow Intelligence** (Phases 28–40; `.planning/REQUIREMENTS.md`)
+**Active milestone: v12.0 Theory–Implementation Alignment** (Phases 1200–1205; `.planning/REQUIREMENTS.md`)
 
 - [x] Phase 28: Cloud LLM connector + provider abstraction (shipped 2026-07-06)
 - [ ] Phase 29: DG-Aware Context Layer (SWRL + ontology + Cypher awareness) — **next to plan**
@@ -72,6 +72,10 @@ Architects can express design constraints in plain language and instantly valida
 - Neo4j label renames beyond Knowledge*→Spec* (e.g. ValidationRun→Run, DatatypeProperty→DataProperty in DB) — DB keeps existing labels/graph values; ontology↔DB mapping is documented instead (propagation cost outweighs benefit)
 
 ## Current State
+
+v9.0 AI Workflow Intelligence closed on 2026-09-19 by override closeout with accepted debt. The detailed archive is in `.planning/milestones/v9.0-ROADMAP.md` and `.planning/milestones/v9.0-REQUIREMENTS.md`; the milestone audit is `.planning/v9.0-MILESTONE-AUDIT.md`. The primary carry-forward is the accepted Session B recognition blocker `D-40-SB-01`.
+
+v12.0 Theory–Implementation Alignment is now the active milestone package. Its first action is standalone GSD control-plane reconciliation before Phase 1200 planning.
 
 v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v8.1 (Phases 810–816) completed 2026-07-11 — all four setup regions live (AI Engine, Connectors, Reasoner, DG API Documentation) plus verified E2E connector lifecycle and deployment cutover; formal archive via `/gsd-complete-milestone` still pending, phase dirs archived to `.planning/milestones/v8.1-phases/` 2026-07-12. v8.2 (Phases 820–824) shipped 2026-07-12 (override closeout — 822/823/824 verification deferred): isolated `dg-reasoner` sidecar with real OWL 2 DL (HermiT) consistency checking + SHACL data-integrity layer, additive CONNECTOR platform-token heartbeat. **v9.0 AI Workflow Intelligence reactivated 2026-07-12** — active in `.planning/phases/` (Phase 28 cloud-llm-connector already shipped, its LLM gateway is what the AI Engine screen surfaces; Phase 29 DG-Aware Context Layer next). **Phase 39 (DesignState Auto-Validation Investigation) complete 2026-07-28** — verified 26/26 must-haves, DSAV-01/02/03 met. A data-service-hosted watcher (`data-service/dsav_watcher.py` + `POST /designstate/capture`) closes the capture→validate loop hands-off on live Docker in 2.679 s, collapses 8 captures to 1 run, and minted one human-confirmed Speckle version. Prototype only — full implementation is scoped to a follow-up milestone by the ADR in `DG_OBSIDIAN/knowledge/decisions/`. Known open issue F-39-01: auto-runs are SHACL-validated before their own `ValidStatus` is written, so verdicts come back uniformly all-false — structurally sound but not yet discriminating.
 

@@ -1,0 +1,413 @@
+{
+  "phase": 40,
+  "measured_at": "2026-09-19T20:41:03Z",
+  "source": "mechanical closeout audit: repository-local checks run on 2026-09-19; live E2E was not run",
+  "configuration": {
+    "project_string": null,
+    "provider": null,
+    "model": null,
+    "note": "No live Phase 40 session was executed. Null values are intentional and are not measurements."
+  },
+  "software_context": {
+    "repository": "C:/Users/Admin/source/repos/design-grammar-system",
+    "phase_context": ".planning/milestones/v9.0-phases/40-e2e-validation-and-docs/40-CONTEXT.md",
+    "runbook": ".planning/milestones/v9.0-phases/v9.0-PIPELINE-UAT.md",
+    "evidence_precedent": ".planning/milestones/v9.0-phases/39-designstate-auto-validation-investigation/39-EVIDENCE.json",
+    "worktree_note": "Pre-existing unrelated worktree changes were preserved; application source and v12.0 artifacts were not modified by this audit."
+  },
+  "measurements": {
+    "mechanical_closeout": {
+      "status": "partial",
+      "checks_run": [
+        {
+          "name": "SC4 Ollama framing grep",
+          "command": "grep -ri \"ollama\" CLAUDE.md spec/",
+          "status": "pass",
+          "interpretation": "All current hits describe Ollama as optional, local, fallback, or deployment-specific; no hit says it is the sole LLM path. Raw output is recorded in sc4_grep_output."
+        },
+        {
+          "name": "Raw UAT result-field scan",
+          "command": "Python scan of .planning/milestones/v9.0-phases/*/[0-9][0-9]-UAT.md result: lines",
+          "status": "pass",
+          "observed": {
+            "28": 1,
+            "29": 1,
+            "33": 4,
+            "34": 5,
+            "35": 7,
+            "36": 4,
+            "37": 1,
+            "38": 3
+          },
+          "interpretation": "Eight raw UAT files were found and every scanned result field was non-empty. This is an inventory check, not proof that human UAT passed."
+        },
+        {
+          "name": "Content assertions",
+          "command": "Python assertions for spec/DATABASE.md, docs/RELEASE-NOTES-v9.0.md, REQUIREMENTS.md, and 40-DEFERRALS.md",
+          "status": "pass",
+          "observed": "All required strings were present, including Phase 39 ValidationRun properties, AutoValidation, five v9.0 components, ORCH-01, RING-05, Phase 30, Phase 31, and v10.0."
+        },
+        {
+          "name": "git diff --check",
+          "command": "git diff --check",
+          "status": "fail",
+          "observed": "Reported trailing whitespace in pre-existing generated DG .obj/.editorconfig files; no files were changed to repair it. This result is not attributed to the Phase 40 evidence files."
+        }
+      ],
+      "checks_not_run": [
+        "docker compose ps",
+        "data-service rebuild/up and 10-route openapi probe",
+        ".gha provenance SHA256 and Rhino start-time check",
+        "dotnet test ./DG/tests/DG.Tests/",
+        "docker compose exec data-service python -m pytest tests/ -q",
+        "graphify update ."
+      ]
+    },
+    "sc4_grep_output": [
+      "CLAUDE.md:the LLMSettingsPanel or /llm/settings); an Ollama adapter remains for local",
+      "CLAUDE.md:models. n8n workflows no longer call Ollama directly.",
+      "CLAUDE.md:| `ollama` | Ollama (GPU) | 11435 | Optional local model — one of the LLM gateway's providers, not called directly by n8n |",
+      "CLAUDE.md:| LLM | — | Provider-agnostic gateway (Anthropic/OpenAI via API key, Ollama local fallback) |",
+      "spec/API.md:Supported adapters are Anthropic, OpenAI-compatible (configurable `baseUrl`), and local Ollama. With no configured cloud API key, the gateway falls back to Ollama.",
+      "spec/ARCHITECTURE.md:| `ollama` | `ollama/ollama` | 11434 | 11435 | Optional local Ollama provider for the LLM gateway (GPU, llama3.1); n8n does not call it directly |",
+      "spec/ARCHITECTURE.md:The gateway exposes one generation contract and resolves among three adapters: Anthropic, OpenAI-compatible (configurable base URL), and local Ollama. Provider resolution is owned by `data-service/llm_gateway.py`.",
+      "spec/ARCHITECTURE.md:- **Optional local GPU provider** — NVIDIA GPU reservation applies to Ollama only; cloud providers need no GPU",
+      "spec/DATABASE.md:- **Provenance transport (Phase 36 UAT F6, closed 2026-07-26):** provider/model/confidence are read and written by computgraph_publish.py for every recognized entity. A run falling back to local Ollama has no model id, so it records provider: ollama with a null model.",
+      "spec/DECISIONS.md:**Decision:** Route generation through data-service/llm_gateway.py and its one /llm/generate contract. The gateway resolves the active provider and model from saved settings and supports Anthropic, OpenAI-compatible (configurable base URL), and local Ollama adapters. API keys are encrypted at rest under LLM_MASTER_SECRET; Ollama remains the zero-config fallback when no API key is configured.",
+      "spec/DEPLOYMENT.md:| 11435 | Ollama |",
+      "spec/DEPLOYMENT.md:`neo4j_data`, `n8n_data`, `ollama`, `speckle_postgres_data`, `speckle_redis_data`, `speckle_minio_data`",
+      "spec/PROJECT.md:    (Anthropic, OpenAI-compatible, or local Ollama; Ollama is the zero-config fallback when no API key is set)"
+    ],
+    "human_e2e": {
+      "status": "partial",
+      "session_a": {
+        "status": "pass",
+        "project": "v9-final-uat",
+        "cloud_ingest": {
+          "status": "pass",
+          "user_observed_response": "Rule ingested into the metagraph.",
+          "user_observed_provider": "OpenAI",
+          "user_observed_model": "mimo-v2.5-pro",
+          "gateway_settings_verified": {
+            "provider": "openai",
+            "model": "mimo-v2.5-pro",
+            "apiKeyConfigured": true,
+            "baseUrl": "https://router.genproagent.ru/v1"
+          },
+          "runtime_evidence": {
+            "conflict_check_http": 200,
+            "context_assemble_http": 200,
+            "context_generate_cypher_http": 200,
+            "execution_result_id": 262,
+            "neo4j_rule_id": "R_URB_HEIGHT_MAX_75_V",
+            "neo4j_atom_count": 4
+          }
+        },
+        "validation_read_only": {
+          "status": "pass",
+          "project": "v8-ui-smoke",
+          "run_id": "a547014ebd824a269c36fd6814eb4b1ec",
+          "user_observed": {
+            "run_opened": true,
+            "validation_result_visible": true,
+            "speckle_model_view": "loaded"
+          },
+          "runtime_evidence": {
+            "runs_endpoint": "GET /validation/runs/v8-ui-smoke 200",
+            "view_endpoint": "GET /validation/view/v8-ui-smoke/a547014ebd824a269c36fd6814eb4b1ec 200",
+            "speckle_project_id": "44088eefc6",
+            "base_model_id": "4c546c0771",
+            "base_version_id": "9ff670f197",
+            "validation_model_id": "a6d1e0c5da",
+            "validation_version_id": "a950f27a67",
+            "rule_ids": [
+              "R_BUILDING_MAX_HEIGHT_75_V"
+            ],
+            "rule_count": 1,
+            "failed_rule_count": 1,
+            "entity_count": 57,
+            "state_id": "DS_44B87E4ED3060032"
+          },
+          "interpretation": "Read-only validation and existing Speckle model view were confirmed. No new publish side effect was performed."
+        },
+        "provider_switch": {
+          "status": "pass",
+          "cloud_leg": "pass",
+          "ollama_connection_test": "pass",
+          "ollama_ingest": "pass",
+          "provider": "ollama",
+          "model": "llama3.1:8b",
+          "docker_restart_observed": false,
+          "workflow_edit_observed": false,
+          "execution_result_id": 266,
+          "user_observed_response": "Rule ingested into the metagraph.",
+          "neo4j_rule_id": "R_CORRIDOR_LENGTH_MAX_14_V",
+          "neo4j_atom_count": 4,
+          "note": "The successful retry supersedes the earlier failed attempt for the provider-switch acceptance measurement; the earlier failure remains recorded as F-40-07."
+        },
+        "ollama_retry": {
+          "status": "pass",
+          "execution_result_id": 266,
+          "rule_id": "R_CORRIDOR_LENGTH_MAX_14_V",
+          "atom_count": 4,
+          "provider": "Ollama",
+          "model": "llama3.1:8b"
+        }
+      },
+      "query": {
+        "status": "pass",
+        "user_observed_response": "No data found for design states or validation runs in project v9-final-uat",
+        "user_observed_provider": "OpenAI",
+        "user_observed_model": "mimo-v2.5-pro",
+        "runtime_evidence": {
+          "execution_result_id": 265,
+          "context_assemble_http": 200,
+          "context_generate_cypher_http": 200,
+          "mcp_http": 200,
+          "llm_generate_http": 200,
+          "generated_cypher": "MATCH (r:ValidationRun) WHERE r.project = 'v9-final-uat' RETURN r LIMIT 50",
+          "records": []
+        },
+        "interpretation": "The live context-aware query path completed successfully and returned an honest empty result. The project contains no ValidationRun rows; this is not a query-path failure."
+      },
+      "session_b": {
+        "status": "partial",
+        "fixture": "RuleValidation-UrbanBlock_V8_Template_Recognition.gh",
+        "bridge_listener": {
+          "status": "pass",
+          "user_observed_status": "Listening on 127.0.0.1:8720",
+          "object_marker": {
+            "status": "pass",
+            "object_name": "BRIDGE",
+            "scribbles": [
+              "OBJECT - BRIDGE",
+              "1_ALGORITHM"
+            ],
+            "duplicate_free_recompute": true,
+            "user_observed_status": "Read existing: OBJECT - BRIDGE / 1_ALGORITHM",
+            "observed_edge_cases": [
+              "An existing object/scribble is not overwritten; a new marker reports the existing object in its status.",
+              "If all scribbles are deleted and two markers run concurrently, two scribbles are created but both marker statuses report one of the existing objects."
+            ],
+            "interpretation": "The single-marker idempotent path passed. Concurrent empty-canvas marker ownership/status is ambiguous and remains an observed edge case, not a pass claim."
+          },
+          "context_pull": {
+            "status": "pass",
+            "http_status": 200,
+            "schemaVersion": "cg-context-1",
+            "project": "v9-final-uat",
+            "definition_fileName": "RuleValidation-UrbanBlock_V8_Template_Recognition*",
+            "object": "Building",
+            "object_source": "tagged",
+            "algorithm_count": 1,
+            "procedure_count": 4,
+            "tagged_pattern_count": 12,
+            "tagged_parameter_count": 13,
+            "untagged_node_count": 36
+          },
+          "mcp_tools_list": {
+            "status": "pass",
+            "http_status": 200,
+            "tools": [
+              "gh_get_context",
+              "gh_get_selection",
+              "gh_preview_structure",
+              "gh_clear_preview"
+            ]
+          },
+          "note": "Fixture is UrbanBlock V8 Template Recognition, not the Frame fixture; this is a live bridge connectivity/context measurement.",
+          "entity_tag": {
+            "status": "pass",
+            "user_observed": {
+              "group": "11_Var_SpansCount",
+              "color": "pink",
+              "member_count": 1,
+              "ctrl_z": "clean",
+              "status": "Tagged: 11_Var_SpansCount (1 member(s))"
+            },
+            "runtime_evidence": {
+              "context_pull_http": 200,
+              "schemaVersion": "cg-context-1",
+              "kind": "Variable",
+              "source": "tagged",
+              "name": "SpansCount",
+              "procedure_index": 11,
+              "member_count": 1,
+              "member_ids": [
+                "f284995c-36d3-4d9e-8ebb-6bcff0b583a2"
+              ]
+            },
+            "interpretation": "Tag round-trip passed from live Rhino through the bridge serializer and parser."
+          }
+        },
+        "recognition": {
+          "status": "blocked",
+          "procedure_index": 11,
+          "context_pull_http": 200,
+          "recognize_http": 200,
+          "provider": "ollama",
+          "model": "llama3.1:8b",
+          "valid": false,
+          "attempts": 1,
+          "violations": [
+            {
+              "code": "output_truncated",
+              "message": "The model's response was truncated at the 512-token cap with 1 residual candidates in scope. Where: the LLM response. How to fix: scope recognition to a single procedure_index to reduce the candidate count.",
+              "path": null
+            }
+          ],
+          "preview_executed": false,
+          "interpretation": "Procedure 11 was requested, but the current recognition contract/model still exceeded the 512-token response cap with one residual candidate. No preview or confirmation was performed.",
+          "retry": {
+            "status": "blocked",
+            "procedure_index": 11,
+            "context_pull_http": 200,
+            "recognize_http": 200,
+            "provider": "openai",
+            "model": "mimo-v2.5-pro",
+            "valid": false,
+            "attempts": 1,
+            "violation_code": "output_truncated",
+            "residual_candidates": 1,
+            "output_cap_tokens": 512,
+            "preview_executed": false,
+            "interpretation": "OpenAI-compatible retry reproduced the same output_truncated result at the 512-token cap with one residual candidate; no preview or confirmation was performed."
+          },
+          "acceptance_decision": {
+            "decision": "accepted_blocker",
+            "scope": "do not alter fixture to force recognition pass",
+            "reason": "Both Ollama/llama3.1:8b and OpenAI/mimo-v2.5-pro reproduced output_truncated at the 512-token cap with one residual candidate.",
+            "consequence": "Preview, confirm, publish, structure validation, and PARAMETER REINSTATE are not executed in this UAT run."
+          }
+        }
+      },
+      "provider_switch": {
+        "status": "partial",
+        "cloud_leg": "pass",
+        "ollama_connection_test": "pass",
+        "ollama_ingest": "failed",
+        "provider": "ollama",
+        "model": "llama3.1:8b",
+        "docker_restart_observed": false,
+        "workflow_edit_observed": false,
+        "failure": "Neo4j rejected LLM output because explanatory prose preceded the fenced Cypher: 'Here are the converted Cypher MERGE + SET statements for the given rule:'",
+        "execution_result_ids": [
+          263,
+          264
+        ],
+        "ollama_models_connected": [
+          "llama3.1:8b"
+        ],
+        "ollama_models_failed": [
+          "llama3.1:latest",
+          "llama3.1-dg:smoke",
+          "llama3.1-dg:v3"
+        ]
+      },
+      "note": "Session A completed through cloud/Ollama ingest, context-aware query, and read-only validation/model evidence. Session B bridge, object marker, and entity-tag round-trip passed. Recognition was accepted as a blocker after both Ollama and OpenAI/mimo-v2.5-pro reproduced output_truncated at the 512-token cap; no fixture reduction was performed to force a pass."
+    }
+  },
+  "findings": [
+    {
+      "id": "F-39-01",
+      "title": "Auto-validation verdicts remain a known constant-false limitation",
+      "status": "carried_forward",
+      "observed": "Phase 39 evidence records SHACL self-validation before ValidStatus exists, yielding false ValidStatus values and an unmapped conservative fallback.",
+      "consequence": "Phase 40 records this as an expected, pre-registered observation and does not claim to fix or re-measure it."
+    },
+    {
+      "id": "F-40-01",
+      "title": "Session A full chain remains incomplete",
+      "status": "pass",
+      "observed": "Cloud ingest, context-aware query, read-only validation/model-view, and successful Ollama retry were observed. No new Speckle publish was performed.",
+      "consequence": "The measured Session A browser/Docker chain is complete through read-only validation/model evidence; external publish remains separately unperformed."
+    },
+    {
+      "id": "F-40-02",
+      "title": "Session B recognition is an accepted blocker",
+      "status": "accepted_blocker",
+      "observed": "Bridge, object marker, and entity-tag round-trip passed. Recognition was attempted with Ollama/llama3.1:8b and OpenAI/mimo-v2.5-pro; both returned valid=false with output_truncated at the 512-token cap.",
+      "consequence": "Per UAT decision, the fixture was not altered to force a pass. Preview, confirm, publish, structure validation, and PARAMETER REINSTATE remain unmeasured."
+    },
+    {
+      "id": "F-40-03",
+      "title": "Provider-switch evidence is partial",
+      "status": "pass",
+      "observed": "OpenAI-compatible routing passed; Ollama connection and retry ingest passed with llama3.1:8b, without Docker restart or workflow edit.",
+      "consequence": "INTG-02 provider-switch behavior is measured as passed. The earlier failed first attempt remains a retained finding, not the final acceptance result."
+    },
+    {
+      "id": "F-40-04",
+      "title": "Cloud and Rhino credentials/environment were unavailable to this audit",
+      "status": "human_needed",
+      "observed": "No cloud-provider API key, live Rhino session, or human checkpoint result was supplied.",
+      "consequence": "Credential-dependent and Rhino-dependent measurements remain open; this is not reported as a product failure."
+    },
+    {
+      "id": "F-40-05",
+      "title": "Full baseline suites and graphify refresh were not run",
+      "status": "not_run",
+      "observed": "The audit ran only the listed repository-local mechanical checks; dotnet, in-container pytest, Docker smoke/probe, .gha provenance, and graphify commands were not executed.",
+      "consequence": "No suite or deployment pass claim is made."
+    },
+    {
+      "id": "F-40-06",
+      "title": "Pre-existing generated-file whitespace prevents a clean repository-wide diff check",
+      "status": "observed",
+      "observed": "git diff --check reported trailing whitespace in generated DG .obj/.editorconfig files already present in the worktree.",
+      "consequence": "Those unrelated generated files were not modified."
+    },
+    {
+      "id": "F-40-07",
+      "title": "Ollama llama3.1:8b emits explanatory prose before Cypher",
+      "status": "failed",
+      "observed": "The Ollama route reached the live ingest workflow, but execution result 263/264 attempted to send the prose prefix 'Here are the converted Cypher MERGE + SET statements for the given rule:' to Neo4j before the fenced Cypher block.",
+      "consequence": "The first Ollama attempt failed on prose-before-Cypher; a reconnect retry subsequently passed. The finding remains historical and does not block provider-switch acceptance."
+    }
+  ],
+  "missing_measurements": [
+    {
+      "id": "MM-40-01",
+      "scope": "Session A",
+      "status": "human_needed",
+      "reason": "Live browser + Docker + cloud-provider + Neo4j/GH/Speckle chain was not observed.",
+      "required_capture": "One project string, provider/model, timestamps, S-A/1 through S-A/5 artifacts and outcomes, and owning UAT result lines."
+    },
+    {
+      "id": "MM-40-02",
+      "scope": "Session B",
+      "status": "accepted_blocker",
+      "reason": "Recognition blocker accepted after both tested providers reproduced output_truncated at the 512-token cap; the fixture was intentionally not altered to force a pass.",
+      "required_capture": "Future fix or explicitly scoped recognition run with a raised/appropriate output contract, followed by preview, confirm/reject, Computgraph publish, structure validation, PARAMETER REINSTATE, and validation-run evidence."
+    },
+    {
+      "id": "MM-40-03",
+      "scope": "provider switch",
+      "status": "resolved",
+      "reason": "Cloud provider routing passed and Ollama connection plus retry ingest passed.",
+      "required_capture": "Completed by execution result 266 and Neo4j rule/atom evidence."
+    },
+    {
+      "id": "MM-40-04",
+      "scope": "Rhino/cloud credentials",
+      "status": "human_needed",
+      "reason": "This agent cannot supply or enter credentials and cannot self-approve a Rhino-in-the-loop checkpoint.",
+      "required_capture": "Human-run checkpoint with authorized cloud key and live Rhino/Grasshopper environment."
+    },
+    {
+      "id": "MM-40-05",
+      "scope": "tests and mechanical gates not run",
+      "status": "not_run",
+      "reason": "No Docker smoke/probe, .gha provenance check, dotnet suite, in-container pytest suite, or graphify refresh was executed during this audit.",
+      "required_capture": "Raw command output and exit status for each named command."
+    }
+  ],
+  "decision_log": [
+    {
+      "id": "D-40-SB-01",
+      "decision": "Accept recognition blocker and stop Session B before preview",
+      "basis": "Reproduced across Ollama/llama3.1:8b and OpenAI/mimo-v2.5-pro; preserving fixture integrity is preferred to artificial scope reduction.",
+      "date": "2026-09-19"
+    }
+  ]
+}

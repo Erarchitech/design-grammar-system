@@ -238,6 +238,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-09-14 T1 ITcon R15.4 — architecture and figures planning|2026-09-14 T1 ITcon R15.4 — architecture and figures planning]]
 - [[sessions/2026-09-15 T1 ITcon R15.4 — H14 and architecture wording|2026-09-15 T1 ITcon R15.4 — H14 and architecture wording]]
 - [[sessions/2026-09-19 T1 ITcon R15.6 title and keywords finalisation|2026-09-19 T1 R15.6 — title & keywords]]
+- [[sessions/2026-09-19 Theory–implementation alignment audit and GSD planning|2026-09-19 Theory–Implementation Alignment audit + GSD sequencing]]
+- [[sessions/2026-09-20 v9.0 override closeout and v12.0 activation|2026-09-20 v9.0 override closeout + v12.0 activation]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)

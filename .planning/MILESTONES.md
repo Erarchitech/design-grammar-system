@@ -1,5 +1,13 @@
 # Milestones
 
+## v9.0 AI Workflow Intelligence (Override Closeout: 2026-09-19)
+
+**Phases:** 28–40  
+**Closeout:** override closeout with accepted debt; 33 verification/UAT/debug artifacts acknowledged through the official GSD audit mechanism.  
+**Key carry-forward:** Session B recognition blocker accepted under `D-40-SB-01`; v9.0 was not fully passed. Full records: `.planning/milestones/v9.0-ROADMAP.md`, `.planning/milestones/v9.0-REQUIREMENTS.md`, `.planning/v9.0-MILESTONE-AUDIT.md`.
+
+---
+
 ## v8.2 Connector Integration & Reasoning Engine (Shipped: 2026-07-12)
 
 **Phases completed:** 5 phases, 19 plans, 44 tasks

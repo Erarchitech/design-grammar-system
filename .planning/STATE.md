@@ -1,20 +1,20 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.0
-milestone_name: AI Workflow Intelligence
-current_phase: 40
-current_phase_name: E2E Validation and Docs
-status: planning
-stopped_at: Phase 40 context gathered
-last_updated: "2026-07-28T19:49:12.368Z"
-last_activity: 2026-07-28
-last_activity_desc: Phase 33 (dg-canvas-bridge) completed and verified out of sequence — Phases 34-39 were already complete, so the frontier stays at Phase 40
+milestone: v12.0
+milestone_name: Theory–Implementation Alignment
+current_phase: 1200
+current_phase_name: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
+status: ready_to_plan
+stopped_at: v9.0 override closeout complete; v12.0 activation after control-plane reconciliation
+last_updated: "2026-09-19T23:30:00+01:00"
+last_activity: 2026-09-19
+last_activity_desc: v9.0 archived with accepted debt; v12.0 isolated package activated; standalone GSD control-plane reconciliation is the next action
 progress:
-  total_phases: 14
-  completed_phases: 11
-  total_plans: 68
-  completed_plans: 68
-  percent: 79
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 40 — E2E Validation and Docs
+**Current focus:** Phase 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
 
 ## Current Position
 
-Phase: 40 — E2E Validation and Docs
+Phase: 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-07-28 — Phase 33 (dg-canvas-bridge) completed and verified out of sequence — Phases 34-39 were already complete, so the frontier stays at Phase 40
+Status: Ready to plan after standalone control-plane reconciliation
+Last activity: 2026-09-19 — v9.0 override closeout complete; v12.0 package activated with accepted carry-forward debt
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
