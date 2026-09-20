@@ -99,7 +99,7 @@ Plans:
 
 **Gate:** supported fixtures pass; unsupported fixtures return typed non-verdict outcomes; no unsupported construct becomes an ordinary failure.
 
-**Plans:** 4/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 
@@ -108,7 +108,7 @@ Plans:
 - [x] 1201-03-PLAN.md — Parser `TryParse` with resolver-driven atom typing, quoted commas/escaping/datatype/language literals, Neo4j predicate-kind resolver (wave 3)
 - [x] 1201-04-PLAN.md — Parser conformance corpus, `spec/SWRL-SUBSET.md` with non-claims section, doc↔code drift guard, propagation (wave 4)
 - [x] 1201-05-PLAN.md — dg-reasoner leg `run_id` fix, `not_evaluated` for what SHACL cannot express, non-null report hashes (wave 1, Python-side, parallel with 01)
-- [ ] 1201-06-PLAN.md — D-11 exit gate: live four-leg DE-01 re-run at `silent_disagreement_count = 0` (wave 5, **requires a live compose stack**, human checkpoint)
+- [x] 1201-06-PLAN.md — D-11 exit gate: live four-leg DE-01 re-run at `silent_disagreement_count = 0` (wave 5, **requires a live compose stack**, human checkpoint)
 
 ### Phase 1202: Design State Replay and Per-Object Verdict Closure
 
