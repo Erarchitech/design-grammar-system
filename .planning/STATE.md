@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Theory–Implementation Alignment
-current_phase: 1200
-current_phase_name: contract-status-vocabulary-evidence-envelope-and-golden-fixt
+current_phase: 1201
+current_phase_name: rule-parser-and-evaluator-conformance
 status: executing
-stopped_at: Completed 1201-03-PLAN.md
-last_updated: "2026-09-20T21:19:36.955Z"
+stopped_at: Completed 1201-04-PLAN.md
+last_updated: "2026-09-20T22:40:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: Phase 1200 executed (9/9 plans). Gap-closure plans 06/07 fixed CR-01
+last_activity_desc: Phase 1201 plan 04 executed — parser conformance corpus, spec/SWRL-SUBSET.md, bidirectional drift guard (D-13/D-14/D-15/D-16). Plan 06 (DE-01 re-run exit gate) remains open.
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 15
-  completed_plans: 13
-  percent: 17
+  completed_plans: 14
+  percent: 23
 ---
 
 # Project State
@@ -28,9 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED
-Plan: 9 of 9
-Status: Phase 1200 executed and re-verified; contract frozen with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
+Phase: 1201 (rule-parser-and-evaluator-conformance) — EXECUTING
+Plan: 04 of 06 complete (01, 02, 03, 05 also complete; 06 — DE-01 re-run exit gate — remains open)
+Status: Phase 1201 plan 04 executed: fixtures/golden/parser/ conformance corpus (9 cases covering all 8 ROADMAP parser deliverables + the null-resolver ObjectPropertyAtom counterpart), spec/SWRL-SUBSET.md (normative non-claims doc), and a bidirectional drift guard proven to actually fail on an induced mismatch then reverted. Full .NET suite: 502/502 passed, 0 warnings/errors on both TFMs. Frozen fixtures untouched. Plan 06 (D-09 SHACL targeting fix + D-11 DE-01 re-run + D-12 hash propagation) is the phase's remaining exit gate.
+
+Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
 **GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
@@ -125,6 +127,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1200 P04 | ~6min | 3 tasks | 8 files |
 | Phase 1200 P05 | ~10min | 1 tasks | 1 files |
 | Phase 1201 P03 | 55min | 5 tasks | 7 files |
+| Phase 1201 P04 | ~50min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -399,6 +402,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: Parser TryParse (D-01): SwrlRuleParser stays static; TryParse(expr, resolver=null) never throws; Parse is a thin wrapper that still throws for empty/arrow-arity/atom-regex but not for an unresolvable predicate kind.
 - [Phase ?]: ObjectPropertyAtom now reachable (D-02): ResolveAtomType resolves >=2-arg non-swrlb predicates via IPredicateKindResolver; unresolved predicates become UnsupportedAtom, never a guessed DataPropertyAtom.
 - [Phase ?]: Quote-aware linear scanners replace naive Split('^')/Split(',') in SwrlRuleParser (SplitArgs, new SplitAtomChain) to avoid regex backtracking DoS and to correctly handle ^^ datatype-suffix literals colliding with the atom-conjunction separator.
+- [Phase 1201-04]: spec/SWRL-SUBSET.md carries the supported-builtin allow-list and non-claims status list inline as two fenced machine-readable blocks, each bound to production code by a bidirectional-equality test (DG.Core.Validation.SupportedBuiltins.Names and EvidenceStatusNames.TryParseWireName respectively) -- the guard was proven to actually fail on an induced mismatch (fake builtin added, test failed naming it, reverted) before being trusted.
+- [Phase 1201-04]: fixtures/golden/parser/ holds a separate, non-frozen 9-case corpus (8 ROADMAP parser cases + the null-resolver ObjectPropertyAtom counterpart) read only by SwrlSubsetConformanceTests via MemberData -- explicitly additive to, and never a replacement for, the frozen fixture.json (1200 D-11).
+- [Phase 1201-04]: CLAUDE.md Schema Change Propagation scoped narrowly per the plan's own instruction -- only CLAUDE.md, EVIDENCE-CONTRACT.md, RULE-PARTITION-POLICY.md, and MANIFEST.md touched; cypher_template.txt/dataset_schema.json/n8n prompts/config.template.js left untouched since this phase changes no graph schema.
 
 ### Research Flags (carry into planning)
 

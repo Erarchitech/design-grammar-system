@@ -106,7 +106,7 @@ Plans:
 - [x] 1201-01-PLAN.md — Tracer slice: single rollup precedence extracted, D-15 builtin allow-list, additive `Status`, unsupported builtin returns `unsupported` instead of throwing (wave 1)
 - [x] 1201-02-PLAN.md — Remaining evaluator collapse sites: `no_population`, `unknown`, ObjectPropertyAtom refusal, `not_evaluated` at the publish boundary (wave 2)
 - [x] 1201-03-PLAN.md — Parser `TryParse` with resolver-driven atom typing, quoted commas/escaping/datatype/language literals, Neo4j predicate-kind resolver (wave 3)
-- [ ] 1201-04-PLAN.md — Parser conformance corpus, `spec/SWRL-SUBSET.md` with non-claims section, doc↔code drift guard, propagation (wave 4)
+- [x] 1201-04-PLAN.md — Parser conformance corpus, `spec/SWRL-SUBSET.md` with non-claims section, doc↔code drift guard, propagation (wave 4)
 - [x] 1201-05-PLAN.md — dg-reasoner leg `run_id` fix, `not_evaluated` for what SHACL cannot express, non-null report hashes (wave 1, Python-side, parallel with 01)
 - [ ] 1201-06-PLAN.md — D-11 exit gate: live four-leg DE-01 re-run at `silent_disagreement_count = 0` (wave 5, **requires a live compose stack**, human checkpoint)
 

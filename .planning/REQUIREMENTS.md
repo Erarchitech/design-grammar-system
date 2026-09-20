@@ -21,7 +21,7 @@
 
 - [x] **ALGN12-05**: ObjectPropertyAtom and malformed/unsupported syntax have explicit parser outcomes and regression fixtures.
 - [ ] **ALGN12-06**: Unsupported built-ins and predicate forms never collapse into ordinary failed verdicts.
-- [ ] **ALGN12-07**: Documentation and tests distinguish the schema-level SWRL subset from the bounded C# evaluator; no full-reasoner claim is made.
+- [x] **ALGN12-07**: Documentation and tests distinguish the schema-level SWRL subset from the bounded C# evaluator; no full-reasoner claim is made.
 
 ## Design State and verdict replay (Phase 1202)
 
