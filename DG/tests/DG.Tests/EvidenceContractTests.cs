@@ -104,4 +104,129 @@ public sealed class EvidenceContractTests
 
         Assert.True(File.Exists(fixturePath), $"Expected shared golden fixture copied to test output at {fixturePath}. Confirm the DG.Tests.csproj repo-root <None Include> rule is present and the project has been rebuilt.");
     }
+
+    private static EvidenceRow Row(string objectId, string ruleId, EvidenceStatus status)
+    {
+        return new EvidenceRow { ObjectId = objectId, RuleId = ruleId, CanonicalStatus = status };
+    }
+
+    [Fact]
+    public void Build_ShouldSortRows_ByObjectIdThenRuleId_Ordinal()
+    {
+        var rows = new List<EvidenceRow>
+        {
+            Row("OBJ_B", "R_2", EvidenceStatus.Passed),
+            Row("OBJ_A", "R_2", EvidenceStatus.Passed),
+            Row("OBJ_A", "R_1", EvidenceStatus.Passed),
+        };
+
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "dg-grasshopper-evaluator", "1.0", "test-stage", rows);
+
+        Assert.Equal(3, envelope.Rows.Count);
+        Assert.Equal(("OBJ_A", "R_1"), (envelope.Rows[0].ObjectId, envelope.Rows[0].RuleId));
+        Assert.Equal(("OBJ_A", "R_2"), (envelope.Rows[1].ObjectId, envelope.Rows[1].RuleId));
+        Assert.Equal(("OBJ_B", "R_2"), (envelope.Rows[2].ObjectId, envelope.Rows[2].RuleId));
+    }
+
+    [Fact]
+    public void Build_ShouldSetContractAndCanonicalizationVersion()
+    {
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "svc", "1.0", "stage", new List<EvidenceRow>
+        {
+            Row("OBJ_A", "R_1", EvidenceStatus.Passed),
+        });
+
+        Assert.Equal("1.0.0", envelope.ContractVersion);
+        Assert.Equal(CanonicalJsonWriter.CanonicalizationVersion, envelope.CanonicalizationVersion);
+    }
+
+    [Fact]
+    public void Build_ShouldSetEmittedAt_AsRfc3339UtcWithZSuffix()
+    {
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "svc", "1.0", "stage", new List<EvidenceRow>
+        {
+            Row("OBJ_A", "R_1", EvidenceStatus.Passed),
+        });
+
+        Assert.EndsWith("Z", envelope.EmittedAt);
+        Assert.True(DateTimeOffset.TryParse(envelope.EmittedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out _));
+    }
+
+    [Theory]
+    [InlineData(EvidenceStatus.Error, EvidenceStatus.Failed)]
+    [InlineData(EvidenceStatus.Failed, EvidenceStatus.Indeterminate)]
+    [InlineData(EvidenceStatus.Indeterminate, EvidenceStatus.Unsupported)]
+    [InlineData(EvidenceStatus.Unsupported, EvidenceStatus.Unknown)]
+    [InlineData(EvidenceStatus.Unknown, EvidenceStatus.NotEvaluated)]
+    [InlineData(EvidenceStatus.NotEvaluated, EvidenceStatus.NoPopulation)]
+    [InlineData(EvidenceStatus.NoPopulation, EvidenceStatus.Passed)]
+    public void Build_RollupPrecedence_ShouldPreferWorseStatus(EvidenceStatus worse, EvidenceStatus better)
+    {
+        var rows = new List<EvidenceRow>
+        {
+            Row("OBJ_A", "R_1", better),
+            Row("OBJ_B", "R_2", worse),
+        };
+
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "svc", "1.0", "stage", rows);
+
+        Assert.Equal(worse, envelope.CanonicalStatus);
+    }
+
+    [Fact]
+    public void Build_WithEmptyRows_ShouldYieldNotEvaluated()
+    {
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "svc", "1.0", "stage", new List<EvidenceRow>());
+
+        Assert.Equal(EvidenceStatus.NotEvaluated, envelope.CanonicalStatus);
+        Assert.Empty(envelope.Rows);
+    }
+
+    [Fact]
+    public void Build_WithRollUpOverride_ShouldUseOverrideVerbatim()
+    {
+        var rows = new List<EvidenceRow> { Row("OBJ_A", "R_1", EvidenceStatus.Passed) };
+
+        var envelope = EvidenceEnvelopeFactory.Build(
+            "p1", "def-1", "svc", "1.0", "stage", rows, rollUp: EvidenceStatus.NoPopulation);
+
+        Assert.Equal(EvidenceStatus.NoPopulation, envelope.CanonicalStatus);
+    }
+
+    [Fact]
+    public void SerializedEnvelope_ShouldCarrySchemaFieldNames_AndSnakeCaseStatus()
+    {
+        var envelope = EvidenceEnvelopeFactory.Build("p1", "def-1", "svc", "1.0", "stage", new List<EvidenceRow>
+        {
+            Row("OBJ_A", "R_1", EvidenceStatus.NoPopulation),
+        });
+
+        var options = new JsonSerializerOptions();
+        var json = JsonSerializer.Serialize(envelope, options);
+        var node = JsonNode.Parse(json)!;
+
+        var canonical = CanonicalJsonWriter.Canonicalize(node);
+
+        Assert.Contains("\"canonicalStatus\":\"no_population\"", canonical);
+        Assert.Contains("\"contractVersion\":\"1.0.0\"", canonical);
+        Assert.Contains("\"emittedAt\":", canonical);
+
+        // Ordinal-sorted keys: "canonicalStatus" sorts before "contractVersion" ordinally.
+        var canonicalStatusIndex = canonical.IndexOf("\"canonicalStatus\"", StringComparison.Ordinal);
+        var contractVersionIndex = canonical.IndexOf("\"contractVersion\"", StringComparison.Ordinal);
+        Assert.True(canonicalStatusIndex < contractVersionIndex);
+    }
+
+    [Fact]
+    public void ToLegacyBoolean_ShouldReturnTrue_OnlyForPassed()
+    {
+        Assert.True(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Passed));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Failed));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Unknown));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.NotEvaluated));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.NoPopulation));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Unsupported));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Indeterminate));
+        Assert.False(EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.Error));
+    }
 }
