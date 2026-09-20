@@ -1,3 +1,4 @@
+using DG.Core.Contracts;
 using DG.Core.Models;
 
 namespace DG.Core.Validation;
@@ -33,10 +34,17 @@ public static class ValidationPublishPackageBuilder
 
             if (!resultById.TryGetValue(rule.Id, out var result))
             {
+                // Phase 1201 plan 02: `not_evaluated` is "the rule was in scope but no evaluation
+                // was ever attempted or no result was produced" (spec/EVIDENCE-CONTRACT.md) — this
+                // TryGetValue miss is exactly that branch, and it is distinct from `unknown`, where
+                // evaluation happened and could not resolve. Without a typed status here, a rule
+                // that was never evaluated is indistinguishable at the publish boundary from an
+                // evaluated violation (Passed=false either way) — T-1201-04's repudiation risk.
                 package.RuleResults.Add(new ValidationPublishRuleResult
                 {
                     RuleId = rule.Id,
                     Passed = false,
+                    Status = EvidenceStatus.NotEvaluated,
                 });
                 continue;
             }
@@ -82,6 +90,11 @@ public static class ValidationPublishPackageBuilder
             {
                 RuleId = rule.Id,
                 Passed = result.Passed,
+                // Copied verbatim from the evaluator's result — never recomputed from Passed.
+                // boolean->canonical inference is forbidden by the contract and this phase's
+                // constraints (e.g. Status = Unsupported must publish as Unsupported, not be
+                // re-derived as some other status because Passed happens to be false).
+                Status = result.Status,
             };
 
             foreach (var pair in statusByEntity.OrderBy(pair => pair.Key, StringComparer.Ordinal))

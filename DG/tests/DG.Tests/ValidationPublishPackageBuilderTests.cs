@@ -1,3 +1,4 @@
+using DG.Core.Contracts;
 using DG.Core.Models;
 using DG.Core.Validation;
 
@@ -155,5 +156,98 @@ public sealed class ValidationPublishPackageBuilderTests
             ValidationPublishPackageBuilder.Build(rules, results, Array.Empty<BindingRow>()));
 
         Assert.Contains("single DG project", ex.Message);
+    }
+
+    // --- Phase 1201 plan 02: the publish boundary carries the evaluator's typed Status. ---
+
+    [Fact]
+    public void Build_ShouldPublishNotEvaluatedWhenNoResultExistsForRule()
+    {
+        var rule = new Rule
+        {
+            Id = "R_HEIGHT",
+            Name = "Height",
+            Description = "Max height",
+            Project = "project-a",
+        };
+
+        // No RuleEvaluationResult supplied for R_HEIGHT at all — the rule was in scope but never
+        // evaluated (or produced no result).
+        var package = ValidationPublishPackageBuilder.Build(
+            new[] { rule },
+            Array.Empty<RuleEvaluationResult>(),
+            Array.Empty<BindingRow>());
+
+        var ruleResult = Assert.Single(package.RuleResults);
+        Assert.Equal(EvidenceStatus.NotEvaluated, ruleResult.Status);
+        Assert.False(ruleResult.Passed);
+    }
+
+    [Fact]
+    public void Build_ShouldCopyResultStatusVerbatimWhenResultExists()
+    {
+        var rule = new Rule
+        {
+            Id = "R_HEIGHT",
+            Name = "Height",
+            Description = "Max height",
+            Project = "project-a",
+        };
+        var binding = new BindingRow();
+        binding.ValuesByVar["?b"] = "B1";
+        var result = new RuleEvaluationResult
+        {
+            RuleId = "R_HEIGHT",
+            RuleName = "Height",
+            RuleDescription = "Max height",
+            Passed = true,
+            Status = EvidenceStatus.Passed,
+        };
+
+        var package = ValidationPublishPackageBuilder.Build(
+            new[] { rule },
+            new[] { result },
+            new[] { binding });
+
+        var ruleResult = Assert.Single(package.RuleResults);
+        Assert.Equal(EvidenceStatus.Passed, ruleResult.Status);
+        Assert.True(ruleResult.Passed);
+    }
+
+    [Fact]
+    public void Build_ShouldPublishUnsupportedStatusRatherThanDisguisingItAsAViolation()
+    {
+        var rule = new Rule
+        {
+            Id = "R_HEIGHT",
+            Name = "Height",
+            Description = "Max height",
+            Project = "project-a",
+        };
+        var binding = new BindingRow();
+        binding.ValuesByVar["?b"] = "B1";
+
+        // An unsupported construct: Passed is false (non-authoritative, per the contract), but
+        // Status is Unsupported, not Failed — the evaluator never called this a violation.
+        var result = new RuleEvaluationResult
+        {
+            RuleId = "R_HEIGHT",
+            RuleName = "Height",
+            RuleDescription = "Max height",
+            Passed = false,
+            Status = EvidenceStatus.Unsupported,
+        };
+
+        var package = ValidationPublishPackageBuilder.Build(
+            new[] { rule },
+            new[] { result },
+            new[] { binding });
+
+        var ruleResult = Assert.Single(package.RuleResults);
+        Assert.Equal(EvidenceStatus.Unsupported, ruleResult.Status);
+        Assert.False(ruleResult.Passed);
+        // Status is not recomputed from Passed — an Unsupported result must not silently read as
+        // Failed just because Passed happens to be false.
+        Assert.NotEqual(EvidenceStatus.Failed, ruleResult.Status);
     }
 }
