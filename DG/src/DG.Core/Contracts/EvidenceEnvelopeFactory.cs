@@ -16,25 +16,6 @@ public static class EvidenceEnvelopeFactory
     public const string ContractVersion = "1.0.0";
 
     /// <summary>
-    /// Envelope-level roll-up precedence (worst-case-first), mirrored in
-    /// <c>data-service/evidence_contract.py::_ROLLUP_PRECEDENCE</c>. The first status present
-    /// among the rows, walking this order, is the roll-up. Implemented as an explicit ordered
-    /// list, never by boolean arithmetic or a max/min over enum ordinal values — either of which
-    /// would silently depend on declaration order.
-    /// </summary>
-    private static readonly EvidenceStatus[] RollupPrecedence =
-    {
-        EvidenceStatus.Error,
-        EvidenceStatus.Failed,
-        EvidenceStatus.Indeterminate,
-        EvidenceStatus.Unsupported,
-        EvidenceStatus.Unknown,
-        EvidenceStatus.NotEvaluated,
-        EvidenceStatus.NoPopulation,
-        EvidenceStatus.Passed,
-    };
-
-    /// <summary>
     /// Builds an <see cref="EvidenceEnvelope"/> with <paramref name="rows"/> sorted ascending by
     /// <see cref="EvidenceRow.ObjectId"/>, ties broken by <see cref="EvidenceRow.RuleId"/>
     /// (ordinal comparison, spec/EVIDENCE-CONTRACT.md section 4). Sets
@@ -43,8 +24,8 @@ public static class EvidenceEnvelopeFactory
     /// <see cref="CanonicalJsonWriter"/>'s constants respectively, and
     /// <see cref="EvidenceEnvelope.EmittedAt"/> from <see cref="DateTimeOffset.UtcNow"/> rendered
     /// RFC 3339 with a <c>Z</c> suffix. The envelope-level <see cref="EvidenceEnvelope.CanonicalStatus"/>
-    /// is derived from <paramref name="rows"/> by the explicit <see cref="RollupPrecedence"/> chain
-    /// unless <paramref name="rollUp"/> is supplied, in which case the override is used verbatim.
+    /// is derived from <paramref name="rows"/> by the explicit <see cref="StatusRollup.Precedence"/>
+    /// chain unless <paramref name="rollUp"/> is supplied, in which case the override is used verbatim.
     /// An empty <paramref name="rows"/> collection yields <see cref="EvidenceStatus.NotEvaluated"/>
     /// when no override is supplied — nothing was evaluated, so this cannot roll up to
     /// <see cref="EvidenceStatus.Passed"/>.
@@ -104,9 +85,10 @@ public static class EvidenceEnvelopeFactory
     }
 
     /// <summary>
-    /// Derives the envelope-level roll-up status from row statuses by explicit precedence
-    /// (never boolean arithmetic). An empty row list rolls up to
-    /// <see cref="EvidenceStatus.NotEvaluated"/> — distinct from
+    /// Derives the envelope-level roll-up status from row statuses by delegating to
+    /// <see cref="StatusRollup.Rollup"/> — the single shared precedence, never a second copy. An
+    /// empty row list rolls up to <see cref="EvidenceStatus.NotEvaluated"/> (matching
+    /// <see cref="StatusRollup.Rollup"/>'s empty-input default) — distinct from
     /// <c>data-service/evidence_contract.py</c>'s zero-row default of <c>no_population</c>, because
     /// this factory's own default for "nothing to roll up over" is "nothing was evaluated"; callers
     /// with a genuine rule-level <c>no_population</c> case (zero contributing rows for one
@@ -114,24 +96,7 @@ public static class EvidenceEnvelopeFactory
     /// </summary>
     private static EvidenceStatus RollupStatus(IReadOnlyCollection<EvidenceRow> rows)
     {
-        if (rows.Count == 0)
-        {
-            return EvidenceStatus.NotEvaluated;
-        }
-
-        var present = rows.Select(r => r.CanonicalStatus).ToHashSet();
-
-        foreach (var candidate in RollupPrecedence)
-        {
-            if (present.Contains(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        // Unreachable: RollupPrecedence enumerates every EvidenceStatus member, and `present` is
-        // non-empty when rows.Count > 0 above.
-        throw new InvalidOperationException("EvidenceEnvelopeFactory.RollupStatus: no precedence tier matched a non-empty row set. This indicates RollupPrecedence is missing an EvidenceStatus member.");
+        return StatusRollup.Rollup(rows.Select(r => r.CanonicalStatus));
     }
 
     /// <summary>
