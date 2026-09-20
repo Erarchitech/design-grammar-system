@@ -10,7 +10,7 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current Milestone: v12.0 Theory–Implementation Alignment (activated after v9.0 override closeout)
 
-**v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — Phases 822/823/824 verification deferred; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
+**v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — 822/823 since closed and passed 2026-07-13; **824 and 825 both remain `human_needed`**, 3 in-Rhino checks each — reconciled 2026-09-20 by GSD-ALIGN-010; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
 
 **Now:** **v12.0 Theory–Implementation Alignment** is activated as an isolated milestone package after v9.0 override closeout. The next action is standalone GSD control-plane reconciliation, followed by Phase 1200 planning. v9.0 artifacts are archived under `.planning/milestones/v9.0-phases/`; v12.0 roadmap and requirements are active.
 
@@ -49,13 +49,28 @@ Architects can express design constraints in plain language and instantly valida
 
 **Active milestone: v12.0 Theory–Implementation Alignment** (Phases 1200–1205; `.planning/REQUIREMENTS.md`)
 
-- [x] Phase 28: Cloud LLM connector + provider abstraction (shipped 2026-07-06)
-- [ ] Phase 29: DG-Aware Context Layer (SWRL + ontology + Cypher awareness) — **next to plan**
-- [ ] Phases 30–31: Orchestration evaluation (n8n vs OpenClaw) + rules ingest/edit rebuild on the context layer
-- [ ] Phases 32–37: Grasshopper canvas → Computgraph serialization pipeline (serialization core, DG canvas bridge, tagging, LLM recognition + on-canvas preview, persistence/display, structure-validation MVP)
-  - [x] Phase 32.1: Cross-Platform Identity and Mapping (DG ID) — shipped 2026-07-18, phase-verified 2026-07-27 (7/7 plans, DGID-01..06 all met); code review flagged 2 unresolved Critical findings (registry-anchor/publish-path label mismatch risking orphaned duplicate nodes; unescaped `|` in the cross-language hash join) — see `32.1-REVIEW.md`
-  - [x] Phase 33: DG Canvas Bridge (grasshopper-mcp adaptation) — shipped and phase-verified 2026-07-28 (4/4 plans, BRDG-01..04 all met, 9/9 must-haves); code review chain closed clean (10/10 in-scope critical+warning findings fixed across 2 iterations); the live in-Rhino end-to-end round-trip (Plan 04) was personally run and approved by the project user — resumed out of sequence since Phases 34–39 had already shipped in parallel
-- [ ] Phases 38–40: AI-generated script inputs, DesignState auto-validation investigation, E2E + docs
+> **Reconciled 2026-09-20 (GSD-ALIGN-001).** This section previously listed v9.0's phases 28–40
+> under the v12.0 heading, with "Phase 29 — **next to plan**". That was stale: v9.0 closed by
+> override closeout on 2026-09-19 and its phases are archived to
+> `.planning/milestones/v9.0-phases/`. The v9.0 phase ledger now lives in
+> `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`; the archived disposition is in
+> `.planning/milestones/v9.0-ROADMAP.md` and `v9.0-REQUIREMENTS.md` (47 complete / 9 deferred /
+> 4 pending).
+
+- [ ] **Phase 1200**: Contract, Status Vocabulary, Evidence Envelope, Golden Fixture — **next to plan** (context captured; GATE12-01 reconciliation now complete)
+- [ ] **Phase 1201**: Rule Parser and Evaluator Conformance
+- [ ] **Phase 1202**: Design State Replay and Per-Object Verdict Closure
+- [ ] **Phase 1203**: Identity Convergence and `ATTRIBUTE_OF` Decision — also owns the Phase 32.1 CR-01/CR-02 identity fixes (GSD-ALIGN-006)
+- [ ] **Phase 1204**: Determinism and LLM Reproducibility Benchmark
+- [ ] **Phase 1205**: Security and Tenancy Release Gate
+
+**Carried forward from v9.0 (closed, not active):**
+
+- Phase 35 SC1 / `RCGN-01` — recognition quality is a **measured FAIL** (M1 = 0.031 vs 0.60 gate on Corpus B / A3), not "blocked"; `RCGN-01` is **partial — plumbing satisfied, quality gate failed** (GSD-ALIGN-003). The A0f/A5 frontier-arm diagnostic remains open.
+- Phase 32.1 — `verified-with-open-review`; 2 unresolved Critical identity findings owned by Phase 1203 (GSD-ALIGN-006).
+- Phases 28, 29, 34, 36, 37, 38, 40 — `human_needed`, each pending live evidence. **Phase 40 remains the sole active closeout owner** (GSD-ALIGN-013, GATE12-04 — v12.0 cannot mark these passed).
+- `ORCH-01..04` + `RING-01..05` (9 requirements) — formally **deferred to v10.0**.
+- Phase 39 — `verified-with-warnings`; W-39-A, W-39-B, F-39-01 remain disclosed open items (GSD-ALIGN-009).
 
 **Defined but NOT activated: v9.1 DG Canvas Chatbot Node** (Phases 910–917, 41 requirements; `.planning/milestones/v9.1-REQUIREMENTS.md` + `v9.1-ROADMAP.md`, defined 2026-07-27) — reassembles the five v9.0 canvas-intelligence components into one auto-listening chatbot node with an Eto chat window and a `/dg-` slash-command namespace (Ant analogy). Isolated like v10.0/v4.0: it does not touch `.planning/phases/`, STATE.md, or this Current Milestone section. Activates via `/gsd-new-milestone` once v9.0 Phases 32–36 are verified.
 

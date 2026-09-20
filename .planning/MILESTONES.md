@@ -12,7 +12,16 @@
 
 **Phases completed:** 5 phases, 19 plans, 44 tasks
 **Closeout:** override closeout — **Known verification overrides: 3** (Phases 822 & 824 in-app/in-Rhino UAT deferred; Phase 823 closed via user-approved checkpoint with no formal VERIFICATION.md — see STATE.md `## Deferred Items`)
-**Override status update (2026-07-13 gap-closure session):** 2 of 3 closed — Phase 822's three frontend UAT scenarios executed live and **passed** (822-UAT.md; 822-VERIFICATION.md now `passed`); Phase 823 received a formal retroactive **823-VERIFICATION.md** (`passed`, 4/4 — fresh in-container suites: dg-reasoner 39/39, data-service 168/168, DG 234/234). Phase 824's 3 in-Rhino checks remain the only open item (needs live Rhino/Grasshopper — 824-UAT.md).
+**Override status update (2026-07-13 gap-closure session):** 2 of 3 closed — Phase 822's three frontend UAT scenarios executed live and **passed** (822-UAT.md; 822-VERIFICATION.md now `passed`); Phase 823 received a formal retroactive **823-VERIFICATION.md** (`passed`, 4/4 — fresh in-container suites: dg-reasoner 39/39, data-service 168/168, DG 234/234). Phase 824's 3 in-Rhino checks remain open (needs live Rhino/Grasshopper — `824-UAT.md`).
+
+**Reconciled 2026-09-20 (GSD-ALIGN-010):** 824 is **not** the only open v8.2 item. **Phase 825 (CONNECTOR token simplification)** is a separate follow-up phase, added after the original 5-phase v8.2 scope, and `825-VERIFICATION.md` is also `human_needed` with `behavior_unverified: 3` — its own 3 in-Rhino checks in `825-UAT.md`. Both are listed separately below; 822 and 823 are closed and are **not** counted as outstanding.
+
+| Phase | Verification | UAT file | Status |
+|---|---|---|---|
+| 822 OWL 2 DL + Reasoner wiring | `passed` | `822-UAT.md` | closed 2026-07-13 |
+| 823 SHACL Validation Layer | `passed` | *(retroactive verification)* | closed 2026-07-13 |
+| 824 CONNECTOR credential integration | `human_needed` | `824-UAT.md` | **OPEN** — 3 in-Rhino checks |
+| 825 CONNECTOR token simplification | `human_needed` | `825-UAT.md` | **OPEN** — 3 in-Rhino checks (follow-up phase) |
 
 **Key accomplishments:**
 

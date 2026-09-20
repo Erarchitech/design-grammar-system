@@ -1,13 +1,23 @@
 ---
 phase: 39
 slug: designstate-auto-validation-investigation
-status: planned
+status: passed-with-warnings
 nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-27
 ---
 
 # Phase 39 — Validation Strategy
+
+> **Reconciled 2026-09-20 (GSD-ALIGN-009).** Frontmatter `status:` was `planned` while
+> `39-VERIFICATION.md` recorded `passed` (26/26 must-haves, 2026-07-28). The two now agree.
+> `passed-with-warnings` preserves W-39-A (spec/DATABASE.md does not document the widened
+> `:ValidationRun` semantics), W-39-B (stale ~1.5 s SHACL round-trip figure in
+> `39-03-SUMMARY.md:132`), and F-39-01 (auto-runs SHACL-validated before their own `ValidStatus`
+> is written) as **disclosed open items**, not as failures hidden by a passed status.
+> This phase remains "Investigation + prototype + ADR only" — it is **not** production
+> auto-validation completion. See `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
+
 
 > Per-phase validation contract for feedback sampling during execution.
 

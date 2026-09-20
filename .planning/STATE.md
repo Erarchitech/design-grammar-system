@@ -5,10 +5,10 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1200
 current_phase_name: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
 status: ready_to_plan
-stopped_at: Phase 1200 context gathered (blocked on GATE12-01 reconciliation)
-last_updated: "2026-09-20T00:12:35.423Z"
-last_activity: 2026-09-19
-last_activity_desc: v9.0 override closeout complete; v12.0 package activated with accepted carry-forward debt
+stopped_at: GATE12-01 control-plane reconciliation complete; Phase 1200 ready to plan
+last_updated: "2026-09-20T12:00:00+01:00"
+last_activity: 2026-09-20
+last_activity_desc: GATE12-01 standalone control-plane reconciliation executed — 8 auto items reconciled, 3 manual left open, 2 skip unchanged; Phase 1200 unblocked
 progress:
   total_phases: 6
   completed_phases: 0
@@ -30,8 +30,13 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 1200 — Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
 Plan: Not started
-Status: Ready to plan after standalone control-plane reconciliation
-Last activity: 2026-09-19 — v9.0 override closeout complete; v12.0 package activated with accepted carry-forward debt
+Status: **Ready to plan** — GATE12-01 standalone control-plane reconciliation COMPLETE (2026-09-20)
+
+**GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
+010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
+classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
+(011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
+Last activity: 2026-09-20 — GATE12-01 control-plane reconciliation executed; Phase 1200 unblocked
 
 **Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
 Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
@@ -67,7 +72,8 @@ Deferred at v8.2 milestone close on 2026-07-12 (override closeout); **2 of 3 clo
 |----------|------|--------|--------|
 | verification | Phase 822 (OWL 2 DL + Reasoner wiring) | **closed 2026-07-13 — passed** | All 3 frontend UAT scenarios executed live and passed (real kill-on-timeout → Inconclusive; Inconsistent verdict with human labels; Run/Cancel/Consistent click-through) — see archived 822-UAT.md; 822-VERIFICATION.md now `status: passed` |
 | verification | Phase 823 (SHACL Validation Layer) | **closed 2026-07-13 — passed** | Retroactive 823-VERIFICATION.md written (4/4 truths; fresh in-container suites dg-reasoner 39/39 + data-service 168/168, DG 234/234; live /shacl/validate round-trip) |
-| verification | Phase 824 (CONNECTOR Credential) | human_needed | /gsd-verify-work 824 — 3 in-Rhino UAT checks (live Grasshopper + data-service); the ONLY remaining v8.2 verification item |
+| verification | Phase 824 (CONNECTOR Credential) | human_needed | /gsd-verify-work 824 — 3 in-Rhino UAT checks (live Grasshopper + data-service) |
+| verification | Phase 825 (CONNECTOR Token Simplification) | human_needed | /gsd-verify-work 825 — 3 in-Rhino UAT checks (`825-UAT.md`); follow-up phase added after the original v8.2 scope. **Added 2026-09-20 by GSD-ALIGN-010** — was omitted from this table although `825-VERIFICATION.md` has carried `human_needed` / `behavior_unverified: 3` since 2026-07-13 |
 
 The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad-token Error / service-down Warning with outputs still populating; internalised token scrubbed from a saved `.gh` + old canvas opens) are in `.planning/milestones/v8.2-phases/824-connector-credential-integration/824-UAT.md`. All automatable checks (build, 234 unit tests, source assertions) pass. Confirmed 2026-07-13: `dotnet test` runs clean on net9.0 without `DOTNET_ROLL_FORWARD` (the old "net9.0 runtime absent" blocker is stale — removed from Blockers). One intermittent order-dependent flake observed once in `DG.Tests.E2E.DesignStateValidationFlowTests.HappyPath_StatePublishAndRetrieve` (passes in isolation and on re-run) — follow-up task flagged.
 
@@ -385,7 +391,8 @@ Shipped from Phase 20 Plan 02:
 - **USER APPROVAL NEEDED**: run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` — v2.0-era validation runs (project TestA, 20 runs/1148 entities) invisible to data-service until then (auto-mode denied the bulk mutation)
 - Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted — note: `v8-ui-smoke` is currently the reasoner/SHACL verification fixture (822/823 evidence runs use it), so keep it until an alternative fixture project exists
 - Phase 28 UAT item "E2E provider switch" still human-needed (cloud-llm-connector, archived in .planning/milestones/v9.0-phases/28-cloud-llm-connector/)
-- Phase 824's 3 in-Rhino UAT checks — the only remaining v8.2 verification item (see Deferred Items)
+- Phase 824's 3 in-Rhino UAT checks (see Deferred Items)
+- Phase 825's 3 in-Rhino UAT checks (see Deferred Items) — **added 2026-09-20 by GSD-ALIGN-010**; 824 and 825 are two open v8.2 items, not one
 - Consider a phase (825–829 free block or v9.0 insert) for the reasoner value gap: post-ingest/edit consistency gate + taxonomy emission on ingest + staged-autonomy repair — analysis in `.planning/research/REASONER-VALUE-AND-AUTOREPAIR.md` (2026-07-13)
 - ~~Reconcile n8n workflows~~ — RESOLVED in Phase 29-05 (2026-07-12): both live workflows overwritten with repo content and re-verified byte-identical
 - ~~Formal `/gsd-complete-milestone` pass for v8.1~~ — RESOLVED 2026-07-13: MILESTONES.md entry written, retroactive VERIFICATION.md for 810–813, 813-01-SUMMARY, requirement checkboxes/traceability flipped, RETROSPECTIVE v8.1 section added

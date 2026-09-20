@@ -1,7 +1,7 @@
 # Phase 1200: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture - Context
 
 **Gathered:** 2026-09-20
-**Status:** Ready for planning — **BLOCKED on GATE12-01** (see `<blocking_prerequisite>`)
+**Status:** Ready for planning — **GATE12-01 CLEARED 2026-09-20**
 
 <domain>
 ## Phase Boundary
@@ -35,19 +35,43 @@ make DE-01 produce real evidence.
 </domain>
 
 <blocking_prerequisite>
-## GATE12-01 — Control-plane reconciliation must complete first
+## GATE12-01 — Control-plane reconciliation — **CLEARED 2026-09-20**
 
-**Status as of 2026-09-20: NOT DONE.** No completion marker exists on disk
-(`.planning/` has no reconciliation record; `gsd-proposed-updates.json` shows 13 items
-unreconciled — 8 `auto`, 3 `manual`, 2 `skip`).
+**Status: SATISFIED.** The standalone pass was executed on 2026-09-20.
+Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
+
+All 8 `auto`-class items are reconciled from disk evidence. The 3 `manual` items (005, 008, 013)
+remain open by their own classification — they require a live environment and **do not block
+Phase 1200**. The 2 `skip` items (011, 012) are unchanged.
+
+**What changed that Phase 1200 planning depends on:**
+
+- **GSD-ALIGN-001** — `.planning/PROJECT.md` had listed v9.0's phases 28–40 under the v12.0
+  heading with "Phase 29 — next to plan"; replaced with the real v12.0 list plus a v9.0
+  carry-forward block. A broken evidence chain was found and corrected: the v9.0 archive claimed
+  its traceability record was "preserved unchanged" at `.planning/REQUIREMENTS.md`, but commit
+  `0e46ec3` had overwritten it with v12.0's. Counts re-derived from git history: **47 / 9 / 4 = 60**,
+  agreeing exactly with the archive.
+- **GSD-ALIGN-002** — UAT coverage recomputed from raw scans: **17 files / 42 items /
+  4 block-scalar fields**. The `audit-uat` CLI now returns **0/0** (worse than the 5/10 the
+  register recorded) because it scans `.planning/phases/` only, which is empty after archival.
+  The ledger's raw inventory is the authoritative coverage record until that is fixed.
+- **GSD-ALIGN-003** — Phase 35 SC1 is now recorded as a **measured FAIL** (M1 = 0.031 vs the 0.60
+  gate, Corpus B / arm A3, n = 32), not "blocked". `RCGN-01` reads *partial — plumbing satisfied,
+  quality gate failed*. No control-plane document claims a passing recognition gate.
+
+**Historical note — the original blocking analysis, retained:**
+
+Before the pass, no completion marker existed on disk and `gsd-proposed-updates.json` showed all
+13 items unreconciled (8 `auto`, 3 `manual`, 2 `skip`).
 
 `.planning/milestones/v12.0-CONTEXT.md` § `<sequencing>` is explicit and says it twice:
 the reconciliation runs as a **standalone pass, not as Phase 1200 task 1**, and its completion
 is a **hard sequencing prerequisite** for v12.0 planning and execution.
 
-**Do not fold it into this phase's plans.** Run it, then plan 1200.
+It was **not** folded into this phase's plans. It ran first; 1200 planning follows.
 
-**Items that bind this phase specifically:**
+**Items that bound this phase specifically — all now reconciled:**
 
 | Item | Class | Why it blocks 1200 |
 |---|---|---|
@@ -55,8 +79,8 @@ is a **hard sequencing prerequisite** for v12.0 planning and execution.
 | `GSD-ALIGN-002` | auto | UAT coverage register from raw per-file scans. 1200's gate wording depends on knowing true UAT status; the `audit-uat` CLI is known to undercount (5 files/10 items vs 17 raw) |
 | `GSD-ALIGN-003` | auto | Phase 35 SC1 recorded as measured FAIL (M1 = 0.03125 vs 0.60 gate), not blocked. Affects what "passed" may honestly mean in control-plane docs |
 
-`manual` items (005, 008, 013) need live observation and stay unresolved — they do **not**
-block 1200. `skip` items (011, 012) must not be reopened.
+`manual` items (005, 008, 013) need live observation and remain unresolved — they do **not**
+block 1200. `skip` items (011, 012) were not reopened.
 
 </blocking_prerequisite>
 
