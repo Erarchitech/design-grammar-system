@@ -29,4 +29,16 @@
     </None>
   </ItemGroup>
 
+  <!--
+    fixtures/golden/ is the single shared cross-service golden fixture (spec/EVIDENCE-CONTRACT.md
+    section 7, D-09/D-10/D-11) read identically by all four DE-01 legs. This climbs outside the
+    project directory deliberately: per-service copies of this fixture are forbidden, so the C#
+    leg reads the same repo-root bytes the Python/dg-reasoner legs read instead of a duplicated copy.
+  -->
+  <ItemGroup>
+    <None Include="..\..\..\fixtures\golden\**\*.json" Link="Fixtures\golden\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
