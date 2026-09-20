@@ -1,4 +1,5 @@
 {
+  "_supersession_note": "SUPERSEDED_BY (Rule -> Rule, debug session rule-ingest-no-conflict-check, 2026-09-19) is NOT part of this per-example connections[] shape and MUST NOT be emitted by LLM ingest -- it is written only by POST /rules/supersede (data-service/app.py) as Replace/Update provenance from the ingest conflict-check gate. See spec/RULE-PARTITION-POLICY.md's 'Corpus-Level Authoring-Time Conflict Check' addendum and cypher_template.txt's document-only SUPERSEDED_BY block.",
   "id": "string_unique",
   "layer": "DesignGrammar.Communication | DesignGrammar.Validation",
   "task": "nl_to_swrl_and_metagraph",

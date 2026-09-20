@@ -177,6 +177,93 @@ export async function bulkDeleteRules(project, ruleIds) {
   return res.json();
 }
 
+// POST /rules/check-conflict → { grounding, conflict, matches[] }. Read-only
+// preview stage (paper T1 ITcon R15.6 §4): call this BEFORE ingestRules() so
+// the blocking dialog can run entirely client-side, ahead of the n8n
+// webhook. `grounding` is null and `conflict` is false whenever the NL text
+// could not be confidently resolved to a known Class+DatatypeProperty+
+// comparator in this project — treat that identically to "no conflict".
+export async function checkRuleConflict(project, rulesText) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(`${dataServiceUrl}/rules/check-conflict`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, rules_text: rulesText })
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// POST /rules/supersede → records old→new SUPERSEDED_BY provenance. Call
+// AFTER ingestRules() has written the new rule (Replace/Update dialog
+// actions): the new Rule_Id must already exist in the graph before this
+// call can link to it.
+export async function supersedeRule(project, oldRuleId, newRuleId, prompt) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(`${dataServiceUrl}/rules/supersede`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, oldRuleId, newRuleId, prompt: prompt || "" })
+  });
+  if (!res.ok) {
+    let detail = "";
+    let code = "";
+    let hint = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+      code = j?.detail?.code || "";
+      hint = j?.detail?.hint || "";
+    } catch {
+      /* non-JSON body */
+    }
+    // `code`/`hint` are attached (not just folded into the message) so a
+    // caller can distinguish a REFUSED supersede (RULE_NOT_PUBLISHABLE —
+    // the old rule was correctly left untouched) from a transient/network
+    // failure, and show the actionable hint rather than just the error —
+    // see GraphScreen.jsx's runIngestWithConflictCheck for why this
+    // distinction matters (live UAT regression, debug session
+    // rule-ingest-no-conflict-check, 2026-09-19).
+    const err = new Error(detail || `HTTP ${res.status}`);
+    err.code = code;
+    err.hint = hint;
+    throw err;
+  }
+  return res.json();
+}
+
+// POST /rules/accept-overlap → provenance-only annotation for "Keep both".
+// Call AFTER ingestRules() has written the new rule. Never blocks or
+// mutates the rule corpus — records that the overlap was seen and accepted.
+export async function acceptRuleOverlap(project, ruleId, conflictsWith) {
+  const { dataServiceUrl } = getConfig();
+  const res = await fetch(`${dataServiceUrl}/rules/accept-overlap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, ruleId, conflictsWith: conflictsWith || [] })
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.detail?.error || j?.detail || "";
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchProjects() {
   const json = await executeCypher(
     "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"
