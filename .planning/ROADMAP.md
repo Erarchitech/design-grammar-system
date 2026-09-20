@@ -52,6 +52,15 @@ v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LL
 
 **Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 1200-01-PLAN.md — Publish `spec/EVIDENCE-CONTRACT.md` + JSON Schema annex; bounded propagation (wave 1)
+- [ ] 1200-02-PLAN.md — Frozen golden fixture, Neo4j seed, manifest, canonical golden vectors, fixture reachability (wave 1)
+- [ ] 1200-03-PLAN.md — Python leg: canonical JSON, typed status + envelope models, additive sidecar persistence (wave 2)
+- [ ] 1200-04-PLAN.md — C# leg: `EvidenceStatus`, `CanonicalJsonWriter`, envelope DTO, cross-language hash parity (wave 2)
+- [ ] 1200-05-PLAN.md — DE-01 runner across four legs, dual-format report, owner acceptance gate (wave 3)
+
 ### Phase 1201: Rule Parser and Evaluator Conformance
 
 **Goal:** Make the implemented C# rule subset explicit and safe.

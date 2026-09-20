@@ -60,11 +60,22 @@ refined once PLAN.md files exist.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | ALGN12-01 | — | N/A | unit | schema-driven set-equality on `$defs.Status.enum` (8 values exactly) — `dotnet test --filter EvidenceContractTests` / `pytest test_evidence_contract.py` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ALGN12-02 | T-1200-V5 | Envelope input validated mechanically by the schema, not by reading | unit + schema validation | `jsonschema.validate(envelope, schema)` per leg | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ALGN12-03 | — | N/A | fixture-content assertion (unit) | `pytest test_golden_fixture_shape.py` — asserts 4 atom types, 2 mixed-outcome objects, Design State, geometry reference | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ALGN12-04 | T-1200-V6 | SHA-256 integrity hashes detect cross-leg divergence | integration (live stack) | DE-01 runner + thin wrapper asserting `silent_disagreement_count == 0` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ALGN12-02 (D-07) | T-1200-V6 | Canonical form is byte-identical across Python and C# | unit (cross-language golden vectors) | shared canonical-JSON test-vector file asserted by BOTH pytest and xunit | ❌ W0 | ⬜ pending |
+| 01-T1 | 1200-01 | 1 | ALGN12-01, ALGN12-02 | T-1200-02 | Contract states the boolean→canonical direction is forbidden | doc assertion | grep gate on all 8 status names + section count in `spec/EVIDENCE-CONTRACT.md` | ❌ W0 | ⬜ pending |
+| 01-T2 | 1200-01 | 1 | ALGN12-01 | T-1200-01, T-1200-05 | Schema enum is the single vocabulary authority; `additionalProperties: false` | unit | `Draft202012Validator.check_schema` + set-equality on `$defs.CanonicalStatus.enum` | ❌ W0 | ⬜ pending |
+| 01-T3 | 1200-01 | 1 | ALGN12-02 | T-1200-03 | Propagation bounded to 3 files (D-16) | source assertion | grep gate on `spec/DATABASE.md`, `CLAUDE.md`, `.planning/REQUIREMENTS.md` | ❌ W0 | ⬜ pending |
+| 02-T1 | 1200-02 | 1 | ALGN12-03 | T-1200-10 | Golden-vector digests recomputed, not trusted | fixture-content assertion | python shape check: 4 atom types, mixed outcomes, 3-kind Design State, geometry ref, ordering, digest recompute | ❌ W0 | ⬜ pending |
+| 02-T2 | 1200-02 | 1 | ALGN12-03 | T-1200-06, T-1200-07 | Every seeded node carries `project`; static literal Cypher | source assertion | python parse of `fixtures/golden/seed.cypher` statements | ❌ W0 | ⬜ pending |
+| 02-T3 | 1200-02 | 1 | ALGN12-03 | T-1200-08 | Narrow read-only fixture mount, not a repo-root mount | integration | `docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json` | ❌ W0 | ⬜ pending |
+| 03-T1 | 1200-03 | 2 | ALGN12-02 (D-07) | T-1200-16 | Canonical form byte-identical to C# | unit (golden vectors) | `docker compose exec -T data-service pytest tests/test_canonical_json.py -x -q` | ❌ W0 | ⬜ pending |
+| 03-T2 | 1200-03 | 2 | ALGN12-01, ALGN12-02, ALGN12-03 | T-1200-14, T-1200-16 | Enum schema-pinned; no boolean→canonical function | unit + schema validation | `docker compose exec -T data-service pytest tests/test_evidence_contract.py tests/test_golden_fixture_shape.py -x -q` | ❌ W0 | ⬜ pending |
+| 03-T3 | 1200-03 | 2 | ALGN12-02 | T-1200-11, T-1200-12, T-1200-13 | Parameterized write; never-raises read; publish path protected | unit | `docker compose exec -T data-service pytest tests/test_evidence_contract.py -x -q` + full-suite baseline | ❌ W0 | ⬜ pending |
+| 04-T1 | 1200-04 | 2 | ALGN12-01 | T-1200-20 | C# wire forms schema-pinned by test | unit | `dotnet test DG/tests/DG.Tests/DG.Tests.csproj --filter FullyQualifiedName~EvidenceContractTests` | ❌ W0 | ⬜ pending |
+| 04-T2 | 1200-04 | 2 | ALGN12-02 (D-07) | T-1200-17, T-1200-18 | Ordinal key sort, no serializer defaults; parity with Python | unit (golden vectors) | `dotnet test ... --filter FullyQualifiedName~CanonicalJsonWriterTests` | ❌ W0 | ⬜ pending |
+| 04-T3 | 1200-04 | 2 | ALGN12-02 | T-1200-19, T-1200-21 | Roll-up precedence mirrors Python; no boolean→status | unit | `dotnet test ... --filter FullyQualifiedName~EvidenceContractTests` + `dotnet build DG/DG.sln -c Release` | ❌ W0 | ⬜ pending |
+| 05-T1 | 1200-05 | 3 | ALGN12-04 | T-1200-24 | Harness envelope schema-validated; evaluator untouched | integration | `dotnet run --project DG/tools/DG.De01Harness` + `jsonschema.validate` on stdout | ❌ W0 | ⬜ pending |
+| 05-T2 | 1200-05 | 3 | ALGN12-04 | T-1200-23, T-1200-25, T-1200-28 | No dropped/coerced difference; per-leg graceful degradation | unit + integration (live stack) | `pytest tools/de01/tests/test_de01_runner.py -x -q -k "not live"` + full DE-01 run asserting `silent_disagreement_count == 0` | ❌ W0 | ⬜ pending |
+| 05-T3 | 1200-05 | 3 | ALGN12-04 | — | N/A | doc assertion | grep gate on `tools/de01/README.md` | ❌ W0 | ⬜ pending |
+| 05-T4 | 1200-05 | 3 | ALGN12-01, ALGN12-02, ALGN12-04 | T-1200-23 | Comparison code reviewed for silent-difference paths | manual (blocking checkpoint) | none — `checkpoint:human-verify`, see Manual-Only Verifications below | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
