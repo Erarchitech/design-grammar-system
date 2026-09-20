@@ -206,10 +206,17 @@ class TestCompareLegsUnavailableLeg:
         )
         result = compare_legs({"a": leg_a, "b": leg_b})
         assert len(result.rows) == 1
-        # passed vs error with a warning IS declarable (error is in the declarable
-        # vocabulary), so this is a declared non-equivalence, not silent.
-        assert result.rows[0].classification == "declared_non_equivalence"
-        assert result.silent_disagreement_count == 0
+        # error is in the declarable vocabulary and carries a warning, but the
+        # OTHER leg's status (passed) is not itself declarable -- the docstring's
+        # rule (report.py lines 4-17) requires EVERY differing leg's status to be
+        # declarable-and-warned before a difference is declared. `passed` is a
+        # lone non-declarable status here, so this is silent, not declared
+        # (CR-02: this assertion previously certified the same defect the
+        # dedicated regression tests in TestCompareLegsSilentDisagreement catch).
+        # The unavailable leg's error row is still visible in the output, which
+        # is this test's actual subject -- see len(result.rows) == 1 above.
+        assert result.rows[0].classification == "silent_disagreement"
+        assert result.silent_disagreement_count == 1
 
 
 class TestCompareLegsNeverLosesADifference:

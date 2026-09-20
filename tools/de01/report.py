@@ -162,11 +162,17 @@ def compare_legs(leg_results: dict[str, LegResult]) -> ComparisonResult:
                     else:
                         reasons.append(f"{leg_name}: {row['warnings'][0]}")
 
-            # If a non-declarable status differs from another leg's status (e.g.
-            # two legs disagree passed vs failed), that is never declarable no
-            # matter what else is present.
+            # Any non-declarable status participating in a difference makes that
+            # difference silent, regardless of how many distinct non-declarable
+            # statuses are present and regardless of what the other legs
+            # reported. CR-02 (1200-REVIEW.md): the previous form of this guard
+            # only fired when more than one distinct non-declarable status was
+            # present, which let a lone non-declarable status (e.g. one leg
+            # reporting `passed`, the sole non-declarable status here) pass
+            # through as declared just because it was alone. Do not narrow this
+            # back to a size-based condition.
             non_declarable_statuses = statuses_seen - _DECLARABLE_STATUSES
-            if len(non_declarable_statuses) > 1:
+            if non_declarable_statuses:
                 all_declarable_with_warning = False
 
             if all_declarable_with_warning and reasons:
