@@ -41,10 +41,11 @@ namespace DG.Core.Services;
 /// and are documented as pre-contract; only new captures adopt the capture-event key.
 /// </para>
 /// <para>
-/// <see cref="ComputeParamStateId"/>, <see cref="ComputeObjectStateId"/>, and
-/// <see cref="ComputePropStateId"/> are member-level minting, cross-referenced here for
-/// completeness — they are unaffected by this aggregate-level two-layer identity change; each
-/// remains a single content-addressed id for its own state kind.
+/// <see cref="ComputeParamStateId"/>, <see cref="ComputeObjectStateId"/>,
+/// <see cref="ComputeObjectStateIdFromRef"/>, and <see cref="ComputePropStateId"/> are
+/// member-level minting, cross-referenced here for completeness — they are unaffected by this
+/// aggregate-level two-layer identity change; each remains a single content-addressed id for its
+/// own state kind.
 /// </para>
 /// </summary>
 public static class DesignStateIdGenerator
@@ -93,6 +94,41 @@ public static class DesignStateIdGenerator
     public static string ComputeObjectStateId(string projectId, string objectInstanceId, string variableName)
     {
         var input = $"{projectId}|{objectInstanceId}|{variableName}";
+        return ObjectStatePrefix + HashToHex16(input);
+    }
+
+    /// <summary>
+    /// Produces an OS_-prefixed StateId: OS_&lt;SHA256(objectRef|classIri-or-sentinel)&gt; for the
+    /// ObjState model, from what the OBJECT STATE Grasshopper component actually has on its
+    /// canvas (an <c>objectRef</c> and a resolved <c>classIri</c>) rather than the per-rule-variable
+    /// inputs <see cref="ComputeObjectStateId"/> expects.
+    ///
+    /// <para>
+    /// <b>Why this exists alongside <see cref="ComputeObjectStateId"/>:</b> the 3-arg method above
+    /// is the per-rule-variable form (CMPST-07 — Object variables shared across rules, keyed by
+    /// project + instance + variable name); its semantics are deliberately different and it is
+    /// left untouched. <c>ObjectStateComponent</c> has no Project input port and no
+    /// per-geometry-instance variable-name concept, so synthesizing fake values for either would
+    /// satisfy the signature in name while destroying the meaning the 3-arg method's own
+    /// doc-comment promises. This overload is the per-geometry-instance form the component
+    /// actually needs (Phase 1202, D-04).
+    /// </para>
+    /// <para>
+    /// <b>Label is deliberately NOT folded in</b> — this reverses the behavior of the private
+    /// duplicate this overload replaces (<c>ObjectStateComponent.ComputeObjStateId</c>, deleted),
+    /// which hashed <c>objectRef|label</c>. Renaming an object's Label no longer changes its
+    /// ObjState identity; only its <c>objectRef</c> and <c>classIri</c> do, because those are what
+    /// the object structurally *is*, not how it is currently displayed.
+    /// </para>
+    /// <para>
+    /// A null <paramref name="classIri"/> (captured before a class is wired) is hashed against a
+    /// stable sentinel rather than an empty string or a crash, so the id is still deterministic.
+    /// </para>
+    /// </summary>
+    public static string ComputeObjectStateIdFromRef(string objectRef, string? classIri)
+    {
+        const string NoClassIriSentinel = "\u0000no-class-iri\u0000";
+        var input = $"{objectRef}|{classIri ?? NoClassIriSentinel}";
         return ObjectStatePrefix + HashToHex16(input);
     }
 

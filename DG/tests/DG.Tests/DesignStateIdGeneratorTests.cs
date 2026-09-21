@@ -99,6 +99,76 @@ public sealed class DesignStateIdGeneratorTests
         Assert.NotEqual(id1, id2);
     }
 
+    // --- Phase 1202 Plan 06 Task 1: ComputeObjectStateIdFromRef (D-04 minting convergence) ---
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_ShouldReturnOsPrefixed16HexId()
+    {
+        var id = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+
+        Assert.StartsWith("OS_", id);
+        Assert.Equal("OS_".Length + 16, id.Length);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_ShouldBeSame_WhenOnlyLabelDiffers()
+    {
+        // Label is no longer identity-bearing (D-04): the OBJECT STATE component's Label input
+        // must not affect the ObjState id it mints, reversing the deleted duplicate's behavior.
+        var id1 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+        var id2 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+
+        Assert.Equal(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_ShouldChange_WhenObjectRefChanges()
+    {
+        var id1 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+        var id2 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-43", "ex:Building");
+
+        Assert.NotEqual(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_ShouldChange_WhenClassIriChanges_SameObjectRef()
+    {
+        var id1 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+        var id2 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Site");
+
+        Assert.NotEqual(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_NullClassIri_IsDeterministic_NotACrash()
+    {
+        var id1 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", null);
+        var id2 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", null);
+
+        Assert.Equal(id1, id2);
+        Assert.StartsWith("OS_", id1);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_NullClassIri_DiffersFrom_NonNullClassIri()
+    {
+        // The null-classIri sentinel must not collide with any real classIri string.
+        var withNull = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", null);
+        var withClass = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+
+        Assert.NotEqual(withNull, withClass);
+    }
+
+    [Fact]
+    public void ComputeObjectStateId_ThreeArg_ShouldRemainByteIdentical_ForFixedRegressionVector()
+    {
+        // Regression pin: the 3-arg per-rule-variable method's output for a fixed input must be
+        // byte-identical to its behavior before this plan added the additive overload above.
+        var id = DesignStateIdGenerator.ComputeObjectStateId("proj-1", "OS_abc123", "?b");
+
+        Assert.Equal("OS_493B9A7153D92072", id);
+    }
+
     [Fact]
     public void ComputePropStateId_ShouldBeDeterministic_ForSameInputs()
     {

@@ -4,8 +4,6 @@ using DG.Core.Services;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using System.Drawing;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace DG.Grasshopper.Components;
 
@@ -119,7 +117,7 @@ public sealed class ObjectStateComponent : GH_Component
                 ?? GeometryReferenceId(geometryGoos[i])
                 ?? $"obj_{i}";
 
-            var stateId = ComputeObjStateId(objectRef, label);
+            var stateId = DesignStateIdGenerator.ComputeObjectStateIdFromRef(objectRef, classIri);
 
             results.Add(new DG.ObjState
             {
@@ -187,13 +185,6 @@ public sealed class ObjectStateComponent : GH_Component
         return null;
     }
 
-    private static string ComputeObjStateId(string objectRef, string? label)
-    {
-        var input = $"{objectRef}|{label ?? ""}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        var hex = Convert.ToHexString(hash)[..16];
-        return $"OS_{hex}";
-    }
 }
 #else
 namespace DG.Grasshopper.Components;
