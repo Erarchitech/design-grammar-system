@@ -96,10 +96,50 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - `statePayloadJson` = v2 JSON envelope with `objStates`/`paramStates`/`propStates` keys, each containing typed state arrays
 - StateId prefix: `OS_` for ObjState, `DS_` for ParamState, `PS_` for PropState
 - Persisted with `graph = 'ValidGraph'` (not Metagraph — corrected in v7.0)
+- `canonicalStateHash` (Phase 1202 plan 05, D-01/D-02, ALGN12-09) — a 64-character uppercase hex
+  SHA-256 digest over the canonical DesignState projection (StateId-sorted, geometry-excluded —
+  see the declared exclusion below), extending Phase 1200's cross-language hasher rather than
+  inventing a second one. Produced by `DesignStateCanonicalProjection.ComputeHash` (C#) /
+  `design_state_projection.compute_state_hash` (Python), both delegating to
+  `CanonicalJsonWriter.HashCanonical` / `canonical_json.hash_canonical`. **Queryable, but NOT
+  identity-bearing** — content-equivalent DesignStates hash identically, but the node's identity
+  (its `StateId`, per D-01's capture-event key below) does not derive from this hash. Absence on a
+  `DesignState` means **not recorded, never an error**, on any state captured before this phase
+  (D-03, additive-no-rewrite — no backfill). The sibling `canonicalizationVersion` property (an
+  integer, mirroring the evidence envelope's own field of the same name) records which
+  canonicalization rule set produced the hash, so a future rule change never makes an old hash
+  silently ambiguous.
 - **Two writers** (amended Phase 38 — the prior single-writer-by-VALIDATOR claim no longer holds):
   - the VALIDATOR publish path (unchanged) — MERGE'd by `StateId` + `project` (dedup across runs); and
   - `POST /computgraph/candidates/accept` (Phase 38, GHIN-03/D-18/D-21), which writes a **standalone, Run-less** `ParamState` `DesignState` for an architect-accepted AI-generated candidate, carrying the provenance properties shown on the fourth example line above (`source`, `sourceRuleId`, `provider`, `model`, `confidence`, `definitionId`, `publishedAt`, `strategy`, `determinabilityClass`, `generatedAt`). MERGE keyed by `StateId` + `project` remains the rule for both writers, so re-accepting an AI candidate is equally idempotent.
+- **Two-layer identity (Phase 1202 plan 05, D-01, ALGN12-08) — amends the MERGE note above for new
+  captures.** As of this phase, DesignState identity is **both layers**: a **capture-event
+  identity as the node key** (`DesignStateIdGenerator.ComputeCaptureEventStateId`, which folds
+  `capturedAtUtc` into the key so two captures of otherwise-identical content are distinct nodes),
+  plus the **content hash stored as the `canonicalStateHash` property** above (queryable, not
+  identity-bearing). **Direct consequence:** `MERGE` on `StateId` + `project` no longer dedupes a
+  *recapture* for new captures — recapturing the same design content at a different time now
+  produces a new node rather than matching the prior one, because `capturedAtUtc` is folded into
+  the key. This is a deliberate identity-semantics change, not a regression: it is what lets a
+  captured DesignState be addressed by "the state as it was at this specific moment," which
+  content-only identity cannot express. **Historical states are unaffected and undocumented as an
+  exception, not silently reinterpreted:** states captured before this phase keep their prior
+  content-addressed ids exactly as `MERGE`d at the time, and are documented here as pre-contract —
+  D-03's additive-no-rewrite rule applies, so there is no migration and no backfill of the new
+  keying onto old rows.
 - **Standalone accepted candidates are not orphan defects.** A standalone `ParamState` written by `candidates/accept` has **no linked Run until the architect composes it into a validated DesignState and runs the VALIDATOR** — that is the intended lifecycle, not a data-integrity gap. Any consumer that previously assumed every `DesignState` has >=1 linked `Run` must now treat a missing `Run` link as "not yet validated," not as an error.
+- **Declared exclusion: geometry (Phase 1202 plan 05, D-06, ALGN12-09).** `ObjState.Geometry` is
+  formally excluded from both the normative v2 payload and the `canonicalStateHash` computation. A
+  DesignState references its geometry indirectly, via `dgId` / the Speckle `objectId`, rather than
+  embedding it. **Accepted cost, stated plainly:** replay **cannot** reconstruct a viewable design
+  state offline from `statePayloadJson`/`canonicalStateHash` alone — a consumer that needs the
+  actual geometry must resolve it separately via the referenced `dgId`/`objectId`. This is an
+  intentional, documented exclusion, not an oversight: Rhino geometry has no stable canonical JSON
+  form, and serializing it would force a floating-point canonicalization decision this phase does
+  not take. **By contrast, `ClassIri` (on `ObjState`) IS a normative optional payload member** —
+  `DesignStateBindingService` needs it to re-bind a replayed state to its ontology class, so unlike
+  geometry it is included (absence still means "not recorded," per Phase 823's additive rule, on
+  states captured before that member existed).
 
 **Reading standalone ParamStates:** `Neo4jValidGraphRepository.RunsQuery` (`DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs`) reads `(:ValidationRun)` nodes only — it never touches a `:DesignState` node directly. A standalone `:DesignState` written by `candidates/accept` is therefore **invisible to the VALIDATION GRAPH component** until the additive second read introduced in Phase 38 plan 38-05 ships (and the DG.Grasshopper plugin is rebuilt to pick it up). Note also the pre-existing `:ValidationRun` / `:Run` label drift: the code spelling is `:ValidationRun`, this document's convention is `:Run` — this is a known, pre-existing item that Phase 38 does not widen.
 
@@ -109,7 +149,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 (:Run {runId: "VRUN_auto123", status: "completed", trigger: "auto", verdictSource: "shacl", capturedAt: "2026-07-28T19:44:51.686809Z", completedAt: "2026-07-28T19:44:54.365992Z", attempts: 0, SendStatus: false, graph: "ValidGraph", project: "1"})
 ```
 - `Run_Id` — unique identifier for the manual validation run; auto-validation code uses the `runId` spelling on `:ValidationRun` nodes (known `:ValidationRun` / `:Run` label/property drift)
-- `ValidStatus` — Boolean list, one element per ObjState in the validated DesignState, index-matched to ObjState order
+- `ValidStatus` — Boolean list, one element per rule result (see the **formally retired** note below for its historical, now-superseded, ObjState-order framing)
 - `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success). On the auto path it is initialized to `false` by `CAPTURE_QUERY`; the same property is used, not a second field
 - `statePayloadJson` — v2 projection for Model Viewer read-back
 - `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
@@ -123,6 +163,58 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - `status` — enum `captured`, `completed`, `superseded`, or `failed`, written initially by `CAPTURE_QUERY`, changed to `superseded` by `COALESCE_QUERY` for stale captured rows, to `completed` by `COMPLETE_QUERY`, and to `captured` or terminal `failed` by `FAIL_QUERY`. Legal transitions are `captured → superseded`, `captured → completed`, `captured → captured` (retry), and `captured → failed` when `nextAttempts >= maxAttempts`; `COALESCE_QUERY` only supersedes stale rows that are still `captured`
 
 All seven auto-validation properties above are optional on the document-level `:Run` contract: absence means the row is a manual or pre-Phase-39 run, never an error. Auto-runs are SHACL-validated before their own `ValidStatus` is written, so every auto-run self-violates `RunStatusShape_valid` and the conservative unmapped fallback flips every ObjState false; this is finding **F-39-01**, recorded in `.planning/phases/v9.0-PIPELINE-UAT.md`. The fix is scoped to a follow-up milestone; Phase 40 documents the behavior without changing validation logic.
+
+#### Immutable vs mutable properties (Phase 1202 plan 05, D-15, ALGN12-11)
+
+`data-service/app.py`'s publish path (`store_validation_run`) `MERGE`s this node keyed by
+`(graph, project, runId)`. Because `MERGE` on that key means a re-publish of an existing `runId`
+matches the same node, the write is split into three explicitly-classified groups so a re-publish
+cannot silently overwrite the original validated snapshot:
+
+| Group | Properties | Cypher clause | Rationale |
+|---|---|---|---|
+| Immutable, snapshot identity | `rulesJson`, `statePayloadJson`, `createdAt` | `ON CREATE SET` | Describe *what was validated* and *when the run was created*. A re-publish of the same `runId` must not change them — `ON CREATE SET` only fires the first time this node is created, so this is what makes the immutability real, not merely declared or documented. |
+| Mutable, operational status | `status`, `ValidStatus`, `SendStatus`, plus the existing `trigger`/`verdictSource`/`capturedAt`/`completedAt`/`attempts`/`lastError` auto-validation set | unconditional `SET` | Describe *how the run is going*. These legitimately change after creation — the three other independent `SET` sites on this same node (`evidenceEnvelopeJson`, `shaclReportJson`, the auto-complete `SendStatus` write) already mutate this node after creation, so this classification matches existing practice rather than inventing a new one. |
+| Mutable, publish-output | `speckleProjectId`, `baseModelId`, `baseVersionId`, `validationModelId`, `validationVersionId`, `modelViewerUrl`, `baseResourceUrl`, `validationResourceUrl` | unconditional `SET` | A re-publish genuinely produces a new Speckle version, so these eight properties are *outputs of the publish operation*, not properties of the validated snapshot. Pinning them under `ON CREATE SET` would leave the node pointing at a stale Speckle version after a legitimate re-publish — a worse failure than the one D-15 fixes. |
+
+**D-15 deliberately takes this write-once-clause-split over a physical `:StateSnapshot`/`:Run` node
+split.** No migration is introduced. A physical split would trigger the full `CLAUDE.md` § Schema
+Change Propagation sweep plus a migration, disproportionate to what the requirement (separation, not
+relocation) asks for — the split remains available to a later phase if the requirement ever needs
+actual node separation.
+
+#### ValidStatus index-matched contract — formally retired (Phase 1202 plan 05, D-08/D-10/D-13)
+
+The historical `ValidStatus` definition — *"Boolean list, one element per ObjState in the validated
+DesignState, index-matched to ObjState order"* — is **formally retired** by this phase's canonical
+StateId-sorted order (D-08). Once a DesignState payload is normatively sorted by `StateId` rather
+than by wiring/composition order, a positional per-object lookup against that same list no longer
+has a stable meaning: the object at a given index is not guaranteed to be the same object across
+two structurally-equivalent-but-differently-wired designs, or across a resort.
+
+**Per-object verdicts are identity-addressed, not positionally addressed, from here on.** The
+canonical source is the evidence envelope's per-`(rule, object)` rows (`evidenceEnvelopeJson`,
+above), read in C# via `IValidGraphRepository.GetPerObjectVerdictsAsync` (Phase 1202 plan 04, D-13),
+which returns verdicts keyed by object identity rather than list position. `ValidStatus` and
+`:ValidationEntity` are **retained but non-authoritative** (D-10) — additive-not-breaking, per this
+project's house style — but any remaining code path anywhere in the stack that looks up a
+per-object verdict by list position rather than by identity is now a **defect**, not a
+stale-but-valid alternative.
+
+#### Declared exclusion: legacy runs report `not_evaluated` (Phase 1202 plan 05, D-11)
+
+When `evidenceEnvelopeJson` is **absent** on a run (every pre-1200 run, by definition, since the
+envelope did not exist before Phase 1200), every object on that run reports the canonical status
+**`not_evaluated`**, and **there is no fallback**. Inferring a canonical status from the legacy
+`ValidStatus` Boolean is explicitly forbidden (`spec/EVIDENCE-CONTRACT.md` §5, D-04): a legacy
+`false` is compatible with seven of the eight canonical statuses, and guessing which one would
+collapse exactly the distinction the evidence contract exists to preserve.
+
+**Accepted cost, stated plainly:** existing (pre-1200) runs will visibly lose their canvas colors —
+every object reports `not_evaluated` rather than a genuine pass/fail — until the run is re-executed
+under the current pipeline. This is **honest reporting, not a regression**: the per-object verdict
+for those runs was never canonically recorded, and reporting anything more specific than
+`not_evaluated` would be a fabrication, not a recovery.
 
 **IntegrationConfig** — Per-project integration settings for an external consumer, discriminated by `provider`; the Phase 39 `AutoValidation` variant carries the watcher's guardrails.
 ```

@@ -226,6 +226,20 @@ authoritative verdict once a canonical status is available for the same evaluati
 legacy boolean — a legacy `false` is compatible with seven of the eight canonical statuses, and
 guessing which one collapses exactly the distinction this contract exists to preserve.
 
+### 5.1 Canonical per-object verdict source (Phase 1202 plan 05, D-10, ALGN12-10)
+
+The envelope's per-`(rule, object)` **`rows`** (§3/§4 above) are the **canonical per-object verdict
+source**. `Run.ValidStatus` and `:ValidationEntity` (`spec/DATABASE.md` §`:Run`) are **demoted to
+legacy and non-authoritative** — retained for backward compatibility (additive-not-breaking), but
+no downstream gate or consumer may treat either as the authoritative per-object outcome once an
+envelope is available for the same run.
+
+When the envelope is **absent** for a run (every pre-1200 run), every object on that run reports
+`not_evaluated` with **no inference** from any legacy boolean — the same one-directional
+canonical→boolean-only rule §5 states above applies here without exception. See `spec/DATABASE.md`
+§`:Run` (Phase 1202 plan 05) for where this is stored (`evidenceEnvelopeJson`, sibling to
+`statePayloadJson`/`shaclReportJson`) and for the full declared-exclusion statement for legacy runs.
+
 ---
 
 ## 6. Canonical JSON and Hashing (D-07)
