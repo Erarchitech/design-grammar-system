@@ -522,8 +522,15 @@ def test_auto_publish_run_is_callable_with_the_watcher_publish_fn_contract():
 
 
 # ── D-10: the manual publish path stays byte-for-byte untouched ──────────────
-
-STORE_VALIDATION_RUN_SHA256 = "db6615b823d3247c313b3f5f4cc1bfb7302f33012f79cf92323e9147d11c2b01"
+#
+# Re-pinned in Phase 1202 plan 05 (D-15, ALGN12-11): store_validation_run's publish
+# MERGE was deliberately split into ON CREATE SET (immutable snapshot identity --
+# rulesJson/statePayloadJson/createdAt) and SET (mutable operational status plus the
+# mutable Speckle publish-output properties), so re-publishing an existing runId no
+# longer silently overwrites the original snapshot. This is the "deliberate, approved
+# change -- re-pin the hash in the very same commit" case this test's own docstring
+# names, not an accidental edit.
+STORE_VALIDATION_RUN_SHA256 = "693a7c665c5ae99ec37fab6375ece5263d6a9e31605fb362ead20eb9305f89e9"
 
 
 def test_store_validation_run_source_hash_is_pinned():

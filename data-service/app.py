@@ -568,9 +568,34 @@ def store_validation_run(
             for entity in entities
         ]
 
+    # D-15 (Phase 1202 plan 05, ALGN12-11): the MERGE key is (graph, project, runId), so
+    # `ON CREATE SET` is what makes the immutability real, not merely declared -- it only
+    # fires the first time this node is created, never on a re-publish of the same runId.
+    #
+    # Three-way classification (spec/DATABASE.md carries the same table):
+    #   - Immutable, ON CREATE SET: rulesJson, statePayloadJson, createdAt. These describe
+    #     *what was validated* and *when the run was created* -- the snapshot identity.
+    #     A re-publish of the same runId must never change them.
+    #   - Mutable operational, SET: status, ValidStatus, SendStatus. These describe *how
+    #     the run is going* and legitimately change after creation -- the three other SET
+    #     sites in this file (evidenceEnvelopeJson, shaclReportJson, the auto-complete
+    #     SendStatus write) already mutate this same node independently after creation.
+    #   - Mutable publish-output, SET: the eight Speckle/publish-result properties below.
+    #     A re-publish genuinely produces a new Speckle version, so these are outputs of
+    #     the publish operation, not properties of the validated snapshot -- pinning them
+    #     under ON CREATE SET would leave the node pointing at a stale Speckle version
+    #     after a legitimate re-publish, a worse failure than the one being fixed here.
+    #
+    # D-15 deliberately takes this write-once-clause-split over a physical
+    # :StateSnapshot/:Run node split: no migration is introduced, and the split remains
+    # available to a later phase if the requirement ever needs actual node separation.
     write_query(
         """
         MERGE (run:ValidationRun {graph:$graph, project:$project, runId:$runId})
+        ON CREATE SET
+            run.rulesJson = $rulesJson,
+            run.statePayloadJson = $statePayloadJson,
+            run.createdAt = $createdAt
         SET
             run.speckleProjectId = $speckleProjectId,
             run.baseModelId = $baseModelId,
@@ -580,12 +605,9 @@ def store_validation_run(
             run.modelViewerUrl = $modelViewerUrl,
             run.baseResourceUrl = $baseResourceUrl,
             run.validationResourceUrl = $validationResourceUrl,
-            run.rulesJson = $rulesJson,
-            run.statePayloadJson = $statePayloadJson,
             run.status = 'completed',
             run.ValidStatus = $validStatus,
-            run.SendStatus = true,
-            run.createdAt = $createdAt
+            run.SendStatus = true
         """,
         {
             "graph": VALIDATION_GRAPH,
