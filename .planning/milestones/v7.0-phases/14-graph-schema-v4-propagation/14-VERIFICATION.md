@@ -7,6 +7,7 @@ behavior_unverified: 2
 overrides_applied: 0
 gaps: []
 behavior_unverified_items:
+
   - truth: "SC#2: A live rule ingest through the n8n webhook generates Cypher that validates against the v4 template"
     test: "Run bash test/smoke_rules_ingest.sh against a running Docker stack with re-imported n8n workflow"
     expected: "The written Rule node carries non-empty .SWRL property (not r.text)"
@@ -16,6 +17,7 @@ behavior_unverified_items:
     expected: "The generated Cypher references r.SWRL (not r.text exclusively); responses use ParamState/ObjState/PropState kind values"
     why_human: "Requires live Docker stack with n8n re-imported — cannot verify statically"
 human_verification:
+
   - test: "Run bash test/smoke_rules_ingest.sh — live n8n rule-ingest v4 propagation"
     expected: "Ingested Rule node carries non-empty .SWRL property; zero old-kind references"
     why_human: "Requires running Docker stack, n8n re-import, and warm Ollama"
@@ -25,6 +27,10 @@ human_verification:
   - test: "Tick SCHM-11 and SCHM-12 checkboxes in .planning/REQUIREMENTS.md"
     expected: "Change lines 26-27 from '- [ ]' to '- [x]' for SCHM-11 and SCHM-12 — code artifacts verified complete"
     why_human: "Documentation-only correction — code evidence confirms both requirements are met"
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 14: Graph Schema v4 Propagation — Verification Report
@@ -184,6 +190,7 @@ No deferred items — all SCHM-07..14 are intended to be completed in Phase 14. 
 **3. REQUIREMENTS.md checkbox update for SCHM-11 and SCHM-12**
 
 **Test:** Edit `.planning/REQUIREMENTS.md` lines 26-27:
+
 - Line 26: Change `- [ ] **SCHM-11**` to `- [x] **SCHM-11**`
 - Line 27: Change `- [ ] **SCHM-12**` to `- [x] **SCHM-12**`
 

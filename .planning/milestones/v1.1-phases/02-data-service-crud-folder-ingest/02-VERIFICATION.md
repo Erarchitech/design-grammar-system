@@ -4,9 +4,14 @@ verified: 2026-04-06T00:00:00Z
 status: human_needed
 score: 5/5 must-haves verified
 human_verification:
+
   - test: "Run test/test_knowledge_crud.py against live stack (docker compose up -d)"
     expected: "ALL SUCCESS CRITERIA PASSED printed, exit code 0; inserted >= 1 from DG_OBSIDIAN, path traversal returns 403, list/get/put/delete all pass, Nginx proxy routes correctly"
     why_human: "Requires running Docker stack with Neo4j, data-service, and Nginx. Cannot exercise live Neo4j writes, real filesystem mount at /mnt/repo, or Nginx proxy routing without starting services."
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 2: data-service CRUD + Folder Ingest Verification Report

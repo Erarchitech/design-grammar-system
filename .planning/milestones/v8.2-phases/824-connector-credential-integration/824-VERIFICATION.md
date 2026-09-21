@@ -7,6 +7,7 @@ behavior_unverified: 3
 overrides_applied: 0
 gaps: []
 behavior_unverified_items:
+
   - truth: "Criterion 2 — a valid token minted from the v8.1 Connectors screen (Grasshopper connector) authenticates a heartbeat to data-service, observed end-to-end in the Grasshopper canvas"
     test: "In a live Rhino/Grasshopper session with data-service running, wire a Panel holding a real dgc_ token into CONNECTOR's Token input, set Connect=true, and observe the component"
     expected: "Component Message reads 'Connected · Auth OK'; no runtime Error/Warning bubble; data-service records the heartbeat (last_connection updates)"
@@ -20,6 +21,7 @@ behavior_unverified_items:
     expected: "The saved .gh contains no dgc_ substring (ScrubTokenPersistentData cleared it); a Remark instructed wiring from a Panel; the Database output object carries no token"
     why_human: "All code paths that could persist the token are closed and asserted (token-free ConnectionInfo/HeartbeatResult, SHA-256-hashed dedup key, PersistentData.Clear()), but confirming an actual on-disk .gh has no dgc_ string is a manual save-and-inspect."
 human_verification:
+
   - test: "Valid token → in-canvas Auth OK + data-service heartbeat recorded (824-UAT.md Test 1)"
     expected: "Message 'Connected · Auth OK', no error bubble, data-service last_connection updates"
     why_human: "No Rhino runtime + no DG.Grasshopper unit coverage; live E2E never observed"
@@ -30,9 +32,15 @@ human_verification:
     expected: "No dgc_ substring in the saved .gh; internalise Remark fired; old 6-input canvas opens without rewiring"
     why_human: "On-disk .gh inspection + old-canvas backward-compat opening require Rhino/Grasshopper"
 automated_verified:
+
   - "dotnet test DG/tests/DG.Tests — 234/234 pass (incl. 6 heartbeat-client + 2 template facts)"
   - "dotnet build DG/DG.sln -c Release — 0 warnings / 0 errors, DG.Grasshopper compiled against the real Rhino 8 SDK (GRASSHOPPER_SDK defined)"
   - "Source assertions: INPUTS_OK (GUID 24E78A17… + additive DataServiceUrl/Token inputs, existing 0-5 preserved), HEARTBEAT_WIRED_OK (client + AddRuntimeMessage Error/Warning), SECRECY_OK (token-free ConnectionInfo, SHA-256 hashed key, PersistentData scrub), OUTPUT_UNGATED_OK (da.SetData outside the auth branch)"
+
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 824: CONNECTOR Credential Integration — Verification

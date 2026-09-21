@@ -4,6 +4,7 @@ verified: 2026-04-07T00:00:00Z
 status: human_needed
 score: 4/4 roadmap success criteria verified
 deferred:
+
   - truth: "Matching nodes are isolated in the graph view; user selects one or several nodes"
     addressed_in: "Phase 6"
     evidence: "Phase 6 goal: 'Architects can execute the full three-step update flow in the browser — describe what to change, see matching nodes highlighted, review red-highlighted diff, and confirm the edit'. Phase 6 SC-1: 'In Update Knowledge mode, submitting a prompt shows a selectable list of candidate note titles'"
@@ -14,12 +15,17 @@ deferred:
     addressed_in: "Phase 6"
     evidence: "Phase 6 SC-3: 'The diff panel sits adjacent to an editable textarea containing the proposed text; the user can modify the textarea before confirming'. Phase 6 requirement: UIST-04"
 human_verification:
+
   - test: "Import knowledge-update.json into n8n, activate the workflow, then call POST /knowledge/update/propose with a valid noteId and prompt; verify diffHtml in the response contains diff-ins and diff-del spans reflecting the LLM output"
     expected: "Response body contains diffs[0].diffHtml with at least one <span class=\"diff-ins\"> or <span class=\"diff-del\"> span; diffs[0].proposedContent is non-empty and differs from originalContent"
     why_human: "Requires n8n running with the workflow imported and activated, Ollama running with llama3.1, and a KnowledgeNote node in Neo4j — end-to-end LLM path cannot be exercised without live Docker services"
   - test: "Call POST /knowledge/update/match with a natural language prompt against a running data-service with notes in Neo4j; verify the full-text search index (knowledge_note_search) is used and results are ranked"
     expected: "Response contains candidates array with noteId, title, and score fields; results are ordered by score DESC"
     why_human: "Requires the full-text index knowledge_note_search to exist in Neo4j (created in Phase 1); unit tests mock read_many and cannot verify actual index query routing"
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 4: Update Flow Endpoints Verification Report

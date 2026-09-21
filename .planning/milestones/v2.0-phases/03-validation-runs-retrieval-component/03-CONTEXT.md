@@ -1,3 +1,10 @@
+---
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  questions_digest: 33763eb83a7047cb98417c20597294a9231514959658c5d96fe5465fd49edbcb
+---
+
 # Context: Phase 3 - Validation Runs Retrieval Component
 
 ## Locked Decisions

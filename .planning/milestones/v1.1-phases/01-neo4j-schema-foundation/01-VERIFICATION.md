@@ -4,12 +4,17 @@ verified: 2026-04-06T09:30:00Z
 status: human_needed
 score: 5/5 must-haves verified
 human_verification:
+
   - test: "Run python test/test_knowledge_schema.py against a live Neo4j instance"
     expected: "All 5 SC checks print PASS, script exits with code 0"
     why_human: "Requires running Neo4j instance; cannot verify full-text index creation or Cypher execution without a live database"
   - test: "Start data-service container and verify startup hook runs"
     expected: "No errors in container logs at startup; SHOW INDEXES in Neo4j browser shows knowledge_note_search index"
     why_human: "Requires Docker environment with Neo4j running to verify @app.on_event startup hook executes"
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 1: Neo4j Schema Foundation Verification Report

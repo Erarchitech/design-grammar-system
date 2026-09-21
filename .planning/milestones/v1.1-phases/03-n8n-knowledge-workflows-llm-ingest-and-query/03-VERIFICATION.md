@@ -4,6 +4,7 @@ verified: 2026-04-06T00:00:00Z
 status: human_needed
 score: 6/8 must-haves verified
 gaps:
+
   - truth: "Submitting a natural language prompt to POST /knowledge/ingest/prompt causes Ollama to extract a title, tags, and content, and a KnowledgeNote node appears in Neo4j within the async polling round-trip"
     status: partial
     reason: "ROADMAP SC-1 specifies the endpoint path POST /knowledge/ingest/prompt. This data-service endpoint does not exist. The functional goal is achieved but via POST /n8n/webhook/dg/knowledge-ingest (direct n8n webhook, accessed through nginx /n8n/ proxy). The ROADMAP contract path was replaced by a different URL in planning (CONTEXT.md D-09), but ROADMAP.md was not updated."
@@ -24,7 +25,9 @@ gaps:
         issue: "Implements the query workflow correctly at dg/knowledge-query, but this differs from the ROADMAP-specified path"
     missing:
       - "Either update ROADMAP.md SC-2 to reflect the actual path /n8n/webhook/dg/knowledge-query, OR add a /knowledge/query endpoint to data-service that proxies to the n8n webhook"
+
 human_verification:
+
   - test: "Import and activate both n8n workflow JSON files"
     expected: "Both workflows appear as active in n8n UI at http://localhost:5678 after import"
     why_human: "n8n workflow import requires a browser UI interaction — no CLI import available for this n8n version"
@@ -37,6 +40,10 @@ human_verification:
   - test: "POST to http://localhost:8080/n8n/webhook/dg/knowledge-query with body {prompt_text: 'What is the setback distance?', project_name: 'manual-test'}, then poll /data-service/execution-result/latest/knowledge-query"
     expected: "Payload contains non-empty answer string and cypher containing 'knowledge_note_search'"
     why_human: "End-to-end query requires running Ollama + Neo4j with notes already inserted; verifies QRYK-01 and QRYK-02 live behavior"
+audit_acknowledged:
+  milestone: v9.0
+  at: 2026-09-19
+  status: human_needed
 ---
 
 # Phase 3: n8n Knowledge Workflows + LLM Ingest and Query Verification Report
@@ -162,6 +169,7 @@ No blockers found. No TODO/FIXME/placeholder comments. No empty implementations.
 ROADMAP.md Phase 3 success criteria specify `POST /knowledge/ingest/prompt` and `POST /knowledge/query` as the entry-point endpoints. Neither path exists in `data-service/app.py`. The actual implementation exposes the same functional capability through n8n webhook paths (`/n8n/webhook/dg/knowledge-ingest` and `/n8n/webhook/dg/knowledge-query`) per CONTEXT.md decision D-09. The test scaffold (`test_phase03_knowledge_llm.py`) correctly targets the n8n webhook paths.
 
 This is a ROADMAP documentation drift rather than a functional gap — the capability exists. Resolution options:
+
 1. Update ROADMAP.md SC-1 and SC-2 to reflect the actual n8n webhook paths (lowest cost)
 2. Add thin proxy endpoints `/knowledge/ingest/prompt` and `/knowledge/query` to data-service that forward to the n8n webhooks (higher cost, changes public API surface)
 
