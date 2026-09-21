@@ -1,3 +1,4 @@
+using DG.Core.Contracts;
 using DG.Core.Data;
 using DG.Core.Models;
 
@@ -212,5 +213,99 @@ public sealed class Neo4jValidGraphRepositoryTests
         Assert.Equal(2, distinct.Count);
         Assert.Contains(distinct, s => s.StateId == "DS_shared");
         Assert.Contains(distinct, s => s.StateId == "DS_only_standalone");
+    }
+
+    // ── Phase 1202 plan 01 Task 1: RED coverage for the additive per-object
+    // verdict read path (D-13/D-14). PerObjectVerdict, VerdictSource,
+    // PerObjectVerdictResult, Neo4jValidGraphRepository.BuildPerObjectVerdicts,
+    // and Neo4jValidGraphRepository.GetEvidenceQueryForTesting do not exist yet
+    // -- this file is expected to fail to compile until plan 04 implements them
+    // verbatim against these exact symbol names and signatures. Do NOT add any
+    // implementation here; the RED (non-compiling) state is this task's
+    // deliverable.
+
+    private static string BuildEnvelopeJson(params (string ruleId, string objectId, EvidenceStatus status)[] rows)
+    {
+        var rowsJson = string.Join(",", rows.Select(r =>
+            $$"""{"ruleId":"{{r.ruleId}}","objectId":"{{r.objectId}}","canonicalStatus":"{{EvidenceStatusNames.ToWireName(r.status)}}"}"""));
+        return $$"""{"contractVersion":"1","canonicalizationVersion":1,"project":"DG-1202-REPLAY","definitionId":"R_GOLD_HEIGHT_MAX_75_V","serviceName":"DG.Tests","serviceVersion":"test","emittedAt":"2026-09-21T00:00:00Z","stage":"validation.publish","canonicalStatus":"failed","rows":[{{rowsJson}}]}""";
+    }
+
+    [Fact]
+    public void BuildPerObjectVerdicts_WithMixedRows_KeepsObjectVerdictsDistinct()
+    {
+        var envelopeJson = BuildEnvelopeJson(
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", EvidenceStatus.Passed),
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", EvidenceStatus.Failed));
+
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(envelopeJson);
+
+        Assert.True(result.EnvelopePresent);
+        Assert.Equal(2, result.Verdicts.Count);
+
+        var passVerdict = Assert.Single(result.Verdicts, v => v.ObjectId == "OBJ_GOLD_PASS");
+        var failVerdict = Assert.Single(result.Verdicts, v => v.ObjectId == "OBJ_GOLD_FAIL");
+
+        Assert.Equal(EvidenceStatus.Passed, passVerdict.Status);
+        Assert.Equal(EvidenceStatus.Failed, failVerdict.Status);
+        Assert.NotEqual(passVerdict.Status, failVerdict.Status);
+    }
+
+    [Fact]
+    public void BuildPerObjectVerdicts_WithMultipleRowsPerObject_RollsUpByStatusRollupPrecedence()
+    {
+        // Two rows for the SAME objectId: one failed, one error. StatusRollup.Precedence
+        // ranks Error ahead of Failed, so the rolled-up verdict for this object must be
+        // Error -- proving D-12's precedence table drives the rollup, not a failed-wins rule.
+        var envelopeJson = BuildEnvelopeJson(
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", EvidenceStatus.Failed),
+            ("R_OTHER_RULE", "OBJ_GOLD_FAIL", EvidenceStatus.Error));
+
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(envelopeJson);
+
+        Assert.True(result.EnvelopePresent);
+        var verdict = Assert.Single(result.Verdicts);
+        Assert.Equal("OBJ_GOLD_FAIL", verdict.ObjectId);
+        Assert.Equal(EvidenceStatus.Error, verdict.Status);
+        Assert.Equal(EvidenceStatus.Error, StatusRollup.Precedence[0]);
+    }
+
+    [Fact]
+    public void BuildPerObjectVerdicts_WithNullEnvelope_ReportsNotEvaluatedAndEnvelopeAbsent()
+    {
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(null);
+
+        Assert.False(result.EnvelopePresent);
+        // D-11: absence of the envelope must never fabricate a verdict list --
+        // no inference from a legacy boolean, no defaulted Passed entries.
+        Assert.Empty(result.Verdicts);
+    }
+
+    [Fact]
+    public void BuildPerObjectVerdicts_WithMalformedJson_DegradesToEnvelopeAbsent()
+    {
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts("{not json");
+
+        Assert.False(result.EnvelopePresent);
+        Assert.Empty(result.Verdicts);
+    }
+
+    [Fact]
+    public void EvidenceQuery_ShouldSelectEvidenceEnvelopeJsonScopedToProjectAndRunId()
+    {
+        var query = Neo4jValidGraphRepository.GetEvidenceQueryForTesting();
+
+        Assert.Contains("evidenceEnvelopeJson", query);
+        Assert.Contains("graph:'ValidGraph'", query);
+        Assert.Contains("$project", query);
+        Assert.Contains("$runId", query);
+    }
+
+    [Fact(Skip = "Plan 04 wires this Fact to an active behavioral assertion once the additive per-object read path lands; today RunsQuery still fabricates StatusList via Enumerable.Repeat (Neo4jValidGraphRepository.cs:73-75) and no internal static seam exposes a per-run StatusList for a synthetic three-ObjState state without a live Neo4j session.")]
+    public void RunsQuery_ShouldNotFabricateAPerObjectStatusList()
+    {
+        // Placeholder RED Fact (D-14): today's RunsQuery fabricates a per-object
+        // status list via `Enumerable.Repeat(overallPass, objStateCount)`. Plan 04
+        // removes that fabrication; this Fact becomes active then.
     }
 }
