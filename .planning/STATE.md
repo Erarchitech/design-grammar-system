@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Theory–Implementation Alignment
-current_phase: 1201
-current_phase_name: rule-parser-and-evaluator-conformance
-status: verified
+current_phase: 1202
+current_phase_name: design-state-replay-and-per-object-verdict-closure
+status: executing
 stopped_at: Phase 1202 context gathered
-last_updated: "2026-09-21T21:55:09.766Z"
-last_activity: 2026-09-20
-last_activity_desc: Phase 1200 executed (9/9 plans). Gap-closure plans 06/07 fixed CR-01
+last_updated: "2026-09-21T22:39:39.861Z"
+last_activity: 2026-09-21
+last_activity_desc: Phase 1202 execution started
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 15
+  total_plans: 22
   completed_plans: 15
   percent: 33
 ---
@@ -24,13 +24,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1200 — contract-status-vocabulary-evidence-envelope-and-golden-fixt
+**Current focus:** Phase 1202 — design-state-replay-and-per-object-verdict-closure
 
 ## Current Position
 
-Phase: 1201 (rule-parser-and-evaluator-conformance) — EXECUTING
-Plan: 04 of 06 complete (01, 02, 03, 05 also complete; 06 — DE-01 re-run exit gate — remains open)
-Status: Phase 1201 plan 04 executed: fixtures/golden/parser/ conformance corpus (9 cases covering all 8 ROADMAP parser deliverables + the null-resolver ObjectPropertyAtom counterpart), spec/SWRL-SUBSET.md (normative non-claims doc), and a bidirectional drift guard proven to actually fail on an induced mismatch then reverted. Full .NET suite: 502/502 passed, 0 warnings/errors on both TFMs. Frozen fixtures untouched. Plan 06 (D-09 SHACL targeting fix + D-11 DE-01 re-run + D-12 hash propagation) is the phase's remaining exit gate.
+Phase: 1202 (design-state-replay-and-per-object-verdict-closure) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 1202
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
@@ -38,7 +38,7 @@ Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EX
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-20 — Phase 1200 executed (9/9 plans). Gap-closure plans 06/07 fixed CR-01
+Last activity: 2026-09-21 — Phase 1202 execution started
 (cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
 the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
 finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and

@@ -128,14 +128,14 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 7 plans
+**Plans:** 3/7 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 1202-01-PLAN.md — Wave 0 test/fixture scaffolding: RED per-object verdict Facts, RED `ON CREATE SET` immutability regression, mixed pass/fail sibling fixture under `fixtures/golden/replay/` (wave 0)
-- [ ] 1202-02-PLAN.md — Identity semantics: canonical DesignState projection + `canonicalStateHash` in C# and Python with cross-language parity, additive capture-event StateId overload, two-layer identity declared (wave 1)
-- [ ] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and the two payload readers converged on one (wave 1)
+- [x] 1202-01-PLAN.md — Wave 0 test/fixture scaffolding: RED per-object verdict Facts, RED `ON CREATE SET` immutability regression, mixed pass/fail sibling fixture under `fixtures/golden/replay/` (wave 0)
+- [x] 1202-02-PLAN.md — Identity semantics: canonical DesignState projection + `canonicalStateHash` in C# and Python with cross-language parity, additive capture-event StateId overload, two-layer identity declared (wave 1)
+- [x] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and the two payload readers converged on one (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
