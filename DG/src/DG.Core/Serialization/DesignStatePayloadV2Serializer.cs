@@ -257,6 +257,7 @@ public static class DesignStatePayloadV2Serializer
             Label = objState.Label,
             CapturedAtUtc = objState.CapturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
             DgId = objState.DgId,
+            ClassIri = objState.ClassIri,
         };
     }
 
@@ -328,6 +329,7 @@ public static class DesignStatePayloadV2Serializer
             Label = dto.Label,
             CapturedAtUtc = capturedAt.ToUniversalTime(),
             DgId = dto.DgId,
+            ClassIri = dto.ClassIri,
         };
     }
 
@@ -480,6 +482,11 @@ public static class DesignStatePayloadV2Serializer
         public string? CapturedAtUtc { get; init; }
 
         public string? DgId { get; init; }
+
+        // D-05: normative optional member -- absence means "not recorded", never
+        // an error (Phase 823 rule). Wire key is camelCase `classIri` via the
+        // shared Options.PropertyNamingPolicy, no [JsonPropertyName] needed.
+        public string? ClassIri { get; init; }
     }
 
     private sealed class ParamStateDto

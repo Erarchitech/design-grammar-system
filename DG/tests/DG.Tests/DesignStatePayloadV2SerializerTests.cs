@@ -92,6 +92,69 @@ public sealed class DesignStatePayloadV2SerializerTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTrip_ShouldPreserveClassIriWhenPresent()
+    {
+        var state = CreateDesignState();
+
+        var json = DesignStatePayloadV2Serializer.Serialize(state);
+        var roundTrip = DesignStatePayloadV2Serializer.Deserialize(json);
+
+        Assert.Equal("ex:Building", state.ObjStates[0].ClassIri);
+        Assert.Equal(state.ObjStates[0].ClassIri, roundTrip.ObjStates[0].ClassIri);
+    }
+
+    [Fact]
+    public void SerializeDeserialize_RoundTrip_ShouldPreserveNullClassIri()
+    {
+        var state = CreateDesignState();
+        // objState2 is deliberately constructed with no ClassIri (null).
+        Assert.Null(state.ObjStates[1].ClassIri);
+
+        var json = DesignStatePayloadV2Serializer.Serialize(state);
+        var roundTrip = DesignStatePayloadV2Serializer.Deserialize(json);
+
+        Assert.Null(roundTrip.ObjStates[1].ClassIri);
+    }
+
+    [Fact]
+    public void Serialize_ShouldEmitClassIriUnderCamelCaseKey()
+    {
+        var state = CreateDesignState();
+
+        var json = DesignStatePayloadV2Serializer.Serialize(state);
+
+        Assert.Contains("\"classIri\":\"ex:Building\"", json);
+    }
+
+    [Fact]
+    public void Deserialize_WithoutClassIriKey_ShouldSucceedWithNullClassIri()
+    {
+        // A pre-1202 v2 payload authored with no classIri key at all -- absence
+        // means "not recorded", never an error (D-07 / Phase 823 rule).
+        var json = """
+            {
+              "version": "2",
+              "stateId": "DS_legacy",
+              "capturedAtUtc": "2026-07-04T10:00:00.0000000Z",
+              "objStates": [
+                {
+                  "stateId": "OS_legacy",
+                  "objectRef": "obj-legacy",
+                  "capturedAtUtc": "2026-07-04T10:00:00.0000000Z"
+                }
+              ],
+              "paramStates": [],
+              "propStates": []
+            }
+            """;
+
+        var result = DesignStatePayloadV2Serializer.Deserialize(json);
+
+        Assert.Single(result.ObjStates);
+        Assert.Null(result.ObjStates[0].ClassIri);
+    }
+
+    [Fact]
     public void Deserialize_WhenVersionIsMissing_ShouldThrow()
     {
         var json = """
@@ -186,6 +249,7 @@ public sealed class DesignStatePayloadV2SerializerTests
             StateId = DesignStateIdGenerator.ComputeObjectStateId("test-project", "obj-001", "buildingA"),
             ObjectRef = "obj-001",
             Label = "Building A",
+            ClassIri = "ex:Building",
             CapturedAtUtc = new DateTimeOffset(2026, 7, 4, 10, 0, 0, TimeSpan.Zero),
         };
 
