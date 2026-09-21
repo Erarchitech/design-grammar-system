@@ -7,9 +7,45 @@ namespace DG.Core.Services;
 
 /// <summary>
 /// Deterministic ID generation for the DG state model hierarchy.
-/// Every state entity (ParamState, PropState, ObjState, DesignState) gets a content-addressed
-/// StateId — identical inputs produce identical StateId, enabling dedup across validation runs
-/// via MERGE by StateId+project.
+///
+/// <para>
+/// <b>Two-layer DesignState identity (Phase 1202, D-01).</b> A DesignState carries two
+/// independent identifiers, not one:
+/// </para>
+/// <list type="number">
+/// <item>
+/// <b>Layer 1 — the node key (capture-event identity):</b>
+/// <see cref="ComputeCaptureEventStateId"/> folds the capture timestamp into the id, so two
+/// captures of an otherwise-unchanged design are two distinct nodes. <b>Direct consequence:</b>
+/// MERGE by StateId + project no longer dedupes a recapture — the graph grows per capture,
+/// where the pre-1202 content-addressed scheme (below) treated a recapture as idempotent. This
+/// changes the amended-Phase-38 MERGE contract (<c>spec/DATABASE.md</c>'s VALIDATOR-publish and
+/// <c>POST /computgraph/candidates/accept</c> rows, mirrored by
+/// <c>data-service/cg_paramstate_store.py</c>'s MERGE on <c>StateId</c> + <c>project</c>) for
+/// any writer that switches to this overload — that re-examination is deliberate, not an
+/// oversight, per D-01's own consequence note in 1202-CONTEXT.md.
+/// </item>
+/// <item>
+/// <b>Layer 2 — the content hash:</b>
+/// <see cref="DG.Core.Serialization.DesignStateCanonicalProjection.ComputeHash"/>, stored as the
+/// <c>canonicalStateHash</c> property. This is queryable — two designs captured at different
+/// times with identical content share a hash — but it is explicitly <b>not identity-bearing</b>:
+/// it must never be used as (or substituted for) a node key, and it is not a Signature/MAC —
+/// SHA-256 here is content-addressing, not an authenticity control.
+/// </item>
+/// </list>
+/// <para>
+/// <see cref="ComputeDesignStateId"/> (the pure content-addressed overload below) is retained
+/// <b>unchanged</b> and is the function that minted every historical StateId before this phase.
+/// Per D-03, historical states are treated additively with no rewrite: existing rows stay as-is
+/// and are documented as pre-contract; only new captures adopt the capture-event key.
+/// </para>
+/// <para>
+/// <see cref="ComputeParamStateId"/>, <see cref="ComputeObjectStateId"/>, and
+/// <see cref="ComputePropStateId"/> are member-level minting, cross-referenced here for
+/// completeness — they are unaffected by this aggregate-level two-layer identity change; each
+/// remains a single content-addressed id for its own state kind.
+/// </para>
 /// </summary>
 public static class DesignStateIdGenerator
 {
@@ -101,6 +137,38 @@ public static class DesignStateIdGenerator
         {
             sb.Append(id);
         }
+
+        return DesignStatePrefix + HashToHex16(sb.ToString());
+    }
+
+    /// <summary>
+    /// Produces a DS_-prefixed capture-event StateId — the D-01 layer 1 node key. Additive
+    /// alongside <see cref="ComputeDesignStateId"/>, which remains byte-identical and is the
+    /// function that minted every historical StateId (D-03).
+    ///
+    /// Hash input: the ordinally-sorted member StateIds concatenated exactly as
+    /// <see cref="ComputeDesignStateId"/> already does, followed by a <c>|</c> separator and the
+    /// ISO-8601 round-trip ("O", invariant culture, UTC) rendering of
+    /// <paramref name="capturedAtUtc"/> — the same rendering
+    /// <see cref="DG.Core.Serialization.DesignStatePayloadV2Serializer"/> already uses, so this
+    /// id and the payload's own <c>capturedAtUtc</c> field never disagree.
+    ///
+    /// Deterministic and idempotent: the same members captured at the same instant always
+    /// produce the same id (so a retried write of the same capture is still idempotent), but two
+    /// captures of the same members at two different instants produce two distinct ids — the
+    /// direct consequence documented on this class's own doc-comment (MERGE by StateId + project
+    /// no longer dedupes a recapture).
+    /// </summary>
+    public static string ComputeCaptureEventStateId(IEnumerable<string> memberStateIds, DateTimeOffset capturedAtUtc)
+    {
+        var sb = new StringBuilder();
+        foreach (var id in memberStateIds.OrderBy(x => x, StringComparer.Ordinal))
+        {
+            sb.Append(id);
+        }
+
+        sb.Append('|');
+        sb.Append(capturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
 
         return DesignStatePrefix + HashToHex16(sb.ToString());
     }

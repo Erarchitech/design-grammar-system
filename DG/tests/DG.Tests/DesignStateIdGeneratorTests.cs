@@ -233,4 +233,96 @@ public sealed class DesignStateIdGeneratorTests
 
         Assert.NotEqual(id1, id2);
     }
+
+    // --- Phase 1202 Plan 02 Task 3: ComputeCaptureEventStateId (D-01 layer 1) ---
+
+    [Fact]
+    public void ComputeDesignStateId_ShouldRemainByteIdentical_ForFixedRegressionVector()
+    {
+        // Regression pin (plan's own instruction): a future edit to the shared hash path must
+        // not silently change historical StateIds. This literal was captured by running the
+        // pre-existing (unmodified) ComputeDesignStateId against a fixed member set.
+        var memberIds = new List<string> { "OS_REG_A", "PS_REG_B", "DS_REG_C" };
+
+        var id = DesignStateIdGenerator.ComputeDesignStateId(memberIds);
+
+        Assert.Equal("DS_3C3C50530BE1DED0", id);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldReturnDesignStatePrefixedId()
+    {
+        var memberIds = new List<string> { "OS_abc", "PS_def" };
+        var capturedAt = new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
+
+        var id = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt);
+
+        Assert.StartsWith("DS_", id);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldDiffer_ForDifferentCapturedAtUtc_WithSameMembers()
+    {
+        var memberIds = new List<string> { "OS_abc", "PS_def" };
+        var capturedAt1 = new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
+        var capturedAt2 = new DateTimeOffset(2026, 9, 21, 12, 0, 1, TimeSpan.Zero);
+
+        var id1 = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt1);
+        var id2 = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt2);
+
+        Assert.NotEqual(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldBeDeterministic_ForSameMembersAndSameCapturedAtUtc()
+    {
+        var memberIds = new List<string> { "OS_abc", "PS_def" };
+        var capturedAt = new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
+
+        var id1 = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt);
+        var id2 = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt);
+
+        Assert.Equal(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldBeOrderIndependent_ForMemberIdOrder()
+    {
+        var ordered = new List<string> { "OS_abc", "PS_def", "DS_ghi" };
+        var reversed = new List<string> { "DS_ghi", "PS_def", "OS_abc" };
+        var capturedAt = new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
+
+        var id1 = DesignStateIdGenerator.ComputeCaptureEventStateId(ordered, capturedAt);
+        var id2 = DesignStateIdGenerator.ComputeCaptureEventStateId(reversed, capturedAt);
+
+        Assert.Equal(id1, id2);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldDiffer_FromContentAddressedId_ForSameMemberSet()
+    {
+        var memberIds = new List<string> { "OS_abc", "PS_def" };
+        var capturedAt = new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
+
+        var contentAddressedId = DesignStateIdGenerator.ComputeDesignStateId(memberIds);
+        var captureEventId = DesignStateIdGenerator.ComputeCaptureEventStateId(memberIds, capturedAt);
+
+        Assert.NotEqual(contentAddressedId, captureEventId);
+    }
+
+    [Fact]
+    public void ComputeCaptureEventStateId_ShouldNotModify_ComputeDesignStateIdBehavior()
+    {
+        // ComputeDesignStateId must remain byte-identical to its pre-plan behavior for every
+        // input (D-03) -- this Fact exercises it standalone, independent of the new overload,
+        // reproducing the exact literal two other Facts in this file already pinned before this
+        // plan touched the file.
+        var memberIds = new List<string> { "OS_abc123", "DS_def456", "PS_ghi789" };
+
+        var id1 = DesignStateIdGenerator.ComputeDesignStateId(memberIds);
+        var id2 = DesignStateIdGenerator.ComputeDesignStateId(memberIds);
+
+        Assert.Equal(id1, id2);
+        Assert.StartsWith("DS_", id1);
+    }
 }
