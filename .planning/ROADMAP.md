@@ -131,13 +131,20 @@ Plans:
 **Plans:** 7 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 1202-01-PLAN.md — Wave 0 test/fixture scaffolding: RED per-object verdict Facts, RED `ON CREATE SET` immutability regression, mixed pass/fail sibling fixture under `fixtures/golden/replay/` (wave 0)
 - [ ] 1202-02-PLAN.md — Identity semantics: canonical DesignState projection + `canonicalStateHash` in C# and Python with cross-language parity, additive capture-event StateId overload, two-layer identity declared (wave 1)
 - [ ] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and the two payload readers converged on one (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 1202-04-PLAN.md — C# per-object verdict read path: additive `GetPerObjectVerdictsAsync`, first Cypher projection of `evidenceEnvelopeJson`, `Enumerable.Repeat` fabrication deleted (wave 2)
 - [ ] 1202-05-PLAN.md — Python side: `ON CREATE SET` snapshot/status separation, rollup reconciled to the shipped precedence, spec propagation with declared exclusions (wave 2)
 - [ ] 1202-06-PLAN.md — ObjState minting convergence with the Pitfall-1 signature resolution, GH Release rebuild, blocking human checkpoint on the identity behavior change (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 1202-07-PLAN.md — DE-01 exit evidence: canonical-state-hash comparison dimension plus the live four-leg run against a `--no-cache` rebuilt stack (wave 3, **requires a live compose stack**, human checkpoint)
 
 ### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
