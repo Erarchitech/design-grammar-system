@@ -163,6 +163,22 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
             using var doc = JsonDocument.Parse(statePayloadJson);
             var root = doc.RootElement;
 
+            // D-07 bundled mandatory fix: check the version field explicitly
+            // before any structural sniffing. A payload that declares a
+            // version other than "2" (e.g. a future v3) must be rejected
+            // outright rather than structurally sniffed and partially parsed
+            // as v2. A payload with NO version key at all (v1's shape) falls
+            // through unchanged to the structural sniff below and, failing
+            // that, the v1 fallback -- v1 payloads carry no version key and
+            // must keep parsing.
+            if (root.ValueKind == JsonValueKind.Object
+                && root.TryGetProperty("version", out var versionElement)
+                && versionElement.ValueKind == JsonValueKind.String
+                && versionElement.GetString() != "2")
+            {
+                return null;
+            }
+
             // v2 payload has top-level stateKind or 3-part composition structure
             if (root.TryGetProperty("stateKind", out _) ||
                 root.TryGetProperty("objStates", out _) ||
