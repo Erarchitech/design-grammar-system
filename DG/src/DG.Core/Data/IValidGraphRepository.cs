@@ -5,6 +5,21 @@ namespace DG.Core.Data;
 public sealed class ValidGraphQueryResult
 {
     public IReadOnlyList<RunInfo> Runs { get; init; } = Array.Empty<RunInfo>();
+
+    /// <summary>
+    /// Legacy, non-authoritative per-run status list. Historically intended as a per-ObjState
+    /// Boolean list, but never actually populated that way — see
+    /// <see cref="Neo4jValidGraphRepository"/>'s removal of the <c>Enumerable.Repeat</c>
+    /// fabrication (D-14). As of this phase, the inner list for each run is the per-RULE
+    /// pass/fail sequence <c>Neo4jValidGraphRepository.ParseRulesJson</c> already returns — one
+    /// boolean per rule evaluated for that run, not one per object. It is retained
+    /// additive-not-breaking (D-13) so existing index-matched <c>Runs[i]</c>/<c>StatusList[i]</c>
+    /// consumers keep working, but it must never be treated as a per-object verdict source.
+    /// <see cref="IValidGraphRepository.GetPerObjectVerdictsAsync"/> is the canonical per-object
+    /// verdict source (D-10). The <c>spec/DATABASE.md</c> contract describing this list as
+    /// index-matched to ObjState order is formally retired by this phase's canonical-sort
+    /// decision (D-08) — see plan 1202-05 for the spec update.
+    /// </summary>
     public IReadOnlyList<IReadOnlyList<bool>> StatusList { get; init; } = Array.Empty<IReadOnlyList<bool>>();
     public IReadOnlyList<DesignState> DesignStates { get; init; } = Array.Empty<DesignState>();
 }
@@ -18,8 +33,56 @@ public class RunInfo
     public string? StateId { get; init; }
 }
 
+/// <summary>
+/// Where a <see cref="PerObjectVerdict"/> was sourced from. Currently the evidence envelope is
+/// the only canonical source (D-10); <see cref="Absent"/> marks the degrade case when no
+/// envelope could be read (D-11) rather than fabricating a status from a legacy boolean.
+/// </summary>
+public enum VerdictSource
+{
+    EvidenceEnvelope,
+    Absent,
+}
+
+/// <summary>
+/// A single object's rolled-up canonical verdict, addressed by <see cref="ObjectId"/> — never by
+/// list position (D-08 formally retires positional/index-matched verdict matching).
+/// </summary>
+public sealed class PerObjectVerdict
+{
+    public string ObjectId { get; init; } = string.Empty;
+    public DG.Core.Contracts.EvidenceStatus Status { get; init; }
+    public VerdictSource Source { get; init; }
+}
+
+/// <summary>
+/// The result of reading a run's per-object verdicts. <see cref="EnvelopePresent"/> distinguishes
+/// "recorded but empty" (<c>true</c>, zero rows) from "not recorded" (<c>false</c>, pre-1200 runs
+/// or malformed JSON, per D-11) — callers must never infer a verdict in the latter case.
+/// </summary>
+public sealed class PerObjectVerdictResult
+{
+    public IReadOnlyList<PerObjectVerdict> Verdicts { get; init; } = Array.Empty<PerObjectVerdict>();
+    public bool EnvelopePresent { get; init; }
+}
+
 public interface IValidGraphRepository
 {
     Task<ValidGraphQueryResult> GetRunsAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the canonical per-object verdicts for one run from its evidence envelope
+    /// (<c>evidenceEnvelopeJson</c>) — the 1200 evidence envelope's per-(rule, object) rows are
+    /// the canonical per-object verdict source (D-10). <see cref="ValidGraphQueryResult.StatusList"/>
+    /// from <see cref="GetRunsAsync"/> is retained but is non-authoritative and must not be used
+    /// as a per-object verdict source. When the envelope is absent (pre-1200 runs) or malformed,
+    /// this returns <see cref="PerObjectVerdictResult.EnvelopePresent"/> <c>false</c> and an empty
+    /// verdict list — every object is then rendered <c>not_evaluated</c> by the caller, with no
+    /// fallback inference from any legacy boolean (D-11): a canonical status can never be derived
+    /// from <see cref="ValidGraphQueryResult.StatusList"/> or any other boolean, only reported
+    /// absent.
+    /// </summary>
+    Task<PerObjectVerdictResult> GetPerObjectVerdictsAsync(
+        ConnectionInfo connection, string runId, CancellationToken cancellationToken = default);
 }

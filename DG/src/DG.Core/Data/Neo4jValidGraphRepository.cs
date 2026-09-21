@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DG.Core.Contracts;
 using DG.Core.Models;
 using DG.Core.Serialization;
 using Neo4j.Driver;
@@ -35,6 +36,16 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
             ds.statePayloadJson AS statePayloadJson,
             ds.acceptedAt AS acceptedAt
         ORDER BY ds.acceptedAt DESC, ds.StateId ASC
+        """;
+
+    // D-13/Correction 2: RunsQuery above does not select run.evidenceEnvelopeJson at all --
+    // this is the first C# projection of that property. The per-object verdict was never
+    // missing an index, it was never read into C# in the first place. Scoped by both
+    // $project and $runId (and graph:'ValidGraph'), matching the two existing queries'
+    // scoping convention -- project isolation itself remains Phase 1205's scope.
+    private const string EvidenceQuery = """
+        MATCH (run:ValidationRun {graph:'ValidGraph', project:$project, runId:$runId})
+        RETURN run.evidenceEnvelopeJson AS evidenceEnvelopeJson
         """;
 
     public async Task<ValidGraphQueryResult> GetRunsAsync(
@@ -153,6 +164,98 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
     internal static string GetRunsQueryForTesting() => RunsQuery;
 
     internal static string GetStandaloneStatesQueryForTesting() => StandaloneStatesQuery;
+
+    internal static string GetEvidenceQueryForTesting() => EvidenceQuery;
+
+    /// <summary>
+    /// Reads a run's canonical per-object verdicts (D-10/D-13). Guards <paramref name="runId"/>
+    /// explicitly rather than via <c>ArgumentException.ThrowIfNullOrWhiteSpace</c>, which is
+    /// .NET 8+ only -- DG.Core multi-targets net7.0. Wrapped in the same degrade-not-abort
+    /// pattern as the standalone-states read (see :112-131 above): an older graph shape, an
+    /// unreachable property, or a missing run must yield an envelope-absent result, never an
+    /// exception that would surface as a Grasshopper canvas failure.
+    /// </summary>
+    public async Task<PerObjectVerdictResult> GetPerObjectVerdictsAsync(
+        ConnectionInfo connection, string runId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(runId))
+        {
+            throw new ArgumentException("Run id must not be null or whitespace.", nameof(runId));
+        }
+
+        await using var driver = GraphDatabase.Driver(
+            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
+        await using var session = driver.AsyncSession(
+            options => options.WithDatabase(connection.Database));
+
+        string? evidenceEnvelopeJson = null;
+
+        try
+        {
+            var cursor = await session
+                .RunAsync(EvidenceQuery, new { project = connection.Project, runId })
+                .WaitAsync(QueryTimeout, cancellationToken);
+
+            await cursor
+                .ForEachAsync(record =>
+                {
+                    evidenceEnvelopeJson = record["evidenceEnvelopeJson"].As<string?>();
+                })
+                .WaitAsync(QueryTimeout, cancellationToken);
+        }
+        catch (Exception)
+        {
+            // Degrade, don't abort -- an older graph shape or an unreachable property yields
+            // an envelope-absent result rather than propagating out of this method.
+            evidenceEnvelopeJson = null;
+        }
+
+        return BuildPerObjectVerdicts(evidenceEnvelopeJson);
+    }
+
+    /// <summary>
+    /// Pure deserialization+rollup function (D-13's testing seam, matching the
+    /// TryParseDesignState/ParseRulesJson convention): null/whitespace/malformed input all
+    /// degrade to an envelope-absent result rather than throwing (D-11). Rows are grouped by
+    /// ObjectId (ordinal) and rolled up via <see cref="StatusRollup.Rollup"/> -- the shipped
+    /// precedence, never a locally-ordered or re-implemented one (D-12). Output is sorted by
+    /// ObjectId ordinal, matching the envelope's own normative row order.
+    /// </summary>
+    internal static PerObjectVerdictResult BuildPerObjectVerdicts(string? evidenceEnvelopeJson)
+    {
+        if (string.IsNullOrWhiteSpace(evidenceEnvelopeJson))
+        {
+            return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
+        }
+
+        try
+        {
+            var envelope = JsonSerializer.Deserialize<EvidenceEnvelope>(evidenceEnvelopeJson);
+            if (envelope is null)
+            {
+                return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
+            }
+
+            var verdicts = envelope.Rows
+                .GroupBy(row => row.ObjectId, StringComparer.Ordinal)
+                .Select(group => new PerObjectVerdict
+                {
+                    ObjectId = group.Key,
+                    Status = StatusRollup.Rollup(group.Select(row => row.CanonicalStatus)),
+                    Source = VerdictSource.EvidenceEnvelope,
+                })
+                .OrderBy(v => v.ObjectId, StringComparer.Ordinal)
+                .ToList();
+
+            return new PerObjectVerdictResult { EnvelopePresent = true, Verdicts = verdicts };
+        }
+        catch (Exception)
+        {
+            // Malformed envelope JSON -- degrade rather than throw, mirroring
+            // TryParseDesignState's degrade-not-crash posture.
+            return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
+        }
+    }
 
     internal static DesignState? TryParseDesignState(string? statePayloadJson)
     {
