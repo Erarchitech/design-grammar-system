@@ -866,6 +866,23 @@ def delete_validation_run_metadata(project: str, run_id: str) -> None:
 
 
 def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = None) -> dict[str, list]:
+    """Roll up ValidationEntity rows to one verdict per dgEntityId.
+
+    D-12 (Phase 1202 plan 05, ALGN12-10): rolls up via the shipped
+    evidence_contract.ROLLUP_PRECEDENCE walk -- error outranks failed -- never a
+    locally-ordered table and never boolean arithmetic/max-min over an enum ordinal.
+    This reconciles the legacy failed-wins dedup this function used to run, which put
+    `failed` ahead of `error`, the opposite of the shipped precedence.
+
+    Legacy presentation bucketing: the rolled-up canonical status is mapped onto this
+    function's existing {"failed": [...], "passed": [...]} return shape using
+    evidence_contract.to_legacy_boolean, the sole sanctioned canonical->boolean
+    direction -- `passed` buckets to "passed", every other status buckets to "failed".
+    Per D-10 this whole function is legacy/non-authoritative: the canonical per-object
+    verdict source is the evidence envelope, read in C# via
+    IValidGraphRepository.GetPerObjectVerdictsAsync. This function's only remaining job
+    is to not ship a second, disagreeing rollup.
+    """
     rows = read_many(
         """
         MATCH (ve:ValidationEntity {graph:$graph, project:$project, runId:$runId})
@@ -875,21 +892,46 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
         """,
         {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id, "ruleId": rule_id},
     )
-    seen_failed: dict[str, dict[str, str]] = {}
-    seen_passed: dict[str, dict[str, str]] = {}
+
+    groups: dict[str, dict[str, Any]] = {}
     for row in rows:
-        status = row.get("status")
         dg_entity_id = row.get("dgEntityId")
         if not dg_entity_id:
             continue
-        entry = {"dgEntityId": dg_entity_id, "displayName": row.get("displayName") or dg_entity_id}
-        if status == "failed":
-            if dg_entity_id not in seen_failed:
-                seen_failed[dg_entity_id] = entry
-            seen_passed.pop(dg_entity_id, None)
-        elif status == "passed" and dg_entity_id not in seen_failed and dg_entity_id not in seen_passed:
-            seen_passed[dg_entity_id] = entry
-    return {"failed": list(seen_failed.values()), "passed": list(seen_passed.values())}
+        group = groups.setdefault(
+            dg_entity_id,
+            {"displayName": row.get("displayName") or dg_entity_id, "statuses": set()},
+        )
+        if row.get("displayName"):
+            group["displayName"] = row["displayName"]
+
+        status_raw = row.get("status")
+        try:
+            status = evidence_contract.CanonicalStatus(status_raw)
+        except ValueError:
+            logging.getLogger(__name__).warning(
+                "get_validation_entity_sets: unrecognized ValidationEntity.status %r "
+                "for dgEntityId=%r (project=%r, runId=%r) -- treated as UNKNOWN rather "
+                "than discarded, per D-12.",
+                status_raw, dg_entity_id, project, run_id,
+            )
+            status = evidence_contract.CanonicalStatus.UNKNOWN
+        group["statuses"].add(status)
+
+    failed: list[dict[str, str]] = []
+    passed: list[dict[str, str]] = []
+    for dg_entity_id, group in groups.items():
+        entry = {"dgEntityId": dg_entity_id, "displayName": group["displayName"]}
+        rolled_up = next(
+            (candidate for candidate in evidence_contract.ROLLUP_PRECEDENCE if candidate in group["statuses"]),
+            evidence_contract.CanonicalStatus.NO_POPULATION,
+        )
+        if evidence_contract.to_legacy_boolean(rolled_up):
+            passed.append(entry)
+        else:
+            failed.append(entry)
+
+    return {"failed": failed, "passed": passed}
 
 
 def build_rules_summary(request: ValidationPublishRequest) -> list[dict[str, Any]]:

@@ -95,6 +95,13 @@ _ROLLUP_PRECEDENCE: tuple[CanonicalStatus, ...] = (
     CanonicalStatus.PASSED,
 )
 
+# Public alias of _ROLLUP_PRECEDENCE (Phase 1202 plan 05, D-12). Other modules (e.g.
+# app.py's get_validation_entity_sets) must import the shipped precedence rather than
+# reaching through the underscore-prefixed name or retyping the ordering -- a second
+# ordered table is exactly the drift this milestone eliminates. This is the same tuple
+# object, not a copy.
+ROLLUP_PRECEDENCE: tuple[CanonicalStatus, ...] = _ROLLUP_PRECEDENCE
+
 
 def to_legacy_boolean(status: "CanonicalStatus") -> bool:
     """One-directional canonical -> legacy boolean mapping (D-04).
