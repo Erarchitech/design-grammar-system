@@ -1,0 +1,104 @@
+# fixtures/golden/replay/ — Mixed Pass/Fail Per-Object Replay Fixture
+
+**Added:** Phase 1202 plan 01 Task 3 (D-17), requirements ALGN12-09/ALGN12-10.
+
+## What this is
+
+`mixed-verdicts.json` is a single sibling fixture built to exercise the D-17 mixed pass/fail
+per-object replay case: a Design State whose three ObjStates resolve to three **different**
+per-object verdicts (`passed`, `failed`, `no_population`) that must stay distinct through
+`publish → query → replay`, rather than collapsing into one run-level aggregate.
+
+It is read by two future consumers named in `1202-CONTEXT.md`'s `key_links`:
+
+- **Plan 04's `Neo4jValidGraphRepository` per-object verdict tests** — the `statePayloadJson`
+  is a serializer-valid v2 payload the repository's `BuildPerObjectVerdicts` path can be fed
+  directly, and the `evidenceEnvelopeJson` key carries the exact rows that method parses.
+- **Plan 06's DE-01 replay leg (D-16)** — the same artifact is the one input both the C# and
+  Python legs read, so this is not a per-service copy (per `spec/EVIDENCE-CONTRACT.md` § 7's
+  "per-service copies are forbidden" rule, mirrored here for fixture material generally).
+
+## Relationship to `fixtures/golden/fixture.json` — this is a SIBLING, not an edit
+
+This fixture is **additive and separate from** the frozen `fixtures/golden/fixture.json`
+(1200 D-11, `MANIFEST.md`'s freeze policy). **`fixture.json`, `seed.cypher`, and
+`canonical-vectors.json` were not touched by this task** — verified by
+`git status --porcelain` showing no changes to any of the three. This mirrors the exact
+precedent `fixtures/golden/parser/` set in Phase 1201 plan 04 (D-16): a new corpus lives in
+its own subdirectory, under its own (lighter) change-reason discipline, rather than by editing
+the frozen trio to make a later phase's own gate pass.
+
+### Why reuse, not invention, of object/rule ids
+
+`mixed-verdicts.json` deliberately reuses the **same three object ids and the same rule id**
+already defined in the frozen `fixture.json`:
+
+| Id | Source | Expected verdict here |
+|---|---|---|
+| `OBJ_GOLD_PASS` | `fixture.json` `objects[0]` | `passed` |
+| `OBJ_GOLD_FAIL` | `fixture.json` `objects[1]` | `failed` |
+| `OBJ_GOLD_EMPTY` | `fixture.json` `objects[2]` | `no_population` |
+| `R_GOLD_HEIGHT_MAX_75_V` | `fixture.json` `rule.Rule_Id` | (rule under evaluation) |
+
+The three expected statuses mirror `fixture.json`'s own `expectedOutcomes` table for the same
+`(ruleId, objectId)` pairs exactly. Reusing these ids means every consumer of this fixture
+reasons about the **same** objects the frozen golden fixture already established, instead of
+inventing a second, disconnected identity vocabulary that a reviewer would have to cross-check
+against the frozen file by hand. `fixture.json` itself is read-only input here — this fixture
+does not add to or modify its `objects`, `atoms`, or `expectedOutcomes` arrays.
+
+## Why this fixture exists at all — the stub DesignState in `fixture.json` cannot round-trip
+
+`fixture.json`'s own `designState.statePayloadJson` field is a *stub*: its `objStates`,
+`paramStates`, and `propStates` entries carry only a bare `stateId` (e.g.
+`{"stateId":"OS_GOLDEN_01"}`) with no `objectRef` and no `capturedAtUtc`. Both are required by
+`DesignStatePayloadV2Serializer.Deserialize` (`ValidateDeserialized`, and `FromDto`'s
+`CapturedAtUtc` parse, which throws on a missing/invalid timestamp) — so that stub cannot
+survive a `Deserialize` round-trip. `mixed-verdicts.json`'s `statePayloadJson` exists precisely
+to be serializer-valid where the frozen stub is not, without touching the frozen stub itself.
+
+## Content shape
+
+- `statePayloadJson` is a JSON **string** (matching how DesignState payloads are actually
+  persisted on `:ValidationRun`/`:DesignState` nodes — see `spec/DATABASE.md`'s
+  `statePayloadJson` sidecar), not an inline object.
+- The embedded v2 payload carries `version: "2"`, a root `stateId` + `capturedAtUtc`, three
+  `objStates` (one per reused object id, each with `classIri`, `label`, and its own
+  `capturedAtUtc`), one `paramStates` entry with a real `number`-typed parameter, and one
+  `propStates` entry referencing `R_GOLD_HEIGHT_MAX_75_V` / `ex:hasHeight`.
+- The `classIri` member on every ObjState is deliberate: it is the D-05 member plan 03 adds to
+  `ObjStateDto` (currently absent, per `1202-CONTEXT.md` D-05), and this fixture is the
+  round-trip proof that a replayed payload carrying it deserializes cleanly once plan 03 lands.
+- The three `objStates` entries are ordered **non-canonically** in the file (`OS_1202_C_EMPTY`,
+  then `OS_1202_A_PASS`, then `OS_1202_B_FAIL` — not StateId-ascending), so a round-trip test can
+  prove D-08's canonical StateId-sort actually re-orders them rather than passing vacuously on
+  already-sorted input.
+- `expectedPerObjectVerdicts` uses the canonical wire-form status strings from
+  `spec/EVIDENCE-CONTRACT.md` (`passed` / `failed` / `no_population`) — never a boolean — with a
+  `note` on each entry explaining its derivation from `fixture.json`'s own `expectedOutcomes`.
+- `evidenceEnvelopeJson` is a contract-valid envelope string (per `spec/EVIDENCE-CONTRACT.md`'s
+  `rows: {ruleId, objectId, canonicalStatus}` shape) whose three rows produce exactly the three
+  `expectedPerObjectVerdicts` above, so plan 04's repository tests and plan 06's DE-01 leg can
+  both consume this one artifact instead of two independently-authored ones.
+
+## `expectedCanonicalStateHash` is intentionally `null`
+
+Deliverable 4 of this phase (the canonical state hash, D-01/D-02) has no implementation yet in
+plan 01 — `CanonicalJsonWriter.HashCanonical` is not extended to a DesignState projection until
+a later plan. Filling in a hash value now would be a **fabricated** value, not a computed one.
+`expectedCanonicalStateHash` stays `null` with an explanatory `expectedCanonicalStateHashNote`
+field until **plan 02** implements the canonical projection and can compute the real digest.
+
+## Freeze status
+
+This corpus is **not frozen** the way `fixture.json` is. It is this plan's own deliverable. A
+later phase may extend it (e.g. plan 02 filling in `expectedCanonicalStateHash`) without a
+version-bump ceremony, but should log the change below — the same "log why" discipline
+`fixtures/golden/parser/README.md` established, scoped down from `MANIFEST.md`'s heavier
+`FIXTURE_VERSION` bump requirement for the frozen trio.
+
+## Change-Reason Log
+
+| Date | Reason | Changed by |
+|---|---|---|
+| 2026-09-21 | Initial fixture — mixed pass/fail/no_population per-object replay case for D-17, built from the existing `OBJ_GOLD_PASS`/`OBJ_GOLD_FAIL`/`OBJ_GOLD_EMPTY` object ids and `R_GOLD_HEIGHT_MAX_75_V` rule id. `expectedCanonicalStateHash` left `null` pending plan 02. | Phase 1202-01 executor |

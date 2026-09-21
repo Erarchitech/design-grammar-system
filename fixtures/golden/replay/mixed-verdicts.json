@@ -1,0 +1,27 @@
+{
+  "fixtureVersion": "1.0.0",
+  "project": "DG-1202-REPLAY",
+  "description": "Sibling replay fixture for Phase 1202 plan 01 Task 3 (D-17): a mixed pass/fail/no_population per-object verdict case built from the existing OBJ_GOLD_PASS/OBJ_GOLD_FAIL/OBJ_GOLD_EMPTY object ids in fixtures/golden/fixture.json and the R_GOLD_HEIGHT_MAX_75_V rule id. Exists because the frozen fixture.json's own stub DesignState (its 'designState.statePayloadJson' field) carries bare stateId-only members with no objectRef/capturedAtUtc and cannot round-trip through DesignStatePayloadV2Serializer.Deserialize -- this sibling is serializer-valid where that stub is not. See README.md in this directory for the full framing and the frozen-file non-edit guarantee.",
+  "derivedFrom": "fixtures/golden/fixture.json (reuses OBJ_GOLD_PASS, OBJ_GOLD_FAIL, OBJ_GOLD_EMPTY object ids and the R_GOLD_HEIGHT_MAX_75_V rule id verbatim; that file itself is NOT edited by this fixture)",
+  "statePayloadJson": "{\"version\":\"2\",\"stateId\":\"DS_1202_MIXED_REPLAY_01\",\"label\":\"1202 mixed pass/fail replay\",\"capturedAtUtc\":\"2026-09-21T12:00:00.0000000Z\",\"objStates\":[{\"stateId\":\"OS_1202_C_EMPTY\",\"objectRef\":\"OBJ_GOLD_EMPTY\",\"label\":\"Golden Non-Building Object\",\"classIri\":\"ex:Site\",\"capturedAtUtc\":\"2026-09-21T12:00:02.0000000Z\"},{\"stateId\":\"OS_1202_A_PASS\",\"objectRef\":\"OBJ_GOLD_PASS\",\"label\":\"Golden Building Pass\",\"classIri\":\"ex:Building\",\"capturedAtUtc\":\"2026-09-21T12:00:00.0000000Z\"},{\"stateId\":\"OS_1202_B_FAIL\",\"objectRef\":\"OBJ_GOLD_FAIL\",\"label\":\"Golden Building Fail\",\"classIri\":\"ex:Building\",\"capturedAtUtc\":\"2026-09-21T12:00:01.0000000Z\"}],\"paramStates\":[{\"stateId\":\"DS_1202_MIXED_PARAMS_01\",\"capturedAtUtc\":\"2026-09-21T12:00:03.0000000Z\",\"parameters\":[{\"parameterId\":\"HeightSlider\",\"displayName\":\"Height Slider\",\"type\":\"number\",\"value\":42.0}]}],\"propStates\":[{\"stateId\":\"PS_1202_MIXED_HEIGHT_01\",\"ruleIri\":\"R_GOLD_HEIGHT_MAX_75_V\",\"dataPropertyIri\":\"ex:hasHeight\",\"objectRef\":\"OBJ_GOLD_PASS\",\"propValue\":{\"parameterId\":\"hasHeight\",\"displayName\":\"Has Height\",\"type\":\"number\",\"value\":42.0}}]}",
+  "expectedPerObjectVerdicts": [
+    {
+      "objectId": "OBJ_GOLD_PASS",
+      "expectedCanonicalStatus": "passed",
+      "note": "Mirrors fixture.json's expectedOutcomes row for OBJ_GOLD_PASS against R_GOLD_HEIGHT_MAX_75_V: hasHeight 42.0 <= 75, so the violation body never fires."
+    },
+    {
+      "objectId": "OBJ_GOLD_FAIL",
+      "expectedCanonicalStatus": "failed",
+      "note": "Mirrors fixture.json's expectedOutcomes row for OBJ_GOLD_FAIL against R_GOLD_HEIGHT_MAX_75_V: hasHeight 88.5 > 75, so swrlb:greaterThan(?h, 75) is satisfied and the rule is genuinely violated. (fixture.json also asserts a by-design 'unsupported' row for the ObjectPropertyAtom on this same object -- this sibling fixture asserts only the per-object rollup outcome, 'failed', per D-12's precedence: error > failed > ... > passed.)"
+    },
+    {
+      "objectId": "OBJ_GOLD_EMPTY",
+      "expectedCanonicalStatus": "no_population",
+      "note": "Mirrors fixture.json's expectedOutcomes row for OBJ_GOLD_EMPTY: it is of class ex:Site, which the rule's ClassAtom never matches -- zero bindings, asserted no_population."
+    }
+  ],
+  "expectedCanonicalStateHash": null,
+  "expectedCanonicalStateHashNote": "Intentionally null. Plan 02 fills this in once the canonical DesignState projection (D-01/D-02) exists and CanonicalJsonWriter.HashCanonical can be run against it. A placeholder hash value here would be fabricated, not computed, and this plan does not implement the hasher extension.",
+  "evidenceEnvelopeJson": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"DG-1202-REPLAY\",\"definitionId\":\"R_GOLD_HEIGHT_MAX_75_V\",\"serviceName\":\"fixtures.golden.replay\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-21T12:00:04.0000000Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\",\"objectId\":\"OBJ_GOLD_PASS\",\"canonicalStatus\":\"passed\"},{\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\",\"objectId\":\"OBJ_GOLD_FAIL\",\"canonicalStatus\":\"failed\"},{\"ruleId\":\"R_GOLD_HEIGHT_MAX_75_V\",\"objectId\":\"OBJ_GOLD_EMPTY\",\"canonicalStatus\":\"no_population\"}]}"
+}
