@@ -81,13 +81,30 @@ to be serializer-valid where the frozen stub is not, without touching the frozen
   `expectedPerObjectVerdicts` above, so plan 04's repository tests and plan 06's DE-01 leg can
   both consume this one artifact instead of two independently-authored ones.
 
-## `expectedCanonicalStateHash` is intentionally `null`
+## `expectedCanonicalStateHash` — populated by plan 02
 
-Deliverable 4 of this phase (the canonical state hash, D-01/D-02) has no implementation yet in
-plan 01 — `CanonicalJsonWriter.HashCanonical` is not extended to a DesignState projection until
-a later plan. Filling in a hash value now would be a **fabricated** value, not a computed one.
-`expectedCanonicalStateHash` stays `null` with an explanatory `expectedCanonicalStateHashNote`
-field until **plan 02** implements the canonical projection and can compute the real digest.
+Deliverable 4 of this phase (the canonical state hash, D-01/D-02) had no implementation in plan
+01 — `expectedCanonicalStateHash` was left `null` there rather than fabricated. **Plan 02** built
+`DesignStateCanonicalProjection` (C#) and `data-service/design_state_projection.py` (Python),
+both extending `CanonicalJsonWriter.HashCanonical` / `canonical_json.hash_canonical` per D-02, and
+used the Python side to compute the real digest for this fixture's `statePayloadJson`
+(`3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428`, `canonicalizationVersion: 1`).
+
+**Known, deliberately-not-fixed parity gap, recorded in `expectedCanonicalStateHashNote`:** this
+hash currently reproduces only via the Python path (which reads `classIri` directly off the raw
+wire-payload dict). It does **not** yet reproduce via
+`DesignStatePayloadV2Serializer.Deserialize(statePayloadJson)` ->
+`DesignStateCanonicalProjection.ComputeHash(...)` in C#, because the shipped serializer's
+`ObjStateDto` has no `ClassIri` member yet — that member is added by D-05, scoped to a later plan
+per `1202-CONTEXT.md`'s `canonical_refs`, not plan 02. `Deserialize` silently drops `classIri`
+today, producing `classIri:null` on every ObjState instead of this fixture's real values
+(`ex:Building` / `ex:Site`), which changes the hash relative to the Python computation. This is
+not a cross-language hashing bug — `DesignStateCanonicalProjection` (C#) and
+`design_state_projection.py` (Python) agree byte-for-byte given the *same* input, verified by the
+shared cross-language vector both suites assert (`DesignStateCanonicalProjectionTests.cs` /
+`test_design_state_projection.py`). The divergence here is upstream of the projection, in what the
+current C# deserializer supplies as input. Re-verify (and update this hash if it changes) once
+D-05 ships and the serializer round-trips `ClassIri`.
 
 ## Freeze status
 
@@ -102,3 +119,4 @@ version-bump ceremony, but should log the change below — the same "log why" di
 | Date | Reason | Changed by |
 |---|---|---|
 | 2026-09-21 | Initial fixture — mixed pass/fail/no_population per-object replay case for D-17, built from the existing `OBJ_GOLD_PASS`/`OBJ_GOLD_FAIL`/`OBJ_GOLD_EMPTY` object ids and `R_GOLD_HEIGHT_MAX_75_V` rule id. `expectedCanonicalStateHash` left `null` pending plan 02. | Phase 1202-01 executor |
+| 2026-09-21 | Populated `expectedCanonicalStateHash` (`3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428`) and added `canonicalizationVersion: 1`, computed via `design_state_projection.compute_state_hash`. Documented the known C#-serializer `classIri` parity gap (resolves once D-05 ships) in `expectedCanonicalStateHashNote`. | Phase 1202-02 executor |
