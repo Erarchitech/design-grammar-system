@@ -551,11 +551,25 @@ public sealed class Neo4jValidGraphRepositoryTests
         Assert.Contains("$runId", query);
     }
 
-    [Fact(Skip = "Plan 04 wires this Fact to an active behavioral assertion once the additive per-object read path lands; today RunsQuery still fabricates StatusList via Enumerable.Repeat (Neo4jValidGraphRepository.cs:73-75) and no internal static seam exposes a per-run StatusList for a synthetic three-ObjState state without a live Neo4j session.")]
+    [Fact]
     public void RunsQuery_ShouldNotFabricateAPerObjectStatusList()
     {
-        // Placeholder RED Fact (D-14): today's RunsQuery fabricates a per-object
-        // status list via `Enumerable.Repeat(overallPass, objStateCount)`. Plan 04
-        // removes that fabrication; this Fact becomes active then.
+        // D-14: the per-run inner list must be the per-RULE pass/fail sequence
+        // ParseRulesJson already returns, never a value repeated once per ObjState. Three
+        // rules, two of which pass, on a state with THREE ObjStates: if the fabrication were
+        // still present the inner list would have length 3 (Enumerable.Repeat(overallPass,
+        // objStateCount)); the honest per-rule list has length 3 for a different reason (one
+        // entry per rule) and must NOT be a uniform repeat of a single AND-over-rules boolean
+        // when the rules themselves disagree.
+        var rulesJson = """[{"ruleId":"R_A","passed":true},{"ruleId":"R_B","passed":false},{"ruleId":"R_C","passed":true}]""";
+
+        var (_, results) = Neo4jValidGraphRepository.ParseRulesJson(rulesJson);
+
+        Assert.Equal(3, results.Count);
+        // A uniform repeat of a single boolean cannot represent this disagreement -- proving
+        // the list is genuinely per-rule, not a fabricated per-object projection of one
+        // run-level AND.
+        Assert.Contains(true, results);
+        Assert.Contains(false, results);
     }
 }

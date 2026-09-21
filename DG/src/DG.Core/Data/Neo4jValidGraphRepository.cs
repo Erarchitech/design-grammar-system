@@ -74,16 +74,18 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
 
                 // Parse rules and status
                 var (ruleIds, results) = ParseRulesJson(rulesJson);
-                var overallPass = results.All(r => r);
 
                 // Parse design state
                 var state = TryParseDesignState(statePayloadJson);
-                var objStateCount = state?.ObjStates.Count ?? 0;
 
-                // Build per-ObjState status list
-                var statusList = objStateCount > 0
-                    ? Enumerable.Repeat(overallPass, objStateCount).ToList()
-                    : new List<bool> { overallPass };
+                // D-14: the per-run inner list is honestly the per-RULE pass/fail sequence
+                // ParseRulesJson already returns -- one boolean per rule evaluated for this
+                // run, never a per-object list. The former construction here fabricated a
+                // per-object-shaped list from a run-level AND over rules by repeating that
+                // single boolean once per ObjState; this is a missing feature, not a mapping
+                // bug (Correction 2), and GetPerObjectVerdictsAsync is the canonical
+                // per-object read path (D-10).
+                var statusList = (IReadOnlyList<bool>)results;
 
                 var runInfo = new RunInfo
                 {
