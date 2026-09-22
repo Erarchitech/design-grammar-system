@@ -29,24 +29,54 @@ This document is the normative contract. The implementation plans (`DG.Core.Mode
 
 ## Format & Minting
 
-`dgId` = the literal prefix `dg:` followed by the **first 16 uppercase hexadecimal characters** of the SHA-256 digest over the UTF-8 bytes of the pipe-joined string:
+`dgId` = the literal prefix `dg:` followed by the **first 16 uppercase hexadecimal characters** of the SHA-256 digest over the UTF-8 bytes of the length-prefix-encoded string:
 
 ```
-dgId = "dg:" + UPPER(HEX(SHA-256(UTF-8( project | definitionId | cgId ))))[0..16]
+dgId = "dg:" + UPPER(HEX(SHA-256(UTF-8( EncodeHashInput(project, definitionId, cgId) ))))[0..16]
 ```
 
-- **Hash input (exact order):** `project | definitionId | cgId` — three fields joined by the literal pipe character `|`, in that order, with no surrounding whitespace.
+- **Hash input (exact order):** `project`, `definitionId`, `cgId` — three components, in that order, combined through the **length-prefix encoding contract** below (Phase 1203, D-09/CR-02) rather than a naive pipe-join.
 - **Example shape:** `dg:9F2A4C1E7B03D5A8` (prefix + 16 hex chars).
 - The mechanism reuses the `HashToHex16` pattern already shipped in `DG.Core.Services.DesignStateIdGenerator` (`Convert.ToHexString(SHA256.HashData(...))[..16]`) — zero new dependency, byte-identical to the existing house pattern.
 
+### Length-prefix hash-input encoding (Phase 1203, D-09 / CR-02)
+
+**This is the single normative encoding contract for every dgId and every DesignState id in this system.** It replaced a naive pipe-join (`"{a}|{b}|{c}"`) that allowed a pipe character embedded in any one component to shift the boundary between components, producing a hash collision between two semantically different input tuples (CR-02).
+
+**Rule, precise enough to reimplement byte-for-byte:** for each component, in order, emit the component's character length in invariant decimal, then a colon, then the component's raw text; join the resulting units with a single pipe (`|`) character.
+
+- A component that is present (even as an empty string) emits `{length}:{text}` — an empty string emits the unit `0:` (length zero, colon, no trailing text).
+- A component that is **absent** (`null` / `None`) emits the literal unit `-1:` — this is how a null component is distinguished from an empty one: `0:` (empty string, length 0) and `-1:` (null, sentinel length -1) can never collide, and neither can collide with any real length-prefixed unit, because a real component's length is always ≥ 0.
+- Length is counted in UTF-16 characters on the C# side (`string.Length`) and in Unicode code points on the Python side (`len(str)`) — the two counting conventions agree for every input this system's identity components actually carry (ASCII/BMP project names, definitionIds, and cgIds); no astral-plane characters are expected here.
+- Because every unit is preceded by an unambiguous length, a pipe (or any other character) inside a component's raw text can never be mistaken for a component boundary — this is what closes CR-02.
+
+**Worked example (the canonical adversarial pair from the CR-02 regression tests):** the two triples `("a|b", "c", "d")` and `("a", "b|c", "d")` both naively join to the identical string `a|b|c|d` under the old scheme. Under the length-prefix encoding they diverge: `("a|b","c","d")` → `3:a|b|1:c|1:d`, while `("a","b|c","d")` → `1:a|3:b|c|1:d` — distinct strings, distinct hashes.
+
+**Twinned implementations (must never drift independently):**
+
+| Language | Symbol |
+|---|---|
+| C# | `DG.Core.Models.Identity.DgIdMintingService.EncodeHashInput` and `DG.Core.Services.DesignStateIdGenerator.EncodeHashInput` (identical copies of the same rule) |
+| Python | `data-service.dg_identity._encode_hash_input` |
+
+A **shared golden vector** (a fixed `(project, definitionId, cgId)` triple and its expected `dgId`) and a shared collision regression (the worked adversarial pair above) guard parity across both languages; any edit to the encoding rule in one language MUST be mirrored in the other.
+
+**Known, deliberately out-of-scope divergence:** `canonical_json.hash_scalar_tuple` (Python) and `DG.Core.Contracts.CanonicalJsonWriter.HashScalarTuple` (C#) are a **third, independent** hashing implementation that still uses the pre-CR-02 naive pipe-join. Their doc-comments claim byte-for-byte parity with `Mint`/`compute_dg_id`; that claim is now **false** and is recorded here as a known open gap (Phase 1203 Plan 02), not resolved by this document or this phase. A future plan must either extend the length-prefix encoding to that third implementation or explicitly document the two conventions as intentionally divergent and correct the stale claim in both doc-comments.
+
 ### Single source of truth (cross-language parity anchor)
 
-> The hash-input contract `project|definitionId|cgId` (this exact field set, order, and pipe delimiter) is the **SINGLE source of truth** that BOTH implementations follow:
+> The hash-input contract (component set `project`, `definitionId`, `cgId`, in that order, combined via the length-prefix encoding above) is the **SINGLE source of truth** that BOTH implementations follow:
 >
 > - `DG.Core.Models.Identity.DgIdMintingService` (C#, mints at canvas-extraction time inside the plugin), and
 > - the data-service `compute_dg_id` (Python, mints/verifies on the publish and `/identity/mint` paths).
 >
-> A **shared golden vector** (a fixed `(project, definitionId, cgId)` triple and its expected `dgId`) guards parity: both a C# xUnit test and a Python pytest assert the same triple produces the same `dgId`. Any drift in field set, order, delimiter, hash, casing, or truncation length breaks the golden vector and fails CI in both runners.
+> A **shared golden vector** (a fixed `(project, definitionId, cgId)` triple and its expected `dgId`) guards parity: both a C# xUnit test and a Python pytest assert the same triple produces the same `dgId`. Any drift in field set, order, encoding rule, hash, casing, or truncation length breaks the golden vector and fails CI in both runners.
+
+### The `definitionId` ambiguity — resolved (WR-04)
+
+**`definitionId` is the GH document id (`CgDefinition.DocumentId`, sourced from `doc.DocumentID.ToString()` at canvas extraction), NOT the file name (`CgDefinition.FileName` / `doc.DisplayName`).** Confirmed directly in `DG.Core.Services.CgContextDgIdAssigner.AssignDgIds`, which reads `context.Definition.DocumentId` (never `FileName`) into the local `definitionId` used for every `DgIdMintingService.Mint` call in that method. `CgDefinition` (`DG.Core.Models.Computgraph.CgContext.cs`) carries both fields side by side — `DocumentId` and `FileName` are genuinely distinct properties on the same object, populated from different GH document accessors (`doc.DocumentID` vs. `doc.DisplayName`) — so the ambiguity is a real one this spec must pin, not a naming accident.
+
+The golden-vector and collision-regression test constants in both languages use filename-shaped literals (e.g. `"frame.gh"`, `"wall.gh"`) as the `definitionId` argument. These are opaque test literals chosen for readability, not evidence that production code passes a file name — the test helper functions (`Mint`, `compute_dg_id`) accept `definitionId` as an untyped string and mint identically regardless of which real-world field a caller supplies. The production caller (`CgContextDgIdAssigner`) is the authority on what `definitionId` actually is at runtime, and it is the document id.
 
 ### Relationship to `cgId`
 
@@ -86,10 +116,25 @@ A **member-instance-GUID carry-forward** escape hatch is recorded here as a docu
 
 Cross-project `dgId` collisions are prevented by **belt-and-suspenders** defense:
 
-1. **`project` is folded into the hash input** (`project|definitionId|cgId`), so two different projects tagging structurally identical definitions with the same convention name produce **distinct** `dgId`s.
+1. **`project` is folded into the hash input** (length-prefix-encoded `project, definitionId, cgId`), so two different projects tagging structurally identical definitions with the same convention name produce **distinct** `dgId`s.
 2. **Every registry Cypher query includes `project` in its `MATCH`/`MERGE` key** — defense in depth, never relying on the hash alone.
 
 This applies the lesson of the shipped v2.0/v3.0 `Var` cross-project merge-key collision bug (`migrations/2026-06-23_var_project_merge_key.cypher`), whose fix added `project` to the merge key. Folding `project` into the hash *and* scoping every query is the more defensive of the two precedents already in this codebase. `DgIdMintingService` unit tests assert two projects with an identical `cgId` produce different `dgId`s.
+
+### Project-in-hash for DesignState ids (Phase 1203, D-08) — which functions receive it, and why some do not
+
+The same belt-and-suspenders defense extends to DesignState id minting, restoring the two-layer collision defense for that surface. `project` is an **optional trailing parameter** on the three per-member minting functions that can legitimately obtain one:
+
+| Function | Takes `project`? | Reason |
+|---|---|---|
+| `ComputeParamStateId` | Yes (optional, default `null`) | Folded into the hash when supplied |
+| `ComputeObjectStateIdFromRef` | Yes (optional, default `null`) | Folded into the hash when supplied — this is the canvas-capture-authoritative form (see [ObjState Authority Contract](#objstate-authority-contract-d-07) below) |
+| `ComputePropStateId` | Yes (optional, default `null`) | Folded into the hash when supplied |
+| `ComputeObjectStateId` (3-arg) | **No** — and this is correct, not an oversight | Its project-in-hash obligation is already satisfied by its existing `projectId` argument (one of its original three parameters), so it takes no *additional* parameter |
+| `ComputeDesignStateId` (aggregate) | No | Concatenates sorted member StateIds with no separator at all — not pipe-joined, so CR-02 does not apply, and `project` reaches it transitively through its members' own StateIds |
+| `ComputeCaptureEventStateId` (aggregate) | No | Same aggregate reasoning as `ComputeDesignStateId`; project reaches it transitively through members |
+
+**Honestly, which functions do NOT receive a project, and why:** none of the three shipping Grasshopper capture components (`ObjectStateComponent`, `ParameterStateComponent`, `PropertyStateComponent`) has a Project input port or a project field in its `SolveInstance` scope (confirmed on disk, Phase 1203-02). Each currently calls its minting function with `project` left `null` — synthesizing a fake project value to fill the parameter would satisfy the signature in name while destroying its meaning, since a wrong project value is worse than an honestly-absent one. Wiring a Project input port into these components is a Grasshopper canvas/UX change requiring re-wiring and live Rhino verification; that work is explicitly routed to a later phase (GATE12-04 / v9.0 Phase 40), not done here.
 
 ---
 
@@ -207,6 +252,54 @@ Every Computgraph entity additionally gains a `dgId` property (strictly additive
 
 ---
 
+## DesignState Identity (Phase 1202/1203)
+
+This section extends this document's authority (ALGN12-12) beyond `dgId` to cover **DesignState id minting** — the `OS_`/`DS_`/`PS_`-prefixed StateIds produced by `DG.Core.Services.DesignStateIdGenerator`. Before this section, these minting functions were governed by nothing but their own doc-comments; this document is now the one place that answers how any identity in this system is minted, not only `dgId`.
+
+### The four DesignState id families and their two aggregate functions
+
+| Prefix | Kind | Minting function(s) | Content |
+|---|---|---|---|
+| `OS_` | ObjState | `ComputeObjectStateId` (3-arg, per-rule-variable) and `ComputeObjectStateIdFromRef` (canvas-capture, per-geometry-instance) — see [ObjState Authority Contract](#objstate-authority-contract-d-07) below | Object + Geometry + Label |
+| `DS_` | ParamState | `ComputeParamStateId` | Parameters list (sliders, toggles) |
+| `PS_` | PropState | `ComputePropStateId` | Rule + DataProperty + PropValue |
+| `DS_` | DesignState (aggregate) | `ComputeDesignStateId` (content-addressed, Layer 2) and `ComputeCaptureEventStateId` (capture-event node key, Layer 1) | Sorted member StateIds (+ capture timestamp for the capture-event form) |
+
+Note that `ParamState` and the aggregate `DesignState` share the `DS_` prefix; they are distinguished by hash-input domain (parameter-list content vs. member-StateId concatenation), not by prefix, exactly as `DesignStateIdGenerator`'s own doc-comment records.
+
+### ObjState Authority Contract (D-07)
+
+**Both ObjState minting forms are retained — neither is deleted, deprecated, or scheduled for removal.** They serve genuinely different cases:
+
+- **`ComputeObjectStateIdFromRef(objectRef, classIri, project=null)` is authoritative for canvas-captured, per-geometry-instance ObjStates** — this is the shipping path used by the OBJECT STATE Grasshopper component. It hashes what that component actually has on its canvas (an `objectRef` and a resolved `classIri`), with `project` folded in when supplied. A null `classIri` (captured before a class is wired) hashes against a stable sentinel rather than crashing or hashing an empty string, so the id stays deterministic. Label is deliberately NOT folded in — renaming an object's display Label no longer changes its ObjState identity; only its structural `objectRef`/`classIri` do.
+- **`ComputeObjectStateId(projectId, objectInstanceId, variableName)` (3-arg) is the per-rule-variable form (CMPST-07)** — Object variables shared across rules, keyed by project + instance + variable name. It is retained and documented here, **currently with no production caller**. It exists for a different addressing scheme than the capture path and is not a legacy artifact awaiting removal.
+
+**Why both are needed, not just one:** the shipping `ObjectStateComponent` has no Project input port and no per-geometry per-rule variable-name concept in its canvas scope. Synthesizing fake values for either input would satisfy the 3-arg form's signature in name while destroying the meaning its own doc-comment promises (a specific per-rule-variable addressing scheme). `ComputeObjectStateIdFromRef` is the form actually shaped to what the capture component has available; the 3-arg form remains the correct tool for a future caller that genuinely has project + instance + variable-name inputs.
+
+### Encoding contract
+
+Every DesignState minting function that was previously pipe-joined (`ComputeObjectStateId`, `ComputeObjectStateIdFromRef`, `ComputePropStateId`, `ComputeParamStateId`) now routes through the same length-prefix `EncodeHashInput` contract documented in [Format & Minting](#length-prefix-hash-input-encoding-phase-1203-d-09--cr-02) above — see that section for the precise, reimplementable rule (including null-vs-empty handling) and the twinned C#/Python implementation table. `ComputeDesignStateId` and `ComputeCaptureEventStateId` are the two exceptions: they concatenate sorted member StateIds with no separator at all (not pipe-joined in the first place), so the CR-02 fix does not apply to them, and their pinned test literal (`DS_3C3C50530BE1DED0`) is genuinely byte-unchanged by Phase 1203, not merely re-asserted for convenience.
+
+**SHA-256 here is content-addressing, not an authenticity control** — this framing, already normative for `dgId` above, extends unchanged to every DesignState id: none of these hashes are a signature or MAC, and none should be treated as tamper-evident.
+
+### Migration policy — pre-1203 ids are pre-contract, and are NOT rewritten
+
+**IDs minted before Phase 1203 used the pre-length-prefix (naive pipe-join) encoding and did not fold `project` into the DesignState hash.** They remain valid, are documented here as **pre-contract**, and are explicitly **NOT migrated**:
+
+- No migration script is added by this phase or any phase referencing this document, for either `dgId` or DesignState ids.
+- A recapture of the *same* design under the new contract yields a **different** id than the pre-1203 capture did — this is expected, not a defect. The old id and the new id both remain individually valid and resolvable; they are simply not the same id, because they were minted under two different, explicitly-versioned contracts.
+- This mirrors the same additive, no-rewrite treatment `DesignStateIdGenerator`'s own doc-comment already establishes for the two-layer capture-event vs. content-hash distinction (D-01/D-03): historical rows stay as-is, only new writes adopt the new contract.
+
+### Confirmation, not re-specification (ALGN12-13)
+
+Per D-12, the platform authority, detach, provenance, and conflict policies documented above ([Binding Model](#binding-model), [Shared-Property Semantics](#shared-property-semantics)) are already normative in this file, and Phase 1203 Plan 03 added test coverage that holds them (`test_mint_then_bind_then_publish_preserves_binding`, `test_mint_identity_tags_graph_computgraph`, `test_ambiguous_bind_rejected`). No prose in those sections needed amendment — none of Plan 03's tests proved any existing statement wrong. Per D-13, richer per-platform conflict resolution (two platforms competing to write the same shared property) remains **explicitly deferred** — this document does not specify it, and no reader should infer it is implemented.
+
+### `/identity/mint` and `entity_kind` (CR-01, Phase 1203 Plan 03)
+
+`mint_identity`'s anchor MERGE is now **label-aware**: it upserts on `(:<entity_kind> {cgId, definitionId, project})`, where `entity_kind` must be one of `ENTITY_KINDS = (Object, Procedure, Pattern, Parameter, Interface)` — confirmed directly against `computgraph_publish.py`'s five publish writers, each of which MERGEs on the identical labelled three-part key. Before this fix the anchor was label-less (`MERGE (e {cgId, definitionId, project})`), so a pre-publish mint and the later publish MERGE addressed two different nodes, silently orphaning any binding attached before publish (CR-01, closed). Minted nodes also now carry `graph = 'Computgraph'` (WR-01, closed). The full request/response contract for `POST /identity/mint`, including `entity_kind`'s allowed values, is documented in `spec/API.md`.
+
+---
+
 ## State of the Art
 
 `dgId` is not a novel invention — it is DG's instance of a pattern the entire BIM/VPL interop space has converged on: **identity is separate from native id.** Each surveyed system keeps a durable identity token distinct from the volatile native identifier. Full rationale and citations are in the ADR (`DG ID cross-platform identity scheme.md`).
@@ -228,3 +321,4 @@ Every Computgraph entity additionally gains a `dgId` property (strictly additive
 - **Valid until:** the schema surface changes. Any change to the node labels, relationships, enums, or the `dgId` property is a **schema change** subject to the CLAUDE.md schema-propagation checklist.
 - **Propagation owner:** Plan 32.1-07 syncs `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts (where applicable), `spec/DATABASE.md`, CLAUDE.md schema tables, `ontology/dg-shapes.ttl` SHACL shapes, and the Phase 29 Cypher-validator allow-lists to match this spec.
 - **Cross-language parity:** the golden vector (see [Format & Minting](#single-source-of-truth-cross-language-parity-anchor)) must remain green in both the C# and Python test suites whenever the minting contract is touched.
+- **Single identity authority (ALGN12-12, Phase 1203):** this document is the one place that governs BOTH id families — `dgId` (Computgraph entity identity) and DesignState ids (`OS_`/`DS_`/`PS_` StateIds) — including the shared length-prefix encoding contract both are built on, the ObjState dual-form authority split, and the no-rewrite migration policy for pre-1203 ids. No second identity specification document exists or should be created; any future identity-related decision extends this file.

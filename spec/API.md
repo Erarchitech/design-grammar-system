@@ -308,6 +308,47 @@ Response keys: `project`, `stateId` (carries the `DS_` prefix, D-18), `kind` (al
 
 **Errors:** 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_REQUEST_INVALID`, 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_DOMAIN_VIOLATION`, 502 `COMPUTGRAPH_ACCEPT_CANDIDATE_FAILED`. Every error body is the standard `{error, hint, code}` detail shape.
 
+### Identity (`/identity/*`, Phase 32.1/1203)
+
+The identity registry API. Normative contract: `spec/DG-ID.md` (format, minting, collision policy, binding model). This is a first-write for this document — no `/identity/*` route was previously documented here.
+
+| Method | Path | Body / Params | Description |
+|--------|------|---------------|-------------|
+| POST | `/identity/mint` | `{project, definition_id, cg_id, entity_kind}` | Deterministically mint + persist a `dgId` for a Computgraph entity. See below. |
+| GET | `/identity/resolve` | Query: `platform, native_id, project` | Resolve a `(platform, native_id)` representation to its owning entity's `dgId`. |
+| POST | `/identity/bind` | `{dg_id, platform, native_id_kind, native_id, connector, project}` | Bind a native-id representation to a `dgId` — never a silent repoint. |
+| GET | `/identity/{dg_id}/representations` | Query: `project` | List all platform representations bound to a `dgId`. |
+| DELETE | `/identity/{dg_id}/representations` | Query: `platform, native_id, project` | Detach a representation from a `dgId` — removes only the `Representation` node/edge; the `dgId` is untouched. |
+| POST | `/identity/{dg_id}/properties` | `{property_name, value, platform, connector}` + query `project` | Write (upsert) a cross-platform shared property on a `dgId`. |
+| GET | `/identity/{dg_id}/properties` | Query: `project, property_name?` | Read one shared property (when `property_name` given) or list all shared properties on a `dgId`. |
+
+#### `POST /identity/mint`
+
+Request body:
+
+```json
+{
+  "project": "p1",
+  "definition_id": "wall.gh",
+  "cg_id": "cg:1:param:heightValue",
+  "entity_kind": "Parameter"
+}
+```
+
+`entity_kind` is a required field, validated against the fixed allowlist `ENTITY_KINDS = ("Object", "Procedure", "Pattern", "Parameter", "Interface")` — these are exactly the five Computgraph labels `POST /computgraph/publish`'s writers MERGE on. An unrecognized `entity_kind` is rejected before any Cypher runs (both at the pydantic field-validator level and again inside `mint_identity` itself, defense-in-depth).
+
+200 response:
+
+```json
+{"dgId": "dg:9F2A4C1E7B03D5A8"}
+```
+
+**Idempotent** — safe to call unconditionally ahead of a publish; re-minting the same `(project, definition_id, cg_id)` triple returns the same `dgId` without duplicating the node. The anchor MERGE is **label-aware**: it upserts on `(:<entity_kind> {cgId, definitionId, project})`, the same labelled three-part key `POST /computgraph/publish`'s writers use, so a pre-publish mint and a later publish coincide on one node rather than orphaning (CR-01, Phase 1203 Plan 03). Minted nodes are tagged `graph = 'Computgraph'`.
+
+**Errors:** 422 (pydantic validation failure on an unrecognized `entity_kind`, FastAPI's standard validation-error body — not the `{error, hint, code}` shape, since this is caught before the route body runs).
+
+**Other identity routes' structured error codes** (standard `{error, hint, code}` detail shape): `DGID_NOT_FOUND` (404 — no entity/binding/property matches the given key), `DGID_AMBIGUOUS_BINDING` (409 — `POST /identity/bind` only, when the native id is already bound to a *different* `dgId`; the response includes the existing `dgId` in the message so the caller can detach-then-rebind or confirm intent).
+
 ---
 
 ## n8n Webhooks (port 5678)

@@ -516,7 +516,7 @@ ROADMAP's own "or an explicit exclusion contract" wording.
 | `project` | string | Project isolation key (merge key part) |
 
 - Merge key: `(nativeId, platform, project)`
-- Written only by the data-service identity API (`PATCH /identity/bind`, `POST /identity/{dgId}/representations`)
+- Written only by the data-service identity API (`POST /identity/bind`, `GET /identity/{dgId}/representations`, `DELETE /identity/{dgId}/representations`) — see `spec/API.md` for the full `/identity/*` route table
 - Managed via `bind`/`detach` operations — never directly by LLM rule-ingest
 
 ---
