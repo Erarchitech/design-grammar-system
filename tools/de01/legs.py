@@ -63,6 +63,23 @@ class LegResult:
     available: bool
     envelope: dict[str, Any]
     error: str | None = field(default=None)
+    state_hash: dict[str, Any] | None = field(default=None)
+    """The canonical DesignState hash this leg reported, or ``None`` for typed
+    absence. Defaults to ``None`` so every pre-existing ``LegResult`` constructor
+    keeps working unchanged.
+
+    Populated ONLY by ``run_leg_replay`` (and would be populated by
+    ``run_leg_csharp`` if the C# harness made a Design State hash available --
+    checked: DG.De01Harness's envelope carries no such field today, so
+    ``csharp`` also stays ``None``). ``run_leg_data_service`` and
+    ``run_leg_dg_reasoner`` evaluate the rule fixture directly and capture no
+    Design State at all, so they never populate this field either -- Open
+    Question 2's resolution (plan 1202-07 objective): forcing a non-participating
+    leg to fabricate a hash would be exactly the silent force-fitting the typed-
+    absence idiom exists to prevent.
+
+    Shape when present: ``{"hash": <64-char hex>, "canonicalizationVersion": <int>}``.
+    """
 
 
 def _synthesize_error_envelope(
@@ -882,4 +899,20 @@ def run_leg_replay(fixture: dict[str, Any], config: dict[str, Any]) -> LegResult
     envelope_dict = dict(envelope_dict)
     envelope_dict["stage"] = "validation.view.replay"
 
-    return _validated_leg_result("replay", envelope_dict)
+    result = _validated_leg_result("replay", envelope_dict)
+
+    # canonicalStateHash/canonicalizationVersion (D-16, this plan): read from the
+    # same view response, independent of envelope validation above -- a schema
+    # violation in the evidence envelope must not suppress a genuinely-present
+    # state hash, and a missing hash must not fail envelope validation. Typed
+    # absence (state_hash stays None) when the view reports no hash, exactly
+    # mirroring build_view_payload's own absence convention (data-service/app.py
+    # _compute_canonical_state_hash: None for "not recorded", never omitted).
+    canonical_state_hash = view_payload.get("canonicalStateHash")
+    if canonical_state_hash:
+        result.state_hash = {
+            "hash": canonical_state_hash,
+            "canonicalizationVersion": view_payload.get("canonicalizationVersion"),
+        }
+
+    return result

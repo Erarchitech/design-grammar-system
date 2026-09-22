@@ -23,8 +23,8 @@ if str(TOOLS_DE01_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DE01_DIR))
 
 import legs  # noqa: E402
-from legs import LegResult, run_leg_dg_reasoner  # noqa: E402
-from report import compare_legs  # noqa: E402
+from legs import LegResult, run_leg_dg_reasoner, run_leg_replay  # noqa: E402
+from report import compare_legs, compare_state_hashes  # noqa: E402
 
 
 def _envelope(rows: list[dict], service_name: str = "svc", stage: str = "test") -> dict:
@@ -689,6 +689,341 @@ class TestCompareLegsHashFallback:
         row_data = result.rows[0].per_leg["a"]["rows"][0]
         assert row_data["inputHash"] == "row-input-hash"
         assert row_data["outputHash"] == "envelope-output-hash"
+
+
+def _replay_fixture() -> dict:
+    """A minimal fixture dict shaped for run_leg_replay -- project/rule/objects
+    only, matching _minimal_fixture's shape (run_leg_replay reads the same
+    fixture keys run_leg_dg_reasoner does: project, rule.Rule_Id, objects[].objectId)."""
+    return {
+        "project": "DG-1202-REPLAY",
+        "rule": {"Rule_Id": "R_GOLD_HEIGHT_MAX_75_V"},
+        "objects": [
+            {"objectId": "OBJ_GOLD_PASS"},
+            {"objectId": "OBJ_GOLD_FAIL"},
+            {"objectId": "OBJ_GOLD_EMPTY"},
+        ],
+    }
+
+
+def _view_response(
+    *,
+    evidence_envelope: dict | None,
+    canonical_state_hash: str | None = None,
+    canonicalization_version: int | None = None,
+    status_code: int = 200,
+) -> MagicMock:
+    body: dict[str, Any] = {"evidenceEnvelope": evidence_envelope}
+    if canonical_state_hash is not None:
+        body["canonicalStateHash"] = canonical_state_hash
+    if canonicalization_version is not None:
+        body["canonicalizationVersion"] = canonicalization_version
+    return _mock_response(body, status_code=status_code)
+
+
+def _replay_envelope() -> dict:
+    return _envelope(
+        [
+            _row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed"),
+            _row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_FAIL", "failed"),
+            _row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_EMPTY", "no_population"),
+        ],
+        service_name="data-service",
+        stage="validation.publish",
+    )
+
+
+class TestRunLegReplayStateHash:
+    """Task 1 (D-16): run_leg_replay surfaces canonicalStateHash/canonicalizationVersion
+    from the view response onto LegResult.state_hash, with typed absence when the
+    view reports none -- offline, no live services."""
+
+    def test_state_hash_populated_when_view_reports_one(self):
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.get.return_value = _view_response(
+            evidence_envelope=_replay_envelope(),
+            canonical_state_hash="3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428",
+            canonicalization_version=1,
+        )
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_replay(_replay_fixture(), config={})
+
+        assert result.available is True
+        assert result.state_hash == {
+            "hash": "3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428",
+            "canonicalizationVersion": 1,
+        }
+
+    def test_state_hash_is_none_when_view_reports_none(self):
+        """The view response carries no canonicalStateHash key at all (e.g. the
+        run has no statePayloadJson) -- typed absence, LegResult.state_hash stays
+        None, and this must not affect envelope-based availability."""
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.get.return_value = _view_response(evidence_envelope=_replay_envelope())
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_replay(_replay_fixture(), config={})
+
+        assert result.available is True
+        assert result.state_hash is None
+
+    def test_state_hash_is_none_when_view_reports_explicit_null(self):
+        """build_view_payload's own absence convention emits canonicalStateHash:
+        null rather than omitting the key -- run_leg_replay must treat an explicit
+        null the same as a missing key, never as a falsy-but-present hash."""
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.get.return_value = _view_response(
+            evidence_envelope=_replay_envelope(),
+            canonical_state_hash=None,
+        )
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_replay(_replay_fixture(), config={})
+
+        assert result.state_hash is None
+
+    def test_state_hash_stays_none_when_leg_unavailable(self):
+        """An unreachable data-service degrades run_leg_replay to a typed error
+        LegResult (available=False) -- state_hash must stay at its None default,
+        never fabricated from a synthesized error envelope."""
+        mock_client = MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.__exit__.return_value = False
+        mock_client.get.side_effect = legs.httpx.RequestError("connection refused")
+
+        with patch.object(legs.httpx, "Client", return_value=mock_client):
+            result = run_leg_replay(_replay_fixture(), config={})
+
+        assert result.available is False
+        assert result.state_hash is None
+
+
+class TestLegResultStateHashDefault:
+    """The new state_hash field is additive: every existing LegResult constructor
+    (no state_hash kwarg) keeps working unchanged, defaulting to None."""
+
+    def test_legresult_constructor_without_state_hash_kwarg_defaults_to_none(self):
+        result = LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")]))
+        assert result.state_hash is None
+
+    def test_legresult_constructor_with_error_kwarg_still_defaults_state_hash_to_none(self):
+        result = LegResult("a", False, _envelope([]), error="unreachable")
+        assert result.state_hash is None
+
+
+class TestCompareStateHashes:
+    """Task 1 (D-16): compare_state_hashes' agreement/disagreement/typed-absence
+    behavior, plus the fixture-expected-hash comparison."""
+
+    def test_two_legs_reporting_the_same_hash_agree(self):
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+            "csharp": LegResult(
+                "csharp", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "agree"
+        assert result["perLeg"]["replay"]["present"] is True
+        assert result["perLeg"]["replay"]["hash"] == "ABC123"
+        assert result["perLeg"]["csharp"]["present"] is True
+
+    def test_two_legs_reporting_different_hashes_disagree(self):
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+            "csharp": LegResult(
+                "csharp", True, _envelope([]), state_hash={"hash": "ZZZ999", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "disagree"
+
+    def test_non_participating_leg_reports_typed_absence_with_reason_never_fabricated(self):
+        """data-service/dg-reasoner evaluate the rule fixture and capture no Design
+        State (Open Question 2) -- typed absence with a non-empty reason, never a
+        fabricated hash, and their absence does not by itself make the verdict
+        'disagree'."""
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+            "data-service": LegResult("data-service", True, _envelope([]), state_hash=None),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["perLeg"]["data-service"] == {
+            "present": False,
+            "reason": (
+                "the data-service leg does not capture or report a Design State "
+                "(Open Question 2 -- see LegResult.state_hash's docstring)"
+            ),
+        }
+        # Only one leg actually reported a hash -- not enough to compare.
+        assert result["agreement"] == "not_applicable"
+
+    def test_absent_leg_alone_is_not_applicable_not_a_disagreement(self):
+        """A single leg reporting a hash, with every other leg typed-absent, must
+        never itself be classified as a disagreement -- mirroring how a lone row
+        in compare_legs can never itself be a cross-leg difference."""
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "not_applicable"
+
+    def test_all_legs_absent_is_not_applicable(self):
+        legs_map = {
+            "data-service": LegResult("data-service", True, _envelope([]), state_hash=None),
+            "dg-reasoner": LegResult("dg-reasoner", True, _envelope([]), state_hash=None),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "not_applicable"
+        assert result["perLeg"]["data-service"]["present"] is False
+        assert result["perLeg"]["dg-reasoner"]["present"] is False
+
+    def test_present_hash_matching_expected_reports_true(self):
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map, expected_canonical_state_hash="ABC123")
+        assert result["perLeg"]["replay"]["expected_match"] is True
+        assert result["expectedCanonicalStateHash"] == "ABC123"
+
+    def test_present_hash_not_matching_expected_reports_false(self):
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "WRONG", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map, expected_canonical_state_hash="ABC123")
+        assert result["perLeg"]["replay"]["expected_match"] is False
+
+    def test_no_expected_hash_supplied_reports_none_not_false(self):
+        """A third typed-absence case: no fixture expected value at all must not
+        be conflated with a genuine mismatch (False)."""
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["perLeg"]["replay"]["expected_match"] is None
+        assert result["expectedCanonicalStateHash"] is None
+
+
+class TestStateHashDisagreementFoldedIntoSilentDisagreementCount:
+    """run_de01.py's exit-code rule stays non-zero only on
+    silent_disagreement_count > 0 -- a state-hash 'disagree' must increment that
+    same counter, and 'not_applicable' must not, verified against the actual
+    ComparisonResult object rather than only against compare_state_hashes'
+    return value in isolation."""
+
+    def test_disagree_increments_the_shared_silent_disagreement_counter(self):
+        comparison = compare_legs(
+            {
+                "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            }
+        )
+        assert comparison.silent_disagreement_count == 0
+        comparison.state_hash_comparison = compare_state_hashes(
+            {
+                "replay": LegResult(
+                    "replay", True, _envelope([]), state_hash={"hash": "AAA", "canonicalizationVersion": 1}
+                ),
+                "csharp": LegResult(
+                    "csharp", True, _envelope([]), state_hash={"hash": "BBB", "canonicalizationVersion": 1}
+                ),
+            }
+        )
+        if comparison.state_hash_comparison.get("agreement") == "disagree":
+            comparison.silent_disagreement_count += 1
+        assert comparison.silent_disagreement_count == 1
+
+    def test_not_applicable_does_not_increment_the_counter(self):
+        comparison = compare_legs(
+            {
+                "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            }
+        )
+        comparison.state_hash_comparison = compare_state_hashes(
+            {"data-service": LegResult("data-service", True, _envelope([]), state_hash=None)}
+        )
+        if comparison.state_hash_comparison.get("agreement") == "disagree":
+            comparison.silent_disagreement_count += 1
+        assert comparison.silent_disagreement_count == 0
+
+
+class TestReportJsonValidatesAgainstSchemaWithStateHashSection:
+    """The report JSON (including the new state_hash_comparison section) must
+    validate against tools/de01/report_schema.json -- offline, no live services."""
+
+    def test_emitted_json_report_with_state_hash_comparison_validates_against_schema(self, tmp_path):
+        import jsonschema
+
+        comparison = compare_legs(
+            {
+                "a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")])),
+                "b": LegResult("b", True, _envelope([_row("R1", "OBJ1", "passed")])),
+            }
+        )
+        comparison.state_hash_comparison = compare_state_hashes(
+            {
+                "a": LegResult(
+                    "a", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+                ),
+                "b": LegResult(
+                    "b", True, _envelope([]), state_hash={"hash": "ABC123", "canonicalizationVersion": 1}
+                ),
+            },
+            expected_canonical_state_hash="ABC123",
+        )
+
+        import report as report_module
+
+        json_path = tmp_path / "de01-report.json"
+        report_module.emit_json_report(comparison, json_path, fixture_version="1.0.0")
+
+        report = json.loads(json_path.read_text(encoding="utf-8"))
+        schema = json.loads(
+            (REPO_ROOT / "tools" / "de01" / "report_schema.json").read_text(encoding="utf-8")
+        )
+        jsonschema.validate(instance=report, schema=schema)
+        assert report["state_hash_comparison"]["agreement"] == "agree"
+
+    def test_emitted_json_report_with_not_applicable_state_hash_validates_against_schema(self, tmp_path):
+        import jsonschema
+        import report as report_module
+
+        comparison = compare_legs(
+            {"a": LegResult("a", True, _envelope([_row("R1", "OBJ1", "passed")]))}
+        )
+        comparison.state_hash_comparison = compare_state_hashes(
+            {"a": LegResult("a", True, _envelope([]), state_hash=None)}
+        )
+
+        json_path = tmp_path / "de01-report.json"
+        report_module.emit_json_report(comparison, json_path, fixture_version="1.0.0")
+
+        report = json.loads(json_path.read_text(encoding="utf-8"))
+        schema = json.loads(
+            (REPO_ROOT / "tools" / "de01" / "report_schema.json").read_text(encoding="utf-8")
+        )
+        jsonschema.validate(instance=report, schema=schema)
+        assert report["state_hash_comparison"]["agreement"] == "not_applicable"
 
 
 # ── Wrapper test: run the real runner against the golden fixture ────────────────

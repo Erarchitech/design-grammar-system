@@ -64,6 +64,7 @@ class ComparisonResult:
     silent_disagreement_count: int
     declared_non_equivalences: list[dict[str, Any]] = field(default_factory=list)
     status_tally_by_leg: dict[str, dict[str, int]] = field(default_factory=dict)
+    state_hash_comparison: dict[str, Any] = field(default_factory=dict)
 
 
 def _rows_by_pair(envelope: dict[str, Any]) -> dict[tuple[str, str], list[dict[str, Any]]]:
@@ -254,6 +255,85 @@ def compare_legs(leg_results: dict[str, LegResult]) -> ComparisonResult:
     )
 
 
+def compare_state_hashes(
+    leg_results: dict[str, LegResult], expected_canonical_state_hash: str | None = None
+) -> dict[str, Any]:
+    """Build the second comparison dimension (D-16, plan 1202-07): the canonical
+    DesignState hash, compared across legs alongside (never merged into) the
+    existing per-(ruleId, objectId) row comparison ``compare_legs`` produces.
+
+    Mirrors ``compare_legs``' typed-absence idiom EXACTLY (the ``per_leg[leg_name]
+    = {"present": False}`` shape at line ~115 above) rather than inventing a
+    second absence convention: every leg name gets an entry, either
+    ``{"present": True, "hash": ..., "canonicalizationVersion": ...}`` or
+    ``{"present": False, "reason": ...}``.
+
+    A leg that legitimately produces no Design State (``data-service``,
+    ``dg-reasoner`` -- Open Question 2's resolution, see ``LegResult.state_hash``'s
+    docstring in legs.py) reports typed absence, never a fabricated hash; its
+    absence alone never counts as a disagreement -- ``agreement`` is computed
+    only over the legs that DID report a hash.
+
+    ``agreement`` is one of:
+    - ``"agree"`` -- every leg that reported a hash reports the SAME hash.
+    - ``"disagree"`` -- two or more legs reported a hash and they differ. This is
+      the case the caller (run_de01.py) must fold into
+      ``silent_disagreement_count`` -- two legs that both claim to have replayed
+      the same Design State but computed different hashes is a silent
+      disagreement in exactly the same sense compare_legs' rows are.
+    - ``"not_applicable"`` -- fewer than two legs reported a hash, so there is
+      nothing to compare (this is NOT a disagreement -- mirrors how a single
+      leg's row can never itself be a cross-leg difference in compare_legs).
+
+    When ``expected_canonical_state_hash`` is supplied (the fixture's own
+    ``expectedCanonicalStateHash``, e.g. fixtures/golden/replay/mixed-verdicts.json),
+    each present hash is also compared against it and the result records a third,
+    independent outcome: ``expected_match`` is ``True``/``False`` per leg that
+    reported a hash, and ``None`` when no expected value was supplied at all (a
+    third typed-absence case, not conflated with a genuine mismatch).
+    """
+    per_leg: dict[str, dict[str, Any]] = {}
+    present_hashes: dict[str, str] = {}
+
+    for leg_name, result in leg_results.items():
+        if result.state_hash is None:
+            per_leg[leg_name] = {
+                "present": False,
+                "reason": (
+                    f"the {leg_name} leg does not capture or report a Design State "
+                    "(Open Question 2 -- see LegResult.state_hash's docstring)"
+                ),
+            }
+            continue
+
+        leg_hash = result.state_hash.get("hash")
+        entry: dict[str, Any] = {
+            "present": True,
+            "hash": leg_hash,
+            "canonicalizationVersion": result.state_hash.get("canonicalizationVersion"),
+        }
+        if expected_canonical_state_hash is not None:
+            entry["expected_match"] = leg_hash == expected_canonical_state_hash
+        else:
+            entry["expected_match"] = None
+        per_leg[leg_name] = entry
+        present_hashes[leg_name] = leg_hash
+
+    distinct_hashes = set(present_hashes.values())
+    if len(present_hashes) < 2:
+        agreement = "not_applicable"
+    elif len(distinct_hashes) == 1:
+        agreement = "agree"
+    else:
+        agreement = "disagree"
+
+    return {
+        "perLeg": per_leg,
+        "agreement": agreement,
+        "expectedCanonicalStateHash": expected_canonical_state_hash,
+    }
+
+
 def _row_to_dict(row: ComparisonRow) -> dict[str, Any]:
     return {
         "ruleId": row.rule_id,
@@ -288,6 +368,7 @@ def emit_json_report(comparison: ComparisonResult, path: Path, fixture_version: 
         "comparison_rows": [_row_to_dict(row) for row in comparison.rows],
         "declared_non_equivalences": comparison.declared_non_equivalences,
         "status_tally_by_leg": comparison.status_tally_by_leg,
+        "state_hash_comparison": comparison.state_hash_comparison,
         "silent_disagreement_count": comparison.silent_disagreement_count,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -377,6 +458,29 @@ def emit_markdown_report(comparison: ComparisonResult, path: Path, fixture_versi
         tally = comparison.status_tally_by_leg.get(leg_name, {})
         tally_str = ", ".join(f"{status}={count}" for status, count in sorted(tally.items()))
         lines.append(f"| {leg_name} | {tally_str} |")
+    lines.append("")
+
+    lines.append("## Canonical state hash comparison")
+    lines.append("")
+    shc = comparison.state_hash_comparison
+    if shc:
+        lines.append(f"**Agreement:** {shc.get('agreement', 'not_applicable')}")
+        expected = shc.get("expectedCanonicalStateHash")
+        lines.append(f"**Fixture expected hash:** {expected or 'not supplied'}")
+        lines.append("")
+        lines.append("| Leg | Present | Hash | Canonicalization version | Matches expected | Reason |")
+        lines.append("|---|---|---|---|---|---|")
+        for leg_name in sorted(shc.get("perLeg", {}).keys()):
+            entry = shc["perLeg"][leg_name]
+            if entry.get("present"):
+                lines.append(
+                    f"| {leg_name} | True | {entry.get('hash', '')} | "
+                    f"{entry.get('canonicalizationVersion', '')} | {entry.get('expected_match')} | |"
+                )
+            else:
+                lines.append(f"| {leg_name} | False | | | | {entry.get('reason', '')} |")
+    else:
+        lines.append("Not computed for this run.")
     lines.append("")
 
     lines.append("## Warnings appendix")

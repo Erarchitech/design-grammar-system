@@ -172,10 +172,52 @@
         }
       }
     },
+    "state_hash_comparison": {
+      "type": "object",
+      "description": "The second comparison dimension (D-16, plan 1202-07): the canonical DesignState hash (data-service/app.py build_view_payload's canonicalStateHash field, surfaced onto LegResult.state_hash by legs.py::run_leg_replay) compared across legs, alongside (not merged into) comparison_rows. May be an empty object for a report emitted before this plan's ComparisonResult.state_hash_comparison default was ever populated.",
+      "properties": {
+        "perLeg": {
+          "type": "object",
+          "description": "Keyed by leg name. Mirrors comparison_rows.perLeg's typed-absence idiom exactly: {present: false, reason} or {present: true, hash, canonicalizationVersion, expected_match}.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "present": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "hash": {
+                "type": ["string", "null"]
+              },
+              "canonicalizationVersion": {
+                "type": ["integer", "null"]
+              },
+              "expected_match": {
+                "type": ["boolean", "null"],
+                "description": "True/False when the fixture supplied an expectedCanonicalStateHash to compare against; null when no expected value was supplied at all (a third typed-absence case, not conflated with a genuine mismatch)."
+              }
+            },
+            "required": ["present"]
+          }
+        },
+        "agreement": {
+          "type": "string",
+          "enum": ["agree", "disagree", "not_applicable"],
+          "description": "agree: every leg that reported a hash reports the same one. disagree: two or more legs reported a hash and they differ -- this must be folded into silent_disagreement_count by the caller, since it is a silent disagreement in the same sense a comparison_rows row is. not_applicable: fewer than two legs reported a hash, so there is nothing to compare -- never itself a disagreement."
+        },
+        "expectedCanonicalStateHash": {
+          "type": ["string", "null"],
+          "description": "The fixture's own expectedCanonicalStateHash, when supplied; null otherwise."
+        }
+      },
+      "additionalProperties": false
+    },
     "silent_disagreement_count": {
       "type": "integer",
       "minimum": 0,
-      "description": "The DE-01 gate value (D-14). Must be 0 for the golden fixture to accept DE-01."
+      "description": "The DE-01 gate value (D-14). Must be 0 for the golden fixture to accept DE-01. A state-hash 'disagree' verdict between two legs that both claim to have replayed the same Design State counts toward this total, exactly like a comparison_rows silent_disagreement -- a typed absence (not_applicable) never does."
     }
   },
   "required": [

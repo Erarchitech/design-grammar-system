@@ -75,6 +75,8 @@ import cg_input_generation
 import cg_paramstate_store
 import dsav_watcher
 import evidence_contract
+import design_state_projection
+import canonical_json
 
 
 # Phase 39 (DSAV-02): the first startup hook in this file to use `lifespan`.
@@ -984,6 +986,40 @@ def parse_evidence_envelope(evidence_envelope_json: str | None) -> dict[str, Any
     return parsed if isinstance(parsed, dict) else None
 
 
+def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
+    """Compute the run's canonical DesignState hash from its persisted
+    ``statePayloadJson`` for the view response.
+
+    Returns ``None`` when the run carries no ``statePayloadJson`` (the existing
+    absence convention -- "not recorded" rather than a missing key) and also
+    returns ``None`` plus a logged warning when the stored payload is malformed
+    or otherwise fails to project/hash, so a corrupt stored value never fails
+    the whole view response -- the same degrade posture as the C# reader
+    (`_parse_shacl_report`/`parse_evidence_envelope` above) and D-01's own
+    projection contract (`design_state_projection.compute_state_hash`).
+    """
+    if not state_payload_json:
+        return None
+    try:
+        payload = json.loads(state_payload_json)
+    except (TypeError, ValueError) as exc:
+        logging.getLogger(__name__).warning(
+            "_compute_canonical_state_hash: statePayloadJson was not valid JSON -- "
+            "degrading to None rather than failing the view response: %s",
+            exc,
+        )
+        return None
+    try:
+        return design_state_projection.compute_state_hash(payload)
+    except (ValueError, TypeError) as exc:
+        logging.getLogger(__name__).warning(
+            "_compute_canonical_state_hash: statePayloadJson failed to project/hash -- "
+            "degrading to None rather than failing the view response: %s",
+            exc,
+        )
+        return None
+
+
 def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str, list[str]], rule_id: str | None = None) -> dict[str, Any]:
     settings = get_speckle_settings()
     rules = json.loads(run["rulesJson"]) if run.get("rulesJson") else []
@@ -1006,6 +1042,8 @@ def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str,
         "objectSets": object_sets,
         "shaclReport": _parse_shacl_report(run.get("shaclReportJson")),
         "evidenceEnvelope": parse_evidence_envelope(run.get("evidenceEnvelopeJson")),
+        "canonicalStateHash": _compute_canonical_state_hash(run.get("statePayloadJson")),
+        "canonicalizationVersion": canonical_json.CANONICALIZATION_VERSION if run.get("statePayloadJson") else None,
     }
 
 

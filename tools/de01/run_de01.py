@@ -101,6 +101,30 @@ def main(argv: list[str] | None = None) -> int:
 
     comparison = report_module.compare_legs(leg_results)
 
+    # Second comparison dimension (D-16, plan 1202-07): the canonical DesignState
+    # hash, computed alongside (never merged into) the per-(ruleId, objectId) row
+    # comparison above. expectedCanonicalStateHash comes from the fixture when it
+    # supplies one (e.g. fixtures/golden/replay/mixed-verdicts.json); the frozen
+    # fixtures/golden/fixture.json carries none, so this is None for that run.
+    expected_canonical_state_hash = fixture.get("expectedCanonicalStateHash")
+    comparison.state_hash_comparison = report_module.compare_state_hashes(
+        leg_results, expected_canonical_state_hash
+    )
+
+    # Exit-code rule is UNCHANGED: still non-zero only on silent_disagreement_count
+    # > 0 (see this function's own return statement below), never on leg
+    # unavailability. A state-hash "disagree" verdict IS folded into that same
+    # counter here -- two legs that both claim to have replayed the same Design
+    # State but computed different hashes is a silent disagreement in exactly the
+    # sense comparison_rows' silent_disagreement classification already is. A
+    # "not_applicable" verdict (fewer than two legs reported a hash) is a typed
+    # absence, not a disagreement, and must NOT increment the counter -- this
+    # mirrors how comparison_rows never counts a leg's mere unavailability as a
+    # silent disagreement by itself. No new sys.exit / differently-conditioned
+    # exit path is added anywhere in this file -- only this one counter changes.
+    if comparison.state_hash_comparison.get("agreement") == "disagree":
+        comparison.silent_disagreement_count += 1
+
     out_dir = Path(args.out_dir)
     json_path = out_dir / "de01-report.json"
     md_path = out_dir / "de01-report.md"
@@ -114,6 +138,10 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"DE-01: reports written to {json_path} and {md_path}")
     print(f"DE-01: silent_disagreement_count = {comparison.silent_disagreement_count}")
+    print(
+        "DE-01: canonical state hash agreement = "
+        f"{comparison.state_hash_comparison.get('agreement', 'not_applicable')}"
+    )
     print(f"DE-01: available legs = {available_legs}")
     if unavailable_legs:
         print(f"DE-01: unavailable legs (typed error, not a crash) = {unavailable_legs}")
