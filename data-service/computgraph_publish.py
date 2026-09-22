@@ -52,6 +52,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+import cg_input_bindings
 from dg_identity import compute_dg_id
 
 logger = logging.getLogger(__name__)
@@ -86,7 +87,11 @@ def publish_structure(session: Any, project: str, cg_context: dict) -> dict:
 
     published_at = datetime.now(timezone.utc).isoformat()
 
-    params = _build_publish_params(project, definition_id, file_name, published_at, cg_context)
+    rule_classifications = _classify_bound_rules(session, project)
+
+    params = _build_publish_params(
+        project, definition_id, file_name, published_at, cg_context, rule_classifications
+    )
 
     def _write(tx: Any) -> None:
         if params["object"] is not None:
@@ -106,6 +111,8 @@ def publish_structure(session: Any, project: str, cg_context: dict) -> dict:
             _publish_interfaces(tx, params)
         if params["paramLinkRows"]:
             _publish_param_links(tx, params)
+        if params["attributeOfRows"]:
+            _publish_attribute_of(tx, params)
 
     session.execute_write(_write)
 
@@ -122,9 +129,39 @@ def publish_structure(session: Any, project: str, cg_context: dict) -> dict:
             "parameters": len(params["parameterRows"]),
             "interfaces": len(params["interfaceRows"]),
             "paramLinks": len(params["paramLinkRows"]),
+            "attributeOf": len(params["attributeOfRows"]),
         },
         "staleEntityIds": stale_entity_ids,
     }
+
+
+def _classify_bound_rules(session: Any, project: str) -> dict[str, Any]:
+    """Classify every rule declared in `inputBindings` against this project's
+    Metagraph, reusing `cg_input_bindings.classify_rule` unchanged (D-02) --
+    never a second rule-to-parameter resolver.
+
+    A rule id present in `inputBindings` but absent from this project's
+    Metagraph (no `:Rule` node yet) is skipped, not raised -- `inputBindings`
+    is a single repo-wide file with no project scoping of its own, so most
+    entries are irrelevant to any given publish's project. Skipping keeps a
+    Computgraph publish from failing over an unrelated project's rule.
+    """
+    bindings = cg_input_bindings.load_input_bindings()
+    classifications: dict[str, Any] = {}
+    for rule_id in bindings:
+        try:
+            classifications[rule_id] = cg_input_bindings.classify_rule(
+                session, rule_id, project, bindings
+            )
+        except cg_input_bindings.RuleNotFoundError:
+            logger.debug(
+                "Rule %s declared in inputBindings has no :Rule node in project %s; "
+                "skipping ATTRIBUTE_OF derivation for it.",
+                rule_id,
+                project,
+            )
+            continue
+    return classifications
 
 
 def derive_reinstate_parameter_ids(cg_context: dict) -> dict[str, str]:
@@ -221,11 +258,19 @@ def _build_publish_params(
     file_name: str,
     published_at: str,
     cg_context: dict,
+    rule_classifications: dict[str, Any] | None = None,
 ) -> dict:
     """Flatten the confirmed envelope into row lists ready for UNWIND-batched
     Cypher writes. Only ``object``/``algorithms`` are read -- ``untagged`` is
     never touched (T-36-02).
+
+    ``rule_classifications``, when provided, is a ``{ruleId: RuleClassification}``
+    dict already resolved by the caller (``_classify_bound_rules``, which owns
+    the session/project-scoped call to ``cg_input_bindings.classify_rule`` --
+    this function stays pure/no-DB-access per its own docstring). Defaults to
+    ``{}`` so every existing caller that omits it is unaffected.
     """
+    rule_classifications = rule_classifications or {}
     object_row = _object_row(cg_context.get("object"), project, definition_id)
     reinstate_ids_by_cg_id = derive_reinstate_parameter_ids(cg_context)
 
@@ -368,6 +413,7 @@ def _build_publish_params(
                 )
 
     param_link_rows = _paramlinks_from_wires(cg_context.get("wires") or [], parameter_rows, interface_rows)
+    attribute_of_rows = _attribute_of_from_bindings(rule_classifications, parameter_rows)
 
     all_cg_ids = [row["cgId"] for row in procedure_rows]
     all_cg_ids += [row["cgId"] for row in pattern_rows]
@@ -389,6 +435,7 @@ def _build_publish_params(
         "parameterRows": parameter_rows,
         "interfaceRows": interface_rows,
         "paramLinkRows": param_link_rows,
+        "attributeOfRows": attribute_of_rows,
         "allCgIds": all_cg_ids,
     }
 
@@ -444,6 +491,72 @@ def _paramlinks_from_wires(wires: list[dict], parameter_rows: list[dict], interf
                 links.append({"paramCgId": param_cg_id, "interfaceCgId": iface_cg_id})
 
     return links
+
+
+def _attribute_of_from_bindings(
+    rule_classifications: dict[str, Any], parameter_rows: list[dict]
+) -> list[dict]:
+    """Derive Rule->Parameter ATTRIBUTE_OF rows from the already-resolved
+    ``inputBindings`` classification, reusing ``cg_input_bindings.classify_rule``
+    unchanged (D-02) -- this function authors no rule-to-parameter mapping of
+    its own, it only turns an in-memory resolution the system already computed
+    into rows.
+
+    ``rule_classifications`` is a ``{ruleId: RuleClassification}`` dict (see
+    ``_classify_bound_rules``); a rule id absent from it (never bound, or its
+    Rule node does not exist yet) contributes no rows -- the safe default,
+    matching ``classify_rule``'s own "absent = geometry-required, empty
+    parameter list" behavior.
+
+    Each row names the rule id (the Cypher writer resolves the concrete
+    ``DataPropertyAtom`` by type, not by a precomputed ``Atom_Id`` -- see
+    ``_publish_attribute_of``) and one bound parameter's ``cgId``, plus
+    provenance: ``source`` (``binding``/``override``/``default``) and
+    ``determinability``. Deduplicated on ``(ruleId, paramCgId)``. A bound
+    parameter name with no matching published :Parameter row emits no row for
+    that name and is reported in the returned unresolved list rather than
+    silently dropped -- following the same vocabulary
+    ``cg_input_bindings.select_parameters`` already uses for a missing name.
+    """
+    param_cg_id_by_name: dict[str, str] = {}
+    for row in parameter_rows:
+        name = row.get("name")
+        if name:
+            param_cg_id_by_name[name] = row["cgId"]
+
+    seen: set[tuple[str, str]] = set()
+    rows: list[dict] = []
+    unresolved: list[dict] = []
+
+    for rule_id, classification in rule_classifications.items():
+        for param_name in classification.parameterNames:
+            param_cg_id = param_cg_id_by_name.get(param_name)
+            if param_cg_id is None:
+                unresolved.append({"ruleId": rule_id, "parameterName": param_name})
+                continue
+            key = (rule_id, param_cg_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(
+                {
+                    "ruleId": rule_id,
+                    "paramCgId": param_cg_id,
+                    "derivedFromRuleId": rule_id,
+                    "source": classification.source,
+                    "determinability": classification.determinability,
+                }
+            )
+
+    if unresolved:
+        logger.warning(
+            "ATTRIBUTE_OF: %d inputBindings parameter name(s) had no matching published "
+            "Parameter and were excluded (reported, not silently dropped): %s",
+            len(unresolved),
+            unresolved,
+        )
+
+    return rows
 
 
 # ── Cypher writers (each op= tag lets duck-typed test sessions dispatch) ──
@@ -697,6 +810,46 @@ def _publish_param_links(tx: Any, params: dict) -> None:
         """,
         {
             "rows": params["paramLinkRows"],
+            "definitionId": params["definitionId"],
+            "project": params["project"],
+        },
+    )
+
+
+def _publish_attribute_of(tx: Any, params: dict) -> None:
+    """MERGE the ATTRIBUTE_OF edge from a rule's DataPropertyAtom (Metagraph)
+    to a published Parameter (Computgraph) -- the first cross-partition bridge
+    this milestone writes (D-01/D-03/D-04).
+
+    Both endpoints are matched with `project` bound as a query parameter
+    (T-1203-04-02): the Rule match carries `project` directly; the Atom is
+    reached via `HAS_BODY` from that already-project-scoped Rule rather than
+    through a `definitionId` key of its own, since Metagraph `:Atom` nodes are
+    keyed by `Atom_Id` alone (`cypher_template.txt`'s atom MERGE block) and
+    carry no `definitionId`. The Parameter match carries `cgId`, `definitionId`,
+    and `project` together, exactly as every other Computgraph MATCH in this
+    module does.
+
+    The atom is selected by `type = 'DataPropertyAtom'` under `HAS_BODY`
+    (D-04) -- never by `Atom_Id` suffix or `HAS_BODY.order` position alone,
+    since a rule's `_A2` and `_H1` atoms can share `type` but only the body
+    (`HAS_BODY`) `_A2` occurrence is the constraining DataPropertyAtom this
+    edge attaches to.
+    """
+    tx.run(
+        """
+        UNWIND $rows AS row
+          MATCH (r:Rule {Rule_Id: row.ruleId, project: $project})
+          MATCH (r)-[:HAS_BODY]->(a:Atom {type: 'DataPropertyAtom'})
+          MATCH (p:Parameter {cgId: row.paramCgId, definitionId: $definitionId, project: $project})
+          MERGE (a)-[rel:ATTRIBUTE_OF]->(p)
+          SET rel.derivedFromRuleId = row.derivedFromRuleId,
+              rel.source = row.source,
+              rel.determinability = row.determinability
+        // op=PUBLISH_ATTRIBUTE_OF
+        """,
+        {
+            "rows": params["attributeOfRows"],
             "definitionId": params["definitionId"],
             "project": params["project"],
         },

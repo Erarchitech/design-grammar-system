@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import app as app_module  # noqa: E402
+import cg_input_bindings  # noqa: E402
 import computgraph_publish  # noqa: E402
 from app import app  # noqa: E402
 from cg_fixtures import (  # noqa: E402
@@ -70,12 +71,18 @@ class FakeGraph:
     relationships recorded as (type, fromKey, toKey) tuples. Records every
     (op, params) call so tests can assert bound-parameter / no-untagged-write
     contracts.
+
+    `rules`, keyed by (Rule_Id, project), lets tests seed a Metagraph `:Rule`
+    that `cg_input_bindings.read_rule_limit`'s `READ_RULE_LIMIT` op can find --
+    a rule id absent from this dict makes `classify_rule` raise
+    `RuleNotFoundError`, matching the real Cypher's zero-row behavior.
     """
 
     def __init__(self):
         self.nodes: dict[tuple[str, str, str], dict] = {}
         self.relationships: list[tuple[str, tuple, tuple]] = []
         self.calls: list[tuple[str, dict]] = []
+        self.rules: set[tuple[str, str]] = set()
 
     def _set_node(self, label: str, key: str, project: str, props: dict) -> tuple:
         node_key = (label, key, project)
@@ -267,6 +274,40 @@ class FakeGraph:
                 param_key = ("Parameter", row["paramCgId"], params["project"])
                 iface_key = ("Interface", row["interfaceCgId"], params["project"])
                 self.relationships.append(("PARAM_LINK", param_key, iface_key))
+            return []
+
+        if op == "READ_RULE_LIMIT":
+            rule_key = (params["ruleId"], params["project"])
+            if rule_key not in self.rules:
+                return []
+            # One all-null comparison row: the Rule exists but this fixture
+            # carries no BuiltinAtom -- classify_rule only needs a non-empty
+            # row list to avoid RuleNotFoundError; it never needs a real limit
+            # for ATTRIBUTE_OF derivation.
+            return [
+                {
+                    "builtinIri": None,
+                    "bodyOrder": None,
+                    "variableName": None,
+                    "lex": None,
+                    "datatype": None,
+                }
+            ]
+
+        if op == "PUBLISH_ATTRIBUTE_OF":
+            for row in params["rows"]:
+                rule_key = (row["ruleId"], params["project"])
+                if rule_key not in self.rules:
+                    continue
+                atom_key = ("Atom", f'{row["ruleId"]}_A2', params["project"])
+                param_key = ("Parameter", row["paramCgId"], params["project"])
+                # MERGE idempotence: only append this exact (type, from, to)
+                # triple once, mirroring the real Cypher's MERGE semantics --
+                # a plain .append() (as PARAM_LINK above uses) would let a
+                # repeated publish silently duplicate edges in this fake.
+                edge = ("ATTRIBUTE_OF", atom_key, param_key)
+                if edge not in self.relationships:
+                    self.relationships.append(edge)
             return []
 
         if op == "PUBLISH_STALE_DIFF":
@@ -759,3 +800,243 @@ def test_untagged_never_published():
         assert "n-untagged-01" not in serialized
         assert "n-scratch-01" not in serialized
         assert "n-scratch-02" not in serialized
+
+
+# ── ALGN12-14: ATTRIBUTE_OF derivation (_attribute_of_from_bindings) ──
+
+ATTRIBUTE_OF_RULE_ID = "R_STRUCT_FRAME_HEIGHT_VAR_V"
+
+
+def _htotal_binding() -> dict:
+    return {
+        "ruleId": ATTRIBUTE_OF_RULE_ID,
+        "determinability": "direct-parameter",
+        "parameters": ["HTotal"],
+        "description": "HTotal directly carries the Frame's total height.",
+    }
+
+
+def _monotone_binding_two_params() -> dict:
+    return {
+        "ruleId": "R_URB_HEIGHT_MAX_75_V",
+        "determinability": "monotone-bound",
+        "parameters": ["HTotal", "SpansCount"],
+        "metricExpression": "HTotal + 0.1 * SpansCount",
+        "monotoneIn": ["HTotal"],
+        "description": "Overall building height is monotone increasing in HTotal.",
+    }
+
+
+def _patch_bindings(monkeypatch, bindings_payload: dict) -> None:
+    """Redirect cg_input_bindings.load_input_bindings() to a canned payload so
+    the test never depends on the real llm/structure_rules.json on disk."""
+
+    def _fake_load(path=None):
+        del path
+        return {entry["ruleId"]: entry for entry in bindings_payload.get("inputBindings", [])}
+
+    monkeypatch.setattr(cg_input_bindings, "load_input_bindings", _fake_load)
+
+
+def test_attribute_of_two_bound_parameters_yield_two_rows(monkeypatch):
+    """HTotal and SpansCount are both published on procedure 11 in the Frame
+    fixture; a monotone-bound entry naming both must derive one row per name."""
+    _patch_bindings(monkeypatch, {"inputBindings": [_monotone_binding_two_params()]})
+    graph = FakeGraph()
+    graph.rules.add(("R_URB_HEIGHT_MAX_75_V", GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    result = computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    assert result["publishedCounts"]["attributeOf"] == 2
+    param_targets = {
+        rel[2] for rel in graph.relationships if rel[0] == "ATTRIBUTE_OF"
+    }
+    assert ("Parameter", PARAM_HTOTAL_CG_ID, GOLDEN_PROJECT) in param_targets
+    assert ("Parameter", "cg:1:param:11_Var_SpansCount", GOLDEN_PROJECT) in param_targets
+
+
+def test_attribute_of_rule_absent_from_bindings_yields_zero_rows(monkeypatch):
+    _patch_bindings(monkeypatch, {"inputBindings": []})
+    graph = FakeGraph()
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    result = computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    assert result["publishedCounts"]["attributeOf"] == 0
+    assert not any(rel[0] == "ATTRIBUTE_OF" for rel in graph.relationships)
+
+
+def test_attribute_of_unresolved_parameter_name_reported_not_dropped(monkeypatch, caplog):
+    binding = {
+        "ruleId": ATTRIBUTE_OF_RULE_ID,
+        "determinability": "direct-parameter",
+        "parameters": ["HTotal", "DoesNotExistParam"],
+        "description": "One resolvable, one bound name absent from the published Parameter set.",
+    }
+    _patch_bindings(monkeypatch, {"inputBindings": [binding]})
+    graph = FakeGraph()
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    with caplog.at_level("WARNING", logger="computgraph_publish"):
+        result = computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    assert result["publishedCounts"]["attributeOf"] == 1
+    unresolved_warnings = [r for r in caplog.records if "DoesNotExistParam" in r.getMessage()]
+    assert len(unresolved_warnings) == 1
+
+
+def test_attribute_of_duplicate_rule_parameter_pair_deduplicates(monkeypatch):
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    rule_classifications = {
+        ATTRIBUTE_OF_RULE_ID: cg_input_bindings.RuleClassification(
+            ruleId=ATTRIBUTE_OF_RULE_ID,
+            determinability="direct-parameter",
+            parameterNames=("HTotal", "HTotal"),
+            metricExpression=None,
+            monotoneIn=(),
+            limit=None,
+            source="binding",
+        )
+    }
+    parameter_rows = [{"cgId": PARAM_HTOTAL_CG_ID, "name": "HTotal"}]
+
+    rows = computgraph_publish._attribute_of_from_bindings(rule_classifications, parameter_rows)
+
+    assert len(rows) == 1
+    assert rows[0]["ruleId"] == ATTRIBUTE_OF_RULE_ID
+    assert rows[0]["paramCgId"] == PARAM_HTOTAL_CG_ID
+
+
+def test_attribute_of_row_carries_provenance():
+    rule_classifications = {
+        ATTRIBUTE_OF_RULE_ID: cg_input_bindings.RuleClassification(
+            ruleId=ATTRIBUTE_OF_RULE_ID,
+            determinability="direct-parameter",
+            parameterNames=("HTotal",),
+            metricExpression=None,
+            monotoneIn=(),
+            limit=None,
+            source="binding",
+        )
+    }
+    parameter_rows = [{"cgId": PARAM_HTOTAL_CG_ID, "name": "HTotal"}]
+
+    rows = computgraph_publish._attribute_of_from_bindings(rule_classifications, parameter_rows)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["derivedFromRuleId"] == ATTRIBUTE_OF_RULE_ID
+    assert row["source"] == "binding"
+    assert row["determinability"] == "direct-parameter"
+
+
+# ── ALGN12-14: ATTRIBUTE_OF MERGE writer (_publish_attribute_of) -- both query directions ──
+
+
+def test_attribute_of_forward_query_returns_governing_parameter_name(monkeypatch):
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    graph = FakeGraph()
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    # Forward: Rule -[HAS_BODY]-> DataPropertyAtom -[ATTRIBUTE_OF]-> Parameter.
+    atom_key = ("Atom", f"{ATTRIBUTE_OF_RULE_ID}_A2", GOLDEN_PROJECT)
+    param_key = ("Parameter", PARAM_HTOTAL_CG_ID, GOLDEN_PROJECT)
+    matches = [
+        rel for rel in graph.relationships
+        if rel[0] == "ATTRIBUTE_OF" and rel[1] == atom_key and rel[2] == param_key
+    ]
+    assert len(matches) == 1
+
+    htotal_param = graph.nodes[param_key]
+    assert htotal_param["parameterName"] == "HTotal"
+
+
+def test_attribute_of_reverse_query_returns_governing_rule_and_atom(monkeypatch):
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    graph = FakeGraph()
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    # Reverse: Parameter <-[ATTRIBUTE_OF]- Atom (identified by its rule-derived
+    # key); the rule id is recoverable from the atom key's ruleId prefix.
+    param_key = ("Parameter", PARAM_HTOTAL_CG_ID, GOLDEN_PROJECT)
+    matches = [
+        rel for rel in graph.relationships
+        if rel[0] == "ATTRIBUTE_OF" and rel[2] == param_key
+    ]
+    assert len(matches) == 1
+    atom_key = matches[0][1]
+    assert atom_key == ("Atom", f"{ATTRIBUTE_OF_RULE_ID}_A2", GOLDEN_PROJECT)
+
+
+def test_attribute_of_cross_project_isolation_no_edge(monkeypatch):
+    """A Rule bound in project B must never acquire an edge to a Parameter
+    published in project A (T-1203-04-02)."""
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    graph = FakeGraph()
+    other_project = "p1-other"
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, other_project))  # Rule exists in a DIFFERENT project
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    result = computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    # classify_rule(session, ruleId, GOLDEN_PROJECT, ...) finds no Rule in
+    # GOLDEN_PROJECT (it only exists in other_project) -> RuleNotFoundError ->
+    # skipped by _classify_bound_rules -> zero ATTRIBUTE_OF rows.
+    assert result["publishedCounts"]["attributeOf"] == 0
+    assert not any(rel[0] == "ATTRIBUTE_OF" for rel in graph.relationships)
+
+
+def test_attribute_of_republish_is_idempotent(monkeypatch):
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    graph = FakeGraph()
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+    count_before = len([r for r in graph.relationships if r[0] == "ATTRIBUTE_OF"])
+
+    computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+    count_after = len([r for r in graph.relationships if r[0] == "ATTRIBUTE_OF"])
+
+    assert count_before == 1
+    assert count_after == 1
+
+
+def test_attribute_of_no_interpolated_cypher():
+    import inspect
+
+    source = inspect.getsource(computgraph_publish._publish_attribute_of)
+    assert 'tx.run(f"' not in source
+    assert "tx.run(f'" not in source
+
+
+def test_attribute_of_param_link_unchanged_alongside_new_edge(monkeypatch):
+    """PARAM_LINK derivation/publication must coexist unchanged when
+    ATTRIBUTE_OF rows are also present in the same publish."""
+    _patch_bindings(monkeypatch, {"inputBindings": [_htotal_binding()]})
+    graph = FakeGraph()
+    graph.rules.add((ATTRIBUTE_OF_RULE_ID, GOLDEN_PROJECT))
+    session = FixtureSession(graph)
+    cg_context = frame_cg_context(project=GOLDEN_PROJECT, definition_id=GOLDEN_DEFINITION_ID)
+
+    result = computgraph_publish.publish_structure(session, GOLDEN_PROJECT, cg_context)
+
+    assert result["publishedCounts"]["paramLinks"] >= 1
+    assert result["publishedCounts"]["attributeOf"] == 1
+    assert any(rel[0] == "PARAM_LINK" for rel in graph.relationships)
+    assert any(rel[0] == "ATTRIBUTE_OF" for rel in graph.relationships)
