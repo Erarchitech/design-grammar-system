@@ -173,3 +173,10 @@ None - no external service configuration required.
 ---
 *Phase: 1202-design-state-replay-and-per-object-verdict-closure*
 *Completed: 2026-09-22*
+
+## Self-Check: PASSED
+
+All 4 modified files confirmed present on disk (`IValidGraphRepository.cs`,
+`Neo4jValidGraphRepository.cs`, `Neo4jValidGraphRepositoryTests.cs`,
+`spec/EVIDENCE-CONTRACT.md`). All 5 commits (`5e3a045`, `681727b`, `2400318`, `7427d31`,
+`d4cd4a2`) confirmed present in `git log --oneline --all`. No missing items.

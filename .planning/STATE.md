@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1202
 current_phase_name: design-state-replay-and-per-object-verdict-closure
 status: executing
-stopped_at: "Completed 1202-08-PLAN.md (gap-closure: live DE-01 replay run closes VERIFICATION.md gap 1 with Agreement: agree, csharp+replay legs both reporting hash 69D4289C...). Fixed a real pre-existing bug in data-service/app.py's get_validation_run (missing statePayloadJson in RETURN clause). Both 1202-08 and 1202-09 gap-closure plans now complete; phase-level re-verification is next."
-last_updated: "2026-09-22T13:05:16.468Z"
-last_activity: 2026-09-21
+stopped_at: "Completed 1202-10-PLAN.md (gap-closure round 2: CR-01 duplicate (ruleId, objectId) row detection closed via additive HasDuplicateRuleObjectRows/CollidingRuleObjectPairs signal on BuildPerObjectVerdicts, D-12 rollup unchanged, spec/EVIDENCE-CONTRACT.md §5.1 reconciled with §4. 545/545 DG.Tests passing incl. 6/6 BuildPerObjectVerdicts Facts. 10/11 plans in phase now have SUMMARY.md; only 1202-11 remains."
+last_updated: "2026-09-22T14:09:03.419Z"
+last_activity: 2026-09-22
 last_activity_desc: Phase 1202 execution started
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 24
-  completed_plans: 24
-  percent: 50
+  completed_phases: 2
+  total_plans: 26
+  completed_plans: 25
+  percent: 33
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 1202 (design-state-replay-and-per-object-verdict-closure) — EXECUTED, gap-closure plans in progress
-Plan: 9 of 9 (all plans, including gap-closure plans 08 and 09, complete)
-Status: Original 7 plans executed; 1202-07's live DE-01 exit evidence (D-16) approved by user 2026-09-22. Gap-closure plan 1202-09 (parameters[] dual-wire-shape exclusion contract, ALGN12-09/D-09) executed 2026-09-22 — closes VERIFICATION.md gap 2. Phase-level verification/closure not yet run.
+Phase: 1202 (design-state-replay-and-per-object-verdict-closure) — EXECUTING
+Plan: 11 of 11
+Status: Ready to execute plan 11 (1202-10 gap-closure round 2 complete; 10/11 plans have SUMMARY.md)
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
@@ -38,7 +38,7 @@ Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EX
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-21 — Phase 1202 execution started
+Last activity: 2026-09-22 — Phase 1202 execution started
 (cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
 the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
 finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
@@ -132,6 +132,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1202 P07 | ~35min+rebuild+live-run | 3 tasks | 8 files |
 | Phase 1202 P09 | ~25min | 3 tasks | 4 files |
 | Phase 1202 P08 | ~2h30min | 4 tasks | 11 files |
+| Phase 1202 P10 | ~25min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -414,6 +415,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 1202 plan 09]: parameters[] dual-wire-shape divergence documented as declared exclusion contract in spec/DATABASE.md + spec/EVIDENCE-CONTRACT.md (D-09, ALGN12-09) rather than converging the two readers — closes VERIFICATION.md gap 2 with zero reader-behavior change
 - [Phase ?]: 1202-08: kept csharp/replay agree hash (69D4289C...) over forcing a match to the fixture's stale expectedCanonicalStateHash -- neither leg's double-typed Design State model can reach the stale scale-preserving value, so genuine cross-language agreement is the correct target
 - [Phase ?]: 1202-08: run_leg_data_service now forwards fixture.get('statePayloadJson') to /validation/publish -- without this, that leg's own fresh hash-less publish always shadows any seeded evidence within one run_de01.py invocation
+- [Phase ?]: 1202-10: CR-01 fix as additive flag (HasDuplicateRuleObjectRows/CollidingRuleObjectPairs) not a new VerdictSource member -- duplicate-identity is a data-quality fact about a present envelope, not a provenance change
 
 ### Research Flags (carry into planning)
 
@@ -495,9 +497,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-22T13:05:16.458Z
-Stopped at: Completed 1202-08-PLAN.md (gap-closure: live DE-01 replay run closes VERIFICATION.md gap 1 with Agreement: agree, csharp+replay legs both reporting hash 69D4289C...). Fixed a real pre-existing bug in data-service/app.py's get_validation_run (missing statePayloadJson in RETURN clause). Both 1202-08 and 1202-09 gap-closure plans now complete; phase-level re-verification is next.
-Resume file: None
+Last session: 2026-09-22T14:09:03.409Z
+Stopped at: Completed 1202-10-PLAN.md (gap-closure round 2: CR-01 duplicate (ruleId, objectId) row detection closed via additive HasDuplicateRuleObjectRows/CollidingRuleObjectPairs signal on BuildPerObjectVerdicts, D-12 rollup unchanged, spec/EVIDENCE-CONTRACT.md §5.1 reconciled with §4. 545/545 DG.Tests passing incl. 6/6 BuildPerObjectVerdicts Facts. 10/11 plans in phase now have SUMMARY.md; only 1202-11 remains.
+Resume file: 1202-11-PLAN.md
 
 ## Performance Metrics
 
