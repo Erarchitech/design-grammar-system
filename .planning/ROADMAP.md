@@ -175,6 +175,18 @@ Plans:
 
 **Gate:** ontology, runtime, specification, and paper ownership agree; both query directions are evidenced or the narrowed contract is documented.
 
+**Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
+
+**Plans:** 6 plans
+
+Plans:
+- [ ] 1203-01-PLAN.md — Preflight: capture both suite baselines, inventory every pinned identity literal, relocate the WR-02 defect, and record the true SHACL shape count (wave 1, read-and-record only)
+- [ ] 1203-02-PLAN.md — D-08 + D-09 as ONE coordinated re-derivation: length-prefix hash encoding in both languages, `project` folded into DesignState hashes where legitimately reachable, every golden vector and pinned literal updated in lockstep (wave 2)
+- [ ] 1203-04-PLAN.md — `ATTRIBUTE_OF` derivation and project-scoped MERGE at publish time, forward and reverse query tests (wave 2, parallel with 1203-02)
+- [ ] 1203-03-PLAN.md — CR-01 label-aware `mint_identity` with a mint→bind→publish coincidence regression, WR-01 graph tagging, WR-03 dead-constant deletion, ALGN12-13 conflict/detach/provenance test coverage (wave 3, serialized after 1203-02 — both touch `dg_identity.py`)
+- [ ] 1203-05-PLAN.md — D-05 schema propagation sweep across every surface plus the SHACL shape, and D-06 consolidation of `spec/DG-ID.md` into the single identity authority (wave 4)
+- [ ] 1203-06-PLAN.md — CQ3 fixture in a sibling path evidencing both query directions, with a live-stack human checkpoint (wave 5, **requires a running compose stack**)
+
 ### Phase 1204: Determinism and LLM Reproducibility Benchmark
 
 **Goal:** Separate deterministic validator repeatability from LLM proposal repeatability.
