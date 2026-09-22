@@ -128,7 +128,7 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 11/11 plans executed
+**Plans:** 11/11 plans complete
 
 Plans:
 **Wave 1**
