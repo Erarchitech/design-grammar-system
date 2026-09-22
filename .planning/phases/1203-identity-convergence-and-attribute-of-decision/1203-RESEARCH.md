@@ -398,15 +398,25 @@ def _publish_attribute_of(tx: Any, params: dict) -> None:
 
 **If this table is empty:** N/A — see above; risks are procedural (verify-before-planning), not package-legitimacy risks.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both questions below are closed procedurally: each is operationalized as a Wave 0 task in
+> `1203-01-PLAN.md` (Task 1 covers question 1, Task 2 covers question 2), and both appear in
+> `1203-VALIDATION.md` § Wave 0 Requirements. Planning did not need the answers up front — the
+> plans read the answer off disk before any dependent work starts.
 
 1. **Does `fixtures/golden/canonical-vectors.json` contain any DesignState ID or dgId literal that D-08/D-09 would invalidate?**
+   - **Resolved by:** `1203-01-PLAN.md` Task 1. Planner reported the file carries no identity literals, confirming the blast radius is the two test files plus plan 01's repo-wide sweep.
    - What we know: `fixtures/golden/fixture.json` is explicitly frozen (1200 D-11/1202 D-17) and out of scope for edits. `canonical-vectors.json` is a sibling file whose contents were not read in this session.
    - What's unclear: Whether `canonical-vectors.json` pins any hash-derived ID literal that would break under D-08/D-09's re-derivation.
    - Recommendation: Planner reads `fixtures/golden/canonical-vectors.json` and `fixtures/golden/MANIFEST.md` as a Wave-0 task before starting the D-08/D-09 re-derivation, to confirm it is unaffected (likely — it's described elsewhere in the corpus as canonicalization vectors, not identity-minting vectors) or needs its own update.
 
 2. **What is the current, correct line/location of the WR-02 defect in `spec/DATABASE.md`?**
-   - What we know: Line 336 no longer contains a route/verb declaration; the file has been edited since Phase 32.1-REVIEW.md's citation was written.
+   - **Resolved by:** `1203-01-PLAN.md` Task 2. Planner relocated it: `spec/DATABASE.md:518` documents
+     `PATCH /identity/bind` while `app.py:2084` is `@app.post`. `1203-05-PLAN.md` closes the whole
+     defect class mechanically with a script diffing documented `/identity/*` routes against live
+     decorators by verb+path, rather than patching one line.
+   - What we knew: Line 336 no longer contains a route/verb declaration; the file has been edited since Phase 32.1-REVIEW.md's citation was written.
    - What's unclear: Whether the wrong-route/verb text still exists elsewhere in the file, or was already fixed by an intervening edit (in which case WR-02 may already be closed and D-11's bundling of it needs adjustment).
    - Recommendation: Planner re-greps `spec/DATABASE.md` for `/identity/` and `/computgraph/` route documentation near the Phase 32.1 identity-registry section before writing the WR-02 fix task; if no wrong-route/verb text is found anywhere, mark WR-02 as already-resolved and note this explicitly rather than silently dropping the task.
 

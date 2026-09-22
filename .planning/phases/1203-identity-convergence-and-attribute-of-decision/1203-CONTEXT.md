@@ -179,8 +179,8 @@ contradicts the cited evidence.
   scope must come from the publish context, never from the file.
   — **Reversibility:** reversible — additive properties on a new edge.
 
-- **D-04: Which atom the edge attaches to is a planner decision, but it MUST be stated
-  explicitly and be reverse-queryable.** A rule has several body atoms; `PAPER-C-032` attaches to
+- **D-04: Which atom the edge attaches to is a planner decision, but it MUST be stated explicitly and be reverse-queryable.**
+  A rule has several body atoms; `PAPER-C-032` attaches to
   `A2` (the `DataPropertyAtom`, `hasDistanceM`). The planner picks the attachment rule and writes
   it into the spec; it may not leave it implicit.
   **Rationale:** `read_rule_limit` (`cg_input_bindings.py:293-302`) already traverses
@@ -197,16 +197,16 @@ contradicts the cited evidence.
 
 ### Identity minting authority (ALGN12-12)
 
-- **D-06: `spec/DG-ID.md` is extended to become the single identity authority, covering
-  DesignState IDs as well as `dgId`.** Today it governs only `dgId`; the four DesignState minting
+- **D-06: `spec/DG-ID.md` is extended to become the single identity authority, covering DesignState IDs as well as `dgId`.**
+  Today it governs only `dgId`; the four DesignState minting
   functions are governed by nothing but their own doc-comments.
   **Rationale:** ALGN12-12 asks for "one documented authority". A second identity spec would be the
   drift this milestone eliminates. `spec/DG-ID.md` is already normative, already in the propagation
   list, and already carries the collision policy the DesignState functions need.
   — **Reversibility:** reversible — documentation consolidation.
 
-- **D-07: Both ObjState minting forms are RETAINED, and the contract names which is
-  authoritative for which case.** Per Correction 3: `ComputeObjectStateIdFromRef` is authoritative
+- **D-07: Both ObjState minting forms are RETAINED, and the contract names which is authoritative for which case.**
+  Per Correction 3: `ComputeObjectStateIdFromRef` is authoritative
   for **canvas-captured per-geometry-instance ObjStates** (the shipping path);
   `ComputeObjectStateId` (3-arg) is documented as the **per-rule-variable form (CMPST-07)** with no
   current production caller.
@@ -234,8 +234,8 @@ contradicts the cited evidence.
 
 ### Phase 32.1 carried findings (GSD-ALIGN-006)
 
-- **D-09: CR-02 is fixed by length-prefix encoding, applied identically in both languages and
-  extended to every pipe-joined identity hash.** The fix covers `DgIdMintingService.Mint`,
+- **D-09: CR-02 is fixed by length-prefix encoding, applied identically in both languages and extended to every pipe-joined identity hash.**
+  The fix covers `DgIdMintingService.Mint`,
   `compute_dg_id`, **and** the four `DesignStateIdGenerator` functions, which share the same
   unescaped-delimiter exposure (fifth disk fact).
   **Rationale:** the review offers reject-on-`|` or length-prefixing; length-prefixing is chosen
@@ -248,8 +248,8 @@ contradicts the cited evidence.
   — **Reversibility:** one-way — every previously minted `dgId` and DesignState ID changes.
   Sequence D-08 and D-09 as **one** coordinated re-derivation, not two.
 
-- **D-10: CR-01 is fixed by making `mint_identity` label-aware, with a regression test that mints →
-  binds → publishes → asserts the published entity still carries the binding.** Of the review's
+- **D-10: CR-01 is fixed by making `mint_identity` label-aware, with a mint-binds-publishes regression test asserting the published entity still carries the binding.**
+  Of the review's
   three options, the third (forbid mint-before-publish) is rejected: `spec/DG-ID.md:55-64` declares
   pre-mint-before-publish the **intended** workflow, so forbidding it contradicts the normative
   spec this phase is consolidating under D-06.
@@ -258,8 +258,8 @@ contradicts the cited evidence.
   — **Reversibility:** costly — the `/identity/mint` signature is a published API surface
   (`spec/API.md`).
 
-- **D-11: WR-01 is bundled with D-10; WR-02 and WR-04 are bundled into the D-06 doc pass; WR-03 is
-  resolved by DELETING the dead constant.** `ALLOWED_PROPERTIES` (`dg_context.py:546-559`) is
+- **D-11: WR-01 is bundled with D-10; WR-02 and WR-04 are bundled into the D-06 doc pass; WR-03 is resolved by DELETING the dead constant.**
+  `ALLOWED_PROPERTIES` (`dg_context.py:546-559`) is
   never referenced by `validate_cypher`. Wiring property-level validation into the Cypher validator
   is a **new capability** and belongs to a Cypher-validator phase, not here; deleting dead code
   whose docstring overstates what the validator does is in scope.
@@ -278,8 +278,8 @@ contradicts the cited evidence.
   proves it wrong.
   — **Reversibility:** reversible.
 
-- **D-13: Full bidirectional per-platform conflict resolution stays DEFERRED; only last-write-wins
-  is tested.** `spec/DG-ID.md` Conflict-policy direction explicitly defers it, and no requirement
+- **D-13: Full bidirectional per-platform conflict resolution stays DEFERRED; only last-write-wins is tested.**
+  `spec/DG-ID.md` Conflict-policy direction explicitly defers it, and no requirement
   in `.planning/REQUIREMENTS.md` asks for it.
   **Rationale:** scope control — ALGN12-13 says conflict policy is "specified and tested", and the
   specified policy *is* last-write-wins. Implementing richer resolution would be a new capability.
@@ -287,8 +287,8 @@ contradicts the cited evidence.
 
 ### Evidence and exit criteria (cross-cutting)
 
-- **D-14: The CQ3 fixture is this phase's exit evidence and MUST demonstrate both directions;
-  DE-01 extension is at the planner's discretion.** The fixture proves
+- **D-14: The CQ3 fixture is this phase's exit evidence and MUST demonstrate both directions; DE-01 extension is at the planner's discretion.**
+  The fixture proves
   forward (rule/atom → governing parameter) and reverse (parameter → governing rules), project-
   scoped, mirroring `PAPER-C-032`'s shape.
   **Rationale:** the ROADMAP gate says *"both query directions are evidenced"* — that is a graph-
