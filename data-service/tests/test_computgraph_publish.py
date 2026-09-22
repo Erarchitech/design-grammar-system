@@ -8,7 +8,8 @@ statement computgraph_publish.py issues (`// op=PUBLISH_*`).
 
 Cross-language parity anchor (reused from test_dg_identity.py): the dgId computed for
 cgId "cg:1:proc:11_Proc" under (project "p1", definitionId "frame.gh") must equal
-"dg:BC8E62EE137E2B56".
+"dg:0F31CD18542F0252" (re-derived Phase 1203-02, D-09 length-prefix encoding; the
+pre-fix value was "dg:BC8E62EE137E2B56").
 """
 
 from __future__ import annotations
@@ -39,11 +40,12 @@ from cg_fixtures import (  # noqa: E402
 client = TestClient(app, raise_server_exceptions=False)
 
 # The exact dgId minted for this triple (cross-language parity anchor, reused from
-# test_dg_identity.py's golden vector).
+# test_dg_identity.py's golden vector). Re-derived Phase 1203-02 (D-09 length-prefix
+# encoding); the pre-fix value was "dg:BC8E62EE137E2B56".
 GOLDEN_PROJECT = "p1"
 GOLDEN_DEFINITION_ID = "frame.gh"
 GOLDEN_CG_ID = "cg:1:proc:11_Proc"
-GOLDEN_DG_ID = "dg:BC8E62EE137E2B56"
+GOLDEN_DG_ID = "dg:0F31CD18542F0252"
 
 _OP_RE = re.compile(r"op=(\w+)")
 

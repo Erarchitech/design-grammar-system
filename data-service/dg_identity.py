@@ -3,10 +3,11 @@
 Identity model
 --------------
 - ``dgId`` is the durable, platform-neutral anchor for a Computgraph entity. It is
-  minted deterministically from ``project|definitionId|cgId`` (pipe-joined, in that
-  exact order) via SHA-256 — no persistence round-trip is required to "remember" an
-  entity's identity, and folding ``project`` into the hash closes the v2.0
-  cross-project collision class.
+  minted deterministically from the ordered triple ``(project, definitionId, cgId)``,
+  combined via ``_encode_hash_input`` (length-prefixed, not a naive pipe-join — D-09
+  / CR-02) and hashed with SHA-256 — no persistence round-trip is required to
+  "remember" an entity's identity, and folding ``project`` into the hash closes the
+  v2.0 cross-project collision class.
 - Native ids (a Grasshopper ``InstanceGuid``, a Revit ``UniqueId``, an IFC
   ``GlobalId`` …) are *representations* bound to a dgId. Counterpart objects across
   platforms therefore resolve to ONE identity (DGID-03).
@@ -49,8 +50,39 @@ from pydantic import BaseModel, field_validator
 DGID_PREFIX = "dg:"
 
 
+def _encode_hash_input(*parts: str | None) -> str:
+    """Encode an ordered tuple of optional string components with an unambiguous
+    component boundary — the D-09 / CR-02 fix.
+
+    Twinned verbatim with the C# helpers of the same rule: ``DG.Core.Services.
+    DesignStateIdGenerator.EncodeHashInput`` and ``DG.Core.Models.Identity.
+    DgIdMintingService.EncodeHashInput``. Any edit here MUST be mirrored in both.
+
+    Rule: for each component, in order, emit the component's character length in
+    decimal, then a colon, then the component's raw text; join the resulting units
+    with a single pipe. A ``None`` component emits the literal unit ``-1:`` (no
+    trailing text); an empty string emits ``0:``. Because every unit is preceded by
+    an unambiguous length, a pipe (or any other character) inside a component's raw
+    text can never be mistaken for a component boundary, closing the pipe-collision
+    class CR-02 identifies in the naive pipe-join this helper replaces.
+
+    Length is counted in Unicode code points (Python's native ``len(str)``), matching
+    the C# side's UTF-16-character count for every input this identity registry
+    actually receives (ASCII/BMP project names, definitionIds, and cgIds) — no
+    astral-plane characters are expected in these identity components.
+    """
+    units = []
+    for part in parts:
+        if part is None:
+            units.append("-1:")
+        else:
+            units.append(f"{len(part)}:{part}")
+    return "|".join(units)
+
+
 def compute_dg_id(project: str, definition_id: str, cg_id: str) -> str:
-    """Mint a deterministic dgId from the pipe-joined triple ``project|definitionId|cgId``.
+    """Mint a deterministic dgId from the length-prefix-encoded triple
+    ``(project, definition_id, cg_id)`` (see ``_encode_hash_input``).
 
     Byte-identical to DG.Core ``DgIdMintingService.Mint``: SHA-256 the UTF-8 input,
     render the digest as UPPERCASE hex (matching .NET ``Convert.ToHexString``), take
@@ -58,7 +90,7 @@ def compute_dg_id(project: str, definition_id: str, cg_id: str) -> str:
     byte-identical dgId; a differing ``project`` for the same definitionId+cgId yields a
     distinct dgId.
     """
-    input_str = f"{project}|{definition_id}|{cg_id}"
+    input_str = _encode_hash_input(project, definition_id, cg_id)
     digest = hashlib.sha256(input_str.encode("utf-8")).hexdigest().upper()
     return DGID_PREFIX + digest[:16]
 

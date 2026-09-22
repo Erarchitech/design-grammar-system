@@ -64,8 +64,22 @@ public static class DesignStateIdGenerator
     /// <summary>
     /// Produces a 16-character hex StateId, DS_-prefixed, deterministic over the sorted
     /// parameter ID + value pairs. Identical parameter sets always produce the same StateId.
+    ///
+    /// <para>
+    /// <b>D-09 (CR-02):</b> the per-parameter <c>key=value;</c> body and the optional
+    /// trailing <paramref name="project"/> are combined through <see cref="EncodeHashInput"/>,
+    /// so a crafted <c>ParameterId</c> or value containing the encoder's own delimiters can no
+    /// longer shift the boundary between the parameter body and <paramref name="project"/>.
+    /// </para>
+    /// <para>
+    /// <b>D-08 (project-in-hash):</b> <paramref name="project"/> is an optional trailing
+    /// parameter. When supplied, two otherwise-identical parameter sets captured under
+    /// different projects mint different StateIds. When omitted (<c>null</c>), the encoder
+    /// emits its null unit and the id is unchanged from the pre-D-08 contract, so every
+    /// existing call site keeps compiling and minting deterministically.
+    /// </para>
     /// </summary>
-    public static string ComputeParamStateId(IEnumerable<DesignStateParameter> parameters)
+    public static string ComputeParamStateId(IEnumerable<DesignStateParameter> parameters, string? project = null)
     {
         var sb = new StringBuilder();
 
@@ -83,17 +97,27 @@ public static class DesignStateIdGenerator
             sb.Append(';');
         }
 
-        return ParamStatePrefix + HashToHex16(sb.ToString());
+        var input = EncodeHashInput(sb.ToString(), project);
+        return ParamStatePrefix + HashToHex16(input);
     }
 
     /// <summary>
     /// Produces an OS_-prefixed StateId: OS_&lt;SHA256(projectId + objectInstanceId + variableName)&gt;
     /// for the ObjState model. Cross-rule (no rule-scoping input) per CMPST-07 — Object variables
     /// are shared across rules.
+    ///
+    /// <para>
+    /// <b>D-09 (CR-02):</b> the hash input is built through <see cref="EncodeHashInput"/> rather
+    /// than a naive pipe-join, so a <paramref name="projectId"/>, <paramref name="objectInstanceId"/>,
+    /// or <paramref name="variableName"/> containing a pipe can no longer shift the boundary
+    /// between the three components. This method's arity stays exactly three string parameters
+    /// (D-07) — its project-in-hash obligation is already satisfied by its existing
+    /// <paramref name="projectId"/> argument, so it takes no additional optional parameter.
+    /// </para>
     /// </summary>
     public static string ComputeObjectStateId(string projectId, string objectInstanceId, string variableName)
     {
-        var input = $"{projectId}|{objectInstanceId}|{variableName}";
+        var input = EncodeHashInput(projectId, objectInstanceId, variableName);
         return ObjectStatePrefix + HashToHex16(input);
     }
 
@@ -124,26 +148,58 @@ public static class DesignStateIdGenerator
     /// A null <paramref name="classIri"/> (captured before a class is wired) is hashed against a
     /// stable sentinel rather than an empty string or a crash, so the id is still deterministic.
     /// </para>
+    /// <para>
+    /// <b>D-09 (CR-02):</b> the hash input is built through <see cref="EncodeHashInput"/> rather
+    /// than a naive pipe-join, closing the boundary-shift collision a pipe inside
+    /// <paramref name="objectRef"/> or <paramref name="classIri"/> would otherwise allow.
+    /// </para>
+    /// <para>
+    /// <b>D-08 (project-in-hash):</b> <paramref name="project"/> is an optional trailing
+    /// parameter, folded into the hash when supplied so the same objectRef+classIri captured
+    /// under two different projects mint distinct StateIds. The shipping
+    /// <c>ObjectStateComponent</c> Grasshopper component has no Project input port and no
+    /// project field in its <c>SolveInstance</c> scope (confirmed on disk, Phase 1203-02), so it
+    /// currently calls this overload with <paramref name="project"/> left <c>null</c> — a
+    /// project-aware caller (e.g. a future MCP/data-service-side re-mint) may supply one.
+    /// Wiring a project input port into this component is a Grasshopper UX change requiring
+    /// canvas re-wiring and live Rhino verification; GATE12-04 routes that work to v9.0 Phase 40.
+    /// </para>
     /// </summary>
-    public static string ComputeObjectStateIdFromRef(string objectRef, string? classIri)
+    public static string ComputeObjectStateIdFromRef(string objectRef, string? classIri, string? project = null)
     {
         const string NoClassIriSentinel = "\u0000no-class-iri\u0000";
-        var input = $"{objectRef}|{classIri ?? NoClassIriSentinel}";
+        var input = EncodeHashInput(objectRef, classIri ?? NoClassIriSentinel, project);
         return ObjectStatePrefix + HashToHex16(input);
     }
 
     /// <summary>
-    /// Produces a PS_-prefixed StateId for PropState: PS_&lt;SHA256(ruleIri|dataPropertyIri|propValueLex[|objectRef])&gt;.
+    /// Produces a PS_-prefixed StateId for PropState: PS_&lt;SHA256(ruleIri|dataPropertyIri|propValueLex[|objectRef][|project])&gt;.
     /// Deterministic over the Rule IRI, DataProperty IRI, and the typed property value.
     /// When <paramref name="objectRef"/> is provided (per-object properties), it is folded into
     /// the hash so two objects sharing the same value get distinct StateIds (no MERGE collision).
     /// Same Rule + DataProperty + value (+ object) → same StateId across validation runs.
+    ///
+    /// <para>
+    /// <b>D-09 (CR-02):</b> all components are combined through <see cref="EncodeHashInput"/>
+    /// rather than a naive pipe-join, so a pipe embedded in <paramref name="ruleIri"/>,
+    /// <paramref name="dataPropertyIri"/>, the rendered value, or <paramref name="objectRef"/>
+    /// can no longer shift a component boundary.
+    /// </para>
+    /// <para>
+    /// <b>D-08 (project-in-hash):</b> <paramref name="project"/> is an optional trailing
+    /// parameter, folded into the hash when supplied. The shipping
+    /// <c>PropertyStateComponent</c> Grasshopper component has no Project input port and no
+    /// project field in its <c>SolveInstance</c> scope (confirmed on disk, Phase 1203-02), so it
+    /// currently calls this overload with <paramref name="project"/> left <c>null</c>; wiring a
+    /// project port is a Grasshopper UX change GATE12-04 routes to v9.0 Phase 40.
+    /// </para>
     /// </summary>
     public static string ComputePropStateId(
         string ruleIri,
         string dataPropertyIri,
         DesignStateParameter propValue,
-        string? objectRef = null)
+        string? objectRef = null,
+        string? project = null)
     {
         var lex = propValue.Type switch
         {
@@ -154,8 +210,8 @@ public static class DesignStateIdGenerator
         };
 
         var input = string.IsNullOrWhiteSpace(objectRef)
-            ? $"{ruleIri}|{dataPropertyIri}|{lex}"
-            : $"{ruleIri}|{dataPropertyIri}|{lex}|{objectRef}";
+            ? EncodeHashInput(ruleIri, dataPropertyIri, lex, null, project)
+            : EncodeHashInput(ruleIri, dataPropertyIri, lex, objectRef, project);
         return PropStatePrefix + HashToHex16(input);
     }
 
@@ -207,6 +263,53 @@ public static class DesignStateIdGenerator
         sb.Append(capturedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
 
         return DesignStatePrefix + HashToHex16(sb.ToString());
+    }
+
+    /// <summary>
+    /// Encodes an ordered tuple of optional string components into a single hash-input string
+    /// with an unambiguous component boundary — the D-09 / CR-02 fix.
+    ///
+    /// <para>
+    /// <b>Rule (twinned verbatim with <see cref="DG.Core.Models.Identity.DgIdMintingService"/>'s
+    /// own copy of this rule, and with Python <c>dg_identity._encode_hash_input</c>):</b> for each
+    /// component, in order, emit the component's character length in invariant decimal, then a
+    /// colon, then the component's raw text; join the resulting units with a single pipe. A
+    /// <c>null</c> component emits the literal unit <c>-1:</c> (no trailing text); an empty-string
+    /// component emits <c>0:</c>. Because every unit is preceded by an unambiguous length, a pipe
+    /// (or any other character) inside a component's raw text can never be mistaken for a
+    /// component boundary, closing the pipe-collision class CR-02 identifies in the naive
+    /// pipe-join this helper replaces.
+    /// </para>
+    /// <para>
+    /// Length is counted in UTF-16 characters (<c>string.Length</c>), not bytes, and the integer
+    /// is formatted with <see cref="CultureInfo.InvariantCulture"/> so a non-English host locale
+    /// cannot change the digit glyphs or grouping.
+    /// </para>
+    /// </summary>
+    private static string EncodeHashInput(params string?[] components)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < components.Length; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append('|');
+            }
+
+            var component = components[i];
+            if (component is null)
+            {
+                sb.Append("-1:");
+            }
+            else
+            {
+                sb.Append(component.Length.ToString(CultureInfo.InvariantCulture));
+                sb.Append(':');
+                sb.Append(component);
+            }
+        }
+
+        return sb.ToString();
     }
 
     private static string HashToHex16(string input)

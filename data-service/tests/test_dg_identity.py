@@ -33,10 +33,16 @@ from app import app  # noqa: E402
 client = TestClient(app, raise_server_exceptions=False)
 
 # The exact dgId minted by DG.Core for this triple (cross-language parity anchor).
+#
+# Re-derived Phase 1203-02 (D-09 length-prefix encoding replaces the naive pipe-join): the
+# pre-fix value was "dg:BC8E62EE137E2B56"; this is the post-fix value under the final
+# EncodeHashInput / _encode_hash_input contract. DgIdMintingServiceTests.cs's
+# Mint_KnownVector_MatchesExpectedDgId and test_computgraph_publish.py's GOLDEN_DG_ID were
+# updated to the same value in the same commit.
 GOLDEN_PROJECT = "p1"
 GOLDEN_DEFINITION_ID = "frame.gh"
 GOLDEN_CG_ID = "cg:1:proc:11_Proc"
-GOLDEN_DG_ID = "dg:BC8E62EE137E2B56"
+GOLDEN_DG_ID = "dg:0F31CD18542F0252"
 
 _OP_RE = re.compile(r"op=(\w+)")
 
@@ -248,6 +254,22 @@ def test_compute_dg_id_project_scopes_the_hash():
     """A different project for the same definitionId+cgId yields a distinct dgId."""
     a = dg_identity.compute_dg_id("p1", GOLDEN_DEFINITION_ID, GOLDEN_CG_ID)
     b = dg_identity.compute_dg_id("p2", GOLDEN_DEFINITION_ID, GOLDEN_CG_ID)
+    assert a != b
+
+
+def test_compute_dg_id_pipe_boundary_shift_does_not_collide():
+    """CR-02 collision regression: two tuples sharing the same naive pipe-join must not
+    collide once the hash input is length-prefixed.
+
+    Tuple A = ("a|b", "c", "d") and tuple B = ("a", "b|c", "d") both naively join to
+    "a|b|c|d" -- under the pre-fix implementation (``input_str = f"{project}|{definition_id}|
+    {cg_id}"``) these two calls would hash the identical string and collide (assert equal, not
+    assert not-equal). Under the length-prefix encoding, A encodes to "3:a|b|1:c|1:d" and B
+    encodes to "1:a|3:b|c|1:d" -- different strings, different hashes. This test only passes
+    against the length-prefix fix; it fails against the naive-join implementation it replaces.
+    """
+    a = dg_identity.compute_dg_id("a|b", "c", "d")
+    b = dg_identity.compute_dg_id("a", "b|c", "d")
     assert a != b
 
 
