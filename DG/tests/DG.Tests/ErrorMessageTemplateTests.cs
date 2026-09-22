@@ -399,4 +399,47 @@ public sealed class ErrorMessageTemplateTests
         Assert.Contains(": ", result);
         Assert.EndsWith(".", result);
     }
+
+    // --- Object-vs-Geometry list-length guard (Phase 1202-11, CR-02 / gap 2) ---
+
+    [Theory]
+    [InlineData(5, 0, false)]  // no Object wired — exempt
+    [InlineData(5, 1, false)]  // broadcast case — exempt
+    [InlineData(5, 5, false)]  // matched per-instance — exempt
+    [InlineData(5, 3, true)]   // under-supply — mismatch
+    [InlineData(5, 7, true)]   // over-supply — mismatch (tail entries would be silently ignored)
+    [InlineData(0, 0, false)]  // no geometry, no objects — exempt
+    [InlineData(1, 1, false)]  // broadcast and matched coincide — must not report a mismatch
+    [InlineData(0, 3, true)]   // no geometry but objects wired — mismatch
+    public void ObjStateGuard_IsObjectListLengthMismatch_MatchesExpectedShape(int geometryCount, int objectCount, bool expectedMismatch)
+    {
+        var result = ObjStateGuard.IsObjectListLengthMismatch(geometryCount, objectCount);
+
+        Assert.Equal(expectedMismatch, result);
+    }
+
+    [Fact]
+    public void ObjStateMismatchedObjectListLength_NamesObjectNotLabel()
+    {
+        var result = ErrorMessageTemplates.ObjStateMismatchedObjectListLength(5, 3);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("OBJECT STATE", result);
+        Assert.Contains("Object", result);
+        Assert.Contains("5", result);
+        Assert.Contains("3", result);
+        Assert.DoesNotContain("Label", result);
+    }
+
+    [Fact]
+    public void ObjStateMismatchedListLengths_UnchangedByThisPlan_StillLabelWorded()
+    {
+        // Pins the existing Label-side template byte-for-byte, proving Task 1 did not disturb it.
+        var result = ErrorMessageTemplates.ObjStateMismatchedListLengths(5, 3);
+
+        Assert.Equal(
+            "OBJECT STATE: Geometry list length (5) and Label list length (3) must be equal at every index. Ensure each index provides both values.",
+            result);
+    }
 }

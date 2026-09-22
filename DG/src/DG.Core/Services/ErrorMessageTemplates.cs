@@ -55,6 +55,20 @@ public static class ErrorMessageTemplates
         return $"OBJECT STATE: Geometry list length ({geometryCount}) and Label list length ({labelCount}) must be equal at every index. Ensure each index provides both values.";
     }
 
+    /// <summary>
+    /// Dedicated Object-side mismatch template (Phase 1202-11, closing REVIEW CR-02 /
+    /// 1202-VERIFICATION.md gap 2). Deliberately NOT a reuse of
+    /// <see cref="ObjStateMismatchedListLengths"/> — that template hardcodes the word "Label"
+    /// and its second parameter is literally named <c>labelCount</c>, so passing an Object
+    /// count through it would tell the user their Label input is mis-wired when their Object
+    /// input is the one at fault. See 1202-11-PLAN.md's design_decision for the full rationale.
+    /// </summary>
+    public static string ObjStateMismatchedObjectListLength(int geometryCount, int objectCount)
+    {
+        return $"OBJECT STATE: Geometry list length ({geometryCount}) and Object list length ({objectCount}) do not match. " +
+               "Wire exactly one Object (broadcast to every instance), one Object per Geometry item, or none at all.";
+    }
+
     public static string DesignStatePropObjCountMismatch(int objCount, int propCount)
     {
         return $"DESIGN STATE: PropState list length ({propCount}) does not match ObjState list length ({objCount}). When both are present, their list lengths must be equal (property values are evaluated against objects at each index).";
