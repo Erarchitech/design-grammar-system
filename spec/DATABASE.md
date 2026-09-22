@@ -151,7 +151,9 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 - `Run_Id` — unique identifier for the manual validation run; auto-validation code uses the `runId` spelling on `:ValidationRun` nodes (known `:ValidationRun` / `:Run` label/property drift)
 - `ValidStatus` — Boolean list, one element per rule result (see the **formally retired** note below for its historical, now-superseded, ObjState-order framing)
 - `SendStatus` — single Boolean per Run (publish-to-Speckle/data-service success). On the auto path it is initialized to `false` by `CAPTURE_QUERY`; the same property is used, not a second field
-- `statePayloadJson` — v2 projection for Model Viewer read-back
+- `statePayloadJson` — v2 projection for Model Viewer read-back. Its `parameters[]` member has two
+  shipping wire shapes read by two different, non-interchangeable readers — see "Declared
+  exclusion: `parameters[]` has two wire shapes and two readers" below.
 - `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
 - `evidenceEnvelopeJson` — JSON string holding the canonical Evidence Envelope (`contractVersion`, `canonicalizationVersion`, `canonicalStatus`, `rows[]`, and the rest of the field table) defined by `spec/EVIDENCE-CONTRACT.md`; sibling property to `statePayloadJson`/`shaclReportJson`, written by a producing stage when it emits typed canonical-status evidence for this run. **Absence means not recorded, never an error** — the same rule as `shaclReportJson` — since this phase (1200) defines the envelope without migrating every producer onto it. `spec/EVIDENCE-CONTRACT.md` is the authority for this property's content; this document records only its presence and placement.
 - `trigger` — string, literal `auto` on auto-validation runs; written by `CAPTURE_QUERY`, `COMPLETE_QUERY`, and `FAIL_QUERY`. It distinguishes an auto-produced run from the manual VALIDATOR path; absent on manual and all pre-Phase-39 runs, which is normal
@@ -215,6 +217,63 @@ every object reports `not_evaluated` rather than a genuine pass/fail — until t
 under the current pipeline. This is **honest reporting, not a regression**: the per-object verdict
 for those runs was never canonically recorded, and reporting anything more specific than
 `not_evaluated` would be a fabrication, not a recovery.
+
+#### Declared exclusion: `parameters[]` has two wire shapes and two readers (Phase 1202 plan 09, D-09, ALGN12-09)
+
+The v2 `statePayloadJson` envelope's `parameters[]` member — carried on each `ParamState` — has
+**two mutually-incompatible wire shapes in shipping production use**, discovered by plan 1202-03's
+mandated reader-parity proof and deliberately documented here rather than converged, per the
+ROADMAP's own "or an explicit exclusion contract" wording.
+
+1. **The two shapes, named concretely.**
+   - **Flat shape** — carries `parameterId`, `displayName`, `type`, and one of `numberValue` /
+     `integerValue` / `booleanValue` (the model's own CLR property names). Emitted by
+     `data-service/cg_paramstate_store.py`'s `_build_state_payload_json`, the accept-candidate
+     write path (`POST /computgraph/candidates/accept`, Phase 38-05) built.
+   - **Condensed shape** — carries `parameterId`, `displayName`, `type`, and a single `value`.
+     Emitted by `DesignStatePayloadV2Serializer.Serialize` and required by
+     `DesignStatePayloadV2Serializer.Deserialize`'s `ParamFromDto`/`RequireJsonElement` path.
+
+2. **Which reader is authoritative for which producer.**
+   `Neo4jValidGraphRepository.TryParseDesignState`'s inline `JsonSerializer.Deserialize<DesignState>`
+   reader is **authoritative for accept-candidate-writer rows** (flat shape).
+   `DesignStatePayloadV2Serializer.Deserialize` is **authoritative for payloads the serializer
+   itself produced** (condensed shape). Each reader is correct for its own producer and wrong for
+   the other's.
+
+3. **Each reader's failure mode on the other's shape — stated asymmetrically because it IS
+   asymmetric.** `DesignStatePayloadV2Serializer.Deserialize` **throws**
+   `InvalidOperationException: "Parameter value is required."` on a flat-shape payload — a loud
+   failure. `TryParseDesignState`'s inline reader **silently returns null** for
+   `NumberValue`/`IntegerValue`/`BooleanValue` on a condensed-shape payload, with no exception,
+   because `System.Text.Json` ignores unmatched properties by default. **The silent direction is
+   the more dangerous one** — it produces a structurally valid `DesignState` with quietly-empty
+   typed values instead of failing loudly.
+
+4. **D-09's reader convergence is deliberately NOT implemented.** Converging onto the serializer's
+   reader alone (as D-09 originally assumed a single v2 reader would) would make every
+   already-stored flat-shape payload throw inside the converged reader, be swallowed by
+   `TryParseDesignState`'s surrounding broad catch, and silently drop those rows' `ParamStates`/
+   `Parameters` from `GetRunsAsync`'s output. This is a **declared non-alignment** taken under the
+   ROADMAP's own "or an explicit exclusion contract" wording — not an oversight, and not an unfixed
+   bug. The halt that produced this documentation was correct engineering judgment.
+
+5. **Accepted cost.** There is no single reader for the v2 `parameters[]` member — any **new**
+   consumer of `statePayloadJson` must choose its reader by producer, not assume one reader covers
+   both. A third producer of `parameters[]` would invalidate this two-way contract and force
+   convergence.
+
+6. **Machine-checked tripwire.** Both divergence directions are pinned by
+   `TryParseDesignState_AndSerializerDeserialize_DivergeOnAcceptCandidateWriterEnvelope` and
+   `TryParseDesignState_AndSerializerDeserialize_DivergeOnSerializerOwnConciseParameterShape` in
+   `DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs`. If either Fact starts failing, the
+   divergence has changed and this subsection is stale.
+
+7. **What would force convergence:** a third producer of v2 `parameters[]` appearing (three shapes
+   with two readers is no longer describable as a two-way exclusion); a consumer needing to read
+   *both* producers' payloads through a single code path (today each reader is reached only by its
+   own producer's rows); or a v3 payload version, which would have to pick one shape and migrate
+   the other, making the exclusion moot.
 
 **IntegrationConfig** — Per-project integration settings for an external consumer, discriminated by `provider`; the Phase 39 `AutoValidation` variant carries the watcher's guardrails.
 ```
