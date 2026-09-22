@@ -26,15 +26,22 @@ a ``code`` attribute; ``app.py`` translates it into a structured HTTP error high
 
 Cross-phase seam (Phase 36 publish path)
 ----------------------------------------
-``mint_identity`` upserts on the anchor key ``(cgId, definitionId, project)``. This is
-the pre-mint anchor Phase 36's publish path lands on — Phase 36's publish MERGE key
-MUST include ``cgId`` (alongside ``definitionId`` + ``project``, per its CGPD-02
-contract) so pre-minted registry nodes and published Computgraph nodes COINCIDE rather
-than duplicate.
+``mint_identity`` upserts on the LABELLED anchor key ``(:<entity_kind> {cgId,
+definitionId, project})`` — the label is what makes this coincide with Phase 36's
+publish path rather than orphan it (CR-01, Phase 1203-03). Phase 36's publish MERGE
+key already includes the same label + ``cgId`` + ``definitionId`` + ``project`` (per
+its CGPD-02 contract), so pre-minted registry nodes and published Computgraph nodes
+address the SAME node and COINCIDE rather than duplicate. Before this fix the mint
+anchor carried no label, so it and the publish anchor addressed two different nodes;
+a representation bound to the pre-publish node was orphaned once the entity was
+actually published. ``entity_kind`` must be one of ``ENTITY_KINDS``.
 
 Security: every ``session.run`` receives parameters as a dict — identity strings
 (``native_id`` / ``dg_id`` / ``project`` / ``platform``) are NEVER f-string / ``%`` /
-``.format`` interpolated into query text (T-32.1-03a: Cypher injection).
+``.format`` interpolated into query text (T-32.1-03a: Cypher injection). The one
+exception is ``mint_identity``'s Cypher *label*, which Neo4j cannot parameterize;
+that value is validated against the ``ENTITY_KINDS`` allowlist immediately before
+interpolation (T-1203-03-01).
 """
 
 from __future__ import annotations
@@ -100,6 +107,16 @@ def compute_dg_id(project: str, definition_id: str, cg_id: str) -> str:
 PLATFORMS: tuple[str, ...] = ("Grasshopper", "Revit", "IFC", "Speckle")
 NATIVE_ID_KINDS: tuple[str, ...] = ("InstanceGuid", "UniqueId", "GlobalId", "ApplicationId")
 
+# The Computgraph entity labels that carry a dgId, confirmed against
+# computgraph_publish.py's five publish writers (_publish_object,
+# _publish_procedures, _publish_patterns, _publish_parameters,
+# _publish_interfaces) and spec/DG-ID.md — every one of these MERGEs its
+# anchor node on the exact three-part key (cgId, definitionId, project) and
+# tags it graph = 'Computgraph'. mint_identity's anchor MUST use one of these
+# labels (CR-01) so a pre-publish mint and the later publish MERGE address
+# the same node instead of orphaning.
+ENTITY_KINDS: tuple[str, ...] = ("Object", "Procedure", "Pattern", "Parameter", "Interface")
+
 
 # ── Domain exception (translated to a structured HTTP error in app.py) ──
 
@@ -128,6 +145,14 @@ class MintRequest(BaseModel):
     project: str
     definition_id: str
     cg_id: str
+    entity_kind: str
+
+    @field_validator("entity_kind")
+    @classmethod
+    def _entity_kind_known(cls, v: str) -> str:
+        if v not in ENTITY_KINDS:
+            raise ValueError(f"entity_kind must be one of {ENTITY_KINDS}, got {v!r}")
+        return v
 
 
 class BindRepresentationRequest(BaseModel):
@@ -195,21 +220,45 @@ class SharedPropertyWriteRequest(BaseModel):
 # real Cypher.
 
 
-def mint_identity(session: Any, project: str, definition_id: str, cg_id: str) -> str:
+def mint_identity(
+    session: Any, project: str, definition_id: str, cg_id: str, entity_kind: str
+) -> str:
     """Idempotently mint + persist a dgId for a Computgraph entity; return the dgId.
 
-    Upserts on the anchor key ``(cgId, definitionId, project)`` and SETs ``dgId``.
-    Re-minting the same triple yields the same dgId and does not duplicate the node.
+    Upserts on the LABELLED anchor key ``(:<entity_kind> {cgId, definitionId,
+    project})`` and SETs ``dgId`` + ``graph = 'Computgraph'``. Re-minting the same
+    triple yields the same dgId and does not duplicate the node.
 
-    Cross-phase seam: Phase 36's publish MERGE key MUST include ``cgId`` (alongside
-    ``definitionId`` + ``project``) so pre-minted registry nodes and published
-    Computgraph nodes coincide rather than duplicate (see module docstring).
+    The label is what makes this anchor COINCIDE with the publish writer's anchor
+    (``_publish_object`` / ``_publish_procedures`` / ``_publish_patterns`` /
+    ``_publish_parameters`` / ``_publish_interfaces`` in computgraph_publish.py) —
+    each of those MERGEs on the exact same labelled three-part key. Before this fix
+    the anchor here carried no label at all, so a publish-shaped MERGE (which always
+    specifies a label) addressed a DIFFERENT, second node than this label-less one;
+    any binding attached to the pre-publish mint was orphaned once the entity was
+    actually published (CR-01). ``entity_kind`` must be one of ``ENTITY_KINDS`` —
+    validated by ``MintRequest`` at the route boundary AND re-checked here
+    immediately before the label is interpolated (see below).
+
+    Cypher labels are not parameterizable, so ``entity_kind`` is the one value in
+    this query interpolated into the query text rather than bound as a parameter.
+    This is safe ONLY because it is checked against the ``ENTITY_KINDS`` allowlist
+    immediately beforehand — every other value (cgId, definitionId, project, dgId)
+    stays a bound parameter.
     """
+    if entity_kind not in ENTITY_KINDS:
+        raise DgIdentityError(
+            f"entity_kind must be one of {ENTITY_KINDS}, got {entity_kind!r}.",
+            code="DGID_INVALID_ENTITY_KIND",
+        )
     dg_id = compute_dg_id(project, definition_id, cg_id)
+    # entity_kind is allowlist-constrained immediately above — safe to interpolate
+    # as a Cypher label (Neo4j has no parameter syntax for labels).
     session.run(
-        """
-        MERGE (e {cgId: $cgId, definitionId: $definitionId, project: $project})
-        SET e.dgId = $dgId
+        f"""
+        MERGE (e:{entity_kind} {{cgId: $cgId, definitionId: $definitionId, project: $project}})
+        SET e.dgId = $dgId,
+            e.graph = 'Computgraph'
         // op=MINT
         """,
         {

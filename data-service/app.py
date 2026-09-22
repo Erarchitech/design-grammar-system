@@ -2061,7 +2061,11 @@ def post_identity_mint(payload: MintRequest):
     """
     with driver.session() as session:
         dg_id = dg_identity.mint_identity(
-            session, payload.project, payload.definition_id, payload.cg_id
+            session,
+            payload.project,
+            payload.definition_id,
+            payload.cg_id,
+            payload.entity_kind,
         )
     return {"dgId": dg_id}
 

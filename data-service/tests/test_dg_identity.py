@@ -46,6 +46,18 @@ GOLDEN_DG_ID = "dg:0F31CD18542F0252"
 
 _OP_RE = re.compile(r"op=(\w+)")
 
+# Extracts the entity label from mint_identity's anchor MERGE, e.g.
+# "MERGE (e:Object {cgId: $cgId, ...})" -> "Object". Empty string if the anchor
+# carries no label at all (the pre-fix, label-less shape this regression guards
+# against) -- (?:) makes the label group optional so the pattern still matches
+# the old "MERGE (e {cgId: ...})" shape without erroring.
+_MINT_LABEL_RE = re.compile(r"MERGE\s*\(\s*e\s*(?::(\w+))?\s*\{")
+
+
+def _extract_mint_label(query: str) -> str:
+    match = _MINT_LABEL_RE.search(query)
+    return (match.group(1) if match and match.group(1) else "") or ""
+
 
 class FakeResult:
     """Duck-types the slice of neo4j.Result the helpers use: .single() + iteration."""
@@ -75,12 +87,60 @@ class FakeGraph:
         self.calls: list[tuple[str, str, dict]] = []
         # Shared properties keyed by (dgid, property_name, project)
         self.shared_props: dict[tuple[str, str, str], dict] = {}
+        # Full node-identity store (label, cgId, definitionId, project) -> node dict.
+        # Unlike entity_by_dgid (keyed only by dgId, which can't distinguish a
+        # labelled node from a label-less one occupying the "same" logical anchor),
+        # this models real Neo4j MERGE semantics: two MERGEs coincide on ONE node
+        # only if their (label, key-properties) match exactly. This is what lets
+        # the CR-01 regression prove "one node" vs "two nodes" rather than just
+        # "one dgId eventually resolves" (which a label-less-then-labelled pair of
+        # nodes could still satisfy by coincidence of the dgId value alone).
+        self.entities_by_key: dict[tuple[str, str, str, str], dict] = {}
+        # label-less legacy anchor key -> node dict (pre-fix shape, kept only so
+        # the regression test can construct the "before" scenario explicitly if
+        # needed; mint_identity itself never writes here post-fix).
+        self.legacy_entities_by_key: dict[tuple[str, str, str], dict] = {}
 
     def execute(self, op: str, query: str, params: dict) -> list[dict]:
         self.calls.append((op, query, dict(params)))
         if op == "MINT":
             self.entity_by_dgid[(params["dgId"], params["project"])] = True
+            label = _extract_mint_label(query)
+            key = (label, params["cgId"], params["definitionId"], params["project"])
+            node = self.entities_by_key.setdefault(key, {"reps": []})
+            node["dgId"] = params["dgId"]
+            node["label"] = label
+            node["cgId"] = params["cgId"]
+            node["definitionId"] = params["definitionId"]
+            node["project"] = params["project"]
+            node["graph"] = "Computgraph"
             return []
+        if op == "PUBLISH_TEST":
+            # Simulates a publish-shaped MERGE: same label + same three-part key as
+            # the real publish writers in computgraph_publish.py. Coincides with a
+            # prior MINT on the SAME key (proving CR-01 fixed) or creates a second,
+            # disjoint node (proving CR-01 broken, pre-fix).
+            key = (
+                params["label"],
+                params["cgId"],
+                params["definitionId"],
+                params["project"],
+            )
+            node = self.entities_by_key.setdefault(key, {"reps": []})
+            node["label"] = params["label"]
+            node["cgId"] = params["cgId"]
+            node["definitionId"] = params["definitionId"]
+            node["project"] = params["project"]
+            node["publishedName"] = params["publishedName"]
+            node["graph"] = "Computgraph"
+            # Re-point every representation currently bound to this dgId (if any
+            # was minted under this exact key) so "reachable from the published
+            # entity" can be asserted structurally, not just via the dgId string.
+            if "dgId" in node:
+                node["reps"] = [
+                    r for r in self.reps if r["dgId"] == node["dgId"]
+                ]
+            return [{"dgId": node.get("dgId")}]
         if op == "RESOLVE":
             for r in self.reps:
                 if (
@@ -279,13 +339,138 @@ def test_compute_dg_id_pipe_boundary_shift_does_not_collide():
 def test_mint_identity_idempotent(registry):
     """Two mints of the same triple return the same dgId; the MERGE is parameterized."""
     session = _session(registry)
-    first = dg_identity.mint_identity(session, GOLDEN_PROJECT, GOLDEN_DEFINITION_ID, GOLDEN_CG_ID)
-    second = dg_identity.mint_identity(session, GOLDEN_PROJECT, GOLDEN_DEFINITION_ID, GOLDEN_CG_ID)
+    first = dg_identity.mint_identity(session, GOLDEN_PROJECT, GOLDEN_DEFINITION_ID, GOLDEN_CG_ID, "Object")
+    second = dg_identity.mint_identity(session, GOLDEN_PROJECT, GOLDEN_DEFINITION_ID, GOLDEN_CG_ID, "Object")
     assert first == second == GOLDEN_DG_ID
     # project threaded as a bound parameter on the mint MERGE (T-32.1-03c)
     assert session.last_params is not None and "project" in session.last_params
     # only one entity row upserted — idempotent, not duplicated
     assert len(registry.entity_by_dgid) == 1
+
+
+def test_mint_identity_tags_graph_computgraph(registry):
+    """A node written by mint_identity carries graph = 'Computgraph' (WR-01)."""
+    session = _session(registry)
+    dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall", "Object")
+    mint_queries = [q for (op, q, _p) in registry.calls if op == "MINT"]
+    assert mint_queries, "expected a MINT-tagged query"
+    assert any("graph" in q and "Computgraph" in q for q in mint_queries)
+    key = ("Object", "cg:1:obj:wall", "wall.gh", "proj")
+    assert registry.entities_by_key[key]["graph"] == "Computgraph"
+
+
+def test_mint_identity_rejects_unknown_entity_kind(registry):
+    """Minting with an unrecognized entity kind is rejected, not silently accepted."""
+    session = _session(registry)
+    with pytest.raises(dg_identity.DgIdentityError) as exc_info:
+        dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall", "NotARealKind")
+    assert exc_info.value.code == "DGID_INVALID_ENTITY_KIND"
+    # nothing was written
+    assert len(registry.entity_by_dgid) == 0
+
+
+# ── mint-bind-publish coincidence (CR-01 regression) ──
+
+
+def _publish_shaped_merge(session: "FixtureSession", *, label: str, cg_id: str,
+                           definition_id: str, project: str, published_name: str) -> str | None:
+    """Runs a MERGE shaped exactly like the real publish writers in
+    computgraph_publish.py: same label, same three-part key
+    (cgId, definitionId, project). Returns the dgId found on the resulting node
+    (None if the node has never been minted under this exact key).
+
+    This is NOT a call into mint_identity — it simulates the SEPARATE publish
+    write path (_publish_object / _publish_procedures / etc.) that Phase 36
+    performs after a caller has already pre-minted the entity. The whole point
+    of the CR-01 regression is that these are two independently-issued MERGEs
+    that must address the SAME node.
+    """
+    result = session.run(
+        f"""
+        MERGE (o:{label} {{cgId: $cgId, definitionId: $definitionId, project: $project}})
+        SET o.publishedName = $publishedName,
+            o.graph = 'Computgraph'
+        // op=PUBLISH_TEST
+        """,
+        {
+            "label": label,
+            "cgId": cg_id,
+            "definitionId": definition_id,
+            "project": project,
+            "publishedName": published_name,
+        },
+    )
+    record = result.single()
+    return record["dgId"] if record else None
+
+
+def test_mint_then_publish_merge_coincides_on_one_node(registry):
+    """Mint an entity, then run a publish-shaped MERGE for the SAME entity: exactly
+    one node must exist afterward, carrying both the dgId and the published
+    properties (CR-01)."""
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall", "Object")
+
+    _publish_shaped_merge(
+        session,
+        label="Object",
+        cg_id="cg:1:obj:wall",
+        definition_id="wall.gh",
+        project="proj",
+        published_name="North Wall",
+    )
+
+    key = ("Object", "cg:1:obj:wall", "wall.gh", "proj")
+    # Exactly one node under this key — mint and publish coincided.
+    assert len(registry.entities_by_key) == 1
+    node = registry.entities_by_key[key]
+    assert node["dgId"] == dg_id
+    assert node["publishedName"] == "North Wall"
+    assert node["graph"] == "Computgraph"
+
+
+def test_mint_then_bind_then_publish_preserves_binding(registry):
+    """Mint, bind a native-id representation, then run a publish-shaped MERGE: the
+    representation binding must still be reachable from the published entity
+    afterward (CR-01's central regression).
+
+    Written against the PRE-FIX code (label-less mint anchor), this test FAILS:
+    the label-less mint anchor and the labelled publish-shaped MERGE address two
+    DIFFERENT nodes (registry.entities_by_key would hold two entries, one keyed
+    by label="" and one by label="Object"), so the representation bound to the
+    label-less node is orphaned and never appears on the node the publish-shaped
+    MERGE returns/updates. Only the label-aware fix makes them coincide on one
+    node, keeping the binding reachable.
+    """
+    session = _session(registry)
+    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall", "Object")
+
+    dg_identity.bind_representation(
+        session, dg_id, "Grasshopper", "InstanceGuid", "gh-guid-wall", "grasshopper", "proj"
+    )
+
+    _publish_shaped_merge(
+        session,
+        label="Object",
+        cg_id="cg:1:obj:wall",
+        definition_id="wall.gh",
+        project="proj",
+        published_name="North Wall",
+    )
+
+    key = ("Object", "cg:1:obj:wall", "wall.gh", "proj")
+    assert len(registry.entities_by_key) == 1, (
+        "mint and publish must coincide on exactly one node — CR-01 regression"
+    )
+    published_node = registry.entities_by_key[key]
+    assert published_node["dgId"] == dg_id
+
+    # The binding is still reachable from the published entity: resolving the
+    # native id still returns this same dgId, and the node's own rep list
+    # (re-derived by the publish-shaped MERGE from the live dgId) is non-empty.
+    assert dg_identity.resolve_native_id(session, "Grasshopper", "gh-guid-wall", "proj") == dg_id
+    assert published_node["reps"], "representation must still be reachable from the published entity"
+    assert published_node["reps"][0]["nativeId"] == "gh-guid-wall"
 
 
 # ── cross-platform same-dgId resolution (DGID-03) ──
@@ -294,7 +479,7 @@ def test_mint_identity_idempotent(registry):
 def test_cross_platform_bind_resolve_same_dgId(registry):
     """A Grasshopper InstanceGuid and a Revit UniqueId bound to one dgId both resolve to it."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall")
+    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall", "Object")
 
     dg_identity.bind_representation(
         session, dg_id, "Grasshopper", "InstanceGuid", "gh-guid-1", "grasshopper", "proj"
@@ -313,8 +498,8 @@ def test_cross_platform_bind_resolve_same_dgId(registry):
 def test_ambiguous_bind_rejected(registry):
     """Binding a native id already bound to a DIFFERENT dgId returns HTTP 409, never a repoint."""
     session = _session(registry)
-    dg_a = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a")
-    dg_b = dg_identity.mint_identity(session, "proj", "b.gh", "cg:1:obj:b")
+    dg_a = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a", "Object")
+    dg_b = dg_identity.mint_identity(session, "proj", "b.gh", "cg:1:obj:b", "Object")
     assert dg_a != dg_b
 
     dg_identity.bind_representation(
@@ -344,8 +529,8 @@ def test_ambiguous_bind_rejected(registry):
 def test_detach_preserves_dgid_and_frees_binding(registry):
     """Detach removes only the representation; dgId is untouched; native id re-binds (to a different dgId)."""
     session = _session(registry)
-    dg_a = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a")
-    dg_b = dg_identity.mint_identity(session, "proj", "b.gh", "cg:1:obj:b")
+    dg_a = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a", "Object")
+    dg_b = dg_identity.mint_identity(session, "proj", "b.gh", "cg:1:obj:b", "Object")
 
     dg_identity.bind_representation(
         session, dg_a, "Grasshopper", "InstanceGuid", "guid-x", "grasshopper", "proj"
@@ -400,7 +585,7 @@ def test_detach_unknown_binding_returns_not_found(registry):
 def test_resolve_is_project_scoped(registry):
     """A binding under project p1 never leaks to a resolve under project p2."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "p1", "a.gh", "cg:1:obj:a")
+    dg_id = dg_identity.mint_identity(session, "p1", "a.gh", "cg:1:obj:a", "Object")
     dg_identity.bind_representation(
         session, dg_id, "Grasshopper", "InstanceGuid", "guid-iso", "grasshopper", "p1"
     )
@@ -433,7 +618,7 @@ def test_resolve_miss_returns_dgid_not_found(registry):
 def test_list_representations_round_trip(registry):
     """GET /identity/{dg_id}/representations returns every bound representation."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a")
+    dg_id = dg_identity.mint_identity(session, "proj", "a.gh", "cg:1:obj:a", "Object")
     dg_identity.bind_representation(
         session, dg_id, "Grasshopper", "InstanceGuid", "g1", "grasshopper", "proj"
     )
@@ -459,7 +644,7 @@ def test_write_and_read_shared_property_cross_platform(registry):
     """
     # 1. Mint an entity (the facade panel in both GH and Revit)
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "facade.gh", "cg:1:obj:panel_01")
+    dg_id = dg_identity.mint_identity(session, "proj", "facade.gh", "cg:1:obj:panel_01", "Object")
 
     # 2. Bind both a GH and a simulated Revit representation to the SAME dgId
     dg_identity.bind_representation(
@@ -501,7 +686,7 @@ def test_write_and_read_shared_property_cross_platform(registry):
 def test_write_and_read_multiple_properties(registry):
     """Write two shared properties on one dgId; list both."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "panel.gh", "cg:1:obj:panel_01")
+    dg_id = dg_identity.mint_identity(session, "proj", "panel.gh", "cg:1:obj:panel_01", "Object")
 
     client.post(
         f"/identity/{dg_id}/properties",
@@ -535,7 +720,7 @@ def test_write_and_read_multiple_properties(registry):
 def test_write_shared_property_is_idempotent(registry):
     """Writing the same (dgId, propertyName, project) twice updates in-place."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall_01")
+    dg_id = dg_identity.mint_identity(session, "proj", "wall.gh", "cg:1:obj:wall_01", "Object")
 
     client.post(
         f"/identity/{dg_id}/properties",
@@ -582,7 +767,7 @@ def test_read_shared_property_not_found_for_unminted_dgid(registry):
 def test_read_shared_property_missing_property_returns_not_found(registry):
     """Reading a non-existent property name on a valid dgId returns 404."""
     session = _session(registry)
-    dg_id = dg_identity.mint_identity(session, "proj", "roof.gh", "cg:1:obj:roof_01")
+    dg_id = dg_identity.mint_identity(session, "proj", "roof.gh", "cg:1:obj:roof_01", "Object")
 
     resp = client.get(
         f"/identity/{dg_id}/properties",
