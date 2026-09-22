@@ -26,8 +26,8 @@
 ## Design State and verdict replay (Phase 1202)
 
 - [x] **ALGN12-08**: Design State identity is explicitly classified as content-equivalence or capture-event identity.
-- [ ] **ALGN12-09**: Publish → query → replay preserves the canonical state hash, membership manifest, schema version, and all normative members, or records explicit exclusions.
-- [ ] **ALGN12-10**: Mixed per-object outcomes remain distinct through persistence and C# retrieval; no run-level aggregate is replicated across objects.
+- [x] **ALGN12-09**: Publish → query → replay preserves the canonical state hash, membership manifest, schema version, and all normative members, or records explicit exclusions.
+- [x] **ALGN12-10**: Mixed per-object outcomes remain distinct through persistence and C# retrieval; no run-level aggregate is replicated across objects.
 - [ ] **ALGN12-11**: Mutable operational/run status is separated from immutable snapshot identity and payload.
 
 ## Identity and rule–parameter bridge (Phase 1203)

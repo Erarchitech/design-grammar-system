@@ -128,7 +128,7 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans executed
 
 Plans:
 **Wave 1**
@@ -145,7 +145,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 1202-07-PLAN.md — DE-01 exit evidence: canonical-state-hash comparison dimension plus the live four-leg run against a `--no-cache` rebuilt stack (wave 3, **requires a live compose stack**, human checkpoint)
+- [x] 1202-07-PLAN.md — DE-01 exit evidence: canonical-state-hash comparison dimension plus the live four-leg run against a `--no-cache` rebuilt stack (wave 3, **requires a live compose stack**, human checkpoint)
 
 ### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
 
