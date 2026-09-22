@@ -128,7 +128,7 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 3/7 plans executed
+**Plans:** 6/7 plans executed
 
 Plans:
 **Wave 1**
@@ -139,9 +139,9 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 1202-04-PLAN.md — C# per-object verdict read path: additive `GetPerObjectVerdictsAsync`, first Cypher projection of `evidenceEnvelopeJson`, `Enumerable.Repeat` fabrication deleted (wave 2)
-- [ ] 1202-05-PLAN.md — Python side: `ON CREATE SET` snapshot/status separation, rollup reconciled to the shipped precedence, spec propagation with declared exclusions (wave 2)
-- [ ] 1202-06-PLAN.md — ObjState minting convergence with the Pitfall-1 signature resolution, GH Release rebuild, blocking human checkpoint on the identity behavior change (wave 2)
+- [x] 1202-04-PLAN.md — C# per-object verdict read path: additive `GetPerObjectVerdictsAsync`, first Cypher projection of `evidenceEnvelopeJson`, `Enumerable.Repeat` fabrication deleted (wave 2)
+- [x] 1202-05-PLAN.md — Python side: `ON CREATE SET` snapshot/status separation, rollup reconciled to the shipped precedence, spec propagation with declared exclusions (wave 2)
+- [x] 1202-06-PLAN.md — ObjState minting convergence with the Pitfall-1 signature resolution, GH Release rebuild, blocking human checkpoint on the identity behavior change (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
