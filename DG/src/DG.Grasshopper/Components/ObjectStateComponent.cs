@@ -24,6 +24,9 @@ namespace DG.Grasshopper.Components;
 /// Output list length is driven by Geometry. A single OntologyClass on "Object" is
 /// broadcast as the shared ClassIri across all instances. Each ObjState gets a UNIQUE
 /// ObjectRef, resolved as: explicit per-instance ref → geometry reference GUID → index.
+///
+/// The Object input's list length must be empty, a single item (broadcast), or exactly
+/// one item per Geometry item — any other length is a hard error (Phase 1202-11, CR-02).
 /// </summary>
 public sealed class ObjectStateComponent : GH_Component
 {
@@ -93,6 +96,24 @@ public sealed class ObjectStateComponent : GH_Component
             AddRuntimeMessage(
                 GH_RuntimeMessageLevel.Error,
                 ErrorMessageTemplates.ObjStateMismatchedListLengths(geoCount, labelCount));
+            da.SetData(0, null);
+            return;
+        }
+
+        // The Object input's list length must be empty (0 = no Object wired, deliberate —
+        // Object is registered Optional), a single item (1 = the ontology-class broadcast
+        // case), or exactly one item per Geometry item (== geoCount = matched per-instance
+        // identity). Any other length is a defect, not a convenience: the unmatched tail
+        // would silently receive ClassIri = null and a fallback ObjectRef ("obj_{i}"),
+        // minting a plausible-looking OS_ identity with information the user never
+        // supplied and zero canvas signal. Delegates to the shared DG.Core predicate so the
+        // tested logic and the shipped logic cannot drift (Phase 1202-11, CR-02).
+        var objCount = objects.Count;
+        if (ObjStateGuard.IsObjectListLengthMismatch(geoCount, objCount))
+        {
+            AddRuntimeMessage(
+                GH_RuntimeMessageLevel.Error,
+                ErrorMessageTemplates.ObjStateMismatchedObjectListLength(geoCount, objCount));
             da.SetData(0, null);
             return;
         }
