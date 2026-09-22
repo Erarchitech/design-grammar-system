@@ -240,6 +240,16 @@ canonical→boolean-only rule §5 states above applies here without exception. S
 §`:Run` (Phase 1202 plan 05) for where this is stored (`evidenceEnvelopeJson`, sibling to
 `statePayloadJson`/`shaclReportJson`) and for the full declared-exclusion statement for legacy runs.
 
+### 5.2 Declared non-alignment: `parameters[]` wire shapes (Phase 1202 plan 09, D-09, ALGN12-09)
+
+The v2 `statePayloadJson` payload's `parameters[]` member has two shipping wire shapes with two
+readers, each authoritative for its own producer. This is a **declared** non-alignment under
+ALGN12-09's "or an explicit exclusion contract" wording — this phase's governing rule that a
+declared disagreement is acceptable while a silent one is not, which is precisely why it is written
+here. See `spec/DATABASE.md`'s "Declared exclusion: `parameters[]` has two wire shapes and two
+readers" subsection (`:Run` section) for the full contract: both shapes named, which reader is
+authoritative for which producer, the asymmetric failure modes, and the pinning regression Facts.
+
 ---
 
 ## 6. Canonical JSON and Hashing (D-07)
