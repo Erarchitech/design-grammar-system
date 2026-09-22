@@ -138,6 +138,10 @@ public sealed class ObjectStateComponent : GH_Component
                 ?? GeometryReferenceId(geometryGoos[i])
                 ?? $"obj_{i}";
 
+            // project left null: this component has no Project input port and no project field
+            // in SolveInstance scope (confirmed Phase 1203-02, D-08) -- see
+            // ComputeObjectStateIdFromRef's own doc-comment for the full rationale and the
+            // GATE12-04 / v9.0 Phase 40 pointer for wiring a project port.
             var stateId = DesignStateIdGenerator.ComputeObjectStateIdFromRef(objectRef, classIri);
 
             results.Add(new DG.ObjState

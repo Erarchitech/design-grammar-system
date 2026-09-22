@@ -1,5 +1,5 @@
 {
-  "fixtureVersion": "1.0.0",
+  "fixtureVersion": "1.3.0",
   "project": "DG-1200-GOLDEN",
   "description": "The single frozen cross-service golden fixture for Phase 1200 DE-01 (D-09). One rule, all four Metagraph atom types (ClassAtom/DataPropertyAtom/BuiltinAtom/ObjectPropertyAtom), two objects with mixed pass/fail outcomes, one zero-binding object expecting no_population, a three-kind Design State, and a geometry reference. All four DE-01 legs (Python data-service, dg-reasoner, the C# evaluator, and the persisted-replay leg via fixtures/golden/seed.cypher) read this exact file as the same bytes. See fixtures/golden/MANIFEST.md for the freeze policy and the pre-declared by-design ObjectPropertyAtom non-result on the C# leg.",
 
@@ -60,29 +60,31 @@
   "objects": [
     {
       "objectId": "OBJ_GOLD_PASS",
-      "dgId": "dg:57C65BE15E8E368B",
+      "dgId": "dg:3D5D98A2E0E663A8",
       "objectName": "Golden Building Pass",
       "classIri": "ex:Building",
       "properties": {
         "hasHeight": 42.0
-      }
+      },
+      "_note": "dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding replaces the naive pipe-join in DgIdMintingService.Mint / compute_dg_id); pre-fix value was dg:57C65BE15E8E368B. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json's scalarTuple vectors -- those are verified against the separate, unchanged canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple functions, which still use the naive pipe-join; see MANIFEST.md's 1.3.0 row for that open gap."
     },
     {
       "objectId": "OBJ_GOLD_FAIL",
-      "dgId": "dg:729E143958721742",
+      "dgId": "dg:6607D4A051F356F2",
       "objectName": "Golden Building Fail",
       "classIri": "ex:Building",
       "properties": {
         "hasHeight": 88.5
-      }
+      },
+      "_note": "dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding); pre-fix value was dg:729E143958721742. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json (unchanged -- see MANIFEST.md's 1.3.0 row)."
     },
     {
       "objectId": "OBJ_GOLD_EMPTY",
-      "dgId": "dg:0B23FFBDA52B73A6",
+      "dgId": "dg:2602FCC98B32C2A2",
       "objectName": "Golden Non-Building Object",
       "classIri": "ex:Site",
       "properties": {},
-      "_note": "Deliberately of class ex:Site, not ex:Building, so the rule's ClassAtom (R_GOLD_HEIGHT_MAX_75_V_A1) never matches -- zero bindings, asserted expected status no_population, not merely defined."
+      "_note": "Deliberately of class ex:Site, not ex:Building, so the rule's ClassAtom (R_GOLD_HEIGHT_MAX_75_V_A1) never matches -- zero bindings, asserted expected status no_population, not merely defined. dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding); pre-fix value was dg:0B23FFBDA52B73A6. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json (unchanged -- see MANIFEST.md's 1.3.0 row)."
     }
   ],
 

@@ -159,14 +159,82 @@ public sealed class DesignStateIdGeneratorTests
         Assert.NotEqual(withNull, withClass);
     }
 
+    // --- Phase 1203-02 Task 2: project folded into DesignState hashes (D-08) ---
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_ShouldChange_WhenProjectDiffers()
+    {
+        var p1 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building", "proj-a");
+        var p2 = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building", "proj-b");
+
+        Assert.NotEqual(p1, p2);
+    }
+
+    [Fact]
+    public void ComputeObjectStateIdFromRef_NullProject_MatchesLegacyId()
+    {
+        // Omitting project (the shipping ObjectStateComponent call shape) must reproduce the
+        // pre-D-08 id -- backward-compatible call shape, no crash.
+        var legacy = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building");
+        var explicitNull = DesignStateIdGenerator.ComputeObjectStateIdFromRef("building-42", "ex:Building", null);
+
+        Assert.Equal(legacy, explicitNull);
+    }
+
+    [Fact]
+    public void ComputeParamStateId_ShouldChange_WhenProjectDiffers()
+    {
+        var parameters = BuildParameters();
+
+        var p1 = DesignStateIdGenerator.ComputeParamStateId(parameters, "proj-a");
+        var p2 = DesignStateIdGenerator.ComputeParamStateId(parameters, "proj-b");
+
+        Assert.NotEqual(p1, p2);
+    }
+
+    [Fact]
+    public void ComputePropStateId_ShouldChange_WhenProjectDiffers()
+    {
+        var value = new DesignStateParameter
+        {
+            ParameterId = "height",
+            DisplayName = "Height",
+            Type = DesignStateParameterType.Number,
+            NumberValue = 75.0,
+        };
+
+        var p1 = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value, null, "proj-a");
+        var p2 = DesignStateIdGenerator.ComputePropStateId("dgm:Rule_R_URB_HEIGHT_MAX_75_V", "dg:hasHeight", value, null, "proj-b");
+
+        Assert.NotEqual(p1, p2);
+    }
+
     [Fact]
     public void ComputeObjectStateId_ThreeArg_ShouldRemainByteIdentical_ForFixedRegressionVector()
     {
-        // Regression pin: the 3-arg per-rule-variable method's output for a fixed input must be
-        // byte-identical to its behavior before this plan added the additive overload above.
+        // Regression pin, re-derived Phase 1203-02 (D-09 length-prefix encoding replaces the
+        // naive pipe-join for this method too -- CR-02 applies to every pipe-joined DesignState
+        // minting function, not only DgIdMintingService.Mint). Pre-fix value was
+        // "OS_493B9A7153D92072"; this is the post-fix value under the final EncodeHashInput
+        // contract for the same fixed input ("proj-1", "OS_abc123", "?b").
         var id = DesignStateIdGenerator.ComputeObjectStateId("proj-1", "OS_abc123", "?b");
 
-        Assert.Equal("OS_493B9A7153D92072", id);
+        Assert.Equal("OS_F8DD38C8DBB34D70", id);
+    }
+
+    [Fact]
+    public void ComputeObjectStateId_PipeBoundaryShift_ProducesDifferentId()
+    {
+        // CR-02 collision regression for the 3-arg per-rule-variable form: two tuples sharing
+        // the same naive pipe-join must not collide once the hash input is length-prefixed.
+        // ("a|b","c","d") and ("a","b|c","d") both naively join to "a|b|c|d" -- under the
+        // pre-fix implementation ($"{projectId}|{objectInstanceId}|{variableName}") these two
+        // calls would hash the identical string and collide. This test only passes against the
+        // length-prefix fix.
+        var id1 = DesignStateIdGenerator.ComputeObjectStateId("a|b", "c", "d");
+        var id2 = DesignStateIdGenerator.ComputeObjectStateId("a", "b|c", "d");
+
+        Assert.NotEqual(id1, id2);
     }
 
     [Fact]
@@ -312,6 +380,15 @@ public sealed class DesignStateIdGeneratorTests
         // Regression pin (plan's own instruction): a future edit to the shared hash path must
         // not silently change historical StateIds. This literal was captured by running the
         // pre-existing (unmodified) ComputeDesignStateId against a fixed member set.
+        //
+        // Phase 1203-02 note: this literal is UNCHANGED by this plan. ComputeDesignStateId does
+        // not call EncodeHashInput -- it concatenates sorted member StateIds with no separator at
+        // all (not a pipe-join), so CR-02's pipe-boundary-shift defect does not apply to it, and
+        // per this plan's own instruction it is one of the two aggregate functions
+        // (ComputeDesignStateId, ComputeCaptureEventStateId) deliberately left without a project
+        // parameter -- project reaches them transitively through their already-project-aware
+        // member StateIds. D-03 (historical StateIds are not rewritten) is therefore honored by
+        // construction, not merely by policy.
         var memberIds = new List<string> { "OS_REG_A", "PS_REG_B", "DS_REG_C" };
 
         var id = DesignStateIdGenerator.ComputeDesignStateId(memberIds);

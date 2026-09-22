@@ -129,6 +129,10 @@ public sealed class PropertyStateComponent : GH_Component
             var objState = i < objStates.Count ? GhCastingHelpers.TryObjState(objStates[i]) : null;
             var objectRef = string.IsNullOrWhiteSpace(objState?.ObjectRef) ? null : objState!.ObjectRef;
 
+            // project left null: this component has no Project input port and no project field
+            // in SolveInstance scope (confirmed Phase 1203-02, D-08) -- see ComputePropStateId's
+            // own doc-comment for the full rationale and the GATE12-04 / v9.0 Phase 40 pointer for
+            // wiring a project port.
             var stateId = DesignStateIdGenerator.ComputePropStateId(ruleIri, dataPropertyIri, propValue, objectRef);
 
             results.Add(new DG.PropState

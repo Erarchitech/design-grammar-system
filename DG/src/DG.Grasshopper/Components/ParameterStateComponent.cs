@@ -231,6 +231,10 @@ public sealed class ParameterStateComponent : GH_Component, IGH_VariableParamete
 
     private static ParamState BuildSnapshot(List<DesignStateParameter> parameters)
     {
+        // project left null: this component has no Project input port and no project field
+        // in SolveInstance scope (confirmed Phase 1203-02, D-08) -- see ComputeParamStateId's
+        // own doc-comment for the full rationale and the GATE12-04 / v9.0 Phase 40 pointer for
+        // wiring a project port.
         var snapshot = new ParamState
         {
             StateId = DesignStateIdGenerator.ComputeParamStateId(parameters),

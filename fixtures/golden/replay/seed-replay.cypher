@@ -19,6 +19,11 @@
 //   project id 'DG-1200' + '-GOLDEN') — that project is untouched by this file.
 //   Every clause below is scoped to project: 'DG-1202-REPLAY'.
 //
+// Phase 1203-02 note: the three obj_*.dgId literals below were re-derived to stay
+// verbatim-identical with fixtures/golden/fixture.json's re-derived OBJ_GOLD_PASS/
+// FAIL/EMPTY dgIds (D-09 length-prefix hash-input encoding). Pre-fix values were
+// dg:57C65BE15E8E368B (pass), dg:729E143958721742 (fail), dg:0B23FFBDA52B73A6 (empty).
+//
 // EXECUTION METHOD
 //   This script is for dev databases only. Run it as a single block in
 //   Neo4j Browser (paste all + Ctrl+Enter). Each statement is separated
@@ -148,7 +153,7 @@ MERGE (a4)-[:ARG {pos: 2}]->(var_d)
 // ---- Step 5: Objects (dgId, cgId, definitionId, REFERS_TO class) ----
 MERGE (obj_pass:Object {cgId: 'cg:1:obj:01_Pass', definitionId: 'def-replay-1202-01', project: 'DG-1202-REPLAY'})
   SET obj_pass.graph = 'Computgraph',
-      obj_pass.dgId = 'dg:57C65BE15E8E368B',
+      obj_pass.dgId = 'dg:3D5D98A2E0E663A8',
       obj_pass.objectName = 'Golden Building Pass',
       obj_pass.objectId = 'OBJ_GOLD_PASS',
       obj_pass.classIri = 'ex:Building',
@@ -157,7 +162,7 @@ MERGE (obj_pass:Object {cgId: 'cg:1:obj:01_Pass', definitionId: 'def-replay-1202
 
 MERGE (obj_fail:Object {cgId: 'cg:1:obj:02_Fail', definitionId: 'def-replay-1202-01', project: 'DG-1202-REPLAY'})
   SET obj_fail.graph = 'Computgraph',
-      obj_fail.dgId = 'dg:729E143958721742',
+      obj_fail.dgId = 'dg:6607D4A051F356F2',
       obj_fail.objectName = 'Golden Building Fail',
       obj_fail.objectId = 'OBJ_GOLD_FAIL',
       obj_fail.classIri = 'ex:Building',
@@ -168,7 +173,7 @@ MERGE (obj_fail:Object {cgId: 'cg:1:obj:02_Fail', definitionId: 'def-replay-1202
 // ClassAtom never matches -- zero bindings, expected status no_population.
 MERGE (obj_empty:Object {cgId: 'cg:1:obj:03_Empty', definitionId: 'def-replay-1202-01', project: 'DG-1202-REPLAY'})
   SET obj_empty.graph = 'Computgraph',
-      obj_empty.dgId = 'dg:0B23FFBDA52B73A6',
+      obj_empty.dgId = 'dg:2602FCC98B32C2A2',
       obj_empty.objectName = 'Golden Non-Building Object',
       obj_empty.objectId = 'OBJ_GOLD_EMPTY',
       obj_empty.classIri = 'ex:Site'
