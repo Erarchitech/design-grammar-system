@@ -699,7 +699,8 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
             run.SendStatus AS sendStatus,
             run.createdAt AS createdAt,
             run.shaclReportJson AS shaclReportJson,
-            run.evidenceEnvelopeJson AS evidenceEnvelopeJson
+            run.evidenceEnvelopeJson AS evidenceEnvelopeJson,
+            run.statePayloadJson AS statePayloadJson
         ORDER BY run.createdAt DESC
         LIMIT 1
     """
@@ -997,6 +998,30 @@ def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
     the whole view response -- the same degrade posture as the C# reader
     (`_parse_shacl_report`/`parse_evidence_envelope` above) and D-01's own
     projection contract (`design_state_projection.compute_state_hash`).
+
+    Deliberately parses with plain ``json.loads`` (bare Python ``float``), NOT
+    ``parse_float=Decimal`` (plan 1202-08, Task 4 live-run investigation --
+    tried and reverted). ``design_state_projection._build_parameter_value``
+    converts a bare float to ``Decimal`` via ``Decimal(repr(value)).normalize()``,
+    which collapses to SCALE-0 (``Decimal("42")`` for ``42.0``) -- and this is
+    the behavior that matches the C# leg, not a defect: the C# leg's
+    ``NumberValue`` is typed ``double`` (`DesignStatePayloadV2Serializer.
+    ParseNumber`), and `DesignStateCanonicalProjection.ToCanonicalDecimal`
+    converts that ``double`` via ``Convert.ToDecimal``, which ALSO collapses to
+    scale-0 for a whole-number double -- a ``double`` has no stored decimal
+    scale to preserve on either leg. Using ``parse_float=Decimal`` here would
+    preserve the JSON literal's scale (e.g. keep ``42.0`` at scale 1) on the
+    Python side only, diverging from what the C# leg can ever produce through
+    its own double-typed model -- confirmed live during 1202-08 Task 4: with
+    ``parse_float=Decimal`` the replay leg matched
+    ``fixtures/golden/replay/mixed-verdicts.json``'s stored
+    ``expectedCanonicalStateHash`` but DISAGREED with the C# leg's hash: with
+    plain ``json.loads`` (this code), the replay and C# legs AGREE with each
+    other, which is the genuinely cross-language-consistent outcome DE-01
+    exists to prove. The fixture's stored ``expectedCanonicalStateHash`` was
+    computed via a ``parse_float=Decimal`` invocation that no double-typed
+    Design State payload can ever reproduce -- see this fixture's own
+    ``expectedCanonicalStateHashNote`` for the disposition.
     """
     if not state_payload_json:
         return None

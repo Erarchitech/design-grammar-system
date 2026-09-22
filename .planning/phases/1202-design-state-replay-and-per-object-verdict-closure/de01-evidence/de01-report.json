@@ -1,6 +1,6 @@
 {
   "de01ReportVersion": "1.0.0",
-  "generatedAt": "2026-09-22T10:04:03Z",
+  "generatedAt": "2026-09-22T13:02:04Z",
   "fixtureVersion": "1.0.0",
   "contractVersion": "1.0.0",
   "canonicalizationVersion": 1,
@@ -77,7 +77,7 @@
             {
               "canonicalStatus": "no_population",
               "warnings": [],
-              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "inputHash": "08FA0569CF68F42A966D6EE730AE04A5363A299FB0450128BDE1B32FD4FDB3D6",
               "outputHash": null,
               "detail": null,
               "serviceName": "dg-core-evaluator",
@@ -143,7 +143,7 @@
             {
               "canonicalStatus": "failed",
               "warnings": [],
-              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "inputHash": "08FA0569CF68F42A966D6EE730AE04A5363A299FB0450128BDE1B32FD4FDB3D6",
               "outputHash": null,
               "detail": null,
               "serviceName": "dg-core-evaluator",
@@ -154,7 +154,7 @@
               "warnings": [
                 "What: atom 'R_GOLD_HEIGHT_MAX_75_V_A4' (ObjectPropertyAtom, belongsToDistrict(?b, ?d)) has no resolvable type on the C# leg. Where: DG.Core.Parsing.SwrlRuleParser.ResolveAtomType has no ObjectPropertyAtom branch (returns only BuiltinAtom/ClassAtom/DataPropertyAtom). How to fix: Phase 1201's ALGN12-05 adds the missing branch. This is a pre-declared, by-design non-result -- see fixtures/golden/MANIFEST.md 'Expected non-results by design' -- not a fixture defect or a DE-01 failure."
               ],
-              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "inputHash": "08FA0569CF68F42A966D6EE730AE04A5363A299FB0450128BDE1B32FD4FDB3D6",
               "outputHash": null,
               "detail": "R_GOLD_HEIGHT_MAX_75_V_A4",
               "serviceName": "dg-core-evaluator",
@@ -220,7 +220,7 @@
             {
               "canonicalStatus": "passed",
               "warnings": [],
-              "inputHash": "D9F81B55B08C667AFA61766F21A4C5BC29E132B789391231E8C7AB7925FDC986",
+              "inputHash": "08FA0569CF68F42A966D6EE730AE04A5363A299FB0450128BDE1B32FD4FDB3D6",
               "outputHash": null,
               "detail": null,
               "serviceName": "dg-core-evaluator",
@@ -307,16 +307,20 @@
         "reason": "the dg-reasoner leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring)"
       },
       "csharp": {
-        "present": false,
-        "reason": "the csharp leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring)"
+        "present": true,
+        "hash": "69D4289C722DE31B42D57E5F3C41BAB39272BE7DAC8957870512EC86C0707A84",
+        "canonicalizationVersion": 1,
+        "expected_match": false
       },
       "replay": {
-        "present": false,
-        "reason": "the replay leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring)"
+        "present": true,
+        "hash": "69D4289C722DE31B42D57E5F3C41BAB39272BE7DAC8957870512EC86C0707A84",
+        "canonicalizationVersion": 1,
+        "expected_match": false
       }
     },
-    "agreement": "not_applicable",
-    "expectedCanonicalStateHash": null
+    "agreement": "agree",
+    "expectedCanonicalStateHash": "3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428"
   },
   "silent_disagreement_count": 0
 }

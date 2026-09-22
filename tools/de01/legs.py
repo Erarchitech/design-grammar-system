@@ -164,6 +164,23 @@ def run_leg_data_service(fixture: dict[str, Any], config: dict[str, Any]) -> Leg
     write token (data-service/app.py); when that precondition is unmet -- or the
     service is unreachable at all -- this degrades to a typed ``error`` LegResult
     naming the missing precondition, never a crash (D-13).
+
+    Plan 1202-08 (Task 4, live-run finding): the publish body's ``statePayloadJson``
+    passes through ``fixture.get("statePayloadJson")`` rather than a hardcoded
+    ``None``. This leg's own canonical-status behavior is unaffected either way --
+    ``entities``/``ruleResults`` still drive the reported statuses exactly as
+    before. What changes is a real side effect discovered live: within one
+    ``run_de01.py`` invocation, ``run_leg_data_service`` always runs (and
+    publishes) before ``run_leg_replay`` reads ``GET /validation/view/{project}``
+    (no runId -- resolves to the newest run by ``createdAt``). A fixture that
+    supplies a real ``statePayloadJson`` (e.g.
+    ``fixtures/golden/replay/mixed-verdicts.json``) but whose data-service
+    publish carries none would always get shadowed by this leg's own
+    hash-less publish, permanently reproducing gap 1 even against a correctly
+    seeded project -- this leg's publish is unavoidably the freshest run by the
+    time the replay leg reads. The frozen ``fixtures/golden/fixture.json``
+    carries no top-level ``statePayloadJson`` key, so ``fixture.get(...)``
+    returns ``None`` for that invocation -- byte-identical to today.
     """
     base_url = config.get("data_service_url", "http://localhost:8000")
     project = fixture["project"]
@@ -175,7 +192,7 @@ def run_leg_data_service(fixture: dict[str, Any], config: dict[str, Any]) -> Leg
                 f"{base_url}/validation/publish",
                 json={
                     "project": project,
-                    "statePayloadJson": None,
+                    "statePayloadJson": fixture.get("statePayloadJson"),
                     "validStatus": None,
                     "rules": [
                         {

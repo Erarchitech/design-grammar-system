@@ -4,7 +4,7 @@
 **silent_disagreement_count:** 0
 **Fixture version:** 1.0.0
 **Contract version:** 1.0.0
-**Generated:** 2026-09-22T10:04:03Z
+**Generated:** 2026-09-22T13:02:04Z
 
 Acceptance rule (spec/EVIDENCE-CONTRACT.md section 8, D-14): a silent disagreement is a failure; a declared non-equivalence is not.
 
@@ -44,15 +44,15 @@ Acceptance rule (spec/EVIDENCE-CONTRACT.md section 8, D-14): a silent disagreeme
 
 ## Canonical state hash comparison
 
-**Agreement:** not_applicable
-**Fixture expected hash:** not supplied
+**Agreement:** agree
+**Fixture expected hash:** 3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428
 
 | Leg | Present | Hash | Canonicalization version | Matches expected | Reason |
 |---|---|---|---|---|---|
-| csharp | False | | | | the csharp leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring) |
+| csharp | True | 69D4289C722DE31B42D57E5F3C41BAB39272BE7DAC8957870512EC86C0707A84 | 1 | False | |
 | data-service | False | | | | the data-service leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring) |
 | dg-reasoner | False | | | | the dg-reasoner leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring) |
-| replay | False | | | | the replay leg does not capture or report a Design State (Open Question 2 -- see LegResult.state_hash's docstring) |
+| replay | True | 69D4289C722DE31B42D57E5F3C41BAB39272BE7DAC8957870512EC86C0707A84 | 1 | False | |
 
 ## Warnings appendix
 
