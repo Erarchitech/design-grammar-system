@@ -128,7 +128,7 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 10/11 plans executed
+**Plans:** 11/11 plans executed
 
 Plans:
 **Wave 1**
@@ -155,7 +155,7 @@ Plans:
 **Gap closure, round 2** *(from the re-verified `1202-VERIFICATION.md` — the two Critical findings `1202-REVIEW.md` CR-01/CR-02, which were out of scope for 1202-08/09; independent, parallel, different subsystems)*
 
 - [x] 1202-10-PLAN.md — Gap 1 (CR-01, ALGN12-10): `BuildPerObjectVerdicts` groups on the `(RuleId, ObjectId)` pair before the ObjectId rollup and surfaces a duplicate-identity collision as an additive, typed signal on `PerObjectVerdict`/`PerObjectVerdictResult` — `VerdictSource` stays at two members, `StatusRollup.Rollup` stays verbatim (D-12), and `spec/EVIDENCE-CONTRACT.md` §5.1 records the reader-side behavior (wave 1, C# + spec, no live stack needed)
-- [ ] 1202-11-PLAN.md — Gap 2 (CR-02, ALGN12-08): mirror the Label-vs-Geometry guard for Object-vs-Geometry in `ObjectStateComponent.SolveInstance` using a **dedicated** error template (the existing one hardcodes "Label"), with the guard predicate factored into `DG.Core` so it is unit-testable without the Rhino SDK (wave 1, C# only, optional non-blocking canvas human-check)
+- [x] 1202-11-PLAN.md — Gap 2 (CR-02, ALGN12-08): mirror the Label-vs-Geometry guard for Object-vs-Geometry in `ObjectStateComponent.SolveInstance` using a **dedicated** error template (the existing one hardcodes "Label"), with the guard predicate factored into `DG.Core` so it is unit-testable without the Rhino SDK (wave 1, C# only, optional non-blocking canvas human-check)
 
 ### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
 

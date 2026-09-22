@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1202
 current_phase_name: design-state-replay-and-per-object-verdict-closure
 status: executing
-stopped_at: "Completed 1202-10-PLAN.md (gap-closure round 2: CR-01 duplicate (ruleId, objectId) row detection closed via additive HasDuplicateRuleObjectRows/CollidingRuleObjectPairs signal on BuildPerObjectVerdicts, D-12 rollup unchanged, spec/EVIDENCE-CONTRACT.md §5.1 reconciled with §4. 545/545 DG.Tests passing incl. 6/6 BuildPerObjectVerdicts Facts. 10/11 plans in phase now have SUMMARY.md; only 1202-11 remains."
-last_updated: "2026-09-22T14:09:03.419Z"
+stopped_at: "Completed 1202-11-PLAN.md (gap-closure round 2 finale: CR-02 closed — Object-vs-Geometry list-length guard added to ObjectStateComponent via new DG.Core ObjStateGuard predicate + dedicated error template. 556/556 DG.Tests passing (Neo4j up). All 11/11 plans in Phase 1202 now have SUMMARY.md — phase ready for verification."
+last_updated: "2026-09-22T14:15:08.769Z"
 last_activity: 2026-09-22
 last_activity_desc: Phase 1202 execution started
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 26
-  completed_plans: 25
-  percent: 33
+  completed_plans: 26
+  percent: 50
 ---
 
 # Project State
@@ -133,6 +133,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1202 P09 | ~25min | 3 tasks | 4 files |
 | Phase 1202 P08 | ~2h30min | 4 tasks | 11 files |
 | Phase 1202 P10 | ~25min | 4 tasks | 4 files |
+| Phase 1202 P11 | ~20min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -416,6 +417,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1202-08: kept csharp/replay agree hash (69D4289C...) over forcing a match to the fixture's stale expectedCanonicalStateHash -- neither leg's double-typed Design State model can reach the stale scale-preserving value, so genuine cross-language agreement is the correct target
 - [Phase ?]: 1202-08: run_leg_data_service now forwards fixture.get('statePayloadJson') to /validation/publish -- without this, that leg's own fresh hash-less publish always shadows any seeded evidence within one run_de01.py invocation
 - [Phase ?]: 1202-10: CR-01 fix as additive flag (HasDuplicateRuleObjectRows/CollidingRuleObjectPairs) not a new VerdictSource member -- duplicate-identity is a data-quality fact about a present envelope, not a provenance change
+- [Phase ?]: 1202-11: dedicated ObjStateMismatchedObjectListLength template required (not a reuse of the Label-worded template, which hardcodes 'Label' and would mislead users); guard predicate factored into new DG.Core ObjStateGuard class since ObjectStateComponent.cs is entirely GRASSHOPPER_SDK-gated and untestable from DG.Tests directly
 
 ### Research Flags (carry into planning)
 
@@ -497,9 +499,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-22T14:09:03.409Z
-Stopped at: Completed 1202-10-PLAN.md (gap-closure round 2: CR-01 duplicate (ruleId, objectId) row detection closed via additive HasDuplicateRuleObjectRows/CollidingRuleObjectPairs signal on BuildPerObjectVerdicts, D-12 rollup unchanged, spec/EVIDENCE-CONTRACT.md §5.1 reconciled with §4. 545/545 DG.Tests passing incl. 6/6 BuildPerObjectVerdicts Facts. 10/11 plans in phase now have SUMMARY.md; only 1202-11 remains.
-Resume file: 1202-11-PLAN.md
+Last session: 2026-09-22T14:15:08.757Z
+Stopped at: Completed 1202-11-PLAN.md (gap-closure round 2 finale: CR-02 closed — Object-vs-Geometry list-length guard added to ObjectStateComponent via new DG.Core ObjStateGuard predicate + dedicated error template. 556/556 DG.Tests passing (Neo4j up). All 11/11 plans in Phase 1202 now have SUMMARY.md — phase ready for verification.
+Resume file: None
 
 ## Performance Metrics
 
