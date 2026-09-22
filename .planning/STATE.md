@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1203
 current_phase_name: identity-convergence-and-attribute-of-decision
 status: executing
-stopped_at: Completed 1203-01-PLAN.md
-last_updated: "2026-09-22T21:10:04.471Z"
+stopped_at: Completed 1203-02-PLAN.md
+last_updated: "2026-09-22T21:55:30.437Z"
 last_activity: 2026-09-22
 last_activity_desc: Phase 1203 execution started
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 32
-  completed_plans: 27
+  completed_plans: 29
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1203 (identity-convergence-and-attribute-of-decision) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -135,6 +135,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1202 P10 | ~25min | 4 tasks | 4 files |
 | Phase 1202 P11 | ~20min | 3 tasks | 5 files |
 | Phase 1203 P01 | 35 min | 2 tasks | 1 files |
+| Phase 1203 P02 | 55min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -419,6 +420,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1202-08: run_leg_data_service now forwards fixture.get('statePayloadJson') to /validation/publish -- without this, that leg's own fresh hash-less publish always shadows any seeded evidence within one run_de01.py invocation
 - [Phase ?]: 1202-10: CR-01 fix as additive flag (HasDuplicateRuleObjectRows/CollidingRuleObjectPairs) not a new VerdictSource member -- duplicate-identity is a data-quality fact about a present envelope, not a provenance change
 - [Phase ?]: 1202-11: dedicated ObjStateMismatchedObjectListLength template required (not a reuse of the Label-worded template, which hardcodes 'Label' and would mislead users); guard predicate factored into new DG.Core ObjStateGuard class since ObjectStateComponent.cs is entirely GRASSHOPPER_SDK-gated and untestable from DG.Tests directly
+- [Phase ?]: 1203-02: Length-prefix hash encoding closes CR-02; project folded into DesignState hashes where legitimately reachable; discovered canonical_json.hash_scalar_tuple/CanonicalJsonWriter.HashScalarTuple now diverge from Mint/compute_dg_id and need a follow-up decision
 
 ### Research Flags (carry into planning)
 
@@ -448,6 +450,7 @@ Shipped from Phase 20 Plan 02:
 - 38-06: no live Neo4j fixture pairs a published Computgraph definition with a Rule an inputBindings entry maps to -- publish into v8-ui-smoke (has R_URB_HEIGHT_MAX_75_V) or add a rule into urbanblock-uat (has a published definition) before plan 38-07's live UAT
 - Live docker compose exec verification for dg-reasoner's fixture mount deferred -- Docker Desktop's engine was not running in the execution environment (client present, daemon unreachable). Human with running Docker Desktop should run: docker compose up -d dg-reasoner && docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json
 - Live four-leg DE-01 run outstanding: Docker Desktop unavailable in this environment prevented data-service/dg-reasoner/replay legs from executing during the golden-fixture run; only the csharp leg ran (silent_disagreement_count=0, no_population correctly distinguished from failed). Re-run tools/de01/run_de01.py once Docker Desktop is up and fixtures/golden/seed.cypher is applied.
+- canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple still use the naive pipe-join and have silently diverged from DgIdMintingService.Mint/compute_dg_id's now-length-prefixed encoding — their doc-comments' byte-for-byte parity claim is stale; needs a follow-up decision (extend the fix, or document the split)
 
 ### Quick Tasks Completed
 
@@ -500,8 +503,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-22T21:10:04.461Z
-Stopped at: Completed 1203-01-PLAN.md
+Last session: 2026-09-22T21:55:30.428Z
+Stopped at: Completed 1203-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics

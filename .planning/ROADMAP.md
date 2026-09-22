@@ -177,7 +177,7 @@ Plans:
 
 **Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
 
-**Plans:** 1/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -186,8 +186,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 1203-02-PLAN.md — D-08 + D-09 as ONE coordinated re-derivation: length-prefix hash encoding in both languages, `project` folded into DesignState hashes where legitimately reachable, every golden vector and pinned literal updated in lockstep (wave 2)
-- [ ] 1203-04-PLAN.md — `ATTRIBUTE_OF` derivation and project-scoped MERGE at publish time, forward and reverse query tests (wave 2, parallel with 1203-02)
+- [x] 1203-02-PLAN.md — D-08 + D-09 as ONE coordinated re-derivation: length-prefix hash encoding in both languages, `project` folded into DesignState hashes where legitimately reachable, every golden vector and pinned literal updated in lockstep (wave 2)
+- [x] 1203-04-PLAN.md — `ATTRIBUTE_OF` derivation and project-scoped MERGE at publish time, forward and reverse query tests (wave 2, parallel with 1203-02)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
