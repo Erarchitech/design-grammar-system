@@ -7,7 +7,13 @@ date: 2026-07-18
 
 ## In Flight
 
-0. **v12.0 Theory–Implementation Alignment** — 🔄 **Activated 2026-09-20.** v9.0 was closed by override closeout with accepted debt; the accepted recognition blocker is `D-40-SB-01`. Active v12.0 package: canonical status/evidence contract, cross-service golden fixture/DE-01, parser/evaluator conformance, replay/per-object verdicts, identity/`ATTRIBUTE_OF` decision, determinism benchmark, and security/tenancy gate. **Next:** standalone GSD control-plane reconciliation (`GSD-ALIGN-001..013`), then discuss/plan Phase 1200. No Phase 1200 implementation started yet.
+0. **v12.0 Theory–Implementation Alignment — Phase 1203 Planned ✅** — 2026-09-22 **Full `gsd-plan-phase 1203` complete; all gates pass.** 6 plans across 5 waves (38 tasks). Research verified CONTEXT.md's 14 locked decisions against disk; found 2 disk facts diverging from planning corpus (dg-shapes.ttl: 17 not 20; WR-02 at line 518 not 336). Pattern mapping identified 13/15 analog sites. Plans locked:
+   - Wave 1: Preflight (baselines, fixture/route verification)
+   - Wave 2: D-08+D-09 identity re-derivation (both languages, golden vectors synchronized) ‖ `ATTRIBUTE_OF` edge (parallel, disjoint files)
+   - Wave 3: CR-01/WR-01/WR-03 fixes + ALGN12-13 tests (serialized after Wave 2 due to shared file edit `dg_identity.py`)
+   - Wave 4: D-05 schema propagation sweep + D-06 spec consolidation
+   - Wave 5: CQ3 fixture (both query directions), live checkpoint (`autonomous: false`)
+   **Plan-checker verdict:** VERIFICATION PASSED (2 warnings, 0 blockers). Warning 1: D-08 scope — `project` optional param, Grasshopper capture path passes null (no project in scope for those components; D-07 forbids synthesis). Canvas-minted IDs don't fold project until Phase 40 wires port. **Owner explicitly accepted this reading 2026-09-22.** Warning 2: RESEARCH.md open questions already operationalized as Wave 0 tasks in plan 01. Gates: requirements 3/3, decisions 14/14, gap analysis 17/17. **Next:** `/gsd-execute-phase 1203`.
 
 0. **Theory–Implementation Alignment Audit** — ✅ 2026-09-19. **Complete.** Produced `docs/reviews/theory-implementation-alignment/THEORY-IMPLEMENTATION-ALIGNMENT-PLAN.md` plus evidence bundle: 50 paper claims, 13 GSD alignment proposals, backend/C#/GSD/literature/Obsidian/Graphify audits, and a 62-artifact integrated index. Main conclusion: conditional GO for bounded alignment revision; NO-GO for unqualified full-SWRL, complete cross-platform BIM, lossless Design State replay, production CDE governance, or universal LLM determinism claims. No manuscript, source, planning, vault, database, or live-system changes were made beyond the report/evidence bundle. Next decisions: `ATTRIBUTE_OF` vs `PARAM_LINK`, canonical validation statuses, cross-service golden fixture/DE-01, and security/tenancy gate.
 
