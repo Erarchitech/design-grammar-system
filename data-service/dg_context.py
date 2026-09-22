@@ -545,21 +545,6 @@ ALLOWED_RELATIONSHIPS: set[str] = {
     "HAS_SHARED_PROPERTY",
 }
 
-# Identity-registry property allow-list (Phase 32.1) -- properties on
-# Representation and SharedProperty nodes, plus dgId on Computgraph entities,
-# that the validator must recognize to avoid false-positive unknown-property
-# rejections on generated Cypher touching the identity registry.
-ALLOWED_PROPERTIES: set[str] = {
-    "dgId",
-    "nativeId",
-    "nativeIdKind",
-    "platform",
-    "connector",
-    "boundAt",
-    "propertyName",
-    "writtenAt",
-}
-
 
 # DesignState.kind enum (v4/v7 schema) -- same three values already exposed
 # via VALIDGRAPH_CONCEPTS["design_state_kinds"] above; kept as its own
