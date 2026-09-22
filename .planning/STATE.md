@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1202
 current_phase_name: design-state-replay-and-per-object-verdict-closure
 status: executing
-stopped_at: "Completed 1202-09-PLAN.md (gap-closure: parameters[] dual-wire-shape exclusion contract documented, VERIFICATION.md gap 2 closed)"
-last_updated: "2026-09-22T12:21:34.467Z"
+stopped_at: "Completed 1202-08-PLAN.md (gap-closure: live DE-01 replay run closes VERIFICATION.md gap 1 with Agreement: agree, csharp+replay legs both reporting hash 69D4289C...). Fixed a real pre-existing bug in data-service/app.py's get_validation_run (missing statePayloadJson in RETURN clause). Both 1202-08 and 1202-09 gap-closure plans now complete; phase-level re-verification is next."
+last_updated: "2026-09-22T13:05:16.468Z"
 last_activity: 2026-09-21
 last_activity_desc: Phase 1202 execution started
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 24
-  completed_plans: 23
-  percent: 33
+  completed_plans: 24
+  percent: 50
 ---
 
 # Project State
@@ -131,6 +131,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1202 P06 | ~25min | 3 tasks | 3 files |
 | Phase 1202 P07 | ~35min+rebuild+live-run | 3 tasks | 8 files |
 | Phase 1202 P09 | ~25min | 3 tasks | 4 files |
+| Phase 1202 P08 | ~2h30min | 4 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -411,6 +412,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 1202-06] Task 3 checkpoint:human-verify closed via user 'approved' response with no code changes -- ObjState identity is confirmed live: Label is no longer identity-bearing (objectRef+classIri only), no relabel-to-reset workflow was reported as broken
 - [Phase ?]: [Phase 1202-07] Task 3 checkpoint:human-verify closed via user 'approved' response — live four-leg DE-01 run against the --no-cache-rebuilt stack showed silent_disagreement_count=0, mixed per-object verdicts (OBJ_GOLD_PASS/OBJ_GOLD_FAIL) surviving in the replay leg, and a not_applicable state-hash agreement verdict confirmed correct (frozen fixture.json carries no round-trippable DesignState payload, a pre-existing 1202-02 finding, not a gap)
 - [Phase ?]: [Phase 1202 plan 09]: parameters[] dual-wire-shape divergence documented as declared exclusion contract in spec/DATABASE.md + spec/EVIDENCE-CONTRACT.md (D-09, ALGN12-09) rather than converging the two readers — closes VERIFICATION.md gap 2 with zero reader-behavior change
+- [Phase ?]: 1202-08: kept csharp/replay agree hash (69D4289C...) over forcing a match to the fixture's stale expectedCanonicalStateHash -- neither leg's double-typed Design State model can reach the stale scale-preserving value, so genuine cross-language agreement is the correct target
+- [Phase ?]: 1202-08: run_leg_data_service now forwards fixture.get('statePayloadJson') to /validation/publish -- without this, that leg's own fresh hash-less publish always shadows any seeded evidence within one run_de01.py invocation
 
 ### Research Flags (carry into planning)
 
@@ -492,8 +495,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-22T12:21:34.458Z
-Stopped at: Completed 1202-09-PLAN.md (gap-closure: parameters[] dual-wire-shape exclusion contract documented, VERIFICATION.md gap 2 closed)
+Last session: 2026-09-22T13:05:16.458Z
+Stopped at: Completed 1202-08-PLAN.md (gap-closure: live DE-01 replay run closes VERIFICATION.md gap 1 with Agreement: agree, csharp+replay legs both reporting hash 69D4289C...). Fixed a real pre-existing bug in data-service/app.py's get_validation_run (missing statePayloadJson in RETURN clause). Both 1202-08 and 1202-09 gap-closure plans now complete; phase-level re-verification is next.
 Resume file: None
 
 ## Performance Metrics

@@ -201,3 +201,7 @@ Two Docker Desktop `--no-cache` rebuild cycles were required (one after each cod
 ---
 *Phase: 1202-design-state-replay-and-per-object-verdict-closure*
 *Completed: 2026-09-22*
+
+## Self-Check: PASSED
+
+All 11 created/modified files found on disk; all 5 commit hashes (922afea, b624de9, 09a520b, 3e9c842, c5cc179) found in git log.
