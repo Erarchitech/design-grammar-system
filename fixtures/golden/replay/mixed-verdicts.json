@@ -4,6 +4,112 @@
   "description": "Sibling replay fixture for Phase 1202 plan 01 Task 3 (D-17): a mixed pass/fail/no_population per-object verdict case built from the existing OBJ_GOLD_PASS/OBJ_GOLD_FAIL/OBJ_GOLD_EMPTY object ids in fixtures/golden/fixture.json and the R_GOLD_HEIGHT_MAX_75_V rule id. Exists because the frozen fixture.json's own stub DesignState (its 'designState.statePayloadJson' field) carries bare stateId-only members with no objectRef/capturedAtUtc and cannot round-trip through DesignStatePayloadV2Serializer.Deserialize -- this sibling is serializer-valid where that stub is not. See README.md in this directory for the full framing and the frozen-file non-edit guarantee.",
   "derivedFrom": "fixtures/golden/fixture.json (reuses OBJ_GOLD_PASS, OBJ_GOLD_FAIL, OBJ_GOLD_EMPTY object ids and the R_GOLD_HEIGHT_MAX_75_V rule id verbatim; that file itself is NOT edited by this fixture)",
   "statePayloadJson": "{\"version\":\"2\",\"stateId\":\"DS_1202_MIXED_REPLAY_01\",\"label\":\"1202 mixed pass/fail replay\",\"capturedAtUtc\":\"2026-09-21T12:00:00.0000000Z\",\"objStates\":[{\"stateId\":\"OS_1202_C_EMPTY\",\"objectRef\":\"OBJ_GOLD_EMPTY\",\"label\":\"Golden Non-Building Object\",\"classIri\":\"ex:Site\",\"capturedAtUtc\":\"2026-09-21T12:00:02.0000000Z\"},{\"stateId\":\"OS_1202_A_PASS\",\"objectRef\":\"OBJ_GOLD_PASS\",\"label\":\"Golden Building Pass\",\"classIri\":\"ex:Building\",\"capturedAtUtc\":\"2026-09-21T12:00:00.0000000Z\"},{\"stateId\":\"OS_1202_B_FAIL\",\"objectRef\":\"OBJ_GOLD_FAIL\",\"label\":\"Golden Building Fail\",\"classIri\":\"ex:Building\",\"capturedAtUtc\":\"2026-09-21T12:00:01.0000000Z\"}],\"paramStates\":[{\"stateId\":\"DS_1202_MIXED_PARAMS_01\",\"capturedAtUtc\":\"2026-09-21T12:00:03.0000000Z\",\"parameters\":[{\"parameterId\":\"HeightSlider\",\"displayName\":\"Height Slider\",\"type\":\"number\",\"value\":42.0}]}],\"propStates\":[{\"stateId\":\"PS_1202_MIXED_HEIGHT_01\",\"ruleIri\":\"R_GOLD_HEIGHT_MAX_75_V\",\"dataPropertyIri\":\"ex:hasHeight\",\"objectRef\":\"OBJ_GOLD_PASS\",\"propValue\":{\"parameterId\":\"hasHeight\",\"displayName\":\"Has Height\",\"type\":\"number\",\"value\":42.0}}]}",
+  "rule": {
+    "Rule_Id": "R_GOLD_HEIGHT_MAX_75_V",
+    "RuleName": "Golden fixture max building height",
+    "RuleDescription": "Maximum building height must not exceed 75 meters",
+    "swrl": "Building(?b) ^ hasHeight(?b, ?h) ^ swrlb:greaterThan(?h, 75) -> Violation(?b)"
+  },
+  "atoms": [
+    {
+      "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A1",
+      "type": "ClassAtom",
+      "SWRL_label": "Building(?b)",
+      "predicateIri": "ex:Building",
+      "side": "body",
+      "args": [
+        { "pos": 1, "var": "?b" }
+      ]
+    },
+    {
+      "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A2",
+      "type": "DataPropertyAtom",
+      "SWRL_label": "hasHeight(?b, ?h)",
+      "predicateIri": "ex:hasHeight",
+      "side": "body",
+      "args": [
+        { "pos": 1, "var": "?b" },
+        { "pos": 2, "var": "?h" }
+      ]
+    },
+    {
+      "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A3",
+      "type": "BuiltinAtom",
+      "SWRL_label": "swrlb:greaterThan(?h, 75)",
+      "predicateIri": "swrlb:greaterThan",
+      "side": "body",
+      "args": [
+        { "pos": 1, "var": "?h" },
+        { "pos": 2, "literal": { "lex": "75", "datatype": "xsd:decimal" } }
+      ]
+    },
+    {
+      "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A4",
+      "type": "ObjectPropertyAtom",
+      "SWRL_label": "belongsToDistrict(?b, ?d)",
+      "predicateIri": "ex:belongsToDistrict",
+      "side": "body",
+      "args": [
+        { "pos": 1, "var": "?b" },
+        { "pos": 2, "var": "?d" }
+      ],
+      "_note": "Copied by value from fixtures/golden/fixture.json (D-17's additive-key task, plan 1202-08 Task 1). Present at the data level only -- see that file's own _note for the ResolveAtomType gap this atom exercises."
+    }
+  ],
+  "objects": [
+    {
+      "objectId": "OBJ_GOLD_PASS",
+      "dgId": "dg:57C65BE15E8E368B",
+      "objectName": "Golden Building Pass",
+      "classIri": "ex:Building",
+      "properties": {
+        "hasHeight": 42.0
+      }
+    },
+    {
+      "objectId": "OBJ_GOLD_FAIL",
+      "dgId": "dg:729E143958721742",
+      "objectName": "Golden Building Fail",
+      "classIri": "ex:Building",
+      "properties": {
+        "hasHeight": 88.5
+      }
+    },
+    {
+      "objectId": "OBJ_GOLD_EMPTY",
+      "dgId": "dg:0B23FFBDA52B73A6",
+      "objectName": "Golden Non-Building Object",
+      "classIri": "ex:Site",
+      "properties": {},
+      "_note": "Deliberately of class ex:Site, not ex:Building, so the rule's ClassAtom (R_GOLD_HEIGHT_MAX_75_V_A1) never matches -- zero bindings, asserted expected status no_population, not merely defined."
+    }
+  ],
+  "expectedOutcomes": [
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_EMPTY",
+      "expectedCanonicalStatus": "no_population",
+      "note": "OBJ_GOLD_EMPTY is of class ex:Site, which the rule's ClassAtom does not match -- zero bindings, asserted no_population (never failed)."
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_FAIL",
+      "expectedCanonicalStatus": "failed",
+      "note": "hasHeight 88.5 > 75, so swrlb:greaterThan(?h, 75) is satisfied in the violation-pattern body -- the rule is genuinely violated."
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_FAIL",
+      "expectedCanonicalStatus": "unsupported",
+      "note": "By design, the C# leg (DG.Core.Validation.RuleEvaluator via SwrlRuleParser) has no ObjectPropertyAtom branch until Phase 1201 ALGN12-05; when the fourth atom (R_GOLD_HEIGHT_MAX_75_V_A4, ObjectPropertyAtom) is included in that leg's evaluation it reports unsupported (or error, if the parser throws before 1201 lands). This is a pre-declared, by-design non-result -- see fixtures/golden/MANIFEST.md -- not a fixture defect or a DE-01 failure."
+    },
+    {
+      "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+      "objectId": "OBJ_GOLD_PASS",
+      "expectedCanonicalStatus": "passed",
+      "note": "hasHeight 42.0 <= 75, so swrlb:greaterThan(?h, 75) is not satisfied -- the violation body never fires and the rule passes for this object."
+    }
+  ],
   "expectedPerObjectVerdicts": [
     {
       "objectId": "OBJ_GOLD_PASS",

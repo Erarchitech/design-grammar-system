@@ -114,9 +114,64 @@ version-bump ceremony, but should log the change below — the same "log why" di
 `fixtures/golden/parser/README.md` established, scoped down from `MANIFEST.md`'s heavier
 `FIXTURE_VERSION` bump requirement for the frozen trio.
 
+## Seeding and running the live replay path (Phase 1202 plan 08, gap 1 closure)
+
+VERIFICATION.md gap 1 required a **live** DE-01 run that exercises a real,
+round-trippable Design State end-to-end and reports a non-`not_applicable`
+canonical state hash agreement verdict. `mixed-verdicts.json` alone cannot do
+this — it needs (a) additive `rule`/`atoms`/`objects`/`expectedOutcomes` keys so
+every leg's field access succeeds, (b) a seeded Neo4j project carrying the
+round-trippable `statePayloadJson`, and (c) a `run_de01.py` invocation that
+selects it as input. Plan 08 (Task 1) added all three:
+
+1. **`mixed-verdicts.json` is now a complete DE-01 fixture.** It carries the
+   same `rule`/`atoms`/`objects`/`expectedOutcomes` members `fixture.json`
+   defines (copied by value, `project` left at `DG-1202-REPLAY`), alongside its
+   own `statePayloadJson`/`expectedCanonicalStateHash`/`expectedPerObjectVerdicts`/
+   `evidenceEnvelopeJson` members unchanged. This is still additive to the
+   frozen `fixture.json` — nothing in that file changed.
+
+2. **`seed-replay.cypher` seeds project `DG-1202-REPLAY`.** Apply it against a
+   dev Neo4j instance:
+
+   ```bash
+   cypher-shell -a bolt://localhost:7687 -u neo4j -p <password> -f fixtures/golden/replay/seed-replay.cypher
+   # or, against the running compose stack (MSYS_NO_PATHCONV=1 needed on Git Bash
+   # for docker exec/cp path rewriting):
+   MSYS_NO_PATHCONV=1 docker compose exec -T neo4j cypher-shell -u neo4j -p 12345678 -f /dev/stdin < fixtures/golden/replay/seed-replay.cypher
+   ```
+
+   Unlike `fixtures/golden/seed.cypher`'s stub `:DesignState` (bare `stateId`
+   members only), `seed-replay.cypher`'s `:DesignState {StateId:
+   'DS_1202_MIXED_REPLAY_01'}` carries the full `statePayloadJson` string from
+   `mixed-verdicts.json` — complete `objectRef`/`capturedAtUtc`/`classIri`
+   members on every ObjState, so it round-trips through
+   `DesignStatePayloadV2Serializer.Deserialize`. It also seeds the `:Run`
+   node's `evidenceEnvelopeJson` directly from the fixture, so the replay leg
+   has per-object rows without a prior `/validation/publish` call.
+
+   It **never writes to the frozen golden project** — every clause is scoped to
+   `project: 'DG-1202-REPLAY'`, verified by the file's own header greps.
+
+3. **`--replay-fixture` selects the sibling fixture as input.** Run:
+
+   ```bash
+   python tools/de01/run_de01.py --replay-fixture
+   ```
+
+   This is a documented shorthand for `--fixture
+   fixtures/golden/replay/mixed-verdicts.json` — `run_de01.py`'s `--fixture`
+   **default** stays `fixtures/golden/fixture.json` (the frozen golden fixture)
+   unchanged; nothing about the default invocation's behavior shifted.
+
+The frozen trio (`fixture.json`, `seed.cypher`, `canonical-vectors.json`)
+remains byte-untouched by every step above — confirmed by
+`git diff --numstat` against all three showing no output.
+
 ## Change-Reason Log
 
 | Date | Reason | Changed by |
 |---|---|---|
 | 2026-09-21 | Initial fixture — mixed pass/fail/no_population per-object replay case for D-17, built from the existing `OBJ_GOLD_PASS`/`OBJ_GOLD_FAIL`/`OBJ_GOLD_EMPTY` object ids and `R_GOLD_HEIGHT_MAX_75_V` rule id. `expectedCanonicalStateHash` left `null` pending plan 02. | Phase 1202-01 executor |
 | 2026-09-21 | Populated `expectedCanonicalStateHash` (`3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428`) and added `canonicalizationVersion: 1`, computed via `design_state_projection.compute_state_hash`. Documented the known C#-serializer `classIri` parity gap (resolves once D-05 ships) in `expectedCanonicalStateHashNote`. | Phase 1202-02 executor |
+| 2026-09-22 | Added `rule`/`atoms`/`objects`/`expectedOutcomes` keys (copied by value from `fixture.json`) to make `mixed-verdicts.json` a complete DE-01 fixture; added sibling `seed-replay.cypher` to project the round-trippable `statePayloadJson` into Neo4j under `DG-1202-REPLAY`; added `run_de01.py --replay-fixture` as the documented invocation. Closes VERIFICATION.md gap 1's fixture-shape and seeding preconditions (Task 1 of 3; the live run itself is Task 4). | Phase 1202-08 executor |

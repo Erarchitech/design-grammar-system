@@ -46,7 +46,26 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--fixture",
         default=str(REPO_ROOT / "fixtures" / "golden" / "fixture.json"),
-        help="Path to the frozen golden fixture (default: fixtures/golden/fixture.json).",
+        help=(
+            "Path to the DE-01 fixture (default: fixtures/golden/fixture.json, the frozen "
+            "golden fixture -- D-11, never modified). Pass "
+            "fixtures/golden/replay/mixed-verdicts.json (or use --replay-fixture as a "
+            "shorthand) to exercise a real, round-trippable Design State and a live "
+            "canonical state hash agreement verdict (D-16) -- see "
+            "fixtures/golden/replay/README.md."
+        ),
+    )
+    parser.add_argument(
+        "--replay-fixture",
+        action="store_true",
+        help=(
+            "Shorthand for --fixture fixtures/golden/replay/mixed-verdicts.json -- the "
+            "sibling fixture whose statePayloadJson round-trips through "
+            "DesignStatePayloadV2Serializer.Deserialize, making a non-not_applicable "
+            "canonical state hash agreement verdict reachable (D-16). Requires "
+            "fixtures/golden/replay/seed-replay.cypher to have been applied first against "
+            "project DG-1202-REPLAY. Overrides --fixture when both are passed."
+        ),
     )
     parser.add_argument(
         "--out-dir",
@@ -81,7 +100,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
-    fixture_path = Path(args.fixture)
+    # --replay-fixture is a documented first-class shorthand (D-16) rather than a
+    # path a future operator must remember -- overrides --fixture when both are
+    # passed. The --fixture default itself is UNCHANGED: fixtures/golden/fixture.json.
+    if args.replay_fixture:
+        fixture_path = REPO_ROOT / "fixtures" / "golden" / "replay" / "mixed-verdicts.json"
+    else:
+        fixture_path = Path(args.fixture)
     if not fixture_path.is_file():
         print(f"run_de01.py: fixture not found at {fixture_path}", file=sys.stderr)
         return 1
