@@ -691,6 +691,154 @@ class TestCompareLegsHashFallback:
         assert row_data["outputHash"] == "envelope-output-hash"
 
 
+def _mock_subprocess_result(stdout: str, returncode: int = 0) -> MagicMock:
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = stdout
+    result.stderr = ""
+    return result
+
+
+def _csharp_wrapper_stdout(envelope: dict, canonical_state_hash: str | None, canonicalization_version: int = 1) -> str:
+    return json.dumps(
+        {
+            "envelope": envelope,
+            "canonicalStateHash": canonical_state_hash,
+            "canonicalizationVersion": canonicalization_version,
+        }
+    )
+
+
+def _csharp_bare_envelope_stdout(envelope: dict) -> str:
+    return json.dumps(envelope)
+
+
+class TestRunLegCsharpWrapperExtraction:
+    """Task 2 (D-16, T-1202-29): run_leg_csharp must extract only the envelope
+    sub-object from a wrapper-shaped stdout, populate LegResult.state_hash from
+    the wrapper's sibling keys, keep the bare-envelope path working unchanged for
+    a legacy/un-rebuilt harness binary, and never pass the whole wrapper to
+    _validated_leg_result (which would fail schema validation and silently
+    reproduce gap 1 forever). All offline -- dotnet subprocess is mocked."""
+
+    def test_wrapper_csharp_round_trip_populates_state_hash_and_valid_envelope(self):
+        """The wrapper round-trip -- the criterion proving gap 1 is not silently
+        reproduced. Both halves must hold: the extracted envelope validates
+        against the contract schema AND state_hash is populated."""
+        import evidence_contract
+        import jsonschema
+
+        expected_hash = "3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428"
+        envelope = _envelope(
+            [_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed")],
+            service_name="dg-core-evaluator",
+            stage="de01.csharp-leg.evaluate",
+        )
+        stdout = _csharp_wrapper_stdout(envelope, expected_hash, canonicalization_version=1)
+
+        with patch.object(legs.subprocess, "run", return_value=_mock_subprocess_result(stdout)):
+            result = legs.run_leg_csharp({}, config={"fixture_path": "irrelevant-for-this-test.json"})
+
+        assert result.available is True
+        assert result.error is None
+        jsonschema.validate(instance=result.envelope, schema=evidence_contract.load_contract_schema())
+        assert result.state_hash == {"hash": expected_hash, "canonicalizationVersion": 1}
+
+    def test_bare_envelope_csharp_round_trip_still_works(self):
+        """Backward compatibility: a legacy/un-rebuilt harness binary emitting the
+        pre-1202-08 bare envelope shape must still produce a schema-valid,
+        available LegResult with state_hash staying None."""
+        import evidence_contract
+        import jsonschema
+
+        envelope = _envelope(
+            [_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed")],
+            service_name="dg-core-evaluator",
+            stage="de01.csharp-leg.evaluate",
+        )
+        stdout = _csharp_bare_envelope_stdout(envelope)
+
+        with patch.object(legs.subprocess, "run", return_value=_mock_subprocess_result(stdout)):
+            result = legs.run_leg_csharp({}, config={"fixture_path": "irrelevant-for-this-test.json"})
+
+        assert result.available is True
+        assert result.error is None
+        jsonschema.validate(instance=result.envelope, schema=evidence_contract.load_contract_schema())
+        assert result.state_hash is None
+
+    def test_wrapper_with_null_hash_is_typed_absence(self):
+        """A wrapper whose canonicalStateHash is null (the harness's own typed-
+        absence case, e.g. a statePayloadJson that failed to deserialize) must
+        still yield a schema-valid envelope and available=True, with state_hash
+        staying None -- never fabricated."""
+        import evidence_contract
+        import jsonschema
+
+        envelope = _envelope(
+            [_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed")],
+            service_name="dg-core-evaluator",
+            stage="de01.csharp-leg.evaluate",
+        )
+        stdout = _csharp_wrapper_stdout(envelope, canonical_state_hash=None)
+
+        with patch.object(legs.subprocess, "run", return_value=_mock_subprocess_result(stdout)):
+            result = legs.run_leg_csharp({}, config={"fixture_path": "irrelevant-for-this-test.json"})
+
+        assert result.available is True
+        assert result.error is None
+        jsonschema.validate(instance=result.envelope, schema=evidence_contract.load_contract_schema())
+        assert result.state_hash is None
+
+    def test_passing_the_whole_wrapper_to_validated_leg_result_would_fail_schema(self):
+        """Negative control pinning WHY the extraction is required: feeding the
+        unextracted wrapper dict whole to _validated_leg_result must fail schema
+        validation (additionalProperties: false at the envelope root, and no
+        contractVersion at the wrapper's own top level) -- so a future refactor
+        that drops the extraction fails loudly (Present: False) instead of
+        silently reproducing gap 1 forever."""
+        envelope = _envelope(
+            [_row("R_GOLD_HEIGHT_MAX_75_V", "OBJ_GOLD_PASS", "passed")],
+            service_name="dg-core-evaluator",
+            stage="de01.csharp-leg.evaluate",
+        )
+        wrapper = {
+            "envelope": envelope,
+            "canonicalStateHash": "3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428",
+            "canonicalizationVersion": 1,
+        }
+
+        result = legs._validated_leg_result("csharp", wrapper)
+
+        assert result.available is False
+        assert result.error is not None
+        assert "schema validation failed" in result.error
+
+    def test_agreement_reachable_when_csharp_and_replay_report_same_hash(self):
+        shared_hash = "3D2D5EDF750FEA213CFB564E424C61F029220F2BF93B0B227EE6FEEC4F55A428"
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": shared_hash, "canonicalizationVersion": 1}
+            ),
+            "csharp": LegResult(
+                "csharp", True, _envelope([]), state_hash={"hash": shared_hash, "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "agree"
+
+    def test_disagreement_reachable_when_csharp_and_replay_report_different_hashes(self):
+        legs_map = {
+            "replay": LegResult(
+                "replay", True, _envelope([]), state_hash={"hash": "AAAA", "canonicalizationVersion": 1}
+            ),
+            "csharp": LegResult(
+                "csharp", True, _envelope([]), state_hash={"hash": "BBBB", "canonicalizationVersion": 1}
+            ),
+        }
+        result = compare_state_hashes(legs_map)
+        assert result["agreement"] == "disagree"
+
+
 def _replay_fixture() -> dict:
     """A minimal fixture dict shaped for run_leg_replay -- project/rule/objects
     only, matching _minimal_fixture's shape (run_leg_replay reads the same

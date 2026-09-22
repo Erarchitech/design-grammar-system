@@ -3,26 +3,46 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DG.Core.Contracts;
 using DG.Core.Models;
+using DG.Core.Serialization;
 using DG.Core.Validation;
 
 namespace DG.De01Harness;
 
 /// <summary>
-/// DE-01's C# leg (spec/EVIDENCE-CONTRACT.md section 8; plan 1200-05, Task 1).
+/// DE-01's C# leg (spec/EVIDENCE-CONTRACT.md section 8; plan 1200-05, Task 1; canonical state hash
+/// wrapper added plan 1202-08, Task 2, D-16).
 ///
-/// Reads <c>fixtures/golden/fixture.json</c>, builds the rule/atoms/bindings into the
+/// Reads <c>fixtures/golden/fixture.json</c> (or a sibling fixture, e.g.
+/// <c>fixtures/golden/replay/mixed-verdicts.json</c>), builds the rule/atoms/bindings into the
 /// <c>DG.Core</c> model types <see cref="RuleEvaluator"/> and <see cref="DG.Core.Parsing.SwrlRuleParser"/>
 /// consume, calls <see cref="RuleEvaluator.EvaluateRule"/> once per object, and maps every outcome
 /// (exception-based or boolean-based) to a typed <see cref="EvidenceStatus"/> at this boundary --
 /// never inside <see cref="RuleEvaluator"/> itself, which this harness never modifies (D-04).
 ///
-/// Writes exactly one <see cref="EvidenceEnvelope"/> as canonical JSON to stdout. Nothing else goes
-/// to stdout; all diagnostics go to stderr, so <c>tools/de01/legs.py</c>'s <c>run_leg_csharp</c>
-/// adapter can parse stdout unconditionally.
+/// Writes exactly one JSON object as canonical JSON to stdout. Nothing else goes to stdout; all
+/// diagnostics go to stderr, so <c>tools/de01/legs.py</c>'s <c>run_leg_csharp</c> adapter can parse
+/// stdout unconditionally. Two possible stdout shapes:
+/// <list type="bullet">
+/// <item><b>Bare envelope</b> (fixture has no top-level <c>statePayloadJson</c> string, e.g. the
+/// frozen <c>fixtures/golden/fixture.json</c>): the <see cref="EvidenceEnvelope"/> exactly as
+/// before this plan -- byte-compatible with every pre-1202-08 caller.</item>
+/// <item><b>Wrapper</b> (fixture DOES carry a top-level <c>statePayloadJson</c> string, e.g.
+/// <c>fixtures/golden/replay/mixed-verdicts.json</c>): <c>{envelope, canonicalStateHash,
+/// canonicalizationVersion}</c>, where <c>envelope</c> is the same unchanged
+/// <see cref="EvidenceEnvelope"/> object (never itself carrying the hash -- see
+/// <c>spec/evidence-contract.schema.json</c>'s <c>additionalProperties: false</c>, which
+/// rejects a sibling key inside the envelope), and <c>canonicalStateHash</c> is the 64-char
+/// uppercase hex hash from <see cref="DesignStateCanonicalProjection.ComputeHash"/>, or JSON
+/// <c>null</c> for typed absence when the payload does not deserialize or the projection throws.
+/// <c>envelope</c> is also the sentinel key <c>tools/de01/legs.py</c>'s <c>run_leg_csharp</c>
+/// branches on to detect this shape -- it is always present whenever the wrapper form is emitted.
+/// </item>
+/// </list>
 ///
-/// Exit code contract: 0 whenever an envelope was successfully written to stdout, even when every
-/// row is <see cref="EvidenceStatus.Error"/>. A non-zero exit is reserved for the harness itself
-/// failing to produce any envelope at all (e.g. an unreadable fixture path).
+/// Exit code contract: 0 whenever a stdout object was successfully written, even when every row is
+/// <see cref="EvidenceStatus.Error"/> and/or <c>canonicalStateHash</c> is <c>null</c> (typed
+/// absence). A non-zero exit is reserved for the harness itself failing to produce any output at
+/// all (e.g. an unreadable fixture path).
 /// </summary>
 public static class Program
 {
@@ -77,17 +97,53 @@ public static class Program
             // validate_envelope, which dumps with exclude_none=True). System.Text.Json's default
             // serializes an unset init-only property as an explicit JSON null, which fails schema
             // validation -- WhenWritingNull drops the key entirely instead, matching "absent."
-            var json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions
+            var serializerOptions = new JsonSerializerOptions
             {
                 WriteIndented = false,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            });
+            };
+            var envelopeJson = JsonSerializer.Serialize(envelope, serializerOptions);
+            var envelopeNode = JsonNode.Parse(envelopeJson);
+
+            // statePayloadJsonNode is read from a top-level "statePayloadJson" string key.
+            // fixtures/golden/fixture.json (frozen) carries no such top-level key -- its own
+            // Design State stub lives nested at designState.statePayloadJson, which this harness
+            // deliberately does not read, so that invocation keeps emitting the bare envelope
+            // exactly as before this plan. fixtures/golden/replay/mixed-verdicts.json DOES carry
+            // a top-level statePayloadJson string -- that fixture is the wrapper-form input.
+            var statePayloadJsonNode = fixtureNode["statePayloadJson"];
+            JsonNode outputNode;
+
+            if (statePayloadJsonNode is JsonValue statePayloadValue && statePayloadValue.TryGetValue<string>(out var statePayloadJson))
+            {
+                var (canonicalStateHash, hashWarning) = TryComputeCanonicalStateHash(statePayloadJson);
+                if (hashWarning is not null)
+                {
+                    Console.Error.WriteLine($"DG.De01Harness: {hashWarning}");
+                }
+
+                // Wrapper form. "envelope" is the sentinel key tools/de01/legs.py's run_leg_csharp
+                // branches on -- it must always be present here. The hash is a sibling of the
+                // wrapper, never inside envelopeNode itself (spec/evidence-contract.schema.json
+                // additionalProperties:false would reject a canonicalStateHash sibling key inside
+                // the envelope object).
+                outputNode = new JsonObject
+                {
+                    ["envelope"] = envelopeNode,
+                    ["canonicalStateHash"] = canonicalStateHash,
+                    ["canonicalizationVersion"] = CanonicalJsonWriter.CanonicalizationVersion,
+                };
+            }
+            else
+            {
+                // Bare-envelope form -- byte-compatible with every pre-1202-08 caller.
+                outputNode = envelopeNode!;
+            }
 
             // Re-render through CanonicalJsonWriter so the emitted bytes are in canonical form
             // (rule 1/3/4/5 -- sorted keys, minimal whitespace, NFC strings, minimal escaping),
             // matching the Python leg's producer discipline (D-07).
-            var envelopeNode = JsonNode.Parse(json);
-            var canonical = CanonicalJsonWriter.Canonicalize(envelopeNode);
+            var canonical = CanonicalJsonWriter.Canonicalize(outputNode);
             Console.Out.Write(canonical);
             Console.Out.Flush();
             return 0;
@@ -96,6 +152,39 @@ public static class Program
         {
             Console.Error.WriteLine($"DG.De01Harness: failed to produce an envelope (What: unexpected exception building/serializing the envelope; Where: DG.De01Harness.Program.BuildEnvelope; How to fix: see the exception below) -- {ex.GetType().Name}: {ex.Message}");
             return 1;
+        }
+    }
+
+    /// <summary>
+    /// Deserializes <paramref name="statePayloadJson"/> and computes its canonical state hash via
+    /// <see cref="DesignStateCanonicalProjection.ComputeHash"/>. Never throws: a deserialize
+    /// failure or a projection failure (unsupported parameter type, non-finite number, decimal
+    /// overflow -- <see cref="DesignStateCanonicalProjection"/>'s real throw sites) degrades to
+    /// typed absence (<c>null</c> hash) with a diagnostic reason, mirroring this file's existing
+    /// What/Where/How-to-fix style (see <see cref="Main"/>'s own catch blocks above). The harness
+    /// must still exit 0 and still emit a valid envelope in that case -- never a crash, never a
+    /// fabricated hash.
+    /// </summary>
+    private static (string? Hash, string? Warning) TryComputeCanonicalStateHash(string statePayloadJson)
+    {
+        DesignState designState;
+        try
+        {
+            designState = DesignStatePayloadV2Serializer.Deserialize(statePayloadJson);
+        }
+        catch (Exception ex)
+        {
+            return (null, $"canonical state hash unavailable (What: statePayloadJson failed to deserialize; Where: DG.Core.Serialization.DesignStatePayloadV2Serializer.Deserialize (via DG.De01Harness.Program.TryComputeCanonicalStateHash); How to fix: verify the fixture's statePayloadJson is a valid v2 payload) -- {ex.GetType().Name}: {ex.Message}");
+        }
+
+        try
+        {
+            var hash = DesignStateCanonicalProjection.ComputeHash(designState);
+            return (hash, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, $"canonical state hash unavailable (What: DesignStateCanonicalProjection.ComputeHash threw; Where: DG.Core.Serialization.DesignStateCanonicalProjection.ComputeHash (via DG.De01Harness.Program.TryComputeCanonicalStateHash); How to fix: see the exception below -- likely an unsupported parameter type, a non-finite number, or a decimal overflow) -- {ex.GetType().Name}: {ex.Message}");
         }
     }
 

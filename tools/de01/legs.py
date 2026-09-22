@@ -68,15 +68,16 @@ class LegResult:
     absence. Defaults to ``None`` so every pre-existing ``LegResult`` constructor
     keeps working unchanged.
 
-    Populated ONLY by ``run_leg_replay`` (and would be populated by
-    ``run_leg_csharp`` if the C# harness made a Design State hash available --
-    checked: DG.De01Harness's envelope carries no such field today, so
-    ``csharp`` also stays ``None``). ``run_leg_data_service`` and
-    ``run_leg_dg_reasoner`` evaluate the rule fixture directly and capture no
-    Design State at all, so they never populate this field either -- Open
-    Question 2's resolution (plan 1202-07 objective): forcing a non-participating
-    leg to fabricate a hash would be exactly the silent force-fitting the typed-
-    absence idiom exists to prevent.
+    Populated by ``run_leg_replay`` and, since plan 1202-08 Task 2 (D-16), by
+    ``run_leg_csharp`` too -- DG.De01Harness now emits a wrapper carrying
+    ``canonicalStateHash`` alongside its envelope when the fixture supplies a
+    ``statePayloadJson`` string, computed via ``DesignStateCanonicalProjection``
+    (DG.Core's own canonical projection), giving a genuine second, independent
+    hash source. ``run_leg_data_service`` and ``run_leg_dg_reasoner`` evaluate the
+    rule fixture directly and capture no Design State at all, so they never
+    populate this field -- Open Question 2's resolution (plan 1202-07 objective):
+    forcing a non-participating leg to fabricate a hash would be exactly the
+    silent force-fitting the typed-absence idiom exists to prevent.
 
     Shape when present: ``{"hash": <64-char hex>, "canonicalizationVersion": <int>}``.
     """
@@ -623,6 +624,22 @@ def run_leg_csharp(fixture: dict[str, Any], config: dict[str, Any]) -> LegResult
     non-zero exit, unparseable stdout) -- it never catches or reinterprets the
     harness's own internal NotSupportedException-to-unsupported mapping, which is
     the harness's job (Task 1), not this adapter's.
+
+    Plan 1202-08 (Task 2, D-16): the harness's stdout is now one of two shapes.
+    A **wrapper** ``{"envelope": {...}, "canonicalStateHash": <hash-or-null>,
+    "canonicalizationVersion": <int>}`` when the fixture supplied a
+    ``statePayloadJson`` string (e.g. ``fixtures/golden/replay/mixed-verdicts.json``),
+    detected by the presence of a top-level ``"envelope"`` key whose value is
+    itself a dict -- this is the sentinel the wrapper vs. bare-envelope branch
+    below keys off, deliberately NOT ``canonicalStateHash`` (which is ``null`` in
+    the typed-absence case and would misclassify that as bare-envelope). Or a
+    **bare envelope** (the harness's pre-1202-08 shape, and still what it emits for
+    the frozen ``fixtures/golden/fixture.json``, which carries no top-level
+    ``statePayloadJson``). Only the extracted ``envelope`` sub-object is ever
+    passed to ``_validated_leg_result`` -- passing the wrapper whole would fail
+    schema validation (``additionalProperties: false``, no ``contractVersion`` at
+    the wrapper's own top level), permanently reporting ``Present: False`` and
+    silently reproducing gap 1.
     """
     fixture_path = config.get("fixture_path", str(REPO_ROOT / "fixtures" / "golden" / "fixture.json"))
 
@@ -755,7 +772,44 @@ def run_leg_csharp(fixture: dict[str, Any], config: dict[str, Any]) -> LegResult
             error=f"invalid JSON: {exc}",
         )
 
-    return _validated_leg_result("csharp", envelope_dict)
+    # Plan 1202-08 Task 2 (D-16): shape detection by sentinel key. A wrapper and a
+    # bare envelope are structurally indistinguishable without an explicit check,
+    # so branch on whether the parsed dict contains a top-level "envelope" key
+    # whose value is itself a dict. Deliberately NOT sniffing on
+    # "canonicalStateHash": it is null in the typed-absence case and a sniff on it
+    # would misclassify that as a bare envelope.
+    state_hash: dict[str, Any] | None = None
+    if isinstance(envelope_dict, dict) and isinstance(envelope_dict.get("envelope"), dict):
+        # Wrapper form. Only the extracted envelope sub-object reaches
+        # _validated_leg_result -- passing the wrapper whole would fail schema
+        # validation (additionalProperties: false, no contractVersion at the
+        # wrapper's own top level), which is exactly the T-1202-29 failure mode
+        # this extraction exists to prevent.
+        canonical_state_hash = envelope_dict.get("canonicalStateHash")
+        canonicalization_version = envelope_dict.get("canonicalizationVersion")
+        envelope_dict = envelope_dict["envelope"]
+        if canonical_state_hash:
+            state_hash = {
+                "hash": canonical_state_hash,
+                "canonicalizationVersion": canonicalization_version,
+            }
+        # else: canonicalStateHash is null/absent -- typed absence, state_hash
+        # stays None, exactly mirroring run_leg_replay's own convention.
+    # else: bare-envelope form (a legacy/older harness binary, or the frozen
+    # fixture which carries no top-level statePayloadJson) -- behave exactly as
+    # today. state_hash stays None, no error is produced. Backward compatibility
+    # must not depend on the harness having been rebuilt.
+
+    # _validated_leg_result constructs and returns the LegResult itself, so
+    # state_hash is attached to the returned object afterward -- a plain mutable
+    # dataclass attribute, exactly as run_leg_replay already does
+    # (legs.py:911-914) -- rather than changing _validated_leg_result's shared
+    # signature. The call below is byte-identical to this function's pre-1202-08
+    # call site; only the surrounding return/assignment shape differs so
+    # state_hash can be attached afterward.
+    result = _validated_leg_result("csharp", envelope_dict)
+    result.state_hash = state_hash
+    return result
 
 
 # ── Leg 4: persisted replay (Python, HTTP + Neo4j via data-service) ──────────────
