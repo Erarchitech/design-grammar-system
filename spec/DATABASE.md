@@ -461,6 +461,7 @@ ROADMAP's own "or an explicit exclusion contract" wording.
 - Merge key: `(cgId, definitionId, project)`
 - Written only by `POST /computgraph/publish`
 - `PARAM_LINK` connects this parameter to the Interface nodes its wires feed (wire-derived)
+- `ATTRIBUTE_OF` connects a Metagraph `Atom` (type `DataPropertyAtom`) to this parameter — the cross-layer rule-parameter bridge (see `## Relationships` below for the full shape)
 
 ---
 
@@ -585,6 +586,7 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 | `HAS_INTERFACE` | Procedure | Interface | — | Procedure → interface link |
 | `PARAM_LINK` | Parameter | Interface | — | Parameter → interface, wire-derived |
 | `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
+| `ATTRIBUTE_OF` | Atom (`type: 'DataPropertyAtom'`) | Parameter | `derivedFromRuleId`, `source` (`binding`\|`override`\|`default`), `determinability` (`direct-parameter`\|`monotone-bound`\|`geometry-required`) | Metagraph → Computgraph cross-layer bridge; project-scoped on both endpoints (Rule matched by `Rule_Id`+`project`, Parameter matched by `cgId`+`definitionId`+`project`); the Atom is reached via `HAS_BODY` from the project-scoped Rule (Metagraph `Atom` nodes carry no `definitionId` of their own). Derived at `POST /computgraph/publish` time from the existing `inputBindings` resolution (`cg_input_bindings.classify_rule`) — never authored by rule ingestion. Written only by `data-service/computgraph_publish.py`'s `_publish_attribute_of`. |
 
 ## Rule ID Format
 

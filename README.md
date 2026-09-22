@@ -202,6 +202,7 @@ Login with `neo4j / 12345678` unless changed.
   - `HAS_STATE` (DesignState -> state nodes, read-side composition)
   - `SUPERSEDED_BY` (Rule -> Rule, properties: `supersededAt`/`actor`/`prompt` — Replace/Update provenance from the ingest conflict-check gate; server-authored only via `POST /rules/supersede`, never emitted by LLM ingest; excluded from every Rule-corpus read used for validation/selection)
   - Computgraph: `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived), `REFERS_TO` (Object→Class cross-layer bridge), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty)
+  - Cross-layer bridge: `ATTRIBUTE_OF` (Metagraph `Atom` [type `DataPropertyAtom`] → Computgraph `Parameter`), project-scoped, derived from `inputBindings` at `POST /computgraph/publish` time — never authored by rule ingestion
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
   - Rule: `Rule_Id`, `SWRL` (SWRL expression), `RuleName`, `RuleDescription`, `kind` (violation)

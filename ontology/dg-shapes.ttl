@@ -536,3 +536,18 @@ dgsh:InterfaceShape_project
     sh:severity sh:Violation ;
     sh:message "An Interface node is missing the project property — every node must carry project isolation." ;
     dgsh:howToFix "Set project on the Interface node to the owning project." .
+
+#############################################
+# 18. AtomAttributeOf — cross-layer rule-parameter bridge (Phase 1203)
+#############################################
+dgsh:AtomAttributeOfShape
+    a sh:NodeShape ;
+    sh:targetClass swrl:DatavaluedPropertyAtom ;
+    sh:property dgsh:AtomAttributeOfShape_attributeOf .
+
+dgsh:AtomAttributeOfShape_attributeOf
+    sh:path dgc:attributeOf ;
+    sh:class dgc:Parameter ;
+    sh:severity sh:Warning ;
+    sh:message "A DataPropertyAtom's ATTRIBUTE_OF edge does not target a Parameter node." ;
+    dgsh:howToFix "Re-publish the Computgraph so ATTRIBUTE_OF is re-derived from inputBindings; a rule with no bound parameters is legitimate (geometry-required default) but a misdirected edge is not." .

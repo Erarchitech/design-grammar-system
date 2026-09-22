@@ -355,6 +355,12 @@
           "from": "Object",
           "to": "Class",
           "note": "Cross-layer bridge to OntoGraph"
+        },
+        "ATTRIBUTE_OF": {
+          "type": "ATTRIBUTE_OF",
+          "from": "Atom",
+          "to": "Parameter",
+          "note": "Metagraph->Computgraph cross-layer bridge (Atom.type='DataPropertyAtom' only); project-scoped; derived from inputBindings at POST /computgraph/publish time; NEVER emitted by LLM rule-ingest Cypher"
         }
       }
     },

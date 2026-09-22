@@ -191,7 +191,7 @@ This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserv
 
 ### Relationships
 
-`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity; Object→Class cross-layer), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty), `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived)
+`HAS_BODY`, `HAS_HEAD` (Rule→Atom, with `order`), `REFERS_TO` (Atom→entity; Object→Class cross-layer), `ARG` (Atom→Var/Literal, with `pos`), `HAS_STATE` (DesignState→ObjState/ParamState/PropState, read-side composition), `HAS_REPRESENTATION` (entity→Representation), `HAS_SHARED_PROPERTY` (entity→SharedProperty), `HAS_BEHAVIOR` (Object→Behavior), `HAS_ALGORITHM` (Behavior→Algorithm), `HAS_PROCEDURE` (Algorithm→Procedure), `HAS_PATTERN` (Procedure→Pattern), `PATTERN_HOST_TO` (Pattern→Pattern nesting), `HAS_PARAMETER` (Procedure→Parameter), `HAS_INTERFACE` (Procedure→Interface), `PARAM_LINK` (Parameter→Interface, wire-derived), `ATTRIBUTE_OF` (Atom→Parameter, Metagraph→Computgraph cross-layer bridge; derived from `inputBindings` at Computgraph publish time, project-scoped, never authored by rule ingestion)
 
 Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface) carries an optional `dgId` property — a deterministic platform-neutral identity (`dg:` + 16 uppercase hex). See `spec/DG-ID.md` for the normative specification (format, minting, collision policy, binding model).
 
@@ -203,7 +203,7 @@ Every Computgraph entity node (Object, Procedure, Pattern, Parameter, Interface)
 
 ### Schema Change Propagation
 
-When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), `llm/structure_rules.json` (carries `inputBindings`, a rule-referencing artifact, alongside `mappings` — Phase 38), `spec/EVIDENCE-CONTRACT.md`, and any Cypher templates in Python/JS.
+When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schema.json`, n8n workflow prompts, `config.template.js`, `data-service/app.py` Cypher, `.github/copilot-instructions.md`, `README.md`, `spec/DATABASE.md`, `spec/LPG-OWL-MAPPING.md` (RDF/OWL mapping contract — a new relationship type needs a TBox-to-LPG correspondence row), `ontology/dg-shapes.ttl` (SHACL shapes — keep in sync with any structural/data-integrity change), `llm/structure_rules.json` (carries `inputBindings`, a rule-referencing artifact, alongside `mappings` — Phase 38), `spec/EVIDENCE-CONTRACT.md`, and any Cypher templates in Python/JS.
 
 `shaclReportJson`/`evidenceEnvelopeJson` (ValidationRun/Run node properties, `spec/DATABASE.md`) are schema-propagation surfaces themselves — `shaclReportJson` added Phase 823, `evidenceEnvelopeJson` added Phase 1200, both sibling to `statePayloadJson`/`rulesJson`.
 

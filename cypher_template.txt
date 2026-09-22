@@ -151,6 +151,10 @@ GRAPH SCHEMA (from dataset_schema v3)
   HAS_INTERFACE    (Procedure→Interface)
   PARAM_LINK       (Parameter→Interface, wire-derived linking)
   REFERS_TO        (Object→Class, cross-layer bridge to OntoGraph)
+  ATTRIBUTE_OF     (Atom [type DataPropertyAtom]→Parameter, Metagraph→Computgraph cross-layer
+                    bridge -- derived from inputBindings ONLY at POST /computgraph/publish time.
+                    Do NOT emit ATTRIBUTE_OF MERGE statements during rule ingestion -- this edge
+                    is written exclusively by the publish path, never authored from this prompt.)
 
   Entity→Representation  relationship: (:Computgraph entity)-[:HAS_REPRESENTATION]->(:Representation)
   Entity→SharedProperty  relationship: (:Computgraph entity)-[:HAS_SHARED_PROPERTY]->(:SharedProperty)

@@ -57,6 +57,7 @@ Use these relationship types in generated Cypher and UI assumptions:
 - `HAS_INTERFACE`: Procedure -> Interface (linking)
 - `PARAM_LINK`: Parameter -> Interface (wire-derived linking)
 - `REFERS_TO`: Object -> Class (cross-layer bridge, when classIri present)
+- `ATTRIBUTE_OF`: Atom (type DataPropertyAtom, Metagraph) -> Parameter (Computgraph), cross-layer bridge, project-scoped — derived at `POST /computgraph/publish` time from `inputBindings`, NEVER emit this in LLM-generated rule-ingest Cypher
 - `SUPERSEDED_BY`: Rule -> Rule (Replace/Update provenance from the ingest conflict-check gate; props `supersededAt`/`actor`/`prompt`) — **server-authored only** (`POST /rules/supersede`), NEVER emit this in LLM-generated ingest Cypher; every Rule-corpus read for validation/selection must exclude it via `WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }`
 
 Do not use legacy assumptions like `Rule.id`, `Atom.id`, `Atom.Id`, `DatatypeProperty.label`, or `HAS_ATOM` unless you are explicitly writing a migration.

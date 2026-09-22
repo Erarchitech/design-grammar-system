@@ -353,6 +353,14 @@ A `Run` node records one validation execution:
 
 The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]->(:DesignState)`) maps to `dgv:validates` object property.
 
+### Cross-Layer Bridge: `ATTRIBUTE_OF` / `dgc:attributeOf`
+
+**Status:** Implemented in Phase 1203 (`data-service/computgraph_publish.py`'s `_publish_attribute_of`). The TBox already declares this correspondence (`ontology/DesignGrammar-V7.md` §"Layer dgc — Computgraph", `dgc:attributeOf`, domain `dgm:Atom` / range `dgc:Parameter`); this section records that the LPG relationship type realizing that TBox commitment is now live.
+
+| DG (Neo4j) | RDF/OWL Term | Notes |
+|---|---|---|
+| `ATTRIBUTE_OF` relationship (`Atom {type:'DataPropertyAtom'}` → `Parameter`) | `dgc:attributeOf` | Cross-layer bridge connecting a Metagraph `Atom` to a Computgraph `Parameter`, mirroring `dgm:refersTo`'s Metagraph→OntoGraph pattern. Project-scoped on both endpoints; carries `derivedFromRuleId`, `source`, `determinability` as edge properties (no direct RDF equivalent for these — they would map as reified statement annotations if ever exported, following the same edge-property-reification pattern as `ARG.pos`/`HAS_BODY.order`). Derived at Computgraph publish time from `inputBindings`; records ComputGraph structure and makes the rule-parameter relation queryable — it does NOT prove solver equivalence or executable design semantics. |
+
 ### UNA Interaction
 
 Because ValidGraph nodes are named individuals, the `owl:AllDifferent` requirement (see [UNA section](#unique-name-assumption-una)) is critical: every DesignState and Run IRI is listed in the project's `owl:distinctMembers` declaration, alongside the Metagraph individuals, to prevent the reasoner from merging e.g. two distinct `dgv:ObjState` individuals with overlapping property values. This is implemented (not merely required) as of Phase 823 -- see the [UNA section](#unique-name-assumption-una) status note.
