@@ -177,12 +177,12 @@ Plans:
 
 **Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 1203-01-PLAN.md — Preflight: capture both suite baselines, inventory every pinned identity literal, relocate the WR-02 defect, and record the true SHACL shape count (wave 1, read-and-record only)
+- [x] 1203-01-PLAN.md — Preflight: capture both suite baselines, inventory every pinned identity literal, relocate the WR-02 defect, and record the true SHACL shape count (wave 1, read-and-record only)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

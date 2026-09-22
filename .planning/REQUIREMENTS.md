@@ -32,9 +32,9 @@
 
 ## Identity and rule–parameter bridge (Phase 1203)
 
-- [ ] **ALGN12-12**: Grasshopper ObjState and core identity minting use one documented authority and migration policy.
-- [ ] **ALGN12-13**: Platform identity conflict, detach, representation provenance, and shared-property authority are specified and tested.
-- [ ] **ALGN12-14**: The `ATTRIBUTE_OF` versus `PARAM_LINK` decision is recorded; ontology, runtime, specifications, and manuscript ownership agree.
+- [x] **ALGN12-12**: Grasshopper ObjState and core identity minting use one documented authority and migration policy.
+- [x] **ALGN12-13**: Platform identity conflict, detach, representation provenance, and shared-property authority are specified and tested.
+- [x] **ALGN12-14**: The `ATTRIBUTE_OF` versus `PARAM_LINK` decision is recorded; ontology, runtime, specifications, and manuscript ownership agree.
 
 ## Determinism and reproducibility (Phase 1204)
 
