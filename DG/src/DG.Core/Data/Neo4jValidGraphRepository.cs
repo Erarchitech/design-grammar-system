@@ -218,10 +218,36 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
     /// <summary>
     /// Pure deserialization+rollup function (D-13's testing seam, matching the
     /// TryParseDesignState/ParseRulesJson convention): null/whitespace/malformed input all
-    /// degrade to an envelope-absent result rather than throwing (D-11). Rows are grouped by
-    /// ObjectId (ordinal) and rolled up via <see cref="StatusRollup.Rollup"/> -- the shipped
-    /// precedence, never a locally-ordered or re-implemented one (D-12). Output is sorted by
-    /// ObjectId ordinal, matching the envelope's own normative row order.
+    /// degrade to an envelope-absent result rather than throwing (D-11).
+    ///
+    /// Two distinct cases, both explained here per CR-01 (<c>1202-REVIEW.md</c>) so a future
+    /// reader does not have to infer either from the body:
+    ///
+    /// <list type="bullet">
+    /// <item><description><b>Cross-rule case (intended, unchanged):</b> one object, several
+    /// DISTINCT rules. Rows are grouped by ObjectId (ordinal) and rolled up via
+    /// <see cref="StatusRollup.Rollup"/> -- the shipped worst-case-first precedence, never a
+    /// locally-ordered or re-implemented one (D-12). Output is sorted by ObjectId ordinal,
+    /// matching the envelope's own normative row order.</description></item>
+    /// <item><description><b>Duplicate-identity case (detected, reported):</b> two or more rows
+    /// share ONE <c>(ruleId, objectId)</c> pair. This is a producer-side contract violation
+    /// against <c>spec/EVIDENCE-CONTRACT.md</c> §4's row-identity rule ("never merged, collided,
+    /// or deduplicated on value equality alone"). Rather than letting <see cref="StatusRollup.Rollup"/>
+    /// silently absorb the duplicate rows into the same worst-case rollup, this method first
+    /// groups by the composite <c>(RuleId, ObjectId)</c> identity to detect any pair appearing on
+    /// more than one row, and reports the finding via
+    /// <see cref="PerObjectVerdict.HasDuplicateRuleObjectRows"/> and
+    /// <see cref="PerObjectVerdictResult.CollidingRuleObjectPairs"/>. The affected object's
+    /// <see cref="PerObjectVerdict.Status"/> is still the complete D-12 rollup over every
+    /// contributing row, duplicates included -- a duplicate is flagged, not degraded and not
+    /// thrown, because it is a well-formed envelope and <see cref="GetPerObjectVerdictsAsync"/> is
+    /// on the Grasshopper canvas read path (D-11's degrade contract covers malformed input, not
+    /// this).</description></item>
+    /// </list>
+    ///
+    /// See <c>spec/EVIDENCE-CONTRACT.md</c> §5.1 for the human-readable contract. Note
+    /// <c>tools/de01/report.py</c>'s <c>compare_legs</c> keeps all rows per pair for the same
+    /// reason (never deduplicating) -- the two legs now agree on this boundary.
     /// </summary>
     internal static PerObjectVerdictResult BuildPerObjectVerdicts(string? evidenceEnvelopeJson)
     {
@@ -238,18 +264,49 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
             }
 
-            var verdicts = envelope.Rows
+            // Materialize once: both the (RuleId, ObjectId) collision detection below and the
+            // ObjectId-level rollup that follows must read from the SAME row sequence, so the
+            // duplicate-identity flag and the rolled-up status can never describe different row
+            // sets (plan 1202-10 key_links).
+            var rows = envelope.Rows.ToList();
+
+            // Step 1: (RuleId, ObjectId) composite identity, ordinal on both components, per
+            // spec/EVIDENCE-CONTRACT.md §4. Any pair appearing on more than one row is a
+            // producer-side identity collision (CR-01).
+            var collidingPairs = rows
+                .GroupBy(row => (row.RuleId, row.ObjectId), PairOrdinalComparer.Instance)
+                .Where(group => group.Count() > 1)
+                .Select(group => new RuleObjectPair(group.Key.RuleId, group.Key.ObjectId))
+                .OrderBy(pair => pair.RuleId, StringComparer.Ordinal)
+                .ThenBy(pair => pair.ObjectId, StringComparer.Ordinal)
+                .ToList();
+
+            var collidingObjectIds = collidingPairs
+                .Select(pair => pair.ObjectId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            // Step 2: existing ObjectId-level grouping and StatusRollup.Rollup, over EVERY row
+            // (duplicates included) -- the rolled-up status must not change as a result of this
+            // fix. D-12 forbids a second precedence; StatusRollup.Rollup is called exactly as it
+            // is today.
+            var verdicts = rows
                 .GroupBy(row => row.ObjectId, StringComparer.Ordinal)
                 .Select(group => new PerObjectVerdict
                 {
                     ObjectId = group.Key,
                     Status = StatusRollup.Rollup(group.Select(row => row.CanonicalStatus)),
                     Source = VerdictSource.EvidenceEnvelope,
+                    HasDuplicateRuleObjectRows = collidingObjectIds.Contains(group.Key),
                 })
                 .OrderBy(v => v.ObjectId, StringComparer.Ordinal)
                 .ToList();
 
-            return new PerObjectVerdictResult { EnvelopePresent = true, Verdicts = verdicts };
+            return new PerObjectVerdictResult
+            {
+                EnvelopePresent = true,
+                Verdicts = verdicts,
+                CollidingRuleObjectPairs = collidingPairs,
+            };
         }
         catch (Exception)
         {
@@ -257,6 +314,26 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
             // TryParseDesignState's degrade-not-crash posture.
             return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
         }
+    }
+
+    /// <summary>
+    /// Ordinal equality/hashing over a <c>(string RuleId, string ObjectId)</c> tuple, used by
+    /// <see cref="BuildPerObjectVerdicts"/>'s Step 1 grouping (CR-01). The default tuple
+    /// <c>EqualityComparer</c> already uses each component's own <see cref="object.Equals(object)"/>
+    /// (ordinal for <see cref="string"/>), but this explicit comparer makes the ordinal intent
+    /// visible at the call site rather than relying on that implicit default.
+    /// </summary>
+    private sealed class PairOrdinalComparer : IEqualityComparer<(string RuleId, string ObjectId)>
+    {
+        public static readonly PairOrdinalComparer Instance = new();
+
+        public bool Equals((string RuleId, string ObjectId) x, (string RuleId, string ObjectId) y) =>
+            StringComparer.Ordinal.Equals(x.RuleId, y.RuleId) && StringComparer.Ordinal.Equals(x.ObjectId, y.ObjectId);
+
+        public int GetHashCode((string RuleId, string ObjectId) obj) =>
+            HashCode.Combine(
+                StringComparer.Ordinal.GetHashCode(obj.RuleId),
+                StringComparer.Ordinal.GetHashCode(obj.ObjectId));
     }
 
     internal static DesignState? TryParseDesignState(string? statePayloadJson)
