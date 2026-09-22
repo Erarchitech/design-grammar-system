@@ -188,7 +188,9 @@ comparable, position-by-position, against the legacy `Run.ValidStatus` index-mat
 Evidence rows are addressed by the **`(ruleId, objectId)` pair** as their identity, not by value.
 Two fixture atoms or objects that are value-equal but are distinct entities (distinct identity)
 remain **separately addressable** in evidence and are **never merged, collided, or deduplicated**
-on value equality alone. Only an exact `(ruleId, objectId)` match refers to the same row.
+on value equality alone. Only an exact `(ruleId, objectId)` match refers to the same row. See §5.1
+below for where this identity rule is enforced (detected and reported, not silently merged) on the
+canonical C# per-object read path.
 
 An **empty population** (zero bindings for a rule) produces no per-object rows for that rule and
 the rule's own status is `no_population` — this is never represented as a `failed` row and is
@@ -239,6 +241,27 @@ When the envelope is **absent** for a run (every pre-1200 run), every object on 
 canonical→boolean-only rule §5 states above applies here without exception. See `spec/DATABASE.md`
 §`:Run` (Phase 1202 plan 05) for where this is stored (`evidenceEnvelopeJson`, sibling to
 `statePayloadJson`/`shaclReportJson`) and for the full declared-exclusion statement for legacy runs.
+
+**Duplicate `(ruleId, objectId)` row detection (Phase 1202 plan 10, CR-01 gap closure).** The
+canonical C# per-object read path (`IValidGraphRepository.GetPerObjectVerdictsAsync` →
+`Neo4jValidGraphRepository.BuildPerObjectVerdicts`) rolls a single object's rows from **distinct**
+rules up through the shipped worst-case-first precedence (§4 above, D-12) — this is the intended
+cross-rule behavior and is unchanged by this plan.
+
+When two or more rows share ONE `(ruleId, objectId)` pair, that is a producer-side violation of
+§4's identity rule above, and the reader **detects and reports** it on its result rather than
+merging it away: `PerObjectVerdict.HasDuplicateRuleObjectRows` flags the affected object, and
+`PerObjectVerdictResult.CollidingRuleObjectPairs` names every colliding pair.
+
+A reported collision does **not** mean the envelope is absent or malformed: the verdict list is
+complete and the rolled-up status still includes every duplicate row via the same `StatusRollup`
+call. Absence keeps its D-11 meaning exclusively — a duplicate-pair envelope is well-formed and is
+flagged, not degraded, and never thrown.
+
+The Python leg holds the matching posture: `tools/de01/report.py`'s `compare_legs` retains all
+rows per pair (`_rows_by_pair`), so both legs now decline to deduplicate on this identity boundary
+— this is what closes the asymmetry `1202-REVIEW.md` CR-01 identified, and closes
+`1202-VERIFICATION.md` gap 1.
 
 ### 5.2 Declared non-alignment: `parameters[]` wire shapes (Phase 1202 plan 09, D-09, ALGN12-09)
 
