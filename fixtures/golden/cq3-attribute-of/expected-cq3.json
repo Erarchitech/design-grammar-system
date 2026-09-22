@@ -1,0 +1,60 @@
+{
+  "fixtureId": "CQ3-ATTRIBUTE-OF",
+  "traceability": {
+    "paperClaimId": "PAPER-C-032",
+    "paperLocation": "P125, T02 CQ3",
+    "claimText": "CQ3 is demonstrated by a single row tracing R_BUILDING_MIN_DISTANCE_12_V/A2/hasDistanceM to parameter SepDist of type Variable.",
+    "paperClaimsSource": "docs/reviews/theory-implementation-alignment/evidence/paper-claims.json"
+  },
+  "project": "DG-1203-CQ3",
+  "seed": {
+    "ruleId": "R_BUILDING_MIN_DISTANCE_12_V",
+    "atomId": "R_BUILDING_MIN_DISTANCE_12_V_A2",
+    "atomType": "DataPropertyAtom",
+    "atomIri": "ex:hasDistanceM",
+    "parameterCgId": "cg:1:param:cq3_SepDist",
+    "parameterDefinitionId": "cq3-fixture.gh",
+    "parameterName": "SepDist",
+    "parameterKind": "Variable"
+  },
+  "forwardQuery": {
+    "description": "Rule -> HAS_BODY -> DataPropertyAtom -> ATTRIBUTE_OF -> Parameter. Starts from the rule id and project, traverses HAS_BODY to the atom filtered on type = 'DataPropertyAtom', then ATTRIBUTE_OF to the parameter.",
+    "cypher": "MATCH (r:Rule {Rule_Id: $ruleId, project: $project}) MATCH (r)-[:HAS_BODY]->(a:Atom {type: 'DataPropertyAtom'}) MATCH (a)-[:ATTRIBUTE_OF]->(p:Parameter) RETURN p.parameterName AS parameterName, p.paramKind AS parameterKind, p.cgId AS parameterCgId",
+    "parameters": {
+      "ruleId": "R_BUILDING_MIN_DISTANCE_12_V",
+      "project": "DG-1203-CQ3"
+    },
+    "expectedRowCount": 1,
+    "expectedRows": [
+      {
+        "parameterName": "SepDist",
+        "parameterKind": "Variable",
+        "parameterCgId": "cg:1:param:cq3_SepDist"
+      }
+    ]
+  },
+  "reverseQuery": {
+    "description": "Parameter <- ATTRIBUTE_OF <- DataPropertyAtom <- HAS_BODY <- Rule. Starts from the parameter's key, traverses ATTRIBUTE_OF backwards to the atom and HAS_BODY backwards to the rule.",
+    "cypher": "MATCH (p:Parameter {cgId: $parameterCgId, definitionId: $definitionId, project: $project}) MATCH (a:Atom)-[:ATTRIBUTE_OF]->(p) MATCH (r:Rule)-[:HAS_BODY]->(a) RETURN r.Rule_Id AS ruleId, a.Atom_Id AS atomId, a.type AS atomType",
+    "parameters": {
+      "parameterCgId": "cg:1:param:cq3_SepDist",
+      "definitionId": "cq3-fixture.gh",
+      "project": "DG-1203-CQ3"
+    },
+    "expectedRowCount": 1,
+    "expectedRows": [
+      {
+        "ruleId": "R_BUILDING_MIN_DISTANCE_12_V",
+        "atomId": "R_BUILDING_MIN_DISTANCE_12_V_A2",
+        "atomType": "DataPropertyAtom"
+      }
+    ]
+  },
+  "crossProjectIsolation": {
+    "description": "The same forward and reverse queries, re-run with a different project value, must return zero rows -- proving project scoping, not incidental non-collision.",
+    "otherProject": "DG-1203-CQ3-OTHER",
+    "expectedRowCountForward": 0,
+    "expectedRowCountReverse": 0
+  },
+  "scopeDisclaimer": "This evidence demonstrates a populated, queryable bridge on one fixture -- it records ComputGraph structure and does not claim solver equivalence or executable design semantics. See README.md."
+}

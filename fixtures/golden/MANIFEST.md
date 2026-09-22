@@ -3,6 +3,11 @@
 **FIXTURE_VERSION: `1.3.0`**
 **Freeze date: 2026-09-20**
 
+**Note:** the version above governs only the frozen trio
+(`fixture.json`/`seed.cypher`/`canonical-vectors.json`). `fixtures/golden/cq3-attribute-of/`,
+added below, is an additive sibling corpus under its own lighter change-reason discipline —
+see its own README.md, mirroring `parser/` and `replay/`'s precedent.
+
 This is the single source of truth for the one frozen cross-service golden fixture that all
 four DE-01 legs (Python `data-service`, `dg-reasoner`, the C# `DG.Core` evaluator, and the
 persisted-replay leg via `fixtures/golden/seed.cypher`) read as the **same bytes**, per
@@ -81,6 +86,8 @@ DE-01 legs read `fixtures/golden/` directly.
 | `seed.cypher` | Scripted, dev-only Neo4j seed path (D-10) projecting `fixture.json` into a live graph for the persisted-replay DE-01 leg, with an idempotent `DETACH DELETE` teardown. |
 | `canonical-vectors.json` | At least 5 golden input/expected-digest pairs for the canonical-hash implementations (`spec/EVIDENCE-CONTRACT.md` § 6), duplicated as literal assertions into both the Python and C# test suites (plans 1200-03/1200-04). |
 | `parser/` | **Additive, added Phase 1201 plan 04 (D-16).** A separate table-driven SWRL parser conformance corpus (`parser/cases.json`), read only by `DG/tests/DG.Tests/SwrlSubsetConformanceTests.cs`. This is **not** the frozen fixture above and does **not** alter this file's freeze policy — see `parser/README.md` for its own (lighter) change-reason convention. |
+| `replay/` | **Additive, added Phase 1202 plan 01 (D-17), extended plan 08.** A sibling per-object mixed pass/fail/no_population replay fixture (`replay/mixed-verdicts.json`, `replay/seed-replay.cypher`) reusing `fixture.json`'s object/rule ids under project `DG-1202-REPLAY`. Not the frozen fixture above — see `replay/README.md`. |
+| `cq3-attribute-of/` | **Additive, added Phase 1203 plan 06 (D-14), requirement ALGN12-14.** A dedicated single-triple fixture (`README.md`, `seed-cq3.cypher`, `expected-cq3.json`) reproducing `PAPER-C-032`'s exact rule/atom/parameter triple under project `DG-1203-CQ3`, demonstrating the `ATTRIBUTE_OF` bridge (added Phase 1203-04) is queryable in both directions. Read by `data-service/tests/test_cq3_attribute_of.py`. Not the frozen fixture above — see `cq3-attribute-of/README.md` for its own (lighter) change-reason convention. |
 
 ## Fixture identifiers
 
