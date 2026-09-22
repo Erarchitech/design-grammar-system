@@ -290,6 +290,20 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 root.ValueKind == JsonValueKind.Object &&
                 root.EnumerateObject().Any(p => p.Name is "objStates" or "paramStates" or "propStates"))
             {
+                // Declared exclusion (Phase 1202 plan 09, D-09, ALGN12-09): this inline reader is
+                // the authoritative reader for accept-candidate-writer (flat numberValue/
+                // integerValue/booleanValue shape) parameters[] payloads only. It silently
+                // yields null typed values (NumberValue/IntegerValue/BooleanValue) on the
+                // DesignStatePayloadV2Serializer's own condensed {type, value} shape, with no
+                // exception, because System.Text.Json ignores unmatched properties by default.
+                // Converging the two readers is deliberately NOT implemented — see spec/DATABASE.md
+                // "Declared exclusion: `parameters[]` has two wire shapes and two readers" for the
+                // full contract. Pinned by
+                // TryParseDesignState_AndSerializerDeserialize_DivergeOnAcceptCandidateWriterEnvelope
+                // and
+                // TryParseDesignState_AndSerializerDeserialize_DivergeOnSerializerOwnConciseParameterShape
+                // in DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs.
+                //
                 // v2 payload — deserialize as full DesignState. Two fixes
                 // here (Rule 1, Phase 38 plan 38-05 Task 3), both required
                 // for a ParamState carrying real parameters to round-trip

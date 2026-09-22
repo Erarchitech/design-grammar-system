@@ -366,6 +366,15 @@ public static class DesignStatePayloadV2Serializer
         };
     }
 
+    // Declared exclusion (Phase 1202 plan 09, D-09, ALGN12-09): this reader is authoritative only
+    // for the serializer's own condensed {type, value} parameters[] shape (what Serialize emits).
+    // It throws InvalidOperationException ("Parameter value is required.") on the flat
+    // numberValue/integerValue/booleanValue shape emitted by
+    // data-service/cg_paramstate_store.py's accept-candidate writer, rather than mis-parsing it --
+    // the mirror image of Neo4jValidGraphRepository.TryParseDesignState's inline reader, which
+    // silently mis-parses this reader's own shape instead of throwing. See spec/DATABASE.md
+    // "Declared exclusion: `parameters[]` has two wire shapes and two readers" for the full
+    // contract and the two pinning regression Facts in Neo4jValidGraphRepositoryTests.cs.
     private static DesignStateParameter ParamFromDto(ParameterDto dto)
     {
         if (dto is null)
