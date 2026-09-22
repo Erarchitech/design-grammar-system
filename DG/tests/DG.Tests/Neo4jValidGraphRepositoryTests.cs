@@ -499,6 +499,11 @@ public sealed class Neo4jValidGraphRepositoryTests
         Assert.Equal(EvidenceStatus.Passed, passVerdict.Status);
         Assert.Equal(EvidenceStatus.Failed, failVerdict.Status);
         Assert.NotEqual(passVerdict.Status, failVerdict.Status);
+
+        // CR-01 regression guard: distinct-object happy path reports NO collision.
+        Assert.False(passVerdict.HasDuplicateRuleObjectRows);
+        Assert.False(failVerdict.HasDuplicateRuleObjectRows);
+        Assert.Empty(result.CollidingRuleObjectPairs);
     }
 
     [Fact]
@@ -518,6 +523,58 @@ public sealed class Neo4jValidGraphRepositoryTests
         Assert.Equal("OBJ_GOLD_FAIL", verdict.ObjectId);
         Assert.Equal(EvidenceStatus.Error, verdict.Status);
         Assert.Equal(EvidenceStatus.Error, StatusRollup.Precedence[0]);
+
+        // CR-01 regression guard (D-12): two DISTINCT rules on one object is the intended
+        // cross-rule rollup, not a duplicate-identity collision -- must report NO collision.
+        Assert.False(verdict.HasDuplicateRuleObjectRows);
+        Assert.Empty(result.CollidingRuleObjectPairs);
+    }
+
+    // CR-01 (1202-REVIEW.md) / spec/EVIDENCE-CONTRACT.md §4: two rows sharing ONE
+    // (ruleId, objectId) pair is a producer-side identity collision. This Fact is the
+    // regression guard for detect-and-surface: if BuildPerObjectVerdicts ever reverts to
+    // grouping by ObjectId alone (pre-1202-10 shape), this Fact fails because the duplicate
+    // indicator and colliding-pair collection would go silently false/empty again while the
+    // status still rolls up -- exactly the silent-collapse behavior CR-01 flagged.
+    [Fact]
+    public void BuildPerObjectVerdicts_WithDuplicateRuleObjectPairRows_FlagsTheCollisionAndStillRollsUp()
+    {
+        var envelopeJson = BuildEnvelopeJson(
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ1", EvidenceStatus.Failed),
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ1", EvidenceStatus.Error));
+
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(envelopeJson);
+
+        Assert.True(result.EnvelopePresent);
+        var verdict = Assert.Single(result.Verdicts);
+        Assert.Equal("OBJ1", verdict.ObjectId);
+        // Full D-12 rollup over BOTH rows, duplicates included -- pinned to the shipped
+        // precedence table rather than a literal the test itself chose.
+        Assert.Equal(EvidenceStatus.Error, verdict.Status);
+        Assert.Equal(EvidenceStatus.Error, StatusRollup.Precedence[0]);
+
+        Assert.True(verdict.HasDuplicateRuleObjectRows);
+
+        var collidingPair = Assert.Single(result.CollidingRuleObjectPairs);
+        Assert.Equal("R_GOLD_HEIGHT_MAX_75_V", collidingPair.RuleId);
+        Assert.Equal("OBJ1", collidingPair.ObjectId);
+    }
+
+    // CR-01: a duplicate-pair envelope must never throw -- GetPerObjectVerdictsAsync is on the
+    // Grasshopper canvas read path and D-11's degrade-not-throw contract for this function
+    // covers malformed input, not a well-formed envelope with a producer-side duplicate. This
+    // Fact asserts by calling through and inspecting the result, not a bare try/catch.
+    [Fact]
+    public void BuildPerObjectVerdicts_WithDuplicateRuleObjectPairRows_DoesNotThrowOrDegrade()
+    {
+        var envelopeJson = BuildEnvelopeJson(
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ1", EvidenceStatus.Failed),
+            ("R_GOLD_HEIGHT_MAX_75_V", "OBJ1", EvidenceStatus.Error));
+
+        var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(envelopeJson);
+
+        Assert.True(result.EnvelopePresent);
+        Assert.NotEmpty(result.Verdicts);
     }
 
     [Fact]
@@ -529,6 +586,8 @@ public sealed class Neo4jValidGraphRepositoryTests
         // D-11: absence of the envelope must never fabricate a verdict list --
         // no inference from a legacy boolean, no defaulted Passed entries.
         Assert.Empty(result.Verdicts);
+        // Absence never implies a collision.
+        Assert.Empty(result.CollidingRuleObjectPairs);
     }
 
     [Fact]
@@ -538,6 +597,8 @@ public sealed class Neo4jValidGraphRepositoryTests
 
         Assert.False(result.EnvelopePresent);
         Assert.Empty(result.Verdicts);
+        // Absence never implies a collision.
+        Assert.Empty(result.CollidingRuleObjectPairs);
     }
 
     [Fact]
