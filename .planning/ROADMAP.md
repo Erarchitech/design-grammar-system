@@ -177,7 +177,7 @@ Plans:
 
 **Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
 
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -191,7 +191,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 1203-03-PLAN.md — CR-01 label-aware `mint_identity` with a mint→bind→publish coincidence regression, WR-01 graph tagging, WR-03 dead-constant deletion, ALGN12-13 conflict/detach/provenance test coverage (wave 3, serialized after 1203-02 — both touch `dg_identity.py`)
+- [x] 1203-03-PLAN.md — CR-01 label-aware `mint_identity` with a mint→bind→publish coincidence regression, WR-01 graph tagging, WR-03 dead-constant deletion, ALGN12-13 conflict/detach/provenance test coverage (wave 3, serialized after 1203-02 — both touch `dg_identity.py`)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
