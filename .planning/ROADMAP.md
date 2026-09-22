@@ -128,14 +128,14 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 7/7 plans executed
+**Plans:** 7/7 executed; 2 gap-closure plans added (9 total)
 
 Plans:
 **Wave 1**
 
 - [x] 1202-01-PLAN.md — Wave 0 test/fixture scaffolding: RED per-object verdict Facts, RED `ON CREATE SET` immutability regression, mixed pass/fail sibling fixture under `fixtures/golden/replay/` (wave 0)
 - [x] 1202-02-PLAN.md — Identity semantics: canonical DesignState projection + `canonicalStateHash` in C# and Python with cross-language parity, additive capture-event StateId overload, two-layer identity declared (wave 1)
-- [x] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and the two payload readers converged on one (wave 1)
+- [x] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and a reader-parity proof that halted D-09's convergence on a real dual-wire-shape collision (wave 1; convergence deliberately not implemented — the exclusion contract is claimed in 1202-09)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -146,6 +146,11 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 1202-07-PLAN.md — DE-01 exit evidence: canonical-state-hash comparison dimension plus the live four-leg run against a `--no-cache` rebuilt stack (wave 3, **requires a live compose stack**, human checkpoint)
+
+**Gap closure** *(from `1202-VERIFICATION.md` `status: gaps_found` — both plans target ALGN12-09, the only requirement left partially satisfied; independent, parallel)*
+
+- [ ] 1202-08-PLAN.md — Gap 1: make the gate's canonical-state-hash half live-demonstrable — seed `DG-1202-REPLAY`, add `--replay-fixture`, give the C# leg a second independent hash source so `agree`/`disagree` is reachable instead of `not_applicable`, refresh the retained exit evidence, reconcile the ALGN12-11 checkbox (wave 1, **requires a live compose stack**, human checkpoint)
+- [ ] 1202-09-PLAN.md — Gap 2: claim ALGN12-09's "or an explicit exclusion contract" hatch — write the `parameters[]` dual-wire-shape divergence into `spec/DATABASE.md` and `spec/EVIDENCE-CONTRACT.md`, naming which reader is authoritative for which producer (wave 1, docs + comments only, no reader change)
 
 ### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
 
