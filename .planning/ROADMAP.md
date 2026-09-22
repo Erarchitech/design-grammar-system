@@ -177,7 +177,7 @@ Plans:
 
 **Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
 
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 
 Plans:
 **Wave 1**
@@ -195,7 +195,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 1203-05-PLAN.md — D-05 schema propagation sweep across every surface plus the SHACL shape, and D-06 consolidation of `spec/DG-ID.md` into the single identity authority (wave 4)
+- [x] 1203-05-PLAN.md — D-05 schema propagation sweep across every surface plus the SHACL shape, and D-06 consolidation of `spec/DG-ID.md` into the single identity authority (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
