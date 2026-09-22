@@ -128,7 +128,7 @@ Plans:
 
 **Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
 
-**Plans:** 7/7 executed; 2 gap-closure plans added (9 total)
+**Plans:** 8/9 plans executed
 
 Plans:
 **Wave 1**
@@ -150,7 +150,7 @@ Plans:
 **Gap closure** *(from `1202-VERIFICATION.md` `status: gaps_found` — both plans target ALGN12-09, the only requirement left partially satisfied; independent, parallel)*
 
 - [ ] 1202-08-PLAN.md — Gap 1: make the gate's canonical-state-hash half live-demonstrable — seed `DG-1202-REPLAY`, add `--replay-fixture`, give the C# leg a second independent hash source so `agree`/`disagree` is reachable instead of `not_applicable`, refresh the retained exit evidence, reconcile the ALGN12-11 checkbox (wave 1, **requires a live compose stack**, human checkpoint)
-- [ ] 1202-09-PLAN.md — Gap 2: claim ALGN12-09's "or an explicit exclusion contract" hatch — write the `parameters[]` dual-wire-shape divergence into `spec/DATABASE.md` and `spec/EVIDENCE-CONTRACT.md`, naming which reader is authoritative for which producer (wave 1, docs + comments only, no reader change)
+- [x] 1202-09-PLAN.md — Gap 2: claim ALGN12-09's "or an explicit exclusion contract" hatch — write the `parameters[]` dual-wire-shape divergence into `spec/DATABASE.md` and `spec/EVIDENCE-CONTRACT.md`, naming which reader is authoritative for which producer (wave 1, docs + comments only, no reader change)
 
 ### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
 

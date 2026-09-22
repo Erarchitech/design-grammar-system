@@ -184,3 +184,7 @@ None.
 ---
 *Phase: 1202-design-state-replay-and-per-object-verdict-closure*
 *Completed: 2026-09-22*
+
+## Self-Check: PASSED
+
+All 5 created/modified files found on disk; all 4 commit hashes (380f04b, f289507, c821d80, 4aaab47) found in git log.
