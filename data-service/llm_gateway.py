@@ -61,6 +61,18 @@ class GenerateResponse(BaseModel):
         finish_reason: The provider's raw stop reason, in the provider's own
             spelling. 'refusal' is synthesised for an OpenAI refusal so callers
             can raise a distinct violation instead of a misleading bad_json.
+        served_model: The model id the provider reported serving, read verbatim
+            from the provider response. It is provider-attested -- it may
+            differ from model, which keeps meaning the REQUESTED model id and
+            is never repointed. Recording it is what makes a provider alias
+            re-point to a different model observable.
+        response_id: The provider's own message/response id for this call.
+        system_fingerprint: A provider-side configuration fingerprint. Only
+            OpenAI-family responses carry one.
+
+    The three fields above are additive and default to None, which means "the
+    provider omitted the field". The gateway never fabricates a value when the
+    provider response lacks the key.
     """
 
     text: str
@@ -69,6 +81,9 @@ class GenerateResponse(BaseModel):
     usage: dict
     truncated: bool = False
     finish_reason: str | None = None
+    served_model: str | None = None
+    response_id: str | None = None
+    system_fingerprint: str | None = None
 
 
 class GenerationOptions(BaseModel):
@@ -422,6 +437,8 @@ class AnthropicAdapter(LLMAdapter):
             usage=usage,
             truncated=stop_reason == "max_tokens",
             finish_reason=stop_reason,
+            served_model=data.get("model"),
+            response_id=data.get("id"),
         )
 
     def list_models(self, api_key: str | None) -> list[str]:
@@ -511,6 +528,9 @@ class OpenAIAdapter(LLMAdapter):
             usage=usage,
             truncated=finish_reason == "length",
             finish_reason=finish_reason,
+            served_model=data.get("model"),
+            response_id=data.get("id"),
+            system_fingerprint=data.get("system_fingerprint"),
         )
 
     def list_models(self, api_key: str | None) -> list[str]:
@@ -583,6 +603,7 @@ class OllamaAdapter(LLMAdapter):
             usage=usage,
             truncated=done_reason == "length",
             finish_reason=done_reason,
+            served_model=data.get("model"),
         )
 
     def list_models(self, api_key: str | None = None) -> list[str]:

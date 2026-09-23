@@ -752,3 +752,131 @@ class TestPublicRequestBodyUnchanged:
         # max_tokens/temperature/output_schema there would make them
         # attacker-controllable (cost-DoS, unvalidated provider pass-through).
         assert set(GenerateRequest.model_fields) == {"prompt", "system", "model", "provider"}
+
+# -- Phase 1204-02 / D-20: gateway provenance tracer --
+#
+# GenerateResponse carries three additive, provider-attested observations:
+# served_model, response_id and system_fingerprint. Each adapter fills only the
+# fields its own already-parsed provider response actually contains; an absent
+# key settles to None and is never synthesised or guessed. `model` keeps its
+# shipped meaning -- the REQUESTED id (Correction 5) -- and is never repointed.
+#
+# Driven through the same _run_adapter harness as TestTruncationDetection so the
+# adapters run unmodified.
+
+
+class TestGenerateProvenanceFields:
+    def test_openai_populates_served_model_response_id_system_fingerprint(self):
+        resp, _ = _run_adapter(
+            OpenAIAdapter(),
+            {
+                "choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}],
+                "usage": {},
+                "model": "gpt-4o-2026-05",
+                "id": "chatcmpl-xyz",
+                "system_fingerprint": "fp_abc",
+            },
+        )
+        assert resp.served_model == "gpt-4o-2026-05"
+        assert resp.response_id == "chatcmpl-xyz"
+        assert resp.system_fingerprint == "fp_abc"
+        # The requested id stays in `model` -- never repointed to the served id.
+        assert resp.model == "m"
+
+    def test_openai_omitted_served_model_response_id_fingerprint_are_none(self):
+        resp, _ = _run_adapter(OpenAIAdapter(), {"choices": [{"message": {}}], "usage": {}})
+        assert resp.served_model is None
+        assert resp.response_id is None
+        assert resp.system_fingerprint is None
+
+    def test_anthropic_populates_served_model_and_response_id(self):
+        resp, _ = _run_adapter(
+            AnthropicAdapter(),
+            {
+                "content": [{"type": "text", "text": "hi"}],
+                "usage": {},
+                "model": "claude-sonnet-5-20261022",
+                "id": "msg_01X",
+            },
+        )
+        assert resp.served_model == "claude-sonnet-5-20261022"
+        assert resp.response_id == "msg_01X"
+        # The Messages API carries no fingerprint key -- never invented.
+        assert resp.system_fingerprint is None
+        assert resp.model == "m"
+
+    def test_anthropic_omitted_served_model_and_response_id_are_none(self):
+        resp, _ = _run_adapter(AnthropicAdapter(), {"content": [], "usage": {}})
+        assert resp.served_model is None
+        assert resp.response_id is None
+        assert resp.system_fingerprint is None
+
+    def test_ollama_populates_served_model_only(self):
+        resp, _ = _run_adapter(OllamaAdapter(), {"response": "hi", "model": "llama3.2:latest"})
+        assert resp.served_model == "llama3.2:latest"
+        assert resp.response_id is None
+        assert resp.system_fingerprint is None
+
+    def test_ollama_omitted_served_model_is_none(self):
+        resp, _ = _run_adapter(OllamaAdapter(), {"response": ""})
+        assert resp.served_model is None
+        assert resp.response_id is None
+        assert resp.system_fingerprint is None
+
+    def test_default_served_model_response_id_fingerprint_are_none_and_serialize_as_null(self):
+        # Backward compatibility: a caller that never sets the new fields still
+        # constructs the response, and the serialized envelope carries the three
+        # keys as null without disturbing any existing key.
+        resp = GenerateResponse(text="t", provider="p", model="m", usage={})
+        assert resp.served_model is None
+        assert resp.response_id is None
+        assert resp.system_fingerprint is None
+        dumped = resp.model_dump()
+        assert set(dumped) >= {
+            "text",
+            "provider",
+            "model",
+            "usage",
+            "served_model",
+            "response_id",
+            "system_fingerprint",
+        }
+        assert dumped["served_model"] is None
+        assert dumped["response_id"] is None
+        assert dumped["system_fingerprint"] is None
+        assert dumped["text"] == "t"
+        assert dumped["provider"] == "p"
+        assert dumped["model"] == "m"
+        assert dumped["usage"] == {}
+
+    @patch("app.get_adapter")
+    @patch("app.load_persisted_llm_settings")
+    def test_llm_generate_endpoint_serializes_served_model_response_id_fingerprint_additively(
+        self, mock_load, mock_get_adapter
+    ):
+        mock_load.return_value = {
+            "provider": "anthropic",
+            "model": "claude-sonnet-5",
+            "apiKey": encrypt_value("sk-ant-test", "test-master-secret"),
+        }
+        mock_adapter = MagicMock()
+        mock_adapter.generate.return_value = GenerateResponse(
+            text="Hello from Claude",
+            provider="anthropic",
+            model="claude-sonnet-5",
+            usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        )
+        mock_get_adapter.return_value = mock_adapter
+
+        response = client.post(
+            "/llm/generate",
+            json={"prompt": "Say hello", "provider": "anthropic", "model": "claude-sonnet-5"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["served_model"] is None
+        assert body["response_id"] is None
+        assert body["system_fingerprint"] is None
+        # The requested id is still what the envelope reports.
+        assert body["model"] == "claude-sonnet-5"
+        assert body["text"] == "Hello from Claude"

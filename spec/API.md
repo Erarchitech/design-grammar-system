@@ -308,6 +308,61 @@ Response keys: `project`, `stateId` (carries the `DS_` prefix, D-18), `kind` (al
 
 **Errors:** 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_REQUEST_INVALID`, 422 `COMPUTGRAPH_ACCEPT_CANDIDATE_DOMAIN_VIOLATION`, 502 `COMPUTGRAPH_ACCEPT_CANDIDATE_FAILED`. Every error body is the standard `{error, hint, code}` detail shape.
 
+### LLM Gateway
+
+The provider-agnostic LLM gateway. Routes a prompt to the active provider adapter (Anthropic, OpenAI, or a local Ollama server) and normalises every adapter's response into one envelope.
+
+| Method | Path | Body / Params | Description |
+|--------|------|---------------|-------------|
+| POST | `/llm/generate` | `{prompt, system?, model?, provider?}` | Route the prompt to the active provider adapter and return the normalised envelope. See below. |
+
+#### `POST /llm/generate`
+
+Request body: `{prompt: string, system?: string, model?: string, provider?: string}`
+
+When `provider` / `model` are omitted (n8n sends `null` per D-07), the gateway resolves the active provider from saved LLM settings; a request-level `provider` / `model` overrides the saved value for that call only.
+
+Response envelope:
+
+```json
+{
+  "text": "...",
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+  "truncated": false,
+  "finish_reason": "end_turn",
+  "served_model": "claude-sonnet-5-20261022",
+  "response_id": "msg_01X",
+  "system_fingerprint": null
+}
+```
+
+- `text` — the generated text.
+- `provider` — the provider that served the request.
+- `model` — **the REQUESTED model id.** This ships today and is not repointed (D-20/Correction 5).
+- `usage` — normalised token usage `{prompt_tokens, completion_tokens, total_tokens}`.
+- `truncated` — `true` when the provider stopped because the output cap was hit.
+- `finish_reason` — the provider's raw stop reason, in the provider's own spelling.
+- `served_model` — the model id the provider **reported serving**, read verbatim from the provider response.
+- `response_id` — the provider's own message/response id for this call.
+- `system_fingerprint` — a provider-side configuration fingerprint.
+
+**Per-provider availability of the provenance fields (D-20):**
+
+| Provider | `served_model` | `response_id` | `system_fingerprint` |
+|----------|----------------|---------------|----------------------|
+| OpenAI (and OpenAI-compatible base URLs) | yes | yes | yes |
+| Anthropic | yes | yes | never (the Messages API carries no fingerprint key) |
+| Ollama | yes | never (the parsed `/api/generate` response carries no `id`) | never |
+
+**Normative rules:**
+- A field absent from the provider response is **`null`** in the envelope. The gateway never synthesises or guesses a value for a key the provider omitted.
+- `served_model` is **provider-attested**, not independently verified: it records what the provider reported serving, which is what makes a provider alias re-pointing behind a requested id observable. `model` continues to carry the requested id, so the two can be compared (D-20/Correction 5).
+- The three provenance fields are additive: they default to `null` for any caller that never sets them, so existing consumers are unaffected.
+
+**Errors:** 502 with the standard `{error, hint, code}` detail shape for any provider failure.
+
 ### Identity (`/identity/*`, Phase 32.1/1203)
 
 The identity registry API. Normative contract: `spec/DG-ID.md` (format, minting, collision policy, binding model). This is a first-write for this document — no `/identity/*` route was previously documented here.
