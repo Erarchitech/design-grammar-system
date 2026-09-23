@@ -83,6 +83,7 @@ class TestCassette:
             ("temperature", 0.5),
             ("negotiated_mode", "json_schema_strict"),
             ("max_tokens", 4096),
+            ("sample_index", 1),
         ],
     )
     def test_cassette_key_changes_when_any_single_input_flips(self, field, new_value):
@@ -198,6 +199,61 @@ class TestCassette:
                 "A0", None, negotiated_mode="none", prompt_version="r1",
                 ip_class="own", mode="bogus",
             )
+
+    def test_cassette_key_sample_index_zero_is_byte_identical_to_eight_part_digest(self):
+        import inspect
+
+        param = inspect.signature(cassette_module.cassette_key).parameters["sample_index"]
+        assert param.kind is inspect.Parameter.KEYWORD_ONLY
+        assert param.default == 0
+
+        assert (
+            cassette_module.cassette_key(**self._KEY_KWARGS)
+            == "0a045631ddcf3012ed43aa414845a8c9088b09a746548b2cca90e380e5c3c5a3"
+        )
+        assert cassette_module.cassette_key(
+            **self._KEY_KWARGS, sample_index=0
+        ) == cassette_module.cassette_key(**self._KEY_KWARGS)
+
+    def test_cassette_key_rejects_bool_sample_index(self):
+        with pytest.raises(ValueError):
+            cassette_module.cassette_key(**self._KEY_KWARGS, sample_index=True)
+
+    def test_cassette_key_rejects_negative_sample_index(self):
+        with pytest.raises(ValueError):
+            cassette_module.cassette_key(**self._KEY_KWARGS, sample_index=-1)
+
+    def test_cassette_key_sample_index_zero_one_two_are_distinct(self):
+        k0 = cassette_module.cassette_key(**self._KEY_KWARGS)
+        k1 = cassette_module.cassette_key(**self._KEY_KWARGS, sample_index=1)
+        k2 = cassette_module.cassette_key(**self._KEY_KWARGS, sample_index=2)
+        assert k0 != k1
+        assert k1 != k2
+        assert k0 != k2
+
+    def test_cassette_adapter_threads_sample_index_into_replay_key(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cassette_module, "_FIXTURES_ROOT", tmp_path)
+        adapter = cassette_module.CassetteAdapter(
+            "A0", None, negotiated_mode="none", prompt_version="r35.4",
+            ip_class="own", mode="replay", sample_index=1,
+        )
+        req = GenerateRequest(prompt="hello", system="sys", model="m", provider="p")
+
+        with pytest.raises(cassette_module.CassetteMissError) as excinfo:
+            adapter.generate(req, "key")
+
+        message = str(excinfo.value)
+        sample_index_key = cassette_module.cassette_key(
+            provider="p", model="m", prompt_version="r35.4", system="sys",
+            user_prompt="hello", temperature=None, negotiated_mode="none", max_tokens=None,
+            sample_index=1,
+        )
+        index_zero_key = cassette_module.cassette_key(
+            provider="p", model="m", prompt_version="r35.4", system="sys",
+            user_prompt="hello", temperature=None, negotiated_mode="none", max_tokens=None,
+        )
+        assert sample_index_key in message
+        assert sample_index_key != index_zero_key
 
 
 # ── TestArms (Task 2) ──

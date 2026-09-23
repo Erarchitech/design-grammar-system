@@ -76,6 +76,7 @@ def cassette_key(
     temperature: "float | None",
     negotiated_mode: str,
     max_tokens: "int | None",
+    sample_index: int = 0,
 ) -> str:
     """SHA-256 over the eight identity inputs, pipe-joined in the exact order
     35-AI-SPEC.md 5 specifies: provider | model | promptVersion | system |
@@ -84,7 +85,28 @@ def cassette_key(
     Because `prompt_version` and both prompt bodies are hashed in, ANY prompt
     change invalidates every cassette by construction -- the freeze
     discipline is enforced by the hash, not by remembering.
+
+    `sample_index` keys the k-th SAMPLE of an otherwise identical request
+    (D-21 / Correction 7: the ALGN12-15 "LLM sampling" arm records k draws
+    per item, and without this dimension all k would collide on one cassette
+    filename and silently overwrite/replay one another). The value 0 means
+    "the legacy eight-part digest, byte-identical to pre-D-21" -- the ninth
+    part is NOT appended -- so every committed Phase-35 cassette keeps
+    resolving unchanged. Any value >= 1 appends a ninth pipe-joined part
+    `str(sample_index)`, so sample_index 0 vs 1 vs 2 yield three distinct
+    keys while the eight identity inputs stay byte-identical.
     """
+    if (
+        isinstance(sample_index, bool)
+        or not isinstance(sample_index, int)
+        or sample_index < 0
+    ):
+        raise ValueError(
+            f"sample_index must be a non-negative int, got {sample_index!r} "
+            f"({type(sample_index).__name__}); 0 means the legacy eight-part "
+            f"digest, and 1, 2, ... key the k-th sample of an otherwise "
+            f"identical request."
+        )
     parts = [
         provider or "",
         model or "",
@@ -95,6 +117,12 @@ def cassette_key(
         negotiated_mode or "",
         "" if max_tokens is None else str(int(max_tokens)),
     ]
+    if sample_index != 0:
+        # Ninth part ONLY for a non-zero index: index 0 keeps joining eight
+        # parts, so its digest stays byte-identical to pre-D-21 and every
+        # committed cassette under fixtures/recognition_eval/cassettes/
+        # resolves unchanged.
+        parts.append(str(sample_index))
     digest_input = "|".join(parts).encode("utf-8")
     return hashlib.sha256(digest_input).hexdigest()
 
@@ -119,13 +147,17 @@ def _cassette_path(arm_id: str, key: str) -> Path:
 class CassetteAdapter:
     """Drop-in `LLMAdapter`-shaped wrapper implementing record/replay/live.
 
-    `negotiated_mode` and `prompt_version` are constructor-time, not
-    per-call, values. Within one `recognize_structure()` run both are
-    resolved ONCE before the Tier-1 retry loop and held fixed across every
-    attempt (`recognize_structure`'s own docstring), so pinning them here --
+    `negotiated_mode`, `prompt_version` and `sample_index` are
+    constructor-time, not per-call, values. Within one `recognize_structure()`
+    run all of them are resolved ONCE before the Tier-1 retry loop and held
+    fixed across every attempt (`recognize_structure`'s own docstring), so
+    pinning them here --
     rather than threading them through `generate()`, which must keep the
     real adapter's exact `(req, api_key, options=None)` signature -- is the
-    correct scope for them, not a shortcut.
+    correct scope for them, not a shortcut. `sample_index` (default 0 =
+    the legacy eight-part key) is the same kind of value: it keys the k-th
+    sample of one request, and `generate()` forwards it to `cassette_key`
+    at its single call site (D-21 / Correction 7).
     """
 
     def __init__(
@@ -137,6 +169,7 @@ class CassetteAdapter:
         prompt_version: str,
         ip_class: str,
         mode: "str | None" = None,
+        sample_index: int = 0,
     ) -> None:
         self.arm_id = arm_id
         self._wrapped = wrapped
@@ -144,6 +177,7 @@ class CassetteAdapter:
         self.prompt_version = prompt_version
         self.ip_class = ip_class
         self.mode = mode if mode is not None else os.environ.get("RECOGNITION_EVAL_MODE", "replay")
+        self.sample_index = sample_index
         if self.mode not in _VALID_MODES:
             raise ValueError(
                 f"unknown RECOGNITION_EVAL_MODE {self.mode!r} -- must be one "
@@ -165,6 +199,7 @@ class CassetteAdapter:
             temperature=options.temperature if options is not None else None,
             negotiated_mode=self.negotiated_mode,
             max_tokens=options.max_tokens if options is not None else None,
+            sample_index=self.sample_index,
         )
         path = _cassette_path(self.arm_id, key)
 
