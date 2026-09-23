@@ -4,9 +4,9 @@ milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1204
 current_phase_name: Determinism and LLM Reproducibility Benchmark
-status: planning
+status: executing
 stopped_at: Phase 1204 context gathered
-last_updated: "2026-09-23T19:13:20.073Z"
+last_updated: "2026-09-23T22:27:33.509Z"
 last_activity: 2026-09-23
 last_activity_desc: Phase 1203 complete, transitioned to Phase 1204
 progress:
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 1204 — Determinism and LLM Reproducibility Benchmark
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
