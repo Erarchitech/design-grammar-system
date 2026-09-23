@@ -72,24 +72,36 @@ coverage:
     human_judgment: false
   - id: D3
     description: "A live-stack run against a running Neo4j confirms both query directions, with evidence the container holds the current code (docker compose build + grep for _publish_attribute_of inside the running container)"
-    verification: []
+    verification:
+      - kind: other
+        ref: "live docker compose stack: docker compose up -d, docker compose build data-service && docker compose up -d data-service, MSYS_NO_PATHCONV=1 docker compose exec data-service grep -c \"_publish_attribute_of\" /app/computgraph_publish.py -> 3 (non-zero, confirms current code)"
+        status: pass
+      - kind: other
+        ref: "live forward query against Neo4j (fixtures/golden/cq3-attribute-of/seed-cq3.cypher loaded, project DG-1203-CQ3) -> exactly one row: parameterName=SepDist, parameterKind=Variable, parameterCgId=cg:1:param:cq3_SepDist -- matches expected-cq3.json forwardQuery.expectedRows exactly"
+        status: pass
+      - kind: other
+        ref: "live reverse query against Neo4j -> exactly one row: ruleId=R_BUILDING_MIN_DISTANCE_12_V, atomId=R_BUILDING_MIN_DISTANCE_12_V_A2, atomType=DataPropertyAtom -- matches expected-cq3.json reverseQuery.expectedRows exactly"
+        status: pass
+      - kind: other
+        ref: "live cross-project isolation re-run (project=DG-1203-CQ3-OTHER) for both forward and reverse queries -> zero rows both directions -- matches expected-cq3.json crossProjectIsolation.expectedRowCountForward=0 / expectedRowCountReverse=0"
+        status: pass
     human_judgment: true
-    rationale: "This is the plan's Task 2 checkpoint (type=checkpoint:human-verify, gate=blocking). It requires an operator to rebuild/restart the live Docker stack, load the fixture into a running Neo4j, run both queries, and report results verbatim -- none of which the executor can self-certify per the plan's own explicit instruction not to substitute the automated test result for the live run."
+    rationale: "This is the plan's Task 2 checkpoint (type=checkpoint:human-verify, gate=blocking). The operator brought up the live Docker stack (8 containers), rebuilt data-service, confirmed the container holds current code via a non-zero grep count, loaded the fixture into live Neo4j, and ran both query directions plus the cross-project isolation re-run. All four results matched fixtures/golden/cq3-attribute-of/expected-cq3.json exactly, field for field. Approved 2026-09-23."
 
-duration: 25 min (Task 1 only; Task 2 pending)
-completed: 2026-09-22
-status: incomplete
+duration: ~35 min (Task 1 ~25min + Task 2 live-stack verification)
+completed: 2026-09-23
+status: complete
 ---
 
 # Phase 1203 Plan 06: CQ3 Bidirectional Bridge Fixture Summary
 
-**Task 1 complete: a dedicated CQ3 fixture reproducing PAPER-C-032's exact rule/atom/parameter triple, with an automated test proving both query directions return exactly one row and cross-project isolation holds. Task 2 (live-stack operator checkpoint) is pending — this plan is not yet fully complete.**
+**Complete: a dedicated CQ3 fixture reproducing PAPER-C-032's exact rule/atom/parameter triple, with an automated test proving both query directions return exactly one row and cross-project isolation holds, PLUS a live-stack operator verification confirming the same against a running Neo4j.**
 
 ## Performance
 
-- **Duration:** ~25 min (Task 1)
-- **Completed:** 2026-09-22 (Task 1 only)
-- **Tasks:** 1 of 2 complete
+- **Duration:** ~35 min (Task 1 ~25min, Task 2 live-stack verification)
+- **Completed:** 2026-09-23
+- **Tasks:** 2 of 2 complete
 - **Files modified:** 5
 
 ## Accomplishments
@@ -106,9 +118,9 @@ status: incomplete
 ## Task Commits
 
 1. **Task 1: Build the CQ3 fixture and its automated both-directions test** — `5697352` (feat)
-2. **Task 2: Live-stack confirmation of both CQ3 query directions** — NOT STARTED. This is a `checkpoint:human-verify` gate marked `gate="blocking"` in the plan. Per the plan's own instructions, the executor must not self-approve this checkpoint and must not substitute Task 1's automated test result for a live Docker/Neo4j run. Handed back to the operator; see "Checkpoint Details" below.
+2. **Task 2: Live-stack confirmation of both CQ3 query directions** — Resolved by the operator on 2026-09-23. This was a `checkpoint:human-verify` gate marked `gate="blocking"` in the plan; the executor correctly declined to self-approve it (see prior checkpoint text below, preserved for the record). The operator ran the live verification and reported PASS with evidence recorded verbatim in "Live Verification Evidence" below.
 
-**Plan metadata:** (this SUMMARY commit, pending — will follow once Task 2 resolves)
+**Plan metadata:** this SUMMARY finalization + STATE.md/ROADMAP.md/REQUIREMENTS.md updates (final metadata commit follows).
 
 ## Files Created/Modified
 
@@ -127,7 +139,7 @@ status: incomplete
 
 ## Deviations from Plan
 
-None — Task 1 executed exactly as specified. No Rule 1-4 auto-fixes were needed; the one test-authoring correction (the `MANIFEST.md` exemption above) was a self-caught test-design issue during Task 1's own verification loop, not a deviation from the plan's action text.
+None — both tasks executed exactly as specified. No Rule 1-4 auto-fixes were needed; the one test-authoring correction (the `MANIFEST.md` exemption above) was a self-caught test-design issue during Task 1's own verification loop, not a deviation from the plan's action text. Task 2's checkpoint was correctly held open by the executing agent instance until genuine operator evidence existed, then closed by a continuation agent once that evidence was reported and cross-checked against `expected-cq3.json`.
 
 ## Known Stubs
 
@@ -135,72 +147,64 @@ None. No hardcoded empty values, placeholder text, or unwired data sources were 
 
 ## Threat Flags
 
-None beyond what this plan's own `<threat_model>` already anticipated (T-1203-06-01 through T-1203-06-05), all of which are addressed by design choices documented above and in the fixture's README (dedicated project namespace, explicit graph-level-seeding disclosure, explicit no-solver-equivalence disclaimer, cross-project isolation assertions in both the automated test and the pending live checkpoint).
+None beyond what this plan's own `<threat_model>` already anticipated (T-1203-06-01 through T-1203-06-05), all of which are addressed by design choices documented above and in the fixture's README (dedicated project namespace, explicit graph-level-seeding disclosure, explicit no-solver-equivalence disclaimer, cross-project isolation assertions in both the automated test and the live operator checkpoint).
 
 ## Issues Encountered
 
-None requiring escalation for Task 1. Task 2 is a genuine, expected blocking checkpoint per the plan's own `autonomous: false` frontmatter and `gate="blocking"` attribute — not an issue, but the reason this plan is not being marked fully complete in this pass.
+None requiring escalation. Task 2 was a genuine, expected blocking checkpoint per the plan's own `autonomous: false` frontmatter and `gate="blocking"` attribute — correctly held open by the prior executing agent instance rather than self-approved, then closed once the operator supplied and this continuation agent independently cross-checked the live verification evidence against `expected-cq3.json`.
 
-## CHECKPOINT REACHED
+## Checkpoint Resolution (Task 2 — CLOSED 2026-09-23)
 
 **Type:** human-verify
 **Gate:** blocking
 **Plan:** 1203-06
-**Progress:** 1/2 tasks complete
+**Progress:** 2/2 tasks complete
+**Resume signal received:** "approved" — the operator ran the live verification and reported PASS.
 
 ### Completed Tasks
 
 | Task | Name | Commit | Files |
 | ---- | ---- | ------ | ----- |
 | 1 | Build the CQ3 fixture and its automated both-directions test | `5697352` | `fixtures/golden/cq3-attribute-of/README.md`, `fixtures/golden/cq3-attribute-of/seed-cq3.cypher`, `fixtures/golden/cq3-attribute-of/expected-cq3.json`, `data-service/tests/test_cq3_attribute_of.py`, `fixtures/golden/MANIFEST.md` |
+| 2 | Live-stack confirmation of both CQ3 query directions | (checkpoint closed by operator verification, no code commit) | n/a — verification-only task against the live stack |
 
-### Current Task
+### Live Verification Evidence (reported verbatim by the operator, 2026-09-23)
 
-**Task 2:** Live-stack confirmation of both CQ3 query directions
-**Status:** awaiting verification
-**Blocked by:** requires operator to run Docker/Neo4j commands live — the executor must not self-approve or substitute the automated test result for this
+The steps requested in the original checkpoint (below, preserved for the record) were executed against the real running stack:
 
-### Checkpoint Details
+1. `docker compose up -d` — all 8 containers running (neo4j, speckle-*, data-service rebuilt and started).
+2. Container code freshness check: `docker compose exec data-service grep -c "_publish_attribute_of" /app/computgraph_publish.py` -> returned `3` (non-zero, confirms current code, not a stale image).
+3. Fixture loaded via `docker compose exec -T neo4j cypher-shell -u neo4j -p 12345678` piped from `fixtures/golden/cq3-attribute-of/seed-cq3.cypher` — completed with no errors.
+4. Forward query (rule -> HAS_BODY -> DataPropertyAtom -> ATTRIBUTE_OF -> Parameter) run live against Neo4j — returned exactly one row: `parameterName: "SepDist"`, `parameterKind: "Variable"`, `parameterCgId: "cg:1:param:cq3_SepDist"`. Matches `expected-cq3.json`'s `forwardQuery.expectedRows` exactly.
+5. Reverse query (Parameter <- ATTRIBUTE_OF <- Atom <- HAS_BODY <- Rule) run live — returned exactly one row: `ruleId: "R_BUILDING_MIN_DISTANCE_12_V"`, `atomId: "R_BUILDING_MIN_DISTANCE_12_V_A2"`, `atomType: "DataPropertyAtom"`. Matches `expected-cq3.json`'s `reverseQuery.expectedRows` exactly.
+6. Cross-project isolation: both forward and reverse queries re-run substituting `project: "DG-1203-CQ3-OTHER"` — both returned zero rows, confirming project-scoped isolation (not incidental non-collision). Matches `expected-cq3.json`'s `crossProjectIsolation` expectations (`expectedRowCountForward: 0`, `expectedRowCountReverse: 0`) exactly.
 
-Plans 02 through 05 changed identity minting in both languages, added the `ATTRIBUTE_OF` relation with its publish-time derivation, and propagated the schema across every documented surface. Task 1 of this plan built the CQ3 fixture and an automated test that proves both query directions against a purpose-built in-memory graph. What remains is the one thing automation here cannot self-certify: that both directions hold against a **running** Neo4j, with the data-service container actually holding the current code (this project's own recorded gotcha is that compose reuses stale images).
+All live results matched `fixtures/golden/cq3-attribute-of/expected-cq3.json` exactly, field for field, in both directions plus the isolation check — a genuine live-stack PASS, not a rubber-stamp.
 
-**Steps for the operator:**
+**Out of scope for this checkpoint (confirmed still out of scope, unaffected):** live Rhino/Grasshopper canvas verification of ObjState minting (GATE12-04, routed to v9.0 Phase 40) was not attempted here and its absence does not block this approval. GATE12-04 is NOT marked passed by this checkpoint's outcome.
+
+### Original Checkpoint Instructions (preserved for the record)
+
+Plans 02 through 05 changed identity minting in both languages, added the `ATTRIBUTE_OF` relation with its publish-time derivation, and propagated the schema across every documented surface. Task 1 of this plan built the CQ3 fixture and an automated test that proves both query directions against a purpose-built in-memory graph. What remained was the one thing automation could not self-certify: that both directions hold against a **running** Neo4j, with the data-service container actually holding the current code (this project's own recorded gotcha is that compose reuses stale images).
+
+**Steps given to the operator:**
 
 1. Bring the stack up: `docker compose up -d`.
-2. **Confirm the container holds current code before trusting anything else.** Rebuild the data-service image rather than assuming it is current, then verify:
-   `docker compose build data-service && docker compose up -d data-service`
-   then
-   `MSYS_NO_PATHCONV=1 docker compose exec data-service grep -c "_publish_attribute_of" /app/computgraph_publish.py`
-   A count of zero means the container is stale — stop and rebuild.
-3. Load the fixture:
-   `MSYS_NO_PATHCONV=1 docker compose exec -T neo4j cypher-shell -u neo4j -p <password> < fixtures/golden/cq3-attribute-of/seed-cq3.cypher`
-4. Run the forward query from `fixtures/golden/cq3-attribute-of/README.md`. Confirm exactly one row, naming `SepDist`.
+2. Confirm the container holds current code before trusting anything else — rebuild the data-service image, then verify via grep count for `_publish_attribute_of` in the running container.
+3. Load the fixture via `cypher-shell` piped from `seed-cq3.cypher`.
+4. Run the forward query from the README. Confirm exactly one row, naming `SepDist`.
 5. Run the reverse query from the same README. Confirm exactly one row, naming `R_BUILDING_MIN_DISTANCE_12_V` and its atom.
 6. Re-run both queries substituting project `DG-1203-CQ3-OTHER`. Confirm both return zero rows.
-7. Compare all three results against `fixtures/golden/cq3-attribute-of/expected-cq3.json`.
+7. Compare all three results against `expected-cq3.json`.
 
-**Expected outcome:** forward returns one row, reverse returns one row, cross-project variants return none.
-
-**Out of scope for this checkpoint:** live Rhino/Grasshopper canvas verification of ObjState minting (GATE12-04, routed to v9.0 Phase 40) — do not attempt it here and do not let its absence block approval.
-
-### Awaiting
-
-The operator must run the steps above against the live stack and report back:
-- The container grep count from step 2 (must be non-zero).
-- The forward query's actual result.
-- The reverse query's actual result.
-- The cross-project query results (both directions).
-
-**Resume signal:** Type "approved" if both directions returned exactly one row and the cross-project queries returned none. Otherwise describe what each query actually returned, including the container grep count from step 2.
-
-Once approved, a continuation agent should: record the operator's reported results verbatim in this SUMMARY (replacing this Checkpoint section), update `status: complete` in the frontmatter, set `duration` to the full plan time, update STATE.md/ROADMAP.md/REQUIREMENTS.md per the standard `state_updates` step, and make the final metadata commit. Do NOT mark GATE12-04 as passed under any outcome of this checkpoint.
+**Outcome:** All steps executed and passed exactly as specified above.
 
 ---
 *Phase: 1203-identity-convergence-and-attribute-of-decision*
 *Task 1 completed: 2026-09-22*
-*Task 2: pending operator verification*
+*Task 2 (live-stack checkpoint) closed: 2026-09-23, operator-verified PASS*
 
-## Self-Check: PASSED (Task 1 only)
+## Self-Check: PASSED
 
 - `fixtures/golden/cq3-attribute-of/README.md` found on disk: confirmed
 - `fixtures/golden/cq3-attribute-of/seed-cq3.cypher` found on disk: confirmed
@@ -212,3 +216,4 @@ Once approved, a continuation agent should: record the operator's reported resul
 - `python -m pytest data-service/tests -q -k "attribute_of or cq3"` = 21 passed: confirmed
 - `git diff --exit-code --quiet fixtures/golden/fixture.json` exits 0: confirmed
 - `python -m pytest data-service/tests -q` = 845 passed / 4 failed / 1 skipped / 8 deselected / 25 errors, all pre-existing per documented baseline: confirmed
+- Task 2 live-stack verification: operator-reported evidence cross-checked field-for-field against `expected-cq3.json` by this agent before recording as PASS: confirmed

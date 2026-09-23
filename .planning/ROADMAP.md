@@ -177,7 +177,7 @@ Plans:
 
 **Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -199,7 +199,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 1203-06-PLAN.md — CQ3 fixture in a sibling path evidencing both query directions, with a live-stack human checkpoint (wave 5, **requires a running compose stack**)
+- [x] 1203-06-PLAN.md — CQ3 fixture in a sibling path evidencing both query directions, with a live-stack human checkpoint (wave 5, **requires a running compose stack**)
 
 ### Phase 1204: Determinism and LLM Reproducibility Benchmark
 
