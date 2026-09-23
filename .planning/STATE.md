@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Theory–Implementation Alignment
-current_phase: 1203
-current_phase_name: identity-convergence-and-attribute-of-decision
-status: executing
+current_phase: 1204
+current_phase_name: Determinism and LLM Reproducibility Benchmark
+status: planning
 stopped_at: Completed 1203-06-PLAN.md -- Phase 1203 fully executed 6/6 plans
-last_updated: "2026-09-23T17:10:04.876Z"
-last_activity: 2026-09-22
-last_activity_desc: Phase 1203 execution started
+last_updated: "2026-09-23T17:18:31.428Z"
+last_activity: 2026-09-23
+last_activity_desc: Phase 1203 complete, transitioned to Phase 1204
 progress:
   total_phases: 6
   completed_phases: 4
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 1203 (identity-convergence-and-attribute-of-decision) — ALL PLANS COMPLETE (6/6)
-Plan: 6 of 6
-Status: Plans complete; phase-level verification (`/gsd-verify-work 1203` or equivalent) not yet run
+Phase: 1204 — Determinism and LLM Reproducibility Benchmark
+Plan: Not started
+Status: Ready to plan
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
@@ -38,7 +38,7 @@ Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EX
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-22 — Phase 1203 execution started
+Last activity: 2026-09-23 — Phase 1203 complete, transitioned to Phase 1204
 (cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
 the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
 finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
