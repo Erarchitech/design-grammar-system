@@ -7,7 +7,9 @@ date: 2026-07-18
 
 ## In Flight
 
-0. **v12.0 Theory–Implementation Alignment — Phase 1203 Planned ✅** — 2026-09-22 **Full `gsd-plan-phase 1203` complete; all gates pass.** 6 plans across 5 waves (38 tasks). Research verified CONTEXT.md's 14 locked decisions against disk; found 2 disk facts diverging from planning corpus (dg-shapes.ttl: 17 not 20; WR-02 at line 518 not 336). Pattern mapping identified 13/15 analog sites. Plans locked:
+0. **v12.0 Theory–Implementation Alignment — Phase 1204 CONTEXT GATHERED ✅** — 2026-09-23 **`/gsd-discuss-phase 1204 обсуди все темы и прими все рекомендуемые решения самостоятельно` complete.** All 28 decisions (D-01…D-28) auto-selected after Claude scouted 11 upstream corrections from disk facts. Headline: evaluator/relay leg split, benchmark-computed projection hash, N=10 across ≥2 process lifetimes, recognition + rule-ingest as LLM subjects (shipped, uncontrolled), reproducibility class per experiment, new spec/REPRODUCIBILITY.md with machine-checked LLM call-site scope table. Context.md + Discussion-log.md committed (73a32d5), STATE.md updated (6365cb9). Memory saved. Next: `/gsd-plan-phase 1204`.
+
+0. **v12.0 Theory–Implementation Alignment — Phase 1203 EXECUTED & VERIFIED ✅** — 2026-09-23 **Full `/gsd-execute-phase 1203` complete; all 6/6 plans executed, all gates pass, phase marked complete.** 6 plans across 5 waves (38 tasks), 6 commits during execution + 1 phase-completion commit. Regression gate: Python 845 passed/4 failed/25 errors, C# 560 passed/2 failed — all match Neo4j-unreachable-from-host baseline (zero new failures). Verification: 24/24 must-haves independently verified. Known open item (deliberately deferred, out-of-scope): `canonical_json.hash_scalar_tuple` still uses naive pipe-join. Plans executed:
    - Wave 1: Preflight (baselines, fixture/route verification)
    - Wave 2: D-08+D-09 identity re-derivation (both languages, golden vectors synchronized) ‖ `ATTRIBUTE_OF` edge (parallel, disjoint files)
    - Wave 3: CR-01/WR-01/WR-03 fixes + ALGN12-13 tests (serialized after Wave 2 due to shared file edit `dg_identity.py`)
