@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -80,6 +81,54 @@ REQUIRED_PROVENANCE_FIELDS = (
 )
 
 
+# D-19 (1204): every LLM sample carries a complete provenance block, and a
+# sample missing any required field is VOID. This sibling tuple is additive --
+# `REQUIRED_PROVENANCE_FIELDS` above and its callers (`assert_provenance`) are
+# untouched, because it describes a different artifact: an LLM sample row, not
+# a scored result row.
+#
+# The endpoint is recorded as a bare HOST -- never the API key, and never a
+# URL carrying credentials. "Sampling parameters as actually sent" is legal as
+# "not sent". Provider identity is the endpoint host plus the model, never the
+# adapter name (Correction 6).
+#
+# Conditionally required (recorded only when the provider returned them /
+# when the provider is local -- D-19, D-20):
+#   servedModelId, responseId, systemFingerprint  -- provider-attested fields
+#   ollamaWeightsDigest                            -- local (Ollama) providers
+LLM_SAMPLE_PROVENANCE_FIELDS = (
+    "adapter",
+    "endpointHost",
+    "requestedModelId",
+    "servedModelId",
+    "responseId",
+    "systemFingerprint",
+    "ollamaWeightsDigest",
+    "promptFilePath",
+    "promptSha256",
+    "promptVersion",
+    "renderedRequestSha256",
+    "samplingParamsAsSent",
+    "negotiatedMode",
+    "gatewayCommit",
+    "serviceCommit",
+    "inputSha256",
+    "sampleIndex",
+    "timestamp",
+    "usage",
+    "finishReason",
+)
+
+# The subset of LLM_SAMPLE_PROVENANCE_FIELDS that is unconditional: a sample
+# missing any of these is void regardless of provider.
+CONDITIONAL_LLM_SAMPLE_PROVENANCE_FIELDS = (
+    "servedModelId",
+    "responseId",
+    "systemFingerprint",
+    "ollamaWeightsDigest",
+)
+
+
 def assert_provenance(result_row: dict) -> None:
     """Raises `ProvenanceError` unless `result_row` carries every field in
     `REQUIRED_PROVENANCE_FIELDS`, and again if `frozenAtCommit == "unfrozen"`
@@ -104,6 +153,72 @@ def assert_provenance(result_row: dict) -> None:
             "freeze commit must block a score, not default to a "
             "plausible-looking value."
         )
+
+
+# D-19 credential/API-key shapes: an endpointHost carrying userinfo or a query
+# key, or any string value shaped like a secret, must never reach the report
+# schema (T-1204-04-02).
+_CREDENTIALED_ENDPOINT_MARKERS = ("user:pass@", "?key=")
+
+_API_KEY_SHAPED_PATTERNS = (
+    re.compile(r"\bsk-[A-Za-z0-9]", re.IGNORECASE),
+    re.compile(r"\bbearer\b", re.IGNORECASE),
+    re.compile(r"api[_-]?key\s*=", re.IGNORECASE),
+)
+
+
+def _api_key_shaped(value: object) -> bool:
+    """True when `value` is a string carrying key-shaped material."""
+    if not isinstance(value, str):
+        return False
+    return any(pattern.search(value) for pattern in _API_KEY_SHAPED_PATTERNS)
+
+
+def assert_llm_sample_provenance(sample: dict) -> None:
+    """D-19 void guard -- raises `ProvenanceError` for an LLM sample whose
+    provenance block is incomplete or credential-carrying.
+
+    Sibling to `assert_provenance` (which guards scored result rows), reusing
+    the same `ProvenanceError` refusal semantics and the same `None` = missing
+    rule. Purely additive: `REQUIRED_PROVENANCE_FIELDS`, `assert_provenance`
+    and their callers are untouched.
+
+    Raises when:
+      (a) any unconditional field in `LLM_SAMPLE_PROVENANCE_FIELDS` is absent
+          or None;
+      (b) `endpointHost` carries userinfo ("user:pass@") or a query key
+          ("?key=");
+      (c) any string value is api-key-shaped ("sk-", "Bearer", "api_key=").
+    """
+    missing = [
+        field
+        for field in LLM_SAMPLE_PROVENANCE_FIELDS
+        if field not in CONDITIONAL_LLM_SAMPLE_PROVENANCE_FIELDS
+        and (field not in sample or sample[field] is None)
+    ]
+    if missing:
+        raise ProvenanceError(
+            f"LLM sample is missing required provenance field(s): {missing} -- "
+            "the harness refuses to keep a sample whose provenance block is "
+            "incomplete (D-19)."
+        )
+
+    endpoint_host = sample.get("endpointHost")
+    if isinstance(endpoint_host, str) and any(
+        marker in endpoint_host for marker in _CREDENTIALED_ENDPOINT_MARKERS
+    ):
+        raise ProvenanceError(
+            "LLM sample's endpointHost carries credentials -- the endpoint is "
+            "recorded as a bare host, never an API key and never a URL with "
+            "userinfo or a query key (D-19)."
+        )
+
+    for field, value in sample.items():
+        if _api_key_shaped(value):
+            raise ProvenanceError(
+                f"LLM sample's {field!r} is api-key-shaped -- key material "
+                "must never reach the LLM report schema (D-19)."
+            )
 
 
 def assert_context_unchanged(corpus: Corpus) -> None:
