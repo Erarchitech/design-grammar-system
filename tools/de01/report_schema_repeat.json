@@ -1,0 +1,326 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-grammar-system/tools/de01/report_schema_repeat.json",
+  "title": "DE-01 Deterministic Repeat Benchmark Report",
+  "description": "Machine-readable shape of the DE-01 N-iteration repeat benchmark's own JSON report (tools/de01/run_de01_repeat.py::emit_repeat_json_report). This is a SIBLING schema, not a reuse of report_schema_repeat.json: the repeat report answers a different question (one distinct projection hash per leg across N fresh process lifetimes, plus silent_disagreement_count == 0 per iteration) and carries a per-leg leg_role column that report_schema_repeat.json has no field for. It deliberately does NOT $ref report_schema_repeat.json: a plain jsonschema.validate(instance, schema) call -- this file's own verification contract, and the invocation every operator/CI runs -- cannot resolve a cross-file $ref without a caller-supplied Registry, since jsonschema 4.18+ requires explicit retrieval for any $ref outside the current document. $defs.leg_role and $defs.CanonicalStatus below are same-document $defs for exactly that reason.",
+  "$defs": {
+    "leg_role": {
+      "type": "string",
+      "description": "D-02's evaluator/relay classification, drawn from run_de01_repeat.LEG_ROLES. An 'evaluator' leg actually evaluates the rule and may carry a validator-determinism claim; a 'relay' leg echoes or re-reads persisted evidence, so its repetition is reported as round-trip stability only, never as validator repeatability.",
+      "enum": [
+        "evaluator",
+        "relay"
+      ]
+    },
+    "LegPins": {
+      "type": "object",
+      "description": "Per-leg projection history across the N iterations, in iteration order.",
+      "properties": {
+        "leg_role": {
+          "$ref": "#/$defs/leg_role"
+        },
+        "projectionHashes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "One projection hash per iteration, in iteration order (D-04's per-leg hash primitive)."
+        },
+        "distinctHashCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of distinct hashes across all N iterations. The D-08 gate requires exactly 1."
+        },
+        "gatePassed": {
+          "type": "boolean",
+          "description": "True iff this leg produced exactly one distinct projection hash across all N iterations."
+        }
+      },
+      "required": [
+        "leg_role",
+        "projectionHashes",
+        "distinctHashCount",
+        "gatePassed"
+      ],
+      "additionalProperties": false
+    },
+    "StaleImageCheck": {
+      "type": "object",
+      "description": "D-07/T-1204-05-06: records that the running image must be verified to hold the code under test. A stale compose image can mask a source change, so an N/N result without this check is not evidence for the recorded commit.",
+      "properties": {
+        "checked": {
+          "type": "boolean",
+          "description": "Whether this run verified image freshness. False is a recorded limitation, not a pass."
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "checked",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "ConfigPins": {
+      "type": "object",
+      "description": "D-07's configuration pin block. Records ONLY the enumerated pins -- never an environment-variable dump and never a credential (T-1204-05-03).",
+      "properties": {
+        "git_commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "git_dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True iff the working tree had uncommitted changes; null when git was unavailable (a typed absence, not 'clean')."
+        },
+        "image_ids": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "dotnet_sdk_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_configuration": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fixture_sha256": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "fixture_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contract_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "canonicalization_version": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "service_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "pinned_replay_run_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "D-06: iteration 1's data-service publish run id, held fixed for every replay read."
+        },
+        "iterations": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "batches": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "stale_image_check": {
+          "$ref": "#/$defs/StaleImageCheck"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "git_commit",
+        "git_dirty",
+        "image_ids",
+        "dotnet_sdk_version",
+        "build_configuration",
+        "fixture_sha256",
+        "contract_version",
+        "canonicalization_version",
+        "service_versions",
+        "pinned_replay_run_id",
+        "iterations",
+        "batches",
+        "stale_image_check",
+        "findings"
+      ],
+      "additionalProperties": true
+    },
+    "Gate": {
+      "type": "object",
+      "description": "D-08's verdict plus the mandatory non-proof statement (D-05).",
+      "properties": {
+        "passed": {
+          "type": "boolean",
+          "description": "True iff every leg had exactly one distinct hash across all N AND silent_disagreement_count == 0 in every iteration."
+        },
+        "nonProofStatement": {
+          "type": "string",
+          "description": "The literal D-05 statement. Its presence is enforced so no reader can mistake an N/N result for a proof of universal determinism."
+        }
+      },
+      "required": [
+        "passed",
+        "nonProofStatement"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "repeatReportVersion": {
+      "type": "string",
+      "description": "Version of this report's own shape (run_de01_repeat.REPEAT_REPORT_VERSION)."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp of when this report was generated."
+    },
+    "fixtureVersion": {
+      "type": "string"
+    },
+    "contractVersion": {
+      "type": "string"
+    },
+    "canonicalizationVersion": {
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "canonical_json.CANONICALIZATION_VERSION in effect for this run."
+    },
+    "projectionVersion": {
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "projection_hash.PROJECTION_VERSION in effect; two projections with different exclusion lists must never compare equal (D-04)."
+    },
+    "iterationsRequested": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "batchesRequested": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pinnedReplayRunId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "legs": {
+      "type": "object",
+      "description": "One entry per leg in LEG_ROLES, keyed by leg name.",
+      "additionalProperties": {
+        "$ref": "#/$defs/LegPins"
+      }
+    },
+    "config": {
+      "$ref": "#/$defs/ConfigPins"
+    },
+    "iterations": {
+      "type": "object",
+      "description": "Per-iteration comparison outcomes.",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "silentDisagreementCount": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "report.compare_legs' silent_disagreement_count for each iteration, in iteration order. Every entry must be 0 for the D-08 gate to pass."
+        },
+        "divergingPairs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "The D-08 failure evidence: one {leg, iteration_a, iteration_b, hash_a, hash_b} entry per diverging leg, plus one {iteration, silent_disagreement_count} entry per nonzero silent iteration."
+        }
+      },
+      "required": [
+        "count",
+        "silentDisagreementCount",
+        "divergingPairs"
+      ],
+      "additionalProperties": false
+    },
+    "gate": {
+      "$ref": "#/$defs/Gate"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "repeatReportVersion",
+    "generatedAt",
+    "fixtureVersion",
+    "contractVersion",
+    "canonicalizationVersion",
+    "config",
+    "legs",
+    "iterations",
+    "gate",
+    "findings"
+  ],
+  "additionalProperties": false
+}
