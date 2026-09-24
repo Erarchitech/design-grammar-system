@@ -535,29 +535,30 @@ def run_leg_replay_pinned(
             error="no evidenceEnvelope in validation view",
         )
 
-    validated = legs.evidence_contract.validate_envelope(envelope_dict)
-    if validated is not None:
-        return legs.LegResult(
-            leg_name="replay",
-            available=False,
-            envelope=legs._synthesize_error_envelope(
-                "replay",
-                service_name="data-service",
-                service_version="unknown",
-                stage="validation.view.replay",
-                reason=_seed_hint(f"the persisted envelope is not contract-valid: {validated}."),
-                rule_ids=[rule_id],
-                object_ids=object_ids,
-            ),
-            error=f"invalid envelope: {validated}",
-        )
+    # Re-stamp stage so the report distinguishes this leg's re-derivation from
+    # the publish-time envelope it re-reads (D-06), exactly mirroring
+    # run_leg_replay's own re-stamp (legs.py:909-913).
+    envelope_dict = dict(envelope_dict)
+    envelope_dict["stage"] = "validation.view.replay"
 
-    return legs.LegResult(
-        leg_name="replay",
-        available=True,
-        envelope=envelope_dict,
-        error=None,
-    )
+    # Validate the dict directly against the JSON schema via the same
+    # _validated_leg_result helper run_leg_replay uses (legs.py:130-152) --
+    # NOT evidence_contract.validate_envelope, which expects an already-built
+    # EvidenceEnvelope pydantic model (it calls envelope.model_dump()) and
+    # signals failure by raising, never by returning non-None.
+    result = legs._validated_leg_result("replay", envelope_dict)
+
+    # canonicalStateHash/canonicalizationVersion (D-16): read from the same
+    # view response, independent of envelope validation above, mirroring
+    # run_leg_replay's own state_hash attachment (legs.py:975-984).
+    canonical_state_hash = view_payload.get("canonicalStateHash")
+    if canonical_state_hash:
+        result.state_hash = {
+            "hash": canonical_state_hash,
+            "canonicalizationVersion": view_payload.get("canonicalizationVersion"),
+        }
+
+    return result
 
 
 # -- D-07: the configuration pin block ---------------------------------------------

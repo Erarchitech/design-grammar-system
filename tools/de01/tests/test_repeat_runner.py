@@ -649,9 +649,11 @@ class TestRepeatRunnerPinnedReplay:
 
     def test_pinned_replay_url_carries_the_pinned_run_id(self, monkeypatch):
         monkeypatch.setattr(run_de01_repeat.httpx, "Client", _RecordingHttpxClient)
-        monkeypatch.setattr(
-            run_de01_repeat.legs.evidence_contract, "validate_envelope", lambda env: None
-        )
+        # No evidence_contract.validate_envelope mock: the real code path
+        # validates the envelope dict directly via legs._validated_leg_result
+        # (jsonschema.validate against the contract schema), never pydantic's
+        # EvidenceEnvelope.model_dump(). _baseline_envelope() is genuinely
+        # schema-conformant, so real validation passes unmocked.
 
         fixture = {
             "project": "DG-1200-GOLDEN",
@@ -676,7 +678,12 @@ class TestRepeatRunnerPinnedReplay:
         )
 
         assert result.available is True
-        assert result.envelope == envelope
+        # stage is re-stamped to "validation.view.replay" (D-06), exactly
+        # mirroring run_leg_replay's own re-stamp -- every other field is
+        # byte-identical to the envelope the fake HTTP double returned.
+        expected_envelope = dict(envelope)
+        expected_envelope["stage"] = "validation.view.replay"
+        assert result.envelope == expected_envelope
         assert len(_RecordingHttpxClient.instances) == 1
         url = _RecordingHttpxClient.instances[0].urls[0]
         assert url == "http://localhost:8000/validation/view/DG-1200-GOLDEN/RUN-PINNED-42"
