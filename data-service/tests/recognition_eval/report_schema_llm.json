@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-grammar-system/report_schema_llm.json",
+  "title": "LLM repeatability report (1204-07, D-24)",
+  "description": "The D-24 LLM-repeatability report. A SEPARATE schema from the deterministic legs report (tools/de01/report_schema.json) on purpose: the two artifacts must never be pooled, averaged, or differenced into one number (D-24). No top-level field name in this schema appears in the deterministic schema, so a pooling join has no key to join on by construction. This schema carries NO accuracy field and NO expected-label field: the LLM half reports agreement and stability, never correctness against an oracle (D-18).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "llmRepeatabilityReportVersion",
+    "reportLabel",
+    "subject",
+    "repeatSamples",
+    "minSampleFloor",
+    "llmReportGeneratedAt",
+    "protocol",
+    "providerStrata",
+    "temperaturePolicy",
+    "outcomeVocabulary"
+  ],
+  "properties": {
+    "llmRepeatabilityReportVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "reportLabel": {
+      "type": "string",
+      "description": "Names what this report does and does not measure.",
+      "const": "scoring-pipeline determinism"
+    },
+    "subject": {
+      "type": "string",
+      "enum": ["recognition", "rule_ingest"]
+    },
+    "repeatSamples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minSampleFloor": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "llmReportGeneratedAt": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolveOncePerProvider", "sampleIndexBase", "providerStrataNeverPooled"],
+      "properties": {
+        "resolveOncePerProvider": { "type": "boolean", "const": true },
+        "sampleIndexBase": {
+          "type": "integer",
+          "const": 1,
+          "description": "Sample indices are 1..k. Index 0 is the legacy D-21 cassette key and is never used as a sample."
+        },
+        "providerStrataNeverPooled": { "type": "boolean", "const": true }
+      }
+    },
+    "providerStrata": {
+      "type": "array",
+      "description": "One entry per provider. There is deliberately no combined/pooled cell (D-13).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "n",
+          "level1Distinct",
+          "level2Distinct",
+          "modalAgreement",
+          "wilsonLower",
+          "wilsonUpper",
+          "outcomeTallies"
+        ],
+        "properties": {
+          "provider": { "type": "string" },
+          "n": { "type": "integer", "minimum": 1 },
+          "level1Distinct": { "type": "integer", "minimum": 0 },
+          "level2Distinct": { "type": "integer", "minimum": 0 },
+          "modalAgreement": {
+            "type": ["number", "string"],
+            "description": "modal_count / n, or the string 'insufficient samples' below the min-5 floor (D-13)."
+          },
+          "wilsonLower": {
+            "type": ["number", "string"],
+            "description": "Wilson 95% lower bound from scoring.wilson_interval(modal_count, n), or 'insufficient samples' below the floor."
+          },
+          "wilsonUpper": {
+            "type": ["number", "string"]
+          },
+          "outcomeTallies": {
+            "type": "object",
+            "description": "D-14 proposal-outcome tallies only. Never canonical verdict statuses (D-14 vs 1200).",
+            "additionalProperties": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "temperaturePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerDefaultSentinel", "subjectsSendingNoOptions"],
+      "properties": {
+        "providerDefaultSentinel": {
+          "type": "string",
+          "const": "not sent \u2014 provider default"
+        },
+        "subjectsSendingNoOptions": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["rule_ingest"] }
+        }
+      }
+    },
+    "outcomeVocabulary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taxonomy", "labels"],
+      "properties": {
+        "taxonomy": { "type": "string", "const": "D-14 proposal outcomes" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

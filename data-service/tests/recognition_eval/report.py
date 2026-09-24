@@ -505,3 +505,172 @@ def main(argv: "list[str] | None" = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# ── 1204-07 Task 3: additive D-24 LLM-repeatability emitters (D-24/D-21) ──
+#
+# ADDITIVE ONLY. Every function below is new; no existing function, field or
+# rendered figure of the deterministic recognition-eval report is touched.
+# D-24 requires the LLM-repeatability artifact to be a SEPARATE report from
+# the deterministic one, with no shared/poolable field, so nothing here is
+# wired into `render_markdown`/`render_json` above.
+
+
+def render_llm_repeatability_json(report: dict) -> str:
+    """Additive D-24 LLM-repeatability JSON emitter. Serializes `report` (the
+    shape produced by repeat_sweep.compute_item_metrics / run_repeat_sweep)
+    to indented JSON. Never touches the deterministic report_schema.json
+    field set (D-24 -- no shared/poolable field)."""
+    return json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True)
+
+
+def render_llm_repeatability_markdown(report: dict) -> str:
+    """Additive D-24 LLM-repeatability Markdown emitter.
+
+    Reads `report["strata"]` when present (the key `compute_item_metrics`
+    actually returns) and falls back to `report["providers"]`, so a caller
+    holding either shape gets a per-provider section rather than an empty
+    document. Providers are never summed into a pooled figure (D-13).
+    """
+    lines: "list[str]" = ["# LLM Repeatability Report", ""]
+
+    body = report.get("strata")
+    if not isinstance(body, dict):
+        body = report.get("providers")
+    if not isinstance(body, dict):
+        lines.append(str(report))
+        lines.append("")
+        return "\n".join(lines)
+
+    for provider, cell in sorted(body.items()):
+        lines.append(f"## Provider: {provider}")
+        lines.append("")
+        lines.append(json.dumps(cell, indent=2, ensure_ascii=False, sort_keys=True))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+class MaxSamplesExceededError(ValueError):
+    """Raised when a requested sample count exceeds the --max-samples budget cap."""
+
+
+def enforce_max_samples(requested: int, cap: "int | None") -> int:
+    """D-21 cost-runaway guard: raise if `requested` exceeds `cap` (when set)."""
+    if cap is not None and requested > cap:
+        raise MaxSamplesExceededError(
+            f"requested {requested} samples exceeds --max-samples cap of {cap}"
+        )
+    return requested
+
+
+def generate_llm_report_bytes(cassette_dir, provider: str, item) -> bytes:
+    """D-21 regeneration check: recompute the LLM-repeatability report and
+    return the exact emitted bytes.
+
+    Labeled "scoring-pipeline determinism" (not model determinism): this
+    proves the SCORING PIPELINE is deterministic given fixed inputs, never
+    that the underlying model is repeatable.
+
+    Determinism comes from the scored record set being a pure function of
+    `cassette_dir`/`provider`/`item`: when `cassette_dir` points at committed
+    sample-index cassettes they are replayed (replay only -- never a live
+    call), and when it is None / holds no matching cassette the scoring runs
+    over an empty record set. Either way two calls with the same inputs
+    return byte-identical JSON, because the payload carries no timestamp and
+    no run-varying value.
+    """
+    from recognition_eval import repeat_sweep as _repeat_sweep_module
+
+    records = _load_llm_sample_records(cassette_dir, provider, item)
+    metrics = _repeat_sweep_module.compute_item_metrics(item, records)
+    subject = getattr(item, "subject", None) if not isinstance(item, dict) else item.get("subject")
+    report = {
+        "llmRepeatabilityReportVersion": 1,
+        "label": "scoring-pipeline determinism",
+        "reportLabel": "scoring-pipeline determinism",
+        "provider": provider,
+        "subject": subject or _DEFAULT_LLM_SUBJECT,
+        "metrics": metrics,
+    }
+    return render_llm_repeatability_json(report).encode("utf-8")
+
+
+_DEFAULT_LLM_SUBJECT = "recognition"
+
+
+def _load_llm_sample_records(cassette_dir, provider: str, item) -> "list[dict]":
+    """Committed-cassette reader for `generate_llm_report_bytes`.
+
+    Replay-only and network-free. Returns whatever sample records the
+    committed cassette store exposes for `(provider, item)`; an absent or
+    unusable store yields `[]` (an honest "no samples measured" run) rather
+    than a crash, so the regeneration check can always emit bytes.
+
+    This deliberately reads committed state instead of driving an adapter:
+    D-21's byte-identity claim is about the scoring pipeline, and touching a
+    live adapter here would make the check non-reproducible.
+    """
+    if cassette_dir is None:
+        return []
+
+    try:
+        root = Path(cassette_dir)
+    except TypeError:
+        return []
+
+    if not root.exists():
+        return []
+
+    item_key = _llm_item_key(item)
+    records: "list[dict]" = []
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        if path.suffix not in (".json", ".jsonl"):
+            continue
+        try:
+            raw = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+
+        payloads: "list[Any]" = []
+        if path.suffix == ".jsonl":
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    payloads.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        else:
+            try:
+                loaded = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            payloads = loaded if isinstance(loaded, list) else [loaded]
+
+        for payload in payloads:
+            if not isinstance(payload, dict):
+                continue
+            if payload.get("provider") not in (None, provider):
+                continue
+            if item_key is not None and payload.get("item") not in (None, item_key):
+                continue
+            records.append(payload)
+
+    return records
+
+
+def _llm_item_key(item) -> "str | None":
+    if item is None:
+        return None
+    if isinstance(item, dict):
+        for key in ("id", "name", "item_id"):
+            if item.get(key) is not None:
+                return str(item[key])
+        return None
+    for key in ("id", "name", "item_id"):
+        value = getattr(item, key, None)
+        if value is not None:
+            return str(value)
+    return None
