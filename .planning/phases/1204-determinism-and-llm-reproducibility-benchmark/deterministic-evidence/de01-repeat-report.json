@@ -1,0 +1,146 @@
+{
+  "repeatReportVersion": "1.0.0",
+  "generatedAt": "2026-09-24T01:17:15Z",
+  "fixtureVersion": "1.3.0",
+  "contractVersion": "1.0.0",
+  "canonicalizationVersion": 1,
+  "projectionVersion": 1,
+  "iterationsRequested": 10,
+  "batchesRequested": 2,
+  "pinnedReplayRunId": "b606720bb0f24d6faf95133369bc398c",
+  "legs": {
+    "data-service": {
+      "leg_role": "relay",
+      "projectionHashes": [
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "19BF1B630B680326567DED0FD205E6D8FB1B79723605085C4576CFF8E695C26F",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB"
+      ],
+      "distinctHashCount": 2,
+      "gatePassed": false
+    },
+    "dg-reasoner": {
+      "leg_role": "evaluator",
+      "projectionHashes": [
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF",
+        "C23B415DC5C573B9CFC953891FC5D82A250F61DDF295F8E582C79BB5AB33B8FF"
+      ],
+      "distinctHashCount": 1,
+      "gatePassed": true
+    },
+    "csharp": {
+      "leg_role": "evaluator",
+      "projectionHashes": [
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303",
+        "10B8882489BA771568BC731C61E862491816438A450CD5D9179E540313ED1303"
+      ],
+      "distinctHashCount": 1,
+      "gatePassed": true
+    },
+    "replay": {
+      "leg_role": "relay",
+      "projectionHashes": [
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C",
+        "0217BA5D49169B57B9072A8E491AB185E7C4006BC7C664F8C81DB01A059ADC0C"
+      ],
+      "distinctHashCount": 1,
+      "gatePassed": true
+    }
+  },
+  "config": {
+    "git_commit": "2615ae19b00f4a1160a5f62e81797156bc6c135b",
+    "git_dirty": true,
+    "image_ids": {
+      "data-service": "1410e0f03ce2055d547d78108d215991ba90fb73fc75d3a02707471482d0dca8",
+      "dg-reasoner": "dcd4ab1c232305809742f7776fabffc446afb86a3386c9edbe6c70cbefda3e38",
+      "neo4j": "46abd0ec9de55d560c4054a4ab05ae500c8558cef73eaa8640f269ec415f2308"
+    },
+    "dotnet_sdk_version": "10.0.301",
+    "build_configuration": "Release",
+    "fixture_sha256": {
+      "fixtures/golden/fixture.json": "3cc9fe377f7c5bf12becc4624dcd95a341a90adc3be9514f4539d037fae65d40",
+      "fixtures/golden/replay/mixed-verdicts.json": "56ab68a809262f35a3f9861e1e7d4272391701756e36e81d7706802204cefd81"
+    },
+    "fixture_version": "1.3.0",
+    "contract_version": "1.0.0",
+    "canonicalization_version": 1,
+    "service_versions": {
+      "data-service": "unknown",
+      "dg-reasoner": "unknown",
+      "csharp": "unknown",
+      "replay": "unknown"
+    },
+    "pinned_replay_run_id": "b606720bb0f24d6faf95133369bc398c",
+    "iterations": 10,
+    "batches": 2,
+    "stale_image_check": {
+      "checked": false,
+      "note": "The running image id(s) below were recorded from the live daemon, but whether each image actually contains the code under test was NOT verified by this run. docker compose reuses a previously built image when the compose file and Dockerfile inputs are unchanged, so a stale image can mask a source change: before treating an N/N result as evidence for THIS commit, rebuild (docker compose build) or confirm image ids match a build of git_commit. Recorded image ids: {'data-service': '1410e0f03ce2055d547d78108d215991ba90fb73fc75d3a02707471482d0dca8', 'dg-reasoner': 'dcd4ab1c232305809742f7776fabffc446afb86a3386c9edbe6c70cbefda3e38', 'neo4j': '46abd0ec9de55d560c4054a4ab05ae500c8558cef73eaa8640f269ec415f2308'}."
+    },
+    "findings": [
+      "Run-identity label drift (1204-CONTEXT.md Correction 4): the golden seed writes :Run {Run_Id: 'RUN_GOLD_1200'} (legs.py:47), but data-service's GET /validation/view/{project}/{run_id} matches :ValidationRun {runId} (app.py:685) -- so the seeded literal does not resolve through the pinned route. The D-06 pin is therefore the run id minted by iteration 1's data-service publish (a :ValidationRun.runId the route demonstrably resolves), recorded in this report's config block. Recorded as a finding; not fixed here (D-10 measure as shipped, and this plan adds no production change)."
+    ]
+  },
+  "iterations": {
+    "count": 10,
+    "silentDisagreementCount": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "divergingPairs": [
+      {
+        "leg": "data-service",
+        "iteration_a": 1,
+        "iteration_b": 6,
+        "hash_a": "B20E74EF8C7534AC40D4719A1B5E9277CEAE77E7BB3DF5006114A4B1E548BEEB",
+        "hash_b": "19BF1B630B680326567DED0FD205E6D8FB1B79723605085C4576CFF8E695C26F"
+      }
+    ]
+  },
+  "gate": {
+    "passed": false,
+    "nonProofStatement": "N/N identical does not prove determinism; it fails to falsify it for this fixture, build and configuration."
+  },
+  "findings": [
+    "Run-identity label drift (1204-CONTEXT.md Correction 4): the golden seed writes :Run {Run_Id: 'RUN_GOLD_1200'} (legs.py:47), but data-service's GET /validation/view/{project}/{run_id} matches :ValidationRun {runId} (app.py:685) -- so the seeded literal does not resolve through the pinned route. The D-06 pin is therefore the run id minted by iteration 1's data-service publish (a :ValidationRun.runId the route demonstrably resolves), recorded in this report's config block. Recorded as a finding; not fixed here (D-10 measure as shipped, and this plan adds no production change)."
+  ]
+}
