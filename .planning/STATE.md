@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-05-PLAN.md
-last_updated: "2026-09-28T21:57:19.237Z"
+stopped_at: Completed 1205-06-PLAN.md
+last_updated: "2026-09-28T22:16:10.459Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 46
-  percent: 77
+  completed_plans: 47
+  percent: 78
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 6 of 19
+Plan: 7 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -144,6 +144,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P03 | ~35min | 2 tasks | 10 files |
 | Phase 1205 P04 | 55min | 3 tasks | 8 files |
 | Phase 1205 P05 | ~20min | 2 tasks | 6 files |
+| Phase 1205 P06 | ~20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -443,6 +444,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: D-13: rotate_llm_master_secret.py reads/writes settings JSON directly and verifies the full round trip before an atomic write
 - [Phase ?]: D-16: check_live_boundary.py matches known-default literals only as quoted string values, not bare substrings, to avoid false-positiving on identifiers like speckleBaseUrl
 - [Phase ?]: 1205-05: n8n workflows hardened -- Verify Relay Token guard (D-04) on all 5 webhooks, caller-overridable URLs/credentials removed (D-08/Correction 7), Neo4j auth from env with no default fallback (D-10), rules-ingest write collapsed into one atomic project-scoped tx/commit (ALGN12-17); graph-query-mcp.json's own workflow id (contains coincidental '12345678' substring) deliberately left unchanged -- it is the live n8n instance's PATCH-sync identity, not a credential
+- [Phase ?]: [Phase 1205-06]: check_query_project_scope/check_foreign_project_literals/find_cross_project_key_collisions/find_foreign_project_entities added to dg_context.py as pure functions; validate_cypher/generate_validated_cypher gained a backwards-compatible project kwarg (graph_query wired to the scope check, rule_ingest/rule_edit to the foreign-literal check); wiring into /context/generate-cypher and /mcp routes deferred to 1205-14
 
 ### Research Flags (carry into planning)
 
@@ -525,8 +527,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-28T21:57:19.202Z
-Stopped at: Completed 1205-05-PLAN.md
+Last session: 2026-09-28T22:16:10.441Z
+Stopped at: Completed 1205-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
