@@ -58,12 +58,13 @@
     },
     "providerStrata": {
       "type": "array",
-      "description": "One entry per provider. There is deliberately no combined/pooled cell (D-13).",
+      "description": "One entry per (provider, item) pair. There is deliberately no combined/pooled cell across providers (D-13) AND no combined/pooled cell across items: repeat_sweep.compute_item_metrics computes strata per item, and pooling heterogeneous items (each a different rule-ingest prompt or recognition case) into one modal-agreement figure would be substantively misleading -- different prompts have different correct outputs by construction, so a naive cross-item pool reads as near-total instability regardless of how stable any single item actually is. A single-item run still validates: it simply has one entry.",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": [
           "provider",
+          "item",
           "n",
           "level1Distinct",
           "level2Distinct",
@@ -74,6 +75,10 @@
         ],
         "properties": {
           "provider": { "type": "string" },
+          "item": {
+            "type": "string",
+            "description": "The item_id this stratum's n samples were drawn for (repeat_sweep.py's item_id, e.g. one D-12 rule-ingest prompt name). Never a pooled/combined value."
+          },
           "n": { "type": "integer", "minimum": 1 },
           "level1Distinct": { "type": "integer", "minimum": 0 },
           "level2Distinct": { "type": "integer", "minimum": 0 },

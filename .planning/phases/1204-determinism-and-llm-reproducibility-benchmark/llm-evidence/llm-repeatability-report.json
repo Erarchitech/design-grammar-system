@@ -1,0 +1,102 @@
+{
+  "llmRepeatabilityReportVersion": 1,
+  "llmReportGeneratedAt": "2026-09-28T00:00:00Z",
+  "minSampleFloor": 5,
+  "outcomeVocabulary": {
+    "labels": [
+      "abstained",
+      "invalid",
+      "provider_error",
+      "refused",
+      "truncated",
+      "valid",
+      "valid_after_retry"
+    ],
+    "taxonomy": "D-14 proposal outcomes"
+  },
+  "protocol": {
+    "providerStrataNeverPooled": true,
+    "resolveOncePerProvider": true,
+    "sampleIndexBase": 1
+  },
+  "providerStrata": [
+    {
+      "item": "cq3_attribute_of",
+      "level1Distinct": 9,
+      "level2Distinct": 9,
+      "modalAgreement": 0.2,
+      "n": 10,
+      "outcomeTallies": {
+        "truncated": 2,
+        "valid": 8
+      },
+      "provider": "openai",
+      "wilsonLower": 0.05668094798069328,
+      "wilsonUpper": 0.5098431532792767
+    },
+    {
+      "item": "fixture_rules_v7_1_maximum_height_of_buildings_is_75_meters",
+      "level1Distinct": 5,
+      "level2Distinct": 5,
+      "modalAgreement": 0.6,
+      "n": 10,
+      "outcomeTallies": {
+        "truncated": 1,
+        "valid": 9
+      },
+      "provider": "openai",
+      "wilsonLower": 0.3126695474501863,
+      "wilsonUpper": 0.8318224187964901
+    },
+    {
+      "item": "fixture_rules_v7_2_minimum_area_of_living_units_is_28_squar",
+      "level1Distinct": 8,
+      "level2Distinct": 8,
+      "modalAgreement": 0.2,
+      "n": 10,
+      "outcomeTallies": {
+        "valid": 10
+      },
+      "provider": "openai",
+      "wilsonLower": 0.05668094798069328,
+      "wilsonUpper": 0.5098431532792767
+    },
+    {
+      "item": "fixture_rules_v7_3_all_residential_buildings_must_be_at_lea",
+      "level1Distinct": 9,
+      "level2Distinct": 9,
+      "modalAgreement": 0.2,
+      "n": 10,
+      "outcomeTallies": {
+        "truncated": 4,
+        "valid": 6
+      },
+      "provider": "openai",
+      "wilsonLower": 0.05668094798069328,
+      "wilsonUpper": 0.5098431532792767
+    },
+    {
+      "item": "height_rule",
+      "level1Distinct": 10,
+      "level2Distinct": 10,
+      "modalAgreement": 0.1,
+      "n": 10,
+      "outcomeTallies": {
+        "truncated": 3,
+        "valid": 7
+      },
+      "provider": "openai",
+      "wilsonLower": 0.01787574951572113,
+      "wilsonUpper": 0.4041563854975721
+    }
+  ],
+  "repeatSamples": 10,
+  "reportLabel": "scoring-pipeline determinism",
+  "subject": "rule_ingest",
+  "temperaturePolicy": {
+    "providerDefaultSentinel": "not sent — provider default",
+    "subjectsSendingNoOptions": [
+      "rule_ingest"
+    ]
+  }
+}

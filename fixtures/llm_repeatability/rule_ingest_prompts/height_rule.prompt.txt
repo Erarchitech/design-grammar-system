@@ -1,0 +1,175 @@
+Convert design rules into Neo4j Cypher MERGE + SET statements. Output Cypher only, no JSON, no markdown fences.
+
+CONTEXT (deterministically assembled by /context/assemble -- schema layers, SWRL conventions, and the matched Cypher catalog shape(s) with worked examples):
+{"ontograph": {"layer": "Ontograph", "graph_value": "OntoGraph", "node_labels": ["Class", "DatatypeProperty", "ObjectProperty"], "key_properties": {"Class": "iri", "DatatypeProperty": "iri", "ObjectProperty": "iri"}, "display_properties": {"Class": "label", "DatatypeProperty": "SWRL_label", "ObjectProperty": "label"}, "iri_prefixes": {"domain_terms": "ex:"}}, "metagraph": {"layer": "Metagraph", "graph_value": "Metagraph", "node_labels": ["Rule", "Atom", "Var", "Literal", "Builtin"], "relationship_types": ["HAS_BODY", "HAS_HEAD", "REFERS_TO", "ARG"], "key_properties": {"Rule": "Rule_Id", "Atom": "Atom_Id", "Var": "name+project", "Literal": "lex+datatype", "Builtin": "iri"}, "iri_prefixes": {"builtins": "swrlb:"}}, "swrl_conventions": {"violation_inversion": {"flag": true, "statement": "Body atoms fire when the constraint is VIOLATED (inverted logic); the head atom sets the violation DatatypeProperty to true. Example: 'maximum height 75' -> body uses swrlb:greaterThan(?val, 75), NOT swrlb:lessThanOrEqual(?val, 75)."}, "atom_ordering": {"relationship_types": ["HAS_BODY", "HAS_HEAD"], "property": "order", "statement": "Rule->Atom edges via HAS_BODY/HAS_HEAD carry an integer `order` property establishing body/head atom sequence. `order` is a reserved Cypher word and MUST be backtick-quoted: MERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)."}, "argument_rules": {"relationship_type": "ARG", "property": "pos", "statement": "Atom->Var/Literal edges via ARG carry an integer `pos` property establishing argument position. `pos` is a reserved Cypher word and MUST be backtick-quoted: MERGE (a1)-[:ARG {`pos`: 1}]->(vEntity).", "var_merge_keys": ["name", "project"], "var_merge_statement": "Var nodes MERGE on both `name` (?<varName>) and `project` -- omitting `project` from the merge key reintroduces the v2.0 cross-project variable-collision bug (fixed per STATE.md v3.0 Phase 7 decision: 'Var merge key includes project').", "literal_merge_keys": ["lex", "datatype"], "literal_merge_statement": "Literal nodes MERGE on `lex` and `datatype`.", "builtin_merge_key": "iri", "builtin_merge_statement": "Builtin nodes MERGE on `iri` (swrlb:<builtinName>)."}, "naming_quirks": {"Rule_Id": "Rule node key property is `Rule_Id`, not `id`.", "Atom_Id": "Atom node key property is `Atom_Id` (format {Rule_Id}_A{n} for body, {Rule_Id}_H{n} for head), not `id`.", "SWRL_label": "DatatypeProperty display property is `SWRL_label`, not `label` (Class/ObjectProperty use plain `label`).", "SWRL": "Rule's SWRL-expression body property is named `SWRL`, not `text`.", "reserved_relationship_properties": ["order", "pos"]}}, "selected_cypher_shapes": [{"id": "max_limit", "name": "Maximum Limit", "description": "Constraint of the form \"maximum X is N\" / \"at most N\" / \"no more than N\". Body atoms fire when the measured value EXCEEDS the limit (violation-inverted pattern) using a swrlb:greaterThan Builtin atom against a Literal threshold. Rule_Id format: R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V.", "swrl_pattern": "<CLASS_NAME>(?e) ^ <PROPERTY_NAME>(?e, ?val) ^ swrlb:greaterThan(?val, \"<LIMIT>\"^^xsd:decimal) -> <VIOLATION_PROPERTY>(?e, true)", "cypher_template": "// 1. OntoGraph -- ontology terms\nMERGE (C_Main:Class {iri: 'ex:<CLASS_NAME>'})\nSET C_Main.label = '<CLASS_NAME>', C_Main.project = '<PROJECT>', C_Main.graph = 'OntoGraph'\n\nMERGE (DP_Main:DatatypeProperty {iri: 'ex:<PROPERTY_NAME>'})\nSET DP_Main.SWRL_label = '<PROPERTY_NAME>', DP_Main.range = 'xsd:decimal', DP_Main.project = '<PROJECT>', DP_Main.graph = 'OntoGraph'\n\nMERGE (B_Gt:Builtin {iri: 'swrlb:greaterThan'})\nSET B_Gt.label = 'greaterThan', B_Gt.project = '<PROJECT>', B_Gt.graph = 'Metagraph'\n\nMERGE (DP_V:DatatypeProperty {iri: 'ex:<VIOLATION_PROPERTY>'})\nSET DP_V.SWRL_label = '<VIOLATION_PROPERTY>', DP_V.range = 'xsd:boolean', DP_V.project = '<PROJECT>', DP_V.graph = 'OntoGraph'\n\n// 2. Metagraph -- rule node\nMERGE (r:Rule {Rule_Id: 'R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V'})\nSET r.SWRL = '<SWRL_EXPRESSION>', r.kind = 'violation', r.project = '<PROJECT>', r.graph = 'Metagraph'\n\n// 3. Metagraph -- variables, literals\nMERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: '<PROJECT>'})\nSET vEntity.graph = 'Metagraph'\n\nMERGE (vValue:Var {name: '?<VALUE_VAR>', project: '<PROJECT>'})\nSET vValue.graph = 'Metagraph'\n\nMERGE (litX:Literal {lex: '<LIMIT>', datatype: 'xsd:decimal'})\nSET litX.project = '<PROJECT>', litX.graph = 'Metagraph'\n\nMERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'})\nSET litT.project = '<PROJECT>', litT.graph = 'Metagraph'\n\n// 4. Metagraph -- atom nodes\nMERGE (a1:Atom {Atom_Id: 'R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V_A1'})\nSET a1.type = 'ClassAtom', a1.iri = 'ex:<CLASS_NAME>', a1.SWRL_label = '<CLASS_NAME>', a1.project = '<PROJECT>', a1.graph = 'Metagraph'\n\nMERGE (a2:Atom {Atom_Id: 'R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V_A2'})\nSET a2.type = 'DataPropertyAtom', a2.iri = 'ex:<PROPERTY_NAME>', a2.SWRL_label = '<PROPERTY_NAME>', a2.project = '<PROJECT>', a2.graph = 'Metagraph'\n\nMERGE (a3:Atom {Atom_Id: 'R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V_A3'})\nSET a3.type = 'BuiltinAtom', a3.iri = 'swrlb:greaterThan', a3.SWRL_label = 'greaterThan', a3.project = '<PROJECT>', a3.graph = 'Metagraph'\n\nMERGE (h1:Atom {Atom_Id: 'R_<DOMAIN>_<PROPERTY>_MAX_<LIMIT>_V_H1'})\nSET h1.type = 'DataPropertyAtom', h1.iri = 'ex:<VIOLATION_PROPERTY>', h1.SWRL_label = '<VIOLATION_PROPERTY>', h1.project = '<PROJECT>', h1.graph = 'Metagraph'\n\n// 5. Relationships -- rule <-> atoms\nMERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)\nMERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)\nMERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)\nMERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)\n\n// 6. Relationships -- atoms -> ontology terms\nMERGE (a1)-[:REFERS_TO]->(C_Main)\nMERGE (a2)-[:REFERS_TO]->(DP_Main)\nMERGE (a3)-[:REFERS_TO]->(B_Gt)\nMERGE (h1)-[:REFERS_TO]->(DP_V)\n\n// 7. Relationships -- atoms -> arguments\nMERGE (a1)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (a2)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (a2)-[:ARG {`pos`: 2}]->(vValue)\nMERGE (a3)-[:ARG {`pos`: 1}]->(vValue)\nMERGE (a3)-[:ARG {`pos`: 2}]->(litX)\nMERGE (h1)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (h1)-[:ARG {`pos`: 2}]->(litT);", "worked_example": "-- \"Maximum building height is 75 meters\" -> R_URB_HEIGHT_MAX_75_V, project 'demo-project'\n\nMERGE (C_Main:Class {iri: 'ex:Building'})\nSET C_Main.label = 'Building', C_Main.project = 'demo-project', C_Main.graph = 'OntoGraph'\n\nMERGE (DP_Main:DatatypeProperty {iri: 'ex:height'})\nSET DP_Main.SWRL_label = 'height', DP_Main.range = 'xsd:decimal', DP_Main.project = 'demo-project', DP_Main.graph = 'OntoGraph'\n\nMERGE (B_Gt:Builtin {iri: 'swrlb:greaterThan'})\nSET B_Gt.label = 'greaterThan', B_Gt.project = 'demo-project', B_Gt.graph = 'Metagraph'\n\nMERGE (DP_V:DatatypeProperty {iri: 'ex:heightExceedsMax'})\nSET DP_V.SWRL_label = 'heightExceedsMax', DP_V.range = 'xsd:boolean', DP_V.project = 'demo-project', DP_V.graph = 'OntoGraph'\n\nMERGE (r:Rule {Rule_Id: 'R_URB_HEIGHT_MAX_75_V'})\nSET r.SWRL = 'Building(?b) ^ height(?b, ?h) ^ swrlb:greaterThan(?h, \"75\"^^xsd:decimal) -> heightExceedsMax(?b, true)', r.kind = 'violation', r.project = 'demo-project', r.graph = 'Metagraph'\n\nMERGE (vEntity:Var {name: '?b', project: 'demo-project'})\nSET vEntity.graph = 'Metagraph'\n\nMERGE (vValue:Var {name: '?h', project: 'demo-project'})\nSET vValue.graph = 'Metagraph'\n\nMERGE (litX:Literal {lex: '75', datatype: 'xsd:decimal'})\nSET litX.project = 'demo-project', litX.graph = 'Metagraph'\n\nMERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'})\nSET litT.project = 'demo-project', litT.graph = 'Metagraph'\n\nMERGE (a1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A1'})\nSET a1.type = 'ClassAtom', a1.iri = 'ex:Building', a1.SWRL_label = 'Building', a1.project = 'demo-project', a1.graph = 'Metagraph'\n\nMERGE (a2:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A2'})\nSET a2.type = 'DataPropertyAtom', a2.iri = 'ex:height', a2.SWRL_label = 'height', a2.project = 'demo-project', a2.graph = 'Metagraph'\n\nMERGE (a3:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_A3'})\nSET a3.type = 'BuiltinAtom', a3.iri = 'swrlb:greaterThan', a3.SWRL_label = 'greaterThan', a3.project = 'demo-project', a3.graph = 'Metagraph'\n\nMERGE (h1:Atom {Atom_Id: 'R_URB_HEIGHT_MAX_75_V_H1'})\nSET h1.type = 'DataPropertyAtom', h1.iri = 'ex:heightExceedsMax', h1.SWRL_label = 'heightExceedsMax', h1.project = 'demo-project', h1.graph = 'Metagraph'\n\nMERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)\nMERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)\nMERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)\nMERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)\n\nMERGE (a1)-[:REFERS_TO]->(C_Main)\nMERGE (a2)-[:REFERS_TO]->(DP_Main)\nMERGE (a3)-[:REFERS_TO]->(B_Gt)\nMERGE (h1)-[:REFERS_TO]->(DP_V)\n\nMERGE (a1)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (a2)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (a2)-[:ARG {`pos`: 2}]->(vValue)\nMERGE (a3)-[:ARG {`pos`: 1}]->(vValue)\nMERGE (a3)-[:ARG {`pos`: 2}]->(litX)\nMERGE (h1)-[:ARG {`pos`: 1}]->(vEntity)\nMERGE (h1)-[:ARG {`pos`: 2}]->(litT);"}]}
+
+project = 'DG-1200-GOLDEN'
+
+EXISTING ENTITIES IN THE GRAPH (you MUST reuse these, do NOT create duplicates):
+  - Building [Class] (iri: ex:Building)
+
+EDIT MODE: You are EDITING existing rule(s): R_GOLD_HEIGHT_MAX_75_V, R_GOLD_HEIGHT_MAX_75_V, R_GOLD_HEIGHT_MAX_75_V, R_GOLD_HEIGHT_MAX_75_V, R_GOLD_HEIGHT_MAX_75_V, R_GOLD_HEIGHT_MAX_75_V.
+Output the COMPLETE updated rule(s) with ALL nodes and relationships (MERGE+SET) from scratch.
+Keep the same DatatypeProperty/Class iris from the original rule; only change the Literal lex value for numeric threshold edits.
+Update Rule_Id to reflect the new numeric limit (e.g. R_..._1_V becomes R_..._2_V).
+If the prompt adds new constraints, create those as SEPARATE new Rules.
+NEVER output rules that were not mentioned in the edit prompt.
+
+Now convert these rules (output ONLY the Cypher MERGE+SET statements, then stop):
+{
+ "fixtureVersion": "1.3.0",
+ "project": "DG-1200-GOLDEN",
+ "description": "The single frozen cross-service golden fixture for Phase 1200 DE-01 (D-09). One rule, all four Metagraph atom types (ClassAtom/DataPropertyAtom/BuiltinAtom/ObjectPropertyAtom), two objects with mixed pass/fail outcomes, one zero-binding object expecting no_population, a three-kind Design State, and a geometry reference. All four DE-01 legs (Python data-service, dg-reasoner, the C# evaluator, and the persisted-replay leg via fixtures/golden/seed.cypher) read this exact file as the same bytes. See fixtures/golden/MANIFEST.md for the freeze policy and the pre-declared by-design ObjectPropertyAtom non-result on the C# leg.",
+
+ "rule": {
+ "Rule_Id": "R_GOLD_HEIGHT_MAX_75_V",
+ "RuleName": "Golden fixture max building height",
+ "RuleDescription": "Maximum building height must not exceed 75 meters",
+ "swrl": "Building(?b) ^ hasHeight(?b, ?h) ^ swrlb:greaterThan(?h, 75) -> Violation(?b)"
+ },
+
+ "atoms": [
+ {
+ "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A1",
+ "type": "ClassAtom",
+ "SWRL_label": "Building(?b)",
+ "predicateIri": "ex:Building",
+ "side": "body",
+ "args": [
+ { "pos": 1, "var": "?b" }
+ ]
+ },
+ {
+ "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A2",
+ "type": "DataPropertyAtom",
+ "SWRL_label": "hasHeight(?b, ?h)",
+ "predicateIri": "ex:hasHeight",
+ "side": "body",
+ "args": [
+ { "pos": 1, "var": "?b" },
+ { "pos": 2, "var": "?h" }
+ ]
+ },
+ {
+ "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A3",
+ "type": "BuiltinAtom",
+ "SWRL_label": "swrlb:greaterThan(?h, 75)",
+ "predicateIri": "swrlb:greaterThan",
+ "side": "body",
+ "args": [
+ { "pos": 1, "var": "?h" },
+ { "pos": 2, "literal": { "lex": "75", "datatype": "xsd:decimal" } }
+ ]
+ },
+ {
+ "Atom_Id": "R_GOLD_HEIGHT_MAX_75_V_A4",
+ "type": "ObjectPropertyAtom",
+ "SWRL_label": "belongsToDistrict(?b, ?d)",
+ "predicateIri": "ex:belongsToDistrict",
+ "side": "body",
+ "args": [
+ { "pos": 1, "var": "?b" },
+ { "pos": 2, "var": "?d" }
+ ],
+ "_note": "Present at the data level only. DG.Core.Parsing.SwrlRuleParser.ResolveAtomType has no ObjectPropertyAtom branch (returns only BuiltinAtom/ClassAtom/DataPropertyAtom) until Phase 1201 ALGN12-05 adds it. See MANIFEST.md 'Expected non-results by design'."
+ }
+ ],
+
+ "objects": [
+ {
+ "objectId": "OBJ_GOLD_PASS",
+ "dgId": "dg:3D5D98A2E0E663A8",
+ "objectName": "Golden Building Pass",
+ "classIri": "ex:Building",
+ "properties": {
+ "hasHeight": 42.0
+ },
+ "_note": "dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding replaces the naive pipe-join in DgIdMintingService.Mint / compute_dg_id); pre-fix value was dg:57C65BE15E8E368B. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json's scalarTuple vectors -- those are verified against the separate, unchanged canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple functions, which still use the naive pipe-join; see MANIFEST.md's 1.3.0 row for that open gap."
+ },
+ {
+ "objectId": "OBJ_GOLD_FAIL",
+ "dgId": "dg:6607D4A051F356F2",
+ "objectName": "Golden Building Fail",
+ "classIri": "ex:Building",
+ "properties": {
+ "hasHeight": 88.5
+ },
+ "_note": "dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding); pre-fix value was dg:729E143958721742. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json (unchanged -- see MANIFEST.md's 1.3.0 row)."
+ },
+ {
+ "objectId": "OBJ_GOLD_EMPTY",
+ "dgId": "dg:2602FCC98B32C2A2",
+ "objectName": "Golden Non-Building Object",
+ "classIri": "ex:Site",
+ "properties": {},
+ "_note": "Deliberately of class ex:Site, not ex:Building, so the rule's ClassAtom (R_GOLD_HEIGHT_MAX_75_V_A1) never matches -- zero bindings, asserted expected status no_population, not merely defined. dgId re-derived Phase 1203-02 (D-09 length-prefix hash-input encoding); pre-fix value was dg:0B23FFBDA52B73A6. See MANIFEST.md Change-Reason Log (FIXTURE_VERSION 1.3.0). NOT re-derived via canonical-vectors.json (unchanged -- see MANIFEST.md's 1.3.0 row)."
+ }
+ ],
+
+ "designState": {
+ "StateId": "DS_GOLDEN_FIXTURE_01",
+ "kind": "DesignState",
+ "statePayloadJson": "{\"version\":\"2\",\"stateId\":\"DS_GOLDEN_FIXTURE_01\",\"capturedAtUtc\":\"2026-09-20T00:00:00Z\",\"objStates\":[{\"stateId\":\"OS_GOLDEN_01\"}],\"paramStates\":[{\"stateId\":\"DS_GOLDEN_01\"}],\"propStates\":[{\"stateId\":\"PS_GOLDEN_01\"}]}",
+ "states": [
+ {
+ "StateId": "OS_GOLDEN_01",
+ "kind": "ObjState",
+ "objectId": "OBJ_GOLD_PASS",
+ "geometryRef": "speckle:golden-fixture-box-01"
+ },
+ {
+ "StateId": "DS_GOLDEN_01",
+ "kind": "ParamState",
+ "parameters": [
+ { "name": "HeightSlider", "type": "Number", "value": 42.0 }
+ ]
+ },
+ {
+ "StateId": "PS_GOLDEN_01",
+ "kind": "PropState",
+ "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+ "dataProperty": "ex:hasHeight",
+ "propValue": 42.0
+ }
+ ]
+ },
+
+ "geometry": {
+ "dgEntityId": "speckle:golden-fixture-box-01",
+ "displayName": "Golden Fixture Building",
+ "speckleObjectId": "0123456789abcdef0123456789abcdef",
+ "boundingBox": {
+ "units": "m",
+ "min": [0.0, 0.0, 0.0],
+ "max": [20.0, 15.0, 42.0]
+ },
+ "_note": "A reference (speckleObjectId + bounding box), not inline mesh data, per ALGN12-03's geometry-reference requirement."
+ },
+
+ "expectedOutcomes": [
+ {
+ "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+ "objectId": "OBJ_GOLD_EMPTY",
+ "expectedCanonicalStatus": "no_population",
+ "note": "OBJ_GOLD_EMPTY is of class ex:Site, which the rule's ClassAtom does not match -- zero bindings, asserted no_population (never failed)."
+ },
+ {
+ "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+ "objectId": "OBJ_GOLD_FAIL",
+ "expectedCanonicalStatus": "failed",
+ "note": "hasHeight 88.5 > 75, so swrlb:greaterThan(?h, 75) is satisfied in the violation-pattern body -- the rule is genuinely violated."
+ },
+ {
+ "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+ "objectId": "OBJ_GOLD_FAIL",
+ "expectedCanonicalStatus": "unsupported",
+ "note": "By design, the C# leg (DG.Core.Validation.RuleEvaluator via SwrlRuleParser) has no ObjectPropertyAtom branch until Phase 1201 ALGN12-05; when the fourth atom (R_GOLD_HEIGHT_MAX_75_V_A4, ObjectPropertyAtom) is included in that leg's evaluation it reports unsupported (or error, if the parser throws before 1201 lands). This is a pre-declared, by-design non-result -- see MANIFEST.md -- not a fixture defect or a DE-01 failure."
+ },
+ {
+ "ruleId": "R_GOLD_HEIGHT_MAX_75_V",
+ "objectId": "OBJ_GOLD_PASS",
+ "expectedCanonicalStatus": "passed",
+ "note": "hasHeight 42.0 <= 75, so swrlb:greaterThan(?h, 75) is not satisfied -- the violation body never fires and the rule passes for this object."
+ }
+ ]
+}
