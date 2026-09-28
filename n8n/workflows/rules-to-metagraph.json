@@ -19,6 +19,19 @@
     },
     {
       "parameters": {
+        "functionCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst headers = ($json && $json.headers) || {};\nconst provided = headers['x-dg-service-token'];\nconst expected = $env.DG_SERVICE_TOKEN;\nif (!expected || provided !== expected) {\n  throw new Error('relay token rejected');\n}\nreturn items;"
+      },
+      "id": "verify-relay-token",
+      "name": "Verify Relay Token",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        0
+      ]
+    },
+    {
+      "parameters": {
         "keepOnlySet": true,
         "values": {
           "string": [
@@ -27,36 +40,16 @@
               "value": "={{$json.rules_text || ($json.body && $json.body.rules_text) || ($json.query && $json.query.rules_text) || $json.rules || ''}}"
             },
             {
-              "name": "neo4j_user",
-              "value": "={{$json.neo4j_user || 'neo4j'}}"
-            },
-            {
-              "name": "neo4j_password",
-              "value": "={{$json.neo4j_password || '12345678'}}"
-            },
-            {
               "name": "project_name",
-              "value": "={{$json.project_name || $json.project || ($json.body && ($json.body.project_name || $json.body.project)) || 'default-project'}}"
+              "value": "={{ ($json.body && ($json.body.project_name || $json.body.project)) || 'default-project' }}"
             },
             {
               "name": "ollama_model",
               "value": "={{$json.ollama_model || 'llama3.1:latest'}}"
             },
             {
-              "name": "ollama_url",
-              "value": ""
-            },
-            {
               "name": "ollama_keep_alive",
               "value": "={{$json.ollama_keep_alive || '30m'}}"
-            },
-            {
-              "name": "neo4j_url",
-              "value": "={{$json.neo4j_url || ($json.body && $json.body.neo4j_url) || ($json.query && $json.query.neo4j_url) || 'http://neo4j:7474'}}"
-            },
-            {
-              "name": "data_service_url",
-              "value": "={{$json.data_service_url || 'http://data-service:8000'}}"
             }
           ]
         }
@@ -72,13 +65,14 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items('Set Input Defaults')[0].json.data_service_url || 'http://data-service:8000') + '/context/assemble' }}",
+        "url": "http://data-service:8000/context/assemble",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"type\": \"rule_ingest\", \"project\": $items('Set Input Defaults')[0].json.project_name, \"rules_text\": $items('Set Input Defaults')[0].json.rules_text } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "assemble-context",
       "name": "Assemble Context",
@@ -104,13 +98,14 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items('Set Input Defaults')[0].json.data_service_url || 'http://data-service:8000') + '/context/generate-cypher' }}",
+        "url": "http://data-service:8000/context/generate-cypher",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"prompt\": $items(\"Build LLM Prompt\")[0].json.prompt, \"type\": \"rule_ingest\", \"project\": $items('Set Input Defaults')[0].json.project_name } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "4",
       "name": "Generate Validated Cypher",
@@ -123,7 +118,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Phase 29-05: thin caller -- bracket-nesting / label-allow-list validation\n// no longer lives here. POST /context/generate-cypher (dg_context.generate_validated_cypher(),\n// Plan 29-04) already ran validate_cypher() with a bounded 3-attempt retry\n// loop before this node ever sees a response: {valid, cypher, attempts} on\n// success, or {valid:false, violations, attempts} once retries are exhausted.\nconst input = $items(\"Set Input Defaults\")[0].json;\nconst llmBuild = $items(\"Build LLM Prompt\")[0].json;\nconst base = {\n  project_name: input.project_name,\n  neo4j_user: input.neo4j_user,\n  neo4j_password: input.neo4j_password,\n  neo4j_url: input.neo4j_url,\n  rules_text: input.rules_text || '',\n  isEdit: llmBuild.isEdit || false,\n  editRuleIds: llmBuild.editRuleIds || []\n};\nconst result = $json;\nif (!result || result.valid !== true || !result.cypher) {\n  const violations = (result && result.violations) || [];\n  throw new Error('Cypher generation failed validation after retries: ' + JSON.stringify(violations));\n}\nreturn [{ json: { ...base, cypher: result.cypher } }];"
+        "functionCode": "// Phase 29-05: thin caller -- bracket-nesting / label-allow-list validation\n// no longer lives here. POST /context/generate-cypher (dg_context.generate_validated_cypher(),\n// Plan 29-04) already ran validate_cypher() with a bounded 3-attempt retry\n// loop before this node ever sees a response: {valid, cypher, attempts} on\n// success, or {valid:false, violations, attempts} once retries are exhausted.\n// Phase 1205-05 (D-10): neo4j_user/neo4j_password/neo4j_url no longer flow\n// through Set Input Defaults -- Prepare Graph Payload builds the Neo4j auth\n// header from $env directly, so this node no longer passes them through.\nconst input = $items(\"Set Input Defaults\")[0].json;\nconst llmBuild = $items(\"Build LLM Prompt\")[0].json;\nconst base = {\n  project_name: input.project_name,\n  rules_text: input.rules_text || '',\n  isEdit: llmBuild.isEdit || false,\n  editRuleIds: llmBuild.editRuleIds || []\n};\nconst result = $json;\nif (!result || result.valid !== true || !result.cypher) {\n  const violations = (result && result.violations) || [];\n  throw new Error('Cypher generation failed validation after retries: ' + JSON.stringify(violations));\n}\nreturn [{ json: { ...base, cypher: result.cypher } }];"
       },
       "id": "5",
       "name": "Parse LLM Output",
@@ -136,7 +131,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Neo4j's /db/neo4j/tx/commit accepts exactly ONE statement per `statements`\n// entry, so a `;`-separated script fails the whole transaction with \"Expected\n// exactly one statement per query but got: N\". Splitting on `;` is NOT the fix:\n// the generated relationship MERGEs reference variables bound by earlier\n// clauses (MERGE (r)-[:HAS_BODY]->(a1)), and variable scope does not survive\n// across separate statements. Strip the separators instead, leaving one chained\n// query with continuous scope. Semicolons inside single-quoted strings (SWRL\n// bodies) are preserved.\nfunction stripStatementSeparators(text) {\n  let out = '';\n  let inQuote = false;\n  for (const ch of text) {\n    if (ch === \"'\") { inQuote = !inQuote; out += ch; continue; }\n    out += (ch === ';' && !inQuote) ? '\\n' : ch;\n  }\n  return out.trim();\n}\nconst cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\nconst isEdit = $json.isEdit || false;\nconst editRuleIds = $json.editRuleIds || [];\nlet cleanupStatements = [];\nif (isEdit && editRuleIds.length) {\n  for (const rid of editRuleIds) {\n    const safeId = rid.replace(/[^A-Za-z0-9_]/g, '');\n    cleanupStatements.push(\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[arg:ARG]->() DELETE arg\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[ref:REFERS_TO]->() DELETE ref\",\n      \"MATCH (:Rule {Rule_Id: '\" + safeId + \"'})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) DELETE rel, a\",\n      \"MATCH (r:Rule {Rule_Id: '\" + safeId + \"'}) DELETE r\"\n    );\n  }\n  cleanupStatements.push(\"MATCH (n) WHERE (n:Var OR n:Literal) AND n.graph = 'Metagraph' AND NOT (n)<-[:ARG]-() DELETE n\");\n}\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\nconst neo4j_auth_header = 'Basic ' + Buffer.from(($json.neo4j_user || 'neo4j') + ':' + ($json.neo4j_password || '12345678')).toString('base64');\nreturn [{\n  json: {\n    neo4j_auth_header: neo4j_auth_header,\n    project_name: $json.project_name,\n    neo4j_user: $json.neo4j_user,\n    neo4j_password: $json.neo4j_password,\n    neo4j_url: $json.neo4j_url,\n    rules_text: $json.rules_text || '',\n    cypher: stripStatementSeparators(cypher),\n    cleanupStatements: cleanupStatements,\n    postProcess: postProcess\n  }\n}];"
+        "functionCode": "// Neo4j's HTTP transaction endpoint accepts exactly ONE statement per `statements`\n// entry, so a `;`-separated script fails the whole transaction with \"Expected\n// exactly one statement per query but got: N\". Splitting on `;` is NOT the fix:\n// the generated relationship MERGEs reference variables bound by earlier\n// clauses (MERGE (r)-[:HAS_BODY]->(a1)), and variable scope does not survive\n// across separate statements. Strip the separators instead, leaving one chained\n// query with continuous scope. Semicolons inside single-quoted strings (SWRL\n// bodies) are preserved.\nfunction stripStatementSeparators(text) {\n  let out = '';\n  let inQuote = false;\n  for (const ch of text) {\n    if (ch === \"'\") { inQuote = !inQuote; out += ch; continue; }\n    out += (ch === ';' && !inQuote) ? '\\n' : ch;\n  }\n  return out.trim();\n}\nconst cypher = $json.cypher || '';\nconst project = $json.project_name || 'default-project';\nconst isEdit = $json.isEdit || false;\nconst editRuleIds = $json.editRuleIds || [];\n// Phase 1205-05 (ALGN12-17): every cleanup statement now carries a bound\n// $project parameter and matches Rule/Var/Literal nodes scoped to $project,\n// so an edit-mode cleanup can never touch another tenant's nodes.\nlet cleanupStatements = [];\nif (isEdit && editRuleIds.length) {\n  for (const rid of editRuleIds) {\n    const safeId = rid.replace(/[^A-Za-z0-9_]/g, '');\n    cleanupStatements.push(\n      { statement: \"MATCH (:Rule {Rule_Id: '\" + safeId + \"', project: $project})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[arg:ARG]->() DELETE arg\", parameters: { project: project } },\n      { statement: \"MATCH (:Rule {Rule_Id: '\" + safeId + \"', project: $project})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[ref:REFERS_TO]->() DELETE ref\", parameters: { project: project } },\n      { statement: \"MATCH (:Rule {Rule_Id: '\" + safeId + \"', project: $project})-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) DELETE rel, a\", parameters: { project: project } },\n      { statement: \"MATCH (r:Rule {Rule_Id: '\" + safeId + \"', project: $project}) DELETE r\", parameters: { project: project } }\n    );\n  }\n  cleanupStatements.push({\n    statement: \"MATCH (n) WHERE (n:Var OR n:Literal) AND n.graph = 'Metagraph' AND n.project = $project AND NOT (n)<-[:ARG]-() DELETE n\",\n    parameters: { project: project }\n  });\n}\n\nconst postProcess = [\n  \"MATCH (n) WHERE (n:Class OR n:DatatypeProperty OR n:ObjectProperty) AND n.graph IS NULL SET n.graph = 'OntoGraph', n.project = $project\",\n  \"WITH 1 AS dummy\",\n  \"MATCH (n) WHERE (n:Rule OR n:Atom OR n:Builtin OR n:Var OR n:Literal) AND n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\",\n  \"WITH 1 AS dummy2\",\n  \"MATCH (n) WHERE n.graph IS NULL SET n.graph = 'Metagraph', n.project = $project\"\n].join('\\n');\n\n// Phase 1205-05 (ALGN12-17): scoped to $project so the description backfill\n// (kept as one MERGE-free SET pass) never annotates another project's rules.\nconst descriptionStatement = \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' AND r.project = $project AND (r.description IS NULL OR r.description = '') SET r.description = $description, r.RuleDescription = $description\";\n\n// Phase 1205-05 (D-10): Neo4j Basic auth is built from the environment only --\n// no fallback to the committed default user/password literal.\nconst neo4j_auth_header = 'Basic ' + Buffer.from(($env.NEO4J_USER || '') + ':' + ($env.NEO4J_PASSWORD || '')).toString('base64');\nreturn [{\n  json: {\n    neo4j_auth_header: neo4j_auth_header,\n    project_name: $json.project_name,\n    rules_text: $json.rules_text || '',\n    cypher: stripStatementSeparators(cypher),\n    cleanupStatements: cleanupStatements,\n    postProcess: postProcess,\n    descriptionStatement: descriptionStatement\n  }\n}];"
       },
       "id": "6",
       "name": "Prepare Graph Payload",
@@ -149,13 +144,13 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
         "jsonParameters": true,
         "options": {
           "ignoreSslIssues": true,
           "timeout": 900000
         },
-        "bodyParametersJson": "={{ (() => { const p = $items('Prepare Graph Payload')[0].json; const stmts = (p.cleanupStatements || []).map(s => ({ statement: s })); stmts.push({ statement: p.cypher }); return { statements: stmts }; })() }}",
+        "bodyParametersJson": "={{ (() => { const p = $items('Prepare Graph Payload')[0].json; const stmts = (p.cleanupStatements || []).map(s => ({ statement: s.statement, parameters: s.parameters })); stmts.push({ statement: p.cypher }); stmts.push({ statement: p.postProcess, parameters: { project: p.project_name } }); stmts.push({ statement: p.descriptionStatement, parameters: { project: p.project_name, description: p.rules_text || '' } }); return { statements: stmts }; })() }}",
         "requestMethod": "POST",
         "headerParametersJson": "={{ { \"Authorization\": $items(\"Prepare Graph Payload\")[0].json.neo4j_auth_header } }}"
       },
@@ -170,28 +165,7 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items(\"Prepare Graph Payload\")[0].json.neo4j_url || 'http://neo4j:7474') + '/db/neo4j/tx/commit' }}",
-        "jsonParameters": true,
-        "options": {
-          "ignoreSslIssues": true,
-          "timeout": 900000
-        },
-        "bodyParametersJson": "={{ { \"statements\": [ { \"statement\": $items('Prepare Graph Payload')[0].json.postProcess, \"parameters\": { \"project\": $items('Prepare Graph Payload')[0].json.project_name } }, { \"statement\": \"MATCH (r:Rule) WHERE r.graph = 'Metagraph' AND (r.description IS NULL OR r.description = '') SET r.description = $description, r.RuleDescription = $description\", \"parameters\": { \"description\": $items('Prepare Graph Payload')[0].json.rules_text || '' } } ] } }}",
-        "requestMethod": "POST",
-        "headerParametersJson": "={{ { \"Authorization\": $items(\"Prepare Graph Payload\")[0].json.neo4j_auth_header } }}"
-      },
-      "id": "9",
-      "name": "Annotate Graph Props",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
-      "position": [
-        1260,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "// Neo4j's /db/neo4j/tx/commit answers HTTP 200 even when a statement fails --\n// the failure lives in the response's `errors` array and rolls back the WHOLE\n// transaction. Reporting `status: 'ok'` off the generated Cypher text alone made\n// a zero-write syntax error look like a successful ingest in the UI's session\n// history (no new nodes in the Graph Viewer, no error anywhere).\nconst payload = $items(\"Prepare Graph Payload\")[0].json;\nconst cypher = payload.cypher || '';\nconst mergeCount = (cypher.match(/MERGE/gi) || []).length;\nconst neo4jErrors = [];\nfor (const step of ['Execute LLM Cypher', 'Annotate Graph Props']) {\n  let items;\n  try { items = $items(step); } catch (e) { continue; }\n  for (const item of (items || [])) {\n    for (const err of ((item.json && item.json.errors) || [])) {\n      neo4jErrors.push({ step: step, code: err.code || '', message: err.message || '' });\n    }\n  }\n}\nif (neo4jErrors.length) {\n  return [{\n    json: {\n      status: \"error\",\n      project: payload.project_name,\n      database: \"neo4j\",\n      message: 'Neo4j rejected the generated Cypher -- nothing was written. ' + neo4jErrors.map(e => e.step + ': ' + e.code + ' ' + e.message).join(' | '),\n      neo4jErrors: neo4jErrors,\n      cypher: cypher\n    }\n  }];\n}\nreturn [{\n  json: {\n    status: \"ok\",\n    project: payload.project_name,\n    database: \"neo4j\",\n    graphs: { ontology: \"OntoGraph\", rules: \"Metagraph\" },\n    counts: { merge_statements: mergeCount },\n    cypher: cypher\n  }\n}];"
+        "functionCode": "// Neo4j's HTTP transaction endpoint answers HTTP 200 even when a statement fails --\n// the failure lives in the response's `errors` array and rolls back the WHOLE\n// transaction. Reporting `status: 'ok'` off the generated Cypher text alone made\n// a zero-write syntax error look like a successful ingest in the UI's session\n// history (no new nodes in the Graph Viewer, no error anywhere).\n// Phase 1205-05: the write is now ONE atomic Execute LLM Cypher transaction\n// (the separate post-processing node was folded in), so only that step is scanned.\nconst payload = $items(\"Prepare Graph Payload\")[0].json;\nconst cypher = payload.cypher || '';\nconst mergeCount = (cypher.match(/MERGE/gi) || []).length;\nconst neo4jErrors = [];\nfor (const step of ['Execute LLM Cypher']) {\n  let items;\n  try { items = $items(step); } catch (e) { continue; }\n  for (const item of (items || [])) {\n    for (const err of ((item.json && item.json.errors) || [])) {\n      neo4jErrors.push({ step: step, code: err.code || '', message: err.message || '' });\n    }\n  }\n}\nif (neo4jErrors.length) {\n  return [{\n    json: {\n      status: \"error\",\n      project: payload.project_name,\n      database: \"neo4j\",\n      message: 'Neo4j rejected the generated Cypher -- nothing was written. ' + neo4jErrors.map(e => e.step + ': ' + e.code + ' ' + e.message).join(' | '),\n      neo4jErrors: neo4jErrors,\n      cypher: cypher\n    }\n  }];\n}\nreturn [{\n  json: {\n    status: \"ok\",\n    project: payload.project_name,\n    database: \"neo4j\",\n    graphs: { ontology: \"OntoGraph\", rules: \"Metagraph\" },\n    counts: { merge_statements: mergeCount },\n    cypher: cypher\n  }\n}];"
       },
       "id": "10",
       "name": "Build Response",
@@ -204,10 +178,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": $json.status === 'error' ? 'failed' : 'completed', \"workflow\": \"rules-ingest\", \"message\": $json.message || '', \"payload\": $json } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "store",
       "name": "Store Result",
@@ -246,10 +221,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 1, \"progress\": 20, \"message\": \"Workflow started\", \"payload\": {} } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "mark",
       "name": "Mark Running",
@@ -262,10 +238,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 2, \"progress\": 40, \"message\": \"Parsing rules\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step2",
       "name": "Mark Step 2",
@@ -278,10 +255,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 3, \"progress\": 60, \"message\": \"Writing graph\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step3",
       "name": "Mark Step 3",
@@ -294,10 +272,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"rules-ingest\", \"step\": 4, \"progress\": 80, \"message\": \"Annotating properties\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step4",
       "name": "Mark Step 4",
@@ -311,6 +290,17 @@
   ],
   "connections": {
     "Ingest Rules": {
+      "main": [
+        [
+          {
+            "node": "Verify Relay Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Relay Token": {
       "main": [
         [
           {
@@ -409,17 +399,6 @@
         ]
       ]
     },
-    "Annotate Graph Props": {
-      "main": [
-        [
-          {
-            "node": "Build Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Build Response": {
       "main": [
         [
@@ -482,7 +461,7 @@
       "main": [
         [
           {
-            "node": "Annotate Graph Props",
+            "node": "Build Response",
             "type": "main",
             "index": 0
           }

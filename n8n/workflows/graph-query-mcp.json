@@ -19,6 +19,19 @@
     },
     {
       "parameters": {
+        "functionCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst headers = ($json && $json.headers) || {};\nconst provided = headers['x-dg-service-token'];\nconst expected = $env.DG_SERVICE_TOKEN;\nif (!expected || provided !== expected) {\n  throw new Error('relay token rejected');\n}\nreturn items;"
+      },
+      "id": "verify-relay-token",
+      "name": "Verify Relay Token",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        0
+      ]
+    },
+    {
+      "parameters": {
         "keepOnlySet": true,
         "values": {
           "string": [
@@ -28,23 +41,11 @@
             },
             {
               "name": "project_name",
-              "value": "={{$json.project_name || $json.project || ($json.body && ($json.body.project_name || $json.body.project)) || ''}}"
+              "value": "={{ ($json.body && ($json.body.project_name || $json.body.project)) || '' }}"
             },
             {
               "name": "ollama_model",
               "value": "={{$json.ollama_model || 'llama3.1:latest'}}"
-            },
-            {
-              "name": "ollama_url",
-              "value": ""
-            },
-            {
-              "name": "mcp_url",
-              "value": "={{$json.mcp_url || 'http://data-service:8000/mcp'}}"
-            },
-            {
-              "name": "data_service_url",
-              "value": "={{$json.data_service_url || 'http://data-service:8000'}}"
             }
           ]
         }
@@ -60,13 +61,14 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items('Set Input Defaults')[0].json.data_service_url || 'http://data-service:8000') + '/context/assemble' }}",
+        "url": "http://data-service:8000/context/assemble",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"type\": \"graph_query\", \"project\": $items('Set Input Defaults')[0].json.project_name, \"question\": $items('Set Input Defaults')[0].json.prompt_text } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "3",
       "name": "Assemble Context",
@@ -79,7 +81,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Phase 29-05: thin caller -- the live-schema + v3-data-model + keyword-override\n// guidance string, and the \"Smart Overrides\" keyword-matching logic, now live\n// entirely in data-service's /context/assemble (dg_context.assemble_context()\n// + its deterministic _match_shape_ids() keyword matcher, Plan 29-03). This\n// node only string-joins the assembled context dict into the final prompt --\n// it asks for RAW Cypher text (no JSON wrapper), matching what\n// POST /context/generate-cypher's validate_cypher() expects as input.\nconst input = $items(\"Set Input Defaults\")[0].json;\nconst context = $json;\nconst promptText = (input.prompt_text || '').trim();\nif (!promptText) {\n  throw new Error('prompt is required');\n}\n\nconst projectNote = input.project_name\n  ? `MANDATORY: You MUST add r.project = $project to EVERY query that touches Rule, Atom, Var, or Literal nodes. The active project is \\\"${input.project_name}\\\". Never omit this filter -- results must be scoped to this project only.`\n  : 'Only add a project filter if the user explicitly mentions a project.';\n\nconst prompt = [\n  'You are a Neo4j Cypher expert.',\n  'Generate a single read-only Cypher query that answers the user question.',\n  'Output Cypher only -- no JSON, no markdown fences, no commentary.',\n  'STRICT RULE: Use ONLY the labels, relationship types, and property keys described in the CONTEXT below.',\n  '',\n  'CONTEXT (deterministically assembled by /context/assemble -- schema layers, SWRL conventions, matched Cypher catalog shape(s), and known existing entities):',\n  JSON.stringify({\n    ontograph: context.ontograph,\n    metagraph: context.metagraph,\n    validgraph: context.validgraph,\n    swrl_conventions: context.swrl_conventions,\n    selected_cypher_shapes: context.selected_cypher_shapes,\n    existing_entities: context.existing_entities,\n    existing_design_states: context.existing_design_states\n  }),\n  '',\n  `- ${projectNote}`,\n  '- Always include LIMIT 50 unless the user explicitly asks for all results.',\n  '- existing_design_states lists real per-project ValidationRun design-state snapshots; answer design-state questions by matching (:ValidationRun {project:$project}) and reading run.statePayloadJson.',\n  '',\n  'Question:',\n  promptText\n].join('\\n');\n\nreturn [{ json: { ...input, cypher_prompt: prompt } }];"
+        "functionCode": "// Phase 29-05: thin caller -- the live-schema + v3-data-model + keyword-override\n// guidance string, and the \"Smart Overrides\" keyword-matching logic, now live\n// entirely in data-service's /context/assemble (dg_context.assemble_context()\n// + its deterministic _match_shape_ids() keyword matcher, Plan 29-03). This\n// node only string-joins the assembled context dict into the final prompt --\n// it asks for RAW Cypher text (no JSON wrapper), matching what\n// POST /context/generate-cypher's validate_cypher() expects as input.\nconst input = $items(\"Set Input Defaults\")[0].json;\nconst context = $json;\nconst promptText = (input.prompt_text || '').trim();\nif (!promptText) {\n  throw new Error('prompt is required');\n}\n\n// Phase 1205-05: states the 1205-06 project-scope validator's exact rule so\n// the LLM's first attempt already conforms, instead of relying on retries.\nconst projectNote = 'MANDATORY: every node variable in the query must be constrained to $project via <var>.project = $project or an inline {project: $project} map, except Class, DatatypeProperty, ObjectProperty, Builtin and Literal nodes (shared vocabulary). Never write a project name as a string literal -- always bind it through the $project parameter. Never use CALL, UNION, LOAD CSV, FOREACH or USE.';\n\nconst prompt = [\n  'You are a Neo4j Cypher expert.',\n  'Generate a single read-only Cypher query that answers the user question.',\n  'Output Cypher only -- no JSON, no markdown fences, no commentary.',\n  'STRICT RULE: Use ONLY the labels, relationship types, and property keys described in the CONTEXT below.',\n  '',\n  'CONTEXT (deterministically assembled by /context/assemble -- schema layers, SWRL conventions, matched Cypher catalog shape(s), and known existing entities):',\n  JSON.stringify({\n    ontograph: context.ontograph,\n    metagraph: context.metagraph,\n    validgraph: context.validgraph,\n    swrl_conventions: context.swrl_conventions,\n    selected_cypher_shapes: context.selected_cypher_shapes,\n    existing_entities: context.existing_entities,\n    existing_design_states: context.existing_design_states\n  }),\n  '',\n  `- ${projectNote}`,\n  '- Always include LIMIT 50 unless the user explicitly asks for all results.',\n  '- existing_design_states lists real per-project ValidationRun design-state snapshots; answer design-state questions by matching (:ValidationRun {project:$project}) and reading run.statePayloadJson.',\n  '',\n  'Question:',\n  promptText\n].join('\\n');\n\nreturn [{ json: { ...input, cypher_prompt: prompt } }];"
       },
       "id": "4",
       "name": "Build Cypher Prompt",
@@ -92,13 +94,14 @@
     },
     {
       "parameters": {
-        "url": "={{ ($items('Set Input Defaults')[0].json.data_service_url || 'http://data-service:8000') + '/context/generate-cypher' }}",
+        "url": "http://data-service:8000/context/generate-cypher",
         "jsonParameters": true,
         "options": {
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"prompt\": $items(\"Build Cypher Prompt\")[0].json.cypher_prompt, \"type\": \"graph_query\", \"project\": $items('Set Input Defaults')[0].json.project_name } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "5",
       "name": "Generate Validated Cypher",
@@ -124,10 +127,11 @@
     },
     {
       "parameters": {
-        "url": "={{$items(\"Set Input Defaults\")[0].json.mcp_url}}",
+        "url": "http://data-service:8000/mcp",
         "jsonParameters": true,
-        "bodyParametersJson": "={{ { \"jsonrpc\": \"2.0\", \"id\": \"query\", \"method\": \"tools/call\", \"params\": { \"name\": \"neo4j_query\", \"arguments\": { \"cypher\": $items(\"Parse Cypher\")[0].json.cypher, \"parameters\": ($items(\"Set Input Defaults\")[0].json.project_name ? { \"project\": $items(\"Set Input Defaults\")[0].json.project_name } : {}) } } } }}",
-        "requestMethod": "POST"
+        "bodyParametersJson": "={{ { \"jsonrpc\": \"2.0\", \"id\": \"query\", \"method\": \"tools/call\", \"params\": { \"name\": \"neo4j_query\", \"arguments\": { \"cypher\": $items(\"Parse Cypher\")[0].json.cypher, \"parameters\": { \"project\": $items(\"Set Input Defaults\")[0].json.project_name } } } } }}",
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "7",
       "name": "Run Cypher (MCP)",
@@ -159,7 +163,8 @@
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $items(\"Build Answer Prompt\")[0].json.answer_prompt, \"system\": null } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "9",
       "name": "Generate Answer",
@@ -185,10 +190,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"graph-query\", \"payload\": $json } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "store",
       "name": "Store Result",
@@ -227,10 +233,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 1, \"progress\": 20, \"message\": \"Workflow started\", \"payload\": {} } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "mark",
       "name": "Mark Running",
@@ -243,10 +250,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 2, \"progress\": 40, \"message\": \"Generating cypher\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step2",
       "name": "Mark Step 2",
@@ -259,10 +267,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 3, \"progress\": 60, \"message\": \"Querying graph\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step3",
       "name": "Mark Step 3",
@@ -275,10 +284,11 @@
     },
     {
       "parameters": {
-        "url": "={{($items(\"Set Input Defaults\")[0].json.data_service_url || 'http://data-service:8000') + '/execution-result'}}",
+        "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"running\", \"workflow\": \"graph-query\", \"step\": 4, \"progress\": 80, \"message\": \"Generating answer\" } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "step4",
       "name": "Mark Step 4",
@@ -292,6 +302,17 @@
   ],
   "connections": {
     "Ingest Prompt": {
+      "main": [
+        [
+          {
+            "node": "Verify Relay Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Relay Token": {
       "main": [
         [
           {
