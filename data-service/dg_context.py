@@ -671,7 +671,209 @@ def _var_label_map(cypher: str) -> dict[str, str]:
     return mapping
 
 
-def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
+# ── Project-scope static validator for graph_query and rule ingest/edit
+# (Phase 1205-06: ALGN12-17, D-03 fail-closed, D-08 relay only) ──
+#
+# Neither validate_cypher() above nor the schema/verb checks it already runs
+# prove that a MODEL-WRITTEN query only ever touches the calling project's
+# data. `/mcp neo4j_query` (T-1205-06) cannot itself be made per-user (1205
+# RESEARCH.md Pitfall 2: the shared database has no RBAC), so the query
+# text itself must be proven project-scoped before execution. These
+# functions are pure and return the same {code, message, path?} violation
+# shape as every other check in this file; wiring into the two enforcement
+# points (/context/generate-cypher for graph_query, and /mcp result
+# filtering) happens in 1205-14 -- this plan only adds the checks and the
+# validate_cypher `project` kwarg that carries them.
+
+# Shared vocabulary labels (cypher_template.txt:174, CLAUDE.md Node Labels
+# table) are visible across every project by design -- a node whose ENTIRE
+# label set is drawn from this frozenset is exempt from inline project
+# scoping. Documented as an accepted low-severity residual in
+# spec/SECURITY-BOUNDARY.md by 1205-16 (T-1205-06-04).
+SHARED_VOCABULARY_LABELS: frozenset[str] = frozenset(
+    {"Class", "DatatypeProperty", "ObjectProperty", "Builtin", "Literal"}
+)
+
+# Forbidden graph_query constructs -- each one is a way to escape the static
+# inline-map proof below (a stored procedure result, a second query branch
+# via UNION, file/DB access) and is rejected outright rather than analyzed
+# (T-1205-06-02). Checked against the DE-QUOTED text only (never inside a
+# string literal).
+_FORBIDDEN_CLAUSE_PATTERNS: dict[str, "re.Pattern[str]"] = {
+    "CALL": re.compile(r"\bCALL\b", re.IGNORECASE),
+    "UNION": re.compile(r"\bUNION\b", re.IGNORECASE),
+    "LOAD CSV": re.compile(r"\bLOAD\s+CSV\b", re.IGNORECASE),
+    "FOREACH": re.compile(r"\bFOREACH\b", re.IGNORECASE),
+    "USE": re.compile(r"\bUSE\b", re.IGNORECASE),
+    "apoc.": re.compile(r"\bapoc\.", re.IGNORECASE),
+    "db.": re.compile(r"\bdb\.", re.IGNORECASE),
+}
+
+# Both single- and double-quoted string literals -- stripped (replaced with
+# nothing) before scanning for forbidden clauses or node patterns, so a
+# keyword or bracket quoted as DATA (e.g. a stored SWRL body) is never
+# mistaken for Cypher syntax. The project_literal/foreign_project_literal
+# checks below run on the ORIGINAL text instead, since they need the quoted
+# literal itself.
+_STRING_LITERAL_PATTERN = re.compile(r"'[^']*'|\"[^\"]*\"")
+
+
+def _strip_string_literals(cypher: str) -> str:
+    return _STRING_LITERAL_PATTERN.sub("", cypher)
+
+
+# One node pattern: '(' + optional variable + optional ':Label' chain
+# (backticks allowed) + optional '{...}' property map + ')', with the
+# closing ')' required immediately after the optional map -- so a function
+# call's argument list (count(n), collect(DISTINCT n), toLower(r.name)) can
+# never match, since none of those have a valid var/label/map shape ending
+# directly in ')'.
+_SCOPE_LABEL_TOKEN = r":\s*`?[A-Za-z_][A-Za-z0-9_]*`?"
+_SCOPE_NODE_PATTERN = re.compile(
+    r"\(\s*"
+    r"(?P<var>[A-Za-z_][A-Za-z0-9_]*)?"
+    r"(?P<labels>(?:\s*" + _SCOPE_LABEL_TOKEN + r")*)"
+    r"\s*(?P<map>\{[^{}]*\})?"
+    r"\s*\)"
+)
+
+# project: $project inside an inline map -- the ONLY thing that counts as
+# proof of scope (a WHERE predicate does not, since it can be widened with
+# `OR true`).
+_INLINE_PROJECT_PARAM_PATTERN = re.compile(r"project\s*:\s*\$project\b")
+
+# `project` compared to or mapped from a quoted literal -- illegal in
+# graph_query Cypher (project_literal) at ANY value, and illegal in rule
+# ingest/edit Cypher when the literal differs from the relayed project
+# (foreign_project_literal). Both single- and double-quoted forms; runs on
+# the ORIGINAL (not de-quoted) text.
+_PROJECT_MAP_LITERAL_PATTERN = re.compile(r"project\s*:\s*(['\"])([^'\"]*)\1")
+_PROJECT_DOT_LITERAL_PATTERN = re.compile(r"\.project\s*=\s*(['\"])([^'\"]*)\1")
+
+
+def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
+    """Statically prove (or disprove) that graph_query Cypher is project-
+    scoped (T-1205-06-01/02). Every node variable of a tenant-owned or
+    unlabeled node pattern must carry an inline `{project: $project}` map at
+    its FIRST occurrence in text order; anonymous patterns need the same
+    inline map; shared-vocabulary-only label patterns are exempt; forbidden
+    procedure/set/file clauses are rejected outright; any literal `project`
+    value is rejected; a query that never references `$project` at all is
+    rejected. Never fails open -- an unrecognized construct is always a
+    violation, never silently accepted (T-1205-06 prohibition).
+    """
+    violations: list[dict[str, Any]] = []
+    dequoted = _strip_string_literals(cypher)
+
+    for label, pattern in _FORBIDDEN_CLAUSE_PATTERNS.items():
+        if pattern.search(dequoted):
+            violations.append(
+                {
+                    "code": "forbidden_clause",
+                    "message": (
+                        f"'{label}' is not permitted in graph_query Cypher -- "
+                        "it can escape static project-scope proof (a "
+                        "procedure call, a second query branch, or file/DB "
+                        "access). Where: the generated Cypher. How to fix: "
+                        "rewrite as a single, plain MATCH/RETURN query with "
+                        "no CALL/UNION/LOAD CSV/FOREACH/USE/apoc./db. "
+                        "construct."
+                    ),
+                    "path": label,
+                }
+            )
+
+    seen_vars: set[str] = set()
+    for match in _SCOPE_NODE_PATTERN.finditer(dequoted):
+        var = match.group("var")
+        labels = [
+            token.split(":", 1)[1].strip().strip("`")
+            for token in re.findall(_SCOPE_LABEL_TOKEN, match.group("labels") or "")
+        ]
+        map_text = match.group("map") or ""
+        has_scope_param = bool(_INLINE_PROJECT_PARAM_PATTERN.search(map_text))
+        exempt = bool(labels) and all(label in SHARED_VOCABULARY_LABELS for label in labels)
+        if exempt:
+            continue
+
+        if var is None:
+            if not has_scope_param:
+                violations.append(
+                    {
+                        "code": "anonymous_node_pattern",
+                        "message": (
+                            "An anonymous (or unlabeled-tenant) node pattern "
+                            "has no inline {project: $project} map, so it can "
+                            "match nodes from every project. Where: "
+                            f"'{match.group(0).strip()}'. How to fix: give "
+                            "this pattern an inline {project: $project} map, "
+                            "or bind it to a variable and scope it at its "
+                            "first occurrence."
+                        ),
+                        "path": match.group(0).strip(),
+                    }
+                )
+            continue
+
+        if var in seen_vars:
+            continue
+        seen_vars.add(var)
+
+        if not has_scope_param:
+            violations.append(
+                {
+                    "code": "missing_project_scope",
+                    "message": (
+                        f"Variable `{var}` is not inline-scoped at its first "
+                        "occurrence, so it can match nodes from every "
+                        f"project. Where: `{var}`'s first appearance. How to "
+                        f"fix: write ({var}:Label {{project: $project}}) at "
+                        "the variable's first appearance -- a WHERE "
+                        "predicate does not count, since it can be widened "
+                        "with OR."
+                    ),
+                    "path": var,
+                }
+            )
+
+    if "$project" not in cypher:
+        violations.append(
+            {
+                "code": "missing_project_scope",
+                "message": (
+                    "The query never references $project, so it cannot be "
+                    "proven project-scoped. Where: the full query. How to "
+                    "fix: bind $project and reference it via an inline "
+                    "{project: $project} map on every tenant-owned or "
+                    "unlabeled node pattern."
+                ),
+                "path": "query",
+            }
+        )
+
+    for pattern in (_PROJECT_MAP_LITERAL_PATTERN, _PROJECT_DOT_LITERAL_PATTERN):
+        for match in pattern.finditer(cypher):
+            literal_value = match.group(2)
+            violations.append(
+                {
+                    "code": "project_literal",
+                    "message": (
+                        f"`project` is compared to or set from the string "
+                        f"literal '{literal_value}' instead of the bound "
+                        f"$project parameter. Where: '{match.group(0)}'. How "
+                        "to fix: use $project -- never a literal project "
+                        "value -- in graph_query Cypher."
+                    ),
+                    "path": literal_value,
+                }
+            )
+
+    return violations
+
+
+def validate_cypher(
+    cypher: str, request_type: str, *, project: str | None = None
+) -> dict[str, Any]:
     """Validate LLM-generated Cypher against the v4 schema (allowed labels,
     relationships, DesignState `kind` enum, Rule_Id/Atom_Id/SWRL_label naming,
     Var `project` merge key) AND a request-type-aware write-verb policy
@@ -914,6 +1116,14 @@ def validate_cypher(cypher: str, request_type: str) -> dict[str, Any]:
                     }
                 )
 
+    # Project-scope checks (Phase 1205-06: ALGN12-17) -- only run when a
+    # project is supplied, so callers that never pass one (existing
+    # test_dg_context.py behavior) see byte-identical results to before this
+    # kwarg existed.
+    if project is not None:
+        if request_type == "graph_query":
+            violations.extend(check_query_project_scope(cypher))
+
     # De-duplicate identical violations (same code+path) while preserving order.
     seen: set[tuple[str, str | None]] = set()
     unique_violations: list[dict[str, Any]] = []
@@ -951,11 +1161,19 @@ def append_corrective_feedback(prompt: str, violations: list[dict[str, Any]]) ->
 
 
 def generate_validated_cypher(
-    prompt: str, request_type: str, max_retries: int = 2
+    prompt: str,
+    request_type: str,
+    max_retries: int = 2,
+    *,
+    project: str | None = None,
 ) -> dict[str, Any]:
     """The single n8n-facing generate+validate+retry orchestrator (D-06/D-07,
     RESEARCH.md Open Question 1 resolution: one endpoint, prompt-in ->
     validated-cypher-out).
+
+    `project`, when supplied, is passed through to `validate_cypher()` on
+    every attempt (Phase 1205-06: ALGN12-17) -- omitted, behavior is
+    byte-identical to before this kwarg existed.
 
     Calls the LLM gateway adapter directly in-process (resolve_active_provider
     -> get_adapter -> adapter.generate -- the exact llm_generate() sequence
@@ -986,7 +1204,7 @@ def generate_validated_cypher(
     for attempt in range(max_retries + 1):
         req = GenerateRequest(prompt=current_prompt, model=model, provider=provider)
         response = adapter.generate(req, api_key)
-        result = validate_cypher(response.text, request_type)
+        result = validate_cypher(response.text, request_type, project=project)
         if result["valid"]:
             return {"valid": True, "cypher": response.text, "attempts": attempt + 1}
         violations = result["violations"]
