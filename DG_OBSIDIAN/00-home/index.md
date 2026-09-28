@@ -85,6 +85,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[decisions/Phase 35 Corpus A frozen as-is, Frame Truss binaries not committed|Phase 35 (v9.0): Corpus A not re-grounded on recovered Frame/Truss source; *.gh/*.3dm gitignored (20 MB .3dm never committed)]]
 - [[decisions/Phase 37 structure validation — rule-mapping file-first, severity taxonomy, ephemeral results|Phase 37 (v9.0): Rule-mapping file-first (`llm/structure_rules.json`), severity taxonomy reuses SHACL, results ephemeral for MVP]]
 - [[decisions/Phase 39 DesignState auto-validation — data-service watcher, SHACL verdict, guardrails|Phase 39 (v9.0): DesignState auto-validation — data-service watcher (paths a/c empirically blocked), SHACL verdict as the only server-side judge, three per-project guardrails; SHACL/SWRL coverage gap is the headline open finding]]
+- [[knowledge/decisions/Live-infrastructure GSD plans run by the orchestrator directly, never DSH|Phase 1204 (v12.0): live-infra plans (Docker restarts, real LLM cost, D-28 key handling) run by the orchestrator directly, never DSH]]
+- [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
 - [[Docker layer caching can serve stale index.html]]
@@ -113,6 +115,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[debugging/Phase 36 data-service image predated the phase (F7)|F7: data-service image predated Phase 36 — /computgraph/publish 404'd until rebuilt]]
 - [[debugging/Phase 35 latent parser bug — pattern host resolved by document order|Latent: ComputeHostPatternIds picks a host by document order, so a Procedure listing a transitively-nested pattern silently drops PATTERN_HOST_TO. Fix planned as 35-16]]
 - [[debugging/Phase 35 R4 interface rule unreachable on live Grasshopper data|Phase 35: R4 Interface rule matches on `name.startswith("Param")`, but no real GH component ever displays as "Param..." — rule is unreachable on live canvases, and its only test feeds a fictitious name that hides the bug]]
+- [[knowledge/debugging/Python module-identity mismatch silently defeats a monkeypatch|Phase 1204: bare `import cassette` vs. `from recognition_eval import cassette` bound two separate sys.modules entries — patching one's `_FIXTURES_ROOT` never touched the module the codebase actually calls into]]
+- [[knowledge/debugging/D-24 report schema had no item dimension, risking misleading pooled metrics|Phase 1204: report_schema_llm.json's providerStrata had no item dimension — pooling 5 different rule-ingest prompts would have produced a substantively misleading near-zero agreement figure]]
 
 ### Patterns
 - [[Async polling pattern for n8n workflow execution tracking]]
@@ -240,6 +244,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-09-19 T1 ITcon R15.6 title and keywords finalisation|2026-09-19 T1 R15.6 — title & keywords]]
 - [[sessions/2026-09-19 Theory–implementation alignment audit and GSD planning|2026-09-19 Theory–Implementation Alignment audit + GSD sequencing]]
 - [[sessions/2026-09-20 v9.0 override closeout and v12.0 activation|2026-09-20 v9.0 override closeout + v12.0 activation]]
+- [[sessions/2026-09-28 Phase 1204 execution complete — determinism and LLM reproducibility benchmark|2026-09-28 Phase 1204 execution complete — 9/9 plans, D-08 gate genuinely failed (disclosed), live LLM sampling, gsd-verifier 12/12]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
