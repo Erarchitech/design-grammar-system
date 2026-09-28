@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Phase 1204 context gathered
-last_updated: "2026-09-28T19:39:27.155Z"
+stopped_at: Completed 1205-01-PLAN.md (checkpoint resolved + Rule-1 fix)
+last_updated: "2026-09-28T21:04:13.917Z"
 last_activity: 2026-09-28
-last_activity_desc: Phase 1204 complete, transitioned to Phase 1205
+last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 41
-  completed_plans: 41
-  percent: 83
+  total_plans: 60
+  completed_plans: 42
+  percent: 70
 ---
 
 # Project State
@@ -24,12 +24,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1203 — identity-convergence-and-attribute-of-decision
+**Current focus:** Phase 1205 — Security and Tenancy Release Gate
 
 ## Current Position
 
-Phase: 1205 — Security and Tenancy Release Gate
-Plan: Not started
+Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
+Plan: 2 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -38,7 +38,7 @@ Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EX
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-28 — Phase 1204 complete, transitioned to Phase 1205
+Last activity: 2026-09-28 — Phase 1205 execution started
 (cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
 the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
 finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
@@ -139,6 +139,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1203 P03 | 45min | 2 tasks | 4 files |
 | Phase 1203 P05 | 50min | 2 tasks | 11 files |
 | Phase 1203 P06 | ~35min | 2 tasks | 5 files |
+| Phase 1205 P01 | ~20min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -429,6 +430,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: ATTRIBUTE_OF propagated across every schema surface (CLAUDE.md, README.md, copilot-instructions.md, cypher_template.txt, dataset_schema.json, DATABASE.md, LPG-OWL-MAPPING.md, dg-shapes.ttl) plus a new RULE-PARTITION-POLICY.md decision-table row assigning it its own ownership category
 - [Phase ?]: WR-02 fixed (identity route verb/path corrections in spec/DATABASE.md) and WR-04 resolved (definitionId is CgDefinition.DocumentId, not FileName, confirmed against CgContextDgIdAssigner.AssignDgIds)
 - [Phase ?]: 1203-06: Live-stack checkpoint closed 2026-09-23 -- operator verified both CQ3 forward/reverse ATTRIBUTE_OF queries and cross-project isolation against a running Neo4j, results matched expected-cq3.json exactly, field for field
+- [Phase ?]: 1205-01: ALGN12-19 requirement checkbox intentionally NOT marked complete — spans 8 plans in this phase (01,04,07,09,11,15,16,18); marking it now would falsely claim the whole requirement done
+- [Phase ?]: 1205-01: Rule-1 fix — check_env_file.classify() now grants pending-rotation to a PENDING_ROTATION_KEYS member whose reasons are a non-empty subset of {known-default, too-short} (not strict equality to [known-default]), fixing LLM_MASTER_SECRET's unsatisfiable --allow-pending-rotation case
 
 ### Research Flags (carry into planning)
 
@@ -511,9 +514,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-23T19:13:20.063Z
-Stopped at: Phase 1204 context gathered
-Resume file: .planning/phases/1204-determinism-and-llm-reproducibility-benchmark/1204-CONTEXT.md
+Last session: 2026-09-28T21:04:13.899Z
+Stopped at: Completed 1205-01-PLAN.md (checkpoint resolved + Rule-1 fix)
+Resume file: None
 
 ## Performance Metrics
 
