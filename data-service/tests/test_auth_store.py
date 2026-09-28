@@ -261,3 +261,245 @@ def test_deployment_profile_multi_user():
 def test_deployment_profile_invalid_raises():
     with pytest.raises(ValueError):
         auth.deployment_profile({"DG_DEPLOYMENT": "prod"})
+
+
+# ── set_membership / get_role / remove_membership (D-02) ──
+
+
+def test_set_membership_rejects_invalid_role():
+    with pytest.raises(ValueError):
+        auth.set_membership("judy", "p1", "superuser")
+
+
+def test_get_role_returns_stored_role():
+    auth.set_membership("judy", "p1", "editor")
+    assert auth.get_role("judy", "p1") == "editor"
+
+
+def test_get_role_unknown_pair_returns_none():
+    assert auth.get_role("nobody", "nowhere") is None
+
+
+def test_remove_membership_missing_pair_returns_false():
+    assert auth.remove_membership("nobody", "nowhere") is False
+
+
+def test_remove_membership_existing_pair_returns_true():
+    auth.set_membership("judy", "p1", "viewer")
+    assert auth.remove_membership("judy", "p1") is True
+    assert auth.get_role("judy", "p1") is None
+
+
+# ── effective_role / role_satisfies (D-02) ──
+
+
+def test_effective_role_admin_is_always_owner():
+    admin = auth.Principal(kind="user", username="root", is_admin=True)
+    assert auth.effective_role(admin, "any-project") == "owner"
+
+
+def test_effective_role_user_without_membership_is_none():
+    user = auth.Principal(kind="user", username="mallory", is_admin=False)
+    assert auth.effective_role(user, "p1") is None
+
+
+def test_effective_role_non_user_principal_is_none():
+    connector = auth.Principal(kind="connector", bound_project="p1")
+    assert auth.effective_role(connector, "p1") is None
+
+
+def test_role_satisfies():
+    assert auth.role_satisfies("editor", "viewer") is True
+    assert auth.role_satisfies("viewer", "editor") is False
+    assert auth.role_satisfies(None, "viewer") is False
+
+
+# ── create_project_if_unclaimed (D-02) ──
+
+
+def test_create_project_if_unclaimed_true_then_false():
+    assert auth.create_project_if_unclaimed("P-new", "trent", exists_in_graph=False) is True
+    assert auth.get_role("trent", "P-new") == "owner"
+    # Already has a member now -- a second claim must fail.
+    assert auth.create_project_if_unclaimed("P-new", "oscar", exists_in_graph=False) is False
+
+
+def test_create_project_if_unclaimed_false_when_exists_in_graph():
+    assert auth.create_project_if_unclaimed("P-existing", "trent", exists_in_graph=True) is False
+    assert auth.get_role("trent", "P-existing") is None
+
+
+# ── invites (D-05) ──
+
+
+def test_create_invite_and_consume():
+    code, record = auth.create_invite(
+        "peggy", "p1", "editor", created_by="root"
+    )
+    assert code.startswith(auth.INVITE_CODE_PREFIX)
+    assert "code_hash" not in record
+    consumed = auth.consume_invite(code)
+    assert consumed is not None
+    assert consumed["username"] == "peggy"
+
+
+def test_consume_invite_second_time_returns_none():
+    code, _record = auth.create_invite("peggy", "p1", "editor", created_by="root")
+    assert auth.consume_invite(code) is not None
+    assert auth.consume_invite(code) is None
+
+
+def test_consume_invite_expired_returns_none():
+    start = 5_000_000
+    code, _record = auth.create_invite(
+        "peggy", "p1", "editor", created_by="root", now=start
+    )
+    assert auth.consume_invite(code, now=start + auth.INVITE_TTL_SECONDS) is None
+
+
+def test_consume_invite_unknown_code_returns_none():
+    assert auth.consume_invite("dgi_totally-unknown-code") is None
+
+
+# ── ensure_bootstrap_admin (D-05) ──
+
+
+def test_ensure_bootstrap_admin_created(caplog):
+    result = auth.ensure_bootstrap_admin(
+        {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "root-password-1234"},
+        "local",
+        logging.getLogger("test-bootstrap"),
+    )
+    assert result == "created"
+    user = auth.get_user("root")
+    assert user is not None
+    assert user["is_admin"] is True
+
+
+def test_ensure_bootstrap_admin_second_call_exists_and_hash_unchanged():
+    env = {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "root-password-1234"}
+    logger = logging.getLogger("test-bootstrap")
+    auth.ensure_bootstrap_admin(env, "local", logger)
+    first_hash = auth.get_user("root")["password_hash"]
+    changed_env = {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "a-different-password-99"}
+    result = auth.ensure_bootstrap_admin(changed_env, "local", logger)
+    assert result == "exists"
+    assert auth.get_user("root")["password_hash"] == first_hash
+
+
+def test_ensure_bootstrap_admin_missing_env_local_warns(caplog):
+    logger = logging.getLogger("test-bootstrap")
+    with caplog.at_level(logging.WARNING, logger="test-bootstrap"):
+        result = auth.ensure_bootstrap_admin({}, "local", logger)
+    assert result == "missing-env"
+    assert auth.get_user("root") is None
+    assert any(record.levelno == logging.WARNING for record in caplog.records)
+
+
+def test_ensure_bootstrap_admin_missing_env_multi_user_raises():
+    logger = logging.getLogger("test-bootstrap")
+    with pytest.raises(RuntimeError):
+        auth.ensure_bootstrap_admin({}, "multi-user", logger)
+
+
+def test_ensure_bootstrap_admin_weak_password_local_warns_and_creates_nothing(caplog):
+    logger = logging.getLogger("test-bootstrap")
+    env = {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "short11chr"}
+    with caplog.at_level(logging.WARNING, logger="test-bootstrap"):
+        result = auth.ensure_bootstrap_admin(env, "local", logger)
+    assert auth.get_user("root") is None
+    assert any(record.levelno == logging.WARNING for record in caplog.records)
+    assert "short11chr" not in caplog.text
+
+
+def test_ensure_bootstrap_admin_weak_password_multi_user_raises():
+    logger = logging.getLogger("test-bootstrap")
+    env = {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "short11chr"}
+    with pytest.raises(RuntimeError):
+        auth.ensure_bootstrap_admin(env, "multi-user", logger)
+
+
+def test_ensure_bootstrap_admin_never_logs_password(caplog):
+    logger = logging.getLogger("test-bootstrap")
+    env = {"DG_BOOTSTRAP_ADMIN_USER": "root", "DG_BOOTSTRAP_ADMIN_PASSWORD": "root-password-1234"}
+    with caplog.at_level(logging.DEBUG, logger="test-bootstrap"):
+        auth.ensure_bootstrap_admin(env, "local", logger)
+    assert "root-password-1234" not in caplog.text
+
+
+# ── concurrency proof (ALGN12-17) ──
+
+
+def test_concurrent_create_and_revoke_session_never_resurrects_revoked():
+    auth.create_user("walter", "walter-password-1234")
+    barrier = threading.Barrier(16)
+    tokens: list[str] = []
+    tokens_lock = threading.Lock()
+
+    def creator():
+        barrier.wait()
+        token = auth.create_session("walter")
+        with tokens_lock:
+            tokens.append(token)
+
+    threads = [threading.Thread(target=creator) for _ in range(16)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(tokens) == 16
+
+    revoke_barrier = threading.Barrier(16)
+
+    def revoker(token):
+        revoke_barrier.wait()
+        auth.revoke_session(token)
+
+    threads = [threading.Thread(target=revoker, args=(tok,)) for tok in tokens]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    for tok in tokens:
+        assert auth.authenticate_session(tok) is None
+
+
+def test_concurrent_create_project_if_unclaimed_exactly_one_owner():
+    barrier = threading.Barrier(8)
+    results: list[bool] = []
+    results_lock = threading.Lock()
+
+    def claimer(i):
+        barrier.wait()
+        result = auth.create_project_if_unclaimed(
+            "P-race", f"user{i}", exists_in_graph=False
+        )
+        with results_lock:
+            results.append(result)
+
+    threads = [threading.Thread(target=claimer, args=(i,)) for i in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert sum(1 for r in results if r) == 1
+    assert auth.count_owners("P-race") == 1
+
+
+def test_concurrent_set_membership_persists_all_rows():
+    barrier = threading.Barrier(16)
+
+    def setter(i):
+        barrier.wait()
+        auth.set_membership(f"user{i}", "P-shared", "viewer")
+
+    threads = [threading.Thread(target=setter, args=(i,)) for i in range(16)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(auth.list_members("P-shared")) == 16
