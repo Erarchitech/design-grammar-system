@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-03-PLAN.md
-last_updated: "2026-09-28T21:24:16.729Z"
+stopped_at: Completed 1205-04-PLAN.md
+last_updated: "2026-09-28T21:36:13.680Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 44
-  percent: 73
+  completed_plans: 45
+  percent: 75
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 4 of 19
+Plan: 5 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -142,6 +142,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P01 | ~20min | 2 tasks | 5 files |
 | Phase 1205 P02 | ~30min | 2 tasks | 2 files |
 | Phase 1205 P03 | ~35min | 2 tasks | 10 files |
+| Phase 1205 P04 | 55min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -437,6 +438,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-02: JSON-under-DATA_DIR identity store mirroring connectors.py (not Neo4j) -- users/scrypt passwords/dgs_ sessions/memberships/dgi_ invites/three principal resolvers/bootstrap admin, no route wiring yet
 - [Phase ?]: [Phase 1205-03]: DataServiceRequestAuth lives in DG.Core (no Grasshopper reference) so xUnit can test the Bearer-token header/status-classification logic directly (D-04)
 - [Phase ?]: [Phase 1205-03]: CONNECTOR distinguishes an authenticated heartbeat with no Neo4j bundle (D-07 multi-user profile) from a missing/rejected token via a dedicated ConnectorNoGraphBundle Remark message
+- [Phase ?]: D-20: DE-01 token precedence is env var then gitignored file, else no header (byte-identical when unconfigured)
+- [Phase ?]: D-13: rotate_llm_master_secret.py reads/writes settings JSON directly and verifies the full round trip before an atomic write
+- [Phase ?]: D-16: check_live_boundary.py matches known-default literals only as quoted string values, not bare substrings, to avoid false-positiving on identifiers like speckleBaseUrl
 
 ### Research Flags (carry into planning)
 
@@ -519,8 +523,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-28T21:24:16.710Z
-Stopped at: Completed 1205-03-PLAN.md
+Last session: 2026-09-28T21:36:13.660Z
+Stopped at: Completed 1205-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
