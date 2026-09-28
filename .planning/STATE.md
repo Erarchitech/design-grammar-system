@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-01-PLAN.md (checkpoint resolved + Rule-1 fix)
-last_updated: "2026-09-28T21:04:13.917Z"
+stopped_at: Completed 1205-02-PLAN.md
+last_updated: "2026-09-28T21:14:22.608Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 42
-  percent: 70
+  completed_plans: 43
+  percent: 72
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 2 of 19
+Plan: 3 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -140,6 +140,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1203 P05 | 50min | 2 tasks | 11 files |
 | Phase 1203 P06 | ~35min | 2 tasks | 5 files |
 | Phase 1205 P01 | ~20min | 2 tasks | 5 files |
+| Phase 1205 P02 | ~30min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -432,6 +433,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1203-06: Live-stack checkpoint closed 2026-09-23 -- operator verified both CQ3 forward/reverse ATTRIBUTE_OF queries and cross-project isolation against a running Neo4j, results matched expected-cq3.json exactly, field for field
 - [Phase ?]: 1205-01: ALGN12-19 requirement checkbox intentionally NOT marked complete — spans 8 plans in this phase (01,04,07,09,11,15,16,18); marking it now would falsely claim the whole requirement done
 - [Phase ?]: 1205-01: Rule-1 fix — check_env_file.classify() now grants pending-rotation to a PENDING_ROTATION_KEYS member whose reasons are a non-empty subset of {known-default, too-short} (not strict equality to [known-default]), fixing LLM_MASTER_SECRET's unsatisfiable --allow-pending-rotation case
+- [Phase ?]: 1205-02: JSON-under-DATA_DIR identity store mirroring connectors.py (not Neo4j) -- users/scrypt passwords/dgs_ sessions/memberships/dgi_ invites/three principal resolvers/bootstrap admin, no route wiring yet
 
 ### Research Flags (carry into planning)
 
@@ -514,8 +516,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-28T21:04:13.899Z
-Stopped at: Completed 1205-01-PLAN.md (checkpoint resolved + Rule-1 fix)
+Last session: 2026-09-28T21:14:22.577Z
+Stopped at: Completed 1205-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
