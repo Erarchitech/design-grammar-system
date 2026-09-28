@@ -442,4 +442,90 @@ public sealed class ErrorMessageTemplateTests
             "OBJECT STATE: Geometry list length (5) and Label list length (3) must be equal at every index. Ensure each index provides both values.",
             result);
     }
+
+    // --- Publish-auth template tests (Phase 1205-03, D-04/D-19) ---
+
+    [Fact]
+    public void PublishTokenMissing_NamesComponentAndTokenInput()
+    {
+        var result = ErrorMessageTemplates.PublishTokenMissing("VALIDATOR");
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("VALIDATOR", result);
+        Assert.Contains("Token input", result);
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("dgc_ platform token", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void PublishTokenRejected_MentionsRevokedOrExpiredAndConnectorsScreen()
+    {
+        var result = ErrorMessageTemplates.PublishTokenRejected("COMPUTGRAPH PUBLISH");
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("COMPUTGRAPH PUBLISH", result);
+        Assert.Contains("rejected", result);
+        Assert.Contains("Connectors screen", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void PublishProjectForbidden_MentionsDifferentProjectAndConnectorsScreen()
+    {
+        var result = ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR");
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("VALIDATOR", result);
+        Assert.Contains("different project", result);
+        Assert.Contains("Connectors screen", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorNoGraphBundle_MentionsDirectBoltUnsupported()
+    {
+        var result = ErrorMessageTemplates.ConnectorNoGraphBundle();
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("direct graph connection", result);
+        Assert.Contains("Bolt", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void PublishAuthTemplates_NeverLeakARealTokenValue()
+    {
+        // The four templates are static text (no token parameter) — this asserts
+        // none of them contains anything beyond the bare "dgc_" prefix hint, i.e.
+        // no template accidentally interpolates an actual token value.
+        var templates = new[]
+        {
+            ErrorMessageTemplates.PublishTokenMissing("VALIDATOR"),
+            ErrorMessageTemplates.PublishTokenRejected("VALIDATOR"),
+            ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR"),
+            ErrorMessageTemplates.ConnectorNoGraphBundle(),
+        };
+
+        foreach (var text in templates)
+        {
+            var idx = text.IndexOf("dgc_", StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                continue;
+            }
+
+            var afterPrefix = text.Substring(idx + "dgc_".Length);
+            // Only the word "platform" or "token" (the hint) may immediately follow;
+            // a real token would be alphanumeric with no space.
+            Assert.True(
+                afterPrefix.Length == 0 || afterPrefix[0] == ' ',
+                $"Template appears to embed a token value after the dgc_ prefix: '{text}'");
+        }
+    }
 }

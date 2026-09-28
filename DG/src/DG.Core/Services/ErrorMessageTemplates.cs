@@ -202,6 +202,38 @@ public static class ErrorMessageTemplates
         return "CONNECTOR: no platform token. Paste a dgc_ token (minted on the Connectors screen, Grasshopper connector) into the Token input — it resolves the project and Neo4j connection.";
     }
 
+    // --- Publish-auth templates (Phase 1205-03, D-04/D-19) ---
+
+    /// <summary>
+    /// The Token input on a publish component (VALIDATOR, COMPUTGRAPH PUBLISH) is
+    /// blank. Publishing is skipped; local evaluation still runs (D-19).
+    /// </summary>
+    public static string PublishTokenMissing(string component)
+    {
+        return $"{component}: no platform token. Paste the same dgc_ platform token used on CONNECTOR into this component's Token input to publish — evaluation still runs without it.";
+    }
+
+    /// <summary>A publish request's token was rejected by data-service (HTTP 401).</summary>
+    public static string PublishTokenRejected(string component)
+    {
+        return $"{component}: platform token rejected — invalid, revoked, or expired. Mint a new token from the Connectors screen and re-paste it into the Token input.";
+    }
+
+    /// <summary>A publish request's token authenticated but is bound to a different project (HTTP 403).</summary>
+    public static string PublishProjectForbidden(string component)
+    {
+        return $"{component}: platform token is bound to a different project than the one being published. Mint a credential scoped to this project from the Connectors screen.";
+    }
+
+    /// <summary>
+    /// D-07: an authenticated heartbeat carried no Neo4j bundle — this deployment
+    /// (multi-user profile) does not hand out a direct graph connection.
+    /// </summary>
+    public static string ConnectorNoGraphBundle()
+    {
+        return "CONNECTOR: platform token authenticated, but this deployment does not hand out a direct graph connection. Direct-Bolt DG components are unsupported in this profile.";
+    }
+
     public static string FormatMessage(ReinstatementResult result)
     {
         if (result.Applied)
