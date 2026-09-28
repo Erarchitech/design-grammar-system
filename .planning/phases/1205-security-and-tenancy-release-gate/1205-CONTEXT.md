@@ -153,8 +153,9 @@ All 20 decisions below were proposed by Claude in smart discuss and accepted by 
 
 ### Secret and credential hardening (ALGN12-19)
 
-- **D-10: All secrets move to a gitignored .env with a committed .env.example, and compose requires them with ${VAR:?}.**
-  A missing required secret stops the stack from starting. `.env.example` carries placeholders
+- **D-10: All secrets move to a gitignored .env with a committed .env.example, and compose requires each one.**
+  Compose uses the required-variable syntax `${VAR:?}`, so a missing required secret stops the
+  stack from starting. `.env.example` carries placeholders
   only.
 
 - **D-11: data-service refuses to start in multi-user when a secret equals a known default, and warns loudly in local.**

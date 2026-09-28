@@ -41,15 +41,31 @@ the data-service image before trusting an in-container run (stale images mask co
 
 ## Per-Task Verification Map
 
-Seeded per requirement; the planner refines to task IDs.
+Refined by the planner to real plan/task IDs (2026-09-28). `pytest` paths are relative to `data-service/` when run in-container (`MSYS_NO_PATHCONV=1 docker exec data-service pytest …`) and to the repo root on the host.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 1205-TBD | TBD | TBD | ALGN12-17 | T-1205-* | Every non-allowlisted route returns 401 without a principal | unit+integration | `pytest tests/test_route_inventory.py -x` | ❌ W0 | ⬜ pending |
-| 1205-TBD | TBD | TBD | ALGN12-18 | T-1205-* | No `/neo4j/` or `/n8n/` nginx location; internal ports bind 127.0.0.1 | static | `pytest tests/test_static_proxy_boundary.py -x` | ❌ W0 | ⬜ pending |
-| 1205-TBD | TBD | TBD | ALGN12-19 | T-1205-* | config.js and ui-v2/dist carry no credential keys or known defaults; multi-user refuses default secrets | unit | `pytest tests/test_config_js_no_secrets.py tests/test_default_secret_refusal.py -x` | ❌ W0 | ⬜ pending |
-| 1205-TBD | TBD | TBD | ALGN12-20 | T-1205-* | Cross-project access (user and connector token) returns 403/404 on every project-scoped and id-only route | integration | `pytest tests/test_cross_project_matrix.py -x` | ❌ W0 | ⬜ pending |
-| 1205-TBD | TBD | TBD | GATE12-05 | T-1205-* | Gate holds with `DG_DEPLOYMENT=multi-user` against rebuilt containers | live (human checkpoint) | `docker compose -f docker-compose.yml -f docker-compose.multi-user.yml up -d --build` then D-16 live checks | ❌ W0 | ⬜ pending |
+| 1205-01-T1 | 01 | 1 | ALGN12-19 | T-1205-01-01..03 | Known-default policy (digest for the committed n8n password); checker prints names/verdicts only | unit | `python -m pytest data-service/tests/test_secrets_policy.py tools/security/tests/test_check_env_file.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-01-T2 | 01 | 1 | ALGN12-19 | T-1205-01-04 | Owner creates `.env` before enforcement (no lockout) | human-action | `git check-ignore .env` | n/a | ⬜ pending |
+| 1205-02-T1/T2 | 02 | 1 | ALGN12-17 | T-1205-02-01..07 | scrypt, hashed sessions, expiry boundaries, locked atomic store, invites, bootstrap | unit+concurrency | `python -m pytest data-service/tests/test_auth_store.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-03-T1/T2 | 03 | 1 | ALGN12-17 | T-1205-03-01..04 | GH publish clients send the dgc_ Bearer token; no token in .gh/messages | unit+build | `dotnet test .\DG\tests\DG.Tests\` and `dotnet build .\DG\DG.sln -c Release` | ❌ W0 | ⬜ pending |
+| 1205-04-T1..T3 | 04 | 1 | ALGN12-19, ALGN12-20 | T-1205-04-01..04 | DE-01 token never in reports; rotation script fails closed; live checker treats SPA 200 as failure | unit | `python -m pytest tools/de01/tests tools/security/tests/test_check_live_boundary.py data-service/tests/test_rotate_llm_master_secret.py -x -q -k "not live"` | ❌ W0 | ⬜ pending |
+| 1205-05-T1/T2 | 05 | 1 | ALGN12-18 | T-1205-05-01..04 | Workflows ignore caller URLs/credentials, send the service token, verify the relay token, write atomically per project | static | `python -m pytest data-service/tests/test_n8n_workflow_boundary.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-06-T1/T2 | 06 | 1 | ALGN12-17 | T-1205-06-01..03 | LLM Cypher proven project-scoped; foreign literals and key collisions detected | unit | `python -m pytest data-service/tests/test_cypher_project_scope.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-07-T1 | 07 | 2 | ALGN12-17 | T-1205-07-01..06 | Tracer: login cookie, 401 no principal, 403 cross-project, no credential fallback, CSRF | integration | `python -m pytest data-service/tests/test_auth_tracer.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-07-T2 | 07 | 2 | ALGN12-19 | T-1205-07-07..08 | Multi-user refuses default secrets; heartbeat omits the Neo4j bundle | integration | `python -m pytest data-service/tests/test_deployment_profile.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-08-T1/T2 | 08 | 2 | ALGN12-20 | T-1205-08-01..04 | Existing suites authenticate through real principals (no bypass) | unit+suite | `python -m pytest data-service/tests/test_authorized_fixtures.py -x -q` then full suite | ❌ W0 | ⬜ pending |
+| 1205-09-T1/T2 | 09 | 2 | ALGN12-18, ALGN12-19 | T-1205-09-01..04 | Required secrets, 127.0.0.1 bindings, multi-user `!reset`, dockerignore | static | `python -m pytest data-service/tests/test_compose_boundary.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-10-T2 | 10 | 3 | ALGN12-17, ALGN12-20 | T-1205-10-01..08 | D-14: every route classified + dependency present + denial sweeps | integration | `python -m pytest data-service/tests/test_route_inventory.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-11-T1/T2 | 11 | 3 | ALGN12-18 | T-1205-11-01..04 | No Cypher executor/credential/n8n URL in ui-v2/src/lib | build+grep | `npm --prefix ui-v2 run build` | ✅ | ⬜ pending |
+| 1205-12-T1/T2 | 12 | 4 | ALGN12-17, ALGN12-18 | T-1205-12-01..05 | Membership-scoped projects, invites, named parameterised graph endpoints | integration | `python -m pytest data-service/tests/test_project_routes.py data-service/tests/test_graph_routes.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-13-T1/T2 | 13 | 4 | ALGN12-17 | T-1205-13-01..03 | Server-backed login, invite-only onboarding, legacy hashes purged | build+grep | `npm --prefix ui-v2 run build` | ✅ | ⬜ pending |
+| 1205-14-T1/T2 | 14 | 5 | ALGN12-17, ALGN12-18 | T-1205-14-01..05 | Relay owner-bound; /mcp and generate-cypher enforce project scope | integration | `python -m pytest data-service/tests/test_workflow_relay.py data-service/tests/test_mcp_project_scope.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-15-T1/T2 | 15 | 5 | ALGN12-18, ALGN12-19 | T-1205-15-01..05 | nginx/vite have no /neo4j or /n8n proxy; config.js and dist carry no secret | static | `python -m pytest data-service/tests/test_static_proxy_boundary.py data-service/tests/test_config_js_no_secrets.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-16-T2 | 16 | 6 | ALGN12-17..20, GATE12-05 | T-1205-16-01..02 | Spec blocks equal code, routes and compose (both directions) | static | `python -m pytest data-service/tests/test_security_boundary_spec.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-17-T1/T2 | 17 | 6 | ALGN12-20 | T-1205-17-01..03 | D-15 cross-project matrix incl. id-only and owner-bound executions, both profiles | integration | `python -m pytest data-service/tests/test_cross_project_matrix.py -x -q` | ❌ W0 | ⬜ pending |
+| 1205-18-T1..T3 | 18 | 7 | ALGN12-19, ALGN12-18 | T-1205-18-01..04 | Rotation by owner; old defaults rejected; n8n published; local live checks | live (human checkpoint) | `python tools/security/check_live_boundary.py --profile local` | n/a | ⬜ pending |
+| 1205-19-T1..T3 | 19 | 8 | GATE12-05 | T-1205-19-01..04 | D-14/D-15/D-16 hold with DG_DEPLOYMENT=multi-user against rebuilt containers | live (human checkpoint) | `docker compose -f docker-compose.yml -f docker-compose.multi-user.yml up -d --force-recreate` then in-container gate suites and `check_live_boundary.py --profile multi-user` | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -57,12 +73,14 @@ Seeded per requirement; the planner refines to task IDs.
 
 ## Wave 0 Requirements
 
-- [ ] `data-service/tests/conftest.py` — authorized-client / connector-token / service-token fixtures (D-20)
-- [ ] `data-service/tests/test_route_inventory.py` — D-14
-- [ ] `data-service/tests/test_cross_project_matrix.py` — D-15 two-user/two-project fixture
-- [ ] `data-service/tests/test_static_proxy_boundary.py` — D-16 static half
-- [ ] `data-service/tests/test_config_js_no_secrets.py` — D-12
-- [ ] `spec/SECURITY-BOUNDARY.md` — D-17 fenced allowlist block the D-14 test reads
+- [ ] `data-service/tests/conftest.py` + `auth_fixtures.py` — authorized-client / connector-token / service-token fixtures (D-20) — plan 1205-08
+- [ ] `data-service/tests/test_secrets_policy.py` + `test_deployment_profile.py` — D-11 known defaults and multi-user refusal — plans 1205-01, 1205-07
+- [ ] `data-service/tests/test_route_inventory.py` — D-14 runtime inventory and sweeps — plan 1205-10
+- [ ] `data-service/tests/test_security_boundary_spec.py` — D-14/D-17 spec drift — plan 1205-16
+- [ ] `data-service/tests/test_cross_project_matrix.py` — D-15 two-user/two-project fixture — plan 1205-17
+- [ ] `data-service/tests/test_static_proxy_boundary.py` + `test_compose_boundary.py` — D-16 static half — plans 1205-15, 1205-09
+- [ ] `data-service/tests/test_config_js_no_secrets.py` — D-12 — plan 1205-15
+- [ ] `spec/SECURITY-BOUNDARY.md` — D-17 fenced blocks the drift test reads — plan 1205-16
 
 Framework install: none — pytest, xUnit and npm are already present.
 

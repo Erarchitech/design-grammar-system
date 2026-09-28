@@ -236,6 +236,52 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
+**Plans:** 19 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 1205-01-PLAN.md — Known-default secret policy, `.env.example`, owner-run env checker; owner creates `.env` before any enforcement (human checkpoint)
+- [ ] 1205-02-PLAN.md — Server-side identity store: scrypt users, hashed sessions, memberships, invites, three principal resolvers, bootstrap admin, deployment profile
+- [ ] 1205-03-PLAN.md — Grasshopper publish clients send the `dgc_` connector token; Token inputs; CONNECTOR multi-user no-bundle handling
+- [ ] 1205-04-PLAN.md — Operator tooling: DE-01 connector-token path, LLM master-secret re-encryption script, live boundary checker
+- [ ] 1205-05-PLAN.md — n8n workflows: relay-token guard, service token, hardcoded internal URLs, env credentials, atomic project-scoped ingest write
+- [ ] 1205-06-PLAN.md — LLM-generated Cypher project-scope guard, foreign-literal and key-collision checks (dg_context)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 1205-07-PLAN.md — Tracer: login + deny-by-default dependency + one enforced project route end to end; startup profile, D-11 refusal, bootstrap, heartbeat bundle
+- [ ] 1205-08-PLAN.md — Authorized test fixtures so every existing suite runs under a real principal
+- [ ] 1205-09-PLAN.md — Compose: required `.env` secrets, 127.0.0.1 bindings, multi-user override, dockerignore
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 1205-10-PLAN.md — Global enforcement flip: 67-route classification, removals, resource-bound id routes, D-14 inventory and sweeps
+- [ ] 1205-11-PLAN.md — UI data layer: apiFetch, named endpoints replace the nine Cypher sites, relay replaces n8n webhooks
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 1205-12-PLAN.md — Projects, memberships, invitations and the named graph endpoints (D-06)
+- [ ] 1205-13-PLAN.md — UI login / accept-invite, membership-scoped Projects screen with owner members panel
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 1205-14-PLAN.md — Workflow relay with owner-bound polling; /mcp and generate-cypher project enforcement
+- [ ] 1205-15-PLAN.md — nginx/vite proxy removal with 404 tombstones; secret-free config.js; bundle secret scan
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 1205-16-PLAN.md — `spec/SECURITY-BOUNDARY.md` with four machine-checked blocks and the rotation runbook; spec drift test; doc pointers
+- [ ] 1205-17-PLAN.md — D-15 two-user/two-project cross-project matrix
+
+**Wave 7** *(blocked on Wave 6 completion; requires a running compose stack)*
+
+- [ ] 1205-18-PLAN.md — Live: owner rotates every committed secret, n8n publish, local-profile boundary checks (human checkpoint)
+
+**Wave 8** *(blocked on Wave 7 completion; requires a running compose stack)*
+
+- [ ] 1205-19-PLAN.md — Live GATE12-05 judgement in the multi-user profile with owner verdict (human checkpoint)
+
 ## Activation gates for downstream milestones
 
 ### v9.1 activation

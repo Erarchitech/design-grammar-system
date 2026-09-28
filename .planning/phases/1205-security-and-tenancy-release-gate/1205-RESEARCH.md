@@ -752,10 +752,11 @@ def authenticate_token(token: str) -> dict[str, Any] | None:
 | A3 | `llm_gateway.py`'s exact key-derivation chain (SHA-256 -> base64 -> Fernet key) was inferred from imports and module docstring, not read line-by-line | LLM_MASTER_SECRET Rotation | The rotation script's exact re-encrypt steps need this function read directly before implementation; if the derivation differs from the assumed SHA-256-then-base64 shape, the rotation script would be wrong |
 | A4 | `/mcp`'s tool set is called by n8n workflows (inferred from route design and this being the only sensible caller of a JSON-RPC-shaped Cypher/GH-bridge endpoint), not confirmed by grepping `/mcp` literal URLs inside `n8n/workflows/*.json` this session | Principal → Route Scope Matrix | If nothing actually calls `/mcp` from n8n today, classifying it as internal-service-token-only is still the safe default (nothing browser-facing should reach it either way), so risk is low |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `GET /projects` (the `fetchProjects` replacement) list only the caller's own
    memberships, or every project that exists?**
+   - RESOLVED: caller's memberships only; an admin sees every project (orchestrator fact 4, recorded in 1205-12 must_haves).
    - What we know: Today's `fetchProjects` (browser Cypher) lists every project unconditionally —
      it's the project picker on the landing/graph screens.
    - What's unclear: Whether D-02's membership model should hide the existence of projects a user
@@ -767,6 +768,7 @@ def authenticate_token(token: str) -> dict[str, Any] | None:
      you're not on), not just a security tightening.
 
 2. **How should `GET /execution-result/{execution_id}` and `.../latest/{workflow}` be scoped?**
+   - RESOLVED: `latest/{workflow}` is removed (1205-10); execution results are bound to the initiating user, and another project member gets 404 (1205-14).
    - What we know: Both are polled directly by the browser after an n8n-workflow-triggering call;
      neither carries a project or user binding today (Route Inventory #46/#47).
    - What's unclear: Whether to bind `execution_id` to the initiating session (requires threading
@@ -781,6 +783,7 @@ def authenticate_token(token: str) -> dict[str, Any] | None:
      not a fix for every latent multi-user race.
 
 3. **Does `/mcp` actually get called by any n8n workflow node today, or is it dead/future code?**
+   - RESOLVED: yes, it is called — `n8n/workflows/graph-query-mcp.json:43` defaults `mcp_url` to `http://data-service:8000/mcp`; `/mcp` is service-token-only (1205-10/1205-14).
    - What we know: The route exists, is fully implemented, and is architecturally the only sane
      home for GH-canvas-bridge tool calls (`gh_get_context` etc., Phase 33 BRDG-02).
    - What's unclear: This session did not grep `n8n/workflows/*.json` for a literal `/mcp` URL to
