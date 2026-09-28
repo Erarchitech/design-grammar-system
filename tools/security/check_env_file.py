@@ -17,8 +17,9 @@ Usage:
 
 Exit code 0 only when every key declared in `--example` reports `ok`, or
 `pending-rotation` (under `--allow-pending-rotation`) for a key in
-`secrets_policy.PENDING_ROTATION_KEYS` whose only failing reason is
-`known-default`. Keys present in `--env-file` but absent from `--example`
+`secrets_policy.PENDING_ROTATION_KEYS` whose failing reasons are a
+non-empty subset of {"known-default", "too-short"} (i.e. anything except
+"missing"). Keys present in `--env-file` but absent from `--example`
 report `extra` and never fail the run.
 """
 
@@ -88,10 +89,18 @@ def classify(
     if not reasons:
         return "ok"
 
+    # Bug fix (Rule 1, plan 1205-01 continuation): a pending-rotation key
+    # whose live value is both a known-default AND too-short (e.g.
+    # LLM_MASTER_SECRET's pre-existing default) must still pass under
+    # --allow-pending-rotation -- restricting to reasons == ["known-default"]
+    # made the flag unsatisfiable for exactly the key it was meant to unblock.
+    # "missing" is deliberately excluded: an absent value is never
+    # pending-rotation, regardless of the flag.
     if (
         allow_pending_rotation
-        and reasons == ["known-default"]
         and key in secrets_policy.PENDING_ROTATION_KEYS
+        and reasons
+        and set(reasons) <= {"known-default", "too-short"}
     ):
         return "pending-rotation"
 

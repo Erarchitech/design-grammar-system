@@ -113,6 +113,88 @@ def test_pending_rotation_key_passes_only_with_flag(tmp_path, capsys):
     assert "NEO4J_PASSWORD: pending-rotation" in out_with_flag
 
 
+def test_pending_rotation_key_known_default_and_too_short_passes_with_flag(
+    tmp_path, capsys
+):
+    # Regression (Rule 1 fix): LLM_MASTER_SECRET is both a pending-rotation
+    # key and carries a MIN_LENGTHS entry. A live value that is simultaneously
+    # known-default (change-me prefix) AND too-short (under 32 chars) must
+    # still report pending-rotation under the flag -- the old
+    # `reasons == ["known-default"]` check made this unsatisfiable.
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "LLM_MASTER_SECRET=change-me-llm-master-secret\n")
+    _write(env, "LLM_MASTER_SECRET=change-me-short\n")
+
+    exit_code_without_flag = check_env_file.main(
+        ["--env-file", str(env), "--example", str(example)]
+    )
+    out_without_flag = capsys.readouterr().out
+    assert exit_code_without_flag == 1
+    assert "LLM_MASTER_SECRET: known-default" in out_without_flag
+
+    exit_code_with_flag = check_env_file.main(
+        [
+            "--env-file",
+            str(env),
+            "--example",
+            str(example),
+            "--allow-pending-rotation",
+        ]
+    )
+    out_with_flag = capsys.readouterr().out
+    assert exit_code_with_flag == 0
+    assert "LLM_MASTER_SECRET: pending-rotation" in out_with_flag
+
+
+def test_non_pending_key_too_short_never_passes_via_flag(tmp_path, capsys):
+    # A too-short value on a key NOT in PENDING_ROTATION_KEYS (e.g.
+    # DG_SERVICE_TOKEN) must remain too-short even with the flag set --
+    # the flag only ever helps PENDING_ROTATION_KEYS members.
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    synthetic_short_token = "s" * 20
+    _write(example, "DG_SERVICE_TOKEN=change-me-dg-service-token\n")
+    _write(env, f"DG_SERVICE_TOKEN={synthetic_short_token}\n")
+
+    exit_code = check_env_file.main(
+        [
+            "--env-file",
+            str(env),
+            "--example",
+            str(example),
+            "--allow-pending-rotation",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert "DG_SERVICE_TOKEN: too-short" in out
+    assert synthetic_short_token not in out
+
+
+def test_pending_rotation_key_missing_never_passes_via_flag(tmp_path, capsys):
+    # A missing value on a pending-rotation key must remain "missing" even
+    # with the flag set -- "missing" is deliberately excluded from the
+    # pending-rotation subset.
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "NEO4J_PASSWORD=change-me-neo4j-password\n")
+    _write(env, "# not set\n")
+
+    exit_code = check_env_file.main(
+        [
+            "--env-file",
+            str(env),
+            "--example",
+            str(example),
+            "--allow-pending-rotation",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert "NEO4J_PASSWORD: missing" in out
+
+
 def test_non_pending_rotation_key_never_passes_via_flag(tmp_path, capsys):
     example = tmp_path / ".env.example"
     env = tmp_path / ".env"
