@@ -871,6 +871,180 @@ def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
     return violations
 
 
+def check_foreign_project_literals(cypher: str, project: str) -> list[dict[str, Any]]:
+    """Rule ingest/edit Cypher may only ever write the relayed project's
+    value into a `project` property (T-1205-06-03). Any quoted `project`
+    literal (inline map key or `.project` assignment/comparison) that
+    differs from `project` is a foreign_project_literal violation -- one per
+    distinct offending literal value.
+    """
+    violations: list[dict[str, Any]] = []
+    seen_literals: set[str] = set()
+    for pattern in (_PROJECT_MAP_LITERAL_PATTERN, _PROJECT_DOT_LITERAL_PATTERN):
+        for match in pattern.finditer(cypher):
+            literal_value = match.group(2)
+            if literal_value == project or literal_value in seen_literals:
+                continue
+            seen_literals.add(literal_value)
+            violations.append(
+                {
+                    "code": "foreign_project_literal",
+                    "message": (
+                        f"`project` is set from the literal '{literal_value}', "
+                        "which is not the relayed project. Where: "
+                        f"'{match.group(0)}'. How to fix: use the relayed "
+                        "project's value (bound as $project, or the current "
+                        "project's literal) -- never another project's "
+                        "literal."
+                    ),
+                    "path": literal_value,
+                }
+            )
+    return violations
+
+
+# One read query, bound parameters only ($ruleIds, $atomIds, $project) --
+# never string-interpolated (same discipline as fetch_existing_entities()).
+# Schema v4 keys Rule/Atom by id only (not project-qualified, CLAUDE.md
+# Schema Change Propagation), so a MERGE on a Rule_Id/Atom_Id already owned
+# by another project silently overwrites/extends that project's rule --
+# this fails closed on that collision (T-1205-06-06) rather than allowing
+# it, until project-qualified keys exist.
+_CROSS_PROJECT_COLLISION_QUERY = (
+    "OPTIONAL MATCH (r:Rule) WHERE r.Rule_Id IN $ruleIds "
+    "AND coalesce(r.project, '') <> $project "
+    "WITH collect(DISTINCT r.Rule_Id) AS ruleHits "
+    "OPTIONAL MATCH (a:Atom) WHERE a.Atom_Id IN $atomIds "
+    "AND coalesce(a.project, '') <> $project "
+    "RETURN ruleHits, collect(DISTINCT a.Atom_Id) AS atomHits"
+)
+
+_RULE_ID_PROP_PATTERN = re.compile(r"Rule_Id\s*:\s*'([^']*)'")
+_ATOM_ID_PROP_PATTERN = re.compile(r"Atom_Id\s*:\s*'([^']*)'")
+
+
+def find_cross_project_key_collisions(
+    cypher: str, project: str, session: Any = None
+) -> list[dict[str, Any]]:
+    """Find every Rule_Id/Atom_Id this rule-ingest/edit Cypher would MERGE
+    that is already owned by a DIFFERENT project (T-1205-06-03/06). Returns
+    [] without touching Neo4j when the Cypher merges no Rule/Atom key at
+    all. `session` is duck-typed exactly like fetch_existing_entities() --
+    inject a fake session in tests, omit in production for a lazily-opened
+    live session. The violation message names the offending key but never
+    the other project (anti-enumeration house style, T-39-06 precedent).
+    """
+    rule_ids: set[str] = set()
+    atom_ids: set[str] = set()
+    for _var, label, props in _MERGE_NODE_PATTERN.findall(cypher):
+        if label == "Rule":
+            rule_ids.update(_RULE_ID_PROP_PATTERN.findall(props))
+        elif label == "Atom":
+            atom_ids.update(_ATOM_ID_PROP_PATTERN.findall(props))
+
+    if not rule_ids and not atom_ids:
+        return []
+
+    params = {
+        "ruleIds": sorted(rule_ids),
+        "atomIds": sorted(atom_ids),
+        "project": project,
+    }
+    if session is not None:
+        result = session.run(_CROSS_PROJECT_COLLISION_QUERY, **params)
+        rows = [dict(record) for record in result]
+    else:
+        with _get_driver().session() as live_session:
+            result = live_session.run(_CROSS_PROJECT_COLLISION_QUERY, **params)
+            rows = [dict(record) for record in result]
+
+    violations: list[dict[str, Any]] = []
+    for row in rows:
+        colliding_keys = list(row.get("ruleHits") or []) + list(row.get("atomHits") or [])
+        for key in colliding_keys:
+            violations.append(
+                {
+                    "code": "cross_project_key_collision",
+                    "message": (
+                        f"The key '{key}' is already used by another project "
+                        "and cannot be reused until project-qualified MERGE "
+                        "keys exist (schema v4 keys Rule/Atom by id only). "
+                        f"Where: '{key}'. How to fix: choose a different "
+                        "Rule_Id/Atom_Id."
+                    ),
+                    "path": key,
+                }
+            )
+    return violations
+
+
+def find_foreign_project_entities(values: Any, project: str) -> int:
+    """Result-side defence (T-1205-06-01, wired into /mcp by 1205-14):
+    recursively walk arbitrary neo4j graph-value results (nodes,
+    relationships, paths, and any list/tuple/dict nesting of them) and
+    count entities whose `project` property is missing (fails closed) or
+    differs from `project` -- skipping nodes whose ENTIRE label set is
+    shared vocabulary. Duck-typed: a "node" is anything exposing `.labels`;
+    a "relationship" is anything exposing `.type` plus mapping access; a
+    "path" is anything exposing both `.nodes` and `.relationships`. Never
+    raises -- unrecognized values (plain scalars) are counted 0.
+    """
+
+    def _get_prop(obj: Any, key: str) -> Any:
+        get = getattr(obj, "get", None)
+        if callable(get):
+            try:
+                return get(key)
+            except TypeError:
+                pass
+        try:
+            return obj[key]
+        except (KeyError, TypeError, IndexError):
+            return None
+
+    count = 0
+
+    def _walk(value: Any) -> None:
+        nonlocal count
+        if value is None:
+            return
+        if isinstance(value, dict):
+            for item in value.values():
+                _walk(item)
+            return
+        if isinstance(value, (list, tuple, set, frozenset)):
+            for item in value:
+                _walk(item)
+            return
+
+        nodes_attr = getattr(value, "nodes", None)
+        rels_attr = getattr(value, "relationships", None)
+        if nodes_attr is not None and rels_attr is not None:
+            for node in nodes_attr:
+                _walk(node)
+            for rel in rels_attr:
+                _walk(rel)
+            return
+
+        labels = getattr(value, "labels", None)
+        if labels is not None:
+            label_set = set(labels)
+            if label_set and label_set <= SHARED_VOCABULARY_LABELS:
+                return
+            if _get_prop(value, "project") != project:
+                count += 1
+            return
+
+        rel_type = getattr(value, "type", None)
+        if rel_type is not None:
+            if _get_prop(value, "project") != project:
+                count += 1
+            return
+
+    _walk(values)
+    return count
+
+
 def validate_cypher(
     cypher: str, request_type: str, *, project: str | None = None
 ) -> dict[str, Any]:
@@ -1123,6 +1297,8 @@ def validate_cypher(
     if project is not None:
         if request_type == "graph_query":
             violations.extend(check_query_project_scope(cypher))
+        elif request_type in ("rule_ingest", "rule_edit"):
+            violations.extend(check_foreign_project_literals(cypher, project))
 
     # De-duplicate identical violations (same code+path) while preserving order.
     seen: set[tuple[str, str | None]] = set()
