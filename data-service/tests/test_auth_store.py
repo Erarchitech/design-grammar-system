@@ -132,7 +132,10 @@ def test_raw_session_token_absent_from_sessions_file():
 # ── expiry boundaries ──
 
 
-def test_session_expiry_boundary_inclusive():
+def test_session_expiry_boundary_inclusive(monkeypatch):
+    # Idle timeout is deliberately disabled (huge) so only the expires_at
+    # boundary is under test here -- the idle boundary has its own test.
+    monkeypatch.setenv("DG_SESSION_IDLE_SECONDS", "999999999")
     auth.create_user("erin", "erin-password-1234")
     start = 1_000_000
     token = auth.create_session("erin", now=start)
