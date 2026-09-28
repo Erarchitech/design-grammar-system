@@ -413,3 +413,243 @@ def deployment_profile(env: Mapping[str, str] | None = None) -> str:
     if value not in DEPLOYMENT_PROFILES:
         raise ValueError(f"unknown deployment profile: {value!r}")
     return value
+
+
+# ── Memberships (D-02) ──
+
+
+def set_membership(username: str, project: str, role: str) -> dict[str, Any]:
+    """Upsert one membership row for (username, project). Raises ValueError
+    for a role outside ROLES."""
+    if role not in ROLES:
+        raise ValueError(f"invalid role: {role!r}")
+    normalized = username.strip().lower()
+    with _STORE_LOCK:
+        rows = _load(MEMBERSHIPS_FILE, "memberships")
+        record: dict[str, Any] | None = None
+        for r in rows:
+            if r.get("username") == normalized and r.get("project") == project:
+                r["role"] = role
+                r["granted_at"] = int(time.time())
+                record = r
+                break
+        if record is None:
+            record = {
+                "username": normalized,
+                "project": project,
+                "role": role,
+                "granted_at": int(time.time()),
+            }
+            rows.append(record)
+        _save(MEMBERSHIPS_FILE, "memberships", rows)
+        return dict(record)
+
+
+def get_role(username: str, project: str) -> str | None:
+    """Return the stored role for (username, project), or None."""
+    normalized = username.strip().lower()
+    with _STORE_LOCK:
+        for r in _load(MEMBERSHIPS_FILE, "memberships"):
+            if r.get("username") == normalized and r.get("project") == project:
+                return r.get("role")
+    return None
+
+
+def remove_membership(username: str, project: str) -> bool:
+    """Remove the membership row for (username, project). Returns False if
+    the pair was not a member."""
+    normalized = username.strip().lower()
+    with _STORE_LOCK:
+        rows = _load(MEMBERSHIPS_FILE, "memberships")
+        new_rows = [
+            r
+            for r in rows
+            if not (r.get("username") == normalized and r.get("project") == project)
+        ]
+        if len(new_rows) == len(rows):
+            return False
+        _save(MEMBERSHIPS_FILE, "memberships", new_rows)
+        return True
+
+
+def list_memberships(username: str) -> list[dict[str, Any]]:
+    """Return [{project, role}] for every project this user is a member of."""
+    normalized = username.strip().lower()
+    with _STORE_LOCK:
+        rows = _load(MEMBERSHIPS_FILE, "memberships")
+    return [
+        {"project": r["project"], "role": r["role"]}
+        for r in rows
+        if r.get("username") == normalized
+    ]
+
+
+def list_members(project: str) -> list[dict[str, Any]]:
+    """Return [{username, role}] for every member of `project`."""
+    with _STORE_LOCK:
+        rows = _load(MEMBERSHIPS_FILE, "memberships")
+    return [
+        {"username": r["username"], "role": r["role"]}
+        for r in rows
+        if r.get("project") == project
+    ]
+
+
+def list_member_projects(username: str) -> list[str]:
+    """Return the sorted list of project names this user is a member of."""
+    return sorted({m["project"] for m in list_memberships(username)})
+
+
+def project_has_members(project: str) -> bool:
+    """True if `project` has at least one membership row."""
+    return len(list_members(project)) > 0
+
+
+def count_owners(project: str) -> int:
+    """Count members of `project` with role == owner."""
+    return sum(1 for m in list_members(project) if m.get("role") == "owner")
+
+
+def role_satisfies(role: str | None, min_role: str) -> bool:
+    """True if `role` outranks or equals `min_role`. A None role never
+    satisfies anything."""
+    if role is None:
+        return False
+    return ROLE_RANK.get(role, -1) >= ROLE_RANK.get(min_role, len(ROLE_RANK))
+
+
+def effective_role(principal: "Principal", project: str) -> str | None:
+    """Return "owner" for an admin user principal, the stored role for a
+    plain user principal, and None for every other principal kind (connector
+    and service principals are authorized by route scope, not by role)."""
+    if principal.kind == "user":
+        if principal.is_admin:
+            return "owner"
+        return get_role(principal.username or "", project)
+    return None
+
+
+def create_project_if_unclaimed(
+    project: str, owner_username: str, *, exists_in_graph: bool
+) -> bool:
+    """Atomically claim `project` for `owner_username` as owner, unless it
+    already has members or already exists in the graph. Returns whether the
+    claim succeeded."""
+    with _STORE_LOCK:
+        if project_has_members(project) or exists_in_graph:
+            return False
+        set_membership(owner_username, project, "owner")
+        return True
+
+
+# ── Invites (D-05) ──
+
+
+def create_invite(
+    username: str,
+    project: str,
+    role: str,
+    *,
+    created_by: str,
+    now: int | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Mint a single-use invite code (dgi_ + 32 random bytes, 72h TTL). Only
+    the SHA-256 hash of the code is persisted. Returns (raw_code, record)
+    where record never carries the hash."""
+    if role not in ROLES:
+        raise ValueError(f"invalid role: {role!r}")
+    current = _now(now)
+    code = INVITE_CODE_PREFIX + secrets.token_urlsafe(32)
+    record: dict[str, Any] = {
+        "code_hash": hashlib.sha256(code.encode()).hexdigest(),
+        "username": username.strip().lower(),
+        "project": project,
+        "role": role,
+        "created_by": created_by,
+        "created_at": current,
+        "expires_at": current + INVITE_TTL_SECONDS,
+        "used": False,
+        "used_at": None,
+    }
+    with _STORE_LOCK:
+        rows = _load(INVITES_FILE, "invites")
+        rows.append(record)
+        _save(INVITES_FILE, "invites", rows)
+    public = dict(record)
+    public.pop("code_hash", None)
+    return code, public
+
+
+def consume_invite(code: str, *, now: int | None = None) -> dict[str, Any] | None:
+    """Mark an invite code used-once. Returns None for a second consume, an
+    expired code (inclusive: now >= expires_at), or an unknown code."""
+    if not code or not code.startswith(INVITE_CODE_PREFIX):
+        return None
+    digest = hashlib.sha256(code.encode()).hexdigest()
+    current = _now(now)
+    with _STORE_LOCK:
+        rows = _load(INVITES_FILE, "invites")
+        for r in rows:
+            if r.get("code_hash") != digest:
+                continue
+            if r.get("used"):
+                return None
+            if current >= int(r.get("expires_at", 0)):
+                return None
+            r["used"] = True
+            r["used_at"] = current
+            _save(INVITES_FILE, "invites", rows)
+            result = dict(r)
+            result.pop("code_hash", None)
+            return result
+    return None
+
+
+# ── Bootstrap admin (D-05) ──
+
+
+def ensure_bootstrap_admin(
+    env: Mapping[str, str], profile: str, logger: logging.Logger
+) -> str:
+    """Create the bootstrap admin from DG_BOOTSTRAP_ADMIN_USER/
+    DG_BOOTSTRAP_ADMIN_PASSWORD when no admin exists yet. Never overwrites an
+    existing admin. Returns "exists" | "created" | "missing-env" |
+    "weak-password". A missing or too-short/invalid bootstrap secret raises
+    RuntimeError in "multi-user" and logs a WARNING (creating nothing) in
+    "local". Never logs the username above INFO or the password at any
+    level."""
+    if profile not in DEPLOYMENT_PROFILES:
+        raise ValueError(f"unknown deployment profile: {profile!r}")
+
+    with _STORE_LOCK:
+        users = _load(USERS_FILE, "users")
+        if any(u.get("is_admin") for u in users):
+            return "exists"
+
+        username = env.get("DG_BOOTSTRAP_ADMIN_USER")
+        password = env.get("DG_BOOTSTRAP_ADMIN_PASSWORD")
+
+        if not username or not password:
+            message = (
+                "DG_BOOTSTRAP_ADMIN_USER/DG_BOOTSTRAP_ADMIN_PASSWORD not set; "
+                "no bootstrap admin created"
+            )
+            if profile == "multi-user":
+                raise RuntimeError(message)
+            logger.warning(message)
+            return "missing-env"
+
+        try:
+            validate_password_policy(password)
+        except ValueError:
+            message = (
+                "DG_BOOTSTRAP_ADMIN_PASSWORD does not meet the password policy; "
+                "no bootstrap admin created"
+            )
+            if profile == "multi-user":
+                raise RuntimeError(message)
+            logger.warning(message)
+            return "weak-password"
+
+        create_user(username, password, is_admin=True)
+        return "created"
