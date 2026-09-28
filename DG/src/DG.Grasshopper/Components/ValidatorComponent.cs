@@ -2,6 +2,7 @@
 using DG.Core.Models;
 using DG.Core.Services;
 using DG.Core.Validation;
+using DG.Grasshopper.Params;
 using DG.Grasshopper.Validation;
 using Grasshopper.Kernel;
 using System.Drawing;
@@ -28,6 +29,13 @@ public sealed class ValidatorComponent : GH_Component
         pManager[1].Optional = true;
         pManager.AddBooleanParameter("SendValid", "SendValid", "Set true to evaluate and publish results to data-service", GH_ParamAccess.item, false);
         pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
+        pManager.AddParameter(
+            new NonPersistentStringParam(),
+            "Platform Token",
+            "Token",
+            "Platform credential (dgc_ token from the Connectors screen, same token as CONNECTOR). Required to publish; evaluation runs without it.",
+            GH_ParamAccess.item);
+        pManager[4].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -68,6 +76,9 @@ public sealed class ValidatorComponent : GH_Component
 
         var dataServiceUrl = "http://localhost:8000";
         da.GetData(3, ref dataServiceUrl);
+
+        var token = string.Empty;
+        da.GetData(4, ref token);
 
         // 2. If DesignState is null: warning, continue with empty
         if (designState is null)
@@ -114,52 +125,63 @@ public sealed class ValidatorComponent : GH_Component
         var modelViewerUrl = string.Empty;
         if (sendValid)
         {
-            try
+            if (string.IsNullOrWhiteSpace(token))
             {
-                var response = ValidationPublishClient.Publish(
-                    new[] { rule },
-                    new[] { result },
-                    bindings,
-                    dataServiceUrl,
-                    designState,
-                    validStatus);
-                sendStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
-                validationRunId = response.RunId;
-                modelViewerUrl = response.ModelViewerUrl;
-
-                // 7a. Surface SHACL findings (D-15): Report lines + runtime messages, capped
-                // at Warning -- a SHACL data-integrity finding must never render this
-                // component as errored/failed. GH_RuntimeMessageLevel.Error stays reserved
-                // for the publish-exception catch block below.
-                var shacl = response.Shacl;
-                if (shacl?.Results is { Count: > 0 })
-                {
-                    foreach (var finding in shacl.Results)
-                    {
-                        var severity = finding.Severity ?? string.Empty;
-                        var line = ErrorMessageTemplates.ShaclViolation(severity, finding.What ?? string.Empty, finding.Where ?? string.Empty, finding.HowToFix ?? string.Empty);
-                        reportLines.Add(line);
-
-                        var level = severity.Trim().ToLowerInvariant() switch
-                        {
-                            "violation" => GH_RuntimeMessageLevel.Warning,
-                            "warning" => GH_RuntimeMessageLevel.Warning,
-                            "info" => GH_RuntimeMessageLevel.Remark,
-                            _ => GH_RuntimeMessageLevel.Remark,
-                        };
-                        AddRuntimeMessage(level, line);
-                    }
-                    da.SetDataList(3, reportLines);
-                }
-                else if (shacl is not null && (shacl.Status == "unavailable" || shacl.Status == "timeout"))
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"SHACL was not evaluated for this run ({shacl.Status}).");
-                }
+                // D-19: authentication is required to publish in both deployment
+                // profiles. Skip the HTTP call entirely -- evaluation above already ran.
+                sendStatus = ErrorMessageTemplates.PublishTokenMissing("VALIDATOR");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, sendStatus);
             }
-            catch (Exception ex)
+            else
             {
-                sendStatus = $"Publish failed: {ex.Message}";
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Publish failed: {ex.Message}");
+                try
+                {
+                    var response = ValidationPublishClient.Publish(
+                        new[] { rule },
+                        new[] { result },
+                        bindings,
+                        dataServiceUrl,
+                        token,
+                        designState,
+                        validStatus);
+                    sendStatus = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
+                    validationRunId = response.RunId;
+                    modelViewerUrl = response.ModelViewerUrl;
+
+                    // 7a. Surface SHACL findings (D-15): Report lines + runtime messages, capped
+                    // at Warning -- a SHACL data-integrity finding must never render this
+                    // component as errored/failed. GH_RuntimeMessageLevel.Error stays reserved
+                    // for the publish-exception catch block below.
+                    var shacl = response.Shacl;
+                    if (shacl?.Results is { Count: > 0 })
+                    {
+                        foreach (var finding in shacl.Results)
+                        {
+                            var severity = finding.Severity ?? string.Empty;
+                            var line = ErrorMessageTemplates.ShaclViolation(severity, finding.What ?? string.Empty, finding.Where ?? string.Empty, finding.HowToFix ?? string.Empty);
+                            reportLines.Add(line);
+
+                            var level = severity.Trim().ToLowerInvariant() switch
+                            {
+                                "violation" => GH_RuntimeMessageLevel.Warning,
+                                "warning" => GH_RuntimeMessageLevel.Warning,
+                                "info" => GH_RuntimeMessageLevel.Remark,
+                                _ => GH_RuntimeMessageLevel.Remark,
+                            };
+                            AddRuntimeMessage(level, line);
+                        }
+                        da.SetDataList(3, reportLines);
+                    }
+                    else if (shacl is not null && (shacl.Status == "unavailable" || shacl.Status == "timeout"))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"SHACL was not evaluated for this run ({shacl.Status}).");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    sendStatus = $"Publish failed: {ex.Message}";
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Publish failed: {ex.Message}");
+                }
             }
         }
         da.SetData(5, sendStatus);

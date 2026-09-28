@@ -2,8 +2,10 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using DG.Core.Data;
 using DG.Core.Models;
 using DG.Core.Serialization;
+using DG.Core.Services;
 using DG.Core.Validation;
 using CoreBindingRow = DG.Core.Models.BindingRow;
 using CoreDesignState = DG.Core.Models.DesignState;
@@ -14,6 +16,9 @@ namespace DG.Grasshopper.Validation;
 
 internal static class ValidationPublishClient
 {
+    // Named per D-04's Artifacts table; used only in error-template text, never in a header.
+    private const string ComponentName = "VALIDATOR";
+
     private static readonly HttpClient HttpClient = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -25,6 +30,7 @@ internal static class ValidationPublishClient
         IReadOnlyList<CoreRuleEvaluationResult> results,
         IReadOnlyList<CoreBindingRow> bindings,
         string dataServiceUrl,
+        string? token,
         CoreDesignState? designState = null,
         List<bool>? validStatus = null)
     {
@@ -33,11 +39,32 @@ internal static class ValidationPublishClient
         var request = BuildRequest(package, statePayloadJson);
         request.ValidStatus = validStatus;
         var endpoint = $"{NormalizeUrl(dataServiceUrl)}/validation/publish";
-        using var response = HttpClient.PostAsJsonAsync(endpoint, request, JsonOptions).GetAwaiter().GetResult();
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = JsonContent.Create(request, options: JsonOptions),
+        };
+
+        // D-04/Correction 5: the token is required to publish. Bail out before any
+        // network I/O when it's missing or malformed — the token itself never
+        // enters an exception message (DataServiceRequestAuth doc-comment discipline).
+        if (!DataServiceRequestAuth.TryApplyConnectorToken(httpRequest, token, out _))
+        {
+            throw new InvalidOperationException(ErrorMessageTemplates.PublishTokenMissing(ComponentName));
+        }
+
+        using var response = HttpClient.SendAsync(httpRequest).GetAwaiter().GetResult();
         var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Validation publish failed ({(int)response.StatusCode}): {body}");
+            var outcome = DataServiceRequestAuth.ClassifyStatus(response.StatusCode);
+            var message = outcome switch
+            {
+                PublishAuthOutcome.Rejected => ErrorMessageTemplates.PublishTokenRejected(ComponentName),
+                PublishAuthOutcome.Forbidden => ErrorMessageTemplates.PublishProjectForbidden(ComponentName),
+                _ => $"Validation publish failed ({(int)response.StatusCode}): {body}",
+            };
+            throw new InvalidOperationException(message);
         }
 
         var parsed = JsonSerializer.Deserialize<ValidationPublishResponse>(body, JsonOptions);

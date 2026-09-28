@@ -4,6 +4,7 @@ using DG.Core.Parsing;
 using DG.Core.Serialization;
 using DG.Core.Services;
 using DG.Grasshopper.Canvas;
+using DG.Grasshopper.Params;
 using DG.Grasshopper.Validation;
 using Grasshopper.Kernel;
 
@@ -41,6 +42,13 @@ public sealed class ComputgraphPublishComponent : GH_Component
         pManager.AddTextParameter("Project", "Project", "DG project name", GH_ParamAccess.item, "default-project");
         pManager.AddTextParameter("DataServiceUrl", "DataServiceUrl", "DG data-service base URL", GH_ParamAccess.item, "http://localhost:8000");
         pManager.AddBooleanParameter("Publish", "Publish", "Rising-edge trigger: re-extract canvas and publish to data-service once", GH_ParamAccess.item, false);
+        pManager.AddParameter(
+            new NonPersistentStringParam(),
+            "Platform Token",
+            "Token",
+            "Platform credential (dgc_ token from the Connectors screen, same token as CONNECTOR). Required to publish.",
+            GH_ParamAccess.item);
+        pManager[3].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -60,6 +68,9 @@ public sealed class ComputgraphPublishComponent : GH_Component
         var publishInput = false;
         da.GetData(2, ref publishInput);
 
+        var token = string.Empty;
+        da.GetData(3, ref token);
+
         // Rising-edge detection: _lastApply starts true so first solve with Publish=true
         // does NOT auto-fire (mirrors StructureConfirmComponent's _lastApply pattern).
         var isRisingEdge = publishInput && !_lastApply;
@@ -67,7 +78,7 @@ public sealed class ComputgraphPublishComponent : GH_Component
 
         if (isRisingEdge)
         {
-            PublishCanvas(project, dataServiceUrl);
+            PublishCanvas(project, dataServiceUrl, token);
         }
 
         da.SetData(0, _status);
@@ -82,8 +93,17 @@ public sealed class ComputgraphPublishComponent : GH_Component
     /// Everything inside this method runs on a single solve -- it is a pure read+HTTP
     /// path with no canvas mutation, so no ScheduleSolution is needed.
     /// </summary>
-    private void PublishCanvas(string project, string dataServiceUrl)
+    private void PublishCanvas(string project, string dataServiceUrl, string? token)
     {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            // D-19: authentication is required to publish in both deployment profiles.
+            _status = ErrorMessageTemplates.PublishTokenMissing("COMPUTGRAPH PUBLISH");
+            _staleEntityIds = new List<string>();
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, _status);
+            return;
+        }
+
         try
         {
             var doc = OnPingDocument();
@@ -125,7 +145,7 @@ public sealed class ComputgraphPublishComponent : GH_Component
             CgContextDgIdAssigner.AssignDgIds(context, project);
             var cgContextJson = ComputgraphContextSerializer.Serialize(context);
 
-            var response = ComputgraphPublishClient.Publish(cgContextJson, project, dataServiceUrl);
+            var response = ComputgraphPublishClient.Publish(cgContextJson, project, dataServiceUrl, token);
 
             _status = string.IsNullOrWhiteSpace(response.Status) ? "published" : response.Status;
             _staleEntityIds = response.StaleEntityIds ?? new List<string>();

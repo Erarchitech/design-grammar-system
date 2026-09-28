@@ -161,10 +161,14 @@ public sealed class ConnectorComponent : GH_Component
         // report the auth reason on a not-connected ConnectionInfo.
         if (auth.Outcome != HeartbeatOutcome.Authenticated || auth.Bundle is not { } bundle)
         {
+            // D-07: an authenticated heartbeat with no bundle means this deployment
+            // (multi-user profile) doesn't hand out a direct graph connection --
+            // distinct from "no token", which would be misleading here.
             var reason = auth.Outcome switch
             {
                 HeartbeatOutcome.Rejected => "Platform token rejected — invalid, revoked, or expired.",
                 HeartbeatOutcome.Unreachable => "Could not reach data-service to authenticate the token.",
+                HeartbeatOutcome.Authenticated => ErrorMessageTemplates.ConnectorNoGraphBundle(),
                 _ => "No platform token.",
             };
             return new ConnectResult(NotConnected(reason), auth);
@@ -192,6 +196,11 @@ public sealed class ConnectorComponent : GH_Component
                 break;
             case HeartbeatOutcome.Unreachable:
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ConnectorHeartbeatUnreachable(DataServiceUrl));
+                break;
+            case HeartbeatOutcome.Authenticated when auth.Bundle is null:
+                // D-07: multi-user profile withholds the Neo4j bundle -- authenticated,
+                // but no direct graph connection is available in this deployment.
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ErrorMessageTemplates.ConnectorNoGraphBundle());
                 break;
         }
     }
