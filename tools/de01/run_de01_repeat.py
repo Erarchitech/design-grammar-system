@@ -425,7 +425,10 @@ def run_leg_replay_pinned(
         )
 
     try:
-        with httpx.Client(timeout=httpx.Timeout(connect=2.0, read=10.0, write=2.0, pool=2.0)) as client:
+        with httpx.Client(
+            timeout=httpx.Timeout(connect=2.0, read=10.0, write=2.0, pool=2.0),
+            headers=legs.data_service_auth_headers(),
+        ) as client:
             response = client.get(f"{base_url}/validation/view/{project}/{run_id}")
     except httpx.RequestError as exc:
         return legs.LegResult(

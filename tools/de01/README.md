@@ -168,6 +168,36 @@ construction and the C# harness's own row emission), and
 reader comparing two rows from the *same* envelope is comparing the *same*
 hash after this fallback, and should not read per-row agreement into it.
 
+## Authenticated legs (Phase 1205)
+
+Phase 1205 (D-20) enforces server-side authorization on `/validation/publish` and
+`/validation/view/*` (1205-10). Once that plan lands, the **data-service** and
+**replay** legs (and `run_de01_repeat.py`'s pinned-replay GET) need a connector
+token or they will report a typed `error` (HTTP 401) instead of a comparable
+envelope.
+
+**To authenticate:**
+
+1. Mint a Grasshopper connector credential for the golden fixture project
+   (`DG-1200-GOLDEN`) on the Connectors screen of the V2 UI — the same
+   `dgc_`-prefixed token Grasshopper itself uses.
+2. Make the token available to the runner, in either of two ways:
+   - Save it to the gitignored file `.de01/connector-token` (one line, the raw
+     token — `.gitignore`'s `.de01/` entry already covers this path), or
+   - Export it in your own shell as `DG_DE01_CONNECTOR_TOKEN` (checked first,
+     ahead of the file).
+3. Run `run_de01.py` / `run_de01_repeat.py` as usual — no new CLI flag exists
+   for the token; `legs.data_service_auth_headers()` reads it at call time.
+
+`DG_DE01_CONNECTOR_TOKEN_FILE` overrides the default file path
+(`.de01/connector-token`) if you keep the token elsewhere.
+
+**Without a token configured**, both legs send no `Authorization` header at
+all — byte-identical to today's pre-1205-10 behavior. The token is never
+placed in the leg `config` dict, a CLI argument, or either report: it exists
+only as a single-request HTTP header, read fresh from the environment/file on
+every call and never cached or logged.
+
 ## Fixture freeze rule (phases 1201–1205)
 
 `fixtures/golden/` is frozen once committed (spec/EVIDENCE-CONTRACT.md section 7,

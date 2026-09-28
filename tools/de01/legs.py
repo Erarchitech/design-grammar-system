@@ -46,6 +46,44 @@ FIXTURE_RULE_ID = "R_GOLD_HEIGHT_MAX_75_V"
 # run id reads it from here, never hardcoded a second time at the call site.
 FIXTURE_RUN_ID = "RUN_GOLD_1200"
 
+DEFAULT_CONNECTOR_TOKEN_FILE = REPO_ROOT / ".de01" / "connector-token"
+"""Default location of the gitignored connector-token file (`.gitignore`'s `.de01/`)."""
+
+
+def data_service_auth_headers() -> dict[str, str]:
+    """Bearer header for the data-service and replay legs' HTTP calls (D-20).
+
+    Reads ``DG_DE01_CONNECTOR_TOKEN`` at call time; if blank, reads the first
+    non-empty line of the file named by ``DG_DE01_CONNECTOR_TOKEN_FILE``
+    (default :data:`DEFAULT_CONNECTOR_TOKEN_FILE`). Returns
+    ``{"Authorization": "Bearer <token>"}`` when a value exists, else ``{}`` --
+    byte-identical to today (no header at all) when no token is configured
+    anywhere.
+
+    Never caches the token, never logs it, and never returns it in any shape
+    other than this single-use header dict -- callers must not fold the
+    return value into a ``config`` dict, a CLI argument, or a report field
+    (T-1205-04-01): every report this repo emits is built from ``config``,
+    so a token placed there would be serialized verbatim into
+    ``run_de01_repeat.py``'s JSON/Markdown reports.
+    """
+    token = os.environ.get("DG_DE01_CONNECTOR_TOKEN", "").strip()
+    if not token:
+        token_file_env = os.environ.get("DG_DE01_CONNECTOR_TOKEN_FILE", "").strip()
+        token_path = Path(token_file_env) if token_file_env else DEFAULT_CONNECTOR_TOKEN_FILE
+        if token_path.is_file():
+            try:
+                for line in token_path.read_text(encoding="utf-8").splitlines():
+                    stripped = line.strip()
+                    if stripped:
+                        token = stripped
+                        break
+            except OSError:
+                token = ""
+    if not token:
+        return {}
+    return {"Authorization": f"Bearer {token}"}
+
 
 @dataclass
 class LegResult:
@@ -187,7 +225,10 @@ def run_leg_data_service(fixture: dict[str, Any], config: dict[str, Any]) -> Leg
     entities = _fixture_entities_payload(fixture)
 
     try:
-        with httpx.Client(timeout=httpx.Timeout(connect=2.0, read=15.0, write=5.0, pool=2.0)) as client:
+        with httpx.Client(
+            timeout=httpx.Timeout(connect=2.0, read=15.0, write=5.0, pool=2.0),
+            headers=data_service_auth_headers(),
+        ) as client:
             publish_response = client.post(
                 f"{base_url}/validation/publish",
                 json={
@@ -854,7 +895,10 @@ def run_leg_replay(fixture: dict[str, Any], config: dict[str, Any]) -> LegResult
         )
 
     try:
-        with httpx.Client(timeout=httpx.Timeout(connect=2.0, read=10.0, write=2.0, pool=2.0)) as client:
+        with httpx.Client(
+            timeout=httpx.Timeout(connect=2.0, read=10.0, write=2.0, pool=2.0),
+            headers=data_service_auth_headers(),
+        ) as client:
             response = client.get(f"{base_url}/validation/view/{project}")
     except httpx.RequestError as exc:
         return LegResult(
