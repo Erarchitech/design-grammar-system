@@ -64,6 +64,7 @@ from connectors import (
 
 import auth
 import auth_routes
+import secrets_policy
 
 import reasoner
 import dg_context
@@ -100,6 +101,14 @@ import canonical_json
 # makes it deterministically stoppable.
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Phase 1205 (D-05/D-07/D-11/D-19): profile validation, the known-default
+    # secret refusal, and the bootstrap admin all run first and let their
+    # exceptions propagate -- unlike the watcher below, a refused start here
+    # must be a failed start, not a degraded one.
+    _profile = auth.deployment_profile()
+    secrets_policy.enforce_startup_secrets(os.environ, _profile, logging.getLogger(__name__))
+    auth.ensure_bootstrap_admin(os.environ, _profile, logging.getLogger(__name__))
+
     # Late module-global lookups on purpose: `ensure_spec_indexes`,
     # `_call_shacl_validate` and `_auto_publish_run` are all defined further
     # down this module, and this body runs at startup, long after import.
@@ -125,7 +134,20 @@ async def lifespan(_app: FastAPI):
         logging.getLogger(__name__).exception("dsav_watcher: stop_watcher failed during shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+# Phase 1205 (D-07/D-19): docs exposure is gated by the import-time deployment
+# profile, read directly from the environment (not through auth.deployment_profile,
+# which raises on an unknown value -- an import-time crash on an unrelated typo
+# would be worse than fail-closed docs). Anything other than exactly "local"
+# disables /docs, /redoc and /openapi.json (fail closed).
+_DOCS_PROFILE = os.getenv("DG_DEPLOYMENT", "local")
+_DOCS_ENABLED = _DOCS_PROFILE == "local"
+
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/docs" if _DOCS_ENABLED else None,
+    redoc_url="/redoc" if _DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if _DOCS_ENABLED else None,
+)
 app.include_router(auth_routes.router)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
@@ -1447,6 +1469,18 @@ def connector_heartbeat(request: Request):
             "CONNECTOR_AUTH_FAILED",
             401,
         )
+    # Phase 1205 (D-07/D-19/T-1205-07-08): the Neo4j admin bundle is withheld
+    # from every connector in the multi-user profile -- Bolt is not published
+    # there and the GH direct-Bolt path is documented as local-only. `local`
+    # keeps today's bundle so the trusted-local GH workflow is unaffected.
+    neo4j_bundle = None
+    if auth.deployment_profile() != "multi-user":
+        neo4j_bundle = connectors.Neo4jBundle(
+            uri=NEO4J_PUBLIC_URI,
+            user=NEO4J_USER,
+            password=NEO4J_PASSWORD,
+            database=NEO4J_DATABASE,
+        )
     return HeartbeatResponse(
         connector_id=record["connector_id"],
         status=connectors.derive_status(record["last_connection"]),
@@ -1454,12 +1488,7 @@ def connector_heartbeat(request: Request):
         # for the authenticated connector. Old records without a project read as
         # "default-project".
         project=record.get("project") or "default-project",
-        neo4j=connectors.Neo4jBundle(
-            uri=NEO4J_PUBLIC_URI,
-            user=NEO4J_USER,
-            password=NEO4J_PASSWORD,
-            database=NEO4J_DATABASE,
-        ),
+        neo4j=neo4j_bundle,
     )
 
 
