@@ -236,14 +236,14 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 2/19 plans executed
+**Plans:** 3/19 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 1205-01-PLAN.md — Known-default secret policy, `.env.example`, owner-run env checker; owner creates `.env` before any enforcement (human checkpoint)
 - [x] 1205-02-PLAN.md — Server-side identity store: scrypt users, hashed sessions, memberships, invites, three principal resolvers, bootstrap admin, deployment profile
-- [ ] 1205-03-PLAN.md — Grasshopper publish clients send the `dgc_` connector token; Token inputs; CONNECTOR multi-user no-bundle handling
+- [x] 1205-03-PLAN.md — Grasshopper publish clients send the `dgc_` connector token; Token inputs; CONNECTOR multi-user no-bundle handling
 - [ ] 1205-04-PLAN.md — Operator tooling: DE-01 connector-token path, LLM master-secret re-encryption script, live boundary checker
 - [ ] 1205-05-PLAN.md — n8n workflows: relay-token guard, service token, hardcoded internal URLs, env credentials, atomic project-scoped ingest write
 - [ ] 1205-06-PLAN.md — LLM-generated Cypher project-scope guard, foreign-literal and key-collision checks (dg_context)
