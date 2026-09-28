@@ -20,6 +20,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst item = $input.all()[0];\nconst headers = (item.json && item.json.headers) || {};\nconst provided = headers['x-dg-service-token'];\nconst expected = $env.DG_SERVICE_TOKEN;\nif (!expected || provided !== expected) {\n  throw new Error('relay token rejected');\n}\nreturn $input.all();"
+      },
+      "id": "ku-verify-relay-token",
+      "name": "Verify Relay Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        0
+      ]
+    },
+    {
+      "parameters": {
         "keepOnlySet": true,
         "values": {
           "string": [
@@ -102,7 +115,8 @@
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $json.update_prompt, \"system\": null } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "ku-ollama",
       "name": "Ollama Generate",
@@ -151,7 +165,8 @@
         "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $json.execution_id, \"status\": \"completed\", \"workflow\": \"knowledge-update\", \"payload\": { \"proposedText\": $json.proposed_text } } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "ku-post-result",
       "name": "Post Execution Result",
@@ -165,6 +180,17 @@
   ],
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Relay Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Relay Token": {
       "main": [
         [
           {

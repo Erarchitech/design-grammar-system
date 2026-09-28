@@ -20,6 +20,19 @@
     },
     {
       "parameters": {
+        "functionCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst headers = ($json && $json.headers) || {};\nconst provided = headers['x-dg-service-token'];\nconst expected = $env.DG_SERVICE_TOKEN;\nif (!expected || provided !== expected) {\n  throw new Error('relay token rejected');\n}\nreturn items;"
+      },
+      "id": "ki-verify-relay-token",
+      "name": "Verify Relay Token",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        0
+      ]
+    },
+    {
+      "parameters": {
         "keepOnlySet": true,
         "values": {
           "string": [
@@ -90,7 +103,8 @@
           "timeout": 900000
         },
         "bodyParametersJson": "={{ { \"provider\": null, \"model\": null, \"prompt\": $json.prompt, \"system\": null } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "ki-ollama",
       "name": "Ollama Generate",
@@ -137,8 +151,8 @@
           "timeout": 30000
         },
         "bodyParametersJson": "={{JSON.stringify($json.neo4jBody)}}",
-        "basicAuthUser": "neo4j",
-        "basicAuthPassword": "12345678",
+        "basicAuthUser": "={{$env.NEO4J_USER}}",
+        "basicAuthPassword": "={{$env.NEO4J_PASSWORD}}",
         "requestMethod": "POST"
       },
       "id": "ki-execute-neo4j",
@@ -160,8 +174,8 @@
           "timeout": 30000
         },
         "bodyParametersJson": "={{ (() => { const input = $items('Build Cypher')[0].json; const sessionId = 'ks-' + Date.now().toString(36); const resultStr = JSON.stringify({ noteId: input.noteId, title: input.title, tags: input.tags }).slice(0, 2000); return { statements: [{ statement: 'MERGE (s:SpecSession {sessionId: $sessionId, project: $project, graph: $graph}) SET s.mode = $mode, s.prompt = $prompt, s.result = $result, s.createdAt = $createdAt', parameters: { sessionId: sessionId, project: input.project_name, graph: 'SpecGraph', mode: 'insert', prompt: input.prompt_text, result: resultStr, createdAt: new Date().toISOString() } }, { statement: 'MATCH (s:SpecSession {sessionId: $sessionId, graph: $graph}) MERGE (c:SpecClass {name: \\'SpecSession\\', graph: $graph}) MERGE (s)-[:INSTANCE_OF]->(c)', parameters: { sessionId: sessionId, graph: 'SpecGraph' } }] }; })() }}",
-        "basicAuthUser": "neo4j",
-        "basicAuthPassword": "12345678",
+        "basicAuthUser": "={{$env.NEO4J_USER}}",
+        "basicAuthPassword": "={{$env.NEO4J_PASSWORD}}",
         "requestMethod": "POST"
       },
       "id": "ki-write-session",
@@ -178,7 +192,8 @@
         "url": "http://data-service:8000/execution-result",
         "jsonParameters": true,
         "bodyParametersJson": "={{ { \"executionId\": $execution.id, \"status\": \"completed\", \"workflow\": \"knowledge-ingest\", \"payload\": { \"noteId\": $items('Build Cypher')[0].json.noteId, \"title\": $items('Build Cypher')[0].json.title, \"tags\": $items('Build Cypher')[0].json.tags } } }}",
-        "requestMethod": "POST"
+        "requestMethod": "POST",
+        "headerParametersJson": "={{ { \"X-DG-Service-Token\": $env.DG_SERVICE_TOKEN } }}"
       },
       "id": "ki-post-result",
       "name": "Post Execution Result",
@@ -192,6 +207,17 @@
   ],
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Relay Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Relay Token": {
       "main": [
         [
           {
