@@ -40,7 +40,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from fastapi import HTTPException, Request
+
 import connectors
+import route_policy
 
 # ── Constants (Claude's discretion per 1205-02-PLAN.md Artifacts table) ──
 
@@ -653,3 +656,236 @@ def ensure_bootstrap_admin(
 
         create_user(username, password, is_admin=True)
         return "created"
+
+
+# ── require_principal dependency (D-03/D-04, 1205-07 tracer) ──
+
+_UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def auth_error(error: str, hint: str, code: str, status_code: int) -> HTTPException:
+    """Same `{error, hint, code}` detail shape as app.py's
+    `_structured_error_response` (kept independent to avoid an app.py<->auth.py
+    circular import)."""
+    return HTTPException(status_code=status_code, detail={"error": error, "hint": hint, "code": code})
+
+
+def cookie_secure(env: Mapping[str, str] | None = None) -> bool:
+    """Read DG_COOKIE_SECURE (`true`/`1`, case-insensitive) -- whether the
+    session cookie should carry the Secure attribute."""
+    value = (_env(env).get("DG_COOKIE_SECURE") or "").strip().lower()
+    return value in ("true", "1")
+
+
+def _require_csrf(request: Request) -> None:
+    """T-1205-07-04: a same-site page cannot send the SameSite=Strict cookie
+    plus a custom header without a CORS preflight nothing here answers."""
+    if request.headers.get(CSRF_HEADER) != "1":
+        raise auth_error(
+            "A CSRF header is required for this request.",
+            f'Include "{CSRF_HEADER}: 1" on this request.',
+            "CSRF_HEADER_REQUIRED",
+            403,
+        )
+
+
+async def _resolve_project(request: Request, policy: "route_policy.RoutePolicy") -> str:
+    """Gather the project value(s) declared on `request` (D-03): path, query,
+    and -- for a method that may carry a body -- the top-level `project` key
+    of the JSON body (a non-JSON or non-dict body is tolerated as absent).
+    More than one distinct non-empty value anywhere -> PROJECT_MISMATCH,
+    regardless of which source `policy.project_source` actually declares.
+    The declared source itself being empty -> PROJECT_REQUIRED. A
+    `resource:<name>` source delegates to a registered resolver instead.
+    """
+    source = policy.project_source
+    if source is None:
+        return ""
+
+    if source.startswith("resource:"):
+        resolver_name = source.split(":", 1)[1]
+        resolver = route_policy.RESOURCE_RESOLVERS.get(resolver_name)
+        if resolver is None:
+            raise auth_error(
+                "This route's project resolver is not registered.",
+                "Register a resolver via route_policy.register_resource_resolver.",
+                "ROUTE_UNCLASSIFIED",
+                403,
+            )
+        result = resolver(request)
+        if hasattr(result, "__await__"):
+            result = await result
+        return result
+
+    candidates: dict[str, str] = {}
+
+    path_project = request.path_params.get("project")
+    if path_project:
+        candidates["path"] = path_project
+
+    query_project = request.query_params.get("project")
+    if query_project:
+        candidates["query"] = query_project
+
+    if request.method in _UNSAFE_METHODS:
+        try:
+            body = await request.json()
+        except Exception:
+            body = None
+        if isinstance(body, dict):
+            body_project = body.get("project")
+            if isinstance(body_project, str) and body_project:
+                candidates["body"] = body_project
+
+    if len({v for v in candidates.values()}) > 1:
+        raise auth_error(
+            "The request carries conflicting project values.",
+            "Ensure the path, query and body all agree on the project.",
+            "PROJECT_MISMATCH",
+            403,
+        )
+
+    project = candidates.get(source)
+    if not project:
+        raise auth_error(
+            "A project is required for this request.",
+            f"Include a project value in the request {source}.",
+            "PROJECT_REQUIRED",
+            403,
+        )
+    return project
+
+
+async def require_principal(request: Request) -> Principal:
+    """FastAPI dependency (D-03/D-04): deny-by-default. Looks up the policy
+    for this route in route_policy.ROUTE_POLICIES; resolves a principal from
+    the service header, then a connector Bearer token, then the session
+    cookie (explicit-credential precedence, no fallback to a weaker one);
+    enforces the principal-kind check, CSRF, and project authorization; sets
+    `request.state.principal` / `request.state.project`; returns the
+    principal.
+    """
+    route = request.scope.get("route")
+    path_template = getattr(route, "path", None)
+    policy = route_policy.policy_for(request.method, path_template)
+    if policy is None:
+        _LOGGER.error(
+            "require_principal: no route policy classified for %s %s",
+            request.method,
+            path_template or request.url.path,
+        )
+        raise auth_error(
+            "This route has no authorization policy.",
+            "Add a RoutePolicy entry in route_policy.ROUTE_POLICIES.",
+            "ROUTE_UNCLASSIFIED",
+            403,
+        )
+
+    # (2) public / connector-self: anonymous, no credential resolution.
+    if policy.principals & {route_policy.PRINCIPAL_PUBLIC, route_policy.PRINCIPAL_CONNECTOR_SELF}:
+        if route_policy.PRINCIPAL_PUBLIC in policy.principals and request.method in _UNSAFE_METHODS:
+            _require_csrf(request)
+        principal = Principal(kind="anonymous")
+        request.state.principal = principal
+        request.state.project = None
+        return principal
+
+    # (3) resolve the credential: service header > connector Bearer > session
+    # cookie. An explicit-but-invalid credential never falls back to a
+    # weaker one (D-04).
+    service_header = request.headers.get(SERVICE_TOKEN_HEADER)
+    auth_header = request.headers.get("Authorization", "")
+    cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
+
+    principal: Principal | None
+    if service_header is not None:
+        principal = resolve_service_principal(service_header)
+        if principal is None:
+            raise auth_error(
+                "Invalid service token.",
+                "Check the internal service token configuration.",
+                "SERVICE_AUTH_FAILED",
+                401,
+            )
+    elif auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):].strip()
+        principal = resolve_connector_principal(token)
+        if principal is None:
+            raise auth_error(
+                "Invalid or revoked connector token.",
+                "Create a new credential via POST /connectors/{connector_id}/credentials.",
+                "CONNECTOR_AUTH_FAILED",
+                401,
+            )
+    elif cookie_token:
+        principal = resolve_session_principal(cookie_token)
+        if principal is None:
+            raise auth_error(
+                "Authentication required.",
+                "Log in via POST /auth/login.",
+                "AUTH_REQUIRED",
+                401,
+            )
+    else:
+        raise auth_error(
+            "Authentication required.",
+            "Log in via POST /auth/login.",
+            "AUTH_REQUIRED",
+            401,
+        )
+
+    # (4) principal-kind check.
+    allowed_tokens_by_kind = {
+        "user": {route_policy.PRINCIPAL_SESSION, route_policy.PRINCIPAL_ADMIN, route_policy.PRINCIPAL_MEMBER},
+        "connector": {route_policy.PRINCIPAL_CONNECTOR},
+        "service": {route_policy.PRINCIPAL_SERVICE},
+    }
+    if policy.principals.isdisjoint(allowed_tokens_by_kind.get(principal.kind, set())):
+        raise auth_error(
+            "Not authorized for this operation.",
+            "Use a principal type permitted for this route.",
+            "PRINCIPAL_NOT_PERMITTED",
+            403,
+        )
+
+    # (5) CSRF on session-authenticated unsafe requests.
+    if principal.kind == "user" and request.method in _UNSAFE_METHODS:
+        _require_csrf(request)
+
+    # (6) admin-only routes.
+    if policy.principals == frozenset({route_policy.PRINCIPAL_ADMIN}) and not principal.is_admin:
+        raise auth_error(
+            "Administrator access required.",
+            "Contact a project or system administrator.",
+            "ADMIN_REQUIRED",
+            403,
+        )
+
+    # (7)/(8) project authorization.
+    if policy.project_source is not None:
+        project = await _resolve_project(request, policy)
+        if principal.kind == "user":
+            role = effective_role(principal, project)
+            authorized = role_satisfies(role, policy.min_role or "viewer")
+        elif principal.kind == "connector":
+            authorized = principal.bound_project == project
+        elif principal.kind == "service":
+            authorized = True
+        else:
+            authorized = False
+        if not authorized:
+            raise auth_error(
+                "Not authorized for the requested project.",
+                "Request project access from a project owner.",
+                "PROJECT_FORBIDDEN",
+                403,
+            )
+        request.state.project = project
+    else:
+        request.state.project = None
+
+    # (9)
+    request.state.principal = principal
+    return principal

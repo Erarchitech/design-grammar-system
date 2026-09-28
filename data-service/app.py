@@ -15,7 +15,7 @@ import urllib.request
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
@@ -61,6 +61,9 @@ from connectors import (
     CredentialCreatedResponse,
     HeartbeatResponse,
 )
+
+import auth
+import auth_routes
 
 import reasoner
 import dg_context
@@ -123,6 +126,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(auth_routes.router)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -2718,7 +2722,7 @@ def publish_validation(payload: ValidationPublishRequest):
         ) from exc
 
 
-@app.get("/validation/runs/{project}")
+@app.get("/validation/runs/{project}", dependencies=[Depends(auth.require_principal)])
 def get_validation_runs(project: str):
     return {"project": project, "runs": list_validation_runs(project)}
 
