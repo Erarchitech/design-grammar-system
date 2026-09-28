@@ -146,6 +146,11 @@ n=10, none needed the "insufficient samples" fallback.
 | Cassette count on disk | ✅ 50 (5 items × 10) |
 | MANIFEST.md digests match `sha256sum` of every listed file | ✅ spot-checked, matched |
 
+## Owner verdicts (D-28)
+
+- **Task 1 (provider setup):** owner confirmed the OpenAI-compatible custom-router provider was configured via the V2 UI LLM Settings panel and reachable; Ollama explicitly out of scope for this run; Anthropic not used this round (see Scope decisions above).
+- **Task 4 (report review):** owner replied **"approved"** after opening and reading `llm-repeatability-report.md` directly in the IDE, accepting the recorded per-item results (including the genuine 0.1–0.6 modal-agreement instability) as the correct disclosed finding.
+
 ## Report file sha256
 
 - `llm-repeatability-report.json`: `f445f9399448d687d0196b33a51869c2272817131594caeb73e038e92cc7baa9`
