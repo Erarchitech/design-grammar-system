@@ -25,8 +25,7 @@ Base URL: `/data-service` (via nginx proxy)
 | Method | Path | Body / Params | Description |
 |--------|------|---------------|-------------|
 | POST | `/execution-result` | `{id, status, result, workflow}` | Store workflow execution status |
-| GET | `/execution-result/{id}` | — | Retrieve execution status by ID |
-| GET | `/execution-result/latest/{workflow}` | — | Latest status for named workflow |
+| GET | `/execution-result/{id}` | — | Retrieve execution status by ID (only the user who started the execution; others get 404) |
 
 ### Speckle Settings
 
@@ -406,9 +405,52 @@ Request body:
 
 ---
 
+## Authentication and authorization (Phase 1205)
+
+The full contract, including the complete route-policy table, is `spec/SECURITY-BOUNDARY.md`. Summary:
+
+**Principals.** Every data-service route is deny-by-default and classified in `data-service/route_policy.py`.
+
+| Principal | Credential | Used by |
+|-----------|-----------|---------|
+| User session | `dg_session` cookie (HttpOnly, SameSite=Strict) plus `X-DG-CSRF: 1` on every `POST`/`PUT`/`PATCH`/`DELETE` | The V2 UI. Roles per project: `viewer`, `editor`, `owner`; an admin acts as owner everywhere |
+| Connector token | `Authorization: Bearer dgc_...`, bound to one project | Grasshopper: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, plus `POST /connectors/heartbeat` and `POST /designstate/capture` |
+| Service token | `X-DG-Service-Token` | n8n only: `/llm/generate`, `/context/*`, `/mcp`, `POST /execution-result` |
+
+Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POST /connectors/heartbeat` (validates its own connector token).
+
+**Errors** use the `{error, hint, code}` detail shape: 401 `AUTH_REQUIRED`, `CONNECTOR_AUTH_FAILED`, `SERVICE_AUTH_FAILED`; 403 `PRINCIPAL_NOT_PERMITTED`, `CSRF_HEADER_REQUIRED`, `ADMIN_REQUIRED`, `PROJECT_FORBIDDEN`, `PROJECT_REQUIRED`, `PROJECT_MISMATCH`, `ROUTE_UNCLASSIFIED`. Resource-bound routes answer an unknown and an unauthorized resource with the same 404.
+
+**Account and project endpoints (Phase 1205).**
+
+| Method | Path | Principal | Description |
+|--------|------|-----------|-------------|
+| POST | `/auth/login` | public | Issue the session cookie |
+| POST | `/auth/logout` | session | Revoke the session |
+| GET | `/auth/me` | session | Current user, admin flag, memberships |
+| POST | `/auth/password` | session | Change own password |
+| POST | `/auth/invites` | project owner | Invite a user to a project (`dgi_` code, valid 72 hours) |
+| POST | `/auth/accept-invite` | public (invite code) | Create the account and start a session |
+| GET | `/projects` | session | Projects the caller can access |
+| POST | `/projects` | session | Create a project (caller becomes owner) |
+| GET | `/projects/{project}/members` | owner | List members |
+| DELETE | `/projects/{project}/members/{username}` | owner | Remove a member |
+| GET | `/graph/{project}` | viewer | Graph nodes and relationships for the project |
+| POST | `/graph/{project}/claim-untagged` | editor | Claim untagged (`project IS NULL`) nodes |
+| PUT | `/graph/{project}/node/{node_id}/property` | editor | Update one node property |
+| GET | `/rules/{project}`, `/rules/{project}/{rule_id}` | viewer | Rule listing and detail |
+| GET | `/validation/view/{project}/{run_id}/entity/{dg_entity_id}` | viewer | Per-entity validation detail |
+| GET | `/computgraph/candidates/{project}` | viewer | Candidate list |
+| POST | `/workflows/rules-ingest` | editor | Relay rules ingest to n8n; 202 `{status, executionId}` |
+| POST | `/workflows/graph-query` | viewer | Relay a graph question to n8n; 202 `{status, executionId}` |
+
+Removed: `POST /create_node/` and `GET /execution-result/latest/{workflow}`.
+
+---
+
 ## n8n Webhooks (port 5678)
 
-Base URL: `/n8n` (via nginx proxy)
+Internal only (Phase 1205): the UI no longer calls n8n and nginx has no `/n8n/` route. data-service relays to these webhooks over the internal network through `POST /workflows/rules-ingest` and `POST /workflows/graph-query`, carrying `X-DG-Service-Token`.
 
 ### Rules Ingest
 
@@ -434,13 +476,13 @@ Base URL: `/n8n` (via nginx proxy)
 
 ## Neo4j HTTP API (port 7474)
 
-Base URL: `/neo4j` (via nginx proxy)
+Not reachable from the browser (Phase 1205): nginx has no `/neo4j/` route and the UI holds no Neo4j credential. The browser uses the named, project-authorized data-service endpoints above. Bolt and this HTTP port are published to `127.0.0.1` only in the `local` profile and not at all in `multi-user`.
 
 | Method | Path | Body | Description |
 |--------|------|------|-------------|
 | POST | `/db/neo4j/tx/commit` | `{statements: [{statement: "CYPHER..."}]}` | Direct Cypher execution |
 
-Used by the SPA for graph visualization (NeoVis), node property editing, and node deletion.
+Historical: this path was used by the pre-1205 SPA for graph visualization, node property editing and node deletion.
 
 ---
 
@@ -448,6 +490,6 @@ Used by the SPA for graph visualization (NeoVis), node property editing, and nod
 
 The SPA does not wait for n8n workflow completion. Instead:
 
-1. UI sends webhook request → receives immediate 200 ACK with execution ID
-2. n8n workflow runs asynchronously → stores result via `POST /data-service/execution-result`
-3. UI polls `GET /data-service/execution-result/{id}` until status ≠ "pending"
+1. UI calls the relay route (`/workflows/...`) → receives an immediate 202 ACK with the execution ID
+2. n8n workflow runs asynchronously → stores result via `POST /data-service/execution-result` (service token)
+3. UI polls `GET /data-service/execution-result/{id}` until status ≠ "pending"; only the user who started the execution can read the result

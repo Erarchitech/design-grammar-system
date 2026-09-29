@@ -91,3 +91,11 @@ dotnet build .\DG\DG.sln -c Release -p:RhinoInstallDir="D:\Apps\Rhino 8"
 - **Conditional compilation** — `#if GRASSHOPPER_SDK` guards all GH-dependent code. Without Rhino SDK installed, `DG.Grasshopper` compiles as a placeholder.
 - **Async polling** — Components use `ScheduleSolution()` + task caching instead of blocking the GH UI thread.
 - **SWRL parsing** — Bespoke regex parser, not a vendor OWL library. Handles `Class(?var)`, `Property(?var1, ?var2)`, and `Builtin(?var, literal)` patterns.
+
+## Connector token on publish components (Phase 1205)
+
+Every Grasshopper call to data-service is authenticated with a project-bound connector token (`dgc_...`); see `spec/SECURITY-BOUNDARY.md` (section 3.2).
+
+- The **VALIDATOR** and **COMPUTGRAPH PUBLISH** components have a `Token` input. It takes the same `dgc_` token that the **CONNECTOR** component uses. The token is a runtime input and is not saved into the `.gh` file; re-supply it when the canvas is reopened.
+- A token works only for its bound project and only on the connector-scoped routes: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, `POST /connectors/heartbeat` and `POST /designstate/capture`. Any other route answers 403.
+- The direct-Bolt components (`Neo4j*Repository` based, connecting to `bolt://localhost:7687`) are a trusted-local boundary in the `local` profile and are **unsupported in `multi-user`**: Bolt is not published and the heartbeat withholds the Neo4j bundle. Use the data-service API instead.
