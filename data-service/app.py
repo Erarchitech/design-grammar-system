@@ -2143,12 +2143,13 @@ def post_context_generate_cypher(payload: dg_context.GenerateCypherRequest):
     structured violation list; intermediate failed attempts stay invisible.
     """
     project = (payload.project or "").strip() or None
-    if payload.type == "graph_query" and project is None:
-        # Phase 1205 (ALGN12-17): an unscoped graph query can read any
-        # project, so the scope guard needs the caller's project to prove
-        # the generated Cypher stays inside it.
+    if payload.type in ("graph_query", "rule_ingest", "rule_edit") and project is None:
+        # Phase 1205 (ALGN12-17; CR-04 of the review): an unscoped graph query
+        # can read any project, and an unscoped rule ingest/edit skips the
+        # ownership guards entirely -- both need the caller's project, so the
+        # guards fail closed when it is missing.
         raise _structured_error_response(
-            "A project is required to generate a graph query.",
+            "A project is required to generate this Cypher.",
             "Include the authorised project in the request body.",
             "CONTEXT_PROJECT_REQUIRED",
             400,

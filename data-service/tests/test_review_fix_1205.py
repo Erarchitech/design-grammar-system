@@ -216,3 +216,115 @@ class TestWr13FunctionCallsNotFalsePositives:
     )
     def test_function_call_on_relationship_or_alias_is_not_a_violation(self, cypher):
         assert dg_context.check_query_project_scope(cypher) == []
+
+
+# --------------------------------------------------------------------------
+# CR-04: rule-ingest ownership guards are not bypassable by regex evasion
+# --------------------------------------------------------------------------
+
+
+class _ExplodingSession:
+    def run(self, *args, **kwargs):
+        raise AssertionError("must not query Neo4j")
+
+
+class _FakeCollisionSession:
+    def __init__(self, rows):
+        self._rows = rows
+        self.calls = []
+
+    def run(self, query, **params):
+        self.calls.append((query, params))
+        return self._rows
+
+
+class _Cr04Session:
+    """Reports every queried id as owned by another project."""
+
+    def __init__(self):
+        self.calls = []
+
+    def run(self, query, **params):
+        self.calls.append(params)
+        return [{"ruleHits": list(params["ruleIds"]), "atomHits": list(params["atomIds"])}]
+
+
+class TestCr04KeyCollisionEvasion:
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            'MERGE (r:Rule {Rule_Id: "R_X"}) SET r.SWRL="a"',  # double quotes
+            "MERGE (:Rule {Rule_Id: 'R_X'})",  # no variable
+            "MATCH (r:Rule {Rule_Id: 'R_X'}) SET r.SWRL = 'a'",  # MATCH-then-SET
+            "CREATE (r:Rule {Rule_Id: 'R_X'})",  # CREATE
+        ],
+    )
+    def test_key_is_collected_and_owner_checked(self, cypher):
+        session = _Cr04Session()
+        result = dg_context.find_cross_project_key_collisions(cypher, "P1", session=session)
+        assert [v["code"] for v in result] == ["cross_project_key_collision"]
+        assert session.calls[0]["ruleIds"] == ["R_X"]
+
+    def test_unkeyed_rule_pattern_fails_closed_without_db(self):
+        result = dg_context.find_cross_project_key_collisions(
+            "MATCH (r:Rule) SET r.SWRL = 'a'", "P1", session=_ExplodingSession()
+        )
+        assert result and result[0]["code"] == "unkeyed_rule_or_atom_pattern"
+
+    def test_nonliteral_key_fails_closed_without_db(self):
+        result = dg_context.find_cross_project_key_collisions(
+            "MATCH (r:Rule) WHERE r.Rule_Id IN ['R_X'] SET r.SWRL = 'a'",
+            "P1",
+            session=_ExplodingSession(),
+        )
+        assert {v["code"] for v in result} & {"unanalysable_key", "unkeyed_rule_or_atom_pattern"}
+
+    def test_atom_reached_through_relationship_is_allowed(self):
+        session = _FakeCollisionSession([])
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_X'}) "
+            "MERGE (r)-[:HAS_BODY]->(a:Atom {Atom_Id: 'R_X_A1'})"
+        )
+        assert dg_context.find_cross_project_key_collisions(cypher, "P1", session=session) == []
+        assert session.calls[0][1]["atomIds"] == ["R_X_A1"]
+
+    def test_key_text_inside_a_string_literal_is_ignored(self):
+        cypher = "MERGE (r:Rule {Rule_Id: 'R_X', SWRL: 'Rule_Id: \"Q\" and Atom_Id = 1'})"
+        session = _FakeCollisionSession([])
+        dg_context.find_cross_project_key_collisions(cypher, "P1", session=session)
+        assert session.calls[0][1]["ruleIds"] == ["R_X"]
+        assert session.calls[0][1]["atomIds"] == []
+
+
+class TestCr04ForeignProjectWriteEvasion:
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            "MERGE (r:Rule {Rule_Id: 'R_X'}) SET r.`project` = 'victim'",
+            "MERGE (r:Rule {Rule_Id: 'R_X'}) SET r['project'] = 'victim'",
+            "MERGE (r:Rule {Rule_Id: 'R_X'}) SET r.project = other.project",
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: \"victim\"})",
+        ],
+    )
+    def test_obfuscated_or_foreign_project_write_is_rejected(self, cypher):
+        assert dg_context.check_foreign_project_literals(cypher, "mine")
+
+    def test_own_literal_is_accepted(self):
+        assert dg_context.check_foreign_project_literals(
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: 'mine'}) SET r.project = 'mine'", "mine"
+        ) == []
+
+
+class TestCr04ProjectRequired:
+    @pytest.mark.dg_principal("service")
+    @pytest.mark.parametrize("request_type", ["rule_ingest", "rule_edit"])
+    def test_blank_project_is_rejected_before_generation(self, monkeypatch, request_type):
+        monkeypatch.setattr(
+            dg_context, "generate_validated_cypher", lambda *a, **k: pytest.fail("must not generate")
+        )
+        for project in (None, "", "  "):
+            body = {"prompt": "p", "type": request_type}
+            if project is not None:
+                body["project"] = project
+            response = client.post("/context/generate-cypher", json=body)
+            assert response.status_code == 400

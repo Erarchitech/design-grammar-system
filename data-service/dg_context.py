@@ -960,6 +960,30 @@ def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
     return violations
 
 
+# CR-04: string-literal-aware masking (backslash escapes honoured, as Cypher
+# does). Each literal is replaced by same-length filler so character offsets in
+# the masked and the original text line up -- structure is analysed on the
+# masked text, quoted values are read back from the original.
+_ESCAPED_STRING_LITERAL_PATTERN = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"", re.DOTALL)
+
+
+def _mask_string_literals(cypher: str) -> str:
+    def _fill(match: "re.Match[str]") -> str:
+        text = match.group(0)
+        return text[0] + "x" * (len(text) - 2) + text[-1]
+
+    return _ESCAPED_STRING_LITERAL_PATTERN.sub(_fill, cypher)
+
+
+_PROJECT_KEY_OBFUSCATION_PATTERN = re.compile(r"`\s*project\s*`")
+_PROJECT_KEY_INDEX_PATTERN = re.compile(r"\[\s*(['\"])project\1\s*\]")
+# `project:` / `.project =` followed by something that is neither a quoted
+# literal nor a `$parameter` (e.g. `x.project`, a function call).
+_PROJECT_NONLITERAL_VALUE_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_])project\s*:\s*(?!['\"$])[^\s,}]+|\.project\s*=(?!=)\s*(?!['\"$])[^\s,;]+"
+)
+
+
 def check_foreign_project_literals(cypher: str, project: str) -> list[dict[str, Any]]:
     """Rule ingest/edit Cypher may only ever write the relayed project's
     value into a `project` property (T-1205-06-03). Any quoted `project`
@@ -989,6 +1013,44 @@ def check_foreign_project_literals(cypher: str, project: str) -> list[dict[str, 
                     "path": literal_value,
                 }
             )
+
+    # CR-04 (1205 review): obfuscated or non-literal writes of the `project`
+    # key cannot be compared with the relayed project, so they are rejected
+    # (fail closed) instead of slipping past the literal check above.
+    masked = _mask_string_literals(cypher)
+    for pattern, text in (
+        (_PROJECT_KEY_OBFUSCATION_PATTERN, masked),
+        (_PROJECT_KEY_INDEX_PATTERN, cypher),
+    ):
+        for match in pattern.finditer(text):
+            violations.append(
+                {
+                    "code": "unsupported_project_write",
+                    "message": (
+                        "The `project` property is addressed through a "
+                        "backtick or bracket form the ownership check cannot "
+                        "read. Where: "
+                        f"'{match.group(0).strip()}'. How to fix: write "
+                        "`project` as a plain property key with the relayed "
+                        "project's literal value."
+                    ),
+                    "path": match.group(0).strip(),
+                }
+            )
+    for match in _PROJECT_NONLITERAL_VALUE_PATTERN.finditer(masked):
+        violations.append(
+            {
+                "code": "unsupported_project_write",
+                "message": (
+                    "`project` is set from an expression, not from the "
+                    "relayed project's literal, so ownership cannot be "
+                    "verified. Where: "
+                    f"'{match.group(0).strip()}'. How to fix: set `project` "
+                    "to the relayed project's quoted literal only."
+                ),
+                "path": match.group(0).strip(),
+            }
+        )
     return violations
 
 
@@ -1012,6 +1074,76 @@ _RULE_ID_PROP_PATTERN = re.compile(r"Rule_Id\s*:\s*'([^']*)'")
 _ATOM_ID_PROP_PATTERN = re.compile(r"Atom_Id\s*:\s*'([^']*)'")
 
 
+# CR-04 (1205 review): a Rule/Atom node pattern in ANY clause (MERGE, MATCH,
+# CREATE; with or without a variable; single or double quotes) is analysed, and
+# every Rule/Atom the statement touches must be addressed by a literal key so
+# its owner can be looked up. Structure is read from the string-masked text.
+_RULE_ATOM_NODE_PATTERN = re.compile(
+    r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?(?P<labels>(?:\s*:\s*`?[A-Za-z_][A-Za-z0-9_]*`?)+)"
+    r"\s*(?P<map>\{[^{}]*\})?\s*\)"
+)
+_ID_KEY_MENTION_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_])`?(?P<key>Rule_Id|Atom_Id)`?\s*(?P<op>:|=(?!=)|\bIN\b)\s*"
+)
+_QUOTED_LITERAL_AT_PATTERN = re.compile(r"'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"", re.DOTALL)
+
+
+def _collect_rule_atom_keys(cypher: str) -> tuple[set[str], set[str], list[dict[str, Any]]]:
+    masked = _mask_string_literals(cypher)
+    rule_ids: set[str] = set()
+    atom_ids: set[str] = set()
+    violations: list[dict[str, Any]] = []
+
+    def _violation(code: str, what: str, where: str) -> dict[str, Any]:
+        return {
+            "code": code,
+            "message": (
+                f"{what} cannot be ownership-checked. Where: '{where}'. How "
+                "to fix: address every Rule/Atom with an inline literal "
+                "Rule_Id/Atom_Id key, e.g. MERGE (r:Rule {Rule_Id: 'R_X'})."
+            ),
+            "path": where,
+        }
+
+    for mention in _ID_KEY_MENTION_PATTERN.finditer(masked):
+        target = rule_ids if mention.group("key") == "Rule_Id" else atom_ids
+        literal = _QUOTED_LITERAL_AT_PATTERN.match(cypher, mention.end())
+        if mention.group("op") == "IN" or literal is None:
+            violations.append(
+                _violation(
+                    "unanalysable_key",
+                    f"A {mention.group('key')} that is not a plain quoted literal",
+                    cypher[mention.start() : mention.end() + 30].strip(),
+                )
+            )
+            continue
+        target.add(literal.group(1) if literal.group(1) is not None else literal.group(2))
+
+    for node in _RULE_ATOM_NODE_PATTERN.finditer(masked):
+        labels = {token.strip().strip("`") for token in node.group("labels").split(":") if token.strip()}
+        wants = [name for name in ("Rule", "Atom") if name in labels]
+        if not wants:
+            continue
+        span_text = masked[node.start() : node.end()]
+        for name in wants:
+            key = f"{name}_Id"
+            if re.search(rf"(?<![A-Za-z0-9_])`?{key}`?\s*:\s*['\"]", span_text):
+                continue
+            if name == "Atom":
+                before = masked[: node.start()].rstrip()
+                after = masked[node.end() :].lstrip()
+                if before.endswith(("-", ">")) or after.startswith(("-", "<")):
+                    continue  # reached through a relationship from a keyed Rule
+            violations.append(
+                _violation(
+                    "unkeyed_rule_or_atom_pattern",
+                    f"A {name} pattern without a literal {key}",
+                    cypher[node.start() : node.end()].strip()[:80],
+                )
+            )
+    return rule_ids, atom_ids, violations
+
+
 def find_cross_project_key_collisions(
     cypher: str, project: str, session: Any = None
 ) -> list[dict[str, Any]]:
@@ -1023,13 +1155,11 @@ def find_cross_project_key_collisions(
     live session. The violation message names the offending key but never
     the other project (anti-enumeration house style, T-39-06 precedent).
     """
-    rule_ids: set[str] = set()
-    atom_ids: set[str] = set()
-    for _var, label, props in _MERGE_NODE_PATTERN.findall(cypher):
-        if label == "Rule":
-            rule_ids.update(_RULE_ID_PROP_PATTERN.findall(props))
-        elif label == "Atom":
-            atom_ids.update(_ATOM_ID_PROP_PATTERN.findall(props))
+    rule_ids, atom_ids, structural = _collect_rule_atom_keys(cypher)
+    if structural:
+        # CR-04: a Rule/Atom the statement touches without a literal key
+        # cannot be ownership-checked -- fail closed, no database round trip.
+        return structural
 
     if not rule_ids and not atom_ids:
         return []
