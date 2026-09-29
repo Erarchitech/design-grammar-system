@@ -196,3 +196,71 @@ class TestComputgraphCatalog:
 
         assert parse_calls["count"] == 1
         assert first is second
+
+
+# ── Phase 1205 plan 10: folder ingest never reads hidden repository paths ──
+
+
+class TestIngestFolderHiddenPaths:
+    """T-1205-10-05: the mounted repository holds `.secrets/`, `.env*`, `.git/`
+    and `.claude/`; an admin-triggered folder ingest must skip any markdown
+    file below a dot-prefixed path segment and say why."""
+
+    def _seed(self, tmp_path):
+        (tmp_path / "notes").mkdir()
+        (tmp_path / "notes" / "public.md").write_text("# Public\nbody", encoding="utf-8")
+        (tmp_path / "notes" / ".secrets").mkdir()
+        (tmp_path / "notes" / ".secrets" / "leak.md").write_text("# Leak\nkey", encoding="utf-8")
+        (tmp_path / ".secrets").mkdir()
+        (tmp_path / ".secrets" / "root-leak.md").write_text("# Leak2\nkey", encoding="utf-8")
+
+    def _patch(self, monkeypatch, tmp_path):
+        writes: list[dict] = []
+        monkeypatch.setattr(app_module, "KNOWLEDGE_REPO_ROOT", tmp_path)
+        monkeypatch.setattr(
+            app_module, "write_query", lambda q, p=None: writes.append(p or {})
+        )
+        return writes
+
+    def test_hidden_segment_files_are_skipped_and_reported(self, tmp_path, monkeypatch):
+        self._seed(tmp_path)
+        writes = self._patch(monkeypatch, tmp_path)
+
+        response = client.post(
+            "/knowledge/ingest/folder", json={"project": "P1", "path": "notes"}
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["inserted"] == 1
+        assert body["skippedHidden"] == 1
+        assert body["skipped"] >= 1
+        assert body["skippedFiles"] == [
+            {"path": "notes/.secrets/leak.md", "reason": "hidden-path"}
+        ]
+        assert all("leak" not in str(p.get("source", "")) for p in writes)
+        assert not any(p.get("content") and "key" in p["content"] for p in writes)
+
+    def test_requesting_a_hidden_folder_directly_is_refused_too(self, tmp_path, monkeypatch):
+        self._seed(tmp_path)
+        writes = self._patch(monkeypatch, tmp_path)
+
+        response = client.post(
+            "/knowledge/ingest/folder", json={"project": "P1", "path": ".secrets"}
+        )
+
+        assert response.status_code == 200
+        assert response.json()["inserted"] == 0
+        assert response.json()["skippedHidden"] == 1
+        assert writes == []
+
+    @pytest.mark.dg_principal("none")
+    def test_ingest_requires_an_admin(self, tmp_path, monkeypatch):
+        self._seed(tmp_path)
+        self._patch(monkeypatch, tmp_path)
+        assert (
+            client.post(
+                "/knowledge/ingest/folder", json={"project": "P1", "path": "notes"}
+            ).status_code
+            == 401
+        )

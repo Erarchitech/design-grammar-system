@@ -137,12 +137,38 @@ def compare_routes(route_keys: set, policy_keys: set) -> tuple[set, set]:
     return route_keys - policy_keys, policy_keys - route_keys
 
 
-def _registered_keys() -> set:
-    keys = set()
+def _flat_routes() -> list[tuple[str, str | None, set, object]]:
+    """Every registered route as ``(kind, path, methods, dependant)``,
+    ``kind`` being ``"api"`` or ``"other"``.
+
+    Older FastAPI releases put each included ``APIRoute`` straight into
+    ``app.routes`` (with the router-level dependencies already merged into its
+    dependant); newer ones wrap an included router in a lazy
+    ``_IncludedRouter`` whose ``effective_route_contexts()`` carry the full
+    path and merged dependant. Both shapes are flattened here so the inventory
+    holds in the dev host and in the container image.
+    """
+    flat: list[tuple[str, str | None, set, object]] = []
     for route in app.routes:
         if isinstance(route, APIRoute):
-            for method in route.methods - {"HEAD", "OPTIONS"}:
-                keys.add((method, route.path))
+            flat.append(("api", route.path, set(route.methods), route.dependant))
+        elif hasattr(route, "effective_route_contexts"):
+            for ctx in route.effective_route_contexts():
+                if isinstance(ctx.original_route, APIRoute):
+                    flat.append(("api", ctx.path, set(ctx.methods), ctx.dependant))
+                else:
+                    flat.append(("other", getattr(ctx.starlette_route, "path", None), set(), None))
+        else:
+            flat.append(("other", getattr(route, "path", None), set(), None))
+    return flat
+
+
+def _registered_keys() -> set:
+    keys = set()
+    for kind, path, methods, _dependant in _flat_routes():
+        if kind == "api":
+            for method in methods - {"HEAD", "OPTIONS"}:
+                keys.add((method, path))
     return keys
 
 
@@ -156,11 +182,12 @@ def _dependency_calls(dependant) -> set:
 
 class TestInventory:
     def test_every_api_route_has_require_principal(self):
+        api_routes = [r for r in _flat_routes() if r[0] == "api"]
+        assert len(api_routes) >= 60  # the flattening really found the routes
         missing = [
-            route.path
-            for route in app.routes
-            if isinstance(route, APIRoute)
-            and auth.require_principal not in _dependency_calls(route.dependant)
+            path
+            for _kind, path, _methods, dependant in api_routes
+            if auth.require_principal not in _dependency_calls(dependant)
         ]
         assert missing == []
 
@@ -172,9 +199,7 @@ class TestInventory:
         assert stale == set(), f"policy rows without a route: {sorted(stale)}"
 
     def test_only_docs_routes_are_not_api_routes_and_only_in_local(self):
-        extras = {
-            getattr(r, "path", None) for r in app.routes if not isinstance(r, APIRoute)
-        }
+        extras = {path for kind, path, _m, _d in _flat_routes() if kind == "other"}
         assert extras <= _DOCS_PATHS
         if not app_module._DOCS_ENABLED:
             assert extras == set()

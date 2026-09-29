@@ -124,7 +124,7 @@ def test_lifespan_local_warns_once_naming_the_key_and_starts(
 
     with caplog.at_level("WARNING"):
         with TestClient(app) as client:
-            resp = client.get("/connectors")
+            resp = client.get("/")  # public health route; /connectors now needs a login (1205-10)
             assert resp.status_code == 200
 
     secrets_warnings = [

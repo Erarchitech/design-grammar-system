@@ -1434,13 +1434,19 @@ def get_llm_models(provider: str):
 
 
 @router.get("/connectors")
-def get_connectors():
+def get_connectors(request: Request):
     """Connector registry joined with per-connector status, last-connection
     date, and credential summaries (never tokens or hashes). CONNB-01, CONNB-04.
+
+    Phase 1205 (T-1205-10-06): only credentials bound to a project the caller
+    is a member of are listed, and status / last-connection are derived from
+    those credentials alone. An admin sees every credential.
     """
+    principal = request.state.principal
+    projects = None if principal.is_admin else set(auth.list_member_projects(principal.username))
     return {
         "categories": connectors.CONNECTOR_CATEGORIES,
-        "connectors": connectors.get_connector_overview(),
+        "connectors": connectors.get_connector_overview(projects=projects),
     }
 
 
@@ -3041,12 +3047,32 @@ MAX_FILE_SIZE = 100 * 1024  # 100KB
 def ingest_folder(payload: FolderIngestRequest):
     root = validate_ingest_path(payload.path)
     md_files = list(root.rglob("*.md"))
+    repo_root = KNOWLEDGE_REPO_ROOT.resolve()
 
     inserted = 0
     skipped = 0
+    skipped_hidden: list[dict[str, str]] = []
+    hidden_count = 0
     now = datetime.now(timezone.utc).isoformat()
 
     for md_file in md_files:
+        # Phase 1205 (T-1205-10-05): the mounted repository holds `.secrets/`,
+        # `.env*`, `.git/`, `.claude/` ... Any file below a path segment that
+        # begins with a dot is never read.
+        # Measured against the repository root (a superset of the requested
+        # folder's own segments), so `path=".secrets"` is refused too.
+        try:
+            rel_parts = md_file.relative_to(repo_root).parts
+        except ValueError:
+            rel_parts = md_file.relative_to(root).parts
+        if any(part.startswith(".") for part in rel_parts):
+            skipped += 1
+            hidden_count += 1
+            if len(skipped_hidden) < 50:
+                skipped_hidden.append(
+                    {"path": "/".join(rel_parts), "reason": "hidden-path"}
+                )
+            continue
         try:
             if md_file.stat().st_size > MAX_FILE_SIZE:
                 skipped += 1
@@ -3108,7 +3134,12 @@ def ingest_folder(payload: FolderIngestRequest):
         except Exception:
             skipped += 1
 
-    return {"inserted": inserted, "skipped": skipped}
+    return {
+        "inserted": inserted,
+        "skipped": skipped,
+        "skippedHidden": hidden_count,
+        "skippedFiles": skipped_hidden,
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -341,7 +341,7 @@ def test_lifespan_survives_watcher_start_failure(monkeypatch):
     monkeypatch.setattr(dsav_watcher, "stop_watcher", lambda **_kwargs: None)
 
     with TestClient(app) as live_client:
-        response = live_client.get("/connectors")
+        response = live_client.get("/")  # public health route; /connectors now needs a login (1205-10)
         assert response.status_code == 200
 
 

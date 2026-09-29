@@ -845,7 +845,7 @@ class TestRecognizeRoute:
 
         response = client.post(
             "/computgraph/recognize",
-            json={"cg_context": _cg_context(), "procedure_index": 999},
+            json={"cg_context": _cg_context(), "procedure_index": 999, "project": "P1"},
         )
 
         assert response.status_code == 422
@@ -869,7 +869,9 @@ class TestRecognizeRoute:
             "groups": [{"nickname": "wired thing group", "memberIds": ["n4"]}],
         }
 
-        response = client.post("/computgraph/recognize", json={"cg_context": ctx})
+        response = client.post(
+            "/computgraph/recognize", json={"cg_context": ctx, "project": "P1"}
+        )
 
         assert response.status_code == 200
         body = response.json()
@@ -883,7 +885,10 @@ class TestRecognizeRoute:
             lambda provider, base_url=None: _FakeAdapterForRetry([_TRUNCATED_RESPONSE]),
         )
 
-        response = client.post("/computgraph/recognize", json={"cg_context": _cg_context()})
+        response = client.post(
+            "/computgraph/recognize",
+            json={"cg_context": _cg_context(), "project": "P1"},
+        )
 
         assert response.status_code == 200
         body = response.json()
@@ -902,7 +907,7 @@ class TestRecognizeRoute:
 
         response = client.post(
             "/computgraph/recognize",
-            json={"cg_context": _isolated_candidates_context(6, "m")},
+            json={"cg_context": _isolated_candidates_context(6, "m"), "project": "P1"},
         )
 
         assert response.status_code == 200

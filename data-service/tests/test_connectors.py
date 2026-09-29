@@ -97,7 +97,9 @@ class TestRegistry:
 class TestCreateCredential:
     def test_create_returns_token_once_and_persists_only_hash(self):
         """POST returns dgc_ token; store holds only the SHA-256 hash."""
-        response = client.post("/connectors/revit/credentials", json={"label": "Office seat"})
+        response = client.post(
+            "/connectors/revit/credentials", json={"label": "Office seat", "project": "P1"}
+        )
         assert response.status_code == 201
         body = response.json()
         token = body["token"]
@@ -115,21 +117,28 @@ class TestCreateCredential:
         assert record["revoked"] is False
         assert record["last_connection"] is None
 
-    def test_create_without_body(self):
-        """Label is optional — POST with no body works."""
+    def test_create_without_body_fails_closed_project_required(self):
+        """Phase 1205: the project is now required (research gap 3) -- a POST
+        with no body is 403 PROJECT_REQUIRED, never an unscoped default."""
         response = client.post("/connectors/grasshopper/credentials")
+        assert response.status_code == 403
+        assert response.json()["detail"]["code"] == "PROJECT_REQUIRED"
+
+    def test_create_with_project_only_label_is_optional(self):
+        """Label is optional -- a body carrying only the project works."""
+        response = client.post("/connectors/grasshopper/credentials", json={"project": "P1"})
         assert response.status_code == 201
         assert response.json()["token"].startswith("dgc_")
 
     def test_create_unknown_connector_404(self):
         """Unknown connector id → 404 structured error."""
-        response = client.post("/connectors/sketchup/credentials", json={})
+        response = client.post("/connectors/sketchup/credentials", json={"project": "P1"})
         assert response.status_code == 404
         assert response.json()["detail"]["code"] == "CONNECTOR_NOT_FOUND"
 
     def test_token_never_exposed_by_listing(self):
         """GET /connectors credential summaries omit token and token_hash."""
-        token = client.post("/connectors/dynamo/credentials", json={}).json()["token"]
+        token = client.post("/connectors/dynamo/credentials", json={"project": "P1"}).json()["token"]
         body = client.get("/connectors").json()
         dump = json.dumps(body)
         assert token not in dump
@@ -144,7 +153,7 @@ class TestCreateCredential:
 
 class TestHeartbeat:
     def test_valid_token_activates_and_stamps_last_connection(self):
-        token = client.post("/connectors/blender/credentials", json={}).json()["token"]
+        token = client.post("/connectors/blender/credentials", json={"project": "P1"}).json()["token"]
         response = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         )
@@ -178,7 +187,7 @@ class TestHeartbeat:
         )
 
     def test_revoked_token_401(self):
-        created = client.post("/connectors/tekla/credentials", json={}).json()
+        created = client.post("/connectors/tekla/credentials", json={"project": "P1"}).json()
         token = created["token"]
         assert (
             client.delete(
@@ -206,14 +215,16 @@ class TestHeartbeatBundle:
         assert body["project"] == "urban-tower"
 
     def test_missing_project_defaults_to_default_project(self):
-        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        # A legacy credential minted with no project (the route now requires
+        # one, so it is created directly in the store).
+        _record, token = connectors.create_credential("grasshopper")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
         assert body["project"] == "default-project"
 
     def test_heartbeat_returns_host_facing_neo4j_bundle(self):
-        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        token = client.post("/connectors/grasshopper/credentials", json={"project": "P1"}).json()["token"]
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -230,7 +241,7 @@ class TestHeartbeatBundle:
         import app as app_module
 
         monkeypatch.setattr(app_module, "NEO4J_PUBLIC_URI", "bolt://10.0.0.5:7687")
-        token = client.post("/connectors/grasshopper/credentials", json={}).json()["token"]
+        token = client.post("/connectors/grasshopper/credentials", json={"project": "P1"}).json()["token"]
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -257,7 +268,7 @@ class TestStatusDerivation:
 
     def test_stale_surfaces_in_endpoint(self):
         """A connection older than 7 days shows as stale via GET /connectors."""
-        client.post("/connectors/lumion/credentials", json={})
+        client.post("/connectors/lumion/credentials", json={"project": "P1"})
         stored = _read_store()
         stored[0]["last_connection"] = (
             datetime.now(timezone.utc) - timedelta(days=30)
@@ -276,7 +287,7 @@ class TestStatusDerivation:
 class TestRevokeLifecycle:
     def test_revoke_marks_credential_and_reflects_in_listing(self):
         created = client.post(
-            "/connectors/navisworks/credentials", json={"label": "Site laptop"}
+            "/connectors/navisworks/credentials", json={"label": "Site laptop", "project": "P1"}
         ).json()
         response = client.delete(
             f"/connectors/navisworks/credentials/{created['credential_id']}"
@@ -293,13 +304,16 @@ class TestRevokeLifecycle:
         assert response.json()["detail"]["code"] == "CREDENTIAL_NOT_FOUND"
 
     def test_revoke_unknown_connector_404(self):
+        """Phase 1205: the credential resolver runs before the handler, so an
+        unknown connector id is indistinguishable from an unknown credential
+        (no-leak 404)."""
         response = client.delete("/connectors/sketchup/credentials/whatever")
         assert response.status_code == 404
-        assert response.json()["detail"]["code"] == "CONNECTOR_NOT_FOUND"
+        assert response.json()["detail"]["code"] == "CREDENTIAL_NOT_FOUND"
 
     def test_revoke_preserves_last_connection_history(self):
         """Revoking a credential keeps the connector's past connection date."""
-        created = client.post("/connectors/solibri/credentials", json={}).json()
+        created = client.post("/connectors/solibri/credentials", json={"project": "P1"}).json()
         client.post(
             "/connectors/heartbeat",
             headers={"Authorization": f"Bearer {created['token']}"},
@@ -310,3 +324,75 @@ class TestRevokeLifecycle:
         solibri = next(c for c in overview if c["id"] == "solibri")
         assert solibri["last_connection"] is not None
         assert solibri["status"] == "active"
+
+
+# ── Phase 1205 plan 10: tenant-filtered overview (T-1205-10-06) ──
+
+
+class TestOverviewProjectFilter:
+    def _seed(self):
+        _rec_a, token_a = connectors.create_credential("blender", "mine", "P1")
+        _rec_b, token_b = connectors.create_credential("blender", "theirs", "P2")
+        _rec_c, _tok_c = connectors.create_credential("solibri", "theirs-too", "P2")
+        # Legacy record with no project reads as default-project.
+        creds = connectors.load_credentials()
+        creds.append(
+            {
+                "credential_id": "legacy1",
+                "connector_id": "revit",
+                "label": "legacy",
+                "token_hash": "x",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "revoked": False,
+                "last_connection": None,
+            }
+        )
+        connectors.save_credentials(creds)
+        connectors.record_heartbeat(token_b)  # P2 activity only
+        return token_a, token_b
+
+    def test_projects_none_returns_every_credential(self):
+        self._seed()
+        overview = connectors.get_connector_overview()
+        blender = next(c for c in overview if c["id"] == "blender")
+        assert len(blender["credentials"]) == 2
+
+    def test_credentials_outside_the_set_are_dropped_before_status_is_derived(self):
+        self._seed()
+        overview = connectors.get_connector_overview(projects={"P1"})
+        blender = next(c for c in overview if c["id"] == "blender")
+        assert [c["label"] for c in blender["credentials"]] == ["mine"]
+        # P2's heartbeat must not leak into P1's view of the connector.
+        assert blender["last_connection"] is None
+        assert blender["status"] == "never_connected"
+        solibri = next(c for c in overview if c["id"] == "solibri")
+        assert solibri["credentials"] == []
+
+    def test_empty_set_lists_no_credentials(self):
+        self._seed()
+        overview = connectors.get_connector_overview(projects=set())
+        assert all(c["credentials"] == [] for c in overview)
+
+    def test_legacy_record_counts_as_default_project(self):
+        self._seed()
+        overview = connectors.get_connector_overview(projects={"default-project"})
+        revit = next(c for c in overview if c["id"] == "revit")
+        assert [c["credential_id"] for c in revit["credentials"]] == ["legacy1"]
+
+    def test_route_filters_by_membership_and_admin_sees_all(self):
+        import auth_fixtures
+
+        self._seed()
+        member = auth_fixtures.make_user("p1member@dg.local", memberships={"P1": "viewer"})
+        cookie = auth_fixtures.session_cookie_for(member["username"])
+        as_member = TestClient(app, raise_server_exceptions=False)
+        as_member.cookies.set("dg_session", cookie)
+        listed = as_member.get("/connectors").json()["connectors"]
+        blender = next(c for c in listed if c["id"] == "blender")
+        assert [c["label"] for c in blender["credentials"]] == ["mine"]
+        assert blender["last_connection"] is None
+
+        as_admin = TestClient(app, raise_server_exceptions=False)
+        as_admin.cookies.set("dg_session", auth_fixtures.admin_session_token())
+        all_listed = as_admin.get("/connectors").json()["connectors"]
+        assert len(next(c for c in all_listed if c["id"] == "blender")["credentials"]) == 2

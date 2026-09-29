@@ -285,11 +285,24 @@ def connector_last_connection(
     return max(timestamps) if timestamps else None
 
 
-def get_connector_overview(now: datetime | None = None) -> list[dict[str, Any]]:
+def get_connector_overview(
+    now: datetime | None = None, *, projects: set[str] | None = None
+) -> list[dict[str, Any]]:
     """Registry joined with per-connector status, last-connection date, and
     credential summaries. Never exposes tokens or token hashes (CONNB-01, CONNB-04).
+
+    `projects` (Phase 1205, T-1205-10-06): when given, credentials whose bound
+    project is outside the set are dropped BEFORE status and last-connection
+    are derived, so no cross-project activity leaks. None means all (admin).
+    Records without a project read as "default-project".
     """
     credentials = load_credentials()
+    if projects is not None:
+        credentials = [
+            record
+            for record in credentials
+            if (record.get("project") or "default-project") in projects
+        ]
     overview: list[dict[str, Any]] = []
     for connector in CONNECTOR_REGISTRY:
         last_connection = connector_last_connection(connector["id"], credentials)

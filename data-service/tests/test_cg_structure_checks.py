@@ -459,10 +459,13 @@ def test_report_contract_missing_project_rejected_before_session_opened(monkeypa
 
     response = client.post("/computgraph/validate", json={"definitionId": "frame.gh"})
 
-    # 422 here is FastAPI's own request-body validation -- if the route had
-    # instead opened a session, _ExplodingDriver's AssertionError would have
-    # been caught by the route's `except Exception` and mapped to 502.
-    assert response.status_code == 422
+    # Phase 1205: the deny-by-default dependency now rejects a body-sourced
+    # route that carries no project (403 PROJECT_REQUIRED) before FastAPI's own
+    # body validation (formerly 422) runs. Either way the route never opened a
+    # session -- if it had, _ExplodingDriver's AssertionError would have been
+    # caught by the route's `except Exception` and mapped to 502.
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "PROJECT_REQUIRED"
 
 
 def test_report_contract_sc4_module_source_has_no_gateway_identifiers():
