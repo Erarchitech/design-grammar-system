@@ -20,6 +20,10 @@ from app import app  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
 
+# D-04 (1205-08): /mcp is service-only; authorise the client as the service
+# principal up front so the 1205-10 flip does not turn this module red.
+DG_TEST_PRINCIPAL = "service"
+
 EXPECTED_GH_TOOL_NAMES = {
     "gh_get_context",
     "gh_get_selection",

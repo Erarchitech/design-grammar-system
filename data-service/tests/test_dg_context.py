@@ -26,6 +26,9 @@ from llm_gateway import GenerateResponse  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
 
+# D-04 (1205-08): /context/* is service-only; see test_mcp_gh_tools.py.
+DG_TEST_PRINCIPAL = "service"
+
 
 @pytest.fixture
 def catalog_path(tmp_path, monkeypatch):

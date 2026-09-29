@@ -235,6 +235,7 @@ class TestDeleteSettings:
 # ── POST /llm/generate ──
 
 
+@pytest.mark.dg_principal("service")
 class TestGenerate:
     @patch("app.get_adapter")
     @patch("app.load_persisted_llm_settings")
@@ -849,6 +850,7 @@ class TestGenerateProvenanceFields:
         assert dumped["model"] == "m"
         assert dumped["usage"] == {}
 
+    @pytest.mark.dg_principal("service")
     @patch("app.get_adapter")
     @patch("app.load_persisted_llm_settings")
     def test_llm_generate_endpoint_serializes_served_model_response_id_fingerprint_additively(

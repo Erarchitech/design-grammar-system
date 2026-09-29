@@ -16,10 +16,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(__file__))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import app as app_module  # noqa: E402
+import auth_fixtures  # noqa: E402
 import reasoner  # noqa: E402
 from app import app  # noqa: E402
 
@@ -98,6 +100,7 @@ class TestSelectReasoner:
 
         # Simulate restart by creating fresh client
         fresh = TestClient(app, raise_server_exceptions=False)
+        auth_fixtures.authorize_client(fresh, "admin")  # D-20: real session, not a bypass
         body = fresh.get("/reasoner/settings").json()
         assert body["selected"] == "hermit"
 
