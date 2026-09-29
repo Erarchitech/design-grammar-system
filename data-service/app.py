@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import threading
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -64,6 +65,7 @@ from connectors import (
 
 import auth
 import auth_routes
+import route_policy
 import secrets_policy
 
 import reasoner
@@ -181,7 +183,33 @@ DSAV_MAX_STATE_PAYLOAD_BYTES = int(os.getenv("DSAV_MAX_STATE_PAYLOAD_BYTES", "10
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 EXECUTION_RESULTS: dict[str, dict[str, Any]] = {}
-WORKFLOW_STATUS: dict[str, dict[str, Any]] = {}
+
+# Phase 1205 (T-1205-10-03): the per-execution owner record. The n8n relay
+# (plan 1205-14) records who started each execution; GET /execution-result/{id}
+# then answers only that user. The former global "latest per workflow" slot
+# (last-write-wins across all callers) no longer exists.
+EXECUTION_OWNERS: dict[str, dict[str, Any]] = {}
+_EXECUTION_OWNERS_LOCK = threading.Lock()
+EXECUTION_OWNERS_CAP = 1000
+
+
+def record_execution_owner(
+    execution_id: str, username: str, project: str | None, workflow: str | None
+) -> None:
+    """Bind `execution_id` to the user who started it. Oldest entries are
+    evicted once the map holds EXECUTION_OWNERS_CAP records."""
+    if not execution_id or not username:
+        return
+    with _EXECUTION_OWNERS_LOCK:
+        EXECUTION_OWNERS.pop(execution_id, None)
+        EXECUTION_OWNERS[execution_id] = {
+            "username": username,
+            "project": project,
+            "workflow": workflow,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+        }
+        while len(EXECUTION_OWNERS) > EXECUTION_OWNERS_CAP:
+            EXECUTION_OWNERS.pop(next(iter(EXECUTION_OWNERS)))
 VALIDATION_GRAPH = "ValidGraph"
 SPEC_GRAPH = "SpecGraph"
 # Phase 1200 (D-06): the serviceVersion this data-service instance stamps into every
@@ -1185,13 +1213,6 @@ def ensure_spec_indexes():
 @app.get("/")
 def read_root():
     return {"status": "Data Service is running"}
-
-
-@app.post("/create_node/")
-def create_node(label: str, name: str):
-    with driver.session() as session:
-        session.run(f"CREATE (n:{label} {{label: $name}})", name=name)
-    return {"status": f"Node {name} with label {label} created"}
 
 
 @app.get("/integration/speckle/project/{project}")
@@ -2995,29 +3016,15 @@ def store_execution_result(result: ExecutionResult):
     if result.message is not None:
         entry["message"] = result.message
     EXECUTION_RESULTS[result.executionId] = entry
-    if result.workflow:
-        WORKFLOW_STATUS[result.workflow] = {
-            "executionId": result.executionId,
-            "status": result.status,
-            "payload": result.payload or {},
-        }
-        if result.step is not None:
-            WORKFLOW_STATUS[result.workflow]["step"] = result.step
-        if result.progress is not None:
-            WORKFLOW_STATUS[result.workflow]["progress"] = result.progress
-        if result.message is not None:
-            WORKFLOW_STATUS[result.workflow]["message"] = result.message
     return {"status": "ok"}
 
 
 @app.get("/execution-result/{execution_id}")
 def get_execution_result(execution_id: str):
+    # Phase 1205 (D-04, T-1205-10-03): only the user who started the execution
+    # reaches this handler (the "execution" resolver answers everyone else with
+    # EXECUTION_NOT_FOUND). An owned id with no result yet is still running.
     return EXECUTION_RESULTS.get(execution_id, {"status": "running"})
-
-
-@app.get("/execution-result/latest/{workflow}")
-def get_latest_workflow_result(workflow: str):
-    return WORKFLOW_STATUS.get(workflow, {"status": "unknown"})
 
 
 MAX_FILE_SIZE = 100 * 1024  # 100KB
@@ -3869,3 +3876,85 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
         },
     )
     return {"affectedNodes": affected, "sessionId": session_id}
+
+
+# ---------------------------------------------------------------------------
+# Resource-project resolvers (Phase 1205, D-03/D-15, ALGN12-20)
+# ---------------------------------------------------------------------------
+#
+# Routes addressed by an opaque id alone (credential, note, execution) cannot
+# read their project from the request. Each resolver derives it server-side
+# from the stored resource. An unknown resource and an unauthorised one raise
+# the SAME not-found, so no route reveals whether another project's resource
+# exists.
+
+
+def _credential_not_found() -> HTTPException:
+    return _structured_error_response(
+        "Credential not found.",
+        "Use a credential_id from GET /connectors.",
+        "CREDENTIAL_NOT_FOUND",
+        404,
+    )
+
+
+def _resolve_credential_project(request: Request) -> str | None:
+    connector_id = request.path_params.get("connector_id")
+    credential_id = request.path_params.get("credential_id")
+    for record in connectors.load_credentials():
+        if (
+            record.get("connector_id") == connector_id
+            and record.get("credential_id") == credential_id
+        ):
+            return record.get("project") or "default-project"
+    return None
+
+
+def _note_not_found() -> HTTPException:
+    return HTTPException(status_code=404, detail="Note not found")
+
+
+async def _resolve_note_project(request: Request) -> str | None:
+    note_id = request.path_params.get("note_id")
+    row = await run_in_threadpool(
+        read_single,
+        "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) RETURN n.project AS project",
+        {"noteId": note_id, "graph": SPEC_GRAPH},
+    )
+    if row is None:
+        return None
+    return row.get("project") or "default-project"
+
+
+def _execution_not_found() -> HTTPException:
+    return _structured_error_response(
+        "Execution not found.",
+        "Poll an executionId returned to you by the workflow you started.",
+        "EXECUTION_NOT_FOUND",
+        404,
+    )
+
+
+def _resolve_execution_project(request: Request) -> str | None:
+    """Owner-bound: only the user who started the execution resolves it, and
+    only while they still hold membership of the recorded project (checked by
+    the caller against the route's min_role). Anyone else -- including other
+    members of the same project -- gets None (404)."""
+    execution_id = request.path_params.get("execution_id")
+    with _EXECUTION_OWNERS_LOCK:
+        owner = EXECUTION_OWNERS.get(execution_id)
+    principal = getattr(request.state, "principal", None)
+    if owner is None or principal is None:
+        return None
+    if principal.username is None or principal.username != owner.get("username"):
+        return None
+    return owner.get("project") or None
+
+
+route_policy.register_resource_resolver(
+    "credential", _resolve_credential_project, _credential_not_found
+)
+route_policy.register_resource_resolver("note", _resolve_note_project, _note_not_found)
+route_policy.register_resource_resolver(
+    "execution", _resolve_execution_project, _execution_not_found
+)

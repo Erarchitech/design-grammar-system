@@ -706,17 +706,22 @@ async def _resolve_project(request: Request, policy: "route_policy.RoutePolicy")
 
     if source.startswith("resource:"):
         resolver_name = source.split(":", 1)[1]
-        resolver = route_policy.RESOURCE_RESOLVERS.get(resolver_name)
-        if resolver is None:
+        entry = route_policy.RESOURCE_RESOLVERS.get(resolver_name)
+        if entry is None:
             raise auth_error(
                 "This route's project resolver is not registered.",
                 "Register a resolver via route_policy.register_resource_resolver.",
                 "ROUTE_UNCLASSIFIED",
                 403,
             )
-        result = resolver(request)
+        resolve, not_found = entry
+        result = resolve(request)
         if hasattr(result, "__await__"):
             result = await result
+        if not result:
+            # Unknown resource: the same not-found an unauthorised caller gets
+            # (D-15 no-leak rule).
+            raise not_found()
         return result
 
     candidates: dict[str, str] = {}
@@ -863,8 +868,14 @@ async def require_principal(request: Request) -> Principal:
             403,
         )
 
-    # (7)/(8) project authorization.
-    if policy.project_source is not None:
+    # (7)/(8) project authorization. A "filtered" source carries no project
+    # value: the handler filters its own output by the caller's membership.
+    # A "resource:*" source resolves the project server-side; any failure
+    # there answers the resource's own not-found so an unknown and an
+    # unauthorised resource are indistinguishable (D-15, ALGN12-20).
+    if policy.project_source is not None and policy.project_source != "filtered":
+        # Resolvers may read the caller (execution ownership).
+        request.state.principal = principal
         project = await _resolve_project(request, policy)
         if principal.kind == "user":
             role = effective_role(principal, project)
@@ -875,6 +886,8 @@ async def require_principal(request: Request) -> Principal:
             authorized = True
         else:
             authorized = False
+        if not authorized and policy.project_source.startswith("resource:"):
+            raise route_policy.RESOURCE_RESOLVERS[policy.project_source.split(":", 1)[1]][1]()
         if not authorized:
             raise auth_error(
                 "Not authorized for the requested project.",
