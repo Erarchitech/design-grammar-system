@@ -820,3 +820,64 @@ class TestWr14BootstrapUsername:
         assert "not a valid name" not in caplog.text.replace("not a valid account name", "")
         with pytest.raises(RuntimeError):
             auth.ensure_bootstrap_admin(self.ENV, "multi-user", logger)
+
+
+# --------------------------------------------------------------------------
+# WR-15: a second invite for a username that now has an account is not burned
+# --------------------------------------------------------------------------
+
+
+class TestWr15SecondInvite:
+    CSRF = {auth.CSRF_HEADER: auth_fixtures.CSRF_VALUE}
+
+    def _invite(self, username, project, role="editor"):
+        code, _record = auth.create_invite(username, project, role, created_by="owner@dg.local")
+        return code
+
+    def test_existing_account_joins_with_its_own_password_and_code_is_consumed(self, clean_throttle):
+        user = auth_fixtures.make_user("second-invite@dg.local")
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        code = self._invite("second-invite@dg.local", "PX")
+        fresh = TestClient(app_module.app, raise_server_exceptions=False)
+        before = auth.get_user("second-invite@dg.local")["password_hash"]
+        resp = fresh.post(
+            "/auth/accept-invite", json={"inviteCode": code, "password": password}, headers=self.CSRF
+        )
+        assert resp.status_code == 200, resp.text
+        assert auth.get_role("second-invite@dg.local", "PX") == "editor"
+        assert auth.get_user("second-invite@dg.local")["password_hash"] == before
+        again = fresh.post(
+            "/auth/accept-invite", json={"inviteCode": code, "password": password}, headers=self.CSRF
+        )
+        assert again.status_code == 400
+
+    def test_wrong_password_refuses_without_burning_the_code(self, clean_throttle):
+        user = auth_fixtures.make_user("second-invite-2@dg.local")
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        code = self._invite("second-invite-2@dg.local", "PY")
+        fresh = TestClient(app_module.app, raise_server_exceptions=False)
+        bad = fresh.post(
+            "/auth/accept-invite",
+            json={"inviteCode": code, "password": "definitely-not-the-password"},
+            headers=self.CSRF,
+        )
+        assert bad.status_code == 400
+        assert bad.json()["detail"]["code"] == "INVITE_INVALID"
+        assert "already has an account" in bad.json()["detail"]["hint"]
+        assert auth.get_role("second-invite-2@dg.local", "PY") is None
+        assert auth.peek_invite(code) is not None  # not consumed
+        ok = fresh.post(
+            "/auth/accept-invite", json={"inviteCode": code, "password": password}, headers=self.CSRF
+        )
+        assert ok.status_code == 200
+        assert auth.get_role("second-invite-2@dg.local", "PY") == "editor"
+
+    def test_peek_does_not_consume(self):
+        code = self._invite("peek-user@dg.local", "PZ")
+        assert auth.peek_invite(code) is not None
+        assert auth.peek_invite(code) is not None
+        assert auth.peek_invite("dgi_unknown") is None

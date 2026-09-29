@@ -594,6 +594,26 @@ def create_invite(
     return code, public
 
 
+def peek_invite(code: str, *, now: int | None = None) -> dict[str, Any] | None:
+    """Read a still-usable invite WITHOUT consuming it (WR-15). None for an
+    unknown, used or expired code -- the same conditions consume_invite()
+    refuses on."""
+    if not code or not code.startswith(INVITE_CODE_PREFIX):
+        return None
+    digest = hashlib.sha256(code.encode()).hexdigest()
+    current = _now(now)
+    with _STORE_LOCK:
+        for r in _load(INVITES_FILE, "invites"):
+            if r.get("code_hash") != digest:
+                continue
+            if r.get("used") or current >= int(r.get("expires_at", 0)):
+                return None
+            result = dict(r)
+            result.pop("code_hash", None)
+            return result
+    return None
+
+
 def consume_invite(code: str, *, now: int | None = None) -> dict[str, Any] | None:
     """Mark an invite code used-once. Returns None for a second consume, an
     expired code (inclusive: now >= expires_at), or an unknown code."""

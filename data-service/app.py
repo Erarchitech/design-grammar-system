@@ -4474,12 +4474,48 @@ def create_project_invite(payload: InviteRequest, request: Request):
     return {"status": "invited", "inviteCode": code, "expiresAt": _iso_utc(record["expires_at"])}
 
 
+def _accept_invite_for_existing_account(
+    payload: AcceptInviteRequest, request: Request, response: Response, existing: dict[str, Any]
+) -> dict[str, Any]:
+    """WR-15: join a project with an invite that names an existing account."""
+    username = existing["username"]
+    ip_key = f"ip:{auth_routes._client_ip(request)}"
+    user_key = f"user:{username}"
+    retry_after = max(auth.throttle_retry_after(ip_key), auth.throttle_retry_after(user_key))
+    if retry_after > 0:
+        raise auth_routes._throttled_error(retry_after)
+    if not auth_routes._verify_with_slot(payload.password, existing["password_hash"]):
+        auth.throttle_record_failure(ip_key, limit=auth.THROTTLE_LIMIT_IP)
+        auth.throttle_record_failure(user_key, limit=auth.THROTTLE_LIMIT_USER)
+        raise _structured_error_response(
+            "This invitation is not valid.",
+            "This username already has an account. Enter that account's own password "
+            "to join the project; the invitation is kept until you do.",
+            "INVITE_INVALID",
+            400,
+        )
+    invite = auth.consume_invite(payload.inviteCode)
+    if invite is None or invite["username"] != username:
+        raise _invite_invalid()
+    auth.throttle_clear(user_key)
+    auth.set_membership(username, invite["project"], invite["role"])
+    token = auth.create_session(username)
+    auth_routes.set_session_cookie(response, token)
+    return {"username": username, "isAdmin": bool(existing.get("is_admin"))}
+
+
 @router.post("/auth/accept-invite")
-def accept_invite(payload: AcceptInviteRequest, response: Response):
+def accept_invite(payload: AcceptInviteRequest, request: Request, response: Response):
     """Public: turn a one-time invite code plus a chosen password into an
     account with the invited project role, and log it in. The password policy
     is checked BEFORE the code is consumed; an existing account is never
-    modified (T-1205-12-01)."""
+    modified (T-1205-12-01).
+
+    WR-15: when the invited username already has an account (a second
+    project invited the same new username and the first invite created it),
+    the code is NOT burned. The caller proves ownership with that account's
+    own password; only then is the membership added and a session issued. A
+    wrong password refuses without consuming the code."""
     try:
         auth.validate_password_policy(payload.password)
     except ValueError as exc:
@@ -4489,6 +4525,12 @@ def accept_invite(payload: AcceptInviteRequest, response: Response):
             "PASSWORD_POLICY",
             422,
         ) from exc
+
+    pending = auth.peek_invite(payload.inviteCode)
+    if pending is not None:
+        existing = auth.get_user(pending["username"])
+        if existing is not None:
+            return _accept_invite_for_existing_account(payload, request, response, existing)
 
     invite = auth.consume_invite(payload.inviteCode)
     if invite is None:
