@@ -775,6 +775,14 @@ class TestGenerateCypherEndpoint:
     def test_endpoint_returns_validated_cypher_for_mocked_valid_adapter(self, monkeypatch):
         fake_adapter = _FakeAdapterForRetry([_VALID_CYPHER])
         monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: fake_adapter)
+        # 1205-14: a valid rule_ingest result is checked for cross-project
+        # Rule_Id/Atom_Id collisions against the live graph; isolate that here.
+        collision_calls = []
+        monkeypatch.setattr(
+            dg_context,
+            "find_cross_project_key_collisions",
+            lambda cypher, project: collision_calls.append((cypher, project)) or [],
+        )
 
         response = client.post(
             "/context/generate-cypher",
@@ -782,6 +790,7 @@ class TestGenerateCypherEndpoint:
         )
 
         assert response.status_code == 200
+        assert collision_calls == [(_VALID_CYPHER, "p")]
         body = response.json()
         assert body["valid"] is True
         assert body["cypher"] == _VALID_CYPHER

@@ -2123,13 +2123,55 @@ def post_context_generate_cypher(payload: dg_context.GenerateCypherRequest):
     attempts total) -- n8n sees only the final valid Cypher or a final
     structured violation list; intermediate failed attempts stay invisible.
     """
+    project = (payload.project or "").strip() or None
+    if payload.type == "graph_query" and project is None:
+        # Phase 1205 (ALGN12-17): an unscoped graph query can read any
+        # project, so the scope guard needs the caller's project to prove
+        # the generated Cypher stays inside it.
+        raise _structured_error_response(
+            "A project is required to generate a graph query.",
+            "Include the authorised project in the request body.",
+            "CONTEXT_PROJECT_REQUIRED",
+            400,
+        )
     try:
-        return dg_context.generate_validated_cypher(payload.prompt, payload.type)
+        result = dg_context.generate_validated_cypher(
+            payload.prompt, payload.type, project=project
+        )
     except ValueError as exc:
         raise _context_type_invalid_error(exc)
     except Exception as exc:
         error_msg, hint, code = map_provider_error(exc)
         raise _structured_error_response(error_msg, hint, code, 502)
+
+    # Phase 1205 (T-1205-14-04): schema v4 keys Rule/Atom by id only, so a
+    # rule ingest that MERGEs an id owned by another project would overwrite
+    # that project's rule. A collision turns the result invalid; the workflow's
+    # Parse node then aborts the write. Fails closed if the check cannot run.
+    if (
+        project is not None
+        and payload.type in ("rule_ingest", "rule_edit")
+        and result.get("valid")
+    ):
+        try:
+            collisions = dg_context.find_cross_project_key_collisions(
+                result["cypher"], project
+            )
+        except Exception:
+            logging.getLogger(__name__).exception("cross-project key collision check failed")
+            raise _structured_error_response(
+                "The rule key ownership check could not be completed.",
+                "Retry once the graph database is reachable.",
+                "KEY_COLLISION_CHECK_UNAVAILABLE",
+                503,
+            )
+        if collisions:
+            return {
+                "valid": False,
+                "violations": collisions,
+                "attempts": result["attempts"],
+            }
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -2935,7 +2977,7 @@ async def mcp(request: Request):
                 "tools": [
                     {
                         "name": "neo4j_schema",
-                        "description": "Return Neo4j labels, relationship types, property keys, graphs, and projects.",
+                        "description": "Return Neo4j labels, relationship types, property keys, and graphs.",
                     },
                     {
                         "name": "neo4j_query",
@@ -2985,13 +3027,13 @@ async def mcp(request: Request):
             rels = session.run("CALL db.relationshipTypes()").value()
             props = session.run("CALL db.propertyKeys()").value()
             graphs = session.run("MATCH (n) WHERE n.graph IS NOT NULL RETURN DISTINCT n.graph AS graph").value()
-            projects = session.run("MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project").value()
+        # Phase 1205 (T-1205-14-05): no tenant name list -- the schema tool
+        # must not enumerate every project in the shared graph.
         data = {
             "labels": labels,
             "relationship_types": rels,
             "property_keys": props,
             "graphs": graphs,
-            "projects": projects,
         }
         return {
             "jsonrpc": "2.0",
@@ -3004,12 +3046,43 @@ async def mcp(request: Request):
         parameters = arguments.get("parameters") or {}
         if not cypher:
             raise HTTPException(status_code=400, detail="cypher is required")
+        # Phase 1205 (ALGN12-17, research gap 4): the query runs under an
+        # explicit project. It is statically proven project-scoped BEFORE any
+        # session opens, and every returned entity is checked AFTER.
+        query_project = (
+            parameters.get("project") if isinstance(parameters, dict) else None
+        )
+        if not isinstance(query_project, str) or not query_project.strip():
+            raise _structured_error_response(
+                "project is required: arguments.parameters.project must be a non-empty string.",
+                "Pass the authorised project as the $project query parameter.",
+                "QUERY_PROJECT_REQUIRED",
+                400,
+            )
+        scope_violations = dg_context.check_query_project_scope(cypher)
+        if scope_violations:
+            codes = sorted({str(v.get("code")) for v in scope_violations})
+            raise _structured_error_response(
+                "The query is not scoped to the project: " + ", ".join(codes) + ".",
+                "Anchor every node pattern with {project: $project} and reference $project.",
+                "QUERY_NOT_PROJECT_SCOPED",
+                400,
+            )
         if is_write_query(cypher):
             raise HTTPException(status_code=400, detail="Only read-only Cypher is allowed")
         with driver.session() as session:
             result = session.run(cypher, parameters)
             keys = result.keys()
-            records = [normalize_value(record.data()) for record in result]
+            fetched = list(result)
+            raw_values = [record.values() for record in fetched]
+            if dg_context.find_foreign_project_entities(raw_values, query_project) > 0:
+                raise _structured_error_response(
+                    "The query result was withheld: it contained entities outside the authorised project.",
+                    "Restrict the query to nodes of the authorised project.",
+                    "CROSS_PROJECT_RESULT_WITHHELD",
+                    400,
+                )
+            records = [normalize_value(record.data()) for record in fetched]
         data = {"keys": keys, "records": records}
         return {
             "jsonrpc": "2.0",
