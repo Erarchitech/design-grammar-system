@@ -205,7 +205,7 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        assert len(route_policy.ROUTE_POLICIES) == 67
+        assert len(route_policy.ROUTE_POLICIES) == 73
 
     def test_removed_routes_are_gone(self):
         paths = {k[1] for k in _registered_keys()}

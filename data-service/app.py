@@ -16,7 +16,7 @@ import urllib.request
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
@@ -3996,6 +3996,215 @@ route_policy.register_resource_resolver("note", _resolve_note_project, _note_not
 route_policy.register_resource_resolver(
     "execution", _resolve_execution_project, _execution_not_found
 )
+
+
+# ── Project tenancy (Phase 1205, D-02/D-05) ─────────────────────────────────
+#
+# Project listing/creation, membership administration and invitations. Every
+# route reads the caller from request.state.principal, set by the router-level
+# auth.require_principal dependency. There is deliberately no open
+# self-service account creation route: an account is created only by accepting
+# an invite minted by a project owner (POST /auth/invites -> POST
+# /auth/accept-invite).
+
+PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.-]{0,63}$")
+
+# Fixed statements: the project (or project list) is always a bound parameter.
+PROJECT_NODE_COUNTS_QUERY = (
+    "MATCH (n) WHERE n.project IS NOT NULL AND ($projects IS NULL OR n.project IN $projects) "
+    "RETURN n.project AS project, count(n) AS nodes"
+)
+PROJECT_EXISTS_IN_GRAPH_QUERY = "MATCH (n) WHERE n.project = $project RETURN true AS present LIMIT 1"
+
+
+class ProjectCreateRequest(BaseModel):
+    project: str
+
+
+class InviteRequest(BaseModel):
+    username: str
+    project: str
+    role: str
+
+
+class AcceptInviteRequest(BaseModel):
+    inviteCode: str
+    password: str
+
+
+def _invite_invalid() -> HTTPException:
+    """The one generic answer for every invite failure (unknown, used,
+    expired, or naming an account that already exists)."""
+    return _structured_error_response(
+        "This invitation is not valid.",
+        "Ask a project owner for a new invitation.",
+        "INVITE_INVALID",
+        400,
+    )
+
+
+def _iso_utc(epoch_seconds: int) -> str:
+    return datetime.fromtimestamp(int(epoch_seconds), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@router.get("/projects")
+def list_projects(request: Request):
+    """Membership-scoped project listing. A member sees only the projects
+    they belong to (with their role and node count); an admin sees every
+    project -- graph projects plus membership projects -- as owner."""
+    principal = request.state.principal
+    if principal.is_admin:
+        graph_rows = read_many(PROJECT_NODE_COUNTS_QUERY, {"projects": None})
+        roles = {name: "owner" for name in auth.list_all_member_projects()}
+        for row in graph_rows:
+            roles.setdefault(row["project"], "owner")
+    else:
+        memberships = auth.list_memberships(principal.username or "")
+        roles = {m["project"]: m["role"] for m in memberships}
+        graph_rows = (
+            read_many(PROJECT_NODE_COUNTS_QUERY, {"projects": sorted(roles)}) if roles else []
+        )
+    counts = {row["project"]: int(row["nodes"]) for row in graph_rows}
+    return {
+        "projects": [
+            {"project": name, "nodes": counts.get(name, 0), "role": roles[name]}
+            for name in sorted(roles)
+        ]
+    }
+
+
+@router.post("/projects", status_code=201)
+def create_project(payload: ProjectCreateRequest, request: Request):
+    """Register an unused project name with the caller as owner. The
+    membership/graph existence check-and-set runs under the auth store lock
+    (auth.create_project_if_unclaimed)."""
+    principal = request.state.principal
+    name = payload.project
+    if not PROJECT_NAME_PATTERN.match(name):
+        raise _structured_error_response(
+            "That project name is not valid.",
+            "Use 1-64 characters: letters, digits, spaces, dot, underscore or hyphen, starting with a letter or digit.",
+            "PROJECT_NAME_INVALID",
+            422,
+        )
+    exists_in_graph = read_single(PROJECT_EXISTS_IN_GRAPH_QUERY, {"project": name}) is not None
+    if not auth.create_project_if_unclaimed(
+        name, principal.username or "", exists_in_graph=exists_in_graph
+    ):
+        raise _structured_error_response(
+            "That project name is unavailable.",
+            "Choose a different project name.",
+            "PROJECT_NAME_UNAVAILABLE",
+            409,
+        )
+    return {"project": name, "role": "owner"}
+
+
+@router.get("/projects/{project}/members")
+def list_project_members(project: str):
+    members = sorted(auth.list_members(project), key=lambda m: m["username"])
+    return {"project": project, "members": members}
+
+
+@router.delete("/projects/{project}/members/{username}", status_code=204)
+def remove_project_member(project: str, username: str):
+    with auth._STORE_LOCK:
+        role = auth.get_role(username, project)
+        if role is None:
+            raise _structured_error_response(
+                "That user is not a member of this project.",
+                "List the project members and try again.",
+                "MEMBER_NOT_FOUND",
+                404,
+            )
+        if role == "owner" and auth.count_owners(project) <= 1:
+            raise _structured_error_response(
+                "A project must keep at least one owner.",
+                "Promote another member to owner before removing this one.",
+                "LAST_OWNER",
+                409,
+            )
+        auth.remove_membership(username, project)
+    return Response(status_code=204)
+
+
+@router.post("/auth/invites")
+def create_project_invite(payload: InviteRequest, request: Request):
+    """Add an existing user to the project directly, or mint a one-time
+    invite code for a username that has no account yet (D-05). An invite
+    never sets or changes the password of an existing account."""
+    principal = request.state.principal
+    if payload.role not in auth.ROLES:
+        raise _structured_error_response(
+            "That role is not valid.",
+            "Use one of: " + ", ".join(auth.ROLES) + ".",
+            "ROLE_INVALID",
+            422,
+        )
+    try:
+        username = auth.normalize_username(payload.username)
+    except ValueError as exc:
+        raise _structured_error_response(
+            "That username is not valid.",
+            "Use 3-254 characters: lowercase letters, digits and . _ @ + -.",
+            "USERNAME_INVALID",
+            422,
+        ) from exc
+
+    if auth.get_user(username) is not None:
+        with auth._STORE_LOCK:
+            current = auth.get_role(username, payload.project)
+            if (
+                current == "owner"
+                and payload.role != "owner"
+                and auth.count_owners(payload.project) <= 1
+            ):
+                raise _structured_error_response(
+                    "A project must keep at least one owner.",
+                    "Promote another member to owner before changing this role.",
+                    "LAST_OWNER",
+                    409,
+                )
+            auth.set_membership(username, payload.project, payload.role)
+        return {"status": "member-added"}
+
+    code, record = auth.create_invite(
+        username,
+        payload.project,
+        payload.role,
+        created_by=principal.username or "",
+    )
+    return {"status": "invited", "inviteCode": code, "expiresAt": _iso_utc(record["expires_at"])}
+
+
+@router.post("/auth/accept-invite")
+def accept_invite(payload: AcceptInviteRequest, response: Response):
+    """Public: turn a one-time invite code plus a chosen password into an
+    account with the invited project role, and log it in. The password policy
+    is checked BEFORE the code is consumed; an existing account is never
+    modified (T-1205-12-01)."""
+    try:
+        auth.validate_password_policy(payload.password)
+    except ValueError as exc:
+        raise _structured_error_response(
+            "The password does not meet the password policy.",
+            str(exc),
+            "PASSWORD_POLICY",
+            422,
+        ) from exc
+
+    invite = auth.consume_invite(payload.inviteCode)
+    if invite is None:
+        raise _invite_invalid()
+    try:
+        user = auth.create_user(invite["username"], payload.password)
+    except ValueError as exc:
+        # The invited username now has an account: refuse without touching it.
+        raise _invite_invalid() from exc
+    auth.set_membership(user["username"], invite["project"], invite["role"])
+    token = auth.create_session(user["username"])
+    auth_routes.set_session_cookie(response, token)
+    return {"username": user["username"], "isAdmin": False}
 
 
 app.include_router(router)

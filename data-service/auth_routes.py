@@ -61,7 +61,9 @@ class PasswordChangeRequest(BaseModel):
     newPassword: str
 
 
-def _set_session_cookie(response: Response, token: str) -> None:
+def set_session_cookie(response: Response, token: str) -> None:
+    """Set the dg_session cookie. Shared by login and accept-invite (app.py)
+    so both paths issue identical cookie attributes."""
     ttl = int(os.environ.get("DG_SESSION_TTL_SECONDS", "43200"))
     response.set_cookie(
         key=auth.SESSION_COOKIE_NAME,
@@ -74,7 +76,8 @@ def _set_session_cookie(response: Response, token: str) -> None:
     )
 
 
-def _clear_session_cookie(response: Response) -> None:
+def clear_session_cookie(response: Response) -> None:
+    """Expire the dg_session cookie (logout)."""
     response.delete_cookie(key=auth.SESSION_COOKIE_NAME, path="/")
 
 
@@ -100,7 +103,7 @@ def login(payload: LoginRequest, response: Response):
         )
 
     token = auth.create_session(user["username"])
-    _set_session_cookie(response, token)
+    set_session_cookie(response, token)
     return LoginResponse(username=user["username"], isAdmin=bool(user.get("is_admin")))
 
 
@@ -109,7 +112,7 @@ def logout(request: Request, response: Response):
     token = request.cookies.get(auth.SESSION_COOKIE_NAME)
     if token:
         auth.revoke_session(token)
-    _clear_session_cookie(response)
+    clear_session_cookie(response)
     return None
 
 

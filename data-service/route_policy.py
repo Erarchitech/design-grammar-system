@@ -102,6 +102,13 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/auth/logout"): _p(_SES),
     ("GET", "/auth/me"): _p(_SES),
     ("POST", "/auth/password"): _p(_SES),
+    # ── project tenancy + invitations (Phase 1205-12, D-02/D-05) ──
+    ("POST", "/auth/invites"): _p(_MEM, source="body", role="owner"),
+    ("POST", "/auth/accept-invite"): _p(_PUB),
+    ("GET", "/projects"): _p(_SES, source="filtered"),
+    ("POST", "/projects"): _p(_SES),
+    ("GET", "/projects/{project}/members"): _p(_MEM, source="path", role="owner"),
+    ("DELETE", "/projects/{project}/members/{username}"): _p(_MEM, source="path", role="owner"),
     # ── integration / settings ──
     ("GET", "/integration/speckle/project/{project}"): _p(_MEM, source="path", role="viewer"),
     ("PUT", "/integration/speckle/project/{project}"): _p(_MEM, source="path", role="owner"),

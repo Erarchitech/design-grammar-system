@@ -503,6 +503,14 @@ def list_member_projects(username: str) -> list[str]:
     return sorted({m["project"] for m in list_memberships(username)})
 
 
+def list_all_member_projects() -> list[str]:
+    """Return the sorted list of every project name that has at least one
+    membership row (admin-only listing, GET /projects)."""
+    with _STORE_LOCK:
+        rows = _load(MEMBERSHIPS_FILE, "memberships")
+    return sorted({r["project"] for r in rows if r.get("project")})
+
+
 def project_has_members(project: str) -> bool:
     """True if `project` has at least one membership row."""
     return len(list_members(project)) > 0
