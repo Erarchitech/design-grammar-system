@@ -4439,6 +4439,29 @@ def accept_invite(payload: AcceptInviteRequest, response: Response):
 # authorisation happens in the router dependency (ROUTE_POLICIES rows).
 
 PROTECTED_NODE_KEYS = frozenset({"project", "graph"})
+
+# WR-04 (1205 review): a viewer edit must never rewrite identity, structural or
+# evidence properties. Compared case-insensitively. Any `*Json` payload
+# (statePayloadJson, shaclReportJson, evidenceEnvelopeJson, rulesJson, ...) and
+# any evidence-/SHACL-prefixed key is protected as a class.
+PROTECTED_NODE_KEYS_CI = frozenset(
+    key.lower()
+    for key in (
+        *PROTECTED_NODE_KEYS,
+        "Rule_Id", "Atom_Id", "StateId", "Run_Id", "dgId", "iri", "nativeId",
+        "cgId", "definitionId", "algIndex", "noteId", "sessionId", "runId",
+        "SWRL", "status", "ValidStatus", "SendStatus", "kind", "platform",
+        "propertyName", "sourceRuleId", "provider", "model",
+    )
+)
+PROTECTED_NODE_KEY_PATTERN = re.compile(r"(?i)(^(evidence|shacl)|json$)")
+# Node labels whose whole property set is written only by the validation and
+# publish pipelines; a viewer edit on them is refused.
+LOCKED_NODE_LABELS = ["ValidationRun", "ValidationEntity", "Run", "DesignState", "IntegrationConfig"]
+
+
+def is_protected_node_key(key: str) -> bool:
+    return key.lower() in PROTECTED_NODE_KEYS_CI or bool(PROTECTED_NODE_KEY_PATTERN.search(key))
 NODE_KEY_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
 GRAPH_NODES_QUERY = (
@@ -4460,6 +4483,7 @@ CLAIM_UNTAGGED_QUERY = (
 )
 NODE_PROPERTY_UPDATE_QUERY = (
     "MATCH (n) WHERE id(n) = $id AND n.project = $project "
+    "AND none(l IN labels(n) WHERE l IN $lockedLabels) "
     "SET n[$key] = $value RETURN properties(n) AS props"
 )
 RULES_LIST_QUERY = (
@@ -4548,10 +4572,10 @@ def update_node_property(project: str, node_id: int, payload: NodePropertyReques
             "NODE_KEY_INVALID",
             422,
         )
-    if key in PROTECTED_NODE_KEYS:
+    if is_protected_node_key(key):
         raise _structured_error_response(
             "That property cannot be edited.",
-            "The project and graph properties are managed by the system.",
+            "Identity, project, graph and evidence properties are managed by the system.",
             "PROTECTED_PROPERTY",
             403,
         )
@@ -4569,10 +4593,17 @@ def update_node_property(project: str, node_id: int, payload: NodePropertyReques
         )
     row = write_single(
         NODE_PROPERTY_UPDATE_QUERY,
-        {"id": node_id, "project": project, "key": key, "value": value},
+        {
+            "id": node_id,
+            "project": project,
+            "key": key,
+            "value": value,
+            "lockedLabels": LOCKED_NODE_LABELS,
+        },
     )
     if row is None:
-        # Same answer for an unknown node and another project's node.
+        # Same answer for an unknown node, another project's node and a node
+        # whose label is locked.
         raise _structured_error_response(
             "Node not found.",
             "Reload the graph and try again.",

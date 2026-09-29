@@ -169,8 +169,36 @@ class TestNodeProperty:
         assert kind == "write"
         assert "id(n) = $id" in query and "n.project = $project" in query
         assert "n[$key] = $value" in query
-        assert PROJECT not in query and "label" not in query
-        assert params == {"id": 5, "project": PROJECT, "key": "label", "value": "x"}
+        assert PROJECT not in query and "'label'" not in query
+        assert params == {
+            "id": 5,
+            "project": PROJECT,
+            "key": "label",
+            "value": "x",
+            "lockedLabels": app_module.LOCKED_NODE_LABELS,
+        }
+        assert "$lockedLabels" in query
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "Rule_Id", "atom_id", "StateId", "dgId", "iri", "SWRL", "status", "ValidStatus",
+            "statePayloadJson", "shaclReportJson", "evidenceEnvelopeJson", "rulesJson",
+            "evidence_note", "shaclX",
+        ],
+    )
+    def test_identity_and_evidence_keys_are_refused_before_any_write(self, client, db, key):
+        response = client.put(self.URL, json={"key": key, "value": "x"}, headers=_headers())
+
+        assert response.status_code == 403
+        assert _code(response) == "PROTECTED_PROPERTY"
+        assert db["calls"] == []
+
+    @pytest.mark.parametrize("key", ["label", "description", "SWRL_label", "RuleDescription", "note"])
+    def test_display_keys_stay_editable(self, client, db, key):
+        db["write"] = {"props": {key: "x"}}
+        response = client.put(self.URL, json={"key": key, "value": "x"}, headers=_headers())
+        assert response.status_code == 200
 
     @pytest.mark.parametrize("key", ["project", "graph"])
     def test_protected_keys_are_refused_before_any_write(self, client, db, key):
