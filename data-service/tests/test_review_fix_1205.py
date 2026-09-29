@@ -915,3 +915,45 @@ class TestWr16SecurityHeaders:
     def test_csp_forbids_framing(self):
         text = self._nginx()
         assert "frame-ancestors 'none'" in text
+
+
+# --------------------------------------------------------------------------
+# WR-19: non-admins get provider/model only, no key preview or baseUrl
+# --------------------------------------------------------------------------
+
+
+class TestWr19LlmSettingsVisibility:
+    SETTINGS = {
+        "provider": "openai",
+        "model": "gpt-x",
+        "baseUrl": "http://internal-gateway.local:9000/v1",
+    }
+
+    def _settings(self, monkeypatch):
+        encrypted = app_module.encrypt_value("sk-live-abcdef123456", os.environ["LLM_MASTER_SECRET"])
+        monkeypatch.setattr(
+            app_module, "load_persisted_llm_settings", lambda: {**self.SETTINGS, "apiKey": encrypted}
+        )
+
+    def test_admin_sees_everything(self, monkeypatch):
+        self._settings(monkeypatch)
+        body = client.get("/llm/settings").json()
+        assert body["baseUrl"] == self.SETTINGS["baseUrl"]
+        assert body["apiKeyPreview"]
+        assert body["apiKeyConfigured"] is True
+
+    def test_plain_member_gets_provider_model_and_status_only(self, monkeypatch):
+        self._settings(monkeypatch)
+        auth_fixtures.make_user("plain-member@dg.local", memberships={"P1": "viewer"})
+        undo = auth_fixtures.authorize_client(client, ("user", "plain-member@dg.local"))
+        try:
+            resp = client.get("/llm/settings")
+        finally:
+            undo()
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["provider"] == "openai" and body["model"] == "gpt-x"
+        assert body["apiKeyConfigured"] is True
+        assert not body["apiKeyPreview"]
+        assert body["baseUrl"] is None
+        assert "internal-gateway" not in resp.text and "abcdef" not in resp.text

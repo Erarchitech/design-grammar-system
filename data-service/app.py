@@ -1348,11 +1348,21 @@ def put_speckle_runtime_settings(payload: SpeckleSettingsPayload):
 
 
 @router.get("/llm/settings")
-def get_llm_settings():
-    """Read LLM settings (provider, model, masked key, status)."""
+def get_llm_settings(request: Request):
+    """Read LLM settings (provider, model, masked key, status).
+
+    WR-19 (1205 review): any signed-in user may read which provider/model is
+    active and whether a key is configured, but the masked key preview and the
+    (possibly internal) baseUrl are administrator-only.
+    """
     master_secret = os.getenv("LLM_MASTER_SECRET", "")
     settings = load_persisted_llm_settings()
-    return get_llm_settings_response(settings, master_secret)
+    response = get_llm_settings_response(settings, master_secret)
+    principal = getattr(request.state, "principal", None)
+    privileged = bool(getattr(principal, "is_admin", False)) or getattr(principal, "kind", None) == "service"
+    if privileged:
+        return response
+    return response.model_copy(update={"apiKeyPreview": "", "baseUrl": None})
 
 
 @router.put("/llm/settings")
