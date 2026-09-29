@@ -21,6 +21,27 @@ export function purgeLegacyLocalAuth() {
   }
 }
 
+// WR-09 (1205 review): tenant content (built graphs, run thumbnails, the last
+// project selection, ...) lives under dgv2_* keys. It must not survive a
+// logout, an expired session or a change of account in the same browser.
+// Only the theme preference is user-agnostic and kept.
+const TENANT_KEY_PREFIX = "dgv2_";
+const KEPT_KEYS = new Set(["dgv2_theme"]);
+export const OWNER_KEY = "dgv2_owner";
+
+export function clearTenantBrowserData() {
+  try {
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(TENANT_KEY_PREFIX) && !KEPT_KEYS.has(key)) doomed.push(key);
+    }
+    for (const key of doomed) localStorage.removeItem(key);
+  } catch {
+    // storage unavailable — nothing was persisted
+  }
+}
+
 function toUser(me) {
   return {
     email: me.username,

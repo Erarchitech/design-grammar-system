@@ -8,7 +8,7 @@ import ConnectorsScreen from "./screens/ConnectorsScreen.jsx";
 import ReasonerScreen from "./screens/ReasonerScreen.jsx";
 import ApiDocsScreen from "./screens/ApiDocsScreen.jsx";
 import SpecimenPage from "./specimen/SpecimenPage.jsx";
-import { currentUser, purgeLegacyLocalAuth } from "./lib/auth.js";
+import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } from "./lib/auth.js";
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -83,11 +83,47 @@ export default function App() {
     };
   }, []);
 
+  // WR-09: tenant data must not outlive the session that loaded it. Sign-out
+  // and session expiry (user -> null) wipe the tenant keys and the project
+  // scope; a sign-in as a DIFFERENT account than the browser's last owner
+  // does the same, so the next user never inherits the previous user's data.
+  const prevUserRef = React.useRef(null);
+  React.useEffect(() => {
+    const prev = prevUserRef.current;
+    prevUserRef.current = user ? user.email : null;
+    if (prev && !user) {
+      clearTenantBrowserData();
+      setProject(null);
+    }
+  }, [user]);
+  React.useEffect(() => {
+    if (!user) return;
+    try {
+      const owner = localStorage.getItem(OWNER_KEY);
+      if (owner && owner !== user.email) {
+        clearTenantBrowserData();
+        setProject(null);
+      }
+      localStorage.setItem(OWNER_KEY, user.email);
+    } catch {
+      // storage unavailable — nothing persisted to protect
+    }
+  }, [user?.email]);
+
   // A remembered project the user is not a member of is forgotten (admins
-  // keep it). The server denies access anyway; this avoids a stale scope.
+  // keep it), together with any tenant data cached for it. The server denies
+  // access anyway; this avoids a stale scope.
   React.useEffect(() => {
     if (!user || user.isAdmin || !project) return;
-    if (!user.memberships.some((m) => m.project === project)) setProject(null);
+    if (!user.memberships.some((m) => m.project === project)) {
+      clearTenantBrowserData();
+      try {
+        localStorage.setItem(OWNER_KEY, user.email);
+      } catch {
+        // storage unavailable
+      }
+      setProject(null);
+    }
   }, [user, project]);
 
   // Selecting a project first refreshes memberships so a project created or
@@ -129,6 +165,10 @@ export default function App() {
 
   if (import.meta.env.DEV && hash === "#specimen") return <SpecimenPage />;
 
+  // WR-09: the screen layers are keyed on the signed-in identity so a sign-out
+  // or account change discards their in-memory graph, run and token state.
+  const screenKey = user ? user.email : "anon";
+
   return (
     <div
       style={{
@@ -151,25 +191,25 @@ export default function App() {
         />
       </Layer>
       <Layer active={region === "graph"}>
-        <GraphScreen active={region === "graph"} onBack={goLanding} project={project} />
+        <GraphScreen key={screenKey} active={region === "graph"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "model"}>
-        <ModelScreen active={region === "model"} onBack={goLanding} project={project} />
+        <ModelScreen key={screenKey} active={region === "model"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "projects"}>
-        <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={selectProject} user={user} />
+        <ProjectsScreen key={screenKey} active={region === "projects"} onBack={goLanding} project={project} onProject={selectProject} user={user} />
       </Layer>
       <Layer active={region === "aiengine"}>
-        <AiEngineScreen active={region === "aiengine"} onBack={goLanding} project={project} />
+        <AiEngineScreen key={screenKey} active={region === "aiengine"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "connectors"}>
-        <ConnectorsScreen active={region === "connectors"} onBack={goLanding} project={project} />
+        <ConnectorsScreen key={screenKey} active={region === "connectors"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "reasoner"}>
-        <ReasonerScreen active={region === "reasoner"} onBack={goLanding} project={project} />
+        <ReasonerScreen key={screenKey} active={region === "reasoner"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "apidocs"}>
-        <ApiDocsScreen active={region === "apidocs"} onBack={goLanding} project={project} />
+        <ApiDocsScreen key={screenKey} active={region === "apidocs"} onBack={goLanding} project={project} />
       </Layer>
 
       {/* dark / light toggle — global, floats above every layer */}

@@ -421,12 +421,14 @@ class TestWr01LoginRoute:
 import json as _json  # noqa: E402
 from pathlib import Path as _Path  # noqa: E402
 
+# Same resolution as test_n8n_workflow_boundary: /mnt/repo in the container.
+_REPO_ROOT = _Path(os.getenv("DG_KNOWLEDGE_REPO_ROOT", str(_Path(__file__).resolve().parents[2])))
+
 
 class TestWr02PostProcessGuard:
     def _post_process(self):
         wf = _json.loads(
-            (_Path(__file__).resolve().parents[2] / "n8n" / "workflows" / "rules-to-metagraph.json")
-            .read_text(encoding="utf-8")
+            (_REPO_ROOT / "n8n" / "workflows" / "rules-to-metagraph.json").read_text(encoding="utf-8")
         )
         code = next(n for n in wf["nodes"] if n["name"] == "Prepare Graph Payload")["parameters"]["functionCode"]
         start = code.index("const postProcess = [")
@@ -630,3 +632,39 @@ class TestWr08SpeckleProjectBinding:
         resp = client.put("/integration/speckle/project/mine", json=self.BODY)
         assert resp.status_code == 200
         assert calls["read"] == []
+
+
+# --------------------------------------------------------------------------
+# WR-09: browser tenant data does not survive logout / account change
+# --------------------------------------------------------------------------
+
+import shutil as _shutil  # noqa: E402
+import subprocess as _subprocess  # noqa: E402
+
+_UI_SRC = _REPO_ROOT / "ui-v2" / "src"
+
+
+class TestWr09BrowserDataCleanup:
+    @pytest.mark.skipif(_shutil.which("node") is None, reason="node not available")
+    def test_clear_tenant_browser_data_keeps_only_theme(self, tmp_path):
+        script = tmp_path / "check.mjs"
+        script.write_text(
+            "const store = new Map([['dgv2_project','a'],['dgv2_theme','dark'],"
+            "['dgv2_graph_snapshots_a','{}'],['dgv2_run_shots','{}'],['other','x'],['dgv2_owner','u']]);\n"
+            "globalThis.localStorage = { get length(){return store.size;}, key(i){return [...store.keys()][i]??null;},"
+            " getItem:k=>store.get(k)??null, setItem:(k,v)=>store.set(k,String(v)), removeItem:k=>store.delete(k) };\n"
+            f"const m = await import({(_UI_SRC / 'lib' / 'auth.js').as_uri()!r});\n"
+            "m.clearTenantBrowserData();\n"
+            "console.log(JSON.stringify([...store.keys()].sort()));\n",
+            encoding="utf-8",
+        )
+        out = _subprocess.run(["node", str(script)], capture_output=True, text=True, timeout=60)
+        assert out.returncode == 0, out.stderr
+        assert _json.loads(out.stdout.strip().splitlines()[-1]) == ["dgv2_theme", "other"]
+
+    def test_app_wipes_on_signout_and_keys_screens_on_identity(self):
+        app_src = (_UI_SRC / "App.jsx").read_text(encoding="utf-8")
+        assert "clearTenantBrowserData()" in app_src
+        assert "const screenKey" in app_src
+        for screen in ("GraphScreen", "ModelScreen", "ProjectsScreen"):
+            assert f"<{screen} key={{screenKey}}" in app_src
