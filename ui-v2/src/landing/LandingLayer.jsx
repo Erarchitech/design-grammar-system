@@ -26,8 +26,8 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
 
   const [authOpen, setAuthOpen] = React.useState(false);
   const [authMode, setAuthMode] = React.useState("login");
-  const [authName, setAuthName] = React.useState("");
-  const [authEmail, setAuthEmail] = React.useState("");
+  const [authCode, setAuthCode] = React.useState("");
+  const [authUser, setAuthUser] = React.useState("");
   const [authPass, setAuthPass] = React.useState("");
   const [authErr, setAuthErr] = React.useState("");
 
@@ -97,33 +97,44 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
     engineRef.current?.setHeroPhase("forming");
   };
   const switchAuthMode = () => {
-    setAuthMode((m) => (m === "login" ? "register" : "login"));
+    setAuthMode((m) => (m === "login" ? "invite" : "login"));
     setAuthErr("");
   };
   const submitAuth = async () => {
-    const email = authEmail.trim();
-    const reg = authMode === "register";
-    if (reg && !authName.trim()) return setAuthErr("Enter your name.");
-    if (!email || email.indexOf("@") < 1) return setAuthErr("Enter a valid email.");
-    if (authPass.length < 4) return setAuthErr("Password must be at least 4 characters.");
+    const invite = authMode === "invite";
+    const username = authUser.trim();
+    const code = authCode.trim();
+    if (invite) {
+      if (!code) return setAuthErr("Enter your invite code.");
+      // Client-side floor only; the server enforces the password policy.
+      if (authPass.length < 12) return setAuthErr("Password must be at least 12 characters.");
+    } else {
+      if (!username) return setAuthErr("Enter your username.");
+      if (!authPass) return setAuthErr("Enter your password.");
+    }
     try {
-      const u = reg ? await auth.register(authName, email, authPass) : await auth.login(email, authPass);
+      const u = invite ? await auth.acceptInvite(code, authPass) : await auth.login(username, authPass);
       onUser(u);
       setAuthOpen(false);
       setAuthErr("");
       setAuthPass("");
+      setAuthCode("");
       engineRef.current?.setHeroPhase("forming");
     } catch (err) {
       setAuthErr(err.message || "Authentication failed.");
     }
   };
-  const signOut = () => {
-    auth.signOut();
+  const signOut = async () => {
+    try {
+      await auth.logout();
+    } catch {
+      // the local state is cleared either way; a live session expires server-side
+    }
     onUser(null);
   };
 
   const fly = (region) => onFly(region, engineRef.current?.pk?.[region]);
-  const reg = authMode === "register";
+  const reg = authMode === "invite";
 
   const cardStyle = authOpen
     ? { transitionDelay: "260ms", opacity: 1, transform: "translateY(0)", filter: "blur(0px)", pointerEvents: "auto" }
@@ -146,7 +157,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
         {!user && !authOpen && (
           <div style={{ pointerEvents: "auto" }}>
             <Button variant="outline" size="lg" onClick={openAuth}>
-              Login / Register
+              Log in
             </Button>
           </div>
         )}
@@ -191,31 +202,35 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-              {reg ? "New account" : "Access"}
+              {reg ? "Invitation" : "Access"}
             </div>
             <div style={{ font: "600 22px/1.15 var(--font-sans)", letterSpacing: "-0.6px", color: "var(--text-primary)" }}>
-              {reg ? "Create your account" : "Welcome back"}
+              {reg ? "Accept your invite" : "Welcome back"}
             </div>
             <div style={{ font: "400 13px/1.45 var(--font-sans)", color: "var(--text-muted)" }}>
-              {reg ? "Register to start encoding design intent." : "Enter your credentials to access Design Grammars."}
+              {reg ? "Enter the code from your project owner and choose a password." : "Enter your credentials to access Design Grammars."}
             </div>
           </div>
-          {reg && <Input placeholder="Full name" value={authName} onChange={(e) => { setAuthName(e.target.value); setAuthErr(""); }} />}
-          <Input type="email" placeholder="Email" value={authEmail} onChange={(e) => { setAuthEmail(e.target.value); setAuthErr(""); }} />
+          {reg ? (
+            <Input placeholder="Invite code" value={authCode} autoComplete="off" onChange={(e) => { setAuthCode(e.target.value); setAuthErr(""); }} />
+          ) : (
+            <Input placeholder="Username" value={authUser} autoComplete="username" onChange={(e) => { setAuthUser(e.target.value); setAuthErr(""); }} />
+          )}
           <Input
             type="password"
-            placeholder="Password"
+            placeholder={reg ? "New password (12+ characters)" : "Password"}
+            autoComplete={reg ? "new-password" : "current-password"}
             value={authPass}
             onChange={(e) => { setAuthPass(e.target.value); setAuthErr(""); }}
             onKeyDown={(e) => { if (e.key === "Enter") submitAuth(); }}
           />
           {authErr && <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>{authErr}</div>}
           <Button size="lg" style={{ width: "100%" }} onClick={submitAuth}>
-            {reg ? "Register" : "Log in"}
+            {reg ? "Accept invite" : "Log in"}
           </Button>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 2 }}>
             <div className="dgl-auth-switch" onClick={switchAuthMode}>
-              {reg ? "Have an account? Log in" : "Need an account? Register"}
+              {reg ? "Have an account? Log in" : "Have an invite code? Accept invite"}
             </div>
             <div className="dgl-auth-cancel" onClick={cancelAuth}>
               Cancel

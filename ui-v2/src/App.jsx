@@ -8,7 +8,8 @@ import ConnectorsScreen from "./screens/ConnectorsScreen.jsx";
 import ReasonerScreen from "./screens/ReasonerScreen.jsx";
 import ApiDocsScreen from "./screens/ApiDocsScreen.jsx";
 import SpecimenPage from "./specimen/SpecimenPage.jsx";
-import { currentUser } from "./lib/auth.js";
+import { currentUser, purgeLegacyLocalAuth } from "./lib/auth.js";
+import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
@@ -38,7 +39,8 @@ function Layer({ active, isLanding = false, layerRef, children }) {
 export default function App() {
   const [hash, setHash] = React.useState(window.location.hash);
   const [region, setRegion] = React.useState("landing");
-  const [user, setUser] = React.useState(() => currentUser());
+  // D-01: identity is resolved asynchronously from GET /auth/me (session cookie).
+  const [user, setUser] = React.useState(null);
   const [project, setProject] = React.useState(() => localStorage.getItem("dgv2_project") || null);
   const [theme, setTheme] = React.useState(() => (localStorage.getItem("dgv2_theme") === "dark" ? "dark" : "light"));
   const landingLayerRef = React.useRef(null);
@@ -59,6 +61,47 @@ export default function App() {
     const onHash = () => setHash(window.location.hash);
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  // Resolve the signed-in user from the server; drop the legacy browser
+  // accounts (D-05); return to the signed-out state whenever any call 401s.
+  React.useEffect(() => {
+    let cancelled = false;
+    purgeLegacyLocalAuth();
+    currentUser()
+      .then((u) => {
+        if (!cancelled) setUser(u);
+      })
+      .catch(() => {
+        // server unreachable — stay signed out; the login card reports errors
+      });
+    const onExpired = () => setUser(null);
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    };
+  }, []);
+
+  // A remembered project the user is not a member of is forgotten (admins
+  // keep it). The server denies access anyway; this avoids a stale scope.
+  React.useEffect(() => {
+    if (!user || user.isAdmin || !project) return;
+    if (!user.memberships.some((m) => m.project === project)) setProject(null);
+  }, [user, project]);
+
+  // Selecting a project first refreshes memberships so a project created or
+  // joined a moment ago is not mistaken for a stale one by the effect above.
+  const selectProject = React.useCallback(async (name) => {
+    if (name) {
+      try {
+        const fresh = await currentUser();
+        if (fresh) setUser(fresh);
+      } catch {
+        // keep the previous memberships
+      }
+    }
+    setProject(name);
   }, []);
 
   React.useEffect(() => {
@@ -114,7 +157,7 @@ export default function App() {
         <ModelScreen active={region === "model"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "projects"}>
-        <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={setProject} />
+        <ProjectsScreen active={region === "projects"} onBack={goLanding} project={project} onProject={selectProject} user={user} />
       </Layer>
       <Layer active={region === "aiengine"}>
         <AiEngineScreen active={region === "aiengine"} onBack={goLanding} project={project} />
