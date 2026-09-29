@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 9/19 plans executed
+**Plans:** 10/19 plans executed
 
 Plans:
 **Wave 1**
@@ -256,7 +256,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 1205-10-PLAN.md — Global enforcement flip: 67-route classification, removals, resource-bound id routes, D-14 inventory and sweeps
+- [x] 1205-10-PLAN.md — Global enforcement flip: 67-route classification, removals, resource-bound id routes, D-14 inventory and sweeps
 - [ ] 1205-11-PLAN.md — UI data layer: apiFetch, named endpoints replace the nine Cypher sites, relay replaces n8n webhooks
 
 **Wave 4** *(blocked on Wave 3 completion)*
