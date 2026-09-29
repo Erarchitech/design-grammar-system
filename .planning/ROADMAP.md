@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 13/19 plans executed
+**Plans:** 14/19 plans executed
 
 Plans:
 **Wave 1**
@@ -266,7 +266,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 1205-14-PLAN.md — Workflow relay with owner-bound polling; /mcp and generate-cypher project enforcement
+- [x] 1205-14-PLAN.md — Workflow relay with owner-bound polling; /mcp and generate-cypher project enforcement
 - [ ] 1205-15-PLAN.md — nginx/vite proxy removal with 404 tombstones; secret-free config.js; bundle secret scan
 
 **Wave 6** *(blocked on Wave 5 completion)*
