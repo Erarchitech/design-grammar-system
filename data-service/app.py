@@ -519,7 +519,9 @@ def get_speckle_settings() -> SpeckleConnectionSettings:
     base_url = os.getenv("SPECKLE_BASE_URL", "").strip() or persisted.get("baseUrl") or "http://localhost:8090"
     internal_url = os.getenv("SPECKLE_INTERNAL_URL", "").strip() or base_url
     write_token = os.getenv("SPECKLE_WRITE_TOKEN", "").strip() or persisted.get("writeToken", "")
-    read_token = os.getenv("SPECKLE_READ_TOKEN", "").strip() or persisted.get("readToken", "") or write_token
+    # CR-01 (1205 review): never fall back to the WRITE token -- the read token
+    # is handed to viewer/connector callers via /validation/view.
+    read_token = os.getenv("SPECKLE_READ_TOKEN", "").strip() or persisted.get("readToken", "")
     dg_base_url = os.getenv("DG_BASE_URL", "http://localhost:8080").strip()
     return SpeckleConnectionSettings(
         base_url=normalize_url(base_url),
@@ -1147,15 +1149,27 @@ def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
         return None
 
 
-def build_view_payload(project: str, run: dict[str, Any], object_sets: dict[str, list[str]], rule_id: str | None = None) -> dict[str, Any]:
+def build_view_payload(
+    project: str,
+    run: dict[str, Any],
+    object_sets: dict[str, list[str]],
+    rule_id: str | None = None,
+    principal: Any = None,
+) -> dict[str, Any]:
     settings = get_speckle_settings()
     rules = json.loads(run["rulesJson"]) if run.get("rulesJson") else []
+    # CR-01 (1205 review): the Speckle read token is one credential for the
+    # whole Speckle server. It is released only to interactive user (and
+    # service) callers, never to connector principals, and never when the
+    # caller is unknown (fail closed).
+    principal_kind = getattr(principal, "kind", None)
+    read_token = settings.read_token if principal_kind in ("user", "service") and settings.read_token else None
     return {
         "project": project,
         "runId": run["runId"],
         "selectedRuleId": rule_id,
         "speckleBaseUrl": settings.base_url,
-        "readToken": settings.read_token,
+        "readToken": read_token,
         "baseProjectId": run["speckleProjectId"],
         "baseModelId": run["baseModelId"],
         "baseVersionId": run["baseVersionId"],
@@ -2934,33 +2948,33 @@ def delete_validation_run(project: str, run_id: str):
 
 
 @router.get("/validation/view/{project}")
-def get_latest_validation_view(project: str):
+def get_latest_validation_view(project: str, request: Request):
     run = get_validation_run(project)
     if run is None:
         raise HTTPException(status_code=404, detail="No validation run found for this DG project.")
 
     object_sets = get_validation_entity_sets(project, run["runId"])
-    return build_view_payload(project, run, object_sets)
+    return build_view_payload(project, run, object_sets, principal=request.state.principal)
 
 
 @router.get("/validation/view/{project}/{run_id}")
-def get_validation_view_for_run(project: str, run_id: str):
+def get_validation_view_for_run(project: str, run_id: str, request: Request):
     run = get_validation_run(project, run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Validation run not found.")
 
     object_sets = get_validation_entity_sets(project, run_id)
-    return build_view_payload(project, run, object_sets)
+    return build_view_payload(project, run, object_sets, principal=request.state.principal)
 
 
 @router.get("/validation/view/{project}/{run_id}/{rule_id}")
-def get_rule_validation_view(project: str, run_id: str, rule_id: str):
+def get_rule_validation_view(project: str, run_id: str, rule_id: str, request: Request):
     run = get_validation_run(project, run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Validation run not found.")
 
     object_sets = get_validation_entity_sets(project, run_id, rule_id)
-    return build_view_payload(project, run, object_sets, rule_id=rule_id)
+    return build_view_payload(project, run, object_sets, rule_id=rule_id, principal=request.state.principal)
 
 
 @router.post("/mcp")
