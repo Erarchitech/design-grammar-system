@@ -723,12 +723,14 @@ def _strip_string_literals(cypher: str) -> str:
 
 
 # One node pattern: '(' + optional variable + optional ':Label' chain
-# (backticks allowed) + optional '{...}' property map + ')', with the
-# closing ')' required immediately after the optional map -- so a function
-# call's argument list (count(n), collect(DISTINCT n), toLower(r.name)) can
-# never match, since none of those have a valid var/label/map shape ending
-# directly in ')'.
-_SCOPE_LABEL_TOKEN = r":\s*`?[A-Za-z_][A-Za-z0-9_]*`?"
+# + optional '{...}' property map + ')', with the closing ')' required
+# immediately after the optional map. The regex alone cannot tell a node
+# pattern from a function call's argument list (count(r), toLower(id) are
+# `(var)` too) -- check_query_project_scope() therefore only applies it at a
+# `(` that is NOT the argument list of a function call (see
+# _is_function_call_paren). Backticked identifiers are rejected up front
+# (CR-03), so the label token no longer accepts backticks.
+_SCOPE_LABEL_TOKEN = r":\s*[A-Za-z_][A-Za-z0-9_]*"
 _SCOPE_NODE_PATTERN = re.compile(
     r"\(\s*"
     r"(?P<var>[A-Za-z_][A-Za-z0-9_]*)?"
@@ -740,7 +742,76 @@ _SCOPE_NODE_PATTERN = re.compile(
 # project: $project inside an inline map -- the ONLY thing that counts as
 # proof of scope (a WHERE predicate does not, since it can be widened with
 # `OR true`).
-_INLINE_PROJECT_PARAM_PATTERN = re.compile(r"project\s*:\s*\$project\b")
+_INLINE_PROJECT_PARAM_PATTERN = re.compile(r"(?<![A-Za-z0-9_$])project\s*:\s*\$project\b")
+
+# CR-03 (1205 review): the static proof below is regex-based, so every
+# construct the regexes cannot read reliably is rejected up front rather than
+# silently skipped. A query using any of these is a violation, never accepted.
+_UNSUPPORTED_SYNTAX_MESSAGE = (
+    "{what} is not permitted in graph_query Cypher -- the project-scope proof "
+    "cannot read it reliably. Where: the generated Cypher. How to fix: "
+    "rewrite as a plain MATCH/RETURN query without backticks, backslashes, "
+    "comments, nested braces or label expressions in node patterns."
+)
+
+# Words that may directly precede a `(` that opens a pattern or a grouping
+# parenthesis (`MATCH(n)`, `WHERE(n)-->()`) -- as opposed to a function name,
+# whose `(` opens an argument list. Compared lower-case.
+_PATTERN_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "match", "optional", "where", "and", "or", "xor", "not", "return",
+        "with", "in", "when", "then", "else", "case", "distinct", "unwind",
+        "as", "set", "order", "by", "skip", "limit", "on", "merge", "create",
+        "delete", "remove", "is", "starts", "ends", "contains", "union",
+    }
+)
+
+# What a `(` looks like when it opens something that reads as a node pattern
+# (variable, label, property map, parameter map or inline WHERE) but that
+# _SCOPE_NODE_PATTERN could not parse -- e.g. `(n:A|B)`, `(n WHERE ...)`,
+# `(n $props)`. Such a pattern is rejected, not skipped.
+_NODEISH_PAREN_PATTERN = re.compile(
+    r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?\s*(?:[:{$]|WHERE\b)", re.IGNORECASE
+)
+_PRECEDING_IDENTIFIER_PATTERN = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)$")
+
+
+def _is_function_call_paren(dequoted: str, pos: int) -> bool:
+    """True when the `(` at `pos` opens a function call's argument list: it
+    directly follows an identifier (no whitespace) that is not a pattern
+    keyword. `MATCH(n)` is a pattern (keyword), `count(r)` is a call."""
+    found = _PRECEDING_IDENTIFIER_PATTERN.search(dequoted[max(0, pos - 64) : pos])
+    if found is None:
+        return False
+    return found.group(1).lower() not in _PATTERN_KEYWORDS
+
+
+def _unsupported_syntax_violations(cypher: str, dequoted: str) -> list[dict[str, Any]]:
+    """Fail-closed pre-check for constructs the regex proof cannot read."""
+    findings: list[tuple[str, str]] = []
+    if "`" in cypher:
+        findings.append(("a backtick-quoted identifier", "`"))
+    if "\\" in cypher:
+        findings.append(("a backslash escape", "\\"))
+    if "//" in dequoted or "/*" in dequoted:
+        findings.append(("a comment", "comment"))
+    depth = 0
+    for ch in dequoted:
+        if ch == "{":
+            depth += 1
+            if depth > 1:
+                findings.append(("nested braces", "{{"))
+                break
+        elif ch == "}":
+            depth = max(0, depth - 1)
+    return [
+        {
+            "code": "unsupported_syntax",
+            "message": _UNSUPPORTED_SYNTAX_MESSAGE.format(what=what[0].upper() + what[1:]),
+            "path": path,
+        }
+        for what, path in findings
+    ]
 
 # `project` compared to or mapped from a quoted literal -- illegal in
 # graph_query Cypher (project_literal) at ANY value, and illegal in rule
@@ -764,6 +835,7 @@ def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
     """
     violations: list[dict[str, Any]] = []
     dequoted = _strip_string_literals(cypher)
+    violations.extend(_unsupported_syntax_violations(cypher, dequoted))
 
     for label, pattern in _FORBIDDEN_CLAUSE_PATTERNS.items():
         if pattern.search(dequoted):
@@ -784,7 +856,24 @@ def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
             )
 
     seen_vars: set[str] = set()
-    for match in _SCOPE_NODE_PATTERN.finditer(dequoted):
+    for paren_match in re.finditer(r"\(", dequoted):
+        paren_pos = paren_match.start()
+        if _is_function_call_paren(dequoted, paren_pos):
+            continue
+        match = _SCOPE_NODE_PATTERN.match(dequoted, paren_pos)
+        if match is None:
+            if _NODEISH_PAREN_PATTERN.match(dequoted, paren_pos):
+                violations.append(
+                    {
+                        "code": "unsupported_syntax",
+                        "message": _UNSUPPORTED_SYNTAX_MESSAGE.format(
+                            what="A node pattern with a label expression, "
+                            "an inline WHERE or a parameter map"
+                        ),
+                        "path": dequoted[paren_pos : paren_pos + 40].strip(),
+                    }
+                )
+            continue
         var = match.group("var")
         labels = [
             token.split(":", 1)[1].strip().strip("`")

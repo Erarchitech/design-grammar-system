@@ -141,3 +141,78 @@ class TestCr02KnowledgeUpdateScoping:
             },
         )
         assert r1.status_code == 400 and r2.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# CR-03 / WR-13: the project-scope proof is not forgeable, and does not reject
+# ordinary function calls
+# --------------------------------------------------------------------------
+
+import dg_context  # noqa: E402
+
+
+def _codes(cypher: str) -> set[str]:
+    return {v["code"] for v in dg_context.check_query_project_scope(cypher)}
+
+
+class TestCr03ScopeProofNotForgeable:
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            # backticked variable was skipped entirely
+            "MATCH (`n`) RETURN `n`.text, $project AS p LIMIT 50",
+            # block comment carrying a fake scoped pattern
+            "/* (n {project: $project}) */ MATCH (n) RETURN n.text LIMIT 5",
+            # line comment carrying a fake scoped pattern
+            "// (n {project: $project})\nMATCH (n) RETURN n.text LIMIT 5",
+            # nested braces defeated the map regex (fail-open)
+            "MATCH (n {a: {b: 1}.b}) RETURN n.text, $project LIMIT 5",
+            # backslash-escaped quote can desynchronise string stripping
+            "MATCH (n) WHERE n.t = 'a\' OR true //' RETURN n.text, $project",
+        ],
+    )
+    def test_forgery_is_rejected(self, cypher):
+        assert _codes(cypher), cypher
+
+    def test_subproject_key_is_not_project_scope(self):
+        codes = _codes("MATCH (n {subproject: $project}) RETURN n.text LIMIT 5")
+        assert "missing_project_scope" in codes
+
+    def test_keyword_glued_paren_is_still_a_node_pattern(self):
+        # MATCH(n) is a pattern, not a function call named MATCH
+        assert "missing_project_scope" in _codes("MATCH(n) RETURN n.text, $project")
+
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            "MATCH (n:Rule|Atom {project: $project}) RETURN n.text",
+            "MATCH (n WHERE true) RETURN n.text, $project",
+            "MATCH (n:Rule WHERE true) RETURN n.text, $project",
+        ],
+    )
+    def test_unreadable_node_pattern_is_rejected_not_skipped(self, cypher):
+        assert "unsupported_syntax" in _codes(cypher)
+
+    def test_ordinary_scoped_query_still_passes(self):
+        assert dg_context.check_query_project_scope(
+            "MATCH (r:Rule {project: $project})-[:HAS_BODY]->(a:Atom {project: $project}) "
+            "WHERE r.Rule_Id = 'R_X' RETURN a.SWRL_label LIMIT 20"
+        ) == []
+
+    def test_url_in_string_literal_is_not_a_comment(self):
+        assert dg_context.check_query_project_scope(
+            "MATCH (r:Rule {project: $project}) WHERE r.src = 'http://x/y' RETURN r.Rule_Id"
+        ) == []
+
+
+class TestWr13FunctionCallsNotFalsePositives:
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            "MATCH (a {project: $project})-[r]->(b {project: $project}) RETURN count(r)",
+            "MATCH (a:Rule {project: $project}) WITH a.Rule_Id AS id RETURN toLower(id)",
+            "MATCH (a:Rule {project: $project}) RETURN a.Rule_Id, timestamp() AS t",
+        ],
+    )
+    def test_function_call_on_relationship_or_alias_is_not_a_violation(self, cypher):
+        assert dg_context.check_query_project_scope(cypher) == []
