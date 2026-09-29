@@ -179,6 +179,8 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/execution-result/{execution_id}"): _p(
         _SES, source="resource:execution", role="viewer"
     ),
+    ("POST", "/workflows/rules-ingest"): _p(_MEM, source="body", role="editor"),
+    ("POST", "/workflows/graph-query"): _p(_MEM, source="body", role="viewer"),
     # ── knowledge ──
     ("POST", "/knowledge/ingest/folder"): _p(_ADM),
     ("GET", "/knowledge/notes/{project}"): _p(_MEM, source="path", role="viewer"),

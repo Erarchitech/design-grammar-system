@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path as FilePath
 from typing import Any
 import time
+import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 
@@ -256,20 +257,60 @@ def word_diff_html(original: str, proposed: str) -> str:
     return " ".join(parts)
 
 
-def call_n8n_sync(webhook_path: str, body: dict, timeout: int = 120) -> dict:
-    """Fire n8n webhook, poll EXECUTION_RESULTS until completed or timeout."""
-    data = json.dumps(body).encode()
+def fire_n8n_webhook(webhook_path: str, body: dict, timeout: int = 15) -> str:
+    """POST `body` to the internal n8n webhook and return the ack executionId.
+
+    Phase 1205 (D-04/D-08): every data-service -> n8n request carries the
+    service token in X-DG-Service-Token (checked by the workflows' Verify Relay
+    Token node). With DG_SERVICE_TOKEN unset the call fails closed with
+    RELAY_UNAVAILABLE before any network request; an ack without an
+    executionId is RELAY_NO_EXECUTION_ID (there is no latest-slot fallback).
+    """
+    token = (os.getenv("DG_SERVICE_TOKEN") or "").strip()
+    if not token:
+        raise _structured_error_response(
+            "The workflow relay is not configured.",
+            "Set DG_SERVICE_TOKEN for the data-service and n8n containers.",
+            "RELAY_UNAVAILABLE",
+            503,
+        )
     req = urllib.request.Request(
         f"{N8N_INTERNAL_URL}/webhook/{webhook_path}",
-        data=data,
-        headers={"Content-Type": "application/json"},
+        data=json.dumps(body).encode(),
+        headers={
+            "Content-Type": "application/json",
+            auth.SERVICE_TOKEN_HEADER: token,
+        },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        ack = json.loads(resp.read())
-    execution_id = ack.get("executionId")
-    if not execution_id:
-        raise HTTPException(status_code=502, detail="n8n did not return executionId")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read()
+    except (urllib.error.URLError, TimeoutError, OSError):
+        raise _structured_error_response(
+            "The workflow engine could not be reached.",
+            "Check that the n8n service is running and retry.",
+            "RELAY_UNAVAILABLE",
+            503,
+        )
+    try:
+        ack = json.loads(raw)
+    except (ValueError, TypeError):
+        ack = None
+    execution_id = ack.get("executionId") if isinstance(ack, dict) else None
+    if not execution_id or not isinstance(execution_id, (str, int)):
+        raise _structured_error_response(
+            "The workflow engine did not return an execution id.",
+            "Check that the n8n workflow responds immediately with its executionId.",
+            "RELAY_NO_EXECUTION_ID",
+            502,
+        )
+    return str(execution_id)
+
+
+def call_n8n_sync(webhook_path: str, body: dict, timeout: int = 120) -> dict:
+    """Fire n8n webhook, poll EXECUTION_RESULTS until completed or timeout."""
+    execution_id = fire_n8n_webhook(webhook_path, body)
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         entry = EXECUTION_RESULTS.get(execution_id, {})
@@ -3038,6 +3079,77 @@ def get_execution_result(execution_id: str):
     # reaches this handler (the "execution" resolver answers everyone else with
     # EXECUTION_NOT_FOUND). An owned id with no result yet is still running.
     return EXECUTION_RESULTS.get(execution_id, {"status": "running"})
+
+
+# ── Workflow relay (Phase 1205, D-08) ───────────────────────────────────────
+#
+# The browser no longer calls the n8n webhooks directly. These two routes are
+# the only path from a signed-in user to a workflow: project-authorised by the
+# route policy, relayed over the internal network with the service token, and
+# owner-bound (the initiator is recorded before the 202 so only they can poll
+# GET /execution-result/{executionId}). The n8n body is built from the
+# validated request model only -- never from raw request data.
+
+
+class WorkflowRulesIngestRequest(BaseModel):
+    project: str = Field(min_length=1)
+    rulesText: str = Field(min_length=1, max_length=20000)
+
+
+class WorkflowGraphQueryRequest(BaseModel):
+    project: str = Field(min_length=1)
+    prompt: str = Field(min_length=1, max_length=4000)
+
+
+def _relay_workflow(
+    request: Request, workflow: str, webhook_path: str, project: str, body: dict
+) -> dict:
+    principal = getattr(request.state, "principal", None)
+    username = getattr(principal, "username", None)
+    if not username:
+        raise _structured_error_response(
+            "A signed-in user is required to start a workflow.",
+            "Sign in and retry.",
+            "RELAY_USER_REQUIRED",
+            403,
+        )
+    execution_id = fire_n8n_webhook(webhook_path, body)
+    # Bind the execution to its initiator BEFORE answering, so the owner's own
+    # first poll never races the recording.
+    record_execution_owner(execution_id, username, project, workflow)
+    return {"status": "accepted", "executionId": execution_id}
+
+
+@router.post("/workflows/rules-ingest", status_code=202)
+def relay_rules_ingest(payload: WorkflowRulesIngestRequest, request: Request):
+    return _relay_workflow(
+        request,
+        "rules-ingest",
+        "dg/rules-ingest",
+        payload.project,
+        {
+            "rules_text": payload.rulesText,
+            "project": payload.project,
+            "project_name": payload.project,
+            "cypher_prompt": False,
+        },
+    )
+
+
+@router.post("/workflows/graph-query", status_code=202)
+def relay_graph_query(payload: WorkflowGraphQueryRequest, request: Request):
+    return _relay_workflow(
+        request,
+        "graph-query",
+        "dg/graph-query",
+        payload.project,
+        {
+            "prompt": payload.prompt,
+            "project": payload.project,
+            "project_name": payload.project,
+            "cypher_prompt": False,
+        },
+    )
 
 
 MAX_FILE_SIZE = 100 * 1024  # 100KB
