@@ -1,25 +1,13 @@
 // Reasoner Screen backend access — reasoner registry settings.
 // nginx proxies /reasoner/ to data-service. The vite dev proxy also
 // forwards /reasoner to localhost:8080 for development.
+// Phase 1205: every call goes through apiFetch (session cookie + CSRF header).
 
-async function getJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
+import { apiFetch } from "./apiClient.js";
 
 // GET /reasoner/settings → { reasoners: [...], selected: "hermit" | null }
 export function getReasonerSettings() {
-  return getJson("/reasoner/settings");
+  return apiFetch("/reasoner/settings");
 }
 
 // POST /reasoner/consistency with { project, engine: "hermit" }.
@@ -30,34 +18,17 @@ export function getReasonerSettings() {
 // Forwards the caller's AbortController signal so a run can be
 // cancelled client-side (D-07). Every call is a fresh POST — no
 // response is stored or reused across runs (D-10).
-export async function runConsistencyCheck(project, { signal } = {}) {
-  const res = await fetch("/reasoner/consistency", {
+export function runConsistencyCheck(project, { signal } = {}) {
+  return apiFetch("/reasoner/consistency", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, engine: "hermit" }),
+    body: { project, engine: "hermit" },
     signal,
-  });
-  const body = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, body };
+    passthrough: true
+  }); // { ok, status, body }
 }
 
 // PUT /reasoner/settings with { reasoner: "hermit" }
 // Returns the updated settings. Rejects unknown ids with 422.
-export async function selectReasoner(id) {
-  const res = await fetch("/reasoner/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ reasoner: id }),
-  });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
+export function selectReasoner(id) {
+  return apiFetch("/reasoner/settings", { method: "PUT", body: { reasoner: id } });
 }
