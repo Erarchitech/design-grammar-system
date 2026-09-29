@@ -441,6 +441,11 @@ class UpdateMatchRequest(BaseModel):
     project: str
 
 
+# CR-02 (1205 review): each proposed note costs a blocking n8n round trip
+# (up to 120 s on a threadpool thread), so one request may not fan out unbounded.
+KNOWLEDGE_UPDATE_MAX_NOTES = 20
+
+
 class UpdateProposeRequest(BaseModel):
     prompt: str
     project: str
@@ -4029,14 +4034,21 @@ def knowledge_update_match(payload: UpdateMatchRequest):
 def knowledge_update_propose(payload: UpdateProposeRequest):
     if not payload.noteIds:
         raise HTTPException(status_code=400, detail="noteIds must not be empty")
+    if len(payload.noteIds) > KNOWLEDGE_UPDATE_MAX_NOTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"noteIds must not exceed {KNOWLEDGE_UPDATE_MAX_NOTES} entries",
+        )
     if not payload.prompt.strip():
         raise HTTPException(status_code=400, detail="prompt is required")
     results = []
     for note_id in payload.noteIds:
+        # CR-02 (1205 review): scope the note to the authorised project; a note
+        # of another project is indistinguishable from an unknown one (404).
         note = read_single(
-            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
             "RETURN n.noteId AS noteId, n.title AS title, n.content AS content, n.updatedAt AS updatedAt",
-            {"noteId": note_id, "graph": SPEC_GRAPH},
+            {"noteId": note_id, "project": payload.project, "graph": SPEC_GRAPH},
         )
         if note is None:
             raise HTTPException(status_code=404, detail=f"Note not found: {note_id}")
@@ -4064,6 +4076,11 @@ def knowledge_update_propose(payload: UpdateProposeRequest):
 def knowledge_update_confirm(payload: UpdateConfirmRequest):
     if not payload.notes:
         raise HTTPException(status_code=400, detail="notes must not be empty")
+    if len(payload.notes) > KNOWLEDGE_UPDATE_MAX_NOTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"notes must not exceed {KNOWLEDGE_UPDATE_MAX_NOTES} entries",
+        )
     for item in payload.notes:
         if len(item.content.encode("utf-8")) > MAX_CONTENT_SIZE:
             raise HTTPException(status_code=413, detail=f"Content for {item.noteId} exceeds 100KB limit")
@@ -4071,9 +4088,9 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
     now = datetime.now(timezone.utc).isoformat()
     for item in payload.notes:
         existing = read_single(
-            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
             "RETURN n.updatedAt AS updatedAt, n.title AS title",
-            {"noteId": item.noteId, "graph": SPEC_GRAPH},
+            {"noteId": item.noteId, "project": payload.project, "graph": SPEC_GRAPH},
         )
         if existing is None:
             raise HTTPException(status_code=404, detail=f"Note not found: {item.noteId}")
@@ -4083,9 +4100,15 @@ def knowledge_update_confirm(payload: UpdateConfirmRequest):
                 detail=f"Note {item.noteId} was modified since propose step - reload and retry",
             )
         write_query(
-            "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
+            "MATCH (n:SpecNote {noteId: $noteId, project: $project, graph: $graph}) "
             "SET n.content = $content, n.updatedAt = $now",
-            {"noteId": item.noteId, "graph": SPEC_GRAPH, "content": item.content, "now": now},
+            {
+                "noteId": item.noteId,
+                "project": payload.project,
+                "graph": SPEC_GRAPH,
+                "content": item.content,
+                "now": now,
+            },
         )
         affected.append(existing.get("title") or item.noteId)
     # Write SpecSession per D-10 / UPDK-06
