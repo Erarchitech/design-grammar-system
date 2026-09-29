@@ -4207,4 +4207,207 @@ def accept_invite(payload: AcceptInviteRequest, response: Response):
     return {"username": user["username"], "isAdmin": False}
 
 
+# ── Named graph endpoints (Phase 1205, D-06) ────────────────────────────────
+#
+# Replacements for the browser's former direct Cypher sites. Each endpoint runs
+# ONE fixed module-level statement; the only variables are bound parameters
+# ($project, $id, $key, $value, $ruleId, $runId, $dgEntityId). No endpoint
+# accepts statement text, and the project is never interpolated. Project
+# authorisation happens in the router dependency (ROUTE_POLICIES rows).
+
+PROTECTED_NODE_KEYS = frozenset({"project", "graph"})
+NODE_KEY_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+
+GRAPH_NODES_QUERY = (
+    "MATCH (n) WHERE n.project = $project "
+    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props LIMIT 2000"
+)
+GRAPH_RELS_QUERY = (
+    "MATCH (a)-[r]->(b) WHERE a.project = $project AND b.project = $project "
+    "RETURN id(a) AS source, type(r) AS type, id(b) AS target LIMIT 8000"
+)
+# The D-06 carve-out (spec'd by 1205-16): only nodes with NO project are moved,
+# and never a node of a named project (default-project included).
+CLAIM_UNTAGGED_QUERY = (
+    "MATCH (n) WHERE n.project IS NULL SET n.project = $project RETURN count(n) AS claimed"
+)
+NODE_PROPERTY_UPDATE_QUERY = (
+    "MATCH (n) WHERE id(n) = $id AND n.project = $project "
+    "SET n[$key] = $value RETURN properties(n) AS props"
+)
+RULES_LIST_QUERY = (
+    "MATCH (r:Rule) WHERE r.graph = 'Metagraph' AND r.project = $project "
+    "RETURN r.Rule_Id AS ruleId, coalesce(r.SWRL, r.text, '') AS text ORDER BY r.Rule_Id"
+)
+RULE_DETAIL_QUERY = (
+    "MATCH (r:Rule {Rule_Id: $ruleId}) WHERE r.project = $project "
+    "RETURN r.SWRL AS swrl, r.RuleName AS name, r.RuleDescription AS description LIMIT 1"
+)
+ENTITY_STATUSES_QUERY = (
+    "MATCH (ve:ValidationEntity {graph:'ValidGraph', project:$project, runId:$runId, dgEntityId:$dgEntityId}) "
+    "RETURN ve.ruleId AS ruleId, ve.status AS status ORDER BY ruleId"
+)
+ACCEPTED_CANDIDATES_QUERY = (
+    "MATCH (ds:DesignState {project: $project, kind: 'ParamState'}) "
+    "WHERE ds.source = 'ai-generated' AND ($ruleId IS NULL OR ds.sourceRuleId = $ruleId) "
+    "RETURN ds.StateId AS stateId, ds.sourceRuleId AS sourceRuleId, ds.provider AS provider, "
+    "ds.model AS model, ds.generatedAt AS generatedAt, ds.acceptedAt AS acceptedAt, "
+    "ds.strategy AS strategy ORDER BY ds.acceptedAt DESC"
+)
+
+
+class NodePropertyRequest(BaseModel):
+    key: str
+    value: Any = None
+
+
+def write_single(query: str, parameters: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Run one write statement and return its single result row (or None)."""
+    with driver.session() as session:
+        record = session.run(query, parameters or {}).single()
+    return None if record is None else record.data()
+
+
+def _graph_json_safe(value: Any):
+    """normalize_value, plus a JSON-safe fallback for driver types (temporal,
+    spatial) that a JSON response cannot encode."""
+    value = normalize_value(value)
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(k): _graph_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_graph_json_safe(v) for v in value]
+    iso = getattr(value, "iso_format", None)
+    return iso() if callable(iso) else str(value)
+
+
+@router.get("/graph/{project}")
+def get_project_graph(project: str):
+    node_rows = read_many(GRAPH_NODES_QUERY, {"project": project})
+    rel_rows = read_many(GRAPH_RELS_QUERY, {"project": project})
+    return {
+        "nodes": [
+            {
+                "id": row["id"],
+                "labels": _graph_json_safe(row["labels"]),
+                "props": _graph_json_safe(row["props"]),
+            }
+            for row in node_rows
+        ],
+        "rels": [
+            {"source": row["source"], "type": row["type"], "target": row["target"]}
+            for row in rel_rows
+        ],
+    }
+
+
+@router.post("/graph/{project}/claim-untagged")
+def claim_untagged_nodes(project: str):
+    row = write_single(CLAIM_UNTAGGED_QUERY, {"project": project})
+    return {"claimed": int((row or {}).get("claimed") or 0)}
+
+
+@router.put("/graph/{project}/node/{node_id}/property")
+def update_node_property(project: str, node_id: int, payload: NodePropertyRequest):
+    key = payload.key
+    if not NODE_KEY_PATTERN.match(key):
+        raise _structured_error_response(
+            "That property name is not valid.",
+            "Use letters, digits and underscore, starting with a letter or underscore (max 64 characters).",
+            "NODE_KEY_INVALID",
+            422,
+        )
+    if key in PROTECTED_NODE_KEYS:
+        raise _structured_error_response(
+            "That property cannot be edited.",
+            "The project and graph properties are managed by the system.",
+            "PROTECTED_PROPERTY",
+            403,
+        )
+    value = payload.value
+    if value is not None and (
+        not isinstance(value, (str, int, float, bool))
+        or (isinstance(value, float) and value != value)
+        or (isinstance(value, float) and value in (float("inf"), float("-inf")))
+    ):
+        raise _structured_error_response(
+            "That property value is not valid.",
+            "Use a string, number, boolean or null.",
+            "PROPERTY_VALUE_INVALID",
+            422,
+        )
+    row = write_single(
+        NODE_PROPERTY_UPDATE_QUERY,
+        {"id": node_id, "project": project, "key": key, "value": value},
+    )
+    if row is None:
+        # Same answer for an unknown node and another project's node.
+        raise _structured_error_response(
+            "Node not found.",
+            "Reload the graph and try again.",
+            "NODE_NOT_FOUND",
+            404,
+        )
+    return {"props": _graph_json_safe(row["props"])}
+
+
+@router.get("/rules/{project}")
+def list_project_rules(project: str):
+    rows = read_many(RULES_LIST_QUERY, {"project": project})
+    return {
+        "project": project,
+        "rules": [{"ruleId": row["ruleId"], "text": row["text"] or ""} for row in rows],
+    }
+
+
+@router.get("/rules/{project}/{rule_id}")
+def get_rule_detail(project: str, rule_id: str):
+    row = read_single(RULE_DETAIL_QUERY, {"project": project, "ruleId": rule_id})
+    if row is None:
+        raise _structured_error_response(
+            "Rule not found.",
+            "Check the rule id and project.",
+            "RULE_NOT_FOUND",
+            404,
+        )
+    return {
+        "ruleId": rule_id,
+        "swrl": row.get("swrl") or "",
+        "name": row.get("name") or "",
+        "description": row.get("description") or "",
+    }
+
+
+@router.get("/validation/view/{project}/{run_id}/entity/{dg_entity_id}")
+def get_entity_statuses(project: str, run_id: str, dg_entity_id: str):
+    rows = read_many(
+        ENTITY_STATUSES_QUERY,
+        {"project": project, "runId": run_id, "dgEntityId": dg_entity_id},
+    )
+    return {"statuses": [{"ruleId": row["ruleId"], "status": row["status"]} for row in rows]}
+
+
+@router.get("/computgraph/candidates/{project}")
+def list_accepted_candidates(project: str, ruleId: str | None = Query(default=None)):
+    rows = read_many(ACCEPTED_CANDIDATES_QUERY, {"project": project, "ruleId": ruleId or None})
+    return {
+        "candidates": [
+            {
+                key: _graph_json_safe(row.get(key))
+                for key in (
+                    "stateId",
+                    "sourceRuleId",
+                    "provider",
+                    "model",
+                    "generatedAt",
+                    "acceptedAt",
+                    "strategy",
+                )
+            }
+            for row in rows
+        ]
+    }
+
+
 app.include_router(router)

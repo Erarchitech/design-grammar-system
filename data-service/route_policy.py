@@ -109,6 +109,16 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/projects"): _p(_SES),
     ("GET", "/projects/{project}/members"): _p(_MEM, source="path", role="owner"),
     ("DELETE", "/projects/{project}/members/{username}"): _p(_MEM, source="path", role="owner"),
+    # ── named graph endpoints (Phase 1205-12, D-06) ──
+    ("GET", "/graph/{project}"): _p(_MEM, source="path", role="viewer"),
+    ("POST", "/graph/{project}/claim-untagged"): _p(_MEM, source="path", role="editor"),
+    ("PUT", "/graph/{project}/node/{node_id}/property"): _p(_MEM, source="path", role="editor"),
+    ("GET", "/rules/{project}"): _p(_MEM, source="path", role="viewer"),
+    ("GET", "/rules/{project}/{rule_id}"): _p(_MEM, source="path", role="viewer"),
+    ("GET", "/validation/view/{project}/{run_id}/entity/{dg_entity_id}"): _p(
+        _MEM, source="path", role="viewer"
+    ),
+    ("GET", "/computgraph/candidates/{project}"): _p(_MEM, source="path", role="viewer"),
     # ── integration / settings ──
     ("GET", "/integration/speckle/project/{project}"): _p(_MEM, source="path", role="viewer"),
     ("PUT", "/integration/speckle/project/{project}"): _p(_MEM, source="path", role="owner"),
