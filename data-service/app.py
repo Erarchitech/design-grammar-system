@@ -3818,8 +3818,23 @@ class RuleSupersedePayload(BaseModel):
     actor: str = ""
 
 
+def _authenticated_actor(request: Request) -> str:
+    """WR-10 (1205 review): provenance names the AUTHENTICATED caller, never a
+    client-supplied string. A body `actor` is accepted for wire compatibility
+    and ignored."""
+    principal = getattr(request.state, "principal", None)
+    kind = getattr(principal, "kind", None)
+    if kind == "user" and principal.username:
+        return principal.username
+    if kind == "connector":
+        return f"connector:{principal.credential_id or 'unknown'}"
+    if kind == "service":
+        return "service"
+    return "unknown"
+
+
 @router.post("/rules/supersede")
-def supersede_rule(payload: RuleSupersedePayload):
+def supersede_rule(payload: RuleSupersedePayload, request: Request):
     """Record that `newRuleId` supersedes `oldRuleId`. Call this AFTER the
     new rule has been written by the normal ingest path (n8n rules-ingest),
     so both Rule nodes exist when the edge is created.
@@ -3903,7 +3918,7 @@ def supersede_rule(payload: RuleSupersedePayload):
             "newId": new_id,
             "project": payload.project,
             "supersededAt": now,
-            "actor": (payload.actor or "").strip(),
+            "actor": _authenticated_actor(request),
             "prompt": (payload.prompt or "").strip()[:2000],
         },
     )
@@ -3925,7 +3940,7 @@ class RuleAcceptOverlapPayload(BaseModel):
 
 
 @router.post("/rules/accept-overlap")
-def accept_rule_overlap(payload: RuleAcceptOverlapPayload):
+def accept_rule_overlap(payload: RuleAcceptOverlapPayload, request: Request):
     """'Keep both' provenance: record that the architect knowingly authored
     `ruleId` despite it overlapping with `conflictsWith`, without superseding
     anything. Call AFTER the new rule has been written by the normal ingest
@@ -3979,7 +3994,7 @@ def accept_rule_overlap(payload: RuleAcceptOverlapPayload):
             "project": payload.project,
             "conflictsWith": payload.conflictsWith,
             "acceptedAt": now,
-            "actor": (payload.actor or "").strip(),
+            "actor": _authenticated_actor(request),
         },
     )
 

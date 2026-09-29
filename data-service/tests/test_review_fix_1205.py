@@ -668,3 +668,50 @@ class TestWr09BrowserDataCleanup:
         assert "const screenKey" in app_src
         for screen in ("GraphScreen", "ModelScreen", "ProjectsScreen"):
             assert f"<{screen} key={{screenKey}}" in app_src
+
+
+# --------------------------------------------------------------------------
+# WR-10: provenance actor is the authenticated principal, not the request body
+# --------------------------------------------------------------------------
+
+
+class TestWr10ProvenanceActor:
+    def _stub(self, monkeypatch):
+        writes = []
+        monkeypatch.setattr(
+            app_module, "read_single",
+            lambda q, p=None: {"ruleId": (p or {}).get("ruleId", "R"), "alreadySuperseded": False},
+        )
+        monkeypatch.setattr(app_module, "_require_publishable_rule", lambda rule_id, project: None)
+        monkeypatch.setattr(app_module, "write_query", lambda q, p=None: writes.append(p))
+        return writes
+
+    def test_supersede_ignores_body_actor(self, monkeypatch):
+        writes = self._stub(monkeypatch)
+        resp = client.post(
+            "/rules/supersede",
+            json={"project": "p", "oldRuleId": "R_OLD", "newRuleId": "R_NEW", "actor": "someone-else@dg.local"},
+        )
+        assert resp.status_code == 200, resp.text
+        assert writes[0]["actor"] == auth_fixtures.TEST_ADMIN_USERNAME
+
+    def test_accept_overlap_ignores_body_actor(self, monkeypatch):
+        writes = self._stub(monkeypatch)
+        resp = client.post(
+            "/rules/accept-overlap",
+            json={"project": "p", "ruleId": "R_NEW", "conflictsWith": ["R_OLD"], "actor": "someone-else@dg.local"},
+        )
+        assert resp.status_code == 200, resp.text
+        assert writes[0]["actor"] == auth_fixtures.TEST_ADMIN_USERNAME
+
+    def test_actor_helper_covers_every_principal_kind(self):
+        class _Req:
+            def __init__(self, principal):
+                self.state = type("S", (), {"principal": principal})()
+
+        assert app_module._authenticated_actor(_Req(auth.Principal(kind="user", username="u@dg.local"))) == "u@dg.local"
+        assert app_module._authenticated_actor(_Req(auth.Principal(kind="service"))) == "service"
+        assert app_module._authenticated_actor(
+            _Req(auth.Principal(kind="connector", credential_id="c1"))
+        ) == "connector:c1"
+        assert app_module._authenticated_actor(_Req(None)) == "unknown"
