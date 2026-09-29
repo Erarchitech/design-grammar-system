@@ -16,7 +16,7 @@ import urllib.request
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
@@ -151,6 +151,13 @@ app = FastAPI(
     openapi_url="/openapi.json" if _DOCS_ENABLED else None,
 )
 app.include_router(auth_routes.router)
+
+# Phase 1205 (D-03): every data-service route below is registered on this one
+# router, whose dependency runs the deny-by-default auth.require_principal.
+# The router is included as the LAST statement of this module, after every
+# route definition (a route added to `app` directly would bypass the guard;
+# tests/test_route_inventory.py fails the suite if any route lacks it).
+router = APIRouter(dependencies=[Depends(auth.require_principal)])
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -1210,12 +1217,12 @@ def ensure_spec_indexes():
         ).consume()
 
 
-@app.get("/")
+@router.get("/")
 def read_root():
     return {"status": "Data Service is running"}
 
 
-@app.get("/integration/speckle/project/{project}")
+@router.get("/integration/speckle/project/{project}")
 def get_speckle_project_config(project: str):
     config = get_integration_config(project)
     if config is None:
@@ -1223,12 +1230,12 @@ def get_speckle_project_config(project: str):
     return config.model_dump()
 
 
-@app.get("/settings/speckle")
+@router.get("/settings/speckle")
 def get_speckle_runtime_settings():
     return get_speckle_settings_response()
 
 
-@app.put("/settings/speckle")
+@router.put("/settings/speckle")
 def put_speckle_runtime_settings(payload: SpeckleSettingsPayload):
     persisted = load_persisted_speckle_settings()
 
@@ -1257,7 +1264,7 @@ def put_speckle_runtime_settings(payload: SpeckleSettingsPayload):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/llm/settings")
+@router.get("/llm/settings")
 def get_llm_settings():
     """Read LLM settings (provider, model, masked key, status)."""
     master_secret = os.getenv("LLM_MASTER_SECRET", "")
@@ -1265,7 +1272,7 @@ def get_llm_settings():
     return get_llm_settings_response(settings, master_secret)
 
 
-@app.put("/llm/settings")
+@router.put("/llm/settings")
 def put_llm_settings(payload: LLMSettingsPayload):
     """Save LLM settings. Encrypts apiKey with Fernet before persisting."""
     master_secret = os.getenv("LLM_MASTER_SECRET", "")
@@ -1296,14 +1303,14 @@ def put_llm_settings(payload: LLMSettingsPayload):
     return get_llm_settings_response(load_persisted_llm_settings(), master_secret)
 
 
-@app.delete("/llm/settings", status_code=204)
+@router.delete("/llm/settings", status_code=204)
 def delete_llm_settings():
     """Clear all LLM settings. Gateway falls back to Ollama on next call."""
     save_persisted_llm_settings({})
     return None
 
 
-@app.post("/llm/generate")
+@router.post("/llm/generate")
 def llm_generate(req: GenerateRequest):
     """Main gateway endpoint. Routes prompt to the active provider adapter.
 
@@ -1341,7 +1348,7 @@ def llm_generate(req: GenerateRequest):
 KEYLESS_PROVIDER = "ollama"
 
 
-@app.post("/llm/settings/test")
+@router.post("/llm/settings/test")
 def test_llm_settings(payload: TestConnectionPayload | None = None):
     """Test an LLM configuration with a minimal provider call.
 
@@ -1399,7 +1406,7 @@ def test_llm_settings(payload: TestConnectionPayload | None = None):
         return TestResult(success=False, error=error_msg)
 
 
-@app.get("/llm/models")
+@router.get("/llm/models")
 def get_llm_models(provider: str):
     """Return available model IDs for the given provider.
 
@@ -1426,7 +1433,7 @@ def get_llm_models(provider: str):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/connectors")
+@router.get("/connectors")
 def get_connectors():
     """Connector registry joined with per-connector status, last-connection
     date, and credential summaries (never tokens or hashes). CONNB-01, CONNB-04.
@@ -1437,7 +1444,7 @@ def get_connectors():
     }
 
 
-@app.post("/connectors/{connector_id}/credentials", status_code=201)
+@router.post("/connectors/{connector_id}/credentials", status_code=201)
 def create_connector_credential(connector_id: str, payload: CredentialCreatePayload | None = None):
     """Mint a credential for a connector. The token is returned once here
     and never again — only its SHA-256 hash is persisted (CONNB-02).
@@ -1455,7 +1462,7 @@ def create_connector_credential(connector_id: str, payload: CredentialCreatePayl
     return CredentialCreatedResponse(credential_id=record["credential_id"], token=token)
 
 
-@app.delete("/connectors/{connector_id}/credentials/{credential_id}", status_code=204)
+@router.delete("/connectors/{connector_id}/credentials/{credential_id}", status_code=204)
 def revoke_connector_credential(connector_id: str, credential_id: str):
     """Revoke a credential. Revoked tokens stop authenticating heartbeats (CONNB-01)."""
     if connector_id not in connectors.CONNECTOR_IDS:
@@ -1475,7 +1482,7 @@ def revoke_connector_credential(connector_id: str, credential_id: str):
     return None
 
 
-@app.post("/connectors/heartbeat")
+@router.post("/connectors/heartbeat")
 def connector_heartbeat(request: Request):
     """Token-authenticated heartbeat. Updates the connector's last_connection
     and returns its derived status. 401 on unknown/revoked token (CONNB-03).
@@ -1522,7 +1529,7 @@ class ReasonerSettingsPayload(BaseModel):
     reasoner: str
 
 
-@app.get("/reasoner/settings")
+@router.get("/reasoner/settings")
 def get_reasoner_settings():
     """Return the reasoner registry and currently selected reasoner id."""
     settings = reasoner.load_settings()
@@ -1532,7 +1539,7 @@ def get_reasoner_settings():
     }
 
 
-@app.put("/reasoner/settings")
+@router.put("/reasoner/settings")
 def put_reasoner_settings(payload: ReasonerSettingsPayload):
     """Persist the selected reasoner id. Rejects unknown ids with 422."""
     if payload.reasoner not in reasoner.REASONER_IDS:
@@ -1554,7 +1561,7 @@ class ReasonerConsistencyRequest(BaseModel):
     engine: str = "hermit"
 
 
-@app.post("/reasoner/consistency")
+@router.post("/reasoner/consistency")
 def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
     """Thin proxy to the dg-reasoner sidecar's `POST /reason/consistency` (D-06).
 
@@ -1610,7 +1617,7 @@ class ComputgraphContextPullRequest(BaseModel):
     project: str
 
 
-@app.post("/computgraph/context/pull")
+@router.post("/computgraph/context/pull")
 def pull_computgraph_context(payload: ComputgraphContextPullRequest):
     """Thin proxy to the live Grasshopper canvas via gh_bridge (BRDG-02).
 
@@ -1656,7 +1663,7 @@ def _violation_hint(message: str) -> str:
     return message[idx + len(marker) :].strip()
 
 
-@app.post("/computgraph/recognize")
+@router.post("/computgraph/recognize")
 def post_computgraph_recognize(payload: RecognizeRequest):
     """Classify untagged canvas entities into a schema-valid proposed-structure
     (RCGN-01) via the two-tier Tier-0 (deterministic topology)/Tier-1 (LLM)
@@ -1724,7 +1731,7 @@ class ComputgraphPublishRequest(BaseModel):
     cgContext: dict
 
 
-@app.post("/computgraph/publish")
+@router.post("/computgraph/publish")
 def post_computgraph_publish(payload: ComputgraphPublishRequest):
     """Publish a confirmed cgContextJson v1 envelope as a Computgraph subgraph.
 
@@ -1765,7 +1772,7 @@ class ComputgraphValidateRequest(BaseModel):
     definitionId: str | None = None
 
 
-@app.post("/computgraph/validate")
+@router.post("/computgraph/validate")
 def post_computgraph_validate(payload: ComputgraphValidateRequest):
     """Run the deterministic, LLM-free structural + rule-mapped checks over
     the published Computgraph and return the documented report.
@@ -1817,7 +1824,7 @@ class ComputgraphConsultRequest(BaseModel):
     question: str
 
 
-@app.post("/computgraph/consult")
+@router.post("/computgraph/consult")
 def post_computgraph_consult(payload: ComputgraphConsultRequest):
     """Read-only, grounded LLM consult over one published Computgraph
     subgraph (Phase 37 Plan 06: SVAL-03).
@@ -1863,7 +1870,7 @@ class ComputgraphGenerateInputsRequest(BaseModel):
     parameterOverrides: "list[str] | None" = None
 
 
-@app.post("/computgraph/generate-inputs")
+@router.post("/computgraph/generate-inputs")
 def post_computgraph_generate_inputs(payload: ComputgraphGenerateInputsRequest):
     """Generate AI candidate parameter sets for a Metagraph Rule from
     published Computgraph parameter bindings (Phase 38: GHIN-01..04).
@@ -1959,7 +1966,7 @@ class ComputgraphAcceptCandidateRequest(BaseModel):
     parameterOverrides: "list[str] | None" = None
 
 
-@app.post("/computgraph/candidates/accept")
+@router.post("/computgraph/candidates/accept")
 def post_computgraph_accept_candidate(payload: ComputgraphAcceptCandidateRequest):
     """Persist one architect-accepted AI-generated candidate as a standalone
     `ParamState` DesignState (Phase 38: GHIN-02/03/04).
@@ -2031,7 +2038,7 @@ def _context_type_invalid_error(exc: ValueError) -> HTTPException:
     )
 
 
-@app.post("/context/assemble")
+@router.post("/context/assemble")
 def post_context_assemble(payload: dg_context.ContextAssembleRequest):
     """Assemble the per-layer V7 concept subset + SWRL conventions + selected
     Cypher catalog shapes + live existing entities for one request (D-01).
@@ -2043,7 +2050,7 @@ def post_context_assemble(payload: dg_context.ContextAssembleRequest):
         raise _context_type_invalid_error(exc)
 
 
-@app.get("/context/debug")
+@router.get("/context/debug")
 def get_context_debug(
     type: str,
     project: str,
@@ -2062,7 +2069,7 @@ def get_context_debug(
         raise _context_type_invalid_error(exc)
 
 
-@app.post("/context/generate-cypher")
+@router.post("/context/generate-cypher")
 def post_context_generate_cypher(payload: dg_context.GenerateCypherRequest):
     """The single n8n-facing call wrapping prompt-in -> validated-cypher-out
     (CTXA-04, D-06/D-07). Retries internally, bounded at 2 retries (3
@@ -2105,7 +2112,7 @@ def _ambiguous_binding_error(native_id: str, existing_dg_id: str) -> HTTPExcepti
     )
 
 
-@app.post("/identity/mint")
+@router.post("/identity/mint")
 def post_identity_mint(payload: MintRequest):
     """Deterministically mint + persist a dgId for a Computgraph entity.
 
@@ -2124,7 +2131,7 @@ def post_identity_mint(payload: MintRequest):
     return {"dgId": dg_id}
 
 
-@app.get("/identity/resolve")
+@router.get("/identity/resolve")
 def get_identity_resolve(platform: str, native_id: str, project: str):
     """Resolve a (platform, native_id) representation to its dgId (project-scoped)."""
     with driver.session() as session:
@@ -2139,7 +2146,7 @@ def get_identity_resolve(platform: str, native_id: str, project: str):
     return {"dgId": dg_id}
 
 
-@app.post("/identity/bind")
+@router.post("/identity/bind")
 def post_identity_bind(payload: BindRepresentationRequest):
     """Bind a native-id representation to a dgId — never a silent repoint.
 
@@ -2164,14 +2171,14 @@ def post_identity_bind(payload: BindRepresentationRequest):
     return representation
 
 
-@app.get("/identity/{dg_id}/representations")
+@router.get("/identity/{dg_id}/representations")
 def get_identity_representations(dg_id: str, project: str):
     """List all platform representations bound to a dgId within a project."""
     with driver.session() as session:
         return dg_identity.list_representations(session, dg_id, project)
 
 
-@app.delete("/identity/{dg_id}/representations")
+@router.delete("/identity/{dg_id}/representations")
 def delete_identity_representation(dg_id: str, platform: str, native_id: str, project: str):
     """Detach a representation from a dgId — removes ONLY the representation.
 
@@ -2186,7 +2193,7 @@ def delete_identity_representation(dg_id: str, platform: str, native_id: str, pr
     return {"detached": True}
 
 
-@app.post("/identity/{dg_id}/properties")
+@router.post("/identity/{dg_id}/properties")
 def post_identity_properties(dg_id: str, payload: SharedPropertyWriteRequest, project: str):
     """Write (upsert) a cross-platform shared property on a dgId.
 
@@ -2210,7 +2217,7 @@ def post_identity_properties(dg_id: str, payload: SharedPropertyWriteRequest, pr
     return result
 
 
-@app.get("/identity/{dg_id}/properties")
+@router.get("/identity/{dg_id}/properties")
 def get_identity_properties(dg_id: str, project: str, property_name: str = ""):
     """Read shared properties attached to a dgId.
 
@@ -2226,7 +2233,7 @@ def get_identity_properties(dg_id: str, project: str, property_name: str = ""):
         raise _dgid_not_found_error(dg_id)
 
 
-@app.put("/integration/speckle/project/{project}")
+@router.put("/integration/speckle/project/{project}")
 def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayload):
     payload = normalize_speckle_project_config_payload(payload)
     if not payload.speckleProjectId or not payload.baseModelId:
@@ -2564,7 +2571,7 @@ def _auto_publish_run(
         return {"status": "error", "reason": type(exc).__name__, "runId": run_id}
 
 
-@app.post("/designstate/capture", status_code=202)
+@router.post("/designstate/capture", status_code=202)
 def capture_design_state(request: Request, payload: DesignStateCaptureRequest):
     """Accept a DesignState snapshot for later automatic validation (DSAV-02).
 
@@ -2641,7 +2648,7 @@ def capture_design_state(request: Request, payload: DesignStateCaptureRequest):
     )
 
 
-@app.post("/validation/publish")
+@router.post("/validation/publish")
 def publish_validation(payload: ValidationPublishRequest):
     config = get_integration_config(payload.project)
     if config is None:
@@ -2772,12 +2779,12 @@ def publish_validation(payload: ValidationPublishRequest):
         ) from exc
 
 
-@app.get("/validation/runs/{project}", dependencies=[Depends(auth.require_principal)])
+@router.get("/validation/runs/{project}")
 def get_validation_runs(project: str):
     return {"project": project, "runs": list_validation_runs(project)}
 
 
-@app.delete("/validation/run/{project}/{run_id}")
+@router.delete("/validation/run/{project}/{run_id}")
 def delete_validation_run(project: str, run_id: str):
     run = get_validation_run(project, run_id)
     if run is None:
@@ -2837,7 +2844,7 @@ def delete_validation_run(project: str, run_id: str):
         ) from exc
 
 
-@app.get("/validation/view/{project}")
+@router.get("/validation/view/{project}")
 def get_latest_validation_view(project: str):
     run = get_validation_run(project)
     if run is None:
@@ -2847,7 +2854,7 @@ def get_latest_validation_view(project: str):
     return build_view_payload(project, run, object_sets)
 
 
-@app.get("/validation/view/{project}/{run_id}")
+@router.get("/validation/view/{project}/{run_id}")
 def get_validation_view_for_run(project: str, run_id: str):
     run = get_validation_run(project, run_id)
     if run is None:
@@ -2857,7 +2864,7 @@ def get_validation_view_for_run(project: str, run_id: str):
     return build_view_payload(project, run, object_sets)
 
 
-@app.get("/validation/view/{project}/{run_id}/{rule_id}")
+@router.get("/validation/view/{project}/{run_id}/{rule_id}")
 def get_rule_validation_view(project: str, run_id: str, rule_id: str):
     run = get_validation_run(project, run_id)
     if run is None:
@@ -2867,7 +2874,7 @@ def get_rule_validation_view(project: str, run_id: str, rule_id: str):
     return build_view_payload(project, run, object_sets, rule_id=rule_id)
 
 
-@app.post("/mcp")
+@router.post("/mcp")
 async def mcp(request: Request):
     payload = await request.json()
     method = payload.get("method")
@@ -3003,7 +3010,7 @@ async def mcp(request: Request):
     raise HTTPException(status_code=400, detail="Unknown tool name")
 
 
-@app.post("/execution-result")
+@router.post("/execution-result")
 def store_execution_result(result: ExecutionResult):
     entry = {
         "status": result.status,
@@ -3019,7 +3026,7 @@ def store_execution_result(result: ExecutionResult):
     return {"status": "ok"}
 
 
-@app.get("/execution-result/{execution_id}")
+@router.get("/execution-result/{execution_id}")
 def get_execution_result(execution_id: str):
     # Phase 1205 (D-04, T-1205-10-03): only the user who started the execution
     # reaches this handler (the "execution" resolver answers everyone else with
@@ -3030,7 +3037,7 @@ def get_execution_result(execution_id: str):
 MAX_FILE_SIZE = 100 * 1024  # 100KB
 
 
-@app.post("/knowledge/ingest/folder")
+@router.post("/knowledge/ingest/folder")
 def ingest_folder(payload: FolderIngestRequest):
     root = validate_ingest_path(payload.path)
     md_files = list(root.rglob("*.md"))
@@ -3109,7 +3116,7 @@ def ingest_folder(payload: FolderIngestRequest):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/knowledge/notes/{project}")
+@router.get("/knowledge/notes/{project}")
 def list_knowledge_notes(project: str):
     rows = read_many(
         "MATCH (n:SpecNote {project: $project, graph: $graph}) "
@@ -3121,7 +3128,7 @@ def list_knowledge_notes(project: str):
     return {"project": project, "notes": rows}
 
 
-@app.get("/knowledge/note/{note_id}")
+@router.get("/knowledge/note/{note_id}")
 def get_knowledge_note(note_id: str):
     row = read_single(
         "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) "
@@ -3135,7 +3142,7 @@ def get_knowledge_note(note_id: str):
     return row
 
 
-@app.put("/knowledge/note/{note_id}")
+@router.put("/knowledge/note/{note_id}")
 def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
     existing = read_single(
         "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
@@ -3167,7 +3174,7 @@ def update_knowledge_note(note_id: str, payload: NoteUpdateRequest):
     return {"status": "updated", "noteId": note_id}
 
 
-@app.delete("/knowledge/note/{note_id}")
+@router.delete("/knowledge/note/{note_id}")
 def delete_knowledge_note(note_id: str):
     existing = read_single(
         "MATCH (n:SpecNote {noteId: $noteId, graph: $graph}) RETURN n.noteId AS noteId",
@@ -3241,7 +3248,7 @@ def _rule_delete_preview(project: str, rule_id: str) -> dict[str, Any] | None:
     }
 
 
-@app.get("/rules/{project}/{rule_id}/delete-preview")
+@router.get("/rules/{project}/{rule_id}/delete-preview")
 def preview_rule_deletion(project: str, rule_id: str):
     """Exactly what a delete would remove -- the confirmation dialog's source.
 
@@ -3258,7 +3265,7 @@ def preview_rule_deletion(project: str, rule_id: str):
     return preview
 
 
-@app.delete("/rules/{project}/{rule_id}")
+@router.delete("/rules/{project}/{rule_id}")
 def delete_rule(project: str, rule_id: str):
     """Delete a Rule, its Atoms, and any Literal/Var left orphaned by that.
 
@@ -3306,7 +3313,7 @@ class RuleDeleteResolvePayload(BaseModel):
     request: str
 
 
-@app.post("/rules/resolve-deletion")
+@router.post("/rules/resolve-deletion")
 def resolve_rule_deletion(payload: RuleDeleteResolvePayload):
     """Resolve a natural-language deletion request to concrete Rule_Ids, with a
     per-rule preview of what removing each would take with it.
@@ -3352,7 +3359,7 @@ class RuleBulkDeletePayload(BaseModel):
     ruleIds: list[str]
 
 
-@app.post("/rules/bulk-delete")
+@router.post("/rules/bulk-delete")
 def bulk_delete_rules(payload: RuleBulkDeletePayload):
     """Delete an explicit list of Rule_Ids the user has confirmed.
 
@@ -3413,7 +3420,7 @@ class RuleConflictCheckPayload(BaseModel):
     rules_text: str
 
 
-@app.post("/rules/check-conflict")
+@router.post("/rules/check-conflict")
 def check_rule_conflict(payload: RuleConflictCheckPayload):
     """Preview stage: does `rules_text` collide with a Rule already in the
     project's corpus? Read-only -- writes nothing, matching the read-only
@@ -3546,7 +3553,7 @@ class RuleSupersedePayload(BaseModel):
     actor: str = ""
 
 
-@app.post("/rules/supersede")
+@router.post("/rules/supersede")
 def supersede_rule(payload: RuleSupersedePayload):
     """Record that `newRuleId` supersedes `oldRuleId`. Call this AFTER the
     new rule has been written by the normal ingest path (n8n rules-ingest),
@@ -3652,7 +3659,7 @@ class RuleAcceptOverlapPayload(BaseModel):
     actor: str = ""
 
 
-@app.post("/rules/accept-overlap")
+@router.post("/rules/accept-overlap")
 def accept_rule_overlap(payload: RuleAcceptOverlapPayload):
     """'Keep both' provenance: record that the architect knowingly authored
     `ruleId` despite it overlapping with `conflictsWith`, without superseding
@@ -3720,7 +3727,7 @@ def accept_rule_overlap(payload: RuleAcceptOverlapPayload):
     }
 
 
-@app.get("/knowledge/sessions/{project}")
+@router.get("/knowledge/sessions/{project}")
 def list_knowledge_sessions(project: str):
     rows = read_many(
         "MATCH (s:SpecSession {project: $project, graph: $graph}) "
@@ -3739,7 +3746,7 @@ class DesignRuleSessionPayload(BaseModel):
     result: str = ""
 
 
-@app.post("/design-rule-sessions")
+@router.post("/design-rule-sessions")
 def store_design_rule_session(payload: DesignRuleSessionPayload):
     session_id = "drs-" + uuid.uuid4().hex[:12]
     now = datetime.now(timezone.utc).isoformat()
@@ -3758,7 +3765,7 @@ def store_design_rule_session(payload: DesignRuleSessionPayload):
     return {"sessionId": session_id}
 
 
-@app.get("/design-rule-sessions/{project}")
+@router.get("/design-rule-sessions/{project}")
 def list_design_rule_sessions(project: str):
     rows = read_many(
         "MATCH (s:DesignRuleSession {project: $project}) "
@@ -3773,7 +3780,7 @@ def list_design_rule_sessions(project: str):
 MAX_CONTENT_SIZE = 100 * 1024  # 100KB per D-09 / Out of Scope
 
 
-@app.post("/knowledge/update/match")
+@router.post("/knowledge/update/match")
 def knowledge_update_match(payload: UpdateMatchRequest):
     if not payload.prompt.strip():
         raise HTTPException(status_code=400, detail="prompt is required")
@@ -3788,7 +3795,7 @@ def knowledge_update_match(payload: UpdateMatchRequest):
     return {"candidates": rows}
 
 
-@app.post("/knowledge/update/propose")
+@router.post("/knowledge/update/propose")
 def knowledge_update_propose(payload: UpdateProposeRequest):
     if not payload.noteIds:
         raise HTTPException(status_code=400, detail="noteIds must not be empty")
@@ -3823,7 +3830,7 @@ def knowledge_update_propose(payload: UpdateProposeRequest):
     return {"diffs": results}
 
 
-@app.post("/knowledge/update/confirm")
+@router.post("/knowledge/update/confirm")
 def knowledge_update_confirm(payload: UpdateConfirmRequest):
     if not payload.notes:
         raise HTTPException(status_code=400, detail="notes must not be empty")
@@ -3958,3 +3965,6 @@ route_policy.register_resource_resolver("note", _resolve_note_project, _note_not
 route_policy.register_resource_resolver(
     "execution", _resolve_execution_project, _execution_not_found
 )
+
+
+app.include_router(router)
