@@ -587,3 +587,46 @@ class TestWr07CanvasPullRole:
         policy = route_policy.ROUTE_POLICIES[("POST", "/computgraph/context/pull")]
         assert policy.principals == {route_policy.PRINCIPAL_MEMBER}
         assert policy.min_role == "editor"
+
+
+# --------------------------------------------------------------------------
+# WR-08: a Speckle project already bound to another DG project is refused
+# --------------------------------------------------------------------------
+
+
+class TestWr08SpeckleProjectBinding:
+    BODY = {"speckleProjectId": "sp-shared", "baseModelId": "bm1"}
+
+    def _stub(self, monkeypatch, owner_row):
+        calls = {"read": [], "write": []}
+        monkeypatch.setattr(
+            app_module, "read_single",
+            lambda q, p=None: (calls["read"].append((q, p)) or owner_row),
+        )
+        monkeypatch.setattr(app_module, "write_query", lambda q, p=None: calls["write"].append(p))
+        monkeypatch.setattr(app_module, "get_integration_config", lambda project: None)
+        return calls
+
+    def test_binding_to_another_projects_speckle_project_is_409(self, monkeypatch):
+        monkeypatch.delenv("SPECKLE_PROJECT_ID", raising=False)
+        calls = self._stub(monkeypatch, {"project": "other-dg-project"})
+        resp = client.put("/integration/speckle/project/mine", json=self.BODY)
+        assert resp.status_code == 409
+        assert resp.json()["detail"]["code"] == "SPECKLE_PROJECT_BOUND"
+        assert "other-dg-project" not in resp.text
+        assert calls["write"] == []
+        assert calls["read"][0][1]["project"] == "mine"
+
+    def test_unbound_speckle_project_is_accepted(self, monkeypatch):
+        monkeypatch.delenv("SPECKLE_PROJECT_ID", raising=False)
+        calls = self._stub(monkeypatch, None)
+        resp = client.put("/integration/speckle/project/mine", json=self.BODY)
+        assert resp.status_code == 200
+        assert len(calls["write"]) == 1
+
+    def test_deployment_default_speckle_project_stays_shareable(self, monkeypatch):
+        monkeypatch.setenv("SPECKLE_PROJECT_ID", "sp-shared")
+        calls = self._stub(monkeypatch, {"project": "other-dg-project"})
+        resp = client.put("/integration/speckle/project/mine", json=self.BODY)
+        assert resp.status_code == 200
+        assert calls["read"] == []

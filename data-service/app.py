@@ -2342,11 +2342,40 @@ def get_identity_properties(dg_id: str, project: str, property_name: str = ""):
         raise _dgid_not_found_error(dg_id)
 
 
+SPECKLE_PROJECT_OWNER_QUERY = (
+    "MATCH (cfg:IntegrationConfig {graph:$graph, provider:'Speckle', speckleProjectId:$speckleProjectId}) "
+    "WHERE cfg.project <> $project RETURN cfg.project AS project LIMIT 1"
+)
+
+
 @router.put("/integration/speckle/project/{project}")
 def put_speckle_project_config(project: str, payload: SpeckleProjectConfigPayload):
     payload = normalize_speckle_project_config_payload(payload)
     if not payload.speckleProjectId or not payload.baseModelId:
         raise HTTPException(status_code=400, detail="speckleProjectId and baseModelId are required.")
+    # WR-08 (1205 review): publishing and deleting use one server-wide Speckle
+    # write token, so an owner must not be able to point their DG project at a
+    # Speckle project another DG project already uses. The deployment's own
+    # default Speckle project (SPECKLE_PROJECT_ID) stays shareable -- that is
+    # the single-Speckle-project local setup. The answer never names the other
+    # project.
+    default_speckle_project = os.getenv("SPECKLE_PROJECT_ID", "").strip()
+    if payload.speckleProjectId != default_speckle_project:
+        taken = read_single(
+            SPECKLE_PROJECT_OWNER_QUERY,
+            {
+                "graph": VALIDATION_GRAPH,
+                "project": project,
+                "speckleProjectId": payload.speckleProjectId,
+            },
+        )
+        if taken is not None:
+            raise _structured_error_response(
+                "That Speckle project is already bound to another DG project.",
+                "Use a Speckle project dedicated to this DG project.",
+                "SPECKLE_PROJECT_BOUND",
+                409,
+            )
     config = upsert_integration_config(project, payload)
     return config.model_dump()
 
