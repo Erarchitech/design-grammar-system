@@ -47,6 +47,15 @@ ciphertext are for different secrets.
 - ``3`` / ``missing-env`` -- one or both of
   DG_ROTATE_OLD_LLM_MASTER_SECRET/DG_ROTATE_NEW_LLM_MASTER_SECRET is unset;
   file unchanged.
+- ``4`` / ``settings-file-unreadable`` -- the settings file EXISTS but is
+  malformed, unreadable or not a JSON object; file unchanged. Never treated as
+  "nothing to rotate": changing LLM_MASTER_SECRET afterwards would strand the
+  stored key (WR-18). Repair or restore the file first.
+
+**Concurrency:** the file is read and rewritten without a lock, so a live
+``PUT /llm/settings`` can race it. Stop data-service (or at least do not save
+LLM settings) for the duration of the rotation, then restart it with the new
+``LLM_MASTER_SECRET``.
 """
 
 from __future__ import annotations
@@ -70,14 +79,24 @@ STATUS_NOTHING_TO_ROTATE = "nothing-to-rotate"
 STATUS_DRY_RUN_OK = "dry-run-ok"
 STATUS_OLD_SECRET_DOES_NOT_DECRYPT = "old-secret-does-not-decrypt"
 STATUS_MISSING_ENV = "missing-env"
+STATUS_SETTINGS_FILE_UNREADABLE = "settings-file-unreadable"
 
 EXIT_OK = 0
 EXIT_OLD_SECRET_INVALID = 2
 EXIT_MISSING_ENV = 3
+EXIT_SETTINGS_FILE_UNREADABLE = 4
+
+
+class SettingsFileUnreadable(Exception):
+    """The settings file exists but cannot be read as a JSON object."""
 
 
 def _read_settings_json(settings_file: Path) -> dict[str, Any] | None:
-    """Read the settings file's raw JSON dict, or ``None`` if absent/malformed.
+    """Read the settings file's raw JSON dict, or ``None`` if the file is absent.
+
+    Raises :class:`SettingsFileUnreadable` when the file exists but is
+    unreadable, malformed or not a JSON object (WR-18) -- that must never be
+    mistaken for "nothing to rotate".
 
     Reads the JSON directly (not through
     ``llm_gateway.load_persisted_llm_settings``) so every field -- including
@@ -89,10 +108,10 @@ def _read_settings_json(settings_file: Path) -> dict[str, Any] | None:
         return None
     try:
         payload = json.loads(settings_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    except (OSError, ValueError) as exc:
+        raise SettingsFileUnreadable(type(exc).__name__) from exc
     if not isinstance(payload, dict):
-        return None
+        raise SettingsFileUnreadable("not-a-json-object")
     return payload
 
 
@@ -123,7 +142,10 @@ def rotate(
     only after the NEW ciphertext has been verified to decrypt back to the
     original plaintext under NEW.
     """
-    payload = _read_settings_json(settings_file)
+    try:
+        payload = _read_settings_json(settings_file)
+    except SettingsFileUnreadable:
+        return STATUS_SETTINGS_FILE_UNREADABLE
     if not payload:
         return STATUS_NOTHING_TO_ROTATE
 
@@ -205,6 +227,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if status == STATUS_OLD_SECRET_DOES_NOT_DECRYPT:
         return EXIT_OLD_SECRET_INVALID
+    if status == STATUS_SETTINGS_FILE_UNREADABLE:
+        return EXIT_SETTINGS_FILE_UNREADABLE
     return EXIT_OK
 
 

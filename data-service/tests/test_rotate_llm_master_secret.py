@@ -12,6 +12,8 @@ import json
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import llm_gateway  # noqa: E402
@@ -255,3 +257,30 @@ class TestArgparseNoSecretFlag:
         parser = rotate_mod.build_arg_parser()
         actions = {action.dest for action in parser._actions if action.dest != "help"}
         assert actions == {"settings_file", "dry_run"}
+
+
+class TestRotateUnreadableSettingsFile:
+    """WR-18: a settings file that exists but cannot be read is an error, never
+    "nothing to rotate" (which would let the owner strand the stored key)."""
+
+    @pytest.mark.parametrize("content", ["{not json", "", "[1, 2, 3]", "\"just a string\""])
+    def test_present_but_unreadable_exits_4_and_leaves_the_file_alone(
+        self, tmp_path, monkeypatch, capsys, content
+    ):
+        settings_file = tmp_path / "llm-settings.json"
+        settings_file.write_text(content, encoding="utf-8")
+        original = settings_file.read_bytes()
+        monkeypatch.setenv(rotate_mod.OLD_SECRET_ENV_VAR, OLD_SECRET)
+        monkeypatch.setenv(rotate_mod.NEW_SECRET_ENV_VAR, NEW_SECRET)
+
+        exit_code = rotate_mod.main(["--settings-file", str(settings_file)])
+
+        assert exit_code == rotate_mod.EXIT_SETTINGS_FILE_UNREADABLE == 4
+        assert capsys.readouterr().out.strip() == rotate_mod.STATUS_SETTINGS_FILE_UNREADABLE
+        assert settings_file.read_bytes() == original
+
+    def test_absent_file_is_still_nothing_to_rotate(self, tmp_path):
+        assert (
+            rotate_mod.rotate(tmp_path / "absent.json", OLD_SECRET, NEW_SECRET)
+            == rotate_mod.STATUS_NOTHING_TO_ROTATE
+        )
