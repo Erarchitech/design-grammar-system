@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-14-PLAN.md
-last_updated: "2026-09-29T18:22:06.263Z"
+stopped_at: Completed 1205-15-PLAN.md
+last_updated: "2026-09-29T18:28:28.863Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 55
+  completed_plans: 56
   percent: 83
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 15 of 19
+Plan: 16 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -153,6 +153,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P12 | 30min | 2 tasks | 7 files |
 | Phase 1205 P13 | 20min | 2 tasks | 6 files |
 | Phase 1205 P14 | 35min | 2 tasks | 6 files |
+| Phase 1205 P15 | 25min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -463,6 +464,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-12: claim-untagged follows plan literally (project IS NULL only); may claim untagged shared ontology nodes -- flagged for 1205-16 spec pass
 - [Phase ?]: 1205-13: App.selectProject refreshes /auth/me memberships before setting a project so a just-created project is not cleared by the stale-project guard
 - [Phase ?]: 1205-14: relay body built from validated models only; collision check and unset service token both fail closed (503)
+- [Phase ?]: 1205-15: gen-config.sh JS-escapes its two URL values; dist scan checks Neo4j default as exact string literal, change-me/key names as substrings
 
 ### Research Flags (carry into planning)
 
@@ -546,8 +548,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T18:22:06.232Z
-Stopped at: Completed 1205-14-PLAN.md
+Last session: 2026-09-29T18:28:28.844Z
+Stopped at: Completed 1205-15-PLAN.md
 Resume file: None
 
 ## Performance Metrics
