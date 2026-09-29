@@ -328,3 +328,87 @@ class TestCr04ProjectRequired:
                 body["project"] = project
             response = client.post("/context/generate-cypher", json=body)
             assert response.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# WR-01: login / password-check throttling
+# --------------------------------------------------------------------------
+
+import auth_fixtures  # noqa: E402
+
+
+@pytest.fixture
+def clean_throttle():
+    auth.throttle_reset_all()
+    yield
+    auth.throttle_reset_all()
+
+
+class TestWr01ThrottleCore:
+    def test_free_attempts_then_exponential_backoff_capped(self, clean_throttle):
+        now = 1000.0
+        for _ in range(3):
+            auth.throttle_record_failure("k", limit=3, now=now)
+        assert auth.throttle_retry_after("k", now=now) == 0
+        auth.throttle_record_failure("k", limit=3, now=now)  # 1st excess
+        first = auth.throttle_retry_after("k", now=now)
+        auth.throttle_record_failure("k", limit=3, now=now + first + 1)  # 2nd excess
+        second = auth.throttle_retry_after("k", now=now + first + 1)
+        assert 0 < first < second <= auth.THROTTLE_MAX_DELAY_SECONDS + 1
+        for i in range(30):
+            auth.throttle_record_failure("k", limit=3, now=now + 1000 + i)
+        assert auth.throttle_retry_after("k", now=now + 1030) <= auth.THROTTLE_MAX_DELAY_SECONDS + 1
+
+    def test_lock_expires_and_success_clears(self, clean_throttle):
+        for _ in range(6):
+            auth.throttle_record_failure("k", limit=1, now=50.0)
+        assert auth.throttle_retry_after("k", now=50.0) > 0
+        assert auth.throttle_retry_after("k", now=50.0 + auth.THROTTLE_MAX_DELAY_SECONDS + 5) == 0
+        auth.throttle_record_failure("k2", limit=0, now=50.0)
+        auth.throttle_clear("k2")
+        assert auth.throttle_retry_after("k2", now=50.0) == 0
+
+    def test_memory_is_bounded(self, clean_throttle, monkeypatch):
+        monkeypatch.setattr(auth, "_THROTTLE_MAX_ENTRIES", 50)
+        for i in range(200):
+            auth.throttle_record_failure(f"k{i}", limit=5, now=10.0 + i)
+        assert len(auth._THROTTLE) <= 51  # pruned before each insert
+
+
+class TestWr01LoginRoute:
+    @pytest.mark.dg_principal("none")
+    def test_repeated_failures_lock_the_username_before_scrypt(self, clean_throttle, monkeypatch):
+        import auth_routes
+
+        record = auth_fixtures.make_user("throttle-user@dg.local")
+        password = record.get("password", "unused")
+        bad = {"username": "throttle-user@dg.local", "password": "definitely-wrong-password"}
+        headers = {auth.CSRF_HEADER: auth_fixtures.CSRF_VALUE}
+        # THROTTLE_LIMIT_USER free failures, then the next failure arms the lock.
+        for _ in range(auth.THROTTLE_LIMIT_USER + 1):
+            assert client.post("/auth/login", json=bad, headers=headers).status_code == 401
+        # Locked now: no derivation may run for a throttled caller.
+        monkeypatch.setattr(
+            auth_routes.auth, "verify_password", lambda *a, **k: pytest.fail("scrypt must not run")
+        )
+        resp = client.post("/auth/login", json=bad, headers=headers)
+        assert resp.status_code == 429
+        assert int(resp.headers["retry-after"]) > 0
+        assert resp.json()["detail"]["code"] == "AUTH_THROTTLED"
+        # Even the correct password is refused while locked (no oracle).
+        good = {"username": "throttle-user@dg.local", "password": password}
+        assert client.post("/auth/login", json=good, headers=headers).status_code == 429
+
+    @pytest.mark.dg_principal("none")
+    def test_success_resets_the_user_counter(self, clean_throttle):
+        record = auth_fixtures.make_user("throttle-ok@dg.local")
+        password = record.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        headers = {auth.CSRF_HEADER: auth_fixtures.CSRF_VALUE}
+        bad = {"username": "throttle-ok@dg.local", "password": "definitely-wrong-password"}
+        for _ in range(auth.THROTTLE_LIMIT_USER - 1):
+            client.post("/auth/login", json=bad, headers=headers)
+        good = {"username": "throttle-ok@dg.local", "password": password}
+        assert client.post("/auth/login", json=good, headers=headers).status_code == 200
+        assert auth.throttle_retry_after("user:throttle-ok@dg.local") == 0

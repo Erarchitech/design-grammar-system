@@ -680,6 +680,82 @@ def auth_error(error: str, hint: str, code: str, status_code: int) -> HTTPExcept
     return HTTPException(status_code=status_code, detail={"error": error, "hint": hint, "code": code})
 
 
+# -- Login / password-check throttling (WR-01 of the 1205 review) ------------
+#
+# In-process, per-key failure counter with exponential backoff. Single uvicorn
+# worker (see module docstring), so a threading lock is sufficient. Keys are
+# namespaced by the caller ("user:<name>", "ip:<addr>", "pw:<name>"). A key
+# gets `limit` free failures inside a sliding window; every further failure
+# locks it for base * 2^(n) seconds, capped. A success clears the key.
+
+THROTTLE_WINDOW_SECONDS = 900
+THROTTLE_BASE_DELAY_SECONDS = 5
+THROTTLE_MAX_DELAY_SECONDS = 300
+THROTTLE_LIMIT_USER = 5
+THROTTLE_LIMIT_IP = 30
+THROTTLE_LIMIT_PASSWORD = 5
+_THROTTLE_MAX_ENTRIES = 10000
+
+_THROTTLE_LOCK = threading.Lock()
+_THROTTLE: dict[str, dict[str, float]] = {}
+
+
+def _throttle_prune(now: float) -> None:
+    """Drop stale entries; bound memory. Caller holds _THROTTLE_LOCK."""
+    stale = [
+        key
+        for key, entry in _THROTTLE.items()
+        if entry["locked_until"] <= now and now - entry["first"] > THROTTLE_WINDOW_SECONDS
+    ]
+    for key in stale:
+        del _THROTTLE[key]
+    if len(_THROTTLE) > _THROTTLE_MAX_ENTRIES:
+        oldest = sorted(_THROTTLE.items(), key=lambda kv: kv[1]["first"])
+        for key, _entry in oldest[: len(_THROTTLE) - _THROTTLE_MAX_ENTRIES]:
+            del _THROTTLE[key]
+
+
+def throttle_retry_after(key: str, *, now: float | None = None) -> int:
+    """Seconds the caller must wait before another attempt on `key`; 0 = allowed."""
+    current = time.time() if now is None else now
+    with _THROTTLE_LOCK:
+        entry = _THROTTLE.get(key)
+        if entry is None:
+            return 0
+        remaining = entry["locked_until"] - current
+        return int(remaining) + 1 if remaining > 0 else 0
+
+
+def throttle_record_failure(key: str, *, limit: int, now: float | None = None) -> None:
+    current = time.time() if now is None else now
+    with _THROTTLE_LOCK:
+        _throttle_prune(current)
+        entry = _THROTTLE.get(key)
+        if entry is None or (
+            entry["locked_until"] <= current and current - entry["first"] > THROTTLE_WINDOW_SECONDS
+        ):
+            entry = {"failures": 0, "first": current, "locked_until": 0.0}
+            _THROTTLE[key] = entry
+        entry["failures"] += 1
+        excess = int(entry["failures"]) - limit
+        if excess > 0:
+            delay = min(THROTTLE_MAX_DELAY_SECONDS, THROTTLE_BASE_DELAY_SECONDS * (2 ** (excess - 1)))
+            entry["locked_until"] = current + delay
+
+
+def throttle_clear(key: str | None) -> None:
+    if key is None:
+        return
+    with _THROTTLE_LOCK:
+        _THROTTLE.pop(key, None)
+
+
+def throttle_reset_all() -> None:
+    """Test/diagnostic hook: forget every counter."""
+    with _THROTTLE_LOCK:
+        _THROTTLE.clear()
+
+
 def cookie_secure(env: Mapping[str, str] | None = None) -> bool:
     """Read DG_COOKIE_SECURE (`true`/`1`, case-insensitive) -- whether the
     session cookie should carry the Secure attribute."""
