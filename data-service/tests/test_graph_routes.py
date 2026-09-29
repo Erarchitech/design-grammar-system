@@ -134,7 +134,13 @@ class TestClaimUntagged:
         assert "n.project IS NULL" in query
         assert "default-project" not in query
         assert PROJECT not in query
-        assert params == {"project": PROJECT}
+        assert params == {"project": PROJECT, "sharedGraphs": ["SpecGraph"]}
+
+    def test_shared_hub_graph_is_never_claimed(self):
+        query = app_module.CLAIM_UNTAGGED_QUERY
+        assert "$sharedGraphs" in query
+        assert "SpecGraph" in app_module.CLAIM_UNTAGGED_SHARED_GRAPHS
+        assert "SpecGraph" not in query  # bound, never interpolated
 
     def test_statement_never_matches_a_named_project(self):
         query = app_module.CLAIM_UNTAGGED_QUERY

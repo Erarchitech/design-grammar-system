@@ -412,3 +412,34 @@ class TestWr01LoginRoute:
         good = {"username": "throttle-ok@dg.local", "password": password}
         assert client.post("/auth/login", json=good, headers=headers).status_code == 200
         assert auth.throttle_retry_after("user:throttle-ok@dg.local") == 0
+
+
+# --------------------------------------------------------------------------
+# WR-02: ingest postProcess never re-tags another project's node
+# --------------------------------------------------------------------------
+
+import json as _json  # noqa: E402
+from pathlib import Path as _Path  # noqa: E402
+
+
+class TestWr02PostProcessGuard:
+    def _post_process(self):
+        wf = _json.loads(
+            (_Path(__file__).resolve().parents[2] / "n8n" / "workflows" / "rules-to-metagraph.json")
+            .read_text(encoding="utf-8")
+        )
+        code = next(n for n in wf["nodes"] if n["name"] == "Prepare Graph Payload")["parameters"]["functionCode"]
+        start = code.index("const postProcess = [")
+        end = code.index("].join(", start)
+        return code[start:end]
+
+    def test_every_retagging_statement_skips_other_projects_nodes(self):
+        block = self._post_process()
+        statements = [line for line in block.splitlines() if "SET n.graph" in line]
+        assert len(statements) == 3
+        for line in statements:
+            assert "n.project IS NULL OR n.project = $project" in line, line
+
+    def test_claim_untagged_skips_the_shared_hub_graph(self):
+        assert "SpecGraph" in app_module.CLAIM_UNTAGGED_SHARED_GRAPHS
+        assert "$sharedGraphs" in app_module.CLAIM_UNTAGGED_QUERY

@@ -4451,8 +4451,12 @@ GRAPH_RELS_QUERY = (
 )
 # The D-06 carve-out (spec'd by 1205-16): only nodes with NO project are moved,
 # and never a node of a named project (default-project included).
+# WR-02 (1205 review): shared hub graphs (SpecGraph carries SpecClass nodes with
+# no project by design) are never claimed by a project.
+CLAIM_UNTAGGED_SHARED_GRAPHS = ["SpecGraph"]
 CLAIM_UNTAGGED_QUERY = (
-    "MATCH (n) WHERE n.project IS NULL SET n.project = $project RETURN count(n) AS claimed"
+    "MATCH (n) WHERE n.project IS NULL AND NOT coalesce(n.graph, '') IN $sharedGraphs "
+    "SET n.project = $project RETURN count(n) AS claimed"
 )
 NODE_PROPERTY_UPDATE_QUERY = (
     "MATCH (n) WHERE id(n) = $id AND n.project = $project "
@@ -4527,7 +4531,10 @@ def get_project_graph(project: str):
 
 @router.post("/graph/{project}/claim-untagged")
 def claim_untagged_nodes(project: str):
-    row = write_single(CLAIM_UNTAGGED_QUERY, {"project": project})
+    row = write_single(
+        CLAIM_UNTAGGED_QUERY,
+        {"project": project, "sharedGraphs": CLAIM_UNTAGGED_SHARED_GRAPHS},
+    )
     return {"claimed": int((row or {}).get("claimed") or 0)}
 
 
