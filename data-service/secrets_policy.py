@@ -149,6 +149,17 @@ def enforce_startup_secrets(
     if profile not in ("local", "multi-user"):
         raise ValueError(f"unknown deployment profile: {profile!r}")
 
+    # WR-05 (1205 review): the session cookie only carries `Secure` when
+    # DG_COOKIE_SECURE is true. The stack terminates no TLS, so this is the
+    # operator's call (spec/SECURITY-BOUNDARY.md, TLS) -- but a shared
+    # multi-user deployment running without it should say so at startup.
+    if profile == "multi-user" and (env.get("DG_COOKIE_SECURE") or "").strip().lower() not in ("true", "1"):
+        logger.warning(
+            "multi-user profile is running with DG_COOKIE_SECURE off: the session "
+            "cookie is sent without the Secure attribute. Terminate TLS in front "
+            "of the UI and set DG_COOKIE_SECURE=true before any external deployment."
+        )
+
     failing: list[str] = []
     for key in DATA_SERVICE_SECRET_KEYS:
         reasons = classify_secret(key, env.get(key))

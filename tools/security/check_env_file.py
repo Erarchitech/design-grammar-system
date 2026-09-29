@@ -59,15 +59,41 @@ def parse_env_file(path: Path) -> dict[str, str]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
+        if line.startswith("export "):
+            line = line[len("export "):].lstrip()
         if "=" not in line:
             continue
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
-            value = value[1:-1]
+        if value[:1] in ("'", '"'):
+            # Quoted value: keep everything up to the matching close quote,
+            # drop a trailing `# comment` after it (as Compose does).
+            close = value.find(value[0], 1)
+            if close != -1:
+                value = value[1:close]
+        else:
+            # Unquoted value: an inline comment starts at whitespace + '#'.
+            for marker in (" #", "\t#"):
+                cut = value.find(marker)
+                if cut != -1:
+                    value = value[:cut].rstrip()
         values[key] = value
     return values
+
+
+def cross_key_warnings(actual: dict[str, str]) -> list[str]:
+    """Advisory checks that span more than one key. Never fatal: they name
+    keys only and are printed as `KEY: warn ...` lines (WR-05/IN-03)."""
+    warnings: list[str] = []
+    if actual.get("DG_DEPLOYMENT", "").strip() == "multi-user" and actual.get(
+        "DG_COOKIE_SECURE", ""
+    ).strip().lower() not in ("true", "1"):
+        warnings.append(
+            "DG_COOKIE_SECURE: warn (multi-user profile without the Secure cookie "
+            "flag; set true behind TLS before an external deployment)"
+        )
+    return warnings
 
 
 def classify(
@@ -135,6 +161,9 @@ def main(argv: list[str] | None = None) -> int:
 
     for key in sorted(set(actual_values) - set(example_values)):
         print(f"{key}: extra")
+
+    for warning in cross_key_warnings(actual_values):
+        print(warning)
 
     return 0 if all_ok else 1
 

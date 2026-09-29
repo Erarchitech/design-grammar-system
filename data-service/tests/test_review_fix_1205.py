@@ -512,3 +512,40 @@ class TestWr03ConnectorStore:
         assert not errors
         assert still_revoked
         assert connectors.authenticate_token(token) is None
+
+
+# --------------------------------------------------------------------------
+# WR-05: multi-user startup warns when the session cookie is not Secure
+# --------------------------------------------------------------------------
+
+import logging  # noqa: E402
+
+import secrets_policy  # noqa: E402
+
+_OK_SECRETS = {
+    "NEO4J_PASSWORD": "some-strong-rotated-value-xyz",
+    "LLM_MASTER_SECRET": "b" * 32,
+    "DG_SERVICE_TOKEN": "a" * 32,
+    "DG_BOOTSTRAP_ADMIN_PASSWORD": "x" * 12,
+}
+
+
+class TestWr05CookieSecureWarning:
+    def test_multi_user_without_secure_cookie_warns_and_still_starts(self, caplog):
+        logger = logging.getLogger("wr05-a")
+        with caplog.at_level(logging.WARNING, logger="wr05-a"):
+            assert secrets_policy.enforce_startup_secrets(_OK_SECRETS, "multi-user", logger) == []
+        assert any("DG_COOKIE_SECURE" in r.getMessage() for r in caplog.records)
+
+    def test_multi_user_with_secure_cookie_is_silent(self, caplog):
+        logger = logging.getLogger("wr05-b")
+        env = {**_OK_SECRETS, "DG_COOKIE_SECURE": "true"}
+        with caplog.at_level(logging.WARNING, logger="wr05-b"):
+            secrets_policy.enforce_startup_secrets(env, "multi-user", logger)
+        assert not caplog.records
+
+    def test_local_profile_never_warns_about_the_cookie(self, caplog):
+        logger = logging.getLogger("wr05-c")
+        with caplog.at_level(logging.WARNING, logger="wr05-c"):
+            secrets_policy.enforce_startup_secrets(_OK_SECRETS, "local", logger)
+        assert not caplog.records

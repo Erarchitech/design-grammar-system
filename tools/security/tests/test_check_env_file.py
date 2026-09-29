@@ -282,3 +282,43 @@ def test_repo_env_example_reports_known_default_for_every_secret_key(capsys):
     ]
     for key in secret_keys:
         assert f"{key}: known-default" in out, f"expected {key} to be known-default in:\n{out}"
+
+
+# -- review-fix WR-05 / IN-03 -------------------------------------------------
+
+
+def test_parser_strips_inline_comments_and_export_like_compose(tmp_path):
+    env = tmp_path / ".env"
+    _write(
+        env,
+        "A=value # note\n"
+        "export B=exported\n"
+        "C='quoted # keep' # trailing\n"
+        "D=has#hash\n",
+    )
+    parsed = check_env_file.parse_env_file(env)
+    assert parsed == {"A": "value", "B": "exported", "C": "quoted # keep", "D": "has#hash"}
+
+
+def test_multi_user_without_secure_cookie_warns_but_does_not_fail(tmp_path, capsys):
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "DG_SERVICE_TOKEN=change-me-dg-service-token\n")
+    _write(env, "DG_SERVICE_TOKEN=" + ("z" * 40) + "\nDG_DEPLOYMENT=multi-user\nDG_COOKIE_SECURE=false\n")
+
+    exit_code = check_env_file.main(["--env-file", str(env), "--example", str(example)])
+
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "DG_COOKIE_SECURE: warn" in out
+
+
+def test_multi_user_with_secure_cookie_has_no_warning(tmp_path, capsys):
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "DG_SERVICE_TOKEN=change-me-dg-service-token\n")
+    _write(env, "DG_SERVICE_TOKEN=" + ("z" * 40) + "\nDG_DEPLOYMENT=multi-user\nDG_COOKIE_SECURE=true\n")
+
+    check_env_file.main(["--env-file", str(env), "--example", str(example)])
+
+    assert "warn" not in capsys.readouterr().out
