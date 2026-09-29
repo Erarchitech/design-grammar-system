@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst item = $input.all()[0];\nconst headers = (item.json && item.json.headers) || {};\nconst provided = headers['x-dg-service-token'];\nconst expected = $env.DG_SERVICE_TOKEN;\nif (!expected || provided !== expected) {\n  throw new Error('relay token rejected');\n}\nreturn $input.all();"
+        "jsCode": "// Phase 1205-05 (D-04): only the data-service relay (1205-14) may start this\n// workflow. Reject any caller that does not present the internal service token.\nconst item = $input.all()[0];\nconst headers = (item.json && item.json.headers) || {};\nconst provided = String(headers['x-dg-service-token'] || '');\nconst expected = String($env.DG_SERVICE_TOKEN || '');\n// WR-21: constant-time compare -- accumulate the difference over the full length\n// of both strings instead of returning at the first mismatching character.\nlet diff = provided.length ^ expected.length;\nconst span = Math.max(provided.length, expected.length);\nfor (let i = 0; i < span; i++) {\n  diff |= (provided.charCodeAt(i) || 0) ^ (expected.charCodeAt(i) || 0);\n}\nif (!expected || diff !== 0) {\n  throw new Error('relay token rejected');\n}\nreturn $input.all();"
       },
       "id": "ku-verify-relay-token",
       "name": "Verify Relay Token",

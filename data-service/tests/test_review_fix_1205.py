@@ -1015,3 +1015,68 @@ class TestWr20AuthStore:
         auth.create_session("bob@dg.local", now=far_future)
         rows = auth._load(auth.SESSIONS_FILE, "sessions")
         assert [r["username"] for r in rows] == ["bob@dg.local"]
+
+
+# --------------------------------------------------------------------------
+# WR-21: relay-token check is constant time; the n8n image is pinned
+# --------------------------------------------------------------------------
+
+
+class TestWr21N8nHardening:
+    WORKFLOWS = ("graph-query-mcp", "rules-to-metagraph", "spec-ingest", "spec-query", "spec-update")
+
+    def _relay_code(self, name):
+        wf = _json.loads((_REPO_ROOT / "n8n" / "workflows" / f"{name}.json").read_text(encoding="utf-8"))
+        node = next(n for n in wf["nodes"] if n["name"] == "Verify Relay Token")
+        return node["parameters"].get("functionCode") or node["parameters"]["jsCode"]
+
+    def test_no_workflow_compares_the_relay_token_with_a_short_circuit_operator(self):
+        for name in self.WORKFLOWS:
+            code = self._relay_code(name)
+            assert "provided !== expected" not in code, name
+            assert "diff |=" in code and "relay token rejected" in code, name
+
+    @pytest.mark.skipif(_shutil.which("node") is None, reason="node not available")
+    def test_check_still_accepts_only_the_exact_token(self, tmp_path):
+        import textwrap
+
+        results = {}
+        for name in self.WORKFLOWS:
+            code = self._relay_code(name)
+            harness = tmp_path / f"{name}.js"
+            harness.write_text(
+                textwrap.dedent(
+                    """
+                    const run = (headers, token) => {
+                      const $env = { DG_SERVICE_TOKEN: token };
+                      const $json = { headers };
+                      const item = { json: { headers } };
+                      const $input = { all: () => [item] };
+                      const items = [item];
+                      try { (new Function('$env', '$json', '$input', 'items', %s))($env, $json, $input, items); return 'ok'; }
+                      catch (e) { return 'rejected'; }
+                    };
+                    const good = 'a'.repeat(40);
+                    console.log(JSON.stringify([
+                      run({'x-dg-service-token': good}, good),
+                      run({'x-dg-service-token': good + 'x'}, good),
+                      run({'x-dg-service-token': good.slice(1)}, good),
+                      run({'x-dg-service-token': 'b'.repeat(40)}, good),
+                      run({}, good),
+                      run({'x-dg-service-token': ''}, ''),
+                    ]));
+                    """
+                )
+                % _json.dumps(code),
+                encoding="utf-8",
+            )
+            out = _subprocess.run(["node", str(harness)], capture_output=True, text=True, timeout=60)
+            assert out.returncode == 0, out.stderr
+            results[name] = _json.loads(out.stdout.strip().splitlines()[-1])
+        for name, verdicts in results.items():
+            assert verdicts == ["ok", "rejected", "rejected", "rejected", "rejected", "rejected"], name
+
+    def test_n8n_image_is_pinned_to_a_version_tag(self):
+        text = (_REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+        image = next(ln.split("image:", 1)[1].strip() for ln in text.splitlines() if "image: n8nio/n8n" in ln)
+        assert image.startswith("n8nio/n8n:") and not image.endswith(":latest")

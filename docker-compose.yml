@@ -93,7 +93,9 @@ services:
       - speckle-ingress
 
   n8n:
-    image: n8nio/n8n
+    # WR-21 (1205 review): pinned to the version the workflows are published and
+    # verified on (n8n 2.4.8) so an unattended `pull` cannot change the runtime.
+    image: n8nio/n8n:2.4.8
     container_name: n8n
     # Phase 1205 (D-09): loopback only. The multi-user override drops this publish.
     ports:
