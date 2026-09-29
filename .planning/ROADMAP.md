@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 11/19 plans executed
+**Plans:** 12/19 plans executed
 
 Plans:
 **Wave 1**
@@ -261,7 +261,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 1205-12-PLAN.md — Projects, memberships, invitations and the named graph endpoints (D-06)
+- [x] 1205-12-PLAN.md — Projects, memberships, invitations and the named graph endpoints (D-06)
 - [ ] 1205-13-PLAN.md — UI login / accept-invite, membership-scoped Projects screen with owner members panel
 
 **Wave 5** *(blocked on Wave 4 completion)*

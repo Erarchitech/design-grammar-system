@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-11-PLAN.md
-last_updated: "2026-09-29T17:58:00.661Z"
+stopped_at: Completed 1205-12-PLAN.md
+last_updated: "2026-09-29T18:08:32.182Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 52
+  completed_plans: 53
   percent: 83
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 12 of 19
+Plan: 13 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -150,6 +150,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P09 | 25min | 2 tasks | 4 files |
 | Phase 1205 P10 | 20min | 3 tasks | 11 files |
 | Phase 1205 P11 | 12min | 2 tasks | 8 files |
+| Phase 1205 P12 | 30min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -456,6 +457,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-09: multi-user override uses Compose !reset (ports concatenate across -f files); known-default literal test scoped so bare usernames only fail on secret-named keys
 - [Phase ?]: 1205-10: hidden-path ingest skip measured from repo root (refuses path='.secrets' too); 'filtered' project source skips project authorisation; execution owner without project resolves 404 (1205-14 must record a project)
 - [Phase ?]: 1205-11: apiFetch gained signal+passthrough options; getConfig returns only dataServiceUrl+speckleBaseUrl; entrypoint.sh still emits legacy credential keys to config.js (close in 1205-15)
+- [Phase ?]: 1205-12: accept-invite validates password before consuming the code; every invite failure (incl. now-existing username) is one generic INVITE_INVALID and never modifies an existing account
+- [Phase ?]: 1205-12: claim-untagged follows plan literally (project IS NULL only); may claim untagged shared ontology nodes -- flagged for 1205-16 spec pass
 
 ### Research Flags (carry into planning)
 
@@ -539,8 +542,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T17:58:00.629Z
-Stopped at: Completed 1205-11-PLAN.md
+Last session: 2026-09-29T18:08:32.150Z
+Stopped at: Completed 1205-12-PLAN.md
 Resume file: None
 
 ## Performance Metrics
