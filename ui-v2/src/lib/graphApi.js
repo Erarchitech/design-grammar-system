@@ -1,331 +1,188 @@
-// Backend access for the Graph Viewer — Neo4j HTTP tx endpoint via the nginx
-// proxy, plus the two n8n webhooks (rules-ingest / graph-query) with the
-// data-service async polling contract used by the legacy SPA.
+// Backend access for the Graph Viewer — named, project-authorised data-service
+// endpoints only (phase 1205, D-06/D-08). The browser holds no Neo4j or n8n
+// credential, cannot choose a Cypher statement, and never calls n8n: rules
+// ingest and graph query go through the data-service workflow relay and are
+// polled by executionId. Project isolation is enforced by the server.
 
-const DEFAULTS = {
-  neo4jHttp: "/neo4j",
-  neo4jUser: "neo4j",
-  neo4jPassword: "12345678",
-  n8nWebhook: "/n8n/webhook/dg/rules-ingest",
-  n8nQueryWebhook: "/n8n/webhook/dg/graph-query",
-  dataServiceUrl: "/data-service"
-};
+import { apiFetch, dataServiceBase, getConfig } from "./apiClient.js";
 
-export function getConfig() {
-  return { ...DEFAULTS, ...(window.GRAPH_CONFIG || {}) };
-}
+// Existing importers keep reading the runtime config from here.
+export { getConfig };
 
-export async function executeCypher(statement, parameters = {}) {
-  const cfg = getConfig();
-  const res = await fetch(cfg.neo4jHttp + "/db/neo4j/tx/commit", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Basic " + btoa(`${cfg.neo4jUser}:${cfg.neo4jPassword}`)
-    },
-    body: JSON.stringify({ statements: [{ statement, parameters }] })
-  });
-  const json = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(json?.errors?.[0]?.message || res.statusText || "Neo4j error");
-  if (Array.isArray(json?.errors) && json.errors.length) {
-    throw new Error(json.errors[0]?.message || "Neo4j error");
-  }
-  return json;
-}
+const enc = encodeURIComponent;
 
-const rowsOf = (json) => json?.results?.[0]?.data?.map((d) => d.row) || [];
-
-// Fetch the project-scoped graph: all tagged nodes plus the relationships
-// among them. Untagged (project IS NULL) nodes are included when no project
-// scope is set, matching the legacy viewer's behaviour.
+// GET /graph/{project} → { nodes:[{id, labels, props}], rels:[{source, type, target}] }
+// There is no unscoped graph any more: an empty project yields an empty graph
+// without a request.
 export async function fetchGraph(project) {
-  const scope = project
-    ? "n.project = $project"
-    : "TRUE";
-  const nodesJson = await executeCypher(
-    `MATCH (n) WHERE ${scope} RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props LIMIT 2000`,
-    project ? { project } : {}
-  );
-  const relsJson = await executeCypher(
-    `MATCH (a)-[r]->(b) WHERE ${scope.replace(/n\./g, "a.")} AND ${scope.replace(/n\./g, "b.")}
-     RETURN id(a) AS source, type(r) AS type, id(b) AS target LIMIT 8000`,
-    project ? { project } : {}
-  );
+  if (!project) return { nodes: [], rels: [] };
+  const data = await apiFetch(`${dataServiceBase()}/graph/${enc(project)}`);
   return {
-    nodes: rowsOf(nodesJson).map(([id, labels, props]) => ({ id, labels, props })),
-    rels: rowsOf(relsJson).map(([source, type, target]) => ({ source, type, target }))
+    nodes: Array.isArray(data?.nodes) ? data.nodes : [],
+    rels: Array.isArray(data?.rels) ? data.rels : []
   };
 }
 
-// Legacy-parity post-ingest fixup ("Neo4j node tagging" gotcha): the n8n
-// workflow writes nodes under default-project; the client claims them for
-// the active project afterwards, exactly like the legacy SPA's tagProjectNodes.
+// Legacy-parity post-ingest fixup ("Neo4j node tagging" gotcha): the workflow
+// writes nodes under default-project; the client asks the server to claim them
+// for the active project afterwards (POST /graph/{project}/claim-untagged).
 export async function tagProjectNodes(project) {
   if (!project) return;
-  await executeCypher(
-    "MATCH (n) WHERE n.project IS NULL OR n.project = 'default-project' SET n.project = $project",
-    { project }
-  );
+  await apiFetch(`${dataServiceBase()}/graph/${enc(project)}/claim-untagged`, { method: "POST" });
 }
 
 // Manual property editing (legacy SPA parity): write a single property on a
 // node by Neo4j id and return the updated property map.
-export async function updateNodeProp(neoId, key, value) {
-  const json = await executeCypher(
-    "MATCH (n) WHERE id(n) = $id SET n[$key] = $value RETURN properties(n) AS props",
-    { id: Number(neoId), key, value }
+// PUT /graph/{project}/node/{neoId}/property  { key, value } → { props }
+export async function updateNodeProp(project, neoId, key, value) {
+  const data = await apiFetch(
+    `${dataServiceBase()}/graph/${enc(project)}/node/${enc(Number(neoId))}/property`,
+    { method: "PUT", body: { key, value } }
   );
-  return rowsOf(json)[0]?.[0] || null;
+  return data?.props || null;
 }
 
 // Existing rules for the Edit mode picker (legacy fetchExistingRules parity)
+// GET /rules/{project} → { project, rules: [{ruleId, text}] }
 export async function fetchRules(project) {
-  const scope = project ? " AND r.project = $project" : "";
-  const json = await executeCypher(
-    `MATCH (r:Rule) WHERE r.graph = 'Metagraph'${scope} ` +
-      "RETURN r.Rule_Id AS ruleId, coalesce(r.SWRL, r.text, '') AS text ORDER BY r.Rule_Id",
-    project ? { project } : {}
-  );
-  return rowsOf(json).map(([ruleId, text]) => ({ ruleId, text }));
+  if (!project) return [];
+  const data = await apiFetch(`${dataServiceBase()}/rules/${enc(project)}`);
+  return (Array.isArray(data?.rules) ? data.rules : []).map((r) => ({
+    ruleId: r.ruleId,
+    text: r.text || ""
+  }));
 }
 
 // GET /rules/{project}/{ruleId}/delete-preview → what a delete would remove.
 // Read-only: fetch it, show the user, and only then call deleteRule().
 // `shared` args are referenced by other rules and are deliberately KEPT.
-export async function fetchRuleDeletePreview(project, ruleId) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(
-    `${dataServiceUrl}/rules/${encodeURIComponent(project)}/${encodeURIComponent(ruleId)}/delete-preview`
-  );
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
+export function fetchRuleDeletePreview(project, ruleId) {
+  return apiFetch(`${dataServiceBase()}/rules/${enc(project)}/${enc(ruleId)}/delete-preview`);
 }
 
 // DELETE /rules/{project}/{ruleId} → removes the Rule, its Atoms, and any
 // Literal/Var orphaned by that. Destructive and not undoable: only call this
 // after the user has confirmed against fetchRuleDeletePreview() output.
-export async function deleteRule(project, ruleId) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(
-    `${dataServiceUrl}/rules/${encodeURIComponent(project)}/${encodeURIComponent(ruleId)}`,
-    { method: "DELETE" }
-  );
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
+export function deleteRule(project, ruleId) {
+  return apiFetch(`${dataServiceBase()}/rules/${enc(project)}/${enc(ruleId)}`, { method: "DELETE" });
 }
 
 // POST /rules/resolve-deletion → { matches[], reason, hallucinated[] }
 // Resolves a natural-language deletion request ("all height rules above 50 m")
 // to concrete rules, each with its own delete preview. Selection only —
 // deletes nothing.
-export async function resolveRuleDeletion(project, request) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(`${dataServiceUrl}/rules/resolve-deletion`, {
+export function resolveRuleDeletion(project, request) {
+  return apiFetch(`${dataServiceBase()}/rules/resolve-deletion`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, request })
+    body: { project, request }
   });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
 }
 
 // POST /rules/bulk-delete → deletes the confirmed Rule_Ids. Destructive.
-export async function bulkDeleteRules(project, ruleIds) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(`${dataServiceUrl}/rules/bulk-delete`, {
+export function bulkDeleteRules(project, ruleIds) {
+  return apiFetch(`${dataServiceBase()}/rules/bulk-delete`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, ruleIds })
+    body: { project, ruleIds }
   });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
 }
 
 // POST /rules/check-conflict → { grounding, conflict, matches[] }. Read-only
 // preview stage (paper T1 ITcon R15.6 §4): call this BEFORE ingestRules() so
-// the blocking dialog can run entirely client-side, ahead of the n8n
-// webhook. `grounding` is null and `conflict` is false whenever the NL text
+// the blocking dialog can run entirely client-side, ahead of the rules-ingest
+// relay. `grounding` is null and `conflict` is false whenever the NL text
 // could not be confidently resolved to a known Class+DatatypeProperty+
 // comparator in this project — treat that identically to "no conflict".
-export async function checkRuleConflict(project, rulesText) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(`${dataServiceUrl}/rules/check-conflict`, {
+export function checkRuleConflict(project, rulesText) {
+  return apiFetch(`${dataServiceBase()}/rules/check-conflict`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, rules_text: rulesText })
+    body: { project, rules_text: rulesText }
   });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
 }
 
 // POST /rules/supersede → records old→new SUPERSEDED_BY provenance. Call
 // AFTER ingestRules() has written the new rule (Replace/Update dialog
 // actions): the new Rule_Id must already exist in the graph before this
 // call can link to it.
-export async function supersedeRule(project, oldRuleId, newRuleId, prompt) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(`${dataServiceUrl}/rules/supersede`, {
+//
+// The thrown ApiError carries `code`/`hint` (not just a folded message) so a
+// caller can distinguish a REFUSED supersede (RULE_NOT_PUBLISHABLE — the old
+// rule was correctly left untouched) from a transient/network failure, and
+// show the actionable hint rather than just the error — see GraphScreen.jsx's
+// runIngestWithConflictCheck for why this distinction matters (live UAT
+// regression, debug session rule-ingest-no-conflict-check, 2026-09-19).
+export function supersedeRule(project, oldRuleId, newRuleId, prompt) {
+  return apiFetch(`${dataServiceBase()}/rules/supersede`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, oldRuleId, newRuleId, prompt: prompt || "" })
+    body: { project, oldRuleId, newRuleId, prompt: prompt || "" }
   });
-  if (!res.ok) {
-    let detail = "";
-    let code = "";
-    let hint = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-      code = j?.detail?.code || "";
-      hint = j?.detail?.hint || "";
-    } catch {
-      /* non-JSON body */
-    }
-    // `code`/`hint` are attached (not just folded into the message) so a
-    // caller can distinguish a REFUSED supersede (RULE_NOT_PUBLISHABLE —
-    // the old rule was correctly left untouched) from a transient/network
-    // failure, and show the actionable hint rather than just the error —
-    // see GraphScreen.jsx's runIngestWithConflictCheck for why this
-    // distinction matters (live UAT regression, debug session
-    // rule-ingest-no-conflict-check, 2026-09-19).
-    const err = new Error(detail || `HTTP ${res.status}`);
-    err.code = code;
-    err.hint = hint;
-    throw err;
-  }
-  return res.json();
 }
 
 // POST /rules/accept-overlap → provenance-only annotation for "Keep both".
 // Call AFTER ingestRules() has written the new rule. Never blocks or
 // mutates the rule corpus — records that the overlap was seen and accepted.
-export async function acceptRuleOverlap(project, ruleId, conflictsWith) {
-  const { dataServiceUrl } = getConfig();
-  const res = await fetch(`${dataServiceUrl}/rules/accept-overlap`, {
+export function acceptRuleOverlap(project, ruleId, conflictsWith) {
+  return apiFetch(`${dataServiceBase()}/rules/accept-overlap`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project, ruleId, conflictsWith: conflictsWith || [] })
+    body: { project, ruleId, conflictsWith: conflictsWith || [] }
   });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j?.detail?.error || j?.detail || "";
-    } catch {
-      /* non-JSON body */
-    }
-    throw new Error(detail || `HTTP ${res.status}`);
-  }
-  return res.json();
 }
 
+// GET /projects → { projects: [{project, nodes, role}] } — only the caller's
+// member projects (an admin sees all).
 export async function fetchProjects() {
-  const json = await executeCypher(
-    "MATCH (n) WHERE n.project IS NOT NULL RETURN DISTINCT n.project AS project, count(n) AS nodes ORDER BY project"
-  );
-  return rowsOf(json).map(([project, nodes]) => ({ project, nodes }));
+  const data = await apiFetch(`${dataServiceBase()}/projects`);
+  return Array.isArray(data?.projects) ? data.projects : [];
 }
 
 // ---- design-rule session history (data-service, legacy SPA parity) ----
 
 export async function fetchDrSessions(project) {
-  const cfg = getConfig();
-  const base = (cfg.dataServiceUrl || "/data-service").replace(/\/$/, "");
-  const res = await fetch(`${base}/design-rule-sessions/${encodeURIComponent(project || "default-project")}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json().catch(() => null);
+  const data = await apiFetch(`${dataServiceBase()}/design-rule-sessions/${enc(project || "default-project")}`);
   return Array.isArray(data?.sessions) ? data.sessions : [];
 }
 
 export async function saveDrSession(project, mode, prompt, result) {
-  const cfg = getConfig();
-  const base = (cfg.dataServiceUrl || "/data-service").replace(/\/$/, "");
   try {
-    const res = await fetch(`${base}/design-rule-sessions`, {
+    const data = await apiFetch(`${dataServiceBase()}/design-rule-sessions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         project: project || "default-project",
         mode,
         prompt,
         result: (result || "").slice(0, 2000)
-      })
+      }
     });
-    if (res.ok) {
-      const data = await res.json().catch(() => null);
-      return data?.sessionId || null;
-    }
+    return data?.sessionId || null;
   } catch {
     // history is best-effort — never block the workflow on it
+    return null;
   }
-  return null;
 }
 
-// ---- n8n webhooks with the async "accepted → poll data-service" contract ----
+// ---- workflow relay with the async "accepted → poll data-service" contract ----
+// POST /workflows/{rules-ingest|graph-query} answers 202 {status:"accepted",
+// executionId}; the result is polled at /execution-result/{executionId} only.
+// The server binds each execution to the user who started it, so a foreign or
+// unknown id is a 404 — there is no latest-by-workflow fallback.
 
-function webhookHeaders(cfg) {
-  const headers = { "Content-Type": "application/json" };
-  if (cfg.n8nUser && cfg.n8nPassword) {
-    headers["Authorization"] = "Basic " + btoa(`${cfg.n8nUser}:${cfg.n8nPassword}`);
-  }
-  return headers;
-}
-
-async function pollExecution(url, { onProgress, intervalMs = 1500, timeoutMs = 180000 } = {}) {
+async function pollExecution(executionId, { onProgress, intervalMs = 1500, timeoutMs = 180000 } = {}) {
+  const url = `${dataServiceBase()}/execution-result/${enc(executionId)}`;
   const t0 = Date.now();
   for (;;) {
     if (Date.now() - t0 > timeoutMs) throw new Error("Workflow timed out.");
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json().catch(() => null);
-      const status = data?.status || "running";
-      if (status === "completed") return data?.payload || {};
-      if (status === "failed") throw new Error(data?.message || "Workflow failed.");
+    let data = null;
+    try {
+      data = await apiFetch(url);
+    } catch (err) {
+      if (err?.status === 404) throw new Error("Execution not found or not permitted.");
+      // Auth/permission problems are terminal; anything else (transient 5xx,
+      // network blip) keeps polling until the timeout, as before.
+      if (err?.status === 401 || err?.status === 403) throw err;
+    }
+    if (data) {
+      const status = data.status || "running";
+      if (status === "completed") return data.payload || {};
+      if (status === "failed") throw new Error(data.message || "Workflow failed.");
       if (status === "cancelled") throw new Error("Workflow cancelled.");
       if (onProgress) onProgress(data);
     }
@@ -333,61 +190,26 @@ async function pollExecution(url, { onProgress, intervalMs = 1500, timeoutMs = 1
   }
 }
 
-async function callWorkflow(url, body, workflowKey, { onProgress } = {}) {
-  const cfg = getConfig();
-  const res = await fetch(url, { method: "POST", headers: webhookHeaders(cfg), body: JSON.stringify(body) });
-  const rawText = await res.text();
-  let data = null;
-  if (rawText) {
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      /* non-JSON response — handled below */
-    }
+async function callWorkflow(path, body, { onProgress } = {}) {
+  const data = await apiFetch(`${dataServiceBase()}${path}`, { method: "POST", body });
+  if (data?.status !== "accepted" || !data?.executionId) {
+    throw new Error("Workflow relay did not return an execution id.");
   }
-  if (!res.ok) throw new Error(data?.message || rawText || `HTTP ${res.status}`);
-  const base = cfg.dataServiceUrl.replace(/\/$/, "");
-  if (data?.status === "accepted" && data?.executionId) {
-    return pollExecution(`${base}/execution-result/${data.executionId}`, { onProgress });
-  }
-  // "accepted" without id, "started" messages, or intermediate echo payloads
-  // all mean the workflow is running — poll the latest result for this key.
-  const intermediate =
-    data &&
-    !data.answer &&
-    !data.response &&
-    !data.cypher &&
-    (data.rules_text || data.prompt_text || data.ollama_model || data.neo4j_url || data.mcp_url);
-  if (
-    data?.status === "accepted" ||
-    (typeof data?.message === "string" && data.message.toLowerCase().includes("started")) ||
-    intermediate
-  ) {
-    return pollExecution(`${base}/execution-result/latest/${workflowKey}`, { onProgress });
-  }
-  return data || { answer: rawText };
+  return pollExecution(data.executionId, { onProgress });
 }
 
-// Both `project` (legacy SPA contract) and `project_name` (v7 workflow
-// contract) are sent — the live workflows read project_name.
 export function ingestRules(rulesText, project, opts) {
-  const cfg = getConfig();
-  const p = project || "default-project";
   return callWorkflow(
-    cfg.n8nWebhook,
-    { rules_text: rulesText, cypher_prompt: false, project: p, project_name: p },
-    "rules-ingest",
+    "/workflows/rules-ingest",
+    { project: project || "default-project", rulesText },
     opts
   );
 }
 
 export function queryGraph(prompt, project, opts) {
-  const cfg = getConfig();
-  const p = project || "default-project";
   return callWorkflow(
-    cfg.n8nQueryWebhook,
-    { prompt, cypher_prompt: false, project: p, project_name: p },
-    "graph-query",
+    "/workflows/graph-query",
+    { project: project || "default-project", prompt },
     opts
   );
 }

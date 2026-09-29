@@ -845,7 +845,7 @@ export default function GraphScreen({ active, onBack, project }) {
       // keep as plain string
     }
     try {
-      const props = await updateNodeProp(se.neoId, key, value);
+      const props = await updateNodeProp(project, se.neoId, key, value);
       if (props) {
         se.props = Object.entries(props);
         setSel((s) => (s ? { ...s } : s));

@@ -7,37 +7,27 @@
 // this module, and it must only ever be called from an explicit user action
 // (a click handler), never from an effect or on render/selection (D-19, SC3).
 
-import { executeCypher, getConfig } from "./graphApi.js";
+import { apiFetch, dataServiceBase } from "./apiClient.js";
 
-const base = () => getConfig().dataServiceUrl.replace(/\/$/, "");
+const base = dataServiceBase;
 
-// POST helper mirroring modelApi.js's getJson error-unwrapping convention:
-// unwrap `detail.error` from the structured `{error, hint, code}` body, and
-// surface `detail.hint` too — for these two routes the hint carries the
-// actionable part (which parameter, which domain, which available
-// definition ids).
+// POST helper on apiFetch: the ApiError already unwraps `detail.error` from the
+// structured `{error, hint, code}` body; for these two routes the hint carries
+// the actionable part (which parameter, which domain, which available
+// definition ids), so it is appended to the message and kept on `err.hint`.
 async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    let error = "";
-    let hint = "";
-    try {
-      const j = await res.json();
-      error = j?.detail?.error || j?.detail || "";
-      hint = j?.detail?.hint || "";
-    } catch {
-      /* non-JSON body */
+  try {
+    return await apiFetch(url, { method: "POST", body });
+  } catch (err) {
+    if (err?.hint) {
+      const wrapped = new Error([err.message, err.hint].filter(Boolean).join(" — "));
+      wrapped.hint = err.hint;
+      wrapped.code = err.code;
+      wrapped.status = err.status;
+      throw wrapped;
     }
-    const message = [error || `HTTP ${res.status}`, hint].filter(Boolean).join(" — ");
-    const err = new Error(message);
-    err.hint = hint;
     throw err;
   }
-  return res.json();
 }
 
 // → { project, definitionId, publishedAt, ruleId, determinabilityClass,
@@ -65,25 +55,12 @@ export function acceptCandidate(project, definitionId, ruleId, candidate) {
 }
 
 // → [{stateId, sourceRuleId, provider, model, generatedAt, acceptedAt, strategy}]
-// Targeted read over the graph's accepted AI-generated ParamStates, matching
-// modelApi.js's existing targeted-read pattern (bound Cypher parameters only).
+// GET /computgraph/candidates/{project}?ruleId= → { candidates: [...] } — the
+// project's accepted AI-generated ParamStates, authorised server-side.
 export async function fetchAcceptedCandidates(project, ruleId) {
-  const json = await executeCypher(
-    `MATCH (ds:DesignState {project: $project, kind: 'ParamState'})
-     WHERE ds.source = 'ai-generated' AND ($ruleId IS NULL OR ds.sourceRuleId = $ruleId)
-     RETURN ds.StateId AS stateId, ds.sourceRuleId AS sourceRuleId, ds.provider AS provider,
-            ds.model AS model, ds.generatedAt AS generatedAt, ds.acceptedAt AS acceptedAt,
-            ds.strategy AS strategy
-     ORDER BY ds.acceptedAt DESC`,
-    { project: project || "default-project", ruleId: ruleId || null }
+  const qs = ruleId ? `?ruleId=${encodeURIComponent(ruleId)}` : "";
+  const data = await apiFetch(
+    `${base()}/computgraph/candidates/${encodeURIComponent(project || "default-project")}${qs}`
   );
-  return (json?.results?.[0]?.data || []).map((d) => ({
-    stateId: d.row[0],
-    sourceRuleId: d.row[1],
-    provider: d.row[2],
-    model: d.row[3],
-    generatedAt: d.row[4],
-    acceptedAt: d.row[5],
-    strategy: d.row[6]
-  }));
+  return Array.isArray(data?.candidates) ? data.candidates : [];
 }
