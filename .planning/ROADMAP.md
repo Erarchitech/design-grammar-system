@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 15/19 plans executed
+**Plans:** 16/19 plans executed
 
 Plans:
 **Wave 1**
@@ -271,7 +271,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 1205-16-PLAN.md — `spec/SECURITY-BOUNDARY.md` with four machine-checked blocks and the rotation runbook; spec drift test; doc pointers
+- [x] 1205-16-PLAN.md — `spec/SECURITY-BOUNDARY.md` with four machine-checked blocks and the rotation runbook; spec drift test; doc pointers
 - [ ] 1205-17-PLAN.md — D-15 two-user/two-project cross-project matrix
 
 **Wave 7** *(blocked on Wave 6 completion; requires a running compose stack)*
