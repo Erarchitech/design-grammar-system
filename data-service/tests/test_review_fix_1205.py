@@ -573,3 +573,17 @@ class TestWr06ServiceTokenNonAscii:
         raw = _TC(app_module.app, raise_server_exceptions=False)
         resp = raw.get("/auth/me", headers={auth.SERVICE_TOKEN_HEADER: b"\x80\xfftoken"})
         assert resp.status_code == 401
+
+
+# --------------------------------------------------------------------------
+# WR-07: pulling the live canvas needs at least editor
+# --------------------------------------------------------------------------
+
+import route_policy  # noqa: E402
+
+
+class TestWr07CanvasPullRole:
+    def test_pull_requires_editor_not_viewer(self):
+        policy = route_policy.ROUTE_POLICIES[("POST", "/computgraph/context/pull")]
+        assert policy.principals == {route_policy.PRINCIPAL_MEMBER}
+        assert policy.min_role == "editor"

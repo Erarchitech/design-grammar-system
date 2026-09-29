@@ -143,7 +143,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("PUT", "/reasoner/settings"): _p(_ADM),
     ("POST", "/reasoner/consistency"): _p(_MEM, source="body", role="viewer"),
     # ── computgraph ──
-    ("POST", "/computgraph/context/pull"): _p(_MEM, source="body", role="viewer"),
+    ("POST", "/computgraph/context/pull"): _p(_MEM, source="body", role="editor"),
     ("POST", "/computgraph/recognize"): _p(_MEM, source="body", role="viewer"),
     ("POST", "/computgraph/publish"): _p(_MEM, _CON, source="body", role="editor"),
     ("POST", "/computgraph/validate"): _p(_MEM, source="body", role="viewer"),

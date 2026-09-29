@@ -125,7 +125,7 @@ POST|/auth/password|session|-|-
 POST|/computgraph/candidates/accept|member|body|editor
 GET|/computgraph/candidates/{project}|member|path|viewer
 POST|/computgraph/consult|member|body|viewer
-POST|/computgraph/context/pull|member|body|viewer
+POST|/computgraph/context/pull|member|body|editor
 POST|/computgraph/generate-inputs|member|body|editor
 POST|/computgraph/publish|connector+member|body|editor
 POST|/computgraph/recognize|member|body|viewer
