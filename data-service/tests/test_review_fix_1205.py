@@ -881,3 +881,37 @@ class TestWr15SecondInvite:
         assert auth.peek_invite(code) is not None
         assert auth.peek_invite(code) is not None
         assert auth.peek_invite("dgi_unknown") is None
+
+
+# --------------------------------------------------------------------------
+# WR-16: nginx sends baseline security headers on every location
+# --------------------------------------------------------------------------
+
+
+class TestWr16SecurityHeaders:
+    REQUIRED = (
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "Referrer-Policy",
+        "Content-Security-Policy",
+    )
+
+    def _nginx(self):
+        return (_REPO_ROOT / "ui-v2" / "nginx.conf").read_text(encoding="utf-8")
+
+    def test_server_level_headers_present_and_always(self):
+        text = self._nginx()
+        for name in self.REQUIRED:
+            line = next(ln for ln in text.splitlines() if f"add_header {name} " in ln)
+            assert line.rstrip().endswith("always;"), line
+
+    def test_spa_location_repeats_the_headers_because_it_sets_its_own(self):
+        text = self._nginx()
+        block = text[text.index("  location / {"): text.index("  location /llm/")]
+        assert "add_header Cache-Control" in block
+        for name in self.REQUIRED:
+            assert f"add_header {name} " in block, name
+
+    def test_csp_forbids_framing(self):
+        text = self._nginx()
+        assert "frame-ancestors 'none'" in text
