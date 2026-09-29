@@ -29,6 +29,29 @@ POST /connectors/heartbeat on http://localhost:8000 with the owner's DE-01 conne
 ## Token-shape grep
 Token-shape grep over `live-evidence/`: 0 secret-shaped matches. The generic 40+ character pattern matches only long pytest test names in this file (no token, hex digest or bundle value present); the JSON evidence has 0 matches.
 
-## Pending
-- Task 2 owner smoke and GATE12-05 verdict: PENDING (blocking checkpoint).
-- Task 3 (n8n published-version node check, local-profile restore): NOT STARTED.
+## Owner verdict (Task 2, 2026-09-29)
+- GATE12-05 verdict, verbatim: "gate-pass".
+- The owner did not supply the timestamps of their ingest and query runs (see the n8n check below for how this was handled).
+- The owner did not comment on the two Task-1 findings (5 profile-dependent test failures; null `neo4j` heartbeat key). They are recorded as OPEN non-blocking follow-ups under the gate-pass, not as owner-accepted.
+
+## n8n published-version check (D-08), Task 3
+- Method: n8n database (plus -wal/-shm) copied to the session scratchpad, opened with sqlite3, only node names, the presence of `Verify Relay Token`, execution start time and status were read. Scratch copies deleted afterwards (confirmed: 0 files remain).
+- The two executions below are the most recent rows of each workflow after the 1205-18 publish (~2026-09-29 19:15Z). They could NOT be matched to owner-supplied run times (none were given); they are the most recent rows, presumed but not proven to be the owner's runs.
+- Rules ingest ("DG Rules -> Metagraph"): execution 274, started 2026-09-29 20:11:26 (n8n stored time), mode webhook, status success; workflow node list contains `Verify Relay Token`: True (17 nodes).
+- Graph query ("DG Graph Query (MCP)"): execution 273, started 2026-09-29 20:09:47 (n8n stored time), mode webhook, status success; node list contains `Verify Relay Token`: True (18 nodes).
+- Older executions on the pre-publish version (2026-09-19) lack `Verify Relay Token`, confirming the published version changed. Executions 267-272 (19:19-19:20) were 1205-18 probes on the new version (contain the node; several status error, not analysed here).
+
+## Local profile restored (D-19), Task 3
+- `docker compose up -d --force-recreate` (base file only, no override).
+- data-service exited with code 3 at cold start again (Neo4j Bolt not ready; no healthcheck/restart policy). Restarted once with `docker compose up -d data-service`. No code change.
+- `docker exec data-service printenv DG_DEPLOYMENT` -> `local`.
+- Heartbeat with the saved connector token: `neo4j bundle present: True`.
+- All 15 containers Up.
+
+## Open follow-ups (non-blocking, not fixed in this plan)
+1. Multi-user full-suite: 5 extra failures (`test_connectors.py::TestHeartbeatBundle` x2 hard-code the local bundle; `test_designstate_capture.py` lifespan tests x3 fail only in the full run with the D-11 refusal on LLM_MASTER_SECRET(too-short), suspected env leak, unverified).
+2. Multi-user heartbeat keeps a `neo4j` key with a null value versus the plan's literal "no neo4j key".
+3. From 1205-18: DG.Tests E2E DesignStateValidationFlowTests (3) fail with 401 (fixture lacks a connector token); data-service cold-start race (exit code 3).
+
+## Status
+- Task 1: complete (a1f7e39). Task 2: owner verdict "gate-pass". Task 3: complete.

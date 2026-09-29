@@ -44,9 +44,9 @@
 ## Security and tenancy (Phase 1205)
 
 - [ ] **ALGN12-17**: Ordinary API and graph access enforce server-side user/tenant authorization rather than relying on client-side auth and project predicates.
-- [ ] **ALGN12-18**: Direct Neo4j proxy exposure is removed or restricted behind an authorized server boundary.
+- [x] **ALGN12-18**: Direct Neo4j proxy exposure is removed or restricted behind an authorized server boundary.
 - [ ] **ALGN12-19**: Compose/default credentials and secrets are hardened, rotated, and excluded from browser-readable runtime configuration.
-- [ ] **ALGN12-20**: Unauthorized cross-project and direct-proxy access tests fail closed.
+- [x] **ALGN12-20**: Unauthorized cross-project and direct-proxy access tests fail closed.
 
 ## Activation gates
 
@@ -54,7 +54,7 @@
 - [ ] **GATE12-02**: v12.0 Phases 1200–1203 are complete before v9.1 activation.
 - [ ] **GATE12-03**: v12.0 Phases 1200–1204 plus v11.0 semantic-boundary/rule-ownership gate are complete before v10.0 activation.
 - [ ] **GATE12-04**: Phase 40 retains ownership of live Rhino/LLM/Speckle UAT; v12.0 cannot mark those items passed.
-- [ ] **GATE12-05**: Phase 1205 is release-blocking for external multi-user evaluation, but does not block local single-user feature development or the paper's bounded claims.
+- [x] **GATE12-05**: Phase 1205 is release-blocking for external multi-user evaluation, but does not block local single-user feature development or the paper's bounded claims.
 
 ## Out of scope
 

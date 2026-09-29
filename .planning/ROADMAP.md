@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 18/19 plans executed
+**Plans:** 19/19 plans executed
 
 Plans:
 **Wave 1**
@@ -280,7 +280,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion; requires a running compose stack)*
 
-- [ ] 1205-19-PLAN.md — Live GATE12-05 judgement in the multi-user profile with owner verdict (human checkpoint)
+- [x] 1205-19-PLAN.md — Live GATE12-05 judgement in the multi-user profile with owner verdict (human checkpoint)
 
 ## Activation gates for downstream milestones
 
