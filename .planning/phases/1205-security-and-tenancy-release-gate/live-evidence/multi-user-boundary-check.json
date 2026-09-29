@@ -1,0 +1,102 @@
+{
+  "profile": "multi-user",
+  "uiUrl": "http://localhost:8080",
+  "dataServiceUrl": "http://localhost:8000",
+  "host": "127.0.0.1",
+  "knownDefaultsSource": "data-service.secrets_policy",
+  "checks": [
+    {
+      "check": "proxy_removed",
+      "target": "GET http://localhost:8080/neo4j/",
+      "expected": "404",
+      "observed": "404",
+      "result": "pass"
+    },
+    {
+      "check": "proxy_removed",
+      "target": "POST http://localhost:8080/neo4j/db/neo4j/tx/commit",
+      "expected": "404",
+      "observed": "404",
+      "result": "pass"
+    },
+    {
+      "check": "proxy_removed",
+      "target": "GET http://localhost:8080/n8n/webhook/dg/graph-query",
+      "expected": "404",
+      "observed": "404",
+      "result": "pass"
+    },
+    {
+      "check": "unauthenticated",
+      "target": "GET http://localhost:8080/data-service/validation/runs/any-project",
+      "expected": "401",
+      "observed": "401",
+      "result": "pass"
+    },
+    {
+      "check": "unauthenticated",
+      "target": "POST http://localhost:8080/data-service/mcp",
+      "expected": "401",
+      "observed": "401",
+      "result": "pass"
+    },
+    {
+      "check": "unauthenticated",
+      "target": "GET http://localhost:8080/data-service/auth/me",
+      "expected": "401",
+      "observed": "401",
+      "result": "pass"
+    },
+    {
+      "check": "unauthenticated",
+      "target": "GET http://localhost:8000/validation/runs/any-project",
+      "expected": "401",
+      "observed": "401",
+      "result": "pass"
+    },
+    {
+      "check": "unauthenticated",
+      "target": "GET http://localhost:8080/data-service/",
+      "expected": "200",
+      "observed": "200",
+      "result": "pass"
+    },
+    {
+      "check": "config_js",
+      "target": "GET http://localhost:8080/config.js",
+      "expected": "no credential key name present",
+      "observed": "none found",
+      "result": "pass"
+    },
+    {
+      "check": "config_js",
+      "target": "GET http://localhost:8080/config.js",
+      "expected": "no known-default literal value present",
+      "observed": "none found",
+      "result": "pass",
+      "note": "knownDefaultsSource=data-service.secrets_policy"
+    },
+    {
+      "check": "ports",
+      "target": "127.0.0.1:7687",
+      "expected": "refused",
+      "observed": "refused",
+      "result": "pass"
+    },
+    {
+      "check": "ports",
+      "target": "127.0.0.1:7474",
+      "expected": "refused",
+      "observed": "refused",
+      "result": "pass"
+    },
+    {
+      "check": "ports",
+      "target": "127.0.0.1:5678",
+      "expected": "refused",
+      "observed": "refused",
+      "result": "pass"
+    }
+  ],
+  "passed": true
+}
