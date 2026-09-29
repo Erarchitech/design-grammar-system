@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-16-PLAN.md
-last_updated: "2026-09-29T18:37:17.456Z"
+stopped_at: Completed 1205-17-PLAN.md
+last_updated: "2026-09-29T18:46:52.162Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 57
+  completed_plans: 58
   percent: 83
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 17 of 19
+Plan: 18 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -155,6 +155,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P14 | 35min | 2 tasks | 6 files |
 | Phase 1205 P15 | 25min | 2 tasks | 7 files |
 | Phase 1205 P16 | 45min | 3 tasks | 6 files |
+| Phase 1205 P17 | 25min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -468,6 +469,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-15: gen-config.sh JS-escapes its two URL values; dist scan checks Neo4j default as exact string literal, change-me/key names as substrings
 - [Phase ?]: 1205-16: SECURITY-BOUNDARY.md blocks are drift-tested in both directions (route-policy 82 rows, public routes, known defaults, published ports per profile); n8n default listed by SHA-256 digest only
 - [Phase ?]: 1205-16: CLAUDE.md Security boundary contract pointer inserted after owner's Reproducibility paragraph and left uncommitted for the owner (44 insertions vs 42 baseline)
+- [Phase ?]: 1205-17: cross-project matrix generated from ROUTE_POLICIES (50 scoped rows, 887 cases) under both profiles; positive controls call require_principal directly; tasks 1+2 committed together (single file)
 
 ### Research Flags (carry into planning)
 
@@ -551,8 +553,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T18:37:17.425Z
-Stopped at: Completed 1205-16-PLAN.md
+Last session: 2026-09-29T18:46:52.131Z
+Stopped at: Completed 1205-17-PLAN.md
 Resume file: None
 
 ## Performance Metrics
