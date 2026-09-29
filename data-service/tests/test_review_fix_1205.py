@@ -748,3 +748,46 @@ class TestWr11IngestPathContainment:
         with pytest.raises(_HTTPException) as excinfo:
             app_module.validate_ingest_path("..")
         assert excinfo.value.status_code == 403
+
+
+# --------------------------------------------------------------------------
+# WR-12: catch-all failures never echo exception text to the client
+# --------------------------------------------------------------------------
+
+_SECRET_TEXT = "bolt://neo4j-internal:7687 user=neo4j token=SUPER-SECRET-TOKEN-FRAGMENT"
+
+
+class TestWr12NoInternalErrorText:
+    def test_helper_hides_the_exception_and_logs_it_under_a_reference(self, caplog):
+        with caplog.at_level(logging.ERROR):
+            exc = app_module._internal_failure(
+                RuntimeError(_SECRET_TEXT), "Check logs.", "SOME_FAILED", 502, "Nothing worked."
+            )
+        assert exc.status_code == 502
+        body = repr(exc.detail)
+        assert "SUPER-SECRET" not in body and "neo4j-internal" not in body
+        reference = exc.detail["error"].split("reference ")[1].rstrip(")")
+        assert exc.detail["code"] == "SOME_FAILED"
+        logged = " ".join(r.getMessage() for r in caplog.records)
+        assert reference in logged and "SUPER-SECRET" in logged
+
+    def test_computgraph_publish_route_does_not_leak_a_driver_exception(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError(_SECRET_TEXT)
+
+        monkeypatch.setattr(app_module.computgraph_publish, "publish_structure", boom)
+        monkeypatch.setattr(app_module, "driver", type("D", (), {"session": lambda self: _NullSession()})())
+        resp = client.post(
+            "/computgraph/publish", json={"project": "p", "cgContext": {"schema": "x"}}
+        )
+        assert resp.status_code == 502
+        assert "SUPER-SECRET" not in resp.text and "neo4j-internal" not in resp.text
+        assert resp.json()["detail"]["code"] == "COMPUTGRAPH_PUBLISH_FAILED"
+
+
+class _NullSession:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False

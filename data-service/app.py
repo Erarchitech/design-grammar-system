@@ -824,6 +824,26 @@ def _structured_error_response(error: str, hint: str, code: str, status_code: in
     )
 
 
+def _internal_failure(
+    exc: BaseException,
+    hint: str,
+    code: str,
+    status_code: int = 502,
+    message: str = "The operation failed.",
+) -> HTTPException:
+    """WR-12 (1205 review): a catch-all failure never echoes the exception text
+    to the client -- Neo4j, driver and Speckle exceptions can carry URIs,
+    Cypher fragments, internal hostnames or token fragments. The detail goes to
+    the server log under a correlation id that is returned instead."""
+    correlation_id = uuid.uuid4().hex[:12]
+    logging.getLogger(__name__).error(
+        "%s [%s]: %s: %s", code, correlation_id, type(exc).__name__, exc, exc_info=exc
+    )
+    return _structured_error_response(
+        f"{message} (reference {correlation_id})", hint, code, status_code
+    )
+
+
 def _format_prop_value(prop_value: Any) -> str:
     """Render a PropState propValue envelope as a compact display string.
 
@@ -1822,12 +1842,12 @@ def post_computgraph_publish(payload: ComputgraphPublishRequest):
             422,
         )
     except Exception as exc:
-        raise _structured_error_response(
-            str(exc),
+        raise _internal_failure(
+            exc,
             "Check Neo4j availability and the publish payload.",
             "COMPUTGRAPH_PUBLISH_FAILED",
             502,
-        )
+        ) from exc
 
 
 class ComputgraphValidateRequest(BaseModel):
@@ -1874,12 +1894,12 @@ def post_computgraph_validate(payload: ComputgraphValidateRequest):
             422,
         )
     except Exception as exc:
-        raise _structured_error_response(
-            str(exc),
+        raise _internal_failure(
+            exc,
             "Check Neo4j availability.",
             "COMPUTGRAPH_VALIDATE_FAILED",
             502,
-        )
+        ) from exc
 
 
 class ComputgraphConsultRequest(BaseModel):
@@ -1916,12 +1936,12 @@ def post_computgraph_consult(payload: ComputgraphConsultRequest):
             422,
         )
     except Exception as exc:
-        raise _structured_error_response(
-            str(exc),
+        raise _internal_failure(
+            exc,
             "Check Neo4j availability and the configured LLM provider.",
             "COMPUTGRAPH_CONSULT_FAILED",
             502,
-        )
+        ) from exc
 
 
 class ComputgraphGenerateInputsRequest(BaseModel):
@@ -2012,12 +2032,12 @@ def post_computgraph_generate_inputs(payload: ComputgraphGenerateInputsRequest):
             502,
         )
     except Exception as exc:
-        raise _structured_error_response(
-            str(exc),
+        raise _internal_failure(
+            exc,
             "Check Neo4j availability and the configured LLM provider.",
             "COMPUTGRAPH_GENERATE_INPUTS_FAILED",
             502,
-        )
+        ) from exc
 
 
 class ComputgraphAcceptCandidateRequest(BaseModel):
@@ -2085,12 +2105,12 @@ def post_computgraph_accept_candidate(payload: ComputgraphAcceptCandidateRequest
             422,
         )
     except Exception as exc:
-        raise _structured_error_response(
-            str(exc),
+        raise _internal_failure(
+            exc,
             "Check Neo4j availability.",
             "COMPUTGRAPH_ACCEPT_CANDIDATE_FAILED",
             502,
-        )
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -2912,11 +2932,12 @@ def publish_validation(payload: ValidationPublishRequest):
             400,
         ) from exc
     except Exception as exc:
-        raise _structured_error_response(
-            f"Validation publish failed: {exc}",
+        raise _internal_failure(
+            exc,
             "Check data-service logs for details.",
             "PUBLISH_INTERNAL_ERROR",
             500,
+            "Validation publish failed.",
         ) from exc
 
 
@@ -2977,11 +2998,12 @@ def delete_validation_run(project: str, run_id: str):
             400,
         ) from exc
     except Exception as exc:
-        raise _structured_error_response(
-            f"Validation delete failed: {exc}",
+        raise _internal_failure(
+            exc,
             "Check data-service logs for details.",
             "DELETE_INTERNAL_ERROR",
             500,
+            "Validation delete failed.",
         ) from exc
 
 
