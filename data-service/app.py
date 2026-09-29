@@ -1195,8 +1195,11 @@ def build_view_payload(
 
 def validate_ingest_path(user_path: str) -> FilePath:
     """Resolve user-provided path against mount root; reject if outside root."""
+    root = KNOWLEDGE_REPO_ROOT.resolve()
     candidate = (KNOWLEDGE_REPO_ROOT / user_path).resolve()
-    if not str(candidate).startswith(str(KNOWLEDGE_REPO_ROOT.resolve())):
+    # WR-11 (1205 review): containment is a path-component test, not a string
+    # prefix -- `/mnt/repo2` shares the prefix `/mnt/repo` but is a sibling.
+    if not candidate.is_relative_to(root):
         raise HTTPException(status_code=403, detail="Path outside allowed repository root")
     if not candidate.is_dir():
         raise HTTPException(status_code=400, detail="Path is not a directory")
@@ -3299,6 +3302,11 @@ def ingest_folder(payload: FolderIngestRequest):
             rel_parts = md_file.relative_to(repo_root).parts
         except ValueError:
             rel_parts = md_file.relative_to(root).parts
+        # WR-11: a symlink below the requested folder must not lead a read out
+        # of the repository root.
+        if not md_file.resolve().is_relative_to(repo_root):
+            skipped += 1
+            continue
         if any(part.startswith(".") for part in rel_parts):
             skipped += 1
             hidden_count += 1

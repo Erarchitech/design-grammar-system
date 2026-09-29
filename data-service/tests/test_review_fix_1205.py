@@ -715,3 +715,36 @@ class TestWr10ProvenanceActor:
             _Req(auth.Principal(kind="connector", credential_id="c1"))
         ) == "connector:c1"
         assert app_module._authenticated_actor(_Req(None)) == "unknown"
+
+
+# --------------------------------------------------------------------------
+# WR-11: ingest path containment is by path component, not string prefix
+# --------------------------------------------------------------------------
+
+from fastapi import HTTPException as _HTTPException  # noqa: E402
+
+
+class TestWr11IngestPathContainment:
+    def test_sibling_directory_sharing_the_prefix_is_rejected(self, tmp_path, monkeypatch):
+        root = tmp_path / "repo"
+        sibling = tmp_path / "repo2"
+        root.mkdir()
+        sibling.mkdir()
+        monkeypatch.setattr(app_module, "KNOWLEDGE_REPO_ROOT", root)
+        with pytest.raises(_HTTPException) as excinfo:
+            app_module.validate_ingest_path("../repo2")
+        assert excinfo.value.status_code == 403
+
+    def test_directory_inside_the_root_is_accepted(self, tmp_path, monkeypatch):
+        root = tmp_path / "repo"
+        (root / "notes").mkdir(parents=True)
+        monkeypatch.setattr(app_module, "KNOWLEDGE_REPO_ROOT", root)
+        assert app_module.validate_ingest_path("notes") == (root / "notes").resolve()
+
+    def test_parent_escape_is_rejected(self, tmp_path, monkeypatch):
+        root = tmp_path / "repo"
+        root.mkdir()
+        monkeypatch.setattr(app_module, "KNOWLEDGE_REPO_ROOT", root)
+        with pytest.raises(_HTTPException) as excinfo:
+            app_module.validate_ingest_path("..")
+        assert excinfo.value.status_code == 403
