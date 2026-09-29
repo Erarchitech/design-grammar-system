@@ -5,6 +5,38 @@ export default {
   title: "Authentication",
   pages: [
     {
+      id: "principal-types",
+      title: "Principal Types",
+      summary: "Every request is authenticated as one of three principal types; there is no anonymous access to project data.",
+      blocks: [
+        {
+          type: "text",
+          content:
+            "The data-service denies every route by default and authenticates each request as exactly one of three principal types (Phase 1205).",
+        },
+        {
+          type: "table",
+          headers: ["Principal", "Credential", "Used by"],
+          rows: [
+            ["Browser session", "HttpOnly dg_session cookie issued by POST /auth/login or POST /auth/accept-invite, plus the X-DG-CSRF header on unsafe requests", "The V2 UI"],
+            ["Connector token", "Project-bound dgc_ token, created per connector and shown once", "Grasshopper, Revit and Dynamo connector components"],
+            ["Internal service token", "Shared secret held by the stack, never issued to users", "n8n workflows calling the data-service (n8n only)"],
+          ],
+        },
+        {
+          type: "note",
+          variant: "warning",
+          content:
+            "The VALIDATOR and COMPUTGRAPH PUBLISH components now require a dgc_ token: paste the same project-bound token into the Token input of both. Publish routes reject a call whose token is missing, revoked, or bound to a different project.",
+        },
+        {
+          type: "text",
+          content:
+            "Accounts are created by invitation only. A project owner invites a username from the Projects screen; the invitee accepts the one-time invite code and chooses a password. There is no self-registration endpoint.",
+        },
+      ],
+    },
+    {
       id: "token-format",
       title: "Token Format",
       summary: "Connector tokens use the dgc_ prefix followed by 43 characters of url-safe base64 randomness.",

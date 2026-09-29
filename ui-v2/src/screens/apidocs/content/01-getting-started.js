@@ -38,14 +38,13 @@ export default {
           rows: [
             ["/data-service/*", "http://data-service:8000", "Connector and validation endpoints"],
             ["/llm/*", "http://data-service:8000", "LLM gateway settings and generation"],
-            ["/neo4j/*", "http://neo4j:7474", "Direct Neo4j HTTP API (not for connectors)"],
-            ["/n8n/*", "http://n8n:5678", "n8n workflow webhooks (not for connectors)"],
+            ["/reasoner/*", "http://data-service:8000", "Reasoner endpoints (session-authenticated)"],
           ],
         },
         {
           type: "text",
           content:
-            "The proxy strips the /data-service prefix before forwarding. For example, GET /data-service/connectors reaches the data-service as GET /connectors.",
+            "The proxy strips the /data-service prefix before forwarding. For example, GET /data-service/connectors reaches the data-service as GET /connectors. There is no direct Neo4j or n8n access from outside the stack (Phase 1205): graph reads and writes go through named data-service endpoints, and rule ingest and graph queries go through the data-service workflow relay.",
         },
         {
           type: "code",
