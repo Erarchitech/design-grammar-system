@@ -80,36 +80,62 @@ INVITES_FILE = AUTH_DIR / "auth-invites.json"
 _STORE_LOCK = threading.RLock()
 
 
+class AuthStoreError(RuntimeError):
+    """A JSON auth store exists but cannot be read as a row list.
+
+    WR-20 (1205 review): a corrupt store is an ERROR, never an empty list. The
+    next ``_save`` would otherwise overwrite the corrupt file with a near-empty
+    one, silently losing every account (or un-revoking nothing but dropping
+    every membership). Fail closed instead: the operator repairs or restores
+    the file.
+    """
+
+
 def _load(path: Path, key: str) -> list[dict[str, Any]]:
     """Read a row list from a JSON store.
 
-    Fail-soft: returns ``[]`` if the file is missing, malformed, or empty --
-    mirrors ``connectors.load_credentials``.
+    Returns ``[]`` only when the file does not exist yet (or the document has
+    no such key). Raises :class:`AuthStoreError` when the file exists but is
+    unreadable, empty, malformed, or not a JSON object.
     """
     with _STORE_LOCK:
         if not path.exists():
             return []
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return []
+        except (OSError, ValueError) as exc:
+            raise AuthStoreError(
+                f"auth store {path.name} is unreadable or corrupt ({type(exc).__name__})"
+            ) from exc
         if not isinstance(payload, dict):
-            return []
+            raise AuthStoreError(f"auth store {path.name} is not a JSON object")
         rows = payload.get(key)
-        if not isinstance(rows, list):
+        if rows is None:
             return []
+        if not isinstance(rows, list):
+            raise AuthStoreError(f"auth store {path.name} has a malformed {key!r} list")
         return [r for r in rows if isinstance(r, dict)]
 
 
 def _save(path: Path, key: str, rows: list[dict[str, Any]]) -> None:
-    """Write a row list to a JSON store atomically (temp file + os.replace)."""
+    """Write a row list to a JSON store atomically (temp file + os.replace),
+    owner-only permissions, and never leave the temp file behind."""
     with _STORE_LOCK:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = path.parent / f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}"
-        tmp_path.write_text(
-            json.dumps({key: rows}, indent=2), encoding="utf-8"
-        )
-        os.replace(tmp_path, path)
+        try:
+            tmp_path.write_text(json.dumps({key: rows}, indent=2), encoding="utf-8")
+            try:
+                os.chmod(tmp_path, 0o600)  # scrypt hashes / session token hashes
+            except OSError:
+                pass  # best effort (e.g. Windows bind mounts)
+            os.replace(tmp_path, path)
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
 
 def _now(now: int | None) -> int:
@@ -239,8 +265,9 @@ def set_password(username: str, new_password: str) -> bool:
 
 def create_session(username: str, *, now: int | None = None) -> str:
     """Mint a new opaque session token (dgs_ + 32 random bytes). Only the
-    SHA-256 hash of the token is persisted. Prunes revoked/expired sessions
-    for this user opportunistically."""
+    SHA-256 hash of the token is persisted. Prunes every revoked/expired
+    session (all users, WR-20) opportunistically so the store cannot grow
+    without bound."""
     normalized = username.strip().lower()
     current = _now(now)
     ttl = int(os.getenv("DG_SESSION_TTL_SECONDS", "43200"))
@@ -250,11 +277,8 @@ def create_session(username: str, *, now: int | None = None) -> str:
         sessions = _load(SESSIONS_FILE, "sessions")
         kept: list[dict[str, Any]] = []
         for s in sessions:
-            if s.get("username") != normalized:
-                kept.append(s)
-                continue
             if s.get("revoked") or int(s.get("expires_at", 0)) <= current:
-                continue  # prune revoked/expired sessions for this user
+                continue  # prune revoked/expired sessions of every user
             kept.append(s)
         record: dict[str, Any] = {
             "token_hash": token_hash,

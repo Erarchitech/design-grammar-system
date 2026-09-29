@@ -957,3 +957,61 @@ class TestWr19LlmSettingsVisibility:
         assert not body["apiKeyPreview"]
         assert body["baseUrl"] is None
         assert "internal-gateway" not in resp.text and "abcdef" not in resp.text
+
+
+# --------------------------------------------------------------------------
+# WR-20: auth JSON stores fail closed on corruption, write privately, prune
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def auth_tmp_store(tmp_path, monkeypatch):
+    for name, file in (
+        ("USERS_FILE", "auth-users.json"),
+        ("SESSIONS_FILE", "auth-sessions.json"),
+        ("MEMBERSHIPS_FILE", "auth-memberships.json"),
+        ("INVITES_FILE", "auth-invites.json"),
+    ):
+        monkeypatch.setattr(auth, name, tmp_path / file)
+    return tmp_path
+
+
+class TestWr20AuthStore:
+    @pytest.mark.parametrize("content", ["{not json", "", "[]", "\"x\"", "{\"users\": 5}"])
+    def test_corrupt_store_raises_and_is_not_overwritten(self, auth_tmp_store, content):
+        auth.USERS_FILE.write_text(content, encoding="utf-8")
+        with pytest.raises(auth.AuthStoreError):
+            auth._load(auth.USERS_FILE, "users")
+        with pytest.raises(auth.AuthStoreError):
+            auth.create_user("someone@dg.local", "a-long-enough-password-1")
+        assert auth.USERS_FILE.read_text(encoding="utf-8") == content
+
+    def test_missing_store_and_missing_key_are_empty(self, auth_tmp_store):
+        assert auth._load(auth.USERS_FILE, "users") == []
+        auth.USERS_FILE.write_text("{}", encoding="utf-8")
+        assert auth._load(auth.USERS_FILE, "users") == []
+
+    def test_save_leaves_no_temp_file_even_when_the_replace_fails(self, auth_tmp_store, monkeypatch):
+        def boom(src, dst):
+            raise OSError("disk full")
+
+        monkeypatch.setattr(auth.os, "replace", boom)
+        with pytest.raises(OSError):
+            auth._save(auth.USERS_FILE, "users", [{"username": "a"}])
+        assert list(auth_tmp_store.iterdir()) == []
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
+    def test_store_files_are_owner_only(self, auth_tmp_store):
+        auth._save(auth.USERS_FILE, "users", [])
+        assert (auth.USERS_FILE.stat().st_mode & 0o777) == 0o600
+
+    def test_create_session_prunes_expired_sessions_of_other_users(self, auth_tmp_store):
+        auth.create_user("alice@dg.local", "a-long-enough-password-1")
+        auth.create_user("bob@dg.local", "a-long-enough-password-2")
+        auth.create_session("alice@dg.local", now=1_000)
+        auth.create_session("alice@dg.local", now=1_001)
+        # long after both of alice's sessions expired, bob signs in
+        far_future = 1_001 + 10 * 24 * 3600
+        auth.create_session("bob@dg.local", now=far_future)
+        rows = auth._load(auth.SESSIONS_FILE, "sessions")
+        assert [r["username"] for r in rows] == ["bob@dg.local"]
