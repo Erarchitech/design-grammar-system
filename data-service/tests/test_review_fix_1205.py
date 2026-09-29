@@ -791,3 +791,32 @@ class _NullSession:
 
     def __exit__(self, *exc):
         return False
+
+
+# --------------------------------------------------------------------------
+# WR-14: an invalid bootstrap username degrades like a weak password
+# --------------------------------------------------------------------------
+
+
+class TestWr14BootstrapUsername:
+    ENV = {"DG_BOOTSTRAP_ADMIN_USER": "not a valid name!!", "DG_BOOTSTRAP_ADMIN_PASSWORD": "a-long-enough-password-1"}
+
+    def test_local_profile_warns_and_creates_nothing(self, caplog):
+        logger = logging.getLogger("wr14-local")
+        before = len(auth._load(auth.USERS_FILE, "users"))
+        with caplog.at_level(logging.WARNING, logger="wr14-local"):
+            result = auth.ensure_bootstrap_admin(self.ENV, "local", logger)
+        # a pre-existing test admin short-circuits with "exists"; when none
+        # exists the invalid name is reported, never raised
+        assert result in ("exists", "invalid-username")
+        assert len(auth._load(auth.USERS_FILE, "users")) == before
+
+    def test_invalid_username_path_directly(self, tmp_path, monkeypatch, caplog):
+        monkeypatch.setattr(auth, "USERS_FILE", tmp_path / "auth-users.json")
+        logger = logging.getLogger("wr14-direct")
+        with caplog.at_level(logging.WARNING, logger="wr14-direct"):
+            assert auth.ensure_bootstrap_admin(self.ENV, "local", logger) == "invalid-username"
+        assert "not a valid account name" in caplog.text
+        assert "not a valid name" not in caplog.text.replace("not a valid account name", "")
+        with pytest.raises(RuntimeError):
+            auth.ensure_bootstrap_admin(self.ENV, "multi-user", logger)

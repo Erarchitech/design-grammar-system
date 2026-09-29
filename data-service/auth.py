@@ -628,10 +628,11 @@ def ensure_bootstrap_admin(
     """Create the bootstrap admin from DG_BOOTSTRAP_ADMIN_USER/
     DG_BOOTSTRAP_ADMIN_PASSWORD when no admin exists yet. Never overwrites an
     existing admin. Returns "exists" | "created" | "missing-env" |
-    "weak-password". A missing or too-short/invalid bootstrap secret raises
-    RuntimeError in "multi-user" and logs a WARNING (creating nothing) in
-    "local". Never logs the username above INFO or the password at any
-    level."""
+    "weak-password" | "invalid-username". A missing or too-short/invalid
+    bootstrap secret, or a bootstrap username that is not a valid account
+    name, raises RuntimeError in "multi-user" and logs a WARNING (creating
+    nothing) in "local". Never logs the username above INFO or the password
+    at any level."""
     if profile not in DEPLOYMENT_PROFILES:
         raise ValueError(f"unknown deployment profile: {profile!r}")
 
@@ -665,7 +666,20 @@ def ensure_bootstrap_admin(
             logger.warning(message)
             return "weak-password"
 
-        create_user(username, password, is_admin=True)
+        # WR-14: an invalid bootstrap username must degrade exactly like a weak
+        # password (warn in local, refuse in multi-user) -- not surface as a
+        # raw ValueError out of the lifespan that stops the service in local.
+        try:
+            create_user(username, password, is_admin=True)
+        except ValueError:
+            message = (
+                "DG_BOOTSTRAP_ADMIN_USER is not a valid account name; "
+                "no bootstrap admin created"
+            )
+            if profile == "multi-user":
+                raise RuntimeError(message) from None
+            logger.warning(message)
+            return "invalid-username"
         return "created"
 
 
