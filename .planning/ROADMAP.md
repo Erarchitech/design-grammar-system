@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 8/19 plans executed
+**Plans:** 9/19 plans executed
 
 Plans:
 **Wave 1**
@@ -252,7 +252,7 @@ Plans:
 
 - [x] 1205-07-PLAN.md — Tracer: login + deny-by-default dependency + one enforced project route end to end; startup profile, D-11 refusal, bootstrap, heartbeat bundle
 - [x] 1205-08-PLAN.md — Authorized test fixtures so every existing suite runs under a real principal
-- [ ] 1205-09-PLAN.md — Compose: required `.env` secrets, 127.0.0.1 bindings, multi-user override, dockerignore
+- [x] 1205-09-PLAN.md — Compose: required `.env` secrets, 127.0.0.1 bindings, multi-user override, dockerignore
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

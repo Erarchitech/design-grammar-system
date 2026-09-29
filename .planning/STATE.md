@@ -5,16 +5,16 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: Completed 1205-08-PLAN.md
-last_updated: "2026-09-29T17:26:30.151Z"
+stopped_at: Completed 1205-09-PLAN.md
+last_updated: "2026-09-29T17:33:43.155Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 49
-  percent: 82
+  completed_plans: 50
+  percent: 83
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 9 of 19
+Plan: 10 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -147,6 +147,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P06 | ~20min | 2 tasks | 2 files |
 | Phase 1205 P07 | ~40min | 2 tasks | 6 files |
 | Phase 1205 P08 | 35min | 2 tasks | 7 files |
+| Phase 1205 P09 | 25min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -450,6 +451,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [Phase 1205-07]: Project-mismatch detection gathers path+query+body candidates unconditionally, not just the route's declared project_source, so any two present sources that disagree fail PROJECT_MISMATCH
 - [Phase ?]: [Phase 1205-07]: Docs/redoc/openapi gating reads DG_DEPLOYMENT via bare os.getenv at import time (not auth.deployment_profile, which raises on an unrecognized value) so an unrelated env typo fails closed on docs rather than crashing at import
 - [Phase ?]: [1205-08] Test admin token lives in auth_fixtures.admin_session_token() (lazy create + revalidate each use); conftest redirects only the four auth stores, connectors.CREDENTIALS_FILE stays per-test patched
+- [Phase ?]: 1205-09: multi-user override uses Compose !reset (ports concatenate across -f files); known-default literal test scoped so bare usernames only fail on secret-named keys
 
 ### Research Flags (carry into planning)
 
@@ -480,6 +482,7 @@ Shipped from Phase 20 Plan 02:
 - Live docker compose exec verification for dg-reasoner's fixture mount deferred -- Docker Desktop's engine was not running in the execution environment (client present, daemon unreachable). Human with running Docker Desktop should run: docker compose up -d dg-reasoner && docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json
 - Live four-leg DE-01 run outstanding: Docker Desktop unavailable in this environment prevented data-service/dg-reasoner/replay legs from executing during the golden-fixture run; only the csharp leg ran (silent_disagreement_count=0, no_population correctly distinguished from failed). Re-run tools/de01/run_de01.py once Docker Desktop is up and fixtures/golden/seed.cypher is applied.
 - canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple still use the naive pipe-join and have silently diverged from DgIdMintingService.Mint/compute_dg_id's now-length-prefixed encoding — their doc-comments' byte-for-byte parity claim is stale; needs a follow-up decision (extend the fix, or document the split)
+- 1205-18/19: data-service exits on cold start if neo4j Bolt not yet listening (no healthcheck/restart); ui-v2 entrypoint.sh still falls back to a hardcoded Neo4j password in config.js until 1205-15 lands
 
 ### Quick Tasks Completed
 
@@ -532,8 +535,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T17:26:30.130Z
-Stopped at: Completed 1205-08-PLAN.md
+Last session: 2026-09-29T17:33:43.124Z
+Stopped at: Completed 1205-09-PLAN.md
 Resume file: None
 
 ## Performance Metrics
