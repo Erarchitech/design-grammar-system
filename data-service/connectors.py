@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import secrets
+import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -107,32 +109,71 @@ DATA_DIR = Path(os.getenv("DG_DATA_DIR", "/app/data"))
 CREDENTIALS_FILE = DATA_DIR / "connector-credentials.json"
 
 
+class CredentialStoreError(RuntimeError):
+    """The credential store exists but cannot be read as a credential list.
+
+    WR-03 (1205 review): a corrupt file is an ERROR, never an empty list --
+    treating it as empty would let the next mint overwrite (and so wipe) every
+    existing credential, and would silently un-revoke nothing but also
+    authenticate nothing.
+    """
+
+
+# Serialises every read-modify-write on the credential file (routes are sync
+# `def`, so they run concurrently on the threadpool). Single process, so an
+# in-process lock is sufficient -- same model as auth._STORE_LOCK.
+_STORE_LOCK = threading.RLock()
+
+
 def load_credentials() -> list[dict[str, Any]]:
     """Read the credential list from the JSON store.
 
-    Returns an empty list if the file is missing, malformed, or empty.
+    Returns an empty list only when the file does not exist yet. Raises
+    CredentialStoreError when it exists but is unreadable, empty, or not a
+    credential document.
     """
-    if not CREDENTIALS_FILE.exists():
-        return []
-    try:
-        payload = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return []
-    if not isinstance(payload, dict):
-        return []
-    credentials = payload.get("credentials")
-    if not isinstance(credentials, list):
-        return []
-    return [c for c in credentials if isinstance(c, dict)]
+    with _STORE_LOCK:
+        if not CREDENTIALS_FILE.exists():
+            return []
+        try:
+            payload = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise CredentialStoreError(
+                f"connector credential store {CREDENTIALS_FILE.name} is unreadable: {type(exc).__name__}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise CredentialStoreError(
+                f"connector credential store {CREDENTIALS_FILE.name} is not a JSON object"
+            )
+        if "credentials" not in payload:
+            return []
+        credentials = payload["credentials"]
+        if not isinstance(credentials, list):
+            raise CredentialStoreError(
+                f"connector credential store {CREDENTIALS_FILE.name} has a malformed credentials list"
+            )
+        return [c for c in credentials if isinstance(c, dict)]
 
 
 def save_credentials(credentials: list[dict[str, Any]]) -> None:
-    """Write the credential list to the JSON store. Creates parent dir if needed."""
-    CREDENTIALS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    CREDENTIALS_FILE.write_text(
-        json.dumps({"credentials": credentials}, indent=2),
-        encoding="utf-8",
-    )
+    """Write the credential list to the JSON store atomically (temp file +
+    os.replace, owner-only permissions). Creates the parent dir if needed."""
+    with _STORE_LOCK:
+        CREDENTIALS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = CREDENTIALS_FILE.parent / f".{CREDENTIALS_FILE.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}"
+        try:
+            tmp_path.write_text(json.dumps({"credentials": credentials}, indent=2), encoding="utf-8")
+            try:
+                os.chmod(tmp_path, 0o600)
+            except OSError:
+                pass  # best effort (e.g. Windows bind mounts)
+            os.replace(tmp_path, CREDENTIALS_FILE)
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
 
 # ── Token Utilities ──
@@ -184,9 +225,10 @@ def create_credential(
         "revoked": False,
         "last_connection": None,
     }
-    credentials = load_credentials()
-    credentials.append(record)
-    save_credentials(credentials)
+    with _STORE_LOCK:
+        credentials = load_credentials()
+        credentials.append(record)
+        save_credentials(credentials)
     return record, token
 
 
@@ -195,18 +237,19 @@ def revoke_credential(connector_id: str, credential_id: str) -> bool:
 
     Revoked credentials stop authenticating heartbeats immediately (CONNB-01).
     """
-    credentials = load_credentials()
-    changed = False
-    for record in credentials:
-        if (
-            record.get("connector_id") == connector_id
-            and record.get("credential_id") == credential_id
-        ):
-            record["revoked"] = True
-            changed = True
-    if changed:
-        save_credentials(credentials)
-    return changed
+    with _STORE_LOCK:
+        credentials = load_credentials()
+        changed = False
+        for record in credentials:
+            if (
+                record.get("connector_id") == connector_id
+                and record.get("credential_id") == credential_id
+            ):
+                record["revoked"] = True
+                changed = True
+        if changed:
+            save_credentials(credentials)
+        return changed
 
 
 def authenticate_token(token: str) -> dict[str, Any] | None:
@@ -217,7 +260,12 @@ def authenticate_token(token: str) -> dict[str, Any] | None:
     if not token:
         return None
     digest = hash_token(token)
-    for record in load_credentials():
+    try:
+        credentials = load_credentials()
+    except CredentialStoreError:
+        logging.getLogger(__name__).exception("connector credential store unreadable; refusing token")
+        return None  # fail closed: an unreadable store authenticates nobody
+    for record in credentials:
         if record.get("token_hash") == digest and not record.get("revoked"):
             return record
     return None
@@ -232,12 +280,19 @@ def record_heartbeat(token: str) -> dict[str, Any] | None:
     if not token:
         return None
     digest = hash_token(token)
-    credentials = load_credentials()
-    for record in credentials:
-        if record.get("token_hash") == digest and not record.get("revoked"):
-            record["last_connection"] = _utc_now_iso()
-            save_credentials(credentials)
-            return record
+    # Read-modify-write under the lock so a heartbeat can never write back a
+    # stale list over a concurrent revoke (WR-03).
+    with _STORE_LOCK:
+        try:
+            credentials = load_credentials()
+        except CredentialStoreError:
+            logging.getLogger(__name__).exception("connector credential store unreadable; refusing token")
+            return None
+        for record in credentials:
+            if record.get("token_hash") == digest and not record.get("revoked"):
+                record["last_connection"] = _utc_now_iso()
+                save_credentials(credentials)
+                return record
     return None
 
 

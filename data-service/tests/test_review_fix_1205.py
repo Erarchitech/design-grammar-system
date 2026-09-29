@@ -443,3 +443,72 @@ class TestWr02PostProcessGuard:
     def test_claim_untagged_skips_the_shared_hub_graph(self):
         assert "SpecGraph" in app_module.CLAIM_UNTAGGED_SHARED_GRAPHS
         assert "$sharedGraphs" in app_module.CLAIM_UNTAGGED_QUERY
+
+
+# --------------------------------------------------------------------------
+# WR-03: connector credential store is locked, atomic and fail-closed
+# --------------------------------------------------------------------------
+
+import threading  # noqa: E402
+
+import connectors  # noqa: E402
+
+
+@pytest.fixture
+def cred_store(tmp_path, monkeypatch):
+    monkeypatch.setattr(connectors, "CREDENTIALS_FILE", tmp_path / "connector-credentials.json")
+    return connectors.CREDENTIALS_FILE
+
+
+class TestWr03ConnectorStore:
+    def test_corrupt_store_is_an_error_not_an_empty_list(self, cred_store):
+        cred_store.write_text("{not json", encoding="utf-8")
+        with pytest.raises(connectors.CredentialStoreError):
+            connectors.load_credentials()
+        # a mint must NOT wipe whatever is on disk
+        with pytest.raises(connectors.CredentialStoreError):
+            connectors.create_credential("grasshopper", project="p")
+        assert cred_store.read_text(encoding="utf-8") == "{not json"
+
+    def test_corrupt_store_authenticates_nobody(self, cred_store):
+        cred_store.write_text("", encoding="utf-8")
+        assert connectors.authenticate_token("dgc_anything") is None
+        assert connectors.record_heartbeat("dgc_anything") is None
+
+    def test_missing_store_is_empty(self, cred_store):
+        assert connectors.load_credentials() == []
+
+    def test_save_is_atomic_and_leaves_no_temp_files(self, cred_store):
+        connectors.create_credential("grasshopper", project="p")
+        leftovers = [p for p in cred_store.parent.iterdir() if p.name != cred_store.name]
+        assert leftovers == []
+
+    def test_heartbeats_never_resurrect_a_revoked_credential(self, cred_store):
+        record, token = connectors.create_credential("grasshopper", project="p")
+        stop = threading.Event()
+        errors: list[BaseException] = []
+
+        def beat():
+            try:
+                while not stop.is_set():
+                    connectors.record_heartbeat(token)
+            except BaseException as exc:  # pragma: no cover - surfaced below
+                errors.append(exc)
+
+        threads = [threading.Thread(target=beat) for _ in range(4)]
+        for t in threads:
+            t.start()
+        try:
+            # the revoke must stick despite the racing heartbeats
+            connectors.revoke_credential("grasshopper", record["credential_id"])
+            assert connectors.authenticate_token(token) is None
+            still_revoked = all(
+                r["revoked"] for r in connectors.load_credentials() if r["credential_id"] == record["credential_id"]
+            )
+        finally:
+            stop.set()
+            for t in threads:
+                t.join()
+        assert not errors
+        assert still_revoked
+        assert connectors.authenticate_token(token) is None
