@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 17/19 plans executed
+**Plans:** 18/19 plans executed
 
 Plans:
 **Wave 1**
@@ -276,7 +276,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion; requires a running compose stack)*
 
-- [ ] 1205-18-PLAN.md — Live: owner rotates every committed secret, n8n publish, local-profile boundary checks (human checkpoint)
+- [x] 1205-18-PLAN.md — Live: owner rotates every committed secret, n8n publish, local-profile boundary checks (human checkpoint)
 
 **Wave 8** *(blocked on Wave 7 completion; requires a running compose stack)*
 

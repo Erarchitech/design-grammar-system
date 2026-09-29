@@ -5,15 +5,15 @@ milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 current_phase_name: Security and Tenancy Release Gate
 status: executing
-stopped_at: 1205-18 Task 1 done (37a3c55); paused at Task 2 owner-rotation checkpoint
-last_updated: "2026-09-29T18:55:31.524Z"
+stopped_at: Completed 1205-18-PLAN.md
+last_updated: "2026-09-29T19:21:32.307Z"
 last_activity: 2026-09-28
 last_activity_desc: Phase 1205 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 60
-  completed_plans: 58
+  completed_plans: 59
   percent: 83
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 1205 (Security and Tenancy Release Gate) — EXECUTING
-Plan: 18 of 19
+Plan: 19 of 19
 Status: Ready to execute
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
@@ -156,6 +156,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P15 | 25min | 2 tasks | 7 files |
 | Phase 1205 P16 | 45min | 3 tasks | 6 files |
 | Phase 1205 P17 | 25min | 2 tasks | 1 files |
+| Phase 1205 P18 | n/a (multi-session) | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -470,6 +471,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-16: SECURITY-BOUNDARY.md blocks are drift-tested in both directions (route-policy 82 rows, public routes, known defaults, published ports per profile); n8n default listed by SHA-256 digest only
 - [Phase ?]: 1205-16: CLAUDE.md Security boundary contract pointer inserted after owner's Reproducibility paragraph and left uncommitted for the owner (44 insertions vs 42 baseline)
 - [Phase ?]: 1205-17: cross-project matrix generated from ROUTE_POLICIES (50 scoped rows, 887 cases) under both profiles; positive controls call require_principal directly; tasks 1+2 committed together (single file)
+- [Phase ?]: 1205-18: n8n workflows imported with live ids injected into temp copies (repo files lack ids; plain import duplicates webhook paths); Postgres old-default rejection checked over the compose network
 
 ### Research Flags (carry into planning)
 
@@ -553,8 +555,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T18:55:31.505Z
-Stopped at: 1205-18 Task 1 done (37a3c55); paused at Task 2 owner-rotation checkpoint
+Last session: 2026-09-29T19:21:32.288Z
+Stopped at: Completed 1205-18-PLAN.md
 Resume file: None
 
 ## Performance Metrics
