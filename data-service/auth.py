@@ -404,7 +404,10 @@ def resolve_service_principal(
         return None
     if not header_value:
         return None
-    if not hmac.compare_digest(header_value, expected):
+    # WR-06: compare bytes -- hmac.compare_digest raises TypeError for a str
+    # holding non-ASCII characters (Starlette decodes headers as latin-1), which
+    # would surface as an unauthenticated 500 instead of a 401.
+    if not hmac.compare_digest(header_value.encode("utf-8"), expected.encode("utf-8")):
         return None
     return Principal(kind="service")
 

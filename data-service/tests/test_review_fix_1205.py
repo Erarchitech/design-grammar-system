@@ -168,7 +168,7 @@ class TestCr03ScopeProofNotForgeable:
             # nested braces defeated the map regex (fail-open)
             "MATCH (n {a: {b: 1}.b}) RETURN n.text, $project LIMIT 5",
             # backslash-escaped quote can desynchronise string stripping
-            "MATCH (n) WHERE n.t = 'a\' OR true //' RETURN n.text, $project",
+            "MATCH (n) WHERE n.t = 'a\\' OR true //' RETURN n.text, $project",
         ],
     )
     def test_forgery_is_rejected(self, cypher):
@@ -549,3 +549,27 @@ class TestWr05CookieSecureWarning:
         with caplog.at_level(logging.WARNING, logger="wr05-c"):
             secrets_policy.enforce_startup_secrets(_OK_SECRETS, "local", logger)
         assert not caplog.records
+
+
+# --------------------------------------------------------------------------
+# WR-06: non-ASCII service-token header is a 401, not a 500
+# --------------------------------------------------------------------------
+
+
+class TestWr06ServiceTokenNonAscii:
+    def test_resolver_returns_none_for_non_ascii_header(self):
+        env = {"DG_SERVICE_TOKEN": "a" * 40}
+        assert auth.resolve_service_principal("café-" + "a" * 40, env=env) is None
+        assert auth.resolve_service_principal("\x80\x81", env=env) is None
+
+    def test_correct_token_still_resolves(self):
+        env = {"DG_SERVICE_TOKEN": "a" * 40}
+        assert auth.resolve_service_principal("a" * 40, env=env).kind == "service"
+
+    @pytest.mark.dg_principal("none")
+    def test_http_request_with_high_byte_header_is_401_not_500(self):
+        from fastapi.testclient import TestClient as _TC
+
+        raw = _TC(app_module.app, raise_server_exceptions=False)
+        resp = raw.get("/auth/me", headers={auth.SERVICE_TOKEN_HEADER: b"\x80\xfftoken"})
+        assert resp.status_code == 401
