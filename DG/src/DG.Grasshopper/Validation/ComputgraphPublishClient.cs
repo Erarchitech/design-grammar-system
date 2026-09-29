@@ -39,9 +39,13 @@ internal static class ComputgraphPublishClient
 
         // D-04/Correction 5: bail out before any network I/O when the token is
         // missing or malformed. The token itself never enters an exception message.
-        if (!DataServiceRequestAuth.TryApplyConnectorToken(httpRequest, token, out _))
+        if (!DataServiceRequestAuth.TryApplyConnectorToken(httpRequest, token, out var authFailure))
         {
-            throw new InvalidOperationException(ErrorMessageTemplates.PublishTokenMissing(ComponentName));
+            // WR-17: a malformed token gets its own message instead of reading as "no token".
+            throw new InvalidOperationException(
+                authFailure == PublishAuthOutcome.MalformedToken
+                    ? ErrorMessageTemplates.PublishTokenMalformed(ComponentName)
+                    : ErrorMessageTemplates.PublishTokenMissing(ComponentName));
         }
 
         HttpResponseMessage response;

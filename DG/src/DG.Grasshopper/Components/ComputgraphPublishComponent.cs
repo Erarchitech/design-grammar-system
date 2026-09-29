@@ -104,6 +104,12 @@ public sealed class ComputgraphPublishComponent : GH_Component
             return;
         }
 
+        if (DG.Core.Data.DataServiceRequestAuth.IsInsecureRemoteTransport(dataServiceUrl))
+        {
+            // WR-17: the platform token is a bearer credential; warn before it goes over plain http.
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.PublishInsecureTransport("COMPUTGRAPH PUBLISH"));
+        }
+
         try
         {
             var doc = OnPingDocument();

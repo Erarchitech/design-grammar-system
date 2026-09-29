@@ -48,9 +48,13 @@ internal static class ValidationPublishClient
         // D-04/Correction 5: the token is required to publish. Bail out before any
         // network I/O when it's missing or malformed — the token itself never
         // enters an exception message (DataServiceRequestAuth doc-comment discipline).
-        if (!DataServiceRequestAuth.TryApplyConnectorToken(httpRequest, token, out _))
+        if (!DataServiceRequestAuth.TryApplyConnectorToken(httpRequest, token, out var authFailure))
         {
-            throw new InvalidOperationException(ErrorMessageTemplates.PublishTokenMissing(ComponentName));
+            // WR-17: a malformed token gets its own message instead of reading as "no token".
+            throw new InvalidOperationException(
+                authFailure == PublishAuthOutcome.MalformedToken
+                    ? ErrorMessageTemplates.PublishTokenMalformed(ComponentName)
+                    : ErrorMessageTemplates.PublishTokenMissing(ComponentName));
         }
 
         using var response = HttpClient.SendAsync(httpRequest).GetAwaiter().GetResult();

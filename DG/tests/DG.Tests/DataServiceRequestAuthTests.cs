@@ -67,6 +67,24 @@ public sealed class DataServiceRequestAuthTests
         Assert.Equal(expected, result);
     }
 
+    // --- WR-17: insecure transport classification ---
+
+    [Theory]
+    [InlineData("http://localhost:8000", false)]
+    [InlineData("http://127.0.0.1:8000/data-service", false)]
+    [InlineData("http://[::1]:8000", false)]
+    [InlineData("https://dg.example.org", false)]
+    [InlineData("http://dg.example.org", true)]
+    [InlineData("http://192.168.1.20:8080/data-service", true)]
+    [InlineData("HTTP://DG.EXAMPLE.ORG", true)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    [InlineData("not a url", false)]
+    public void IsInsecureRemoteTransport_FlagsOnlyPlainHttpToNonLoopbackHosts(string? url, bool expected)
+    {
+        Assert.Equal(expected, DataServiceRequestAuth.IsInsecureRemoteTransport(url));
+    }
+
     // --- ConnectionInfo credential-free default (D-04 Correction) ---
 
     [Fact]

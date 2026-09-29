@@ -17,6 +17,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TOOLS_DE01_DIR = REPO_ROOT / "tools" / "de01"
 if str(TOOLS_DE01_DIR) not in sys.path:
@@ -390,3 +392,32 @@ class TestReportNeverLeaksTheToken:
 
         for config in seen_configs:
             assert FAKE_TOKEN not in json.dumps(config, ensure_ascii=False)
+
+
+# -- WR-17: the token never crosses the network over plain http ---------------
+
+
+class TestInsecureTransportGuard:
+    def _with_token(self, monkeypatch):
+        monkeypatch.setenv("DG_DE01_CONNECTOR_TOKEN", FAKE_TOKEN)
+
+    @pytest.mark.parametrize(
+        "url",
+        ["http://localhost:8000", "http://127.0.0.1:8000", "http://[::1]:8000", "https://ds.example.org"],
+    )
+    def test_loopback_and_https_urls_keep_the_header(self, monkeypatch, url):
+        self._with_token(monkeypatch)
+        assert legs.data_service_auth_headers(url) == {"Authorization": f"Bearer {FAKE_TOKEN}"}
+
+    @pytest.mark.parametrize("url", ["http://ds.example.org", "http://192.168.1.20:8000"])
+    def test_plain_http_to_a_remote_host_drops_the_header_and_warns_without_the_token(
+        self, monkeypatch, capsys, url
+    ):
+        self._with_token(monkeypatch)
+        assert legs.data_service_auth_headers(url) == {}
+        err = capsys.readouterr().err
+        assert "refusing" in err and FAKE_TOKEN not in err
+
+    def test_omitting_the_url_is_unchanged(self, monkeypatch):
+        self._with_token(monkeypatch)
+        assert legs.data_service_auth_headers() == {"Authorization": f"Bearer {FAKE_TOKEN}"}

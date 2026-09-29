@@ -15,6 +15,7 @@ admissible evidence (T-1200-24).
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import subprocess
@@ -22,6 +23,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 import jsonschema
@@ -50,7 +52,25 @@ DEFAULT_CONNECTOR_TOKEN_FILE = REPO_ROOT / ".de01" / "connector-token"
 """Default location of the gitignored connector-token file (`.gitignore`'s `.de01/`)."""
 
 
-def data_service_auth_headers() -> dict[str, str]:
+def _is_insecure_remote_http(base_url: str | None) -> bool:
+    """True for a plain-``http`` URL whose host is not loopback (WR-17): the
+    connector token is a bearer credential and must not cross the network in
+    the clear."""
+    if not base_url:
+        return False
+    parsed = urlparse(base_url.strip())
+    if parsed.scheme.lower() != "http":
+        return False
+    host = (parsed.hostname or "").lower()
+    if host in ("localhost", "::1") or host.endswith(".localhost"):
+        return False
+    try:
+        return not ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return True  # a non-loopback DNS name over plain http
+
+
+def data_service_auth_headers(base_url: str | None = None) -> dict[str, str]:
     """Bearer header for the data-service and replay legs' HTTP calls (D-20).
 
     Reads ``DG_DE01_CONNECTOR_TOKEN`` at call time; if blank, reads the first
@@ -59,6 +79,11 @@ def data_service_auth_headers() -> dict[str, str]:
     ``{"Authorization": "Bearer <token>"}`` when a value exists, else ``{}`` --
     byte-identical to today (no header at all) when no token is configured
     anywhere.
+
+    When ``base_url`` is given and is plain ``http`` to a non-loopback host, no
+    header is attached (a warning naming only the host goes to stderr): the
+    token is never sent unencrypted across the network (WR-17). Omitting
+    ``base_url`` keeps the original unconditional behaviour.
 
     Never caches the token, never logs it, and never returns it in any shape
     other than this single-use header dict -- callers must not fold the
@@ -81,6 +106,13 @@ def data_service_auth_headers() -> dict[str, str]:
             except OSError:
                 token = ""
     if not token:
+        return {}
+    if _is_insecure_remote_http(base_url):
+        print(
+            f"warning: refusing to send the connector token over plain http to "
+            f"{urlparse(base_url.strip()).hostname}; use https or a loopback address",
+            file=sys.stderr,
+        )
         return {}
     return {"Authorization": f"Bearer {token}"}
 
@@ -227,7 +259,7 @@ def run_leg_data_service(fixture: dict[str, Any], config: dict[str, Any]) -> Leg
     try:
         with httpx.Client(
             timeout=httpx.Timeout(connect=2.0, read=15.0, write=5.0, pool=2.0),
-            headers=data_service_auth_headers(),
+            headers=data_service_auth_headers(base_url),
         ) as client:
             publish_response = client.post(
                 f"{base_url}/validation/publish",
@@ -897,7 +929,7 @@ def run_leg_replay(fixture: dict[str, Any], config: dict[str, Any]) -> LegResult
     try:
         with httpx.Client(
             timeout=httpx.Timeout(connect=2.0, read=10.0, write=2.0, pool=2.0),
-            headers=data_service_auth_headers(),
+            headers=data_service_auth_headers(base_url),
         ) as client:
             response = client.get(f"{base_url}/validation/view/{project}")
     except httpx.RequestError as exc:

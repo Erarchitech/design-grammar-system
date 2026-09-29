@@ -134,6 +134,12 @@ public sealed class ValidatorComponent : GH_Component
             }
             else
             {
+                if (DG.Core.Data.DataServiceRequestAuth.IsInsecureRemoteTransport(dataServiceUrl))
+                {
+                    // WR-17: the platform token is a bearer credential; warn before it goes over plain http.
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.PublishInsecureTransport("VALIDATOR"));
+                }
+
                 try
                 {
                     var response = ValidationPublishClient.Publish(

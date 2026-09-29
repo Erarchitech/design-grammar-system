@@ -55,6 +55,25 @@ public static class DataServiceRequestAuth
     }
 
     /// <summary>
+    /// True when <paramref name="dataServiceUrl"/> is a plain <c>http://</c> URL
+    /// whose host is not loopback. The platform token is a bearer credential, so
+    /// sending it there exposes it to anyone on the path (WR-17). An unparseable
+    /// or blank URL is not classified as insecure here -- the request itself
+    /// will fail on it.
+    /// </summary>
+    public static bool IsInsecureRemoteTransport(string? dataServiceUrl)
+    {
+        if (string.IsNullOrWhiteSpace(dataServiceUrl)
+            || !Uri.TryCreate(dataServiceUrl.Trim(), UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        return string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && !uri.IsLoopback;
+    }
+
+    /// <summary>
     /// Maps an HTTP status code from a publish response to a
     /// <see cref="PublishAuthOutcome"/>: any 2xx is <see cref="PublishAuthOutcome.Ok"/>,
     /// 401 is <see cref="PublishAuthOutcome.Rejected"/>, 403 is

@@ -460,6 +460,27 @@ public sealed class ErrorMessageTemplateTests
     }
 
     [Fact]
+    public void PublishTokenMalformed_SaysItMustStartWithDgcAndIsDistinctFromMissing()
+    {
+        var result = ErrorMessageTemplates.PublishTokenMalformed("VALIDATOR");
+
+        Assert.Contains("VALIDATOR", result);
+        Assert.Contains("must start with dgc_", result);
+        Assert.NotEqual(ErrorMessageTemplates.PublishTokenMissing("VALIDATOR"), result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void PublishInsecureTransport_WarnsAboutPlainHttp()
+    {
+        var result = ErrorMessageTemplates.PublishInsecureTransport("COMPUTGRAPH PUBLISH");
+
+        Assert.Contains("COMPUTGRAPH PUBLISH", result);
+        Assert.Contains("plain http", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
     public void PublishTokenRejected_MentionsRevokedOrExpiredAndConnectorsScreen()
     {
         var result = ErrorMessageTemplates.PublishTokenRejected("COMPUTGRAPH PUBLISH");
@@ -507,6 +528,8 @@ public sealed class ErrorMessageTemplateTests
         var templates = new[]
         {
             ErrorMessageTemplates.PublishTokenMissing("VALIDATOR"),
+            ErrorMessageTemplates.PublishTokenMalformed("VALIDATOR"),
+            ErrorMessageTemplates.PublishInsecureTransport("VALIDATOR"),
             ErrorMessageTemplates.PublishTokenRejected("VALIDATOR"),
             ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR"),
             ErrorMessageTemplates.ConnectorNoGraphBundle(),

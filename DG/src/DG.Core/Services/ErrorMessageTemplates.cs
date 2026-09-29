@@ -213,6 +213,25 @@ public static class ErrorMessageTemplates
         return $"{component}: no platform token. Paste the same dgc_ platform token used on CONNECTOR into this component's Token input to publish — evaluation still runs without it.";
     }
 
+    /// <summary>
+    /// The Token input holds something, but it is not a dgc_ token (WR-17): a
+    /// mistyped or truncated paste must not read as "no platform token".
+    /// </summary>
+    public static string PublishTokenMalformed(string component)
+    {
+        return $"{component}: the value in the Token input is not a dgc_ platform token - it must start with dgc_. Copy the whole token from the Connectors screen (Grasshopper connector) into the Token input.";
+    }
+
+    /// <summary>
+    /// The data-service URL is plain http to a non-loopback host, so the bearer
+    /// platform token would travel unencrypted (WR-17). A warning, not a block:
+    /// the stack terminates no TLS itself.
+    /// </summary>
+    public static string PublishInsecureTransport(string component)
+    {
+        return $"{component}: the data-service URL uses plain http to a non-local host, so the dgc_ platform token is sent unencrypted. Use an https URL (or a trusted private network) before publishing.";
+    }
+
     /// <summary>A publish request's token was rejected by data-service (HTTP 401).</summary>
     public static string PublishTokenRejected(string component)
     {
