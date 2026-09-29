@@ -1,0 +1,34 @@
+# Phase 1205 (D-07 / D-09): multi-user deployment profile override.
+#
+# Purpose: layer this file over the base docker-compose.yml to run the stack in
+# the multi-user profile. It switches data-service to DG_DEPLOYMENT=multi-user
+# (read by auth.deployment_profile()) and withholds the two internal-service
+# host publishes that a shared deployment must not expose: Neo4j (7474/7687)
+# and n8n (5678).
+#
+# Invocation:
+#     docker compose -f docker-compose.yml -f docker-compose.multi-user.yml up -d
+# A plain `docker compose up -d` stays in the local profile.
+#
+# Why `!reset`: Docker Compose CONCATENATES `ports` lists across -f files
+# instead of replacing them, so redeclaring a shorter list would not drop a
+# publish. The `!reset` YAML tag (Compose v2.24+) clears the inherited list.
+#
+# Ports 8000 (data-service), 8001 (dg-reasoner), 9000/9001 (MinIO) and 11435
+# (Ollama) remain published to 127.0.0.1 only, from the base file. Only 8080
+# (UI) and 8090 (Speckle ingress) bind all interfaces.
+#
+# Consequence: direct-Bolt Grasshopper components (which connect to
+# bolt://localhost:7687) are unsupported in this profile; use the data-service
+# API instead.
+services:
+
+  neo4j:
+    ports: !reset []
+
+  n8n:
+    ports: !reset []
+
+  data-service:
+    environment:
+      DG_DEPLOYMENT: multi-user
