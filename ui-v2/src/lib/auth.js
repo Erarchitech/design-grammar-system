@@ -82,6 +82,24 @@ export async function acceptInvite(inviteCode, password) {
   return establish(res);
 }
 
+// Self-registration (amendment of D-05, 2026-09-30): the server offers it in
+// the local profile only and answers 404 elsewhere. The account starts with no
+// memberships and no admin flag; the user creates their own projects.
+export async function register(username, password) {
+  const res = await apiFetch(url("/auth/register"), {
+    method: "POST",
+    body: { username, password }
+  });
+  return establish(res);
+}
+
+// Public, secret-free deployment options. Callers must fail closed: treat a
+// rejected call as { selfRegistration: false }.
+export async function authOptions() {
+  const res = await apiFetch(url("/auth/options"));
+  return { selfRegistration: res?.selfRegistration === true };
+}
+
 export async function logout() {
   try {
     await apiFetch(url("/auth/logout"), { method: "POST" });
