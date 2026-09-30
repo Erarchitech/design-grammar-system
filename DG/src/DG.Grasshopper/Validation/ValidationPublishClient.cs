@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using DG.Core.Contracts;
 using DG.Core.Data;
 using DG.Core.Models;
 using DG.Core.Serialization;
@@ -117,6 +118,7 @@ internal static class ValidationPublishClient
         var request = new ValidationPublishRequest
         {
             Project = package.Project,
+            EvidenceContractVersion = EvidenceEnvelopeFactory.ContractVersionV2,
             StatePayloadJson = statePayloadJson,
         };
 
@@ -136,7 +138,10 @@ internal static class ValidationPublishClient
             {
                 RuleId = ruleResult.RuleId,
                 Passed = ruleResult.Passed,
+                CanonicalStatus = EvidenceStatusNames.ToWireName(ruleResult.Status),
+                Detail = ruleResult.Detail,
             };
+            payload.Warnings.AddRange(ruleResult.Warnings);
             payload.FailedEntityIds.AddRange(ruleResult.FailedEntityIds);
             payload.PassedEntityIds.AddRange(ruleResult.PassedEntityIds);
             request.RuleResults.Add(payload);
@@ -154,6 +159,18 @@ internal static class ValidationPublishClient
             payload.RuleIds.AddRange(entity.RuleIds);
             payload.FailedRuleIds.AddRange(entity.FailedRuleIds);
             payload.PassedRuleIds.AddRange(entity.PassedRuleIds);
+            foreach (var pair in entity.CanonicalStatuses)
+            {
+                payload.CanonicalStatuses.Add(pair.Key, EvidenceStatusNames.ToWireName(pair.Value));
+            }
+            foreach (var pair in entity.CanonicalWarnings)
+            {
+                payload.CanonicalWarnings.Add(pair.Key, new List<string>(pair.Value));
+            }
+            foreach (var pair in entity.CanonicalDetails)
+            {
+                payload.CanonicalDetails.Add(pair.Key, pair.Value);
+            }
             request.Entities.Add(payload);
         }
 

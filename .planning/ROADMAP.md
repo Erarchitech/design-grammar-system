@@ -316,3 +316,40 @@ Remains governed by its own future-milestone rules and activation sequence. v12.
 ## Acceptance summary
 
 v12.0 is successful when the shared contract is executable, unsupported semantics are typed, state replay and per-object verdicts are preserved, identity/`ATTRIBUTE_OF` ownership is resolved, deterministic and LLM repeatability are separated, and security fails closed before external multi-user evaluation.
+
+### Phase 1205.1: Canonical Status GH Publish Closure (INSERTED)
+
+**Goal:** Close v12.0 audit BLOCKER-01: preserve per-(rule,object) canonical outcomes through DG.Core → production GH publish serialization → Python evidence/persistence, without inferring pass from an empty failure list.
+**Requirements**: ALGN12-01, ALGN12-02, ALGN12-06, ALGN12-10
+**Depends on:** Phase 1205
+**Gap source:** `.planning/v12.0-MILESTONE-AUDIT.md` — BLOCKER-01; shared contracts from Phases 1200–1202.
+**Gate:** Production-wire regression proves non-verdict preservation and mixed supported outcomes; applicable C#/Python tests and GH Release build pass; independent verification confirms closure. No unrelated debt, secret rotation or Phase 40 UAT is absorbed.
+**Plans:** 6/6 plans complete
+
+Plans:
+
+**Wave 1**
+
+- [x] 1205.1-01-PLAN.md — Durable supported production-wire tracer, Unsupported RED и binding outcomes.
+
+**Wave 2 (blocked on Wave 1)**
+
+- [x] 1205.1-02-PLAN.md — Exact pair package + GH mapper: retained Unsupported RED → GREEN.
+
+**Wave 3 (blocked on Wave 2)**
+
+- [x] 1205.1-03-PLAN.md — Strict Python/C# versioned factories/readers; bounded old no-rows read.
+
+**Wave 4 (blocked on Wave 3)**
+
+- [x] 1205.1-04-PLAN.md — Cross-language/DE-01 + historical fixtures; Core diagnostics before mapping.
+
+**Wave 5 (blocked on Wave 4)**
+
+- [x] 1205.1-05-PLAN.md — Explicit BuildRequest diagnostics copying, new GH writer, full outcome matrix.
+
+**Wave 6 (blocked on Wave 5)**
+
+- [x] 1205.1-06-PLAN.md — Bounded parser defense, specifications and offline release evidence.
+
+Cross-cutting constraints: exact pair identity; unchanged legacy fields and canonicalization; no fake objects; no live mutations/secrets/commits; independent plan-check and verification required.

@@ -1,0 +1,6 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "integral or hash"]
+time=2026-09-30T20:14:07.561009+00:00
+.............................                                            [100%]
+29 passed, 59 deselected in 11.27s
+
+exit=0

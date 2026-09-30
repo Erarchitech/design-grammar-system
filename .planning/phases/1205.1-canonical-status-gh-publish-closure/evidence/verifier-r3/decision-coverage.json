@@ -1,0 +1,8 @@
+{
+  "skipped": false,
+  "blocking": false,
+  "total": 4,
+  "honored": 4,
+  "not_honored": [],
+  "message": "All trackable CONTEXT.md decisions are honored by shipped artifacts."
+}

@@ -1,0 +1,38 @@
+COMMAND: python .planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verify_evidence.py --sdk
+EXIT: 0
+diagnostics 5 exact files; persist/read/view linked 38bafd3fa15aedef862f10d3def92fdf1c4d6f40c1492595e5d7dce6d926d4fa
+supported 5 exact files; persist/read/view linked eb30f73ecc131a96b12b68386847a2a9261059fc6e05bc7077e4d8abd01ef244
+unsupported 5 exact files; persist/read/view linked 37ccb75b3299bd7ceb9f4e5883c11069e969f03233f794bf522b4370d5b18759
+zero_rows 5 exact files; persist/read/view linked 86f94900c38d78788a4096dc36e83f65d03ee21e186e28954860ff6b9bc10522
+PASS: 4 scenarios / 20 raw payload files; capture and readback checksums verified
+{
+  "command": [
+    "dotnet",
+    "msbuild",
+    "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+    "-t:ResolveReferences",
+    "-getProperty:DefineConstants",
+    "-getProperty:RhinoCommonPath",
+    "-getProperty:GrasshopperPath",
+    "-getProperty:GhIoPath",
+    "-getItem:ReferencePath",
+    "-getItem:Compile",
+    "-property:Configuration=Release"
+  ],
+  "exit_code": 0,
+  "Properties": {
+    "DefineConstants": "TRACE;GRASSHOPPER_SDK;RELEASE;NET;NET7_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER",
+    "RhinoCommonPath": "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll",
+    "GrasshopperPath": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "GhIoPath": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll"
+  },
+  "resolvedSdkReferences": [
+    "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll",
+    "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll"
+  ],
+  "compiledPublishSources": [
+    "Validation\\ValidationPublishClient.cs",
+    "Validation\\ValidationPublishContract.cs"
+  ]
+}

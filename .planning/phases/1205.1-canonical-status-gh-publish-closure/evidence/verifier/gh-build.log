@@ -1,0 +1,13 @@
+command=["dotnet", "build", "DG/src/DG.Grasshopper/DG.Grasshopper.csproj", "-c", "Release", "--no-restore", "-v", "minimal"]
+started=2026-09-30T19:51:02.588487+00:00
+  DG.Core -> C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Release\net7.0\DG.Core.dll
+  DG.Grasshopper -> C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Grasshopper\bin\Release\net7.0-windows\DG.Grasshopper.dll
+
+Сборка успешно завершена.
+    Предупреждений: 0
+    Ошибок: 0
+
+Прошло времени 00:00:01.14
+
+exit=0
+wall_seconds=1.484

@@ -1,0 +1,210 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_unicode_containers.py", "-q", "--tb=short", "-k", "test_container"]
+time=2026-09-30T20:56:57.867780+00:00
+FFFFFFFFFF..FFFFFFFFFFFFFFF..F.                                          [100%]
+================================== FAILURES ===================================
+_____ test_container_nested_invalid_values_rejected_before_dump[nan-list] _____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+____ test_container_nested_invalid_values_rejected_before_dump[nan-tuple] _____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+_____ test_container_nested_invalid_values_rejected_before_dump[inf-list] _____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+____ test_container_nested_invalid_values_rejected_before_dump[inf-tuple] _____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+____ test_container_nested_invalid_values_rejected_before_dump[-inf-list] _____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+____ test_container_nested_invalid_values_rejected_before_dump[-inf-tuple] ____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+___ test_container_nested_invalid_values_rejected_before_dump[\ud800-list] ____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:21: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+___ test_container_nested_invalid_values_rejected_before_dump[\ud800-tuple] ___
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:21: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+___ test_container_nested_invalid_values_rejected_before_dump[\udfff-list] ____
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:21: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+___ test_container_nested_invalid_values_rejected_before_dump[\udfff-tuple] ___
+data-service\tests\test_evidence_unicode_containers.py:34: in test_container_nested_invalid_values_rejected_before_dump
+    assert_metadata_rejected({'x': container([{'nested': (bad,)}])})
+data-service\tests\test_evidence_unicode_containers.py:21: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+_________ test_container_non_json_forms_explicitly_rejected[1.5-set] __________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[1.5-frozenset] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+________ test_container_non_json_forms_explicitly_rejected[1.5-deque] _________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+_________ test_container_non_json_forms_explicitly_rejected[1.5-iter] _________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[1.5-<lambda>0] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[1.5-<lambda>1] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+_________ test_container_non_json_forms_explicitly_rejected[nan-set] __________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[nan-frozenset] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+________ test_container_non_json_forms_explicitly_rejected[nan-deque] _________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+_________ test_container_non_json_forms_explicitly_rejected[nan-iter] _________
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[nan-<lambda>0] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:18: in assert_metadata_rejected
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_container_non_json_forms_explicitly_rejected[nan-<lambda>1] _______
+data-service\tests\test_evidence_unicode_containers.py:66: in test_container_non_json_forms_explicitly_rejected
+    assert_metadata_rejected({'x': container([value])})
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+_________________ test_container_tuple_depth_accounting[127] __________________
+data-service\tests\test_evidence_unicode_containers.py:78: in test_container_tuple_depth_accounting
+    model = contract.build_envelope_with_rule_results('p', 'd', 's', '1', 'test', [], [], source_representation=meta)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:371: in build_envelope_with_rule_results
+    payload = old.model_dump(mode="json", exclude_none=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\pydantic\main.py:475: in model_dump
+    return self.__pydantic_serializer__.to_python(
+E   ValueError: Circular reference detected (depth exceeded)
+_________________ test_container_tuple_depth_accounting[128] __________________
+data-service\tests\test_evidence_unicode_containers.py:78: in test_container_tuple_depth_accounting
+    model = contract.build_envelope_with_rule_results('p', 'd', 's', '1', 'test', [], [], source_representation=meta)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:371: in build_envelope_with_rule_results
+    payload = old.model_dump(mode="json", exclude_none=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\pydantic\main.py:475: in model_dump
+    return self.__pydantic_serializer__.to_python(
+E   ValueError: Circular reference detected (depth exceeded)
+_________________ test_container_tuple_depth_accounting[129] __________________
+data-service\tests\test_evidence_unicode_containers.py:76: in test_container_tuple_depth_accounting
+    assert_metadata_rejected(meta)
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+____________ test_container_cycles_reject_without_dump[tuple-list] ____________
+data-service\tests\test_evidence_unicode_containers.py:101: in test_container_cycles_reject_without_dump
+    assert_metadata_rejected({'x': item})
+data-service\tests\test_evidence_unicode_containers.py:26: in assert_metadata_rejected
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001903FA4C680>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001903FA4C680> = contract.read_envelope_dict
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[nan-list]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[nan-tuple]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[inf-list]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[inf-tuple]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[-inf-list]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[-inf-tuple]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[\ud800-list]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[\ud800-tuple]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[\udfff-list]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_nested_invalid_values_rejected_before_dump[\udfff-tuple]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-set]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-frozenset]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-deque]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-iter]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-<lambda>0]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[1.5-<lambda>1]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-set]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-frozenset]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-deque]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-iter]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-<lambda>0]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_non_json_forms_explicitly_rejected[nan-<lambda>1]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_tuple_depth_accounting[127]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_tuple_depth_accounting[128]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_tuple_depth_accounting[129]
+FAILED data-service/tests/test_evidence_unicode_containers.py::test_container_cycles_reject_without_dump[tuple-list]
+26 failed, 5 passed, 53 deselected in 3.16s
+
+exit=1

@@ -1,0 +1,11 @@
+{
+  "protectedFiles": 277,
+  "changed": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "copiedProbeSha256": {
+    "verifier/admission_probe.py": "4b35fdbb404b5983cd7239c0bee1f9917f78fa16ac37f1777beebde08f7eb336",
+    "verifier/source_checks.py": "9c940409a949ec2fbb58c81cb850afbe6262982c2eeb572d3cbeb70e8433b2c7",
+    "verifier-r2/inmemory_probe.py": "4c005c61377324a908fe1ff0083b65fa22fdb6952b941a3c0e9fa80aa062b945"
+  }
+}

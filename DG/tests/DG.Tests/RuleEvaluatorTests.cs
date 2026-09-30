@@ -6,6 +6,133 @@ namespace DG.Tests;
 
 public sealed class RuleEvaluatorTests
 {
+    [Fact]
+    public void BindingResults_DistinguishLegacyUnavailableFromEvaluatedEmptyPopulation()
+    {
+        Assert.Null(new RuleEvaluationResult().BindingResults);
+        var result = new RuleEvaluator().EvaluateRule(HeightRule(), Array.Empty<BindingRow>());
+        Assert.Equal(EvidenceStatus.NoPopulation, result.Status);
+        Assert.False(result.Passed);
+        Assert.Empty(result.FailingBindings);
+        Assert.NotNull(result.BindingResults);
+        Assert.Empty(result.BindingResults);
+    }
+
+    [Fact]
+    public void BindingResults_PreserveMixedOutcomesIdentityAndLegacyFieldsBeforeRollup()
+    {
+        var pass = new BindingRow { ValuesByVar = { ["?b"] = "same", ["?h"] = 60m } };
+        var equalValuesDifferentReference = new BindingRow { ValuesByVar = { ["?b"] = "same", ["?h"] = 60m } };
+        var fail = new BindingRow { ValuesByVar = { ["?b"] = "other", ["?h"] = 80m } };
+        var unknown = new BindingRow { ValuesByVar = { ["?b"] = "missing-height" } };
+        var bindings = new[] { pass, equalValuesDifferentReference, fail, unknown, pass };
+        var result = new RuleEvaluator().EvaluateRule(HeightRule(), bindings);
+
+        Assert.NotNull(result.BindingResults);
+        Assert.Equal(new[] { EvidenceStatus.Passed, EvidenceStatus.Passed, EvidenceStatus.Failed,
+            EvidenceStatus.Unknown, EvidenceStatus.Passed }, result.BindingResults.Select(r => r.Status));
+        for (var i = 0; i < bindings.Length; i++)
+            Assert.Same(bindings[i], result.BindingResults[i].Binding);
+        Assert.Null(result.BindingResults[0].Detail);
+        Assert.Null(result.BindingResults[2].Detail);
+        Assert.Contains("?h", result.BindingResults[3].Detail);
+        Assert.Equal(new RuleEvaluator().EvaluateRule(HeightRule(), new[] { unknown }).Message,
+            result.BindingResults[3].Detail);
+        Assert.Equal(EvidenceStatus.Failed, result.Status);
+        Assert.False(result.Passed);
+        Assert.Equal("Rule violated by 1 binding(s).", result.Message);
+        Assert.Same(fail, Assert.Single(result.FailingBindings));
+    }
+
+    [Fact]
+    public void BindingResults_RetainUnsupportedAndCaughtErrorDetailsWithoutReevaluation()
+    {
+        var binding = new BindingRow();
+        var unsupported = new RuleEvaluator().EvaluateRule(
+            RuleWithAtoms(Build("ObjectPropertyAtom", "belongsTo")), new[] { binding });
+        Assert.NotNull(unsupported.BindingResults);
+        var refusal = Assert.Single(unsupported.BindingResults);
+        Assert.Same(binding, refusal.Binding);
+        Assert.Equal(EvidenceStatus.Unsupported, refusal.Status);
+        Assert.Equal(unsupported.Message, refusal.Detail);
+        Assert.Contains("belongsTo", refusal.Detail);
+        Assert.Empty(unsupported.FailingBindings);
+        Assert.False(unsupported.Passed);
+
+        var value = new CountingFault();
+        binding.ValuesByVar["?x"] = value;
+        var atom = Build("BuiltinAtom", "swrlb:equal", ("?x", ArgKind.Variable), ("1", ArgKind.Literal));
+        var error = new RuleEvaluator().EvaluateRule(RuleWithAtoms(atom), new[] { binding });
+        Assert.NotNull(error.BindingResults);
+        var fault = Assert.Single(error.BindingResults);
+        Assert.Same(binding, fault.Binding);
+        Assert.Equal(EvidenceStatus.Error, fault.Status);
+        Assert.Equal("binding-fault", fault.Detail);
+        Assert.Equal(fault.Detail, error.Message);
+        Assert.Equal(EvidenceStatus.Error, error.Status);
+        Assert.False(error.Passed);
+        Assert.Same(binding, Assert.Single(error.FailingBindings));
+        Assert.Equal(1, value.Calls);
+    }
+
+    [Fact]
+    public void BindingResults_KeepBodyShortCircuitAndParsedUnsupportedIdentity()
+    {
+        var pass = new BindingRow { ValuesByVar = { ["?h"] = 60m } };
+        var rejected = new BindingRow { ValuesByVar = { ["?h"] = 80m } };
+        var rule = RuleWithAtoms(GreaterThanBuiltinAtom(), Build("ObjectPropertyAtom", "belongsTo"));
+        var result = new RuleEvaluator().EvaluateRule(rule, new[] { pass, rejected });
+        Assert.NotNull(result.BindingResults);
+        Assert.Equal(EvidenceStatus.Passed, result.BindingResults[0].Status);
+        Assert.Null(result.BindingResults[0].Detail);
+        Assert.Equal(EvidenceStatus.Unsupported, result.BindingResults[1].Status);
+        Assert.Same(rejected, result.BindingResults[1].Binding);
+        Assert.Equal(result.Message, result.BindingResults[1].Detail);
+        Assert.Equal(EvidenceStatus.Unsupported, result.Status);
+        Assert.Empty(result.FailingBindings);
+
+        var parsed = new RuleEvaluator().EvaluateRule(
+            new Rule { Swrl = "unresolved(?x,?y)->Head(?x)" }, new[] { pass, rejected });
+        Assert.NotNull(parsed.BindingResults);
+        Assert.Equal(2, parsed.BindingResults.Count);
+        Assert.All(parsed.BindingResults, r => {
+            Assert.Equal(EvidenceStatus.Unsupported, r.Status);
+            Assert.Equal(parsed.Message, r.Detail);
+        });
+        Assert.Same(pass, parsed.BindingResults[0].Binding);
+        Assert.Same(rejected, parsed.BindingResults[1].Binding);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("no-arrow")]
+    [InlineData("malformed->Head(?x)")]
+    public void BindingResults_PreserveLegacyThrowingParserBoundary(string swrl)
+    {
+        var rule = new Rule { Swrl = swrl };
+        var before = Record.Exception(() => DG.Core.Parsing.SwrlRuleParser.Parse(swrl));
+        var after = Record.Exception(() => new RuleEvaluator().EvaluateRule(rule, new[] { new BindingRow() }));
+        Assert.NotNull(before);
+        Assert.NotNull(after);
+        Assert.Equal(before.GetType(), after.GetType());
+        Assert.Equal(before.Message, after.Message);
+        var empty = new RuleEvaluator().EvaluateRule(rule, Array.Empty<BindingRow>());
+        Assert.Equal(EvidenceStatus.NoPopulation, empty.Status);
+        Assert.NotNull(empty.BindingResults);
+        Assert.Empty(empty.BindingResults);
+    }
+
+    private sealed class CountingFault
+    {
+        public int Calls { get; private set; }
+        public override bool Equals(object? obj)
+        {
+            Calls++;
+            throw new InvalidOperationException("binding-fault");
+        }
+        public override int GetHashCode() => 0;
+    }
+
     // Phase 1201 plan 03, D-02: these tests used to rely on RuleEvaluator.EvaluateRule's
     // rule.BodyAtoms.Count == 0 fallback silently parsing rule.Swrl via SwrlRuleParser.Parse with
     // no resolver, which used to guess `hasHeightM(?b,?h)` as DataPropertyAtom. After plan 03,

@@ -1,0 +1,138 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "nonfinite"]
+time=2026-09-30T20:10:49.603976+00:00
+FFFFFFFFFFFFFFFFFFFF                                                     [100%]
+================================== FAILURES ===================================
+______________ test_nonfinite_raw_and_inmemory_read_view[1-NaN] _______________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+____________ test_nonfinite_raw_and_inmemory_read_view[1-Infinity] ____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+___________ test_nonfinite_raw_and_inmemory_read_view[1--Infinity] ____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+_____________ test_nonfinite_raw_and_inmemory_read_view[1-1e400] ______________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+_____________ test_nonfinite_raw_and_inmemory_read_view[1--1e400] _____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+____________ test_nonfinite_raw_and_inmemory_read_view[1.0.0-NaN] _____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+__________ test_nonfinite_raw_and_inmemory_read_view[1.0.0-Infinity] __________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+_________ test_nonfinite_raw_and_inmemory_read_view[1.0.0--Infinity] __________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+___________ test_nonfinite_raw_and_inmemory_read_view[1.0.0-1e400] ____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+___________ test_nonfinite_raw_and_inmemory_read_view[1.0.0--1e400] ___________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+____________ test_nonfinite_raw_and_inmemory_read_view[2.0.0-NaN] _____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+__________ test_nonfinite_raw_and_inmemory_read_view[2.0.0-Infinity] __________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+_________ test_nonfinite_raw_and_inmemory_read_view[2.0.0--Infinity] __________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+___________ test_nonfinite_raw_and_inmemory_read_view[2.0.0-1e400] ____________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+___________ test_nonfinite_raw_and_inmemory_read_view[2.0.0--1e400] ___________
+data-service\tests\test_evidence_raw_admission.py:58: in test_nonfinite_raw_and_inmemory_read_view
+    assert contract.read_envelope_dict(payload) is None
+E   AssertionError: assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x000001BDC2404180>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x000001BDC2404180> = contract.read_envelope_dict
+______ test_nonfinite_publish_raw_and_inmemory_denied_before_writes[NaN] ______
+data-service\tests\test_evidence_raw_admission.py:72: in test_nonfinite_publish_raw_and_inmemory_denied_before_writes
+    with pytest.raises(ValidationError):
+E   Failed: DID NOT RAISE ValidationError
+___ test_nonfinite_publish_raw_and_inmemory_denied_before_writes[Infinity] ____
+data-service\tests\test_evidence_raw_admission.py:72: in test_nonfinite_publish_raw_and_inmemory_denied_before_writes
+    with pytest.raises(ValidationError):
+E   Failed: DID NOT RAISE ValidationError
+___ test_nonfinite_publish_raw_and_inmemory_denied_before_writes[-Infinity] ___
+data-service\tests\test_evidence_raw_admission.py:72: in test_nonfinite_publish_raw_and_inmemory_denied_before_writes
+    with pytest.raises(ValidationError):
+E   Failed: DID NOT RAISE ValidationError
+_____ test_nonfinite_publish_raw_and_inmemory_denied_before_writes[1e400] _____
+data-service\tests\test_evidence_raw_admission.py:72: in test_nonfinite_publish_raw_and_inmemory_denied_before_writes
+    with pytest.raises(ValidationError):
+E   Failed: DID NOT RAISE ValidationError
+____ test_nonfinite_publish_raw_and_inmemory_denied_before_writes[-1e400] _____
+data-service\tests\test_evidence_raw_admission.py:72: in test_nonfinite_publish_raw_and_inmemory_denied_before_writes
+    with pytest.raises(ValidationError):
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1-NaN]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1-Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1--Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1-1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1--1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1.0.0-NaN]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1.0.0-Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1.0.0--Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1.0.0-1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[1.0.0--1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[2.0.0-NaN]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[2.0.0-Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[2.0.0--Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[2.0.0-1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_raw_and_inmemory_read_view[2.0.0--1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_publish_raw_and_inmemory_denied_before_writes[NaN]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_publish_raw_and_inmemory_denied_before_writes[Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_publish_raw_and_inmemory_denied_before_writes[-Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_publish_raw_and_inmemory_denied_before_writes[1e400]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_publish_raw_and_inmemory_denied_before_writes[-1e400]
+20 failed, 39 deselected in 6.98s
+
+exit=1

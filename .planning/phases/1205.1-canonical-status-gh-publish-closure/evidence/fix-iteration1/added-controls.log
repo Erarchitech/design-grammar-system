@@ -1,0 +1,23 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "factory or row_status or below_and_at"]
+time=2026-09-30T20:24:10.709220+00:00
+..FFF..                                                                  [100%]
+================================== FAILURES ===================================
+_______ test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[nan] _______
+data-service\tests\test_evidence_raw_admission.py:140: in test_v2_factory_does_not_coerce_nonfinite_metadata_to_null
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+_______ test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[inf] _______
+data-service\tests\test_evidence_raw_admission.py:140: in test_v2_factory_does_not_coerce_nonfinite_metadata_to_null
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+______ test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[-inf] _______
+data-service\tests\test_evidence_raw_admission.py:140: in test_v2_factory_does_not_coerce_nonfinite_metadata_to_null
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[nan]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[inf]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_v2_factory_does_not_coerce_nonfinite_metadata_to_null[-inf]
+3 failed, 4 passed, 114 deselected in 6.05s
+
+exit=1

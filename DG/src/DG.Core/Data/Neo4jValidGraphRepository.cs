@@ -258,8 +258,7 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
 
         try
         {
-            var envelope = JsonSerializer.Deserialize<EvidenceEnvelope>(evidenceEnvelopeJson);
-            if (envelope is null)
+            if (!EvidenceEnvelopeReader.TryRead(evidenceEnvelopeJson, out var envelope) || envelope is null)
             {
                 return new PerObjectVerdictResult { EnvelopePresent = false, Verdicts = Array.Empty<PerObjectVerdict>() };
             }

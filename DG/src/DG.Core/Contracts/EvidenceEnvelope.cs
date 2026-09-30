@@ -3,6 +3,71 @@ using System.Text.Json.Serialization;
 
 namespace DG.Core.Contracts;
 
+/// <summary>Rule-scoped evidence, never a source of per-object verdicts.</summary>
+public sealed class EvidenceRuleResult
+{
+    [JsonPropertyName("ruleId")]
+    public required string RuleId { get; init; }
+    [JsonPropertyName("canonicalStatus")]
+    [JsonConverter(typeof(EvidenceStatusJsonConverter))]
+    public required EvidenceStatus CanonicalStatus { get; init; }
+    [JsonPropertyName("warnings")]
+    public required List<string> Warnings { get; init; }
+    [JsonPropertyName("detail")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Detail { get; init; }
+}
+
+/// <summary>Explicit v2 wire DTO. Old EvidenceEnvelope stays sealed and unchanged.</summary>
+public sealed class EvidenceEnvelopeV2
+{
+    [JsonPropertyName("contractVersion")]
+    public required string ContractVersion { get; init; }
+    [JsonPropertyName("canonicalizationVersion")]
+    public required int CanonicalizationVersion { get; init; }
+    [JsonPropertyName("project")]
+    public required string Project { get; init; }
+    [JsonPropertyName("definitionId")]
+    public required string DefinitionId { get; init; }
+    [JsonPropertyName("serviceName")]
+    public required string ServiceName { get; init; }
+    [JsonPropertyName("serviceVersion")]
+    public required string ServiceVersion { get; init; }
+    [JsonPropertyName("emittedAt")]
+    public required string EmittedAt { get; init; }
+    [JsonPropertyName("stage")]
+    public required string Stage { get; init; }
+    [JsonPropertyName("canonicalStatus")]
+    [JsonConverter(typeof(EvidenceStatusJsonConverter))]
+    public required EvidenceStatus CanonicalStatus { get; init; }
+    [JsonPropertyName("rows")]
+    public required List<EvidenceRow> Rows { get; init; }
+    [JsonPropertyName("ruleResults")]
+    public required List<EvidenceRuleResult> RuleResults { get; init; }
+    [JsonPropertyName("dgId")]
+    public string? DgId { get; init; }
+    [JsonPropertyName("sourceRepresentation")]
+    public object? SourceRepresentation { get; init; }
+    [JsonPropertyName("inputHash")]
+    public string? InputHash { get; init; }
+    [JsonPropertyName("outputHash")]
+    public string? OutputHash { get; init; }
+    [JsonPropertyName("schemaVersion")]
+    public string? SchemaVersion { get; init; }
+    [JsonPropertyName("ontologyVersion")]
+    public string? OntologyVersion { get; init; }
+    [JsonPropertyName("ruleVersion")]
+    public string? RuleVersion { get; init; }
+    [JsonPropertyName("shapeVersion")]
+    public string? ShapeVersion { get; init; }
+    [JsonPropertyName("provider")]
+    public string? Provider { get; init; }
+    [JsonPropertyName("model")]
+    public string? Model { get; init; }
+    [JsonPropertyName("warnings")]
+    public List<string>? Warnings { get; init; }
+}
+
 /// <summary>
 /// Per-(rule, object) evidence row (spec/EVIDENCE-CONTRACT.md sections 3/4;
 /// spec/evidence-contract.schema.json <c>$defs.EvidenceRow</c>). Rows are addressed by the

@@ -1,0 +1,33 @@
+{
+  "scenario": "zero_rows",
+  "captureHits": 1,
+  "readbackHits": 1,
+  "identity": [
+    "ValidGraph",
+    "P_WIRE",
+    "b49ff5c81ed0494b8c953036cdf566c2"
+  ],
+  "readerInputSha256": "86f94900c38d78788a4096dc36e83f65d03ee21e186e28954860ff6b9bc10522",
+  "files": {
+    "request.json": {
+      "bytes": 876,
+      "sha256": "55b0b975fcf412f8902efccbf623c8597f61ab5b026bb19d4fa23d8e6524c5f1"
+    },
+    "view-response.json": {
+      "bytes": 1878,
+      "sha256": "476d4fbe9b3f5d119342c1b7ee9643558e207ddc9b5b44421b6249534374661c"
+    },
+    "reader-input.json": {
+      "bytes": 700,
+      "sha256": "86f94900c38d78788a4096dc36e83f65d03ee21e186e28954860ff6b9bc10522"
+    },
+    "reader-output.json": {
+      "bytes": 135,
+      "sha256": "999e66972a8169f965adfc2aa84c12e4ad18c1865b739a409ece86aa033aab23"
+    },
+    "persisted-evidence.json": {
+      "bytes": 700,
+      "sha256": "86f94900c38d78788a4096dc36e83f65d03ee21e186e28954860ff6b9bc10522"
+    }
+  }
+}

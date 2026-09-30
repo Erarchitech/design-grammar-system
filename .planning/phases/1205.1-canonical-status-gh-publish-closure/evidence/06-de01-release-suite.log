@@ -1,0 +1,7 @@
+COMMAND: DG_DE01_CONNECTOR_TOKEN='' DG_DE01_CONNECTOR_TOKEN_FILE='C:/Users/Admin/source/repos/design-grammar-system/.planning/phases/1205.1-canonical-status-gh-publish-closure/nonexistent-test-token' uv run --no-project --with-requirements data-service/requirements.txt python -m pytest tools/de01/tests -q -m 'not live' -k 'not live'
+EXIT: 0
+WALL_SECONDS: 5.813
+........................................................................ [ 42%]
+........................................................................ [ 85%]
+.........................                                                [100%]
+169 passed, 1 deselected in 4.46s

@@ -11,16 +11,19 @@ requirements **ALGN12-01** (canonical status vocabulary), **ALGN12-02** (evidenc
 **ALGN12-03** (empty-population / ordering / adjacency semantics), and **ALGN12-04** (DE-01
 acceptance: silent disagreement is a failure).
 
-`EVIDENCE_CONTRACT_VERSION = "1.0.0"` — the version of this prose contract and its field table.
+`EVIDENCE_CONTRACT_VERSION = "1.0.0"` remains the legacy factory/harness baseline.
+`EVIDENCE_CONTRACT_VERSION_V2 = "2.0.0"` identifies the current opt-in shape with
+rule-scoped results (Phase 1205.1). These are exact string tokens, not normalized semver.
 `CANONICALIZATION_VERSION = 1` — the version of the canonical-JSON normalization rules in
 [§6](#6-canonical-json-and-hashing-d-07). Both are carried in every evidence envelope
 (`contractVersion`, `canonicalizationVersion`) so a consumer can tell which rules produced a given
 hash or status without re-deriving it from context.
 
-**This phase defines and proves the contract. It does not migrate the codebase onto it.** Legacy
-boolean outcome surfaces (`Passed`, `Run.ValidStatus`, `conforms`) are retained unchanged and keep
-being written by every existing code path; adopting the canonical status across those producers is
-the business of Phase 1201–1205 (see [§10](#10-v110-phase-1105-handoff-d-15)).
+**Current source contract (Phase 1205.1):** the production GH publish mapper explicitly selects
+`evidenceContractVersion: "2.0.0"`; Python persists that shape and both Python/C# readers support
+it. This is local source integration, not deployment. Legacy boolean outcome surfaces (`Passed`,
+`Run.ValidStatus`, `conforms`) and passed/failed entity lists remain independently written by
+their existing algorithms. Other producers and old factories are not globally migrated.
 
 **Normative scope:**
 1. [Status Vocabulary](#1-status-vocabulary)
@@ -103,9 +106,11 @@ distinct situations and must never be reported as `failed`.
 
 ## 2. Current Non-Conforming Behavior (informative)
 
-This section names, with file and line, the places in the current codebase where distinct
-statuses above collapse into a single boolean today. **This phase does not fix these** — it makes
-the distinction expressible. Fixing them is Phase 1201's **ALGN12-06**.
+The table below is the **historical Phase 1200 baseline**, not a description of current canonical
+outputs. Phase 1201 added typed outcomes; Phase 1205.1 preserves genuine binding outcomes through
+the production GH mapper, persistence and readers. The old boolean fields still cannot express
+these distinctions and are intentionally retained. Historical line references are not current
+navigation coordinates.
 
 | Location | Current behavior | Should be |
 |---|---|---|
@@ -130,13 +135,14 @@ Two further pre-existing, disclosed behaviors that this contract can *describe* 
 
 An **Evidence Envelope** is the artifact a stage emits to report the outcome of evaluating one or
 more rules against a design. Its shape is normatively fixed in
-`spec/evidence-contract.schema.json` `$defs.EvidenceEnvelope`; the table below is this document's
-semantic description of that same shape (schema is authoritative for exact types/required-ness
-per D-01).
+`spec/evidence-contract.schema.json`: its root union selects `$defs.EvidenceEnvelope` for exact
+old tokens `"1.0.0"`/`"1"` and `$defs.EvidenceEnvelopeV2` for exact `"2.0.0"`.
+The table below describes shared fields; §3.1 defines the version-specific field and admission
+policy (schema is authoritative for exact types/required-ness per D-01).
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `contractVersion` | string | yes | The `EVIDENCE_CONTRACT_VERSION` this envelope was produced against |
+| `contractVersion` | string | yes | Exact supported token; old factory `1.0.0`, historical literal `1`, or opt-in `2.0.0` (§3.1) |
 | `canonicalizationVersion` | integer | yes | The `CANONICALIZATION_VERSION` (§6) used to compute any hashes in this envelope |
 | `project` | string | yes | The project scope this evidence belongs to (matches the repo-wide `project` node property convention) |
 | `definitionId` | string | yes | The Computgraph/design definition this evidence was produced for |
@@ -144,8 +150,9 @@ per D-01).
 | `serviceVersion` | string | yes | The producing service's version identifier |
 | `emittedAt` | string (RFC 3339 UTC, `Z` suffix) | yes | When this envelope was produced |
 | `stage` | string | yes | The pipeline stage boundary this envelope was emitted at (§ D-06 — every stage that produces or transforms a verdict emits one, not only final persistence) |
-| `canonicalStatus` | `CanonicalStatus` | yes | The envelope-level roll-up status (e.g. worst-case across `rows`) |
+| `canonicalStatus` | `CanonicalStatus` | yes | Envelope roll-up; v2 includes both rows and ruleResults, never an object-verdict substitute |
 | `rows` | array of `EvidenceRow` | yes | The per-(rule, object) result rows (§4) |
+| `ruleResults` | array of `EvidenceRuleResult` | v2 only, required | Rule-scoped outcomes, including rules with no object rows; forbidden with old tokens |
 | `dgId` | string | no | The `dg:`-prefixed identity (`spec/DG-ID.md`) of the subject entity, where resolvable |
 | `sourceRepresentation` | object or null | no | The native-platform representation this evidence traces back to (Grasshopper/Revit/IFC/Speckle), where applicable |
 | `inputHash` | string (64 uppercase hex) | no | SHA-256 hex digest of this stage's canonicalized input (§6) |
@@ -170,6 +177,135 @@ Each element of `rows` is an **EvidenceRow**:
 | `outputHash` | string (64 uppercase hex) | no | Row-scoped output hash |
 | `detail` | string | no | Free-text elaboration (e.g. which binding failed, or which builtin was unsupported) |
 
+### 3.1 Exact versions, strict construction and bounded historical read
+
+| Input | Full schema / `parse_envelope_model` admission | Python/C# persisted read |
+|---|---|---|
+| Full `1.0.0` or literal `1`, old shape | Accepted, original token retained | Accepted |
+| Partial `1.0.0` or literal `1`, no ruleResults | Rejected for missing required metadata/rows | Bounded exception below |
+| Full `2.0.0`, required rows and ruleResults | Accepted; models also enforce unique, ordinal-sorted ruleIds | Strict admission, no partial exception |
+| Old token with ruleResults; v2 without ruleResults | Rejected | Absent evidence |
+| Missing, numeric, null, unknown or nonexact token | Rejected, no coercion | Absent evidence |
+
+Full construction forbids unknown root/row/rule-result fields. The root schema has ten required
+old fields; v2 adds required `ruleResults`. An **EvidenceRuleResult** has required string `ruleId`,
+recognized `canonicalStatus`, required string-array `warnings` (empty when none), and optional
+non-null string `detail`. It has **no objectId**. Rule IDs are unique and sorted by UTF-16 ordinal
+order by the named builders; models/readers reject duplicate or unordered rule-result identities.
+The JSON Schema supplies record shape; identity uniqueness/order are additional model checks.
+
+Historical read is deliberately not full writer admission. With exact old tokens only, root
+metadata may be missing or have extra fields. `canonicalStatus`, when present, must be recognized;
+`ruleResults` is forbidden. **Absent rows** is admitted; present rows must be a valid array of
+existing strict EvidenceRow records (null, wrong type and invalid status reject). Python returns
+the original decoded dict without inserting rows, timestamps, metadata or a normalized version.
+C# reports EnvelopePresent=true and empty verdicts/collisions for admitted no-rows inputs: an
+empty projection is not a synthesized row collection or a `no_population` assertion. A summary
+of passed/failed never manufactures an object verdict.
+
+The original C# literal-`1` fixture is a **full** ten-field envelope. The original Python
+`{"contractVersion":"1.0.0","canonicalStatus":"passed"}` fixture is **partial, with no rows**.
+Neither is rewritten. Newly added partial controls for both tokens are tests, not evidence that
+historical missing metadata existed for the literal-`1` fixture.
+
+`build_envelope` / `EvidenceEnvelopeFactory.Build` and their old version constants, empty-input
+defaults and override APIs remain unchanged (Python empty rows default `no_population`; C# empty
+rows default `not_evaluated`, an existing declared difference). New `build_envelope_with_rule_results` /
+`BuildWithRuleResults` explicitly select v2 and derive the aggregate across the union of row and
+rule-result statuses using existing precedence (error > failed > indeterminate > unsupported >
+unknown > not_evaluated > no_population > passed). Empty union is `not_evaluated`; aggregate
+override is not allowed for v2. An independently constructed empty envelope is valid; GH publish
+additionally requires a nonempty declared rule set and exact result coverage.
+
+### 3.1.1 Raw JSON and resource admission (review correction 1205.1)
+
+Schema validation starts **after** JSON decoding. It cannot detect duplicate object members,
+non-JSON numeric constants, or impose a nesting limit on arbitrary metadata. The publish route
+and persisted evidence readers therefore apply the following additional technical boundary **before
+version dispatch/model coercion** (including historical tokens):
+
+- Each object must have unique decoded member names, including escaped-equivalent names and
+  arbitrary nested metadata. Repeated identities in the `rows` **array** are different: they remain
+  admitted and collision-reported, with the established status rollup; never last-member-wins.
+- All member names and string values must consist of Unicode scalar values, including unused
+  historical root/metadata fields. Escaped lone high/low surrogates reject before model/response
+  serialization; valid escaped surrogate pairs and valid UTF-8 Unicode text remain unchanged.
+  No replacement, Unicode normalization, identity/hash normalization or stripping is performed.
+  C# public `TryRead`/`IsStrictEnvelope` return false for malformed UTF-16 string inputs and lazy
+  escaped-string decode failures; they do not depend on the repository's outer catch.
+- Numbers must be representable as finite binary64 values: NaN, Infinity, -Infinity, exponent
+  overflow (e.g. `1e400`) and integer magnitudes overflowing binary64 are rejected. No conversion
+  to null, no metadata stripping and no fabricated verdict. Ordinary decimal/exponent JSON numbers
+  use the existing binary64 decoding semantics; this is not a change to canonical hashing.
+- At most **128 nested containers**, counting the root object as 1 and each object/array as one
+  more; scalar leaves do not add depth. This explicit operational bound replaces Python's accidental
+  recursion limit and C#'s implicit 64-container default. Depth 70 now works in both readers;
+  127/128 work, 129 and the previously crashing 700-array input reject. This is a newly documented
+  resource constraint, not something JSON Schema alone guarantees, nor a general payload-size/DoS limit.
+- Full envelope `canonicalizationVersion` uses JSON Schema integer semantics (integral numeric
+  values including `1.0` and `1e0`, not strings/booleans), in **[-9007199254740991,
+  9007199254740991]**, the interoperable safe-integer range. The schema now states that range
+  explicitly rather than silently inheriting C# Int32. `1099511627776` is admitted. Writers still
+  emit `1`; no canonicalization version/algorithm is changed. Historical projection still ignores
+  unused root metadata types/ranges as in §3.1, but not raw syntax/finite/depth guards.
+- Hashes are exactly 64 uppercase hex characters, and `dgId` exactly `dg:` plus 16 uppercase hex
+  characters. Schema patterns now have an absolute end check plus exact lengths, rejecting a final
+  newline; C# remains strict. No case, whitespace or version-token normalization.
+
+Python applies iterative resource validation to raw-decoded **and in-memory** admission before
+recursive normalization/schema/model/response operations. Persisted read failure returns None;
+C# returns absent evidence with no verdicts. POST `/validation/publish` alone uses the rejecting
+raw decoder and returns 422 before any Speckle/graph writes. Unrelated API decoders are unchanged.
+The SHACL view sibling uses the same guarded JSON decoder because arbitrary report metadata can
+otherwise fail actual JSON response serialization; state hash/projection algorithms are unchanged.
+Old `1`/`1.0.0` no-rows dictionaries remain unmodified. Direct legacy constructor defaults/coercions
+remain distinct from strict full admission; use `parse_envelope_model`/`IsStrictEnvelope` for that gate.
+
+The Python pre-dump domain is explicit: JSON scalars, string-keyed built-in `dict`, built-in `list`
+and built-in `tuple` (the supported Python array extension), plus structurally traversed Pydantic
+records already used by the typed API. Tuple contents have the same finite-number, Unicode and
+container-depth checks as lists; valid finite tuples still serialize as arrays, while in-memory
+read preserves the admitted original dictionary. Other serializer-capable forms — `set`,
+`frozenset`, `deque`, generators/iterators, dataclasses, custom mappings/sequences and container
+subclasses (including named tuples) — are rejected before JSON-mode dumping. Callers must
+explicitly convert them to the supported domain, not rely on implicit lossy serialization.
+Non-string dictionary keys and non-JSON scalar objects are likewise rejected. This closed domain
+avoids an unbounded search over arbitrary/custom iterables. Cycles cannot pass the 128-container
+guard; shared noncyclic aliases remain valid. The depth ceiling is an admission maximum, not a
+promise to increase Pydantic's independent serializer recursion limit (deep `Any` tuples can
+still raise its existing depth error); no recursion settings or legacy defaults are changed.
+
+### 3.2 Production publish, diagnostics and rollout
+
+Only **absence** of request `evidenceContractVersion` selects the old-client publish path, including
+its existing absent/null/invalid supplied-map fallback. Explicit `"2.0.0"` selects the new path;
+null, numeric, old, unknown and nonexact request tokens reject with validation error. Presence of
+new fields does not activate v2. New requests require unique declared rules/results, exact rule
+coverage, unique entity identities, unique in-scope entity ruleIds and canonicalStatuses keys equal
+to those ruleIds. Canonical maps are authoritative; contradictory legacy lists cannot add canonical
+rows. See `spec/API.md` for request fields.
+
+Core associates typed outcomes with the **original BindingRow reference**, then aggregates by
+exact ordinal `(ruleId, objectId)` using existing rollup. Rule aggregate is never copied to every
+object. Null typed collection, nonempty population with empty typed list, or missing expected
+association means `unknown` plus `typed_binding_outcome_unavailable`, not an inferred boolean
+verdict. Inconsistent duplicate/foreign coverage carries `typed_binding_outcome_inconsistent`;
+only genuine matching contributions affect the pair. No result for a supplied rule is
+`not_evaluated`, associated only with refs in its explicit supplied population. Nonempty bindings
+with no ElementRefs retain their actual rule outcome without fabricated object rows.
+
+Genuine evaluator/builder rule warnings/detail flow through GH ruleResults to envelope.ruleResults;
+pair warnings/detail flow through entity canonicalWarnings/canonicalDetails to EvidenceRow.
+Warnings are string arrays, details are optional non-null strings. No empty-default-only diagnostic
+claim is sufficient. The C# verdict projection has no diagnostic DTO field; diagnostics remain in
+the accepted raw envelope. Missing/corrupt stored JSON (including decoder RecursionError) returns
+None / absent evidence, never passed. SHACL/state sibling decode boundaries preserve their safe
+fallbacks without changing hash/projection algorithms.
+
+**Reader-first rollout is mandatory:** deploy compatible Python and C# readers before enabling
+new GH writes. Source activation/Release build and offline captured-I/O tests are not deployment,
+live Rhino geometry/Speckle/Neo4j UAT, historical backfill or runtime input/output-hash completeness.
+
 **D-06 — emission point.** The envelope is emitted at **every stage boundary** where a verdict is
 produced or transformed, not only at final persistence. A stage that reads an upstream verdict and
 re-emits a transformed one (e.g. a replay leg re-deriving status from a persisted payload) emits
@@ -181,9 +317,9 @@ than only visible as an unexplained terminal mismatch.
 ## 4. Ordering and Identity of Evidence Rows
 
 `rows` is ordered **lexicographically ascending by `objectId`, ties broken lexicographically by
-`ruleId`**. This ordering is normative, not incidental: it is what keeps an envelope's `rows`
-comparable, position-by-position, against the legacy `Run.ValidStatus` index-matched Boolean list
-(`spec/DATABASE.md:112`) across different legs and different runs.
+`ruleId`**. Existing row ordering is unchanged. Ordering aids reproducible comparison; it does not
+create positional equivalence with legacy `Run.ValidStatus` (that framing was retired in
+`spec/DATABASE.md`). Per-object verdicts are identity-addressed, not list-position addressed.
 
 Evidence rows are addressed by the **`(ruleId, objectId)` pair** as their identity, not by value.
 Two fixture atoms or objects that are value-equal but are distinct entities (distinct identity)
@@ -195,7 +331,10 @@ canonical C# per-object read path.
 An **empty population** (zero bindings for a rule) produces no per-object rows for that rule and
 the rule's own status is `no_population` — this is never represented as a `failed` row and is
 never silently omitted from the envelope; the rule still appears with its `no_population` status
-even though it contributes zero `EvidenceRow` entries.
+even though it contributes zero `EvidenceRow` entries. In `2.0.0` this is an explicit ruleResults
+record, allowing multiple zero-row rules to survive independently; old shapes cannot encode that
+collection and are not silently relabelled. A zero-row rule may raise envelope severity but never
+changes another object's verdict. Merely having no resolvable object refs is not empty population.
 
 ---
 
@@ -375,6 +514,13 @@ typed non-equivalence** for unsupported cases. **A silent disagreement is a fail
 is not.** Any place the runner could quietly drop, coerce, or normalize away a difference between
 legs is itself a defect in the runner, independent of what the legs report.
 
+**Version metadata:** `tools/de01/report.py` report-level `contractVersion` remains `1.0.0`, the
+legacy harness baseline, not a declaration that every embedded leg emitted that token. Each leg
+retains its own exact `1`, `1.0.0` or `2.0.0` token after full root-schema admission. Partial
+historical read inputs are not admissible DE-01 leg output. Report schema, frozen fixture verdicts,
+canonicalizationVersion=1 and typed disagreement rules are unchanged; mixed-version tests do not
+constitute a new live four-leg run or global relabelling of history.
+
 **Per-leg graceful degradation (D-13).** When a leg is unavailable (dg-reasoner down, Neo4j
 unreachable from the host), that leg records a typed `error` or `unsupported` outcome in the
 report. The runner neither hard-crashes nor silently drops the unavailable leg from the
@@ -384,12 +530,16 @@ comparison — its absence is itself evidence, recorded as a typed outcome like 
 
 ## 9. Enforcement
 
-The only mechanical enforcement this contract has is:
+Mechanical enforcement includes:
 
 **(a)** JSON Schema validation of every leg's output against `spec/evidence-contract.schema.json`
 (`jsonschema.Draft202012Validator` / equivalent), and
 
-**(b)** the DE-01 runner's cross-leg comparison (§8).
+**(b)** the DE-01 runner's cross-leg comparison (§8), and
+
+**(c)** strict versioned Python/C# admission and offline source-linked production-wire regression
+tests (Phase 1205.1). A passing HTTP response alone is not persistence evidence: tests require the
+actual persist-function capture, readback equality and same-byte C# input checksum.
 
 There is **no linter and no CI pipeline** in this repository that enforces this contract
 automatically on every commit. This is a known, accepted gap — the same honest posture

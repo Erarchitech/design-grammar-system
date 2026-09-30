@@ -47,12 +47,55 @@ Base URL: `/data-service` (via nginx proxy)
 
 | Method | Path | Body / Params | Description |
 |--------|------|---------------|-------------|
-| POST | `/validation/publish` | `{project, run_name, rules: [...]}` | Publish validation to Speckle + store metadata |
+| POST | `/validation/publish` | `{project, rules: [...], ruleResults: [...], entities: [...], evidenceContractVersion?: "2.0.0", ...}` | Publish validation to Speckle + store metadata; versioned canonical evidence below |
 | GET | `/validation/runs/{project}` | — | List all validation runs for project |
 | DELETE | `/validation/run/{project}/{run_id}` | — | Delete a validation run |
 | GET | `/validation/view/{project}` | — | Latest validation manifest |
 | GET | `/validation/view/{project}/{run_id}` | — | Specific run manifest |
 | GET | `/validation/view/{project}/{run_id}/{rule_id}` | — | Rule-filtered entity sets |
+
+#### Canonical evidence on existing publish/view routes (Phase 1205.1)
+
+Production GH `BuildRequest` now explicitly emits `evidenceContractVersion: "2.0.0"` in local
+source. Only absence selects the unchanged old-client path (`1.0.0` envelope), including its
+absent/null/invalid canonical-map fallback; new fields alone never select a version. Explicit null,
+numeric, old (`1`/`1.0.0`), future or nonexact request version fails validation (422), not coercion.
+
+New mode requires nonempty unique `rules[].ruleId`, unique `ruleResults[].ruleId` with exact
+declared-rule coverage, and unique entity `dgEntityId` values. Rule result legacy `passed`,
+`failedEntityIds`, `passedEntityIds` remain, alongside required `canonicalStatus` and string-array
+`warnings`, plus optional non-null string `detail`. Each entity's unique `ruleIds` must be in scope;
+required `canonicalStatuses` maps exactly those keys to recognized wire statuses. Optional/default
+`canonicalWarnings` maps scoped rule IDs to string arrays; `canonicalDetails` maps scoped IDs to
+strings. These canonical fields are copied from genuine Core outcomes/diagnostics. Legacy lists,
+`overallStatus` and `validStatus` remain independent and cannot override/add canonical rows.
+
+The persisted `2.0.0` envelope retains metadata/rows and has required ordered, unique `ruleResults`
+without objectId. Multiple empty-population rules retain separate `no_population` results; missing
+results retain `not_evaluated`; no fake objects are introduced. Envelope severity includes both
+collections; per-object severity includes only that object's rows. Null/unavailable typed outcomes
+produce `unknown` with diagnostics rather than reconstruction from booleans or rule aggregates.
+
+Existing view manifests expose decoded `evidenceEnvelope`, `shaclReport`, `canonicalStateHash`
+and `canonicalizationVersion`. Supported evidence is returned without JSON-field rewriting.
+Exact old envelope tokens `1`/`1.0.0` have bounded historical read tolerance (absent metadata/rows,
+valid present rows, no ruleResults); this is not full writer/schema admission. V2 reads are strict.
+Missing, unsupported or corrupt evidence returns null, never passed. Deep JSON decode failures in
+evidence, SHACL and state also degrade to their existing null fallback, so the view is renderable.
+Existing canonicalizationVersion presence semantics are unchanged; a non-null version alone is
+not evidence that a hash was computed. See `spec/EVIDENCE-CONTRACT.md` §3 for exact shapes.
+
+Raw publish JSON rejects duplicate decoded object members, non-finite numbers (including exponent
+overflow), and nesting beyond 128 containers before model admission and before Speckle/graph writes
+(422). This route-specific guard applies even without a version selector; valid legacy fallback is
+unchanged. Persisted evidence/SHACL views reject the same corrupt representations rather than
+coercing metadata to null. Full evidence number/hash constraints and schema-vs-runtime distinction
+are documented in `spec/EVIDENCE-CONTRACT.md` §3.1.1.
+
+Authentication, CSRF and tenant policy are unchanged; invalid new requests produce no graph writes.
+Evidence sidecar persistence remains best-effort: HTTP 200 alone does not prove evidence was saved.
+Offline tests require actual persistence capture and exact readback. Reader-first deployment is
+required; source activation/Release compilation is not live Rhino/Speckle/Neo4j UAT or backfill.
 
 ### Computgraph
 

@@ -1,0 +1,2937 @@
+{
+  "summary": {
+    "timestamp": "2026-09-30T20:43:53.200686+00:00",
+    "case_count": 103,
+    "expected_admission_mismatches": [
+      "unpaired-surrogate-key-1",
+      "unpaired-surrogate-value-1",
+      "unpaired-surrogate-key-1.0.0",
+      "unpaired-surrogate-value-1.0.0",
+      "unpaired-surrogate-key-2.0.0",
+      "unpaired-surrogate-value-2.0.0"
+    ],
+    "response_failures": [
+      "unpaired-surrogate-key-1",
+      "unpaired-surrogate-value-1",
+      "unpaired-surrogate-key-1.0.0",
+      "unpaired-surrogate-value-1.0.0",
+      "unpaired-surrogate-key-2.0.0",
+      "unpaired-surrogate-value-2.0.0"
+    ],
+    "strict_process_failures": [
+      "unpaired-surrogate-key-1",
+      "unpaired-surrogate-key-1.0.0",
+      "unpaired-surrogate-key-2.0.0"
+    ],
+    "binary_changed_during_probe": []
+  },
+  "requests": {
+    "valid": {
+      "result": "admitted",
+      "same_cached_object": true,
+      "receive_calls": 1,
+      "body_preserved": true
+    },
+    "duplicate": {
+      "status": 422,
+      "detail": "Invalid publish JSON",
+      "receive_calls": 1
+    },
+    "nested-escaped": {
+      "status": 422,
+      "detail": "Invalid publish JSON",
+      "receive_calls": 1
+    },
+    "nonfinite": {
+      "status": 422,
+      "detail": "Invalid publish JSON",
+      "receive_calls": 1
+    },
+    "overflow": {
+      "status": 422,
+      "detail": "Invalid publish JSON",
+      "receive_calls": 1
+    },
+    "deep": {
+      "status": 422,
+      "detail": "Invalid publish JSON",
+      "receive_calls": 1
+    }
+  },
+  "inmemory": [
+    {
+      "container": "list",
+      "number": "nan",
+      "factory": "rejected",
+      "legacy_validate": "rejected"
+    },
+    {
+      "container": "list",
+      "number": "inf",
+      "factory": "rejected",
+      "legacy_validate": "rejected"
+    },
+    {
+      "container": "tuple",
+      "number": "nan",
+      "factory": "admitted",
+      "factory_metadata": {
+        "x": [
+          null
+        ]
+      },
+      "legacy_validate": "admitted"
+    },
+    {
+      "container": "tuple",
+      "number": "inf",
+      "factory": "admitted",
+      "factory_metadata": {
+        "x": [
+          null
+        ]
+      },
+      "legacy_validate": "admitted"
+    }
+  ],
+  "shacl": [
+    {
+      "raw": "{\"source\":{\"\\ud800\":1}}",
+      "admitted": true,
+      "response": "UnicodeEncodeError"
+    },
+    {
+      "raw": "{\"source\":{\"x\":\"\\ud800\"}}",
+      "admitted": true,
+      "response": "UnicodeEncodeError"
+    },
+    {
+      "raw": "{\"source\":{\"x\":NaN}}",
+      "admitted": false,
+      "response": "ok"
+    }
+  ],
+  "cases": [
+    {
+      "name": "baseline-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "duplicate-version-1",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-escaped-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1,\"\\u0078\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-unicode-pair-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\ud83d\\ude00\":1,\"\\uD83D\\uDE00\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-composed-distinct-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\u00e9\":1,\"e\\u0301\":2}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-70-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-127-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-128-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-129-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "depth-702-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-NaN-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":NaN}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-Infinity-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--Infinity-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":-Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1e400-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--1e400-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":-1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-999999999999999999999999-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1.7976931348623157e308-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1.7976931348623157e308}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1.0-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1e0-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1e0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1099511627776-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1099511627776,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer--9007199254740991-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":-9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740992-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer--9007199254740992-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":-9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1.5-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1.5,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-true-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":true,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1e-400-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1e-400,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991.0-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":9007199254740991.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "unpaired-surrogate-key-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\ud800\":1}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 3762504530,
+        "binary_stable": true,
+        "stderr": "Unhandled exception. System.InvalidOperationException: Cannot read incomplete UTF-16 JSON text as string with missing low surrogate.\r\n   at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadIncompleteUTF16()\r\n   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)\r\n   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)\r\n   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)\r\n   at System.Text.Json.JsonProperty.get_Name()\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 114\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.IsStrictEnvelope(String json) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 84\r\n   at Program.<Main>$(String[] args) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\tests\\DG.PublishWireHarness\\Program.cs:line 18\r\n   at Program.<Main>(String[] args)\n"
+      }
+    },
+    {
+      "name": "unpaired-surrogate-value-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":\"\\ud800\"}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "old-no-rows-1",
+      "raw": "{\"contractVersion\":\"1\",\"canonicalStatus\":\"passed\"}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "baseline-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "duplicate-version-1.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-escaped-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1,\"\\u0078\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-unicode-pair-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\ud83d\\ude00\":1,\"\\uD83D\\uDE00\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-composed-distinct-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\u00e9\":1,\"e\\u0301\":2}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-70-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-127-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-128-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-129-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "depth-702-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-NaN-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":NaN}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-Infinity-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--Infinity-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":-Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1e400-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--1e400-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":-1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-999999999999999999999999-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1.7976931348623157e308-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":1.7976931348623157e308}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1.0-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1e0-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1e0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1099511627776-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1099511627776,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer--9007199254740991-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":-9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740992-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer--9007199254740992-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":-9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1.5-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1.5,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-true-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":true,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1e-400-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1e-400,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991.0-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":9007199254740991.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "unpaired-surrogate-key-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"\\ud800\":1}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 3762504530,
+        "binary_stable": true,
+        "stderr": "Unhandled exception. System.InvalidOperationException: Cannot read incomplete UTF-16 JSON text as string with missing low surrogate.\r\n   at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadIncompleteUTF16()\r\n   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)\r\n   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)\r\n   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)\r\n   at System.Text.Json.JsonProperty.get_Name()\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 114\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.IsStrictEnvelope(String json) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 84\r\n   at Program.<Main>$(String[] args) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\tests\\DG.PublishWireHarness\\Program.cs:line 18\r\n   at Program.<Main>(String[] args)\n"
+      }
+    },
+    {
+      "name": "unpaired-surrogate-value-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"sourceRepresentation\":{\"x\":\"\\ud800\"}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "old-no-rows-1.0.0",
+      "raw": "{\"contractVersion\":\"1.0.0\",\"canonicalStatus\":\"passed\"}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "baseline-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "duplicate-version-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-escaped-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":1,\"\\u0078\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-unicode-pair-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"\\ud83d\\ude00\":1,\"\\uD83D\\uDE00\":2}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "keys-composed-distinct-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"\\u00e9\":1,\"e\\u0301\":2}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-70-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-127-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-128-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "depth-129-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "depth-702-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-NaN-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":NaN}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-Infinity-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--Infinity-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":-Infinity}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1e400-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite--1e400-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":-1e400}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-999999999999999999999999-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "finite-1.7976931348623157e308-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":1.7976931348623157e308}}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1.0-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1e0-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1e0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-1099511627776-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1099511627776,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer--9007199254740991-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":-9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":9007199254740991,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740992-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer--9007199254740992-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":-9007199254740992,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1.5-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1.5,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-true-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":true,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "integer-1e-400-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1e-400,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "integer-9007199254740991.0-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":9007199254740991.0,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}]}",
+      "expected": null,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "unpaired-surrogate-key-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"\\ud800\":1}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 3762504530,
+        "binary_stable": true,
+        "stderr": "Unhandled exception. System.InvalidOperationException: Cannot read incomplete UTF-16 JSON text as string with missing low surrogate.\r\n   at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadIncompleteUTF16()\r\n   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)\r\n   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)\r\n   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)\r\n   at System.Text.Json.JsonProperty.get_Name()\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 114\r\n   at DG.Core.Contracts.EvidenceEnvelopeReader.IsStrictEnvelope(String json) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\Contracts\\EvidenceEnvelopeReader.cs:line 84\r\n   at Program.<Main>$(String[] args) in C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\tests\\DG.PublishWireHarness\\Program.cs:line 18\r\n   at Program.<Main>(String[] args)\n"
+      }
+    },
+    {
+      "name": "unpaired-surrogate-value-2.0.0",
+      "raw": "{\"contractVersion\":\"2.0.0\",\"canonicalizationVersion\":1,\"project\":\"P_WIRE\",\"definitionId\":\"9ea8f4f1609149578a98e000b5b3d223\",\"serviceName\":\"data-service\",\"serviceVersion\":\"1.0.0\",\"emittedAt\":\"2026-09-30T19:34:01Z\",\"stage\":\"validation.publish\",\"canonicalStatus\":\"failed\",\"rows\":[{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_FAIL\",\"canonicalStatus\":\"failed\",\"warnings\":[]},{\"ruleId\":\"R_WIRE\",\"objectId\":\"OBJ_PASS\",\"canonicalStatus\":\"passed\",\"warnings\":[]}],\"warnings\":[],\"ruleResults\":[{\"ruleId\":\"R_WIRE\",\"canonicalStatus\":\"failed\",\"warnings\":[],\"detail\":\"Rule violated by 1 binding(s).\"}],\"sourceRepresentation\":{\"x\":\"\\ud800\"}}",
+      "expected": false,
+      "python_read": true,
+      "response": "UnicodeEncodeError",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-inputHash-False",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"inputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-inputHash-True",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"inputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n\"}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "hash-outputHash-False",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"outputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-outputHash-True",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"outputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n\"}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "hash-dgId-False",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"dgId\": \"dg:AAAAAAAAAAAAAAAA\"}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-dgId-True",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}], \"dgId\": \"dg:AAAAAAAAAAAAAAAA\\n\"}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "hash-row.inputHash-False",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"inputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-row.inputHash-True",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"inputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n\"}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}]}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "hash-row.outputHash-False",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"outputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": false
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    },
+    {
+      "name": "hash-row.outputHash-True",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"outputHash\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n\"}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}]}",
+      "expected": false,
+      "python_read": false,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": false,
+      "full_model": false,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false,
+        "verdicts": [],
+        "collisions": []
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": false
+      }
+    },
+    {
+      "name": "allowed-array-collision",
+      "raw": "{\"contractVersion\": \"2.0.0\", \"canonicalizationVersion\": 1, \"project\": \"P_WIRE\", \"definitionId\": \"9ea8f4f1609149578a98e000b5b3d223\", \"serviceName\": \"data-service\", \"serviceVersion\": \"1.0.0\", \"emittedAt\": \"2026-09-30T19:34:01Z\", \"stage\": \"validation.publish\", \"canonicalStatus\": \"failed\", \"rows\": [{\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_PASS\", \"canonicalStatus\": \"passed\", \"warnings\": []}, {\"ruleId\": \"R_WIRE\", \"objectId\": \"OBJ_FAIL\", \"canonicalStatus\": \"failed\", \"warnings\": []}], \"warnings\": [], \"ruleResults\": [{\"ruleId\": \"R_WIRE\", \"canonicalStatus\": \"failed\", \"warnings\": [], \"detail\": \"Rule violated by 1 binding(s).\"}]}",
+      "expected": true,
+      "python_read": true,
+      "response": "ok",
+      "raw_decode": true,
+      "schema": true,
+      "full_model": true,
+      "csharp_read": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true,
+        "verdicts": [
+          {
+            "objectId": "OBJ_FAIL",
+            "status": "failed",
+            "duplicate": true
+          },
+          {
+            "objectId": "OBJ_PASS",
+            "status": "passed",
+            "duplicate": false
+          }
+        ],
+        "collisions": [
+          {
+            "RuleId": "R_WIRE",
+            "ObjectId": "OBJ_FAIL"
+          }
+        ]
+      },
+      "csharp_strict": {
+        "exit": 0,
+        "binary_stable": true,
+        "admitted": true
+      }
+    }
+  ]
+}

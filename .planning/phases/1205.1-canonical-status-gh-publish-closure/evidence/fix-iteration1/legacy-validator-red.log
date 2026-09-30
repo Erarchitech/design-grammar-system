@@ -1,0 +1,13 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "legacy_validation"]
+time=2026-09-30T20:29:06.530916+00:00
+F                                                                        [100%]
+================================== FAILURES ===================================
+___________ test_legacy_validation_checks_before_json_mode_coercion ___________
+data-service\tests\test_evidence_raw_admission.py:146: in test_legacy_validation_checks_before_json_mode_coercion
+    with pytest.raises(ValueError):
+E   Failed: DID NOT RAISE ValueError
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_legacy_validation_checks_before_json_mode_coercion
+1 failed, 121 deselected in 2.02s
+
+exit=1

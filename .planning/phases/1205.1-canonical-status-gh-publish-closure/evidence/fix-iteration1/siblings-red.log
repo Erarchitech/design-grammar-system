@@ -1,0 +1,375 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "metadata_finite or sibling"]
+time=2026-09-30T20:15:18.714063+00:00
+..F.FFFF                                                                 [100%]
+================================== FAILURES ===================================
+_ test_metadata_finite_number_range[9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999-False] _
+data-service\tests\test_evidence_raw_admission.py:113: in test_metadata_finite_number_range
+    assert (app.parse_evidence_envelope(raw) is not None) == expected
+E   assert ({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x0000024AB4AF8900>('{"contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}}')
+E    +    where <function parse_evidence_envelope at 0x0000024AB4AF8900> = app.parse_evidence_envelope
+__________________ test_nonfinite_sibling_view_fallback[NaN] __________________
+data-service\tests\test_evidence_raw_admission.py:121: in test_nonfinite_sibling_view_fallback
+    response = client.get('/validation/view/P_WIRE/' + run['runId'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:482: in get
+    return super().get(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1118: in get
+    return self.request(
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:454: in request
+    return super().request(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:803: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:985: in send
+    response = self._send_handling_auth(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1013: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1048: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1081: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:356: in handle_request
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:353: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\applications.py:1160: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:119: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:105: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:481: in app
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:192: in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:45: in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:195: in render
+    return json.dumps(
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+E   ValueError: Out of range float values are not JSON compliant
+_______________ test_nonfinite_sibling_view_fallback[Infinity] ________________
+data-service\tests\test_evidence_raw_admission.py:121: in test_nonfinite_sibling_view_fallback
+    response = client.get('/validation/view/P_WIRE/' + run['runId'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:482: in get
+    return super().get(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1118: in get
+    return self.request(
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:454: in request
+    return super().request(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:803: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:985: in send
+    response = self._send_handling_auth(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1013: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1048: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1081: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:356: in handle_request
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:353: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\applications.py:1160: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:119: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:105: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:481: in app
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:192: in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:45: in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:195: in render
+    return json.dumps(
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+E   ValueError: Out of range float values are not JSON compliant
+_______________ test_nonfinite_sibling_view_fallback[-Infinity] _______________
+data-service\tests\test_evidence_raw_admission.py:121: in test_nonfinite_sibling_view_fallback
+    response = client.get('/validation/view/P_WIRE/' + run['runId'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:482: in get
+    return super().get(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1118: in get
+    return self.request(
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:454: in request
+    return super().request(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:803: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:985: in send
+    response = self._send_handling_auth(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1013: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1048: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1081: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:356: in handle_request
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:353: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\applications.py:1160: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:119: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:105: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:481: in app
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:192: in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:45: in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:195: in render
+    return json.dumps(
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+E   ValueError: Out of range float values are not JSON compliant
+_________________ test_nonfinite_sibling_view_fallback[1e400] _________________
+data-service\tests\test_evidence_raw_admission.py:121: in test_nonfinite_sibling_view_fallback
+    response = client.get('/validation/view/P_WIRE/' + run['runId'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:482: in get
+    return super().get(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1118: in get
+    return self.request(
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:454: in request
+    return super().request(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:803: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:985: in send
+    response = self._send_handling_auth(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1013: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1048: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\httpx2\_client.py:1081: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:356: in handle_request
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\testclient.py:353: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\anyio\from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\applications.py:1160: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:119: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:105: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\fastapi\routing.py:481: in app
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:192: in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:45: in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\uv\cache\archive-v0\ErlH0i13DutVUgsfaDv-I\Lib\site-packages\starlette\responses.py:195: in render
+    return json.dumps(
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+E   ValueError: Out of range float values are not JSON compliant
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_metadata_finite_number_range[9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999-False]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_sibling_view_fallback[NaN]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_sibling_view_fallback[Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_sibling_view_fallback[-Infinity]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_nonfinite_sibling_view_fallback[1e400]
+5 failed, 3 passed, 88 deselected in 7.68s
+
+exit=1

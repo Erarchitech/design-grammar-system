@@ -7,6 +7,8 @@ internal sealed class ValidationPublishRequest
 {
     public string Project { get; init; } = "default-project";
 
+    public string EvidenceContractVersion { get; init; } = string.Empty;
+
     /// <summary>
     /// Serialized ParamState JSON from the PARAMETER STATE component.
     /// Null when no state was captured for this validation run.
@@ -39,6 +41,13 @@ internal sealed class ValidationPublishRuleResultPayload
 {
     public string RuleId { get; init; } = string.Empty;
 
+    public string CanonicalStatus { get; init; } = string.Empty;
+
+    public List<string> Warnings { get; } = new();
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Detail { get; init; }
+
     public bool Passed { get; init; }
 
     public List<string> FailedEntityIds { get; } = new();
@@ -59,6 +68,12 @@ internal sealed class ValidationPublishEntityPayload
     public List<string> FailedRuleIds { get; } = new();
 
     public List<string> PassedRuleIds { get; } = new();
+
+    public Dictionary<string, string> CanonicalStatuses { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, List<string>> CanonicalWarnings { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> CanonicalDetails { get; } = new(StringComparer.Ordinal);
 
     public string OverallStatus { get; init; } = "unknown";
 }

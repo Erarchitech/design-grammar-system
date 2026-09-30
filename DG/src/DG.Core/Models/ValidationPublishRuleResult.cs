@@ -17,13 +17,18 @@ public sealed class ValidationPublishRuleResult
 
     /// <summary>
     /// The authoritative rule-level outcome carried across the publish boundary (Phase 1201 plan 02).
-    /// Additive alongside <see cref="Passed"/>. Copied verbatim from
-    /// <see cref="RuleEvaluationResult.Status"/> when a result exists for the rule; set to
+    /// Additive alongside <see cref="Passed"/>. Carries
+    /// <see cref="RuleEvaluationResult.Status"/> when typed coverage is available;
+    /// unavailable coverage yields Unknown with diagnostics. Set to
     /// <see cref="DG.Core.Contracts.EvidenceStatus.NotEvaluated"/> when no result exists (the rule
     /// was in scope but no evaluation was ever attempted or no result was produced) — never
     /// recomputed from <see cref="Passed"/>.
     /// </summary>
     public DG.Core.Contracts.EvidenceStatus Status { get; init; }
+
+    public List<string> Warnings { get; } = new();
+
+    public string? Detail { get; init; }
 
     public List<string> FailedEntityIds { get; } = new();
 

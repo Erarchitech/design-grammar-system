@@ -1,0 +1,40 @@
+{
+  "verified": "2026-09-30T20:43:07.375652+00:00",
+  "head": "37450d4e6ec6763ff1c35953a560cbfcec767dc6",
+  "sdk": {
+    "GH_IO.dll": {
+      "path": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll",
+      "exists": true
+    },
+    "Grasshopper.dll": {
+      "path": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+      "exists": true
+    },
+    "RhinoCommon.dll": {
+      "path": "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll",
+      "exists": true
+    }
+  },
+  "properties": {
+    "DefineConstants": "TRACE;GRASSHOPPER_SDK;RELEASE;NET;NET7_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER",
+    "TargetFramework": "net7.0-windows"
+  },
+  "productionPublishCompileItems": [
+    "Validation/ValidationPublishClient.cs",
+    "Validation/ValidationPublishContract.cs"
+  ],
+  "wirePassedByModule": {
+    "test_gh_publish_wire.py": 72,
+    "test_evidence_versions.py": 128,
+    "test_validation_entity_rollup.py": 8,
+    "test_evidence_raw_admission.py": 122
+  },
+  "protectedFiles": 149,
+  "protectedChanged": [],
+  "extraScanFindings": [],
+  "heldOutExit": 1,
+  "projectSkillDirectories": {
+    ".hermes/skills": false,
+    ".agents/skills": false
+  }
+}

@@ -1,20 +1,20 @@
 ---
-gsd_state_version: 1.0
+gsd_state_version: "1.0"
 milestone: v12.0
 milestone_name: Theory–Implementation Alignment
-current_phase: 1205
-status: completed
-stopped_at: Phase 1205 complete; v12.0 ready for milestone audit
-last_updated: "2026-09-30T09:52:16.584Z"
+current_phase: "1205.1"
+status: Phase 1205.1 complete; milestone re-audit pending
+stopped_at: Phase 1205.1 complete; v12.0 re-audit required
+last_updated: "2026-09-30T21:36:53.127Z"
 last_activity: 2026-09-30
-last_activity_desc: Phase 1205 complete
+last_activity_desc: Phase 1205.1 complete
+state_head: 6d66763400ff8683629b1c8f2fb1433f16eb2efb
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 60
-  completed_plans: 60
-  percent: 100
-current_phase_name: Security and Tenancy Release Gate
+  total_plans: 66
+  completed_plans: 66
+  percent: 86
 ---
 
 # Project State
@@ -24,13 +24,13 @@ current_phase_name: Security and Tenancy Release Gate
 See: .planning/PROJECT.md (updated 2026-09-30)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** v12.0 milestone complete (all 6 phases). Next: milestone audit and completion
+**Current focus:** 1205.1 closure verified 11/11, review clean, Nyquist compliant, 14 threats closed. Next: /gsd-audit-milestone v12.0; milestone not released.
 
 ## Current Position
 
-Phase: 1205
-Plan: Not started
-Status: All phases complete
+Phase: 1205.1
+Plan: 06 of 06 complete
+Status: Phase 1205.1 complete; milestone re-audit pending
 
 Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
 
@@ -38,7 +38,7 @@ Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EX
 010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
 classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
 (011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-30 — Phase 1205 complete
+Last activity: 2026-09-30 — Phase 1205.1 complete
 (cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
 the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
 finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
@@ -560,10 +560,14 @@ Shipped from Phase 20 Plan 02:
 | Phase 35 P04 | 10min | 2 tasks | 4 files |
 | Phase 36-computgraph-persistence-display P01 | 15m | - tasks | - files |
 
+### Roadmap Evolution
+
+- Phase 1205.1 inserted after Phase 1205: Close audit BLOCKER-01 canonical status loss through GH publish (URGENT)
+
 ## Session Continuity
 
 Last session: 2026-09-30
-Stopped at: Phase 1205 complete (verification passed, UAT 3 pass / 1 owner-accepted issue). The v12.0 milestone is 100% executed; ready for /gsd-audit-milestone then /gsd-complete-milestone v12.0
+Stopped at: Phase 1205.1 complete; v12.0 re-audit required
 Resume file: None
 
 ## Performance Metrics

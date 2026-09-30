@@ -1,0 +1,44 @@
+[
+  {
+    "label": "contract-final",
+    "command": "uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_evidence_versions.py data-service/tests/test_evidence_contract.py -q -m 'not live and not integration'",
+    "exit_code": 0,
+    "wall_seconds": 25.453,
+    "output": "........................................................................ [ 46%]\r\n........................................................................ [ 92%]\r\n...........                                                              [100%]\r\n155 passed in 23.48s"
+  },
+  {
+    "label": "csharp-release-suite",
+    "command": "dotnet test DG/tests/DG.Tests/DG.Tests.csproj --no-restore --filter 'FullyQualifiedName~EvidenceContractTests|FullyQualifiedName~RuleEvaluatorTests|FullyQualifiedName~ValidationPublishPackageBuilderTests|FullyQualifiedName~Neo4jValidGraphRepositoryTests|FullyQualifiedName~DataServiceRequestAuthTests|FullyQualifiedName~SwrlSubsetConformanceTests' -v minimal",
+    "exit_code": 0,
+    "wall_seconds": 3.641,
+    "output": "DG.Core -> C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\bin\\Debug\\net9.0\\DG.Core.dll\r\n  DG.Tests -> C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\tests\\DG.Tests\\bin\\Debug\\net9.0\\DG.Tests.dll\r\n\u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0437\u0430\u043f\u0443\u0441\u043a \u0434\u043b\u044f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\tests\\DG.Tests\\bin\\Debug\\net9.0\\DG.Tests.dll (.NETCoreApp,Version=v9.0)\r\n\u041e\u0431\u0449\u0435\u0435 \u043a\u043e\u043b\u0438\u0447\u0435\u0441\u0442\u0432\u043e \u0442\u0435\u0441\u0442\u043e\u0432\u044b\u0445 \u0444\u0430\u0439\u043b\u043e\u0432 (1), \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0445 \u0443\u043a\u0430\u0437\u0430\u043d\u043d\u043e\u043c\u0443 \u0448\u0430\u0431\u043b\u043e\u043d\u0443.\r\n\r\n\u041f\u0440\u043e\u0439\u0434\u0435\u043d!   : \u043d\u0435 \u043f\u0440\u043e\u0439\u0434\u0435\u043d\u043e     0, \u043f\u0440\u043e\u0439\u0434\u0435\u043d\u043e   189, \u043f\u0440\u043e\u043f\u0443\u0449\u0435\u043d\u043e     0, \u0432\u0441\u0435\u0433\u043e   189, \u0434\u043b\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c 93 ms. - DG.Tests.dll (net9.0)"
+  },
+  {
+    "label": "backend-release-suite",
+    "command": "uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_evidence_contract.py data-service/tests/test_validation_run_immutability.py data-service/tests/test_route_inventory.py data-service/tests/test_cross_project_matrix.py -q -m 'not live and not integration'",
+    "exit_code": 0,
+    "wall_seconds": 39.484,
+    "output": "........................................................................ [  4%]\r\n........................................................................ [  8%]\r\n........................................................................ [ 13%]\r\n........................................................................ [ 17%]\r\n........................................................................ [ 22%]\r\n........................................................................ [ 26%]\r\n........................................................................ [ 30%]\r\n........................................................................ [ 35%]\r\n........................................................................ [ 39%]\r\n........................................................................ [ 44%]\r\n........................................................................ [ 48%]\r\n........................................................................ [ 52%]\r\n........................................................................ [ 57%]\r\n........................................................................ [ 61%]\r\n........................................................................ [ 66%]\r\n........................................................................ [ 70%]\r\n........................................................................ [ 74%]\r\n........................................................................ [ 79%]\r\n........................................................................ [ 83%]\r\n........................................................................ [ 88%]\r\n........................................................................ [ 92%]\r\n........................................................................ [ 96%]\r\n..................................................                       [100%]\r\n1634 passed in 37.29s"
+  },
+  {
+    "label": "wire-release-suite",
+    "command": "uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_gh_publish_wire.py data-service/tests/test_evidence_versions.py data-service/tests/test_validation_entity_rollup.py -q -m 'not live and not integration'",
+    "exit_code": 0,
+    "wall_seconds": 52.437,
+    "output": "........................................................................ [ 34%]\r\n........................................................................ [ 69%]\r\n................................................................         [100%]\r\n208 passed in 50.50s"
+  },
+  {
+    "label": "de01-release-suite",
+    "command": "DG_DE01_CONNECTOR_TOKEN='' DG_DE01_CONNECTOR_TOKEN_FILE='C:/Users/Admin/source/repos/design-grammar-system/.planning/phases/1205.1-canonical-status-gh-publish-closure/nonexistent-test-token' uv run --no-project --with-requirements data-service/requirements.txt python -m pytest tools/de01/tests -q -m 'not live' -k 'not live'",
+    "exit_code": 0,
+    "wall_seconds": 5.813,
+    "output": "........................................................................ [ 42%]\r\n........................................................................ [ 85%]\r\n.........................                                                [100%]\r\n169 passed, 1 deselected in 4.46s"
+  },
+  {
+    "label": "gh-release-build",
+    "command": "dotnet build DG/src/DG.Grasshopper/DG.Grasshopper.csproj -c Release --no-restore -v minimal",
+    "exit_code": 0,
+    "wall_seconds": 1.812,
+    "output": "DG.Core -> C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Core\\bin\\Release\\net7.0\\DG.Core.dll\r\n  DG.Grasshopper -> C:\\Users\\Admin\\source\\repos\\design-grammar-system\\DG\\src\\DG.Grasshopper\\bin\\Release\\net7.0-windows\\DG.Grasshopper.dll\r\n\r\n\u0421\u0431\u043e\u0440\u043a\u0430 \u0443\u0441\u043f\u0435\u0448\u043d\u043e \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0430.\r\n    \u041f\u0440\u0435\u0434\u0443\u043f\u0440\u0435\u0436\u0434\u0435\u043d\u0438\u0439: 0\r\n    \u041e\u0448\u0438\u0431\u043e\u043a: 0\r\n\r\n\u041f\u0440\u043e\u0448\u043b\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0438 00:00:01.07"
+  }
+]

@@ -1,0 +1,20 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "-p", "data-service.tests.conftest", ".planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r2\\test_heldout_http.py", "-v", "-m", "not live and not integration"]
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\AppData\Local\uv\cache\builds-v0\.tmpBNoJsU\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Admin\source\repos\design-grammar-system
+plugins: anyio-4.12.1
+collecting ... collected 8 items
+
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":{"a":0,"\\u0061":1}-False] PASSED [ 12%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":{"a":0,"\\u0061":1}-True] PASSED [ 25%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":[{"ok":1},{"deep":{"x":0,"x":1}}]-False] PASSED [ 37%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":[{"ok":1},{"deep":{"x":0,"x":1}}]-True] PASSED [ 50%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":{"x":NaN}-False] PASSED [ 62%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_raw_denial_even_without_version[,"ignored":{"x":NaN}-True] PASSED [ 75%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_unambiguous_repeated_keys_in_distinct_objects_allowed[False] PASSED [ 87%]
+.planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r2/test_heldout_http.py::test_unambiguous_repeated_keys_in_distinct_objects_allowed[True] PASSED [100%]
+
+============================== 8 passed in 5.77s ==============================
+
+exit=0

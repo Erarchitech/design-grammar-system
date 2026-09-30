@@ -14,6 +14,42 @@ namespace DG.Core.Contracts;
 public static class EvidenceEnvelopeFactory
 {
     public const string ContractVersion = "1.0.0";
+    public const string ContractVersionV2 = "2.0.0";
+
+    /// <summary>Opt-in v2 writer; aggregate includes rule outcomes but object rows do not.</summary>
+    public static EvidenceEnvelopeV2 BuildWithRuleResults(
+        string project, string definitionId, string serviceName, string serviceVersion,
+        string stage, IReadOnlyCollection<EvidenceRow> rows,
+        IReadOnlyCollection<EvidenceRuleResult> ruleResults,
+        string? dgId = null, object? sourceRepresentation = null,
+        string? inputHash = null, string? outputHash = null, string? schemaVersion = null,
+        string? ontologyVersion = null, string? ruleVersion = null, string? shapeVersion = null,
+        string? provider = null, string? model = null, List<string>? warnings = null)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+        ArgumentNullException.ThrowIfNull(ruleResults);
+        var sortedRules = ruleResults.OrderBy(r => r.RuleId, StringComparer.Ordinal).ToList();
+        if (sortedRules.Select(r => r.RuleId).Distinct(StringComparer.Ordinal).Count() != sortedRules.Count)
+            throw new ArgumentException("Duplicate ruleResults ruleId", nameof(ruleResults));
+        var old = Build(project, definitionId, serviceName, serviceVersion, stage, rows);
+        var envelope = new EvidenceEnvelopeV2
+        {
+            ContractVersion = ContractVersionV2,
+            CanonicalizationVersion = old.CanonicalizationVersion,
+            Project = project, DefinitionId = definitionId, ServiceName = serviceName,
+            ServiceVersion = serviceVersion, EmittedAt = old.EmittedAt, Stage = stage,
+            Rows = old.Rows, RuleResults = sortedRules,
+            CanonicalStatus = StatusRollup.Rollup(rows.Select(r => r.CanonicalStatus)
+                .Concat(sortedRules.Select(r => r.CanonicalStatus))),
+            DgId = dgId, SourceRepresentation = sourceRepresentation,
+            InputHash = inputHash, OutputHash = outputHash, SchemaVersion = schemaVersion,
+            OntologyVersion = ontologyVersion, RuleVersion = ruleVersion, ShapeVersion = shapeVersion,
+            Provider = provider, Model = model, Warnings = warnings,
+        };
+        // Same explicit full guard as the reader, not System.Text.Json defaults.
+        EvidenceEnvelopeReader.Serialize(envelope);
+        return envelope;
+    }
 
     /// <summary>
     /// Builds an <see cref="EvidenceEnvelope"/> with <paramref name="rows"/> sorted ascending by

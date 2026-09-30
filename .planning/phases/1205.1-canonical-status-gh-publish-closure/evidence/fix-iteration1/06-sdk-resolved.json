@@ -1,0 +1,31 @@
+{
+  "command": [
+    "dotnet",
+    "msbuild",
+    "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+    "-t:ResolveReferences",
+    "-getProperty:DefineConstants",
+    "-getProperty:RhinoCommonPath",
+    "-getProperty:GrasshopperPath",
+    "-getProperty:GhIoPath",
+    "-getItem:ReferencePath",
+    "-getItem:Compile",
+    "-property:Configuration=Release"
+  ],
+  "exit_code": 0,
+  "Properties": {
+    "DefineConstants": "TRACE;GRASSHOPPER_SDK;RELEASE;NET;NET7_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER",
+    "RhinoCommonPath": "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll",
+    "GrasshopperPath": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "GhIoPath": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll"
+  },
+  "resolvedSdkReferences": [
+    "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll",
+    "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll"
+  ],
+  "compiledPublishSources": [
+    "Validation\\ValidationPublishClient.cs",
+    "Validation\\ValidationPublishContract.cs"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "scenario": "supported",
+  "captureHits": 1,
+  "readbackHits": 1,
+  "identity": [
+    "ValidGraph",
+    "P_WIRE",
+    "9ea8f4f1609149578a98e000b5b3d223"
+  ],
+  "readerInputSha256": "eb30f73ecc131a96b12b68386847a2a9261059fc6e05bc7077e4d8abd01ef244",
+  "files": {
+    "request.json": {
+      "bytes": 970,
+      "sha256": "8c54d06e680adeb74a1cb2d434beca7b1eaee1d4dff6fa83203baa1ed5e1e3be"
+    },
+    "view-response.json": {
+      "bytes": 1510,
+      "sha256": "c7a32cedcaa2de0f61f6a072c49f7744ee4cc97369e094efda6ab9416ad3e8b3"
+    },
+    "reader-input.json": {
+      "bytes": 577,
+      "sha256": "eb30f73ecc131a96b12b68386847a2a9261059fc6e05bc7077e4d8abd01ef244"
+    },
+    "reader-output.json": {
+      "bytes": 254,
+      "sha256": "d9bbcb4b947d8c052911e368ca6d3c97b5217a5d3b8069a094f6c1b7ae42f3ac"
+    },
+    "persisted-evidence.json": {
+      "bytes": 577,
+      "sha256": "eb30f73ecc131a96b12b68386847a2a9261059fc6e05bc7077e4d8abd01ef244"
+    }
+  }
+}

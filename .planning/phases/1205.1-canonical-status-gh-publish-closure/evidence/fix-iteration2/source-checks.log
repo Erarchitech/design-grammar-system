@@ -1,0 +1,176 @@
+command=["python", "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\fix-iteration2\\source_checks.py"]
+time=2026-09-30T21:04:12.745350+00:00
+{
+  "verified": "2026-09-30T21:04:12.701177+00:00",
+  "originalPythonParserClassUnchanged": true,
+  "originalCSharpFullLiteralHelperUnchanged": true,
+  "catches": [
+    {
+      "function": "parse_evidence_envelope",
+      "before": [
+        "(TypeError, ValueError)"
+      ],
+      "after": [
+        "(TypeError, ValueError, RecursionError)"
+      ]
+    },
+    {
+      "function": "_parse_shacl_report",
+      "before": [
+        "(TypeError, ValueError)"
+      ],
+      "after": [
+        "(TypeError, ValueError, RecursionError)"
+      ]
+    },
+    {
+      "function": "_compute_canonical_state_hash",
+      "before": [
+        "(TypeError, ValueError)",
+        "(ValueError, TypeError)"
+      ],
+      "after": [
+        "(TypeError, ValueError, RecursionError)",
+        "(ValueError, TypeError)"
+      ]
+    },
+    {
+      "function": "_project_state_summary",
+      "before": [
+        "(json.JSONDecodeError, ValueError, TypeError, RecursionError)"
+      ],
+      "after": [
+        "(json.JSONDecodeError, ValueError, TypeError, RecursionError)"
+      ]
+    }
+  ],
+  "scanFindings": [],
+  "retainedArtifactsCurrentReader": [
+    {
+      "scenario": "diagnostics",
+      "persistedSha256": "38bafd3fa15aedef862f10d3def92fdf1c4d6f40c1492595e5d7dce6d926d4fa",
+      "rows": [
+        [
+          "R_LEGACY",
+          "OBJ_DIAG",
+          "unknown"
+        ],
+        [
+          "R_WIRE",
+          "OBJ_DIAG",
+          "unknown"
+        ]
+      ],
+      "ruleResults": [
+        [
+          "R_LEGACY",
+          "unknown"
+        ],
+        [
+          "R_WIRE",
+          "unknown"
+        ]
+      ],
+      "currentReaderMatchesRetained": true,
+      "rowHashPairs": 0
+    },
+    {
+      "scenario": "supported",
+      "persistedSha256": "eb30f73ecc131a96b12b68386847a2a9261059fc6e05bc7077e4d8abd01ef244",
+      "rows": [
+        [
+          "R_WIRE",
+          "OBJ_FAIL",
+          "failed"
+        ],
+        [
+          "R_WIRE",
+          "OBJ_PASS",
+          "passed"
+        ]
+      ],
+      "ruleResults": [
+        [
+          "R_WIRE",
+          "failed"
+        ]
+      ],
+      "currentReaderMatchesRetained": true,
+      "rowHashPairs": 0
+    },
+    {
+      "scenario": "unsupported",
+      "persistedSha256": "37ccb75b3299bd7ceb9f4e5883c11069e969f03233f794bf522b4370d5b18759",
+      "rows": [
+        [
+          "R_WIRE",
+          "OBJ_UNSUPPORTED",
+          "unsupported"
+        ]
+      ],
+      "ruleResults": [
+        [
+          "R_WIRE",
+          "unsupported"
+        ]
+      ],
+      "currentReaderMatchesRetained": true,
+      "rowHashPairs": 0
+    },
+    {
+      "scenario": "zero_rows",
+      "persistedSha256": "86f94900c38d78788a4096dc36e83f65d03ee21e186e28954860ff6b9bc10522",
+      "rows": [],
+      "ruleResults": [
+        [
+          "R_EMPTY_B",
+          "no_population"
+        ],
+        [
+          "R_MISSING",
+          "not_evaluated"
+        ],
+        [
+          "R_WIRE",
+          "no_population"
+        ]
+      ],
+      "currentReaderMatchesRetained": true,
+      "rowHashPairs": 0
+    }
+  ],
+  "phaseOwnedPaths": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-EXECUTION-EVIDENCE.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-SCHEMA-PROPAGATION.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-VALIDATION.md",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelope.cs",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelopeFactory.cs",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelopeReader.cs",
+    "DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs",
+    "DG/src/DG.Core/Models/RuleEvaluationResult.cs",
+    "DG/src/DG.Core/Models/ValidationPublishEntity.cs",
+    "DG/src/DG.Core/Models/ValidationPublishRuleResult.cs",
+    "DG/src/DG.Core/Validation/RuleEvaluator.cs",
+    "DG/src/DG.Core/Validation/ValidationPublishPackageBuilder.cs",
+    "DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs",
+    "DG/src/DG.Grasshopper/Validation/ValidationPublishContract.cs",
+    "DG/tests/DG.PublishWireHarness/DG.PublishWireHarness.csproj",
+    "DG/tests/DG.PublishWireHarness/Program.cs",
+    "DG/tests/DG.Tests/EvidenceContractTests.cs",
+    "DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs",
+    "DG/tests/DG.Tests/RuleEvaluatorTests.cs",
+    "DG/tests/DG.Tests/ValidationPublishPackageBuilderTests.cs",
+    "data-service/app.py",
+    "data-service/evidence_contract.py",
+    "data-service/tests/test_evidence_contract.py",
+    "data-service/tests/test_evidence_versions.py",
+    "data-service/tests/test_gh_publish_wire.py",
+    "spec/API.md",
+    "spec/DATABASE.md",
+    "spec/EVIDENCE-CONTRACT.md",
+    "spec/evidence-contract.schema.json",
+    "tools/de01/tests/test_evidence_versions.py"
+  ]
+}
+
+exit=0

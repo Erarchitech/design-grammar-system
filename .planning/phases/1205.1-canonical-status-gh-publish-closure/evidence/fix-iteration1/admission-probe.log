@@ -1,0 +1,24 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\fix-iteration1\\admission_probe.py"]
+time=2026-09-30T20:32:08.273319+00:00
+[
+  {
+    "case": "baseline",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": true
+  },
+  {
+    "case": "integral-json-number",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": true
+  },
+  {
+    "case": "newline-hash",
+    "rootSchemaAccepted": false,
+    "pythonReadAccepted": false,
+    "csharpReadAccepted": false
+  }
+]
+
+exit=0

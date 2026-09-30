@@ -1,0 +1,423 @@
+--- before/data-service/app.py
++++ after/data-service/app.py
+@@ -20,6 +20,7 @@
+ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
+ from fastapi.concurrency import run_in_threadpool
+ from fastapi.responses import JSONResponse
++from fastapi.routing import APIRoute
+ from neo4j import GraphDatabase
+ from neo4j.graph import Node, Path, Relationship
+ from pydantic import BaseModel, Field, model_validator
+@@ -161,7 +162,30 @@
+ # The router is included as the LAST statement of this module, after every
+ # route definition (a route added to `app` directly would bypass the guard;
+ # tests/test_route_inventory.py fails the suite if any route lacks it).
+-router = APIRouter(dependencies=[Depends(auth.require_principal)])
++class EvidencePublishRequest(Request):
++    async def json(self) -> Any:
++        if not hasattr(self, "_json"):
++            try:
++                self._json = evidence_contract.decode_evidence_json(await self.body())
++            except (ValueError, TypeError, RecursionError) as exc:
++                # Do not include raw user values in a response or validation error.
++                raise HTTPException(status_code=422, detail="Invalid publish JSON") from exc
++        return self._json
++
++
++class EvidencePublishRoute(APIRoute):
++    def get_route_handler(self):
++        original = super().get_route_handler()
++        if self.path != "/validation/publish":
++            return original
++
++        async def strict_publish(request: Request):
++            return await original(EvidencePublishRequest(request.scope, request.receive))
++
++        return strict_publish
++
++
++router = APIRouter(dependencies=[Depends(auth.require_principal)], route_class=EvidencePublishRoute)
+ 
+ NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
+ NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+@@ -415,6 +439,7 @@
+     @model_validator(mode="before")
+     @classmethod
+     def validate_canonical_publish(cls, value: Any) -> Any:
++        evidence_contract.validate_json_resources(value)
+         # Only absence selects the historical path. Inspect raw tokens before
+         # Pydantic can coerce types; never infer a version from collection shape.
+         if not isinstance(value, dict) or "evidenceContractVersion" not in value:
+@@ -1167,7 +1192,7 @@
+     if not shacl_report_json:
+         return None
+     try:
+-        parsed = json.loads(shacl_report_json)
++        parsed = evidence_contract.decode_evidence_json(shacl_report_json)
+     except (TypeError, ValueError, RecursionError):
+         return None
+     return parsed if isinstance(parsed, dict) else None
+@@ -1185,10 +1210,10 @@
+     if not evidence_envelope_json:
+         return None
+     try:
+-        parsed = json.loads(evidence_envelope_json)
++        parsed = evidence_contract.decode_evidence_json(evidence_envelope_json)
++        return evidence_contract.read_envelope_dict(parsed)
+     except (TypeError, ValueError, RecursionError):
+         return None
+-    return evidence_contract.read_envelope_dict(parsed)
+ 
+ 
+ def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
+--- before/data-service/evidence_contract.py
++++ after/data-service/evidence_contract.py
+@@ -31,6 +31,7 @@
+ from __future__ import annotations
+ 
+ import functools
++import math
+ import os
+ from datetime import datetime, timezone
+ from enum import StrEnum
+@@ -219,6 +220,51 @@
+         return value
+ 
+ 
++MAX_JSON_DEPTH = 128  # Containers only, root object counts as one (System.Text.Json semantics).
++
++
++def validate_json_resources(value: Any) -> None:
++    """Iterative preflight before recursive model/schema/response operations."""
++    pending = [(value, 0)]
++    while pending:
++        item, parent_depth = pending.pop()
++        if isinstance(item, BaseModel):
++            item = dict(item)
++        if isinstance(item, int) and not isinstance(item, bool):
++            try:
++                finite = math.isfinite(item)
++            except OverflowError:
++                finite = False
++            if not finite:
++                raise ValueError("JSON number exceeds finite binary64 range")
++        if isinstance(item, float) and not math.isfinite(item):
++            raise ValueError("Non-finite JSON number")
++        if isinstance(item, (dict, list)):
++            depth = parent_depth + 1
++            if depth > MAX_JSON_DEPTH:
++                raise ValueError("JSON nesting exceeds 128 containers")
++            children = item.values() if isinstance(item, dict) else item
++            pending.extend((child, depth) for child in children)
++
++
++def decode_evidence_json(raw: str | bytes) -> Any:
++    """Reject ambiguous object members before any version/model dispatch."""
++    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
++        result: dict[str, Any] = {}
++        for key, value in pairs:
++            if key in result:
++                raise ValueError("Duplicate JSON member")
++            result[key] = value
++        return result
++
++    def reject_constant(token: str) -> Any:
++        raise ValueError("Non-JSON numeric constant")
++
++    payload = _json.loads(raw, object_pairs_hook=unique_object, parse_constant=reject_constant)
++    validate_json_resources(payload)
++    return payload
++
++
+ def _wire_input(value: Any) -> Any:
+     # Typed nested records carry unset optional fields as None; their wire form
+     # omits those. Raw dictionaries are NOT cleaned or coerced.
+@@ -241,6 +287,7 @@
+     @model_validator(mode="before")
+     @classmethod
+     def validate_wire_shape(cls, value: Any) -> Any:
++        validate_json_resources(value)
+         payload = _wire_input(value)
+         try:
+             jsonschema.validate(payload, load_contract_schema())
+@@ -265,6 +312,7 @@
+ 
+ def parse_envelope_model(payload: Any) -> EvidenceEnvelope | LegacyEvidenceEnvelope | EvidenceEnvelopeV2:
+     """Full schema admission; intentionally NOT the historical projection reader."""
++    validate_json_resources(payload)
+     jsonschema.validate(payload, load_contract_schema())
+     model = {"1.0.0": EvidenceEnvelope, "1": LegacyEvidenceEnvelope,
+              EVIDENCE_CONTRACT_VERSION_V2: EvidenceEnvelopeV2}[payload["contractVersion"]]
+@@ -277,6 +325,7 @@
+         return None
+     version = payload["contractVersion"]
+     try:
++        validate_json_resources(payload)
+         if version == EVIDENCE_CONTRACT_VERSION_V2:
+             parse_envelope_model(payload)
+         elif version in ("1", EVIDENCE_CONTRACT_VERSION):
+@@ -291,7 +340,7 @@
+                 jsonschema.validate(payload["rows"], row_schema)
+         else:
+             return None
+-    except (jsonschema.ValidationError, ValidationError):
++    except (jsonschema.ValidationError, ValueError, RecursionError):
+         return None
+     return payload
+ 
+@@ -301,12 +350,15 @@
+     stage: str, rows: list[EvidenceRow], rule_results: list[EvidenceRuleResult],
+     **metadata: Any,
+ ) -> EvidenceEnvelopeV2:
+-    """Opt-in v2 construction; old factories and production emission stay old."""
++    """Explicit v2 construction used by current GH publish; old factories stay old."""
+     # Preserve the existing metadata API, but never permit an aggregate override
+     # to hide a rule outcome in the new shape.
+     if "roll_up" in metadata:
+         raise TypeError("v2 aggregate is derived from rows and ruleResults")
+     old = build_envelope(project, definition_id, service_name, service_version, stage, rows, **metadata)
++    # Pydantic's JSON-mode dump can turn non-finite Any metadata into null.
++    # Admit the original Python values before that irreversible transformation.
++    validate_json_resources(old)
+     payload = old.model_dump(mode="json", exclude_none=True)
+     results = sorted(rule_results, key=lambda item: _ordinal_key(item.ruleId))
+     statuses = {item.canonicalStatus for item in [*rows, *results]}
+@@ -417,5 +469,6 @@
+     treatment every other optional field gets.
+     """
+     schema = load_contract_schema()
++    validate_json_resources(envelope)
+     payload = envelope.model_dump(mode="json", exclude_none=True)
+     jsonschema.validate(instance=payload, schema=schema)
+--- before/DG/src/DG.Core/Contracts/EvidenceEnvelopeReader.cs
++++ after/DG/src/DG.Core/Contracts/EvidenceEnvelopeReader.cs
+@@ -15,6 +15,8 @@
+ /// </summary>
+ public static class EvidenceEnvelopeReader
+ {
++    public const int MaxJsonDepth = 128;
++    private static readonly JsonDocumentOptions DocumentOptions = new() { MaxDepth = MaxJsonDepth };
+     private static readonly string[] RequiredEnvelope =
+     {
+         "contractVersion", "canonicalizationVersion", "project", "definitionId", "serviceName",
+@@ -32,7 +34,8 @@
+     private static readonly HashSet<string> AllowedRule = new(RequiredRule.Concat(new[] { "detail" }), StringComparer.Ordinal);
+     private static readonly JsonSerializerOptions WireOptions = new()
+     {
+-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
++        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
++        MaxDepth = MaxJsonDepth
+     };
+ 
+     public static bool TryRead(string? json, out EvidenceEnvelopeReadResult? result)
+@@ -41,14 +44,17 @@
+         if (string.IsNullOrWhiteSpace(json)) return false;
+         try
+         {
+-            using var document = JsonDocument.Parse(json);
++            using var document = JsonDocument.Parse(json, DocumentOptions);
+             var root = document.RootElement;
+-            if (!Version(root, out var version)) return false;
++            if (!JsonResources(root) || !Version(root, out var version)) return false;
+             if (version == EvidenceEnvelopeFactory.ContractVersionV2)
+             {
+                 if (!FullShape(root, isV2: true)) return false;
+-                var envelope = JsonSerializer.Deserialize<EvidenceEnvelopeV2>(root.GetRawText())!;
+-                result = new(version, envelope.Rows, envelope.RuleResults);
++                // Project only the admitted records; do not narrow schema-valid version
++                // numbers through the writer DTO's Int32 metadata property.
++                result = new(version,
++                    JsonSerializer.Deserialize<List<EvidenceRow>>(root.GetProperty("rows").GetRawText(), WireOptions)!,
++                    JsonSerializer.Deserialize<List<EvidenceRuleResult>>(root.GetProperty("ruleResults").GetRawText(), WireOptions)!);
+             }
+             else
+             {
+@@ -74,8 +80,8 @@
+     {
+         try
+         {
+-            using var document = JsonDocument.Parse(json);
+-            return Version(document.RootElement, out var version) &&
++            using var document = JsonDocument.Parse(json, DocumentOptions);
++            return JsonResources(document.RootElement) && Version(document.RootElement, out var version) &&
+                    FullShape(document.RootElement, version == EvidenceEnvelopeFactory.ContractVersionV2);
+         }
+         catch (JsonException) { return false; }
+@@ -91,6 +97,30 @@
+         return json;
+     }
+ 
++    private static bool JsonResources(JsonElement root)
++    {
++        var pending = new Stack<JsonElement>();
++        pending.Push(root);
++        while (pending.Count > 0)
++        {
++            var value = pending.Pop();
++            if (value.ValueKind == JsonValueKind.Number &&
++                (!value.TryGetDouble(out var number) || !double.IsFinite(number))) return false;
++            if (value.ValueKind == JsonValueKind.Object)
++            {
++                var names = new HashSet<string>(StringComparer.Ordinal);
++                foreach (var property in value.EnumerateObject())
++                {
++                    if (!names.Add(property.Name)) return false;
++                    pending.Push(property.Value);
++                }
++            }
++            else if (value.ValueKind == JsonValueKind.Array)
++                foreach (var item in value.EnumerateArray()) pending.Push(item);
++        }
++        return true;
++    }
++
+     private static bool Version(JsonElement root, out string version)
+     {
+         version = string.Empty;
+@@ -126,7 +156,9 @@
+             {
+                 case "rows": case "canonicalStatus": break;
+                 case "canonicalizationVersion":
+-                    if (field.Value.ValueKind != JsonValueKind.Number || !field.Value.TryGetInt32(out _)) return false;
++                    if (field.Value.ValueKind != JsonValueKind.Number ||
++                        !field.Value.TryGetDouble(out var number) || !double.IsFinite(number) ||
++                        Math.Truncate(number) != number || Math.Abs(number) > 9007199254740991d) return false;
+                     break;
+                 case "sourceRepresentation":
+                     if (field.Value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null)) return false;
+--- before/spec/evidence-contract.schema.json
++++ after/spec/evidence-contract.schema.json
+@@ -46,12 +46,16 @@
+         },
+         "inputHash": {
+           "type": "string",
+-          "pattern": "^[0-9A-F]{64}$",
++          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
++          "minLength": 64,
++          "maxLength": 64,
+           "description": "SHA-256 hex digest (uppercase) of this row's canonicalized input, where the envelope-level hash is insufficiently granular."
+         },
+         "outputHash": {
+           "type": "string",
+-          "pattern": "^[0-9A-F]{64}$",
++          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
++          "minLength": 64,
++          "maxLength": 64,
+           "description": "SHA-256 hex digest (uppercase) of this row's canonicalized output."
+         },
+         "detail": {
+@@ -117,7 +121,9 @@
+         },
+         "canonicalizationVersion": {
+           "type": "integer",
+-          "description": "The CANONICALIZATION_VERSION used to compute any hashes in this envelope."
++          "minimum": -9007199254740991,
++          "maximum": 9007199254740991,
++          "description": "The CANONICALIZATION_VERSION. Integral JSON numbers, including 1.0 and 1e0, within the interoperable safe-integer range; producers still emit 1."
+         },
+         "project": {
+           "type": "string",
+@@ -157,7 +163,9 @@
+         },
+         "dgId": {
+           "type": "string",
+-          "pattern": "^dg:[0-9A-F]{16}$",
++          "pattern": "^dg:[0-9A-F]{16}(?![\\s\\S])",
++          "minLength": 19,
++          "maxLength": 19,
+           "description": "The dg:-prefixed identity (spec/DG-ID.md) of the subject entity, where resolvable."
+         },
+         "sourceRepresentation": {
+@@ -166,12 +174,16 @@
+         },
+         "inputHash": {
+           "type": "string",
+-          "pattern": "^[0-9A-F]{64}$",
++          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
++          "minLength": 64,
++          "maxLength": 64,
+           "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized input."
+         },
+         "outputHash": {
+           "type": "string",
+-          "pattern": "^[0-9A-F]{64}$",
++          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
++          "minLength": 64,
++          "maxLength": 64,
+           "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized output."
+         },
+         "schemaVersion": {
+--- before/spec/EVIDENCE-CONTRACT.md
++++ after/spec/EVIDENCE-CONTRACT.md
+@@ -216,6 +216,44 @@
+ unknown > not_evaluated > no_population > passed). Empty union is `not_evaluated`; aggregate
+ override is not allowed for v2. An independently constructed empty envelope is valid; GH publish
+ additionally requires a nonempty declared rule set and exact result coverage.
++
++### 3.1.1 Raw JSON and resource admission (review correction 1205.1)
++
++Schema validation starts **after** JSON decoding. It cannot detect duplicate object members,
++non-JSON numeric constants, or impose a nesting limit on arbitrary metadata. The publish route
++and persisted evidence readers therefore apply the following additional technical boundary **before
++version dispatch/model coercion** (including historical tokens):
++
++- Each object must have unique decoded member names, including escaped-equivalent names and
++  arbitrary nested metadata. Repeated identities in the `rows` **array** are different: they remain
++  admitted and collision-reported, with the established status rollup; never last-member-wins.
++- Numbers must be representable as finite binary64 values: NaN, Infinity, -Infinity, exponent
++  overflow (e.g. `1e400`) and integer magnitudes overflowing binary64 are rejected. No conversion
++  to null, no metadata stripping and no fabricated verdict. Ordinary decimal/exponent JSON numbers
++  use the existing binary64 decoding semantics; this is not a change to canonical hashing.
++- At most **128 nested containers**, counting the root object as 1 and each object/array as one
++  more; scalar leaves do not add depth. This explicit operational bound replaces Python's accidental
++  recursion limit and C#'s implicit 64-container default. Depth 70 now works in both readers;
++  127/128 work, 129 and the previously crashing 700-array input reject. This is a newly documented
++  resource constraint, not something JSON Schema alone guarantees, nor a general payload-size/DoS limit.
++- Full envelope `canonicalizationVersion` uses JSON Schema integer semantics (integral numeric
++  values including `1.0` and `1e0`, not strings/booleans), in **[-9007199254740991,
++  9007199254740991]**, the interoperable safe-integer range. The schema now states that range
++  explicitly rather than silently inheriting C# Int32. `1099511627776` is admitted. Writers still
++  emit `1`; no canonicalization version/algorithm is changed. Historical projection still ignores
++  unused root metadata types/ranges as in §3.1, but not raw syntax/finite/depth guards.
++- Hashes are exactly 64 uppercase hex characters, and `dgId` exactly `dg:` plus 16 uppercase hex
++  characters. Schema patterns now have an absolute end check plus exact lengths, rejecting a final
++  newline; C# remains strict. No case, whitespace or version-token normalization.
++
++Python applies iterative resource validation to raw-decoded **and in-memory** admission before
++recursive normalization/schema/model/response operations. Persisted read failure returns None;
++C# returns absent evidence with no verdicts. POST `/validation/publish` alone uses the rejecting
++raw decoder and returns 422 before any Speckle/graph writes. Unrelated API decoders are unchanged.
++The SHACL view sibling uses the same guarded JSON decoder because arbitrary report metadata can
++otherwise fail actual JSON response serialization; state hash/projection algorithms are unchanged.
++Old `1`/`1.0.0` no-rows dictionaries remain unmodified. Direct legacy constructor defaults/coercions
++remain distinct from strict full admission; use `parse_envelope_model`/`IsStrictEnvelope` for that gate.
+ 
+ ### 3.2 Production publish, diagnostics and rollout
+ 
+--- before/spec/API.md
++++ after/spec/API.md
+@@ -84,6 +84,13 @@
+ evidence, SHACL and state also degrade to their existing null fallback, so the view is renderable.
+ Existing canonicalizationVersion presence semantics are unchanged; a non-null version alone is
+ not evidence that a hash was computed. See `spec/EVIDENCE-CONTRACT.md` §3 for exact shapes.
++
++Raw publish JSON rejects duplicate decoded object members, non-finite numbers (including exponent
++overflow), and nesting beyond 128 containers before model admission and before Speckle/graph writes
++(422). This route-specific guard applies even without a version selector; valid legacy fallback is
++unchanged. Persisted evidence/SHACL views reject the same corrupt representations rather than
++coercing metadata to null. Full evidence number/hash constraints and schema-vs-runtime distinction
++are documented in `spec/EVIDENCE-CONTRACT.md` §3.1.1.
+ 
+ Authentication, CSRF and tenant policy are unchanged; invalid new requests produce no graph writes.
+ Evidence sidecar persistence remains best-effort: HTTP 200 alone does not prove evidence was saved.
+--- before/spec/DATABASE.md
++++ after/spec/DATABASE.md
+@@ -155,7 +155,7 @@
+   shipping wire shapes read by two different, non-interchangeable readers — see "Declared
+   exclusion: `parameters[]` has two wire shapes and two readers" below.
+ - `shaclReportJson` — JSON string holding the per-run SHACL validation report envelope (`status`, `conforms`, `results[]`, per-severity counts); sibling property to `rulesJson`/`statePayloadJson`, written by `data-service`'s publish path after the `dg-reasoner` SHACL call; **absent on pre-823 runs** (Model Viewer/UI must treat missing `shaclReportJson` as "not checked," never as an error) — added Phase 823 (SHCL-01, D-06). Governed by `spec/RULE-PARTITION-POLICY.md`.
+-- `evidenceEnvelopeJson` — JSON string holding the canonical Evidence Envelope defined by `spec/EVIDENCE-CONTRACT.md`; sibling property to `statePayloadJson`/`shaclReportJson`. Exact old tokens `1.0.0` and historical literal `1` have the old shape; exact `2.0.0` additionally requires `ruleResults[]` (`ruleId`, `canonicalStatus`, `warnings`, optional non-null `detail`), retaining multiple zero-row outcomes without invented objects. Object verdicts derive only from `rows[]`; rule results/aggregate never manufacture object verdicts. Full writer/schema admission is strict. Bounded old-token readers may admit missing metadata/absent rows without rewriting stored JSON; malformed present rows, crossed versions or malformed v2 reject. **Absence/corruption, including excessive JSON nesting, means not recorded, never passed or a view crash.** The current source GH writer selects v2 explicitly; absent request version retains old-client emission. Compatible readers must deploy before new writers; no migration/backfill or live deployment is asserted. `persist_evidence_envelope` still sets only this property with `(graph, project, runId)` parameters on the existing ValidationRun node. No label, relation or Cypher schema change accompanies this JSON-content revision; existing Run/ValidationRun naming drift is not repaired here.
++- `evidenceEnvelopeJson` — JSON string holding the canonical Evidence Envelope defined by `spec/EVIDENCE-CONTRACT.md`; sibling property to `statePayloadJson`/`shaclReportJson`. Exact old tokens `1.0.0` and historical literal `1` have the old shape; exact `2.0.0` additionally requires `ruleResults[]` (`ruleId`, `canonicalStatus`, `warnings`, optional non-null `detail`), retaining multiple zero-row outcomes without invented objects. Object verdicts derive only from `rows[]`; rule results/aggregate never manufacture object verdicts. Full writer/schema admission is strict. Bounded old-token readers may admit missing metadata/absent rows without rewriting stored JSON; malformed present rows, crossed versions or malformed v2 reject. **Absence/corruption, including excessive JSON nesting, means not recorded, never passed or a view crash.** Raw readers reject duplicate object members, non-finite numbers/overflow and depth above 128 containers before version dispatch (including old tokens); full number/hash admission follows `spec/EVIDENCE-CONTRACT.md` §3.1.1. Duplicate array-row identities still follow collision reporting, not JSON-member rejection. The current source GH writer selects v2 explicitly; absent request version retains old-client emission. Compatible readers must deploy before new writers; no migration/backfill or live deployment is asserted. `persist_evidence_envelope` still sets only this property with `(graph, project, runId)` parameters on the existing ValidationRun node. No label, relation or Cypher schema change accompanies this JSON-content revision; existing Run/ValidationRun naming drift is not repaired here.
+ - `trigger` — string, literal `auto` on auto-validation runs; written by `CAPTURE_QUERY`, `COMPLETE_QUERY`, and `FAIL_QUERY`. It distinguishes an auto-produced run from the manual VALIDATOR path; absent on manual and all pre-Phase-39 runs, which is normal
+ - `verdictSource` — string, literal `shacl`, written by `COMPLETE_QUERY`; absent when no auto-validation completion has written it
+ - `capturedAt` — ISO-8601 string, set by `POST /designstate/capture` through `CAPTURE_QUERY`, which also copies it to `createdAt`; absent on manual runs

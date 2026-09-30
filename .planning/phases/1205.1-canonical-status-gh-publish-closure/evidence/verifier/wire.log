@@ -1,0 +1,9 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_gh_publish_wire.py", "data-service/tests/test_evidence_versions.py", "data-service/tests/test_validation_entity_rollup.py", "-q", "-m", "not live and not integration"]
+started=2026-09-30T19:49:59.578306+00:00
+........................................................................ [ 34%]
+........................................................................ [ 69%]
+................................................................         [100%]
+208 passed in 55.25s
+
+exit=0
+wall_seconds=56.891

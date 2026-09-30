@@ -1,0 +1,1 @@
+{"inputSha256":"e09ce7e622a6a64025e6d6abf673ee722686509cd6c1f6d736b501e0a45b6536","envelopePresent":true,"verdicts":[{"objectId":"OBJ_FAIL","status":"failed","duplicate":false},{"objectId":"OBJ_PASS","status":"passed","duplicate":false}],"collisions":[]}

@@ -1,0 +1,153 @@
+[
+  {
+    "name": "csharp",
+    "command": [
+      "dotnet",
+      "test",
+      "DG/tests/DG.Tests/DG.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~EvidenceContractTests|FullyQualifiedName~RuleEvaluatorTests|FullyQualifiedName~ValidationPublishPackageBuilderTests|FullyQualifiedName~Neo4jValidGraphRepositoryTests|FullyQualifiedName~DataServiceRequestAuthTests|FullyQualifiedName~SwrlSubsetConformanceTests",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T20:36:47.283557+00:00",
+    "exit": 0,
+    "wall_seconds": 3.219
+  },
+  {
+    "name": "backend",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_evidence_contract.py",
+      "data-service/tests/test_validation_run_immutability.py",
+      "data-service/tests/test_route_inventory.py",
+      "data-service/tests/test_cross_project_matrix.py",
+      "-q",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T20:36:50.496799+00:00",
+    "exit": 0,
+    "wall_seconds": 34.156
+  },
+  {
+    "name": "wire",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_gh_publish_wire.py",
+      "data-service/tests/test_evidence_versions.py",
+      "data-service/tests/test_validation_entity_rollup.py",
+      "data-service/tests/test_evidence_raw_admission.py",
+      "-v",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T20:37:24.660071+00:00",
+    "exit": 0,
+    "wall_seconds": 88.984
+  },
+  {
+    "name": "de01",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "tools/de01/tests",
+      "-q",
+      "-m",
+      "not live",
+      "-k",
+      "not live"
+    ],
+    "started": "2026-09-30T20:38:53.640804+00:00",
+    "exit": 0,
+    "wall_seconds": 5.641
+  },
+  {
+    "name": "gh-rebuild",
+    "command": [
+      "dotnet",
+      "build",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-t:Rebuild",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T20:38:59.277996+00:00",
+    "exit": 0,
+    "wall_seconds": 2.313
+  },
+  {
+    "name": "sdk-resolve",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-p:Configuration=Release",
+      "-t:ResolveReferences",
+      "-getProperty:DefineConstants,TargetFramework",
+      "-getItem:ReferencePath,Compile"
+    ],
+    "started": "2026-09-30T20:39:01.599067+00:00",
+    "exit": 0,
+    "wall_seconds": 1.406
+  },
+  {
+    "name": "artifact-check",
+    "command": [
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verify_evidence.py"
+    ],
+    "started": "2026-09-30T20:39:02.997974+00:00",
+    "exit": 0,
+    "wall_seconds": 0.094
+  },
+  {
+    "name": "source-checks",
+    "command": [
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r2\\source_checks.py"
+    ],
+    "started": "2026-09-30T20:39:03.097214+00:00",
+    "exit": 0,
+    "wall_seconds": 1.203
+  },
+  {
+    "name": "admission-probe",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r2\\admission_probe.py"
+    ],
+    "started": "2026-09-30T20:39:04.289304+00:00",
+    "exit": 0,
+    "wall_seconds": 1.875
+  }
+]

@@ -10,6 +10,217 @@ namespace DG.Tests;
 
 public sealed class EvidenceContractTests
 {
+    [Theory]
+    [InlineData("\\ud800")]
+    [InlineData("\\udfff")]
+    [InlineData("\\ud800x")]
+    [InlineData("\\udfff\\ud800")]
+    public void UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(string escaped)
+    {
+        foreach (var version in new[] { "1", "1.0.0", "2.0.0" })
+        foreach (var metadata in new[] { "{\"" + escaped + "\":1}", "{\"x\":\"" + escaped + "\"}" })
+        {
+            var full = "{\"contractVersion\":\"" + version + "\",\"canonicalizationVersion\":1," +
+                "\"project\":\"p\",\"definitionId\":\"d\",\"serviceName\":\"s\",\"serviceVersion\":\"1\"," +
+                "\"emittedAt\":\"now\",\"stage\":\"test\",\"canonicalStatus\":\"passed\",\"rows\":[]," +
+                (version == "2.0.0" ? "\"ruleResults\":[]," : "") + "\"sourceRepresentation\":" + metadata + "}";
+            Assert.False(EvidenceEnvelopeReader.TryRead(full, out var result));
+            Assert.Null(result);
+            Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(full));
+            if (version != "2.0.0")
+            {
+                var partial = "{\"contractVersion\":\"" + version + "\"," + metadata[1..];
+                Assert.False(EvidenceEnvelopeReader.TryRead(partial, out result));
+                Assert.Null(result);
+                Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(partial));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(0xd800)]
+    [InlineData(0xdfff)]
+    public void UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(int codeUnit)
+    {
+        var text = new string((char)codeUnit, 1);
+        var raw = "{\"contractVersion\":\"1\",\"x\":\"" + text + "\"}";
+        Assert.False(EvidenceEnvelopeReader.TryRead(raw, out var result));
+        Assert.Null(result);
+        Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(raw));
+    }
+
+    [Fact]
+    public void UnicodeAdmission_PublicGuardsPreservePairsAndDistinctKeys()
+    {
+        var raw = EvidenceEnvelopeReader.Serialize(V2());
+        raw = raw[..^1] + ",\"sourceRepresentation\":{\"\\ud83d\\ude00\":\"\\ud800\\udc00\",\"é\":1,\"e\\u0301\":2,\"�\":3}}";
+        Assert.True(EvidenceEnvelopeReader.TryRead(raw, out var result));
+        Assert.NotNull(result);
+        Assert.True(EvidenceEnvelopeReader.IsStrictEnvelope(raw));
+    }
+
+    [Fact]
+    public void VersionedReaderAndBuilder_AreExplicitCapabilities()
+    {
+        var envelope = V2();
+        var json = EvidenceEnvelopeReader.Serialize(envelope);
+        Assert.True(EvidenceEnvelopeReader.TryRead(json, out var read));
+        Assert.Equal("2.0.0", read!.ContractVersion);
+        Assert.Equal(1, envelope.CanonicalizationVersion);
+        Assert.Equal(new[] { "R_A", "R_Z" }, read.RuleResults.Select(r => r.RuleId));
+        Assert.Equal(EvidenceStatus.NotEvaluated, envelope.CanonicalStatus);
+        Assert.Empty(read.Rows);
+        var projection = DG.Core.Data.Neo4jValidGraphRepository.BuildPerObjectVerdicts(json);
+        Assert.True(projection.EnvelopePresent);
+        Assert.Empty(projection.Verdicts);
+        Assert.Empty(projection.CollidingRuleObjectPairs);
+        var old = EvidenceEnvelopeFactory.Build("p", "d", "s", "1", "stage", Array.Empty<EvidenceRow>());
+        Assert.Equal("1.0.0", old.ContractVersion);
+        Assert.Equal(EvidenceStatus.NotEvaluated, old.CanonicalStatus);
+        Assert.DoesNotContain("ruleResults", JsonSerializer.Serialize(old));
+    }
+
+    private static EvidenceEnvelopeV2 V2() => EvidenceEnvelopeFactory.BuildWithRuleResults(
+        "p", "d", "s", "1", "stage", Array.Empty<EvidenceRow>(), new[]
+        {
+            new EvidenceRuleResult { RuleId = "R_Z", CanonicalStatus = EvidenceStatus.NoPopulation, Warnings = new() },
+            new EvidenceRuleResult { RuleId = "R_A", CanonicalStatus = EvidenceStatus.NotEvaluated, Warnings = new() { "pending" }, Detail = "not run" }
+        });
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("1.0.0")]
+    public void VersionedReader_NewPartialControl_IsNotFullConstruction(string version)
+    {
+        var json = $$"""{"contractVersion":"{{version}}","canonicalStatus":"failed"}""";
+        Assert.True(EvidenceEnvelopeReader.TryRead(json, out var read));
+        Assert.Equal(version, read!.ContractVersion);
+        Assert.Empty(read.Rows);
+        Assert.Empty(read.RuleResults);
+        Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(json));
+        var projection = DG.Core.Data.Neo4jValidGraphRepository.BuildPerObjectVerdicts(json);
+        Assert.True(projection.EnvelopePresent);
+        Assert.Empty(projection.Verdicts);
+        Assert.Empty(projection.CollidingRuleObjectPairs);
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("\"rows\"")]
+    [InlineData("[null]")]
+    [InlineData("[{\"ruleId\":\"R\",\"objectId\":\"O\",\"canonicalStatus\":\"bogus\"}]")]
+    public void VersionedReader_NewPartialControl_RejectsInvalidPresentRows(string rows)
+    {
+        foreach (var version in new[] { "1", "1.0.0" })
+            Assert.False(EvidenceEnvelopeReader.TryRead($$"""{"contractVersion":"{{version}}","rows":{{rows}}}""", out _));
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("1")]
+    [InlineData("true")]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("\"2\"")]
+    [InlineData("\"2.0.0 \"")]
+    [InlineData("\"3.0.0\"")]
+    public void VersionedReader_RejectsNonExactVersionTokens(string token)
+    {
+        var node = JsonNode.Parse(EvidenceEnvelopeReader.Serialize(V2()))!;
+        node["contractVersion"] = JsonNode.Parse(token);
+        Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(node.ToJsonString()));
+    }
+
+    [Fact]
+    public void VersionedReader_RequiresAllNewFields_AndAllRuleFields()
+    {
+        var schema = LoadSchema();
+        foreach (var field in schema["$defs"]!["EvidenceEnvelopeV2"]!["required"]!.AsArray())
+        {
+            var node = JsonNode.Parse(EvidenceEnvelopeReader.Serialize(V2()))!.AsObject();
+            node.Remove(field!.GetValue<string>());
+            Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        }
+        foreach (var field in schema["$defs"]!["EvidenceRuleResult"]!["required"]!.AsArray())
+        {
+            var node = JsonNode.Parse(EvidenceEnvelopeReader.Serialize(V2()))!;
+            node["ruleResults"]![0]!.AsObject().Remove(field!.GetValue<string>());
+            Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        }
+    }
+
+    [Theory]
+    [InlineData("root", "extra", "1")]
+    [InlineData("root", "project", "null")]
+    [InlineData("root", "canonicalizationVersion", "\"1\"")]
+    [InlineData("root", "canonicalizationVersion", "true")]
+    [InlineData("root", "canonicalStatus", "\"Passed\"")]
+    [InlineData("root", "rows", "null")]
+    [InlineData("root", "ruleResults", "null")]
+    [InlineData("root", "inputHash", "\"invalid\"")]
+    [InlineData("root", "sourceRepresentation", "[]")]
+    [InlineData("root", "warnings", "[1]")]
+    [InlineData("rule", "extra", "1")]
+    [InlineData("rule", "objectId", "\"fake\"")]
+    [InlineData("rule", "warnings", "null")]
+    [InlineData("rule", "detail", "null")]
+    [InlineData("rule", "canonicalStatus", "\"invalid\"")]
+    [InlineData("rule", "ruleId", "42")]
+    [InlineData("row", "extra", "1")]
+    [InlineData("row", "canonicalStatus", "false")]
+    [InlineData("row", "objectId", "null")]
+    [InlineData("row", "warnings", "[false]")]
+    [InlineData("row", "inputHash", "\"invalid\"")]
+    [InlineData("row", "detail", "null")]
+    public void VersionedReader_RejectsInvalidNestedFields(string target, string field, string raw)
+    {
+        var node = JsonNode.Parse(EvidenceEnvelopeReader.Serialize(V2()))!;
+        node["rows"] = JsonNode.Parse("""[{"ruleId":"R","objectId":"O","canonicalStatus":"passed"}]""");
+        var record = target == "root" ? node : node[target == "rule" ? "ruleResults" : "rows"]![0]!;
+        record[field] = JsonNode.Parse(raw);
+        Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(node.ToJsonString()));
+    }
+
+    [Fact]
+    public void VersionedReader_RuleIdentityAndOrder_AreStrict_ButDuplicateRowsRetained()
+    {
+        var rule = new EvidenceRuleResult { RuleId = "R", CanonicalStatus = EvidenceStatus.Unsupported, Warnings = new() };
+        Assert.Throws<ArgumentException>(() => EvidenceEnvelopeFactory.BuildWithRuleResults("p", "d", "s", "1", "stage", Array.Empty<EvidenceRow>(), new[] { rule, rule }));
+        var node = JsonNode.Parse(EvidenceEnvelopeReader.Serialize(V2()))!;
+        node["ruleResults"]![1]!["ruleId"] = "R_A";
+        Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        node["ruleResults"]![0]!["ruleId"] = "Z";
+        Assert.False(EvidenceEnvelopeReader.TryRead(node.ToJsonString(), out _));
+        var empty = EvidenceEnvelopeFactory.BuildWithRuleResults("p", "d", "s", "1", "stage", Array.Empty<EvidenceRow>(), Array.Empty<EvidenceRuleResult>());
+        Assert.Equal(EvidenceStatus.NotEvaluated, empty.CanonicalStatus);
+        var envelope = EvidenceEnvelopeFactory.BuildWithRuleResults("p", "d", "s", "1", "stage", new[]
+        {
+            Row("O", "R", EvidenceStatus.Passed), Row("O", "R", EvidenceStatus.Failed),
+            Row("OTHER", "R", EvidenceStatus.Passed)
+        }, new[] { new EvidenceRuleResult { RuleId = "zero-row", CanonicalStatus = EvidenceStatus.Error, Warnings = new() } });
+        Assert.Equal(EvidenceStatus.Error, envelope.CanonicalStatus);
+        var projected = DG.Core.Data.Neo4jValidGraphRepository.BuildPerObjectVerdicts(EvidenceEnvelopeReader.Serialize(envelope));
+        Assert.True(projected.EnvelopePresent);
+        Assert.Single(projected.CollidingRuleObjectPairs);
+        Assert.Equal(new[] { EvidenceStatus.Failed, EvidenceStatus.Passed }, projected.Verdicts.Select(v => v.Status));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"contractVersion\":\"3.0.0\",\"rows\":[]}")]
+    [InlineData("{\"contractVersion\":\"2.0.0\",\"rows\":[]}")]
+    [InlineData("{\"contractVersion\":\"1\",\"ruleResults\":[],\"rows\":[]}")]
+    public void VersionedReader_RepositoryRejectsUnsupportedOrCrossedShapes(string json)
+    {
+        var result = DG.Core.Data.Neo4jValidGraphRepository.BuildPerObjectVerdicts(json);
+        Assert.False(result.EnvelopePresent);
+        Assert.Empty(result.Verdicts);
+        Assert.Empty(result.CollidingRuleObjectPairs);
+    }
+
     /// <summary>
     /// Walks up from the test assembly's output directory to the repo root, so this test works
     /// regardless of build configuration (Debug/Release) or target framework subfolder.

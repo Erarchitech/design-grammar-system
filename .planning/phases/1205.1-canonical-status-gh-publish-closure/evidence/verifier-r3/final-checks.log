@@ -1,0 +1,114 @@
+{
+  "verified": "2026-09-30T21:16:18.169420+00:00",
+  "head": "6d66763400ff8683629b1c8f2fb1433f16eb2efb",
+  "sdk": {
+    "GH_IO.dll": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll",
+    "Grasshopper.dll": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "RhinoCommon.dll": "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll"
+  },
+  "properties": {
+    "DefineConstants": "TRACE;GRASSHOPPER_SDK;RELEASE;NET;NET7_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER",
+    "TargetFramework": "net7.0-windows"
+  },
+  "publishCompileItems": [
+    "Validation/ValidationPublishClient.cs",
+    "Validation/ValidationPublishContract.cs"
+  ],
+  "wirePassedByModule": {
+    "test_gh_publish_wire.py": 72,
+    "test_evidence_versions.py": 128,
+    "test_validation_entity_rollup.py": 8,
+    "test_evidence_raw_admission.py": 122,
+    "test_evidence_unicode_containers.py": 98
+  },
+  "reviewRawCases": 103,
+  "reviewSummary": {
+    "timestamp": "2026-09-30T21:15:15.017973+00:00",
+    "case_count": 103,
+    "expected_admission_mismatches": [],
+    "response_failures": [],
+    "strict_process_failures": [],
+    "binary_changed_during_probe": []
+  },
+  "reviewInmemoryCases": 4,
+  "reviewShaclCases": 3,
+  "domainProbeCases": 18,
+  "protectedFiles": 277,
+  "protectedChanged": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "fixSourceManifestMatches": true,
+  "iterationDiffMatches": true,
+  "extraScanFindings": [],
+  "projectSkillDirectories": {
+    ".hermes/skills": false,
+    ".agents/skills": false
+  }
+}
+fingerprint {
+  "covered_files": [
+    ".planning/REQUIREMENTS.md",
+    ".planning/ROADMAP.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-01-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-01-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-02-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-02-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-03-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-03-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-04-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-04-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-05-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-05-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-06-PLAN.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-06-SUMMARY.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-CONTEXT.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-CONTRACT-DECISIONS.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-EXECUTION-EVIDENCE.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-REVIEW-2.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-REVIEW-FIX-2.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-REVIEW-FIX.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-REVIEW.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-SCHEMA-PROPAGATION.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-VALIDATION.md",
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/1205.1-VERIFICATION-2.md",
+    ".planning/v12.0-MILESTONE-AUDIT.md",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelope.cs",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelopeFactory.cs",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelopeReader.cs",
+    "DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs",
+    "DG/src/DG.Core/Models/RuleEvaluationResult.cs",
+    "DG/src/DG.Core/Models/ValidationPublishEntity.cs",
+    "DG/src/DG.Core/Models/ValidationPublishRuleResult.cs",
+    "DG/src/DG.Core/Validation/RuleEvaluator.cs",
+    "DG/src/DG.Core/Validation/ValidationPublishPackageBuilder.cs",
+    "DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs",
+    "DG/src/DG.Grasshopper/Validation/ValidationPublishContract.cs",
+    "DG/tests/DG.PublishWireHarness/DG.PublishWireHarness.csproj",
+    "DG/tests/DG.PublishWireHarness/Program.cs",
+    "DG/tests/DG.Tests/EvidenceContractTests.cs",
+    "DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs",
+    "DG/tests/DG.Tests/RuleEvaluatorTests.cs",
+    "DG/tests/DG.Tests/ValidationPublishPackageBuilderTests.cs",
+    "data-service/app.py",
+    "data-service/evidence_contract.py",
+    "data-service/tests/test_evidence_contract.py",
+    "data-service/tests/test_evidence_raw_admission.py",
+    "data-service/tests/test_evidence_unicode_containers.py",
+    "data-service/tests/test_evidence_versions.py",
+    "data-service/tests/test_gh_publish_wire.py",
+    "spec/API.md",
+    "spec/DATABASE.md",
+    "spec/EVIDENCE-CONTRACT.md",
+    "spec/evidence-contract.schema.json",
+    "tools/de01/tests/test_evidence_versions.py"
+  ],
+  "covered_digest": "v1:sha256:6ea5b496a877fd4453d3fc184b2f99d0fc97abbe70f153827c0fb9ce292e5dc4"
+}
+decision-coverage {
+  "skipped": false,
+  "blocking": false,
+  "total": 4,
+  "honored": 4,
+  "not_honored": [],
+  "message": "All trackable CONTEXT.md decisions are honored by shipped artifacts."
+}

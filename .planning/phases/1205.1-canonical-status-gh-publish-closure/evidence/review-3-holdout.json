@@ -1,0 +1,422 @@
+{
+  "timestamp": "2026-09-30T21:14:38.400212+00:00",
+  "source_hashes": {
+    "data-service/evidence_contract.py": "6562c0d4781a7340ca2ddbc4bd325d640962dc93b274bce970dd99b9d8dbfae9",
+    "DG/src/DG.Core/Contracts/EvidenceEnvelopeReader.cs": "9db32473c13bb774beccaac1ef02432fc55f360a9303d7db80b2666626f6677e",
+    "DG/tests/DG.PublishWireHarness/Program.cs": "f529794617065ec6ecab57e2c85a54f31c4b70bd3ded22fedecb419ff3067c02",
+    "DG/tests/DG.Tests/EvidenceContractTests.cs": "3a42ab6f236ddaa7fb9a0cd86e2ad9668c866e04f7ad107a271c248b733634aa",
+    "spec/EVIDENCE-CONTRACT.md": "3d1f9adedc615ccec0b32ba54c4e2f5a03fae4475978569194210b7cfd0e7e2e",
+    "data-service/tests/test_evidence_unicode_containers.py": "bc158f3e002fec00737268cab60aa20c9d2794708d1a0c3ba9aebf3b02c7844a"
+  },
+  "source_count": 6,
+  "iteration_diff_exact": true,
+  "protected_count": 227,
+  "protected_mismatches": [],
+  "historical_fixtures_unchanged": true,
+  "replay_count": 103,
+  "replay_summary": {
+    "timestamp": "2026-09-30T21:12:26.829118+00:00",
+    "case_count": 103,
+    "expected_admission_mismatches": [],
+    "response_failures": [],
+    "strict_process_failures": [],
+    "binary_changed_during_probe": []
+  },
+  "replay_cross_language_parity": true,
+  "holdout_count": 69,
+  "records": [
+    {
+      "name": "tuple-nan",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "tuple-plus-inf",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "tuple-minus-inf",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "model-nan",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "tuple-huge-int",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "key-int",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "key-bool",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "key-none",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "key-surrogate",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "value-surrogate-pair-codepoints",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "set",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "frozenset",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "deque",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "custom-mapping",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "dataclass",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "namedtuple",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "list-subclass",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "dict-subclass",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "tuple-subclass",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "decimal",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "bytes",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "custom-iterable",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "generator",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "iterator",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "cycle-list",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "cycle-model",
+      "rejected_before_dump": true
+    },
+    {
+      "name": "unsupported-iterables-unconsumed",
+      "generator_events": [],
+      "iterator_first_preserved": true
+    },
+    {
+      "name": "finite-tuple",
+      "dump_preserved": {
+        "x": [
+          1.5,
+          null,
+          true,
+          "\ud83d\ude00",
+          {
+            "\u00e9": 1,
+            "e\u0301": 2
+          }
+        ],
+        "alias": [
+          1.5,
+          null,
+          true,
+          "\ud83d\ude00",
+          {
+            "\u00e9": 1,
+            "e\u0301": 2
+          }
+        ]
+      }
+    },
+    {
+      "name": "finite-model",
+      "dump_preserved": {
+        "x": {
+          "x": [
+            1.5,
+            "\ud83d\ude00",
+            {
+              "\ufffd": 3
+            }
+          ]
+        },
+        "alias": {
+          "x": [
+            1.5,
+            "\ud83d\ude00",
+            {
+              "\ufffd": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "finite-typed-record",
+      "dump_preserved": {
+        "x": {
+          "ruleId": "R",
+          "objectId": "O",
+          "canonicalStatus": "passed",
+          "warnings": []
+        },
+        "alias": {
+          "ruleId": "R",
+          "objectId": "O",
+          "canonicalStatus": "passed",
+          "warnings": []
+        }
+      }
+    },
+    {
+      "name": "tuple-depth-127",
+      "factory": "safe-serializer-error",
+      "read_admitted": true
+    },
+    {
+      "name": "tuple-depth-128",
+      "factory": "safe-serializer-error",
+      "read_admitted": true
+    },
+    {
+      "name": "tuple-depth-129",
+      "factory": "rejected",
+      "read_admitted": false
+    },
+    {
+      "name": "unicode-0-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-0-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-1-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-1-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-2-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-2-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-3-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-3-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-4-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-4-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-5-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-5-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-6-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-6-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-7-key",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-7-value",
+      "admitted": false,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-8-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-8-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-9-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-9-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-10-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-10-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-11-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-11-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-12-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-12-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-13-key",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "unicode-13-value",
+      "admitted": true,
+      "response": "ok",
+      "public_guards": "agree"
+    },
+    {
+      "name": "raw-pair-decodes-to-scalar",
+      "preserved": true
+    },
+    {
+      "name": "invalid-utf8-ff",
+      "rejected": true
+    },
+    {
+      "name": "invalid-utf8-eda080",
+      "rejected": true
+    },
+    {
+      "name": "invalid-utf8-f0808080",
+      "rejected": true
+    },
+    {
+      "name": "raw-request-unicode-0",
+      "admitted": false,
+      "receives": 1
+    },
+    {
+      "name": "raw-request-unicode-1",
+      "admitted": false,
+      "receives": 1
+    },
+    {
+      "name": "raw-request-unicode-2",
+      "admitted": false,
+      "receives": 1
+    },
+    {
+      "name": "raw-request-unicode-3",
+      "admitted": true,
+      "receives": 1
+    }
+  ]
+}

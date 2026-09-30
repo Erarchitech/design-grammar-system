@@ -1,0 +1,10 @@
+{
+  "command": "python .planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verifier-r3/run_checks.py",
+  "exit": 1,
+  "failing_assertion": "assert not changed",
+  "all_child_gates_exit": 0,
+  "changed": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "resolution": "See preservation-reconciliation.json; original evidence/runner unchanged; final_checks.py exit 0"
+}

@@ -1,0 +1,166 @@
+COMMAND: uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_evidence_contract.py data-service/tests/test_evidence_versions.py -q -m 'not live and not integration' -k 'json_decode_boundaries or never_raises_on_garbage_input' --tb=short
+EXIT: 1
+FFFF..FFFF                                                               [100%]
+================================== FAILURES ===================================
+________ TestParseEvidenceEnvelope.test_never_raises_on_garbage_input _________
+data-service\tests\test_evidence_contract.py:282: in test_never_raises_on_garbage_input
+    parse_evidence_envelope(garbage)
+data-service\app.py:1188: in parse_evidence_envelope
+    parsed = json.loads(evidence_envelope_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+
+During handling of the above exception, another exception occurred:
+data-service\tests\test_evidence_contract.py:284: in test_never_raises_on_garbage_input
+    pytest.fail(f"parse_evidence_envelope raised on input {garbage!r}: {e}")
+E   Failed: parse_evidence_envelope raised on input '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[': maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_deep_corruption_and_nonobject_controls[parse_evidence_envelope] _
+data-service\tests\test_evidence_contract.py:297: in test_json_decode_boundaries_deep_corruption_and_nonobject_controls
+    assert parse(raw) is None
+           ^^^^^^^^^^
+data-service\app.py:1188: in parse_evidence_envelope
+    parsed = json.loads(evidence_envelope_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_deep_corruption_and_nonobject_controls[_parse_shacl_report] _
+data-service\tests\test_evidence_contract.py:297: in test_json_decode_boundaries_deep_corruption_and_nonobject_controls
+    assert parse(raw) is None
+           ^^^^^^^^^^
+data-service\app.py:1170: in _parse_shacl_report
+    parsed = json.loads(shacl_report_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_deep_corruption_and_nonobject_controls[_compute_canonical_state_hash] _
+data-service\tests\test_evidence_contract.py:297: in test_json_decode_boundaries_deep_corruption_and_nonobject_controls
+    assert parse(raw) is None
+           ^^^^^^^^^^
+data-service\app.py:1233: in _compute_canonical_state_hash
+    payload = json.loads(state_payload_json)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields0] _
+data-service\tests\test_evidence_versions.py:145: in test_json_decode_boundaries_persisted_record_view_fallback
+    payload = app_module.build_view_payload("P_WIRE", captured_graph.runs[key], {})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1285: in build_view_payload
+    "evidenceEnvelope": parse_evidence_envelope(run.get("evidenceEnvelopeJson")),
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1188: in parse_evidence_envelope
+    parsed = json.loads(evidence_envelope_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields1] _
+data-service\tests\test_evidence_versions.py:145: in test_json_decode_boundaries_persisted_record_view_fallback
+    payload = app_module.build_view_payload("P_WIRE", captured_graph.runs[key], {})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1284: in build_view_payload
+    "shaclReport": _parse_shacl_report(run.get("shaclReportJson")),
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1170: in _parse_shacl_report
+    parsed = json.loads(shacl_report_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields2] _
+data-service\tests\test_evidence_versions.py:145: in test_json_decode_boundaries_persisted_record_view_fallback
+    payload = app_module.build_view_payload("P_WIRE", captured_graph.runs[key], {})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1286: in build_view_payload
+    "canonicalStateHash": _compute_canonical_state_hash(run.get("statePayloadJson")),
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1233: in _compute_canonical_state_hash
+    payload = json.loads(state_payload_json)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+_ test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields3] _
+data-service\tests\test_evidence_versions.py:145: in test_json_decode_boundaries_persisted_record_view_fallback
+    payload = app_module.build_view_payload("P_WIRE", captured_graph.runs[key], {})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1284: in build_view_payload
+    "shaclReport": _parse_shacl_report(run.get("shaclReportJson")),
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\app.py:1170: in _parse_shacl_report
+    parsed = json.loads(shacl_report_json)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:353: in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_contract.py::TestParseEvidenceEnvelope::test_never_raises_on_garbage_input
+FAILED data-service/tests/test_evidence_contract.py::test_json_decode_boundaries_deep_corruption_and_nonobject_controls[parse_evidence_envelope]
+FAILED data-service/tests/test_evidence_contract.py::test_json_decode_boundaries_deep_corruption_and_nonobject_controls[_parse_shacl_report]
+FAILED data-service/tests/test_evidence_contract.py::test_json_decode_boundaries_deep_corruption_and_nonobject_controls[_compute_canonical_state_hash]
+FAILED data-service/tests/test_evidence_versions.py::test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields0]
+FAILED data-service/tests/test_evidence_versions.py::test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields1]
+FAILED data-service/tests/test_evidence_versions.py::test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields2]
+FAILED data-service/tests/test_evidence_versions.py::test_json_decode_boundaries_persisted_record_view_fallback[corrupt_fields3]
+8 failed, 2 passed, 141 deselected in 3.03s

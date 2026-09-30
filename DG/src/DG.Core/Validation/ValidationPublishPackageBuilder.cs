@@ -5,6 +5,9 @@ namespace DG.Core.Validation;
 
 public static class ValidationPublishPackageBuilder
 {
+    private const string UnavailableWarning = "typed_binding_outcome_unavailable";
+    private const string InconsistentWarning = "typed_binding_outcome_inconsistent";
+    private const string UnavailableDetail = "Typed binding outcomes are unavailable for the supplied binding population; canonical success cannot be inferred from legacy fields.";
     public static ValidationPublishPackage Build(
         IReadOnlyList<Rule> rules,
         IReadOnlyList<RuleEvaluationResult> results,
@@ -18,6 +21,7 @@ public static class ValidationPublishPackageBuilder
         var project = ResolveProject(rules);
         var resultById = results.ToDictionary(result => result.RuleId, StringComparer.Ordinal);
         var entityById = new Dictionary<string, ValidationPublishEntity>(StringComparer.Ordinal);
+        var missingRules = new List<Rule>();
         var package = new ValidationPublishPackage
         {
             Project = project,
@@ -46,6 +50,7 @@ public static class ValidationPublishPackageBuilder
                     Passed = false,
                     Status = EvidenceStatus.NotEvaluated,
                 });
+                missingRules.Add(rule);
                 continue;
             }
 
@@ -53,6 +58,24 @@ public static class ValidationPublishPackageBuilder
             var statusByEntity = new Dictionary<string, bool>(StringComparer.Ordinal);
             var refByEntity = new Dictionary<string, ElementRef>(StringComparer.Ordinal);
             var bindingByEntity = new Dictionary<string, BindingRow>(StringComparer.Ordinal);
+            var canonicalByEntity = new Dictionary<string, List<EvidenceStatus>>(StringComparer.Ordinal);
+            var warningsByEntity = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            var detailsByEntity = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            var canonicalBindings = new HashSet<BindingRow>(ReferenceEqualityComparer.Instance);
+            var outcomesByBinding = new Dictionary<BindingRow, List<BindingEvaluationResult>>(ReferenceEqualityComparer.Instance);
+            foreach (var outcome in result.BindingResults ?? Array.Empty<BindingEvaluationResult>())
+            {
+                if (!outcomesByBinding.TryGetValue(outcome.Binding, out var statuses))
+                {
+                    statuses = new List<BindingEvaluationResult>();
+                    outcomesByBinding.Add(outcome.Binding, statuses);
+                }
+                statuses.Add(outcome);
+            }
+
+            var population = new HashSet<BindingRow>(bindings, ReferenceEqualityComparer.Instance);
+            var unavailable = result.BindingResults is null || population.Any(b => !outcomesByBinding.ContainsKey(b));
+            var inconsistent = outcomesByBinding.Any(p => !population.Contains(p.Key) || p.Value.Count > 1);
 
             foreach (var binding in bindings)
             {
@@ -63,8 +86,37 @@ public static class ValidationPublishPackageBuilder
                 }
 
                 var isFailingBinding = failingBindings.Contains(binding);
+                var firstCanonicalContribution = canonicalBindings.Add(binding);
                 foreach (var elementRef in elementRefs)
                 {
+                    if (firstCanonicalContribution)
+                    {
+                        if (!canonicalByEntity.TryGetValue(elementRef.DgEntityId, out var canonicalStatuses))
+                        {
+                            canonicalStatuses = new List<EvidenceStatus>();
+                            canonicalByEntity.Add(elementRef.DgEntityId, canonicalStatuses);
+                            warningsByEntity.Add(elementRef.DgEntityId, new List<string>());
+                            detailsByEntity.Add(elementRef.DgEntityId, new List<string>());
+                        }
+                        // Only genuine outcomes for this original binding contribute to this pair.
+                        // Missing typed associations never inherit a boolean or the rule aggregate.
+                        if (outcomesByBinding.TryGetValue(binding, out var bindingStatuses))
+                        {
+                            canonicalStatuses.AddRange(bindingStatuses.Select(o => o.Status));
+                            foreach (var outcome in bindingStatuses)
+                                if (!string.IsNullOrWhiteSpace(outcome.Detail))
+                                    AddUnique(detailsByEntity[elementRef.DgEntityId], outcome.Detail);
+                            if (bindingStatuses.Count > 1)
+                                AddUnique(warningsByEntity[elementRef.DgEntityId], InconsistentWarning);
+                        }
+                        else
+                        {
+                            canonicalStatuses.Add(EvidenceStatus.Unknown);
+                            AddUnique(warningsByEntity[elementRef.DgEntityId], UnavailableWarning);
+                            AddUnique(detailsByEntity[elementRef.DgEntityId], UnavailableDetail);
+                        }
+                    }
+
                     if (!refByEntity.ContainsKey(elementRef.DgEntityId))
                     {
                         refByEntity[elementRef.DgEntityId] = elementRef;
@@ -90,12 +142,12 @@ public static class ValidationPublishPackageBuilder
             {
                 RuleId = rule.Id,
                 Passed = result.Passed,
-                // Copied verbatim from the evaluator's result — never recomputed from Passed.
-                // boolean->canonical inference is forbidden by the contract and this phase's
-                // constraints (e.g. Status = Unsupported must publish as Unsupported, not be
-                // re-derived as some other status because Passed happens to be false).
-                Status = result.Status,
+                // Coverage absence cannot trust a default enum; legacy fields are independent.
+                Status = unavailable ? EvidenceStatus.Unknown : result.Status,
+                Detail = JoinDetails(result.Message, unavailable ? UnavailableDetail : null),
             };
+            if (unavailable) ruleResult.Warnings.Add(UnavailableWarning);
+            if (inconsistent) ruleResult.Warnings.Add(InconsistentWarning);
 
             foreach (var pair in statusByEntity.OrderBy(pair => pair.Key, StringComparer.Ordinal))
             {
@@ -143,6 +195,10 @@ public static class ValidationPublishPackageBuilder
                 }
 
                 AddUnique(entity.RuleIds, rule.Id);
+                entity.CanonicalStatuses[rule.Id] = StatusRollup.Rollup(canonicalByEntity[dgEntityId]);
+                entity.CanonicalWarnings[rule.Id] = warningsByEntity[dgEntityId];
+                var canonicalDetail = JoinDetails(detailsByEntity[dgEntityId].ToArray());
+                if (canonicalDetail is not null) entity.CanonicalDetails[rule.Id] = canonicalDetail;
                 if (isFailing)
                 {
                     AddUnique(entity.FailedRuleIds, rule.Id);
@@ -157,12 +213,39 @@ public static class ValidationPublishPackageBuilder
             package.RuleResults.Add(ruleResult);
         }
 
+        // Append only canonical associations after the legacy path so missing-rule order
+        // cannot change an existing entity's display name, geometry or legacy lists.
+        foreach (var rule in missingRules)
+        foreach (var binding in bindings)
+        foreach (var elementRef in ExtractElementRefs(binding))
+        {
+            if (!entityById.TryGetValue(elementRef.DgEntityId, out var entity))
+            {
+                entity = new ValidationPublishEntity
+                {
+                    DgEntityId = elementRef.DgEntityId,
+                    DisplayName = elementRef.DisplayName,
+                    Geometry = elementRef.Geometry,
+                };
+                entityById.Add(elementRef.DgEntityId, entity);
+            }
+            AddUnique(entity.RuleIds, rule.Id);
+            entity.CanonicalStatuses[rule.Id] = EvidenceStatus.NotEvaluated;
+            entity.CanonicalWarnings[rule.Id] = new List<string>();
+        }
+
         foreach (var entity in entityById.Values.OrderBy(entity => entity.DgEntityId, StringComparer.Ordinal))
         {
             package.Entities.Add(entity);
         }
 
         return package;
+    }
+
+    private static string? JoinDetails(params string?[] details)
+    {
+        var nonempty = details.Where(d => !string.IsNullOrWhiteSpace(d)).Distinct(StringComparer.Ordinal).ToArray();
+        return nonempty.Length == 0 ? null : string.Join("\n", nonempty);
     }
 
     private static List<ElementRef> ExtractElementRefs(BindingRow binding)

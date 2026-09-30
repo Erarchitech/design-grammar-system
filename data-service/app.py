@@ -20,9 +20,10 @@ import httpx
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Path, Relationship
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from speckle_validation import (
     SpeckleConnectionSettings,
@@ -161,7 +162,30 @@ app.include_router(auth_routes.router)
 # The router is included as the LAST statement of this module, after every
 # route definition (a route added to `app` directly would bypass the guard;
 # tests/test_route_inventory.py fails the suite if any route lacks it).
-router = APIRouter(dependencies=[Depends(auth.require_principal)])
+class EvidencePublishRequest(Request):
+    async def json(self) -> Any:
+        if not hasattr(self, "_json"):
+            try:
+                self._json = evidence_contract.decode_evidence_json(await self.body())
+            except (ValueError, TypeError, RecursionError) as exc:
+                # Do not include raw user values in a response or validation error.
+                raise HTTPException(status_code=422, detail="Invalid publish JSON") from exc
+        return self._json
+
+
+class EvidencePublishRoute(APIRoute):
+    def get_route_handler(self):
+        original = super().get_route_handler()
+        if self.path != "/validation/publish":
+            return original
+
+        async def strict_publish(request: Request):
+            return await original(EvidencePublishRequest(request.scope, request.receive))
+
+        return strict_publish
+
+
+router = APIRouter(dependencies=[Depends(auth.require_principal)], route_class=EvidencePublishRoute)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -359,6 +383,9 @@ class ValidationPublishRuleResultPayload(BaseModel):
     passed: bool
     failedEntityIds: list[str] = Field(default_factory=list)
     passedEntityIds: list[str] = Field(default_factory=list)
+    canonicalStatus: str | None = None
+    warnings: list[str] | None = None
+    detail: str | None = None
 
 
 class ValidationGeometryItemPayload(BaseModel):
@@ -390,10 +417,13 @@ class ValidationPublishEntityPayload(BaseModel):
     # pre-1201 behavior exactly; this never infers a canonical status from a legacy
     # boolean, it only stops discarding one the producer supplied.
     canonicalStatuses: dict[str, str] | None = None
+    canonicalWarnings: dict[str, list[str]] = Field(default_factory=dict)
+    canonicalDetails: dict[str, str] = Field(default_factory=dict)
 
 
 class ValidationPublishRequest(BaseModel):
     project: str
+    evidenceContractVersion: str | None = None
     # statePayloadJson carries the captured DesignState snapshot as JSON. v4.0
     # ParamState payloads use DS_-prefixed stateId values (unchanged from v2.0);
     # OS_-prefixed ObjState references join this payload from Phase 11
@@ -405,6 +435,68 @@ class ValidationPublishRequest(BaseModel):
     rules: list[ValidationPublishRulePayload] = Field(default_factory=list)
     ruleResults: list[ValidationPublishRuleResultPayload] = Field(default_factory=list)
     entities: list[ValidationPublishEntityPayload] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_canonical_publish(cls, value: Any) -> Any:
+        evidence_contract.validate_json_resources(value)
+        # Only absence selects the historical path. Inspect raw tokens before
+        # Pydantic can coerce types; never infer a version from collection shape.
+        if not isinstance(value, dict) or "evidenceContractVersion" not in value:
+            return value
+        version = value["evidenceContractVersion"]
+        if type(version) is not str or version != evidence_contract.EVIDENCE_CONTRACT_VERSION_V2:
+            raise ValueError("Unsupported evidenceContractVersion")
+
+        def identities(records: Any, key: str) -> set[str]:
+            if not isinstance(records, list) or any(
+                not isinstance(record, dict) or type(record.get(key)) is not str
+                for record in records
+            ):
+                raise ValueError(f"Expected records with string {key}")
+            keys = [record[key] for record in records]
+            if len(keys) != len(set(keys)):
+                raise ValueError(f"Duplicate {key}")
+            return set(keys)
+
+        declared = identities(value.get("rules"), "ruleId")
+        if not declared or identities(value.get("ruleResults"), "ruleId") != declared:
+            raise ValueError("New-mode ruleResults must exactly cover nonempty rules")
+        statuses = {status.value for status in evidence_contract.CanonicalStatus}
+        for result in value["ruleResults"]:
+            status = result.get("canonicalStatus")
+            if type(status) is not str or status not in statuses:
+                raise ValueError("Unrecognized rule canonicalStatus")
+            warnings = result.get("warnings")
+            if not isinstance(warnings, list) or any(type(w) is not str for w in warnings):
+                raise ValueError("Rule warnings must be a string array")
+            if "detail" in result and type(result["detail"]) is not str:
+                raise ValueError("Rule detail must be a string when supplied")
+        identities(value.get("entities"), "dgEntityId")
+        for entity in value["entities"]:
+            rule_ids = entity.get("ruleIds")
+            if not isinstance(rule_ids, list) or any(type(r) is not str for r in rule_ids):
+                raise ValueError("Entity ruleIds must be a string array")
+            scope = set(rule_ids)
+            if len(scope) != len(rule_ids) or not scope <= declared:
+                raise ValueError("Entity ruleIds must be unique declared rules")
+            supplied = entity.get("canonicalStatuses")
+            if not isinstance(supplied, dict) or set(supplied) != scope or any(
+                type(s) is not str or s not in statuses for s in supplied.values()
+            ):
+                raise ValueError("canonicalStatuses must exactly cover entity ruleIds")
+            for name in ("canonicalWarnings", "canonicalDetails"):
+                diagnostics = entity.get(name, {})
+                if not isinstance(diagnostics, dict) or not set(diagnostics) <= scope:
+                    raise ValueError(f"{name} contains out-of-scope rule keys")
+                for diagnostic in diagnostics.values():
+                    if name == "canonicalDetails":
+                        valid = type(diagnostic) is str
+                    else:
+                        valid = isinstance(diagnostic, list) and all(type(w) is str for w in diagnostic)
+                    if not valid:
+                        raise ValueError(f"Invalid {name} value")
+        return value
 
 
 class DesignStateCaptureRequest(BaseModel):
@@ -1082,6 +1174,11 @@ def build_rules_summary(request: ValidationPublishRequest) -> list[dict[str, Any
                 "passed": result.passed if result else False,
             }
         )
+        if result is not None:
+            for name in ("canonicalStatus", "warnings", "detail"):
+                field = getattr(result, name)
+                if field is not None:
+                    summaries[-1][name] = field
     return summaries
 
 
@@ -1095,8 +1192,8 @@ def _parse_shacl_report(shacl_report_json: str | None) -> dict[str, Any] | None:
     if not shacl_report_json:
         return None
     try:
-        parsed = json.loads(shacl_report_json)
-    except (TypeError, ValueError):
+        parsed = evidence_contract.decode_evidence_json(shacl_report_json)
+    except (TypeError, ValueError, RecursionError):
         return None
     return parsed if isinstance(parsed, dict) else None
 
@@ -1113,10 +1210,10 @@ def parse_evidence_envelope(evidence_envelope_json: str | None) -> dict[str, Any
     if not evidence_envelope_json:
         return None
     try:
-        parsed = json.loads(evidence_envelope_json)
-    except (TypeError, ValueError):
+        parsed = evidence_contract.decode_evidence_json(evidence_envelope_json)
+        return evidence_contract.read_envelope_dict(parsed)
+    except (TypeError, ValueError, RecursionError):
         return None
-    return parsed if isinstance(parsed, dict) else None
 
 
 def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
@@ -1159,7 +1256,7 @@ def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
         return None
     try:
         payload = json.loads(state_payload_json)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RecursionError) as exc:
         logging.getLogger(__name__).warning(
             "_compute_canonical_state_hash: statePayloadJson was not valid JSON -- "
             "degrading to None rather than failing the view response: %s",
@@ -2530,11 +2627,17 @@ def _parse_supplied_canonical_status(
 
 
 def _build_publish_evidence_envelope(
-    project: str, run_id: str, entity_dicts: list[dict[str, Any]]
+    project: str, run_id: str, entity_dicts: list[dict[str, Any]], *,
+    rule_results: list[ValidationPublishRuleResultPayload] | None = None,
+    evidence_contract_version: str | None = None,
 ) -> "evidence_contract.EvidenceEnvelope":
     """Build the evidence envelope for the `/validation/publish` stage boundary.
 
-    Precedence: a canonical status the producer supplied in `canonicalStatuses`
+    Exact 2.0.0 requests use admitted canonical maps and rule results only,
+    including independent zero-row outcomes and diagnostics. No list inference.
+    The three-argument call retains the historical writer described below.
+
+    Legacy precedence: a canonical status the producer supplied in `canonicalStatuses`
     (Phase 1201) wins outright. Only when none was supplied does the legacy boolean
     discrimination run: an entity's rule id appearing in `failedRuleIds` is a genuine
     evaluated violation (`failed`); appearing in `passedRuleIds` (and not also failed)
@@ -2552,6 +2655,33 @@ def _build_publish_evidence_envelope(
     existed. An unparseable wire name falls through to the legacy path rather than
     raising, so a malformed entry can never turn a publish into an error.
     """
+    if evidence_contract_version is not None:
+        if evidence_contract_version != evidence_contract.EVIDENCE_CONTRACT_VERSION_V2:
+            raise ValueError("Unsupported evidenceContractVersion")
+        # Request admission has checked exact coverage. Direct indexing is
+        # deliberate: missing typed data must fail, never use legacy lists.
+        rows = [
+            evidence_contract.EvidenceRow(
+                ruleId=rule_id, objectId=entity["dgEntityId"],
+                canonicalStatus=entity["canonicalStatuses"][rule_id],
+                warnings=entity.get("canonicalWarnings", {}).get(rule_id, []),
+                detail=entity.get("canonicalDetails", {}).get(rule_id),
+            )
+            for entity in entity_dicts for rule_id in entity["ruleIds"]
+        ]
+        if rule_results is None:
+            raise ValueError("New-mode rule_results required")
+        outcomes = [evidence_contract.EvidenceRuleResult.model_validate({
+            "ruleId": result.ruleId, "canonicalStatus": result.canonicalStatus,
+            "warnings": result.warnings,
+            **({"detail": result.detail} if result.detail is not None else {}),
+        }) for result in rule_results]
+        return evidence_contract.build_envelope_with_rule_results(
+            project=project, definition_id=run_id, service_name="data-service",
+            service_version=EVIDENCE_SERVICE_VERSION, stage="validation.publish",
+            rows=rows, rule_results=outcomes,
+        )
+
     rows: list[evidence_contract.EvidenceRow] = []
     for entity in entity_dicts:
         dg_entity_id = entity.get("dgEntityId", "")
@@ -2915,7 +3045,14 @@ def publish_validation(payload: ValidationPublishRequest):
         # property, and must never change the publish response/status that was
         # working before this phase.
         try:
-            envelope = _build_publish_evidence_envelope(payload.project, run_id, entity_dicts)
+            if payload.evidenceContractVersion is None:
+                envelope = _build_publish_evidence_envelope(payload.project, run_id, entity_dicts)
+            else:
+                envelope = _build_publish_evidence_envelope(
+                    payload.project, run_id, entity_dicts,
+                    rule_results=payload.ruleResults,
+                    evidence_contract_version=payload.evidenceContractVersion,
+                )
             evidence_contract.validate_envelope(envelope)
             persist_evidence_envelope(
                 payload.project, run_id, envelope.model_dump_json(exclude_none=True)

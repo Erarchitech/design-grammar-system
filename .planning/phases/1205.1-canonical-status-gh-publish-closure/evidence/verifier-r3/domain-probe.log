@@ -1,0 +1,190 @@
+[
+  {
+    "case": "dict-subclass",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "list-subclass",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "tuple-subclass",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "ordered-dict",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "bytes",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "decimal",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "datetime",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "complex",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "nested-tuple-finite",
+    "expectedAccepted": true,
+    "results": {
+      "wire": {
+        "nested": [
+          [
+            1.5,
+            null,
+            true,
+            "\ud83d\ude00"
+          ]
+        ]
+      },
+      "factory": "accepted",
+      "legacy-validator": "accepted",
+      "resources": "accepted"
+    }
+  },
+  {
+    "case": "dict-list-tuple-finite",
+    "expectedAccepted": true,
+    "results": {
+      "wire": {
+        "nested": {
+          "a": [
+            [
+              1.5,
+              {
+                "\u00e9": 2,
+                "e\u0301": 3
+              }
+            ]
+          ]
+        }
+      },
+      "factory": "accepted",
+      "legacy-validator": "accepted",
+      "resources": "accepted"
+    }
+  },
+  {
+    "case": "dict-list-tuple-nan",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "dict-list-tuple-inf",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "dict-list-tuple--inf",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  },
+  {
+    "case": "tuple-depth-127",
+    "resources": "accepted",
+    "factory": "explicit-ValueError",
+    "message": "Circular reference detected (depth exceeded)"
+  },
+  {
+    "case": "tuple-depth-128",
+    "resources": "accepted",
+    "factory": "explicit-ValueError",
+    "message": "Circular reference detected (depth exceeded)"
+  },
+  {
+    "case": "tuple-depth-129",
+    "resources": "ValueError",
+    "factory": "explicit-ValueError",
+    "message": "JSON nesting exceeds 128 containers"
+  },
+  {
+    "case": "typed-record-finite",
+    "expectedAccepted": true,
+    "results": {
+      "wire": {
+        "nested": [
+          {
+            "ruleId": "R",
+            "objectId": "O",
+            "canonicalStatus": "unsupported",
+            "warnings": [],
+            "detail": "\ud83d\ude00"
+          }
+        ]
+      },
+      "factory": "accepted",
+      "legacy-validator": "accepted",
+      "resources": "accepted"
+    }
+  },
+  {
+    "case": "typed-record-invalid-unicode",
+    "expectedAccepted": false,
+    "results": {
+      "factory": "ValueError",
+      "legacy-validator": "ValueError",
+      "resources": "ValueError"
+    }
+  }
+]
+PASS cases=18

@@ -1,0 +1,2979 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "depth"]
+time=2026-09-30T20:08:20.549087+00:00
+FFFFFFFFFFFFFFFFF                                                        [100%]
+================================== FAILURES ===================================
+________________ test_depth_bound_raw_read_and_real_view[1-70] ________________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_______________ test_depth_bound_raw_read_and_real_view[1-127] ________________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_______________ test_depth_bound_raw_read_and_real_view[1-128] ________________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_______________ test_depth_bound_raw_read_and_real_view[1-129] ________________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+E   AssertionError: assert ({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x00000161B7E1F600>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x00000161B7E1F600> = contract.read_envelope_dict
+_______________ test_depth_bound_raw_read_and_real_view[1-702] ________________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+E   AssertionError: assert ({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x00000161B7E1F600>({'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x00000161B7E1F600> = contract.read_envelope_dict
+______________ test_depth_bound_raw_read_and_real_view[1.0.0-70] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[1.0.0-127] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[1.0.0-128] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[1.0.0-129] ______________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+E   AssertionError: assert ({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x00000161B7E1F600>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x00000161B7E1F600> = contract.read_envelope_dict
+_____________ test_depth_bound_raw_read_and_real_view[1.0.0-702] ______________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+E   AssertionError: assert ({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x00000161B7E1F600>({'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x00000161B7E1F600> = contract.read_envelope_dict
+______________ test_depth_bound_raw_read_and_real_view[2.0.0-70] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[2.0.0-127] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[2.0.0-128] ______________
+data-service\tests\test_evidence_raw_admission.py:37: in test_depth_bound_raw_read_and_real_view
+    assert read["envelopePresent"] == expected
+E   assert False == True
+_____________ test_depth_bound_raw_read_and_real_view[2.0.0-129] ______________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+E   AssertionError: assert ({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is not None) == False
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function read_envelope_dict at 0x00000161B7E1F600>({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where <function read_envelope_dict at 0x00000161B7E1F600> = contract.read_envelope_dict
+_____________ test_depth_bound_raw_read_and_real_view[2.0.0-702] ______________
+data-service\tests\test_evidence_raw_admission.py:34: in test_depth_bound_raw_read_and_real_view
+    assert (contract.read_envelope_dict(payload) is not None) == expected
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:294: in read_envelope_dict
+    parse_envelope_model(payload)
+data-service\evidence_contract.py:284: in parse_envelope_model
+    return model.model_validate(payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:257: in validate_wire_shape
+    payload = _wire_input(value)
+              ^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:241: in _wire_input
+    return {key: _wire_input(item) for key, item in value.items()}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:241: in <dictcomp>
+    return {key: _wire_input(item) for key, item in value.items()}
+                 ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:241: in _wire_input
+    return {key: _wire_input(item) for key, item in value.items()}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:241: in <dictcomp>
+    return {key: _wire_input(item) for key, item in value.items()}
+                 ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in _wire_input
+    return [_wire_input(item) for item in value]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:243: in <listcomp>
+    return [_wire_input(item) for item in value]
+            ^^^^^^^^^^^^^^^^^
+data-service\evidence_contract.py:238: in _wire_input
+    if isinstance(value, BaseModel):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded while calling a Python object
+________________ test_publish_depth_denial_before_writes[129] _________________
+data-service\tests\test_evidence_raw_admission.py:49: in test_publish_depth_denial_before_writes
+    assert response.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+________________ test_publish_depth_denial_before_writes[702] _________________
+data-service\tests\test_evidence_raw_admission.py:49: in test_publish_depth_denial_before_writes
+    assert response.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1-70]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1-127]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1-128]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1-129]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1-702]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1.0.0-70]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1.0.0-127]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1.0.0-128]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1.0.0-129]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[1.0.0-702]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[2.0.0-70]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[2.0.0-127]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[2.0.0-128]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[2.0.0-129]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_depth_bound_raw_read_and_real_view[2.0.0-702]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_publish_depth_denial_before_writes[129]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_publish_depth_denial_before_writes[702]
+17 failed, 22 deselected in 13.08s
+
+exit=1

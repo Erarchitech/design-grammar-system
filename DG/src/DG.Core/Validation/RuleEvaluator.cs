@@ -46,6 +46,7 @@ public sealed class RuleEvaluator
                 RuleDescription = rule.Description,
                 Passed = EvidenceEnvelopeFactory.ToLegacyBoolean(EvidenceStatus.NoPopulation),
                 Status = EvidenceStatus.NoPopulation,
+                BindingResults = Array.Empty<BindingEvaluationResult>(),
                 // D-06 (Phase 1201 plan 02): this is a real, distinguishable evaluation outcome —
                 // the rule was evaluated and its binding population was empty — not a failure and
                 // not a non-evaluation. Wording deliberately avoids "violated"/"failed" so it does
@@ -59,7 +60,7 @@ public sealed class RuleEvaluator
             : SwrlRuleParser.Parse(rule.Swrl).BodyAtoms;
 
         var failingBindings = new List<BindingRow>();
-        var outcomes = new List<BindingOutcome>(bindings.Count);
+        var outcomes = new List<BindingEvaluationResult>(bindings.Count);
         string? unsupportedDetail = null;
         string? unknownDetail = null;
         string? firstErrorDetail = null;
@@ -92,7 +93,7 @@ public sealed class RuleEvaluator
                 firstErrorDetail ??= ex.Message;
             }
 
-            outcomes.Add(outcome);
+            outcomes.Add(new BindingEvaluationResult(binding, outcome.Status, outcome.Detail));
 
             if (outcome.Status == EvidenceStatus.Failed || outcome.Status == EvidenceStatus.Error)
             {
@@ -129,6 +130,7 @@ public sealed class RuleEvaluator
             Passed = passed,
             Status = status,
             Message = message,
+            BindingResults = outcomes.AsReadOnly(),
         };
         result.FailingBindings.AddRange(failingBindings);
         return result;

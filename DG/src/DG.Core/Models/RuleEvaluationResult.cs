@@ -1,5 +1,12 @@
 namespace DG.Core.Models;
 
+/// <summary>
+/// Genuine outcome for one evaluation of the original binding instance. Binding
+/// identity is reference identity, not equality of its scalar values.
+/// </summary>
+public sealed record BindingEvaluationResult(
+    BindingRow Binding, DG.Core.Contracts.EvidenceStatus Status, string? Detail);
+
 public sealed class RuleEvaluationResult
 {
     public string RuleId { get; init; } = string.Empty;
@@ -26,6 +33,13 @@ public sealed class RuleEvaluationResult
     public DG.Core.Contracts.EvidenceStatus Status { get; init; }
 
     public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Outcomes retained before rule rollup. Null means typed evidence is unavailable
+    /// (legacy/manual result); an explicitly empty list means evaluated empty population.
+    /// Never infer these outcomes from Passed, FailingBindings or the rule aggregate.
+    /// </summary>
+    public IReadOnlyList<BindingEvaluationResult>? BindingResults { get; init; }
 
     public List<BindingRow> FailingBindings { get; } = new();
 }

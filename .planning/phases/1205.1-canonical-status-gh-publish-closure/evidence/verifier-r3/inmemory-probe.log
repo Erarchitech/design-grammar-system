@@ -1,0 +1,58 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r3\\inmemory_probe.py"]
+started=2026-09-30T21:14:35.189257+00:00
+{
+  "cases": [
+    {
+      "case": "finite-list",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "finite-tuple",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "nan-list",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "case": "nan-tuple",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "case": "positive-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "case": "negative-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    }
+  ],
+  "legacyValidateEnvelopeRejectsTupleNan": true
+}
+
+exit=0
+wall_seconds=1.563

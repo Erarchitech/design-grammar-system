@@ -284,6 +284,37 @@ class TestParseEvidenceEnvelope:
                 pytest.fail(f"parse_evidence_envelope raised on input {garbage!r}: {e}")
 
 
+@pytest.mark.parametrize("boundary", [
+    "parse_evidence_envelope", "_parse_shacl_report",
+    "_compute_canonical_state_hash", "_project_state_summary",
+])
+def test_json_decode_boundaries_deep_corruption_and_nonobject_controls(boundary):
+    import app as app_module
+
+    parse = getattr(app_module, boundary)
+    # Exercise the real decoder without changing the interpreter recursion limit.
+    for raw in ("[" * 10000, None, "", "{", "null", "[]", "42", '"text"'):
+        assert parse(raw) is None
+
+
+def test_json_decode_boundaries_valid_sibling_controls():
+    import app as app_module
+    import design_state_projection
+
+    old = {"contractVersion": "1.0.0", "canonicalStatus": "passed"}
+    assert parse_evidence_envelope(json.dumps(old)) == old
+    report = {"conforms": False, "results": []}
+    assert app_module._parse_shacl_report(json.dumps(report)) == report
+    state = {"version": "2", "stateId": "DS_control", "objStates": [],
+             "paramStates": [], "propStates": []}
+    raw = json.dumps(state)
+    assert app_module._compute_canonical_state_hash(raw) == design_state_projection.compute_state_hash(state)
+    assert app_module._project_state_summary(raw) == {
+        "stateId": "DS_control", "label": None, "capturedAtUtc": None,
+        "parameterCount": 0, "props": [],
+    }
+
+
 class TestBuildPublishEvidenceEnvelope:
     def test_failed_and_passed_rule_ids_map_to_genuine_statuses(self):
         entity_dicts = [

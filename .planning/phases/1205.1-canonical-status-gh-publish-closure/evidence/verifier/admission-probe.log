@@ -1,0 +1,25 @@
+[
+  {
+    "case": "baseline",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": true
+  },
+  {
+    "case": "integral-json-number",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": false
+  },
+  {
+    "case": "newline-hash",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": false
+  }
+]
+Traceback (most recent call last):
+  File "C:\Users\Admin\source\repos\design-grammar-system\.planning\phases\1205.1-canonical-status-gh-publish-closure\evidence\verifier\admission_probe.py", line 30, in <module>
+    assert all(c['rootSchemaAccepted']==c['pythonReadAccepted']==c['csharpReadAccepted'] for c in cases), 'Strict full-envelope admission diverges across root schema, Python and C#'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Strict full-envelope admission diverges across root schema, Python and C#

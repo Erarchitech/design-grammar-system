@@ -1,0 +1,4 @@
+COMMAND: DG_RETAIN_PHASE1205_1_EVIDENCE=1 uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_evidence_versions.py -q -k release_evidence_exact_bytes -m 'not live and not integration'
+EXIT: 0
+....                                                                     [100%]
+4 passed, 124 deselected in 6.41s

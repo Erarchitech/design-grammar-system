@@ -1,0 +1,47 @@
+{
+  "verified": "2026-09-30T21:16:18.169420+00:00",
+  "head": "6d66763400ff8683629b1c8f2fb1433f16eb2efb",
+  "sdk": {
+    "GH_IO.dll": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\GH_IO.dll",
+    "Grasshopper.dll": "C:\\Program Files\\Rhino 8\\Plug-ins\\Grasshopper\\Grasshopper.dll",
+    "RhinoCommon.dll": "C:\\Program Files\\Rhino 8\\System\\RhinoCommon.dll"
+  },
+  "properties": {
+    "DefineConstants": "TRACE;GRASSHOPPER_SDK;RELEASE;NET;NET7_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER",
+    "TargetFramework": "net7.0-windows"
+  },
+  "publishCompileItems": [
+    "Validation/ValidationPublishClient.cs",
+    "Validation/ValidationPublishContract.cs"
+  ],
+  "wirePassedByModule": {
+    "test_gh_publish_wire.py": 72,
+    "test_evidence_versions.py": 128,
+    "test_validation_entity_rollup.py": 8,
+    "test_evidence_raw_admission.py": 122,
+    "test_evidence_unicode_containers.py": 98
+  },
+  "reviewRawCases": 103,
+  "reviewSummary": {
+    "timestamp": "2026-09-30T21:15:15.017973+00:00",
+    "case_count": 103,
+    "expected_admission_mismatches": [],
+    "response_failures": [],
+    "strict_process_failures": [],
+    "binary_changed_during_probe": []
+  },
+  "reviewInmemoryCases": 4,
+  "reviewShaclCases": 3,
+  "domainProbeCases": 18,
+  "protectedFiles": 277,
+  "protectedChanged": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "fixSourceManifestMatches": true,
+  "iterationDiffMatches": true,
+  "extraScanFindings": [],
+  "projectSkillDirectories": {
+    ".hermes/skills": false,
+    ".agents/skills": false
+  }
+}

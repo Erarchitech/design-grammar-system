@@ -31,20 +31,22 @@ exactly the distinction this vocabulary exists to preserve.
 from __future__ import annotations
 
 import functools
+import math
 import os
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import json as _json
 
 import jsonschema
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 import canonical_json
 
 EVIDENCE_CONTRACT_VERSION = "1.0.0"
+EVIDENCE_CONTRACT_VERSION_V2 = "2.0.0"
 
 
 class CanonicalStatus(StrEnum):
@@ -168,7 +170,7 @@ class EvidenceEnvelope(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    contractVersion: str
+    contractVersion: Literal["1.0.0"]
     canonicalizationVersion: int
     project: str
     definitionId: str
@@ -190,6 +192,198 @@ class EvidenceEnvelope(BaseModel):
     provider: str | None = None
     model: str | None = None
     warnings: list[str] = Field(default_factory=list)
+
+
+class LegacyEvidenceEnvelope(EvidenceEnvelope):
+    """Strict full historical alias; never normalize its literal version."""
+
+    contractVersion: Literal["1"]
+
+
+class EvidenceRuleResult(BaseModel):
+    """Rule-scoped outcome, including rules without any object rows."""
+
+    model_config = ConfigDict(extra="forbid")
+    ruleId: str
+    canonicalStatus: CanonicalStatus
+    warnings: list[str]
+    detail: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_record_shape(cls, value: Any) -> Any:
+        schema = load_contract_schema()
+        try:
+            jsonschema.validate(value, {"$defs": schema["$defs"], "$ref": "#/$defs/EvidenceRuleResult"})
+        except jsonschema.ValidationError as exc:
+            raise ValueError(exc.message) from exc
+        return value
+
+
+MAX_JSON_DEPTH = 128  # Containers only, root object counts as one (System.Text.Json semantics).
+
+
+def validate_json_resources(value: Any) -> None:
+    """Preflight JSON-domain values before model/schema/response operations.
+
+    Tuples are the supported Python array extension. Do not silently accept
+    every form Pydantic can serialize: sets/deques/generators/dataclasses and
+    custom objects must be explicitly converted by the caller before admission.
+    """
+    pending = [(value, 0)]
+    while pending:
+        item, parent_depth = pending.pop()
+        if isinstance(item, BaseModel):
+            item = dict(item)
+        if isinstance(item, str):
+            # Escaped pairs already decode to one scalar. Never replace or
+            # normalize identity-bearing text to make it encodable.
+            try:
+                item.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise ValueError("JSON text contains a non-scalar Unicode value") from exc
+        if isinstance(item, int) and not isinstance(item, bool):
+            try:
+                finite = math.isfinite(item)
+            except OverflowError:
+                finite = False
+            if not finite:
+                raise ValueError("JSON number exceeds finite binary64 range")
+        if isinstance(item, float) and not math.isfinite(item):
+            raise ValueError("Non-finite JSON number")
+        if type(item) in (dict, list, tuple):
+            depth = parent_depth + 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("JSON nesting exceeds 128 containers")
+            children = item.values() if isinstance(item, dict) else item
+            pending.extend((child, depth) for child in children)
+            if isinstance(item, dict):
+                if any(not isinstance(key, str) for key in item):
+                    raise ValueError("JSON member names must be strings")
+                pending.extend((key, depth) for key in item)
+        elif item is not None and not isinstance(item, (str, bool, int, float)):
+            raise ValueError("Unsupported in-memory JSON value; use dict, list or tuple")
+
+
+def decode_evidence_json(raw: str | bytes) -> Any:
+    """Reject ambiguous object members before any version/model dispatch."""
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate JSON member")
+            result[key] = value
+        return result
+
+    def reject_constant(token: str) -> Any:
+        raise ValueError("Non-JSON numeric constant")
+
+    payload = _json.loads(raw, object_pairs_hook=unique_object, parse_constant=reject_constant)
+    validate_json_resources(payload)
+    return payload
+
+
+def _wire_input(value: Any) -> Any:
+    # Typed nested records carry unset optional fields as None; their wire form
+    # omits those. Raw dictionaries are NOT cleaned or coerced.
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json", exclude_none=True)
+    if isinstance(value, dict):
+        return {key: _wire_input(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_wire_input(item) for item in value]
+    return value
+
+
+class EvidenceEnvelopeV2(EvidenceEnvelope):
+    """Distinct strict new shape; no optional-field extension of old output."""
+
+    contractVersion: Literal["2.0.0"]
+    rows: list[EvidenceRow]
+    ruleResults: list[EvidenceRuleResult]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_wire_shape(cls, value: Any) -> Any:
+        validate_json_resources(value)
+        payload = _wire_input(value)
+        try:
+            jsonschema.validate(payload, load_contract_schema())
+        except jsonschema.ValidationError as exc:
+            raise ValueError(exc.message) from exc
+        return value
+
+    @model_validator(mode="after")
+    def validate_rule_identities(self) -> EvidenceEnvelopeV2:
+        keys = [result.ruleId for result in self.ruleResults]
+        if len(keys) != len(set(keys)):
+            raise ValueError("Duplicate ruleResults ruleId")
+        if keys != sorted(keys, key=_ordinal_key):
+            raise ValueError("ruleResults must be ordered by ordinal ruleId")
+        return self
+
+
+def _ordinal_key(value: str) -> bytes:
+    """Match C# StringComparer.Ordinal (UTF-16 code units), not locale order."""
+    return value.encode("utf-16-be", errors="surrogatepass")
+
+
+def parse_envelope_model(payload: Any) -> EvidenceEnvelope | LegacyEvidenceEnvelope | EvidenceEnvelopeV2:
+    """Full schema admission; intentionally NOT the historical projection reader."""
+    validate_json_resources(payload)
+    jsonschema.validate(payload, load_contract_schema())
+    model = {"1.0.0": EvidenceEnvelope, "1": LegacyEvidenceEnvelope,
+             EVIDENCE_CONTRACT_VERSION_V2: EvidenceEnvelopeV2}[payload["contractVersion"]]
+    return model.model_validate(payload)
+
+
+def read_envelope_dict(payload: Any) -> dict[str, Any] | None:
+    """Exact-token read dispatch. Return admitted dictionaries without rewriting."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("contractVersion"), str):
+        return None
+    version = payload["contractVersion"]
+    try:
+        validate_json_resources(payload)
+        if version == EVIDENCE_CONTRACT_VERSION_V2:
+            parse_envelope_model(payload)
+        elif version in ("1", EVIDENCE_CONTRACT_VERSION):
+            if "ruleResults" in payload:
+                return None
+            schema = load_contract_schema()
+            if "canonicalStatus" in payload:
+                jsonschema.validate(payload["canonicalStatus"], schema["$defs"]["CanonicalStatus"])
+            if "rows" in payload:
+                row_schema = {"$defs": schema["$defs"], "type": "array",
+                              "items": {"$ref": "#/$defs/EvidenceRow"}}
+                jsonschema.validate(payload["rows"], row_schema)
+        else:
+            return None
+    except (jsonschema.ValidationError, ValueError, RecursionError):
+        return None
+    return payload
+
+
+def build_envelope_with_rule_results(
+    project: str, definition_id: str, service_name: str, service_version: str,
+    stage: str, rows: list[EvidenceRow], rule_results: list[EvidenceRuleResult],
+    **metadata: Any,
+) -> EvidenceEnvelopeV2:
+    """Explicit v2 construction used by current GH publish; old factories stay old."""
+    # Preserve the existing metadata API, but never permit an aggregate override
+    # to hide a rule outcome in the new shape.
+    if "roll_up" in metadata:
+        raise TypeError("v2 aggregate is derived from rows and ruleResults")
+    old = build_envelope(project, definition_id, service_name, service_version, stage, rows, **metadata)
+    # Pydantic's JSON-mode dump can turn non-finite Any metadata into null.
+    # Admit the original Python values before that irreversible transformation.
+    validate_json_resources(old)
+    payload = old.model_dump(mode="json", exclude_none=True)
+    results = sorted(rule_results, key=lambda item: _ordinal_key(item.ruleId))
+    statuses = {item.canonicalStatus for item in [*rows, *results]}
+    payload.update(contractVersion=EVIDENCE_CONTRACT_VERSION_V2,
+                   ruleResults=results,
+                   canonicalStatus=next((s for s in _ROLLUP_PRECEDENCE if s in statuses), CanonicalStatus.NOT_EVALUATED))
+    return EvidenceEnvelopeV2.model_validate(payload)
 
 
 def _sort_key(row: EvidenceRow) -> tuple[str, str]:
@@ -293,5 +487,6 @@ def validate_envelope(envelope: EvidenceEnvelope) -> None:
     treatment every other optional field gets.
     """
     schema = load_contract_schema()
+    validate_json_resources(envelope)
     payload = envelope.model_dump(mode="json", exclude_none=True)
     jsonschema.validate(instance=payload, schema=schema)

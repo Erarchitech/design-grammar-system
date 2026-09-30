@@ -1,0 +1,108 @@
+command=["dotnet", "test", "DG/tests/DG.Tests/DG.Tests.csproj", "--no-restore", "--filter", "FullyQualifiedName~UnicodeAdmission", "-v", "minimal"]
+time=2026-09-30T20:54:03.778218+00:00
+  DG.Core -> C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Debug\net9.0\DG.Core.dll
+  DG.Tests -> C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\bin\Debug\net9.0\DG.Tests.dll
+Тестовый запуск для C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\bin\Debug\net9.0\DG.Tests.dll (.NETCoreApp,Version=v9.0)
+Общее количество тестовых файлов (1), соответствующих указанному шаблону.
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\udfff\\ud800") [6 ms]
+  Сообщение об ошибке:
+   System.InvalidOperationException : Cannot read invalid UTF-16 JSON text as string. Invalid surrogate value: '0xDFFF'.
+  Трассировка стека:
+     at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadInvalidUTF16(Int32 charAsInt)
+   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)
+   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)
+   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)
+   at System.Text.Json.JsonProperty.get_Name()
+   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 114
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 49
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(String escaped) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 27
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\ud800") [< 1 ms]
+  Сообщение об ошибке:
+   System.InvalidOperationException : Cannot read incomplete UTF-16 JSON text as string with missing low surrogate.
+  Трассировка стека:
+     at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadIncompleteUTF16()
+   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)
+   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)
+   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)
+   at System.Text.Json.JsonProperty.get_Name()
+   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 114
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 49
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(String escaped) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 27
+   at InvokeStub_EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\ud800x") [< 1 ms]
+  Сообщение об ошибке:
+   System.InvalidOperationException : Cannot read incomplete UTF-16 JSON text as string with missing low surrogate.
+  Трассировка стека:
+     at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadIncompleteUTF16()
+   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)
+   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)
+   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)
+   at System.Text.Json.JsonProperty.get_Name()
+   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 114
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 49
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(String escaped) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 27
+   at InvokeStub_EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\udfff") [< 1 ms]
+  Сообщение об ошибке:
+   System.InvalidOperationException : Cannot read invalid UTF-16 JSON text as string. Invalid surrogate value: '0xDFFF'.
+  Трассировка стека:
+     at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ReadInvalidUTF16(Int32 charAsInt)
+   at System.Text.Json.JsonReaderHelper.TryUnescape(ReadOnlySpan`1 source, Span`1 destination, Int32 idx, Int32& written)
+   at System.Text.Json.JsonReaderHelper.GetUnescapedString(ReadOnlySpan`1 utf8Source)
+   at System.Text.Json.JsonDocument.GetString(Int32 index, JsonTokenType expectedType)
+   at System.Text.Json.JsonProperty.get_Name()
+   at DG.Core.Contracts.EvidenceEnvelopeReader.JsonResources(JsonElement root) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 114
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 49
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(String escaped) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 27
+   at InvokeStub_EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(codeUnit: 57343) [2 ms]
+  Сообщение об ошибке:
+   System.ArgumentException : Cannot transcode invalid UTF-16 string to UTF-8 JSON text.
+---- System.Text.EncoderFallbackException : Unable to translate Unicode character \\uDFFF at index 28 to specified code page.
+  Трассировка стека:
+     at System.Text.Json.JsonReaderHelper.GetUtf8ByteCount(ReadOnlySpan`1 text)
+   at System.Text.Json.JsonDocument.Parse(ReadOnlyMemory`1 json, JsonDocumentOptions options)
+   at System.Text.Json.JsonDocument.Parse(String json, JsonDocumentOptions options)
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 47
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(Int32 codeUnit) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 47
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+----- Inner Stack Trace -----
+   at System.Text.EncoderExceptionFallbackBuffer.Fallback(Char charUnknown, Int32 index)
+   at System.Text.Encoding.GetByteCountWithFallback(ReadOnlySpan`1 chars, Int32 originalCharsLength, EncoderNLS encoder)
+   at System.Text.Encoding.GetByteCountWithFallback(Char* pCharsOriginal, Int32 originalCharCount, Int32 charsConsumedSoFar)
+   at System.Text.UTF8Encoding.GetByteCount(ReadOnlySpan`1 chars)
+   at System.Text.Json.JsonReaderHelper.GetUtf8ByteCount(ReadOnlySpan`1 text)
+  Не пройден DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(codeUnit: 55296) [< 1 ms]
+  Сообщение об ошибке:
+   System.ArgumentException : Cannot transcode invalid UTF-16 string to UTF-8 JSON text.
+---- System.Text.EncoderFallbackException : Unable to translate Unicode character \\uD800 at index 28 to specified code page.
+  Трассировка стека:
+     at System.Text.Json.JsonReaderHelper.GetUtf8ByteCount(ReadOnlySpan`1 text)
+   at System.Text.Json.JsonDocument.Parse(ReadOnlyMemory`1 json, JsonDocumentOptions options)
+   at System.Text.Json.JsonDocument.Parse(String json, JsonDocumentOptions options)
+   at DG.Core.Contracts.EvidenceEnvelopeReader.TryRead(String json, EvidenceEnvelopeReadResult& result) in C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\Contracts\EvidenceEnvelopeReader.cs:line 47
+   at DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(Int32 codeUnit) in C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\EvidenceContractTests.cs:line 47
+   at InvokeStub_EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+----- Inner Stack Trace -----
+   at System.Text.EncoderExceptionFallbackBuffer.Fallback(Char charUnknown, Int32 index)
+   at System.Text.Encoding.GetByteCountWithFallback(ReadOnlySpan`1 chars, Int32 originalCharsLength, EncoderNLS encoder)
+   at System.Text.Encoding.GetByteCountWithFallback(Char* pCharsOriginal, Int32 originalCharCount, Int32 charsConsumedSoFar)
+   at System.Text.UTF8Encoding.GetByteCount(ReadOnlySpan`1 chars)
+   at System.Text.Json.JsonReaderHelper.GetUtf8ByteCount(ReadOnlySpan`1 text)
+
+Не пройден!: не пройдено     6, пройдено     1, пропущено     0, всего     7, длительность 38 ms. - DG.Tests.dll (net9.0)
+[xUnit.net 00:00:00.27]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\udfff\\ud800") [FAIL]
+[xUnit.net 00:00:00.28]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\ud800") [FAIL]
+[xUnit.net 00:00:00.28]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\ud800x") [FAIL]
+[xUnit.net 00:00:00.28]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectMalformedKeysAndValues(escaped: "\\udfff") [FAIL]
+[xUnit.net 00:00:00.28]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(codeUnit: 57343) [FAIL]
+[xUnit.net 00:00:00.28]     DG.Tests.EvidenceContractTests.UnicodeAdmission_PublicGuardsRejectLiteralInvalidUtf16(codeUnit: 55296) [FAIL]
+
+exit=1

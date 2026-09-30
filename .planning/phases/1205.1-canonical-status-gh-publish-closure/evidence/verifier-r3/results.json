@@ -1,0 +1,185 @@
+[
+  {
+    "name": "csharp",
+    "command": [
+      "dotnet",
+      "test",
+      "DG/tests/DG.Tests/DG.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~EvidenceContractTests|FullyQualifiedName~RuleEvaluatorTests|FullyQualifiedName~ValidationPublishPackageBuilderTests|FullyQualifiedName~Neo4jValidGraphRepositoryTests|FullyQualifiedName~DataServiceRequestAuthTests|FullyQualifiedName~SwrlSubsetConformanceTests",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T21:11:52.933239+00:00",
+    "exit": 0,
+    "wall_seconds": 3.5
+  },
+  {
+    "name": "backend",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_evidence_contract.py",
+      "data-service/tests/test_validation_run_immutability.py",
+      "data-service/tests/test_route_inventory.py",
+      "data-service/tests/test_cross_project_matrix.py",
+      "-q",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T21:11:56.431931+00:00",
+    "exit": 0,
+    "wall_seconds": 36.719
+  },
+  {
+    "name": "wire",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_gh_publish_wire.py",
+      "data-service/tests/test_evidence_versions.py",
+      "data-service/tests/test_validation_entity_rollup.py",
+      "data-service/tests/test_evidence_raw_admission.py",
+      "data-service/tests/test_evidence_unicode_containers.py",
+      "-v",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T21:12:33.158849+00:00",
+    "exit": 0,
+    "wall_seconds": 106.516
+  },
+  {
+    "name": "de01",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "tools/de01/tests",
+      "-q",
+      "-m",
+      "not live",
+      "-k",
+      "not live"
+    ],
+    "started": "2026-09-30T21:14:19.675333+00:00",
+    "exit": 0,
+    "wall_seconds": 6.218
+  },
+  {
+    "name": "gh-rebuild",
+    "command": [
+      "dotnet",
+      "build",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-t:Rebuild",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T21:14:25.897669+00:00",
+    "exit": 0,
+    "wall_seconds": 4.422
+  },
+  {
+    "name": "sdk-resolve",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-p:Configuration=Release",
+      "-t:ResolveReferences",
+      "-getProperty:DefineConstants,TargetFramework",
+      "-getItem:ReferencePath,Compile"
+    ],
+    "started": "2026-09-30T21:14:30.325950+00:00",
+    "exit": 0,
+    "wall_seconds": 1.625
+  },
+  {
+    "name": "artifact-check",
+    "command": [
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verify_evidence.py"
+    ],
+    "started": "2026-09-30T21:14:31.955674+00:00",
+    "exit": 0,
+    "wall_seconds": 0.109
+  },
+  {
+    "name": "source-checks",
+    "command": [
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r3\\source_checks.py"
+    ],
+    "started": "2026-09-30T21:14:32.056923+00:00",
+    "exit": 0,
+    "wall_seconds": 1.25
+  },
+  {
+    "name": "admission-probe",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r3\\admission_probe.py"
+    ],
+    "started": "2026-09-30T21:14:33.306674+00:00",
+    "exit": 0,
+    "wall_seconds": 1.875
+  },
+  {
+    "name": "inmemory-probe",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r3\\inmemory_probe.py"
+    ],
+    "started": "2026-09-30T21:14:35.189257+00:00",
+    "exit": 0,
+    "wall_seconds": 1.563
+  },
+  {
+    "name": "review-probe",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-B",
+      "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\review-2-probe.py"
+    ],
+    "started": "2026-09-30T21:14:36.753032+00:00",
+    "exit": 0,
+    "wall_seconds": 38.375
+  }
+]

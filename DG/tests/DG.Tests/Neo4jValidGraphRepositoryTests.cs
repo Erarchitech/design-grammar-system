@@ -482,6 +482,47 @@ public sealed class Neo4jValidGraphRepositoryTests
     }
 
     [Fact]
+    public void HistoricalFullLiteralOneFixture_IsStrictAndRemainsLiteralOne()
+    {
+        var json = BuildEnvelopeJson(("R", "O", EvidenceStatus.Unsupported));
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        Assert.Equal("1", doc.RootElement.GetProperty("contractVersion").GetString());
+        Assert.Equal(10, doc.RootElement.EnumerateObject().Count());
+        Assert.True(EvidenceEnvelopeReader.IsStrictEnvelope(json));
+    }
+
+    [Theory]
+    [InlineData("1", "passed")]
+    [InlineData("1", "failed")]
+    [InlineData("1.0.0", "passed")]
+    [InlineData("1.0.0", "failed")]
+    public void NewPartialOldControls_AreTolerantProjectionsNotProducerEnvelopes(string version, string summary)
+    {
+        // NEW controls, not the original FULL literal-one helper above.
+        var root = "{\"contractVersion\":\"" + version + "\",\"canonicalStatus\":\"" + summary + "\"";
+        foreach (var suffix in new[] { "}", ",\"rows\":[]}" })
+        {
+            var json = root + suffix;
+            Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(json));
+            var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(json);
+            Assert.True(result.EnvelopePresent);
+            Assert.Empty(result.Verdicts);
+            Assert.Empty(result.CollidingRuleObjectPairs);
+        }
+        var valid = root + ",\"rows\":[{\"ruleId\":\"R\",\"objectId\":\"O\",\"canonicalStatus\":\"unsupported\"}]}";
+        Assert.False(EvidenceEnvelopeReader.IsStrictEnvelope(valid));
+        Assert.Equal(EvidenceStatus.Unsupported, Assert.Single(Neo4jValidGraphRepository.BuildPerObjectVerdicts(valid).Verdicts).Status);
+        foreach (var suffix in new[] { ",\"rows\":null}", ",\"rows\":{}}", ",\"ruleResults\":[]}",
+            ",\"rows\":[{\"ruleId\":\"R\",\"objectId\":\"O\",\"canonicalStatus\":\"invalid\"}]}" })
+        {
+            var result = Neo4jValidGraphRepository.BuildPerObjectVerdicts(root + suffix);
+            Assert.False(result.EnvelopePresent);
+            Assert.Empty(result.Verdicts);
+            Assert.Empty(result.CollidingRuleObjectPairs);
+        }
+    }
+
+    [Fact]
     public void BuildPerObjectVerdicts_WithMixedRows_KeepsObjectVerdictsDistinct()
     {
         var envelopeJson = BuildEnvelopeJson(

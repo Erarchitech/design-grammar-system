@@ -1,0 +1,178 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short"]
+time=2026-09-30T20:05:19.835007+00:00
+FFFFFFFFFFFFFFFFFFFF..                                                   [100%]
+================================== FAILURES ===================================
+_ test_duplicate_publish_raw_bytes_denied_before_writes[evidenceContractVersion] _
+data-service\tests\test_evidence_raw_admission.py:31: in test_duplicate_publish_raw_bytes_denied_before_writes
+    assert response.status_code == 422, response.text
+E   AssertionError: {"status":"published","runId":"e1ed9ebbb8c44f76a8c7d23a7bf51447","validationModelId":"vm-wire","validationVersionId":"vv-wire","baseVersionId":"bv-wire","modelViewerUrl":"http://dg.invalid/view","shacl":{"status":"unavailable"}}
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+___ test_duplicate_publish_raw_bytes_denied_before_writes[canonicalStatus] ____
+data-service\tests\test_evidence_raw_admission.py:31: in test_duplicate_publish_raw_bytes_denied_before_writes
+    assert response.status_code == 422, response.text
+E   AssertionError: {"status":"published","runId":"ba10dd1265f1487186ac4e2192ec6612","validationModelId":"vm-wire","validationVersionId":"vv-wire","baseVersionId":"bv-wire","modelViewerUrl":"http://dg.invalid/view","shacl":{"status":"unavailable"}}
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+__ test_duplicate_publish_raw_bytes_denied_before_writes[canonicalStatuses] ___
+data-service\tests\test_evidence_raw_admission.py:31: in test_duplicate_publish_raw_bytes_denied_before_writes
+    assert response.status_code == 422, response.text
+E   AssertionError: {"status":"published","runId":"a3fb2e8f75a44ffca1fb32eca749c49c","validationModelId":"vm-wire","validationVersionId":"vv-wire","baseVersionId":"bv-wire","modelViewerUrl":"http://dg.invalid/view","shacl":{"status":"unavailable"}}
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+________ test_duplicate_publish_raw_bytes_denied_before_writes[R_WIRE] ________
+data-service\tests\test_evidence_raw_admission.py:31: in test_duplicate_publish_raw_bytes_denied_before_writes
+    assert response.status_code == 422, response.text
+E   AssertionError: {"status":"published","runId":"5630c1b4a3924926a109ba56aa82438f","validationModelId":"vm-wire","validationVersionId":"vv-wire","baseVersionId":"bv-wire","modelViewerUrl":"http://dg.invalid/view","shacl":{"status":"unavailable"}}
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+_______ test_duplicate_publish_raw_bytes_denied_before_writes[entities] _______
+data-service\tests\test_evidence_raw_admission.py:31: in test_duplicate_publish_raw_bytes_denied_before_writes
+    assert response.status_code == 422, response.text
+E   AssertionError: {"status":"published","runId":"9c5fb083ab9e43d3b86c695195abc4a7","validationModelId":"vm-wire","validationVersionId":"vv-wire","baseVersionId":"bv-wire","modelViewerUrl":"http://dg.invalid/view","shacl":{"status":"unavailable"}}
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+_ test_duplicate_persisted_members_before_version_dispatch[contractVersion-1] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","contractVersion":"1","canonicalizationVersion":1,"project":"p","definitionId":"d","servic...ion":"1","emittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_ test_duplicate_persisted_members_before_version_dispatch[contractVersion-1.0.0] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","contractVersion":"1.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","se...ion":"1","emittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_ test_duplicate_persisted_members_before_version_dispatch[contractVersion-2.0.0] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","se...:"no_population","rows":[],"warnings":[],"ruleResults":[{"ruleId":"R","canonicalStatus":"unsupported","warnings":[]}]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_ test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-1] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVersion...026-09-30T20:05:18Z","stage":"stage","canonicalStatus":null,"canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_ test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-1.0.0] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...026-09-30T20:05:18Z","stage":"stage","canonicalStatus":null,"canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_ test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-2.0.0] _
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...:"no_population","rows":[],"warnings":[],"ruleResults":[{"ruleId":"R","canonicalStatus":"unsupported","warnings":[]}]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+______ test_duplicate_persisted_members_before_version_dispatch[rows-1] _______
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVersion...ittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":null,"rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+____ test_duplicate_persisted_members_before_version_dispatch[rows-1.0.0] _____
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...ittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":null,"rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+____ test_duplicate_persisted_members_before_version_dispatch[rows-2.0.0] _____
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...ion","rows":null,"rows":[],"warnings":[],"ruleResults":[{"ruleId":"R","canonicalStatus":"unsupported","warnings":[]}]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_____ test_duplicate_persisted_members_before_version_dispatch[nested-1] ______
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVersion...5:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[],"sourceRepresentation":{"x":1,"x":2}}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+___ test_duplicate_persisted_members_before_version_dispatch[nested-1.0.0] ____
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"1.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...5:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[],"sourceRepresentation":{"x":1,"x":2}}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+___ test_duplicate_persisted_members_before_version_dispatch[nested-2.0.0] ____
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"d","serviceName":"s","serviceVer...:[],"ruleResults":[{"ruleId":"R","canonicalStatus":"unsupported","warnings":[]}],"sourceRepresentation":{"x":1,"x":2}}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+_____ test_duplicate_persisted_members_before_version_dispatch[escaped-1] _____
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contract\\u0056ersion":"2.0.0","contractVersion":"1","canonicalizationVersion":1,"project":"p","definitionId":"d","...ion":"1","emittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+___ test_duplicate_persisted_members_before_version_dispatch[escaped-1.0.0] ___
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '1.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contract\\u0056ersion":"2.0.0","contractVersion":"1.0.0","canonicalizationVersion":1,"project":"p","definitionId":"...ion":"1","emittedAt":"2026-09-30T20:05:18Z","stage":"stage","canonicalStatus":"no_population","rows":[],"warnings":[]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+___ test_duplicate_persisted_members_before_version_dispatch[escaped-2.0.0] ___
+data-service\tests\test_evidence_raw_admission.py:48: in test_duplicate_persisted_members_before_version_dispatch
+    assert_absent(wire_harness, raw)
+data-service\tests\test_evidence_raw_admission.py:16: in assert_absent
+    assert app.parse_evidence_envelope(raw) is None
+E   assert {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} is None
+E    +  where {'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...} = <function parse_evidence_envelope at 0x00000242D0C514E0>('{"contract\\u0056ersion":"2.0.0","contractVersion":"2.0.0","canonicalizationVersion":1,"project":"p","definitionId":"...:"no_population","rows":[],"warnings":[],"ruleResults":[{"ruleId":"R","canonicalStatus":"unsupported","warnings":[]}]}')
+E    +    where <function parse_evidence_envelope at 0x00000242D0C514E0> = app.parse_evidence_envelope
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_publish_raw_bytes_denied_before_writes[evidenceContractVersion]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_publish_raw_bytes_denied_before_writes[canonicalStatus]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_publish_raw_bytes_denied_before_writes[canonicalStatuses]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_publish_raw_bytes_denied_before_writes[R_WIRE]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_publish_raw_bytes_denied_before_writes[entities]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[contractVersion-1]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[contractVersion-1.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[contractVersion-2.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-1]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-1.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[canonicalStatus-2.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[rows-1]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[rows-1.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[rows-2.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[nested-1]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[nested-1.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[nested-2.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[escaped-1]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[escaped-1.0.0]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_duplicate_persisted_members_before_version_dispatch[escaped-2.0.0]
+20 failed, 2 passed in 7.99s
+
+exit=1

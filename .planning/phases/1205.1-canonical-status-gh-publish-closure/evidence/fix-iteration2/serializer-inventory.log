@@ -1,0 +1,138 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\fix-iteration2\\serializer_inventory.py"]
+time=2026-09-30T21:06:33.341514+00:00
+[
+  {
+    "container": "list",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "admitted"
+  },
+  {
+    "container": "list",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "tuple",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "admitted"
+  },
+  {
+    "container": "tuple",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "set",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "rejected"
+  },
+  {
+    "container": "set",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "frozenset",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "rejected"
+  },
+  {
+    "container": "frozenset",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "deque",
+    "value": "finite",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  },
+  {
+    "container": "deque",
+    "value": "nan",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  },
+  {
+    "container": "generator",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "rejected"
+  },
+  {
+    "container": "generator",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "iterator",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "rejected"
+  },
+  {
+    "container": "iterator",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "dataclass",
+    "value": "finite",
+    "serializer_json": "{\"x\":1.5}",
+    "guard": "rejected"
+  },
+  {
+    "container": "dataclass",
+    "value": "nan",
+    "serializer_json": "{\"x\":null}",
+    "guard": "rejected"
+  },
+  {
+    "container": "namedtuple",
+    "value": "finite",
+    "serializer_json": "[1.5]",
+    "guard": "rejected"
+  },
+  {
+    "container": "namedtuple",
+    "value": "nan",
+    "serializer_json": "[null]",
+    "guard": "rejected"
+  },
+  {
+    "container": "custom_mapping",
+    "value": "finite",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  },
+  {
+    "container": "custom_mapping",
+    "value": "nan",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  },
+  {
+    "container": "custom_iterable",
+    "value": "finite",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  },
+  {
+    "container": "custom_iterable",
+    "value": "nan",
+    "serializer_error": "PydanticSerializationError",
+    "guard": "rejected"
+  }
+]
+
+exit=0

@@ -1,0 +1,16 @@
+{
+  "originalRunnerExit": 1,
+  "originalAssertion": "assert not changed",
+  "originalManifestCount": 277,
+  "changed": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "classification": "Concurrent reviewer round-3 output, not prior history/source",
+  "excludedFromImmutableScope": [
+    ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/review-3-replay.json"
+  ],
+  "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "afterSha256": "473f7ee4c5c79452f5acd8564dc3ed0c55d3758a5881f8ca92186d2cbd5d8806",
+  "immutableCount": 276,
+  "immutableChanged": []
+}

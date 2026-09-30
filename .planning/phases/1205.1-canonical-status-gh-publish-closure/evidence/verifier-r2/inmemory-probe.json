@@ -1,0 +1,71 @@
+{
+  "cases": [
+    {
+      "case": "finite-list",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "finite-tuple",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "nan-list",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "case": "nan-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "positive-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "negative-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    }
+  ],
+  "legacyValidateEnvelopeRejectsTupleNan": false
+}

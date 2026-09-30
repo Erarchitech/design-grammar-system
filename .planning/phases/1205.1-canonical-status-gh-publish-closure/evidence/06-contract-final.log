@@ -1,0 +1,7 @@
+COMMAND: uv run --no-project --with-requirements data-service/requirements.txt python -m pytest data-service/tests/test_evidence_versions.py data-service/tests/test_evidence_contract.py -q -m 'not live and not integration'
+EXIT: 0
+WALL_SECONDS: 25.453
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+...........                                                              [100%]
+155 passed in 23.48s

@@ -1,0 +1,6 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_unicode_containers.py", "-q", "--tb=short"]
+time=2026-09-30T20:55:40.922334+00:00
+.....................................................                    [100%]
+53 passed in 12.55s
+
+exit=0

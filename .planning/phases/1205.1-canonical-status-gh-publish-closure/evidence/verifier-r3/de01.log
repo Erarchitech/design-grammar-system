@@ -1,0 +1,9 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "tools/de01/tests", "-q", "-m", "not live", "-k", "not live"]
+started=2026-09-30T21:14:19.675333+00:00
+........................................................................ [ 42%]
+........................................................................ [ 85%]
+.........................                                                [100%]
+169 passed, 1 deselected in 4.81s
+
+exit=0
+wall_seconds=6.218

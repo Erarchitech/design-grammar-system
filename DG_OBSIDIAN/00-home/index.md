@@ -32,6 +32,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/Evidence v2 preserves rule outcomes and keeps legacy projections separate|Evidence v2: typed outcomes, zero-row rules и совместимость legacy]] (2026-09-30, Phase 1205.1)
 - [[knowledge/decisions/DeGram approved process and company-project rule scope|DeGram: согласованный процесс, классы компании, правила проекта и lessons learned]] (2026-09-30)
 - [[knowledge/decisions/Self-registration is local-profile only, invite-only in multi-user|Self-registration is local-profile only, invite-only in multi-user]] (2026-09-30, D-05 amendment)
 - [[knowledge/decisions/LLM-written Cypher is guarded by a grammar allowlist, not a blocklist|LLM-written Cypher: grammar allowlist, not blocklist]] (2026-09-30)
@@ -92,6 +93,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/Typed non-verdicts can become passed at the GH publication boundary|GH wire: Unsupported превращался в passed; raw JSON и межъязыковой admission]] (2026-09-30)
+- [[sessions/2026-09-30 v12 audit and Phase 1205.1 canonical status closure|Сессия: v12 audit и verified closure 1205.1]]
 - [[knowledge/debugging/Blocklist checks over LLM-written Cypher were bypassed three times|Blocklist checks over LLM-written Cypher bypassed three times]] (2026-09-30)
 - [[Docker layer caching can serve stale index.html]]
 - [[Browser cache prevents seeing UI updates after rebuild]]

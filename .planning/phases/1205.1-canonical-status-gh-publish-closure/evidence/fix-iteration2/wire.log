@@ -1,0 +1,11 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_gh_publish_wire.py", "data-service/tests/test_evidence_versions.py", "data-service/tests/test_validation_entity_rollup.py", "data-service/tests/test_evidence_raw_admission.py", "data-service/tests/test_evidence_unicode_containers.py", "-q", "-m", "not live and not integration"]
+time=2026-09-30T21:03:55.719374+00:00
+........................................................................ [ 16%]
+........................................................................ [ 33%]
+........................................................................ [ 50%]
+........................................................................ [ 67%]
+........................................................................ [ 84%]
+....................................................................     [100%]
+428 passed in 111.18s (0:01:51)
+
+exit=0

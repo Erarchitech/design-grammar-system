@@ -1,0 +1,6 @@
+[
+  {"id":"ALGN12-01","text":"Canonical statuses distinguish passed, failed, unknown, not_evaluated, no_population, unsupported, indeterminate, and error."},
+  {"id":"ALGN12-02","text":"A common evidence envelope records project, definition, dgId/source representation, input/output hashes, schema/ontology/rule/shape versions, service/version, provider/model where applicable, timestamps, warnings, and status."},
+  {"id":"ALGN12-06","text":"Unsupported built-ins and predicate forms never collapse into ordinary failed verdicts."},
+  {"id":"ALGN12-10","text":"Mixed per-object outcomes remain distinct through persistence and C# retrieval; no run-level aggregate is replicated across objects."}
+]

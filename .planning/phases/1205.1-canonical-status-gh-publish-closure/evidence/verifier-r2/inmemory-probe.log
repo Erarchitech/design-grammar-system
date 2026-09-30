@@ -1,0 +1,79 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "C:\\Users\\Admin\\source\\repos\\design-grammar-system\\.planning\\phases\\1205.1-canonical-status-gh-publish-closure\\evidence\\verifier-r2\\inmemory_probe.py"]
+{
+  "cases": [
+    {
+      "case": "finite-list",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "finite-tuple",
+      "expectedRejected": false,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          1.5
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "nan-list",
+      "expectedRejected": true,
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "case": "nan-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "positive-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    },
+    {
+      "case": "negative-infinity-tuple",
+      "expectedRejected": true,
+      "rejected": false,
+      "serializedSourceRepresentation": {
+        "x": [
+          null
+        ]
+      },
+      "pythonReadAccepted": true,
+      "csharpReadAccepted": true
+    }
+  ],
+  "legacyValidateEnvelopeRejectsTupleNan": false
+}
+Traceback (most recent call last):
+  File "C:\Users\Admin\source\repos\design-grammar-system\.planning\phases\1205.1-canonical-status-gh-publish-closure\evidence\verifier-r2\inmemory_probe.py", line 44, in <module>
+    assert all(x['rejected']==x['expectedRejected'] for x in results) and legacy_rejected, 'CR-03: tuple metadata nonfinite values silently serialized to null before admission'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: CR-03: tuple metadata nonfinite values silently serialized to null before admission
+
+exit=1

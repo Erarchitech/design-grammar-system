@@ -1,0 +1,115 @@
+command=["uv", "run", "--no-project", "--with-requirements", "data-service/requirements.txt", "python", "-m", "pytest", "data-service/tests/test_evidence_raw_admission.py", "-q", "--tb=short", "-k", "integral or hash"]
+time=2026-09-30T20:12:51.494314+00:00
+FFFFFFFF................FFFFF                                            [100%]
+================================== FAILURES ===================================
+__________ test_integral_number_range_schema_reader_parity[1.0-True] __________
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+__________ test_integral_number_range_schema_reader_parity[1e0-True] __________
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+_____ test_integral_number_range_schema_reader_parity[1099511627776-True] _____
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+___ test_integral_number_range_schema_reader_parity[9007199254740990-True] ____
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+___ test_integral_number_range_schema_reader_parity[9007199254740991-True] ____
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+___ test_integral_number_range_schema_reader_parity[9007199254740992-False] ___
+data-service\tests\test_evidence_raw_admission.py:88: in test_integral_number_range_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 9007199254740992, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+___ test_integral_number_range_schema_reader_parity[-9007199254740991-True] ___
+data-service\tests\test_evidence_raw_admission.py:91: in test_integral_number_range_schema_reader_parity
+    assert read['envelopePresent'] == expected
+E   assert False == True
+__ test_integral_number_range_schema_reader_parity[-9007199254740992-False] ___
+data-service\tests\test_evidence_raw_admission.py:88: in test_integral_number_range_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': -9007199254740992, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+_______ test_hash_absolute_end_schema_reader_parity[newline-inputHash] ________
+data-service\tests\test_evidence_raw_admission.py:105: in test_hash_absolute_end_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+_______ test_hash_absolute_end_schema_reader_parity[newline-outputHash] _______
+data-service\tests\test_evidence_raw_admission.py:105: in test_hash_absolute_end_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+__________ test_hash_absolute_end_schema_reader_parity[newline-dgId] __________
+data-service\tests\test_evidence_raw_admission.py:105: in test_hash_absolute_end_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+_____ test_hash_absolute_end_schema_reader_parity[newline-row.inputHash] ______
+data-service\tests\test_evidence_raw_admission.py:105: in test_hash_absolute_end_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+_____ test_hash_absolute_end_schema_reader_parity[newline-row.outputHash] _____
+data-service\tests\test_evidence_raw_admission.py:105: in test_hash_absolute_end_schema_reader_parity
+    assert jsonschema.Draft202012Validator(contract.load_contract_schema()).is_valid(payload) == expected
+E   AssertionError: assert True == False
+E    +  where True = is_valid({'contractVersion': '2.0.0', 'canonicalizationVersion': 1, 'project': 'p', 'definitionId': 'd', ...})
+E    +    where is_valid = Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None).is_valid
+E    +      where Draft202012Validator(schema={'$defs': {'CanonicalStatus': {'description': 'The frozen 8...his contract.', 'enum': ['pa...', '$schema': 'https://json...020-12/schema', 'description': 'Machine-read...of this list.', ...}, format_checker=None) = <class 'jsonschema.validators.Draft202012Validator'>({'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...})
+E    +        where <class 'jsonschema.validators.Draft202012Validator'> = <module 'jsonschema' from 'C:\\Users\\Admin\\AppData\\Local\\uv\\cache\\archive-v0\\ErlH0i13DutVUgsfaDv-I\\Lib\\site-packages\\jsonschema\\__init__.py'>.Draft202012Validator
+E    +        and   {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'https://design-grammar-system/spec/evidence-contra...echanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.', ...} = <functools._lru_cache_wrapper object at 0x000001CF52A53110>()
+E    +          where <functools._lru_cache_wrapper object at 0x000001CF52A53110> = contract.load_contract_schema
+=========================== short test summary info ===========================
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[1.0-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[1e0-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[1099511627776-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[9007199254740990-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[9007199254740991-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[9007199254740992-False]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[-9007199254740991-True]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_integral_number_range_schema_reader_parity[-9007199254740992-False]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_hash_absolute_end_schema_reader_parity[newline-inputHash]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_hash_absolute_end_schema_reader_parity[newline-outputHash]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_hash_absolute_end_schema_reader_parity[newline-dgId]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_hash_absolute_end_schema_reader_parity[newline-row.inputHash]
+FAILED data-service/tests/test_evidence_raw_admission.py::test_hash_absolute_end_schema_reader_parity[newline-row.outputHash]
+13 failed, 16 passed, 59 deselected in 10.06s
+
+exit=1

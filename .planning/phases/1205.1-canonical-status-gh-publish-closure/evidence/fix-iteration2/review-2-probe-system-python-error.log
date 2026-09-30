@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\source\repos\design-grammar-system\.planning\phases\1205.1-canonical-status-gh-publish-closure\evidence\review-2-probe.py", line 16, in <module>
+    import evidence_contract as ec
+  File "C:\Users\Admin\source\repos\design-grammar-system\data-service\evidence_contract.py", line 43, in <module>
+    import jsonschema
+ModuleNotFoundError: No module named 'jsonschema'

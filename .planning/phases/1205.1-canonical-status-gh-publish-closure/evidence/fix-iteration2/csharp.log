@@ -1,0 +1,10 @@
+command=["dotnet", "test", "DG/tests/DG.Tests/DG.Tests.csproj", "--no-restore", "--filter", "FullyQualifiedName~EvidenceContractTests|FullyQualifiedName~RuleEvaluatorTests|FullyQualifiedName~ValidationPublishPackageBuilderTests|FullyQualifiedName~Neo4jValidGraphRepositoryTests|FullyQualifiedName~DataServiceRequestAuthTests|FullyQualifiedName~SwrlSubsetConformanceTests", "-v", "minimal"]
+time=2026-09-30T21:03:59.722658+00:00
+  DG.Core -> C:\Users\Admin\source\repos\design-grammar-system\DG\src\DG.Core\bin\Debug\net9.0\DG.Core.dll
+  DG.Tests -> C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\bin\Debug\net9.0\DG.Tests.dll
+Тестовый запуск для C:\Users\Admin\source\repos\design-grammar-system\DG\tests\DG.Tests\bin\Debug\net9.0\DG.Tests.dll (.NETCoreApp,Version=v9.0)
+Общее количество тестовых файлов (1), соответствующих указанному шаблону.
+
+Пройден!   : не пройдено     0, пройдено   196, пропущено     0, всего   196, длительность 111 ms. - DG.Tests.dll (net9.0)
+
+exit=0

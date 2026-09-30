@@ -1,0 +1,135 @@
+[
+  {
+    "name": "csharp",
+    "command": [
+      "dotnet",
+      "test",
+      "DG/tests/DG.Tests/DG.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~EvidenceContractTests|FullyQualifiedName~RuleEvaluatorTests|FullyQualifiedName~ValidationPublishPackageBuilderTests|FullyQualifiedName~Neo4jValidGraphRepositoryTests|FullyQualifiedName~DataServiceRequestAuthTests|FullyQualifiedName~SwrlSubsetConformanceTests",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T19:49:13.410733+00:00",
+    "exit": 0,
+    "wall_seconds": 3.188,
+    "log": "csharp.log"
+  },
+  {
+    "name": "backend",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_evidence_contract.py",
+      "data-service/tests/test_validation_run_immutability.py",
+      "data-service/tests/test_route_inventory.py",
+      "data-service/tests/test_cross_project_matrix.py",
+      "-q",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T19:49:16.592930+00:00",
+    "exit": 0,
+    "wall_seconds": 42.984,
+    "log": "backend.log"
+  },
+  {
+    "name": "wire",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "data-service/tests/test_gh_publish_wire.py",
+      "data-service/tests/test_evidence_versions.py",
+      "data-service/tests/test_validation_entity_rollup.py",
+      "-q",
+      "-m",
+      "not live and not integration"
+    ],
+    "started": "2026-09-30T19:49:59.578306+00:00",
+    "exit": 0,
+    "wall_seconds": 56.891,
+    "log": "wire.log"
+  },
+  {
+    "name": "de01",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with-requirements",
+      "data-service/requirements.txt",
+      "python",
+      "-m",
+      "pytest",
+      "tools/de01/tests",
+      "-q",
+      "-m",
+      "not live",
+      "-k",
+      "not live"
+    ],
+    "started": "2026-09-30T19:50:56.464964+00:00",
+    "exit": 0,
+    "wall_seconds": 6.125,
+    "log": "de01.log"
+  },
+  {
+    "name": "gh-build",
+    "command": [
+      "dotnet",
+      "build",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T19:51:02.588487+00:00",
+    "exit": 0,
+    "wall_seconds": 1.484,
+    "log": "gh-build.log"
+  },
+  {
+    "name": "gh-rebuild",
+    "command": [
+      "dotnet",
+      "build",
+      "DG/src/DG.Grasshopper/DG.Grasshopper.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-t:Rebuild",
+      "-v",
+      "minimal"
+    ],
+    "started": "2026-09-30T19:51:04.070895+00:00",
+    "exit": 0,
+    "wall_seconds": 4.203,
+    "log": "gh-rebuild.log"
+  },
+  {
+    "name": "artifact-check",
+    "command": [
+      "python",
+      ".planning/phases/1205.1-canonical-status-gh-publish-closure/evidence/verify_evidence.py"
+    ],
+    "started": "2026-09-30T19:51:08.288226+00:00",
+    "exit": 0,
+    "wall_seconds": 0.109,
+    "log": "artifact-check.log"
+  }
+]

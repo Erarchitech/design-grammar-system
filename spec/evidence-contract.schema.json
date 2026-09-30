@@ -3,7 +3,10 @@
   "$id": "https://design-grammar-system/spec/evidence-contract.schema.json",
   "title": "Design Grammar System Evidence Envelope",
   "description": "Machine-readable shape annex for spec/EVIDENCE-CONTRACT.md. This file is authoritative for SHAPE only (field names, types, required-ness); spec/EVIDENCE-CONTRACT.md is authoritative for MEANING (what each canonical status asserts, ordering/identity rules, canonicalization rules, DE-01 acceptance). On conflict, schema wins for shape and prose wins for semantics (D-01). $defs.CanonicalStatus.enum is the single mechanical authority for the 8-member status vocabulary -- no other file may hardcode a second copy of this list.",
-  "$ref": "#/$defs/EvidenceEnvelope",
+  "oneOf": [
+    { "$ref": "#/$defs/EvidenceEnvelope" },
+    { "$ref": "#/$defs/EvidenceEnvelopeV2" }
+  ],
   "$defs": {
     "CanonicalStatus": {
       "type": "string",
@@ -43,12 +46,16 @@
         },
         "inputHash": {
           "type": "string",
-          "pattern": "^[0-9A-F]{64}$",
+          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
+          "minLength": 64,
+          "maxLength": 64,
           "description": "SHA-256 hex digest (uppercase) of this row's canonicalized input, where the envelope-level hash is insufficiently granular."
         },
         "outputHash": {
           "type": "string",
-          "pattern": "^[0-9A-F]{64}$",
+          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
+          "minLength": 64,
+          "maxLength": 64,
           "description": "SHA-256 hex digest (uppercase) of this row's canonicalized output."
         },
         "detail": {
@@ -59,17 +66,64 @@
       "required": ["ruleId", "objectId", "canonicalStatus"],
       "additionalProperties": false
     },
+    "EvidenceRuleResult": {
+      "type": "object",
+      "properties": {
+        "ruleId": { "type": "string" },
+        "canonicalStatus": { "$ref": "#/$defs/CanonicalStatus" },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "detail": { "type": "string" }
+      },
+      "required": ["ruleId", "canonicalStatus", "warnings"],
+      "additionalProperties": false
+    },
+    "EvidenceEnvelopeV2": {
+      "type": "object",
+      "properties": {
+        "contractVersion": { "const": "2.0.0", "type": "string" },
+        "canonicalizationVersion": { "$ref": "#/$defs/EvidenceEnvelope/properties/canonicalizationVersion" },
+        "project": { "type": "string" },
+        "definitionId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "serviceVersion": { "type": "string" },
+        "emittedAt": { "$ref": "#/$defs/EvidenceEnvelope/properties/emittedAt" },
+        "stage": { "type": "string" },
+        "canonicalStatus": { "$ref": "#/$defs/CanonicalStatus" },
+        "rows": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRow" } },
+        "ruleResults": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvidenceRuleResult" },
+          "description": "Ordinal ruleId order, one result per ruleId (identity uniqueness enforced by models/builders). Empty input is not_evaluated. Never an object verdict source."
+        },
+        "dgId": { "$ref": "#/$defs/EvidenceEnvelope/properties/dgId" },
+        "sourceRepresentation": { "$ref": "#/$defs/EvidenceEnvelope/properties/sourceRepresentation" },
+        "inputHash": { "$ref": "#/$defs/EvidenceEnvelope/properties/inputHash" },
+        "outputHash": { "$ref": "#/$defs/EvidenceEnvelope/properties/outputHash" },
+        "schemaVersion": { "type": "string" },
+        "ontologyVersion": { "type": "string" },
+        "ruleVersion": { "type": "string" },
+        "shapeVersion": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["contractVersion", "canonicalizationVersion", "project", "definitionId", "serviceName", "serviceVersion", "emittedAt", "stage", "canonicalStatus", "rows", "ruleResults"],
+      "additionalProperties": false
+    },
     "EvidenceEnvelope": {
       "type": "object",
       "description": "The evidence envelope a stage emits to report the outcome of evaluating one or more rules against a design. Emitted at every stage boundary that produces or transforms a verdict (D-06), not only at final persistence.",
       "properties": {
         "contractVersion": {
           "type": "string",
+          "enum": ["1.0.0", "1"],
           "description": "The EVIDENCE_CONTRACT_VERSION this envelope was produced against."
         },
         "canonicalizationVersion": {
           "type": "integer",
-          "description": "The CANONICALIZATION_VERSION used to compute any hashes in this envelope."
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "The CANONICALIZATION_VERSION. Integral JSON numbers, including 1.0 and 1e0, within the interoperable safe-integer range; producers still emit 1."
         },
         "project": {
           "type": "string",
@@ -109,7 +163,9 @@
         },
         "dgId": {
           "type": "string",
-          "pattern": "^dg:[0-9A-F]{16}$",
+          "pattern": "^dg:[0-9A-F]{16}(?![\\s\\S])",
+          "minLength": 19,
+          "maxLength": 19,
           "description": "The dg:-prefixed identity (spec/DG-ID.md) of the subject entity, where resolvable."
         },
         "sourceRepresentation": {
@@ -118,12 +174,16 @@
         },
         "inputHash": {
           "type": "string",
-          "pattern": "^[0-9A-F]{64}$",
+          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
+          "minLength": 64,
+          "maxLength": 64,
           "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized input."
         },
         "outputHash": {
           "type": "string",
-          "pattern": "^[0-9A-F]{64}$",
+          "pattern": "^[0-9A-F]{64}(?![\\s\\S])",
+          "minLength": 64,
+          "maxLength": 64,
           "description": "SHA-256 hex digest (uppercase) of this stage's canonicalized output."
         },
         "schemaVersion": {

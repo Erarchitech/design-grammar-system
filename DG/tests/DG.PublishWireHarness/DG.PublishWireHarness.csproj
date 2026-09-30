@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);GRASSHOPPER_SDK</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DG.Core/DG.Core.csproj" />
+    <Compile Include="../../src/DG.Grasshopper/Validation/ValidationPublishClient.cs" Link="Production/ValidationPublishClient.cs" />
+    <Compile Include="../../src/DG.Grasshopper/Validation/ValidationPublishContract.cs" Link="Production/ValidationPublishContract.cs" />
+  </ItemGroup>
+</Project>

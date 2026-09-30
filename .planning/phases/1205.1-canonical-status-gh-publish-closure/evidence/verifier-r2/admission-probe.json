@@ -1,0 +1,20 @@
+[
+  {
+    "case": "baseline",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": true
+  },
+  {
+    "case": "integral-json-number",
+    "rootSchemaAccepted": true,
+    "pythonReadAccepted": true,
+    "csharpReadAccepted": true
+  },
+  {
+    "case": "newline-hash",
+    "rootSchemaAccepted": false,
+    "pythonReadAccepted": false,
+    "csharpReadAccepted": false
+  }
+]
