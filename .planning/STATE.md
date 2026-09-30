@@ -4,7 +4,7 @@ milestone: v12.0
 milestone_name: Theory–Implementation Alignment
 current_phase: 1205
 status: completed
-stopped_at: Completed 1205-19-PLAN.md
+stopped_at: Phase 1205 complete; v12.0 ready for milestone audit
 last_updated: "2026-09-30T09:52:16.584Z"
 last_activity: 2026-09-30
 last_activity_desc: Phase 1205 complete
@@ -21,10 +21,10 @@ current_phase_name: Security and Tenancy Release Gate
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-11)
+See: .planning/PROJECT.md (updated 2026-09-30)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1205 — Security and Tenancy Release Gate
+**Current focus:** v12.0 milestone complete (all 6 phases). Next: milestone audit and completion
 
 ## Current Position
 
@@ -503,7 +503,13 @@ Shipped from Phase 20 Plan 02:
 - Live docker compose exec verification for dg-reasoner's fixture mount deferred -- Docker Desktop's engine was not running in the execution environment (client present, daemon unreachable). Human with running Docker Desktop should run: docker compose up -d dg-reasoner && docker compose exec -T dg-reasoner test -f /app/fixtures/golden/fixture.json
 - Live four-leg DE-01 run outstanding: Docker Desktop unavailable in this environment prevented data-service/dg-reasoner/replay legs from executing during the golden-fixture run; only the csharp leg ran (silent_disagreement_count=0, no_population correctly distinguished from failed). Re-run tools/de01/run_de01.py once Docker Desktop is up and fixtures/golden/seed.cypher is applied.
 - canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple still use the naive pipe-join and have silently diverged from DgIdMintingService.Mint/compute_dg_id's now-length-prefixed encoding — their doc-comments' byte-for-byte parity claim is stale; needs a follow-up decision (extend the fix, or document the split)
-- 1205-18/19: data-service exits on cold start if neo4j Bolt not yet listening (no healthcheck/restart); ui-v2 entrypoint.sh still falls back to a hardcoded Neo4j password in config.js until 1205-15 lands
+- [Phase 1205] data-service exits on cold start if neo4j Bolt is not yet listening (no healthcheck or restart policy). One `docker compose up -d data-service` recovers it.
+  (The config.js Neo4j fallback part of this entry was resolved in 1205-15.)
+- [Phase 1205] N8N_PASSWORD is still the old committed (leaked) value. The owner accepted this as an open minor gap (1205-UAT test 3). To fix, rotate it in the n8n UI and in .env.
+- [Phase 1205] Open follow-ups from verification:
+  - 5 full-suite failures that appear only in the multi-user profile (TestHeartbeatBundle ×2; test_designstate_capture lifespan ×3, a suspected env leak).
+  - DG.Tests E2E DesignStateValidationFlowTests ×4 get 401 (the fixture needs a connector token).
+  - The multi-user heartbeat returns `neo4j: null` rather than omitting the key.
 
 ### Quick Tasks Completed
 
@@ -556,8 +562,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-29T20:22:25.753Z
-Stopped at: Completed 1205-19-PLAN.md
+Last session: 2026-09-30
+Stopped at: Phase 1205 complete (verification passed, UAT 3 pass / 1 owner-accepted issue). The v12.0 milestone is 100% executed; ready for /gsd-audit-milestone then /gsd-complete-milestone v12.0
 Resume file: None
 
 ## Performance Metrics
