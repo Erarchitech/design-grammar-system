@@ -1012,6 +1012,77 @@ class TestWr15SecondInvite:
         assert resp.status_code == 200, resp.text
         assert auth.get_role("raised@dg.local", "PV") == "editor"
 
+    def test_store_lock_is_reentrant_so_the_invite_path_cannot_self_deadlock(self):
+        """IN-01 (review iteration 4): the invite path holds `_STORE_LOCK`
+        across `get_role` + `set_membership`, and each of those takes it again.
+        That is safe only because it is an RLock; pin that."""
+        import threading
+
+        assert isinstance(auth._STORE_LOCK, type(threading.RLock()))
+        seen: list = []
+
+        def nest() -> None:
+            with auth._STORE_LOCK:
+                with auth._STORE_LOCK:
+                    seen.append(auth.get_role("nobody-in1@dg.local", "P_IN1"))
+
+        worker = threading.Thread(target=nest, daemon=True)
+        worker.start()
+        worker.join(timeout=10)
+        assert not worker.is_alive(), "nested _STORE_LOCK acquisition deadlocked"
+        assert seen == [None]
+
+    def test_throttle_lock_is_never_held_across_the_store_lock(self):
+        """The plain (non-reentrant) `_THROTTLE_LOCK` is taken once per call and
+        no throttle function calls another or touches the membership store, so
+        it cannot be acquired twice in one thread or ordered against
+        `_STORE_LOCK`."""
+        import inspect
+
+        for name in (
+            "throttle_retry_after",
+            "throttle_record_failure",
+            "throttle_clear",
+            "throttle_reset_all",
+        ):
+            source = inspect.getsource(getattr(auth, name))
+            assert source.count("with _THROTTLE_LOCK") == 1, name
+            assert "_STORE_LOCK" not in source, name
+            assert "get_role" not in source and "set_membership" not in source, name
+        assert "_THROTTLE_LOCK" not in inspect.getsource(auth._throttle_prune).split('"""', 2)[2]
+
+    def test_concurrent_invites_converge_on_the_highest_role_without_deadlock(self, clean_throttle):
+        """IN-01 / WR-24: several invites for one existing account and project,
+        accepted concurrently, all complete and the membership ends at the
+        highest invited role (the compare-and-set is atomic under the lock)."""
+        import threading
+
+        user = auth_fixtures.make_user("concurrent-invites@dg.local")
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        roles = sorted(auth.ROLES, key=lambda r: auth.ROLE_RANK.get(r, -1))
+        codes = [self._invite("concurrent-invites@dg.local", "PCONC", role=role) for role in roles]
+        statuses: list[int] = []
+
+        def accept(code: str) -> None:
+            client = TestClient(app_module.app, raise_server_exceptions=False)
+            resp = client.post(
+                "/auth/accept-invite",
+                json={"inviteCode": code, "password": password},
+                headers=self.CSRF,
+            )
+            statuses.append(resp.status_code)
+
+        threads = [threading.Thread(target=accept, args=(code,), daemon=True) for code in codes]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=60)
+        assert all(not thread.is_alive() for thread in threads), "an invite acceptance deadlocked"
+        assert statuses == [200] * len(codes), statuses
+        assert auth.get_role("concurrent-invites@dg.local", "PCONC") == roles[-1]
+
     def test_password_policy_applies_to_a_new_account_only(self, clean_throttle, monkeypatch):
         """WR-24: an existing account proves ownership with its current password
         even when that password predates the policy; a new account still must
