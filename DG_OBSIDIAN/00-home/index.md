@@ -32,6 +32,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/Self-registration is local-profile only, invite-only in multi-user|Self-registration is local-profile only, invite-only in multi-user]] (2026-09-30, D-05 amendment)
+- [[knowledge/decisions/LLM-written Cypher is guarded by a grammar allowlist, not a blocklist|LLM-written Cypher: grammar allowlist, not blocklist]] (2026-09-30)
 - [[archive/Single-file React SPA avoids build tooling for main UI (archived)|Single-file React SPA (v1–v7, archived)]] — superseded by v8.0
 - [[decisions/V8 frontend build supersedes no-JSX pattern|V8.0: Vite+React+JSX app replaces no-build pattern]]
 - [[SWRL parsing is bespoke regex not vendor OWL library]]
@@ -89,6 +91,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/Blocklist checks over LLM-written Cypher were bypassed three times|Blocklist checks over LLM-written Cypher bypassed three times]] (2026-09-30)
 - [[Docker layer caching can serve stale index.html]]
 - [[Browser cache prevents seeing UI updates after rebuild]]
 - [[Neo4j node tagging required after n8n ingestion]]
@@ -245,6 +248,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-09-19 Theory–implementation alignment audit and GSD planning|2026-09-19 Theory–Implementation Alignment audit + GSD sequencing]]
 - [[sessions/2026-09-20 v9.0 override closeout and v12.0 activation|2026-09-20 v9.0 override closeout + v12.0 activation]]
 - [[sessions/2026-09-28 Phase 1204 execution complete — determinism and LLM reproducibility benchmark|2026-09-28 Phase 1204 execution complete — 9/9 plans, D-08 gate genuinely failed (disclosed), live LLM sampling, gsd-verifier 12/12]]
+- [[sessions/2026-09-30 Phase 1205 security and tenancy release gate complete|2026-09-30 Phase 1205 complete — 19/19 plans, server-side tenancy, grammar allowlist for LLM Cypher, multi-user gate-pass]]
 
 ### Archive
 - [[archive/|DG_OBSIDIAN archive]] — stale notes for deleted/renamed v7.0 components (CLASSIFICATOR, VALIDATION RUNS, REINSTATE, v3.0-phase plans)
