@@ -237,3 +237,119 @@ class TestGraphQuerySpecifics:
             assert shared_vocab_label in code, f"prompt does not name the {shared_vocab_label} label in the scope rule"
         for banned in ("CALL", "UNION", "LOAD CSV", "FOREACH", "USE"):
             assert banned in code, f"missing banned-clause mention for {banned}"
+
+
+# ── 1205 review iteration 4: WR-04 / WR-05 (statement separators in n8n) ──
+
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+
+_NODE = shutil.which("node")
+
+
+def _run_node_function(code: str, *, json_input: dict, items: dict | None = None) -> dict:
+    """Execute an n8n Function-node body under Node with `$json`, `$items` and
+    `$env` stubbed, returning the first returned item's json."""
+    harness = (
+        "const $json = JSON.parse(process.env.DG_TEST_JSON);\n"
+        "const __items = JSON.parse(process.env.DG_TEST_ITEMS || '{}');\n"
+        "const $items = (name) => [{ json: __items[name] || {} }];\n"
+        "const $env = { NEO4J_USER: 'u', NEO4J_PASSWORD: 'p' };\n"
+        "const out = (function () {\n" + code + "\n})();\n"
+        "process.stdout.write(JSON.stringify(out[0].json));\n"
+    )
+    import json as _json
+    import os as _os
+
+    env = dict(_os.environ)
+    env["DG_TEST_JSON"] = _json.dumps(json_input)
+    env["DG_TEST_ITEMS"] = _json.dumps(items or {})
+    done = subprocess.run(
+        [_NODE, "-e", harness], env=env, capture_output=True, text=True, timeout=30
+    )
+    assert done.returncode == 0, done.stderr
+    return _json.loads(done.stdout)
+
+
+class TestStatementSeparatorsInN8n:
+    def test_prepare_graph_payload_no_longer_scans_for_separators(self):
+        code = _node_code(_nodes_by_name(_load("rules_ingest"))["Prepare Graph Payload"])
+        assert "stripStatementSeparators" not in code
+        assert "inQuote" not in code, "a quote-tracking scanner would need the lexer's quoting rules"
+        assert "dropTrailingSemicolon" in code
+
+    def test_parse_cypher_strips_trailing_separator_and_appends_limit_only_when_needed(self):
+        code = _node_code(_nodes_by_name(_load("graph_query"))["Parse Cypher"])
+        assert r"[\s;]+$" in code
+        assert r"LIMIT\s+" in code
+
+    @pytest.mark.skipif(_NODE is None, reason="node is not available")
+    @pytest.mark.parametrize(
+        "cypher, expected",
+        [
+            ("MATCH (r:Rule {project: $project}) RETURN r", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 50"),
+            ("MATCH (r:Rule {project: $project}) RETURN r;", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 50"),
+            ("MATCH (r:Rule {project: $project}) RETURN r ; \n", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 50"),
+            ("MATCH (r:Rule {project: $project}) RETURN r;;", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 50"),
+            ("MATCH (r:Rule {project: $project}) RETURN r LIMIT 5", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 5"),
+            ("MATCH (r:Rule {project: $project}) RETURN r LIMIT 5;", "MATCH (r:Rule {project: $project}) RETURN r LIMIT 5"),
+            ("MATCH (r:Rule {project: $project}) RETURN r limit $limit", "MATCH (r:Rule {project: $project}) RETURN r limit $limit"),
+            (
+                "MATCH (r:Rule {project: $project}) RETURN r ORDER BY r.x SKIP 2 LIMIT 7;",
+                "MATCH (r:Rule {project: $project}) RETURN r ORDER BY r.x SKIP 2 LIMIT 7",
+            ),
+            # a `limit` property or string must not suppress the default LIMIT
+            ("MATCH (r:Rule {project: $project}) RETURN r.limit", "MATCH (r:Rule {project: $project}) RETURN r.limit LIMIT 50"),
+            (
+                "MATCH (r:Rule {project: $project, SWRL: 'LIMIT 3'}) RETURN r",
+                "MATCH (r:Rule {project: $project, SWRL: 'LIMIT 3'}) RETURN r LIMIT 50",
+            ),
+        ],
+    )
+    def test_parse_cypher_behaviour(self, cypher, expected):
+        code = _node_code(_nodes_by_name(_load("graph_query"))["Parse Cypher"])
+        result = _run_node_function(
+            code,
+            json_input={"valid": True, "cypher": cypher},
+            items={"Build Cypher Prompt": {"project_name": "P1"}},
+        )
+        assert result["cypher"] == expected
+        assert ";" not in result["cypher"].replace("'LIMIT 3'", "")
+
+    @pytest.mark.skipif(_NODE is None, reason="node is not available")
+    @pytest.mark.parametrize(
+        "cypher, expected",
+        [
+            ("MERGE (r:Rule {Rule_Id: 'R_X', project: $project});", "MERGE (r:Rule {Rule_Id: 'R_X', project: $project})"),
+            ("MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) ;\n  ", "MERGE (r:Rule {Rule_Id: 'R_X', project: $project})"),
+            ("MERGE (r:Rule {Rule_Id: 'R_X', project: $project})", "MERGE (r:Rule {Rule_Id: 'R_X', project: $project})"),
+            # a `;` inside a string is content: kept, single- and double-quoted
+            (
+                "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) SET r.a = 'x;y'",
+                "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) SET r.a = 'x;y'",
+            ),
+            (
+                'MERGE (r:Rule {Rule_Id: \'R_X\', project: $project}) SET r.a = "x;y";',
+                'MERGE (r:Rule {Rule_Id: \'R_X\', project: $project}) SET r.a = "x;y"',
+            ),
+            (
+                "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) SET r.a = \"it's; fine\"",
+                "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) SET r.a = \"it's; fine\"",
+            ),
+        ],
+    )
+    def test_prepare_graph_payload_only_drops_one_trailing_separator(self, cypher, expected):
+        code = _node_code(_nodes_by_name(_load("rules_ingest"))["Prepare Graph Payload"])
+        result = _run_node_function(
+            code, json_input={"cypher": cypher, "project_name": "P1", "rules_text": "t"}
+        )
+        assert result["cypher"] == expected
+
+    def test_both_prompts_teach_the_separator_rule(self):
+        read_prompt = _node_code(_nodes_by_name(_load("graph_query"))["Build Cypher Prompt"])
+        assert "semicolons" in read_prompt
+        assert "pattern predicates" in read_prompt
+        assert "label syntax with IS" in read_prompt
+        write_prompt = _node_code(_nodes_by_name(_load("rules_ingest"))["Build LLM Prompt"])
+        assert "ONE chained statement" in write_prompt
+        assert "no backslash" in write_prompt

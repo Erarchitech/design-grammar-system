@@ -489,7 +489,7 @@ class TestWriteRejectsOtherConstructs:
             ),
             (
                 "MERGE (r:Rule {Rule_Id: 'X', project: $project}); MERGE (a:Atom {Atom_Id: 'A'}); ",
-                "missing_project_scope",
+                "unsupported_syntax",  # a ';' between clauses is refused outright
             ),
         ],
     )
@@ -535,13 +535,24 @@ class TestWriteAcceptsLegitimateIngests:
         )
         assert write_check(cypher) == []
 
-    def test_separator_between_clauses_is_whitespace(self):
+    def test_one_trailing_separator_is_accepted(self):
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_A', project: $project, graph: 'Metagraph'})\n"
+            "MERGE (a:Atom {Atom_Id: 'R_A_A1', project: $project, graph: 'Metagraph'})\n"
+            "MERGE (r)-[:HAS_BODY {order: 1}]->(a);"
+        )
+        assert write_check(cypher) == []
+        assert write_check(cypher + "\n  ") == []
+
+    def test_separator_between_clauses_is_refused(self):
         cypher = (
             "MERGE (r:Rule {Rule_Id: 'R_A', project: $project, graph: 'Metagraph'});\n"
             "MERGE (a:Atom {Atom_Id: 'R_A_A1', project: $project, graph: 'Metagraph'});\n"
             "MERGE (r)-[:HAS_BODY {order: 1}]->(a);"
         )
-        assert write_check(cypher) == []
+        result = write_check(cypher)
+        assert "unsupported_syntax" in _codes(result)
+        assert any("between clauses" in v["message"] for v in result), result
 
     def test_match_by_complete_key_and_project_then_merge_relationship(self):
         cypher = (
@@ -1361,3 +1372,145 @@ class TestStringLiteralsAgreeWithNeo4jOnWhereTheyEnd:
             path = _repo_root() / "training" / name
             if path.exists():
                 assert _BS not in path.read_text(encoding="utf-8"), name
+
+
+# ── 1205 review iteration 4: WR-04 / WR-05 (statement separators) ─────────
+
+
+class TestStatementSeparators:
+    """The n8n graph-query workflow appends ` LIMIT 50`; the n8n rules-ingest
+    workflow chains clauses into one statement. Neither may depend on text
+    processing that mirrors the lexer's quoting rules, so the allowlist itself
+    refuses every `;` that could matter."""
+
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            "MATCH (r:Rule {project: $project}) RETURN r.Rule_Id;",
+            "MATCH (r:Rule {project: $project}) RETURN r.Rule_Id ;  ",
+            "MATCH (r:Rule {project: $project}) RETURN r.Rule_Id LIMIT 5;",
+            "MATCH (r:Rule {project: $project}) RETURN r.Rule_Id;;",
+            "MATCH (r:Rule {project: $project}) RETURN r.Rule_Id; MATCH (m:Rule {project: $project}) RETURN m",
+            "MATCH (r:Rule {project: $project}); RETURN r",
+            "; MATCH (r:Rule {project: $project}) RETURN r",
+            "MATCH (r:Rule {project: $project}) WHERE r.x = 1; RETURN r",
+        ],
+    )
+    def test_read_profile_refuses_every_semicolon(self, cypher):
+        result = read_check(cypher)
+        assert "unsupported_syntax" in _codes(result), cypher
+
+    def test_semicolon_inside_a_string_is_content_not_a_separator(self):
+        cypher = "MATCH (r:Rule {project: $project, SWRL: 'a; b;'}) RETURN r.Rule_Id"
+        assert read_check(cypher) == []
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project, graph: 'Metagraph'}) "
+            "SET r.SWRL = 'Building(?b) ^ height(?b, ?h); more', r.kind = \"a;b\";"
+        )
+        assert write_check(cypher) == []
+
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}); MERGE (a:Atom {Atom_Id: 'A', project: $project})",
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project});; ",
+            "; MERGE (r:Rule {Rule_Id: 'R_X', project: $project})",
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project}) SET r.a = 'x'; SET r.b = 'y'",
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project})\n;\nMERGE (a:Atom {Atom_Id: 'A', project: $project})",
+        ],
+    )
+    def test_write_profile_refuses_a_separator_anywhere_but_last(self, cypher):
+        assert "unsupported_syntax" in _codes(write_check(cypher)), cypher
+
+    def test_a_validated_write_statement_has_no_separator_but_the_last_token(self):
+        toks = cypher_allowlist.tokenize(HEIGHT_RULE, "h")
+        semis = [i for i, t in enumerate(toks) if t.kind == "PUNCT" and t.text == ";"]
+        assert semis in ([], [len(toks) - 1])
+        assert write_check(HEIGHT_RULE) == []
+
+    def test_retry_feedback_teaches_the_no_separator_rule(self):
+        result = write_check(
+            "MERGE (r:Rule {Rule_Id: 'R_A', project: $project}); MERGE (a:Atom {Atom_Id: 'A', project: $project})"
+        )
+        assert any("one trailing ';'" in v["message"] for v in result), result
+
+
+# ── 1205 review iteration 4: WR-02 (examples are valid allowlist input) ───
+
+
+def _template_block() -> str:
+    text = (_repo_root() / "cypher_template.txt").read_text(encoding="utf-8").replace("\r\n", "\n")
+    start = text.index("CYPHER TEMPLATE BLOCK") + len("CYPHER TEMPLATE BLOCK")
+    end = text.index("QUALITY CHECKS")
+    return text[start:end].strip()
+
+
+def _instantiate(block: str) -> str:
+    """Fill the `<PLACEHOLDER>` slots of the template block with sample values."""
+    samples = {
+        "CLASS_NAME": "Building",
+        "PROPERTY_NAME": "height",
+        "BUILTIN_NAME": "greaterThan",
+        "VIOLATION_PROPERTY": "heightExceedsMax",
+        "RULE_ID": "R_URB_HEIGHT_MAX_75_V",
+        "SWRL_EXPRESSION": "Building(?b) ^ height(?b, ?h) -> heightExceedsMax(?b, true)",
+        "ENTITY_VAR": "b",
+        "VALUE_VAR": "h",
+        "THRESHOLD": "75",
+        "xsd:decimal|xsd:integer|xsd:boolean": "xsd:decimal",
+        "xsd:decimal|xsd:integer": "xsd:decimal",
+    }
+    for key, value in samples.items():
+        block = block.replace(f"<{key}>", value)
+    assert "<" not in block.replace("->", "").replace("<-", ""), block
+    return block
+
+
+class TestModelFacingExamplesAreValidAllowlistInput:
+    """The Cypher the model is shown as a positive pattern must itself pass the
+    allowlist that will grade its output -- verbatim, with no header stripping."""
+
+    def test_every_catalog_example_passes_the_write_profile_as_shown(self):
+        shapes = dg_context.load_cypher_catalog()["shapes"]
+        assert len(shapes) == 6
+        for shape in shapes:
+            for field in ("cypher_template", "worked_example"):
+                text = shape[field]
+                violations = write_check(text)
+                assert violations == [], (shape["id"], field, violations)
+
+    def test_no_model_facing_cypher_string_carries_a_comment_or_narration_line(self):
+        for shape in dg_context.load_cypher_catalog()["shapes"]:
+            for field in ("cypher_template", "worked_example"):
+                text = shape[field]
+                assert not any(line.lstrip().startswith(("--", "//", "/*")) for line in text.split("\n")), (
+                    shape["id"],
+                    field,
+                )
+                assert ";" not in text.rstrip().rstrip(";"), (shape["id"], field, "interior ';'")
+            assert isinstance(shape.get("narration"), str) and shape["narration"], shape["id"]
+
+    def test_narration_never_shows_a_literal_project_to_copy(self):
+        for shape in dg_context.load_cypher_catalog()["shapes"]:
+            assert not re.search(r"project:\s*'", shape["narration"]), shape["id"]
+
+    def test_cypher_template_txt_block_passes_the_write_profile(self):
+        assert write_check(_instantiate(_template_block())) == []
+
+    def test_every_catalog_worked_example_passes_the_full_ingest_validator(self):
+        for shape in dg_context.load_cypher_catalog()["shapes"]:
+            result = dg_context.validate_cypher(shape["worked_example"], "rule_ingest", project="p")
+            assert result["valid"] is True, (shape["id"], result["violations"])
+
+    def test_a_graph_query_reference_shape_passes_the_read_profile(self):
+        """Every read query the n8n graph-query prompt teaches (the supersession
+        exclusion via OPTIONAL MATCH ... IS NULL, the ValidationRun read) is
+        accepted by the read profile."""
+        for cypher in (
+            "MATCH (r:Rule {project: $project}) "
+            "OPTIONAL MATCH (r)-[:SUPERSEDED_BY]->(s:Rule {project: $project}) "
+            "WHERE s IS NULL RETURN r.Rule_Id LIMIT 50",
+            "MATCH (run:ValidationRun {project: $project}) "
+            "RETURN run.Run_Id, run.statePayloadJson ORDER BY run.Run_Id LIMIT 50",
+        ):
+            assert read_check(cypher) == []

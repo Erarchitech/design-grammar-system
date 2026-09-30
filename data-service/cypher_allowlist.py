@@ -12,7 +12,8 @@ Two profiles share the lexer:
 
 * read (`graph_query`, and the `/mcp` `neo4j_query` tool): `MATCH`,
   `OPTIONAL MATCH`, `WHERE`, `RETURN` (`DISTINCT`, `AS`), `ORDER BY`, `SKIP`,
-  `LIMIT`, plus a fixed list of scalar/aggregate functions. Every node pattern
+  `LIMIT`, plus a fixed list of scalar/aggregate functions (no `;`, not even a
+  trailing one). Every node pattern
   must bind a variable and carry the map entry `project: $project` at its
   declaration (bare references to an already declared variable are the only
   other form). No `WITH`/`UNWIND`/`CALL`/`UNION`/`FOREACH`/`LOAD`, no
@@ -34,7 +35,8 @@ Two profiles share the lexer:
   complete single string-literal identity key and `project: $project`; `SET`
   is limited to `var.prop = <literal>` on a bound variable and never touches
   `project` or `graph`; relationships are one of the four ingest types between
-  bound nodes with literal properties.
+  bound nodes with literal properties. The clauses are one chained statement:
+  a `;` is refused except as the very last token.
 
 Lexical rules (both profiles): only ASCII letters/digits/underscore in
 identifiers, standard punctuation, and string contents. Backticks, comments,
@@ -99,14 +101,15 @@ _READ_HOW = (
     "declared as (v:Label {project: $project}), with no WITH, UNWIND, CALL, "
     "UNION, subquery blocks, pattern predicates such as WHERE (a)-[:R]->(b) "
     "(use OPTIONAL MATCH (a)-[:R]->(b:Label {project: $project}) WHERE b IS "
-    "NULL instead), IS / | / & / ! label syntax, comments, backticks, "
-    "backslashes or doubled quotes in strings, or procedures"
+    "NULL instead), IS / | / & / ! label syntax, semicolons, comments, "
+    "backticks, backslashes or doubled quotes in strings, or procedures"
 )
 _WRITE_HOW = (
     "emit only MERGE (v:Label {<key>: '<literal>', project: $project, graph: "
     "'<graph>'}), relationship MERGEs between those variables, and SET "
-    "v.prop = '<literal>' -- no comments, backticks, backslashes or doubled "
-    "quotes in strings, WITH, DELETE, CALL, concatenation or functions"
+    "v.prop = '<literal>' as ONE chained statement with no ';' between clauses "
+    "(one trailing ';' is allowed) -- no comments, backticks, backslashes or "
+    "doubled quotes in strings, WITH, DELETE, CALL, concatenation or functions"
 )
 
 
@@ -1098,8 +1101,9 @@ class _Parser:
                 break
             else:
                 raise self.reject_clause_word(tok)
-        while self.accept_punct(";"):
-            pass
+        # No `;` anywhere in a read query, not even a trailing one: the n8n
+        # graph-query workflow appends ` LIMIT 50` to the statement, which a
+        # trailing `;` would turn into invalid Cypher.
         if self.peek() is not None:
             raise self.reject_clause_word(self.peek())
 
@@ -1165,10 +1169,19 @@ class _Parser:
             if tok is None:
                 break
             if tok.kind == "PUNCT" and tok.text == ";":
-                # n8n strips `;` outside quotes and chains the clauses into one
-                # statement, so a separator between clauses is whitespace.
+                # The clauses form ONE chained statement (variable scope must
+                # survive from MERGE to MERGE), so a separator between clauses
+                # is refused rather than stripped downstream by text
+                # processing that would need this lexer's quoting rules. One
+                # trailing `;` is tolerated; n8n removes it.
+                if self.i != len(self.toks) - 1:
+                    raise self.unsupported(
+                        "A ';' between clauses is not permitted; write the clauses "
+                        "as one chained statement (one trailing ';' is allowed)",
+                        ";",
+                    )
                 self.i += 1
-                continue
+                break
             if tok.kind != "IDENT":
                 raise self.reject_clause_word(tok)
             up = tok.upper

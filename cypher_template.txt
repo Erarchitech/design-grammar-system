@@ -12,6 +12,9 @@ OUTPUT RULES
   comments (// or /* */), no backticks, ASCII identifiers only. String
   literals may not contain a backslash (no escape sequences) or a doubled
   quote ('' or ""); reword the text instead.
+- Write all clauses as ONE chained statement: no ';' between clauses (a single
+  trailing ';' at the very end is allowed). Variable scope must survive from
+  one MERGE to the next, so never split the output into several statements.
 - Use only MERGE and SET (MATCH only to re-bind a node by its complete literal
   key and project: $project). Never WITH, UNWIND, CALL, FOREACH, LOAD CSV,
   CREATE, DELETE, REMOVE, UNION or subqueries — such output is rejected.
@@ -71,7 +74,11 @@ GRAPH SCHEMA (from dataset_schema v3)
            Conflict Check" addendum. Any Rule-corpus read for validation MUST
            exclude a Rule with an outgoing SUPERSEDED_BY edge
            (WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() }), or a superseded
-           rule keeps firing alongside its replacement.
+           rule keeps firing alongside its replacement. (That EXISTS form is
+           for data-service's own internal reads. A model-written graph_query
+           may not use subquery blocks or pattern predicates; it writes
+           OPTIONAL MATCH (r)-[:SUPERSEDED_BY]->(s:Rule {project: $project})
+           WHERE s IS NULL instead.)
 
   ~~ DesignState & Run (document-only — NOT emitted by LLM ingest) ~~
 
