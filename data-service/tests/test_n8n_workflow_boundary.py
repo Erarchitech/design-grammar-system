@@ -234,6 +234,6 @@ class TestGraphQuerySpecifics:
         node = _nodes_by_name(workflow)["Build Cypher Prompt"]
         code = _node_code(node)
         for shared_vocab_label in ("Class", "DatatypeProperty", "ObjectProperty", "Builtin", "Literal"):
-            assert shared_vocab_label in code, f"missing shared-vocabulary exemption for {shared_vocab_label}"
+            assert shared_vocab_label in code, f"prompt does not name the {shared_vocab_label} label in the scope rule"
         for banned in ("CALL", "UNION", "LOAD CSV", "FOREACH", "USE"):
             assert banned in code, f"missing banned-clause mention for {banned}"
