@@ -43,9 +43,9 @@
 
 ## Security and tenancy (Phase 1205)
 
-- [ ] **ALGN12-17**: Ordinary API and graph access enforce server-side user/tenant authorization rather than relying on client-side auth and project predicates.
+- [x] **ALGN12-17**: Ordinary API and graph access enforce server-side user/tenant authorization rather than relying on client-side auth and project predicates.
 - [x] **ALGN12-18**: Direct Neo4j proxy exposure is removed or restricted behind an authorized server boundary.
-- [ ] **ALGN12-19**: Compose/default credentials and secrets are hardened, rotated, and excluded from browser-readable runtime configuration.
+- [x] **ALGN12-19**: Compose/default credentials and secrets are hardened, rotated, and excluded from browser-readable runtime configuration.
 - [x] **ALGN12-20**: Unauthorized cross-project and direct-proxy access tests fail closed.
 
 ## Activation gates

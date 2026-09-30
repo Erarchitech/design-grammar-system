@@ -236,7 +236,7 @@ Plans:
 
 **Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
 
-**Plans:** 19/19 plans executed
+**Plans:** 19/19 plans complete
 
 Plans:
 **Wave 1**
