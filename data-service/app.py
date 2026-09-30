@@ -4489,13 +4489,18 @@ def _accept_invite_for_existing_account(
 ) -> dict[str, Any]:
     """WR-15: join a project with an invite that names an existing account."""
     username = existing["username"]
-    ip_key = f"ip:{auth_routes._client_ip(request)}"
+    ip_limit = auth.ip_throttle_limit()
+    ip_key = f"ip:{auth_routes._client_ip(request)}" if ip_limit > 0 else None
     user_key = f"user:{username}"
-    retry_after = max(auth.throttle_retry_after(ip_key), auth.throttle_retry_after(user_key))
+    retry_after = max(
+        auth.throttle_retry_after(ip_key) if ip_key else 0,
+        auth.throttle_retry_after(user_key),
+    )
     if retry_after > 0:
         raise auth_routes._throttled_error(retry_after)
     if not auth_routes._verify_with_slot(payload.password, existing["password_hash"]):
-        auth.throttle_record_failure(ip_key, limit=auth.THROTTLE_LIMIT_IP)
+        if ip_key:
+            auth.throttle_record_failure(ip_key, limit=ip_limit)
         auth.throttle_record_failure(user_key, limit=auth.THROTTLE_LIMIT_USER)
         raise _structured_error_response(
             "This invitation is not valid.",

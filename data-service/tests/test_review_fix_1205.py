@@ -420,6 +420,110 @@ class TestWr01LoginRoute:
 
 
 # --------------------------------------------------------------------------
+# WR-22 / WR-23: nginx rate limit placement and address-keyed throttles
+# --------------------------------------------------------------------------
+
+
+class TestWr23AddressThrottleNeedsTrustedProxies:
+    def test_default_is_disabled_without_a_trusted_proxy_list(self):
+        assert auth.ip_throttle_limit({}) == 0
+        assert auth.trusted_proxies_configured({}) is False
+
+    def test_trusted_proxy_list_enables_the_default_limit(self):
+        env = {"DG_TRUSTED_PROXIES": "10.0.0.0/8, 172.16.0.0/12"}
+        assert auth.trusted_proxies_configured(env) is True
+        assert auth.ip_throttle_limit(env) == auth.THROTTLE_LIMIT_IP_DEFAULT
+
+    def test_explicit_override_wins_and_bad_values_fall_back(self):
+        assert auth.ip_throttle_limit({"DG_THROTTLE_LIMIT_IP": "7"}) == 7
+        assert auth.ip_throttle_limit({"DG_THROTTLE_LIMIT_IP": "0", "DG_TRUSTED_PROXIES": "10.0.0.1"}) == 0
+        assert auth.ip_throttle_limit({"DG_THROTTLE_LIMIT_IP": "-3"}) == 0
+        assert auth.ip_throttle_limit({"DG_THROTTLE_LIMIT_IP": "many", "DG_TRUSTED_PROXIES": "10.0.0.1"}) == (
+            auth.THROTTLE_LIMIT_IP_DEFAULT
+        )
+
+    @pytest.mark.dg_principal("none")
+    def test_failures_from_one_address_do_not_lock_other_users_by_default(
+        self, clean_throttle, monkeypatch
+    ):
+        monkeypatch.delenv("DG_TRUSTED_PROXIES", raising=False)
+        monkeypatch.delenv("DG_THROTTLE_LIMIT_IP", raising=False)
+        record = auth_fixtures.make_user("shared-proxy-ok@dg.local")
+        password = record.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        headers = {auth.CSRF_HEADER: auth_fixtures.CSRF_VALUE}
+        for index in range(40):
+            bad = {"username": f"nobody-{index}@dg.local", "password": "definitely-wrong-password"}
+            assert client.post("/auth/login", json=bad, headers=headers).status_code == 401
+        assert not [key for key in auth._THROTTLE if key.startswith("ip:")]
+        good = {"username": "shared-proxy-ok@dg.local", "password": password}
+        assert client.post("/auth/login", json=good, headers=headers).status_code == 200
+
+    @pytest.mark.dg_principal("none")
+    def test_address_lock_applies_once_a_trusted_proxy_list_is_configured(
+        self, clean_throttle, monkeypatch
+    ):
+        monkeypatch.setenv("DG_TRUSTED_PROXIES", "10.0.0.0/8")
+        monkeypatch.setenv("DG_THROTTLE_LIMIT_IP", "2")
+        record = auth_fixtures.make_user("shared-proxy-locked@dg.local")
+        password = record.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        headers = {auth.CSRF_HEADER: auth_fixtures.CSRF_VALUE}
+        for index in range(3):
+            bad = {"username": f"nobody-b{index}@dg.local", "password": "definitely-wrong-password"}
+            assert client.post("/auth/login", json=bad, headers=headers).status_code == 401
+        good = {"username": "shared-proxy-locked@dg.local", "password": password}
+        assert client.post("/auth/login", json=good, headers=headers).status_code == 429
+
+
+import re  # noqa: E402
+from pathlib import Path as _P  # noqa: E402
+
+_WR22_ROOT = _P(os.getenv("DG_KNOWLEDGE_REPO_ROOT", str(_P(__file__).resolve().parents[2])))
+
+
+class TestWr22Wr23NginxAndEntrypoint:
+    NGINX = (_WR22_ROOT / "ui-v2" / "nginx.conf").read_text(encoding="utf-8")
+    ENTRYPOINT = (_WR22_ROOT / "ui-v2" / "entrypoint.sh").read_text(encoding="utf-8")
+
+    def test_limit_is_not_keyed_on_a_uri_that_the_proxy_location_rewrites(self):
+        assert not re.search(r"(?m)^\s*map\s+\$(uri|request_uri)", self.NGINX)
+        assert "$dg_auth_limit_key" not in re.sub(r"(?m)^\s*#.*$", "", self.NGINX)
+
+    def test_credential_routes_have_their_own_limited_location(self):
+        match = re.search(
+            r"location ~ \^/data-service/auth/\(login\|password\|accept-invite\)/\?\$ \{(?P<body>.*?)\n  \}",
+            self.NGINX.replace("\r\n", "\n"),
+            re.DOTALL,
+        )
+        assert match, "regex location for the credential routes is missing"
+        body = match.group("body")
+        assert "limit_req zone=dg_auth" in body
+        assert "limit_req_status 429" in body
+        assert "proxy_pass $ds_upstream" in body
+
+    def test_generic_data_service_location_is_not_limited(self):
+        generic = self.NGINX.replace("\r\n", "\n").split("location /data-service/ {", 1)[1].split("\n  }", 1)[0]
+        assert "limit_req" not in generic
+
+    def test_real_ip_include_exists_and_is_empty_by_default(self):
+        assert "include /etc/nginx/dg-realip.conf;" in self.NGINX
+        assert ': > "$realip"' in self.ENTRYPOINT
+        assert "set_real_ip_from" in self.ENTRYPOINT
+        assert "real_ip_recursive on" in self.ENTRYPOINT
+
+    def test_entrypoint_rejects_non_address_entries(self):
+        assert "[!0-9a-fA-F:./]" in self.ENTRYPOINT
+        assert "exit 1" in self.ENTRYPOINT
+
+    def test_compose_passes_the_trusted_proxy_list_to_both_services(self):
+        compose = (_WR22_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+        assert compose.count("DG_TRUSTED_PROXIES: ${DG_TRUSTED_PROXIES:-}") == 2
+
+
+# --------------------------------------------------------------------------
 # WR-02: ingest postProcess never re-tags another project's node
 # --------------------------------------------------------------------------
 

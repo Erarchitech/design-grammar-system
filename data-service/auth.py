@@ -753,12 +753,39 @@ THROTTLE_WINDOW_SECONDS = 900
 THROTTLE_BASE_DELAY_SECONDS = 5
 THROTTLE_MAX_DELAY_SECONDS = 300
 THROTTLE_LIMIT_USER = 5
-THROTTLE_LIMIT_IP = 30
+THROTTLE_LIMIT_IP_DEFAULT = 30
 THROTTLE_LIMIT_PASSWORD = 5
 _THROTTLE_MAX_ENTRIES = 10000
 
 _THROTTLE_LOCK = threading.Lock()
 _THROTTLE: dict[str, dict[str, float]] = {}
+
+
+def trusted_proxies_configured(env: Mapping[str, str] | None = None) -> bool:
+    """True when DG_TRUSTED_PROXIES names at least one proxy address. The UI
+    container's nginx then restores the real client address from
+    X-Forwarded-For (ui-v2/entrypoint.sh), so an address-keyed counter means
+    one client and not the whole deployment."""
+    return bool((_env(env).get("DG_TRUSTED_PROXIES") or "").strip())
+
+
+def ip_throttle_limit(env: Mapping[str, str] | None = None) -> int:
+    """Free failures per client address before that address locks (WR-23);
+    0 disables the per-address counter.
+
+    Behind a TLS terminator or NAT every client shares the proxy's address, so
+    a per-address lock would let anyone lock out the whole deployment. The
+    per-username counter is therefore the primary throttle and the per-address
+    counter runs only when a trusted-proxy list is configured
+    (DG_TRUSTED_PROXIES). DG_THROTTLE_LIMIT_IP overrides either way (an
+    integer; 0 disables)."""
+    raw = (_env(env).get("DG_THROTTLE_LIMIT_IP") or "").strip()
+    if raw:
+        try:
+            return max(0, int(raw))
+        except ValueError:
+            pass
+    return THROTTLE_LIMIT_IP_DEFAULT if trusted_proxies_configured(env) else 0
 
 
 def _throttle_prune(now: float) -> None:

@@ -75,6 +75,11 @@ services:
       DG_BOOTSTRAP_ADMIN_PASSWORD: ${DG_BOOTSTRAP_ADMIN_PASSWORD:?set DG_BOOTSTRAP_ADMIN_PASSWORD in .env (see .env.example)}
       DG_DEPLOYMENT: ${DG_DEPLOYMENT:-local}
       DG_COOKIE_SECURE: ${DG_COOKIE_SECURE:-false}
+      # WR-23 (1205 review): the per-address login-failure counter runs only when a
+      # trusted-proxy list is configured (behind a TLS terminator every client
+      # otherwise shares one address); DG_THROTTLE_LIMIT_IP overrides the limit.
+      DG_TRUSTED_PROXIES: ${DG_TRUSTED_PROXIES:-}
+      DG_THROTTLE_LIMIT_IP: ${DG_THROTTLE_LIMIT_IP:-}
       DG_REASONER_URL: http://dg-reasoner:8000
       # Phase 33 (BRDG-02): DG CANVAS LISTENER bridge -- the Windows-host
       # Grasshopper process is reached via host.docker.internal, not a
@@ -151,6 +156,8 @@ services:
     environment:
       DATA_SERVICE_URL: /data-service
       SPECKLE_BASE_URL: http://localhost:8090
+      # WR-23: proxies whose X-Forwarded-For nginx trusts for the client address.
+      DG_TRUSTED_PROXIES: ${DG_TRUSTED_PROXIES:-}
     depends_on:
       - data-service
 

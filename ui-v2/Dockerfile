@@ -12,7 +12,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /entrypoint.sh
 COPY gen-config.sh /gen-config.sh
-RUN chmod +x /entrypoint.sh /gen-config.sh
+RUN chmod +x /entrypoint.sh /gen-config.sh && touch /etc/nginx/dg-realip.conf
 
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]

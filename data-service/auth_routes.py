@@ -44,8 +44,9 @@ _SCRYPT_WAIT_SECONDS = 10
 
 
 def _client_ip(request: Request) -> str:
-    """nginx overwrites X-Real-IP with the peer address; fall back to the
-    direct peer when the service is reached without the proxy."""
+    """nginx overwrites X-Real-IP with the peer address (the client address
+    recovered from X-Forwarded-For when DG_TRUSTED_PROXIES is configured); fall
+    back to the direct peer when the service is reached without the proxy."""
     real = (request.headers.get("x-real-ip") or "").strip()
     if real:
         return real[:64]
@@ -129,10 +130,11 @@ def login(payload: LoginRequest, request: Request, response: Response):
 
     # WR-01: throttle BEFORE the scrypt derivation so a locked-out caller
     # costs nothing. Both keys apply to unknown usernames too (no enumeration).
-    ip_key = f"ip:{_client_ip(request)}"
+    ip_limit = auth.ip_throttle_limit()
+    ip_key = f"ip:{_client_ip(request)}" if ip_limit > 0 else None
     user_key = f"user:{normalized}" if normalized else None
     retry_after = max(
-        auth.throttle_retry_after(ip_key),
+        auth.throttle_retry_after(ip_key) if ip_key else 0,
         auth.throttle_retry_after(user_key) if user_key else 0,
     )
     if retry_after > 0:
@@ -143,7 +145,8 @@ def login(payload: LoginRequest, request: Request, response: Response):
     password_ok = _verify_with_slot(payload.password, stored_hash)
 
     if user is None or not password_ok:
-        auth.throttle_record_failure(ip_key, limit=auth.THROTTLE_LIMIT_IP)
+        if ip_key:
+            auth.throttle_record_failure(ip_key, limit=ip_limit)
         if user_key:
             auth.throttle_record_failure(user_key, limit=auth.THROTTLE_LIMIT_USER)
         # Identical message and code for "unknown user" and "wrong password"
