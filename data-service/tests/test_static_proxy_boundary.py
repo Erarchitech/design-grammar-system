@@ -29,7 +29,10 @@ REPO_ROOT = Path(
 NGINX_CONF = REPO_ROOT / "ui-v2" / "nginx.conf"
 VITE_CONFIG = REPO_ROOT / "ui-v2" / "vite.config.js"
 
-ALLOWED_PROXY_LOCATIONS = {"/data-service/", "/llm/", "/reasoner/"}
+# WR-22: the credential routes get their own rate-limited regex location that
+# proxies to data-service like /data-service/ does.
+RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite)/?$"
+ALLOWED_PROXY_LOCATIONS = {"/data-service/", "/llm/", "/reasoner/", RATE_LIMITED_AUTH_LOCATION}
 EXPECTED_VITE_PROXY_KEYS = {"/data-service", "/llm", "/reasoner"}
 DATA_SERVICE_UPSTREAM = "http://data-service:8000"
 FORBIDDEN_UPSTREAM = re.compile(r"\b(neo4j|n8n)\b", re.IGNORECASE)
