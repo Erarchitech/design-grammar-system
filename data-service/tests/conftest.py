@@ -94,6 +94,12 @@ def pytest_configure(config: pytest.Config) -> None:
     )
     config.addinivalue_line(
         "markers",
+        "neo4j_probe: differential check of the Cypher allowlist against a "
+        "DISPOSABLE Neo4j; skipped unless DG_ALLOWLIST_PROBE_BOLT is set "
+        "(see test_cypher_allowlist_probe.py).",
+    )
+    config.addinivalue_line(
+        "markers",
         "integration: requires the compose network -- the `neo4j` hostname only "
         "resolves there (not from the host). Not deselected by default; select "
         "explicitly with `-k structural` or `-m integration` inside the container.",
