@@ -75,6 +75,9 @@ services:
       DG_BOOTSTRAP_ADMIN_PASSWORD: ${DG_BOOTSTRAP_ADMIN_PASSWORD:?set DG_BOOTSTRAP_ADMIN_PASSWORD in .env (see .env.example)}
       DG_DEPLOYMENT: ${DG_DEPLOYMENT:-local}
       DG_COOKIE_SECURE: ${DG_COOKIE_SECURE:-false}
+      # Amendment of D-05 (2026-09-30): open self-registration is a local-profile
+      # surface. Blank follows the profile (on for local, off for multi-user).
+      DG_ALLOW_SELF_REGISTRATION: ${DG_ALLOW_SELF_REGISTRATION:-}
       # WR-23 (1205 review): the per-address login-failure counter runs only when a
       # trusted-proxy list is configured (behind a TLS terminator every client
       # otherwise shares one address); DG_THROTTLE_LIMIT_IP overrides the limit.

@@ -494,7 +494,7 @@ class TestWr22Wr23NginxAndEntrypoint:
 
     def test_credential_routes_have_their_own_limited_location(self):
         match = re.search(
-            r"location ~ \^/data-service/auth/\(login\|password\|accept-invite\)/\?\$ \{(?P<body>.*?)\n  \}",
+            r"location ~ \^/data-service/auth/\(login\|password\|accept-invite\|register\)/\?\$ \{(?P<body>.*?)\n  \}",
             self.NGINX.replace("\r\n", "\n"),
             re.DOTALL,
         )

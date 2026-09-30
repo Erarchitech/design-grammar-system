@@ -45,7 +45,13 @@ import secrets_policy  # noqa: E402
 # unconditional missing-when-blank contract. DG_TRUSTED_PROXIES (WR-23) is a
 # non-secret list whose blank value means "trust no proxy".
 OPTIONAL_BLANK_KEYS: frozenset[str] = frozenset(
-    {"SPECKLE_PROJECT_ID", "SPECKLE_BASE_MODEL_ID", "DG_TRUSTED_PROXIES"}
+    {
+        "SPECKLE_PROJECT_ID",
+        "SPECKLE_BASE_MODEL_ID",
+        "DG_TRUSTED_PROXIES",
+        # Blank follows the deployment profile (self-registration on for local).
+        "DG_ALLOW_SELF_REGISTRATION",
+    }
 )
 
 

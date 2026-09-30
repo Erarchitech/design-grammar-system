@@ -243,6 +243,40 @@ def test_trusted_proxies_blank_is_ok(tmp_path, capsys):
     assert "DG_TRUSTED_PROXIES: ok" in out
 
 
+def test_allow_self_registration_blank_is_ok(tmp_path, capsys):
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "DG_ALLOW_SELF_REGISTRATION=\n")
+    _write(env, "DG_ALLOW_SELF_REGISTRATION=\n")
+
+    exit_code = check_env_file.main(
+        ["--env-file", str(env), "--example", str(example)]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "DG_ALLOW_SELF_REGISTRATION: ok" in out
+
+
+def test_allow_self_registration_absent_from_env_is_ok(tmp_path, capsys):
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "DG_ALLOW_SELF_REGISTRATION=\n")
+    _write(env, "OTHER_KEY=value\n")
+
+    exit_code = check_env_file.main(
+        ["--env-file", str(env), "--example", str(example)]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "DG_ALLOW_SELF_REGISTRATION: ok" in out
+
+
+def test_repo_env_example_lists_allow_self_registration_blank():
+    values = check_env_file.parse_env_file(REPO_ROOT / ".env.example")
+    assert values.get("DG_ALLOW_SELF_REGISTRATION") == ""
+    assert "DG_ALLOW_SELF_REGISTRATION" in check_env_file.OPTIONAL_BLANK_KEYS
+
+
 def test_extra_key_reported_but_does_not_fail(tmp_path, capsys):
     example = tmp_path / ".env.example"
     env = tmp_path / ".env"

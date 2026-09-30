@@ -313,6 +313,17 @@ def test_multi_user_override_drops_neo4j_and_n8n_publishes(override):
     assert override["data-service"]["environment"]["DG_DEPLOYMENT"] == "multi-user"
 
 
+def test_multi_user_override_pins_self_registration_off(override):
+    # quoted "false" in the YAML: the literal, not an interpolation of .env
+    value = override["data-service"]["environment"]["DG_ALLOW_SELF_REGISTRATION"]
+    assert str(value).strip("\"'").lower() == "false"
+
+
+def test_base_compose_passes_self_registration_through_blank_by_default(base):
+    env = base["data-service"]["environment"]
+    assert env["DG_ALLOW_SELF_REGISTRATION"] == "${DG_ALLOW_SELF_REGISTRATION:-}"
+
+
 def test_multi_user_override_does_not_republish_anything(override):
     assert all(not svc["ports"] for svc in override.values())
 

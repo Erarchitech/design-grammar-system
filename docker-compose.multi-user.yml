@@ -32,3 +32,6 @@ services:
   data-service:
     environment:
       DG_DEPLOYMENT: multi-user
+      # Invite-only onboarding: pinned off so an inherited .env value cannot
+      # open self-registration in this profile.
+      DG_ALLOW_SELF_REGISTRATION: "false"

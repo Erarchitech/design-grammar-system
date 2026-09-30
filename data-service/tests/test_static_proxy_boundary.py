@@ -31,7 +31,7 @@ VITE_CONFIG = REPO_ROOT / "ui-v2" / "vite.config.js"
 
 # WR-22: the credential routes get their own rate-limited regex location that
 # proxies to data-service like /data-service/ does.
-RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite)/?$"
+RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite|register)/?$"
 ALLOWED_PROXY_LOCATIONS = {"/data-service/", "/llm/", "/reasoner/", RATE_LIMITED_AUTH_LOCATION}
 EXPECTED_VITE_PROXY_KEYS = {"/data-service", "/llm", "/reasoner"}
 DATA_SERVICE_UPSTREAM = "http://data-service:8000"
