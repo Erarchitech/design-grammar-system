@@ -1,236 +1,197 @@
 ---
 phase: 1205-security-and-tenancy-release-gate
-reviewed: 2026-09-29T22:30:00Z
-depth: standard
-files_reviewed: 45
+reviewed: 2026-09-30T06:40:32Z
+depth: deep
+diff_base: 382a865
+files_reviewed: 11
 files_reviewed_list:
+  - data-service/cypher_allowlist.py
+  - data-service/dg_context.py
+  - data-service/app.py
   - data-service/auth.py
   - data-service/auth_routes.py
-  - data-service/route_policy.py
-  - data-service/secrets_policy.py
-  - data-service/app.py
-  - data-service/connectors.py
-  - data-service/dg_context.py
-  - data-service/rotate_llm_master_secret.py
-  - data-service/.dockerignore
-  - docker-compose.yml
-  - docker-compose.multi-user.yml
-  - .env.example
-  - n8n/workflows/rules-to-metagraph.json
-  - n8n/workflows/graph-query-mcp.json
-  - n8n/workflows/spec-ingest.json
-  - n8n/workflows/spec-query.json
-  - n8n/workflows/spec-update.json
-  - tools/de01/legs.py
-  - tools/de01/run_de01_repeat.py
-  - tools/security/check_env_file.py
-  - tools/security/check_live_boundary.py
   - ui-v2/nginx.conf
   - ui-v2/entrypoint.sh
-  - ui-v2/gen-config.sh
   - ui-v2/Dockerfile
-  - ui-v2/vite.config.js
-  - ui-v2/src/lib/apiClient.js
-  - ui-v2/src/lib/auth.js
-  - ui-v2/src/lib/graphApi.js
-  - ui-v2/src/lib/modelApi.js
-  - ui-v2/src/lib/inputGenApi.js
-  - ui-v2/src/lib/connectorsApi.js
-  - ui-v2/src/lib/llmApi.js
-  - ui-v2/src/lib/reasonerApi.js
-  - ui-v2/src/App.jsx
-  - ui-v2/src/landing/LandingLayer.jsx
-  - ui-v2/src/screens/ProjectsScreen.jsx
-  - ui-v2/src/screens/GraphScreen.jsx
-  - DG/src/DG.Core/Data/DataServiceRequestAuth.cs
-  - DG/src/DG.Core/Models/ConnectionInfo.cs
-  - DG/src/DG.Core/Services/ErrorMessageTemplates.cs
-  - DG/src/DG.Grasshopper/Components/ComputgraphPublishComponent.cs
-  - DG/src/DG.Grasshopper/Components/ConnectorComponent.cs
-  - DG/src/DG.Grasshopper/Components/ValidatorComponent.cs
-  - DG/src/DG.Grasshopper/Validation/ComputgraphPublishClient.cs
-  - DG/src/DG.Grasshopper/Validation/ValidationPublishClient.cs
+  - docker-compose.yml
+  - .env.example
+  - cypher_template.txt
+  - llm/cypher_catalog.json
+  - n8n/workflows/rules-to-metagraph.json
+  - n8n/workflows/graph-query-mcp.json
+  - tools/security/check_env_file.py
+  - spec/SECURITY-BOUNDARY.md
 findings:
   critical: 2
-  warning: 3
-  info: 4
+  warning: 4
+  info: 3
   total: 9
 status: issues_found
 ---
 
-# Phase 1205: Code Review Report (iteration 2, re-review after fixes)
+# Phase 1205: Code Review Report (Final, iteration 4)
 
-**Reviewed:** 2026-09-29T22:30:00Z
-**Depth:** standard
-**Files Reviewed:** 45
+**Reviewed:** 2026-09-30T06:40:32Z
+**Depth:** deep
+**Files Reviewed:** 15
 **Status:** issues_found
 
-## Scope note
+## Scope
 
-Same scope as iteration 1: the 45 production files above (tests and docs excluded by the orchestrator). This pass read `1205-REVIEW-FIX.md`, then the fix commits (`git diff da186f5..HEAD`) and the surrounding code. Claims marked "verified" were reproduced by running the code: `data-service/dg_context.py` imported and called locally, and the nginx rate-limit config run in a throwaway `nginx:alpine` container. Files holding live secrets were not read. No structural (fallow) findings were supplied.
+This is the delta review requested for the final gate: only code changed **after** the iteration-2 review, i.e. the diff `382a865..HEAD`, which is the full contents of `data-service/cypher_allowlist.py` (new file, the tokenizer/parser replacing the regex-based `dg_context.py` checks), the corresponding thinning of `dg_context.py` down to thin delegating wrappers, the WR-22/23/24 changes in `app.py`/`auth.py`/`auth_routes.py`/`nginx.conf`/`entrypoint.sh`, and the prompt/template text updates in `cypher_template.txt`, `llm/cypher_catalog.json` and the two n8n workflow JSON files.
 
-## Summary
+**Carried forward, not re-reviewed (per instructions):**
+- CR-01/CR-02 — closed in iteration 1.
+- CR-05 — accepted by design (D-07).
+- The full iteration-2 accepted-by-design list (see `1205-REVIEW.iter2.md` and `1205-REVIEW.iter3.md` for detail) — not re-litigated here except where the iteration-3 fix (`cypher_allowlist.py` itself) reopens the question, which it does, hence this review's primary focus.
 
-Of the five iteration-1 Criticals, two are closed (CR-01, CR-02), two are only partly closed (CR-03, CR-04), and one is accepted by design (CR-05).
-
-- **CR-01, CR-02:** closed. The write-token fallback is gone and the read token goes only to `user` and `service` principals. Note ids are now project-scoped and capped. The remaining server-wide read token for viewers is locked by D-12.
-- **CR-03, CR-04:** the four literal cases from iteration 1 are fixed, but both regex guards still have verified bypasses that reach the same cross-tenant outcome. The fix report acknowledged that the stronger design (execution-time scoping) was not implemented. It did not find these specific holes.
-- **New defect:** the nginx login rate limit added for WR-01 never applies (verified). Everything else in the fix commits looks correct: the throttle logic, atomic stores, constant-time n8n check, WR-15 invite flow, WR-09 client cleanup, and the C# and DE-01 changes.
-
-## Critical Issues
-
-### CR-03: (still open) The project-scope proof for LLM-written graph queries still has verified bypasses
-
-**File:** `data-service/dg_context.py:858-926` (`check_query_project_scope`, first-occurrence loop), `:733-740` (`_SCOPE_NODE_PATTERN`); consumer `data-service/app.py:3146` (`/mcp neo4j_query`)
-**Issue:** The fix closed the four iteration-1 cases (backticks, comments, nested braces, `subproject:`). It kept the "first occurrence of a variable decides" design and the ASCII-only tokenizer. Two further bypasses each return zero violations when run locally (verified):
-
-1. **Variable rebinding after `WITH`.**
-   ```
-   MATCH (n:Rule {project: $project}) WITH count(n) AS c MATCH (n) RETURN n.text, c LIMIT 5
-   ```
-   `WITH` drops `n` from scope, so the second `MATCH (n)` binds a fresh, unscoped `n` over every tenant. `seen_vars` still contains `n`, so it is skipped. `find_foreign_project_entities` sees only scalars (`n.text`, `c`) and counts nothing, so the data goes out.
-2. **Non-ASCII identifiers.**
-   ```
-   MATCH (ñ) RETURN ñ.text, $project AS p LIMIT 5
-   ```
-   Cypher accepts Unicode identifiers. `_SCOPE_NODE_PATTERN` only accepts `[A-Za-z_][A-Za-z0-9_]*`. `(ñ)` and `(ñ:Rule)` match neither the node pattern nor `_NODEISH_PAREN_PATTERN`, so the `(` is silently skipped. This is the "unrecognised construct is skipped" failure that the docstring says never happens.
-
-The threat model is unchanged. `/mcp` runs model-written Cypher under the shared admin driver, from a prompt the end user controls.
-
-**Fix:** Do not extend the regexes. Enforce the boundary at execution time, for example:
-
-- Run `graph_query` Cypher against a project-filtered view.
-- Or rewrite the query so that every `MATCH` is anchored on a `$project`-filtered `WITH` and reject any second `MATCH` after a `WITH`.
-
-If the static check stays, make it fail closed on what it cannot read:
-
-- Reject any character outside ASCII in the dequoted text.
-- Reject `WITH`/`UNWIND` followed by another `MATCH`, or reset `seen_vars` at every `WITH`.
-- Treat any `(` that is neither a recognised node pattern nor a function-call or keyword paren as a violation.
-
-Add both queries above to the test suite.
-
-### CR-04: (still open, narrowed) Rule-ingest ownership guards are still bypassable, and only cover Rule/Atom keys
-
-**File:** `data-service/dg_context.py:1084-1145` (`_collect_rule_atom_keys`), `:1147-1197` (`find_cross_project_key_collisions`); wiring `data-service/app.py:2204-2226`
-**Issue:** The fix handles quote style, no-variable MERGE and MATCH-then-SET on `Rule`/`Atom` nodes. It also fails closed on a blank project. The remaining bypasses were verified by calling both guards on the strings below. Each returns no violation, and the Neo4j check either does not run or runs on the wrong key. The resulting Cypher is executed by n8n under the admin credentials.
-
-| Statement (project `p`) | Why it passes |
-|---|---|
-| `MERGE (r:Rule {Rule_Id: 'R_'+'X'})` | Only the leading quoted literal `'R_'` is read as the key. The ownership query runs on `R_`, not on the real key `R_X`, so a foreign-owned `R_X` is overwritten. Any `'a' + b` or `'a' + $v` form works. |
-| `MATCH (a:Atom)-[:ARG]->(v) SET a.SWRL='x'` | An Atom pattern next to any relationship is treated as "reached from a keyed Rule", though no Rule is keyed. No ids are collected, so the function returns `[]`. The same holds for `MATCH (r:Rule {Rule_Id:'R_MINE'}) ... MATCH (a:Atom)-[]-()` and every other Atom pattern with a relationship neighbour. |
-| `MATCH (r) WHERE r.Rule_Id STARTS WITH 'R_' SET r.SWRL='x'`, `... r.Rule_Id <> 'zz' DETACH DELETE r` | The unlabeled node is not analysed. The key operator regex only knows `:`, `=` and `IN`. |
-| `MATCH (n) DETACH DELETE n`, `MATCH (n:Var) DETACH DELETE n`, `MATCH (n:Class) SET n.label='x'` | The guard reads only `Rule`/`Atom`. Var, Literal, Class, Builtin, or unlabeled writes are not looked at, so one prompt-injected ingest can wipe or edit every tenant's graph. |
-
-The fix report says the database-side option was not implemented, so this class stays open.
-
-**Fix:** Move the enforcement into the database instead of analysing model text:
-
-- In the n8n write transaction, add a verification statement, run before commit, that asserts every node created or modified carries `project = $project` (or is a shared-vocabulary node), and roll back otherwise.
-- Or rewrite the `MERGE` keys to project-qualified ones.
-
-If the static guard stays, make it stricter:
-
-- Allow only a whitelist of statement shapes: `MERGE`/`SET` on `Rule`, `Atom`, `Var`, `Literal`, `Builtin`, `Class`, `DatatypeProperty` and `ObjectProperty` patterns, each with a plain quoted key.
-- Reject `DELETE`, `REMOVE`, and any pattern that is unlabeled or is not in the whitelist.
-- Reject any key expression that is not exactly one quoted literal followed by `,` or `}`.
-
-## Warnings
-
-### WR-22: The nginx login rate limit never applies (verified)
-
-**File:** `ui-v2/nginx.conf:3-10` (`map $uri $dg_auth_limit_key`), `:68-72` (`location /data-service/`)
-**Issue:** The map keys on `$uri` with the regex `^/data-service/auth/(login|password|accept-invite)$`. The same location runs `rewrite ^/data-service/(.*) /$1 break;`, which rewrites `$uri` to `/auth/login` in the rewrite phase, before the `limit_req` preaccess phase evaluates the map variable. The regex therefore never matches and the key is always empty, which means no limit.
-
-Reproduced in a throwaway `nginx:alpine` container with the same map, zone and location. 30 rapid requests to `/data-service/auth/login` all returned 200. The access log showed `/auth/login key=[]`.
-
-The fix report checked only `nginx -t` and that a bad login still returns 401, so it never exercised the limit. The comment claims the limit exists and the in-process throttle is documented as sitting "behind" it, so the layered defence is one layer short.
-**Fix:** Key on the pre-rewrite URI:
-```nginx
-map $request_uri $dg_auth_limit_key {
-  default "";
-  ~^/data-service/auth/(login|password|accept-invite)(\?|$) $binary_remote_addr;
-}
-```
-Then verify with a burst of at least 20 requests that 429 appears.
-
-### WR-23: The IP-keyed failure limits become one global bucket behind a TLS terminator or NAT
-
-**File:** `data-service/auth_routes.py:44-52` (`_client_ip`), `:127-150` (login); `data-service/auth.py:751-757` (`THROTTLE_LIMIT_IP = 30`); `ui-v2/nginx.conf`
-**Issue:** The client address is `X-Real-IP`, which nginx sets from `$remote_addr`. `spec/SECURITY-BOUNDARY.md` makes TLS the operator's job, so nginx will normally sit behind a TLS-terminating proxy. There is no `real_ip` / `set_real_ip_from` configuration. Every client then shares the proxy's address, and Docker Desktop's port NAT can produce the same effect.
-
-- 30 failed logins from anyone lock the IP key for up to 300 seconds. During the lock even correct credentials are rejected for every user.
-- Once WR-22 is fixed, the nginx `limit_req` (5 requests/s, burst 10) is shared the same way.
-
-The per-username key already lets anyone lock a known account (accepted trade-off). This lets an attacker with no username lock out the whole deployment.
-**Fix:**
-
-- Trust `X-Forwarded-For` only from a configured proxy list, by adding `set_real_ip_from` and `real_ip_header` to nginx driven by an env var.
-- Make `THROTTLE_LIMIT_IP` env-configurable and document the shared-address caveat in the runbook.
-- Consider keying the IP throttle on the pair `ip+username`, so it slows guessing without becoming a global lock.
-
-### WR-24: WR-15's existing-account invite path upserts the role, so it can silently change an existing membership
-
-**File:** `data-service/app.py:4510-4515` (`_accept_invite_for_existing_account`), `data-service/auth.py:451-475` (`set_membership`)
-**Issue:** After the password check the code calls `auth.set_membership(username, invite["project"], invite["role"])`. `set_membership` overwrites the role of an existing `(username, project)` row. If the account already holds a different role on the invited project, for example was promoted after the invite was issued, accepting the stale invite replaces it in either direction: a downgrade, or an escalation to whatever role the old invite named.
-
-The path is also reached only after `validate_password_policy` has run on the supplied password. An existing account whose current password is below the policy (a legacy bootstrap password) is rejected with a policy error before its password is ever checked.
-**Fix:** Do not lower or change an existing role through an invite:
-```python
-current = auth.get_role(username, invite["project"])
-if current is None:
-    auth.set_membership(username, invite["project"], invite["role"])
-```
-Or keep the higher of the two roles. Also run `validate_password_policy` only on the new-account branch.
-
-## Info
-
-### IN-01: Iteration-1 Info items, not in fix scope, are unchanged
-
-**File:** `data-service/app.py:4195` and `:4404` (`PROJECT_NAME_PATTERN` and `NODE_KEY_PATTERN` end in `$`), `:63-71` (`/docs`, `/redoc` and `/openapi.json` unauthenticated), `:4406-4413` (silent 2000/8000 row truncation), `data-service/auth.py` (`policy.min_role or "viewer"`)
-**Issue:** Iteration-1 IN-01, IN-02, IN-04 and IN-05 are untouched. IN-03 was fixed with WR-05.
-**Fix:** As listed in the iteration-1 review (`re.fullmatch`, gate or disable the docs routes, a `truncated` flag with `ORDER BY`, and raise when a member policy has no role).
-
-### IN-02: A corrupt auth or credential store now surfaces as an unstructured 500
-
-**File:** `data-service/auth.py:96-115` (`AuthStoreError`), `data-service/connectors.py:112-160` (`CredentialStoreError`)
-**Issue:** Failing closed is the right behaviour. Neither exception is handled anywhere, so the login, session-resolution and connector routes return a bare 500 with a logged traceback, and startup crash-loops. The operator sees no hint about which file to repair.
-**Fix:** Register an exception handler for both classes that returns a structured 503 with code `AUTH_STORE_UNAVAILABLE` and the store file name (never its content).
-
-### IN-03: The WR-04 fix is a denylist
-
-**File:** `data-service/app.py:4568-4590` (`PROTECTED_NODE_KEYS_CI`, `PROTECTED_NODE_KEY_PATTERN`)
-**Issue:** As the fix report notes, identity keys not on the list stay editable, for example `name` on Var nodes and `lex` on Literal nodes, which key those nodes together with the project. New key properties added to the schema later are unprotected by default.
-**Fix:** Move to an allowlist of the properties the property table actually edits when the owner confirms them.
-
-### IN-04: The failure counters check before they record
-
-**File:** `data-service/auth_routes.py:127-150`
-**Issue:** `throttle_retry_after` runs before verification and `throttle_record_failure` after. A burst of parallel requests all passes the check before the first failure is recorded. This is bounded by the scrypt semaphore and the threadpool, so a burst can overshoot the limit by tens of attempts per lock cycle, not without limit.
-**Fix:** Reserve an attempt under `_THROTTLE_LOCK` before verifying, and release it on success.
-
-## Accepted by design (not defects)
-
-- **CR-05, default `local` profile hands editors the Neo4j bundle (D-07).** I confirmed the gate reads `auth.deployment_profile()`, the same resolver the lifespan validates, so an unrecognised value fails startup rather than falling through to `local`. Still an open owner choice: limiting the bundle to admin-minted credentials, or warning on second users in `local`.
-- **CR-01 residual, the server-wide Speckle read token goes to `user` principals (D-12).** D-12 specifies a project-authorised endpoint serving the read token. The implementation withholds it from connectors and from unknown callers and no longer falls back to the write token. To narrow it further, configure `SPECKLE_READ_TOKEN` with a token scoped to the shared Speckle projects.
-- **WR-16, port 8080 published on all interfaces in `local` (D-09).** Only the UI and the Speckle ingress are routable by decision.
-- **WR-14, `DG_BOOTSTRAP_ADMIN_*` stay required compose interpolations (D-10).**
-- **WR-11, the whole repository is mounted at `/mnt/repo:ro`.** The path check itself was fixed (`is_relative_to`, symlink containment).
-- **WR-01, per-process throttle counters that reset on restart.** Login throttling is listed out of scope in CONTEXT, so the in-process design is acceptable. The nginx half is broken (WR-22).
-
-## Closed since iteration 1
-
-Read against the fix commits and, where noted, exercised. No new defect found in them beyond those listed above.
-
-- **CR-01, CR-02:** closed.
-- **WR-02:** the fix is partial, as the report states. `claim-untagged` skips `SpecGraph`, and the n8n `postProcess` no longer re-tags a node that belongs to another project. A globally untagged node outside `SpecGraph` can still be claimed.
-- **WR-03, WR-06, WR-10, WR-11, WR-12, WR-18, WR-19, WR-20:** closed.
-- **WR-05, WR-07, WR-08, WR-14, WR-17, WR-21:** closed as far as the report states. The pinned `n8nio/n8n:2.4.8` tag exists upstream, and the running container reports 2.4.8. The relay-token comparison is correct: length-XOR plus per-character accumulation, and a blank expected value is rejected.
-- **WR-09:** the client cleanup is wired as described (owner key, sign-out clear, keyed screens). It is covered only by static tests, so a manual sign-out and sign-in-as-other-user pass is still worth doing.
-- **WR-13:** fixed with CR-03 for the two verified false positives. The `WITH` and Unicode gaps in CR-03 are a separate defect.
+**Method:** `cypher_allowlist.check_read_allowlist()` / `check_write_allowlist()` were imported directly from `data-service/` on the host and executed against adversarial Cypher strings. A disposable `neo4j:5.26` container (`NEO4J_AUTH=none`, no compose, no volumes, destroyed after the session) was seeded with two synthetic tenants (`project:'pa'`, `project:'pb'`) carrying obviously-fake marker property values, and every allowlist-accepted query that looked suspicious was actually executed against it via `cypher-shell` to confirm real cross-tenant data return, not just a theoretical parse gap. Every finding below marked "reproduced" was executed this way; the exact input and exact Neo4j output are quoted.
 
 ---
 
-_Reviewed: 2026-09-29T22:30:00Z_
+## Critical Issues
+
+### CR-01 (this review): `STARTS`/`ENDS` before `WITH` is recognised by token text, not by role — lets a smuggled top-level `WITH` clause reset pattern scope and return another project's live data
+
+**File:** `data-service/cypher_allowlist.py:735-737` (`parse_expr`, the `WITH` special-case)
+
+```python
+if up == "WITH":
+    if not (prev is not None and prev.kind == "IDENT" and prev.upper in ("STARTS", "ENDS")):
+        raise self.forbidden("WITH")
+```
+
+**Issue:** This guard exists to let the legitimate `STARTS WITH` / `ENDS WITH` string operators through the expression parser without their `WITH` half being mistaken for the forbidden `WITH` clause. It decides whether the previous token was really the `STARTS`/`ENDS` *operator* by comparing the token's **uppercased text** only — it never checks that the previous token was reached via the operator path rather than via a **property-access chain** (`.starts`, `.ends`). A property literally named `starts` or `ends` (an attacker only needs the LLM, prompt-injected, to emit such a property reference — no real graph property of that name needs to exist) produces the exact same token sequence, so `a.starts WITH ...` sails through as if it were `a STARTS WITH ...`.
+
+Once that guard passes, the tokens `WITH a` are consumed as ordinary identifiers by the fallback branch at the end of the `IDENT` case (`self.i += 1; continue`) — the parser has no notion that it just walked past a real Cypher `WITH` clause boundary. The **top-level** `while` loop that drives `parse_read()` then reaches the next `IDENT`, sees `MATCH`, and happily starts a **second** `MATCH` clause. Any node variable name reused from the first (comma-joined) `MATCH` is treated by `read_node()` as "a bare reference to an already-scoped variable" (`if var in self.node_vars: return`) and skipped entirely — but in **real Cypher semantics**, the smuggled `WITH a` (carrying forward only `a`) has already dropped `b` from scope, so the second `MATCH (b)` is a **brand-new, completely unconstrained** binding of `b` that happens to reuse the name. The allowlist gives it a pass anyway because it only tracks variable *names*, never whether a `WITH` boundary has silently discarded the previous scoping guarantee for that name.
+
+**Reproduced input** (run through `check_read_allowlist`, zero violations returned — i.e. the allowlist **accepts** it):
+
+```
+MATCH (a:Rule {project: $project}), (b:Rule {project: $project})
+WHERE a.project = $project OR a.starts WITH a
+MATCH (b)
+RETURN b.secret
+```
+
+Executed against the seeded Neo4j (two tenants `pa`/`pb`, `$project='pa'`), `cypher-shell` returned:
+
+```
+b.secret
+"pa-secret"
+"pb-SECRET-FOREIGN"
+NULL
+```
+
+The middle row is `pb`'s node, whose owning project is never the caller's `pa`. This is a live cross-tenant read: exactly the invariant CR-03/CR-04 in `cypher_allowlist.py`'s own docstring claims to close ("the query can only read nodes whose `project` equals `$project`"). `ENDS WITH` reproduces identically (`a.ends WITH a`).
+
+**Fix:** Track *why* the previous token is `STARTS`/`ENDS` structurally, not just by spelling — e.g. record on the token stream (or on a small piece of parser state) whether the previous identifier was consumed via the `.` property-access branch (`prev = nxt` at the `.` handling site) versus reached as a bare top-level identifier, and only honour the `STARTS`/`ENDS` exception when the previous token was **not** the target of a property access. Concretely: in the `.` handling branch, tag the produced identifier token (or track a `just_saw_property_access` flag) so the `WITH` check can require `prev is a bare identifier token`, not merely `prev.upper in (...)`. Add a regression test asserting `a.starts WITH b` and `a.ends WITH b` are rejected as `forbidden_clause: WITH` while `a.name STARTS WITH 'x'` (the real operator, with a literal string operand next) still parses.
+
+---
+
+### CR-02 (this review): Neo4j 5's `IS` label syntax is unrecognised by `read_node_shape()`, so a pattern-predicate written with `IS` instead of `:` bypasses node-pattern scope checking entirely — graph-wide property-existence oracle, unauthenticated by project
+
+**File:** `data-service/cypher_allowlist.py:388-416` (`read_node_shape`), `797-815` (`parse_paren`)
+
+**Issue:** `read_node_shape()` only recognises the `(var:Label)` label syntax (`while self.is_punct(":")`); Neo4j 5 also accepts `(var IS Label)` as an alternative spelling of the same thing, and Neo4j accepts it inside a WHERE pattern-predicate too. When `read_node_shape()` meets `IS` it isn't a `:`, not `{`, not `)`, so it raises `_Fatal`. Inside `parse_paren()` — the code path used for a `(` **appearing inside an expression**, i.e. a WHERE pattern-predicate — that `_Fatal` is caught:
+
+```python
+try:
+    self.read_node_shape()
+    is_pattern = self.at_rel_start()
+except _Fatal:
+    is_pattern = False
+self.i = save
+if is_pattern:
+    self.read_pattern_chain(declare=False)
+    return
+self.i += 1
+if self.parse_expr(closers=")") == 0: ...
+```
+
+Because the speculative parse raised, `is_pattern` is forced `False`, and the parser falls back to treating the whole `(a IS Rule)-->({...})` construct as an ordinary **grouping expression + arithmetic operators** (`-->` tokenises as `-`, `-`, `>`), never as the node/relationship pattern it actually is to Neo4j. Nothing in that fallback path ever calls `check_project_entry()` on the trailing anonymous node's property map — it is just a map literal inside a parenthesised sub-expression, which `parse_map_literal()` accepts unconditionally when `prev is None` (freshly opened paren). The result: **any pattern-predicate written with `IS` instead of `:` is invisible to every scope check in this module.**
+
+**Reproduced inputs** (both accepted with zero violations by `check_read_allowlist`, both executed live):
+
+```
+MATCH (a:Rule {project: $project})
+WHERE (a IS Rule)-->({secret:'pb-SECRET-FOREIGN'})
+RETURN 'x' AS r
+```
+→ `r = "x"` (row returned) when the literal matches the **other** tenant's real secret value, no row when it doesn't — a working boolean oracle over the whole graph, keyed on any property the attacker chooses, with **no project constraint on the target node at all**.
+
+Even more severe — no bound tenant node is required at either end:
+```
+MATCH (a:Rule {project: $project})
+WHERE (IS Rule)-->({secret:'pb-atom-secret'})
+RETURN 'GLOBAL-ORACLE' AS r
+```
+→ returns a row (`r = "GLOBAL-ORACLE"`) purely because *some* `Rule` node anywhere in the graph has an outgoing relationship to a node carrying that property value — completely independent of `$project`. This lets an attacker (or an LLM whose output was prompt-injected) binary-search any property of any node belonging to any tenant, one bit of information per query, entirely through the "allowlisted" read path.
+
+**Fix:** `read_node_shape()` must recognise `IS` as an alternate label-introducer (`var (":"| IS) Label ("|" Label)*`) so the speculative parse in `parse_paren()` succeeds and the normal `check_project_entry`/anonymous-node checks run on it — or, more conservatively given this module's stated fail-closed philosophy ("anything the grammar does not positively recognise is a violation, never accepted"), make the catch in `parse_paren()` distinguish "this really is not a pattern" from "this looks pattern-shaped but uses a variant this grammar doesn't parse" and reject the latter outright (`unsupported_syntax`) rather than silently reinterpreting it as an inert expression. The second option is safer and matches the module's own stated design principle. Either way, add `IS` to the read-only prompt's forbidden-construct list in the n8n prompt text as defence in depth (it currently is not mentioned) and add a regression test.
+
+---
+
+## Warnings
+
+### WR-01 (this review): Unbounded parser recursion on deeply nested input raises an uncaught `RecursionError`
+
+**File:** `data-service/cypher_allowlist.py` — `parse_expr`/`parse_paren` recurse directly on nested `(`/`[`/`{` with no depth guard.
+
+**Issue:** `check_read_allowlist("MATCH (a:Rule {project: $project}) WHERE " + "("*1000 + "a.x = 1" + ")"*1000 + " RETURN a")` raises Python's `RecursionError` rather than returning a violation list — confirmed locally at ~400 nested groups (passes) vs. 1000 (raises), well within one HTTP request body's size budget and well within what a prompt-injected LLM response could plausibly contain (the invariant list explicitly names "very long queries / catastrophic backtracking" as an attack class to check). `post_context_generate_cypher()` in `app.py` does wrap `generate_validated_cypher()` in a bare `except Exception`, so that specific call site degrades to a mapped 502 rather than crashing the worker — but `/mcp`'s `neo4j_query` tool calls `dg_context.check_query_project_scope(cypher)` directly on **caller-supplied** Cypher (not LLM output) with no enclosing `try/except` visible around that call in `app.py`, so the same crash there is unhandled by this module and depends entirely on FastAPI's default 500 handler to avoid taking down the request — still an availability gap the module's own "never raises, always a violation" design principle (stated in its docstring) explicitly promises not to have.
+
+**Fix:** Add an explicit nesting-depth counter (increment/decrement around `parse_paren`/list/map recursion, raise a normal `_Fatal("unsupported_syntax", ...)` past a fixed ceiling, e.g. 60) so oversized input is turned into an ordinary rejected-violation response instead of an interpreter-level exception, consistent with the module's "never raises on malformed input" contract.
+
+### WR-02 (this review): `cypher_template.txt` / `llm/cypher_catalog.json` prose examples no longer match the shipped grammar, so the model's own worked examples fail its retry loop on the first attempt
+
+**File:** `cypher_template.txt` (comment lines using `--`), `llm/cypher_catalog.json` (`worked_example` narration)
+
+**Issue:** Several `worked_example` fields and template comment lines use `--` line comments (SQL style, not Cypher) as narration mixed into the same string that gets shown to the model, and the new grammar in `cypher_allowlist.py` rejects **any** `//` or `/* */` comment outright — the templates avoid that, correctly — but several `worked_example` strings still trip `unsupported_syntax`/`missing_project_scope` when run whole through `check_write_allowlist` (verified: 5 of 6 `worked_example` entries fail when passed as-is, because they interleave prose/pitfall commentary with the Cypher rather than being pure statements; the pure `cypher_template` fields all pass cleanly). This isn't a security hole — it only affects the few-shot prompt text, never the validator itself — but it means the "worked example" the LLM is shown as a positive pattern is not, in fact, itself valid input to the very allowlist that will grade its output, undermining the stated purpose of showing worked examples ("so the LLM's first attempt already conforms").
+
+**Fix:** Strip prose/pitfall narration out of the string that is shown as the worked Cypher (keep it in a separate `notes` field, or move it to genuine `--`-prefixed lines that are stripped before display), and add a catalog-level test that runs every `worked_example` through `check_write_allowlist` and asserts zero violations.
+
+### WR-03 (this review): `find_cross_project_key_collisions` / `find_foreign_project_entities` remain regex/duck-typed defence-in-depth behind the new allowlist, but are now dead code on the paths the allowlist already blocks first
+
+**File:** `data-service/dg_context.py:830-892` (kept, per comment, intentionally as defence-in-depth)
+
+Not a defect — flagged only so the reviewer record is complete: with CR-01/CR-02 above open, this defence-in-depth layer is exactly what should have caught the collision case (a MERGE landing on another project's `Rule_Id`) but it does **not** cover the READ-side leak (CR-01/CR-02 are both `graph_query`, not `rule_ingest`/`rule_edit`) — `find_foreign_project_entities()` only runs on `/mcp neo4j_query`'s **result rows**, and both CR-01 and CR-02's reproductions above return the foreign node's **scalar property** (`b.secret`, not the node itself), which `find_foreign_project_entities()`'s duck-typed walk (`getattr(value, "labels", None)`) cannot see — a bare string has no `.labels`. This is why the reproduced exploits above return real data even though the result-side check is live in the codebase: it is exactly the "return no value derived from another project's nodes" invariant in the task's own primary directive, and it is bypassed for the same structural reason (returning a property value, not the node/relationship/path object) rather than any flaw in `find_foreign_project_entities()` itself. No separate fix requested here beyond CR-01/CR-02; recorded for traceability so a future reviewer does not assume the result-side check would have caught this class.
+
+---
+
+## Info
+
+### IN-01: WR-22/WR-23/WR-24 delta re-review — no regression found
+
+- **WR-22** (`ui-v2/nginx.conf` credential-route rate limiting): the regex location `~ ^/data-service/auth/(login|password|accept-invite)/?$` is evaluated against the decoded, slash-merged URI per nginx's normal location-selection algorithm (longest non-`^~` prefix match still allows regex locations to be tried; `merge_slashes` defaults on, so `//auth/login` collapses; nginx location regexes are case-sensitive and so is the FastAPI route being proxied to, so a case-varied path fails the same way on both sides — not a bypass). No new gap found in the delta.
+- **WR-23** (`auth.py: ip_throttle_limit`/`trusted_proxies_configured`, `auth_routes.py`, `entrypoint.sh`): with `DG_TRUSTED_PROXIES` unset, `ip_throttle_limit()` returns 0, `ip_key` is `None` end-to-end in both `auth_routes.login` and `app.py:_accept_invite_for_existing_account`, and the per-address counter is skipped entirely rather than keying on a spoofable `X-Forwarded-For`; `entrypoint.sh` validates every configured entry against `[0-9a-fA-F:./]` and hard-fails container start on anything else. Confirmed consistent with the stated design; the per-username throttle remains the primary control regardless.
+- **WR-24** (`app.py: accept_invite`/`_accept_invite_for_existing_account` role monotonicity): the new `auth._STORE_LOCK`-guarded compare-and-set (`ROLE_RANK.get(invite["role"], -1) > ROLE_RANK.get(current, -1)`) correctly refuses to downgrade an existing higher role and correctly adds a missing membership; verified by reading `auth.ROLE_RANK`/`get_role`/`set_membership` call shapes — no lock-free race window observed between the `get_role` read and `set_membership` write since both happen under the same `with auth._STORE_LOCK:` block.
+
+No regression identified in this delta for these three items.
+
+---
+
+_Reviewed: 2026-09-30T06:40:32Z_
 _Reviewer: Claude (gsd-code-reviewer)_
-_Depth: standard_
+_Depth: deep_
+
+## Orchestrator corrections from the reviewer's final handback (2026-09-30)
+
+The reviewer's rewrite of this file was blocked, so the corrections below come from its final report and override the sections above where they conflict.
+
+- **Scope:** `ui-v2/Dockerfile`, `docker-compose.yml`, `.env.example`, `tools/security/check_env_file.py` and `spec/SECURITY-BOUNDARY.md` were **not** reviewed. `auth.py` and `auth_routes.py` were reviewed only cursorily. `files_reviewed` is set to 11 to match.
+- **Critical:** CR-01 and CR-02 stand as written. Both were verified against a disposable seeded Neo4j 5.26.
+- **Warnings (final list of 4):**
+  1. **WR-01:** unbounded parser recursion raises `RecursionError` instead of a violation. Verified on the host. Fix: add a nesting-depth ceiling that raises `unsupported_syntax`.
+  2. **WR-02 (narrowed):** the catalog and template examples fail `check_write_allowlist` **only because of their `--` header lines**. With those removed, every example passes (verified). Fix: keep narration out of the Cypher the model sees, and add a test that runs every catalog example through the allowlist.
+  3. **WR-04 (new):** the read allowlist accepts a trailing `;`, then the n8n "Parse Cypher" node in `graph-query-mcp.json` appends ` LIMIT 50`, which gives an invalid statement. Verified by code reading. Fix: reject a trailing `;` in the read profile, or strip it before appending.
+  4. **WR-05 (new):** `stripStatementSeparators` in the "Prepare Graph Payload" node of `rules-to-metagraph.json` tracks single quotes only, while the lexer also handles double quotes and backslash escapes. Not executed. Fix: use the lexer's quote and escape rules, or let the allowlist normalise separators.
+- **WR-03 above is a note, not a defect** (defence-in-depth helpers behind the allowlist).
+- **Info:**
+  - **IN-01:** WR-22, WR-23 and WR-24 show no regression. The WR-24 lock analysis is **unverified**: only the diff was read, not `auth.get_role` / `set_membership`, so a non-reentrant-lock deadlock is not excluded.
+  - **IN-02:** `find_foreign_project_entities` inspects only node, relationship and path objects, not scalar values.
+  - **IN-03:** `FORBIDDEN_CLAUSE_WORDS` does not list the newer clause words FOR, LET, FILTER, NEXT and OFFSET. No impact on 5.26 (not tested on newer versions).
+- **Not reached:**
+  - lexer versus Neo4j handling of string escapes and `\u` escapes
+  - the nginx regex location on a live nginx
+  - parsing of `DG_TRUSTED_PROXIES`
+  - authorisation of the caller-supplied `project` on `/mcp neo4j_query`
