@@ -18,7 +18,7 @@ export default {
           type: "table",
           headers: ["Principal", "Credential", "Used by"],
           rows: [
-            ["Browser session", "HttpOnly dg_session cookie issued by POST /auth/login or POST /auth/accept-invite, plus the X-DG-CSRF header on unsafe requests", "The V2 UI"],
+            ["Browser session", "HttpOnly dg_session cookie issued by POST /auth/login, POST /auth/accept-invite or (local profile only) POST /auth/register, plus the X-DG-CSRF header on unsafe requests", "The V2 UI"],
             ["Connector token", "Project-bound dgc_ token, created per connector and shown once", "Grasshopper, Revit and Dynamo connector components"],
             ["Internal service token", "Shared secret held by the stack, never issued to users", "n8n workflows calling the data-service (n8n only)"],
           ],
@@ -32,7 +32,36 @@ export default {
         {
           type: "text",
           content:
-            "Accounts are created by invitation only. A project owner invites a username from the Projects screen; the invitee accepts the one-time invite code and chooses a password. There is no self-registration endpoint.",
+            "In the multi-user profile accounts are created by invitation only: a project owner invites a username from the Projects screen, and the invitee accepts the one-time invite code and chooses a password. The local profile also allows open self-registration. DG_ALLOW_SELF_REGISTRATION (true or false) overrides the profile default, and docker-compose.multi-user.yml pins it to false.",
+        },
+        {
+          type: "endpoint",
+          method: "GET",
+          path: "/data-service/auth/options",
+          description: "Public. Reports whether self-registration is offered. Carries no secret and no user information.",
+          params: [],
+          response:
+            'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  "selfRegistration": true\n}',
+        },
+        {
+          type: "endpoint",
+          method: "POST",
+          path: "/data-service/auth/register",
+          description: "Public, requires the X-DG-CSRF header. Creates a non-admin account with no project memberships and logs it in. Answers 404 when self-registration is off.",
+          params: [
+            { name: "username", type: "string", location: "body", required: true, description: "3-254 characters: lowercase letters, digits and . _ @ + -" },
+            { name: "password", type: "string", location: "body", required: true, description: "12 to 128 characters" },
+          ],
+          request:
+            'POST /data-service/auth/register\nContent-Type: application/json\nX-DG-CSRF: 1\n\n{\n  "username": "alice@example.org",\n  "password": "a-long-passphrase-1"\n}',
+          response:
+            'HTTP/1.1 201 Created\nSet-Cookie: dg_session=...; HttpOnly; SameSite=Strict\n\n{\n  "username": "alice@example.org",\n  "isAdmin": false\n}',
+        },
+        {
+          type: "note",
+          variant: "tip",
+          content:
+            "A taken username or any other failure answers the same 400 REGISTRATION_INVALID, and failed attempts share the login throttle. A newly registered user owns nothing yet and creates projects with POST /data-service/projects.",
         },
       ],
     },

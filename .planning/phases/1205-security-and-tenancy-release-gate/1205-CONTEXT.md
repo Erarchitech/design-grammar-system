@@ -125,6 +125,9 @@ All 20 decisions below were proposed by Claude in smart discuss and accepted by 
 - **D-05: Existing localStorage accounts are not migrated, and there is no open self-registration.**
   A bootstrap admin is created from environment secrets on first start. After that, an admin or a
   project owner invites users. The localStorage hashes are too weak to import.
+  **Amendment (2026-09-30):** the owner re-enabled open self-registration for the `local`
+  deployment profile only ("Local profile only"). Invite-only remains the rule in `multi-user`,
+  so the GATE12-05 multi-user verdict is unaffected. See `spec/SECURITY-BOUNDARY.md` Section 2.
 
 ### Graph access path and direct-proxy exposure (ALGN12-18)
 
