@@ -1,10 +1,10 @@
 ---
 phase: 1205-security-and-tenancy-release-gate
 verified: 2026-09-30T12:00:00Z
-status: human_needed
+status: passed
 score: 9/9 must-haves verified
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
 re_verification: false
 human_verification:
   - test: "Owner review of the iteration-3 security logic (data-service/cypher_allowlist.py, wired through dg_context.check_query_project_scope / check_write_allowlist)"
@@ -132,3 +132,15 @@ Decision for ALGN12-17 and ALGN12-19: both are satisfied by the evidence above, 
 
 _Verified: 2026-09-30_
 _Verifier: Claude (gsd-verifier)_
+
+
+## Human Verification Outcome (2026-09-30)
+
+The owner completed 1205-UAT.md with 3 pass and 1 issue.
+
+- **Item 1:** evidence is enough (the iteration-4 allowlist rewrite).
+- **Item 2:** keep both design residuals.
+- **Item 4:** the sign-out/sign-in pass succeeded.
+- **Item 3 (issue):** N8N_PASSWORD is still the old committed value. The owner accepted this as an OPEN minor gap. This is the one override applied to reach `passed`.
+
+Follow-up the owner requested during UAT: self-registration was restored for the local profile only (D-05 amended; commits 6d8069d..b5179c4; 43 tests). It stays off in multi-user, so the GATE12-05 verdict is unaffected.
