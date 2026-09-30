@@ -77,18 +77,20 @@ class TestLexer:
 
     def test_string_contents_are_free_text(self):
         cypher = (
-            "MATCH (r:Rule {project: $project, SWRL: 'Büro // /* ` \\' UNION CALL'}) "
+            "MATCH (r:Rule {project: $project, SWRL: 'Büro // /* ` \" UNION CALL'}) "
             "RETURN r.Rule_Id"
         )
         assert read_check(cypher) == []
 
-    def test_escaped_quote_does_not_end_the_string(self):
-        """Neo4j treats \\' as an escaped quote; so does the lexer, so the
-        text after it stays inside the string and is never mistaken for Cypher."""
+    def test_backslash_in_a_string_is_refused_not_interpreted(self):
+        """The lexer does not mirror Neo4j's backslash escapes (they would let
+        the two disagree on where a string ends); it refuses the backslash."""
         cypher = "MATCH (r:Rule {project: $project, SWRL: 'a\\' WITH b'}) RETURN r.Rule_Id"
-        assert read_check(cypher) == []
+        result = read_check(cypher)
+        assert "unsupported_syntax" in _codes(result)
+        assert any("backslash" in v["message"] for v in result), result
 
-    def test_trailing_backslash_is_unterminated(self):
+    def test_trailing_backslash_is_refused(self):
         assert read_check("MATCH (r:Rule {project: $project, SWRL: 'a\\'}) RETURN r")
 
 
@@ -1249,3 +1251,113 @@ class TestForbiddenClauseWordsIncludeCypher25:
             v["code"] == "forbidden_clause"
             for v in write_check(f"MERGE (r:Rule {{Rule_Id: 'R_X', project: $project}}) {word} r")
         )
+
+
+# ── 1205 review iteration 4: string-literal escapes (lexer vs Neo4j) ──────
+
+_BS = "\\"
+
+
+class TestStringLiteralsAgreeWithNeo4jOnWhereTheyEnd:
+    """Neo4j honours backslash escapes (escaped quotes, \\n, \\uXXXX ...) and may
+    decode unicode escapes before tokenising. Mirroring all of that is how a
+    lexer ends a string one character away from the server. Both profiles
+    instead refuse every construct the two could disagree on."""
+
+    @pytest.mark.parametrize(
+        "literal",
+        [
+            "'a" + _BS + "' WITH b'",  # escaped single quote
+            '"a' + _BS + '" WITH b"',  # escaped double quote
+            "'a" + _BS + _BS + "'",  # escaped backslash
+            "'a" + _BS + "n b'",  # newline escape
+            "'a" + _BS + "tb'",
+            "'" + _BS + "u0027 WITH b'",  # 4-digit unicode escape (a quote)
+            "'" + _BS + "U00000027 WITH b'",  # 8-digit unicode escape
+            "'" + _BS + "x27'",
+            "'" + _BS + "0'",
+            "'a" + _BS + "'",  # backslash right before the closing quote
+            "'" + _BS + "'",
+        ],
+    )
+    def test_read_profile_refuses_any_backslash_in_a_string(self, literal):
+        cypher = f"MATCH (r:Rule {{project: $project, SWRL: {literal}}}) RETURN r.Rule_Id"
+        result = read_check(cypher)
+        assert result, literal
+        assert "unsupported_syntax" in _codes(result)
+
+    @pytest.mark.parametrize(
+        "literal",
+        [
+            "'a" + _BS + "' WITH b'",
+            '"a' + _BS + '" WITH b"',
+            "'" + _BS + "u0027 WITH b'",
+            "'a" + _BS + "'",
+        ],
+    )
+    def test_write_profile_refuses_any_backslash_in_a_string(self, literal):
+        cypher = (
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project, graph: 'Metagraph'}) "
+            f"SET r.SWRL = {literal}"
+        )
+        result = write_check(cypher)
+        assert result, literal
+        assert "unsupported_syntax" in _codes(result)
+
+    def test_unicode_escape_outside_a_string_is_refused_too(self):
+        cypher = "MATCH (r:Rule {project: $project}) WHERE r.x = " + _BS + "u0027a" + _BS + "u0027 RETURN r"
+        assert "unsupported_syntax" in _codes(read_check(cypher))
+
+    @pytest.mark.parametrize("literal", ["'a''b'", '"a""b"', "''''", "'a' 'b'"])
+    def test_doubled_or_adjacent_quotes_are_refused(self, literal):
+        cypher = f"MATCH (r:Rule {{project: $project, SWRL: {literal}}}) RETURN r.Rule_Id"
+        assert read_check(cypher), literal
+        assert write_check(
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project, graph: 'Metagraph'}) "
+            f"SET r.SWRL = {literal}"
+        ), literal
+
+    def test_doubled_quote_message_names_the_problem(self):
+        result = read_check("MATCH (r:Rule {project: $project, SWRL: 'a''b'}) RETURN r")
+        assert any("doubled quote" in v["message"] for v in result), result
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "a" + chr(0) + "b",
+            "a" + chr(7) + "b",
+            "a" + chr(0x1B) + "b",
+            "a" + chr(0x7F) + "b",
+        ],
+    )
+    def test_control_characters_inside_a_string_are_refused(self, text):
+        assert read_check(f"MATCH (r:Rule {{project: $project, SWRL: '{text}'}}) RETURN r")
+
+    def test_the_other_quote_character_and_plain_punctuation_are_ordinary_content(self):
+        cypher = (
+            "MATCH (r:Rule {project: $project, SWRL: 'say \"hi\"; done -- // /* x */ UNION'}) "
+            "RETURN r.Rule_Id"
+        )
+        assert read_check(cypher) == []
+        cypher = "MATCH (r:Rule {project: $project, SWRL: \"it's; fine\"}) RETURN r.Rule_Id"
+        assert read_check(cypher) == []
+
+    def test_multi_line_strings_end_where_neo4j_ends_them(self):
+        cypher = "MATCH (r:Rule {project: $project, SWRL: 'line one\nline two WITH b'}) RETURN r.Rule_Id"
+        assert read_check(cypher) == []
+
+    def test_string_contents_never_leak_into_the_token_stream(self):
+        toks = cypher_allowlist.tokenize("RETURN 'a WITH b; MATCH (x)' AS s", "h")
+        assert [t.kind for t in toks] == ["IDENT", "STRING", "IDENT", "IDENT"]
+        assert toks[1].text == "a WITH b; MATCH (x)"
+
+    def test_catalog_and_reference_corpus_contain_no_backslash(self):
+        """The reference examples never needed an escape, so refusing them costs
+        the model nothing."""
+        for shape in dg_context.load_cypher_catalog()["shapes"]:
+            for field in ("cypher_template", "worked_example"):
+                assert _BS not in shape[field], (shape["id"], field)
+        for name in TestReferenceExampleCorpus.FILES:
+            path = _repo_root() / "training" / name
+            if path.exists():
+                assert _BS not in path.read_text(encoding="utf-8"), name

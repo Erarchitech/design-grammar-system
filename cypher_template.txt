@@ -9,7 +9,9 @@ statements that populate OntoGraph (ontology terms) and Metagraph
 
 OUTPUT RULES
 - Output Cypher only — no JSON, no markdown fences, no commentary, no Cypher
-  comments (// or /* */), no backticks, ASCII identifiers only.
+  comments (// or /* */), no backticks, ASCII identifiers only. String
+  literals may not contain a backslash (no escape sequences) or a doubled
+  quote ('' or ""); reword the text instead.
 - Use only MERGE and SET (MATCH only to re-bind a node by its complete literal
   key and project: $project). Never WITH, UNWIND, CALL, FOREACH, LOAD CSV,
   CREATE, DELETE, REMOVE, UNION or subqueries — such output is rejected.

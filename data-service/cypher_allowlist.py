@@ -39,9 +39,12 @@ Two profiles share the lexer:
 Lexical rules (both profiles): only ASCII letters/digits/underscore in
 identifiers, standard punctuation, and string contents. Backticks, comments,
 non-ASCII outside string literals, control characters and unterminated strings
-are violations, never stripped and trusted. String literals follow Neo4j's own
-backslash-escape rules, so this lexer and the server agree on where a string
-ends.
+are violations, never stripped and trusted. A string literal may contain no
+backslash (so no quote, newline, `u` or other escape sequences) and no doubled quote: the
+lexer does not try to mirror Neo4j's escape rules, it forbids every construct
+on which the two could disagree about where a string ends. A string may span
+lines (Neo4j does too); ASCII control characters other than whitespace inside
+one are refused.
 
 All functions are pure and return the `{code, message, path}` violation shape
 used by every other check in `dg_context.py`.
@@ -96,14 +99,14 @@ _READ_HOW = (
     "declared as (v:Label {project: $project}), with no WITH, UNWIND, CALL, "
     "UNION, subquery blocks, pattern predicates such as WHERE (a)-[:R]->(b) "
     "(use OPTIONAL MATCH (a)-[:R]->(b:Label {project: $project}) WHERE b IS "
-    "NULL instead), IS / | / & / ! label syntax, comments, backticks or "
-    "procedures"
+    "NULL instead), IS / | / & / ! label syntax, comments, backticks, "
+    "backslashes or doubled quotes in strings, or procedures"
 )
 _WRITE_HOW = (
     "emit only MERGE (v:Label {<key>: '<literal>', project: $project, graph: "
     "'<graph>'}), relationship MERGEs between those variables, and SET "
-    "v.prop = '<literal>' -- no comments, backticks, WITH, DELETE, CALL, "
-    "concatenation or functions"
+    "v.prop = '<literal>' -- no comments, backticks, backslashes or doubled "
+    "quotes in strings, WITH, DELETE, CALL, concatenation or functions"
 )
 
 
@@ -126,11 +129,20 @@ def tokenize(cypher: str, how: str) -> list[Tok]:
             while j < n:
                 cj = cypher[j]
                 if cj == "\\":
-                    j += 2
-                    continue
+                    # Neo4j gives a backslash several meanings (escaped quotes,
+                    # newline and tab escapes, 4- and 8-digit unicode escapes,
+                    # ...). Rather than mirror every one of them, a string may
+                    # not contain a backslash at all, so this lexer and the
+                    # server can never disagree on where a string literal ends.
+                    raise fail(
+                        "unsupported_syntax",
+                        "A backslash inside a string literal is not permitted "
+                        "(no escape sequences, unicode escapes included)",
+                        f"offset {j}",
+                    )
                 if cj == quote:
                     break
-                if ord(cj) < 0x20 and cj not in _WHITESPACE:
+                if (ord(cj) < 0x20 and cj not in _WHITESPACE) or ord(cj) == 0x7F:
                     raise fail(
                         "unsupported_syntax",
                         "A control character inside a string literal is not permitted",
@@ -142,6 +154,15 @@ def tokenize(cypher: str, how: str) -> list[Tok]:
                     "unsupported_syntax",
                     "An unterminated string literal is not permitted",
                     cypher[i : i + 40],
+                )
+            if j + 1 < n and cypher[j + 1] == quote:
+                # `'a''b'`: not a Cypher escape Neo4j honours, and not one this
+                # lexer honours either -- two adjacent literals are refused.
+                raise fail(
+                    "unsupported_syntax",
+                    "A doubled quote inside or directly after a string literal is "
+                    "not permitted",
+                    cypher[i : j + 2][:40],
                 )
             toks.append(Tok("STRING", cypher[i + 1 : j], i))
             i = j + 1
