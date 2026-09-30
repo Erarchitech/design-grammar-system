@@ -17,6 +17,18 @@ Two profiles share the lexer:
   declaration (bare references to an already declared variable are the only
   other form). No `WITH`/`UNWIND`/`CALL`/`UNION`/`FOREACH`/`LOAD`, no
   subquery blocks, no writes, no procedures, no variable-length paths.
+  Expressions use a real operand/operator grammar (two operands can never sit
+  side by side), so a `(` inside an expression is only a grouping or a function
+  call: pattern predicates and pattern expressions are rejected outright, and
+  every node pattern goes through the one node-shape reader used by MATCH,
+  OPTIONAL MATCH, MERGE and both ends of a relationship. That reader accepts
+  only `( [var] [:Label]* [{literal map}] )`; Neo4j 5 label-expression syntax
+  (`IS`, `&`, `|`, `!`, `%`) is rejected, never interpreted. `STARTS WITH` /
+  `ENDS WITH` are one operator, recognised only in operator position after a
+  complete operand; a `WITH` anywhere else is always the forbidden clause.
+  After a successful parse `_audit` checks the structural invariant: every `(`
+  was classified (node / call / group) and every node pattern the reader
+  processed is proven scoped -- otherwise the whole query is invalid.
 * write (`rule_ingest`, `rule_edit`): `MERGE`, `MATCH` (no `WHERE`) and `SET`
   only. Every declared node has exactly one label from the schema set, a
   complete single string-literal identity key and `project: $project`; `SET`
@@ -82,7 +94,10 @@ _READ_HOW = (
     "write a plain read-only query: MATCH/OPTIONAL MATCH ... WHERE ... RETURN "
     "... ORDER BY ... SKIP ... LIMIT, every node bound to a variable and "
     "declared as (v:Label {project: $project}), with no WITH, UNWIND, CALL, "
-    "UNION, subquery blocks, comments, backticks or procedures"
+    "UNION, subquery blocks, pattern predicates such as WHERE (a)-[:R]->(b) "
+    "(use OPTIONAL MATCH (a)-[:R]->(b:Label {project: $project}) WHERE b IS "
+    "NULL instead), IS / | / & / ! label syntax, comments, backticks or "
+    "procedures"
 )
 _WRITE_HOW = (
     "emit only MERGE (v:Label {<key>: '<literal>', project: $project, graph: "
@@ -209,6 +224,9 @@ FORBIDDEN_CLAUSE_WORDS: frozenset[str] = frozenset(
         "MERGE", "SET", "DELETE", "REMOVE", "DETACH", "NODETACH", "DROP",
         "USE", "YIELD", "START", "ALTER", "GRANT", "DENY", "REVOKE", "SHOW",
         "TERMINATE", "FINISH", "INSERT", "COMMIT", "EXPLAIN", "PROFILE",
+        # Cypher 25 clause words (defence in depth: a 5.26 server does not act
+        # on them, a newer one may).
+        "FOR", "LET", "FILTER", "NEXT", "OFFSET", "CYPHER",
     }
 )
 
@@ -221,19 +239,15 @@ _EXPR_STOP_WORDS: frozenset[str] = frozenset(
     }
 )
 
-# Words after which a `(` is a grouping or a pattern, not a function call.
-_PAREN_KEYWORDS: frozenset[str] = frozenset(
-    {
-        "AND", "OR", "XOR", "NOT", "IN", "WHEN", "THEN", "ELSE", "CASE", "IS",
-        "CONTAINS", "STARTS", "ENDS", "WHERE", "RETURN", "MATCH", "BY", "ON",
-    }
-)
+# CASE expression words: they end a sub-expression only inside a CASE.
+_CASE_WORDS: frozenset[str] = frozenset({"WHEN", "THEN", "ELSE", "END"})
 
-# Words after which a `{` may open a map literal (they are operators, never a
-# subquery introducer like EXISTS/COUNT/COLLECT).
-_MAP_OK_AFTER: frozenset[str] = frozenset(
-    {"AND", "OR", "XOR", "NOT", "IN", "WHEN", "THEN", "ELSE", "CASE", "RETURN", "BY"}
-)
+# Reserved operator words: never a variable name at an operand position.
+_OPERATOR_WORDS: frozenset[str] = frozenset({"AND", "OR", "XOR", "IN", "IS", "CONTAINS"})
+
+# Expressions, brackets and function calls nest at most this deep; deeper input
+# is an `unsupported_syntax` violation, never a Python RecursionError.
+MAX_NESTING_DEPTH = 64
 
 # Scalar and aggregate functions a read-only query may call. Namespaced
 # functions (`apoc.x.y(...)`, `db.x(...)`) and anything not listed are
@@ -262,6 +276,7 @@ WRITE_NODE_IDENTITY_KEY: dict[str, str] = {
 WRITE_REL_TYPES: frozenset[str] = frozenset({"HAS_BODY", "HAS_HEAD", "REFERS_TO", "ARG"})
 _PROTECTED_SET_KEYS: frozenset[str] = frozenset({"project", "graph"})
 _LITERAL_WORDS = frozenset({"true", "false", "null"})
+_LITERAL_WORDS_UPPER = frozenset(word.upper() for word in _LITERAL_WORDS)
 
 
 class _Parser:
@@ -274,6 +289,16 @@ class _Parser:
         self.node_vars: set[str] = set()
         self.rel_vars: set[str] = set()
         self.saw_project_param = False
+        self.depth = 0
+        self.case_depth = 0
+        # Token index of every `(` -> what the parser made of it: "node" (read
+        # by the one node-shape reader), "call" (a function call) or "group"
+        # (an expression grouping). `audit()` fails the query when a `(` was
+        # never classified.
+        self.paren_kind: dict[int, str] = {}
+        # Every node pattern the node-shape reader processed (read profile):
+        # (index of its `(`, how it is shown, whether it is proven scoped).
+        self.node_patterns: list[tuple[int, str, bool]] = []
 
     # -- token helpers ----------------------------------------------------
     def peek(self, offset: int = 0) -> Tok | None:
@@ -386,11 +411,24 @@ class _Parser:
 
     # -- node and relationship patterns ---------------------------------------
     def read_node_shape(self) -> tuple[str | None, list[str], dict[str, Tok] | None]:
+        """The one reader for every node pattern (MATCH, OPTIONAL MATCH, MERGE,
+        and either end of a relationship). The only accepted shape is
+        `( [var] [:Label]* [{literal map}] )`; any other token inside the
+        parentheses -- including Neo4j 5 label-expression syntax (`IS`, `&`,
+        `|`, `!`, `%`) and an inline WHERE -- is a violation, never
+        interpreted."""
+        self.paren_kind[self.i] = "node"
         self.expect_punct("(")
         var: str | None = None
         labels: list[str] = []
         nxt = self.peek()
         if nxt is not None and nxt.kind == "IDENT":
+            if nxt.upper == "IS":
+                raise self.unsupported(
+                    "Label-expression syntax (IS) is not permitted in a node pattern; "
+                    "write (v:Label {project: $project})",
+                    "IS",
+                )
             var = self.next().text
         while self.is_punct(":"):
             self.i += 1
@@ -470,6 +508,12 @@ class _Parser:
         if self.accept_punct("["):
             nxt = self.peek()
             if nxt is not None and nxt.kind == "IDENT":
+                if nxt.upper == "IS":
+                    raise self.unsupported(
+                        "Label-expression syntax (IS) is not permitted in a "
+                        "relationship pattern; write [v:TYPE]",
+                        "IS",
+                    )
                 var = self.next().text
             if self.accept_punct(":"):
                 while True:
@@ -512,6 +556,7 @@ class _Parser:
             self.read_node(declare=declare)
 
     def read_node(self, *, declare: bool) -> None:
+        open_index = self.i
         var, labels, props = self.read_node_shape()
         shown = "(" + (var or "") + "".join(":" + label for label in labels) + ")"
         if self.mode == "write":
@@ -519,6 +564,7 @@ class _Parser:
             return
         scoped = self.check_project_entry(props, shown)
         if var is None:
+            self.node_patterns.append((open_index, shown, False))
             self.record(
                 "anonymous_node_pattern",
                 "A node pattern without a variable cannot be scope-checked; every "
@@ -529,9 +575,13 @@ class _Parser:
         if scoped:
             if declare:
                 self.node_vars.add(var)
+            self.node_patterns.append((open_index, shown, True))
             return
         if var in self.node_vars:
-            return  # reference to an already scoped variable (only narrows)
+            # reference to an already scoped variable (only narrows)
+            self.node_patterns.append((open_index, shown, True))
+            return
+        self.node_patterns.append((open_index, shown, False))
         if props is not None and "project" in props:
             return  # project_literal / missing_project_scope already recorded
         self.record(
@@ -642,144 +692,353 @@ class _Parser:
                 )
 
     # -- read-profile expressions ---------------------------------------------
-    def parse_expr(self, *, closers: str = "", in_index: bool = False) -> int:
-        """Consume one expression, stopping (without consuming) at a `,` or a
-        closer at this level, at a top-level clause word, or at `;`. Returns
-        the number of tokens consumed."""
+    #
+    # Expressions are parsed with a real operand/operator grammar, not a token
+    # walk. Every token must be consumed in a position the grammar names:
+    #
+    #   expr    := operand (operator operand | postfix-operator)*
+    #   operand := (NOT | '-' | '+')* primary postfix*
+    #   primary := literal | $param | variable [':' Label]* | function '(' args ')'
+    #            | '(' expr ')' | '[' expr, ... ']' | '{' key ':' expr, ... '}'
+    #            | CASE ... END
+    #   postfix := '.' name | '[' index ']'
+    #
+    # Two consequences are what the earlier token-walking versions lacked:
+    # two operands can never sit side by side (so `a IS Rule`, `(a) (b)` and a
+    # smuggled `WITH` are errors, not skipped words), and a `(` in an
+    # expression is only ever a grouping or a function call -- never a node
+    # pattern. Pattern predicates and pattern expressions are rejected outright
+    # (they would need every node to meet the same {project: $project} rule the
+    # MATCH reader enforces); the only way to reach a relationship from an
+    # expression is through a MATCH clause.
+    def at_expr_end(self, closers: str, stop_dots: bool) -> bool:
+        tok = self.peek()
+        if tok is None:
+            return True
+        if tok.kind == "PUNCT":
+            if tok.text in closers or tok.text in (",", ";"):
+                return True
+            if stop_dots and tok.text == "." and self.is_punct(".", 1):
+                return True
+            return False
+        if tok.kind == "IDENT":
+            up = tok.upper
+            if self.case_depth > 0 and up in _CASE_WORDS:
+                return True
+            if up in _EXPR_STOP_WORDS:
+                if closers:
+                    raise self.unsupported(
+                        "A clause keyword inside brackets is not permitted", up
+                    )
+                return True
+        return False
+
+    def descend(self) -> None:
+        self.depth += 1
+        if self.depth > MAX_NESTING_DEPTH:
+            raise self.unsupported(
+                f"The query nests expressions deeper than {MAX_NESTING_DEPTH} levels",
+                "nesting",
+            )
+
+    def parse_expr(self, *, closers: str = "", stop_dots: bool = False) -> int:
+        """Consume one expression, stopping (without consuming) at a `,`, a
+        closer at this level, a top-level clause word or a `;`. Returns the
+        number of tokens consumed (0 for an empty expression)."""
         start = self.i
-        nested = bool(closers)
-        prev: Tok | None = None
+        if self.at_expr_end(closers, stop_dots):
+            return 0
+        self.descend()
+        try:
+            self.parse_operand(stop_dots)
+            while True:
+                step = self.parse_operator(closers, stop_dots)
+                if step == "end":
+                    break
+                if step == "binary":
+                    self.parse_operand(stop_dots)
+        finally:
+            self.depth -= 1
+        return self.i - start
+
+    def dash_starts_relationship(self, offset: int = 0) -> bool:
+        """`-` followed by `-` or `[`, or `<` `-` followed by `-` or `[`: the
+        start of a relationship pattern, however the whitespace falls."""
+        first = self.peek(offset)
+        if first is None or first.kind != "PUNCT":
+            return False
+        j = offset
+        if first.text == "<":
+            j += 1
+            first = self.peek(j)
+            if first is None or first.kind != "PUNCT":
+                return False
+        if first.text != "-":
+            return False
+        after = self.peek(j + 1)
+        return after is not None and after.kind == "PUNCT" and after.text in ("-", "[")
+
+    def reject_relationship_in_expression(self) -> _Fatal:
+        return self.unsupported(
+            "A pattern predicate or pattern expression is not permitted; bind the "
+            "nodes in a MATCH or OPTIONAL MATCH clause instead",
+            self.describe(self.peek()),
+        )
+
+    def parse_operand(self, stop_dots: bool) -> None:
         while True:
             tok = self.peek()
             if tok is None:
-                break
-            kind, text = tok.kind, tok.text
-            if kind == "PUNCT":
-                if text in closers or text == "," or text == ";":
-                    break
-                if text == "(":
-                    self.parse_paren()
-                    prev = self.toks[self.i - 1]
-                    continue
-                if text == "[":
-                    self.i += 1
-                    if not self.is_punct("]"):
-                        while True:
-                            if self.parse_expr(closers="]", in_index=True) == 0:
-                                raise self.unsupported("An empty list element", "[")
-                            if not self.accept_punct(","):
-                                break
-                    self.expect_punct("]")
-                    prev = self.toks[self.i - 1]
-                    continue
-                if text == "{":
-                    self.parse_map_literal(prev)
-                    prev = self.toks[self.i - 1]
-                    continue
-                if text == "|":
-                    raise self.unsupported(
-                        "A list or pattern comprehension is not permitted", "|"
-                    )
-                if text in (")", "]", "}"):
-                    raise self.unsupported("An unbalanced closing bracket", text)
-                if text == ".":
-                    nxt = self.peek(1)
-                    if in_index and nxt is not None and nxt.kind == "PUNCT" and nxt.text == ".":
-                        self.i += 2
-                        prev = self.toks[self.i - 1]
-                        continue
-                    if prev is None or nxt is None or nxt.kind != "IDENT":
-                        raise self.unsupported("A property access needs a plain name", ".")
-                    after = self.peek(2)
-                    if after is not None and after.kind == "PUNCT" and after.text == "(":
-                        raise self.unsupported(
-                            "A namespaced function or procedure call is not permitted",
-                            f"{prev.text}.{nxt.text}(",
-                        )
-                    # `x.project = '<literal>'` -- a literal project comparison
-                    if nxt.text == "project":
-                        op = self.peek(2)
-                        lit = self.peek(3)
-                        if (
-                            op is not None and op.kind == "PUNCT" and op.text == "="
-                            and lit is not None and lit.kind == "STRING"
-                        ):
-                            self.record(
-                                "project_literal",
-                                f"`project` is compared to the string literal '{lit.text}' "
-                                "instead of the bound $project parameter",
-                                f".project = '{lit.text}'",
-                            )
-                    self.i += 2
-                    prev = nxt
-                    continue
-                if text == ":":
-                    nxt = self.peek(1)
-                    if prev is not None and prev.kind == "IDENT" and nxt is not None and nxt.kind == "IDENT":
-                        self.i += 2
-                        prev = nxt
-                        continue
-                    raise self.unsupported("A stray ':' is not permitted", ":")
-                # arithmetic / comparison operators
+                raise self.unsupported(
+                    "The expression ends where an operand is required", "end of query"
+                )
+            if tok.kind == "PUNCT" and tok.text in ("-", "+"):
+                if self.dash_starts_relationship():
+                    raise self.reject_relationship_in_expression()
                 self.i += 1
-                prev = tok
                 continue
-            if kind == "IDENT":
-                up = tok.upper
-                if up in _EXPR_STOP_WORDS:
-                    if nested:
-                        raise self.unsupported(
-                            "A clause keyword inside brackets is not permitted", up
-                        )
-                    break
-                if up == "WITH":
-                    if not (prev is not None and prev.kind == "IDENT" and prev.upper in ("STARTS", "ENDS")):
-                        raise self.forbidden("WITH")
-                elif up in FORBIDDEN_CLAUSE_WORDS:
-                    raise self.forbidden(up)
-                elif up == "DISTINCT":
-                    if prev is not None:
-                        raise self.unsupported("DISTINCT is only allowed at the start of an expression", "DISTINCT")
-                nxt = self.peek(1)
-                if nxt is not None and nxt.kind == "PUNCT" and nxt.text == "(" and up not in _PAREN_KEYWORDS:
-                    if up not in READ_FUNCTIONS:
-                        raise _Fatal(
-                            _violation(
-                                "unsupported_function",
-                                f"The function `{tok.text}` is not on the read-only allowlist",
-                                tok.text,
-                                self.how,
-                            )
-                        )
-                    self.i += 2
-                    if not self.is_punct(")"):
-                        while True:
-                            if self.parse_expr(closers=")") == 0:
-                                raise self.unsupported("An empty function argument", tok.text + "(")
-                            if not self.accept_punct(","):
-                                break
-                    self.expect_punct(")")
-                    prev = self.toks[self.i - 1]
-                    continue
+            if tok.kind == "IDENT" and tok.upper == "NOT":
                 self.i += 1
-                prev = tok
                 continue
-            # NUMBER / STRING / PARAM
-            if kind == "PARAM" and text == "project":
-                self.saw_project_param = True
-            self.i += 1
-            prev = tok
-        return self.i - start
+            break
+        self.parse_primary()
+        self.parse_postfix(stop_dots)
 
-    def parse_map_literal(self, prev: Tok | None) -> None:
-        if prev is not None and not (
-            (prev.kind == "PUNCT" and prev.text in ("(", "[", ",", ":", "=", "<", ">", "+", "-", "*", "/", "%", "^", "~"))
-            or (prev.kind == "IDENT" and prev.upper in _MAP_OK_AFTER)
-        ):
+    def parse_primary(self) -> None:
+        tok = self.next()
+        kind, text = tok.kind, tok.text
+        if kind in ("NUMBER", "STRING"):
+            return
+        if kind == "PARAM":
+            if text == "project":
+                self.saw_project_param = True
+            return
+        if kind == "PUNCT":
+            if text == "(":
+                self.paren_kind[self.i - 1] = "group"
+                if self.parse_expr(closers=")") == 0:
+                    raise self.unsupported("An empty parenthesis", "()")
+                if self.is_punct(","):
+                    raise self.unsupported(
+                        "A tuple or argument list here is not permitted", ","
+                    )
+                self.expect_punct(")")
+                return
+            if text == "[":
+                if not self.is_punct("]"):
+                    while True:
+                        if self.parse_expr(closers="]") == 0:
+                            raise self.unsupported("An empty list element", "[")
+                        if not self.accept_punct(","):
+                            break
+                self.expect_punct("]")
+                return
+            if text == "{":
+                self.i -= 1
+                self.parse_map_literal()
+                return
             raise self.unsupported(
-                "A subquery block or map after this token is not permitted",
-                (prev.text + " {"),
+                "An operand (a value, variable, function call or bracket) was expected",
+                text,
             )
+        # IDENT
+        up = tok.upper
+        if up in _LITERAL_WORDS_UPPER:
+            return
+        if up == "CASE":
+            self.parse_case()
+            return
+        if up in FORBIDDEN_CLAUSE_WORDS:
+            raise self.forbidden(up)
+        if up in _EXPR_STOP_WORDS or up in _CASE_WORDS:
+            raise self.unsupported(
+                "The expression ends where an operand is required", up
+            )
+        if up in _OPERATOR_WORDS:
+            raise self.unsupported("An operand was expected here", up)
+        if self.is_punct("("):
+            self.call_function(tok)
+            return
+        # a variable, optionally followed by label predicates (`n:Rule:Active`)
+        while self.is_punct(":"):
+            label = self.peek(1)
+            if label is None or label.kind != "IDENT":
+                raise self.unsupported("A stray ':' is not permitted", ":")
+            self.i += 2
+
+    def call_function(self, name: Tok) -> None:
+        up = name.upper
+        if up not in READ_FUNCTIONS:
+            raise _Fatal(
+                _violation(
+                    "unsupported_function",
+                    f"The function `{name.text}` is not on the read-only allowlist",
+                    name.text,
+                    self.how,
+                )
+            )
+        self.paren_kind[self.i] = "call"
+        self.i += 1  # (
+        if not self.is_punct(")"):
+            if self.is_word("DISTINCT"):
+                self.i += 1
+            if up == "COUNT" and self.is_punct("*") and self.is_punct(")", 1):
+                self.i += 1
+            else:
+                while True:
+                    if self.parse_expr(closers=")") == 0:
+                        raise self.unsupported("An empty function argument", name.text + "(")
+                    if not self.accept_punct(","):
+                        break
+        self.expect_punct(")")
+
+    def parse_case(self) -> None:
+        self.case_depth += 1
+        try:
+            if not self.is_word("WHEN"):
+                if self.parse_expr() == 0:
+                    raise self.unsupported("CASE needs a WHEN branch", "CASE")
+            seen_when = False
+            while self.is_word("WHEN"):
+                seen_when = True
+                self.i += 1
+                if self.parse_expr() == 0:
+                    raise self.unsupported("WHEN needs a condition", "WHEN")
+                if not self.is_word("THEN"):
+                    raise self.unsupported("WHEN must be followed by THEN", "WHEN")
+                self.i += 1
+                if self.parse_expr() == 0:
+                    raise self.unsupported("THEN needs a value", "THEN")
+            if not seen_when:
+                raise self.unsupported("CASE needs a WHEN branch", "CASE")
+            if self.is_word("ELSE"):
+                self.i += 1
+                if self.parse_expr() == 0:
+                    raise self.unsupported("ELSE needs a value", "ELSE")
+            if not self.is_word("END"):
+                raise self.unsupported("CASE must end with END", "CASE")
+            self.i += 1
+        finally:
+            self.case_depth -= 1
+
+    def parse_postfix(self, stop_dots: bool) -> None:
+        while True:
+            tok = self.peek()
+            if tok is None or tok.kind != "PUNCT":
+                return
+            if tok.text == ".":
+                nxt = self.peek(1)
+                if stop_dots and nxt is not None and nxt.kind == "PUNCT" and nxt.text == ".":
+                    return
+                if nxt is None or nxt.kind != "IDENT":
+                    raise self.unsupported("A property access needs a plain name", ".")
+                after = self.peek(2)
+                if after is not None and after.kind == "PUNCT" and after.text == "(":
+                    raise self.unsupported(
+                        "A namespaced function or procedure call is not permitted",
+                        f".{nxt.text}(",
+                    )
+                # `x.project = '<literal>'` -- a literal project comparison
+                if nxt.text == "project":
+                    op = self.peek(2)
+                    lit = self.peek(3)
+                    if (
+                        op is not None and op.kind == "PUNCT" and op.text == "="
+                        and lit is not None and lit.kind == "STRING"
+                    ):
+                        self.record(
+                            "project_literal",
+                            f"`project` is compared to the string literal '{lit.text}' "
+                            "instead of the bound $project parameter",
+                            f".project = '{lit.text}'",
+                        )
+                self.i += 2
+                continue
+            if tok.text == "[":
+                self.i += 1
+                self.parse_index()
+                continue
+            return
+
+    def parse_index(self) -> None:
+        """`[i]`, `[a..b]`, `[..b]`, `[a..]` -- the `[` is already consumed."""
+        if self.is_punct(".") and self.is_punct(".", 1):
+            self.i += 2
+            if not self.is_punct("]") and self.parse_expr(closers="]") == 0:
+                raise self.unsupported("An empty slice bound", "..")
+        else:
+            if self.parse_expr(closers="]", stop_dots=True) == 0:
+                raise self.unsupported("An empty index", "[")
+            if self.is_punct(".") and self.is_punct(".", 1):
+                self.i += 2
+                if not self.is_punct("]") and self.parse_expr(closers="]") == 0:
+                    raise self.unsupported("An empty slice bound", "..")
+        self.expect_punct("]")
+
+    def parse_operator(self, closers: str, stop_dots: bool) -> str:
+        """After an operand: 'end' at an expression end, 'binary' after a
+        binary operator (an operand must follow), 'postfix' after `IS [NOT]
+        NULL`. Anything else is a violation."""
+        if self.at_expr_end(closers, stop_dots):
+            return "end"
+        tok = self.next()
+        if tok.kind == "PUNCT":
+            text = tok.text
+            if text in (")", "]", "}"):
+                raise self.unsupported("An unbalanced closing bracket", text)
+            if text == "-" or text == "<":
+                self.i -= 1
+                if self.dash_starts_relationship():
+                    raise self.reject_relationship_in_expression()
+                self.i += 1
+            if text in ("+", "-", "*", "/", "%", "^"):
+                return "binary"
+            if text in ("<", ">"):
+                if self.is_adjacent_punct(tok, ("=", ">") if text == "<" else ("=",)):
+                    self.i += 1
+                return "binary"
+            if text == "=":
+                if self.is_adjacent_punct(tok, ("~",)):
+                    self.i += 1
+                return "binary"
+            raise self.unsupported("An operator was expected here", text)
+        if tok.kind == "IDENT":
+            up = tok.upper
+            if up in ("AND", "OR", "XOR", "IN", "CONTAINS"):
+                return "binary"
+            if up in ("STARTS", "ENDS"):
+                # `STARTS WITH` / `ENDS WITH` is one operator. It is created
+                # only here, after a complete operand; a `WITH` anywhere else
+                # is always the forbidden clause, whatever precedes it.
+                if not self.is_word("WITH"):
+                    raise self.unsupported(f"{up} must be followed by WITH", up)
+                self.i += 1
+                return "binary"
+            if up == "IS":
+                if self.is_word("NOT"):
+                    self.i += 1
+                if not self.is_word("NULL"):
+                    raise self.unsupported(
+                        "IS may only be followed by [NOT] NULL (label and type "
+                        "predicates are not permitted)",
+                        "IS",
+                    )
+                self.i += 1
+                return "postfix"
+            if up in FORBIDDEN_CLAUSE_WORDS:
+                raise self.forbidden(up)
+        raise self.unsupported("An operator was expected here", self.describe(tok))
+
+    def is_adjacent_punct(self, tok: Tok, options: tuple[str, ...]) -> bool:
+        nxt = self.peek()
+        return (
+            nxt is not None
+            and nxt.kind == "PUNCT"
+            and nxt.text in options
+            and nxt.pos == tok.pos + 1
+        )
+
+    def parse_map_literal(self) -> None:
         self.expect_punct("{")
         if self.accept_punct("}"):
             return
@@ -793,26 +1052,6 @@ class _Parser:
             if not self.accept_punct(","):
                 break
         self.expect_punct("}")
-
-    def parse_paren(self) -> None:
-        """A `(` inside an expression: a pattern predicate when it reads as a
-        node pattern followed by a relationship, else a grouping."""
-        save = self.i
-        try:
-            self.read_node_shape()
-            is_pattern = self.at_rel_start()
-        except _Fatal:
-            is_pattern = False
-        self.i = save
-        if is_pattern:
-            self.read_pattern_chain(declare=False)
-            return
-        self.i += 1
-        if self.parse_expr(closers=")") == 0:
-            raise self.unsupported("An empty parenthesis", "()")
-        if self.is_punct(","):
-            raise self.unsupported("A tuple or argument list here is not permitted", ",")
-        self.expect_punct(")")
 
     # -- read profile ------------------------------------------------------------
     def parse_read(self) -> None:
@@ -868,6 +1107,8 @@ class _Parser:
                 alias = self.next()
                 if alias.kind != "IDENT":
                     raise self.unsupported("An alias must be a plain name", self.describe(alias))
+                if alias.upper in FORBIDDEN_CLAUSE_WORDS or alias.upper in _EXPR_STOP_WORDS:
+                    raise self.reject_clause_word(alias)
             if not self.accept_punct(","):
                 break
         self.after_return_items()
@@ -970,6 +1211,45 @@ class _Parser:
                 break
 
 
+def _audit(parser: _Parser) -> list[Violation]:
+    """Structural invariant, checked after a parse that found no violation: the
+    parser must have accounted for every node pattern in the query.
+
+    * every `(` token was classified -- a node pattern read by
+      `read_node_shape`, a function call, or an expression grouping; a `(` the
+      parser never looked at would be a node pattern nobody scope-checked;
+    * in the read profile every node pattern the reader processed is proven
+      scoped (declared with `project: $project`, or a bare reference to a
+      variable that was).
+
+    If either fails the whole query is invalid, whatever the rest looked like.
+    """
+    out: list[Violation] = []
+    for index, tok in enumerate(parser.toks):
+        if tok.kind == "PUNCT" and tok.text == "(" and index not in parser.paren_kind:
+            out.append(
+                _violation(
+                    "unsupported_syntax",
+                    "A parenthesis was never classified as a node pattern, a call or a "
+                    "grouping, so the node pattern it may hold was not scope-checked",
+                    f"offset {tok.pos}",
+                    parser.how,
+                )
+            )
+    if parser.mode == "read":
+        for _, shown, scoped in parser.node_patterns:
+            if not scoped:
+                out.append(
+                    _violation(
+                        "missing_project_scope",
+                        f"The node pattern {shown} was read but not proven scoped to $project",
+                        shown,
+                        parser.how,
+                    )
+                )
+    return out
+
+
 def _run(cypher: str, *, mode: str, how: str) -> tuple[list[Violation], _Parser | None]:
     try:
         toks = tokenize(cypher, how)
@@ -983,7 +1263,17 @@ def _run(cypher: str, *, mode: str, how: str) -> tuple[list[Violation], _Parser 
             parser.parse_write()
     except _Fatal as exc:
         return parser.violations + [exc.violation], parser
+    if not parser.violations:
+        parser.violations.extend(_audit(parser))
     return parser.violations, parser
+
+
+def analyze(cypher: str, *, mode: str) -> tuple[list[Violation], _Parser | None]:
+    """`(violations, parser)` for `cypher` under `mode` ("read" | "write"). The
+    parser (None when the text did not lex) exposes `paren_kind` and
+    `node_patterns` so tests can check the structural invariant."""
+    how = _READ_HOW if mode == "read" else _WRITE_HOW
+    return _run(cypher, mode=mode, how=how)
 
 
 def check_read_allowlist(cypher: str) -> list[Violation]:

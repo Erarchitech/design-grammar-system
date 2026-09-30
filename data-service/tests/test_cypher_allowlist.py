@@ -198,6 +198,22 @@ class TestReadRejectsOtherConstructs:
                 "MATCH (r:Rule {project: $project}); MATCH (m) RETURN m",
                 "unsupported_syntax",
             ),
+            # pattern predicates / pattern expressions are rejected outright
+            # (1205 review iteration 4, CR-02): the only way to a relationship
+            # is a MATCH clause, where every node must carry {project: $project}
+            (
+                "MATCH (r:Rule {project: $project}) WHERE NOT (r)-[:SUPERSEDED_BY]->() RETURN r",
+                "unsupported_syntax",
+            ),
+            (
+                "MATCH (r:Rule {project: $project}), (s:Rule {project: $project}) "
+                "WHERE NOT (r)-[:SUPERSEDED_BY]->(s) RETURN r",
+                "unsupported_syntax",
+            ),
+            (
+                "MATCH (r:Rule {project: $project}) WHERE (r)-[:HAS_BODY]->(m) RETURN r",
+                "unsupported_syntax",
+            ),
             ("MATCH (r:Rule {project: $project})", "unsupported_syntax"),  # no RETURN
             ("", "unsupported_syntax"),
         ],
@@ -228,16 +244,6 @@ class TestReadRejectsOtherConstructs:
                 "MATCH (r:Rule {project: $project})-[:HAS_BODY]->() RETURN r",
                 "anonymous_node_pattern",
                 "()",
-            ),
-            (
-                "MATCH (r:Rule {project: $project}) WHERE NOT (r)-[:SUPERSEDED_BY]->() RETURN r",
-                "anonymous_node_pattern",
-                "()",
-            ),
-            (
-                "MATCH (r:Rule {project: $project}) WHERE (r)-[:HAS_BODY]->(m) RETURN r",
-                "missing_project_scope",
-                "m",
             ),
             (
                 "MATCH ()-[r:HAS_BODY]->() RETURN r",
@@ -275,8 +281,6 @@ LEGIT_READ_QUERIES = [
     "MATCH (r:Rule {project: $project}) "
     "OPTIONAL MATCH (r)-[:SUPERSEDED_BY]->(s:Rule {project: $project}) "
     "WHERE s IS NULL RETURN r.Rule_Id, r.SWRL ORDER BY r.Rule_Id DESC SKIP 5 LIMIT 10",
-    "MATCH (r:Rule {project: $project}), (s:Rule {project: $project}) "
-    "WHERE NOT (r)-[:SUPERSEDED_BY]->(s) RETURN r",
     # the validation-run shape the graph-query prompt teaches
     "MATCH (run:ValidationRun {project: $project}) "
     "RETURN run.Run_Id, run.statePayloadJson ORDER BY run.Run_Id LIMIT 50",
@@ -741,3 +745,429 @@ class TestModuleSurface:
     def test_read_functions_cover_the_aggregates_the_prompt_teaches(self):
         for name in ("COUNT", "COLLECT", "SUM", "MIN", "MAX", "AVG"):
             assert name in cypher_allowlist.READ_FUNCTIONS
+
+
+# ── 1205 review iteration 4: CR-01 (STARTS/ENDS ... WITH) ─────────────────
+
+_TWO_NODES = "MATCH (a:Rule {project: $project}), (b:Rule {project: $project}) "
+
+
+class TestStartsEndsWithIsAnOperatorNotAWord:
+    """`STARTS WITH` / `ENDS WITH` exist only in operator position after a
+    complete operand. A `WITH` in any other position is always the forbidden
+    clause, whatever text precedes it (property name, label, variable)."""
+
+    @pytest.mark.parametrize(
+        "where",
+        [
+            # the reviewer's reproduction: a property NAMED starts / ends
+            "a.project = $project OR a.starts WITH a",
+            "a.ends WITH a",
+            # case variants
+            "a.STARTS WITH a",
+            "a.Starts With a",
+            "a.ENDS WITH a",
+            "a.eNdS wItH a",
+            # a label named starts / ends
+            "a:starts WITH a",
+            "a:ENDS WITH a",
+            # a variable named starts / ends
+            "starts WITH a",
+            "ends WITH a",
+            # any other preceding token
+            "a.name WITH a",
+            "a.x = 1 WITH a",
+            "a.x IS NULL WITH a",
+            "(a.x) WITH a",
+            "a.x STARTS WITH 'x' WITH a",
+            "a.x = 'starts' WITH a",
+            "a.x IN [1] WITH a",
+        ],
+    )
+    def test_with_clause_smuggled_after_a_starts_lookalike_is_rejected(self, where):
+        cypher = f"{_TWO_NODES}WHERE {where}\nMATCH (b)\nRETURN b.secret"
+        result = read_check(cypher)
+        assert any(v["code"] == "forbidden_clause" and v["path"] == "WITH" for v in result), (
+            where,
+            result,
+        )
+
+    def test_review_reproduction_is_rejected_exactly(self):
+        cypher = (
+            "MATCH (a:Rule {project: $project}), (b:Rule {project: $project})\n"
+            "WHERE a.project = $project OR a.starts WITH a\n"
+            "MATCH (b)\n"
+            "RETURN b.secret"
+        )
+        assert "forbidden_clause" in _codes(read_check(cypher))
+
+    @pytest.mark.parametrize(
+        "where",
+        [
+            "a.name STARTS WITH 'x'",
+            "a.name ENDS WITH 'x'",
+            "a.name starts with 'x'",
+            "a.name Ends With a.other",
+            "a.starts STARTS WITH 'x'",  # a property named starts as the LEFT operand
+            "a.name STARTS WITH 'x' AND a.name ENDS WITH 'y'",
+            "NOT a.name STARTS WITH $project",
+            "(a.name) STARTS WITH 'x'",
+            "toLower(a.name) STARTS WITH toLower('X')",
+        ],
+    )
+    def test_real_operator_still_parses(self, where):
+        assert read_check(f"{_TWO_NODES}WHERE {where} RETURN a.Rule_Id") == [], where
+
+    @pytest.mark.parametrize(
+        "where",
+        ["a.name STARTS 'x'", "a.name STARTS", "a.name ENDS a", "a.name STARTS WITH"],
+    )
+    def test_starts_ends_without_with_is_rejected(self, where):
+        assert read_check(f"{_TWO_NODES}WHERE {where} RETURN a") != [], where
+
+    def test_with_is_forbidden_at_every_position(self):
+        for cypher in (
+            "MATCH (a:Rule {project: $project}) WITH a RETURN a",
+            "MATCH (a:Rule {project: $project}) RETURN a WITH a",
+            "MATCH (a:Rule {project: $project}) RETURN a.x AS with",
+            "MATCH (a:Rule {project: $project}) RETURN with",
+            "MATCH (a:Rule {project: $project}) RETURN a.x STARTS WITH 'x' WITH a",
+            "MATCH (a:Rule {project: $project}) RETURN [a.x WITH a]",
+            "MATCH (a:Rule {project: $project}) RETURN size(a.x WITH a)",
+        ):
+            assert read_check(cypher), cypher
+
+    def test_write_profile_rejects_with_after_a_starts_lookalike(self):
+        cypher = (
+            "MATCH (a:Rule {Rule_Id: 'R_A', project: $project}) "
+            "MERGE (b:Atom {Atom_Id: 'x', project: $project}) SET a.starts WITH a"
+        )
+        assert write_check(cypher)
+
+
+# ── 1205 review iteration 4: CR-02 (one node-shape reader, no IS syntax) ──
+
+
+class TestNodeShapeReaderRejectsEverythingItDoesNotRecognise:
+    @pytest.mark.parametrize(
+        "cypher",
+        [
+            # the reviewer's reproductions
+            "MATCH (a:Rule {project: $project}) "
+            "WHERE (a IS Rule)-->({secret:'pb-SECRET-FOREIGN'}) RETURN 'x' AS r",
+            "MATCH (a:Rule {project: $project}) "
+            "WHERE (IS Rule)-->({secret:'pb-atom-secret'}) RETURN 'GLOBAL-ORACLE' AS r",
+            # IS label syntax in every position a node or relationship appears
+            "MATCH (a IS Rule {project: $project}) RETURN a",
+            "MATCH (a IS Rule) RETURN a",
+            "MATCH (IS Rule {project: $project}) RETURN 1 AS x",
+            "OPTIONAL MATCH (a IS Rule {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[r IS HAS_BODY]->(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[:HAS_BODY]->(b IS Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project}) RETURN (a IS Rule)-->(b) AS x",
+            "MATCH (a:Rule {project: $project}) RETURN size((a IS Rule)-->(b)) AS x",
+            "MATCH (a:Rule {project: $project}) RETURN exists((a IS Rule)-->(b)) AS x",
+            "MATCH (a:Rule {project: $project}) WHERE a IS Rule RETURN a",
+            "MATCH (a:Rule {project: $project}) WHERE a IS :: STRING RETURN a",
+            "MATCH (a:Rule {project: $project}) WHERE a IS TYPED STRING RETURN a",
+            # Neo4j 5 label expressions
+            "MATCH (a:Rule|Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule&Atom {project: $project}) RETURN a",
+            "MATCH (a:!Rule {project: $project}) RETURN a",
+            "MATCH (a:% {project: $project}) RETURN a",
+            "MATCH (a:(Rule|Atom) {project: $project}) RETURN a",
+            "MATCH (a {project: $project}) WHERE a:Rule|Atom RETURN a",
+            "MATCH (a {project: $project}) WHERE a:Rule&Atom RETURN a",
+            "MATCH (a {project: $project}) WHERE a:!Rule RETURN a",
+            "MATCH (a {project: $project}) WHERE a:% RETURN a",
+            "MATCH (a:Rule {project: $project})-[r:HAS_BODY&HAS_HEAD]->(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[r:!HAS_BODY]->(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[r:%]->(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[r:(HAS_BODY)]->(b:Atom {project: $project}) RETURN a",
+            # inline WHERE and parameter maps
+            "MATCH (a:Rule {project: $project} WHERE a.x = 1) RETURN a",
+            "MATCH (a:Rule {project: $project})-[r:HAS_BODY WHERE r.order = 1]->(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule $p) RETURN a",
+            # path quantifiers and parenthesised path patterns
+            "MATCH ((a:Rule {project: $project})-[:HAS_BODY]->(b:Atom {project: $project}))+ RETURN a",
+            "MATCH (a:Rule {project: $project})-[:HAS_BODY]->+(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project})-[:HAS_BODY]->{1,3}(b:Atom {project: $project}) RETURN a",
+            "MATCH (a:Rule {project: $project}) (()-[:HAS_BODY]->()){1,3} RETURN a",
+        ],
+    )
+    def test_rejected(self, cypher):
+        assert read_check(cypher), cypher
+
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "(a)-[:X]->(b)",
+            "(a)-[:X]-(b)",
+            "(a)<-[:X]-(b)",
+            "(a)-->(b)",
+            "(a)--(b)",
+            "(a)<--(b)",
+            "(a)-[]->(b)",
+            "(a)-[:X]->({secret: 'pb'})",
+            "(a)-[:X]-({secret: 'pb'})",
+            "(a)-->({secret: 'pb'})",
+            "(a) < - [:X] - ({secret: 'pb'})",
+            "(a) - - ({secret: 'pb'})",
+            "(a)-[:X]->(b:Rule {project: $project})",
+            "(a)-[:X]->(:Rule {project: $project})",
+            "({secret: 'pb'})-->(a)",
+            "(:Rule {secret: 'pb'})-->(a)",
+            "(:Rule)-->(a)",
+            "()-->()",
+            "(a)-[:X]->()-[:Y]->()",
+        ],
+    )
+    def test_pattern_predicates_and_expressions_are_rejected_everywhere(self, predicate):
+        """A pattern outside MATCH is rejected entirely (no node in it could be
+        held to the {project: $project} rule), wherever an expression may sit."""
+        base = "MATCH (a:Rule {project: $project}), (b:Rule {project: $project}) "
+        for cypher in (
+            f"{base}WHERE {predicate} RETURN a",
+            f"{base}WHERE NOT {predicate} RETURN a",
+            f"{base}WHERE a.x = 1 AND {predicate} RETURN a",
+            f"{base}WHERE a.x = 1 OR NOT ({predicate}) RETURN a",
+            f"{base}RETURN {predicate} AS p",
+            f"{base}RETURN exists({predicate}) AS p",
+            f"{base}RETURN size({predicate}) AS p",
+            f"{base}RETURN coalesce({predicate}, false) AS p",
+            f"{base}RETURN [{predicate}] AS p",
+            f"{base}RETURN {{p: {predicate}}} AS p",
+            f"{base}RETURN CASE WHEN {predicate} THEN 1 ELSE 0 END AS p",
+            f"{base}RETURN a ORDER BY {predicate}",
+            f"{base}RETURN a LIMIT size({predicate})",
+            f"MATCH (a:Rule {{project: $project}}) OPTIONAL MATCH (a)-[:X]->(b:Rule {{project: $project}}) "
+            f"WHERE {predicate} RETURN a",
+        ):
+            assert read_check(cypher), cypher
+
+    def test_relationship_reachable_only_through_match(self):
+        """The supported way to ask 'does a have an outgoing X edge' is an
+        OPTIONAL MATCH with a scoped far node."""
+        cypher = (
+            "MATCH (a:Rule {project: $project}) "
+            "OPTIONAL MATCH (a)-[:SUPERSEDED_BY]->(s:Rule {project: $project}) "
+            "WHERE s IS NULL RETURN a.Rule_Id"
+        )
+        assert read_check(cypher) == []
+
+    def test_unscoped_far_node_of_a_match_chain_is_still_a_violation(self):
+        result = read_check("MATCH (a:Rule {project: $project})-[:X]->(b) RETURN b.secret")
+        assert any(v["code"] == "missing_project_scope" and v["path"] == "b" for v in result)
+
+    def test_write_profile_shares_the_node_shape_reader(self):
+        for cypher in (
+            "MERGE (a IS Rule {Rule_Id: 'R_X', project: $project})",
+            "MERGE (a:Rule|Atom {Rule_Id: 'R_X', project: $project})",
+            "MERGE (a:Rule {Rule_Id: 'R_X', project: $project}) "
+            "MERGE (a)-[r IS HAS_BODY]->(b:Atom {Atom_Id: 'A', project: $project})",
+        ):
+            assert write_check(cypher), cypher
+
+
+# ── 1205 review iteration 4: structural invariant ─────────────────────────
+
+
+def _paren_spans(toks):
+    """Independent of the parser: (open_index, close_index) for every `(`."""
+    stack, spans = [], []
+    for index, tok in enumerate(toks):
+        if tok.kind == "PUNCT" and tok.text == "(":
+            stack.append(index)
+        elif tok.kind == "PUNCT" and tok.text == ")" and stack:
+            spans.append((stack.pop(), index))
+    return spans
+
+
+def _relationship_adjacent(toks, open_index, close_index) -> bool:
+    """True when the lexer alone shows a relationship dash next to this
+    parenthesis -- i.e. it is (an endpoint of) a pattern."""
+
+    def punct(index):
+        if 0 <= index < len(toks) and toks[index].kind == "PUNCT":
+            return toks[index].text
+        return None
+
+    if open_index > 0 and toks[open_index - 1].kind == "IDENT":
+        return False  # a function call, not a pattern endpoint
+    after = (punct(close_index + 1) == "-" and punct(close_index + 2) in ("-", "[")) or (
+        punct(close_index + 1) == "<" and punct(close_index + 2) == "-"
+    )
+    before = (punct(open_index - 1) == ">" and punct(open_index - 2) == "-") or (
+        punct(open_index - 1) == "-" and punct(open_index - 2) in ("-", "]")
+    )
+    return before or after
+
+
+def _assert_structurally_sound(cypher: str) -> None:
+    """For an ACCEPTED read query: every `(` the lexer sees was classified by
+    the parser, every node pattern the reader processed is scoped, and every
+    parenthesis the lexer shows next to a relationship dash was read as a node
+    pattern (not waved through as a grouping)."""
+    violations, parser = cypher_allowlist.analyze(cypher, mode="read")
+    assert violations == [], (cypher, violations)
+    assert parser is not None
+    toks = parser.toks
+    for index, tok in enumerate(toks):
+        if tok.kind == "PUNCT" and tok.text == "(":
+            assert parser.paren_kind.get(index) in ("node", "call", "group"), (cypher, tok.pos)
+    assert all(scoped for _, _, scoped in parser.node_patterns), (cypher, parser.node_patterns)
+    for open_index, close_index in _paren_spans(toks):
+        if _relationship_adjacent(toks, open_index, close_index):
+            assert parser.paren_kind[open_index] == "node", (cypher, toks[open_index].pos)
+
+
+class TestStructuralInvariant:
+    @pytest.mark.parametrize("cypher", LEGIT_READ_QUERIES)
+    def test_every_accepted_legit_query_is_structurally_sound(self, cypher):
+        _assert_structurally_sound(cypher)
+
+    def test_audit_fails_a_query_whose_parenthesis_was_never_classified(self):
+        toks = cypher_allowlist.tokenize(
+            "MATCH (a:Rule {project: $project}) RETURN a.x", cypher_allowlist._READ_HOW
+        )
+        parser = cypher_allowlist._Parser(toks, how="h", mode="read")
+        result = cypher_allowlist._audit(parser)  # nothing was parsed
+        assert any(v["code"] == "unsupported_syntax" for v in result)
+
+    def test_audit_fails_a_node_pattern_that_was_not_proven_scoped(self):
+        toks = cypher_allowlist.tokenize("RETURN 1", cypher_allowlist._READ_HOW)
+        parser = cypher_allowlist._Parser(toks, how="h", mode="read")
+        parser.node_patterns.append((0, "(x)", False))
+        assert any(v["code"] == "missing_project_scope" for v in cypher_allowlist._audit(parser))
+
+    def test_audit_is_clean_for_a_fully_parsed_query(self):
+        violations, parser = cypher_allowlist.analyze(LEGIT_READ_QUERIES[0], mode="read")
+        assert violations == []
+        assert cypher_allowlist._audit(parser) == []
+
+    def test_a_parenthesis_inside_an_expression_is_never_a_node_pattern(self):
+        _, parser = cypher_allowlist.analyze(
+            "MATCH (a:Rule {project: $project}) WHERE (a.x = 1) AND size(a.l) > 0 RETURN a",
+            mode="read",
+        )
+        assert sorted(parser.paren_kind.values()) == ["call", "group", "node"]
+
+
+# Hostile node-pattern snippets, none of which may be accepted in ANY slot of
+# an otherwise valid query: each holds (or hides) a node that is not proven to
+# carry {project: $project}.
+HOSTILE_NODE_SNIPPETS = [
+    "(b)",
+    "(b:Rule)",
+    "(b {secret: 'x'})",
+    "(b:Rule {secret: 'x'})",
+    "(b:Rule {project: 'pb'})",
+    "(b:Rule {project: $other})",
+    "({secret: 'x'})",
+    "(:Rule {secret: 'x'})",
+    "()",
+    "(b IS Rule)",
+    "(IS Rule)",
+    "(b IS Rule {secret: 'x'})",
+    "(b:Rule|Atom)",
+    "(b:Rule&Atom {secret: 'x'})",
+    "(b:!Rule)",
+    "(b:% {secret: 'x'})",
+    "(b WHERE b.secret = 'x')",
+    "(b:Rule WHERE b.secret = 'x')",
+    "(b $props)",
+    "((b))",
+    "(`b`:Rule {project: $project})",
+]
+
+HOSTILE_SLOTS = [
+    "MATCH (a:Rule {{project: $project}}) WHERE (a)-[:X]->{n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE (a)<-[:X]-{n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE NOT (a)-->{n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE {n}-->(a) RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE {n}--(a) RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE {n}-[:X]->(a) RETURN a",
+    "MATCH (a:Rule {{project: $project}}) RETURN (a)-[:X]->{n} AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN exists((a)-->{n}) AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN size((a)-->{n}) AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN [(a)-->{n} | 1] AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN a ORDER BY size((a)-->{n})",
+    "MATCH (a:Rule {{project: $project}}) OPTIONAL MATCH (a)-[:X]->{n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) MATCH (a)-[:X]->{n} RETURN a",
+    "MATCH (a:Rule {{project: $project}})-[:X]->{n} RETURN a",
+    "MATCH {n}-[:X]->(a:Rule {{project: $project}}) RETURN a",
+    "MATCH (a:Rule {{project: $project}}), {n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) WHERE a.x = {n} RETURN a",
+    "MATCH (a:Rule {{project: $project}}) RETURN {n} AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN coalesce({n}, 1) AS p",
+    "MATCH (a:Rule {{project: $project}}) RETURN CASE WHEN {n} THEN 1 ELSE 0 END AS p",
+]
+
+
+# A lone parenthesised value is an ordinary expression grouping, not a pattern
+# (a pattern needs a relationship). These spellings are therefore legitimate in
+# the plain value slots (`a.x = {n}`, `RETURN {n}`, `coalesce({n}, 1)`, CASE);
+# what must never happen is one of them being read as a node that escapes the
+# project rule inside a relationship.
+_VALUE_SLOT_MARKERS = ("a.x = {n}", "RETURN {n} AS p", "coalesce({n}", "WHEN {n} THEN")
+_GROUPING_LOOKALIKES = {"(b)", "(b:Rule)", "({secret: 'x'})", "((b))"}
+
+
+class TestHostileNodePatternMatrix:
+    @pytest.mark.parametrize("slot", HOSTILE_SLOTS)
+    @pytest.mark.parametrize("snippet", HOSTILE_NODE_SNIPPETS)
+    def test_no_hostile_node_pattern_is_accepted_in_any_slot(self, slot, snippet):
+        if snippet in _GROUPING_LOOKALIKES and any(m in slot for m in _VALUE_SLOT_MARKERS):
+            pytest.skip("a lone parenthesised value is an expression grouping")
+        cypher = slot.format(n=snippet)
+        assert read_check(cypher), cypher
+
+
+_FUZZ_VOCABULARY = [
+    "(", ")", "-", "--", "-->", "<--", "->", "<-", "[", "]", "{", "}", ":", ",", ".", "|", "&",
+    "IS", "NOT", "NULL", "WITH", "STARTS", "ENDS", "MATCH", "OPTIONAL", "WHERE", "RETURN", "AND", "OR",
+    "IN", "CASE", "WHEN", "THEN", "ELSE", "END", "count", "size", "exists", "collect", "$project",
+    "project", "b", "c", "a.x", "a.starts", "a.ends", "'x'", "1", "=", "<>", "<", ">", "=~", "+", "*",
+    "{secret: 'x'}", "(b)", "(b:Rule)", "({secret: 'x'})", "(a)-[:X]->(b)", "(a)-->()", "DISTINCT",
+    "Rule", "a", "s",
+]
+
+
+def _mutations(seed_queries: list[str], count: int) -> list[str]:
+    import random
+
+    rng = random.Random(1205)
+    out = []
+    for _ in range(count):
+        toks = rng.choice(seed_queries).split(" ")
+        for _ in range(rng.randint(1, 3)):
+            op = rng.choice(("insert", "delete", "replace", "duplicate", "swap"))
+            at = rng.randrange(len(toks) + 1)
+            if op == "insert":
+                toks.insert(at, rng.choice(_FUZZ_VOCABULARY))
+            elif op == "delete" and toks:
+                toks.pop(min(at, len(toks) - 1))
+            elif op == "replace" and toks:
+                toks[min(at, len(toks) - 1)] = rng.choice(_FUZZ_VOCABULARY)
+            elif op == "duplicate" and toks:
+                i = min(at, len(toks) - 1)
+                toks.insert(i, toks[i])
+            elif op == "swap" and len(toks) > 1:
+                i = min(at, len(toks) - 2)
+                toks[i], toks[i + 1] = toks[i + 1], toks[i]
+        out.append(" ".join(toks))
+    return out
+
+
+class TestPropertyStyleInvariant:
+    def test_every_accepted_mutation_of_a_legit_query_is_structurally_sound(self):
+        """Seeded mutation fuzz: whatever the mutated text is, if the allowlist
+        accepts it then no node pattern escaped the shape reader."""
+        accepted = 0
+        for cypher in _mutations(LEGIT_READ_QUERIES, 6000):
+            if read_check(cypher):
+                continue
+            accepted += 1
+            _assert_structurally_sound(cypher)
+        assert accepted > 0, "the mutation corpus accepted nothing; the test checks nothing"
+        print(f"mutation fuzz: {accepted} accepted queries checked")
