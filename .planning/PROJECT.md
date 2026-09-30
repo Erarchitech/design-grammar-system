@@ -62,7 +62,7 @@ Architects can express design constraints in plain language and instantly valida
 - [x] **Phase 1202**: Design State Replay and Per-Object Verdict Closure — complete 2026-09-22 (11/11 plans, 7/7 must-haves verified)
 - [ ] **Phase 1203**: Identity Convergence and `ATTRIBUTE_OF` Decision — also owns the Phase 32.1 CR-01/CR-02 identity fixes (GSD-ALIGN-006)
 - [ ] **Phase 1204**: Determinism and LLM Reproducibility Benchmark
-- [ ] **Phase 1205**: Security and Tenancy Release Gate
+- [x] **Phase 1205**: Security and Tenancy Release Gate — complete 2026-09-30. 19/19 plans; 9/9 must-haves; ALGN12-17..20 and GATE12-05 met. The owner gave the gate-pass in the multi-user profile. Validated in Phase 1205: server-side auth plus project-membership tenancy (deny-by-default over the whole route set), no browser Neo4j/n8n access, required secrets, rotation, and a fail-closed Cypher allowlist. Local-profile self-registration was restored (D-05 amended). Open: N8N_PASSWORD is still the old committed value (owner-accepted, minor).
 
 **Carried forward from v9.0 (closed, not active):**
 
@@ -177,4 +177,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-22 — Phase 1202 (Design State Replay and Per-Object Verdict Closure) complete: 11/11 plans, phase-verified 7/7 must-haves, ALGN12-08/09/10/11 all met. Gap-closure round 2 (plans 1202-10/11) closed the two Critical findings from 1202-REVIEW.md's round 1 (CR-01: `BuildPerObjectVerdicts` duplicate-`(ruleId,objectId)`-row collapse; CR-02: `ObjectStateComponent` missing Object-vs-Geometry length guard) — both confirmed independently resolved by a fresh scoped code review and by phase re-verification, with no regression to ALGN12-09/ALGN12-11's already-closed work. Active milestone is v12.0 Theory–Implementation Alignment (Phases 1200–1205, superseding v9.0/v9.1 references below this line, which are historical). Next: Phase 1203 (Identity Convergence and `ATTRIBUTE_OF` Decision).
+*Last updated: 2026-09-30. Phase 1205 (Security and Tenancy Release Gate) is complete: 19/19 plans, verification passed (9/9 must-haves) after 4 code-review fix iterations and a final deep review. Server-side authorization with project-membership tenancy now fronts every data-service route. The browser no longer reaches Neo4j or n8n directly. Secrets are required from `.env` and were rotated, except n8n (owner-accepted open gap). A fail-closed allowlist, verified against a disposable two-tenant Neo4j, guards LLM-written Cypher. Self-registration is available in the local profile only. v12.0 milestone phases 1200–1205 are all executed; next is the milestone audit and completion.*
