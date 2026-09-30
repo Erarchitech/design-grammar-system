@@ -1,0 +1,30 @@
+{
+  "scope": "pure Python diagnostics; observations of current implementation, not whole-suite pass or live CAD verification",
+  "assertions": {
+    "golden_vector_matches": true,
+    "member_reordering_same_hash": true,
+    "capture_timestamp_changes_hash": true,
+    "geometry_excluded_from_hash": true,
+    "legacy_scalar_tuple_delimiter_collision": true,
+    "candidate_definition_not_in_id": true
+  },
+  "source_integrity": [
+    {
+      "key": "ptbim",
+      "unchanged": true
+    },
+    {
+      "key": "itcon",
+      "unchanged": true
+    },
+    {
+      "key": "ptbim-original",
+      "unchanged": true
+    }
+  ],
+  "source_hashes": {
+    "data-service\\design_state_projection.py": "d982e9d9b4c62059e73bd32e16d3d7b6c215de44581a791418136ea9c1b8929b",
+    "data-service\\cg_paramstate_store.py": "7083d146c7685fa099336930f6f65e23a097f7c06a5a3325ec4941d14d1543f3",
+    "data-service\\canonical_json.py": "bd397ac0534f58d3cf9bb11e1bf7881a360728a945aa72577094f1eb5fc84fc2"
+  }
+}

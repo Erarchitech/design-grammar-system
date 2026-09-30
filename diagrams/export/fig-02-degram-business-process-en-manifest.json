@@ -1,0 +1,8 @@
+{
+  "language": "en",
+  "pages": 2,
+  "translated_diagram_labels": 72,
+  "source": "fig-02-degram-business-process",
+  "status": "XML/SVG parsed; all diagram labels translated; no Cyrillic remains; Chrome checks and visual inspection of both draw.io PNGs and both HTML sheets passed",
+  "approval": "Business process and general plan approved by the owner on 2026-09-30; implementation not yet accepted"
+}

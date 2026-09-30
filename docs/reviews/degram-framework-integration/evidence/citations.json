@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": 1,
+      "url": "https://www.w3.org/TR/2017/REC-shacl-20170720",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 2,
+      "url": "https://w3c-lbd-cg.github.io/bot",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 3,
+      "url": "https://w3c-lbd-cg.github.io/lbd",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 4,
+      "url": "https://www.w3.org/TR/prov-o",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 5,
+      "url": "https://www.w3.org/submissions/SWRL",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 6,
+      "url": "https://arxiv.org/pdf/2601.00809.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 7,
+      "url": "https://arxiv.org/pdf/2511.08274.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 8,
+      "url": "https://www.itcon.org/papers/2025_26-ITcon-Wyke.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 9,
+      "url": "https://arxiv.org/pdf/2601.00809v2",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 10,
+      "url": "https://arxiv.org/pdf/2511.08274v1",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 11,
+      "url": "https://mdpi-res.com/d_attachment/electronics/electronics-14-02146/article_deploy/electronics-14-02146.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 12,
+      "url": "https://mdpi-res.com/d_attachment/buildings/buildings-14-01983/article_deploy/buildings-14-01983.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 13,
+      "url": "https://lot.linkeddata.es",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 14,
+      "url": "https://pure.tue.nl/ws/files/317339893/1-s2.0-S0926580523003667-main.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 15,
+      "url": "https://www.itcon.org/papers/2025_49-ITcon-Palihakkara.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 16,
+      "url": "https://sites.cc.gatech.edu/computing/classes/AY2013/cs7601_spring/papers/Dorst_Cross2001.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 17,
+      "url": "https://www.cad-journal.net/files/vol_13/CAD_13(4)_2016_549-557.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 18,
+      "url": "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/UserManual/specifications.md",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 19,
+      "url": "https://api.openalex.org/works/https://doi.org/10.1016/j.autcon.2025.106707",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 20,
+      "url": "https://api.crossref.org/works/10.1016/j.autcon.2023.105144",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 21,
+      "url": "https://api.crossref.org/works/10.1016/j.autcon.2023.104979",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 22,
+      "url": "https://mediatum.ub.tum.de/doc/1785697/g0tmslxc39zgchdo8dq11q4j6.2025_WU_EnrichIFC.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 23,
+      "url": "https://mdpi-res.com/d_attachment/buildings/buildings-15-01287/article_deploy/buildings-15-01287.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 24,
+      "url": "https://mediatum.ub.tum.de/doc/1749096/wkcbb1pjs0u9nzajsslaqt44b.2024_WU_IFC.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 25,
+      "url": "https://archives.aristeia.aegean.gr/Publications/e-Aegean_CulTour/2.1/08.%20CAD23_143-148.pdf",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 26,
+      "url": "https://arxiv.org/abs/2206.00783",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 27,
+      "url": "https://api.crossref.org/works/10.1108/CI-07-2014-0036",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 28,
+      "url": "https://doaj.org/api/articles/1422949dd8f74727b939c19826c1b030",
+      "title": "",
+      "accessed": "2026-09-30"
+    },
+    {
+      "id": 29,
+      "url": "https://doi.org/10.1080/16864360.2015.1131551",
+      "title": "",
+      "accessed": "2026-09-30"
+    }
+  ]
+}

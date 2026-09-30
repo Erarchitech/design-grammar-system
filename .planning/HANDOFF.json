@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-09-30T21:53:29+01:00",
+  "context": "research",
+  "phase": null,
+  "phase_name": "DeGram design approved",
+  "phase_dir": null,
+  "plan": null,
+  "task": null,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Integration research and general plan",
+      "status": "done"
+    },
+    {
+      "id": 2,
+      "name": "RU/EN process diagrams and verification",
+      "status": "done"
+    },
+    {
+      "id": 3,
+      "name": "Owner approval",
+      "status": "done"
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 4,
+      "name": "Formalize requirements, roadmap and cross-milestone ownership",
+      "status": "not_started"
+    }
+  ],
+  "blockers": [],
+  "async_jobs": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {
+      "decision": "Company classes; project rules; authorized copy/adapt/validate/approve lessons learned",
+      "rationale": "Reuse without global activation"
+    }
+  ],
+  "uncommitted_files": [
+    " M .planning/ROADMAP.md",
+    " M .planning/STATE.md",
+    " M CLAUDE.md",
+    " M DG/src/DG.Core/Contracts/EvidenceEnvelope.cs",
+    " M DG/src/DG.Core/Contracts/EvidenceEnvelopeFactory.cs",
+    " M DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs",
+    " M DG/src/DG.Core/Models/RuleEvaluationResult.cs",
+    " M DG/src/DG.Core/Models/ValidationPublishEntity.cs",
+    " M DG/src/DG.Core/Models/ValidationPublishRuleResult.cs",
+    " M DG/src/DG.Core/Validation/RuleEvaluator.cs",
+    " M DG/src/DG.Core/Validation/ValidationPublishPackageBuilder.cs",
+    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.deps.json",
+    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.dll",
+    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.pdb",
+    " M DG/src/DG.Core/bin/Release/net7.0/DG.Core.dll",
+    " M DG/src/DG.Core/bin/Release/net7.0/DG.Core.pdb",
+    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.deps.json",
+    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.dll",
+    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.pdb",
+    " M DG/src/DG.Core/obj/DG.Core.csproj.nuget.dgspec.json",
+    " M DG/src/DG.Core/obj/DG.Core.csproj.nuget.g.props",
+    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.AssemblyInfo.cs",
+    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.AssemblyInfoInputs.cache",
+    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
+    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.GlobalUsings.g.cs",
+    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.assets.cache",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.AssemblyInfo.cs",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.AssemblyInfoInputs.cache",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.GlobalUsings.g.cs",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.assets.cache",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.csproj.CoreCompileInputs.cache",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.pdb",
+    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.sourcelink.json",
+    " M DG/src/DG.Core/obj/Debug/net9.0/ref/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Debug/net9.0/refint/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.AssemblyInfo.cs",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.AssemblyInfoInputs.cache",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.GlobalUsings.g.cs",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.assets.cache",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.csproj.CoreCompileInputs.cache",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.pdb",
+    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.sourcelink.json",
+    " M DG/src/DG.Core/obj/Release/net7.0/ref/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Release/net7.0/refint/DG.Core.dll",
+    " M DG/src/DG.Core/obj/Release/net9.0/DG.Core.AssemblyInfo.cs",
+    " M DG/src/DG.Core/obj/Release/net9.0/DG.Core.AssemblyInfoInputs.cache"
+  ],
+  "uncommitted_files_total": 1478,
+  "uncommitted_files_elided": 1428,
+  "snapshot_note": "Measured before session commit. Unrelated work remains; re-run status on resume.",
+  "next_action": "Read approved decision and session note, formalize DeGram requirements and roadmap.",
+  "context_notes": "STATE: v12.0 / 1205.1 verifying. Do not close or switch milestone automatically. Design and general plan approved; implementation not accepted."
+}

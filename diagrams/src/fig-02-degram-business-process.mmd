@@ -1,0 +1,46 @@
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#FFFFFF'
+    primaryTextColor: '#000000'
+    primaryBorderColor: '#000000'
+    lineColor: '#A680B8'
+---
+flowchart TB
+  subgraph COMPANY[Компания и её CDE]
+    CDE[CDE: документы и модели]
+    ONTO[Ontograph: общие классы]
+    RIGHTS[Права: компания / проект / CDE]
+    subgraph A[Проект A]
+      S1[01 Требования] --> S2[02 Правила] --> S3[03 Связь с моделью] --> S4[04 Вариант] --> S5[05 Проверка] --> S6[06 Решение и передача]
+      S5 -. Замечания .-> S4
+      SPEC[SpecGraph: источники и решения]
+      META[Metagraph: проектные правила]
+      COMPUT[ComputGraph: параметры и скрипты]
+      VALID[ValidGraph: проверки]
+      S1 -.- SPEC
+      S6 -.- SPEC
+      S2 -.- META
+      S3 -.- META
+      S4 -.- COMPUT
+      S5 -.- VALID
+      S6 -.- VALID
+    end
+    subgraph B[Проект B]
+      COPY[Собственная редакция правил]
+      ADAPT[Адаптация → проверка → утверждение] --> COPY
+    end
+    ONTO -. Общие классы .-> A
+    ONTO -. Общие классы .-> B
+    CDE --> S1
+    S6 --> CDE
+    META --> LL[Lessons learned: отобрать и разрешить передачу]
+    LL -->|Копия с источником| ADAPT
+  end
+  DG[DeGram: диалог / web DG / Model Viewer]
+  DG -.- A
+  RIGHTS -.- DG
+  LLM[LLM: предложения и объяснения] -.- DG
+  DG -.- MR[MCP Revit ↔ Revit]
+  DG -.- MG[MCP GH ↔ Grasshopper / DG addin]

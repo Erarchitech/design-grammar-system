@@ -1,0 +1,14 @@
+{
+  "pages": 2,
+  "steps": 6,
+  "graphs": ["Ontograph", "Metagraph", "ComputGraph", "ValidGraph", "SpecGraph"],
+  "status": "target-process proposal",
+  "scope": "Company classes and CDE; project-scoped rules; copy, adapt, validate and approve lessons learned in another company project",
+  "generator": "diagrams/src/degram-process-v2.py",
+  "validation": {
+    "xml_svg_parse": "passed",
+    "browser": "Offline Chrome; two sheets; six steps; five graphs present; no page errors or text bounds overflow; navigation and details tested; mobile page width 390px",
+    "visual": "Both draw.io PNGs and both HTML screenshots reviewed: complete, no visible clipping or connector-text collisions",
+    "drawio_export": "Scale 1; page-index 1-based; second page verified by visible Project A/Project B and lessons learned content"
+  }
+}

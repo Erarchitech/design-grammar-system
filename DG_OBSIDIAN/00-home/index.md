@@ -32,6 +32,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram approved process and company-project rule scope|DeGram: согласованный процесс, классы компании, правила проекта и lessons learned]] (2026-09-30)
 - [[knowledge/decisions/Self-registration is local-profile only, invite-only in multi-user|Self-registration is local-profile only, invite-only in multi-user]] (2026-09-30, D-05 amendment)
 - [[knowledge/decisions/LLM-written Cypher is guarded by a grammar allowlist, not a blocklist|LLM-written Cypher: grammar allowlist, not blocklist]] (2026-09-30)
 - [[archive/Single-file React SPA avoids build tooling for main UI (archived)|Single-file React SPA (v1–v7, archived)]] — superseded by v8.0
@@ -154,6 +155,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ### Operational
 - [[sessions/_template|Session log template]]
+- [[sessions/2026-09-30 DeGram process approved and bilingual diagrams|2026-09-30 DeGram — согласование процесса и схемы RU/EN]]
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]
 - [[sessions/2026-04-05 Obsidian vault creation|2026-04-05 Vault creation]]
 - [[sessions/2026-04-05 Model Viewer screenshot and per-run graphics state|2026-04-05 MV screenshots & per-run gfx]]

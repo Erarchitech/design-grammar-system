@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="scope-title"><title id="scope-title">Классы общие — правила принадлежат проекту</title>
+<defs><marker id="scope-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 1 L8 5 L0 9 Z" fill="#A680B8"/></marker></defs>
+<rect x="0" y="0" width="1920" height="1080" rx="0" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2"/>
+<text data-id="brand" data-x="60" data-y="26" data-w="1200" data-h="30" x="60" y="48.480000000000004" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">DESIGN GRAMMARS / DeGram Agent</tspan>
+</text>
+<text data-id="status" data-x="1470" data-y="26" data-w="390" data-h="30" x="1860" y="47.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="end">
+<tspan x="1860" dy="0">ЦЕЛЕВОЙ ПРОЦЕСС · 2/2</tspan>
+</text>
+<text data-id="title" data-x="60" data-y="70" data-w="1800" data-h="60" x="60" y="113.6" font-family="Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">Классы общие — правила принадлежат проекту</tspan>
+</text>
+<text data-id="subtitle" data-x="60" data-y="132" data-w="1800" data-h="34" x="60" y="156.82" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="60" dy="0">Опыт переносится между проектами компании как проверяемая копия, а не как общее действующее правило</tspan>
+</text>
+<rect x="60" y="190" width="1800" height="810" rx="14" fill="#FFFFFF" stroke="#9999FF" stroke-width="2" stroke-dasharray="6 5"/>
+<text data-id="company-title" data-x="85" data-y="202" data-w="1740" data-h="36" x="85" y="228.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="85" dy="0">КОМПАНИЯ И ЕЁ CDE · общая среда данных, классов и накопленного опыта</tspan>
+</text>
+<rect x="90" y="258" width="600" height="135" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="shared-cde-title" data-x="108" data-y="268" data-w="564" data-h="37" x="108" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="108" dy="0">CDE · документы и модели</tspan>
+</text>
+<text data-id="shared-cde-body" data-x="108" data-y="309" data-w="564" data-h="74" x="108" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="108" dy="0">Редакции и доступные материалы проектов</tspan>
+<tspan x="108" dy="28.75">Ссылки на источники и публикации</tspan>
+</text>
+<rect x="740" y="258" width="680" height="135" rx="14" fill="#FFFFFF" stroke="#9999FF" stroke-width="2"/>
+<text data-id="shared-onto-title" data-x="758" data-y="268" data-w="644" data-h="37" x="758" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="758" dy="0">Ontograph · общие классы объектов</tspan>
+</text>
+<text data-id="shared-onto-body" data-x="758" data-y="309" data-w="644" data-h="74" x="758" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="758" dy="0">Классы, свойства и термины компании</tspan>
+<tspan x="758" dy="28.75">Изменение словаря — отдельное согласование</tspan>
+</text>
+<rect x="1470" y="258" width="360" height="135" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="org-rights-title" data-x="1488" data-y="268" data-w="324" data-h="37" x="1488" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1488" dy="0">Права участника</tspan>
+</text>
+<text data-id="org-rights-body" data-x="1488" data-y="309" data-w="324" data-h="74" x="1488" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1488" dy="0">Компания + проект</tspan>
+<tspan x="1488" dy="28.75">+ доступ в CDE</tspan>
+</text>
+<polyline points="940,393 940,422 430,422 430,462" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#scope-arrow)"/>
+<polyline points="1230,393 1230,422 1480,422 1480,462" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#scope-arrow)"/>
+<rect x="90" y="462" width="720" height="280" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<rect x="1110" y="462" width="720" height="280" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="project-a-name" data-x="110" data-y="473" data-w="680" data-h="35" x="110" y="499.34" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="110" dy="0">ПРОЕКТ A · исходный</tspan>
+</text>
+<text data-id="project-a-rule" data-x="110" data-y="526" data-w="680" data-h="36" x="110" y="552.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="110" dy="0">Metagraph: правило A, редакция 3</tspan>
+</text>
+<text data-id="project-a-scope" data-x="110" data-y="571" data-w="680" data-h="70" x="110" y="599.16" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="110" dy="0">Действует только в этом проекте:</tspan>
+<tspan x="110" dy="30.0">для выбранных классов, объектов и условий</tspan>
+</text>
+<text data-id="project-a-evidence" data-x="110" data-y="655" data-w="680" data-h="64" x="110" y="681.015" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="110" dy="0">ComputGraph · модель и расчёты; ValidGraph · проверки</tspan>
+<tspan x="110" dy="26.25">SpecGraph · источники, решения и история</tspan>
+</text>
+<text data-id="project-b-name" data-x="1130" data-y="473" data-w="680" data-h="35" x="1130" y="499.34" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1130" dy="0">ПРОЕКТ B · новый</tspan>
+</text>
+<text data-id="project-b-rule" data-x="1130" data-y="526" data-w="680" data-h="36" x="1130" y="552.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1130" dy="0">Metagraph: копия → собственная редакция</tspan>
+</text>
+<text data-id="project-b-scope" data-x="1130" data-y="571" data-w="680" data-h="70" x="1130" y="599.16" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1130" dy="0">Действует только в этом проекте:</tspan>
+<tspan x="1130" dy="30.0">для выбранных классов, объектов и условий</tspan>
+</text>
+<text data-id="project-b-evidence" data-x="1130" data-y="655" data-w="680" data-h="64" x="1130" y="681.015" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1130" dy="0">ComputGraph · модель и расчёты; ValidGraph · проверки</tspan>
+<tspan x="1130" dy="26.25">SpecGraph · источники, решения и история</tspan>
+</text>
+<text data-id="independence" data-x="825" data-y="520" data-w="270" data-h="155" x="960.0" y="563.73" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="960.0" dy="0">Общие классы</tspan>
+<tspan x="960.0" dy="27.5"></tspan>
+<tspan x="960.0" dy="27.5">Раздельные правила</tspan>
+<tspan x="960.0" dy="27.5">и результаты</tspan>
+</text>
+<rect x="510" y="805" width="900" height="125" rx="14" fill="#FFFFFF" stroke="#006600" stroke-width="2"/>
+<text data-id="lessons-title" data-x="528" data-y="815" data-w="864" data-h="37" x="528" y="842.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="528" dy="0">Lessons learned · отобранный опыт компании</tspan>
+</text>
+<text data-id="lessons-body" data-x="528" data-y="856" data-w="864" data-h="64" x="528" y="881.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="528" dy="0">Копия правила + источник + условия применения + основание</tspan>
+<tspan x="528" dy="28.75">В новом проекте: адаптация → проверка → утверждение</tspan>
+</text>
+<polyline points="430,742 430,870 510,870" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#scope-arrow)"/>
+<polyline points="1410,870 1480,870 1480,742" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#scope-arrow)"/>
+<text data-id="select-label" data-x="105" data-y="795" data-w="300" data-h="106" x="255.0" y="827.98" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="255.0" dy="0">Отобрать и разрешить</tspan>
+<tspan x="255.0" dy="27.5">передачу опыта</tspan>
+<tspan x="255.0" dy="27.5">из проекта A</tspan>
+</text>
+<text data-id="adopt-label" data-x="1510" data-y="795" data-w="300" data-h="106" x="1660.0" y="827.98" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="1660.0" dy="0">Скопировать</tspan>
+<tspan x="1660.0" dy="27.5">с разрешённым доступом</tspan>
+<tspan x="1660.0" dy="27.5">в проект B</tspan>
+</text>
+<text data-id="no-global" data-x="100" data-y="950" data-w="1700" data-h="32" x="100" y="973.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="100" dy="0">Проект B сохраняет ссылку на источник копии и ведёт свою историю. Правило A и результаты его проверок остаются в проекте A.</tspan>
+</text>
+<text data-id="scope-footer" data-x="60" data-y="1020" data-w="1800" data-h="36" x="60" y="1045.82" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">Права определяют, КТО может действовать. Область правила определяет, К ЧЕМУ и В КАКОМ ПРОЕКТЕ оно применяется.</tspan>
+</text>
+</svg>

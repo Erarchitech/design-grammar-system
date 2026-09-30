@@ -1,0 +1,308 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DG и DeGram — процесс и области применения</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:white;color:#111;font-family:Helvetica,Arial,sans-serif}nav{display:flex;gap:22px;flex-wrap:wrap;align-items:center;padding:18px 3vw;border-bottom:1px solid #ddd}nav strong{margin-right:auto}a{color:inherit;text-underline-offset:4px}a:focus-visible,summary:focus-visible{outline:3px solid #3399ff;outline-offset:5px}.sheet{overflow-x:auto;padding:10px 1.5vw 20px;border-bottom:1px solid #ddd}.sheet svg{display:block;width:100%;height:auto;min-width:1050px}.hint{margin:20px 3vw;color:#525252}.explain{padding:20px 4vw 60px;max-width:1450px;overflow-x:auto}h2{font-size:28px}table{width:100%;border-collapse:collapse;font-size:17px;line-height:1.55}th,td{text-align:left;vertical-align:top;padding:14px;border-bottom:1px solid #ddd}thead{background:#f5f5f5}details{border-top:1px solid #ddd;padding-top:20px;margin-top:25px}summary{font-weight:bold;font-size:22px;cursor:pointer;min-height:44px}p,li{font-size:18px;line-height:1.6}li{margin-bottom:10px}footer{padding:20px 4vw;border-top:1px solid #ddd;color:#525252;line-height:1.5}@media(max-width:700px){th,td{padding:8px;font-size:15px}}@media print{@page{size:A3 landscape;margin:5mm}nav,.hint,.explain,footer{display:none}.sheet{padding:0;border:0;overflow:visible;break-after:page}.sheet:last-of-type{break-after:auto}.sheet svg{min-width:0;width:100%}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}</style></head><body><nav aria-label="Навигация"><strong>DG / DeGram</strong><a href="#process">1. Процесс и система</a><a href="#scope">2. Компания и проекты</a><a href="#explain">Пояснения</a><a href="#boundaries">Lessons learned</a></nav><main><section class="sheet" id="process" aria-label="От требований к принятому решению"><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="process-title"><title id="process-title">От требований к принятому решению</title>
+<defs><marker id="process-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 1 L8 5 L0 9 Z" fill="#A680B8"/></marker></defs>
+<rect x="0" y="0" width="1920" height="1080" rx="0" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2"/>
+<text data-id="brand" data-x="60" data-y="26" data-w="1200" data-h="30" x="60" y="48.480000000000004" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">DESIGN GRAMMARS / DeGram Agent</tspan>
+</text>
+<text data-id="status" data-x="1470" data-y="26" data-w="390" data-h="30" x="1860" y="47.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="end">
+<tspan x="1860" dy="0">ЦЕЛЕВОЙ ПРОЦЕСС · 1/2</tspan>
+</text>
+<text data-id="title" data-x="60" data-y="70" data-w="1800" data-h="60" x="60" y="113.6" font-family="Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">От требований к принятому решению</tspan>
+</text>
+<text data-id="subtitle" data-x="60" data-y="132" data-w="1800" data-h="34" x="60" y="156.82" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="60" dy="0">Шесть шагов процесса и элементы системы, которые их поддерживают</tspan>
+</text>
+<rect x="60" y="190" width="550" height="120" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="cde-title" data-x="78" data-y="200" data-w="514" data-h="37" x="78" y="227.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="78" dy="0">CDE · среда общих данных</tspan>
+</text>
+<text data-id="cde-body" data-x="78" data-y="241" data-w="514" data-h="59" x="78" y="264.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="78" dy="0">Вход: документы и их редакции</tspan>
+<tspan x="78" dy="27.5">Выход: принятые материалы проекта</tspan>
+</text>
+<rect x="650" y="190" width="590" height="120" rx="14" fill="#FFFFFF" stroke="#9999FF" stroke-width="2"/>
+<text data-id="onto-title" data-x="668" data-y="200" data-w="554" data-h="37" x="668" y="227.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="668" dy="0">Ontograph · классы компании</tspan>
+</text>
+<text data-id="onto-body" data-x="668" data-y="241" data-w="554" data-h="59" x="668" y="264.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="668" dy="0">Общий язык объектов и свойств</tspan>
+<tspan x="668" dy="27.5">Для проектов в CDE этой компании</tspan>
+</text>
+<rect x="1280" y="190" width="580" height="120" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="rights-title" data-x="1298" data-y="200" data-w="544" data-h="37" x="1298" y="227.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1298" dy="0">Права доступа · на всех шагах</tspan>
+</text>
+<text data-id="rights-body" data-x="1298" data-y="241" data-w="544" data-h="59" x="1298" y="264.515" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1298" dy="0">Просмотр / редактирование / управление</tspan>
+<tspan x="1298" dy="26.25">DG и CDE проверяют права участника</tspan>
+</text>
+<polyline points="190,310 190,350" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#process-arrow)"/>
+<polyline points="790,310 790,350" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#process-arrow)"/>
+<rect x="60" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="num-01" data-x="78" data-y="358" data-w="224" data-h="26" x="78" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="78" dy="0">01</tspan>
+</text>
+<text data-id="step-title-01" data-x="78" data-y="388" data-w="224" data-h="70" x="78" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="78" dy="0">Собрать</tspan>
+<tspan x="78" dy="35.0">требования</tspan>
+</text>
+<text data-id="role-01" data-x="72" data-y="462" data-w="236" data-h="24" x="190.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="190.0" dy="0">Заказчик + архитектор</tspan>
+</text>
+<polyline points="320,414 356,414" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#process-arrow)"/>
+<rect x="360" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="num-02" data-x="378" data-y="358" data-w="224" data-h="26" x="378" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="378" dy="0">02</tspan>
+</text>
+<text data-id="step-title-02" data-x="378" data-y="388" data-w="224" data-h="70" x="378" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="378" dy="0">Согласовать</tspan>
+<tspan x="378" dy="35.0">правила</tspan>
+</text>
+<text data-id="role-02" data-x="372" data-y="462" data-w="236" data-h="24" x="490.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="490.0" dy="0">Ведущий архитектор</tspan>
+</text>
+<polyline points="620,414 656,414" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#process-arrow)"/>
+<rect x="660" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="num-03" data-x="678" data-y="358" data-w="224" data-h="26" x="678" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="678" dy="0">03</tspan>
+</text>
+<text data-id="step-title-03" data-x="678" data-y="388" data-w="224" data-h="70" x="678" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="678" dy="0">Связать</tspan>
+<tspan x="678" dy="35.0">с моделью</tspan>
+</text>
+<text data-id="role-03" data-x="672" data-y="462" data-w="236" data-h="24" x="790.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="790.0" dy="0">Проектировщик</tspan>
+</text>
+<polyline points="920,414 956,414" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#process-arrow)"/>
+<rect x="960" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="num-04" data-x="978" data-y="358" data-w="224" data-h="26" x="978" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="978" dy="0">04</tspan>
+</text>
+<text data-id="step-title-04" data-x="978" data-y="388" data-w="224" data-h="70" x="978" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="978" dy="0">Разработать</tspan>
+<tspan x="978" dy="35.0">вариант</tspan>
+</text>
+<text data-id="role-04" data-x="972" data-y="462" data-w="236" data-h="24" x="1090.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="1090.0" dy="0">Проектировщик</tspan>
+</text>
+<polyline points="1220,414 1256,414" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#process-arrow)"/>
+<rect x="1260" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="num-05" data-x="1278" data-y="358" data-w="224" data-h="26" x="1278" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1278" dy="0">05</tspan>
+</text>
+<text data-id="step-title-05" data-x="1278" data-y="388" data-w="224" data-h="70" x="1278" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1278" dy="0">Проверить</tspan>
+<tspan x="1278" dy="35.0">вариант</tspan>
+</text>
+<text data-id="role-05" data-x="1272" data-y="462" data-w="236" data-h="24" x="1390.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="1390.0" dy="0">Система + проектировщик</tspan>
+</text>
+<polyline points="1520,414 1556,414" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#process-arrow)"/>
+<rect x="1560" y="350" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#006600" stroke-width="2"/>
+<text data-id="num-06" data-x="1578" data-y="358" data-w="224" data-h="26" x="1578" y="377.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1578" dy="0">06</tspan>
+</text>
+<text data-id="step-title-06" data-x="1578" data-y="388" data-w="224" data-h="70" x="1578" y="415.02" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1578" dy="0">Принять</tspan>
+<tspan x="1578" dy="35.0">и передать</tspan>
+</text>
+<text data-id="role-06" data-x="1572" data-y="462" data-w="236" data-h="24" x="1690.0" y="479.78" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="1690.0" dy="0">Ответственный за решение</tspan>
+</text>
+<rect x="60" y="550" width="1800" height="192" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2" stroke-dasharray="6 5"/>
+<text data-id="project-graphs-title" data-x="80" data-y="557" data-w="1755" data-h="30" x="80" y="579.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="80" dy="0">ГРАФЫ АКТИВНОГО ПРОЕКТА · номера показывают, на каких шагах они используются</tspan>
+</text>
+<polyline points="190,492 190,550" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="490,492 490,525 720,525 720,550" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="1090,492 1090,550" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="1390,492 1390,525 1610,525 1610,550" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<rect x="80" y="600" width="425" height="120" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="spec-title" data-x="98" data-y="610" data-w="389" data-h="37" x="98" y="636.66" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="98" dy="0">SpecGraph · 01, 06</tspan>
+</text>
+<text data-id="spec-body" data-x="98" data-y="651" data-w="389" data-h="59" x="98" y="674.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="98" dy="0">Источники, пояснения</tspan>
+<tspan x="98" dy="27.5">и основания решений</tspan>
+</text>
+<rect x="525" y="600" width="425" height="120" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="meta-title" data-x="543" data-y="610" data-w="389" data-h="37" x="543" y="636.66" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="543" dy="0">Metagraph · 02, 03, 05</tspan>
+</text>
+<text data-id="meta-body" data-x="543" data-y="651" data-w="389" data-h="59" x="543" y="674.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="543" dy="0">Правила проекта</tspan>
+<tspan x="543" dy="27.5">и область их применения</tspan>
+</text>
+<rect x="970" y="600" width="425" height="120" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="comput-title" data-x="988" data-y="610" data-w="389" data-h="37" x="988" y="636.66" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="988" dy="0">ComputGraph · 03, 04</tspan>
+</text>
+<text data-id="comput-body" data-x="988" data-y="651" data-w="389" data-h="59" x="988" y="674.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="988" dy="0">Связи параметров,</tspan>
+<tspan x="988" dy="27.5">скриптов и модели</tspan>
+</text>
+<rect x="1415" y="600" width="425" height="120" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="valid-title" data-x="1433" data-y="610" data-w="389" data-h="37" x="1433" y="636.66" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1433" dy="0">ValidGraph · 05, 06</tspan>
+</text>
+<text data-id="valid-body" data-x="1433" data-y="651" data-w="389" data-h="59" x="1433" y="674.23" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1433" dy="0">Результаты проверок</tspan>
+<tspan x="1433" dy="27.5">и проверенное состояние</tspan>
+</text>
+<rect x="60" y="778" width="1800" height="92" rx="14" fill="#FFFFFF" stroke="#FF9933" stroke-width="2"/>
+<text data-id="degram-title" data-x="80" data-y="787" data-w="1750" data-h="32" x="80" y="811.84" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="80" dy="0">DeGram · рабочее место участника: диалог + web-интерфейс DG + Model Viewer</tspan>
+</text>
+<text data-id="degram-subtitle" data-x="80" data-y="827" data-w="1750" data-h="29" x="80" y="848.98" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="80" dy="0">Помогает на всех шести шагах; изменения подтверждает человек. Доступ к графам — через DG и права проекта.</tspan>
+</text>
+<polyline points="960,778 960,742" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<rect x="60" y="919" width="550" height="103" rx="14" fill="#FFFFFF" stroke="#FF9933" stroke-width="2"/>
+<text data-id="llm-title" data-x="78" data-y="929" data-w="514" data-h="37" x="78" y="956.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="78" dy="0">LLM · языковая модель</tspan>
+</text>
+<text data-id="llm-body" data-x="78" data-y="970" data-w="514" data-h="42" x="78" y="998.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="78" dy="0">Предлагает и объясняет; не утверждает</tspan>
+</text>
+<rect x="650" y="919" width="590" height="103" rx="14" fill="#FFFFFF" stroke="#A680B8" stroke-width="2"/>
+<text data-id="mcp-revit-title" data-x="668" data-y="929" data-w="554" data-h="37" x="668" y="956.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="668" dy="0">MCP-сервер Revit ↔ Revit</tspan>
+</text>
+<text data-id="mcp-revit-body" data-x="668" data-y="970" data-w="554" data-h="42" x="668" y="998.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="668" dy="0">Локальная модель на ПК участника</tspan>
+</text>
+<rect x="1280" y="919" width="580" height="103" rx="14" fill="#FFFFFF" stroke="#A680B8" stroke-width="2"/>
+<text data-id="mcp-gh-title" data-x="1298" data-y="929" data-w="544" data-h="37" x="1298" y="956.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1298" dy="0">MCP-сервер GH ↔ Grasshopper</tspan>
+</text>
+<text data-id="mcp-gh-body" data-x="1298" data-y="970" data-w="544" data-h="42" x="1298" y="998.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1298" dy="0">Скрипты и связывание через DG addin</tspan>
+</text>
+<polyline points="335,870 335,919" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="945,870 945,919" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="1570,870 1570,919" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5"/>
+<text data-id="legend" data-x="60" data-y="1035" data-w="1800" data-h="28" x="60" y="1055.8" font-family="Helvetica,Arial,sans-serif" font-size="20" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="60" dy="0">→ порядок работы · пунктир: связь с системой · замечания на шаге 05 → доработка на 04 · итог 06 → публикация в CDE</tspan>
+</text>
+</svg></section><section class="sheet" id="scope" aria-label="Классы общие — правила принадлежат проекту"><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="scope-title"><title id="scope-title">Классы общие — правила принадлежат проекту</title>
+<defs><marker id="scope-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 1 L8 5 L0 9 Z" fill="#A680B8"/></marker></defs>
+<rect x="0" y="0" width="1920" height="1080" rx="0" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2"/>
+<text data-id="brand" data-x="60" data-y="26" data-w="1200" data-h="30" x="60" y="48.480000000000004" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">DESIGN GRAMMARS / DeGram Agent</tspan>
+</text>
+<text data-id="status" data-x="1470" data-y="26" data-w="390" data-h="30" x="1860" y="47.12" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="400" fill="#525252" text-anchor="end">
+<tspan x="1860" dy="0">ЦЕЛЕВОЙ ПРОЦЕСС · 2/2</tspan>
+</text>
+<text data-id="title" data-x="60" data-y="70" data-w="1800" data-h="60" x="60" y="113.6" font-family="Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">Классы общие — правила принадлежат проекту</tspan>
+</text>
+<text data-id="subtitle" data-x="60" data-y="132" data-w="1800" data-h="34" x="60" y="156.82" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="60" dy="0">Опыт переносится между проектами компании как проверяемая копия, а не как общее действующее правило</tspan>
+</text>
+<rect x="60" y="190" width="1800" height="810" rx="14" fill="#FFFFFF" stroke="#9999FF" stroke-width="2" stroke-dasharray="6 5"/>
+<text data-id="company-title" data-x="85" data-y="202" data-w="1740" data-h="36" x="85" y="228.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="85" dy="0">КОМПАНИЯ И ЕЁ CDE · общая среда данных, классов и накопленного опыта</tspan>
+</text>
+<rect x="90" y="258" width="600" height="135" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="shared-cde-title" data-x="108" data-y="268" data-w="564" data-h="37" x="108" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="108" dy="0">CDE · документы и модели</tspan>
+</text>
+<text data-id="shared-cde-body" data-x="108" data-y="309" data-w="564" data-h="74" x="108" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="108" dy="0">Редакции и доступные материалы проектов</tspan>
+<tspan x="108" dy="28.75">Ссылки на источники и публикации</tspan>
+</text>
+<rect x="740" y="258" width="680" height="135" rx="14" fill="#FFFFFF" stroke="#9999FF" stroke-width="2"/>
+<text data-id="shared-onto-title" data-x="758" data-y="268" data-w="644" data-h="37" x="758" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="758" dy="0">Ontograph · общие классы объектов</tspan>
+</text>
+<text data-id="shared-onto-body" data-x="758" data-y="309" data-w="644" data-h="74" x="758" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="758" dy="0">Классы, свойства и термины компании</tspan>
+<tspan x="758" dy="28.75">Изменение словаря — отдельное согласование</tspan>
+</text>
+<rect x="1470" y="258" width="360" height="135" rx="14" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<text data-id="org-rights-title" data-x="1488" data-y="268" data-w="324" data-h="37" x="1488" y="295.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1488" dy="0">Права участника</tspan>
+</text>
+<text data-id="org-rights-body" data-x="1488" data-y="309" data-w="324" data-h="74" x="1488" y="339.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1488" dy="0">Компания + проект</tspan>
+<tspan x="1488" dy="28.75">+ доступ в CDE</tspan>
+</text>
+<polyline points="940,393 940,422 430,422 430,462" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#scope-arrow)"/>
+<polyline points="1230,393 1230,422 1480,422 1480,462" fill="none" stroke="#A680B8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#scope-arrow)"/>
+<rect x="90" y="462" width="720" height="280" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<rect x="1110" y="462" width="720" height="280" rx="14" fill="#FFFFFF" stroke="#3399FF" stroke-width="2"/>
+<text data-id="project-a-name" data-x="110" data-y="473" data-w="680" data-h="35" x="110" y="499.34" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="110" dy="0">ПРОЕКТ A · исходный</tspan>
+</text>
+<text data-id="project-a-rule" data-x="110" data-y="526" data-w="680" data-h="36" x="110" y="552.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="110" dy="0">Metagraph: правило A, редакция 3</tspan>
+</text>
+<text data-id="project-a-scope" data-x="110" data-y="571" data-w="680" data-h="70" x="110" y="599.16" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="110" dy="0">Действует только в этом проекте:</tspan>
+<tspan x="110" dy="30.0">для выбранных классов, объектов и условий</tspan>
+</text>
+<text data-id="project-a-evidence" data-x="110" data-y="655" data-w="680" data-h="64" x="110" y="681.015" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="110" dy="0">ComputGraph · модель и расчёты; ValidGraph · проверки</tspan>
+<tspan x="110" dy="26.25">SpecGraph · источники, решения и история</tspan>
+</text>
+<text data-id="project-b-name" data-x="1130" data-y="473" data-w="680" data-h="35" x="1130" y="499.34" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1130" dy="0">ПРОЕКТ B · новый</tspan>
+</text>
+<text data-id="project-b-rule" data-x="1130" data-y="526" data-w="680" data-h="36" x="1130" y="552.5" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="1130" dy="0">Metagraph: копия → собственная редакция</tspan>
+</text>
+<text data-id="project-b-scope" data-x="1130" data-y="571" data-w="680" data-h="70" x="1130" y="599.16" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1130" dy="0">Действует только в этом проекте:</tspan>
+<tspan x="1130" dy="30.0">для выбранных классов, объектов и условий</tspan>
+</text>
+<text data-id="project-b-evidence" data-x="1130" data-y="655" data-w="680" data-h="64" x="1130" y="681.015" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="1130" dy="0">ComputGraph · модель и расчёты; ValidGraph · проверки</tspan>
+<tspan x="1130" dy="26.25">SpecGraph · источники, решения и история</tspan>
+</text>
+<text data-id="independence" data-x="825" data-y="520" data-w="270" data-h="155" x="960.0" y="563.73" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="960.0" dy="0">Общие классы</tspan>
+<tspan x="960.0" dy="27.5"></tspan>
+<tspan x="960.0" dy="27.5">Раздельные правила</tspan>
+<tspan x="960.0" dy="27.5">и результаты</tspan>
+</text>
+<rect x="510" y="805" width="900" height="125" rx="14" fill="#FFFFFF" stroke="#006600" stroke-width="2"/>
+<text data-id="lessons-title" data-x="528" data-y="815" data-w="864" data-h="37" x="528" y="842.0" font-family="Helvetica,Arial,sans-serif" font-size="25" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="528" dy="0">Lessons learned · отобранный опыт компании</tspan>
+</text>
+<text data-id="lessons-body" data-x="528" data-y="856" data-w="864" data-h="64" x="528" y="881.445" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="528" dy="0">Копия правила + источник + условия применения + основание</tspan>
+<tspan x="528" dy="28.75">В новом проекте: адаптация → проверка → утверждение</tspan>
+</text>
+<polyline points="430,742 430,870 510,870" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#scope-arrow)"/>
+<polyline points="1410,870 1480,870 1480,742" fill="none" stroke="#A680B8" stroke-width="2" marker-end="url(#scope-arrow)"/>
+<text data-id="select-label" data-x="105" data-y="795" data-w="300" data-h="106" x="255.0" y="827.98" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="255.0" dy="0">Отобрать и разрешить</tspan>
+<tspan x="255.0" dy="27.5">передачу опыта</tspan>
+<tspan x="255.0" dy="27.5">из проекта A</tspan>
+</text>
+<text data-id="adopt-label" data-x="1510" data-y="795" data-w="300" data-h="106" x="1660.0" y="827.98" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="400" fill="#525252" text-anchor="middle">
+<tspan x="1660.0" dy="0">Скопировать</tspan>
+<tspan x="1660.0" dy="27.5">с разрешённым доступом</tspan>
+<tspan x="1660.0" dy="27.5">в проект B</tspan>
+</text>
+<text data-id="no-global" data-x="100" data-y="950" data-w="1700" data-h="32" x="100" y="973.14" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="400" fill="#525252" text-anchor="start">
+<tspan x="100" dy="0">Проект B сохраняет ссылку на источник копии и ведёт свою историю. Правило A и результаты его проверок остаются в проекте A.</tspan>
+</text>
+<text data-id="scope-footer" data-x="60" data-y="1020" data-w="1800" data-h="36" x="60" y="1045.82" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="700" fill="#000000" text-anchor="start">
+<tspan x="60" dy="0">Права определяют, КТО может действовать. Область правила определяет, К ЧЕМУ и В КАКОМ ПРОЕКТЕ оно применяется.</tspan>
+</text>
+</svg></section><p class="hint">Два презентационных листа. На узком экране схемы прокручиваются; Ctrl+P печатает их отдельными страницами.</p><section class="explain" id="explain"><h2>Связи без технических подробностей</h2>
+<table><thead><tr><th>Элемент</th><th>Роль в процессе</th><th>Область</th></tr></thead><tbody>
+<tr><th>Ontograph</th><td>Общий словарь классов объектов и свойств; используется при формализации правил, связывании и проверке модели.</td><td>Компания и её CDE; проект ссылается на согласованную редакцию словаря.</td></tr>
+<tr><th>Metagraph</th><td>Правила, критерии и условия применимости. Создание, новая редакция и вывод из использования — с подтверждением.</td><td>Один проект. Класс может быть общим, но связанное с ним правило действует только внутри проекта.</td></tr>
+<tr><th>ComputGraph</th><td>Связи параметров, частей скрипта и модели, по которым можно понять реализацию варианта. Вычисления выполняются профильными инструментами.</td><td>Проект и его модель/вариант.</td></tr>
+<tr><th>ValidGraph</th><td>Что проверяли, на каком состоянии модели, по какой редакции правила; результаты, охват и недостающие данные.</td><td>Проект и конкретная проверка. Результаты проекта A не доказывают соответствие проекта B.</td></tr>
+<tr><th>SpecGraph</th><td>Связи с документами и их фрагментами, пояснения, основания решений и происхождение скопированных правил.</td><td>Проект. Исходные документы и их редакции остаются в CDE.</td></tr>
+<tr><th>CDE</th><td>Среда общих данных: исходные материалы поступают на шаг 01, согласованные результаты публикуются после шага 06. Новая редакция документа запускает анализ затронутых правил.</td><td>Компания с разграничением доступа к проектам. DeGram не заменяет CDE.</td></tr>
+<tr><th>Права доступа</th><td>Просмотр (viewer), редактирование (editor), управление проектом (owner). Согласование словаря и проектных решений определяется ответственностью участника, а не только технической ролью.</td><td>Проверяются DG для данных проекта и CDE для документов. Права в одном проекте не дают доступа к другому.</td></tr>
+<tr><th>LLM</th><td>Помогает интерпретировать требования, предложить правило или правку, объяснить результат. Контекст передаётся в пределах прав и политики компании.</td><td>Выбранная допустимая модель — корпоративная, локальная или внешняя по согласованной политике. LLM не утверждает правила и не заменяет проверки.</td></tr>
+<tr><th>MCP-серверы</th><td>Локальные мосты от DeGram к Revit и Grasshopper. DG addin связывает объекты, параметры и части GH-скрипта с DG. Изменения подтверждает пользователь.</td><td>ПК участника. Успешный вызов инструмента не равен корректному проектному решению; мосты не обходят права DG.</td></tr>
+</tbody></table>
+<details id="boundaries"><summary>Как переносится опыт между проектами</summary><ol><li>В проекте A ответственный отбирает полезное правило, разрешает передачу и фиксирует его источник, редакцию и ограничения.</li><li>Участник с разрешённым доступом создаёт копию в проекте B. Библиотека lessons learned — отобранные материалы компании в CDE со ссылками на DG, а не шестой граф или общий набор автоматически действующих правил.</li><li>В проекте B проверяют соответствие общим классам, адаптируют параметры и область применения, выполняют проверку на его модели.</li><li>Ответственный проекта B утверждает новую редакцию. Дальнейшие изменения проектов независимы, а ссылка на происхождение сохраняется.</li></ol><p><strong>Пример:</strong> класс «Дверь» общий для компании. Требование к ширине двери проекта A копируется в B как предложение; его значение и применимость согласуются для условий B.</p></details>
+<details><summary>Что означает целевая модель</summary><p>Схема описывает желаемый бизнес-процесс, а не готовность текущей реализации. Политика LLM, интеграции CDE, перенос опыта и область разрешённых операций Revit требуют проектирования и проверки. Корпоративная область классов не означает обязательного физического хранения Ontograph внутри продукта CDE.</p><p>Проверка с замечаниями возвращает вариант на доработку. Недостаточные данные дополняют и проверяют повторно. Новые требования проходят согласование; прежние редакции и решения сохраняются.</p></details></section></main><footer>Целевая модель для обсуждения. Основание: ptBIM R2, ITcon Submission, исследование интеграции DeGram и уточнённые границы компании/проекта. Пять графов DG; DeGram — клиент участника, не дополнительный граф.</footer></body></html>
