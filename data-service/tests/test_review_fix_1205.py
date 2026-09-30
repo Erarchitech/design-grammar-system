@@ -881,6 +881,67 @@ class TestWr15SecondInvite:
         assert ok.status_code == 200
         assert auth.get_role("second-invite-2@dg.local", "PY") == "editor"
 
+    def test_invite_never_lowers_an_existing_membership(self, clean_throttle):
+        """WR-24: accepting a stale invite must not downgrade a promoted member."""
+        user = auth_fixtures.make_user("promoted@dg.local", memberships={"PW": "owner"})
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        code = self._invite("promoted@dg.local", "PW", role="viewer")
+        fresh = TestClient(app_module.app, raise_server_exceptions=False)
+        resp = fresh.post(
+            "/auth/accept-invite", json={"inviteCode": code, "password": password}, headers=self.CSRF
+        )
+        assert resp.status_code == 200, resp.text
+        assert auth.get_role("promoted@dg.local", "PW") == "owner"
+
+    def test_invite_may_raise_a_lower_membership(self, clean_throttle):
+        user = auth_fixtures.make_user("raised@dg.local", memberships={"PV": "viewer"})
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+        code = self._invite("raised@dg.local", "PV", role="editor")
+        fresh = TestClient(app_module.app, raise_server_exceptions=False)
+        resp = fresh.post(
+            "/auth/accept-invite", json={"inviteCode": code, "password": password}, headers=self.CSRF
+        )
+        assert resp.status_code == 200, resp.text
+        assert auth.get_role("raised@dg.local", "PV") == "editor"
+
+    def test_password_policy_applies_to_a_new_account_only(self, clean_throttle, monkeypatch):
+        """WR-24: an existing account proves ownership with its current password
+        even when that password predates the policy; a new account still must
+        meet it before its code is consumed."""
+        user = auth_fixtures.make_user("legacy-pw@dg.local")
+        password = user.get("password")
+        if password is None:
+            pytest.skip("user pre-existed without a known password")
+
+        def _reject(_password):
+            raise ValueError("below policy")
+
+        monkeypatch.setattr(auth, "validate_password_policy", _reject)
+        fresh = TestClient(app_module.app, raise_server_exceptions=False)
+
+        existing_code = self._invite("legacy-pw@dg.local", "PL")
+        joined = fresh.post(
+            "/auth/accept-invite",
+            json={"inviteCode": existing_code, "password": password},
+            headers=self.CSRF,
+        )
+        assert joined.status_code == 200, joined.text
+        assert auth.get_role("legacy-pw@dg.local", "PL") == "editor"
+
+        new_code = self._invite("brand-new-wr24@dg.local", "PL")
+        refused = fresh.post(
+            "/auth/accept-invite",
+            json={"inviteCode": new_code, "password": "short"},
+            headers=self.CSRF,
+        )
+        assert refused.status_code == 422
+        assert refused.json()["detail"]["code"] == "PASSWORD_POLICY"
+        assert auth.peek_invite(new_code) is not None  # not consumed
+
     def test_peek_does_not_consume(self):
         code = self._invite("peek-user@dg.local", "PZ")
         assert auth.peek_invite(code) is not None

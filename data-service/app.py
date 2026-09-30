@@ -4508,7 +4508,13 @@ def _accept_invite_for_existing_account(
     if invite is None or invite["username"] != username:
         raise _invite_invalid()
     auth.throttle_clear(user_key)
-    auth.set_membership(username, invite["project"], invite["role"])
+    # WR-24: an invite adds a missing membership or raises a lower one; it never
+    # lowers or replaces a role the account already holds on the project (the
+    # account may have been promoted after the invite was issued).
+    with auth._STORE_LOCK:
+        current = auth.get_role(username, invite["project"])
+        if current is None or auth.ROLE_RANK.get(invite["role"], -1) > auth.ROLE_RANK.get(current, -1):
+            auth.set_membership(username, invite["project"], invite["role"])
     token = auth.create_session(username)
     auth_routes.set_session_cookie(response, token)
     return {"username": username, "isAdmin": bool(existing.get("is_admin"))}
@@ -4518,14 +4524,24 @@ def _accept_invite_for_existing_account(
 def accept_invite(payload: AcceptInviteRequest, request: Request, response: Response):
     """Public: turn a one-time invite code plus a chosen password into an
     account with the invited project role, and log it in. The password policy
-    is checked BEFORE the code is consumed; an existing account is never
-    modified (T-1205-12-01).
+    is checked BEFORE the code is consumed (new accounts only); an existing
+    account is never modified (T-1205-12-01).
 
     WR-15: when the invited username already has an account (a second
     project invited the same new username and the first invite created it),
     the code is NOT burned. The caller proves ownership with that account's
     own password; only then is the membership added and a session issued. A
     wrong password refuses without consuming the code."""
+    pending = auth.peek_invite(payload.inviteCode)
+    if pending is not None:
+        existing = auth.get_user(pending["username"])
+        if existing is not None:
+            # WR-24: the password of an existing account is verified as-is; the
+            # new-password policy applies only to a password being chosen, so a
+            # legacy account whose current password predates the policy can
+            # still prove ownership.
+            return _accept_invite_for_existing_account(payload, request, response, existing)
+
     try:
         auth.validate_password_policy(payload.password)
     except ValueError as exc:
@@ -4535,12 +4551,6 @@ def accept_invite(payload: AcceptInviteRequest, request: Request, response: Resp
             "PASSWORD_POLICY",
             422,
         ) from exc
-
-    pending = auth.peek_invite(payload.inviteCode)
-    if pending is not None:
-        existing = auth.get_user(pending["username"])
-        if existing is not None:
-            return _accept_invite_for_existing_account(payload, request, response, existing)
 
     invite = auth.consume_invite(payload.inviteCode)
     if invite is None:
