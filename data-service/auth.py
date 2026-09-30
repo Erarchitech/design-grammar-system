@@ -445,6 +445,26 @@ def deployment_profile(env: Mapping[str, str] | None = None) -> str:
     return value
 
 
+def self_registration_enabled(env: Mapping[str, str] | None = None) -> bool:
+    """Whether POST /auth/register may create an account.
+
+    Amendment of D-05 (owner decision, 2026-09-30): open self-registration is a
+    `local`-profile surface only. DG_ALLOW_SELF_REGISTRATION is `true` or
+    `false` (case-insensitive); blank or unset follows the deployment profile
+    (on for `local`, off for `multi-user`). Any other value raises ValueError,
+    the same way an invalid DG_DEPLOYMENT does."""
+    raw = (_env(env).get("DG_ALLOW_SELF_REGISTRATION") or "").strip().lower()
+    if raw == "true":
+        return True
+    if raw == "false":
+        return False
+    if raw:
+        raise ValueError(
+            f"DG_ALLOW_SELF_REGISTRATION must be 'true' or 'false' (or blank), got {raw!r}"
+        )
+    return deployment_profile(env) == "local"
+
+
 # ── Memberships (D-02) ──
 
 
@@ -851,6 +871,18 @@ def cookie_secure(env: Mapping[str, str] | None = None) -> bool:
     return value in ("true", "1")
 
 
+REGISTER_ROUTE = ("POST", "/auth/register")
+
+
+def _self_registration_open() -> bool:
+    """Fail closed: an unreadable toggle is 'off' (startup already refuses to
+    boot on one)."""
+    try:
+        return self_registration_enabled()
+    except ValueError:
+        return False
+
+
 def _require_csrf(request: Request) -> None:
     """T-1205-07-04: a same-site page cannot send the SameSite=Strict cookie
     plus a custom header without a CORS preflight nothing here answers."""
@@ -959,6 +991,12 @@ async def require_principal(request: Request) -> Principal:
             "ROUTE_UNCLASSIFIED",
             403,
         )
+
+    # Self-registration off: POST /auth/register must look like an unknown
+    # route, and that includes answering 404 before the CSRF check (a 403 for a
+    # missing header would reveal that the route exists).
+    if (request.method, path_template) == REGISTER_ROUTE and not _self_registration_open():
+        raise HTTPException(status_code=404, detail="Not Found")
 
     # (2) public / connector-self: anonymous, no credential resolution.
     if policy.principals & {route_policy.PRINCIPAL_PUBLIC, route_policy.PRINCIPAL_CONNECTOR_SELF}:

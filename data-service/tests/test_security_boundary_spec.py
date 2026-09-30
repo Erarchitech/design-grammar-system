@@ -342,10 +342,12 @@ def test_route_policy_block_equals_the_registered_app_routes(spec_text):
 def test_public_routes_block_equals_public_and_heartbeat_policies(spec_text):
     spec_rows = parse_public_block(block_lines(spec_text, "public-routes"))
     assert _diff_rows("public-routes", spec_rows, code_public_routes()) == []
-    # the allowlist really is the four documented routes
+    # the allowlist really is the six documented routes
     assert set(spec_rows) == {
         ("GET", "/"),
+        ("GET", "/auth/options"),
         ("POST", "/auth/login"),
+        ("POST", "/auth/register"),
         ("POST", "/auth/accept-invite"),
         HEARTBEAT,
     }

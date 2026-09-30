@@ -33,9 +33,12 @@ Related contracts: `spec/EVIDENCE-CONTRACT.md` (validation outcome status and ev
 | Published ports | Section 4 (`published-ports`), local rows | Section 4, multi-user rows: Neo4j (7474, 7687) and n8n (5678) are not published |
 | Known-default secrets at startup | Logged as a single WARNING naming keys only; data-service still starts | data-service refuses to start (`secrets_policy.enforce_startup_secrets`) |
 | FastAPI docs (`/docs`, `/redoc`, `/openapi.json`) | Enabled | Disabled |
+| Self-registration (`POST /auth/register`, `GET /auth/options`) | On by default (toggle `DG_ALLOW_SELF_REGISTRATION`) | Off; the route answers 404, and `docker-compose.multi-user.yml` pins the toggle to `false` |
 | Authentication and authorization | Enforced | Enforced (D-19) |
 
 **What never varies (D-19).** Authentication and authorization are identical in both profiles. The browser always logs in, Grasshopper always sends its connector token, every route is classified, and every project-scoped call is membership-checked. Only Bolt exposure, published ports, default-secret strictness and the FastAPI docs vary.
+
+**Self-registration (amendment of D-05, made 2026-09-30).** D-05 originally allowed no open self-registration. The owner amended it for the `local` profile only; invite-only onboarding remains the rule in `multi-user`. `DG_ALLOW_SELF_REGISTRATION` (`true` or `false`, case-insensitive) sets it explicitly; blank or unset follows the profile (on for `local`, off for `multi-user`). Any other value makes data-service refuse to start, like an invalid `DG_DEPLOYMENT`. `GET /auth/options` is public and returns only `{"selfRegistration": <bool>}`. `POST /auth/register` is public, requires the CSRF header, and takes `{username, password}` (username rule and 12 to 128 character password policy as for invitations). The account is never an admin and holds no memberships; the new user creates their own projects through `POST /projects`. A taken username and any other failure answer the same 400 `REGISTRATION_INVALID`, the per-username (and, when configured, per-address) login throttle applies, and success returns the login body with a session cookie. When self-registration is off the route answers 404 with the body of an unknown route, before the CSRF check, so `multi-user` shows no registration surface.
 
 **Invocation.**
 
@@ -58,7 +61,7 @@ Exactly one principal type is resolved per request, by explicit credential, in t
 - Passwords: scrypt with a per-user salt; length 12 to 128 characters.
 - CSRF: every unsafe method (`POST`, `PUT`, `PATCH`, `DELETE`) on a session-authenticated request, and on a public route, must carry `X-DG-CSRF: 1`. Missing header: 403 `CSRF_HEADER_REQUIRED`.
 - Roles per project: `viewer` (read), `editor` (write), `owner` (also membership and invitations). Rank is viewer < editor < owner. A user with `is_admin` is treated as `owner` of every project and is the only principal allowed on admin-only routes.
-- Accounts are created by the bootstrap admin at first start (only when no admin exists) and by invitation (`POST /auth/invites`, code prefix `dgi_`, valid 72 hours, single use). There is no open self-registration.
+- Accounts are created by the bootstrap admin at first start (only when no admin exists) and by invitation (`POST /auth/invites`, code prefix `dgi_`, valid 72 hours, single use). Open self-registration (`POST /auth/register`) exists in the `local` profile only and is off in `multi-user` (Section 2, "Self-registration").
 
 ### 3.2 Connector token
 
@@ -103,7 +106,9 @@ Format `METHOD|PATH|CREDENTIAL`. Credential is `none`, `invite-code` (a single-u
 <!-- security-boundary:public-routes:start -->
 ```
 GET|/|none
+GET|/auth/options|none
 POST|/auth/login|none
+POST|/auth/register|none
 POST|/auth/accept-invite|invite-code
 POST|/connectors/heartbeat|connector-token
 ```
@@ -121,7 +126,9 @@ POST|/auth/invites|member|body|owner
 POST|/auth/login|public|-|-
 POST|/auth/logout|session|-|-
 GET|/auth/me|session|-|-
+GET|/auth/options|public|-|-
 POST|/auth/password|session|-|-
+POST|/auth/register|public|-|-
 POST|/computgraph/candidates/accept|member|body|editor
 GET|/computgraph/candidates/{project}|member|path|viewer
 POST|/computgraph/consult|member|body|viewer
@@ -288,7 +295,7 @@ These callers target the removed direct proxies (`/neo4j/`, `/n8n/`) or removed 
 
 Each is deferred deliberately (CONTEXT Deferred Ideas) or accepted with a recorded source. None is silently ignored.
 
-- **Login brute-force protection is layered and depends on the proxy setup (review WR-01, WR-22, WR-23).** nginx limits `POST /auth/login`, `/auth/password` and `/auth/accept-invite` to 5 requests per second per client address (burst 10). data-service counts failures per username (5 free failures, then exponential backoff capped at 300 seconds) in memory, so the counters reset on restart, and counts failures per client address only when `DG_TRUSTED_PROXIES` names the front end (or `DG_THROTTLE_LIMIT_IP` is set). Behind a TLS terminator or NAT without that setting every client shares the proxy's address: the nginx limit is then one shared bucket and the per-address counter stays off, so password spraying across many usernames is bounded only by the nginx limit. The per-username counter lets anyone who knows a username slow that account's logins (accepted). With `DG_TRUSTED_PROXIES` set, the UI container's nginx takes the client address from `X-Forwarded-For` for requests arriving from those addresses only.
+- **Login brute-force protection is layered and depends on the proxy setup (review WR-01, WR-22, WR-23).** nginx limits `POST /auth/login`, `/auth/password`, `/auth/accept-invite` and `/auth/register` to 5 requests per second per client address (burst 10). data-service counts failures per username (5 free failures, then exponential backoff capped at 300 seconds) in memory, so the counters reset on restart, and counts failures per client address only when `DG_TRUSTED_PROXIES` names the front end (or `DG_THROTTLE_LIMIT_IP` is set). Behind a TLS terminator or NAT without that setting every client shares the proxy's address: the nginx limit is then one shared bucket and the per-address counter stays off, so password spraying across many usernames is bounded only by the nginx limit. The per-username counter lets anyone who knows a username slow that account's logins (accepted). With `DG_TRUSTED_PROXIES` set, the UI container's nginx takes the client address from `X-Forwarded-For` for requests arriving from those addresses only.
 - **TLS and the `Secure` cookie flag.** The stack terminates no TLS. Bolt TLS is disabled in the Neo4j configuration. `DG_COOKIE_SECURE=true` must be set behind a TLS-terminating front end before an external deployment.
 - **Audit logging** of authorization decisions is not implemented; denials are answered but not recorded in an audit trail.
 - **Neo4j RBAC and per-tenant databases.** Neo4j Community has no RBAC; tenancy is enforced by the `project` property and the data-service query guards only.

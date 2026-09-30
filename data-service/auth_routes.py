@@ -164,6 +164,98 @@ def login(payload: LoginRequest, request: Request, response: Response):
     return LoginResponse(username=user["username"], isAdmin=bool(user.get("is_admin")))
 
 
+class RegisterRequest(BaseModel):
+    # Only these two fields are read; any other key in the body (for example a
+    # client-supplied `is_admin`) is ignored by pydantic and never reaches the
+    # store.
+    username: str
+    password: str
+
+
+class AuthOptionsResponse(BaseModel):
+    selfRegistration: bool
+
+
+@router.get("/auth/options", response_model=AuthOptionsResponse)
+def auth_options():
+    """Public: which optional sign-in paths this deployment offers. Carries no
+    secret and no user information. Fails closed -- an unreadable toggle
+    reports registration as off."""
+    return AuthOptionsResponse(selfRegistration=auth._self_registration_open())
+
+
+def _registration_invalid(hint: str = "Choose a different username or password and try again.") -> HTTPException:
+    """The one generic answer for every registration failure; never reveals
+    whether the username already exists."""
+    return auth.auth_error("Registration could not be completed.", hint, "REGISTRATION_INVALID", 400)
+
+
+@router.post("/auth/register", response_model=LoginResponse, status_code=201)
+def register(payload: RegisterRequest, request: Request, response: Response):
+    """Public, local-profile self-registration (amendment of D-05, 2026-09-30).
+
+    The account is never an admin and holds no memberships; the new user
+    creates their own projects through POST /projects. When self-registration
+    is off this route answers 404 (auth.require_principal does so before the
+    CSRF check; the guard below is defence in depth)."""
+    if not auth._self_registration_open():
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    try:
+        normalized = auth.normalize_username(payload.username)
+    except ValueError as exc:
+        raise auth.auth_error(
+            "That username is not valid.",
+            "Use 3-254 characters: lowercase letters, digits and . _ @ + -.",
+            "USERNAME_INVALID",
+            422,
+        ) from exc
+
+    # Same counters as login: per-username always, per-address when configured.
+    ip_limit = auth.ip_throttle_limit()
+    ip_key = f"ip:{_client_ip(request)}" if ip_limit > 0 else None
+    user_key = f"user:{normalized}"
+    retry_after = max(
+        auth.throttle_retry_after(ip_key) if ip_key else 0,
+        auth.throttle_retry_after(user_key),
+    )
+    if retry_after > 0:
+        raise _throttled_error(retry_after)
+
+    def _fail(hint: str | None = None) -> HTTPException:
+        if ip_key:
+            auth.throttle_record_failure(ip_key, limit=ip_limit)
+        auth.throttle_record_failure(user_key, limit=auth.THROTTLE_LIMIT_USER)
+        return _registration_invalid(hint) if hint else _registration_invalid()
+
+    try:
+        auth.validate_password_policy(payload.password)
+    except ValueError as exc:
+        raise _fail(str(exc)) from exc
+
+    if auth.get_user(normalized) is not None:
+        # Spend the same scrypt cost as a real creation so timing does not
+        # reveal that the username exists.
+        _verify_with_slot(payload.password, _DUMMY_PASSWORD_HASH)
+        raise _fail()
+
+    if not _SCRYPT_SLOTS.acquire(timeout=_SCRYPT_WAIT_SECONDS):
+        busy = auth.auth_error("The server is busy.", "Retry in a few seconds.", "AUTH_BUSY", 429)
+        busy.headers = {"Retry-After": "5"}
+        raise busy
+    try:
+        # create_user runs the duplicate check and the write under the store lock.
+        user = auth.create_user(normalized, payload.password, is_admin=False)
+    except ValueError as exc:
+        raise _fail() from exc
+    finally:
+        _SCRYPT_SLOTS.release()
+
+    token = auth.create_session(user["username"])
+    set_session_cookie(response, token)
+    return LoginResponse(username=user["username"], isAdmin=False)
+
+
 @router.post("/auth/logout", status_code=204)
 def logout(request: Request, response: Response):
     token = request.cookies.get(auth.SESSION_COOKIE_NAME)

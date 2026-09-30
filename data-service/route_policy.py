@@ -99,6 +99,8 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # ── health + auth account routes (auth_routes.py) ──
     ("GET", "/"): _p(_PUB),
     ("POST", "/auth/login"): _p(_PUB),
+    ("GET", "/auth/options"): _p(_PUB),
+    ("POST", "/auth/register"): _p(_PUB),
     ("POST", "/auth/logout"): _p(_SES),
     ("GET", "/auth/me"): _p(_SES),
     ("POST", "/auth/password"): _p(_SES),

@@ -109,6 +109,9 @@ async def lifespan(_app: FastAPI):
     # exceptions propagate -- unlike the watcher below, a refused start here
     # must be a failed start, not a degraded one.
     _profile = auth.deployment_profile()
+    # Amendment of D-05 (2026-09-30): an unreadable DG_ALLOW_SELF_REGISTRATION
+    # refuses the start, exactly like an invalid DG_DEPLOYMENT.
+    auth.self_registration_enabled()
     secrets_policy.enforce_startup_secrets(os.environ, _profile, logging.getLogger(__name__))
     auth.ensure_bootstrap_admin(os.environ, _profile, logging.getLogger(__name__))
 
@@ -4317,9 +4320,10 @@ route_policy.register_resource_resolver(
 # Project listing/creation, membership administration and invitations. Every
 # route reads the caller from request.state.principal, set by the router-level
 # auth.require_principal dependency. There is deliberately no open
-# self-service account creation route: an account is created only by accepting
-# an invite minted by a project owner (POST /auth/invites -> POST
-# /auth/accept-invite).
+# self-service account creation route in the multi-user profile: an account is
+# created only by accepting an invite minted by a project owner (POST
+# /auth/invites -> POST /auth/accept-invite). Amendment (2026-09-30): the local
+# profile also offers POST /auth/register (auth_routes.py), off in multi-user.
 
 PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.-]{0,63}$")
 

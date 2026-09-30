@@ -432,16 +432,32 @@ class TestMembers:
 
 
 class TestNoOpenRegistration:
-    def test_no_open_account_creation_route_exists(self):
+    """D-05, amended 2026-09-30: invite-only stays the rule in `multi-user`;
+    the `local` profile additionally offers POST /auth/register
+    (tests/test_self_registration.py). No other registration-shaped route may
+    exist."""
+
+    def test_no_other_open_account_creation_route_exists(self):
         offenders = [
             (method, path)
             for method, path in route_policy.ROUTE_POLICIES
-            if "register" in path or "signup" in path
+            if ("register" in path or "signup" in path) and (method, path) != ("POST", "/auth/register")
         ]
         assert offenders == []
 
     @pytest.mark.parametrize("path", ["/auth/register", "/auth/signup", "/auth/users", "/register"])
-    def test_probing_common_registration_paths_finds_nothing(self, client, path):
+    def test_probing_common_registration_paths_finds_nothing_in_multi_user(
+        self, client, path, monkeypatch
+    ):
+        monkeypatch.setenv("DG_DEPLOYMENT", "multi-user")
+        headers = _headers("mem@dg.local")
+        response = client.post(path, json={"username": "x@dg.local", "password": GOOD_PASSWORD}, headers=headers)
+
+        assert response.status_code in (404, 405)
+
+    @pytest.mark.parametrize("path", ["/auth/signup", "/auth/users", "/register"])
+    def test_probing_other_registration_paths_finds_nothing_in_local(self, client, path, monkeypatch):
+        monkeypatch.setenv("DG_DEPLOYMENT", "local")
         headers = _headers("mem@dg.local")
         response = client.post(path, json={"username": "x@dg.local", "password": GOOD_PASSWORD}, headers=headers)
 
