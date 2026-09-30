@@ -249,6 +249,9 @@ _OPERATOR_WORDS: frozenset[str] = frozenset({"AND", "OR", "XOR", "IN", "IS", "CO
 # is an `unsupported_syntax` violation, never a Python RecursionError.
 MAX_NESTING_DEPTH = 64
 
+# Upper bound on the text analysed; anything longer is refused outright.
+MAX_QUERY_CHARS = 200_000
+
 # Scalar and aggregate functions a read-only query may call. Namespaced
 # functions (`apoc.x.y(...)`, `db.x(...)`) and anything not listed are
 # rejected.
@@ -1251,6 +1254,44 @@ def _audit(parser: _Parser) -> list[Violation]:
 
 
 def _run(cypher: str, *, mode: str, how: str) -> tuple[list[Violation], _Parser | None]:
+    """Never raises: any failure to analyse the text -- including a Python
+    RecursionError or a bug in this module -- is a violation, because text that
+    could not be proven safe is refused, and no caller may see an exception
+    instead of a verdict."""
+    try:
+        return _run_unguarded(cypher, mode=mode, how=how)
+    except RecursionError:
+        return [
+            _violation(
+                "unsupported_syntax",
+                "The query nests too deeply to be analysed",
+                "nesting",
+                how,
+            )
+        ], None
+    except Exception:  # noqa: BLE001 -- fail closed on anything unexpected
+        return [
+            _violation(
+                "unsupported_syntax",
+                "The query could not be analysed and is refused",
+                "query",
+                how,
+            )
+        ], None
+
+
+def _run_unguarded(
+    cypher: str, *, mode: str, how: str
+) -> tuple[list[Violation], _Parser | None]:
+    if len(cypher) > MAX_QUERY_CHARS:
+        return [
+            _violation(
+                "unsupported_syntax",
+                f"The query is longer than {MAX_QUERY_CHARS} characters",
+                "query",
+                how,
+            )
+        ], None
     try:
         toks = tokenize(cypher, how)
     except _Fatal as exc:

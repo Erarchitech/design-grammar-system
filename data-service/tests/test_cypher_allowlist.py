@@ -1171,3 +1171,81 @@ class TestPropertyStyleInvariant:
             _assert_structurally_sound(cypher)
         assert accepted > 0, "the mutation corpus accepted nothing; the test checks nothing"
         print(f"mutation fuzz: {accepted} accepted queries checked")
+
+
+# ── 1205 review iteration 4: WR-01 (nesting ceiling, never raises) ────────
+
+_DEEP_HEAD = "MATCH (a:Rule {project: $project}) "
+
+
+def _deep_shapes(n: int) -> dict[str, str]:
+    return {
+        "parens": _DEEP_HEAD + "WHERE " + "(" * n + "a.x = 1" + ")" * n + " RETURN a",
+        "lists": _DEEP_HEAD + "RETURN " + "[" * n + "1" + "]" * n,
+        "maps": _DEEP_HEAD + "RETURN " + "{k: " * n + "1" + "}" * n,
+        "calls": _DEEP_HEAD + "RETURN " + "size(" * n + "a.x" + ")" * n,
+        "case": _DEEP_HEAD + "RETURN " + "CASE WHEN true THEN " * n + "1" + " END" * n,
+        "index": _DEEP_HEAD + "RETURN a.x" + "[0" * n + "]" * n,
+    }
+
+
+class TestNestingDepthCeiling:
+    @pytest.mark.parametrize("shape", sorted(_deep_shapes(1)))
+    def test_about_a_thousand_levels_is_a_violation_not_an_exception(self, shape):
+        result = read_check(_deep_shapes(1000)[shape])
+        assert any(v["code"] == "unsupported_syntax" for v in result), shape
+        assert any("deeper" in v["message"] or "nests" in v["message"] for v in result), shape
+
+    @pytest.mark.parametrize("shape", sorted(_deep_shapes(1)))
+    def test_the_ceiling_is_exact(self, shape):
+        ceiling = cypher_allowlist.MAX_NESTING_DEPTH
+        assert read_check(_deep_shapes(ceiling - 2)[shape]) == [], shape
+        assert read_check(_deep_shapes(ceiling + 1)[shape]) != [], shape
+
+    def test_ordinary_queries_nest_far_below_the_ceiling(self):
+        assert cypher_allowlist.MAX_NESTING_DEPTH >= 32
+        assert read_check(_deep_shapes(8)["parens"]) == []
+
+    def test_a_python_recursion_error_becomes_a_violation(self, monkeypatch):
+        def explode(self):
+            raise RecursionError("simulated")
+
+        monkeypatch.setattr(cypher_allowlist._Parser, "parse_read", explode)
+        result = read_check("MATCH (a:Rule {project: $project}) RETURN a")
+        assert [v["code"] for v in result] == ["unsupported_syntax"]
+
+    def test_an_unexpected_exception_is_refused_not_raised(self, monkeypatch):
+        def explode(self):
+            raise ZeroDivisionError("bug")
+
+        monkeypatch.setattr(cypher_allowlist._Parser, "parse_write", explode)
+        result = write_check("MERGE (r:Rule {Rule_Id: 'R_X', project: $project})")
+        assert [v["code"] for v in result] == ["unsupported_syntax"]
+
+    def test_oversized_text_is_refused(self):
+        huge = "MATCH (a:Rule {project: $project}) RETURN " + "a.x, " * 60000 + "a.y"
+        assert len(huge) > cypher_allowlist.MAX_QUERY_CHARS
+        assert any("longer than" in v["message"] for v in read_check(huge))
+
+    def test_flat_long_queries_are_linear_not_recursive(self):
+        many = "MATCH (a:Rule {project: $project}) RETURN " + ", ".join(["a.x"] * 5000)
+        assert read_check(many) == []
+        chain = "MATCH (a:Rule {project: $project}) WHERE " + " AND ".join(["a.x = 1"] * 5000) + " RETURN a"
+        assert read_check(chain) == []
+
+
+class TestForbiddenClauseWordsIncludeCypher25:
+    @pytest.mark.parametrize("word", ["FOR", "LET", "FILTER", "NEXT", "OFFSET", "CYPHER"])
+    def test_word_is_forbidden_as_a_clause_and_inside_expressions(self, word):
+        assert word in cypher_allowlist.FORBIDDEN_CLAUSE_WORDS
+        for cypher in (
+            f"MATCH (a:Rule {{project: $project}}) {word} a RETURN a",
+            f"MATCH (a:Rule {{project: $project}}) RETURN a {word} 1",
+            f"MATCH (a:Rule {{project: $project}}) WHERE a.x = 1 {word.lower()} x RETURN a",
+            f"{word} x MATCH (a:Rule {{project: $project}}) RETURN a",
+        ):
+            assert any(v["code"] == "forbidden_clause" for v in read_check(cypher)), cypher
+        assert any(
+            v["code"] == "forbidden_clause"
+            for v in write_check(f"MERGE (r:Rule {{Rule_Id: 'R_X', project: $project}}) {word} r")
+        )

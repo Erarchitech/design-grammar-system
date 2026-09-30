@@ -390,6 +390,82 @@ class TestGenerateCypherProject:
         assert "bolt down" not in response.text
 
 
+class TestAllowlistNeverSurfacesAsAServerError:
+    """Review iteration 4 (WR-01): an allowlist exception -- a RecursionError
+    on deeply nested text, or a bug -- must reach the caller as a structured
+    4xx/violation, never a 500 with a traceback."""
+
+    DEEP = (
+        "MATCH (a:Rule {project: $project}) WHERE "
+        + "(" * 1000
+        + "a.x = 1"
+        + ")" * 1000
+        + " RETURN a"
+    )
+
+    def test_mcp_deeply_nested_query_is_a_structured_400(self, monkeypatch):
+        fake = _install_driver(monkeypatch)
+
+        response = _mcp_query(self.DEEP, {"project": "P1"})
+
+        assert response.status_code == 400
+        assert _code(response) == "QUERY_NOT_PROJECT_SCOPED"
+        assert "Traceback" not in response.text
+        assert fake.calls == []
+
+    def test_mcp_an_allowlist_exception_is_a_structured_400(self, monkeypatch):
+        fake = _install_driver(monkeypatch)
+
+        def boom(_cypher):
+            raise ZeroDivisionError("internal bug")
+
+        monkeypatch.setattr(dg_context, "check_query_project_scope", boom)
+
+        response = _mcp_query(SCOPED_QUERY, {"project": "P1"})
+
+        assert response.status_code == 400
+        assert _code(response) == "QUERY_NOT_PROJECT_SCOPED"
+        assert "internal bug" not in response.text
+        assert "Traceback" not in response.text
+        assert fake.calls == []
+
+    def test_generate_cypher_deeply_nested_output_is_a_violation_not_a_500(self, monkeypatch):
+        from llm_gateway import GenerateResponse
+
+        class Adapter:
+            def generate(self, req, api_key):
+                return GenerateResponse(text=TestAllowlistNeverSurfacesAsAServerError.DEEP,
+                                        provider="fake", model="fake", usage={})
+
+        monkeypatch.setattr(dg_context, "get_adapter", lambda provider, base_url=None: Adapter())
+
+        response = client.post(
+            "/context/generate-cypher",
+            json={"prompt": "q", "type": "graph_query", "project": "P1"},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["valid"] is False
+        assert any(v["code"] == "unsupported_syntax" for v in body["violations"])
+        assert "Traceback" not in response.text
+
+    def test_generate_cypher_an_allowlist_exception_is_a_structured_error(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RecursionError("deep")
+
+        monkeypatch.setattr(dg_context, "generate_validated_cypher", boom)
+
+        response = client.post(
+            "/context/generate-cypher",
+            json={"prompt": "q", "type": "graph_query", "project": "P1"},
+        )
+
+        assert response.status_code == 502
+        assert _code(response) == "PROVIDER_UNKNOWN_ERROR"
+        assert "Traceback" not in response.text
+
+
 class TestServicePrincipalOnly:
     @pytest.mark.dg_principal(("user", "someone@dg.local"))
     def test_a_user_session_is_refused(self):

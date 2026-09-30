@@ -3143,7 +3143,14 @@ async def mcp(request: Request):
                 "QUERY_PROJECT_REQUIRED",
                 400,
             )
-        scope_violations = dg_context.check_query_project_scope(cypher)
+        try:
+            scope_violations = dg_context.check_query_project_scope(cypher)
+        except Exception:
+            # The allowlist is built to return a verdict for any text, but this
+            # is the only barrier in front of a shared graph: if it ever raises
+            # the caller gets a structured refusal, never a 500 with a traceback.
+            logging.getLogger(__name__).exception("read allowlist raised")
+            scope_violations = [{"code": "unsupported_syntax"}]
         if scope_violations:
             codes = sorted({str(v.get("code")) for v in scope_violations})
             raise _structured_error_response(
