@@ -45,6 +45,7 @@ from pydantic import BaseModel
 
 import cg_recognition
 import cg_structure_checks
+import cypher_allowlist
 import dg_knowledge
 from llm_gateway import (
     GenerateRequest,
@@ -694,270 +695,29 @@ SHARED_VOCABULARY_LABELS: frozenset[str] = frozenset(
     {"Class", "DatatypeProperty", "ObjectProperty", "Builtin", "Literal"}
 )
 
-# Forbidden graph_query constructs -- each one is a way to escape the static
-# inline-map proof below (a stored procedure result, a second query branch
-# via UNION, file/DB access) and is rejected outright rather than analyzed
-# (T-1205-06-02). Checked against the DE-QUOTED text only (never inside a
-# string literal).
-_FORBIDDEN_CLAUSE_PATTERNS: dict[str, "re.Pattern[str]"] = {
-    "CALL": re.compile(r"\bCALL\b", re.IGNORECASE),
-    "UNION": re.compile(r"\bUNION\b", re.IGNORECASE),
-    "LOAD CSV": re.compile(r"\bLOAD\s+CSV\b", re.IGNORECASE),
-    "FOREACH": re.compile(r"\bFOREACH\b", re.IGNORECASE),
-    "USE": re.compile(r"\bUSE\b", re.IGNORECASE),
-    "apoc.": re.compile(r"\bapoc\.", re.IGNORECASE),
-    "db.": re.compile(r"\bdb\.", re.IGNORECASE),
-}
-
-# Both single- and double-quoted string literals -- stripped (replaced with
-# nothing) before scanning for forbidden clauses or node patterns, so a
-# keyword or bracket quoted as DATA (e.g. a stored SWRL body) is never
-# mistaken for Cypher syntax. The project_literal/foreign_project_literal
-# checks below run on the ORIGINAL text instead, since they need the quoted
-# literal itself.
-_STRING_LITERAL_PATTERN = re.compile(r"'[^']*'|\"[^\"]*\"")
-
-
-def _strip_string_literals(cypher: str) -> str:
-    return _STRING_LITERAL_PATTERN.sub("", cypher)
-
-
-# One node pattern: '(' + optional variable + optional ':Label' chain
-# + optional '{...}' property map + ')', with the closing ')' required
-# immediately after the optional map. The regex alone cannot tell a node
-# pattern from a function call's argument list (count(r), toLower(id) are
-# `(var)` too) -- check_query_project_scope() therefore only applies it at a
-# `(` that is NOT the argument list of a function call (see
-# _is_function_call_paren). Backticked identifiers are rejected up front
-# (CR-03), so the label token no longer accepts backticks.
-_SCOPE_LABEL_TOKEN = r":\s*[A-Za-z_][A-Za-z0-9_]*"
-_SCOPE_NODE_PATTERN = re.compile(
-    r"\(\s*"
-    r"(?P<var>[A-Za-z_][A-Za-z0-9_]*)?"
-    r"(?P<labels>(?:\s*" + _SCOPE_LABEL_TOKEN + r")*)"
-    r"\s*(?P<map>\{[^{}]*\})?"
-    r"\s*\)"
-)
-
-# project: $project inside an inline map -- the ONLY thing that counts as
-# proof of scope (a WHERE predicate does not, since it can be widened with
-# `OR true`).
-_INLINE_PROJECT_PARAM_PATTERN = re.compile(r"(?<![A-Za-z0-9_$])project\s*:\s*\$project\b")
-
-# CR-03 (1205 review): the static proof below is regex-based, so every
-# construct the regexes cannot read reliably is rejected up front rather than
-# silently skipped. A query using any of these is a violation, never accepted.
-_UNSUPPORTED_SYNTAX_MESSAGE = (
-    "{what} is not permitted in graph_query Cypher -- the project-scope proof "
-    "cannot read it reliably. Where: the generated Cypher. How to fix: "
-    "rewrite as a plain MATCH/RETURN query without backticks, backslashes, "
-    "comments, nested braces or label expressions in node patterns."
-)
-
-# Words that may directly precede a `(` that opens a pattern or a grouping
-# parenthesis (`MATCH(n)`, `WHERE(n)-->()`) -- as opposed to a function name,
-# whose `(` opens an argument list. Compared lower-case.
-_PATTERN_KEYWORDS: frozenset[str] = frozenset(
-    {
-        "match", "optional", "where", "and", "or", "xor", "not", "return",
-        "with", "in", "when", "then", "else", "case", "distinct", "unwind",
-        "as", "set", "order", "by", "skip", "limit", "on", "merge", "create",
-        "delete", "remove", "is", "starts", "ends", "contains", "union",
-    }
-)
-
-# What a `(` looks like when it opens something that reads as a node pattern
-# (variable, label, property map, parameter map or inline WHERE) but that
-# _SCOPE_NODE_PATTERN could not parse -- e.g. `(n:A|B)`, `(n WHERE ...)`,
-# `(n $props)`. Such a pattern is rejected, not skipped.
-_NODEISH_PAREN_PATTERN = re.compile(
-    r"\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?\s*(?:[:{$]|WHERE\b)", re.IGNORECASE
-)
-_PRECEDING_IDENTIFIER_PATTERN = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)$")
-
-
-def _is_function_call_paren(dequoted: str, pos: int) -> bool:
-    """True when the `(` at `pos` opens a function call's argument list: it
-    directly follows an identifier (no whitespace) that is not a pattern
-    keyword. `MATCH(n)` is a pattern (keyword), `count(r)` is a call."""
-    found = _PRECEDING_IDENTIFIER_PATTERN.search(dequoted[max(0, pos - 64) : pos])
-    if found is None:
-        return False
-    return found.group(1).lower() not in _PATTERN_KEYWORDS
-
-
-def _unsupported_syntax_violations(cypher: str, dequoted: str) -> list[dict[str, Any]]:
-    """Fail-closed pre-check for constructs the regex proof cannot read."""
-    findings: list[tuple[str, str]] = []
-    if "`" in cypher:
-        findings.append(("a backtick-quoted identifier", "`"))
-    if "\\" in cypher:
-        findings.append(("a backslash escape", "\\"))
-    if "//" in dequoted or "/*" in dequoted:
-        findings.append(("a comment", "comment"))
-    depth = 0
-    for ch in dequoted:
-        if ch == "{":
-            depth += 1
-            if depth > 1:
-                findings.append(("nested braces", "{{"))
-                break
-        elif ch == "}":
-            depth = max(0, depth - 1)
-    return [
-        {
-            "code": "unsupported_syntax",
-            "message": _UNSUPPORTED_SYNTAX_MESSAGE.format(what=what[0].upper() + what[1:]),
-            "path": path,
-        }
-        for what, path in findings
-    ]
-
-# `project` compared to or mapped from a quoted literal -- illegal in
-# graph_query Cypher (project_literal) at ANY value, and illegal in rule
-# ingest/edit Cypher when the literal differs from the relayed project
-# (foreign_project_literal). Both single- and double-quoted forms; runs on
-# the ORIGINAL (not de-quoted) text.
-_PROJECT_MAP_LITERAL_PATTERN = re.compile(r"project\s*:\s*(['\"])([^'\"]*)\1")
-_PROJECT_DOT_LITERAL_PATTERN = re.compile(r"\.project\s*=\s*(['\"])([^'\"]*)\1")
-
-
 def check_query_project_scope(cypher: str) -> list[dict[str, Any]]:
-    """Statically prove (or disprove) that graph_query Cypher is project-
-    scoped (T-1205-06-01/02). Every node variable of a tenant-owned or
-    unlabeled node pattern must carry an inline `{project: $project}` map at
-    its FIRST occurrence in text order; anonymous patterns need the same
-    inline map; shared-vocabulary-only label patterns are exempt; forbidden
-    procedure/set/file clauses are rejected outright; any literal `project`
-    value is rejected; a query that never references `$project` at all is
-    rejected. Never fails open -- an unrecognized construct is always a
-    violation, never silently accepted (T-1205-06 prohibition).
+    """Fail-closed allowlist proof that graph_query Cypher is project-scoped
+    (T-1205-06-01/02; CR-03 of the 1205 review). Delegates to
+    `cypher_allowlist.check_read_allowlist`: the text is lexed and parsed
+    against a small read-only grammar, and anything the grammar does not
+    positively recognise -- a clause outside MATCH/OPTIONAL MATCH/WHERE/RETURN/
+    ORDER BY/SKIP/LIMIT, a non-ASCII or backticked identifier, a comment, a
+    subquery block, an unlisted function, an unscoped or anonymous node
+    pattern -- is a violation. A query is accepted only when every node
+    pattern binds a variable and is declared with `project: $project`.
     """
-    violations: list[dict[str, Any]] = []
-    dequoted = _strip_string_literals(cypher)
-    violations.extend(_unsupported_syntax_violations(cypher, dequoted))
+    return cypher_allowlist.check_read_allowlist(cypher)
 
-    for label, pattern in _FORBIDDEN_CLAUSE_PATTERNS.items():
-        if pattern.search(dequoted):
-            violations.append(
-                {
-                    "code": "forbidden_clause",
-                    "message": (
-                        f"'{label}' is not permitted in graph_query Cypher -- "
-                        "it can escape static project-scope proof (a "
-                        "procedure call, a second query branch, or file/DB "
-                        "access). Where: the generated Cypher. How to fix: "
-                        "rewrite as a single, plain MATCH/RETURN query with "
-                        "no CALL/UNION/LOAD CSV/FOREACH/USE/apoc./db. "
-                        "construct."
-                    ),
-                    "path": label,
-                }
-            )
 
-    seen_vars: set[str] = set()
-    for paren_match in re.finditer(r"\(", dequoted):
-        paren_pos = paren_match.start()
-        if _is_function_call_paren(dequoted, paren_pos):
-            continue
-        match = _SCOPE_NODE_PATTERN.match(dequoted, paren_pos)
-        if match is None:
-            if _NODEISH_PAREN_PATTERN.match(dequoted, paren_pos):
-                violations.append(
-                    {
-                        "code": "unsupported_syntax",
-                        "message": _UNSUPPORTED_SYNTAX_MESSAGE.format(
-                            what="A node pattern with a label expression, "
-                            "an inline WHERE or a parameter map"
-                        ),
-                        "path": dequoted[paren_pos : paren_pos + 40].strip(),
-                    }
-                )
-            continue
-        var = match.group("var")
-        labels = [
-            token.split(":", 1)[1].strip().strip("`")
-            for token in re.findall(_SCOPE_LABEL_TOKEN, match.group("labels") or "")
-        ]
-        map_text = match.group("map") or ""
-        has_scope_param = bool(_INLINE_PROJECT_PARAM_PATTERN.search(map_text))
-        exempt = bool(labels) and all(label in SHARED_VOCABULARY_LABELS for label in labels)
-        if exempt:
-            continue
-
-        if var is None:
-            if not has_scope_param:
-                violations.append(
-                    {
-                        "code": "anonymous_node_pattern",
-                        "message": (
-                            "An anonymous (or unlabeled-tenant) node pattern "
-                            "has no inline {project: $project} map, so it can "
-                            "match nodes from every project. Where: "
-                            f"'{match.group(0).strip()}'. How to fix: give "
-                            "this pattern an inline {project: $project} map, "
-                            "or bind it to a variable and scope it at its "
-                            "first occurrence."
-                        ),
-                        "path": match.group(0).strip(),
-                    }
-                )
-            continue
-
-        if var in seen_vars:
-            continue
-        seen_vars.add(var)
-
-        if not has_scope_param:
-            violations.append(
-                {
-                    "code": "missing_project_scope",
-                    "message": (
-                        f"Variable `{var}` is not inline-scoped at its first "
-                        "occurrence, so it can match nodes from every "
-                        f"project. Where: `{var}`'s first appearance. How to "
-                        f"fix: write ({var}:Label {{project: $project}}) at "
-                        "the variable's first appearance -- a WHERE "
-                        "predicate does not count, since it can be widened "
-                        "with OR."
-                    ),
-                    "path": var,
-                }
-            )
-
-    if "$project" not in cypher:
-        violations.append(
-            {
-                "code": "missing_project_scope",
-                "message": (
-                    "The query never references $project, so it cannot be "
-                    "proven project-scoped. Where: the full query. How to "
-                    "fix: bind $project and reference it via an inline "
-                    "{project: $project} map on every tenant-owned or "
-                    "unlabeled node pattern."
-                ),
-                "path": "query",
-            }
-        )
-
-    for pattern in (_PROJECT_MAP_LITERAL_PATTERN, _PROJECT_DOT_LITERAL_PATTERN):
-        for match in pattern.finditer(cypher):
-            literal_value = match.group(2)
-            violations.append(
-                {
-                    "code": "project_literal",
-                    "message": (
-                        f"`project` is compared to or set from the string "
-                        f"literal '{literal_value}' instead of the bound "
-                        f"$project parameter. Where: '{match.group(0)}'. How "
-                        "to fix: use $project -- never a literal project "
-                        "value -- in graph_query Cypher."
-                    ),
-                    "path": literal_value,
-                }
-            )
-
-    return violations
+def check_write_allowlist(cypher: str) -> list[dict[str, Any]]:
+    """Fail-closed allowlist proof that rule ingest/edit Cypher can only
+    create or touch the relayed project's Metagraph/OntoGraph nodes (CR-04 of
+    the 1205 review). Delegates to `cypher_allowlist.check_write_allowlist`:
+    MERGE/MATCH/SET only, one schema label per node, a complete literal
+    identity key plus `project: $project` on every declared node, `SET`
+    limited to `var.prop = literal` and never `project`/`graph`.
+    """
+    return cypher_allowlist.check_write_allowlist(cypher)
 
 
 # CR-04: string-literal-aware masking (backslash escapes honoured, as Cypher
@@ -975,92 +735,15 @@ def _mask_string_literals(cypher: str) -> str:
     return _ESCAPED_STRING_LITERAL_PATTERN.sub(_fill, cypher)
 
 
-_PROJECT_KEY_OBFUSCATION_PATTERN = re.compile(r"`\s*project\s*`")
-_PROJECT_KEY_INDEX_PATTERN = re.compile(r"\[\s*(['\"])project\1\s*\]")
-# `project:` / `.project =` followed by something that is neither a quoted
-# literal nor a `$parameter` (e.g. `x.project`, a function call).
-_PROJECT_NONLITERAL_VALUE_PATTERN = re.compile(
-    r"(?<![A-Za-z0-9_])project\s*:\s*(?!['\"$])[^\s,}]+|\.project\s*=(?!=)\s*(?!['\"$])[^\s,;]+"
-)
-
-
-def check_foreign_project_literals(cypher: str, project: str) -> list[dict[str, Any]]:
-    """Rule ingest/edit Cypher may only ever write the relayed project's
-    value into a `project` property (T-1205-06-03). Any quoted `project`
-    literal (inline map key or `.project` assignment/comparison) that
-    differs from `project` is a foreign_project_literal violation -- one per
-    distinct offending literal value.
-    """
-    violations: list[dict[str, Any]] = []
-    seen_literals: set[str] = set()
-    for pattern in (_PROJECT_MAP_LITERAL_PATTERN, _PROJECT_DOT_LITERAL_PATTERN):
-        for match in pattern.finditer(cypher):
-            literal_value = match.group(2)
-            if literal_value == project or literal_value in seen_literals:
-                continue
-            seen_literals.add(literal_value)
-            violations.append(
-                {
-                    "code": "foreign_project_literal",
-                    "message": (
-                        f"`project` is set from the literal '{literal_value}', "
-                        "which is not the relayed project. Where: "
-                        f"'{match.group(0)}'. How to fix: use the relayed "
-                        "project's value (bound as $project, or the current "
-                        "project's literal) -- never another project's "
-                        "literal."
-                    ),
-                    "path": literal_value,
-                }
-            )
-
-    # CR-04 (1205 review): obfuscated or non-literal writes of the `project`
-    # key cannot be compared with the relayed project, so they are rejected
-    # (fail closed) instead of slipping past the literal check above.
-    masked = _mask_string_literals(cypher)
-    for pattern, text in (
-        (_PROJECT_KEY_OBFUSCATION_PATTERN, masked),
-        (_PROJECT_KEY_INDEX_PATTERN, cypher),
-    ):
-        for match in pattern.finditer(text):
-            violations.append(
-                {
-                    "code": "unsupported_project_write",
-                    "message": (
-                        "The `project` property is addressed through a "
-                        "backtick or bracket form the ownership check cannot "
-                        "read. Where: "
-                        f"'{match.group(0).strip()}'. How to fix: write "
-                        "`project` as a plain property key with the relayed "
-                        "project's literal value."
-                    ),
-                    "path": match.group(0).strip(),
-                }
-            )
-    for match in _PROJECT_NONLITERAL_VALUE_PATTERN.finditer(masked):
-        violations.append(
-            {
-                "code": "unsupported_project_write",
-                "message": (
-                    "`project` is set from an expression, not from the "
-                    "relayed project's literal, so ownership cannot be "
-                    "verified. Where: "
-                    f"'{match.group(0).strip()}'. How to fix: set `project` "
-                    "to the relayed project's quoted literal only."
-                ),
-                "path": match.group(0).strip(),
-            }
-        )
-    return violations
-
-
 # One read query, bound parameters only ($ruleIds, $atomIds, $project) --
 # never string-interpolated (same discipline as fetch_existing_entities()).
-# Schema v4 keys Rule/Atom by id only (not project-qualified, CLAUDE.md
-# Schema Change Propagation), so a MERGE on a Rule_Id/Atom_Id already owned
-# by another project silently overwrites/extends that project's rule --
-# this fails closed on that collision (T-1205-06-06) rather than allowing
-# it, until project-qualified keys exist.
+# Schema v4 identifies Rule/Atom by id (CLAUDE.md Schema Change Propagation)
+# and other readers/writers -- e.g. computgraph_publish.py -- look them up by
+# id alone. check_write_allowlist() now forces every ingest MERGE key to carry
+# `project: $project`, so a MERGE can no longer touch another project's node;
+# this check remains as defence in depth and refuses to create a second node
+# with an id another project already uses (T-1205-06-06), which id-only
+# readers could not tell apart.
 _CROSS_PROJECT_COLLISION_QUERY = (
     "OPTIONAL MATCH (r:Rule) WHERE r.Rule_Id IN $ruleIds "
     "AND coalesce(r.project, '') <> $project "
@@ -1517,7 +1200,7 @@ def validate_cypher(
         if request_type == "graph_query":
             violations.extend(check_query_project_scope(cypher))
         elif request_type in ("rule_ingest", "rule_edit"):
-            violations.extend(check_foreign_project_literals(cypher, project))
+            violations.extend(check_write_allowlist(cypher))
 
     # De-duplicate identical violations (same code+path) while preserving order.
     seen: set[tuple[str, str | None]] = set()

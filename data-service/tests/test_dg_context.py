@@ -675,10 +675,9 @@ class TestCypherShapeIsRequired:
 # ── generate_validated_cypher() -- bounded retry loop (Phase 29-04: D-06/D-07) ──
 
 _VALID_CYPHER = (
-    "MERGE (r:Rule {Rule_Id: 'R_TEST_1_V'})\n"
-    "SET r.SWRL = 'x', r.project = 'p', r.graph = 'Metagraph'\n"
-    "MERGE (v:Var {name: '?b', project: 'p'})\n"
-    "SET v.graph = 'Metagraph'"
+    "MERGE (r:Rule {Rule_Id: 'R_TEST_1_V', project: $project, graph: 'Metagraph'})\n"
+    "SET r.SWRL = 'x'\n"
+    "MERGE (v:Var {name: '?b', project: $project, graph: 'Metagraph'})"
 )
 
 # Invalid for two independent reasons (bad_key_name + disallowed_verb) -- any

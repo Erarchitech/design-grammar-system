@@ -8,12 +8,21 @@ statements that populate OntoGraph (ontology terms) and Metagraph
 (rules, atoms, variables, literals, builtins).
 
 OUTPUT RULES
-- Output Cypher only — no JSON, no markdown fences, no commentary.
-- Use only MERGE and SET.
+- Output Cypher only — no JSON, no markdown fences, no commentary, no Cypher
+  comments (// or /* */), no backticks, ASCII identifiers only.
+- Use only MERGE and SET (MATCH only to re-bind a node by its complete literal
+  key and project: $project). Never WITH, UNWIND, CALL, FOREACH, LOAD CSV,
+  CREATE, DELETE, REMOVE, UNION or subqueries — such output is rejected.
 - Allowed node labels: Class, DatatypeProperty, ObjectProperty, Builtin,
   Rule, Atom, Var, Literal.
 - Allowed relationship types: HAS_BODY, HAS_HEAD, REFERS_TO, ARG.
-- Every persisted node MUST include `project` and `graph` properties.
+- Every persisted node MUST include `project` and `graph`, written in the
+  MERGE property map: `project: $project` (the bound parameter — never a
+  string literal) and `graph: '<graph>'`. Never SET project or graph.
+- Every node is MERGEd once with a variable, exactly one label, a complete
+  single string-literal key (Rule_Id / Atom_Id / name / lex+datatype / iri — no
+  concatenation, functions or parameters) and project: $project. Relationship
+  MERGEs only connect variables bound earlier in the same output.
 - graph values: 'OntoGraph' for Class / DatatypeProperty / ObjectProperty;
   'Metagraph' for Rule / Atom / Builtin / Var / Literal.
 
@@ -190,102 +199,69 @@ IRI PREFIXES
 
 CYPHER TEMPLATE BLOCK
 
-// 1. OntoGraph — ontology terms
-MERGE (C_Main:Class {iri: 'ex:<CLASS_NAME>'})
-SET C_Main.label = '<CLASS_NAME>',
-    C_Main.project = '<PROJECT>',
-    C_Main.graph = 'OntoGraph'
+MERGE (C_Main:Class {iri: 'ex:<CLASS_NAME>', project: $project, graph: 'OntoGraph'})
+SET C_Main.label = '<CLASS_NAME>'
 
-MERGE (DP_Main:DatatypeProperty {iri: 'ex:<PROPERTY_NAME>'})
+MERGE (DP_Main:DatatypeProperty {iri: 'ex:<PROPERTY_NAME>', project: $project, graph: 'OntoGraph'})
 SET DP_Main.SWRL_label = '<PROPERTY_NAME>',
-    DP_Main.range = '<xsd:decimal|xsd:integer|xsd:boolean>',
-    DP_Main.project = '<PROJECT>',
-    DP_Main.graph = 'OntoGraph'
+    DP_Main.range = '<xsd:decimal|xsd:integer|xsd:boolean>'
 
-MERGE (B_Cmp:Builtin {iri: 'swrlb:<BUILTIN_NAME>'})
-SET B_Cmp.label = '<BUILTIN_NAME>',
-    B_Cmp.project = '<PROJECT>',
-    B_Cmp.graph = 'Metagraph'
+MERGE (B_Cmp:Builtin {iri: 'swrlb:<BUILTIN_NAME>', project: $project, graph: 'Metagraph'})
+SET B_Cmp.label = '<BUILTIN_NAME>'
 
-MERGE (DP_V:DatatypeProperty {iri: 'ex:<VIOLATION_PROPERTY>'})
+MERGE (DP_V:DatatypeProperty {iri: 'ex:<VIOLATION_PROPERTY>', project: $project, graph: 'OntoGraph'})
 SET DP_V.SWRL_label = '<VIOLATION_PROPERTY>',
-    DP_V.range = 'xsd:boolean',
-    DP_V.project = '<PROJECT>',
-    DP_V.graph = 'OntoGraph'
+    DP_V.range = 'xsd:boolean'
 
-// 2. Metagraph — rule node
-MERGE (r:Rule {Rule_Id: '<RULE_ID>'})
+MERGE (r:Rule {Rule_Id: '<RULE_ID>', project: $project, graph: 'Metagraph'})
 SET r.SWRL = '<SWRL_EXPRESSION>',
-    r.kind = 'violation',
-    r.project = '<PROJECT>',
-    r.graph = 'Metagraph'
-    // r.RuleName and r.RuleDescription are optional — LLM sets them when the
-    // NL rule text supplies a name/description; omit the SET clause otherwise.
+    r.kind = 'violation'
 
-// 3. Metagraph — variables, literals
-MERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: '<PROJECT>'})
-SET vEntity.graph = 'Metagraph'
+MERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: $project, graph: 'Metagraph'})
 
-MERGE (vValue:Var {name: '?<VALUE_VAR>', project: '<PROJECT>'})
-SET vValue.graph = 'Metagraph'
+MERGE (vValue:Var {name: '?<VALUE_VAR>', project: $project, graph: 'Metagraph'})
 
-MERGE (litX:Literal {lex: '<THRESHOLD>', datatype: '<xsd:decimal|xsd:integer>'})
-SET litX.project = '<PROJECT>',
-    litX.graph = 'Metagraph'
+MERGE (litX:Literal {lex: '<THRESHOLD>', datatype: '<xsd:decimal|xsd:integer>', project: $project, graph: 'Metagraph'})
 
-MERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean'})
-SET litT.project = '<PROJECT>',
-    litT.graph = 'Metagraph'
+MERGE (litT:Literal {lex: 'true', datatype: 'xsd:boolean', project: $project, graph: 'Metagraph'})
 
-// 4. Metagraph — atom nodes
-MERGE (a1:Atom {Atom_Id: '<RULE_ID>_A1'})
+MERGE (a1:Atom {Atom_Id: '<RULE_ID>_A1', project: $project, graph: 'Metagraph'})
 SET a1.type = 'ClassAtom',
     a1.iri = 'ex:<CLASS_NAME>',
-    a1.SWRL_label = '<CLASS_NAME>',
-    a1.project = '<PROJECT>',
-    a1.graph = 'Metagraph'
+    a1.SWRL_label = '<CLASS_NAME>'
 
-MERGE (a2:Atom {Atom_Id: '<RULE_ID>_A2'})
+MERGE (a2:Atom {Atom_Id: '<RULE_ID>_A2', project: $project, graph: 'Metagraph'})
 SET a2.type = 'DataPropertyAtom',
     a2.iri = 'ex:<PROPERTY_NAME>',
-    a2.SWRL_label = '<PROPERTY_NAME>',
-    a2.project = '<PROJECT>',
-    a2.graph = 'Metagraph'
+    a2.SWRL_label = '<PROPERTY_NAME>'
 
-MERGE (a3:Atom {Atom_Id: '<RULE_ID>_A3'})
+MERGE (a3:Atom {Atom_Id: '<RULE_ID>_A3', project: $project, graph: 'Metagraph'})
 SET a3.type = 'BuiltinAtom',
     a3.iri = 'swrlb:<BUILTIN_NAME>',
-    a3.SWRL_label = '<BUILTIN_NAME>',
-    a3.project = '<PROJECT>',
-    a3.graph = 'Metagraph'
+    a3.SWRL_label = '<BUILTIN_NAME>'
 
-MERGE (h1:Atom {Atom_Id: '<RULE_ID>_H1'})
+MERGE (h1:Atom {Atom_Id: '<RULE_ID>_H1', project: $project, graph: 'Metagraph'})
 SET h1.type = 'DataPropertyAtom',
     h1.iri = 'ex:<VIOLATION_PROPERTY>',
-    h1.SWRL_label = '<VIOLATION_PROPERTY>',
-    h1.project = '<PROJECT>',
-    h1.graph = 'Metagraph'
+    h1.SWRL_label = '<VIOLATION_PROPERTY>'
 
-// 5. Relationships — rule ↔ atoms
-MERGE (r)-[:HAS_BODY {`order`: 1}]->(a1)
-MERGE (r)-[:HAS_BODY {`order`: 2}]->(a2)
-MERGE (r)-[:HAS_BODY {`order`: 3}]->(a3)
-MERGE (r)-[:HAS_HEAD {`order`: 1}]->(h1)
+MERGE (r)-[:HAS_BODY {order: 1}]->(a1)
+MERGE (r)-[:HAS_BODY {order: 2}]->(a2)
+MERGE (r)-[:HAS_BODY {order: 3}]->(a3)
+MERGE (r)-[:HAS_HEAD {order: 1}]->(h1)
 
-// 6. Relationships — atoms → ontology terms (REFERS_TO)
 MERGE (a1)-[:REFERS_TO]->(C_Main)
 MERGE (a2)-[:REFERS_TO]->(DP_Main)
 MERGE (a3)-[:REFERS_TO]->(B_Cmp)
 MERGE (h1)-[:REFERS_TO]->(DP_V)
 
-// 7. Relationships — atoms → arguments (ARG)
-MERGE (a1)-[:ARG {`pos`: 1}]->(vEntity)
-MERGE (a2)-[:ARG {`pos`: 1}]->(vEntity)
-MERGE (a2)-[:ARG {`pos`: 2}]->(vValue)
-MERGE (a3)-[:ARG {`pos`: 1}]->(vValue)
-MERGE (a3)-[:ARG {`pos`: 2}]->(litX)
-MERGE (h1)-[:ARG {`pos`: 1}]->(vEntity)
-MERGE (h1)-[:ARG {`pos`: 2}]->(litT);
+MERGE (a1)-[:ARG {pos: 1}]->(vEntity)
+MERGE (a2)-[:ARG {pos: 1}]->(vEntity)
+MERGE (a2)-[:ARG {pos: 2}]->(vValue)
+MERGE (a3)-[:ARG {pos: 1}]->(vValue)
+MERGE (a3)-[:ARG {pos: 2}]->(litX)
+MERGE (h1)-[:ARG {pos: 1}]->(vEntity)
+MERGE (h1)-[:ARG {pos: 2}]->(litT);
 
 QUALITY CHECKS
 - No malformed MERGE syntax.
@@ -295,5 +271,5 @@ QUALITY CHECKS
 - Atom key is Atom_Id (not id).
 - DatatypeProperty display property is SWRL_label (not label).
 - Rule SWRL body property is named SWRL (not text).
-- Backtick-quote reserved words in relationship properties: `order`, `pos`.
+- Relationship properties `order` and `pos` are written WITHOUT backticks.
 - Cypher must execute in Neo4j 5.

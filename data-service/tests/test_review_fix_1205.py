@@ -210,8 +210,8 @@ class TestWr13FunctionCallsNotFalsePositives:
         "cypher",
         [
             "MATCH (a {project: $project})-[r]->(b {project: $project}) RETURN count(r)",
-            "MATCH (a:Rule {project: $project}) WITH a.Rule_Id AS id RETURN toLower(id)",
-            "MATCH (a:Rule {project: $project}) RETURN a.Rule_Id, timestamp() AS t",
+            "MATCH (a:Rule {project: $project}) RETURN toLower(a.Rule_Id) AS id",
+            "MATCH (a:Rule {project: $project}) RETURN a.Rule_Id, id(a) AS t",
         ],
     )
     def test_function_call_on_relationship_or_alias_is_not_a_violation(self, cypher):
@@ -307,11 +307,16 @@ class TestCr04ForeignProjectWriteEvasion:
         ],
     )
     def test_obfuscated_or_foreign_project_write_is_rejected(self, cypher):
-        assert dg_context.check_foreign_project_literals(cypher, "mine")
+        assert dg_context.check_write_allowlist(cypher)
 
-    def test_own_literal_is_accepted(self):
-        assert dg_context.check_foreign_project_literals(
-            "MERGE (r:Rule {Rule_Id: 'R_X', project: 'mine'}) SET r.project = 'mine'", "mine"
+    def test_own_literal_is_rejected_the_parameter_is_accepted(self):
+        # Iteration 3: the project comes from the bound $project parameter only,
+        # never from a literal -- even the caller's own project name.
+        assert dg_context.check_write_allowlist(
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: 'mine'}) SET r.project = 'mine'"
+        )
+        assert dg_context.check_write_allowlist(
+            "MERGE (r:Rule {Rule_Id: 'R_X', project: $project, graph: 'Metagraph'})"
         ) == []
 
 

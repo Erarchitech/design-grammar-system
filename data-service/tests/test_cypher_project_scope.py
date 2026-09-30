@@ -37,13 +37,24 @@ class TestScopeValidatorValid:
         )
         assert dg_context.check_query_project_scope(cypher) == []
 
-    def test_shared_vocabulary_exempt_and_anonymous_node_carries_map(self):
+    def test_every_node_binds_a_variable_and_carries_the_map(self):
         cypher = (
             "MATCH (r:Rule {project: $project})-[:HAS_BODY]->"
-            "(:Atom {project: $project})-[:REFERS_TO]->(c:Class) "
+            "(a:Atom {project: $project})-[:REFERS_TO]->(c:Class {project: $project}) "
             "RETURN r.Rule_Id, c.label"
         )
         assert dg_context.check_query_project_scope(cypher) == []
+
+    def test_shared_vocabulary_label_is_no_longer_exempt(self):
+        """CR-03 (iteration 3): EVERY node pattern carries the map -- the
+        old shared-vocabulary exemption is gone from the read guard."""
+        cypher = (
+            "MATCH (r:Rule {project: $project})-[:HAS_BODY]->"
+            "(a:Atom {project: $project})-[:REFERS_TO]->(c:Class) "
+            "RETURN r.Rule_Id, c.label"
+        )
+        result = dg_context.check_query_project_scope(cypher)
+        assert any(v["code"] == "missing_project_scope" and v["path"] == "c" for v in result)
 
     def test_unlabeled_variable_with_inline_map_is_valid(self):
         cypher = "MATCH (n {project: $project}) RETURN n"
@@ -203,21 +214,30 @@ class TestValidateCypherGraphQueryProjectWiring:
 
 
 class TestValidateCypherRuleIngestProjectWiring:
+    LEGACY = "MERGE (v:Var {name: '?x', project: 'P2'}) SET v.graph = 'Metagraph'"
+    ALLOWLISTED = (
+        "MERGE (v:Var {name: '?x', project: $project, graph: 'Metagraph'})"
+    )
+
     def test_without_project_unchanged(self):
-        cypher = "MERGE (v:Var {name: '?x', project: 'P2'}) SET v.graph = 'Metagraph'"
-        result = dg_context.validate_cypher(cypher, "rule_ingest")
-        assert "foreign_project_literal" not in _codes(result["violations"])
+        result = dg_context.validate_cypher(self.LEGACY, "rule_ingest")
+        assert "project_literal" not in _codes(result["violations"])
+        assert "missing_project_scope" not in _codes(result["violations"])
 
-    def test_with_project_includes_foreign_project_literal(self):
-        cypher = "MERGE (v:Var {name: '?x', project: 'P2'}) SET v.graph = 'Metagraph'"
-        result = dg_context.validate_cypher(cypher, "rule_ingest", project="P1")
+    def test_with_project_rejects_a_literal_project_value(self):
+        result = dg_context.validate_cypher(self.LEGACY, "rule_ingest", project="P1")
         assert result["valid"] is False
-        assert "foreign_project_literal" in _codes(result["violations"])
+        assert "project_literal" in _codes(result["violations"])
 
-    def test_with_project_matching_literal_no_violation(self):
-        cypher = "MERGE (v:Var {name: '?x', project: 'P1'}) SET v.graph = 'Metagraph'"
+    def test_with_project_rejects_even_the_matching_literal(self):
+        """The allowlist takes the project from the bound parameter only."""
+        cypher = "MERGE (v:Var {name: '?x', project: 'P1', graph: 'Metagraph'})"
         result = dg_context.validate_cypher(cypher, "rule_ingest", project="P1")
-        assert "foreign_project_literal" not in _codes(result["violations"])
+        assert "project_literal" in _codes(result["violations"])
+
+    def test_with_project_accepts_parameterised_project(self):
+        result = dg_context.validate_cypher(self.ALLOWLISTED, "rule_ingest", project="P1")
+        assert result["valid"] is True, result["violations"]
 
 
 # ── generate_validated_cypher() -- project passed through every attempt ────
@@ -266,27 +286,6 @@ class TestGenerateValidatedCypherProjectWiring:
 
         assert result["valid"] is True
         assert result["attempts"] == 1
-
-
-# ── check_foreign_project_literals() ────────────────────────────────────────
-
-
-class TestCheckForeignProjectLiterals:
-    def test_matching_literal_returns_no_violation(self):
-        cypher = "MERGE (v:Var {name: '?x', project: 'P1'})"
-        assert dg_context.check_foreign_project_literals(cypher, "P1") == []
-
-    def test_mismatched_inline_map_literal(self):
-        cypher = "MERGE (v:Var {name: '?x', project: 'P2'})"
-        result = dg_context.check_foreign_project_literals(cypher, "P1")
-        assert len(result) == 1
-        assert result[0]["code"] == "foreign_project_literal"
-        assert result[0]["path"] == "P2"
-
-    def test_set_dot_assignment_mismatch(self):
-        cypher = "MATCH (n:Rule {Rule_Id: 'X'}) SET n.project = 'P2'"
-        result = dg_context.check_foreign_project_literals(cypher, "P1")
-        assert any(v["code"] == "foreign_project_literal" and v["path"] == "P2" for v in result)
 
 
 # ── find_cross_project_key_collisions() ─────────────────────────────────────
