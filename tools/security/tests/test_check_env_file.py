@@ -229,6 +229,20 @@ def test_optional_blank_key_is_ok_when_left_blank(tmp_path, capsys):
     assert "SPECKLE_PROJECT_ID: ok" in out
 
 
+def test_trusted_proxies_blank_is_ok(tmp_path, capsys):
+    example = tmp_path / ".env.example"
+    env = tmp_path / ".env"
+    _write(example, "DG_TRUSTED_PROXIES=\n")
+    _write(env, "DG_TRUSTED_PROXIES=\n")
+
+    exit_code = check_env_file.main(
+        ["--env-file", str(env), "--example", str(example)]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "DG_TRUSTED_PROXIES: ok" in out
+
+
 def test_extra_key_reported_but_does_not_fail(tmp_path, capsys):
     example = tmp_path / ".env.example"
     env = tmp_path / ".env"

@@ -42,9 +42,10 @@ import secrets_policy  # noqa: E402
 # "missing" and block the owner's exit-0 checkpoint (plan 1205-01 Task 2) --
 # added here per Rule 2 (missing critical functionality for the plan's own
 # acceptance criteria), not present in secrets_policy.classify_secret's
-# unconditional missing-when-blank contract.
+# unconditional missing-when-blank contract. DG_TRUSTED_PROXIES (WR-23) is a
+# non-secret list whose blank value means "trust no proxy".
 OPTIONAL_BLANK_KEYS: frozenset[str] = frozenset(
-    {"SPECKLE_PROJECT_ID", "SPECKLE_BASE_MODEL_ID"}
+    {"SPECKLE_PROJECT_ID", "SPECKLE_BASE_MODEL_ID", "DG_TRUSTED_PROXIES"}
 )
 
 
