@@ -1,5 +1,15 @@
 # Milestones
 
+## v13.0 DeGram Agent (Active: 2026-10-02)
+
+**Status:** ACTIVE — explicit owner authorization after approved requirements/ownership and roadmap.
+**Scope:** Phases 1300–1307; 51 MVP requirements; no implementation completion claimed.
+**Current:** Phase 1300 context captured 2026-10-03; Ready for planning. Next: `/gsd-plan-phase 1300` — Контракты, baseline и ownership. 27 decisions and 13 OPEN acceptance/clarification gates; phase implementation unstarted.
+**Control plane:** [Roadmap](ROADMAP.md), [Requirements](REQUIREMENTS.md), [activation and retained debt gates](v13.0-ACTIVATION.md).
+**Prior milestone:** v12.0 CLOSED_WITH_ACCEPTED_DEBT; `gaps_found` unchanged. Git/deploy/live actions remain separately authorized.
+
+---
+
 ## v9.0 AI Workflow Intelligence (Override Closeout: 2026-09-19)
 
 **Phases:** 28–40  

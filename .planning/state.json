@@ -1,0 +1,53 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v13.0 — DeGram Agent",
+  "phases": [
+    {
+      "number": "1300",
+      "name": "Контракты, baseline и ownership",
+      "status": "in_progress"
+    },
+    {
+      "number": "1301",
+      "name": "Рабочий клиент и безопасное чтение",
+      "status": "pending"
+    },
+    {
+      "number": "1302",
+      "name": "Источник, словарь и утверждённая редакция",
+      "status": "pending"
+    },
+    {
+      "number": "1303",
+      "name": "Правило ↔ GH ↔ объект",
+      "status": "pending"
+    },
+    {
+      "number": "1304",
+      "name": "Design State, проверка и review",
+      "status": "pending"
+    },
+    {
+      "number": "1305",
+      "name": "Ограниченное GH intent editing",
+      "status": "pending"
+    },
+    {
+      "number": "1306",
+      "name": "Межплатформенная передача",
+      "status": "pending"
+    },
+    {
+      "number": "1307",
+      "name": "Сравнительный пилот и выпуск",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 1300)",
+    "reason": "Phase 1300 of 8 — needs a plan"
+  },
+  "updated_at": "2026-10-03T14:26:54.940Z"
+}

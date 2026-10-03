@@ -1,55 +1,44 @@
 ---
 gsd_state_version: "1.0"
-milestone: v12.0
-milestone_name: Theory–Implementation Alignment
-current_phase: "1205.1"
-status: Phase 1205.1 complete; milestone re-audit pending
-stopped_at: Phase 1205.1 complete; v12.0 re-audit required
-last_updated: "2026-09-30T21:36:53.127Z"
-last_activity: 2026-09-30
-last_activity_desc: Phase 1205.1 complete
-state_head: 6d66763400ff8683629b1c8f2fb1433f16eb2efb
+milestone: v13.0
+milestone_name: DeGram Agent
+current_phase: 1300
+current_phase_name: Контракты, baseline и ownership
+current_plan: 0
+status: planning
+stopped_at: Phase 1300 context gathered; ready for planning; implementation and acceptance gates remain open
+last_updated: "2026-10-03T14:26:54.413Z"
+last_activity: 2026-10-03
+last_activity_desc: Phase 1300 discussion completed; CONTEXT and DISCUSSION-LOG saved; gates remain open
+state_head: ebc10d4155f818f02f3ce18e9380e993acfc5145
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 66
-  completed_plans: 66
-  percent: 86
+  total_phases: 8
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-30)
+See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** 1205.1 closure verified 11/11, review clean, Nyquist compliant, 14 threats closed. Next: /gsd-audit-milestone v12.0; milestone not released.
+**Current focus:** v13.0 DeGram Agent — Phase 1300 context captured; ready for planning. V8, baseline and OPEN debt gates retained; implementation not started.
 
 ## Current Position
 
-Phase: 1205.1
-Plan: 06 of 06 complete
-Status: Phase 1205.1 complete; milestone re-audit pending
-
-Phase 1200 (contract-status-vocabulary-evidence-envelope-and-golden-fixt) — EXECUTED, 9/9 plans, re-verified with owner re-confirmation. ALGN12-01/02/03 closed; ALGN12-04 deliberately open on the dg-reasoner SHACL-targeting finding routed to Phase 1201.
-
-**GATE12-01 satisfied.** All 8 `auto`-class items (GSD-ALIGN-001, 002, 003, 004, 006, 007, 009,
-010) reconciled from disk evidence. The 3 `manual` items (005, 008, 013) remain open by
-classification — they need a live environment and do not block Phase 1200. The 2 `skip` items
-(011, 012) are unchanged. Ledger: `.planning/reconciliation/GSD-ALIGN-RECONCILIATION.md`.
-Last activity: 2026-09-30 — Phase 1205.1 complete
-(cross-language decimal-scale parity) and CR-02 (DE-01 silent-disagreement classification); 08 ran
-the first genuine four-leg DE-01 run and reconciled the requirement ledger; 09 closed code-review
-finding WR-01 (negative-zero sign loss). Owner re-confirmed the freeze with all defects, fixes, and
-the live run in view.
-
-**Tracking note (surfaced by 38-CONTEXT.md, not fixed here):** `.planning/ROADMAP.md` still lists
-Phase 37 as "Not started / 0 plans", but Phase 37 is fully executed — 6 PLAN + 6 SUMMARY files,
-`37-VERIFICATION.md`, `37-UAT.md`, `37-REVIEW.md`, with `data-service/cg_structure_checks.py`,
-`llm/structure_rules.json` and both `/computgraph/validate` and `/computgraph/consult` live in
-`app.py`. Same drift class as the Phase 32.1 correction recorded in PROJECT.md. Worth fixing in
-the ROADMAP progress table independently of Phase 38.
+Phase: 1300 — Контракты, baseline и ownership (1 of 8)
+Current Phase: 1300
+Current Phase Name: Контракты, baseline и ownership
+Current Plan: 0
+Total Plans in Phase: 0
+Plan: —
+Status: Ready to plan
+Last activity: 2026-10-03 — Phase 1300 context gathered; 27 owner decisions saved; implementation not started
+Last Activity Description: Phase 1300 discussion completed; CONTEXT and DISCUSSION-LOG saved; gates remain open
 
 ## Deferred Verification
 
@@ -566,9 +555,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-09-30
-Stopped at: Phase 1205.1 complete; v12.0 re-audit required
-Resume file: None
+Last session: 2026-10-03T14:24:43.545Z
+Stopped at: Phase 1300 context gathered; ready for planning; implementation and acceptance gates remain open
+Resume file: .planning/phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.md
 
 ## Performance Metrics
 
@@ -612,4 +601,8 @@ Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Next workflow: /gsd-plan-phase 1300 using .planning/phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.md. No PLAN or implementation started by discussion finalization.
+- 27 owner decisions and 13 OPEN clarification/acceptance gates are captured. V8 MVP profile is required before dependent implementation; independent verification and owner acceptance remain mandatory.
+- Web Design Grammars in Docker must run on a separate test server; DG domain records remain in server graphs. Source/CAD files and revision publication packages remain separate in Google Drive/native CAD.
+- v12.0 remains CLOSED_WITH_ACCEPTED_DEBT, technical verdict gaps_found; accepted-debt owners and capability gates are unchanged.
+- Product implementation, live deployment/DB/CAD/LLM/Drive mutations, secret rotation, paid inference, commit/tag/push and other milestone activations are not authorized by this discussion close.

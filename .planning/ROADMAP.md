@@ -1,355 +1,269 @@
-# Roadmap: Design Grammar System v12.0 — Theory–Implementation Alignment
+# Roadmap: Design Grammar System
 
-**Planned:** 2026-09-19  
-**Status:** Active package (activated 2026-09-19 after v9.0 override closeout)  
-**Phase numbering:** `1200–1205`, following the repository `vX.Y → X·100+Y·10` convention.  
-**Depends on:** the v9.0 Phase 40 closeout ledger and the standalone GSD control-plane reconciliation; it does not absorb Phase 40's live UAT or v11.0's publication/manuscript work.
+## v13.0 — DeGram Agent
 
-> **Activation contract:** v12.0 is now the active milestone package. `.planning/phases/` is empty and ready for the first active phase; `.planning/STATE.md`, `.planning/PROJECT.md`, and active `.planning/REQUIREMENTS.md` now point to v12.0. The standalone control-plane reconciliation must complete before Phase 1200 planning/execution.
+**Статус:** ACTIVE — v13.0 активирован 2026-10-02 по явному запросу владельца после проверки финального v12 closeout, аудита, 1205.1 verification и accepted debt. Roadmap утверждён 2026-09-30; обсуждение Phase 1300 начинается, реализация не начата.
 
-## Purpose and sequencing decision
+**Цель milestone:** участник проводит проектное требование от доступного источника через утверждённую редакцию правила, точную native-привязку и измеренную проверку к принятому решению; другой участник восстанавливает контекст и доказательства без чата автора.
 
-v12.0 closes theory–implementation gaps that are not owned by v9.0 Phase 40 or v11.0. It is not a second publication milestone and not a replacement for v11.0.
+Основание: [контекст](milestones/v13.0-CONTEXT.md), [51 MVP requirement](REQUIREMENTS.md), [ownership ledger](milestones/v13.0-OWNERSHIP.md), сохранённое [исследование, §§5, 7–11](../docs/reviews/degram-framework-integration/DEGRAM-FRAMEWORK-INTEGRATION-REVIEW.md). Канонический repo-relative путь исследования: `docs/reviews/degram-framework-integration/DEGRAM-FRAMEWORK-INTEGRATION-REVIEW.md`.
 
-**Early prerequisite rule:** before v9.1 or v10.0 is activated, the shared contract foundation must be complete:
+Требования/ownership и этот roadmap утверждены в отдельных gates ответами владельца «Продолжи» после представления каждого пакета; запись сохранена в requirements/context/ownership. Историческое approval 2026-09-30 разрешало scoped documentation commit без активации. Активация разрешена отдельным запросом владельца 2026-10-02; новая Git/deploy авторизация из неё не следует. Исследование не повторяется. Номера **1300–1307** заданы владельцем и имеют приоритет над обычной нумерацией GSD; добавочных фаз нет. В `.planning/config.json` granularity и phase_id_convention не заданы; используется sequential-форма заголовков с явно зарезервированными номерами, без изменения общей конфигурации.
 
-1. standalone reconciliation of `GSD-ALIGN-001..013` items classified `auto`;
-2. v9.0 Phase 40's live UAT and narrow V8 preflight remain owned by Phase 40;
-3. v12.0 Phases 1200–1203 complete: canonical evidence/status contract, parser/status semantics, replay/per-object verdict contract, and identity/`ATTRIBUTE_OF` decision;
-4. v11.0 1105/1106 and the v9.1/v10.0 activation gates consume those decisions without duplicating ownership.
+## Границы и ownership
 
-v12.0 Phase 1204 is required before v10.0 activation if v10.0's deterministic/LLM reproducibility claims depend on it. Phase 1205 is a release gate for external multi-user evaluation, not a blocker for the paper or local single-user feature work.
+- DeGram — минимальный fork Hermes Desktop; DG владеет корпоративными данными, авторизацией и правами проектов. Существующий DG web и полный Model Viewer переиспользуются; reviewer может работать только в web.
+- Ontograph отвечает за термины компании, Metagraph — за правила одного проекта и их applicability, ComputGraph — за script/model bindings, ValidGraph — за проверенные состояния и runs, SpecGraph — за источники и основания решений. Runtime casing и профиль фиксируются в 1300, а не переименовываются молча. CDE хранит документы/редакции и принятые материалы; шестой граф и вторая CDE не создаются.
+- Разрешённое чтение не требует подтверждения каждой операции. Proposal не даёт права записи. Mutation/publication требуют точного scope, проверки полномочий и подтверждения; LLM предлагает и объясняет, но не устанавливает compliance verdict и не утверждает своё предложение.
+- Lessons learned — разрешённая копия внутри компании, с новым ID, происхождением, адаптацией и свежими доказательствами назначения; не перенос исходного verdict и не автоматическая синхронизация копий.
+- **v12** сохраняет ownership нормативного runtime-основания: canonical status/evidence, parser subset, identity/replay/security и closure GH wire в 1205.1. **v11** сохраняет ownership runtime/V8 compatibility и нормативных mapping/partition/semantic contracts, publication bundle и manuscript/dissemination. **v13** реализует новые product API/store/UI для source/rule revisions, company vocabulary releases и lessons learned, HTTP addin path, bindings, states/decisions и bounded editing. Исправление потребляемого основания возвращается его владельцу; второго engine и двойного delivery owner нет.
+- Перенесённые результаты v9.1/v10 и ORCH/RING сверяются с ledger в 1300; transfer/superseded не означает completed. Full historical topology и arbitrary persisted-snapshot diff, cluster internals, slot synthesis, extended structure rules и расширенная consultation остаются вне v13 у v10. Tag-specific undo в 1303 не дублирует generalized batch editing в 1305.
+- Исключены universal graph CRUD, arbitrary CAD/Python/C# execution из LLM, whole-definition synthesis, universal IFC/IDS/SWRL compiler, full DesignSpaceGraph/event sourcing, скрытая передача между компаниями, обязательные vector DB/GraphRAG/multi-agent и обещание distributed CAD+DG transaction или универсальной детерминированности LLM. Текущее приложение Hermes пользователя и его профили не изменяются.
 
-## Cross-milestone ownership
+## Gates активации и внешних зависимостей
 
-| Concern | Owner |
-|---|---|
-| v9.0 live Rhino/LLM/Speckle UAT and Phase 40 closeout | v9.0 Phase 40 |
-| v9.0 control-plane drift (`GSD-ALIGN-001..013`) | Standalone reconciliation pass before v12 planning |
-| Publication bundle, V8 contract, manuscript, dissemination | v11.0 Phases 1101–1109 |
-| Theory–implementation contract gaps and security gate | v12.0 Phases 1200–1205 |
-| DG chatbot product capability | v9.1 Phases 910–917, after the shared-contract gate |
-| Script Intelligence capability | v10.0 Phases 41–49, after the semantic-boundary gate |
-| Full RDF/OWL canonical migration | Not scheduled; reconsider only after DE-01/DE-02 |
+**Активация control plane разрешена 2026-10-02:** «Активируй Milestone v13.0 и запусти /gsd-discuss-phase 1300». Утверждённый пакет продвинут в active PROJECT/ROADMAP/REQUIREMENTS/STATE/state.json; v12 archive и versioned v13 preparation package сохраняются. v12 закрыт административно с `gaps_found` и OPEN debt. Это разрешение не запускает product implementation, deploy, live DB/CAD/LLM/CDE, secret rotation, Git commit/tag/push или активацию v9.1/v10/v11. Влияющий долг остаётся gate зависимой возможности; см. `.planning/v13.0-ACTIVATION.md`.
+
+Проверенные prerequisites этой активации (см. `v13.0-ACTIVATION.md`; зависимые capability gates сохраняются):
+
+1. Иметь отдельные записи утверждения полного requirements/ownership и этого roadmap.
+2. Прочитать точные финальные артефакты **1205.1 verification, v12 milestone audit и формального v12 closeout**, подготовленные их владельцем. Проверка выполнена: v12 закрыт административно с accepted OPEN debt и `gaps_found`; bounded PASS 1205.1 не подменяет verdict всего milestone.
+3. Проверить **accepted residual debt** относительно каждой потребляемой возможности v13: security/tenancy и credentials, canonical non-verdict/evidence delivery, identity/replay, runtime version/hash completeness, live CAD и recognition limitations. Override closeout не отменяет обязательную возможность. Для каждого влияющего долга нужны точная ссылка, владелец и проверенное disposition; критический пробел блокирует зависимый slice, а не получает PASS.
+4. Получить отдельное разрешение активации v13. Оно получено 2026-10-02; утверждённые versioned artifacts перенесены в active control plane, PROJECT/STATE обновлены, outgoing v12 archive сохранён. Активация разрешает планирование и обсуждение, а не исполнение зависимых возможностей.
+
+**v11 — фазовый gate, не blanket dependency на весь milestone.** В 1300 принимается approved runtime/semantic profile с версиями/хешами: V8 либо явно совместимый профиль, согласованный с владельцами v11/v12. Перед зависимыми writes и смысловыми интерпретациями фаз проверяется применимая часть профиля; критическая несовместимость блокирует выход 1300 или соответствующую операцию. Полное завершение manuscript/publication v11 и v4 BOT не требуется.
 
 ## Phases
 
-### Phase 1200: Contract, Status Vocabulary, Evidence Envelope, and Golden Fixture
+- [ ] **Phase 1300: Контракты, baseline и ownership** — владелец принимает границы MVP, контрактный профиль и проверяемый baseline до реализации зависимых возможностей.
+- [ ] **Phase 1301: Рабочий клиент и безопасное чтение** — участник входит в DG, выбирает свой проект и native document, безопасно читает через локальные adapters и reused web.
+- [ ] **Phase 1302: Источник, словарь и утверждённая редакция** — автор управляет source-linked правилами, а steward — release словаря; история и lessons learned имеют отдельные доказательства.
+- [ ] **Phase 1303: Правило ↔ GH ↔ объект** — пользователь получает точную native-привязку и inspect/trace с совместимыми tagging, recognition и publication.
+- [ ] **Phase 1304: Design State, проверка и review** — участник сохраняет и сравнивает проверяемые состояния, reviewer видит evidence, человек отдельно принимает решение.
+- [ ] **Phase 1305: Ограниченное GH intent editing** — автор подтверждает KB-валидированный patch, получает undo/rollback, реальный solve и восстановимую публикацию.
+- [ ] **Phase 1306: Межплатформенная передача** — получатель на другом ПК проверяет Revit counterpart, значения, выбранную зависимость и основания принятого решения, затем разрешённую передачу в CDE.
+- [ ] **Phase 1307: Сравнительный пилот и выпуск** — владелец принимает либо отклоняет выпуск по заранее согласованным gates и реальным сравнительным доказательствам.
+
+## Порядок и capability prerequisites
+
+**Последовательное исполнение:** `1300 → 1301 → 1302 → 1303 → 1304 → 1305 → 1306 → 1307`.
+
+Это намеренно serial roadmap для одного delivery flow, без заявления фиктивного параллелизма. Каждая следующая фаза потребляет проверенные результаты предыдущих; интеграционный retest не создаёт второго владельца требования.
+
+| Переход | Необходимая capability и отсутствие обратной зависимости |
+|---|---|
+| 1300 → 1301 | Принятые auth/LLM/deployment решения, поддержанные ПК/CAD и contract profile позволяют безопасно проверить ранний Revit/GH read handshake. |
+| 1301 → 1302 | Действуют company/project context и scoped access. Проверка и утверждение lessons-learned копии выполняются существующими v12 validators и/или явной человеческой проверкой в допустимом scope со свежим evidence назначения; UI 1304 не требуется. Human review не подменяет отсутствующий machine verdict: non-verdict сохраняется. |
+| 1302 → 1303 | Есть immutable rule revision, vocabulary pin и typed command/risk/confirm contract. Tag/recognition confirms используют существующий native undo/shared annotation service; generalized batch primitive 1305 не является prerequisite. |
+| 1303 → 1304 | Точные binding и source trace позволяют захватить осмысленный state, измерить population/inputs и показать evidence. Basic reused web surface доставляется уже в 1301; contextual parity и полный review workflow принадлежат 1304. |
+| 1304 → 1305 | Доступны pinned states/rules, канонические outcomes, разделённые local/publish/validation состояния operationId и repeat-validation workflow. 1305 добавляет безопасное исполнение native batch, а не второй operation-state engine. |
+| 1305 → 1306 | Проверенный bounded edit/solve/read-back даёт источник параметрического изменения для handover; ранний Revit bridge из 1301 уже доступен. Revit write slice отдельно ограничен решением 1300. |
+| 1306 → 1307 | Существуют сквозной артефакт, независимый recipient review и CDE receipt; пилот измеряет пользу всего slice, а не только tool success. |
 
-**Goal:** Freeze the common evidence and outcome contract before downstream milestones consume it.
+## Общий verification contract
+
+Каждая фаза должна предъявить evidence по **каждому назначенному ID**: воспроизводимые inputs/fixtures, версии сборок/CAD/plugins/contracts, scope/company/project/document, команду или human-checkpoint protocol, expected/actual outcome, ссылки на raw evidence и read-back. Числовые margins, test corpus, точные команды и ответственные human checkpoints определяются в 1300 и phase plans **до соответствующего исполнения**, а не подгоняются под результат.
+
+Contract/unit и negative tests необходимы, но не заменяют live CAD, multi-user проверки, два ПК и review человеком. Evidence отделяет operational outcome, completeness/freshness, evaluator verdict и human acceptance. Пропуск, unsupported, timeout и human-needed не превращаются в PASS. Тексты исследования, диаграммы, успешный tool call и принятый roadmap не являются completion evidence. Изменения схем/API в будущих планах должны соблюдать CLAUDE.md: schema propagation, normative mapping/partition, evidence, SWRL subset, reproducibility и security-boundary contracts, без второго словаря статусов.
+
+## Phase Details
+
+### Phase 1300: Контракты, baseline и ownership
+
+**Goal**: Владелец может определить разрешённый MVP и принять воспроизводимый baseline, не опираясь на неустранённые несовместимости или неявные обещания других milestones.
+**Depends on**: Нет внутренних фаз v13; внешние gates активации и выбранного профиля v11/v12 описаны выше.
+**Requirements**: DGCN-01, DGCN-02, DGCN-03, DGCN-04
+**Success Criteria**:
+1. Владелец принимает versioned профиль runtime ontology, identity, canonical status/evidence, rule/state revision и source authority с версиями/хешами, ответственными компонентами и решениями по критическим несовместимостям; normative ownership v11/v12 не подменён v13. [DGCN-01]
+2. Владелец находит для каждого переносимого результата v9.1/v10 и ORCH/RING debt item единственного delivery owner, disposition и ссылку; заменённый OpenClaw spike и перенесённые результаты не предъявляются как выполненные. [DGCN-02]
+3. Владелец может воспроизвести задания current DG на выбранных моделях/definitions и проверить expert gold, версии CAD/plugins/источников, participant protocol, correctness/traceability margins, benefit thresholds и матрицу существующих Viewer-функций до сравнительного измерения. [DGCN-03]
+4. Оператор по утверждённому decision register однозначно определяет LLM/data policy, login/SSO, steward/approvers, deployment, CAD corpus, bounded Revit read/measurement/dependency и при необходимости write slice, CDE destination/publication path; unresolved решение явно блокирует зависящую реализацию. [DGCN-04]
+**Plans**: TBD
 
-**Packages:** `ALIGN-P01`, `ALIGN-P02`, `ALIGN-P04`  
-**Requires:** standalone auto-class GSD reconciliation; read-only Phase 40/v11 ownership records.  
-**Blocks:** v9.1 activation; v10.0 activation; phases 1201–1205.
+**Entry gate**: Requirements/ownership и roadmap утверждены, v13 отдельно активирован после проверки точных v12 final artifacts и влияния residual debt. Владелец нормативного контракта доступен для принятия V8 либо explicit compatibility profile; отсутствие полного v11 closeout само по себе не препятствие.
+
+**Verification evidence**: Принятый contract manifest; сверка source-ID dispositions с ownership ledger; воспроизводимый current-DG baseline с raw results и раскрытым долгом; зафиксированные fixtures/gold; decision register с решениями и полномочиями утверждающих. Проверки здесь подтверждают baseline, а не заранее доказывают пользу DeGram.
+
+**Exit gate**: Критические контрактные конфликты разрешены с владельцами; ownership однозначен; обязательные для downstream решения приняты. До пилотных испытаний зафиксированы corpus и числовые correctness/traceability margins/benefit thresholds без придуманных значений в roadmap. Если выбраны обязательный SSO, corporate inference или Revit writes, их объём и критерии явно включены в dependent plans, а готовность не предполагается.
+
+**Обязательный decision register 1300**:
+- LLM: corporate inference или личные providers, разрешённые данные/transport, фактический user-facing chat/tool-calling path; внутренний `/llm/generate` не считается готовым таким интерфейсом. Local Hermes orchestration и retained server n8n получают явные границы ошибок/стоимости.
+- Login: существующие разрешённые DG accounts/invitations или обязательный SSO; не объявлять SSO готовым и не расширять service-only полномочия пользовательского клиента.
+- Governance: steward и approvers, отдельные company/project права, миграция scope и процедуры vocabulary release/retirement.
+- Runtime: версии/хеши выбранного semantic profile, владельцы нормативных изменений и сверка влияющего долга.
+- CAD: поддержанные ОС/ПК, Revit/Rhino/GH/plugin версии, reference definitions/components, источники и допустимые инварианты; exact Revit property/measurement/dependency slice. Указать, какие изменения выполняются вручную, а какие разрешены bounded native writes; произвольный код исключён в обоих случаях.
+- CDE: конкретный target, доступ источников/получателя, publish confirmation и read-back receipt; не все providers сразу.
+- Pilot: plan-layout, urban-block и project-documentation corpus, paired/counterbalanced protocol, опыт/training/setup участников, expert gold, заранее утверждённые margins/thresholds и Viewer parity matrix. Optional command-only arm не становится обязательным новым scope.
+
+### Phase 1301: Рабочий клиент и безопасное чтение
+
+**Goal**: Участник на поддержанном ПК безопасно входит в свой проект, открывает существующий DG web и получает snapshot выбранного локального документа без скрытого контекста и сервисных полномочий.
+**Depends on**: Phase 1300
+**Requirements**: DGCL-01, DGCL-02, DGCL-03, DGCL-04, DGCL-05, DGCL-06, DGCL-07
+**Success Criteria**:
+1. Участник устанавливает минимальный DeGram на чистом поддержанном ПК, входит разрешённым способом DG и выбирает только доступный проект; company/project, provider/model, native document и bridge status видимы, смена контекста отражается в следующем запросе. [DGCL-01, DGCL-02]
+2. Участник открывает существующие DG web-экраны и Model Viewer через изолированную web surface со scoped доступом, без обхода security headers и без токена на все модели; logout, revoke membership/credential прекращают новые защищённые read/write через chat, web и tools, не раскрывая чужой scope. [DGCL-03, DGCL-05]
+3. На каждом из двух ПК участник явно выбирает конкретный локальный Revit/GH document и получает read snapshot через typed adapter; busy/off bridge даёт диагностируемый operational outcome, а не молчаливую подмену документа. [DGCL-04]
+4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
+5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Выход 1300 принят; login/LLM/deployment и scoped-model-access решения применимы к двум реальным ПК. Потребляемая security foundation v12 проверена против residual debt; если безопасный user-facing path отсутствует, service-only endpoint не используется как обход.
+
+**Verification evidence**: Clean-install protocol; живые GH/Revit read snapshots с document identity; записи context switch и bounded LLM payload без секретов; backend/model-access deny cases при revoke/logout и межпроектном/межкорпоративном доступе; live web navigation; cancel/reconnect/listener lifecycle evidence. Native calls выполняются с требуемым UI-thread marshalling.
+
+**Exit gate**: Все назначенные ID подтверждены, нет скрытого выбора документа/проекта и утечки scope. Basic существующая web surface доступна сейчас; расширенный contextual review/parity из 1304 не требуется для этого выхода и не подменяется заявлением, что он уже завершён.
+
+### Phase 1302: Источник, словарь и утверждённая редакция
+
+**Goal**: Автор создаёт управляемое source-linked проектное правило, steward выпускает словарь компании, а принимающий проект независимо проверяет и утверждает lessons-learned копию с сохранённой историей.
+**Depends on**: Phase 1301
+**Requirements**: DGKN-01, DGKN-02, DGKN-03, DGKN-04, DGKN-05, DGKN-06, DGKN-07, DGKN-08, DGKN-09, DGKN-10
+**Success Criteria**:
+1. Автор связывает requirement/intent с доступной CDE SourceRevision (URI/ID, редакция/хеш, фрагмент, applicability); неформализуемый intent сохраняет явную границу проверки. Правило действует ровно в одном проекте на выбранные классы/объекты/условия, а общий company class не распространяет правило в другой проект. [DGKN-01, DGKN-07]
+2. Участник использует видимый immutable vocabulary release своей компании с происхождением терминов; private/project drafts не утекают. Только steward выпускает рассмотренное предложение; project editor без полномочия получает отказ, retirement используемого термина сохраняет исторические ссылки. [DGKN-02, DGKN-03]
+3. Автор видит typed diff create/edit/retirement с source/applicability, проверяет формализацию и отдельно подтверждает редакцию; два редактора получают atomic expectedRevision conflict без потери изменения, а серверный audit показывает actor, before/after и outcome принятой операции. [DGKN-04, DGKN-05]
+4. Проверяющий восстанавливает полный executable ruleset, vocabulary/source revisions старого run после изменения/retirement; затронутые bindings/states/runs требуют повторной проверки, исторический verdict сохранён. Через единый typed `/dg-` registry участник получает аргументы/risk/help, deterministic dispatch без LLM, ранний отказ неверных аргументов и confirmation точного mutation/publication scope. [DGKN-06, DGKN-10]
+5. Участник с разрешением source transfer и destination write создаёт копию в другом проекте той же компании с новым независимым ID, source project/rule revision, условиями и основанием передачи; принимающий автор адаптирует её и активирует лишь после свежей проверки и утверждения назначения. Исходный run не служит destination compliance evidence, изменения копий независимы. [DGKN-08, DGKN-09]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Scoped access 1301 проверен; соответствующие source-authority, vocabulary и revision clauses профиля 1300 согласованы с v11/v12. Назначены steward/approvers и разрешённые CDE sources. Новые product endpoints/store/UI принадлежат только v13.
+
+**Verification evidence**: Source-linked rule и vocabulary release read-back; concurrent-editor CAS/audit tests; pin/retirement/history reconstruction; два проекта одной компании и deny cases другой компании/private terms; command schema/confirmation tests; fresh destination validation record и human approval lessons learned с проверкой независимости копий.
+
+**Exit gate**: По каждому ID предъявлены evidence и нужное human acceptance. Lessons-learned проверка не ждёт 1304: существующие v12 validators и/или ручная проверка человеком обеспечивают свежие destination evidence в объявленном scope, сохраняя unsupported/not-checked и границу machine verdict. Отсутствие доказательств блокирует активацию копии, а не переносится на будущую UI-фазу.
 
-**Deliverables:**
+### Phase 1303: Правило ↔ GH ↔ объект
 
-- canonical statuses: `passed`, `failed`, `unknown`, `not_evaluated`, `no_population`, `unsupported`, `indeterminate`, `error`;
-- evidence envelope with project/definition/dgId, source representation, input/output hashes, contract versions, service/version, provider/model where applicable, timestamps, warnings, and status;
-- one frozen cross-service fixture containing all four atom types, two objects with mixed outcomes, a Design State, and geometry reference;
-- DE-01 runner contract, with silent disagreement treated as failure and typed non-equivalence accepted for unsupported cases;
-- v11.0 1105 handoff specification, without duplicating its schema-propagation work.
-
-**Gate:** status and evidence semantics are accepted by the owner; fixture is committed in the future milestone package; no downstream gate treats legacy booleans as authoritative.
-
-**Plans:** 9/9 plans executed — 3 gap-closure plans added after `1200-VERIFICATION.md` returned `gaps_found` (06/07/08), plus a 4th (09) after `1200-REVIEW.md` found WR-01
-
-Plans:
-**Wave 1**
-
-- [x] 1200-01-PLAN.md — Publish `spec/EVIDENCE-CONTRACT.md` + JSON Schema annex; bounded propagation (wave 1)
-- [x] 1200-02-PLAN.md — Frozen golden fixture, Neo4j seed, manifest, canonical golden vectors, fixture reachability (wave 1)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 1200-03-PLAN.md — Python leg: canonical JSON, typed status + envelope models, additive sidecar persistence (wave 2)
-- [x] 1200-04-PLAN.md — C# leg: `EvidenceStatus`, `CanonicalJsonWriter`, envelope DTO, cross-language hash parity (wave 2)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 1200-05-PLAN.md — DE-01 runner across four legs, dual-format report, owner acceptance gate (wave 3)
-
-**Wave 4** *(gap closure — blocked on Wave 3 completion; 06 and 07 are independent of each other)*
-
-- [x] 1200-06-PLAN.md — GAP-1/CR-01: preserve decimal scale in `CanonicalJsonWriter`, add trailing-zero golden vector, state the rule in §6 (wave 4)
-- [x] 1200-07-PLAN.md — GAP-2/CR-02: fire `compare_legs`' non-declarable guard on any non-empty set; replace the test that certified the defect (wave 4)
-
-**Wave 5** *(blocked on Wave 4 completion)*
-
-- [x] 1200-08-PLAN.md — GAP-3: live four-leg DE-01 run (human, Docker required), REQUIREMENTS.md reconciliation, owner re-confirmation (wave 5)
-
-**Wave 6** *(gap closure — blocked on Wave 4 completion; raised by `1200-REVIEW.md` WR-01)*
-
-- [x] 1200-09-PLAN.md — WR-01/IN-01: preserve negative-zero sign in `CanonicalJsonWriter`, add negative-zero and ordinary-negative golden vectors (wave 6)
-
-### Phase 1201: Rule Parser and Evaluator Conformance
-
-**Goal:** Make the implemented C# rule subset explicit and safe.
-
-**Package:** `ALIGN-P03`  
-**Requires:** 1200.  
-**Blocks:** v9.1 activation only where shared parser/status surfaces are consumed; v10.0 semantic-boundary gate.
-
-**Deliverables:**
-
-- typed parser fixtures for ObjectPropertyAtom, malformed arity, quoted commas, escaping, duplicate arrows, datatype/language literals, and unsupported syntax;
-- explicit unsupported/indeterminate outcomes for unsupported built-ins and predicate forms;
-- documented distinction between schema-level SWRL atom types and the bounded C# evaluator subset;
-- no claim that the C# path is a general SWRL/OWL reasoner.
-
-**Gate:** supported fixtures pass; unsupported fixtures return typed non-verdict outcomes; no unsupported construct becomes an ordinary failure.
-
-**Plans:** 6/6 plans executed
-
-Plans:
-
-- [x] 1201-01-PLAN.md — Tracer slice: single rollup precedence extracted, D-15 builtin allow-list, additive `Status`, unsupported builtin returns `unsupported` instead of throwing (wave 1)
-- [x] 1201-02-PLAN.md — Remaining evaluator collapse sites: `no_population`, `unknown`, ObjectPropertyAtom refusal, `not_evaluated` at the publish boundary (wave 2)
-- [x] 1201-03-PLAN.md — Parser `TryParse` with resolver-driven atom typing, quoted commas/escaping/datatype/language literals, Neo4j predicate-kind resolver (wave 3)
-- [x] 1201-04-PLAN.md — Parser conformance corpus, `spec/SWRL-SUBSET.md` with non-claims section, doc↔code drift guard, propagation (wave 4)
-- [x] 1201-05-PLAN.md — dg-reasoner leg `run_id` fix, `not_evaluated` for what SHACL cannot express, non-null report hashes (wave 1, Python-side, parallel with 01)
-- [x] 1201-06-PLAN.md — D-11 exit gate: live four-leg DE-01 re-run at `silent_disagreement_count = 0` (wave 5, **requires a live compose stack**, human checkpoint)
-
-### Phase 1202: Design State Replay and Per-Object Verdict Closure
-
-**Goal:** Establish one canonical replay contract for state and validation outcomes.
-
-**Packages:** `ALIGN-P05`, `ALIGN-P06`  
-**Requires:** 1200 and 1201.  
-**Blocks:** v9.1 shared-surface gate; v10.0 activation gate; future state-dependent generation/editing.
-
-**Deliverables:**
-
-- explicit decision on content-equivalence versus capture-event identity;
-- v2 serializer/readers aligned for geometry, ClassIri, lists, enums, and schema version, or an explicit exclusion contract;
-- canonical per-object `ValidationEntity` replay path with mixed pass/fail fixture;
-- canonical state hash and membership manifest;
-- explicit separation of snapshot identity from mutable run/operational status.
-
-**Gate:** publish → query → replay reproduces the canonical state hash and preserves mixed object verdicts, or every excluded member is formally documented.
-
-**Plans:** 11/11 plans complete
-
-Plans:
-**Wave 1**
-
-- [x] 1202-01-PLAN.md — Wave 0 test/fixture scaffolding: RED per-object verdict Facts, RED `ON CREATE SET` immutability regression, mixed pass/fail sibling fixture under `fixtures/golden/replay/` (wave 0)
-- [x] 1202-02-PLAN.md — Identity semantics: canonical DesignState projection + `canonicalStateHash` in C# and Python with cross-language parity, additive capture-event StateId overload, two-layer identity declared (wave 1)
-- [x] 1202-03-PLAN.md — Serializer/reader alignment: `ClassIri` as a normative optional DTO member, the missing version check, and a reader-parity proof that halted D-09's convergence on a real dual-wire-shape collision (wave 1; convergence deliberately not implemented — the exclusion contract is claimed in 1202-09)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 1202-04-PLAN.md — C# per-object verdict read path: additive `GetPerObjectVerdictsAsync`, first Cypher projection of `evidenceEnvelopeJson`, `Enumerable.Repeat` fabrication deleted (wave 2)
-- [x] 1202-05-PLAN.md — Python side: `ON CREATE SET` snapshot/status separation, rollup reconciled to the shipped precedence, spec propagation with declared exclusions (wave 2)
-- [x] 1202-06-PLAN.md — ObjState minting convergence with the Pitfall-1 signature resolution, GH Release rebuild, blocking human checkpoint on the identity behavior change (wave 2)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 1202-07-PLAN.md — DE-01 exit evidence: canonical-state-hash comparison dimension plus the live four-leg run against a `--no-cache` rebuilt stack (wave 3, **requires a live compose stack**, human checkpoint)
-
-**Gap closure** *(from `1202-VERIFICATION.md` `status: gaps_found` — both plans target ALGN12-09, the only requirement left partially satisfied; independent, parallel)*
-
-- [x] 1202-08-PLAN.md — Gap 1: make the gate's canonical-state-hash half live-demonstrable — seed `DG-1202-REPLAY`, add `--replay-fixture`, give the C# leg a second independent hash source so `agree`/`disagree` is reachable instead of `not_applicable`, refresh the retained exit evidence, reconcile the ALGN12-11 checkbox (wave 1, **requires a live compose stack**, human checkpoint)
-- [x] 1202-09-PLAN.md — Gap 2: claim ALGN12-09's "or an explicit exclusion contract" hatch — write the `parameters[]` dual-wire-shape divergence into `spec/DATABASE.md` and `spec/EVIDENCE-CONTRACT.md`, naming which reader is authoritative for which producer (wave 1, docs + comments only, no reader change)
-
-**Gap closure, round 2** *(from the re-verified `1202-VERIFICATION.md` — the two Critical findings `1202-REVIEW.md` CR-01/CR-02, which were out of scope for 1202-08/09; independent, parallel, different subsystems)*
-
-- [x] 1202-10-PLAN.md — Gap 1 (CR-01, ALGN12-10): `BuildPerObjectVerdicts` groups on the `(RuleId, ObjectId)` pair before the ObjectId rollup and surfaces a duplicate-identity collision as an additive, typed signal on `PerObjectVerdict`/`PerObjectVerdictResult` — `VerdictSource` stays at two members, `StatusRollup.Rollup` stays verbatim (D-12), and `spec/EVIDENCE-CONTRACT.md` §5.1 records the reader-side behavior (wave 1, C# + spec, no live stack needed)
-- [x] 1202-11-PLAN.md — Gap 2 (CR-02, ALGN12-08): mirror the Label-vs-Geometry guard for Object-vs-Geometry in `ObjectStateComponent.SolveInstance` using a **dedicated** error template (the existing one hardcodes "Label"), with the guard predicate factored into `DG.Core` so it is unit-testable without the Rhino SDK (wave 1, C# only, optional non-blocking canvas human-check)
-
-### Phase 1203: Identity Convergence and `ATTRIBUTE_OF` Decision
-
-**Goal:** Resolve identity authority and the declared-but-unimplemented rule–parameter bridge.
-
-**Packages:** `ALIGN-P07`, `ALIGN-P08`  
-**Requires:** 1200 and 1202.  
-**Blocks:** v9.1 activation if the chatbot exposes identity/provenance; v10.0 activation and Phase 47 rule ownership.
-
-**Deliverables:**
-
-- align Grasshopper ObjState minting with the core identity contract, with migration treatment for historical IDs;
-- define platform authority/conflict/detach/provenance policy;
-- CQ3 fixture covering forward and reverse rule–parameter trace;
-- decision between implementing `ATTRIBUTE_OF` alongside `PARAM_LINK` or formally adopting `PARAM_LINK` and retiring/re-scoping the TBox commitment;
-- full schema propagation if the bridge is implemented.
-
-**Gate:** ontology, runtime, specification, and paper ownership agree; both query directions are evidenced or the narrowed contract is documented.
-
-**Decision (D-01, locked in `1203-CONTEXT.md`):** Branch A — `ATTRIBUTE_OF` is implemented as a real `(:Atom)-[:ATTRIBUTE_OF]->(:Parameter)` relation alongside `PARAM_LINK`, derived from `inputBindings` at publish time. `PARAM_LINK` is `Parameter`→`Interface` and cannot express the rule–parameter claim in either direction.
-
-**Plans:** 6/6 plans complete
-
-Plans:
-**Wave 1**
-
-- [x] 1203-01-PLAN.md — Preflight: capture both suite baselines, inventory every pinned identity literal, relocate the WR-02 defect, and record the true SHACL shape count (wave 1, read-and-record only)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 1203-02-PLAN.md — D-08 + D-09 as ONE coordinated re-derivation: length-prefix hash encoding in both languages, `project` folded into DesignState hashes where legitimately reachable, every golden vector and pinned literal updated in lockstep (wave 2)
-- [x] 1203-04-PLAN.md — `ATTRIBUTE_OF` derivation and project-scoped MERGE at publish time, forward and reverse query tests (wave 2, parallel with 1203-02)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 1203-03-PLAN.md — CR-01 label-aware `mint_identity` with a mint→bind→publish coincidence regression, WR-01 graph tagging, WR-03 dead-constant deletion, ALGN12-13 conflict/detach/provenance test coverage (wave 3, serialized after 1203-02 — both touch `dg_identity.py`)
-
-**Wave 4** *(blocked on Wave 3 completion)*
-
-- [x] 1203-05-PLAN.md — D-05 schema propagation sweep across every surface plus the SHACL shape, and D-06 consolidation of `spec/DG-ID.md` into the single identity authority (wave 4)
-
-**Wave 5** *(blocked on Wave 4 completion)*
-
-- [x] 1203-06-PLAN.md — CQ3 fixture in a sibling path evidencing both query directions, with a live-stack human checkpoint (wave 5, **requires a running compose stack**)
-
-### Phase 1204: Determinism and LLM Reproducibility Benchmark
-
-**Goal:** Separate deterministic validator repeatability from LLM proposal repeatability.
-
-**Package:** `ALIGN-P13`  
-**Requires:** 1200–1203; fixed provider/model/prompt snapshots.  
-**Blocks:** v10.0 activation if its consulting/generation claims depend on reproducibility.
-
-**Deliverables:**
-
-- repeated fixed-fixture validator runs with hashes and canonical statuses;
-- separate LLM repeatability/abstention/invalid-output report;
-- provider/model/prompt/config provenance;
-- no universal determinism claim across live LLM or canvas state.
-
-**Gate:** reports deterministic and model-dependent results separately, with confidence/limitations.
-
-### Phase 1205: Security and Tenancy Release Gate
-
-**Goal:** Establish server-side authorization and fail-closed project boundaries.
-
-**Package:** `ALIGN-P14`  
-**Requires:** 1200 evidence envelope; may run after 1203 but must precede external multi-user evaluation.  
-**Blocks:** external multi-user release, not local single-user feature milestones.
-
-**Deliverables:**
-
-- server-side user/tenant authorization;
-- direct Neo4j proxy exposure review and removal/restriction;
-- secret/default-credential hardening and rotation procedure;
-- unauthorized cross-project and direct-proxy tests;
-- deployment boundary for connector heartbeat and privileged graph access.
-
-**Gate:** unauthorized cross-project and direct-proxy access fail closed; secret handling is deployment-safe.
-
-**Plans:** 19/19 plans complete
-
-Plans:
-**Wave 1**
-
-- [x] 1205-01-PLAN.md — Known-default secret policy, `.env.example`, owner-run env checker; owner creates `.env` before any enforcement (human checkpoint)
-- [x] 1205-02-PLAN.md — Server-side identity store: scrypt users, hashed sessions, memberships, invites, three principal resolvers, bootstrap admin, deployment profile
-- [x] 1205-03-PLAN.md — Grasshopper publish clients send the `dgc_` connector token; Token inputs; CONNECTOR multi-user no-bundle handling
-- [x] 1205-04-PLAN.md — Operator tooling: DE-01 connector-token path, LLM master-secret re-encryption script, live boundary checker
-- [x] 1205-05-PLAN.md — n8n workflows: relay-token guard, service token, hardcoded internal URLs, env credentials, atomic project-scoped ingest write
-- [x] 1205-06-PLAN.md — LLM-generated Cypher project-scope guard, foreign-literal and key-collision checks (dg_context)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 1205-07-PLAN.md — Tracer: login + deny-by-default dependency + one enforced project route end to end; startup profile, D-11 refusal, bootstrap, heartbeat bundle
-- [x] 1205-08-PLAN.md — Authorized test fixtures so every existing suite runs under a real principal
-- [x] 1205-09-PLAN.md — Compose: required `.env` secrets, 127.0.0.1 bindings, multi-user override, dockerignore
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 1205-10-PLAN.md — Global enforcement flip: 67-route classification, removals, resource-bound id routes, D-14 inventory and sweeps
-- [x] 1205-11-PLAN.md — UI data layer: apiFetch, named endpoints replace the nine Cypher sites, relay replaces n8n webhooks
-
-**Wave 4** *(blocked on Wave 3 completion)*
-
-- [x] 1205-12-PLAN.md — Projects, memberships, invitations and the named graph endpoints (D-06)
-- [x] 1205-13-PLAN.md — UI login / accept-invite, membership-scoped Projects screen with owner members panel
-
-**Wave 5** *(blocked on Wave 4 completion)*
-
-- [x] 1205-14-PLAN.md — Workflow relay with owner-bound polling; /mcp and generate-cypher project enforcement
-- [x] 1205-15-PLAN.md — nginx/vite proxy removal with 404 tombstones; secret-free config.js; bundle secret scan
-
-**Wave 6** *(blocked on Wave 5 completion)*
-
-- [x] 1205-16-PLAN.md — `spec/SECURITY-BOUNDARY.md` with four machine-checked blocks and the rotation runbook; spec drift test; doc pointers
-- [x] 1205-17-PLAN.md — D-15 two-user/two-project cross-project matrix
-
-**Wave 7** *(blocked on Wave 6 completion; requires a running compose stack)*
-
-- [x] 1205-18-PLAN.md — Live: owner rotates every committed secret, n8n publish, local-profile boundary checks (human checkpoint)
-
-**Wave 8** *(blocked on Wave 7 completion; requires a running compose stack)*
-
-- [x] 1205-19-PLAN.md — Live GATE12-05 judgement in the multi-user profile with owner verdict (human checkpoint)
-
-## Activation gates for downstream milestones
-
-### v9.1 activation
-
-Requires:
-
-- Phase 40 owns and records the pending live UAT disposition;
-- standalone GSD reconciliation is complete;
-- v12.0 1200–1203 gates pass;
-- v11.0 shared-surface gate is acknowledged, without requiring full v11.0 activation.
-
-### v10.0 activation
-
-Requires:
-
-- v12.0 1200–1204 gates pass;
-- v11.0 1105/1106 semantic-boundary and rule-ownership gate is accepted;
-- Phase 47 retains its explicit partition prerequisite.
-
-### v11.0 activation
-
-Remains governed by its own future-milestone rules and activation sequence. v12.0 supplies evidence and resolved contract decisions; v11.0 remains owner of publication bundle and manuscript alignment.
-
-## Deferred / not owned here
-
-- `ALIGN-P09`, `ALIGN-P15`, `ALIGN-P16`: v11.0 1106/1107.
-- `ALIGN-P10`, `ALIGN-P11`, `ALIGN-P12`: v9.0 Phase 40 and `GSD-ALIGN-005/007/009`.
-- Alternative B/DE-02 and Alternative C/DE-03: reconsider only after the hybrid contract gates produce evidence.
-- Graphify regeneration: separate evidence run, not a v12.0 prerequisite.
-- v4.0 BOT bridge: future scope.
-
-## Acceptance summary
-
-v12.0 is successful when the shared contract is executable, unsupported semantics are typed, state replay and per-object verdicts are preserved, identity/`ATTRIBUTE_OF` ownership is resolved, deterministic and LLM repeatability are separated, and security fails closed before external multi-user evaluation.
-
-### Phase 1205.1: Canonical Status GH Publish Closure (INSERTED)
-
-**Goal:** Close v12.0 audit BLOCKER-01: preserve per-(rule,object) canonical outcomes through DG.Core → production GH publish serialization → Python evidence/persistence, without inferring pass from an empty failure list.
-**Requirements**: ALGN12-01, ALGN12-02, ALGN12-06, ALGN12-10
-**Depends on:** Phase 1205
-**Gap source:** `.planning/v12.0-MILESTONE-AUDIT.md` — BLOCKER-01; shared contracts from Phases 1200–1202.
-**Gate:** Production-wire regression proves non-verdict preservation and mixed supported outcomes; applicable C#/Python tests and GH Release build pass; independent verification confirms closure. No unrelated debt, secret rotation or Phase 40 UAT is absorbed.
-**Plans:** 6/6 plans complete
-
-Plans:
-
-**Wave 1**
-
-- [x] 1205.1-01-PLAN.md — Durable supported production-wire tracer, Unsupported RED и binding outcomes.
-
-**Wave 2 (blocked on Wave 1)**
-
-- [x] 1205.1-02-PLAN.md — Exact pair package + GH mapper: retained Unsupported RED → GREEN.
-
-**Wave 3 (blocked on Wave 2)**
-
-- [x] 1205.1-03-PLAN.md — Strict Python/C# versioned factories/readers; bounded old no-rows read.
-
-**Wave 4 (blocked on Wave 3)**
-
-- [x] 1205.1-04-PLAN.md — Cross-language/DE-01 + historical fixtures; Core diagnostics before mapping.
-
-**Wave 5 (blocked on Wave 4)**
-
-- [x] 1205.1-05-PLAN.md — Explicit BuildRequest diagnostics copying, new GH writer, full outcome matrix.
-
-**Wave 6 (blocked on Wave 5)**
-
-- [x] 1205.1-06-PLAN.md — Bounded parser defense, specifications and offline release evidence.
-
-Cross-cutting constraints: exact pair identity; unchanged legacy fields and canonicalization; no fake objects; no live mutations/secrets/commits; independent plan-check and verification required.
+**Goal**: Пользователь DG addin прослеживает requirement до точного native input и объекта, безопасно подтверждает существующие annotations/recognition и публикует результат без потери совместимости reference definitions.
+**Depends on**: Phase 1302
+**Requirements**: DGBN-01, DGBN-02, DGBN-03, DGBN-04, DGBN-05, DGBN-06
+**Success Criteria**:
+1. Пользователь addin читает нужные company/project данные через авторизованный HTTP repository path без рабочего доступа к Bolt и без service-only полномочий; exact binding связывает rule revision и atom/property с document/definition, component instance, parameter/port и object identity, а ambiguity, одинаковые имена и stale target дают отказ. [DGBN-01, DGBN-02]
+2. Участник проходит inspect/trace от requirement/rule revision через ComputGraph entity и native input к объекту и обратно к source; authored/tagged, recognized/inferred и user-confirmed связи различимы, пробелы раскрыты. [DGBN-03]
+3. Автор mark/tag selection через общий с существующими компонентами сервис/annotation grammar получает идемпотентный, undoable результат, который разбирается существующим serializer без второго формата. [DGBN-04]
+4. Автор запускает существующее распознавание, просматривает предложения, частично принимает/отклоняет их; unrecognized остаются видимыми, отдельное подтверждение публикации показывает target project, revision и реально записанный результат. [DGBN-05]
+5. Пользователь открывает согласованные reference `.gh` с прежними компонентами/GUIDs и получает эквивалентные успешные tagging/publish результаты без новых missing-component placeholders; заранее известные исключения, включая CONNECTOR post-825, перечислены явно. [DGBN-06]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Выход 1302 даёт pin/revision и typed risk/confirm contract; профиль identity/mapping/security согласован. Выбраны реальные reference definitions и зафиксирован recognition baseline с открытым качественным долгом, а не предполагаемым PASS.
+
+**Verification evidence**: HTTP authorization/denial tests; exact identity/port fixtures и live GH trace; same-name/duplicate/stale negative cases; serializer parity и tag undo на живом canvas; partial recognition confirm, publish read-back и regressions старых `.gh`/GUIDs. Качество распознавания сравнивается с принятым baseline без сокрытия unrecognized.
+
+**Exit gate**: Цепочка source→rule→native input→object и назначенные ID проверены. Tag-specific confirmation/undo используют существующий механизм native/shared annotation service: generalized batch engine 1305 не нужен для выхода и не создаётся здесь повторно. Ownership старого recognition debt сохраняется; успешный workflow не объявляет его закрытым автоматически.
+
+### Phase 1304: Design State, проверка и review
+
+**Goal**: Автор и web-only reviewer видят полноту входов, проверяемые версии состояния и канонические evidence, сравнивают допустимые альтернативы и отдельно фиксируют человеческое принятие решения.
+**Depends on**: Phase 1303
+**Requirements**: DGST-01, DGST-02, DGST-03, DGST-04, DGST-05, DGST-06, DGST-07
+**Success Criteria**:
+1. Автор сохраняет неизменяемую capture revision с task/alternative context, document/definition identity, native snapshot/projection version, pinned ruleset и bindings; проверяющий видит expected/observed population и наличие/freshness входов, поэтому пустая выборка, пропущенные объекты и stale данные не выглядят полным успехом. [DGST-01, DGST-02]
+2. Проверяющий получает от применимого evaluator канонический result/evidence с измеренными значениями/units, input versions и declared scope; unsupported/not-checked отличны от operational failure, а SHACL/OWL/tool success не подменяют compliance. [DGST-03]
+3. По operationId участник видит раздельные local change, publication и validation outcomes; после timeout/failed publish выясняет фактическое состояние и безопасно продолжает без слепого повторения local mutation. [DGST-04]
+4. Участник сравнивает варианты только в объявленных task/design-space и версии критериев, видит несовместимые snapshots/ruleset scopes; уполномоченный человек отдельно от verdict принимает вариант с rationale, доступными альтернативами, source/rule/state/run references и actor/approver/time. Временной порядок не выдаётся за reformulation, отсутствующее основание не выдумывается. [DGST-05, DGST-06]
+5. Reviewer, включая web-only пользователя, в полном reused Model Viewer открывает нужные project/run/state, объекты, правила, evidence и сопоставимые альтернативы; вся утверждённая в 1300 матрица parity проходит без скрытой замены существующих функций read-only заглушками. [DGST-07]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Exact bindings и trace 1303 проверены; выбранные v12 evaluator/status/evidence и replay capabilities действительно доступны, долг по hash/projection scope оценён. Historical ruleset 1302 и Viewer parity matrix 1300 приняты.
+
+**Verification evidence**: Versioned capture/read-back и distinct-definition cases; population/freshness negative tests; raw evaluator evidence по каноническому контракту, включая non-verdict; fault injection local/publish boundary и operationId status lookup на доступных операциях; comparison fixtures; human acceptance record; browser-only Viewer UAT по всей parity matrix.
+
+**Exit gate**: Все назначенные ID проверены; отсутствуют silent pass при неполноте, смешение compliance/publication и фиктивное принятие LLM. Operation reconciliation проверен на уже доступных операциях и не зависит от будущего generalized editing 1305. Наличие task context не объявляется реализацией full DesignSpaceGraph или historical topology v10.
+
+### Phase 1305: Ограниченное GH intent editing
+
+**Goal**: Автор безопасно изменяет существующий visual block по intent, видит реальный результат solve и получает revisioned republish с доказательствами фактических изменений.
+**Depends on**: Phase 1304
+**Requirements**: DGED-01, DGED-02, DGED-03, DGED-04, DGED-05, DGED-06, DGED-07, DGED-08
+**Success Criteria**:
+1. Автор проверяет реальные GUID/ports/types/access/defaults компонента в versioned KB согласованного corpus; отсутствующий компонент/capability явно unsupported, несовместимый connection/value отклоняется до canvas change, разрешённая операция сохраняет KB provenance без заявления compliance. [DGED-01, DGED-02]
+2. Автор получает ограниченный old→new patch существующего блока с add/remove/rewire/value/group operations, затронутыми элементами и сохраняемыми инвариантами, видит preview на canvas; writes по умолчанию off, apply возможен лишь после включения и подтверждения, cancel не меняет definition. Whole-definition synthesis не предлагается как поддержанная. [DGED-03, DGED-04]
+3. Подтверждённый batch создаёт один undo record, ошибка возвращает полный pre-state без изменения нецелевых элементов; stale document/revision/target даёт structured refusal, повтор operationId сначала разрешает неопределённый outcome и не применяет batch второй раз. [DGED-05, DGED-06]
+4. После apply автор получает реальный solve/read-back величин и ошибок, а связанные правила проходят повторную проверку; успех native patch сам по себе не считается вычислением или compliance. [DGED-07]
+5. Автор отдельно подтверждает revisioned republish с pre/post snapshots и exact applied-change record; publisher-owned stale bindings reconciled, чужие связи сохранены, failed publish восстановим, локальный Undo не стирает опубликованную историю. [DGED-08]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Выход 1304 подтверждает state/evidence/reconciliation workflow; KB corpus, permitted native writes, инварианты и revision preconditions утверждены. Transferred CKBS/BWRT/SEDT outcomes имеют одного владельца v13 согласно ledger.
+
+**Verification evidence**: KB/component inventory с реальными native metadata; schema/type/access negative tests; live preview/cancel/apply/undo; injected mid-batch failure с pre-state comparison и non-target invariants; stale/retry/no-double-apply cases; live solve/read-back + повторная проверка; publish failure/retry/read-back и проверка сохранности чужих edges/истории.
+
+**Exit gate**: Все назначенные ID доказаны на bounded existing-block corpus. Generalized batch guarantee доставлен здесь, consuming risk contract 1302 и operation-state seam 1304. Минимальные operation/pre-post evidence не называются WPER arbitrary historical diff, distributed transaction или поддержкой SGEN/cluster internals.
+
+### Phase 1306: Межплатформенная передача
+
+**Goal**: Получатель на ПК B с реальным Revit независимо восстанавливает объект, проверяет согласованный параметрический slice и основания решения из проектного артефакта, после чего подтверждает разрешённую публикацию в CDE.
+**Depends on**: Phase 1305
+**Requirements**: DGHN-01, DGHN-02, DGHN-03, DGHN-04, DGHN-05
+**Success Criteria**:
+1. Получатель на ПК B разрешает выбранный native counterpart GH-объекта с ПК A через identity registry и source/document provenance; duplicate document, missing counterpart и ambiguity дают явный outcome вместо случайного совпадения имени. [DGHN-01]
+2. Получатель читает согласованный typed property/measurement slice с исходными и нормализованными units; конфликт GH/Revit сохраняет оба source-attributed значения до решения уполномоченного человека. [DGHN-02]
+3. На live модели получатель проверяет ожидаемую реакцию выбранной зависимости на изменение параметра и сохранность согласованных инвариантов; unsupported зависимости исключены явно, mapping или совпадение геометрии сами по себе не доказательство сохранённого intent. [DGHN-03]
+4. Другой участник без исходного chat transcript восстанавливает source, rule, applicability, выбранный вариант, rationale и evidence из проектного артефакта; результат подтверждает получатель, а не авторский пересказ. [DGHN-04]
+5. Уполномоченный участник подтверждает передачу принятого артефакта в выбранную CDE destination и видит revision/read-back receipt; ошибка публикации видима, доступ получателя сохраняется, DeGram не становится второй системой документов. [DGHN-05]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Предыдущие фазы приняты; реальные GH ПК A/Revit ПК B и разрешённые источники доступны. В 1300 утверждены exact measurement/dependency/invariant slice, режим ручных либо bounded Revit writes, CDE target и полномочия. Нельзя расширять Revit write scope только ради прохождения теста.
+
+**Verification evidence**: Live двухкомпьютерные identity/read-back records; duplicate/missing/ambiguous counterexamples; исходные и нормализованные units; pre/post measurements и независимая проверка инвариантов; recipient reconstruction protocol без чата автора; CDE receipt и read-back прав получателя, включая отказ/сбой публикации.
+
+**Exit gate**: Все назначенные ID проверены получателем в объявленном slice. Невыполненный live dependency test не заменяется registry demo или synthetic API response; нерешённый конфликт значений не скрывается. Успех handover не расширяет support за пределы согласованной зависимости.
+
+### Phase 1307: Сравнительный пилот и выпуск
+
+**Goal**: Владелец принимает либо отклоняет выбранную сборку по реальной пользе и correctness/traceability gates, а оператор воспроизводит безопасную установку, обновление и откат на двух ПК.
+**Depends on**: Phase 1306
+**Requirements**: DGRL-01, DGRL-02, DGRL-03, DGRL-04
+**Success Criteria**:
+1. Владелец получает воспроизводимый paired/counterbalanced отчёт current DG против DeGram на утверждённых plan-layout, urban-block и project-documentation задачах: time/rework, correctness, false-pass/false-fail/non-verdict, traceability, handover и review burden; неудачные попытки сохранены, setup/training учтены отдельно. [DGRL-01]
+2. Оператор предъявляет live governance/security/recovery evidence для двух компаний и двух проектов одной компании, concurrent editors, revoked access, source/scribble injection, missing population, stale patch и timeout после apply/до publish; скрытых неразрешённых side effects нет. [DGRL-02]
+3. Оператор устанавливает, обновляет и откатывает выбранные DeGram/DG adapters на двух поддержанных ПК по compatibility manifest, сохраняя проектный контекст и не раскрывая credentials в поставке/логах. [DGRL-03]
+4. Владелец принимает либо отклоняет выпуск по заранее утверждённым correctness/traceability и benefit gates, raw evidence, known limitations и remaining debt; tool success или выигрыш скорости не заменяют gate, незавершённая проверка не получает PASS. [DGRL-04]
+**Plans**: TBD
+**UI hint**: yes
+
+**Entry gate**: Выходы 1300–1306 имеют phase evidence и human checkpoints; baseline/corpus/protocol/margins/thresholds заморожены до сравнительного тестирования. Любое изменение протокола фиксируется до новой серии; результаты уже выполненной серии не переоцениваются по удобному post-hoc порогу.
+
+**Verification evidence**: Raw paired/counterbalanced runs и воспроизводимый анализ на тех же backend/rules/models/LLM, с раскрытой версией и различиями; expert-gold scoring, failure attempts, recipient evidence; live security/recovery matrix; compatibility/build manifests, clean install/update/rollback на двух ПК и secret checks; owner release decision со ссылками на каждый gate и долг.
+
+**Exit gate**: Evidence pack и решение владельца полны; положительный выпуск разрешён только при выполнении заранее утверждённых gates. Отрицательный пилот даёт честный no-go, а не ложное закрытие acceptance. Необработанный human-needed/FAIL остаётся открытым. Фактическая публикация/активация сборки — отдельное разрешённое действие, не автоматическое следствие подготовки roadmap.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|---|---|---|---|
+| 1300. Контракты, baseline и ownership | 0/TBD | In progress | — |
+| 1301. Рабочий клиент и безопасное чтение | 0/TBD | Not started | — |
+| 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
+| 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
+| 1304. Design State, проверка и review | 0/TBD | Not started | — |
+| 1305. Ограниченное GH intent editing | 0/TBD | Not started | — |
+| 1306. Межплатформенная передача | 0/TBD | Not started | — |
+| 1307. Сравнительный пилот и выпуск | 0/TBD | Not started | — |
+
+## Coverage и передача управления
+
+Единственный delivery mapping задаётся строкой **Requirements** каждой фазы и совпадает с traceability в `v13.0-REQUIREMENTS.md`. Ссылки в Success Criteria — проверка покрытия, не повторное назначение владельца; поздние retests потребляют прежний результат.
+
+| Phase | Требований | Success Criteria |
+|---|---|---|
+| 1300 | 4 | 4 |
+| 1301 | 7 | 5 |
+| 1302 | 10 | 5 |
+| 1303 | 6 | 5 |
+| 1304 | 7 | 5 |
+| 1305 | 8 | 5 |
+| 1306 | 5 | 5 |
+| 1307 | 4 | 4 |
+
+**Проверяемые инварианты roadmap:** ровно 8 фаз 1300–1307; все 51 MVP ID назначены ровно один раз; ни одного нового/пропущенного ID; назначение совпадает с requirements; у каждой фазы 2–5 наблюдаемых критериев, вместе ссылающихся на все её IDs; внутренний dependency graph ацикличен. Это структурная проверка планирования, не выполнение 51 требований.
+
+**Текущий gate:** v13 активирован; `/gsd-discuss-phase 1300` → `/gsd-plan-phase 1300` → `/gsd-execute-phase 1300`. Решения Phase 1300, contract profile и влияние OPEN debt требуют evidence и утверждения до зависимой реализации. Активация не создаёт executable plans и не закрывает требования.
+
+**Открытые риски:** фактическое состояние closeout/deployment v12 проверяется в момент активации; accepted debt может блокировать конкретный slice. Runtime profile v11/v12, LLM/SSO, steward, Revit slice, CAD corpus, CDE target и числовые pilot margins ещё требуют решений 1300. Research findings и старые PROJECT/MILESTONES записи не считаются подтверждением устранения проблем. Ни один из этих вопросов не разрешён скрытым предположением в roadmap.

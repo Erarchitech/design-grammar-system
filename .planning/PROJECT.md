@@ -8,11 +8,30 @@ A platform that automates architectural compliance checking. Architects write de
 
 Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required.
 
-## Current Milestone: v12.0 Theory–Implementation Alignment (activated after v9.0 override closeout)
+## Current Milestone: v13.0 DeGram Agent
+
+**Goal:** Carry a source-linked project requirement through approved rule authoring, exact native binding, measured validation and human acceptance, with handover recoverable without the author's chat.
+
+**Activation:** Explicitly authorized 2026-10-02. Approved scope: 51 requirements, Phases 1300–1307. Phase 1300 discussion completed 2026-10-03; context is ready for planning, implementation remains unstarted.
+
+**Target features:**
+- Minimal DeGram Desktop fork, DG-owned company/project authorization, reused DG web and full Model Viewer.
+- Governed source/rule/vocabulary revisions and authorized lessons-learned copies.
+- Exact GH/model bindings, versioned Design States, canonical evidence and separate human acceptance.
+- Bounded confirmed GH editing, two-PC Revit handover and evidence-gated comparative pilot.
+
+**Contracts and ownership:** An approved V8 profile covering every consumed MVP contract is required; v11/v12 retain their normative owners. Independent technical verification and owner acceptance precede dependent implementation. See [Phase 1300 context](phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.md), [active requirements](REQUIREMENTS.md), [active roadmap](ROADMAP.md), [ownership ledger](milestones/v13.0-OWNERSHIP.md) and [activation/debt gates](v13.0-ACTIVATION.md).
+
+**Outgoing v12.0 closeout:** `override_closeout`, `closed_with_accepted_debt`; audit verdict `gaps_found` retained. Requirements: 15 satisfied / 7 partial / 3 unsatisfied; canonical phase verifications: 4/7 passed. [Archived package](milestones/v12.0-ROADMAP.md) and [explicit accepted debt](milestones/v12.0-ACCEPTED-DEBT.md). This is administrative closure, not a deployed/committed release. The separately authorized v13 activation does not satisfy remaining v12 debt or authorize v9.1/v10 activation.
+
+<details>
+<summary>Historical pre-close milestone context</summary>
 
 **v8.2 Connector Integration & Reasoning Engine shipped 2026-07-12** (override closeout — 822/823 since closed and passed 2026-07-13; **824 and 825 both remain `human_needed`**, 3 in-Rhino checks each — reconciled 2026-09-20 by GSD-ALIGN-010; see `MILESTONES.md` + `STATE.md` Deferred Items). All target features delivered: additive CONNECTOR platform-token heartbeat, real OWL 2 DL (HermiT) consistency checking wired into the Reasoner screen, a SHACL validation layer running alongside the SWRL VALIDATOR, and the reasoning-stack architecture decision (isolated `dg-reasoner` sidecar, hybrid axiom-scoping).
 
 **Now:** **v12.0 Theory–Implementation Alignment** is activated as an isolated milestone package after v9.0 override closeout. The next action is standalone GSD control-plane reconciliation, followed by Phase 1200 planning. v9.0 artifacts are archived under `.planning/milestones/v9.0-phases/`; v12.0 roadmap and requirements are active.
+
+</details>
 
 ## Requirements
 
@@ -47,6 +66,22 @@ Architects can express design constraints in plain language and instantly valida
 
 <!-- Current scope. Building toward these. -->
 
+**Active milestone: v13.0 DeGram Agent** — `.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md` are authoritative for Phases 1300–1307. All requirements remain unchecked until implementation evidence.
+
+- DGCN → 1300: contracts, ownership, current-DG baseline and MVP decisions.
+- DGCL → 1301: working client and safe reading.
+- DGKN → 1302: sources, company vocabulary and approved revisions.
+- DGBN → 1303: rule ↔ GH ↔ object binding.
+- DGST → 1304: Design States, validation and review.
+- DGED → 1305: bounded GH intent editing.
+- DGHN → 1306: cross-platform handover.
+- DGRL → 1307: comparative pilot and release decision.
+
+v12.0 remains CLOSED_WITH_ACCEPTED_DEBT. Open debt keeps its owner and gates; v13 activation does not mark it complete.
+
+<details>
+<summary>Historical v12.0 phase planning claims — superseded by final audit</summary>
+
 **Active milestone: v12.0 Theory–Implementation Alignment** (Phases 1200–1205; `.planning/REQUIREMENTS.md`)
 
 > **Reconciled 2026-09-20 (GSD-ALIGN-001).** This section previously listed v9.0's phases 28–40
@@ -63,6 +98,8 @@ Architects can express design constraints in plain language and instantly valida
 - [ ] **Phase 1203**: Identity Convergence and `ATTRIBUTE_OF` Decision — also owns the Phase 32.1 CR-01/CR-02 identity fixes (GSD-ALIGN-006)
 - [ ] **Phase 1204**: Determinism and LLM Reproducibility Benchmark
 - [x] **Phase 1205**: Security and Tenancy Release Gate — complete 2026-09-30. 19/19 plans; 9/9 must-haves; ALGN12-17..20 and GATE12-05 met. The owner gave the gate-pass in the multi-user profile. Validated in Phase 1205: server-side auth plus project-membership tenancy (deny-by-default over the whole route set), no browser Neo4j/n8n access, required secrets, rotation, and a fail-closed Cypher allowlist. Local-profile self-registration was restored (D-05 amended). Open: N8N_PASSWORD is still the old committed value (owner-accepted, minor).
+
+</details>
 
 **Carried forward from v9.0 (closed, not active):**
 
@@ -88,9 +125,13 @@ Architects can express design constraints in plain language and instantly valida
 
 ## Current State
 
+v13.0 DeGram Agent is active from 2026-10-02. Phase 1300 is ready for planning: 27 owner decisions and 13 OPEN clarification/acceptance gates are captured in `1300-CONTEXT.md`, with alternatives/corrections in `1300-DISCUSSION-LOG.md`. No plans or product implementation have started. The approved preparation package is retained unchanged under `.planning/milestones/v13.0-*`.
+
+Selected deployment/data policy: Web Design Grammars in Docker on a separate test server controls data, access and system LLM; the operator configures task-based model routing. Full DG domain records and history reside in the five server graphs; source documents/native CAD binaries remain separate. Google Drive holds pilot source files and a separate publication package for each accepted revision. Bounded Revit writes cover permitted instance/type parameters and both agreed dependency scenarios. These are chosen product boundaries, not verified runtime readiness.
+
 v9.0 AI Workflow Intelligence closed on 2026-09-19 by override closeout with accepted debt. The detailed archive is in `.planning/milestones/v9.0-ROADMAP.md` and `.planning/milestones/v9.0-REQUIREMENTS.md`; the milestone audit is `.planning/v9.0-MILESTONE-AUDIT.md`. The primary carry-forward is the accepted Session B recognition blocker `D-40-SB-01`.
 
-v12.0 Theory–Implementation Alignment is now the active milestone package. Its first action is standalone GSD control-plane reconciliation before Phase 1200 planning.
+The outgoing v12.0 administrative closeout and OPEN technical debt remain as reviewed in `.planning/v13.0-ACTIVATION.md`. v13 activation and discussion do not satisfy those outstanding obligations; their evidence and owners remain separate.
 
 v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27 added the Speckle 3D embed 2026-07-08. v8.1 (Phases 810–816) completed 2026-07-11 — all four setup regions live (AI Engine, Connectors, Reasoner, DG API Documentation) plus verified E2E connector lifecycle and deployment cutover; formal archive via `/gsd-complete-milestone` still pending, phase dirs archived to `.planning/milestones/v8.1-phases/` 2026-07-12. v8.2 (Phases 820–824) shipped 2026-07-12 (override closeout — 822/823/824 verification deferred): isolated `dg-reasoner` sidecar with real OWL 2 DL (HermiT) consistency checking + SHACL data-integrity layer, additive CONNECTOR platform-token heartbeat. **v9.0 AI Workflow Intelligence reactivated 2026-07-12** — active in `.planning/phases/` (Phase 28 cloud-llm-connector already shipped, its LLM gateway is what the AI Engine screen surfaces; Phase 29 DG-Aware Context Layer next). **Phase 39 (DesignState Auto-Validation Investigation) complete 2026-07-28** — verified 26/26 must-haves, DSAV-01/02/03 met. A data-service-hosted watcher (`data-service/dsav_watcher.py` + `POST /designstate/capture`) closes the capture→validate loop hands-off on live Docker in 2.679 s, collapses 8 captures to 1 run, and minted one human-confirmed Speckle version. Prototype only — full implementation is scoped to a follow-up milestone by the ADR in `DG_OBSIDIAN/knowledge/decisions/`. Known open issue F-39-01: auto-runs are SHACL-validated before their own `ValidStatus` is written, so verdicts come back uniformly all-false — structurally sound but not yet discriminating.
 
@@ -126,6 +167,8 @@ v8.0 (Design Grammars V2 UI) shipped 2026-07-07 and archived; post-ship Phase 27
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| v13.0 activation is separately authorized | Accepted v12.0 gate debt is not satisfied downstream prerequisite | Active 2026-10-02; Phase 1300 context captured, debt gates retained |
+| Phase 1300 product decisions are captured, not implemented | Owner selected D-01..D-27 through interactive discussion | Ready for planning; V8 independent acceptance, baseline and 13 OPEN gates precede dependent delivery |
 | Single Neo4j DB with property isolation | Simpler ops, project property on every node | ✓ Good |
 | No JSX build for main UI | Faster iteration, no build tooling | ✓ Good |
 | SWRL bespoke regex parsing | Lighter than OWL vendor libs | ✓ Good |
@@ -177,4 +220,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-30. Phase 1205 (Security and Tenancy Release Gate) is complete: 19/19 plans, verification passed (9/9 must-haves) after 4 code-review fix iterations and a final deep review. Server-side authorization with project-membership tenancy now fronts every data-service route. The browser no longer reaches Neo4j or n8n directly. Secrets are required from `.env` and were rotated, except n8n (owner-accepted open gap). A fail-closed allowlist, verified against a disposable two-tenant Neo4j, guards LLM-written Cypher. Self-registration is available in the local profile only. v12.0 milestone phases 1200–1205 are all executed; next is the milestone audit and completion.*
+*Last updated: 2026-10-03 — v13.0 active; Phase 1300 context ready for planning. Verification debts preserved; no product implementation or deployment. Owner separately requested a scoped session documentation commit.*
