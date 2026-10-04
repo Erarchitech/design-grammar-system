@@ -164,6 +164,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ### Operational
 - [[sessions/2026-10-04 DeGram automatic context and planning routing|2026-10-04 DeGram: automatic context installed in AGENTS.md/CLAUDE.md/.hermes.md, verified from three cwds]]
+- [[sessions/2026-10-04 Phase 1301 planning gated on context and UI-SPEC|2026-10-04 Phase 1301: planning stopped at gates; discuss → UI-SPEC → plan order chosen]]
 - [[sessions/2026-10-04 DeGram official fork and framework workspace|2026-10-04 DeGram: official Hermes fork, pinned framework workspace, explicit-context blocker]]
 - [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup|2026-10-04 v12 hexagonal facade full-cycle test: setup, 8 rules approved, paused at step 2]]
 - [[sessions/2026-10-03 v13 activation and Phase 1300 context|2026-10-03 v13.0 activation and Phase 1300: 27 owner decisions, Ready for planning]]
