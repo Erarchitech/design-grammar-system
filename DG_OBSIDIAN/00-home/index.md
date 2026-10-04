@@ -33,6 +33,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram Phase 1301 client isolation, auth relay and Revit MCP fork|DeGram Phase 1301: isolated degram variant, delegated-token LLM relay, read-only Revit MCP fork]] (2026-10-04; discussion captured, implementation OPEN)
 - [[knowledge/decisions/DeGram work runs from the framework root with generated child routing|DeGram: work from the framework root; child .hermes.md generated from a framework template]] (2026-10-04)
 - [[knowledge/decisions/Architect rules are reshaped to the v12 evaluator boundary before ingest|Architect rules reshaped to the v12 evaluator boundary: range → two rules, strings → numeric proxies, generative rules excluded]] (2026-10-03, facade test)
 - [[knowledge/decisions/DeGram Phase 1300 decisions require V8 and server-owned graphs|DeGram Phase 1300: V8 MVP profile, system-managed LLM, server graphs and bounded Revit writes]] (2026-10-03; discussion captured, technical acceptance OPEN)
@@ -163,6 +164,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-04 Phase 1301 context gathered|2026-10-04 Phase 1301: context gathered — runtime isolation, auth relay, Revit MCP fork, LLM context card]]
 - [[sessions/2026-10-04 DeGram automatic context and planning routing|2026-10-04 DeGram: automatic context installed in AGENTS.md/CLAUDE.md/.hermes.md, verified from three cwds]]
 - [[sessions/2026-10-04 Phase 1301 planning gated on context and UI-SPEC|2026-10-04 Phase 1301: planning stopped at gates; discuss → UI-SPEC → plan order chosen]]
 - [[sessions/2026-10-04 DeGram official fork and framework workspace|2026-10-04 DeGram: official Hermes fork, pinned framework workspace, explicit-context blocker]]
