@@ -1,0 +1,144 @@
+{
+  "verifiedAt": "2026-10-04T10:46:46.368311+00:00",
+  "status": "PARTIAL_BLOCKED_PROTECTED_CONTEXT",
+  "checks": [
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/degram/tests",
+        "-v"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "test_scoped_code_extraction_and_local_merge (test_index_code.IndexCommandsTests.test_scoped_code_extraction_and_local_merge) ... ok\ntest_context_resolves_both_directions_and_fails_without_framework (test_workspace.ContextRoutingTests.test_context_resolves_both_directions_and_fails_without_framework) ... ok\ntest_rejects_context_escape_and_sensitive_paths_before_read (test_workspace.ContextRoutingTests.test_rejects_context_escape_and_sensitive_paths_before_read) ... ok\ntest_workspace_verifier_checks_real_gitlink_and_reports_pending_context (test_workspace.ContextRoutingTests.test_workspace_verifier_checks_real_gitlink_and_reports_pending_context) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.783s\n\nOK"
+    },
+    {
+      "command": [
+        "python",
+        "tools/degram/workspace.py",
+        "verify"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"frameworkRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\",\n  \"componentRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\",\n  \"planningRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\",\n  \"knowledgeRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\DG_OBSIDIAN\",\n  \"files\": [\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\AGENTS.md\",\n      \"sha256\": \"a922e6ac021d6aa67a340058434dae01fe0f346bd8e87340e149db4f6eac4bde\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\CLAUDE.md\",\n      \"sha256\": \"dcca1ddecc3620fcd8223b5396acb24b0f0ea8696c1b3d7950ae19764f69fc61\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\STATE.md\",\n      \"sha256\": \"7b0a4d6069d20a12fd34f018dd6561950b52a13e876a6e75995de7b06cb8d645\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\ROADMAP.md\",\n      \"sha256\": \"6b36fb5bb88ebdb956dab24217f9ad0085f8360ea9b90d6b5f51d723939cad99\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\REQUIREMENTS.md\",\n      \"sha256\": \"9e38b9f4ddbb1ecfd1c54aa4310cc57c23687cacbeb676f5505bfc23a44c4704\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\DG_OBSIDIAN\\\\degram\\\\index.md\",\n      \"sha256\": \"e006c90f4858d256dd4e24d33f74c2c8a80eaa64095ab42cad34afb1888421e5\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\spec\\\\degram\\\\WORKSPACE.md\",\n      \"sha256\": \"3c49d331c4be2d65b10f3ce50a51f285c0ed610ecf08f7ee0ebafe8dd00552f6\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\AGENTS.md\",\n      \"sha256\": \"fa7afef44219f955bad41e6e3a87a2637eb06697dab88d47ac4de067a8b36119\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\apps\\\\desktop\\\\AGENTS.md\",\n      \"sha256\": \"0bfd32c37d8c9acc5d61f7c0ee62f181b337b17d2de0374aaa5d564417cd16e9\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\apps\\\\desktop\\\\DESIGN.md\",\n      \"sha256\": \"dd3f52e9f646b196c77e67515e1d126109c2b1561e15a8c630dd5e9e4e0a74a0\"\n    }\n  ],\n  \"componentHead\": \"8b66a51036c1e20920a17cdd049fdf55c968d683\",\n  \"gitlinkCommit\": \"8b66a51036c1e20920a17cdd049fdf55c968d683\",\n  \"origin\": \"https://github.com/Erarchitech/degram.git\",\n  \"upstream\": \"https://github.com/NousResearch/hermes-agent.git\",\n  \"productAccepted\": false,\n  \"pending\": [\n    \"protected-context-installation\",\n    \"desktop-runtime-isolation\",\n    \"product-integration-and-acceptance\"\n  ]\n}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python",
+        "../../tools/degram/workspace.py",
+        "context"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"frameworkRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\",\n  \"componentRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\",\n  \"planningRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\",\n  \"knowledgeRoot\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\DG_OBSIDIAN\",\n  \"files\": [\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\AGENTS.md\",\n      \"sha256\": \"a922e6ac021d6aa67a340058434dae01fe0f346bd8e87340e149db4f6eac4bde\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\CLAUDE.md\",\n      \"sha256\": \"dcca1ddecc3620fcd8223b5396acb24b0f0ea8696c1b3d7950ae19764f69fc61\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\STATE.md\",\n      \"sha256\": \"7b0a4d6069d20a12fd34f018dd6561950b52a13e876a6e75995de7b06cb8d645\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\ROADMAP.md\",\n      \"sha256\": \"6b36fb5bb88ebdb956dab24217f9ad0085f8360ea9b90d6b5f51d723939cad99\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\.planning\\\\REQUIREMENTS.md\",\n      \"sha256\": \"9e38b9f4ddbb1ecfd1c54aa4310cc57c23687cacbeb676f5505bfc23a44c4704\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\DG_OBSIDIAN\\\\degram\\\\index.md\",\n      \"sha256\": \"e006c90f4858d256dd4e24d33f74c2c8a80eaa64095ab42cad34afb1888421e5\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\spec\\\\degram\\\\WORKSPACE.md\",\n      \"sha256\": \"3c49d331c4be2d65b10f3ce50a51f285c0ed610ecf08f7ee0ebafe8dd00552f6\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\AGENTS.md\",\n      \"sha256\": \"fa7afef44219f955bad41e6e3a87a2637eb06697dab88d47ac4de067a8b36119\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\apps\\\\desktop\\\\AGENTS.md\",\n      \"sha256\": \"0bfd32c37d8c9acc5d61f7c0ee62f181b337b17d2de0374aaa5d564417cd16e9\"\n    },\n    {\n      \"path\": \"C:\\\\Users\\\\Admin\\\\source\\\\repos\\\\design-grammar-system\\\\apps\\\\degram\\\\apps\\\\desktop\\\\DESIGN.md\",\n      \"sha256\": \"dd3f52e9f646b196c77e67515e1d126109c2b1561e15a8c630dd5e9e4e0a74a0\"\n    }\n  ]\n}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "apps/degram",
+        "status",
+        "--porcelain"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--name-only"
+      ],
+      "exitCode": 0,
+      "stdout": ".gitmodules\napps/degram",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        ".gitignore",
+        ".graphifyignore",
+        ".planning/PROJECT.md",
+        ".planning/ROADMAP.md",
+        ".planning/STATE.md",
+        "DG_OBSIDIAN/00-home/index.md",
+        "DG_OBSIDIAN/00-home/Current priorities.md"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of '.planning/PROJECT.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.planning/ROADMAP.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.planning/STATE.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'DG_OBSIDIAN/00-home/Current priorities.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'DG_OBSIDIAN/00-home/index.md', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "command": [
+        "gh",
+        "api",
+        "repos/Erarchitech/degram",
+        "--jq",
+        "{full_name,fork,parent:.parent.full_name,private}"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"fork\":true,\"full_name\":\"Erarchitech/degram\",\"parent\":\"NousResearch/hermes-agent\",\"private\":false}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "gh",
+        "api",
+        "repos/Erarchitech/degram/commits/main",
+        "--jq",
+        ".sha"
+      ],
+      "exitCode": 0,
+      "stdout": "8b66a51036c1e20920a17cdd049fdf55c968d683",
+      "stderr": ""
+    }
+  ],
+  "graphManifest": {
+    "builtAt": "2026-10-04T10:44:47.196531+00:00",
+    "componentHead": "8b66a51036c1e20920a17cdd049fdf55c968d683",
+    "componentScope": {
+      "desktop": "apps/desktop",
+      "shared": "apps/shared",
+      "gateway": "tui_gateway",
+      "agent": "agent"
+    },
+    "graphs": [
+      {
+        "path": "graphify-out/graph.json",
+        "sha256": "16420629402d8b32e2c75b6f73b6f9a3ad404712fb3b9e0a7df29d5b7de366a9",
+        "nodes": 15128,
+        "edges": 26343
+      },
+      {
+        "path": ".degram/index/component.json",
+        "sha256": "8fa10cfe1e0ee5ba78dcbdc79192441e80ed0b58a90a174ea044f174b5cfb89c",
+        "nodes": 44687,
+        "edges": 127651
+      },
+      {
+        "path": ".degram/index/framework.json",
+        "sha256": "52111a2410c5f56d389331f465a98bbc3fa28f8c4431b5d2104014d306827b2a",
+        "nodes": 60197,
+        "edges": 153520
+      }
+    ],
+    "paidInference": false,
+    "limitations": [
+      "Component index covers four selected source areas, not the whole upstream.",
+      "DG graph preserves existing semantic history; docs not semantically refreshed.",
+      "SQL extraction may be incomplete when optional tree_sitter_sql is missing.",
+      "Graph navigation does not prove API/IPC integration or product acceptance."
+    ]
+  },
+  "requirementsCompleted": [],
+  "blocker": "Protected AGENTS.md edit was denied: attached client cannot answer approval requests. Not retried or bypassed. Automatic context entry points NOT installed."
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "componentPath": "apps/degram",
+  "upstream": "https://github.com/NousResearch/hermes-agent.git",
+  "fork": "https://github.com/Erarchitech/degram.git",
+  "upstreamBaseCommit": "8b66a51036c1e20920a17cdd049fdf55c968d683",
+  "contextFiles": ["AGENTS.md", "CLAUDE.md", ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md", "DG_OBSIDIAN/degram/index.md", "spec/degram/WORKSPACE.md"],
+  "componentContextFiles": ["AGENTS.md", "apps/desktop/AGENTS.md", "apps/desktop/DESIGN.md"],
+  "planningOwner": ".planning",
+  "knowledgeOwner": "DG_OBSIDIAN",
+  "status": "development-workspace-only-not-product-accepted"
+}

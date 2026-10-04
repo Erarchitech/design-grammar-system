@@ -22,3 +22,6 @@ __pycache__/
 # Provenance is recorded in 35-UAT.md "Frame source recovered" instead.
 *.gh
 *.3dm
+
+# Generated DeGram framework indexes and isolated development data
+/.degram/

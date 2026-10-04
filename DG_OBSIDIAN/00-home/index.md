@@ -10,6 +10,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 ## Map of Contents
 
 ### Atlas (Architecture & Stack)
+- [[degram/index|DeGram — integrated Desktop component, shared GSD/context and official upstream fork]]
 - [[Architecture is a microservices Docker pipeline]]
 - [[Technology stack spans C-Sharp Grasshopper and Python FastAPI and React SPA]]
 - [[Neo4j stores ontology and metagraph in a single database]]
@@ -161,6 +162,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-04 DeGram official fork and framework workspace|2026-10-04 DeGram: official Hermes fork, pinned framework workspace, explicit-context blocker]]
 - [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup|2026-10-04 v12 hexagonal facade full-cycle test: setup, 8 rules approved, paused at step 2]]
 - [[sessions/2026-10-03 v13 activation and Phase 1300 context|2026-10-03 v13.0 activation and Phase 1300: 27 owner decisions, Ready for planning]]
 - [[sessions/_template|Session log template]]

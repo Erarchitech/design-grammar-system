@@ -1,0 +1,3 @@
+[submodule "degram"]
+	path = apps/degram
+	url = https://github.com/Erarchitech/degram.git
