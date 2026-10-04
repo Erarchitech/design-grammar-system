@@ -32,6 +32,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/Architect rules are reshaped to the v12 evaluator boundary before ingest|Architect rules reshaped to the v12 evaluator boundary: range → two rules, strings → numeric proxies, generative rules excluded]] (2026-10-03, facade test)
 - [[knowledge/decisions/DeGram Phase 1300 decisions require V8 and server-owned graphs|DeGram Phase 1300: V8 MVP profile, system-managed LLM, server graphs and bounded Revit writes]] (2026-10-03; discussion captured, technical acceptance OPEN)
 - [[knowledge/decisions/Evidence v2 preserves rule outcomes and keeps legacy projections separate|Evidence v2: typed outcomes, zero-row rules и совместимость legacy]] (2026-09-30, Phase 1205.1)
 - [[knowledge/decisions/DeGram approved process and company-project rule scope|DeGram: согласованный процесс, классы компании, правила проекта и lessons learned]] (2026-09-30)
@@ -94,6 +95,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/OBJECT STATE index ObjectRefs collide across classes for computed geometry|OBJECT STATE: index ObjectRefs (obj_i) collide across classes for computed geometry]] (2026-10-03, open)
+- [[knowledge/debugging/V2 UI has no Speckle project link form and the setup guide predates v7|V2 UI: no Speckle project link form; setup guide predates v7; stale DG.gha unnoticed]] (2026-10-01, open)
 - [[knowledge/debugging/Typed non-verdicts can become passed at the GH publication boundary|GH wire: Unsupported превращался в passed; raw JSON и межъязыковой admission]] (2026-09-30)
 - [[sessions/2026-09-30 v12 audit and Phase 1205.1 canonical status closure|Сессия: v12 audit и verified closure 1205.1]]
 - [[knowledge/debugging/Blocklist checks over LLM-written Cypher were bypassed three times|Blocklist checks over LLM-written Cypher bypassed three times]] (2026-09-30)
@@ -158,6 +161,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup|2026-10-04 v12 hexagonal facade full-cycle test: setup, 8 rules approved, paused at step 2]]
 - [[sessions/2026-10-03 v13 activation and Phase 1300 context|2026-10-03 v13.0 activation and Phase 1300: 27 owner decisions, Ready for planning]]
 - [[sessions/_template|Session log template]]
 - [[sessions/2026-09-30 DeGram process approved and bilingual diagrams|2026-09-30 DeGram — согласование процесса и схемы RU/EN]]

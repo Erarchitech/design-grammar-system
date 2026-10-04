@@ -1,0 +1,123 @@
+{
+  "project": "v12-hexagonal-facade-01",
+  "approvedAt": "2026-10-03",
+  "thresholdStatus": "provisional-until-V1-calibration",
+  "modelUnits": "mm",
+  "ruleUnits": "m",
+  "rules": [
+    {
+      "n": 1,
+      "expectedRuleId": "R_FAC_ASPECT_MIN_2_V",
+      "source": "D1-lower",
+      "class": "GlassPanel",
+      "dataProperty": "hasAspectRatio",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:lessThan",
+      "threshold": 2.0,
+      "unit": null,
+      "ingestText": "The aspect ratio of each glass panel (class GlassPanel, property hasAspectRatio) must be at least 2.0."
+    },
+    {
+      "n": 2,
+      "expectedRuleId": "R_FAC_ASPECT_MAX_4_V",
+      "source": "D1-upper",
+      "class": "GlassPanel",
+      "dataProperty": "hasAspectRatio",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:greaterThan",
+      "threshold": 4.0,
+      "unit": null,
+      "ingestText": "The aspect ratio of each glass panel (class GlassPanel, property hasAspectRatio) must not exceed 4.0."
+    },
+    {
+      "n": 3,
+      "expectedRuleId": "R_FAC_LEVELOFFSET_MAX_001_V",
+      "source": "B1-adapted",
+      "class": "HexagonalUnit",
+      "dataProperty": "hasLevelOffsetM",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:greaterThan",
+      "threshold": 0.01,
+      "unit": "m",
+      "ingestText": "The maximum vertical offset of the vertices of each hexagonal unit (class HexagonalUnit, property hasLevelOffsetM) from the nearest level plane must not exceed 0.01 meters."
+    },
+    {
+      "n": 4,
+      "expectedRuleId": "R_FAC_SYMMETRY_MAX_001_V",
+      "source": "B2-adapted",
+      "class": "HexagonalUnit",
+      "dataProperty": "hasSymmetryDeviationM",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:greaterThan",
+      "threshold": 0.01,
+      "unit": "m",
+      "ingestText": "The symmetry deviation of each hexagonal unit (class HexagonalUnit, property hasSymmetryDeviationM) about its own axis through its top and bottom vertices must not exceed 0.01 meters."
+    },
+    {
+      "n": 5,
+      "expectedRuleId": "R_FAC_VERTEXCOUNT_EQ_3_V",
+      "source": "C1-adapted",
+      "class": "BottomTriangularPanel",
+      "dataProperty": "hasVertexCount",
+      "valueKind": "integer",
+      "violationBuiltin": "swrlb:notEqual",
+      "threshold": 3,
+      "unit": null,
+      "ingestText": "Each bottom triangular panel (class BottomTriangularPanel, property hasVertexCount) must have exactly 3 vertices."
+    },
+    {
+      "n": 6,
+      "expectedRuleId": "R_FAC_PLANARITY_MAX_0005_V",
+      "source": "new",
+      "class": "GlassPanel",
+      "dataProperty": "hasPlanarityDeviationM",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:greaterThan",
+      "threshold": 0.005,
+      "unit": "m",
+      "ingestText": "The planarity deviation of each glass panel (class GlassPanel, property hasPlanarityDeviationM) must not exceed 0.005 meters."
+    },
+    {
+      "n": 7,
+      "expectedRuleId": "R_FAC_WIDTH_MIN_09_V",
+      "source": "new",
+      "class": "GlassPanel",
+      "dataProperty": "hasWidthM",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:lessThan",
+      "threshold": 0.9,
+      "unit": "m",
+      "ingestText": "The width of each glass panel (class GlassPanel, property hasWidthM) must be at least 0.9 meters."
+    },
+    {
+      "n": 8,
+      "expectedRuleId": "R_FAC_HEIGHT_MAX_50_V",
+      "source": "new",
+      "class": "Facade",
+      "dataProperty": "hasHeightM",
+      "valueKind": "number",
+      "violationBuiltin": "swrlb:greaterThan",
+      "threshold": 50,
+      "unit": "m",
+      "ingestText": "The total height of the facade (class Facade, property hasHeightM) must not exceed 50 meters."
+    }
+  ],
+  "control": [
+    {
+      "source": "A1",
+      "when": "after-main-cycle",
+      "expectedStatus": "unsupported",
+      "reason": "hasUpperVertex/hasLowerVertex are ObjectProperty atoms; the evaluator recognizes but does not evaluate them"
+    }
+  ],
+  "reserve": [
+    {
+      "expectedRuleId": "R_FAC_TRIANGLEANGLE_MIN_15_V",
+      "class": "BottomTriangularPanel",
+      "dataProperty": "hasMinAngleDeg",
+      "violationBuiltin": "swrlb:lessThan",
+      "threshold": 15,
+      "unit": "deg"
+    }
+  ]
+}
