@@ -106,8 +106,49 @@ Contract/unit и negative tests необходимы, но не заменяют
 3. На каждом из двух ПК участник явно выбирает конкретный локальный Revit/GH document и получает read snapshot через typed adapter; busy/off bridge даёт диагностируемый operational outcome, а не молчаливую подмену документа. [DGCL-04]
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
-**Plans**: TBD
+**Plans**: 16 plans — 1301-01 executed (bounded `ui-v2/#degram` increment, no DGCL closed); 1301-02..16 planned 2026-10-04 (inline plan check, not independent: `1301-PLAN-CHECK.md`). Installs, fork/submodule, build/launch/push, Docker, paid inference and live CAD reads each sit behind an owner decision checkpoint.
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+
+- [x] 1301-01-PLAN.md — Bounded reused-web read-only workspace `ui-v2/#degram` (executed, offline-verified)
+- [ ] 1301-02-PLAN.md — Owner authorization + lockfile restore + Desktop/agent test baseline
+- [ ] 1301-03-PLAN.md — Revit adapter fork registered as pinned submodule `apps/revit-mcp` (D-09)
+- [ ] 1301-05-PLAN.md — DG company attribute + delegated user-scoped token (D-06, D-08, D-20)
+- [ ] 1301-06-PLAN.md — GH bridge document identity + BUSY bounded wait (D-13, D-14, D-18)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 1301-04-PLAN.md — Desktop runtime isolation: identity, home, updater off, NSIS target (D-01..D-04)
+- [ ] 1301-07-PLAN.md — Revit fork read-only allowlist, document identity, loopback fail-closed (D-10, D-11, D-13, D-23)
+- [ ] 1301-08-PLAN.md — Streaming LLM relay with export policy, consent, provenance, cancel (D-16..D-18)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 1301-09-PLAN.md — Server-side Speckle proxy, no token in browser (D-21)
+- [ ] 1301-10-PLAN.md — Agent lockdown: in-memory credentials, pinned provider, registry allowlist, per-scope profiles (D-06, D-16, D-19, D-22)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 1301-11-PLAN.md — degram toolset, CAD adapters, context composer, cancellable reads (D-11, D-13..D-15, D-17, D-18)
+- [ ] 1301-12-PLAN.md — Electron main: partition sign-in, DG view, token mint/handoff, heartbeat/revoke (D-05..D-08, D-19)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 1301-13-PLAN.md — Renderer shell: theme, i18n, hidden surfaces, sign-in/boot states, DG page, scope strip, project picker
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 1301-14-PLAN.md — Renderer chat: document picker, bridge status, Context card, consent/deny, stop/retry
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + two-PC DGCL-01..07 UAT
 
 **Entry gate**: Выход 1300 принят; login/LLM/deployment и scoped-model-access решения применимы к двум реальным ПК. Потребляемая security foundation v12 проверена против residual debt; если безопасный user-facing path отсутствует, service-only endpoint не используется как обход.
 

@@ -71,6 +71,16 @@
 - **D-19:** Локальная история чата привязана к scope user + company + project.
   - Смена проекта открывает новую сессию; контекст другого проекта не переиспользуется. После logout история скрыта до повторного входа с подтверждённым membership. При обнаруженном revoke история этого scope удаляется локально.
 
+### Решения владельца при планировании (2026-10-04, после research)
+- **D-20:** Минимальный атрибут company: admin-задаваемое соответствие project→company в auth store data-service.
+  - Сейчас в auth нет понятия company, только membership на проект. Соответствие отдаётся в `/auth/me` memberships; делегированный токен (D-06) и LLM relay (D-16) проверяют company + project. Governance словаря компании остаётся в 1302.
+- **D-21:** Model Viewer получает геометрию через серверный Speckle proxy, авторизованный по проекту; read token Speckle не покидает сервер.
+  - Сейчас `/validation/view` отдаёт браузеру один read token на весь Speckle server. Новый route отдаёт только объекты `speckleProjectId`, привязанного к проекту DG; viewer грузит их через DG origin. Запись в route-policy и fenced blocks `spec/SECURITY-BOUNDARY.md`.
+- **D-22:** Allowlist инструментов variant `degram` = clarify, todo, toolset `degram` (чтение графа проекта DG, GH snapshot/selection) и read tools revit-mcp.
+  - Не регистрируются вовсе (фильтр на уровне registry, не только config): terminal, process, execute_code, file, web, browser, vision/image/tts, skills, memory, session_search, delegation, cronjob, kanban, computer_use, connections, terminal-инструменты desktop_ui. MCP sampling выключен; auxiliary LLM-вызовы закреплены за relay D-16 или отключены, discovery chain провайдеров закрыт.
+- **D-23:** Revit bridge работает только при loopback-привязке pyRevit Routes, иначе fail-closed.
+  - Fork `startup.py` регистрирует только read routes; шаг установки задаёт `[routes] host = 127.0.0.1`; DeGram проверяет, что listener `:48884` слушает только loopback, иначе статус `setup-incomplete` и чтения не выполняются.
+
 ### Claude's Discretion
 Planner/researcher выбирают HOW в пределах решений выше и границ 1300:
 - Кто вызывает GH bridge: typed tool/MCP в агенте (симметрично D-11) или Electron main через typed IPC. По умолчанию — симметрично с Revit, только loopback.
