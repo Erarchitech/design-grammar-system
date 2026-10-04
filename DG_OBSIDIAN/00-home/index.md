@@ -33,6 +33,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram Desktop uses a DG theme preset, text wordmark and Russian-first copy|DeGram Desktop: DG theme preset, «DeGram» wordmark, ru-first copy, DG web as a shell page]] (2026-10-04; UI-SPEC approved, implementation OPEN)
 - [[knowledge/decisions/DeGram Phase 1301 client isolation, auth relay and Revit MCP fork|DeGram Phase 1301: isolated degram variant, delegated-token LLM relay, read-only Revit MCP fork]] (2026-10-04; discussion captured, implementation OPEN)
 - [[knowledge/decisions/DeGram work runs from the framework root with generated child routing|DeGram: work from the framework root; child .hermes.md generated from a framework template]] (2026-10-04)
 - [[knowledge/decisions/Architect rules are reshaped to the v12 evaluator boundary before ingest|Architect rules reshaped to the v12 evaluator boundary: range → two rules, strings → numeric proxies, generative rules excluded]] (2026-10-03, facade test)
@@ -164,6 +165,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-04 Phase 1301 UI design contract|2026-10-04 Phase 1301: UI-SPEC approved — DG theme preset, wordmark, ru-first copy, DG page, 47 UI states resolved]]
 - [[sessions/2026-10-04 Phase 1301 context gathered|2026-10-04 Phase 1301: context gathered — runtime isolation, auth relay, Revit MCP fork, LLM context card]]
 - [[sessions/2026-10-04 DeGram automatic context and planning routing|2026-10-04 DeGram: automatic context installed in AGENTS.md/CLAUDE.md/.hermes.md, verified from three cwds]]
 - [[sessions/2026-10-04 Phase 1301 planning gated on context and UI-SPEC|2026-10-04 Phase 1301: planning stopped at gates; discuss → UI-SPEC → plan order chosen]]
