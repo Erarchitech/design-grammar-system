@@ -1,0 +1,146 @@
+{
+  "proof": "offline actual application/ReactDOM, synthetic matched API responses, no live service",
+  "results": [
+    {
+      "id": "DG-01 dedicated entry resolves session, selects explicitly, renders and inspects real graph",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-02 switch clears old graph immediately and rejects late previous-project response",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-03 logout clears context immediately and rejects pending graph",
+      "status": "PASS"
+    }
+  ],
+  "calls": [
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    }
+  ],
+  "unexpected": [],
+  "errors": [],
+  "passed": 3,
+  "failed": 0,
+  "browser_exit_code": 0,
+  "sources": [
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-600-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-600-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts.css",
+    "ui-v2/src/styles/tokens/colors.css",
+    "ui-v2/src/styles/tokens/typography.css",
+    "ui-v2/src/styles/tokens/spacing.css",
+    "ui-v2/src/styles/tokens/effects.css",
+    "ui-v2/src/styles/tokens/base.css",
+    "ui-v2/src/styles/styles.css",
+    "ui-v2/src/lib/apiClient.js",
+    "ui-v2/src/lib/auth.js",
+    "ui-v2/src/lib/graphApi.js",
+    "ui-v2/src/components/forms/Button.jsx",
+    "ui-v2/src/graph/graphEngine.js",
+    "ui-v2/src/graph/buildRings.js",
+    "ui-v2/src/components/display/PropertiesTable.jsx",
+    "ui-v2/src/degram/ReadOnlyGraph.jsx",
+    "ui-v2/src/degram/degram.css",
+    "ui-v2/src/degram/DeGramWorkspace.jsx",
+    "ui-v2/src/landing/landingEngine.js",
+    "ui-v2/src/components/forms/Checkbox.jsx",
+    "ui-v2/src/components/forms/Combobox.jsx",
+    "ui-v2/src/components/forms/Input.jsx",
+    "ui-v2/src/components/forms/SearchField.jsx",
+    "ui-v2/src/components/forms/Select.jsx",
+    "ui-v2/src/components/forms/Slider.jsx",
+    "ui-v2/src/components/forms/Textarea.jsx",
+    "ui-v2/src/components/display/Avatar.jsx",
+    "ui-v2/src/components/display/Badge.jsx",
+    "ui-v2/src/components/display/Callout.jsx",
+    "ui-v2/src/components/display/CandidateTable.jsx",
+    "ui-v2/src/components/display/Chip.jsx",
+    "ui-v2/src/components/display/CodeBlock.jsx",
+    "ui-v2/src/components/display/KVRow.jsx",
+    "ui-v2/src/components/display/Progress.jsx",
+    "ui-v2/src/components/display/SessionHistory.jsx",
+    "ui-v2/src/components/surfaces/Collapsible.jsx",
+    "ui-v2/src/components/surfaces/Dialog.jsx",
+    "ui-v2/src/components/surfaces/Panel.jsx",
+    "ui-v2/src/components/surfaces/RunTile.jsx",
+    "ui-v2/src/components/surfaces/Tabs.jsx",
+    "ui-v2/src/components/surfaces/Tile.jsx",
+    "ui-v2/src/components/index.js",
+    "ui-v2/src/landing/landing.css",
+    "ui-v2/src/landing/LandingLayer.jsx",
+    "ui-v2/src/shell/ScreenHeader.jsx",
+    "ui-v2/src/screens/GraphScreen.jsx",
+    "ui-v2/src/lib/modelApi.js",
+    "ui-v2/src/lib/inputGenApi.js",
+    "ui-v2/src/components/speckle/SpeckleViewport.jsx",
+    "ui-v2/src/screens/ModelScreen.jsx",
+    "ui-v2/src/screens/ProjectsScreen.jsx",
+    "ui-v2/src/lib/llmApi.js",
+    "ui-v2/src/screens/AiEngineScreen.jsx",
+    "ui-v2/src/lib/connectorsApi.js",
+    "ui-v2/src/screens/ConnectorsScreen.jsx",
+    "ui-v2/src/lib/reasonerApi.js",
+    "ui-v2/src/screens/ReasonerScreen.jsx",
+    "ui-v2/src/screens/apidocs/content/01-getting-started.js",
+    "ui-v2/src/screens/apidocs/content/02-authentication.js",
+    "ui-v2/src/screens/apidocs/content/03-credentials-api.js",
+    "ui-v2/src/screens/apidocs/content/04-heartbeat-api.js",
+    "ui-v2/src/screens/apidocs/content/05-connectors-status-api.js",
+    "ui-v2/src/screens/apidocs/content/06-validation-publish-api.js",
+    "ui-v2/src/screens/apidocs/content/07-extending.js",
+    "ui-v2/src/screens/apidocs/content/index.js",
+    "ui-v2/src/screens/ApiDocsScreen.jsx",
+    "ui-v2/src/specimen/SpecimenPage.jsx",
+    "ui-v2/src/App.jsx",
+    "ui-v2/src/main.jsx"
+  ]
+}

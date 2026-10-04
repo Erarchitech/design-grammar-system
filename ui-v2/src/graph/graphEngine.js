@@ -149,10 +149,10 @@ export default class GraphEngine {
   }
 
   /* ---------------- lifecycle ---------------- */
-  start() {
+  start({ thinkingAssets = true } = {}) {
     this._stop = false;
     this.resize();
-    this._initThinkImg();
+    if (thinkingAssets) this._initThinkImg();
     this._onResize = () => this.resize();
     window.addEventListener("resize", this._onResize);
     this.bind();

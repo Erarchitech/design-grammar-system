@@ -1,0 +1,10 @@
+✔ Restricted surface dependency closure excludes normal screens and model/LLM/connector clients (54.4893ms)
+✔ Inspection projection is immutable and filters nested case/separator variants (1.486ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 177.4897

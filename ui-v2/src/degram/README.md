@@ -1,0 +1,30 @@
+# DeGram read-only web increment
+
+Open the existing DG web origin at **`/#degram`** after the normal ui-v2 build is served. No new server, port, desktop install or separate datastore is introduced. The current session is resolved via `/auth/me`; otherwise the compact form uses the existing `auth.login` cookie/CSRF flow. Only projects returned by `fetchProjects` are offered. Every initial load, sign-in and access refresh requires an explicit project selection.
+
+`main.jsx` chooses this root before dynamically importing the normal App. Switching between this hash and normal DG reloads the entry, rather than keeping hidden App layers mounted. `ReadOnlyGraph` reuses `buildRings`, `GraphEngine` and `PropertiesTable` (`editable=false`). Nodes without a graph layer remain inspectable in the node list without inventing a sixth graph. `GraphEngine.start({thinkingAssets:false})` skips an unused animation asset; normal callers retain the previous default.
+
+## Safety scope
+
+- No graph mutations, natural-language query/ingestion, history writes, model viewer token requests, connectors, CAD/files, LLM settings, provider/model/key inputs or navigation to normal screens.
+- Display projection strips provider/model/credential metadata recursively, including JSON-encoded properties, before rendering. This is **not server-side redaction** and not a promise about arbitrary prose containing a provider name.
+- A monotonic request generation rejects stale session/project/graph results after context changes, expiry, logout or access refresh. Switching/refreshing clears the canvas and inspector immediately.
+- 401 clears identity and all read context; a current-scope 403 clears projects/graph and shows denial. Shared transport conservatively treats any 401, including a stale request's response, as session expiry.
+- Access is rechecked on explicit **Refresh access** and window focus; server enforcement still applies on every request. No push revocation subscription exists, so a continuously focused cached view does not discover a remote revocation until the next read/refresh/focus. This is not live revocation acceptance.
+- Logout clears local data before awaiting the server. If sign-out fails, no automatic session re-entry occurs; an explicit retry is shown. No credentials, graph, or remembered project are persisted by this workspace.
+- Owner/admin capabilities remain unchanged on the backend and in normal DG. This is a bounded UI surface, **not** a global capability restriction.
+
+## Offline verification
+
+From the repository root, using already installed dependencies/browser:
+
+```text
+node ui-v2/tests/run-degram.mjs verified
+node --test ui-v2/tests/degram-boundary.test.mjs
+node --test ui-v2/tests/api-security.test.mjs ui-v2/tests/auth-security.test.mjs
+npm --prefix ui-v2 run build
+```
+
+The browser runner follows the existing `tests/run-panel.mjs` file-URL strategy. It bundles actual `main.jsx`/ReactDOM and real renderer, permits only finite explicit synthetic API responses, rejects unmatched requests and CSP resource violations, uses an isolated disposable browser profile, and launches no server. A real graph frame is drawn and pixels checked; virtual-time RAF scheduling is not used as a correctness oracle. Evidence under `tests/evidence/degram-*.json` includes observed RED/GREEN runs; `degram-verified.json` is the final complete run with source hashes. These are UI integration tests, not live API/DB/CAD proof.
+
+This increment is a reusable web surface for a future minimal Hermes Desktop fork. Desktop packaging, model/native-document/bridge integration, cancellations/timeouts, live multi-user tenancy verification and full DGCL-01..07 acceptance remain outside this increment.

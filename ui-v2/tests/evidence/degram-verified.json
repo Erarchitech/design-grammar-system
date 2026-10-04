@@ -1,0 +1,694 @@
+{
+  "proof": "offline actual application/ReactDOM, synthetic matched API responses, no live service",
+  "results": [
+    {
+      "id": "DG-01 dedicated entry resolves session, selects explicitly, renders and inspects real graph",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-02 switch clears old graph immediately and rejects late previous-project response",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-03 logout clears context immediately and rejects pending graph",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-04 sign in uses existing cookie/CSRF flow and never stores credentials",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-05 access refresh revokes project and invalidates pending graph",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-06-403 denial discards graph, projects and pending reads",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-06-401 denial discards graph, projects and pending reads",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-07 empty graph is explicit and offers no empty canvas",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-08 inspection removes provider/model/key metadata including nested JSON",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-09 service failures hide previous graph and project denial is explicit",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-10 late sign-in project list cannot resurrect after logout",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-11 failed logout clears data and offers retry without silently re-entering session",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-12 returning to workspace rechecks access and clears revoked graph",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-13 untagged graph nodes remain inspectable without inventing a graph layer",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-14 expiry rejects late project-list and graph reads",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-15 pending sign-in prevents duplicate submit and ignores late auth after expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-16-owner privileged identity still gets only reading controls",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-16-admin privileged identity still gets only reading controls",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-18 late session identity cannot restore a logged-out workspace",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-19 rejected login clears password and never starts project read",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-20 empty session requires explicit sign-in and no projects call",
+      "status": "PASS"
+    },
+    {
+      "id": "DG-17 finite network allowlist, cookie transport and zero errors across complete flow",
+      "status": "PASS"
+    }
+  ],
+  "calls": [
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/login",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/B",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/login",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/login",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/projects",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/graph/A",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    },
+    {
+      "url": "/data-service/auth/logout",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/login",
+      "method": "POST",
+      "credentials": "include",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-DG-CSRF": "1"
+      }
+    },
+    {
+      "url": "/data-service/auth/me",
+      "method": "GET",
+      "credentials": "include",
+      "headers": {}
+    }
+  ],
+  "unexpected": [],
+  "errors": [],
+  "passed": 22,
+  "failed": 0,
+  "browser_exit_code": 0,
+  "sources": [
+    "ui-v2/src/graph/graphEngine.js",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-600-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-400-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-500-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-600-normal.woff2",
+    "ui-v2/src/styles/tokens/fonts.css",
+    "ui-v2/src/styles/tokens/colors.css",
+    "ui-v2/src/styles/tokens/typography.css",
+    "ui-v2/src/styles/tokens/spacing.css",
+    "ui-v2/src/styles/tokens/effects.css",
+    "ui-v2/src/styles/tokens/base.css",
+    "ui-v2/src/styles/styles.css",
+    "ui-v2/src/lib/apiClient.js",
+    "ui-v2/src/lib/auth.js",
+    "ui-v2/src/components/forms/Input.jsx",
+    "ui-v2/src/lib/graphApi.js",
+    "ui-v2/src/components/forms/Button.jsx",
+    "ui-v2/src/graph/buildRings.js",
+    "ui-v2/src/components/display/PropertiesTable.jsx",
+    "ui-v2/src/degram/ReadOnlyGraph.jsx",
+    "ui-v2/src/degram/inspection.js",
+    "ui-v2/src/degram/degram.css",
+    "ui-v2/src/degram/DeGramWorkspace.jsx",
+    "ui-v2/src/landing/landingEngine.js",
+    "ui-v2/src/components/forms/Checkbox.jsx",
+    "ui-v2/src/components/forms/Combobox.jsx",
+    "ui-v2/src/components/forms/SearchField.jsx",
+    "ui-v2/src/components/forms/Select.jsx",
+    "ui-v2/src/components/forms/Slider.jsx",
+    "ui-v2/src/components/forms/Textarea.jsx",
+    "ui-v2/src/components/display/Avatar.jsx",
+    "ui-v2/src/components/display/Badge.jsx",
+    "ui-v2/src/components/display/Callout.jsx",
+    "ui-v2/src/components/display/CandidateTable.jsx",
+    "ui-v2/src/components/display/Chip.jsx",
+    "ui-v2/src/components/display/CodeBlock.jsx",
+    "ui-v2/src/components/display/KVRow.jsx",
+    "ui-v2/src/components/display/Progress.jsx",
+    "ui-v2/src/components/display/SessionHistory.jsx",
+    "ui-v2/src/components/surfaces/Collapsible.jsx",
+    "ui-v2/src/components/surfaces/Dialog.jsx",
+    "ui-v2/src/components/surfaces/Panel.jsx",
+    "ui-v2/src/components/surfaces/RunTile.jsx",
+    "ui-v2/src/components/surfaces/Tabs.jsx",
+    "ui-v2/src/components/surfaces/Tile.jsx",
+    "ui-v2/src/components/index.js",
+    "ui-v2/src/landing/landing.css",
+    "ui-v2/src/landing/LandingLayer.jsx",
+    "ui-v2/src/shell/ScreenHeader.jsx",
+    "ui-v2/src/screens/GraphScreen.jsx",
+    "ui-v2/src/lib/modelApi.js",
+    "ui-v2/src/lib/inputGenApi.js",
+    "ui-v2/src/components/speckle/SpeckleViewport.jsx",
+    "ui-v2/src/screens/ModelScreen.jsx",
+    "ui-v2/src/screens/ProjectsScreen.jsx",
+    "ui-v2/src/lib/llmApi.js",
+    "ui-v2/src/screens/AiEngineScreen.jsx",
+    "ui-v2/src/lib/connectorsApi.js",
+    "ui-v2/src/screens/ConnectorsScreen.jsx",
+    "ui-v2/src/lib/reasonerApi.js",
+    "ui-v2/src/screens/ReasonerScreen.jsx",
+    "ui-v2/src/screens/apidocs/content/01-getting-started.js",
+    "ui-v2/src/screens/apidocs/content/02-authentication.js",
+    "ui-v2/src/screens/apidocs/content/03-credentials-api.js",
+    "ui-v2/src/screens/apidocs/content/04-heartbeat-api.js",
+    "ui-v2/src/screens/apidocs/content/05-connectors-status-api.js",
+    "ui-v2/src/screens/apidocs/content/06-validation-publish-api.js",
+    "ui-v2/src/screens/apidocs/content/07-extending.js",
+    "ui-v2/src/screens/apidocs/content/index.js",
+    "ui-v2/src/screens/ApiDocsScreen.jsx",
+    "ui-v2/src/specimen/SpecimenPage.jsx",
+    "ui-v2/src/App.jsx",
+    "ui-v2/src/main.jsx"
+  ],
+  "sources_meaning": "Bundler inputs, not executed-module coverage; normal App is bundled by this test macro but never mounted on #degram",
+  "command": "node ui-v2/tests/run-degram.mjs",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "sha256": {
+    "ui-v2/src/graph/graphEngine.js": "9b78c6874c3b06681f6089b70d1cd23ae65ac96da01a4b9c9387f51dfe81d315",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-400-normal.woff2": "e6ef6abb39c762ed2259cc814e6f16888c540cd84835962227b56ab2354f27f1",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-500-normal.woff2": "40073e90816315c92e4f4381bd50b6fdc950b22b0dd010a4179046cf588d4f12",
+    "ui-v2/src/styles/tokens/fonts/geist-sans-latin-600-normal.woff2": "9d99fbd791968493fa507ac846de561cee47b00f8100c23cad333b3cb78392d6",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-400-normal.woff2": "6b2e3719a213e34cc043760e5a5b420d4067f477dfe06b92ef3c9fd914192dd4",
+    "ui-v2/src/styles/tokens/fonts/geist-mono-latin-500-normal.woff2": "53cb4eeb92ea2af00279675f699917ae96d9682b1fa5b563def7c02e8c9a2b60",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-400-normal.woff2": "e902b779e43944c300cf8ae5e4a1affa68cb8a823fd263dd2f479c4cdfbd213c",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-500-normal.woff2": "541b12882301dc44b73eaaed9e230709df1d299379c3594695870fc2f9e3ff0a",
+    "ui-v2/src/styles/tokens/fonts/oswald-latin-600-normal.woff2": "f6cb541f4d9794b86145c9c3e7d778ffb78c92f8180c577e245238991503da6f",
+    "ui-v2/src/styles/tokens/fonts.css": "3aaa54fb504fb512350a2ba1298b60f2125fc09f975d55657ae77e16bfa8e84a",
+    "ui-v2/src/styles/tokens/colors.css": "dbbfdbeee90d839593799a98c97c3bb1d0dc32428fc6488ff95a52db5a20a21e",
+    "ui-v2/src/styles/tokens/typography.css": "84ca043962d0cf569b665be7b94ae80a94cbc9bb12c5c69ab42335a45937eadf",
+    "ui-v2/src/styles/tokens/spacing.css": "7d4d3e8e3a73ea8ca137d9735c87259c85fe94a9c954de98a90661bbe52adcf3",
+    "ui-v2/src/styles/tokens/effects.css": "69a8bb58f6884cded34ba84977b7efa3163d09b7d43825514c1d82a56a38440c",
+    "ui-v2/src/styles/tokens/base.css": "abd45438a2c0b1731b81915a739e63246d0fc81b3acba9303c662690cb3cbd25",
+    "ui-v2/src/styles/styles.css": "b35b51d69423c776aaa5b1ab1fa2e1210ecbd51c20e537270c5d15ee2ea8042a",
+    "ui-v2/src/lib/apiClient.js": "3cb033aca99cec85badc11242cf79cc769da63ff13ea583b07d7e84068b72e84",
+    "ui-v2/src/lib/auth.js": "64699abfb674c433e90d5d41c52a8814c0deafd5f031e2997e2a0d37b6f7122b",
+    "ui-v2/src/components/forms/Input.jsx": "4c4bbe18376bcb540f74551a748f8e960bb3a14ea8a73c4e39efff2b57fafdec",
+    "ui-v2/src/lib/graphApi.js": "228bae6d4f38a64f99b8b890df8cf9f9831408eefcee4c21f8d88677eccf0b26",
+    "ui-v2/src/components/forms/Button.jsx": "6da723a45c8a9f6911de02e7b23a05f2f6a1109f94b27dbb0b8be50416e3544c",
+    "ui-v2/src/graph/buildRings.js": "50bf9c4e3db0c9a2fd3789cb510ea33be9dd4965706385884c44fa49d2187f93",
+    "ui-v2/src/components/display/PropertiesTable.jsx": "d58bfa5558ba5d5c742d6e95c88bd000e3b640ba7fbdbeba759eb9f28b828a86",
+    "ui-v2/src/degram/ReadOnlyGraph.jsx": "662a7ed1de0bf4405e6ade70b838c19c1088ad7550a715752a8b9abc94a7aa11",
+    "ui-v2/src/degram/inspection.js": "302591203b1530b4347392f94b8e0d645b6bcca287c419d542a0af0e680918ac",
+    "ui-v2/src/degram/degram.css": "e42f485ad33e5530b0576b86c2f9cd767cb783874f3f97d1f6739e344545efbc",
+    "ui-v2/src/degram/DeGramWorkspace.jsx": "5aaf331e980e4516543ff8731190ffc21bb5e3c44e68b6841c273fb24d3f225d",
+    "ui-v2/src/landing/landingEngine.js": "e3d5c5f3077341f6d41401b64a40ee872860ff2a0b6f06778f31df8a458b8e4d",
+    "ui-v2/src/components/forms/Checkbox.jsx": "cee96b0f59b90f44d288d1815ddc6b17ea7ab36e75b279e08f10fdc90f373baa",
+    "ui-v2/src/components/forms/Combobox.jsx": "3fc0a54f8c99671aa7336ea67aa4925176f18d5adedc26450b62fe05e312b8d2",
+    "ui-v2/src/components/forms/SearchField.jsx": "9eb6f85335473fd0321eb40faa6ac86e47456833cd5b7e882f2f17f1e764e761",
+    "ui-v2/src/components/forms/Select.jsx": "037d15baa29f9af707024a8c76654315c763510f4d8efda692c18db247ff4441",
+    "ui-v2/src/components/forms/Slider.jsx": "056cbee69ac84a92e350069e3a41fbf2965edf59af60722704d5bb13c7e24047",
+    "ui-v2/src/components/forms/Textarea.jsx": "bb45f340744f089a570baf8237b810c0963aebfed5713d29d9036351996b751f",
+    "ui-v2/src/components/display/Avatar.jsx": "cbde4476de0d80fc6124f2476c564aba90da0688f044acb9e84e89b3b5a40426",
+    "ui-v2/src/components/display/Badge.jsx": "2eaa70796243a6a46f68db27104f177c0a2d34a0bbd6d87113941395d336235c",
+    "ui-v2/src/components/display/Callout.jsx": "36b6ce9230bc71047435b958e029c0ce60c2dd77c1499a730541fa88e816a41a",
+    "ui-v2/src/components/display/CandidateTable.jsx": "716a29396840db283ff711e00cd93b534700f719b249d57c0a961ccdfb9a4536",
+    "ui-v2/src/components/display/Chip.jsx": "29c3c798c1c7a533a0657bb98ee639ce49b0317d318cd5979980d7fa3044007c",
+    "ui-v2/src/components/display/CodeBlock.jsx": "a9ba2c483913d3d1136814351e9c4dff5052efabbd1b4feda262d1cf160d7c94",
+    "ui-v2/src/components/display/KVRow.jsx": "5c0ca2cdfaf93bfe46a64daa73c1950fe5601e64c16bbc52ad40b89192b22383",
+    "ui-v2/src/components/display/Progress.jsx": "7037143431b95e0c75f2a431cd266383bc760ab200439355d9457f8aaa6a1e9a",
+    "ui-v2/src/components/display/SessionHistory.jsx": "9a34ca26e2b4fba5d1e090e157f97b0235519ee021ea8cb45866f44dc0715b1f",
+    "ui-v2/src/components/surfaces/Collapsible.jsx": "3fde4d47c31563b07b13776fa3643a1ae2c5e2d80ee755d74287199892e90d0f",
+    "ui-v2/src/components/surfaces/Dialog.jsx": "7be5aae2d6ffa985fdfcea8f602580b706260300be4ba121cd85708583d3232d",
+    "ui-v2/src/components/surfaces/Panel.jsx": "ace3f277749e2245e67f8c2fecee3a6ef92b2863e75f4ff7125862989d73ced9",
+    "ui-v2/src/components/surfaces/RunTile.jsx": "cfcbbc175e4cf9560b09a1b42474b6edfaa424dc8a60b823e41c0f87d749866a",
+    "ui-v2/src/components/surfaces/Tabs.jsx": "c60432774cb6ee9bad88d5dedc164c0d3a621f7fb4cc1528bd257364c152debe",
+    "ui-v2/src/components/surfaces/Tile.jsx": "36215aa28946935fee1864ae215686ca570ca974309c1d5ed8f45f2b08ab1e9f",
+    "ui-v2/src/components/index.js": "9164048edc509381cde3ec7c88e97f800882891dee93644a7c803e6eafe7d4de",
+    "ui-v2/src/landing/landing.css": "35b7bee948c7dec143c4b6802bd1867a129eac505ae4a034925caa50a7fdd570",
+    "ui-v2/src/landing/LandingLayer.jsx": "0566074e9d60284bf3bf360ab04f2f703a2d8ca0c5d91e85be69c43bda12a620",
+    "ui-v2/src/shell/ScreenHeader.jsx": "2a9673e968055e8d70e41c44e9b03aec4ff4bb01be78414de0b807f8d6689083",
+    "ui-v2/src/screens/GraphScreen.jsx": "737ff9033b12d15981b79ab364b3dd0d94c7b106f526245e491c9ade9f056f62",
+    "ui-v2/src/lib/modelApi.js": "38010ebe9371cea1bfe656cb2da5bd8564283024d98a809da8064686e8f46e1b",
+    "ui-v2/src/lib/inputGenApi.js": "50949d1ca84a67cf3552d908aa258c8e14ace1293929c7f6f5bbee8663c77046",
+    "ui-v2/src/components/speckle/SpeckleViewport.jsx": "144e6a3e02b1606583d00ed4807ee0bda4e0156cc52acf868ab246312043c0be",
+    "ui-v2/src/screens/ModelScreen.jsx": "84aeaa02e4441d9283bd76be58ce6cdcbebdd2b5215a2bf4d4c52a36f1bbd7eb",
+    "ui-v2/src/screens/ProjectsScreen.jsx": "5bec285d1c56375ba1f5687d57611fe2d8264d7f44d292e5a61fc8e54335bf52",
+    "ui-v2/src/lib/llmApi.js": "7638f63100acd80e226aa593f6b11903348265fe32d71ba1604d17b4f584a967",
+    "ui-v2/src/screens/AiEngineScreen.jsx": "f5ac230f992d265d07dde9165c0d3e23381c0c0014633cd8f5cb2dafb4eab746",
+    "ui-v2/src/lib/connectorsApi.js": "80e87760637a441e48f58ece4c71d989d2a161d638e761d16e9d1b743087bfd5",
+    "ui-v2/src/screens/ConnectorsScreen.jsx": "a1a2d43f5d3cd0c0b3d76c41d888e619fb533a91ea10a450b1c8d105e1c0ab09",
+    "ui-v2/src/lib/reasonerApi.js": "33d9c92e0c087f0b5ec562ffaff0623ae95e39c50621e657fc5cd2f3337571d4",
+    "ui-v2/src/screens/ReasonerScreen.jsx": "f66c092ae1faa2f09def3faeb0d12e7b130a111ad2048700cb99c0d1fc721d22",
+    "ui-v2/src/screens/apidocs/content/01-getting-started.js": "25d857d6652a744b8a220faaba3c312907d61623f711e52d86adba18d54f0173",
+    "ui-v2/src/screens/apidocs/content/02-authentication.js": "3921c8d24e0789c3c6f165a0297af9518334996236f697343215f79755d86053",
+    "ui-v2/src/screens/apidocs/content/03-credentials-api.js": "9681e767833c598a1a1aa2e116f62b7eb9b136d96092d3ea8674f14aee1e4012",
+    "ui-v2/src/screens/apidocs/content/04-heartbeat-api.js": "a2309c2b3feff7c6e54eb11af933ccc8acdb190a1f4c63940cbee1f32cb763b3",
+    "ui-v2/src/screens/apidocs/content/05-connectors-status-api.js": "011a795a00f29e788d411d28cb05bc02572f6861fa81ecf3b6659c52434065db",
+    "ui-v2/src/screens/apidocs/content/06-validation-publish-api.js": "54977d2a12bde7db61da4ee11e77dbabec16b1d33b10bb2e6d194abd2cb98841",
+    "ui-v2/src/screens/apidocs/content/07-extending.js": "87914bc0ca4964b723c9d4a59d317eec7284bc20da81b79290ef78b05ff64fe1",
+    "ui-v2/src/screens/apidocs/content/index.js": "0a3baf2a94c30fafe08f5a4367850a1010e056241d2030416d5c68848c7558d0",
+    "ui-v2/src/screens/ApiDocsScreen.jsx": "fe7f28719470a53b106b3247f9e1cb0f41bdf0528086b8f6c4650b6ebdebe3cf",
+    "ui-v2/src/specimen/SpecimenPage.jsx": "9baabedd2b8adf04d72b021dd4326be57896835b7a7a4cd720f8a511328d4d46",
+    "ui-v2/src/App.jsx": "311c57fdeb3e14197f775f86906c2b6b1b2ae99f52e67e3c38510aa235a84f34",
+    "ui-v2/src/main.jsx": "ca697d6becd1c19fd191752cebd21908c2c45f3257023b2f87f770ff889bea48",
+    "ui-v2/tests/degram.browser.jsx": "02f2a5fb3214138e64e0ba4c33fa19a83c5025c9163de5026b573176ed092e8a",
+    "ui-v2/tests/run-degram.mjs": "248ab41d356ef428e291dff1f952a1d0da9816ba4302968b65fb69c5d3d07687"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "esbuild": "0.21.5"
+  }
+}
