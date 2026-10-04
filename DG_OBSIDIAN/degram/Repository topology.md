@@ -14,7 +14,7 @@ Public fork: https://github.com/Erarchitech/degram, parent https://github.com/No
 
 One canonical knowledge vault: `DG_OBSIDIAN`. One GSD authority: framework `.planning`, including all existing v13 requirements and retained gates. Read indexes and relevant contracts rather than copying everything into the prompt. Context routing in both directions is explicit because submodule Git-root discovery does not automatically inherit the outer root.
 
-Implementation/runbook: `spec/degram/WORKSPACE.md`; manifest: `integration/degram/workspace.json`. Explicit context resolution works from root and child. Automatic context overlays are NOT installed: protected AGENTS.md editing was blocked by the host approval UI; do not bypass or retry through another tool. The proposed routing document is preserved only as a non-active integration artifact. Public fork contains no DG private research or internal planning. Graphify uses local per-repository indexes plus a namespaced framework merge. Code graph edges are navigation, not evidence of API compatibility.
+Implementation/runbook: `spec/degram/WORKSPACE.md`; manifest: `integration/degram/workspace.json`. Explicit context resolution works from root and child. Automatic context is installed (2026-10-04, owner-approved): root `AGENTS.md` and `CLAUDE.md` carry the DeGram routing/planning protocol; the child `.hermes.md` is generated from `integration/degram/component-context.md` by `workspace.py install-context` and kept out of the fork by a Git-local exclude. Public fork contains no DG private research or internal planning. Graphify uses local per-repository indexes plus a namespaced framework merge. Code graph edges are navigation, not evidence of API compatibility.
 
 ## Consequences
 

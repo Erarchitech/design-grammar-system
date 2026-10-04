@@ -33,6 +33,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram work runs from the framework root with generated child routing|DeGram: work from the framework root; child .hermes.md generated from a framework template]] (2026-10-04)
 - [[knowledge/decisions/Architect rules are reshaped to the v12 evaluator boundary before ingest|Architect rules reshaped to the v12 evaluator boundary: range → two rules, strings → numeric proxies, generative rules excluded]] (2026-10-03, facade test)
 - [[knowledge/decisions/DeGram Phase 1300 decisions require V8 and server-owned graphs|DeGram Phase 1300: V8 MVP profile, system-managed LLM, server graphs and bounded Revit writes]] (2026-10-03; discussion captured, technical acceptance OPEN)
 - [[knowledge/decisions/Evidence v2 preserves rule outcomes and keeps legacy projections separate|Evidence v2: typed outcomes, zero-row rules и совместимость legacy]] (2026-09-30, Phase 1205.1)
@@ -162,6 +163,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-04 DeGram automatic context and planning routing|2026-10-04 DeGram: automatic context installed in AGENTS.md/CLAUDE.md/.hermes.md, verified from three cwds]]
 - [[sessions/2026-10-04 DeGram official fork and framework workspace|2026-10-04 DeGram: official Hermes fork, pinned framework workspace, explicit-context blocker]]
 - [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup|2026-10-04 v12 hexagonal facade full-cycle test: setup, 8 rules approved, paused at step 2]]
 - [[sessions/2026-10-03 v13 activation and Phase 1300 context|2026-10-03 v13.0 activation and Phase 1300: 27 owner decisions, Ready for planning]]

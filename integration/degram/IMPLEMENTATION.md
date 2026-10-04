@@ -1,6 +1,6 @@
 # DeGram framework workspace — implementation result
 
-Status: **PARTIAL / BLOCKED_PROTECTED_CONTEXT**. This report covers repository/workspace provisioning, not Desktop product delivery or Phase 1300 acceptance.
+Status: **PARTIAL**; protected context installed 2026-10-04 (see Update below). This report covers repository/workspace provisioning, not Desktop product delivery or Phase 1300 acceptance.
 
 ## Verified implementation
 
@@ -26,3 +26,7 @@ Automatic bidirectional startup context is therefore **not complete**. Continue 
 - Canonical integration files are local/uncommitted. Another machine cannot reproduce the superproject integration until an explicitly authorized scoped commit/push includes its gitlink and files. The public fork itself already exists independently.
 
 Runbook: `spec/degram/WORKSPACE.md`. Evidence: `integration/degram/workspace-verification.json`. No autonomous update/install action follows from this report.
+
+## Update 2026-10-04: context installed
+
+With explicit owner approval, root `AGENTS.md` gained the framework/DeGram routing section (Perplexity block preserved) and root `CLAUDE.md` the DeGram planning protocol. `workspace.py install-context` (new, tested RED→GREEN, 5/5 tests) generated the child `.hermes.md` from `component-context.md` under a Git-local exclude; `verify` reports `componentContextInstalled: true` and the child stays clean. `gsd-sdk` invoked inside `apps/degram` resolves `project_root` to the framework. Hermes startup context was checked with the fork's `build_context_files_prompt` under a scratch `HERMES_HOME`/`home_override`. No Hermes launch, install, commit or push.

@@ -6,6 +6,14 @@ import subprocess
 from pathlib import Path
 
 MANIFEST = Path('integration/degram/workspace.json')
+CONTEXT_TEMPLATE = Path('integration/degram/component-context.md')
+CONTEXT_NAME = '.hermes.md'
+EXCLUDE_RULE = '/.hermes.md'
+
+
+def git(cwd, *args):
+    return subprocess.check_output(['git', '-C', str(cwd), *args],
+                                   text=True, encoding='utf-8').strip()
 
 
 def safe_path(base, name):
@@ -46,11 +54,6 @@ def verify_workspace(start):
     root = Path(report['frameworkRoot'])
     child = Path(report['componentRoot'])
     manifest = json.loads((root / MANIFEST).read_text(encoding='utf-8'))
-
-    def git(cwd, *args):
-        return subprocess.check_output(['git', '-C', str(cwd), *args],
-                                       text=True, encoding='utf-8').strip()
-
     head = git(child, 'rev-parse', 'HEAD')
     entry = git(root, 'ls-files', '--stage', '--', manifest['componentPath'])
     fields = entry.split()
@@ -62,22 +65,55 @@ def verify_workspace(start):
         raise ValueError('Unexpected component origin/upstream')
     if (child / '.planning/STATE.md').exists() or (child / 'DG_OBSIDIAN').exists():
         raise ValueError('Competing framework planning/knowledge authority in component')
+    installed = component_context_installed(root)
+    pending = ['desktop-runtime-isolation', 'product-integration-and-acceptance']
+    if not installed:
+        pending.insert(0, 'protected-context-installation')
     report.update(componentHead=head, gitlinkCommit=fields[1], origin=origin,
                   upstream=upstream, productAccepted=False,
-                  pending=['protected-context-installation', 'desktop-runtime-isolation',
-                           'product-integration-and-acceptance'])
+                  componentContextInstalled=installed, pending=pending)
     return report
+
+
+def component_context_installed(start):
+    """True only when the child .hermes.md is byte-identical to the framework template."""
+    report = context_report(start)
+    target = Path(report['componentRoot']) / CONTEXT_NAME
+    template = Path(report['frameworkRoot']) / CONTEXT_TEMPLATE
+    return (target.is_file() and template.is_file()
+            and target.read_bytes() == template.read_bytes())
+
+
+def install_context(start):
+    """Generate the child .hermes.md from the framework template; keep it out of the fork."""
+    report = context_report(start)
+    root, child = Path(report['frameworkRoot']), Path(report['componentRoot'])
+    target = child / CONTEXT_NAME
+    if subprocess.run(['git', '-C', str(child), 'ls-files', '--error-unmatch', CONTEXT_NAME],
+                      capture_output=True).returncode == 0:
+        raise ValueError(f'{CONTEXT_NAME} is tracked by the component; refusing to overwrite')
+    raw = (root / CONTEXT_TEMPLATE).read_bytes()
+    target.write_bytes(raw)
+    exclude = Path(git(child, 'rev-parse', '--path-format=absolute', '--git-path', 'info/exclude'))
+    lines = exclude.read_text(encoding='utf-8').splitlines() if exclude.is_file() else []
+    if EXCLUDE_RULE not in lines:
+        exclude.parent.mkdir(parents=True, exist_ok=True)
+        lines += ['# Generated framework routing context (tools/degram/workspace.py).', EXCLUDE_RULE]
+        exclude.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    return {'installed': str(target), 'sha256': hashlib.sha256(raw).hexdigest(),
+            'template': str(root / CONTEXT_TEMPLATE), 'exclude': str(exclude)}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['context', 'verify'])
+    parser.add_argument('command', choices=['context', 'verify', 'install-context'])
     parser.add_argument('--from', dest='start', default=str(Path.cwd()))
     args = parser.parse_args()
     try:
-        action = {'context': context_report, 'verify': verify_workspace}[args.command]
+        action = {'context': context_report, 'verify': verify_workspace,
+                  'install-context': install_context}[args.command]
         print(json.dumps(action(args.start), ensure_ascii=False, indent=2))
-    except (ValueError, OSError) as exc:
+    except (ValueError, OSError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f'{exc}\n')
 
 

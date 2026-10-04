@@ -20,8 +20,9 @@ This project uses an **Obsidian Knowledge Vault** at `DG_OBSIDIAN/` to persist a
 | Decisions, debugging, patterns | `DG_OBSIDIAN/00-home/index.md` → knowledge/ |
 | State of the art, literature, SoA taxonomy | `DG_OBSIDIAN/research/index.md` |
 | Publications, presentations, paper↔dev consistency | `DG_OBSIDIAN/dissemination/index.md` and `dissemination/consistency-map.md` |
+| DeGram (Hermes fork submodule `apps/degram`, v13.0) | `DG_OBSIDIAN/degram/index.md` → `spec/degram/WORKSPACE.md` |
 
-**Do NOT search** (archived/generated/binary): `DG_OBSIDIAN/archive/`, `DG_OBSIDIAN/graphify/communities/`, `Publications/` (binaries; metadata lives in dissemination notes), `.planning/milestones/` (completed milestones), `graphify-out/`, `.secrets/`. PhD archive lives outside the repo at `Yandex.Disk\Studying\03_PHD\99_ARCHIVE`.
+**Do NOT search** (archived/generated/binary): `DG_OBSIDIAN/archive/`, `DG_OBSIDIAN/graphify/communities/`, `Publications/` (binaries; metadata lives in dissemination notes), `.planning/milestones/` (completed milestones), `graphify-out/`, `.secrets/`, `.degram/index/` (local generated graphs). Never sweep `apps/degram/` broadly (it is the whole upstream Hermes tree); search it only for a named area, starting from `apps/degram/AGENTS.md`. PhD archive lives outside the repo at `Yandex.Disk\Studying\03_PHD\99_ARCHIVE`.
 
 ### Session Protocol
 
@@ -96,6 +97,11 @@ design-grammar-system/
 │       ├── screens/             ← Graph / Model / Projects screens
 │       └── lib/                 ← graphApi, modelApi, auth
 │
+├── apps/degram/                 ← DeGram: git submodule, fork of NousResearch/hermes-agent
+├── integration/degram/          ← workspace.json manifest, child routing template, evidence
+├── spec/degram/WORKSPACE.md     ← DeGram integration contract (ownership, update workflow)
+├── tools/degram/                ← workspace.py (context|verify|install-context), index_code.py
+│
 ├── graph-viewer/                ← LEGACY dark SPA (archived at v8.0 cutover)
 │   └── model-viewer/            ← legacy Speckle 3D viewer (archived)
 │
@@ -143,6 +149,41 @@ design-grammar-system/
 3. Sweep refs inside the archived plans: `sed -i 's|.planning/phases/|.planning/milestones/v<old>-phases/|g'`
 
 This keeps GSD tooling happy (it always reads `.planning/phases/`) while preserving each milestone's plans separately.
+
+## DeGram component (`apps/degram` submodule)
+
+`apps/degram` is a pinned Git submodule: the public DeGram fork `https://github.com/Erarchitech/degram` (`origin`) of `https://github.com/NousResearch/hermes-agent` (`upstream`). DeGram is an integral DG component (milestone **v13.0 DeGram Agent**, phases 1300–1307), not a separate product. Its own Git history exists only so upstream updates stay possible. Contract: `spec/degram/WORKSPACE.md`; manifest: `integration/degram/workspace.json`.
+
+### One planning and knowledge authority
+
+- Framework `.planning/` is the only GSD project and `DG_OBSIDIAN/` the only vault. Never create `.planning/`, a roadmap, a vault or a GSD project inside `apps/degram` (`workspace.py verify` fails if one appears).
+- GSD runs from either directory: invoked inside `apps/degram`, `gsd-sdk` resolves `project_root` to the framework root and reads/writes framework `.planning/` (verified 2026-10-04). GSD doc commits therefore land in the **framework** repo, never in the child.
+- Claude Code launched inside `apps/degram` loads this CLAUDE.md as a parent memory file. Hermes launched there reads the generated `apps/degram/.hermes.md`; the child `AGENTS.md` (upstream engineering rules) must then be read explicitly.
+
+### Automatic preflight for any DeGram-touching task
+
+Before discuss/plan/execute of a v13.0 phase, or any edit under `apps/degram/**`, `integration/degram/**`, `spec/degram/**`, `tools/degram/**` or `ui-v2/src/degram/**`:
+
+1. `python tools/degram/workspace.py verify`: gitlink = child HEAD, remotes, required context hashes, no competing authority, `componentContextInstalled`. A failure blocks the task; do not work around it.
+2. If `componentContextInstalled` is `false` (fresh clone, or template changed): `python tools/degram/workspace.py install-context`. It writes `apps/degram/.hermes.md` from `integration/degram/component-context.md` and adds `/.hermes.md` to the child's Git-local `info/exclude`, so the fork stays source-clean. Edit the template, never the generated copy.
+3. Read `DG_OBSIDIAN/degram/index.md`, `spec/degram/WORKSPACE.md`, then `apps/degram/AGENTS.md` (plus `apps/degram/apps/desktop/AGENTS.md` and `DESIGN.md` for Desktop work).
+4. For code navigation in the component use the separate local index (`python tools/degram/index_code.py`, output in `.degram/index/`), not a broad sweep of `apps/degram/`.
+
+### Planning rules for cross-repository work
+
+- PLAN `files_modified` and task paths into the component are written as `apps/degram/...`. Each task names its committing repository: **framework** or **component**.
+- A task that changes component source and framework files is split by repository, or orders them explicitly: (1) child change + child tests, (2) child commit, (3) push to the fork (explicit authorization needed, since it publishes), (4) framework gitlink bump + framework files, (5) `workspace.py verify` on the exact pair. A root commit cannot include uncommitted child source; never commit a gitlink whose object is not on the fork.
+- Verification and acceptance for v13.0 live only in framework phase artifacts (SUMMARY / VERIFICATION / UAT). Never mark GSD work complete from a child-side summary alone.
+- DSH worker briefs for component work carry absolute paths under `C:\Users\Admin\source\repos\design-grammar-system\apps\degram\...`, name the committing repository, and forbid `hermes update`, Desktop launches and any write to the installed Hermes profile.
+- Upstream merges (`git -C apps/degram fetch upstream`) are deliberate, scoped tasks on a development branch. The initial clone is shallow; fetch history first and never rewrite fork history.
+
+### Boundaries (owner decision 2026-10-04)
+
+Authorized: the public upstream-only fork, local submodule registration, integration workspace files. **Not** authorized without a fresh explicit decision: Desktop launch/build against the installed Hermes profile (Phase 1301 runtime isolation of `HERMES_HOME`, Electron userData, app ID and updater comes first), `hermes update` in the submodule, Docker/service operations for DeGram, paid inference, package installs, CAD/graph/CDE writes. The public fork never receives `.secrets/`, credentials, `Publications/`, `DG_OBSIDIAN/` content or unpublished manuscripts.
+
+### Session-end commits with the submodule
+
+The session commit (protocol below) is a framework commit. It may include `.gitmodules` and the `apps/degram` gitlink only when the child commit already exists on the fork. Child source changes get their own child commit, made only with explicit authorization, in the component repo, before the framework commit.
 
 ## Graph Schema v4
 
@@ -230,10 +271,18 @@ dotnet build .\DG\DG.sln -c Release
 
 # Run C# tests
 dotnet test .\DG\tests\DG.Tests\
+# DeGram workspace (submodule apps/degram)
+git submodule update --init apps/degram          # fresh clone
+python tools/degram/workspace.py verify           # preflight before any DeGram task
+python tools/degram/workspace.py install-context  # (re)generate apps/degram/.hermes.md
+python -m unittest discover -s tools/degram/tests -v
 ```
 
 ## Current Priorities
 
+> The live list is `DG_OBSIDIAN/00-home/Current priorities.md` + `.planning/STATE.md`; this section can lag behind them.
+
+0. **v13.0 DeGram Agent**: active milestone (phases 1300–1307, `apps/degram` submodule). Phase 1300 acceptance gates are still open; Phase 1301 runtime isolation must land before any Desktop launch. Follow the DeGram section above.
 1. **v8.0 follow-ups (shipped, still open)** — approve and run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` (v2.0-era validation runs invisible until then); reconcile live n8n workflows with `n8n/workflows/*.json` (live versions drifted ahead of repo)
 2. **v9.0 AI Workflow Intelligence** — active (renumbered to global phases 28-40; GH canvas → Computgraph serialization pipeline elaborated into phases 32-37). LLM gateway (Phase 28/cloud-llm-connector) shipped and is what the V2 UI's Graph Viewer prompt console calls
 3. **v10.0 Script Intelligence** — planned, phases 41-49, isolated; activates after v9.0

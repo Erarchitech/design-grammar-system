@@ -20,7 +20,38 @@ class ContextRoutingTests(unittest.TestCase):
         self.assertEqual(report['componentHead'], report['gitlinkCommit'])
         self.assertEqual(report['origin'], 'https://github.com/Erarchitech/degram.git')
         self.assertFalse(report['productAccepted'])
-        self.assertIn('protected-context-installation', report['pending'])
+        installed = report['componentContextInstalled']
+        self.assertIsInstance(installed, bool)
+        self.assertEqual('protected-context-installation' in report['pending'], not installed)
+
+    def test_install_context_generates_untracked_hermes_md_and_local_exclude(self):
+        import subprocess
+        spec = importlib.util.spec_from_file_location('degram_workspace', MODULE)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertTrue(hasattr(module, 'install_context'), 'context installer missing')
+        with tempfile.TemporaryDirectory(dir=SCRATCH) as temp:
+            root = Path(temp)
+            child = root / 'apps/degram'
+            child.mkdir(parents=True)
+            subprocess.check_call(['git', 'init', '-q', str(child)])
+            (root / 'integration/degram').mkdir(parents=True)
+            manifest = {'schemaVersion': 1, 'componentPath': 'apps/degram',
+                        'contextFiles': [], 'componentContextFiles': []}
+            (root / 'integration/degram/workspace.json').write_text(json.dumps(manifest))
+            (root / 'integration/degram/component-context.md').write_text('# routing v1\n')
+            for _ in range(2):  # idempotent
+                result = module.install_context(child)
+            self.assertEqual((child / '.hermes.md').read_text(), '# routing v1\n')
+            exclude = Path(result['exclude']).read_text().splitlines()
+            self.assertEqual(exclude.count('/.hermes.md'), 1)
+            status = subprocess.check_output(['git', '-C', str(child), 'status', '--porcelain'],
+                                             text=True)
+            self.assertEqual(status.strip(), '')
+            self.assertTrue(module.component_context_installed(root))
+            (root / 'integration/degram/component-context.md').write_text('# routing v2\n')
+            self.assertFalse(module.component_context_installed(root),
+                             'stale generated copy must not count as installed')
 
     def test_rejects_context_escape_and_sensitive_paths_before_read(self):
         spec = importlib.util.spec_from_file_location('degram_workspace', MODULE)
