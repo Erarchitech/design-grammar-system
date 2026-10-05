@@ -53,6 +53,15 @@ A cross-repository change is not atomic: verify the child, publish its explicitl
 
 Before any Desktop launch/build, implement and test separate runtime home, Electron userData, app identity and update channel. Current workspace provisioning does NOT implement that runtime isolation, product branding, installer, login or DG integration. Those remain Phase 1301 work; do not claim install acceptance. Prefer supported plugin/adapter seams over core edits. Preserve upstream MIT notices; DeGram is not an official Nous product.
 
+## Revit adapter component
+
+`apps/revit-mcp` is a second pinned Git submodule, registered under `additionalComponents` in `integration/degram/workspace.json` (Phase 1301, D-09). `origin` is the owner fork `https://github.com/Erarchitech/revit-mcp-server.git` of `upstream` `https://github.com/Demolinator/revit-mcp-server.git` (MIT; keep upstream notices). The gitlink is pinned to upstream commit `74a8ddca6ee5119063dc685f8dad7e8b52b0a769`; the fork carries upstream content only and never receives `.secrets/`, `DG_OBSIDIAN/`, `Publications/` or manuscripts.
+
+- The read-only allowlist (D-09, D-10, D-23) is implemented inside this fork on the local branch `degram/phase-1301`; the framework never edits the child from the root. Child commits and any push to the fork need explicit owner authorization (the push is a separate plan step); a gitlink is bumped only after its object exists on the fork.
+- `uv sync --frozen` inside `apps/revit-mcp` restores the locked environment from the upstream `uv.lock` (no new package, no lock rewrite). The resulting `.venv` is ignored.
+- `python tools/degram/workspace.py verify` checks every additional component the same way as `apps/degram`: gitlink equals child HEAD, `origin`/`upstream` match the manifest, and no competing planning authority (`.planning/`, `ROADMAP.md`, `DG_OBSIDIAN/`) exists in the child. The report lists each component under `components`. A failure blocks the task; it is not worked around.
+- The component context file (`.hermes.md`) and context hashes apply to `apps/degram` only.
+
 ## Code graph boundaries
 
 Keep the existing DG graph and a separate component AST index; build a framework-local combined graph with graphify's supported merge command. Exclude runtime homes, credentials, publications, dependencies, generated graphs and the nested fork from the root scan. Derived graph freshness and source commit/hash provenance must be explicit. Do not mutate the global personal graph or installed profile. See the generated graph manifest for actual coverage/counts, not assumed completeness.

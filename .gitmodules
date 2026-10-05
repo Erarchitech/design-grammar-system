@@ -1,3 +1,6 @@
 [submodule "degram"]
 	path = apps/degram
 	url = https://github.com/Erarchitech/degram.git
+[submodule "apps/revit-mcp"]
+	path = apps/revit-mcp
+	url = https://github.com/Erarchitech/revit-mcp-server.git

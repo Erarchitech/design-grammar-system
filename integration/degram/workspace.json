@@ -6,6 +6,16 @@
   "upstreamBaseCommit": "8b66a51036c1e20920a17cdd049fdf55c968d683",
   "contextFiles": ["AGENTS.md", "CLAUDE.md", ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md", "DG_OBSIDIAN/degram/index.md", "spec/degram/WORKSPACE.md"],
   "componentContextFiles": ["AGENTS.md", "apps/desktop/AGENTS.md", "apps/desktop/DESIGN.md"],
+  "additionalComponents": [
+    {
+      "name": "revit-mcp",
+      "componentPath": "apps/revit-mcp",
+      "fork": "https://github.com/Erarchitech/revit-mcp-server.git",
+      "upstream": "https://github.com/Demolinator/revit-mcp-server.git",
+      "upstreamBaseCommit": "74a8ddca6ee5119063dc685f8dad7e8b52b0a769",
+      "license": "MIT"
+    }
+  ],
   "planningOwner": ".planning",
   "knowledgeOwner": "DG_OBSIDIAN",
   "status": "development-workspace-only-not-product-accepted"

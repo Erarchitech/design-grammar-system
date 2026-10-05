@@ -49,29 +49,64 @@ def context_report(start):
             'knowledgeRoot': str(root / 'DG_OBSIDIAN'), 'files': files}
 
 
+COMPETING_AUTHORITY = ['.planning', 'ROADMAP.md', 'DG_OBSIDIAN']
+
+
+def verify_component(root, rel_path, fork, upstream_url, label=None, strict_authority=False):
+    """Fail closed unless gitlink == child HEAD, remotes match, and no competing authority.
+
+    `label` prefixes error messages for additional components; the primary apps/degram
+    component keeps its original unprefixed messages. `strict_authority` additionally
+    rejects any `.planning/` directory or ROADMAP.md inside the component.
+    """
+    def fail(message):
+        raise ValueError(f'{label}: {message}' if label else message)
+
+    child = safe_path(root, rel_path)
+    try:
+        head = git(child, 'rev-parse', 'HEAD')
+        entry = git(root, 'ls-files', '--stage', '--', rel_path)
+    except subprocess.CalledProcessError:
+        fail('Submodule gitlink does not match the selected component HEAD')
+    fields = entry.split()
+    if len(fields) < 4 or fields[0] != '160000' or fields[1] != head:
+        fail('Submodule gitlink does not match the selected component HEAD')
+    try:
+        origin = git(child, 'remote', 'get-url', 'origin')
+        upstream = git(child, 'remote', 'get-url', 'upstream')
+    except subprocess.CalledProcessError:
+        fail('Unexpected component origin/upstream (remote missing)')
+    if origin != fork or upstream != upstream_url:
+        fail('Unexpected component origin/upstream')
+    names = COMPETING_AUTHORITY if strict_authority else ['.planning/STATE.md', 'DG_OBSIDIAN']
+    if any((child / name).exists() for name in names):
+        fail('Competing framework planning/knowledge authority in component')
+    return {'componentHead': head, 'gitlinkCommit': fields[1], 'origin': origin,
+            'upstream': upstream}
+
+
 def verify_workspace(start):
     report = context_report(start)
     root = Path(report['frameworkRoot'])
-    child = Path(report['componentRoot'])
     manifest = json.loads((root / MANIFEST).read_text(encoding='utf-8'))
-    head = git(child, 'rev-parse', 'HEAD')
-    entry = git(root, 'ls-files', '--stage', '--', manifest['componentPath'])
-    fields = entry.split()
-    if len(fields) < 4 or fields[0] != '160000' or fields[1] != head:
-        raise ValueError('Submodule gitlink does not match the selected component HEAD')
-    origin = git(child, 'remote', 'get-url', 'origin')
-    upstream = git(child, 'remote', 'get-url', 'upstream')
-    if origin != manifest['fork'] or upstream != manifest['upstream']:
-        raise ValueError('Unexpected component origin/upstream')
-    if (child / '.planning/STATE.md').exists() or (child / 'DG_OBSIDIAN').exists():
-        raise ValueError('Competing framework planning/knowledge authority in component')
+    primary = verify_component(root, manifest['componentPath'],
+                               manifest['fork'], manifest['upstream'])
+    components = [{'name': 'degram', 'componentPath': manifest['componentPath'], **primary}]
+    for extra in manifest.get('additionalComponents', []):
+        result = verify_component(root, extra['componentPath'], extra['fork'],
+                                  extra['upstream'], label=extra['name'],
+                                  strict_authority=True)
+        components.append({'name': extra['name'], 'componentPath': extra['componentPath'],
+                           **result})
     installed = component_context_installed(root)
     pending = ['desktop-runtime-isolation', 'product-integration-and-acceptance']
     if not installed:
         pending.insert(0, 'protected-context-installation')
-    report.update(componentHead=head, gitlinkCommit=fields[1], origin=origin,
-                  upstream=upstream, productAccepted=False,
-                  componentContextInstalled=installed, pending=pending)
+    report.update(componentHead=primary['componentHead'],
+                  gitlinkCommit=primary['gitlinkCommit'], origin=primary['origin'],
+                  upstream=primary['upstream'], productAccepted=False,
+                  componentContextInstalled=installed, pending=pending,
+                  components=components)
     return report
 
 
