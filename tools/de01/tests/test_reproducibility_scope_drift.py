@@ -9,6 +9,9 @@ DATA_SERVICE_DIR = REPO_ROOT / "data-service"
 SPEC_PATH = REPO_ROOT / "spec" / "REPRODUCIBILITY.md"
 START_MARKER = "<!-- reproducibility:llm-call-sites:start -->"
 END_MARKER = "<!-- reproducibility:llm-call-sites:end -->"
+# A call site is a ``.generate`` call or, since Phase 1301-08, a ``.stream_chat``
+# call on an adapter-named receiver (the streaming DeGram relay).
+GENERATIVE_ATTRS = ("generate", "stream_chat")
 
 
 def load_fenced_call_sites() -> dict[str, str]:
@@ -49,7 +52,7 @@ class _EnclosingFunctionVisitor(ast.NodeVisitor):
         func = node.func
         if (
             isinstance(func, ast.Attribute)
-            and func.attr == "generate"
+            and func.attr in GENERATIVE_ATTRS
             and isinstance(func.value, ast.Name)
             and "adapter" in func.value.id
         ):
@@ -99,3 +102,38 @@ class TestReproducibilityScopeDrift:
         scanned = scan_call_sites() - {"cg_recognition.py|recognize_structure"}
         documented_only, code_only = report_mismatch(documented, scanned)
         assert "cg_recognition.py|recognize_structure" in documented_only
+
+
+class TestStreamingRelayCallSite:
+    """Phase 1301-08: the scan rule also matches ``stream_chat`` on an
+    adapter-named receiver, so the DeGram relay (a live LLM call site) is
+    governed by this contract like the ``generate`` call sites."""
+
+    RELAY_KEY = "degram_relay.py|relay_chat_completions"
+
+    def test_scan_finds_the_relay_call_site(self):
+        assert self.RELAY_KEY in scan_call_sites()
+
+    def test_spec_block_lists_the_relay_with_a_live_generation_scope_class(self):
+        documented = load_fenced_call_sites()
+        assert documented[self.RELAY_KEY] == documented["app.py|llm_generate"]
+        assert documented[self.RELAY_KEY] == "model-dependent-unmeasured"
+
+    def test_scan_rule_matches_stream_chat_on_adapter_named_receivers_only(self):
+        source = (
+            "async def hit(adapter):\n"
+            "    adapter.stream_chat([])\n"
+            "async def other(client):\n"
+            "    client.stream_chat([])\n"
+            "def define():\n"
+            "    def stream_chat(): pass\n"
+        )
+        visitor = _EnclosingFunctionVisitor()
+        visitor.visit(ast.parse(source))
+        assert visitor.call_sites == {"hit"}
+
+    def test_spec_prose_states_the_stream_chat_rule_and_the_row_count(self):
+        text = SPEC_PATH.read_text(encoding="utf-8")
+        assert "`stream_chat`" in text
+        assert "exactly eight lines" in text
+        assert len(load_fenced_call_sites()) == 8

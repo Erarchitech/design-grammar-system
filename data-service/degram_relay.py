@@ -26,6 +26,7 @@ Operational outcomes (``OPERATIONAL_OUTCOMES``) are NOT evaluator statuses; see
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -37,6 +38,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 from urllib.parse import urlparse
 
+import anyio
 import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -71,10 +73,58 @@ _PASSTHROUGH_FIELDS = ("temperature", "top_p", "max_tokens", "max_completion_tok
 
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
-# Outcomes written to provenance.
+# Timeouts (D-18, T-1301-08-04). Read at call time so tests can shorten them.
+DEGRAM_RELAY_CONNECT_TIMEOUT_S = 10
+DEGRAM_RELAY_FIRST_BYTE_TIMEOUT_S = 60
+DEGRAM_RELAY_TOTAL_TIMEOUT_S = 300
+EXCERPT_LIMIT = 2048  # bytes of an upstream error body echoed to the client
+EXCERPT_READ_TIMEOUT_S = 5
+
+# Operational outcomes (NOT evaluator verdicts; spec/degram/OPERATIONAL-OUTCOMES.md).
 OUTCOME_COMPLETED = "COMPLETED"
-OUTCOME_RELAY_NOT_CONFIGURED = "RELAY_NOT_CONFIGURED"
+OUTCOME_CANCELLED = "CANCELLED"
+OUTCOME_PROVIDER_TIMEOUT = "PROVIDER_TIMEOUT"
+OUTCOME_PROVIDER_RATE_LIMITED = "PROVIDER_RATE_LIMITED"
+OUTCOME_PROVIDER_UNAVAILABLE = "PROVIDER_UNAVAILABLE"
 OUTCOME_PROVIDER_ERROR = "PROVIDER_ERROR"
+OUTCOME_RELAY_NOT_CONFIGURED = "RELAY_NOT_CONFIGURED"
+OUTCOME_POLICY_DENY = "POLICY_DENY"
+OUTCOME_CONSENT_REQUIRED = "CONSENT_REQUIRED"
+
+RELAY_OUTCOMES = frozenset(
+    {
+        OUTCOME_COMPLETED,
+        OUTCOME_CANCELLED,
+        OUTCOME_PROVIDER_TIMEOUT,
+        OUTCOME_PROVIDER_RATE_LIMITED,
+        OUTCOME_PROVIDER_UNAVAILABLE,
+        OUTCOME_PROVIDER_ERROR,
+        OUTCOME_RELAY_NOT_CONFIGURED,
+        OUTCOME_POLICY_DENY,
+        OUTCOME_CONSENT_REQUIRED,
+    }
+)
+# Reported by the DG Canvas / Revit bridges (plans 1301-06, 1301-07, 1301-11).
+BRIDGE_OUTCOMES = frozenset(
+    {
+        "BUSY",
+        "BRIDGE_OFF",
+        "EXTENSION_NOT_LOADED",
+        "ROUTES_DISABLED",
+        "ROUTES_NOT_LOOPBACK",
+        "SETUP_INCOMPLETE",
+        "IDENTITY_MISMATCH",
+        "DOCUMENT_NOT_OPEN",
+    }
+)
+# Reported by the local agent (plans 1301-10, 1301-11).
+AGENT_OUTCOMES = frozenset(
+    {"CREDENTIALS_MISSING", "CREDENTIALS_EXPIRED", "DEGRAM_LOCKED", "SCOPE_NOT_SUPPORTED"}
+)
+# The closed operational vocabulary. It is disjoint from the eight canonical
+# evaluator statuses (spec/evidence-contract.schema.json CanonicalStatus), which
+# stay untouched: an operational outcome is never a verdict.
+OPERATIONAL_OUTCOMES = frozenset(RELAY_OUTCOMES | BRIDGE_OUTCOMES | AGENT_OUTCOMES)
 
 _PROVENANCE_LOCK = threading.Lock()
 _CONFIG_LOCK = threading.Lock()
@@ -325,6 +375,21 @@ def append_provenance(record: dict[str, Any]) -> None:
         _LOGGER.warning("degram relay: could not append the provenance record")
 
 
+@dataclass(frozen=True)
+class RelayTimeouts:
+    connect: float
+    first_byte: float
+    total: float
+
+    @classmethod
+    def current(cls) -> "RelayTimeouts":
+        return cls(
+            DEGRAM_RELAY_CONNECT_TIMEOUT_S,
+            DEGRAM_RELAY_FIRST_BYTE_TIMEOUT_S,
+            DEGRAM_RELAY_TOTAL_TIMEOUT_S,
+        )
+
+
 class StreamCapture:
     """Reads the model, id, fingerprint and usage out of the SSE ``data:``
     lines as they pass. It keeps no message content."""
@@ -395,44 +460,137 @@ class DegramRelayAdapter:
         tool_choice: Any = None,
         *,
         extra: dict[str, Any] | None = None,
+        timeouts: RelayTimeouts | None = None,
     ) -> AsyncIterator[str]:
         """Yield the upstream SSE lines (without the trailing newline, blank
         separators included) while recording model/id/usage. Raises
-        :class:`RelayError`."""
+        :class:`RelayError` with a named outcome. Exactly one upstream call, no
+        retry. Closing the generator closes the upstream response."""
+        limits = timeouts or RelayTimeouts.current()
         payload = self.build_payload(messages, tools, tool_choice, extra)
         url = f"{self.config.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
             "Accept": "text/event-stream",
         }
-        client = httpx.AsyncClient(transport=_transport_factory(), follow_redirects=False)
+        started = time.monotonic()
+        total_deadline = started + limits.total
+        first_deadline = started + min(limits.first_byte, limits.total)
+
+        def remaining(deadline: float) -> float:
+            return max(0.0, deadline - time.monotonic())
+
+        client = httpx.AsyncClient(
+            transport=_transport_factory(),
+            follow_redirects=False,  # a redirect would carry the key elsewhere
+            timeout=httpx.Timeout(limits.total, connect=limits.connect),
+        )
         response: httpx.Response | None = None
         try:
             try:
                 request = client.build_request("POST", url, json=payload, headers=headers)
-                response = await client.send(request, stream=True)
-            except httpx.HTTPError as exc:
-                raise RelayError(
-                    OUTCOME_PROVIDER_ERROR,
-                    status=502,
-                    error="The model provider could not be reached.",
-                    hint="Try again later or ask an administrator to check the relay.",
-                ) from exc
-            if response.status_code < 200 or response.status_code >= 300:
-                raise RelayError(
-                    OUTCOME_PROVIDER_ERROR,
-                    status=502,
-                    error="The model provider refused the request.",
-                    hint="Ask an administrator to check the relay configuration.",
-                    extra={"upstreamStatus": response.status_code},
+                response = await asyncio.wait_for(
+                    client.send(request, stream=True), timeout=remaining(first_deadline)
                 )
-            async for line in response.aiter_lines():
+            except (TimeoutError, httpx.TimeoutException) as exc:
+                raise _timeout_error("first-byte") from exc
+            except httpx.HTTPError as exc:
+                raise _unavailable_error() from exc
+
+            if not 200 <= response.status_code < 300:
+                raise await self._status_error(response)
+
+            lines = response.aiter_lines().__aiter__()
+            seen_first = False
+            while True:
+                deadline = total_deadline if seen_first else min(first_deadline, total_deadline)
+                try:
+                    line = await asyncio.wait_for(lines.__anext__(), timeout=remaining(deadline))
+                except StopAsyncIteration:
+                    return
+                except (TimeoutError, httpx.TimeoutException) as exc:
+                    raise _timeout_error("total" if seen_first else "first-byte") from exc
+                except httpx.HTTPError as exc:
+                    raise _unavailable_error() from exc
+                seen_first = True
                 self.capture.feed(line)
                 yield line
         finally:
-            if response is not None:
-                await response.aclose()
-            await client.aclose()
+            with anyio.CancelScope(shield=True):
+                if response is not None:
+                    await response.aclose()
+                await client.aclose()
+
+    async def _status_error(self, response: httpx.Response) -> RelayError:
+        status = response.status_code
+        if status == 429:
+            retry_after = _parse_retry_after(response.headers.get("retry-after"))
+            return RelayError(
+                OUTCOME_PROVIDER_RATE_LIMITED,
+                status=429,
+                error="The model provider is rate limiting requests.",
+                hint="Wait and try again.",
+                extra={"retryAfter": retry_after},
+                headers={"Retry-After": str(retry_after)} if retry_after is not None else None,
+            )
+        if status >= 500:
+            return _unavailable_error()
+        excerpt = await _read_excerpt(response, self.config.api_key)
+        return RelayError(
+            OUTCOME_PROVIDER_ERROR,
+            status=502,
+            error="The model provider refused the request.",
+            hint="Ask an administrator to check the relay configuration.",
+            extra={"upstreamStatus": status, "upstreamExcerpt": excerpt},
+        )
+
+
+def _parse_retry_after(value: str | None) -> int | None:
+    """Seconds from a numeric ``Retry-After``; None for absent or an HTTP-date."""
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return int(cleaned) if cleaned.isdigit() and len(cleaned) <= 9 else None
+
+
+async def _read_excerpt(response: httpx.Response, api_key: str) -> str:
+    """At most ``EXCERPT_LIMIT`` bytes of the upstream error body, decoded
+    leniently, with the key scrubbed. Reading is itself time-boxed."""
+    buffer = bytearray()
+
+    async def collect() -> None:
+        async for chunk in response.aiter_bytes():
+            buffer.extend(chunk)
+            if len(buffer) >= EXCERPT_LIMIT:
+                return
+
+    try:
+        await asyncio.wait_for(collect(), timeout=EXCERPT_READ_TIMEOUT_S)
+    except (TimeoutError, httpx.HTTPError):
+        pass
+    text = bytes(buffer[:EXCERPT_LIMIT]).decode("utf-8", errors="ignore")
+    if api_key:
+        text = text.replace(api_key, "***")
+    return text.encode("utf-8")[:EXCERPT_LIMIT].decode("utf-8", errors="ignore")
+
+
+def _timeout_error(kind: str) -> RelayError:
+    return RelayError(
+        OUTCOME_PROVIDER_TIMEOUT,
+        status=504,
+        error="The model provider did not answer in time.",
+        hint="Try again, or narrow the context.",
+        extra={"timeout": kind},
+    )
+
+
+def _unavailable_error() -> RelayError:
+    return RelayError(
+        OUTCOME_PROVIDER_UNAVAILABLE,
+        status=503,
+        error="The model provider is unavailable.",
+        hint="Try again later.",
+    )
 
 
 # -- route handler --------------------------------------------------------------
@@ -583,6 +741,9 @@ async def relay_chat_completions(request: Request) -> StreamingResponse:
     except RelayError as exc:
         finish(exc.code)
         raise exc.to_http() from exc
+    except asyncio.CancelledError:
+        finish(OUTCOME_CANCELLED)
+        raise
     except StopAsyncIteration:
         finish(OUTCOME_PROVIDER_ERROR)
         raise relay_error(
@@ -597,6 +758,10 @@ async def relay_chat_completions(request: Request) -> StreamingResponse:
         try:
             pending: str | None = first
             while pending is not None:
+                # D-18: between chunks, a vanished client ends the upstream call.
+                if await request.is_disconnected():
+                    outcome = OUTCOME_CANCELLED
+                    break
                 yield pending + "\n"
                 try:
                     pending = await stream.__anext__()
@@ -605,8 +770,12 @@ async def relay_chat_completions(request: Request) -> StreamingResponse:
         except RelayError as exc:
             outcome = exc.code
             yield _error_event(exc)
+        except (asyncio.CancelledError, GeneratorExit):
+            outcome = OUTCOME_CANCELLED
+            raise
         finally:
-            await stream.aclose()
+            with anyio.CancelScope(shield=True):
+                await stream.aclose()  # closes the upstream response
             finish(outcome)
 
     return StreamingResponse(

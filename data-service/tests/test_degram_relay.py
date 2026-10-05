@@ -66,7 +66,8 @@ class FakeUpstream:
     """A network-free provider. Counts requests and stream closes."""
 
     def __init__(self, chunks=None, *, status=200, headers=None, body=b"", raises=None,
-                 first_delay=0.0, chunk_delay=0.0, hang=False):
+                 first_delay=0.0, chunk_delay=0.0, hang=False, handler_delay=0.0,
+                 fail_after=None):
         self.chunks = list(DEFAULT_CHUNKS if chunks is None else chunks)
         self.status = status
         self.headers = dict(headers or {})
@@ -75,6 +76,8 @@ class FakeUpstream:
         self.first_delay = first_delay
         self.chunk_delay = chunk_delay
         self.hang = hang
+        self.handler_delay = handler_delay
+        self.fail_after = fail_after
         self.requests: list[httpx.Request] = []
         self.sent_chunks = 0
         self.closed = 0
@@ -84,6 +87,8 @@ class FakeUpstream:
 
     async def _handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
+        if self.handler_delay:
+            await asyncio.sleep(self.handler_delay)
         if self.raises is not None:
             raise self.raises
         if self.status != 200:
@@ -105,7 +110,9 @@ class _Stream(httpx.AsyncByteStream):
             await asyncio.sleep(3600)
         if self.up.first_delay:
             await asyncio.sleep(self.up.first_delay)
-        for chunk in self.up.chunks:
+        for index, chunk in enumerate(self.up.chunks):
+            if self.up.fail_after is not None and index >= self.up.fail_after:
+                raise httpx.ReadError("connection reset by the fake upstream")
             self.up.sent_chunks += 1
             yield chunk
             await asyncio.sleep(self.up.chunk_delay)
@@ -527,3 +534,272 @@ def test_content_length_over_the_limit_is_refused_without_reading_the_body(clien
     )
     assert response.status_code == 413
     assert world["upstream"].requests == []
+
+
+# -- cancellation, timeouts, named failures, outcome vocabulary (task 3) ---------------
+
+import re  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUTCOMES_SPEC = REPO_ROOT / "spec" / "degram" / "OPERATIONAL-OUTCOMES.md"
+EVIDENCE_SCHEMA = REPO_ROOT / "spec" / "evidence-contract.schema.json"
+
+
+def _last_event(text):
+    """(event name or None, parsed data) of the final SSE event in `text`."""
+    blocks = [b for b in text.split("\n\n") if b.strip()]
+    block = blocks[-1]
+    name = None
+    data = None
+    for line in block.splitlines():
+        if line.startswith("event:"):
+            name = line[6:].strip()
+        elif line.startswith("data:"):
+            data = line[5:].strip()
+    return name, (json.loads(data) if data and data != "[DONE]" else data)
+
+
+def _many_chunks(n=60):
+    head = [
+        sse({"id": "chatcmpl-9", "model": "served-model-x", "choices": [{"delta": {"content": "a"}}]}),
+        sse({"id": "chatcmpl-9", "model": "served-model-x", "choices": [],
+             "usage": {"prompt_tokens": 3, "completion_tokens": 1, "total_tokens": 4}}),
+    ]
+    tail = [sse({"id": "chatcmpl-9", "model": "served-model-x",
+                 "choices": [{"delta": {"content": "b"}}]}) for _ in range(n)]
+    return head + tail + [sse("[DONE]")]
+
+
+def _asgi_stream(token, body_obj, *, disconnect_after_body_messages):
+    """Drive the real app with a raw ASGI call so the client can vanish
+    mid-stream. Returns the list of messages the app sent."""
+    raw = json.dumps(body_obj).encode()
+    scope = {
+        "type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"}, "http_version": "1.1",
+        "method": "POST", "scheme": "http", "path": RELAY_PATH, "raw_path": RELAY_PATH.encode(),
+        "query_string": b"", "root_path": "",
+        "headers": [
+            (b"host", b"testserver"), (b"authorization", f"Bearer {token}".encode()),
+            (b"content-type", b"application/json"), (b"content-length", str(len(raw)).encode()),
+        ],
+        "client": ("testclient", 50000), "server": ("testserver", 80),
+    }
+    sent: list[dict] = []
+    state = {"body_delivered": False}
+
+    def bodies():
+        return sum(1 for m in sent if m["type"] == "http.response.body")
+
+    async def receive():
+        if not state["body_delivered"]:
+            state["body_delivered"] = True
+            return {"type": "http.request", "body": raw, "more_body": False}
+        if bodies() >= disconnect_after_body_messages:
+            return {"type": "http.disconnect"}
+        await asyncio.sleep(3600)
+
+    async def send(message):
+        sent.append(message)
+
+    asyncio.run(app(scope, receive, send))
+    return sent
+
+
+def test_client_disconnect_closes_the_upstream_and_records_cancelled(client, world):
+    up = world["upstream"]
+    up.chunks = _many_chunks(60)
+    up.chunk_delay = 0.005
+    sent = _asgi_stream(world["token"], _body(), disconnect_after_body_messages=5)
+    assert sent[0]["type"] == "http.response.start" and sent[0]["status"] == 200
+    delivered = [m for m in sent if m["type"] == "http.response.body" and m.get("body")]
+    assert 0 < len(delivered) < 30, len(delivered)
+    assert up.closed == 1
+    assert up.sent_chunks < len(up.chunks)
+    assert len(up.requests) == 1
+    record = _provenance()[0]
+    assert record["outcome"] == "CANCELLED"
+    assert record["usage"] == {"prompt_tokens": 3, "completion_tokens": 1, "total_tokens": 4}
+    assert record["responseId"] == "chatcmpl-9"
+
+
+def test_disconnect_stops_within_a_chunk_of_the_signal(client, world):
+    up = world["upstream"]
+    up.chunks = _many_chunks(200)
+    up.chunk_delay = 0.002
+    sent = _asgi_stream(world["token"], _body(), disconnect_after_body_messages=4)
+    delivered = [m for m in sent if m["type"] == "http.response.body" and m.get("body")]
+    # signal after 4 body messages; one more line may already be in flight
+    assert len(delivered) <= 4 + 2
+
+
+def test_connect_timeout_is_provider_timeout_and_not_retried(client, world):
+    up = world["upstream"]
+    up.raises = httpx.ConnectTimeout("connect timed out")
+    response = _relay(client, world["token"])
+    assert response.status_code == 504, response.text
+    assert _code(response) == "PROVIDER_TIMEOUT"
+    assert len(up.requests) == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_TIMEOUT"
+
+
+def test_no_first_byte_in_time_is_provider_timeout(client, world, monkeypatch):
+    monkeypatch.setattr(degram_relay, "DEGRAM_RELAY_FIRST_BYTE_TIMEOUT_S", 0.2)
+    up = world["upstream"]
+    up.hang = True
+    response = _relay(client, world["token"])
+    assert response.status_code == 504 and _code(response) == "PROVIDER_TIMEOUT"
+    assert len(up.requests) == 1
+    assert up.closed == 1
+
+
+def test_slow_response_headers_count_against_the_first_byte_window(client, world, monkeypatch):
+    monkeypatch.setattr(degram_relay, "DEGRAM_RELAY_FIRST_BYTE_TIMEOUT_S", 0.2)
+    world["upstream"].handler_delay = 1.0
+    response = _relay(client, world["token"])
+    assert response.status_code == 504 and _code(response) == "PROVIDER_TIMEOUT"
+
+
+def test_total_timeout_mid_stream_ends_with_a_degram_error_event(client, world, monkeypatch):
+    monkeypatch.setattr(degram_relay, "DEGRAM_RELAY_FIRST_BYTE_TIMEOUT_S", 0.4)
+    monkeypatch.setattr(degram_relay, "DEGRAM_RELAY_TOTAL_TIMEOUT_S", 0.5)
+    up = world["upstream"]
+    up.chunks = _many_chunks(100)
+    up.chunk_delay = 0.1
+    response = _relay(client, world["token"])
+    assert response.status_code == 200  # streaming had already begun
+    name, data = _last_event(response.text)
+    assert name == "degram-error" and data["code"] == "PROVIDER_TIMEOUT"
+    assert up.closed == 1 and len(up.requests) == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_TIMEOUT"
+
+
+def test_upstream_429_is_rate_limited_with_retry_after(client, world):
+    up = world["upstream"]
+    up.status, up.headers = 429, {"Retry-After": "7"}
+    response = _relay(client, world["token"])
+    assert response.status_code == 429, response.text
+    assert _code(response) == "PROVIDER_RATE_LIMITED"
+    assert _detail(response)["retryAfter"] == 7
+    assert response.headers["retry-after"] == "7"
+    assert len(up.requests) == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_RATE_LIMITED"
+
+
+@pytest.mark.parametrize("headers", [{}, {"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}])
+def test_upstream_429_without_a_numeric_retry_after_has_null(client, world, headers):
+    world["upstream"].status, world["upstream"].headers = 429, headers
+    response = _relay(client, world["token"])
+    assert response.status_code == 429
+    assert _detail(response)["retryAfter"] is None
+
+
+@pytest.mark.parametrize("status", [500, 502, 503, 504])
+def test_upstream_5xx_is_provider_unavailable(client, world, status):
+    up = world["upstream"]
+    up.status, up.body = status, b"boom"
+    response = _relay(client, world["token"])
+    assert response.status_code == 503, response.text
+    assert _code(response) == "PROVIDER_UNAVAILABLE"
+    assert len(up.requests) == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_UNAVAILABLE"
+
+
+def test_unreachable_upstream_is_provider_unavailable(client, world):
+    up = world["upstream"]
+    up.raises = httpx.ConnectError("name resolution failed")
+    response = _relay(client, world["token"])
+    assert response.status_code == 503 and _code(response) == "PROVIDER_UNAVAILABLE"
+    assert len(up.requests) == 1
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 422])
+def test_other_4xx_is_provider_error_with_bounded_excerpt(client, world, status):
+    up = world["upstream"]
+    up.status = status
+    up.body = ("bad request " + SYSTEM_KEY + " " + "z" * 10000).encode()
+    response = _relay(client, world["token"])
+    assert response.status_code == 502, response.text
+    detail = _detail(response)
+    assert detail["code"] == "PROVIDER_ERROR"
+    assert detail["upstreamStatus"] == status
+    assert 0 < len(detail["upstreamExcerpt"].encode()) <= 2048
+    assert SYSTEM_KEY not in response.text
+    assert len(up.requests) == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_ERROR"
+
+
+def test_a_redirect_is_not_followed_and_is_provider_error(client, world):
+    up = world["upstream"]
+    up.status, up.headers = 302, {"Location": "https://elsewhere.example/steal"}
+    response = _relay(client, world["token"])
+    assert response.status_code == 502 and _code(response) == "PROVIDER_ERROR"
+    assert len(up.requests) == 1
+
+
+def test_error_after_streaming_began_is_a_final_degram_error_event(client, world):
+    up = world["upstream"]
+    up.fail_after = 1
+    response = _relay(client, world["token"])
+    assert response.status_code == 200
+    name, data = _last_event(response.text)
+    assert name == "degram-error"
+    assert data["code"] == "PROVIDER_UNAVAILABLE"
+    assert SYSTEM_KEY not in response.text
+    assert len(up.requests) == 1 and up.closed == 1
+    assert _provenance()[0]["outcome"] == "PROVIDER_UNAVAILABLE"
+
+
+def test_exactly_one_upstream_call_per_request_across_failures(client, world):
+    up = world["upstream"]
+    up.status = 503
+    for _ in range(3):
+        _relay(client, world["token"])
+    assert len(up.requests) == 3  # one per request, never a retry
+
+
+def test_the_relay_never_falls_back_to_another_provider(client, world, monkeypatch):
+    """A failing upstream must not trigger the LLM gateway, Ollama or any other
+    network client: the only transport used is the relay's own factory."""
+    import llm_gateway
+
+    def explode(*args, **kwargs):  # pragma: no cover - must not run
+        raise AssertionError("fallback path touched")
+
+    monkeypatch.setattr(llm_gateway, "resolve_active_provider", explode)
+    monkeypatch.setattr(llm_gateway, "get_adapter", explode)
+    world["upstream"].status = 503
+    response = _relay(client, world["token"])
+    assert response.status_code == 503 and _code(response) == "PROVIDER_UNAVAILABLE"
+
+
+def test_operational_outcomes_are_disjoint_from_the_canonical_statuses():
+    schema = json.loads(EVIDENCE_SCHEMA.read_text(encoding="utf-8"))
+    canonical = {s.lower() for s in schema["$defs"]["CanonicalStatus"]["enum"]}
+    assert len(canonical) == 8
+    outcomes = {o.lower() for o in degram_relay.OPERATIONAL_OUTCOMES}
+    assert outcomes and outcomes.isdisjoint(canonical)
+
+
+def test_every_relay_outcome_the_code_emits_is_in_the_vocabulary():
+    emitted = {
+        degram_relay.OUTCOME_COMPLETED, degram_relay.OUTCOME_CANCELLED,
+        degram_relay.OUTCOME_PROVIDER_TIMEOUT, degram_relay.OUTCOME_PROVIDER_RATE_LIMITED,
+        degram_relay.OUTCOME_PROVIDER_UNAVAILABLE, degram_relay.OUTCOME_PROVIDER_ERROR,
+        degram_relay.OUTCOME_RELAY_NOT_CONFIGURED, "POLICY_DENY", "CONSENT_REQUIRED",
+    }
+    assert emitted <= degram_relay.OPERATIONAL_OUTCOMES
+    assert degram_relay.RELAY_OUTCOMES == emitted
+
+
+def test_outcomes_spec_lists_exactly_the_vocabulary():
+    text = OUTCOMES_SPEC.read_text(encoding="utf-8")
+    assert "PROVIDER_TIMEOUT" in text and "IDENTITY_MISMATCH" in text
+    start = "<!-- degram-outcomes:codes:start -->"
+    end = "<!-- degram-outcomes:codes:end -->"
+    assert text.count(start) == 1 and text.count(end) == 1
+    block = text[text.index(start) + len(start): text.index(end)]
+    codes = {line.strip() for line in block.splitlines() if line.strip() and not line.startswith("```")}
+    assert codes == set(degram_relay.OPERATIONAL_OUTCOMES)
+    # The spec states the vocabulary is not an evaluator verdict set.
+    assert "never evaluator verdicts" in text.replace("\n", " ")

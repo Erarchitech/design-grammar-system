@@ -159,7 +159,7 @@ The fenced block below is the machine-checked scope for LLM call sites. It is re
 `tools/de01/tests/test_reproducibility_scope_drift.py`, which asserts that the block and the
 set of generative call sites found by static AST scan of `data-service/*.py` agree **in both
 directions**. One line per **generative** call site, formatted
-`file|function|scope-class`, exactly seven lines:
+`file|function|scope-class`, exactly eight lines:
 
 <!-- reproducibility:llm-call-sites:start -->
 ```
@@ -170,6 +170,7 @@ cg_input_generation.py|generate_inputs|model-dependent-unmeasured
 dg_context.py|generate_validated_cypher|measured
 dg_context.py|consult_computgraph|model-dependent-unmeasured
 dg_context.py|select_rules_for_deletion|model-dependent-unmeasured
+degram_relay.py|relay_chat_completions|model-dependent-unmeasured
 ```
 <!-- reproducibility:llm-call-sites:end -->
 
@@ -185,10 +186,24 @@ in this block, because every LLM call site is model-dependent by definition — 
 model is exactly what makes it a call site.
 
 The scan rule is static and hermetic: for each top-level `data-service/*.py` file, an
-`ast.Call` counts only when its function is an `ast.Attribute` named `generate` whose value is
+`ast.Call` counts only when its function is an `ast.Attribute` named `generate` or `stream_chat`
+(the streaming DeGram relay, Phase 1301 plan 08) whose value is
 an `ast.Name` whose id contains `adapter`. Callers that only retrieve an adapter (for example
 `get_adapter` for model listing) are therefore not matched, and definitions and imports cannot
 inflate the count. No data-service module is imported by the checker; only file text is read.
+
+The `degram_relay.py|relay_chat_completions` row is the DeGram model relay
+(`POST /degram/v1/chat/completions`, `spec/SECURITY-BOUNDARY.md` Section 3.6). It is a live,
+provider-managed call site, so its scope-class is `model-dependent-unmeasured` (the same class as
+`app.py|llm_generate`) and its reproducibility class is `not-reproducible-provider-managed`: the
+model id is an alias the provider can repoint, and no seed is sent. The relay writes an operational
+provenance record per request (requested and served model, response id, fingerprint, usage,
+outcome, user, project, company, payload size; never prompt text or the key). That record is NOT
+the D-19 provenance block (no prompt hash, endpoint host or sampling parameters), so by the rule
+above a relay request is not reportable as determinism evidence; it supports audit and
+served-model attribution only. A relay failure is an operational outcome
+(`spec/degram/OPERATIONAL-OUTCOMES.md`), never an evaluator verdict, and the relay never falls back
+to another provider, so a relay run is never interchangeable with a run from another model.
 
 ## Enforcement and Ownership
 

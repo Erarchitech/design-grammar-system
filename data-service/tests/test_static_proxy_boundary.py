@@ -32,7 +32,15 @@ VITE_CONFIG = REPO_ROOT / "ui-v2" / "vite.config.js"
 # WR-22: the credential routes get their own rate-limited regex location that
 # proxies to data-service like /data-service/ does.
 RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite|register)/?$"
-ALLOWED_PROXY_LOCATIONS = {"/data-service/", "/llm/", "/reasoner/", RATE_LIMITED_AUTH_LOCATION}
+# Phase 1301-08 (D-16): the DeGram relay streams through its own location.
+RELAY_LOCATION = "/data-service/degram/v1/"
+ALLOWED_PROXY_LOCATIONS = {
+    "/data-service/",
+    RELAY_LOCATION,
+    "/llm/",
+    "/reasoner/",
+    RATE_LIMITED_AUTH_LOCATION,
+}
 EXPECTED_VITE_PROXY_KEYS = {"/data-service", "/llm", "/reasoner"}
 DATA_SERVICE_UPSTREAM = "http://data-service:8000"
 FORBIDDEN_UPSTREAM = re.compile(r"\b(neo4j|n8n)\b", re.IGNORECASE)
@@ -225,3 +233,84 @@ def test_induced_vite_neo4j_proxy_is_detected() -> None:
         'proxy: {', 'proxy: {\n      "/neo4j": "http://localhost:8080",', 1
     )
     assert vite_proxy_keys(text) != EXPECTED_VITE_PROXY_KEYS
+
+
+# --- Phase 1301 plan 08 (D-16, D-18): the DeGram relay streaming location ---
+
+import sys  # noqa: E402
+
+sys.path.insert(0, str(REPO_ROOT / "data-service"))
+from degram_relay import DEGRAM_RELAY_TOTAL_TIMEOUT_S  # noqa: E402
+
+
+def _relay_location(nginx_text: str) -> Location:
+    matches = [loc for loc in parse_locations(nginx_text) if loc.path == RELAY_LOCATION]
+    assert len(matches) == 1, f"expected exactly one {RELAY_LOCATION} location"
+    return matches[0]
+
+
+def _seconds(stmt_value: str) -> float:
+    m = re.fullmatch(r"(\d+)(ms|s|m|h)?", stmt_value.strip())
+    assert m, f"unparseable nginx time {stmt_value!r}"
+    return int(m.group(1)) * {"ms": 0.001, None: 1, "s": 1, "m": 60, "h": 3600}[m.group(2)]
+
+
+def test_relay_location_streams_without_buffering(nginx_text: str) -> None:
+    loc = _relay_location(nginx_text)
+    statements = loc.statements
+    assert "proxy_http_version 1.1" in statements
+    assert "proxy_buffering off" in statements
+    assert 'proxy_set_header Connection ""' in statements
+    assert "set $ds_upstream http://data-service:8000" in statements
+    assert "proxy_pass $ds_upstream" in statements
+    assert "rewrite ^/data-service/(.*) /$1 break" in statements
+
+
+def test_relay_read_timeout_exceeds_the_relay_total_timeout(nginx_text: str) -> None:
+    loc = _relay_location(nginx_text)
+    values = [s.split(None, 1)[1] for s in loc.statements if s.startswith("proxy_read_timeout ")]
+    assert len(values) == 1
+    assert _seconds(values[0]) > DEGRAM_RELAY_TOTAL_TIMEOUT_S
+
+
+def test_relay_body_limit_matches_the_relay_ceiling(nginx_text: str) -> None:
+    loc = _relay_location(nginx_text)
+    values = [s.split(None, 1)[1] for s in loc.statements if s.startswith("client_max_body_size ")]
+    assert values == ["1m"]  # 1 MiB, the relay's DEGRAM_RELAY_MAX_BODY_BYTES
+
+
+def test_relay_location_keeps_the_server_level_security_headers(nginx_text: str) -> None:
+    """nginx stops inheriting server-level add_header the moment a location
+    declares one of its own; the streaming location must declare none."""
+    loc = _relay_location(nginx_text)
+    assert not any(s.startswith("add_header") for s in loc.statements)
+    server_level = re.split(r"\blocation\s", strip_comments(nginx_text), maxsplit=1)[0]
+    for header in ("X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy",
+                   "Permissions-Policy", "Content-Security-Policy"):
+        assert header in server_level
+
+
+def test_relay_location_precedes_the_generic_data_service_location(nginx_text: str) -> None:
+    order = [loc.path for loc in parse_locations(nginx_text)]
+    assert order.index(RELAY_LOCATION) < order.index("/data-service/")
+
+
+def test_llm_prefix_does_not_route_to_the_relay(nginx_text: str) -> None:
+    """/llm/ proxies to data-service unchanged: it never rewrites into /degram/,
+    and no location other than the relay one mentions the relay path."""
+    for loc in parse_locations(nginx_text):
+        if loc.path == "/llm/":
+            assert not any(s.startswith("rewrite") for s in loc.statements)
+        if loc.path != RELAY_LOCATION:
+            assert "degram" not in loc.body
+    assert "degram" not in re.split(r"\blocation\s", strip_comments(nginx_text), maxsplit=1)[0]
+
+
+def test_relay_location_adds_no_authorization_injection(nginx_text: str) -> None:
+    assert [p for p in violations_for(nginx_text) if "authorization" in p] == []
+
+
+def test_induced_buffering_regression_is_detected(nginx_text: str) -> None:
+    tampered = nginx_text.replace("proxy_buffering off;", "proxy_buffering on;", 1)
+    assert tampered != nginx_text
+    assert "proxy_buffering off" not in _relay_location(tampered).statements
