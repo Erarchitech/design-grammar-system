@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 3
+current_plan: 4
 status: executing
-stopped_at: Completed 1301-03-PLAN.md
-last_updated: "2026-10-05T07:21:39.368Z"
+stopped_at: Completed 1301-05-PLAN.md
+last_updated: "2026-10-05T07:45:40.693Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 3
+Current Plan: 4
 Total Plans in Phase: 16
-Plan: 3 of 16
+Plan: 4 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -164,6 +164,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P19 | n/a (multi-session, owner checkpoint) | 3 tasks | 2 files |
 | Phase 1301 P02 | 2h | 2 tasks | 1 files |
 | Phase 1301 P03 | 25min | 2 tasks | 6 files |
+| Phase 1301 P05 | 55min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -481,6 +482,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-18: n8n workflows imported with live ids injected into temp copies (repo files lack ids; plain import duplicates webhook paths); Postgres old-default rejection checked over the compose network
 - [Phase ?]: [Phase 1301-02] Stable vitest baseline = 44 failure lines reproducing in two runs; HERMES_PYTHON runner path used because run-in-hermes-env downloads uv; geist-sans has no cyrillic subset
 - [Phase ?]: [Phase 1301-03]: apps/revit-mcp registered as second pinned submodule (fork Erarchitech/revit-mcp-server at 74a8ddca); verify is multi-component and fail-closed
+- [Phase ?]: Phase 1301-05: PUT /projects/{project}/company carries no project source in route policy (admin-only); mint route is member/body/viewer with stored-membership check in handler
+- [Phase ?]: Phase 1301-05: delegated dgd_ token revokes on logout, password change (all user tokens), session expiry/idle, membership removal, company reassignment, own expiry; named DELEGATED_* codes; no admin elevation; CSRF-exempt Bearer
 
 ### Research Flags (carry into planning)
 
@@ -575,8 +578,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T07:21:39.335Z
-Stopped at: Completed 1301-03-PLAN.md
+Last session: 2026-10-05T07:45:32.849Z
+Stopped at: Completed 1301-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics

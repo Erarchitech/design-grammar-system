@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 3/16 plans executed
+**Plans**: 4/16 plans executed
 **UI hint**: yes
 
 Plans:
@@ -154,7 +154,7 @@ Plans:
 - [x] 1301-01-PLAN.md — Bounded reused-web read-only workspace `ui-v2/#degram` (executed, offline-verified)
 - [x] 1301-02-PLAN.md — Owner authorization + lockfile restore + Desktop/agent test baseline
 - [x] 1301-03-PLAN.md — Revit adapter fork registered as pinned submodule `apps/revit-mcp` (D-09)
-- [ ] 1301-05-PLAN.md — DG company attribute + delegated user-scoped token (D-06, D-08, D-20)
+- [x] 1301-05-PLAN.md — DG company attribute + delegated user-scoped token (D-06, D-08, D-20)
 - [ ] 1301-06-PLAN.md — GH bridge document identity + BUSY bounded wait (D-13, D-14, D-18)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -331,7 +331,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 3/16 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 4/16 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
