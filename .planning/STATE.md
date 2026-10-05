@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 10
+current_plan: 11
 status: executing
-stopped_at: Completed 1301-10-PLAN.md
-last_updated: "2026-10-05T10:46:03.455Z"
+stopped_at: Completed 1301-11-PLAN.md
+last_updated: "2026-10-05T12:10:11.229Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 10
+Current Plan: 11
 Total Plans in Phase: 16
-Plan: 10 of 16
+Plan: 11 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -171,6 +171,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P08 | 90min | 3 tasks | 15 files |
 | Phase 1301 P09 | 80min | 2 tasks | 17 files |
 | Phase 1301 P10 | ~1h | 3 tasks | 31 files |
+| Phase 1301 P11 | ~3h | 3 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -500,6 +501,12 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-10: RPC lock is deny-by-default (55 allowed methods, everything else DEGRAM_LOCKED); tool allowlist enforced in ToolRegistry.register, not by hiding schemas
 - [Phase ?]: 1301-10: relayBaseUrl is origin plus /data-service (no /degram/v1), http only on loopback; delegated token only in process memory via degram.credentials.set, api_key is a callable read per request
 - [Phase ?]: 1301-10: todo tool registered name is todo_list; Tool Search switched off in variant degram so allowlisted tools stay visible; compression is the only auxiliary left, on the pinned relay route
+- [Phase ?]: 1301-11: operational outcomes are ok RPC results with status error and a closed-set code; only refused requests (unknown/stale preview, bad scope, busy session) are JSON-RPC errors with data.code
+- [Phase ?]: 1301-11: whole-definition consent header is sent as true (the relay accepts only true/1), previewId binding is local; relay context is armed only by degram.context.send and reset by any other prompt.submit
+- [Phase ?]: 1301-11: pin needs the document in the bridge's fresh list, identity is re-checked before every read (GH documentId + context definition.documentId, Revit creationGuid+pathName); mismatch returns IDENTITY_MISMATCH and reads nothing
+- [Phase ?]: 1301-11: client-side limits 200 objects / 50 parameters per object / 256 KiB with disclosed truncation; the preview payload text is embedded unchanged in the sent message (byte-identity tested through a real agent turn)
+- [Phase ?]: 1301-11: Revit tool allowlist fixed to mcp__revit__* (plan 10 used mcp_revit_*, which MCP never registers); DG_UNAVAILABLE and ACCESS_DENIED added to the closed operational vocabulary
+- [Phase ?]: 1301-11: relay error bodies are terminal named outcomes (one request, unmask probe off, code leads the error text); stock transport retry ladder still applies to unnamed connection failures (residual for plan 15)
 
 ### Research Flags (carry into planning)
 
@@ -594,8 +601,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T10:46:03.420Z
-Stopped at: Completed 1301-10-PLAN.md
+Last session: 2026-10-05T12:10:11.195Z
+Stopped at: Completed 1301-11-PLAN.md
 Resume file: None
 
 ## Performance Metrics
