@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 5
+current_plan: 6
 status: executing
-stopped_at: Completed 1301-06-PLAN.md
-last_updated: "2026-10-05T07:52:11.497Z"
+stopped_at: Completed 1301-04-PLAN.md
+last_updated: "2026-10-05T08:19:46.245Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 5
+Current Plan: 6
 Total Plans in Phase: 16
-Plan: 5 of 16
+Plan: 6 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -166,6 +166,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P03 | 25min | 2 tasks | 6 files |
 | Phase 1301 P05 | 55min | 2 tasks | 15 files |
 | Phase 1301 P06 | 25 min | 2 tasks | 9 files |
+| Phase 1301 P04 | 75min | 2 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -486,6 +487,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: Phase 1301-05: PUT /projects/{project}/company carries no project source in route policy (admin-only); mint route is member/body/viewer with stored-membership check in handler
 - [Phase ?]: Phase 1301-05: delegated dgd_ token revokes on logout, password change (all user tokens), session expiry/idle, membership removal, company reassignment, own expiry; named DELEGATED_* codes; no admin elevation; CSRF-exempt Bearer
 - [Phase ?]: [1301-06] BUSY raised as CanvasBusyException from GH-independent CanvasUiWait and mapped in CanvasCommandDispatcher; timed-out UI delegate not cancelled or retried
+- [Phase ?]: [Phase 1301-04] DeGram boot fails closed on home overlap (app.exit + diagnostic, no fallback home); shared resolvers take fixedHome/fixedUserData from isolation.ts
+- [Phase ?]: [Phase 1301-04] NSIS format is not admitted by the prepared-packaging pipeline (run-electron-builder/prepare-packaging-tools); plan 15 must extend admission and acquire the NSIS toolset
 
 ### Research Flags (carry into planning)
 
@@ -580,8 +583,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T07:52:11.460Z
-Stopped at: Completed 1301-06-PLAN.md
+Last session: 2026-10-05T08:19:46.224Z
+Stopped at: Completed 1301-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics

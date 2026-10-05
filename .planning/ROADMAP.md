@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 5/16 plans executed
+**Plans**: 6/16 plans executed
 **UI hint**: yes
 
 Plans:
@@ -159,7 +159,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 1301-04-PLAN.md — Desktop runtime isolation: identity, home, updater off, NSIS target (D-01..D-04)
+- [x] 1301-04-PLAN.md — Desktop runtime isolation: identity, home, updater off, NSIS target (D-01..D-04)
 - [ ] 1301-07-PLAN.md — Revit fork read-only allowlist, document identity, loopback fail-closed (D-10, D-11, D-13, D-23)
 - [ ] 1301-08-PLAN.md — Streaming LLM relay with export policy, consent, provenance, cancel (D-16..D-18)
 
@@ -331,7 +331,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 5/16 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 6/16 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
