@@ -105,10 +105,19 @@ A user-scoped credential for the local DeGram agent, which holds neither the bro
 
 - **Mint.** `POST /auth/delegated-token` with body `{project}`, authenticated by the `dg_session` cookie and `X-DG-CSRF: 1` (policy `member`, viewer). The caller must hold a stored membership on the project; an admin who is not a member is refused (403 `PROJECT_FORBIDDEN`). A Bearer caller (delegated or connector) cannot mint (403 `PRINCIPAL_NOT_PERMITTED`). The 201 answer is `{token, project, company, expiresAt, expiresInSeconds}` with `Cache-Control: no-store`; the raw token is returned once.
 - **Credential.** `Authorization: Bearer dgd_...` (`secrets.token_urlsafe(32)`), time to live 900 seconds (`delegation.DELEGATED_TOKEN_TTL_SECONDS`). The server stores only the SHA-256 hash, the parent session hash, the username, the project and the company recorded at issue (`auth-delegated-tokens.json`). The raw token is never logged.
-- **Principal.** Resolves to kind `delegated`: never an admin, bound to exactly one project, with the project's company. Route scope is exactly the rows whose principals include `delegated` in the route-policy block: `GET /graph/{project}`, `GET /rules/{project}` and `DELETE /auth/delegated-token` (self-revoke). Authorization is bound-project equality plus the user's stored role, so a delegated token never inherits admin ownership of other projects. Every other route answers 403 `PRINCIPAL_NOT_PERMITTED`.
+- **Principal.** Resolves to kind `delegated`: never an admin, bound to exactly one project, with the project's company. Route scope is exactly the rows whose principals include `delegated` in the route-policy block: `GET /graph/{project}`, `GET /rules/{project}`, `POST /degram/v1/chat/completions` (the model relay, Section 3.6) and `DELETE /auth/delegated-token` (self-revoke). Authorization is bound-project equality plus the user's stored role, so a delegated token never inherits admin ownership of other projects. Every other route answers 403 `PRINCIPAL_NOT_PERMITTED`.
 - **CSRF.** A delegated Bearer is a non-ambient credential and is exempt from `X-DG-CSRF`; the cookie session that mints it is not.
 - **Revocation (fail closed, checked on every request).** The token stops working at once when: the parent session is logged out, revoked, expired or idle-timed-out, or its user is gone (401 `DELEGATED_SESSION_ENDED`); the user changes their password (all of the user's tokens, 401 `DELEGATED_SESSION_ENDED`); the membership on the bound project is removed (403 `PROJECT_FORBIDDEN`); the project is reassigned to another company (403 `DELEGATED_SCOPE_CHANGED`); or its own expiry passes (401 `DELEGATED_EXPIRED`). `DELETE /auth/delegated-token` revokes the presented token (later use answers 401 `DELEGATED_AUTH_FAILED`). Delegated use does not refresh the parent session's idle timer.
 - **Company.** `PUT /projects/{project}/company` (admin only, D-20) assigns a project to a company; `GET /projects` rows and `GET /auth/me` memberships carry `company` (string or `null`).
+
+### 3.6 DeGram model relay (Phase 1301 plan 08, D-16)
+
+`POST /degram/v1/chat/completions` is the only model path of the local DeGram agent. It is not `/llm/generate` and nothing under `/llm/` routes to it.
+
+- **Principal.** Policy `delegated` only, no project source: the project, user and company are the delegated principal's own (`principal.bound_project`, `principal.username`, `principal.company`). A cookie session (admin included), a connector token and the service token answer 403 `PRINCIPAL_NOT_PERMITTED`; no credential answers 401. Because `require_principal` re-validates the token on every request, a token whose project changed company answers 403 `DELEGATED_SCOPE_CHANGED` before the relay runs.
+- **One upstream, no fallback.** The upstream is the single endpoint in `degram-llm.json` (`baseUrl` https, or http for localhost only; `model`, default `mimo-v2.5-pro`; `providerLabel`, default `genpro`; the system key Fernet-encrypted with `LLM_MASTER_SECRET`). The server overwrites `model` and `stream` and drops any client `provider`; the client chooses neither. There is no fallback to another provider, to Ollama or to another model, and no automatic retry. Unconfigured answers 503 `RELAY_NOT_CONFIGURED` before any streaming.
+- **Operator config.** `GET` and `PUT /degram/admin/llm-config` are admin-only. `GET` returns a masked key preview, never the key. `PUT` merges fields (an omitted field keeps its stored value).
+- **Provenance.** Every relayed request appends one JSON line to `degram-llm-provenance.jsonl` under `DG_DATA_DIR`: requested provider and model, served model as the upstream reported it (`null` when absent), response id, fingerprint, usage, outcome, username, company, project, payload size. It never holds prompt text, tool arguments or the key.
 
 ## 4. Machine-Checked Blocks
 
@@ -161,6 +170,9 @@ DELETE|/connectors/{connector_id}/credentials/{credential_id}|member|resource:cr
 POST|/context/assemble|service|-|-
 GET|/context/debug|service|-|-
 POST|/context/generate-cypher|service|-|-
+GET|/degram/admin/llm-config|admin|-|-
+PUT|/degram/admin/llm-config|admin|-|-
+POST|/degram/v1/chat/completions|delegated|-|-
 POST|/design-rule-sessions|member|body|editor
 GET|/design-rule-sessions/{project}|member|path|viewer
 POST|/designstate/capture|connector-self|-|-
@@ -297,7 +309,7 @@ Resource-bound routes (project resolved server-side from the stored resource, un
 | `GET /execution-result/{execution_id}` | `execution` | Any caller could read another user's LLM output; a result is now bound to the user who started it |
 | `GET`, `PUT`, `DELETE /knowledge/note/{note_id}` | `note` | Cross-project note read and edit by id |
 
-Principal-restricted routes: `POST /llm/generate`, `/context/*`, `POST /mcp` and `POST /execution-result` accept only the service token (n8n); the admin-only routes (`GET`, `PUT /settings/speckle`, `PUT`, `DELETE /llm/settings`, `POST /llm/settings/test`, `GET /llm/models`, `PUT /reasoner/settings`, `POST /knowledge/ingest/folder`) accept only an admin user. `POST /projects` and the read-only `GET` settings routes marked `session` accept any signed-in user. `POST /computgraph/recognize` now requires a body project (previously optional).
+Principal-restricted routes: `POST /llm/generate`, `/context/*`, `POST /mcp` and `POST /execution-result` accept only the service token (n8n); the admin-only routes (`GET`, `PUT /degram/admin/llm-config`, `GET`, `PUT /settings/speckle`, `PUT`, `DELETE /llm/settings`, `POST /llm/settings/test`, `GET /llm/models`, `PUT /reasoner/settings`, `POST /knowledge/ingest/folder`) accept only an admin user. `POST /projects` and the read-only `GET` settings routes marked `session` accept any signed-in user. `POST /computgraph/recognize` now requires a body project (previously optional).
 
 ## 7. Unsupported Legacy Callers
 
@@ -360,6 +372,7 @@ Order of execution:
 | `published-ports` equals the compose bindings for both profiles | `data-service/tests/test_security_boundary_spec.py`, `data-service/tests/test_compose_boundary.py` |
 | No `/neo4j/` or `/n8n/` proxy, no credential in `config.js` or the UI bundle | `data-service/tests/test_static_proxy_boundary.py`, `data-service/tests/test_config_js_no_secrets.py` |
 | Delegated token mint, scope, CSRF exemption, no-fallback and every revocation case (Section 3.5); project to company map | `data-service/tests/test_delegated_token.py`, `data-service/tests/test_company_scope.py` |
+| DeGram relay principal scope, single upstream with model override, key masking and encryption at rest, provenance without content (Section 3.6) | `data-service/tests/test_degram_relay.py` |
 | Live exposure and 401 behavior | `tools/security/check_live_boundary.py` (owner run, against rebuilt containers) |
 
 **Adding a route.** Add the `@app` route with `Depends(auth.require_principal)` (or the router-level dependency), add its row to `route_policy.ROUTE_POLICIES`, add the row to the `route-policy` block in Section 4.2 (and the `public-routes` block if it is public), and run the route inventory and this contract's drift test. A route without all three fails the suite.

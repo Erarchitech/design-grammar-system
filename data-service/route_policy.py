@@ -147,6 +147,13 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/llm/generate"): _p(_SVC),
     ("POST", "/llm/settings/test"): _p(_ADM),
     ("GET", "/llm/models"): _p(_ADM),
+    # ── DeGram relay (Phase 1301-08, D-16) ──
+    # The relay takes the project from the delegated principal itself; the two
+    # config routes are operator-only. None of them is reachable by a cookie
+    # session, connector or service principal as a model path.
+    ("POST", "/degram/v1/chat/completions"): _p(_DEL),
+    ("GET", "/degram/admin/llm-config"): _p(_ADM),
+    ("PUT", "/degram/admin/llm-config"): _p(_ADM),
     # ── connectors ──
     ("GET", "/connectors"): _p(_SES, source="filtered"),
     ("POST", "/connectors/{connector_id}/credentials"): _p(_MEM, source="body", role="editor"),

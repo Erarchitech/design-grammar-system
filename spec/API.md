@@ -405,6 +405,18 @@ Response envelope:
 
 **Errors:** 502 with the standard `{error, hint, code}` detail shape for any provider failure.
 
+### DeGram relay (`/degram/*`, Phase 1301 plan 08)
+
+The user-scoped, streaming, OpenAI-compatible model path of the local DeGram agent (D-16). It is not the `/llm/generate` gateway and nothing under `/llm/` routes to it. See `spec/SECURITY-BOUNDARY.md` Section 3.6.
+
+| Method | Path | Principal | Description |
+|--------|------|-----------|-------------|
+| POST | `/degram/v1/chat/completions` | delegated | OpenAI-compatible chat completion, always streamed (`text/event-stream`). Body `{messages, tools?, tool_choice?, temperature?, top_p?, max_tokens?, max_completion_tokens?, stop?}`; any `model`, `provider` or `stream` is ignored. |
+| GET | `/degram/admin/llm-config` | admin | `{configured, baseUrl, model, providerLabel, apiKeyPreview}`; never the key |
+| PUT | `/degram/admin/llm-config` | admin | Body `{baseUrl?, model?, providerLabel?, apiKey?}`; first call needs `baseUrl` and `apiKey`; 422 `RELAY_CONFIG_INVALID` |
+
+The relay forwards the upstream SSE lines unchanged, always sends the operator-configured model and never falls back to another provider. Errors use the standard `{error, hint, code}` detail: 422 `RELAY_REQUEST_INVALID`, 503 `RELAY_NOT_CONFIGURED`, 502 `PROVIDER_ERROR`. Each relayed request appends a provenance record (no prompt text, no key).
+
 ### Identity (`/identity/*`, Phase 32.1/1203)
 
 The identity registry API. Normative contract: `spec/DG-ID.md` (format, minting, collision policy, binding model). This is a first-write for this document — no `/identity/*` route was previously documented here.
@@ -459,7 +471,7 @@ The full contract, including the complete route-policy table, is `spec/SECURITY-
 | User session | `dg_session` cookie (HttpOnly, SameSite=Strict) plus `X-DG-CSRF: 1` on every `POST`/`PUT`/`PATCH`/`DELETE` | The V2 UI. Roles per project: `viewer`, `editor`, `owner`; an admin acts as owner everywhere |
 | Connector token | `Authorization: Bearer dgc_...`, bound to one project | Grasshopper: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, plus `POST /connectors/heartbeat` and `POST /designstate/capture` |
 | Service token | `X-DG-Service-Token` | n8n only: `/llm/generate`, `/context/*`, `/mcp`, `POST /execution-result` |
-| Delegated token (Phase 1301) | `Authorization: Bearer dgd_...`, bound to one project and the user's session, 15-minute lifetime; exempt from `X-DG-CSRF` | The local DeGram agent: `GET /graph/{project}`, `GET /rules/{project}`, `DELETE /auth/delegated-token` |
+| Delegated token (Phase 1301) | `Authorization: Bearer dgd_...`, bound to one project and the user's session, 15-minute lifetime; exempt from `X-DG-CSRF` | The local DeGram agent: `GET /graph/{project}`, `GET /rules/{project}`, `POST /degram/v1/chat/completions`, `DELETE /auth/delegated-token` |
 
 Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POST /connectors/heartbeat` (validates its own connector token).
 

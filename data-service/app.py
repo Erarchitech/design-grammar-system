@@ -68,6 +68,7 @@ from connectors import (
 import auth
 import auth_routes
 import company
+import degram_relay
 import delegation
 import route_policy
 import secrets_policy
@@ -1503,6 +1504,30 @@ def delete_llm_settings():
     """Clear all LLM settings. Gateway falls back to Ollama on next call."""
     save_persisted_llm_settings({})
     return None
+
+
+# ---------------------------------------------------------------------------
+# DeGram relay (Phase 1301-08, D-16): the only model path of the local agent.
+# Delegated principal only; operator config is admin-only. Not under /llm/.
+# ---------------------------------------------------------------------------
+
+
+@router.post("/degram/v1/chat/completions")
+async def degram_chat_completions(request: Request):
+    return await degram_relay.relay_chat_completions(request)
+
+
+@router.get("/degram/admin/llm-config")
+def get_degram_llm_config():
+    """Admin-only: the relay endpoint, model and a masked key preview."""
+    return degram_relay.masked_config()
+
+
+@router.put("/degram/admin/llm-config")
+def put_degram_llm_config(payload: degram_relay.RelayConfigPayload):
+    """Admin-only: set the relay endpoint, model, label and system key (the key
+    is stored Fernet-encrypted; an omitted field keeps its stored value)."""
+    return degram_relay.store_config(payload)
 
 
 @router.post("/llm/generate")
