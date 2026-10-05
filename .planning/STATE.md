@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 9
+current_plan: 10
 status: executing
-stopped_at: Completed 1301-09-PLAN.md
-last_updated: "2026-10-05T09:34:49.800Z"
+stopped_at: Completed 1301-10-PLAN.md
+last_updated: "2026-10-05T10:46:03.455Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 13
+  completed_plans: 14
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 9
+Current Plan: 10
 Total Plans in Phase: 16
-Plan: 9 of 16
+Plan: 10 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -170,6 +170,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P07 | 45 min | 2 tasks | 12 files |
 | Phase 1301 P08 | 90min | 3 tasks | 15 files |
 | Phase 1301 P09 | 80min | 2 tasks | 17 files |
+| Phase 1301 P10 | ~1h | 3 tasks | 31 files |
 
 ## Accumulated Context
 
@@ -496,6 +497,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-08: relay is delegated-only with no project source; provider-export policy deny-by-default, checked before consent and before any upstream contact; consent never overrides POLICY_DENY
 - [Phase ?]: 1301-08: operational outcomes (relay/bridge/agent) are a closed set disjoint from the eight evaluator statuses; relay provenance is audit only, not the D-19 reproducibility block
 - [Phase ?]: 1301-09: Speckle proxy serves the loader's real paths (objects/{p}/{o}/single, api/v2/projects/{p}/object-stream/) plus the plan's two aliases; viewer uses a ProxySpeckleLoader with no token and the IndexedDB cache off; viewerResources replaces readToken/speckleBaseUrl in /validation/view
+- [Phase ?]: 1301-10: RPC lock is deny-by-default (55 allowed methods, everything else DEGRAM_LOCKED); tool allowlist enforced in ToolRegistry.register, not by hiding schemas
+- [Phase ?]: 1301-10: relayBaseUrl is origin plus /data-service (no /degram/v1), http only on loopback; delegated token only in process memory via degram.credentials.set, api_key is a callable read per request
+- [Phase ?]: 1301-10: todo tool registered name is todo_list; Tool Search switched off in variant degram so allowlisted tools stay visible; compression is the only auxiliary left, on the pinned relay route
 
 ### Research Flags (carry into planning)
 
@@ -590,8 +594,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T09:34:49.781Z
-Stopped at: Completed 1301-09-PLAN.md
+Last session: 2026-10-05T10:46:03.420Z
+Stopped at: Completed 1301-10-PLAN.md
 Resume file: None
 
 ## Performance Metrics
