@@ -34,6 +34,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ### Decisions
 - [[knowledge/decisions/ValidGraph inline reader reads both parameter shapes, D-09 exclusion lifted|ValidGraph inline reader reads both parameters[] shapes — Phase 1202 D-09 exclusion lifted (2026-10-05)]]
+- [[knowledge/decisions/DeGram Phase 1301 execution authorizations and narrowed baseline|DeGram Phase 1301 execution: owner authorizations, narrowed baseline, stop on isolation failure]]
 - [[knowledge/decisions/DeGram Phase 1301 adds company scope, Speckle proxy, registry allowlist and loopback-only Revit|DeGram Phase 1301: company map, server Speckle proxy, registry tool allowlist, loopback-only Revit (D-20..D-23)]] (2026-10-04; planned, implementation OPEN)
 - [[knowledge/decisions/DeGram Desktop uses a DG theme preset, text wordmark and Russian-first copy|DeGram Desktop: DG theme preset, «DeGram» wordmark, ru-first copy, DG web as a shell page]] (2026-10-04; UI-SPEC approved, implementation OPEN)
 - [[knowledge/decisions/DeGram Phase 1301 client isolation, auth relay and Revit MCP fork|DeGram Phase 1301: isolated degram variant, delegated-token LLM relay, read-only Revit MCP fork]] (2026-10-04; discussion captured, implementation OPEN)
@@ -108,6 +109,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/Rule ingest blends a rule invented from a bare Rule_Id into the existing rule|Rule ingest: bare Rule_Id → invented rule MERGEd into existing one; ID/recognition findings (F13, F6/F9–F12)]] (2026-10-05, open)
 - [[knowledge/debugging/Grasshopper Panels can neither be captured as parameters nor safely carry tokens|GH Panels: not capturable by PARAMETER STATE; token via Panel persists in .gh (F7/F17)]] (2026-10-05, open)
 - [[knowledge/debugging/Model Viewer shows a foreign base model and a hard-coded tile property catalogue|Model Viewer: foreign base model, shadow, black preview, camera reset, hard-coded tile props (F18–F22)]] (2026-10-05, open)
+- [[knowledge/debugging/Packaged DeGram ignored the degram variant and attached to the live Hermes|Packaged DeGram ignored the degram variant and attached to the live Hermes — identity gate, scrubbed env]]
+- [[knowledge/debugging/GH deadline test patched the clock only after the first request|GH deadline test: clock patched only after the first request — flaky 30 s wait]]
 - [[knowledge/debugging/OBJECT STATE index ObjectRefs collide across classes for computed geometry|OBJECT STATE: index ObjectRefs (obj_i) collide across classes for computed geometry]] (2026-10-03, open)
 - [[knowledge/debugging/V2 UI has no Speckle project link form and the setup guide predates v7|V2 UI: no Speckle project link form; setup guide predates v7; stale DG.gha unnoticed]] (2026-10-01, open)
 - [[knowledge/debugging/Windows auth store atomic replace can fail on reader sharing locks|Windows auth store: sharing conflict при atomic replace и bounded retry]] (2026-10-02)
@@ -176,6 +179,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-05 Phase 1301 executed through plan 14, plan 15 launch failed isolation|2026-10-05 Phase 1301: executed through plan 14; plan 15 launch failed isolation, nothing pushed]]
 - [[sessions/2026-10-04 Phase 1301 planned|2026-10-04 Phase 1301: researched and planned — 15 plans / 8 waves, D-20..D-23, all gates pass]]
 - [[sessions/2026-10-04 Phase 1301 UI design contract|2026-10-04 Phase 1301: UI-SPEC approved — DG theme preset, wordmark, ru-first copy, DG page, 47 UI states resolved]]
 - [[sessions/2026-10-04 Phase 1301 context gathered|2026-10-04 Phase 1301: context gathered — runtime isolation, auth relay, Revit MCP fork, LLM context card]]
