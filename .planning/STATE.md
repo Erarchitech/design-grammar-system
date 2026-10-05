@@ -6,8 +6,8 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 14
 status: executing
-stopped_at: Completed 1301-14-PLAN.md
-last_updated: "2026-10-05T17:32:36.883Z"
+stopped_at: "1301-15 partial: installer built, launch isolation FAILED (stop rule), push and gitlink bump not done"
+last_updated: "2026-10-05T20:28:07.674Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
@@ -552,6 +552,7 @@ Shipped from Phase 20 Plan 02:
   - 5 full-suite failures that appear only in the multi-user profile (TestHeartbeatBundle ×2; test_designstate_capture lifespan ×3, a suspected env leak).
   - DG.Tests E2E DesignStateValidationFlowTests ×4 get 401 (the fixture needs a connector token).
   - The multi-user heartbeat returns `neo4j: null` rather than omitting the key.
+- 1301-15: first launch of the built DeGram ran as stock Hermes (packaged identity not baked, fixed locally at component 910a060d) and wrote to the installed Hermes home; nothing pushed, gitlinks not bumped. Needs rebuild from 910a060d, a fresh owner authorization for a second launch, then push + bump. See 1301-BUILD.md
 
 ### Quick Tasks Completed
 
@@ -608,9 +609,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T17:32:36.863Z
-Stopped at: Completed 1301-14-PLAN.md
-Resume file: None
+Last session: 2026-10-05T20:28:07.651Z
+Stopped at: 1301-15 partial: installer built, launch isolation FAILED (stop rule), push and gitlink bump not done
+Resume file: .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-15-SUMMARY.md
 
 ## Performance Metrics
 

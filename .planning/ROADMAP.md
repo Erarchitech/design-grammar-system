@@ -183,7 +183,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump
+- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump *(PARTIAL 2026-10-05: installer built, CLEAN-INSTALL.md written; first launch failed isolation, packaged-identity fix 910a060d is local, nothing pushed, gitlinks not bumped; see 1301-15-SUMMARY.md and 1301-BUILD.md)*
 
 **Wave 8** *(blocked on Wave 7 completion)*
 

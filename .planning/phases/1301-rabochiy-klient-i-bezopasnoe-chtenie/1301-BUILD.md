@@ -1,0 +1,148 @@
+# Phase 1301 Build record (plan 15)
+
+Recorded 2026-10-05. Committing repository for this file: framework.
+
+**Verdict: the build exists, but the first launch FAILED the D-02 isolation proof.** The installer built here ran as stock
+"Hermes Agent <commit>", attached to the user's running Hermes backend and caused writes in `%LOCALAPPDATA%\hermes`. Nothing was
+pushed and no gitlink was bumped (orchestrator stop rule). The root cause is fixed in the component (`910a060d`, local only,
+tests green) but the fix is not in this artifact: the installer below must not be distributed or launched again.
+
+## Artifact (built from the pre-fix commit)
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.0.0.exe` |
+| Size | 1,931,722,535 bytes |
+| SHA-256 | `46845872fa2646e1ec30935e42f29dcbe9cae99df6783d0abda5612192d4b13f` |
+| Unpacked app (launched once) | `D:\dgb\src\apps\desktop\release\win-unpacked\DeGram.exe` |
+| Built from component commit | `386bd704bc148ac6b1810615c0b32d28d6bd610f` (clean checkout, `dirty: false`, stamp `variant: degram`, `payload: bundled`, `updateMechanism: external`) |
+| Signing | none (`[batch-sign] AZURE_SIGN_* not set - payload binaries will be UNSIGNED`), as designed (D-04) |
+| NSIS | `target=nsis file=release\DeGram-Setup-0.0.0.exe archs=x64 oneClick=false perMachine=false`; NSIS toolset from electron-builder's own pinned supplier (`nsis@1.2.1`, `nsis-bundle-3.12.tar.gz`), copied to `packager\nsis` |
+| `revit-mcp` resource | present at `resources\revit-mcp` (source, `pyproject.toml`, `uv.lock`, `extension.json`, `startup.py`; no `tests`, no `.git`, no `.venv`, no bytecode) |
+| Payload | `resources\agent-payload`, 5.9 GB staged (includes llama.cpp cpu/cuda/hip/vulkan, chromium, ffmpeg, git, gh, ripgrep, node, npm, uv) |
+
+## Command and exit code
+
+Run from a clean local clone of the component at `D:\dgb\src` (`git clone --no-hardlinks apps/degram`, HEAD = `386bd704`, tree clean),
+because the component working tree carries 8 untracked pytest artifacts and `desktop.py` refuses an unclean checkout. Environment
+scrubbed by `D:\dgb\run-build.sh`: `ELECTRON_RUN_AS_NODE`, `HERMES_HOME`, `HERMES_PYTHON`, `HERMES_NODE`, `HERMES_PROFILE`,
+`HERMES_REAL_HOME` unset; `HERMES_HOME=D:\dgb\parent-home`; `TEMP`/`TMP` on D:; `PATH` limited to Git and Windows; the build's own
+`bootstrap_environment` then moves `HOME`/`LOCALAPPDATA`/`APPDATA`/`HERMES_HOME` under `.build\desktop-job`.
+
+```
+python scripts/bundles/desktop.py --commit=386bd704bc148ac6b1810615c0b32d28d6bd610f --variant=degram
+```
+
+| Run | Window (UTC) | Exit | Result |
+|---|---|---|---|
+| final | 19:36:58 - 20:16:25 (39.5 min) | **0** | installer built |
+
+Earlier runs that did not finish (all recorded in `D:\dgb\c-logs\` and `D:\dgb\build.log`): see "Build obstacles".
+
+Tests before the build (component, `apps\degram\apps\desktop`): `npx vitest run --project electron scripts/degram-build.test.mjs electron/degram/isolation.test.ts`
+(degram-build 22, isolation 16: all pass at `910a060d`); `scripts/prepared-packaging.test.mjs`, `prepare-dmgbuild.test.mjs`, `prepared-windows-tools.test.mjs` pass;
+`run-electron-builder.test.mjs` has only the stable 1301-ENV.md baseline failure; `npm run typecheck` exit 0.
+
+## First launch (D-02 proof) - FAILED
+
+Unset for the launch only: `ELECTRON_RUN_AS_NODE` (inherited `1`, makes Electron exit silently). Everything else inherited, including
+`HERMES_HOME=C:\Users\Admin\AppData\Local\hermes` (the owner's real Hermes home; the isolation design must ignore it).
+One launch, no sign-in, no input, 75 s idle, closed through `CloseMainWindow`, no process left (`Get-Process DeGram*` = 0).
+
+| Time (UTC) | Event |
+|---|---|
+| 20:19:49 | `DeGram.exe` pid 44852 launched |
+| 20:21:05 | main window title `Hermes` (not `DeGram`); 4 processes under `win-unpacked`, no Python backend |
+| 20:21:05 | `CloseMainWindow` sent; all processes gone by 20:21:08 |
+
+### Listings
+
+Roots: `%LOCALAPPDATA%\hermes` and `%USERPROFILE%\.hermes` (303,128 entries; path, size, mtime ticks, read-only). The owner's Hermes is
+**live** (5 `Hermes.exe`, gateway, cron, kanban), so a literally empty diff is impossible on this PC. A control window was taken with DeGram not running.
+
+Control A -> B (29 s, no DeGram): 12 modified, 0 created, 0 deleted: only heartbeats and database sidecars (`cron\*`, `gateway_state.json`,
+`kanban.db-shm/-wal`, `state.db-wal`, `state\*.heartbeat`).
+
+Launch B -> C (2.5 min incl. launch): **10 created, 22 modified, 0 deleted**.
+
+```
+C bot_relay\ (claimed, outbox, replies, roster.json)         roster.json mtime 20:19:56
+C desktop-plugins\jev\ (.hermes-package.json, plugin.js)
+C hermes-agent\tools\__pycache__\voice_live.cpython-314.pyc  20:19:51
+C hermes-agent\tui_gateway\__pycache__\profile_roster_cache.cpython-314.pyc  20:19:56
+M logs\desktop.log (+1,149 bytes)  logs\gui.log  logs\agent.log  logs\errors.log
+M provider_models_cache.json  auth.lock  spawn-ledger.json  channel_directory.json
+M (control-type churn) cron\*  gateway_state.json  kanban.db-*  state.db-wal  state\*.heartbeat  (+ the parent directories)
+```
+
+### Attribution: the launched binary behaved as stock Hermes Desktop
+
+The Hermes logs show the DeGram process as a Hermes client at the launch second (local time = UTC+1):
+
+```
+desktop.log 21:19:50,678 [hermes] [attach] attached to the running Hermes backend on http://127.0.0.1:62917 (pid 40472, registered by profile "default"); spawning nothing
+desktop.log 21:19:50,678 [hermes] [boot] Attached to the running Hermes backend
+gui.log     21:19:50,668 tui_gateway.ws: ws accepted peer=127.0.0.1:54704   (closed at once)
+gui.log     21:19:51,616 tui_gateway.ws: ws accepted peer=127.0.0.1:49972
+gui.log     21:19:55,079 hermes_cli.web_server: owner-backfill: stamped 11 legacy NULL-profile session row(s) with profile 'default'
+errors.log  21:19:57,098 tui_gateway.server: wake.start(gui): failed to start listener: Failed to open the wake-word microphone.
+gui.log     21:21:06,730 ws closed peer=127.0.0.1:49972 reason=client_disconnect(code=1001) messages=43
+```
+
+The WebSocket closed at 20:21:06Z, one second after `CloseMainWindow`, after 43 messages. The created files were written 1.5 to 7 s after the launch.
+`%LOCALAPPDATA%\DeGram` was **not** created; `%APPDATA%\HermesBundledCommit386bd70` was (3.5 MB: Chromium caches, `connections.json`,
+`backend-ownership.json`, `desktop-installation.json`): the userData of the stock `bundled` commit-build identity, not DeGram's.
+
+What this changed in the owner's Hermes (all caused by this launch's client; the 22 modified entries also include the control-type churn
+that happens with no DeGram running):
+- new directories/files listed above (`bot_relay`, `desktop-plugins\jev`, two `.pyc`);
+- append-only log lines in `desktop.log`, `gui.log`, `agent.log`, `errors.log`;
+- **a database write**: `owner-backfill: stamped 11 legacy NULL-profile session row(s) with profile 'default'` in the owner's session store, 5 s after the launch
+  (it may be a first-connect migration that any new GUI client triggers; it is a write all the same);
+- a microphone start attempt on the owner's backend (`wake.start(gui)`, failed);
+- no deletion, nothing was moved, no credential was read or entered, no provider call was made.
+
+### Root cause
+
+`scripts/bundle-electron-main.mjs::productIdentity` derived the product identity baked into the packaged `electron-main.mjs`
+(`__HERMES_PRODUCT_IDENTITY__`) from the stamp's `payload` (`bundled`) and ignored `variant: "degram"`. The packaged main therefore
+carried the stock `bundled` + commit identity (`com.erarchitech.degram` occurs 0 times in `dist\electron-main.mjs`), `degram` was false, so
+`isolatedBackendRequired` was false, host-backend attach was on, and `HERMES_HOME` was inherited. Plan 04 proved the identity through
+`HERMES_DESKTOP_VARIANT` only, which a packaged app never has at run time. The offline suites could not see it; only a real launch could.
+
+Fix, component commit **`910a060d`** (local, not pushed): `productIdentity` is exported and selects `degram` from the stamp (payload must be
+`bundled`). New tests, RED before the fix: the baked identity of a degram stamp, the unchanged identity of every other stamp, and an end-to-end
+check that the bundled `electron-main.mjs` of a degram stamp contains `com.erarchitech.degram` and a bundled stamp does not
+(`degram-build.test.mjs` 22/22). The artifact above predates the fix. Cheap pre-launch gate added to `docs/degram/CLEAN-INSTALL.md`
+(step 6.3): the unpacked `dist\electron-main.mjs` must contain `com.erarchitech.degram`.
+
+## Build obstacles (what had to be worked around)
+
+1. **Node.** The shell's Node 20.20.0 violates the repo engines (`^22.22 || ^24.11 || >=26`); the build uses its own PM-pinned Node 26.7.0.
+2. **Windows rename failures.** PM's Node staging failed twice with `[WinError 5]` renaming `node_modules` after extraction (a standalone rename of the same tree
+   works). Workaround: the Node and npm store entries were copied from the installed Hermes store into the build-owned store with their own `facts.json`
+   records (same artifact SHA-256 as `pm/lock.json`, read-only use of the Hermes tree). A later `dist` publication rename failed once with `EPERM` in one run and
+   passed in another (flaky, antivirus/handle related).
+3. **Native extras.** `pilk` (extra `silk`) needs MSVC plus the Windows SDK (no `Windows Kits\10\Include` on this PC) and `obstore` (extra `daytona`) has no
+   CPython 3.14 Windows wheel: `uv sync --all-extras` failed. Component commit `386bd704` makes both opt-in extras (installed on demand, still declared and locked).
+4. **Disk.** `C:` was at 100% (0.4 GB free of 953 GB). The first staged build filled it (`ENOSPC` while copying the payload into `win-unpacked`). Everything was
+   moved to `D:\dgb` (the full tree is about 22 GB, the installer 1.9 GB), the `C:\dgb` scratch was deleted. `C:` now has about 16.7 GB free.
+5. **Inherited environment.** The shell exports `HERMES_HOME=C:\Users\Admin\AppData\Local\hermes`, `HERMES_CA_BUNDLE`, and the Hermes `node`/`bin` directories
+   on `PATH`. The very first attempt (`npm run payload`, 18:35-18:37 UTC, before any scrubbing) ran with that environment and failed on the Node engine check.
+   Hermes files whose mtime falls in that window are `cache\uv\interpreter-v4\0de9bff94b993286\96bc665fdb70c6be.msgpack` (and its parent `cache\uv`) at 18:36:41/18:36:49
+   and `installs\1f298275253120d6\pm-runtime\generations\e3bef59e2ae54ed898fd1da3e7b0440c\.leases` at 18:37:01: these coincide with that run and may be mine (uv interpreter
+   cache entry, lease touch); the live Hermes may also have written them. Nothing else from that run is in the Hermes tree. Every later build command ran scrubbed.
+
+## Pushed commits and gitlinks
+
+Nothing pushed (stop rule). No `git push`, no tag, no remote change. Gitlinks not bumped. `apps/degram` local branch `degram/phase-1301`:
+`0ee2d12f` (plan 14) -> `6e2b4889` (revit-mcp resource, NSIS admission) -> `386bd704` (opt-in extras) -> `910a060d` (identity fix). `apps/revit-mcp` unchanged at `937384f`.
+`python tools/degram/workspace.py verify` therefore still reports gitlink != child HEAD for both children (expected until the pair is pushed).
+
+## What the owner must decide next
+
+1. Rebuild from `910a060d` (or later): about 40 min, about 22 GB on D:, reuses `D:\dgb\src\.cache`.
+2. Authorize a **second** launch. Recommended protocol: before launching, run the identity gate (step 6.3); take listings before and after as here, with a control window;
+   run with the same inherited environment only if the owner accepts a second exposure of the live Hermes, otherwise close the Hermes Desktop first or launch with
+   `HERMES_HOME` removed from the process environment (isolation must not depend on it). An empty diff is only achievable while no Hermes process is running.
+3. Only then push the two branches and bump the gitlinks.
