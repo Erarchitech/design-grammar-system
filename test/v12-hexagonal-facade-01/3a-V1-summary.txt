@@ -1,0 +1,134 @@
+# Step 3a — V1 baseline, gh-measure-rules.cs (tree-access version), 2026-10-04
+# Thresholds in the R* counts are the provisional ones from RULES.md.
+model units: Millimeters  (x0.001 -> m)
+GlassPanel  n=125   outline vertices: 4x125
+  hasAspectRatio          1.41927 .. 5.47988   R1 <2.0: 24   R2 >4.0: 15
+  hasPlanarityDeviationM  0 .. 0   R6 >0.005: 0
+  hasWidthM               4.92727 .. 8.17323   R7 <0.9: 0
+HexagonalUnit  n=125   outline vertices: failedx25, 6x100
+  levels: LZ input, 29 levels
+  hasLevelOffsetM         0 .. 4.7  (25 NaN)   R3 >0.01: 25
+  hasSymmetryDeviationM   0 .. 4.14497  (25 NaN)   R4 >0.01: 32
+BottomTriangularPanel  n=125
+  hasVertexCount          3x125   R5 !=3: 0
+Facade
+  hasHeightM              114.275   R8 >50: VIOLATED
+errors (25):
+  HU{72}..HU{96}: 4 curves join into an OPEN outline
+
+
+# ---------------------------------------------------------------------------
+# Run 2 — 2026-10-04, ground-floor modules closed in GH and split into GU
+# (12-rule script; thresholds still the provisional ones)
+model units: Millimeters  (x0.001 -> m)
+GlassPanel  n=125   outline vertices: 4x125
+  hasAspectRatio          1.41927 .. 5.47988  [p5 1.53294 | med 2.67178 | p95 4.40996]   R1 <2: 24   R2 >4: 15
+  hasPlanarityDeviationM  0 .. 0  [p5 0 | med 0 | p95 0]   R6 >0.005: 0  (control)
+  hasWidthM               4.92727 .. 8.17323  [p5 5.56918 | med 6.94868 | p95 7.56714]   R7 <0.9: 0
+HexagonalUnit  n=125   outline vertices: failedx25, 6x100
+  levels: LZ input, 29 levels   level Z 1.575 .. 109.575   HU vertex Z 15.975 .. 114.275
+  hasLevelOffsetM         0 .. 4.7  [p5 0 | med 0 | p95 4.7]  (25 NaN)   R3 >0.01: 25
+  hasSymmetryDeviationM   0 .. 4.14497  [p5 0 | med 0 | p95 2.60455]  (25 NaN)   R4 >0.01: 32
+  hasOutlineGapCount      0x125   R9 >0: 0
+  hasVertexCount          failedx25, 6x100   R12 !=6: 0
+GroundFloorUnit  n=25
+  hasOutlineGapCount      0x25   R10 >0: 0
+  hasVertexCount          5x25   R11 !=5: 0
+BottomTriangularPanel  n=125
+  hasVertexCount          3x125   R5 !=3: 0  (control)
+Facade
+  hasHeightM              114.275   R8 >50: VIOLATED
+errors (25):
+  HU{72}..HU{96}: empty branch   (left behind by the HU/GU split; script now skips empty branches)
+# Reading: R3 violators = top row, top vertex 114.275 above the last LZ level 109.575 (LZ lacks
+# the parapet/roof elevation). R4: 68 units exactly symmetric, 32 not (hypothesis: units folded
+# around building corners) — script now prints the fold diagnostic.
+
+
+# ---------------------------------------------------------------------------
+# Run 3 — 2026-10-04/05, parapet 114.275 added to LZ, empty HU branches skipped
+model units: Millimeters  (x0.001 -> m)
+GlassPanel  n=125   outline vertices: 4x125
+  hasAspectRatio          1.41927 .. 5.47988  [p5 1.53294 | med 2.67178 | p95 4.40996]   R1 <2: 24   R2 >4: 15
+  hasPlanarityDeviationM  0 .. 0   R6 >0.005: 0  (control)
+  hasWidthM               4.92727 .. 8.17323  [p5 5.56918 | med 6.94868 | p95 7.56714]   R7 <0.9: 0
+HexagonalUnit  n=100   outline vertices: 6x100
+  levels: LZ input, 29 levels   level Z 1.575 .. 114.275   HU vertex Z 15.975 .. 114.275
+  hasLevelOffsetM         0 .. 0   R3 >0.01: 0
+  hasSymmetryDeviationM   0 .. 4.14497  [p5 0 | med 0 | p95 2.60455]   R4 >0.01: 32   (3D mirror measure)
+  (diag) fold             0 .. 1.84413  [p5 0 | med 0 | p95 1.44008]   folded >0.01: 32   R4 violators that are folded: 32
+  hasOutlineGapCount      0x100   R9 >0: 0
+  hasVertexCount          6x100   R12 !=6: 0
+GroundFloorUnit  n=25
+  hasOutlineGapCount      0x25   R10 >0: 0
+  hasVertexCount          5x25   R11 !=5: 0
+BottomTriangularPanel  n=125
+  hasVertexCount          3x125   R5 !=3: 0  (control)
+Facade
+  hasHeightM              114.275   R8 >50: VIOLATED
+# Reading: R3 clean. R4 violators == folded corner units (32/32) -> owner decision 2026-10-05:
+# measure symmetry on the developed outline (plan arc length). Validated on synthetic hexes
+# (rectangle plan, chords across corners, seam crossing): symmetric -> 0, shear 0.5 -> 1.0 flat and folded.
+
+# ---------------------------------------------------------------------------
+# Run 4 — 2026-10-05, R4 developed via PL (plan arc length)
+HexagonalUnit  n=100   outline vertices: 6x100
+  hasSymmetryDeviationM   0 .. 4.12381  [p5 0 | med 0 | p95 2.15354]   R4 >0.01: 44
+  (diag) fold             0 .. 1.84413   folded >0.01: 32   R4 violators that are folded: 31
+  (check) development: plan arc length (PL, length 161.49375 m)
+  (check) vertex distance to PL   0.67858 .. 2.65589   (should be ~0)
+  (check) |developed - 3D mirror| on flat units   0 .. 1.88325   (should be ~0)
+  (diag) 3D mirror measure (old R4)   0 .. 4.14497   >0.01: 32
+# (all other lines identical to run 3)
+# Reading: INVALID development — hex vertices are 0.68..2.66 m off PL, so PL is not the curve the
+# hex grid lies on; the projection distorts even flat units (up to 1.88 m). Need the correct curve.
+
+# ---------------------------------------------------------------------------
+# Run 5 — 2026-10-05, same as run 4 + HU/GU vertex distance to PL by height
+  (diag) HU vertex distance to PL by height (z: min..max, m):
+      z 16: 0 .. 0  (n=25)
+      z 20: 0.67858 .. 2.65589  (n=50)
+      z 47.2 / 51.2 / 66.7 / 70.7 / 94 / 98: 0.67858 .. 2.65589  (n=75 each)
+      z 109.6: 0.67858 .. 2.65589  (n=50)
+      z 114.3: 0.00849 .. 1.88325  (n=25)
+  (diag) GU bottom-vertex distance to PL (control, should be ~0):
+      z 0: 0 .. 0  (n=50)
+# Reading: PL is correct for the ground floor (GU bottoms and the first-row HU bottoms at z16 sit on it).
+# Above z16 every HU vertex is 0.68..2.66 m off PL, with the IDENTICAL range at every level ->
+# the hex grid lies on a VERTICAL surface whose plan differs from PL (not a lean/taper, not a uniform offset).
+
+# ---------------------------------------------------------------------------
+# Run 6 — 2026-10-05, PL = plan of the surface carrying the hex grid (length 174.886 m)
+  hasSymmetryDeviationM   0 .. 4.83249  [p5 0 | med 0 | p95 2.89025]   R4 >0.01: 32
+  (diag) fold             0 .. 1.84413   folded >0.01: 32   R4 violators that are folded: 32
+  (check) vertex distance to PL   0 .. 1.88325
+  (check) |developed - 3D mirror| on flat units   0 .. 0
+  (diag) HU vertex distance to PL by height: z16 0.679..1.883 (n=25, row-1 bottoms);
+         z20..109.6 0..0; z114.3 0..1.881 (n=25, row-4 tops)
+  (diag) GU bottom-vertex distance to PL: 0.679..1.883 (ground floor sits on the base curve)
+# Reading: PL now correct for the grid (z20..109.6 exactly 0); flat units agree with the 3D mirror
+# exactly (method consistent). The 32 folded units still violate R4 (up to 4.83 m) — either real
+# asymmetry of corner units (candidate cause: slider "допуск привязки стоек к углам" snaps vertices
+# to building corners) or distortion from the off-PL axis vertices of rows 1 and 4. Needs Detail.
+# Rows (from vertex levels): row1 z16..51.2, row2 47.2..70.7, row3 66.7..98, row4 94..114.3; 25 units each.
+
+# ---------------------------------------------------------------------------
+# Run 7 — 2026-10-05, FINAL V1 baseline (R4 removed; script without PL/SD)
+model units: Millimeters  (x0.001 -> m)
+GlassPanel  n=125   outline vertices: 4x125
+  hasAspectRatio          1.41927 .. 5.47988  [p5 1.53294 | med 2.67178 | p95 4.40996]   R1 <2: 24   R2 >4: 15
+  hasPlanarityDeviationM  0 .. 0  [p5 0 | med 0 | p95 0]   R6 >0.005: 0  (control)
+  hasWidthM               4.92727 .. 8.17323  [p5 5.56918 | med 6.94868 | p95 7.56714]   R7 <0.9: 0
+HexagonalUnit  n=100   outline vertices: 6x100
+  levels: LZ input, 29 levels   level Z 1.575 .. 114.275   HU vertex Z 15.975 .. 114.275
+  hasLevelOffsetM         0 .. 0  [p5 0 | med 0 | p95 0]   R3 >0.01: 0
+  hasOutlineGapCount      0x100   R9 >0: 0
+  hasVertexCount          6x100   R12 !=6: 0
+GroundFloorUnit  n=25
+  hasOutlineGapCount      0x25   R10 >0: 0
+  hasVertexCount          5x25   R11 !=5: 0
+BottomTriangularPanel  n=125
+  hasVertexCount          3x125   R5 !=3: 0  (control)
+Facade
+  hasHeightM              114.275   R8 >50: VIOLATED
+# V1 clean on R3, R5, R6, R9, R10, R11, R12. Still to calibrate: R1, R2, R7, R8.

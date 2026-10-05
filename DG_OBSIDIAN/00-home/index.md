@@ -33,12 +33,14 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/ValidGraph inline reader reads both parameter shapes, D-09 exclusion lifted|ValidGraph inline reader reads both parameters[] shapes — Phase 1202 D-09 exclusion lifted (2026-10-05)]]
 - [[knowledge/decisions/DeGram Phase 1301 adds company scope, Speckle proxy, registry allowlist and loopback-only Revit|DeGram Phase 1301: company map, server Speckle proxy, registry tool allowlist, loopback-only Revit (D-20..D-23)]] (2026-10-04; planned, implementation OPEN)
 - [[knowledge/decisions/DeGram Desktop uses a DG theme preset, text wordmark and Russian-first copy|DeGram Desktop: DG theme preset, «DeGram» wordmark, ru-first copy, DG web as a shell page]] (2026-10-04; UI-SPEC approved, implementation OPEN)
 - [[knowledge/decisions/DeGram Phase 1301 client isolation, auth relay and Revit MCP fork|DeGram Phase 1301: isolated degram variant, delegated-token LLM relay, read-only Revit MCP fork]] (2026-10-04; discussion captured, implementation OPEN)
 - [[knowledge/decisions/DeGram work runs from the framework root with generated child routing|DeGram: work from the framework root; child .hermes.md generated from a framework template]] (2026-10-04)
 - [[knowledge/decisions/Architect rules are reshaped to the v12 evaluator boundary before ingest|Architect rules reshaped to the v12 evaluator boundary: range → two rules, strings → numeric proxies, generative rules excluded]] (2026-10-03, facade test)
 - [[knowledge/decisions/DeGram Phase 1300 decisions require V8 and server-owned graphs|DeGram Phase 1300: V8 MVP profile, system-managed LLM, server graphs and bounded Revit writes]] (2026-10-03; discussion captured, technical acceptance OPEN)
+- [[knowledge/decisions/v12 administrative closeout preserves accepted open technical debt|v12.0: административное закрытие с OPEN долгами, не technical PASS]] (2026-10-02)
 - [[knowledge/decisions/Evidence v2 preserves rule outcomes and keeps legacy projections separate|Evidence v2: typed outcomes, zero-row rules и совместимость legacy]] (2026-09-30, Phase 1205.1)
 - [[knowledge/decisions/DeGram approved process and company-project rule scope|DeGram: согласованный процесс, классы компании, правила проекта и lessons learned]] (2026-09-30)
 - [[knowledge/decisions/Self-registration is local-profile only, invite-only in multi-user|Self-registration is local-profile only, invite-only in multi-user]] (2026-09-30, D-05 amendment)
@@ -100,8 +102,15 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/DESIGN STATE and VALIDATOR assumed one class per Design State|DESIGN STATE/VALIDATOR: length guard and index-matched ValidStatus assumed one class per Design State (F15/F16)]] (2026-10-05, fixed)
+- [[knowledge/debugging/Reinstate from ValidGraph read null parameters and wrote zeros into sliders|REINSTATE from ValidGraph: null parameters (D-09 silent reader) written as zeros; labels lost (F23–F25)]] (2026-10-05, fixed, install pending)
+- [[knowledge/debugging/CONNECTOR caches an unreachable heartbeat until the token or Go changes|CONNECTOR: cached Unreachable heartbeat survives data-service restart (F14)]] (2026-10-05, open)
+- [[knowledge/debugging/Rule ingest blends a rule invented from a bare Rule_Id into the existing rule|Rule ingest: bare Rule_Id → invented rule MERGEd into existing one; ID/recognition findings (F13, F6/F9–F12)]] (2026-10-05, open)
+- [[knowledge/debugging/Grasshopper Panels can neither be captured as parameters nor safely carry tokens|GH Panels: not capturable by PARAMETER STATE; token via Panel persists in .gh (F7/F17)]] (2026-10-05, open)
+- [[knowledge/debugging/Model Viewer shows a foreign base model and a hard-coded tile property catalogue|Model Viewer: foreign base model, shadow, black preview, camera reset, hard-coded tile props (F18–F22)]] (2026-10-05, open)
 - [[knowledge/debugging/OBJECT STATE index ObjectRefs collide across classes for computed geometry|OBJECT STATE: index ObjectRefs (obj_i) collide across classes for computed geometry]] (2026-10-03, open)
 - [[knowledge/debugging/V2 UI has no Speckle project link form and the setup guide predates v7|V2 UI: no Speckle project link form; setup guide predates v7; stale DG.gha unnoticed]] (2026-10-01, open)
+- [[knowledge/debugging/Windows auth store atomic replace can fail on reader sharing locks|Windows auth store: sharing conflict при atomic replace и bounded retry]] (2026-10-02)
 - [[knowledge/debugging/Typed non-verdicts can become passed at the GH publication boundary|GH wire: Unsupported превращался в passed; raw JSON и межъязыковой admission]] (2026-09-30)
 - [[sessions/2026-09-30 v12 audit and Phase 1205.1 canonical status closure|Сессия: v12 audit и verified closure 1205.1]]
 - [[knowledge/debugging/Blocklist checks over LLM-written Cypher were bypassed three times|Blocklist checks over LLM-written Cypher bypassed three times]] (2026-09-30)
@@ -135,6 +144,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/D-24 report schema had no item dimension, risking misleading pooled metrics|Phase 1204: report_schema_llm.json's providerStrata had no item dimension — pooling 5 different rule-ingest prompts would have produced a substantively misleading near-zero agreement figure]]
 
 ### Patterns
+- [[knowledge/patterns/GSD wave barriers can block independent preparation before external approval|GSD wave barriers: separate draft preparation from late external acceptance]] — Phase1300 verified planning, not runtime acceptance
 - [[Async polling pattern for n8n workflow execution tracking]]
 - [[Cypher MERGE idempotent node creation pattern]]
 - [[Config injection via entrypoint.sh sed replacement]]
@@ -172,8 +182,12 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[sessions/2026-10-04 DeGram automatic context and planning routing|2026-10-04 DeGram: automatic context installed in AGENTS.md/CLAUDE.md/.hermes.md, verified from three cwds]]
 - [[sessions/2026-10-04 Phase 1301 planning gated on context and UI-SPEC|2026-10-04 Phase 1301: planning stopped at gates; discuss → UI-SPEC → plan order chosen]]
 - [[sessions/2026-10-04 DeGram official fork and framework workspace|2026-10-04 DeGram: official Hermes fork, pinned framework workspace, explicit-context blocker]]
+- [[sessions/2026-10-04 DeGram scope revision and first client increment|2026-10-04 DeGram: comparative baseline removed; first isolated read-only web client tested, Desktop integration next]]
+- [[sessions/2026-10-05 v12 hexagonal facade test steps 2-8 and five DG fixes|2026-10-05 v12 hexagonal facade test: steps 2–7 passed (44/44 runs match), step 8 blocked, five DG defects fixed (F15/F16/F23/F24/F25)]]
 - [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup|2026-10-04 v12 hexagonal facade full-cycle test: setup, 8 rules approved, paused at step 2]]
+- [[sessions/2026-10-03 Phase 1300 planning verified|2026-10-03 Phase 1300 planning: 9 plans, 25 tasks, 7 waves; independent check PASSED]]
 - [[sessions/2026-10-03 v13 activation and Phase 1300 context|2026-10-03 v13.0 activation and Phase 1300: 27 owner decisions, Ready for planning]]
+- [[sessions/2026-10-02 v12 override closeout with accepted debt|2026-10-02 v12.0 — reaudit, offline repair и override closeout с принятыми долгами]]
 - [[sessions/_template|Session log template]]
 - [[sessions/2026-09-30 DeGram process approved and bilingual diagrams|2026-09-30 DeGram — согласование процесса и схемы RU/EN]]
 - [[sessions/2026-04-05 Project specification and CLAUDE.md creation|2026-04-05 Spec & CLAUDE.md]]

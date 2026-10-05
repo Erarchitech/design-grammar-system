@@ -27,3 +27,9 @@ In `DG/src/DG.Grasshopper/Components/ObjectStateComponent.cs`, the priority is: 
 3. Prefix the index ref with the class local name (`GlassPanel/obj_3`). This fixes the collision only, not stability.
 
 Related: [[knowledge/decisions/Per-object property binding via PropState.ObjectRef]], [[sessions/2026-10-04 v12 hexagonal facade full-cycle test setup]]
+
+## Observed in the facade test (2026-10-05)
+
+- No wrong colouring in Model Viewer: publish is per run (one rule, one class), and the owner confirmed the highlighting.
+- The collision did bite **inside VALIDATOR**: the ValidStatus mapping could not use `ObjectRef` (GP `obj_0` and HU `obj_0` coexist in one Design State), so F16 was fixed with the binder's source ObjState index. See [[knowledge/debugging/DESIGN STATE and VALIDATOR assumed one class per Design State]].
+- Index identity is not stable across variants: changing `Module Width F1` changes the panel count (125 → 140 → 105) and shifts every index (finding F8).
