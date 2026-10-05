@@ -194,3 +194,9 @@ None beyond the plan's register. T-1301-11-01 (mutating GH commands): allowlist 
 Two leftovers could not be removed because the delete commands were denied by the permission classifier, and they were not worked around:
 1. Eight untracked junk files in the `apps/degram` working-tree root created by the full `tests/tools` run (names start with the literal path `C:\Users\Admin\AppData\Local\Temp\hermes-pytest\...`: `snapshot.sh.tmp.*` and `out.bin`); `git -C apps/degram status --short` lists only these eight entries, all untracked, no tracked change.
 2. The empty metadata directory `.git/modules/degram/worktrees/dgp-t` of the removed pristine comparison worktree (`git worktree list` no longer shows it; the directory itself would not delete: Permission denied).
+
+## Orchestrator follow-up (2026-10-05)
+
+Re-running `tests/degram` after the plan reported one failure, `test_cad_cancel.py::TestDeadlinesAndNoRetry::test_a_gh_read_with_no_answer_for_30_seconds_is_busy` (failed in roughly half of the runs). Cause was in the test, not in `gh_bridge`: the patched clock shifted by 31 s only once the fake had recorded a request, so a second read inside the same preview started from the shifted clock (`gh_bridge.py` deadline = clock + 30 s) and really waited 30 s. Fixed in component commit `7fdb4aae` (each clock read advances 31 s). Verified: 12/12 solo passes at about 2 s each; `test_cad_cancel.py` 25 passed.
+
+Open housekeeping: eight untracked pytest artifacts in the `apps/degram` root (names start with a mangled `C:\Users\Admin\AppData\Local\Temp\hermes-pytest\...` path) and an undeletable empty directory `.git/modules/degram/worktrees/dgp-t` left from the pristine comparison worktree (git reports "Permission denied" when pruning it). Not removed by the orchestrator.
