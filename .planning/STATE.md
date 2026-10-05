@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 12
+current_plan: 13
 status: executing
-stopped_at: Completed 1301-12-PLAN.md
-last_updated: "2026-10-05T13:08:55.727Z"
+stopped_at: Completed 1301-13-PLAN.md
+last_updated: "2026-10-05T14:56:46.237Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 16
+  completed_plans: 17
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 12
+Current Plan: 13
 Total Plans in Phase: 16
-Plan: 12 of 16
+Plan: 13 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -173,6 +173,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P10 | ~1h | 3 tasks | 31 files |
 | Phase 1301 P11 | ~3h | 3 tasks | 28 files |
 | Phase 1301 P12 | 45min | 3 tasks | 22 files |
+| Phase 1301 P13 | two sessions (~3h) | 2 tasks | 60 files |
 
 ## Accumulated Context
 
@@ -508,6 +509,9 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-11: client-side limits 200 objects / 50 parameters per object / 256 KiB with disclosed truncation; the preview payload text is embedded unchanged in the sent message (byte-identity tested through a real agent turn)
 - [Phase ?]: 1301-11: Revit tool allowlist fixed to mcp__revit__* (plan 10 used mcp_revit_*, which MCP never registers); DG_UNAVAILABLE and ACCESS_DENIED added to the closed operational vocabulary
 - [Phase ?]: 1301-11: relay error bodies are terminal named outcomes (one request, unmask probe off, code leads the error text); stock transport retry ladder still applies to unnamed connection failures (residual for plan 15)
+- [Phase ?]: 1301-13: degram preset font stacks are literal ('Geist', system sans tail), not var(--dt-font-sans) - a theme's typography sets that variable, so referencing it is a cycle; Geist Sans has no Cyrillic subset so Cyrillic uses Segoe UI
+- [Phase ?]: 1301-13: hidden upstream surfaces are gated at each entry point through hidden-surfaces.ts (isSurfaceHidden), pinned by a source-audit test because the upstream shell cannot render offline; profile switcher/rail and shared-metrics consent left open for plan 15
+- [Phase ?]: 1301-13: setDgMode also shows the DG page when a revocation blanked the view (electron ipc.ts); DG view bounds are withheld until the page painted
 
 ### Research Flags (carry into planning)
 
@@ -602,8 +606,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T13:08:55.705Z
-Stopped at: Completed 1301-12-PLAN.md
+Last session: 2026-10-05T14:56:46.217Z
+Stopped at: Completed 1301-13-PLAN.md
 Resume file: None
 
 ## Performance Metrics
