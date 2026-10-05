@@ -20,7 +20,7 @@ import auth  # noqa: E402
 
 
 # --------------------------------------------------------------------------
-# CR-01: /validation/view must not leak a server-wide / write Speckle token
+# CR-01 / D-21: /validation/view must not leak a server-wide / write Speckle token
 # --------------------------------------------------------------------------
 
 _RUN = {
@@ -49,22 +49,27 @@ class TestCr01SpeckleReadToken:
         assert settings.write_token == "write-secret-token"
         assert settings.read_token == ""
 
-    def test_view_payload_omits_token_for_user_when_only_write_token_set(self, speckle_env):
+    def test_view_payload_never_carries_a_speckle_credential(self, speckle_env, monkeypatch):
+        # Phase 1301-09 (D-21) supersedes the 1205 CR-01 "token for a user only" rule:
+        # no principal kind, and no configuration, puts a Speckle token in the payload.
+        monkeypatch.setenv("SPECKLE_READ_TOKEN", "read-only-token")
+        principals = [
+            auth.Principal(kind="user", username="v@dg.local"),
+            auth.Principal(kind="connector", bound_project="p", credential_id="c1"),
+            auth.Principal(kind="delegated", username="v@dg.local", bound_project="p"),
+            None,
+        ]
+        for principal in principals:
+            payload = app_module.build_view_payload("p", _RUN, {}, principal=principal)
+            assert "readToken" not in payload and "speckleBaseUrl" not in payload
+            assert "read-only-token" not in repr(payload)
+            assert "write-secret-token" not in repr(payload)
+
+    def test_view_payload_has_no_resources_when_only_a_write_token_is_set(self, speckle_env):
         user = auth.Principal(kind="user", username="v@dg.local")
         payload = app_module.build_view_payload("p", _RUN, {}, principal=user)
-        assert payload["readToken"] is None
+        assert payload["viewerResources"] == []
         assert "write-secret-token" not in repr(payload)
-
-    def test_view_payload_gives_read_token_to_user_only(self, speckle_env, monkeypatch):
-        monkeypatch.setenv("SPECKLE_READ_TOKEN", "read-only-token")
-        user = auth.Principal(kind="user", username="v@dg.local")
-        connector = auth.Principal(kind="connector", bound_project="p", credential_id="c1")
-        assert app_module.build_view_payload("p", _RUN, {}, principal=user)["readToken"] == "read-only-token"
-        assert app_module.build_view_payload("p", _RUN, {}, principal=connector)["readToken"] is None
-
-    def test_view_payload_fails_closed_without_principal(self, speckle_env, monkeypatch):
-        monkeypatch.setenv("SPECKLE_READ_TOKEN", "read-only-token")
-        assert app_module.build_view_payload("p", _RUN, {})["readToken"] is None
 
 
 # --------------------------------------------------------------------------

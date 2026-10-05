@@ -200,6 +200,22 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/validation/view/{project}/{run_id}/{rule_id}"): _p(
         _MEM, _CON, source="path", role="viewer"
     ),
+    # ── Speckle geometry proxy (Phase 1301-09, D-21) ──
+    # Member (viewer) or the delegated principal for the path project; connector and
+    # service tokens are refused. The handler additionally requires the requested
+    # Speckle project to equal the one bound to the path project.
+    ("GET", "/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}"): _p(
+        _MEM, _DEL, source="path", role="viewer"
+    ),
+    ("GET", "/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}/single"): _p(
+        _MEM, _DEL, source="path", role="viewer"
+    ),
+    ("POST", "/speckle-proxy/{project}/api/getobjects/{speckle_project_id}"): _p(
+        _MEM, _DEL, source="path", role="viewer"
+    ),
+    ("POST", "/speckle-proxy/{project}/api/v2/projects/{speckle_project_id}/object-stream/"): _p(
+        _MEM, _DEL, source="path", role="viewer"
+    ),
     # ── n8n relay + execution results ──
     ("POST", "/mcp"): _p(_SVC),
     ("POST", "/execution-result"): _p(_SVC),

@@ -50,9 +50,22 @@ Base URL: `/data-service` (via nginx proxy)
 | POST | `/validation/publish` | `{project, rules: [...], ruleResults: [...], entities: [...], evidenceContractVersion?: "2.0.0", ...}` | Publish validation to Speckle + store metadata; versioned canonical evidence below |
 | GET | `/validation/runs/{project}` | — | List all validation runs for project |
 | DELETE | `/validation/run/{project}/{run_id}` | — | Delete a validation run |
-| GET | `/validation/view/{project}` | — | Latest validation manifest |
+| GET | `/validation/view/{project}` | — | Latest validation manifest. Carries `viewerResources` (DG-proxy object URLs, below) and never a Speckle token, a `readToken` key or `speckleBaseUrl` (Phase 1301-09, D-21) |
 | GET | `/validation/view/{project}/{run_id}` | — | Specific run manifest |
 | GET | `/validation/view/{project}/{run_id}/{rule_id}` | — | Rule-filtered entity sets |
+
+#### Speckle geometry proxy (Phase 1301-09, D-21)
+
+The Model Viewer loads geometry through DG instead of holding a Speckle credential. The view payload field `viewerResources` is a list of concrete object URLs such as `/data-service/speckle-proxy/{project}/objects/{speckleProjectId}/{objectId}` (empty with `viewerResourcesError` set to `SPECKLE_NOT_CONFIGURED`, `SPECKLE_PROJECT_UNBOUND`, `SPECKLE_PROJECT_FORBIDDEN` or `SPECKLE_UPSTREAM_ERROR` when the server cannot resolve them). The server holds the Speckle read token and attaches it upstream; it is never returned.
+
+| Method | Path | Principal | Description |
+|--------|------|-----------|-------------|
+| GET | `/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}` | viewer or delegated | Stream one Speckle object (`object_id` is a 32-character lowercase hash) |
+| GET | `/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}/single` | viewer or delegated | Root-object form used by the Speckle viewer loader |
+| POST | `/speckle-proxy/{project}/api/getobjects/{speckle_project_id}` | viewer or delegated | Legacy batch fetch: `{objects: "<json array of ids>"}` or `{objectIds: [...]}` |
+| POST | `/speckle-proxy/{project}/api/v2/projects/{speckle_project_id}/object-stream/` | viewer or delegated | Batch fetch used by the viewer loader: `{objectIds: [...], attributeMask?: {...}}` |
+
+Only objects of the Speckle project bound to `{project}` are served. Errors use the `{error, hint, code}` shape: 404 `SPECKLE_PROJECT_UNBOUND` (no binding); 403 `SPECKLE_PROJECT_FORBIDDEN` (another Speckle project, answered without contacting Speckle); 422 `SPECKLE_OBJECT_ID_INVALID`; 413 `SPECKLE_BODY_TOO_LARGE`; 503 `SPECKLE_NOT_CONFIGURED`; 502 `SPECKLE_UPSTREAM_ERROR` (any upstream failure; the upstream body is not echoed). Connector and service tokens answer 403 `PRINCIPAL_NOT_PERMITTED`.
 
 #### Canonical evidence on existing publish/view routes (Phase 1205.1)
 
@@ -475,7 +488,7 @@ The full contract, including the complete route-policy table, is `spec/SECURITY-
 | User session | `dg_session` cookie (HttpOnly, SameSite=Strict) plus `X-DG-CSRF: 1` on every `POST`/`PUT`/`PATCH`/`DELETE` | The V2 UI. Roles per project: `viewer`, `editor`, `owner`; an admin acts as owner everywhere |
 | Connector token | `Authorization: Bearer dgc_...`, bound to one project | Grasshopper: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, plus `POST /connectors/heartbeat` and `POST /designstate/capture` |
 | Service token | `X-DG-Service-Token` | n8n only: `/llm/generate`, `/context/*`, `/mcp`, `POST /execution-result` |
-| Delegated token (Phase 1301) | `Authorization: Bearer dgd_...`, bound to one project and the user's session, 15-minute lifetime; exempt from `X-DG-CSRF` | The local DeGram agent: `GET /graph/{project}`, `GET /rules/{project}`, `POST /degram/v1/chat/completions`, `DELETE /auth/delegated-token` |
+| Delegated token (Phase 1301) | `Authorization: Bearer dgd_...`, bound to one project and the user's session, 15-minute lifetime; exempt from `X-DG-CSRF` | The local DeGram agent: `GET /graph/{project}`, `GET /rules/{project}`, `POST /degram/v1/chat/completions`, the four `/speckle-proxy/{project}/...` geometry routes, `DELETE /auth/delegated-token` |
 
 Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POST /connectors/heartbeat` (validates its own connector token).
 

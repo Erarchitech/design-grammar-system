@@ -205,7 +205,28 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        assert len(route_policy.ROUTE_POLICIES) == 92
+        assert len(route_policy.ROUTE_POLICIES) == 96
+
+    def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
+        # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the
+        # delegated principal for the path project; never a connector, service or
+        # session-only caller, and never without a path project.
+        rows = {k: p for k, p in route_policy.ROUTE_POLICIES.items() if k[1].startswith("/speckle-proxy/")}
+        assert {k[0] for k in rows} == {"GET", "POST"}
+        assert len(rows) == 4
+        for key, policy in rows.items():
+            assert policy.principals == {
+                route_policy.PRINCIPAL_MEMBER,
+                route_policy.PRINCIPAL_DELEGATED,
+            }, key
+            assert policy.project_source == "path" and policy.min_role == "viewer", key
+
+    def test_view_payload_routes_stay_member_and_connector_only(self):
+        # The view payload is token-free now, but the delegated principal still has no
+        # reason to read validation manifests: scope is unchanged.
+        for suffix in ("", "/{run_id}", "/{run_id}/{rule_id}"):
+            policy = route_policy.ROUTE_POLICIES[("GET", f"/validation/view/{{project}}{suffix}")]
+            assert route_policy.PRINCIPAL_DELEGATED not in policy.principals
 
     def test_removed_routes_are_gone(self):
         paths = {k[1] for k in _registered_keys()}

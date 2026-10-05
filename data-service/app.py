@@ -71,6 +71,7 @@ import company
 import degram_policy
 import degram_relay
 import delegation
+import speckle_proxy
 import route_policy
 import secrets_policy
 
@@ -1287,18 +1288,24 @@ def build_view_payload(
 ) -> dict[str, Any]:
     settings = get_speckle_settings()
     rules = json.loads(run["rulesJson"]) if run.get("rulesJson") else []
-    # CR-01 (1205 review): the Speckle read token is one credential for the
-    # whole Speckle server. It is released only to interactive user (and
-    # service) callers, never to connector principals, and never when the
-    # caller is unknown (fail closed).
-    principal_kind = getattr(principal, "kind", None)
-    read_token = settings.read_token if principal_kind in ("user", "service") and settings.read_token else None
-    return {
+    # D-21 (Phase 1301-09): the Speckle read token is one credential for the whole
+    # Speckle server and no longer leaves the server in any form -- not for a user,
+    # not for a connector, not for the embedded DeGram view. The viewer receives
+    # concrete object URLs that already point at the project-authorised
+    # /speckle-proxy routes. Resolution runs only for interactive callers (the only
+    # principals the proxy admits) and fails closed for an unknown caller.
+    viewer_resources: list[str] = []
+    viewer_resources_error: str | None = None
+    if getattr(principal, "kind", None) in ("user", "delegated"):
+        bound = _bound_speckle_project_id(project) if settings.read_token else None
+        viewer_resources, viewer_resources_error = speckle_proxy.resolve_view_resources(
+            project, run, settings, bound
+        )
+    payload = {
         "project": project,
         "runId": run["runId"],
         "selectedRuleId": rule_id,
-        "speckleBaseUrl": settings.base_url,
-        "readToken": read_token,
+        "viewerResources": viewer_resources,
         "baseProjectId": run["speckleProjectId"],
         "baseModelId": run["baseModelId"],
         "baseVersionId": run["baseVersionId"],
@@ -1315,6 +1322,21 @@ def build_view_payload(
         "canonicalStateHash": _compute_canonical_state_hash(run.get("statePayloadJson")),
         "canonicalizationVersion": canonical_json.CANONICALIZATION_VERSION if run.get("statePayloadJson") else None,
     }
+    if viewer_resources_error:
+        payload["viewerResourcesError"] = viewer_resources_error
+    return payload
+
+
+def _bound_speckle_project_id(project: str) -> str | None:
+    """The Speckle project bound to a DG project (its IntegrationConfig), or None.
+    A lookup failure answers None: the proxy then fails closed as unbound."""
+    try:
+        config = get_integration_config(project)
+    except Exception:  # noqa: BLE001 -- Neo4j down must not turn into an open proxy
+        logging.getLogger(__name__).warning("speckle binding lookup failed for a project")
+        return None
+    speckle_project_id = (config.speckleProjectId if config else "") or ""
+    return speckle_project_id.strip() or None
 
 
 def validate_ingest_path(user_path: str) -> FilePath:
@@ -3213,6 +3235,62 @@ def get_rule_validation_view(project: str, run_id: str, rule_id: str, request: R
 
     object_sets = get_validation_entity_sets(project, run_id, rule_id)
     return build_view_payload(project, run, object_sets, rule_id=rule_id, principal=request.state.principal)
+
+
+# -- Speckle geometry proxy (Phase 1301-09, D-21, DGCL-03) -----------------------
+#
+# The Model Viewer loads geometry through these routes instead of holding a Speckle
+# token. Policy: member (viewer) or the delegated principal for the path project.
+# The two object loader shapes of @speckle/objectloader2 2.31 are the first and
+# fourth routes below; the legacy /objects/{p}/{o} and /api/getobjects/{p} shapes are
+# served by the same handlers.
+
+
+@router.get("/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}")
+async def speckle_proxy_object(project: str, speckle_project_id: str, object_id: str):
+    return await speckle_proxy.proxy_objects(
+        kind=speckle_proxy.KIND_OBJECT,
+        speckle_project_id=speckle_project_id,
+        object_id=object_id,
+        bound_project_id=await run_in_threadpool(_bound_speckle_project_id, project),
+        settings=get_speckle_settings(),
+    )
+
+
+@router.get("/speckle-proxy/{project}/objects/{speckle_project_id}/{object_id}/single")
+async def speckle_proxy_object_single(project: str, speckle_project_id: str, object_id: str):
+    return await speckle_proxy.proxy_objects(
+        kind=speckle_proxy.KIND_SINGLE,
+        speckle_project_id=speckle_project_id,
+        object_id=object_id,
+        bound_project_id=await run_in_threadpool(_bound_speckle_project_id, project),
+        settings=get_speckle_settings(),
+    )
+
+
+async def _speckle_proxy_post(kind: str, project: str, speckle_project_id: str, request: Request):
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > speckle_proxy.MAX_BODY_BYTES:
+        raise speckle_proxy.proxy_error(
+            413, speckle_proxy.ERR_TOO_LARGE, "The request body is too large.", "Request fewer objects at a time."
+        )
+    return await speckle_proxy.proxy_objects(
+        kind=kind,
+        speckle_project_id=speckle_project_id,
+        body=await request.body(),
+        bound_project_id=await run_in_threadpool(_bound_speckle_project_id, project),
+        settings=get_speckle_settings(),
+    )
+
+
+@router.post("/speckle-proxy/{project}/api/getobjects/{speckle_project_id}")
+async def speckle_proxy_getobjects(project: str, speckle_project_id: str, request: Request):
+    return await _speckle_proxy_post(speckle_proxy.KIND_GETOBJECTS, project, speckle_project_id, request)
+
+
+@router.post("/speckle-proxy/{project}/api/v2/projects/{speckle_project_id}/object-stream/")
+async def speckle_proxy_object_stream(project: str, speckle_project_id: str, request: Request):
+    return await _speckle_proxy_post(speckle_proxy.KIND_STREAM, project, speckle_project_id, request)
 
 
 @router.post("/mcp")

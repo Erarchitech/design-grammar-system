@@ -32,7 +32,7 @@ def test_release_evidence_exact_bytes(wire_harness, captured_graph, monkeypatch,
 
     def view_get(*args, **kwargs):
         response = real_get(*args, **kwargs)
-        assert response.json()["readToken"] is None
+        assert "readToken" not in response.json()  # D-21: no Speckle credential in the view payload
         blobs["view-response.json"] = response.content
         return response
 
