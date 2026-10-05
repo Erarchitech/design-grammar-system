@@ -104,4 +104,90 @@ public class CanvasDocumentIdentityTests
         using var doc = JsonDocument.Parse(line);
         Assert.Equal("UNKNOWN_COMMAND", doc.RootElement.GetProperty("error").GetProperty("code").GetString());
     }
+
+    // --- Task 2: bounded UI-thread wait -> BUSY ---
+
+    [Fact]
+    public void Protocol_Exposes_Busy_Code_And_Ten_Second_Ui_Timeout()
+    {
+        Assert.Equal("BUSY", CanvasBridgeProtocol.ErrorCodeBusy);
+        Assert.Equal(10000, CanvasBridgeProtocol.CanvasUiTimeoutMs);
+    }
+
+    [Fact]
+    public void BuildError_Busy_Yields_Error_Envelope_With_Busy_Code()
+    {
+        var line = CanvasBridgeProtocol.BuildError("Canvas UI thread is busy.", CanvasBridgeProtocol.ErrorCodeBusy);
+
+        using var doc = JsonDocument.Parse(line);
+        var root = doc.RootElement;
+
+        Assert.Equal("error", root.GetProperty("status").GetString());
+        Assert.Equal("BUSY", root.GetProperty("error").GetProperty("code").GetString());
+        Assert.Equal("Canvas UI thread is busy.", root.GetProperty("error").GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public void Await_NeverCompletingTask_Throws_CanvasBusyException_After_Timeout()
+    {
+        var never = new TaskCompletionSource<object?>();
+
+        var ex = Assert.Throws<CanvasBusyException>(() => CanvasUiWait.Await(never.Task, 50));
+
+        Assert.Contains("busy", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Await_CompletedTask_Returns_Result()
+    {
+        var done = new TaskCompletionSource<object?>();
+        done.SetResult("hello");
+
+        Assert.Equal("hello", CanvasUiWait.Await(done.Task, 1000));
+    }
+
+    [Fact]
+    public void Await_FaultedTask_Rethrows_Original_Exception_Not_Busy()
+    {
+        var faulted = new TaskCompletionSource<object?>();
+        faulted.SetException(new InvalidOperationException("boom"));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => CanvasUiWait.Await(faulted.Task, 1000));
+
+        Assert.Equal("boom", ex.Message);
+    }
+
+    [Fact]
+    public void Dispatcher_Handler_Waiting_On_Stuck_Ui_Task_Returns_Busy_Envelope()
+    {
+        var never = new TaskCompletionSource<object?>();
+        var handlers = new Dictionary<string, Func<CanvasCommandRequest, object?>>
+        {
+            [CanvasBridgeCommands.GetDocumentIdentity] = _ => CanvasUiWait.Await(never.Task, 50),
+        };
+        var dispatcher = new CanvasCommandDispatcher(handlers);
+
+        var line = dispatcher.Dispatch("{\"type\":\"get_document_identity\",\"parameters\":{}}");
+
+        using var doc = JsonDocument.Parse(line);
+        var root = doc.RootElement;
+
+        Assert.Equal("error", root.GetProperty("status").GetString());
+        Assert.Equal("BUSY", root.GetProperty("error").GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public void Dispatcher_Handler_Exception_Is_Still_HANDLER_ERROR()
+    {
+        var handlers = new Dictionary<string, Func<CanvasCommandRequest, object?>>
+        {
+            [CanvasBridgeCommands.GetSelection] = _ => throw new InvalidOperationException("nope"),
+        };
+        var dispatcher = new CanvasCommandDispatcher(handlers);
+
+        var line = dispatcher.Dispatch("{\"type\":\"get_selection\",\"parameters\":{}}");
+
+        using var doc = JsonDocument.Parse(line);
+        Assert.Equal("HANDLER_ERROR", doc.RootElement.GetProperty("error").GetProperty("code").GetString());
+    }
 }

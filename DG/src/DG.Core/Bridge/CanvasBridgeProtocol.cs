@@ -18,6 +18,12 @@ public static class CanvasBridgeProtocol
     public const string BridgeName = "dg";
     public const int Version = 1;
 
+    /// <summary>Error code returned when the Rhino UI thread does not answer in time (Phase 1301 D-18).</summary>
+    public const string ErrorCodeBusy = "BUSY";
+
+    /// <summary>Upper bound, in ms, a bridge handler waits on the UI thread before reporting BUSY.</summary>
+    public const int CanvasUiTimeoutMs = 10000;
+
     /// <summary>Guard against unbounded memory use from a malformed/oversized request line.</summary>
     public const int MaxRequestBytes = 5 * 1024 * 1024;
 

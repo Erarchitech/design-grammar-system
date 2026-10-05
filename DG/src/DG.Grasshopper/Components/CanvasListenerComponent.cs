@@ -218,6 +218,9 @@ public sealed class CanvasListenerComponent : GH_Component
     /// Runs <paramref name="work"/> on Rhino's UI thread and blocks the calling
     /// (background) thread until it completes. The socket write must NEVER happen
     /// inside this delegate -- only canvas reads (33-RESEARCH.md Pitfall 1).
+    /// The wait is bounded by <see cref="CanvasBridgeProtocol.CanvasUiTimeoutMs"/>: on expiry
+    /// <see cref="CanvasUiWait.Await{T}"/> throws <see cref="CanvasBusyException"/>, which the
+    /// dispatcher reports as a BUSY error envelope instead of hanging the accept loop (D-18).
     /// </summary>
     private static object? InvokeOnCanvas(Func<object?> work)
     {
@@ -235,7 +238,7 @@ public sealed class CanvasListenerComponent : GH_Component
             }
         }));
 
-        return tcs.Task.GetAwaiter().GetResult();
+        return CanvasUiWait.Await(tcs.Task);
     }
 
     /// <summary>
@@ -252,6 +255,8 @@ public sealed class CanvasListenerComponent : GH_Component
     /// active canvas) resolves to a structured "no document" result instead of invoking
     /// <paramref name="work"/> with null; any exception raised by <paramref name="work"/>
     /// itself is captured on the task, mirroring <see cref="InvokeOnCanvas"/>.
+    /// A timeout reports BUSY without retry; the UI delegate is not cancelled and may still
+    /// run later, so a client must re-read state before assuming the write did not happen.
     /// </summary>
     private object? InvokeOnCanvasWrite(Func<GH_Document, object?> work)
     {
@@ -278,7 +283,7 @@ public sealed class CanvasListenerComponent : GH_Component
             }
         }));
 
-        return tcs.Task.GetAwaiter().GetResult();
+        return CanvasUiWait.Await(tcs.Task);
     }
 
     private object? HandleGetPreviewStatus(CanvasCommandRequest request)

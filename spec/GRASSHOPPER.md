@@ -99,3 +99,42 @@ Every Grasshopper call to data-service is authenticated with a project-bound con
 - The **VALIDATOR** and **COMPUTGRAPH PUBLISH** components have a `Token` input. It takes the same `dgc_` token that the **CONNECTOR** component uses. The token is a runtime input and is not saved into the `.gh` file; re-supply it when the canvas is reopened.
 - A token works only for its bound project and only on the connector-scoped routes: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, `POST /connectors/heartbeat` and `POST /designstate/capture`. Any other route answers 403.
 - The direct-Bolt components (`Neo4j*Repository` based, connecting to `bolt://localhost:7687`) are a trusted-local boundary in the `local` profile and are **unsupported in `multi-user`**: Bolt is not published and the heartbeat withholds the Neo4j bundle. Use the data-service API instead.
+
+## Canvas bridge
+
+The **DG CANVAS LISTENER** component hosts the canvas bridge: a raw TCP socket, UTF-8, one JSON object per line (newline-terminated, no BOM), bound to `127.0.0.1:8720` only (`IPAddress.Loopback`; the port is a component input). Wire format lives in `DG.Core.Bridge.CanvasBridgeProtocol`.
+
+Request: `{"type":"<command>","parameters":{...}}`. Response, always single-line, always carrying `bridge:"dg"`, `version:1`:
+
+- success: `{"bridge":"dg","version":1,"status":"ok","result":<payload>}`
+- error: `{"bridge":"dg","version":1,"status":"error","error":{"message":"...","code":"..."}}`
+
+### Commands
+
+| Command | Kind | Result |
+|---------|------|--------|
+| `get_canvas_context` | read | DG serializer output of the served document (optional `project` parameter) |
+| `get_selection` | read | `{selection: [<instanceGuid>, ...]}` |
+| `get_preview_status` | read | pending preview proposals |
+| `get_document_identity` | read | `{documentId, filePath, displayName, isModified, capturedAt}`; `filePath` is `null` for an unsaved document (Phase 1301 D-13) |
+| `preview_structure` | **mutating** | draws proposal groups on the canvas in one undo record |
+| `clear_preview` | **mutating** | removes the preview objects |
+
+The read commands are listed in `CanvasBridgeCommands.ReadCommands`; they never modify the document. `get_document_identity` is strictly read-only: it reads `DocumentID`, `FilePath`, `DisplayName` and `IsModified` of the document the listener serves on the UI thread, nothing else. A client that wants to pin a document stores `documentId` (and `filePath`) and re-issues `get_document_identity` later to confirm it is the same document.
+
+**DeGram sends read commands only** (D-15: no server routing; the DeGram GH adapter allowlists `ReadCommands`). Mutating commands exist for the DG UI/MCP preview flow and are out of scope for DeGram until the phase 1305 write path.
+
+### Error codes
+
+| Code | Meaning |
+|------|---------|
+| `BAD_REQUEST` | the line is not a parseable request (malformed, oversized over 5 MB, no `type`) |
+| `UNKNOWN_COMMAND` | `type` is not in the dispatcher's explicit allow-list |
+| `HANDLER_ERROR` | the handler threw (for example, no active document) |
+| `BUSY` | the Rhino UI thread did not answer within `CanvasBridgeProtocol.CanvasUiTimeoutMs` (10000 ms) |
+
+**BUSY (Phase 1301 D-18, DGCL-06).** Canvas work is marshalled to Rhino's UI thread. The wait is bounded; if it does not complete in 10 s (modal dialog, long solution), the client receives `status:"error"`, `code:"BUSY"` instead of the listener blocking indefinitely. BUSY is a diagnosable "try again later", not a failure of the document. The timed-out UI delegate is not cancelled and is never retried by the listener; for a read this is harmless, and a client that hit BUSY on a mutating command must re-read state before assuming the write did not happen.
+
+### Trust boundary
+
+No authentication: the socket is reachable by any local process of the same machine (loopback only, never a published port). One client is served at a time (serial accept loop), so a stuck request delays the next one by at most the BUSY timeout. The `filePath` returned by `get_document_identity` is visible to any local process, which is the same exposure as the existing canvas context. Residual risk: a local process can call the mutating preview commands; revisit together with the phase 1305 write path. See `spec/SECURITY-BOUNDARY.md` for the trust zones.

@@ -40,6 +40,10 @@ public sealed class CanvasCommandDispatcher
             var result = handler(request);
             return CanvasBridgeProtocol.BuildOk(result);
         }
+        catch (CanvasBusyException ex)
+        {
+            return CanvasBridgeProtocol.BuildError(ex.Message, CanvasBridgeProtocol.ErrorCodeBusy);
+        }
         catch (Exception ex)
         {
             return CanvasBridgeProtocol.BuildError(ex.Message, "HANDLER_ERROR");
