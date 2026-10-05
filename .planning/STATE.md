@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 6
+current_plan: 7
 status: executing
-stopped_at: Completed 1301-04-PLAN.md
-last_updated: "2026-10-05T08:19:46.245Z"
+stopped_at: Completed 1301-07-PLAN.md
+last_updated: "2026-10-05T08:33:06.670Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 6
+Current Plan: 7
 Total Plans in Phase: 16
-Plan: 6 of 16
+Plan: 7 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -167,6 +167,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P05 | 55min | 2 tasks | 15 files |
 | Phase 1301 P06 | 25 min | 2 tasks | 9 files |
 | Phase 1301 P04 | 75min | 2 tasks | 21 files |
+| Phase 1301 P07 | 45 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -489,6 +490,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [1301-06] BUSY raised as CanvasBusyException from GH-independent CanvasUiWait and mapped in CanvasCommandDispatcher; timed-out UI delegate not cancelled or retried
 - [Phase ?]: [Phase 1301-04] DeGram boot fails closed on home overlap (app.exit + diagnostic, no fallback home); shared resolvers take fixedHome/fixedUserData from isolation.ts
 - [Phase ?]: [Phase 1301-04] NSIS format is not admitted by the prepared-packaging pipeline (run-electron-builder/prepare-packaging-tools); plan 15 must extend admission and acquire the NSIS toolset
+- [Phase ?]: 1301-07: Route allowlist enforced as (method, pattern) pairs via ReadOnlyApi proxy because upstream route modules mix read and write routes; loopback refusal is SETUP_INCOMPLETE/ROUTES_NOT_LOOPBACK
 
 ### Research Flags (carry into planning)
 
@@ -583,8 +585,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T08:19:46.224Z
-Stopped at: Completed 1301-04-PLAN.md
+Last session: 2026-10-05T08:33:06.650Z
+Stopped at: Completed 1301-07-PLAN.md
 Resume file: None
 
 ## Performance Metrics
