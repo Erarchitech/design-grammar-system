@@ -119,7 +119,14 @@ BRIDGE_OUTCOMES = frozenset(
 )
 # Reported by the local agent (plans 1301-10, 1301-11).
 AGENT_OUTCOMES = frozenset(
-    {"CREDENTIALS_MISSING", "CREDENTIALS_EXPIRED", "DEGRAM_LOCKED", "SCOPE_NOT_SUPPORTED"}
+    {
+        "CREDENTIALS_MISSING",
+        "CREDENTIALS_EXPIRED",
+        "DEGRAM_LOCKED",
+        "SCOPE_NOT_SUPPORTED",
+        "DG_UNAVAILABLE",
+        "ACCESS_DENIED",
+    }
 )
 # The closed operational vocabulary. It is disjoint from the eight canonical
 # evaluator statuses (spec/evidence-contract.schema.json CanonicalStatus), which

@@ -55,6 +55,8 @@ Source: the local DeGram agent.
 | `CREDENTIALS_EXPIRED` | The held delegated token is past its expiry; refused before any request |
 | `DEGRAM_LOCKED` | An attempt to select a model/provider or change locked configuration was refused |
 | `SCOPE_NOT_SUPPORTED` | The requested context scope is not available for the host (whole definition for Revit) |
+| `DG_UNAVAILABLE` | The agent could not read the DG graph or rules of its project: backend unreachable, timeout, 5xx, oversized or malformed answer; the `reason` field says which |
+| `ACCESS_DENIED` | The DG backend refused the delegated token or the project scope (HTTP 401/403) on a read |
 
 ## Machine-checked vocabulary
 
@@ -62,6 +64,7 @@ One code per line. The set must equal `degram_relay.OPERATIONAL_OUTCOMES` exactl
 
 <!-- degram-outcomes:codes:start -->
 ```
+ACCESS_DENIED
 BRIDGE_OFF
 BUSY
 CANCELLED
@@ -70,6 +73,7 @@ CONSENT_REQUIRED
 CREDENTIALS_EXPIRED
 CREDENTIALS_MISSING
 DEGRAM_LOCKED
+DG_UNAVAILABLE
 DOCUMENT_NOT_OPEN
 EXTENSION_NOT_LOADED
 IDENTITY_MISMATCH
