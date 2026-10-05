@@ -14,6 +14,11 @@ public static class CanvasBridgeCommands
     public const string ClearPreview = "clear_preview";
     public const string GetPreviewStatus = "get_preview_status";
 
+    /// <summary>
+    /// Phase 1301 D-13: read-only identity of the GH document the listener serves.
+    /// </summary>
+    public const string GetDocumentIdentity = "get_document_identity";
+
     public static IReadOnlyList<string> All { get; } = new[]
     {
         GetCanvasContext,
@@ -21,6 +26,21 @@ public static class CanvasBridgeCommands
         PreviewStructure,
         ClearPreview,
         GetPreviewStatus,
+        GetDocumentIdentity,
+    };
+
+    /// <summary>
+    /// The read-only commands: they never mutate the canvas. This is the
+    /// allowlist a DeGram client uses (Phase 1301 D-15: it sends read commands
+    /// only); <see cref="PreviewStructure"/> and <see cref="ClearPreview"/> are
+    /// mutating and deliberately absent.
+    /// </summary>
+    public static IReadOnlyList<string> ReadCommands { get; } = new[]
+    {
+        GetCanvasContext,
+        GetSelection,
+        GetPreviewStatus,
+        GetDocumentIdentity,
     };
 
     /// <summary>

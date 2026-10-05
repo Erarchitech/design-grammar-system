@@ -144,6 +144,7 @@ public sealed class CanvasListenerComponent : GH_Component
         {
             [CanvasBridgeCommands.GetCanvasContext] = HandleGetCanvasContext,
             [CanvasBridgeCommands.GetSelection] = HandleGetSelection,
+            [CanvasBridgeCommands.GetDocumentIdentity] = HandleGetDocumentIdentity,
             [CanvasBridgeCommands.PreviewStructure] = HandlePreviewStructure,
             [CanvasBridgeCommands.ClearPreview] = HandleClearPreview,
             [CanvasBridgeCommands.GetPreviewStatus] = HandleGetPreviewStatus,
@@ -165,6 +166,31 @@ public sealed class CanvasListenerComponent : GH_Component
     private object? HandleGetSelection(CanvasCommandRequest request)
     {
         return InvokeOnCanvas(() => (object?)new { selection = ReadSelectedGuids() });
+    }
+
+    /// <summary>
+    /// Read-only (Phase 1301 D-13): identity of the GH document this listener serves.
+    /// FilePath is null for an unsaved document. Runs on the UI thread via
+    /// <see cref="InvokeOnCanvas"/>; mutates nothing.
+    /// </summary>
+    private object? HandleGetDocumentIdentity(CanvasCommandRequest request)
+    {
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument();
+            if (doc is null)
+            {
+                throw new InvalidOperationException("No active document.");
+            }
+
+            var path = doc.FilePath;
+            return (object?)new CanvasDocumentIdentity(
+                doc.DocumentID.ToString(),
+                string.IsNullOrWhiteSpace(path) ? null : path,
+                doc.DisplayName,
+                doc.IsModified,
+                DateTimeOffset.UtcNow);
+        });
     }
 
     private List<string> ReadSelectedGuids()
