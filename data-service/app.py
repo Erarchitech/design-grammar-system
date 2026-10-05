@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Path, Relationship
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StrictBool, model_validator
 
 from speckle_validation import (
     SpeckleConnectionSettings,
@@ -68,6 +68,7 @@ from connectors import (
 import auth
 import auth_routes
 import company
+import degram_policy
 import degram_relay
 import delegation
 import route_policy
@@ -4617,6 +4618,51 @@ def set_project_company(project: str, payload: ProjectCompanyRequest):
         # (they are also refused by their own live company check).
         delegation.revoke_for_project(project)
     return {"project": project, "company": record["company"]}
+
+
+class DegramPolicyRequest(BaseModel):
+    providerExportAllowed: StrictBool | None = None
+    wholeDefinitionAllowed: StrictBool | None = None
+
+
+def _check_project_name(project: str) -> None:
+    if not PROJECT_NAME_PATTERN.match(project):
+        raise _structured_error_response(
+            "That project name is not valid.",
+            "Use 1-64 characters: letters, digits, spaces, dot, underscore or hyphen, starting with a letter or digit.",
+            "PROJECT_NAME_INVALID",
+            422,
+        )
+
+
+@router.get("/projects/{project}/degram-policy")
+def get_degram_policy(project: str):
+    """Admin-only (route policy): the project's provider-export policy (D-17).
+    Deny by default: an unset project reads as both flags false."""
+    _check_project_name(project)
+    return {"project": project, **degram_policy.policy_for_project(project)}
+
+
+@router.put("/projects/{project}/degram-policy")
+def put_degram_policy(project: str, payload: DegramPolicyRequest, request: Request):
+    """Admin-only (route policy): merge the given flags into the project's
+    provider-export policy. A flag left out keeps its stored value."""
+    _check_project_name(project)
+    if payload.providerExportAllowed is None and payload.wholeDefinitionAllowed is None:
+        raise _structured_error_response(
+            "No policy flag was given.",
+            "Send providerExportAllowed and/or wholeDefinitionAllowed as booleans.",
+            "DEGRAM_POLICY_INVALID",
+            422,
+        )
+    principal = getattr(request.state, "principal", None)
+    policy = degram_policy.set_policy(
+        project,
+        provider_export_allowed=payload.providerExportAllowed,
+        whole_definition_allowed=payload.wholeDefinitionAllowed,
+        updated_by=getattr(principal, "username", None),
+    )
+    return {"project": project, **policy}
 
 
 @router.get("/projects/{project}/members")

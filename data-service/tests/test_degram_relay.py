@@ -25,6 +25,7 @@ os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 import auth  # noqa: E402
 import company  # noqa: E402
 import connectors  # noqa: E402
+import degram_policy  # noqa: E402
 import degram_relay  # noqa: E402
 import app as app_module  # noqa: E402
 from app import app  # noqa: E402
@@ -193,10 +194,17 @@ def _data_lines(text):
     return [line for line in text.splitlines() if line.startswith("data:")]
 
 
+def _allow(project="P1", *, whole=False):
+    degram_policy.set_policy(
+        project, provider_export_allowed=True, whole_definition_allowed=whole
+    )
+
+
 @pytest.fixture
 def world(client, upstream):
     company.set_project_company("P1", "Acme")
     _configure(client)
+    _allow("P1")
     return {"token": _delegated(client), "upstream": upstream}
 
 
@@ -285,6 +293,7 @@ def test_get_config_before_setup_reports_unconfigured(client):
 
 
 def test_relay_without_config_is_503_before_streaming(client, upstream):
+    _allow("P1")
     token = _delegated(client)
     response = client.post(RELAY_PATH, json=_body(), headers=_bearer(token))
     assert response.status_code == 503, response.text
@@ -387,4 +396,134 @@ def test_relay_rejects_a_malformed_body(client, world):
         response = client.post(RELAY_PATH, content=raw, headers=headers)
         assert response.status_code == 422, (raw, response.text)
         assert _code(response) == "RELAY_REQUEST_INVALID"
+    assert world["upstream"].requests == []
+
+
+# -- provider-export policy, whole-definition consent, scope denies (task 2) ----------
+
+SCOPE = "X-DeGram-Context-Scope"
+CONSENT = "X-DeGram-Whole-Definition-Consent"
+
+
+def _relay(client, token, *, headers=None, body=None):
+    return client.post(RELAY_PATH, json=body or _body(), headers={**_bearer(token), **(headers or {})})
+
+
+def test_export_policy_defaults_to_deny_and_nothing_reaches_the_provider(client, upstream):
+    _configure(client)
+    token = _delegated(client)  # no policy row for P1: deny by default
+    response = _relay(client, token)
+    assert response.status_code == 403, response.text
+    assert _code(response) == "POLICY_DENY"
+    assert _detail(response)["reason"] == "provider-export-not-allowed"
+    assert upstream.requests == []
+    assert _provenance() == []
+
+
+def test_consent_header_never_overrides_a_policy_deny(client, upstream):
+    _configure(client)
+    token = _delegated(client)
+    for headers in ({CONSENT: "true"}, {SCOPE: "whole-definition", CONSENT: "true"}):
+        response = _relay(client, token, headers=headers)
+        assert response.status_code == 403
+        assert _code(response) == "POLICY_DENY"
+        assert _detail(response)["reason"] == "provider-export-not-allowed"
+    assert upstream.requests == []
+
+
+def test_a_policy_change_takes_effect_on_the_next_request(client, world):
+    assert _relay(client, world["token"]).status_code == 200
+    degram_policy.set_policy("P1", provider_export_allowed=False)
+    denied = _relay(client, world["token"])
+    assert denied.status_code == 403 and _code(denied) == "POLICY_DENY"
+    assert len(world["upstream"].requests) == 1
+
+
+def test_policy_of_another_project_does_not_allow_this_one(client, upstream):
+    _configure(client)
+    _allow("P2")
+    token = _delegated(client, project="P1")
+    response = _relay(client, token)
+    assert response.status_code == 403 and _code(response) == "POLICY_DENY"
+    assert upstream.requests == []
+
+
+def test_whole_definition_without_policy_is_a_deny_even_with_consent(client, world):
+    for headers in ({SCOPE: "whole-definition"}, {SCOPE: "whole-definition", CONSENT: "true"}):
+        response = _relay(client, world["token"], headers=headers)
+        assert response.status_code == 403, response.text
+        assert _code(response) == "POLICY_DENY"
+        assert _detail(response)["reason"] == "whole-definition-not-allowed"
+    assert world["upstream"].requests == []
+
+
+def test_whole_definition_with_policy_needs_the_consent_header(client, world):
+    _allow("P1", whole=True)
+    for headers in ({SCOPE: "whole-definition"}, {SCOPE: "whole-definition", CONSENT: "false"},
+                    {SCOPE: "whole-definition", CONSENT: ""}):
+        response = _relay(client, world["token"], headers=headers)
+        assert response.status_code == 428, (headers, response.text)
+        assert _code(response) == "CONSENT_REQUIRED"
+    assert world["upstream"].requests == []
+
+
+def test_whole_definition_with_policy_and_consent_is_relayed_and_recorded(client, world):
+    _allow("P1", whole=True)
+    response = _relay(client, world["token"], headers={SCOPE: "Whole-Definition", CONSENT: "true"})
+    assert response.status_code == 200, response.text
+    assert len(world["upstream"].requests) == 1
+    assert _provenance()[0]["contextScope"] == "whole-definition"
+
+
+def test_default_and_selection_scope_need_no_consent(client, world):
+    assert _relay(client, world["token"]).status_code == 200
+    assert _relay(client, world["token"], headers={SCOPE: "selection"}).status_code == 200
+    assert _relay(client, world["token"], headers={SCOPE: "none"}).status_code == 200
+    scopes = [record["contextScope"] for record in _provenance()]
+    assert scopes == ["selection", "selection", "none"]
+
+
+def test_unknown_scope_value_is_refused_before_the_provider(client, world):
+    response = _relay(client, world["token"], headers={SCOPE: "everything"})
+    assert response.status_code == 422 and _code(response) == "CONTEXT_SCOPE_INVALID"
+    assert world["upstream"].requests == []
+
+
+def test_changed_company_is_refused_before_the_relay_runs(client, world):
+    company.set_project_company("P1", "Other Co")
+    response = _relay(client, world["token"])
+    assert response.status_code == 403
+    assert _code(response) == "DELEGATED_SCOPE_CHANGED"
+    assert world["upstream"].requests == []
+    assert _provenance() == []
+
+
+def test_body_over_one_mebibyte_is_413_before_the_provider(client, world):
+    assert degram_relay.DEGRAM_RELAY_MAX_BODY_BYTES == 1048576
+    big = {"messages": [{"role": "user", "content": "x" * (1048576 + 10)}]}
+    response = client.post(RELAY_PATH, json=big, headers=_bearer(world["token"]))
+    assert response.status_code == 413, response.status_code
+    assert _code(response) == "RELAY_BODY_TOO_LARGE"
+    assert world["upstream"].requests == []
+
+
+def test_body_at_the_limit_is_accepted(client, world):
+    filler = "x" * 1000
+    base = {"messages": [{"role": "user", "content": filler}]}
+    overhead = len(json.dumps(base).encode()) - len(filler)
+    raw = json.dumps({"messages": [{"role": "user", "content": "x" * (1048576 - overhead)}]})
+    assert len(raw.encode()) == 1048576
+    response = client.post(RELAY_PATH, content=raw,
+                           headers={**_bearer(world["token"]), "content-type": "application/json"})
+    assert response.status_code == 200, response.text
+
+
+def test_content_length_over_the_limit_is_refused_without_reading_the_body(client, world):
+    response = client.post(
+        RELAY_PATH,
+        content=b"{}",
+        headers={**_bearer(world["token"]), "content-type": "application/json",
+                 "content-length": str(1048576 + 1)},
+    )
+    assert response.status_code == 413
     assert world["upstream"].requests == []

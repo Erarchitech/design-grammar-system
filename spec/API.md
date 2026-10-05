@@ -414,8 +414,12 @@ The user-scoped, streaming, OpenAI-compatible model path of the local DeGram age
 | POST | `/degram/v1/chat/completions` | delegated | OpenAI-compatible chat completion, always streamed (`text/event-stream`). Body `{messages, tools?, tool_choice?, temperature?, top_p?, max_tokens?, max_completion_tokens?, stop?}`; any `model`, `provider` or `stream` is ignored. |
 | GET | `/degram/admin/llm-config` | admin | `{configured, baseUrl, model, providerLabel, apiKeyPreview}`; never the key |
 | PUT | `/degram/admin/llm-config` | admin | Body `{baseUrl?, model?, providerLabel?, apiKey?}`; first call needs `baseUrl` and `apiKey`; 422 `RELAY_CONFIG_INVALID` |
+| GET | `/projects/{project}/degram-policy` | admin | `{project, providerExportAllowed, wholeDefinitionAllowed}`; both `false` for a project with no policy (deny by default) |
+| PUT | `/projects/{project}/degram-policy` | admin | Body `{providerExportAllowed?, wholeDefinitionAllowed?}` (strict booleans, at least one; 422 `DEGRAM_POLICY_INVALID`); a flag left out keeps its value |
 
 The relay forwards the upstream SSE lines unchanged, always sends the operator-configured model and never falls back to another provider. Errors use the standard `{error, hint, code}` detail: 422 `RELAY_REQUEST_INVALID`, 503 `RELAY_NOT_CONFIGURED`, 502 `PROVIDER_ERROR`. Each relayed request appends a provenance record (no prompt text, no key).
+
+Request headers: `X-DeGram-Context-Scope: none | selection | whole-definition` (default `selection`; other values 422 `CONTEXT_SCOPE_INVALID`) and `X-DeGram-Whole-Definition-Consent: true`. Checks run before any provider contact, in this order: 403 `POLICY_DENY` with `reason` `provider-export-not-allowed` when the project's `providerExportAllowed` is false (consent never overrides it); for `whole-definition`, 403 `POLICY_DENY` with `reason` `whole-definition-not-allowed` unless `wholeDefinitionAllowed`, then 428 `CONSENT_REQUIRED` without the consent header; 413 `RELAY_BODY_TOO_LARGE` over 1 MiB.
 
 ### Identity (`/identity/*`, Phase 32.1/1203)
 

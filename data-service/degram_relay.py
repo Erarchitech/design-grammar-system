@@ -42,6 +42,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+import degram_policy
 from llm_gateway import decrypt_value, encrypt_value, mask_key
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +50,17 @@ _LOGGER = logging.getLogger(__name__)
 RELAY_ROUTE = "/degram/v1/chat/completions"
 CONFIG_FILE_NAME = "degram-llm.json"
 PROVENANCE_FILE_NAME = "degram-llm-provenance.jsonl"
+
+# Request body ceiling (T-1301-08-04); enforced before any provider contact.
+DEGRAM_RELAY_MAX_BODY_BYTES = 1048576
+
+HEADER_CONTEXT_SCOPE = "X-DeGram-Context-Scope"
+HEADER_WHOLE_DEFINITION_CONSENT = "X-DeGram-Whole-Definition-Consent"
+SCOPE_NONE = "none"
+SCOPE_SELECTION = "selection"
+SCOPE_WHOLE_DEFINITION = "whole-definition"
+CONTEXT_SCOPES = (SCOPE_NONE, SCOPE_SELECTION, SCOPE_WHOLE_DEFINITION)
+_CONSENT_VALUES = frozenset({"true", "1"})
 
 DEFAULT_PROVIDER_LABEL = "genpro"
 DEFAULT_MODEL = "mimo-v2.5-pro"
@@ -431,8 +443,71 @@ def _error_event(error: RelayError) -> str:
     return f"event: degram-error\ndata: {json.dumps(body)}\n\n"
 
 
+def _too_large() -> HTTPException:
+    return relay_error(
+        413,
+        "RELAY_BODY_TOO_LARGE",
+        f"The request body exceeds {DEGRAM_RELAY_MAX_BODY_BYTES} bytes.",
+        "Send less context: narrow the selection or drop history.",
+    )
+
+
+async def _read_capped_body(request: Request) -> bytes:
+    declared = request.headers.get("content-length", "")
+    if declared.isdigit() and int(declared) > DEGRAM_RELAY_MAX_BODY_BYTES:
+        raise _too_large()
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > DEGRAM_RELAY_MAX_BODY_BYTES:
+            raise _too_large()
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _policy_deny(reason: str) -> HTTPException:
+    return relay_error(
+        403,
+        "POLICY_DENY",
+        "DG policy does not allow sending this data to the model.",
+        "Narrow the context or ask the project owner. Confirming does not override a policy.",
+        reason=reason,
+    )
+
+
+def _check_export_policy(request: Request, project: str) -> str:
+    """Provider-export policy, context scope and whole-definition consent, in
+    that order, all before any upstream contact. Returns the context scope.
+    A policy deny is terminal: consent is only consulted once the policy
+    already allows the scope."""
+    policy = degram_policy.policy_for_project(project)
+    if not policy["providerExportAllowed"]:
+        raise _policy_deny("provider-export-not-allowed")
+    scope = (request.headers.get(HEADER_CONTEXT_SCOPE) or SCOPE_SELECTION).strip().lower()
+    if scope not in CONTEXT_SCOPES:
+        raise relay_error(
+            422,
+            "CONTEXT_SCOPE_INVALID",
+            "The context scope is not recognised.",
+            f"Use one of: {', '.join(CONTEXT_SCOPES)}.",
+        )
+    if scope == SCOPE_WHOLE_DEFINITION:
+        if not policy["wholeDefinitionAllowed"]:
+            raise _policy_deny("whole-definition-not-allowed")
+        consent = (request.headers.get(HEADER_WHOLE_DEFINITION_CONSENT) or "").strip().lower()
+        if consent not in _CONSENT_VALUES:
+            raise relay_error(
+                428,
+                "CONSENT_REQUIRED",
+                "Sending the whole definition needs the user's confirmation.",
+                f"Confirm in the client and resend with {HEADER_WHOLE_DEFINITION_CONSENT}: true.",
+            )
+    return scope
+
+
 async def _read_json_body(request: Request) -> tuple[dict[str, Any], int]:
-    raw = await request.body()
+    raw = await _read_capped_body(request)
     try:
         payload = json.loads(raw)
     except ValueError:
@@ -464,6 +539,7 @@ async def relay_chat_completions(request: Request) -> StreamingResponse:
             "Use a delegated token minted for the project.",
         )
     project = principal.bound_project
+    scope = _check_export_policy(request, project)
     payload, payload_bytes = await _read_json_body(request)
 
     config = resolve_runtime_config()
@@ -485,6 +561,7 @@ async def relay_chat_completions(request: Request) -> StreamingResponse:
         "project": project,
         "company": principal.company,
         "payloadBytes": payload_bytes,
+        "contextScope": scope,
         "toolCount": len(payload["tools"]) if isinstance(payload.get("tools"), list) else 0,
     }
 

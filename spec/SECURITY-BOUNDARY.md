@@ -116,6 +116,7 @@ A user-scoped credential for the local DeGram agent, which holds neither the bro
 
 - **Principal.** Policy `delegated` only, no project source: the project, user and company are the delegated principal's own (`principal.bound_project`, `principal.username`, `principal.company`). A cookie session (admin included), a connector token and the service token answer 403 `PRINCIPAL_NOT_PERMITTED`; no credential answers 401. Because `require_principal` re-validates the token on every request, a token whose project changed company answers 403 `DELEGATED_SCOPE_CHANGED` before the relay runs.
 - **One upstream, no fallback.** The upstream is the single endpoint in `degram-llm.json` (`baseUrl` https, or http for localhost only; `model`, default `mimo-v2.5-pro`; `providerLabel`, default `genpro`; the system key Fernet-encrypted with `LLM_MASTER_SECRET`). The server overwrites `model` and `stream` and drops any client `provider`; the client chooses neither. There is no fallback to another provider, to Ollama or to another model, and no automatic retry. Unconfigured answers 503 `RELAY_NOT_CONFIGURED` before any streaming.
+- **Provider-export policy (deny by default, D-17, 1300 D-06).** Reading a project through DG and sending its data to a model provider are separate permissions. `GET` and `PUT /projects/{project}/degram-policy` (admin only, no project source, like the company route) hold `{providerExportAllowed, wholeDefinitionAllowed}` per project in `degram-policy.json`; both are false when no row exists, the store is unreadable or a stored value is not literally boolean true. The relay checks, in this order and always before opening the upstream connection: the delegated principal (and its live company scope, Section 3.5); `providerExportAllowed` (else 403 `POLICY_DENY`, reason `provider-export-not-allowed`); the context scope header `X-DeGram-Context-Scope` (`none`, `selection` default, `whole-definition`; anything else 422 `CONTEXT_SCOPE_INVALID`); for `whole-definition`, `wholeDefinitionAllowed` (else 403 `POLICY_DENY`, reason `whole-definition-not-allowed`) and then the per-request consent header `X-DeGram-Whole-Definition-Consent: true` (else 428 `CONSENT_REQUIRED`); the body size limit of 1 MiB (`DEGRAM_RELAY_MAX_BODY_BYTES`, else 413 `RELAY_BODY_TOO_LARGE`, also from `Content-Length`). A policy deny is terminal: the consent header is consulted only once the policy allows the scope, so consent can never override a deny, and the client must not offer a confirm for it. The recorded `contextScope` is part of every provenance line.
 - **Operator config.** `GET` and `PUT /degram/admin/llm-config` are admin-only. `GET` returns a masked key preview, never the key. `PUT` merges fields (an omitted field keeps its stored value).
 - **Provenance.** Every relayed request appends one JSON line to `degram-llm-provenance.jsonl` under `DG_DATA_DIR`: requested provider and model, served model as the upstream reported it (`null` when absent), response id, fingerprint, usage, outcome, username, company, project, payload size. It never holds prompt text, tool arguments or the key.
 
@@ -209,6 +210,8 @@ POST|/mcp|service|-|-
 GET|/projects|session|filtered|-
 POST|/projects|session|-|-
 PUT|/projects/{project}/company|admin|-|-
+GET|/projects/{project}/degram-policy|admin|-|-
+PUT|/projects/{project}/degram-policy|admin|-|-
 GET|/projects/{project}/members|member|path|owner
 DELETE|/projects/{project}/members/{username}|member|path|owner
 POST|/reasoner/consistency|member|body|viewer
@@ -309,7 +312,7 @@ Resource-bound routes (project resolved server-side from the stored resource, un
 | `GET /execution-result/{execution_id}` | `execution` | Any caller could read another user's LLM output; a result is now bound to the user who started it |
 | `GET`, `PUT`, `DELETE /knowledge/note/{note_id}` | `note` | Cross-project note read and edit by id |
 
-Principal-restricted routes: `POST /llm/generate`, `/context/*`, `POST /mcp` and `POST /execution-result` accept only the service token (n8n); the admin-only routes (`GET`, `PUT /degram/admin/llm-config`, `GET`, `PUT /settings/speckle`, `PUT`, `DELETE /llm/settings`, `POST /llm/settings/test`, `GET /llm/models`, `PUT /reasoner/settings`, `POST /knowledge/ingest/folder`) accept only an admin user. `POST /projects` and the read-only `GET` settings routes marked `session` accept any signed-in user. `POST /computgraph/recognize` now requires a body project (previously optional).
+Principal-restricted routes: `POST /llm/generate`, `/context/*`, `POST /mcp` and `POST /execution-result` accept only the service token (n8n); the admin-only routes (`GET`, `PUT /degram/admin/llm-config`, `GET`, `PUT /projects/{project}/degram-policy`, `GET`, `PUT /settings/speckle`, `PUT`, `DELETE /llm/settings`, `POST /llm/settings/test`, `GET /llm/models`, `PUT /reasoner/settings`, `POST /knowledge/ingest/folder`) accept only an admin user. `POST /projects` and the read-only `GET` settings routes marked `session` accept any signed-in user. `POST /computgraph/recognize` now requires a body project (previously optional).
 
 ## 7. Unsupported Legacy Callers
 
@@ -373,6 +376,7 @@ Order of execution:
 | No `/neo4j/` or `/n8n/` proxy, no credential in `config.js` or the UI bundle | `data-service/tests/test_static_proxy_boundary.py`, `data-service/tests/test_config_js_no_secrets.py` |
 | Delegated token mint, scope, CSRF exemption, no-fallback and every revocation case (Section 3.5); project to company map | `data-service/tests/test_delegated_token.py`, `data-service/tests/test_company_scope.py` |
 | DeGram relay principal scope, single upstream with model override, key masking and encryption at rest, provenance without content (Section 3.6) | `data-service/tests/test_degram_relay.py` |
+| DeGram provider-export policy store, admin routes, deny-by-default, consent and scope denies with zero upstream requests (Section 3.6) | `data-service/tests/test_degram_policy.py`, `data-service/tests/test_degram_relay.py` |
 | Live exposure and 401 behavior | `tools/security/check_live_boundary.py` (owner run, against rebuilt containers) |
 
 **Adding a route.** Add the `@app` route with `Depends(auth.require_principal)` (or the router-level dependency), add its row to `route_policy.ROUTE_POLICIES`, add the row to the `route-policy` block in Section 4.2 (and the `public-routes` block if it is public), and run the route inventory and this contract's drift test. A route without all three fails the suite.
