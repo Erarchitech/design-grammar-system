@@ -34,9 +34,12 @@ VITE_CONFIG = REPO_ROOT / "ui-v2" / "vite.config.js"
 RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite|register)/?$"
 # Phase 1301-08 (D-16): the DeGram relay streams through its own location.
 RELAY_LOCATION = "/data-service/degram/v1/"
+# Phase 1301-09 (D-21): Speckle geometry streams through its own unbuffered location.
+SPECKLE_PROXY_LOCATION = "/data-service/speckle-proxy/"
 ALLOWED_PROXY_LOCATIONS = {
     "/data-service/",
     RELAY_LOCATION,
+    SPECKLE_PROXY_LOCATION,
     "/llm/",
     "/reasoner/",
     RATE_LIMITED_AUTH_LOCATION,
@@ -314,3 +317,58 @@ def test_induced_buffering_regression_is_detected(nginx_text: str) -> None:
     tampered = nginx_text.replace("proxy_buffering off;", "proxy_buffering on;", 1)
     assert tampered != nginx_text
     assert "proxy_buffering off" not in _relay_location(tampered).statements
+
+
+# -- Phase 1301-09 (D-21): Speckle geometry proxy location ---------------------------
+
+
+def _speckle_location(nginx_text: str) -> Location:
+    matches = [loc for loc in parse_locations(nginx_text) if loc.path == SPECKLE_PROXY_LOCATION]
+    assert len(matches) == 1, f"expected exactly one {SPECKLE_PROXY_LOCATION} location"
+    return matches[0]
+
+
+def test_speckle_proxy_location_streams_geometry_without_buffering(nginx_text: str) -> None:
+    statements = _speckle_location(nginx_text).statements
+    assert "proxy_http_version 1.1" in statements
+    assert "proxy_buffering off" in statements
+    assert 'proxy_set_header Connection ""' in statements
+    assert "set $ds_upstream http://data-service:8000" in statements
+    assert "proxy_pass $ds_upstream" in statements
+    assert "rewrite ^/data-service/(.*) /$1 break" in statements
+
+
+def test_speckle_proxy_read_timeout_exceeds_the_proxys_upstream_read_limit(nginx_text: str) -> None:
+    import speckle_proxy  # noqa: PLC0415
+
+    values = [s.split(None, 1)[1] for s in _speckle_location(nginx_text).statements
+              if s.startswith("proxy_read_timeout ")]
+    assert len(values) == 1
+    assert _seconds(values[0]) > speckle_proxy.UPSTREAM_TIMEOUT.read
+
+
+def test_speckle_proxy_body_limit_covers_the_proxys_ceiling(nginx_text: str) -> None:
+    import speckle_proxy  # noqa: PLC0415
+
+    values = [s.split(None, 1)[1] for s in _speckle_location(nginx_text).statements
+              if s.startswith("client_max_body_size ")]
+    assert values == ["4m"]
+    assert speckle_proxy.MAX_BODY_BYTES == 4 * 1024 * 1024
+
+
+def test_speckle_proxy_location_keeps_security_headers_and_injects_nothing(nginx_text: str) -> None:
+    loc = _speckle_location(nginx_text)
+    assert not any(s.startswith("add_header") for s in loc.statements)
+    assert not any("authorization" in s.lower() for s in loc.statements)
+    assert [p for p in violations_for(nginx_text) if "authorization" in p] == []
+
+
+def test_speckle_proxy_location_precedes_the_generic_data_service_location(nginx_text: str) -> None:
+    order = [loc.path for loc in parse_locations(nginx_text)]
+    assert order.index(SPECKLE_PROXY_LOCATION) < order.index("/data-service/")
+
+
+def test_nginx_never_proxies_straight_to_speckle(nginx_text: str) -> None:
+    """The browser reaches Speckle geometry only through data-service: no nginx
+    location names a Speckle upstream, so no token-free direct path exists."""
+    assert not re.search(r"speckle-(server|ingress|frontend)|:3000|:8090", strip_comments(nginx_text))

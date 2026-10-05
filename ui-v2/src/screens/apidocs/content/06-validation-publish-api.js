@@ -98,7 +98,7 @@ export default {
             { name: "project", type: "string", location: "path", required: true, description: "DG project name" },
           ],
           response:
-            'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  "project": "my-project",\n  "runId": "...",\n  "selectedRuleId": null,\n  "speckleBaseUrl": "http://localhost:8090",\n  "readToken": "...",\n  "baseProjectId": "...",\n  "baseModelId": "...",\n  "baseVersionId": "...",\n  "validationModelId": "...",\n  "validationVersionId": "...",\n  "rules": [],\n  "objectSets": {\n    "failed": [...],\n    "passed": [...]\n  }\n}',
+            'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  "project": "my-project",\n  "runId": "...",\n  "selectedRuleId": null,\n  "viewerResources": [\n    "/data-service/speckle-proxy/my-project/objects/<speckleProjectId>/<objectId>"\n  ],\n  "baseProjectId": "...",\n  "baseModelId": "...",\n  "baseVersionId": "...",\n  "validationModelId": "...",\n  "validationVersionId": "...",\n  "rules": [],\n  "objectSets": {\n    "failed": [...],\n    "passed": [...]\n  }\n}',
         },
         {
           type: "endpoint",

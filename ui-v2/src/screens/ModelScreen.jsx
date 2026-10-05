@@ -21,7 +21,7 @@ import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 
 // ---- deterministic synthetic massing: degraded-mode fallback only. When
-// Speckle is unavailable (no token/urls or init error) the viewport renders
+// Speckle is unavailable (no viewer resources or init error) the viewport renders
 // these stylised isometric boxes; box geometry derives from entity ids so
 // layouts are stable across loads. With Speckle healthy, both 3D and Map
 // modes show the real model (Map = top-down orthographic).
@@ -577,10 +577,9 @@ export default function ModelScreen({ active, onBack, project }) {
   const zoomPct = worldRef.current.w / viewBox.w;
 
   const speckleResourceUrls = React.useMemo(
-    () => (view ? [view.baseResourceUrl, view.validationResourceUrl].filter(Boolean) : []),
+    () => (Array.isArray(view?.viewerResources) ? view.viewerResources.filter(Boolean) : []),
     [view]
   );
-  const speckleToken = view?.readToken || null;
   const handleSpeckleReady = React.useCallback(() => setSpeckleReady(true), []);
   const handleSpeckleError = React.useCallback((msg) => setSpeckleError(msg), []);
 
@@ -795,10 +794,9 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          {!speckleError && speckleResourceUrls.length > 0 && speckleToken ? (
+          {!speckleError && speckleResourceUrls.length > 0 ? (
             <SpeckleViewport
               viewMode={viewMode}
-              readToken={speckleToken}
               resourceUrls={speckleResourceUrls}
               project={project}
               runId={runId}

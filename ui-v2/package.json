@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@speckle/objectloader2": "^2.31.14",
     "@speckle/viewer": "^2.31.14",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

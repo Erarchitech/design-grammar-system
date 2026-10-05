@@ -13,7 +13,10 @@ export function fetchValidationRuns(project) {
 }
 
 // → { runId, rules: [{ruleId, ruleName, ruleDescription, passed}],
-//      objectSets: {failed: [{dgEntityId, displayName}], passed: […]}, createdAt, … }
+//      objectSets: {failed: [{dgEntityId, displayName}], passed: […]}, createdAt,
+//      viewerResources: [DG-proxy object URLs], … }
+// D-21 (1301-09): the payload carries no Speckle credential. Geometry is loaded through the
+// project-authorised /speckle-proxy/ URLs in viewerResources (see lib/speckleProxy.js).
 export function fetchValidationView(project, runId, ruleId) {
   const p = encodeURIComponent(project || "default-project");
   const tail = ruleId ? `/${encodeURIComponent(runId)}/${encodeURIComponent(ruleId)}` : `/${encodeURIComponent(runId)}`;

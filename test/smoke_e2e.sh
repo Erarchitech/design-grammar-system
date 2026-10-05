@@ -262,7 +262,7 @@ VIEW_RESP=$(curl -s --max-time 10 "$DS_URL/validation/view/${PROJECT}" 2>/dev/nu
 if echo "$VIEW_RESP" | grep -q "not found"; then
   echo "  No validation runs yet (expected — no VALIDATOR publish without GH wire)"
   pass "Data-service validation endpoint responds correctly for empty project"
-elif echo "$VIEW_RESP" | grep -q "readToken"; then
+elif echo "$VIEW_RESP" | grep -q "viewerResources"; then
   pass "Validation view returns data for project ${PROJECT}"
 else
   echo "  Response: $(echo "$VIEW_RESP" | head -c 200)"

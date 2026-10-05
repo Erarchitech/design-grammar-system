@@ -15,8 +15,9 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 // D-12: the runtime config carries only the two non-secret endpoints. Anything
 // else present on window.GRAPH_CONFIG (legacy credential keys from an old
-// config.js) is deliberately ignored. The Speckle read token arrives only in
-// the project-authorised /validation/view response.
+// config.js) is deliberately ignored. There is no Speckle credential in the
+// browser at all (D-21): geometry comes through the project-authorised
+// /speckle-proxy/ routes listed in the /validation/view `viewerResources`.
 export function getConfig() {
   const runtime = (typeof window !== "undefined" && window.GRAPH_CONFIG) || {};
   return {

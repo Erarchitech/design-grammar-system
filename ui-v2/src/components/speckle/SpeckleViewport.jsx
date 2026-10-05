@@ -6,9 +6,20 @@ import {
   SelectionExtension,
   SpeckleLoader,
   UpdateFlags,
-  UrlHelper,
   Viewer
 } from "@speckle/viewer";
+import { createProxyObjectLoader, parseViewerResource } from "../../lib/speckleProxy.js";
+
+// D-21 (Phase 1301-09): the stock SpeckleLoader keeps only the origin of its resource
+// URL, takes a token and falls back to a stored one, so it could never go through the
+// DG proxy without a credential. This subclass swaps only its object-loader factory for
+// one that targets the project-authorised /speckle-proxy/ routes with the DG session
+// cookie. It is never constructed with a token argument.
+class ProxySpeckleLoader extends SpeckleLoader {
+  initObjectLoader(resource, _ignoredCredential, _enableCaching, _resourceData, attributeMask, objectTypeMask) {
+    return createProxyObjectLoader(resource, { attributeMask, objectTypeMask });
+  }
+}
 
 function collectAllDescendantIds(node) {
   const ids = [];
@@ -90,8 +101,9 @@ function collectValidationObjects(worldTree, runId, project) {
  * SpeckleViewport — wraps @speckle/viewer Viewer into a controlled React component.
  *
  * Props:
- *   readToken       — Speckle read token from the view payload (NOT stored in UI env vars)
- *   resourceUrls    — Speckle resource URLs (typically [view.baseResourceUrl, view.validationResourceUrl])
+ *   resourceUrls    — DG-proxy object URLs from the view payload (view.viewerResources); the
+ *                     browser holds no Speckle credential, geometry is read through the
+ *                     project-authorised /speckle-proxy/ routes with the session cookie
  *   project         — DG project name for world tree entity mapping
  *   runId           — Validation run ID for world tree entity mapping
  *   failedEntityIds — dgEntityIds of failing entities (colored failColor)
@@ -109,7 +121,6 @@ function collectValidationObjects(worldTree, runId, project) {
  *   style           — Optional container styling; defaults to { position: "absolute", inset: 0 }
  */
 export default function SpeckleViewport({
-  readToken,
   resourceUrls,
   project,
   runId,
@@ -153,8 +164,12 @@ export default function SpeckleViewport({
   const resourceKey = (resourceUrls || []).filter(Boolean).join("|");
   React.useEffect(() => {
     const urls = resourceKey ? resourceKey.split("|") : [];
-    if (urls.length === 0 || !readToken) {
-      onErrorRef.current?.("No Speckle resource URLs or token available");
+    if (urls.length === 0) {
+      onErrorRef.current?.("No Speckle geometry resources available");
+      return;
+    }
+    if (urls.some((url) => !parseViewerResource(url))) {
+      onErrorRef.current?.("Unexpected geometry resource URL");
       return;
     }
 
@@ -194,15 +209,13 @@ export default function SpeckleViewport({
         viewer.createExtension(SelectionExtension);
         filteringRef.current = viewer.createExtension(FilteringExtension);
 
-        // Load each resource
-        for (const resourceUrl of urls) {
+        // Load each resource. The server already resolved model/version to a concrete
+        // object URL (speckle_proxy.resolve_view_resources); no Speckle GraphQL call
+        // and no token ever happens in the browser.
+        for (const url of urls) {
           if (disposed) return;
-          const concreteUrls = await UrlHelper.getResourceUrls(resourceUrl);
-          for (const url of concreteUrls) {
-            if (disposed) return;
-            const loader = new SpeckleLoader(viewer.getWorldTree(), url, readToken);
-            await viewer.loadObject(loader, true);
-          }
+          const loader = new ProxySpeckleLoader(viewer.getWorldTree(), url);
+          await viewer.loadObject(loader, true);
         }
 
         if (disposed) return;
@@ -267,7 +280,7 @@ export default function SpeckleViewport({
       allValidationObjectIdsRef.current = [];
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourceKey, readToken, project, runId]);
+  }, [resourceKey, project, runId]);
 
   // Validation overlay — visibility, isolation, hiding, coloring and opacity.
   // Ported from the legacy viewer (graph-viewer/model-viewer/src/App.jsx):
