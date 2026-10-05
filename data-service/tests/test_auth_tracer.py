@@ -140,7 +140,7 @@ def test_auth_me_returns_username_isadmin_and_memberships(client, deployment_pro
     body = resp.json()
     assert body["username"] == "user-a"
     assert body["isAdmin"] is False
-    assert body["memberships"] == [{"project": "P1", "role": "editor"}]
+    assert body["memberships"] == [{"project": "P1", "role": "editor", "company": None}]
 
 
 def test_logout_revokes_session_then_401(client, deployment_profile):

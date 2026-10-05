@@ -91,8 +91,8 @@ class TestListProjects:
         assert response.status_code == 200
         assert response.json() == {
             "projects": [
-                {"project": "P1", "nodes": 7, "role": "editor"},
-                {"project": "P3", "nodes": 2, "role": "viewer"},
+                {"project": "P1", "nodes": 7, "role": "editor", "company": None},
+                {"project": "P3", "nodes": 2, "role": "viewer", "company": None},
             ]
         }
         query, params = graph["read_many"][0]
@@ -105,7 +105,9 @@ class TestListProjects:
 
         response = client.get("/projects", headers=headers)
 
-        assert response.json()["projects"] == [{"project": "Fresh", "nodes": 0, "role": "owner"}]
+        assert response.json()["projects"] == [
+            {"project": "Fresh", "nodes": 0, "role": "owner", "company": None}
+        ]
 
     def test_user_without_membership_gets_empty_list_and_no_query(self, client, graph):
         headers = _headers("nobody@dg.local")
@@ -124,8 +126,8 @@ class TestListProjects:
 
         assert response.json() == {
             "projects": [
-                {"project": "P1", "nodes": 1, "role": "owner"},
-                {"project": "P9", "nodes": 4, "role": "owner"},
+                {"project": "P1", "nodes": 1, "role": "owner", "company": None},
+                {"project": "P9", "nodes": 4, "role": "owner", "company": None},
             ]
         }
         query, params = graph["read_many"][0]
@@ -297,7 +299,9 @@ class TestAcceptInvite:
         assert auth.SESSION_COOKIE_NAME in response.headers.get("set-cookie", "")
         me = fresh.get("/auth/me")
         assert me.status_code == 200
-        assert me.json()["memberships"] == [{"project": "P1", "role": "editor"}]
+        assert me.json()["memberships"] == [
+            {"project": "P1", "role": "editor", "company": None}
+        ]
         assert me.json()["isAdmin"] is False
 
     def test_code_is_single_use(self, client, graph):

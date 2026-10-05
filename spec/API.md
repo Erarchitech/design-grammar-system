@@ -470,12 +470,13 @@ Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POS
 |--------|------|-----------|-------------|
 | POST | `/auth/login` | public | Issue the session cookie |
 | POST | `/auth/logout` | session | Revoke the session |
-| GET | `/auth/me` | session | Current user, admin flag, memberships |
+| GET | `/auth/me` | session | Current user, admin flag, memberships (each with `project`, `role`, `company`; `company` is `null` for an unassigned project) |
 | POST | `/auth/password` | session | Change own password |
 | POST | `/auth/invites` | project owner | Invite a user to a project (`dgi_` code, valid 72 hours) |
 | POST | `/auth/accept-invite` | public (invite code) | Create the account and start a session |
-| GET | `/projects` | session | Projects the caller can access |
+| GET | `/projects` | session | Projects the caller can access; each row carries `company` (string or `null`) |
 | POST | `/projects` | session | Create a project (caller becomes owner) |
+| PUT | `/projects/{project}/company` | admin | Assign the project to a company (Phase 1301, D-20): body `{company}`, 1 to 120 printable characters, 422 `COMPANY_INVALID` otherwise; stored in `auth-project-companies.json` |
 | GET | `/projects/{project}/members` | owner | List members |
 | DELETE | `/projects/{project}/members/{username}` | owner | Remove a member |
 | GET | `/graph/{project}` | viewer | Graph nodes and relationships for the project |

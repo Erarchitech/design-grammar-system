@@ -67,6 +67,7 @@ from connectors import (
 
 import auth
 import auth_routes
+import company
 import route_policy
 import secrets_policy
 
@@ -4520,9 +4521,15 @@ def list_projects(request: Request):
             read_many(PROJECT_NODE_COUNTS_QUERY, {"projects": sorted(roles)}) if roles else []
         )
     counts = {row["project"]: int(row["nodes"]) for row in graph_rows}
+    companies = company.all_companies()  # D-20: null for an unassigned project
     return {
         "projects": [
-            {"project": name, "nodes": counts.get(name, 0), "role": roles[name]}
+            {
+                "project": name,
+                "nodes": counts.get(name, 0),
+                "role": roles[name],
+                "company": companies.get(name),
+            }
             for name in sorted(roles)
         ]
     }
@@ -4553,6 +4560,32 @@ def create_project(payload: ProjectCreateRequest, request: Request):
             409,
         )
     return {"project": name, "role": "owner"}
+
+
+class ProjectCompanyRequest(BaseModel):
+    company: str
+
+
+@router.put("/projects/{project}/company")
+def set_project_company(project: str, payload: ProjectCompanyRequest):
+    """Admin-only (route policy): assign `project` to a company (D-20)."""
+    if not PROJECT_NAME_PATTERN.match(project):
+        raise _structured_error_response(
+            "That project name is not valid.",
+            "Use 1-64 characters: letters, digits, spaces, dot, underscore or hyphen, starting with a letter or digit.",
+            "PROJECT_NAME_INVALID",
+            422,
+        )
+    try:
+        record = company.set_project_company(project, payload.company)
+    except ValueError as exc:
+        raise _structured_error_response(
+            "That company name is not valid.",
+            f"Use 1-{company.COMPANY_MAX_LENGTH} printable characters.",
+            "COMPANY_INVALID",
+            422,
+        ) from exc
+    return {"project": project, "company": record["company"]}
 
 
 @router.get("/projects/{project}/members")

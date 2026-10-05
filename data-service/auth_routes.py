@@ -25,6 +25,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 import auth
+import company
 
 router = APIRouter(dependencies=[Depends(auth.require_principal)])
 
@@ -88,6 +89,7 @@ class LoginResponse(BaseModel):
 class MembershipOut(BaseModel):
     project: str
     role: str
+    company: str | None = None  # D-20: null when the project has no company
 
 
 class MeResponse(BaseModel):
@@ -269,10 +271,13 @@ def logout(request: Request, response: Response):
 def me(request: Request):
     principal = request.state.principal
     memberships = auth.list_memberships(principal.username or "")
+    companies = company.all_companies()
     return MeResponse(
         username=principal.username or "",
         isAdmin=principal.is_admin,
-        memberships=[MembershipOut(**m) for m in memberships],
+        memberships=[
+            MembershipOut(**m, company=companies.get(m["project"])) for m in memberships
+        ],
     )
 
 

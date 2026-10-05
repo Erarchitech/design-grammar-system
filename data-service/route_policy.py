@@ -111,6 +111,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/projects"): _p(_SES),
     ("GET", "/projects/{project}/members"): _p(_MEM, source="path", role="owner"),
     ("DELETE", "/projects/{project}/members/{username}"): _p(_MEM, source="path", role="owner"),
+    # ── project -> company attribute (Phase 1301-05, D-20) ──
+    # Admin-only and admin is owner of every project, so a project source would
+    # add no authorization; the handler validates the path value itself.
+    ("PUT", "/projects/{project}/company"): _p(_ADM),
     # ── named graph endpoints (Phase 1205-12, D-06) ──
     ("GET", "/graph/{project}"): _p(_MEM, source="path", role="viewer"),
     ("POST", "/graph/{project}/claim-untagged"): _p(_MEM, source="path", role="editor"),

@@ -8,7 +8,7 @@ This is the normative contract for the Design Grammar System security boundary. 
 
 **Enforcement shape.** This file follows the `spec/SWRL-SUBSET.md` and `spec/REPRODUCIBILITY.md` pattern. Section 4 holds four machine-checked fenced blocks, each delimited by HTML comments. `data-service/tests/test_security_boundary_spec.py` parses them and fails the suite when a block differs from the code or compose file it mirrors, in either direction. A new route, principal, published port or known-default secret therefore cannot ship without this document changing.
 
-**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
+**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
 
 Related contracts: `spec/EVIDENCE-CONTRACT.md` (validation outcome status and evidence envelope, unchanged by this phase), `spec/RULE-PARTITION-POLICY.md`, `spec/SWRL-SUBSET.md`, `spec/REPRODUCIBILITY.md`.
 
@@ -179,6 +179,7 @@ POST|/llm/settings/test|admin|-|-
 POST|/mcp|service|-|-
 GET|/projects|session|filtered|-
 POST|/projects|session|-|-
+PUT|/projects/{project}/company|admin|-|-
 GET|/projects/{project}/members|member|path|owner
 DELETE|/projects/{project}/members/{username}|member|path|owner
 POST|/reasoner/consistency|member|body|viewer
