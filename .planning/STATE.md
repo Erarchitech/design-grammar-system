@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 13
+current_plan: 14
 status: executing
-stopped_at: Completed 1301-13-PLAN.md
-last_updated: "2026-10-05T14:56:46.237Z"
+stopped_at: Completed 1301-14-PLAN.md
+last_updated: "2026-10-05T17:32:36.883Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 28
-  completed_plans: 17
+  completed_plans: 18
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 13
+Current Plan: 14
 Total Plans in Phase: 16
-Plan: 13 of 16
+Plan: 14 of 16
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
@@ -174,6 +174,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P11 | ~3h | 3 tasks | 28 files |
 | Phase 1301 P12 | 45min | 3 tasks | 22 files |
 | Phase 1301 P13 | two sessions (~3h) | 2 tasks | 60 files |
+| Phase 1301 P14 | two sessions | 2 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -512,6 +513,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-13: degram preset font stacks are literal ('Geist', system sans tail), not var(--dt-font-sans) - a theme's typography sets that variable, so referencing it is a cycle; Geist Sans has no Cyrillic subset so Cyrillic uses Segoe UI
 - [Phase ?]: 1301-13: hidden upstream surfaces are gated at each entry point through hidden-surfaces.ts (isSurfaceHidden), pinned by a source-audit test because the upstream shell cannot render offline; profile switcher/rail and shared-metrics consent left open for plan 15
 - [Phase ?]: 1301-13: setDgMode also shows the DG page when a revocation blanked the view (electron ipc.ts); DG view bounds are withheld until the page painted
+- [Phase ?]: 1301-14: stale preview/scope never sends; whole-definition consent is bound to the payload on the card; stock transcript Retry hidden in degram (stock-error-retry); turn events bound via startTurnEventSync on the $gateway atom
 
 ### Research Flags (carry into planning)
 
@@ -606,8 +608,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T14:56:46.217Z
-Stopped at: Completed 1301-13-PLAN.md
+Last session: 2026-10-05T17:32:36.863Z
+Stopped at: Completed 1301-14-PLAN.md
 Resume file: None
 
 ## Performance Metrics
