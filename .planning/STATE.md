@@ -1,44 +1,48 @@
 ---
-gsd_state_version: "1.0"
+gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: DeGram Agent
-current_phase: 1300
-current_phase_name: Контракты, baseline и ownership
-current_plan: 0
-status: planning
-stopped_at: Phase 1300 context gathered; ready for planning; implementation and acceptance gates remain open
-last_updated: "2026-10-03T14:26:54.413Z"
-last_activity: 2026-10-03
-last_activity_desc: Phase 1300 discussion completed; CONTEXT and DISCUSSION-LOG saved; gates remain open
-state_head: ebc10d4155f818f02f3ce18e9380e993acfc5145
+current_phase: 1301
+current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
+current_plan: 2
+status: executing
+stopped_at: Completed 1301-02-PLAN.md
+last_updated: "2026-10-05T07:15:18.357Z"
+last_activity: 2026-10-04
+last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 28
+  completed_plans: 6
   percent: 0
+state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-02)
+See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** v13.0 DeGram Agent — Phase 1300 context captured; ready for planning. V8, baseline and OPEN debt gates retained; implementation not started.
+**Current focus:** Phase 1301 — rabochiy-klient-i-bezopasnoe-chtenie
+
+**Authority:** Latest owner revision removes the DeGram/current-DG comparative study and benefit gates. Historical preparation package/discussion/plan-check PASS cannot override it; archived files remain unchanged. Frozen dossier hashes/receipts require explicit scope rebinding and applicable independent reacceptance, never autoaccept. Design State/pre-post/evaluator agreement/recognition regression comparisons and v12 D08 debt remain intact. Historical sections below do not authorize current work.
 
 ## Current Position
 
-Phase: 1300 — Контракты, baseline и ownership (1 of 8)
-Current Phase: 1300
-Current Phase Name: Контракты, baseline и ownership
-Current Plan: 0
-Total Plans in Phase: 0
-Plan: —
-Status: Ready to plan
-Last activity: 2026-10-03 — Phase 1300 context gathered; 27 owner decisions saved; implementation not started
-Last Activity Description: Phase 1300 discussion completed; CONTEXT and DISCUSSION-LOG saved; gates remain open
+**Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
+
+Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
+Current Phase: 1301
+Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
+Current Plan: 2
+Total Plans in Phase: 16
+Plan: 2 of 16
+Status: Ready to execute
+Last activity: 2026-10-04 — Phase 1301 execution started
+Last Activity Description: Phase 1301 execution started
 
 ## Deferred Verification
 
@@ -60,6 +64,17 @@ Phase 35 (LLM Recognition and On-Canvas Proposal Preview) was code-complete as o
 | A0f/A5 frontier-arm sweep (SC1 completion, new 2026-07-27) | No Anthropic/OpenAI key configured this session (35-15) — DeepSeek-only measurement complete (A0-A4: A0 reproduces F3, caught by G7; best M1=0.031 on urbanblock_slice, ship gate FAILs on M1 alone) | SC1 stays blocked on provider availability, not resolved to pass/fail; the AI-SPEC F3 decision rule's three branches remain unselected — see `35-EVAL-REPORT.md` |
 
 ## Deferred Items
+
+### v12.0 accepted closeout items
+
+| Category | Item | Status | Deferred At | Milestone |
+|---|---|---|---|---|
+| verification_gaps | 1200/1200-VERIFICATION.md | gaps_found — ACCEPTED_OPEN | 2026-10-02 | v12.0 |
+| verification_gaps | 1201/1201-VERIFICATION.md | gaps_found — ACCEPTED_OPEN | 2026-10-02 | v12.0 |
+| verification_gaps | 1204/1204-VERIFICATION.md | gaps_found — ACCEPTED_OPEN | 2026-10-02 | v12.0 |
+| verification_gaps | 1205.1/1205.1-VERIFICATION-2.md | gaps_found — ACCEPTED_OPEN | 2026-10-02 | v12.0 |
+
+Known verification overrides:4newly acknowledged,33carried forward. Full debt register: `.planning/milestones/v12.0-ACCEPTED-DEBT.md`. Owner acceptance is administrative override, no PASS/activation/deploy.
 
 Deferred at v8.2 milestone close on 2026-07-12 (override closeout); **2 of 3 closed on 2026-07-13** (gap-closure session):
 
@@ -147,6 +162,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1205 P17 | 25min | 2 tasks | 1 files |
 | Phase 1205 P18 | n/a (multi-session) | 3 tasks | 2 files |
 | Phase 1205 P19 | n/a (multi-session, owner checkpoint) | 3 tasks | 2 files |
+| Phase 1301 P02 | 2h | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -462,6 +478,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1205-16: CLAUDE.md Security boundary contract pointer inserted after owner's Reproducibility paragraph and left uncommitted for the owner (44 insertions vs 42 baseline)
 - [Phase ?]: 1205-17: cross-project matrix generated from ROUTE_POLICIES (50 scoped rows, 887 cases) under both profiles; positive controls call require_principal directly; tasks 1+2 committed together (single file)
 - [Phase ?]: 1205-18: n8n workflows imported with live ids injected into temp copies (repo files lack ids; plain import duplicates webhook paths); Postgres old-default rejection checked over the compose network
+- [Phase ?]: [Phase 1301-02] Stable vitest baseline = 44 failure lines reproducing in two runs; HERMES_PYTHON runner path used because run-in-hermes-env downloads uv; geist-sans has no cyrillic subset
 
 ### Research Flags (carry into planning)
 
@@ -494,6 +511,7 @@ Shipped from Phase 20 Plan 02:
 - canonical_json.hash_scalar_tuple / CanonicalJsonWriter.HashScalarTuple still use the naive pipe-join and have silently diverged from DgIdMintingService.Mint/compute_dg_id's now-length-prefixed encoding — their doc-comments' byte-for-byte parity claim is stale; needs a follow-up decision (extend the fix, or document the split)
 - [Phase 1205] data-service exits on cold start if neo4j Bolt is not yet listening (no healthcheck or restart policy). One `docker compose up -d data-service` recovers it.
   (The config.js Neo4j fallback part of this entry was resolved in 1205-15.)
+
 - [Phase 1205] N8N_PASSWORD is still the old committed (leaked) value. The owner accepted this as an open minor gap (1205-UAT test 3). To fix, rotate it in the n8n UI and in .env.
 - [Phase 1205] Open follow-ups from verification:
   - 5 full-suite failures that appear only in the multi-user profile (TestHeartbeatBundle ×2; test_designstate_capture lifespan ×3, a suspected env leak).
@@ -555,9 +573,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-03T14:24:43.545Z
-Stopped at: Phase 1300 context gathered; ready for planning; implementation and acceptance gates remain open
-Resume file: .planning/phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.md
+Last session: 2026-10-05T07:15:18.324Z
+Stopped at: Completed 1301-02-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -601,8 +619,8 @@ Resume file: .planning/phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.m
 
 ## Operator Next Steps
 
-- Next workflow: /gsd-plan-phase 1300 using .planning/phases/1300-kontrakty-baseline-i-ownership/1300-CONTEXT.md. No PLAN or implementation started by discussion finalization.
-- 27 owner decisions and 13 OPEN clarification/acceptance gates are captured. V8 MVP profile is required before dependent implementation; independent verification and owner acceptance remain mandatory.
-- Web Design Grammars in Docker must run on a separate test server; DG domain records remain in server graphs. Source/CAD files and revision publication packages remain separate in Google Drive/native CAD.
+- Continue bounded independent 1301 read-only workspace implementation/offline tests in `ui-v2`; do not wait for blanket 1300 completion and do not claim Desktop delivery, test completion or release acceptance.
+- Reconcile remaining active 1300 plans and dossier hashes to the latest scope; 1300-07 is withdrawn, not completed. G-01/V8 independent verification/owner acceptance and security gates remain mandatory before dependent semantic consumption/live operations and phase acceptance.
+- Initial scope is local single-user Compose on the current PC, Revit 2024 / Rhino 8, CAD/graph reads only; system `genpro` / `mimo-v2.5-pro` pair hidden from normal users. Reviewer/second-PC testing is later independent acceptance, not predevelopment identity/spec.
 - v12.0 remains CLOSED_WITH_ACCEPTED_DEBT, technical verdict gaps_found; accepted-debt owners and capability gates are unchanged.
-- Product implementation, live deployment/DB/CAD/LLM/Drive mutations, secret rotation, paid inference, commit/tag/push and other milestone activations are not authorized by this discussion close.
+- No live deployment/DB/CAD/LLM calls, Drive/external/native writes, secret handling/rotation, paid inference, install, Git stage/commit/tag/push/stash/branch or other milestone activation. Later write/publication capabilities remain assigned to their phases, separately authorized future work; they are not silently deleted or enabled now.
