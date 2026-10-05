@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 11/16 plans executed
+**Plans**: 12/16 plans executed
 **UI hint**: yes
 
 Plans:
@@ -171,7 +171,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 1301-11-PLAN.md — degram toolset, CAD adapters, context composer, cancellable reads (D-11, D-13..D-15, D-17, D-18)
-- [ ] 1301-12-PLAN.md — Electron main: partition sign-in, DG view, token mint/handoff, heartbeat/revoke (D-05..D-08, D-19)
+- [x] 1301-12-PLAN.md — Electron main: partition sign-in, DG view, token mint/handoff, heartbeat/revoke (D-05..D-08, D-19)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -331,7 +331,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 11/16 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 12/16 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
