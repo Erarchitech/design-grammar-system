@@ -459,10 +459,11 @@ The full contract, including the complete route-policy table, is `spec/SECURITY-
 | User session | `dg_session` cookie (HttpOnly, SameSite=Strict) plus `X-DG-CSRF: 1` on every `POST`/`PUT`/`PATCH`/`DELETE` | The V2 UI. Roles per project: `viewer`, `editor`, `owner`; an admin acts as owner everywhere |
 | Connector token | `Authorization: Bearer dgc_...`, bound to one project | Grasshopper: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, plus `POST /connectors/heartbeat` and `POST /designstate/capture` |
 | Service token | `X-DG-Service-Token` | n8n only: `/llm/generate`, `/context/*`, `/mcp`, `POST /execution-result` |
+| Delegated token (Phase 1301) | `Authorization: Bearer dgd_...`, bound to one project and the user's session, 15-minute lifetime; exempt from `X-DG-CSRF` | The local DeGram agent: `GET /graph/{project}`, `GET /rules/{project}`, `DELETE /auth/delegated-token` |
 
 Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POST /connectors/heartbeat` (validates its own connector token).
 
-**Errors** use the `{error, hint, code}` detail shape: 401 `AUTH_REQUIRED`, `CONNECTOR_AUTH_FAILED`, `SERVICE_AUTH_FAILED`; 403 `PRINCIPAL_NOT_PERMITTED`, `CSRF_HEADER_REQUIRED`, `ADMIN_REQUIRED`, `PROJECT_FORBIDDEN`, `PROJECT_REQUIRED`, `PROJECT_MISMATCH`, `ROUTE_UNCLASSIFIED`. Resource-bound routes answer an unknown and an unauthorized resource with the same 404.
+**Errors** use the `{error, hint, code}` detail shape: 401 `AUTH_REQUIRED`, `CONNECTOR_AUTH_FAILED`, `SERVICE_AUTH_FAILED`, `DELEGATED_AUTH_FAILED`, `DELEGATED_EXPIRED`, `DELEGATED_SESSION_ENDED`; 403 `DELEGATED_SCOPE_CHANGED`, `PRINCIPAL_NOT_PERMITTED`, `CSRF_HEADER_REQUIRED`, `ADMIN_REQUIRED`, `PROJECT_FORBIDDEN`, `PROJECT_REQUIRED`, `PROJECT_MISMATCH`, `ROUTE_UNCLASSIFIED`. Resource-bound routes answer an unknown and an unauthorized resource with the same 404.
 
 **Account and project endpoints (Phase 1205).**
 
@@ -471,7 +472,9 @@ Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POS
 | POST | `/auth/login` | public | Issue the session cookie |
 | POST | `/auth/logout` | session | Revoke the session |
 | GET | `/auth/me` | session | Current user, admin flag, memberships (each with `project`, `role`, `company`; `company` is `null` for an unassigned project) |
-| POST | `/auth/password` | session | Change own password |
+| POST | `/auth/password` | session | Change own password (also revokes the user's delegated tokens) |
+| POST | `/auth/delegated-token` | session (cookie + CSRF, project member) | Mint a `dgd_` delegated token for one project (Phase 1301, D-06): body `{project}`; 201 `{token, project, company, expiresAt, expiresInSeconds}`, `Cache-Control: no-store`; 403 `PROJECT_FORBIDDEN` for a non-member (an admin needs a membership too) |
+| DELETE | `/auth/delegated-token` | delegated | Revoke the presented delegated token; 204 |
 | POST | `/auth/invites` | project owner | Invite a user to a project (`dgi_` code, valid 72 hours) |
 | POST | `/auth/accept-invite` | public (invite code) | Create the account and start a session |
 | GET | `/projects` | session | Projects the caller can access; each row carries `company` (string or `null`) |

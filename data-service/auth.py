@@ -327,6 +327,35 @@ def authenticate_session(token: str, *, now: int | None = None) -> dict[str, Any
     return None
 
 
+def authenticate_session_hash(
+    session_hash: str, *, now: int | None = None
+) -> dict[str, Any] | None:
+    """Return the session record (without the hash) for `session_hash` if that
+    session is non-revoked, unexpired and not idle-timed-out; else None.
+
+    Applies exactly the rules of :func:`authenticate_session` but is READ-ONLY:
+    it never refreshes ``last_seen_at``. A delegated token (delegation.py) must
+    not keep an abandoned parent session alive (D-08)."""
+    if not session_hash:
+        return None
+    current = _now(now)
+    idle = int(os.getenv("DG_SESSION_IDLE_SECONDS", "7200"))
+    with _STORE_LOCK:
+        for s in _load(SESSIONS_FILE, "sessions"):
+            if s.get("token_hash") != session_hash:
+                continue
+            if s.get("revoked"):
+                return None
+            if current >= int(s.get("expires_at", 0)):
+                return None
+            if current - int(s.get("last_seen_at", 0)) >= idle:
+                return None
+            result = dict(s)
+            result.pop("token_hash", None)
+            return result
+    return None
+
+
 def revoke_session(token: str) -> bool:
     """Mark the session identified by `token` as revoked. Returns False if
     unknown or already revoked."""
@@ -371,7 +400,10 @@ def revoke_user_sessions(username: str, *, except_token_hash: str | None = None)
 
 @dataclass(frozen=True)
 class Principal:
-    """A resolved caller identity. `kind` is one of anonymous/user/connector/service."""
+    """A resolved caller identity. `kind` is one of
+    anonymous/user/connector/service/delegated. A `delegated` principal
+    (Phase 1301-05, D-06) carries `username`, `bound_project`, `company` and
+    the parent `session_hash`; it is never an admin."""
 
     kind: str
     username: str | None = None
@@ -379,6 +411,7 @@ class Principal:
     bound_project: str | None = None
     credential_id: str | None = None
     session_hash: str | None = None
+    company: str | None = None
 
 
 def resolve_session_principal(token: str, *, now: int | None = None) -> Principal | None:
@@ -970,8 +1003,9 @@ async def _resolve_project(request: Request, policy: "route_policy.RoutePolicy")
 async def require_principal(request: Request) -> Principal:
     """FastAPI dependency (D-03/D-04): deny-by-default. Looks up the policy
     for this route in route_policy.ROUTE_POLICIES; resolves a principal from
-    the service header, then a connector Bearer token, then the session
-    cookie (explicit-credential precedence, no fallback to a weaker one);
+    the service header, then a delegated (`dgd_`) or connector Bearer token,
+    then the session cookie (explicit-credential precedence, no fallback to a
+    weaker one);
     enforces the principal-kind check, CSRF, and project authorization; sets
     `request.state.principal` / `request.state.project`; returns the
     principal.
@@ -1007,9 +1041,11 @@ async def require_principal(request: Request) -> Principal:
         request.state.project = None
         return principal
 
-    # (3) resolve the credential: service header > connector Bearer > session
-    # cookie. An explicit-but-invalid credential never falls back to a
-    # weaker one (D-04).
+    # (3) resolve the credential: service header > delegated Bearer > connector
+    # Bearer > session cookie. An explicit-but-invalid credential never falls
+    # back to a weaker one (D-04).
+    import delegation  # noqa: PLC0415 -- delegation imports this module
+
     service_header = request.headers.get(SERVICE_TOKEN_HEADER)
     auth_header = request.headers.get("Authorization", "")
     cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -1026,14 +1062,18 @@ async def require_principal(request: Request) -> Principal:
             )
     elif auth_header.startswith("Bearer "):
         token = auth_header[len("Bearer "):].strip()
-        principal = resolve_connector_principal(token)
-        if principal is None:
-            raise auth_error(
-                "Invalid or revoked connector token.",
-                "Create a new credential via POST /connectors/{connector_id}/credentials.",
-                "CONNECTOR_AUTH_FAILED",
-                401,
-            )
+        if token.startswith(delegation.DELEGATED_TOKEN_PREFIX):
+            # Raises the named DELEGATED_* / PROJECT_FORBIDDEN error itself.
+            principal = delegation.authenticate_delegated_token(token)
+        else:
+            principal = resolve_connector_principal(token)
+            if principal is None:
+                raise auth_error(
+                    "Invalid or revoked connector token.",
+                    "Create a new credential via POST /connectors/{connector_id}/credentials.",
+                    "CONNECTOR_AUTH_FAILED",
+                    401,
+                )
     elif cookie_token:
         principal = resolve_session_principal(cookie_token)
         if principal is None:
@@ -1056,6 +1096,7 @@ async def require_principal(request: Request) -> Principal:
         "user": {route_policy.PRINCIPAL_SESSION, route_policy.PRINCIPAL_ADMIN, route_policy.PRINCIPAL_MEMBER},
         "connector": {route_policy.PRINCIPAL_CONNECTOR},
         "service": {route_policy.PRINCIPAL_SERVICE},
+        "delegated": {route_policy.PRINCIPAL_DELEGATED},
     }
     if policy.principals.isdisjoint(allowed_tokens_by_kind.get(principal.kind, set())):
         raise auth_error(
@@ -1065,7 +1106,9 @@ async def require_principal(request: Request) -> Principal:
             403,
         )
 
-    # (5) CSRF on session-authenticated unsafe requests.
+    # (5) CSRF on session-authenticated unsafe requests. A delegated Bearer is
+    # a non-ambient credential (the browser never attaches it on its own), so
+    # it is exempt; the cookie that minted it is not.
     if principal.kind == "user" and request.method in _UNSAFE_METHODS:
         _require_csrf(request)
 
@@ -1092,6 +1135,12 @@ async def require_principal(request: Request) -> Principal:
             authorized = role_satisfies(role, policy.min_role or "viewer")
         elif principal.kind == "connector":
             authorized = principal.bound_project == project
+        elif principal.kind == "delegated":
+            # Bound project only, and the stored membership role (no admin
+            # elevation); membership/company were re-checked at resolution.
+            authorized = principal.bound_project == project and role_satisfies(
+                get_role(principal.username or "", project), policy.min_role or "viewer"
+            )
         elif principal.kind == "service":
             authorized = True
         else:

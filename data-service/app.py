@@ -68,6 +68,7 @@ from connectors import (
 import auth
 import auth_routes
 import company
+import delegation
 import route_policy
 import secrets_policy
 
@@ -4576,6 +4577,7 @@ def set_project_company(project: str, payload: ProjectCompanyRequest):
             "PROJECT_NAME_INVALID",
             422,
         )
+    previous = company.company_for_project(project)
     try:
         record = company.set_project_company(project, payload.company)
     except ValueError as exc:
@@ -4585,6 +4587,10 @@ def set_project_company(project: str, payload: ProjectCompanyRequest):
             "COMPANY_INVALID",
             422,
         ) from exc
+    if previous != record["company"]:
+        # D-08: tokens issued under the old assignment stop working at once
+        # (they are also refused by their own live company check).
+        delegation.revoke_for_project(project)
     return {"project": project, "company": record["company"]}
 
 
@@ -4613,6 +4619,7 @@ def remove_project_member(project: str, username: str):
                 409,
             )
         auth.remove_membership(username, project)
+        delegation.revoke_for_user_project(username, project)  # D-08
     return Response(status_code=204)
 
 

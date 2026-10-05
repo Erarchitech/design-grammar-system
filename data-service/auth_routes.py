@@ -20,12 +20,14 @@ import os
 import secrets
 
 import threading
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 import auth
 import company
+import delegation
 
 router = APIRouter(dependencies=[Depends(auth.require_principal)])
 
@@ -101,6 +103,10 @@ class MeResponse(BaseModel):
 class PasswordChangeRequest(BaseModel):
     currentPassword: str
     newPassword: str
+
+
+class DelegatedTokenRequest(BaseModel):
+    project: str
 
 
 def set_session_cookie(response: Response, token: str) -> None:
@@ -263,7 +269,54 @@ def logout(request: Request, response: Response):
     token = request.cookies.get(auth.SESSION_COOKIE_NAME)
     if token:
         auth.revoke_session(token)
+        # D-08: every delegated token minted from this session dies with it.
+        delegation.revoke_for_session(request.state.principal.session_hash or "")
     clear_session_cookie(response)
+    return None
+
+
+@router.post("/auth/delegated-token", status_code=201)
+def mint_delegated_token(payload: DelegatedTokenRequest, request: Request, response: Response):
+    """Phase 1301-05 (D-06): convert the caller's cookie session into a
+    short-lived ``dgd_`` Bearer token bound to ONE project the caller is a
+    member of. The route policy keeps the cookie + CSRF requirement (a Bearer
+    caller is refused), and membership is the STORED role: an admin who is not a
+    member gets 403 -- the token would carry no admin elevation anyway."""
+    principal = request.state.principal
+    project = payload.project
+    if (
+        not principal.username
+        or not principal.session_hash
+        or auth.get_role(principal.username, project) is None
+    ):
+        raise auth.auth_error(
+            "Not authorized for the requested project.",
+            "Request project access from a project owner.",
+            "PROJECT_FORBIDDEN",
+            403,
+        )
+    token, record = delegation.issue_delegated_token(
+        session_hash=principal.session_hash,
+        username=principal.username,
+        project=project,
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "token": token,
+        "project": record["project"],
+        "company": record["company"],
+        "expiresAt": datetime.fromtimestamp(record["expires_at"], tz=timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        ),
+        "expiresInSeconds": delegation.DELEGATED_TOKEN_TTL_SECONDS,
+    }
+
+
+@router.delete("/auth/delegated-token", status_code=204)
+def revoke_delegated_token(request: Request):
+    """Revoke the delegated token the caller presented (self-revoke)."""
+    header = request.headers.get("Authorization", "")
+    delegation.revoke_token(header[len("Bearer "):].strip() if header.startswith("Bearer ") else "")
     return None
 
 
@@ -309,4 +362,7 @@ def change_password(request: Request, payload: PasswordChangeRequest):
     auth.throttle_clear(pw_key)
     auth.set_password(user["username"], payload.newPassword)
     auth.revoke_user_sessions(user["username"], except_token_hash=principal.session_hash)
+    # D-08: a password change ends every delegated token of the user, including
+    # those minted from the session that is kept.
+    delegation.revoke_for_user(user["username"])
     return None

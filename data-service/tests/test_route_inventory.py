@@ -205,7 +205,7 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        assert len(route_policy.ROUTE_POLICIES) == 85
+        assert len(route_policy.ROUTE_POLICIES) == 87
 
     def test_removed_routes_are_gone(self):
         paths = {k[1] for k in _registered_keys()}
@@ -237,6 +237,7 @@ class TestInventory:
                 route_policy.PRINCIPAL_CONNECTOR,
                 route_policy.PRINCIPAL_SERVICE,
                 route_policy.PRINCIPAL_CONNECTOR_SELF,
+                route_policy.PRINCIPAL_DELEGATED,
             }, key
             if route_policy.PRINCIPAL_MEMBER in policy.principals:
                 assert policy.project_source and policy.min_role, key

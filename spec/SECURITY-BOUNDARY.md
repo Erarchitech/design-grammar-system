@@ -8,7 +8,7 @@ This is the normative contract for the Design Grammar System security boundary. 
 
 **Enforcement shape.** This file follows the `spec/SWRL-SUBSET.md` and `spec/REPRODUCIBILITY.md` pattern. Section 4 holds four machine-checked fenced blocks, each delimited by HTML comments. `data-service/tests/test_security_boundary_spec.py` parses them and fails the suite when a block differs from the code or compose file it mirrors, in either direction. A new route, principal, published port or known-default secret therefore cannot ship without this document changing.
 
-**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
+**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only) and `auth-delegated-tokens.json` (SHA-256 hashes of delegated tokens, Section 3.5). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
 
 Related contracts: `spec/EVIDENCE-CONTRACT.md` (validation outcome status and evidence envelope, unchanged by this phase), `spec/RULE-PARTITION-POLICY.md`, `spec/SWRL-SUBSET.md`, `spec/REPRODUCIBILITY.md`.
 
@@ -51,7 +51,7 @@ The override uses the Compose `!reset` tag because Compose concatenates `ports` 
 
 ## 3. Principals
 
-Exactly one principal type is resolved per request, by explicit credential, in this precedence order: service header, then connector Bearer token, then session cookie. An explicit-but-invalid credential never falls back to a weaker one.
+Exactly one principal type is resolved per request, by explicit credential, in this precedence order: service header, then delegated Bearer token (`dgd_`), then connector Bearer token (`dgc_`), then session cookie. An explicit-but-invalid credential never falls back to a weaker one: an invalid `dgd_` Bearer answers 401 even when a valid session cookie is also present.
 
 ### 3.1 User session
 
@@ -85,15 +85,30 @@ Every denial uses the `{error, hint, code}` detail shape with generic messages t
 | `AUTH_REQUIRED` | 401 | No credential, or an invalid or expired session |
 | `CONNECTOR_AUTH_FAILED` | 401 | Invalid or revoked connector token |
 | `SERVICE_AUTH_FAILED` | 401 | Invalid service token |
+| `DELEGATED_AUTH_FAILED` | 401 | Unknown, malformed or explicitly revoked delegated token |
+| `DELEGATED_EXPIRED` | 401 | Delegated token past its own expiry |
+| `DELEGATED_SESSION_ENDED` | 401 | The parent session of a delegated token was revoked, expired, idle-timed-out or its user no longer exists |
+| `DELEGATED_SCOPE_CHANGED` | 403 | The project behind a delegated token was reassigned to a different company |
 | `PRINCIPAL_NOT_PERMITTED` | 403 | The principal type is not permitted on this route |
-| `CSRF_HEADER_REQUIRED` | 403 | Unsafe session request without `X-DG-CSRF: 1` |
+| `CSRF_HEADER_REQUIRED` | 403 | Unsafe cookie-session request without `X-DG-CSRF: 1` (a delegated Bearer is exempt) |
 | `ADMIN_REQUIRED` | 403 | Admin-only route, non-admin user |
-| `PROJECT_FORBIDDEN` | 403 | Not a member of the project, or role too low |
+| `PROJECT_FORBIDDEN` | 403 | Not a member of the project, or role too low; also a delegated token whose membership on its bound project was removed |
 | `PROJECT_REQUIRED` | 403 | The declared project source carries no project value |
 | `PROJECT_MISMATCH` | 403 | Path, query and body carry different project values |
 | `ROUTE_UNCLASSIFIED` | 403 | The route has no policy row (fail closed) |
 
 Resource-bound routes answer an unknown resource and an unauthorized one with the same 404 (`CREDENTIAL_NOT_FOUND`, `EXECUTION_NOT_FOUND`, the note not-found), so a caller cannot probe another project's resources.
+
+### 3.5 Delegated token (Phase 1301, D-06, D-08, D-20)
+
+A user-scoped credential for the local DeGram agent, which holds neither the browser cookie, a connector token nor the service token.
+
+- **Mint.** `POST /auth/delegated-token` with body `{project}`, authenticated by the `dg_session` cookie and `X-DG-CSRF: 1` (policy `member`, viewer). The caller must hold a stored membership on the project; an admin who is not a member is refused (403 `PROJECT_FORBIDDEN`). A Bearer caller (delegated or connector) cannot mint (403 `PRINCIPAL_NOT_PERMITTED`). The 201 answer is `{token, project, company, expiresAt, expiresInSeconds}` with `Cache-Control: no-store`; the raw token is returned once.
+- **Credential.** `Authorization: Bearer dgd_...` (`secrets.token_urlsafe(32)`), time to live 900 seconds (`delegation.DELEGATED_TOKEN_TTL_SECONDS`). The server stores only the SHA-256 hash, the parent session hash, the username, the project and the company recorded at issue (`auth-delegated-tokens.json`). The raw token is never logged.
+- **Principal.** Resolves to kind `delegated`: never an admin, bound to exactly one project, with the project's company. Route scope is exactly the rows whose principals include `delegated` in the route-policy block: `GET /graph/{project}`, `GET /rules/{project}` and `DELETE /auth/delegated-token` (self-revoke). Authorization is bound-project equality plus the user's stored role, so a delegated token never inherits admin ownership of other projects. Every other route answers 403 `PRINCIPAL_NOT_PERMITTED`.
+- **CSRF.** A delegated Bearer is a non-ambient credential and is exempt from `X-DG-CSRF`; the cookie session that mints it is not.
+- **Revocation (fail closed, checked on every request).** The token stops working at once when: the parent session is logged out, revoked, expired or idle-timed-out, or its user is gone (401 `DELEGATED_SESSION_ENDED`); the user changes their password (all of the user's tokens, 401 `DELEGATED_SESSION_ENDED`); the membership on the bound project is removed (403 `PROJECT_FORBIDDEN`); the project is reassigned to another company (403 `DELEGATED_SCOPE_CHANGED`); or its own expiry passes (401 `DELEGATED_EXPIRED`). `DELETE /auth/delegated-token` revokes the presented token (later use answers 401 `DELEGATED_AUTH_FAILED`). Delegated use does not refresh the parent session's idle timer.
+- **Company.** `PUT /projects/{project}/company` (admin only, D-20) assigns a project to a company; `GET /projects` rows and `GET /auth/me` memberships carry `company` (string or `null`).
 
 ## 4. Machine-Checked Blocks
 
@@ -122,6 +137,8 @@ Format `METHOD|PATH|PRINCIPALS|PROJECT_SOURCE|MIN_ROLE`. Principals are joined w
 ```
 GET|/|public|-|-
 POST|/auth/accept-invite|public|-|-
+DELETE|/auth/delegated-token|delegated|-|-
+POST|/auth/delegated-token|member|body|viewer
 POST|/auth/invites|member|body|owner
 POST|/auth/login|public|-|-
 POST|/auth/logout|session|-|-
@@ -149,7 +166,7 @@ GET|/design-rule-sessions/{project}|member|path|viewer
 POST|/designstate/capture|connector-self|-|-
 POST|/execution-result|service|-|-
 GET|/execution-result/{execution_id}|session|resource:execution|viewer
-GET|/graph/{project}|member|path|viewer
+GET|/graph/{project}|delegated+member|path|viewer
 POST|/graph/{project}/claim-untagged|member|path|editor
 PUT|/graph/{project}/node/{node_id}/property|member|path|editor
 POST|/identity/bind|member|body|editor
@@ -190,7 +207,7 @@ POST|/rules/bulk-delete|member|body|editor
 POST|/rules/check-conflict|member|body|viewer
 POST|/rules/resolve-deletion|member|body|editor
 POST|/rules/supersede|member|body|editor
-GET|/rules/{project}|member|path|viewer
+GET|/rules/{project}|delegated+member|path|viewer
 DELETE|/rules/{project}/{rule_id}|member|path|editor
 GET|/rules/{project}/{rule_id}|member|path|viewer
 GET|/rules/{project}/{rule_id}/delete-preview|member|path|viewer
@@ -342,6 +359,7 @@ Order of execution:
 | `known-default-secrets` equals `secrets_policy` | `data-service/tests/test_security_boundary_spec.py`, `data-service/tests/test_secrets_policy.py` |
 | `published-ports` equals the compose bindings for both profiles | `data-service/tests/test_security_boundary_spec.py`, `data-service/tests/test_compose_boundary.py` |
 | No `/neo4j/` or `/n8n/` proxy, no credential in `config.js` or the UI bundle | `data-service/tests/test_static_proxy_boundary.py`, `data-service/tests/test_config_js_no_secrets.py` |
+| Delegated token mint, scope, CSRF exemption, no-fallback and every revocation case (Section 3.5); project to company map | `data-service/tests/test_delegated_token.py`, `data-service/tests/test_company_scope.py` |
 | Live exposure and 401 behavior | `tools/security/check_live_boundary.py` (owner run, against rebuilt containers) |
 
 **Adding a route.** Add the `@app` route with `Depends(auth.require_principal)` (or the router-level dependency), add its row to `route_policy.ROUTE_POLICIES`, add the row to the `route-policy` block in Section 4.2 (and the `public-routes` block if it is public), and run the route inventory and this contract's drift test. A route without all three fails the suite.

@@ -22,7 +22,8 @@ from typing import Any, Awaitable, Callable
 # directly -- a "user" kind principal is permitted by any of session/admin/
 # member (auth.require_principal decides which one actually applies); a
 # "connector" kind principal is permitted only by "connector"; a "service"
-# kind principal only by "service". "public"/"connector-self" bypass
+# kind principal only by "service"; a "delegated" kind principal only by
+# "delegated". "public"/"connector-self" bypass
 # credential resolution entirely (anonymous principal).
 PRINCIPAL_PUBLIC = "public"
 PRINCIPAL_CONNECTOR_SELF = "connector-self"
@@ -31,6 +32,10 @@ PRINCIPAL_ADMIN = "admin"
 PRINCIPAL_MEMBER = "member"
 PRINCIPAL_CONNECTOR = "connector"
 PRINCIPAL_SERVICE = "service"
+# Phase 1301-05 (D-06): a short-lived user-scoped ``dgd_`` Bearer minted from a
+# cookie session for one project (delegation.py). Permitted only where a row
+# lists it; resolves to Principal.kind "delegated" and never elevates an admin.
+PRINCIPAL_DELEGATED = "delegated"
 
 
 @dataclass(frozen=True)
@@ -87,6 +92,7 @@ _ADM = PRINCIPAL_ADMIN
 _MEM = PRINCIPAL_MEMBER
 _CON = PRINCIPAL_CONNECTOR
 _SVC = PRINCIPAL_SERVICE
+_DEL = PRINCIPAL_DELEGATED
 _SELF = PRINCIPAL_CONNECTOR_SELF
 
 # ── Route table (D-03/D-14) ──
@@ -104,6 +110,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/auth/logout"): _p(_SES),
     ("GET", "/auth/me"): _p(_SES),
     ("POST", "/auth/password"): _p(_SES),
+    # Phase 1301-05 (D-06): mint (cookie + CSRF, member of the body project)
+    # and self-revoke (the delegated token itself) a delegated token.
+    ("POST", "/auth/delegated-token"): _p(_MEM, source="body", role="viewer"),
+    ("DELETE", "/auth/delegated-token"): _p(_DEL),
     # ── project tenancy + invitations (Phase 1205-12, D-02/D-05) ──
     ("POST", "/auth/invites"): _p(_MEM, source="body", role="owner"),
     ("POST", "/auth/accept-invite"): _p(_PUB),
@@ -116,10 +126,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # add no authorization; the handler validates the path value itself.
     ("PUT", "/projects/{project}/company"): _p(_ADM),
     # ── named graph endpoints (Phase 1205-12, D-06) ──
-    ("GET", "/graph/{project}"): _p(_MEM, source="path", role="viewer"),
+    ("GET", "/graph/{project}"): _p(_MEM, _DEL, source="path", role="viewer"),
     ("POST", "/graph/{project}/claim-untagged"): _p(_MEM, source="path", role="editor"),
     ("PUT", "/graph/{project}/node/{node_id}/property"): _p(_MEM, source="path", role="editor"),
-    ("GET", "/rules/{project}"): _p(_MEM, source="path", role="viewer"),
+    ("GET", "/rules/{project}"): _p(_MEM, _DEL, source="path", role="viewer"),
     ("GET", "/rules/{project}/{rule_id}"): _p(_MEM, source="path", role="viewer"),
     ("GET", "/validation/view/{project}/{run_id}/entity/{dg_entity_id}"): _p(
         _MEM, source="path", role="viewer"
