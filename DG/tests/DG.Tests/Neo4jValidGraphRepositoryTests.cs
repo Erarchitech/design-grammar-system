@@ -299,37 +299,52 @@ public sealed class Neo4jValidGraphRepositoryTests
     }
 
     /// <summary>
-    /// NAMED, ASSERTED DIVERGENCE (companion to the Fact above, same root cause, opposite
-    /// direction): the serializer's OWN condensed <c>{type, value}</c> wire shape -- which is
-    /// what fixtures/golden/replay/mixed-verdicts.json's paramStates member actually carries, and
-    /// what <see cref="DesignStatePayloadV2Serializer.Serialize"/> itself emits -- is silently
-    /// mis-parsed by the INLINE reader: every typed value comes back null instead of throwing,
-    /// because <c>JsonSerializer.Deserialize&lt;DesignStateParameter&gt;</c> has no <c>Value</c>
-    /// CLR property for the wire's <c>value</c> key to bind to, and
-    /// <c>System.Text.Json</c> silently ignores unmatched JSON properties by default.
+    /// The serializer's OWN condensed <c>{type, value}</c> wire shape -- what
+    /// <see cref="DesignStatePayloadV2Serializer.Serialize"/> emits, so what every VALIDATOR
+    /// canvas publish stores, and what fixtures/golden/replay/mixed-verdicts.json carries -- must
+    /// be read by the inline reader with its typed values intact, for both ParamState parameters
+    /// and PropState values. Previously (Phase 1202-09 D-09 "declared exclusion") the inline reader
+    /// returned null for every typed value here; VALIDATION GRAPH reads published runs through it,
+    /// so PARAMETER REINSTATE received empty values (test v12-hexagonal-facade-01, finding F24).
     /// </summary>
     [Fact]
-    public void TryParseDesignState_AndSerializerDeserialize_DivergeOnSerializerOwnConciseParameterShape()
+    public void TryParseDesignState_ReadsTheSerializerOwnConciseParameterShape()
     {
         var mixedVerdictsPayloadJson = LoadMixedVerdictsStatePayloadJson();
 
-        // The serializer round-trips its own shape correctly.
         var serializerResult = DesignStatePayloadV2Serializer.Deserialize(mixedVerdictsPayloadJson);
-        var serializerParameter = Assert.Single(serializerResult.ParamStates[0].Parameters);
-        Assert.Equal("HeightSlider", serializerParameter.ParameterId);
-        Assert.Equal(42.0, serializerParameter.NumberValue);
-
-        // The inline reader silently drops the typed value on the SAME shape -- NumberValue,
-        // IntegerValue, and BooleanValue all come back null, not 42.0. This is NOT a null the
-        // fixture author intended; it is System.Text.Json's default unmatched-property behavior
-        // combined with DesignStateParameter having no Value property.
         var inlineResult = Neo4jValidGraphRepository.TryParseDesignState(mixedVerdictsPayloadJson);
+
         Assert.NotNull(inlineResult);
+        var serializerParameter = Assert.Single(serializerResult.ParamStates[0].Parameters);
         var inlineParameter = Assert.Single(inlineResult!.ParamStates[0].Parameters);
         Assert.Equal("HeightSlider", inlineParameter.ParameterId);
-        Assert.Null(inlineParameter.NumberValue);
-        Assert.Null(inlineParameter.IntegerValue);
-        Assert.Null(inlineParameter.BooleanValue);
+        Assert.Equal(DesignStateParameterType.Number, inlineParameter.Type);
+        Assert.Equal(42.0, inlineParameter.NumberValue);
+        Assert.Equal(serializerParameter.NumberValue, inlineParameter.NumberValue);
+
+        var inlinePropValue = Assert.Single(inlineResult.PropStates).PropValue;
+        Assert.NotNull(inlinePropValue);
+        Assert.Equal(42.0, inlinePropValue!.NumberValue);
+    }
+
+    [Theory]
+    [InlineData("integer", "7", null, 7L, null)]
+    [InlineData("boolean", "true", null, null, true)]
+    [InlineData("number", "-1", -1.0, null, null)]
+    public void TryParseDesignState_ConciseShape_ReadsEveryValueType(
+        string type, string valueJson, double? number, long? integer, bool? boolean)
+    {
+        var payload = "{\"version\":\"2\",\"stateId\":\"DS_X\",\"capturedAtUtc\":\"2026-10-05T00:00:00Z\","
+            + "\"objStates\":[],\"paramStates\":[{\"stateId\":\"PS_X\",\"capturedAtUtc\":\"2026-10-05T00:00:00Z\","
+            + "\"parameters\":[{\"parameterId\":\"p\",\"displayName\":\"p\",\"type\":\"" + type + "\",\"value\":" + valueJson + "}]}],"
+            + "\"propStates\":[]}";
+
+        var parameter = Assert.Single(Neo4jValidGraphRepository.TryParseDesignState(payload)!.ParamStates[0].Parameters);
+
+        Assert.Equal(number, parameter.NumberValue);
+        Assert.Equal(integer, parameter.IntegerValue);
+        Assert.Equal(boolean, parameter.BooleanValue);
     }
 
     private static void AssertDesignStatesAgree(DesignState inlineResult, DesignState serializerResult)

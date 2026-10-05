@@ -7,9 +7,6 @@ public sealed class ReinstatementResult
     public required IReadOnlyList<ReinstatementParameterReport> Reports { get; init; }
 
     public int AppliedCount => Reports.Count(r => r.Status == ReinstatementStatus.Applied);
-    public int BlockedCount => Reports.Count(r => r.Status is ReinstatementStatus.MissingTarget
-        or ReinstatementStatus.TypeMismatch
-        or ReinstatementStatus.AmbiguousTarget
-        or ReinstatementStatus.OutOfRange);
+    public int BlockedCount => Reports.Count(r => r.Status.IsBlocking());
     public int UnchangedCount => Reports.Count(r => r.Status == ReinstatementStatus.Unchanged);
 }

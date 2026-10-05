@@ -29,6 +29,7 @@ public static class ErrorMessageTemplates
             ReinstatementStatus.TypeMismatch => "Reconnect a matching slider or recapture state.",
             ReinstatementStatus.AmbiguousTarget => "Ensure only one slider has this NickName.",
             ReinstatementStatus.OutOfRange => "Adjust slider domain to include the saved value.",
+            ReinstatementStatus.MissingValue => "Recapture the Design State; its stored value could not be read.",
             _ => "Check the parameter connection.",
         };
 
@@ -69,9 +70,9 @@ public static class ErrorMessageTemplates
                "Wire exactly one Object (broadcast to every instance), one Object per Geometry item, or none at all.";
     }
 
-    public static string DesignStatePropObjCountMismatch(int objCount, int propCount)
+    public static string DesignStatePropObjCountMismatch(int objCount, int unlinkedPropCount)
     {
-        return $"DESIGN STATE: PropState list length ({propCount}) does not match ObjState list length ({objCount}). When both are present, their list lengths must be equal (property values are evaluated against objects at each index).";
+        return $"DESIGN STATE: {unlinkedPropCount} PropState(s) without an ObjState link do not match the {objCount} ObjState(s). Unlinked property values need one value per object; to bind values to specific objects instead, wire PROPERTY STATE's ObjState input.";
     }
 
     public static string DesignStateNoInputs()

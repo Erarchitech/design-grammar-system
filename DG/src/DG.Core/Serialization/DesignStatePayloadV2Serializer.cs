@@ -375,6 +375,21 @@ public static class DesignStatePayloadV2Serializer
     // silently mis-parses this reader's own shape instead of throwing. See spec/DATABASE.md
     // "Declared exclusion: `parameters[]` has two wire shapes and two readers" for the full
     // contract and the two pinning regression Facts in Neo4jValidGraphRepositoryTests.cs.
+    /// <summary>
+    /// Reads one parameter in this serializer's condensed <c>{type, value}</c> shape. Shared with
+    /// <c>Neo4jValidGraphRepository.TryParseDesignState</c>, which meets both wire shapes.
+    /// </summary>
+    internal static DesignStateParameter ParameterFromConciseJson(JsonElement element)
+    {
+        var dto = element.Deserialize<ParameterDto>(Options)
+            ?? throw new InvalidOperationException("Parameter entry is required.");
+        return ParamFromDto(dto);
+    }
+
+    /// <summary>True when a parameter element carries the condensed shape's <c>value</c> key.</summary>
+    internal static bool IsConciseParameter(JsonElement element) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty("value", out _);
+
     private static DesignStateParameter ParamFromDto(ParameterDto dto)
     {
         if (dto is null)

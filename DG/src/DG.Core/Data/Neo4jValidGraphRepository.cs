@@ -335,6 +335,18 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 StringComparer.Ordinal.GetHashCode(obj.ObjectId));
     }
 
+    /// <summary>
+    /// Reads one <c>parameters[]</c> entry in either wire shape: the condensed <c>{type, value}</c>
+    /// shape that DesignStatePayloadV2Serializer (every VALIDATOR publish) writes, or the flat
+    /// numberValue/integerValue/booleanValue shape of the accept-candidate writer.
+    /// </summary>
+    private static DesignStateParameter? ReadParameter(JsonElement element, JsonSerializerOptions flatOptions)
+    {
+        return DesignStatePayloadV2Serializer.IsConciseParameter(element)
+            ? DesignStatePayloadV2Serializer.ParameterFromConciseJson(element)
+            : JsonSerializer.Deserialize<DesignStateParameter>(element.GetRawText(), flatOptions);
+    }
+
     internal static DesignState? TryParseDesignState(string? statePayloadJson)
     {
         if (string.IsNullOrWhiteSpace(statePayloadJson)) return null;
@@ -366,19 +378,15 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
                 root.ValueKind == JsonValueKind.Object &&
                 root.EnumerateObject().Any(p => p.Name is "objStates" or "paramStates" or "propStates"))
             {
-                // Declared exclusion (Phase 1202 plan 09, D-09, ALGN12-09): this inline reader is
-                // the authoritative reader for accept-candidate-writer (flat numberValue/
-                // integerValue/booleanValue shape) parameters[] payloads only. It silently
-                // yields null typed values (NumberValue/IntegerValue/BooleanValue) on the
-                // DesignStatePayloadV2Serializer's own condensed {type, value} shape, with no
-                // exception, because System.Text.Json ignores unmatched properties by default.
-                // Converging the two readers is deliberately NOT implemented — see spec/DATABASE.md
-                // "Declared exclusion: `parameters[]` has two wire shapes and two readers" for the
-                // full contract. Pinned by
-                // TryParseDesignState_AndSerializerDeserialize_DivergeOnAcceptCandidateWriterEnvelope
-                // and
-                // TryParseDesignState_AndSerializerDeserialize_DivergeOnSerializerOwnConciseParameterShape
-                // in DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs.
+                // parameters[] wire shapes (Phase 1202-09 D-09, amended 2026-10-05): each entry is
+                // read by ReadParameter -- the condensed {type, value} shape that every VALIDATOR
+                // publish writes goes through DesignStatePayloadV2Serializer's own rule, the flat
+                // numberValue/integerValue/booleanValue shape of the accept-candidate writer through
+                // CLR-name binding. Before the amendment this reader silently returned null typed
+                // values on the condensed shape (findings F24/F25, test v12-hexagonal-facade-01).
+                // See spec/DATABASE.md "Declared exclusion: `parameters[]` has two wire shapes and
+                // two readers"; pinned by the TryParseDesignState_* Facts in
+                // DG/tests/DG.Tests/Neo4jValidGraphRepositoryTests.cs.
                 //
                 // v2 payload — deserialize as full DesignState. Two fixes
                 // here (Rule 1, Phase 38 plan 38-05 Task 3), both required
@@ -423,13 +431,39 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
 
                         foreach (var parameterElement in parametersElement.EnumerateArray())
                         {
-                            var parameter = JsonSerializer.Deserialize<DesignStateParameter>(
-                                parameterElement.GetRawText(), options);
+                            var parameter = ReadParameter(parameterElement, options);
                             if (parameter is not null)
                             {
                                 designState.ParamStates[i].Parameters.Add(parameter);
                             }
                         }
+                    }
+                }
+
+                // PropState values carry the same two shapes; the default deserialization above
+                // binds only the flat one, so condensed {type, value} PropValues are re-read here.
+                if (designState is not null
+                    && root.TryGetProperty("propStates", out var propStatesElement)
+                    && propStatesElement.ValueKind == JsonValueKind.Array)
+                {
+                    var rawPropStates = propStatesElement.EnumerateArray().ToList();
+                    for (var i = 0; i < designState.PropStates.Count && i < rawPropStates.Count; i++)
+                    {
+                        if (!rawPropStates[i].TryGetProperty("propValue", out var propValueElement)
+                            || !DesignStatePayloadV2Serializer.IsConciseParameter(propValueElement))
+                        {
+                            continue;
+                        }
+
+                        var current = designState.PropStates[i];
+                        designState.PropStates[i] = new PropState
+                        {
+                            StateId = current.StateId,
+                            RuleIri = current.RuleIri,
+                            DataPropertyIri = current.DataPropertyIri,
+                            ObjectRef = current.ObjectRef,
+                            PropValue = DesignStatePayloadV2Serializer.ParameterFromConciseJson(propValueElement),
+                        };
                     }
                 }
 

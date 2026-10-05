@@ -95,18 +95,12 @@ public sealed class ValidatorComponent : GH_Component
         var result = _ruleEvaluator.EvaluateRule(rule, bindings);
 
         // 5. Build ValidStatus per D-01/D-02
-        var validStatus = new List<bool>();
-        if (designState is not null)
-        {
-            var failingBindingsSet = new HashSet<BindingRow>(result.FailingBindings);
-            for (var i = 0; i < designState.ObjStates.Count; i++)
-            {
-                // D-01: every ObjState gets ValidStatus[i], index-matched
-                // D-02: non-matching (bindingExists==false) get false but excluded from overall pass AND
-                var bindingExists = i < bindings.Count;
-                validStatus.Add(bindingExists && !failingBindingsSet.Contains(bindings[i]));
-            }
-        }
+        // D-01: every ObjState gets ValidStatus[i]; each binding row is placed on the ObjState it
+        // was built from (rows exist only for the rule's class, so row position != ObjState index).
+        // D-02: ObjStates without a row get false but are excluded from the overall pass AND.
+        var validStatus = designState is not null
+            ? ValidStatusMapper.PerObjState(designState.ObjStates.Count, bindings, result.FailingBindings)
+            : new List<bool>();
 
         // 6. Set outputs
         da.SetDataList(0, validStatus);

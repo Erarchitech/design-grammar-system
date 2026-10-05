@@ -152,10 +152,7 @@ public sealed class ParameterReinstateComponent : GH_Component
         {
             foreach (var report in result.Reports)
             {
-                if (report.Status is ReinstatementStatus.MissingTarget
-                    or ReinstatementStatus.TypeMismatch
-                    or ReinstatementStatus.AmbiguousTarget
-                    or ReinstatementStatus.OutOfRange)
+                if (report.Status.IsBlocking())
                 {
                     AddRuntimeMessage(
                         GH_RuntimeMessageLevel.Warning,

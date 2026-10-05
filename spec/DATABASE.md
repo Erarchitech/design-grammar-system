@@ -220,6 +220,24 @@ for those runs was never canonically recorded, and reporting anything more speci
 
 #### Declared exclusion: `parameters[]` has two wire shapes and two readers (Phase 1202 plan 09, D-09, ALGN12-09)
 
+> **Amended 2026-10-05 — the inline reader now reads both shapes.** Item 7's second trigger
+> ("a consumer needing to read *both* producers' payloads through a single code path") was already
+> true when this was written: VALIDATION GRAPH reads every **VALIDATOR canvas publish** (condensed
+> shape) through `Neo4jValidGraphRepository.TryParseDesignState`, so the "silent direction" in
+> item 3 was the product's main read path — every reinstated parameter came back `null`, and
+> PARAMETER REINSTATE wrote `0` into the sliders (test `v12-hexagonal-facade-01`, findings
+> F24/F25). `TryParseDesignState` now dispatches **per entry**: a `parameters[]` entry or a
+> `propStates[].propValue` with a `value` key is read by
+> `DesignStatePayloadV2Serializer.ParameterFromConciseJson` (the serializer's own rule), anything
+> else by the flat CLR-name binding as before — so already-stored flat rows still parse (item 4's
+> concern does not apply: nothing is converged onto the throwing reader).
+> `DesignStatePayloadV2Serializer.Deserialize` is unchanged and still rejects the flat shape. A
+> missing typed value is now also blocked at reinstate time (`ReinstatementStatus.MissingValue`).
+> Items 3–6 below describe the pre-amendment state; the tripwire Facts are now
+> `TryParseDesignState_AndSerializerDeserialize_DivergeOnAcceptCandidateWriterEnvelope` (flat shape:
+> inline reader reads it, serializer throws — unchanged), `TryParseDesignState_ReadsTheSerializerOwnConciseParameterShape`
+> and `TryParseDesignState_ConciseShape_ReadsEveryValueType`.
+
 The v2 `statePayloadJson` envelope's `parameters[]` member — carried on each `ParamState` — has
 **two mutually-incompatible wire shapes in shipping production use**, discovered by plan 1202-03's
 mandated reader-parity proof and deliberately documented here rather than converged, per the

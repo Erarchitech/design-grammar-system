@@ -56,15 +56,17 @@ public static class DesignStateBindingService
                     ErrorMessageTemplates.BindingServiceNoObjectBindings(rule.Id));
             }
 
-            foreach (var objState in designState.ObjStates)
+            for (var objIndex = 0; objIndex < designState.ObjStates.Count; objIndex++)
             {
+                var objState = designState.ObjStates[objIndex];
+
                 // Skip ObjStates with null ClassIri (D-05 — object binding is class-driven;
                 // an ObjState must carry a ClassIri to match an object variable's target class).
                 if (objState.ClassIri is null)
                     continue;
 
                 var matched = false;
-                var row = new BindingRow();
+                var row = new BindingRow { SourceObjStateIndex = objIndex };
 
                 foreach (var objVar in objectVars)
                 {

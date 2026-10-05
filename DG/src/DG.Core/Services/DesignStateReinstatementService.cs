@@ -44,10 +44,7 @@ public sealed class DesignStateReinstatementService
             var report = ValidateParameter(parameter, targetMap);
             reports.Add(report);
 
-            if (report.Status is ReinstatementStatus.MissingTarget
-                or ReinstatementStatus.TypeMismatch
-                or ReinstatementStatus.AmbiguousTarget
-                or ReinstatementStatus.OutOfRange)
+            if (report.Status.IsBlocking())
             {
                 hasBlocker = true;
             }
@@ -135,6 +132,26 @@ public sealed class DesignStateReinstatementService
                 DisplayName = parameter.DisplayName,
                 Status = ReinstatementStatus.TypeMismatch,
                 Detail = $"Expected {parameter.Type} but target is {target.TargetType?.ToString() ?? "null"}",
+            };
+        }
+
+        // Missing value (finding F25): a parameter read back without its typed value must never
+        // reach the write path, which would substitute 0 / false for it.
+        var hasValue = parameter.Type switch
+        {
+            DesignStateParameterType.Number => parameter.NumberValue.HasValue,
+            DesignStateParameterType.Integer => parameter.IntegerValue.HasValue,
+            DesignStateParameterType.Boolean => parameter.BooleanValue.HasValue,
+            _ => false,
+        };
+        if (!hasValue)
+        {
+            return new ReinstatementParameterReport
+            {
+                ParameterId = parameter.ParameterId,
+                DisplayName = parameter.DisplayName,
+                Status = ReinstatementStatus.MissingValue,
+                Detail = "has no recorded value",
             };
         }
 

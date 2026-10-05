@@ -219,6 +219,7 @@ public sealed class ValidationGraphComponent : GH_Component
         var publicState = new global::DG.DesignState
         {
             StateId = state.StateId,
+            Label = state.Label,
             CapturedAtUtc = state.CapturedAtUtc,
         };
 

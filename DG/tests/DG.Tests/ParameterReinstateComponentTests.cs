@@ -112,7 +112,7 @@ public sealed class ParameterReinstateComponentTests
     // ── ReinstatementStatus enum contract ────────────────────────────────────────
 
     [Fact]
-    public void ReinstatementStatus_EnumHasSevenValues()
+    public void ReinstatementStatus_EnumHasEightValues()
     {
         var values = Enum.GetValues<ReinstatementStatus>();
 
@@ -123,8 +123,9 @@ public sealed class ParameterReinstateComponentTests
         Assert.Contains(ReinstatementStatus.OutOfRange, values);
         Assert.Contains(ReinstatementStatus.Unchanged, values);
         Assert.Contains(ReinstatementStatus.WouldApply, values);
+        Assert.Contains(ReinstatementStatus.MissingValue, values); // finding F25
 
-        Assert.Equal(7, values.Length);
+        Assert.Equal(8, values.Length);
     }
 
     // ── Null guard path ─────────────────────────────────────────────────────────

@@ -131,14 +131,15 @@ public sealed class DesignStateCompositionComponent : GH_Component
             return;
         }
 
-        // Cross-index validation: when both ObjState and PropState are present,
-        // their list lengths must be equal (property values are evaluated against
-        // objects at each index).
-        if (objStates.Count > 0 && propStates.Count > 0 && objStates.Count != propStates.Count)
+        // Length validation applies only to unlinked (legacy, broadcast) PropStates: linked
+        // ones carry an ObjectRef and may outnumber the ObjStates when several rules cover the
+        // same objects. Shared DG.Core predicate so the tested and shipped logic cannot drift.
+        if (DesignStateGuard.IsPropObjCountMismatch(objStates.Count, propStates))
         {
             AddRuntimeMessage(
                 GH_RuntimeMessageLevel.Error,
-                ErrorMessageTemplates.DesignStatePropObjCountMismatch(objStates.Count, propStates.Count));
+                ErrorMessageTemplates.DesignStatePropObjCountMismatch(
+                    objStates.Count, propStates.Count(p => string.IsNullOrWhiteSpace(p.ObjectRef))));
             da.SetData(0, null);
             Message = "Count mismatch";
             return;
