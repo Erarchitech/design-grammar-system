@@ -230,3 +230,26 @@ key-like strings, no personal names or local paths; author `Evgenii <erarchitech
 `degram/phase-1301` = `a9e56d7e` (29 commits over `8b66a510`), `Erarchitech/revit-mcp-server` `degram/phase-1301` = `937384f`.
 Framework gitlinks bumped to the same pair; `python tools/degram/workspace.py verify` passes on it (componentContextInstalled
 true), `tools/degram/tests` 19/19.
+
+## Plan 17 build: DeGram 0.1.1 with the DG pairing (2026-10-06)
+
+Owner authorization (AskUserQuestion, 2026-10-06): child commit, push + gitlink bump, installer 0.1.1 build. Component
+`degram/phase-1301` = `97e158f2` on the fork (`e2fb6ffb` pairing store/exchange/panel, `97e158f2` version 0.1.1); framework
+gitlink bumped, `workspace.py verify` passes on the pair.
+
+Run 1 (13:39Z) failed after 3 min: `PermissionError [WinError 5]` deleting `build\agent-payload\...\__pycache__\auth.cpython-314.pyc`.
+Cause: 26,758 files of the previous build's gitignored `apps/desktop/build/agent-payload` carry the Windows ReadOnly attribute,
+which the payload step's tree delete cannot remove; no process held them. The ReadOnly flag was cleared on that directory only
+(clone still clean), the same scrubbed `D:\dgb\run-build.sh` re-run.
+
+Run 2 (13:43-14:35Z, exit 0, clean clone `D:\dgb\src` at `97e158f2`, clean afterwards):
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.1.exe`, 1,931,571,333 bytes |
+| SHA-256 | `e18533e1e64c962738fd17dadbf099be82cf8f973511f4575e96a931dcd44b25` |
+| Exe version resource | ProductName `DeGram`, CompanyName `Erarchitech`, `Copyright © 2026 Erarchitech`, version `0.1.1.0` |
+| Packaged identity | `com.erarchitech.degram` in `app.asar.unpacked\dist\electron-main.mjs` |
+| Pairing code in the artifact | `electron-main.mjs` (`degram:pairing:set`, `/auth/degram/exchange`, `degram-pairing.bin`), `electron-preload.js` (`degram:pairing:clear`), renderer `index-*.js` (`degram-pairing` panel) and `i18n-*.js` (`Токен сопряжения`) |
+
+Not launched yet: the plan 17 Task 6 live pairing is the owner's step (launch with Hermes handling per the plan 15 recipe).
