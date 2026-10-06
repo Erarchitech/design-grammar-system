@@ -121,6 +121,50 @@ class TestGraph:
         assert response.json()["nodes"][0]["props"] == {"when": "2026-09-29T00:00:00Z"}
 
 
+class TestGraphCompact:
+    """Phase 1301 gap G-1: the DeGram agent reads ``?compact=true``. Large
+    property values are replaced by a size marker and validation records are
+    ordered after the ontology and rules, so the 2,000-node cap is not filled
+    by validation history. Without the parameter the answer is unchanged."""
+
+    def test_large_property_values_are_replaced_by_a_size_marker(self, client, db):
+        big = "x" * 5000
+        db["many"] = [
+            [{"id": 1, "labels": ["ValidationRun"], "props": {"statePayloadJson": big, "Run_Id": "R1"}}],
+            [],
+        ]
+
+        response = client.get(f"/graph/{PROJECT}?compact=true", headers=_headers(role="viewer"))
+
+        assert response.status_code == 200
+        body = response.json()
+        props = body["nodes"][0]["props"]
+        assert props["Run_Id"] == "R1"
+        assert props["statePayloadJson"] == {"omitted": True, "bytes": len(big) + 2}
+        assert body["compact"] == {"propMaxBytes": 2048, "omittedProps": 1}
+
+    def test_compact_orders_validation_records_last_with_a_fixed_statement(self, client, db):
+        db["many"] = [[], []]
+
+        client.get(f"/graph/{PROJECT}?compact=true", headers=_headers(role="viewer"))
+
+        (_, node_query, node_params), (_, rel_query, _) = db["calls"]
+        assert "ORDER BY" in node_query and "$validation_labels" in node_query
+        assert "LIMIT 2000" in node_query and PROJECT not in node_query
+        assert node_params["project"] == PROJECT
+        assert set(node_params["validation_labels"]) >= {"ValidationEntity", "ValidationRun"}
+        assert "LIMIT 8000" in rel_query
+
+    def test_without_compact_large_values_are_returned_unchanged(self, client, db):
+        big = "y" * 5000
+        db["many"] = [[{"id": 1, "labels": ["ValidationRun"], "props": {"statePayloadJson": big}}], []]
+
+        body = client.get(f"/graph/{PROJECT}", headers=_headers(role="viewer")).json()
+
+        assert body["nodes"][0]["props"]["statePayloadJson"] == big
+        assert "compact" not in body
+
+
 class TestClaimUntagged:
     def test_claims_only_untagged_nodes(self, client, db):
         db["write"] = {"claimed": 3}

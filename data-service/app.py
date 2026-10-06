@@ -4982,6 +4982,23 @@ GRAPH_NODES_QUERY = (
     "MATCH (n) WHERE n.project = $project "
     "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props LIMIT 2000"
 )
+# Phase 1301 gap G-1: the DeGram agent's compact read. Validation records sort
+# after the ontology, rules and Computgraph, so the 2,000-node cap is not filled by
+# validation history; large property values are replaced by a size marker.
+GRAPH_NODES_COMPACT_QUERY = (
+    "MATCH (n) WHERE n.project = $project "
+    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props "
+    "ORDER BY CASE WHEN any(l IN labels(n) WHERE l IN $validation_labels) THEN 1 ELSE 0 END, id(n) "
+    "LIMIT 2000"
+)
+GRAPH_COMPACT_VALIDATION_LABELS = [
+    "ValidationEntity",
+    "ValidationRun",
+    "Run",
+    "DesignState",
+    "IntegrationConfig",
+]
+GRAPH_COMPACT_PROP_MAX_BYTES = 2048
 GRAPH_RELS_QUERY = (
     "MATCH (a)-[r]->(b) WHERE a.project = $project AND b.project = $project "
     "RETURN id(a) AS source, type(r) AS type, id(b) AS target LIMIT 8000"
@@ -5047,24 +5064,47 @@ def _graph_json_safe(value: Any):
     return iso() if callable(iso) else str(value)
 
 
+def _compact_props(props: dict, omitted: list[int]) -> dict:
+    """Replace each property value whose JSON form exceeds
+    GRAPH_COMPACT_PROP_MAX_BYTES by ``{"omitted": true, "bytes": n}``."""
+    out = {}
+    for key, value in props.items():
+        size = len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
+        if size > GRAPH_COMPACT_PROP_MAX_BYTES:
+            out[key] = {"omitted": True, "bytes": size}
+            omitted[0] += 1
+        else:
+            out[key] = value
+    return out
+
+
 @router.get("/graph/{project}")
-def get_project_graph(project: str):
-    node_rows = read_many(GRAPH_NODES_QUERY, {"project": project})
+def get_project_graph(project: str, compact: bool = False):
+    if compact:
+        node_rows = read_many(
+            GRAPH_NODES_COMPACT_QUERY,
+            {"project": project, "validation_labels": GRAPH_COMPACT_VALIDATION_LABELS},
+        )
+    else:
+        node_rows = read_many(GRAPH_NODES_QUERY, {"project": project})
     rel_rows = read_many(GRAPH_RELS_QUERY, {"project": project})
-    return {
-        "nodes": [
-            {
-                "id": row["id"],
-                "labels": _graph_json_safe(row["labels"]),
-                "props": _graph_json_safe(row["props"]),
-            }
-            for row in node_rows
-        ],
+    omitted = [0]
+    nodes = []
+    for row in node_rows:
+        props = _graph_json_safe(row["props"])
+        if compact and isinstance(props, dict):
+            props = _compact_props(props, omitted)
+        nodes.append({"id": row["id"], "labels": _graph_json_safe(row["labels"]), "props": props})
+    answer = {
+        "nodes": nodes,
         "rels": [
             {"source": row["source"], "type": row["type"], "target": row["target"]}
             for row in rel_rows
         ],
     }
+    if compact:
+        answer["compact"] = {"propMaxBytes": GRAPH_COMPACT_PROP_MAX_BYTES, "omittedProps": omitted[0]}
+    return answer
 
 
 @router.post("/graph/{project}/claim-untagged")
