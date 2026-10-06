@@ -1542,15 +1542,9 @@ async def degram_chat_completions(request: Request):
 
 @router.get("/degram/admin/llm-config")
 def get_degram_llm_config():
-    """Admin-only: the relay endpoint, model and a masked key preview."""
+    """Admin-only: the effective relay endpoint and model, taken from the Web UI
+    LLM settings (owner decision 2026-10-06), with a masked key preview."""
     return degram_relay.masked_config()
-
-
-@router.put("/degram/admin/llm-config")
-def put_degram_llm_config(payload: degram_relay.RelayConfigPayload):
-    """Admin-only: set the relay endpoint, model, label and system key (the key
-    is stored Fernet-encrypted; an omitted field keeps its stored value)."""
-    return degram_relay.store_config(payload)
 
 
 @router.post("/llm/generate")

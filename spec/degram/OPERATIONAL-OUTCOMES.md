@@ -26,7 +26,7 @@ Source: `POST /degram/v1/chat/completions`. The HTTP status applies when the out
 | `PROVIDER_RATE_LIMITED` | 429 | Upstream 429; `retryAfter` seconds when the upstream sent a numeric `Retry-After`, else `null` |
 | `PROVIDER_UNAVAILABLE` | 503 | Upstream unreachable, connection broken, or upstream 5xx |
 | `PROVIDER_ERROR` | 502 | Any other upstream non-2xx (including an unfollowed redirect); `upstreamStatus` and an excerpt of at most 2 KiB with the key scrubbed |
-| `RELAY_NOT_CONFIGURED` | 503 | No complete operator configuration (`degram-llm.json`) |
+| `RELAY_NOT_CONFIGURED` | 503 | The Web UI LLM settings (`llm-settings.json`) do not describe a runnable OpenAI-compatible endpoint (provider not `openai`, missing model or key, unsafe base URL, undecryptable key); `GET /degram/admin/llm-config` names the `reason` |
 | `POLICY_DENY` | 403 | The project's provider-export policy (or whole-definition policy) forbids the request; `reason` names which. Terminal: consent does not override it |
 | `CONSENT_REQUIRED` | 428 | Whole-definition scope is allowed by policy but the per-request consent header is missing |
 

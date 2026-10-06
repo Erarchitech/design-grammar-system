@@ -30,7 +30,7 @@ import degram_relay  # noqa: E402
 import app as app_module  # noqa: E402
 from app import app  # noqa: E402
 import auth_fixtures  # noqa: E402
-from llm_gateway import decrypt_value  # noqa: E402
+from llm_gateway import decrypt_value, encrypt_value  # noqa: E402
 
 DG_TEST_PRINCIPAL = "none"
 
@@ -169,12 +169,17 @@ def _detail(response):
     return response.json().get("detail")
 
 
-def _configure(client, **overrides):
-    payload = {"baseUrl": BASE_URL, "model": "mimo-v2.5-pro", "providerLabel": "genpro",
-               "apiKey": SYSTEM_KEY, **overrides}
-    response = client.put("/degram/admin/llm-config", json=payload, headers=_cookie(ADMIN, admin=True))
-    assert response.status_code == 200, response.text
-    return response
+def _configure(client=None, **overrides):
+    """Owner decision 2026-10-06 (amends D-16): the relay takes its endpoint, model and key from the
+    Web UI LLM settings (`llm-settings.json`, written by PUT /llm/settings), not from a file of its own.
+    Written directly here because llm_gateway resolves its settings path at import time."""
+    settings = {"provider": "openai", "model": "mimo-v2.5-pro", "baseUrl": BASE_URL,
+                "apiKey": encrypt_value(SYSTEM_KEY, "test-master-secret"), **overrides}
+    settings = {k: v for k, v in settings.items() if v is not None}
+    path = degram_relay.gateway_settings_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(settings), encoding="utf-8")
+    return settings
 
 
 def _delegated(client, project="P1", username=ALICE):
@@ -218,44 +223,53 @@ def world(client, upstream):
 # -- operator config -------------------------------------------------------------
 
 
-def test_config_put_is_admin_only(client):
+def test_config_get_is_admin_only_and_the_relay_has_no_config_writer(client):
     member = _cookie(ALICE, memberships={"P1": "owner"})
-    payload = {"baseUrl": BASE_URL, "apiKey": SYSTEM_KEY}
-    denied = client.put("/degram/admin/llm-config", json=payload, headers=member)
-    assert denied.status_code == 403 and _code(denied) == "ADMIN_REQUIRED"
-    assert client.put("/degram/admin/llm-config", json=payload).status_code == 401
     denied_get = client.get("/degram/admin/llm-config", headers=member)
     assert denied_get.status_code == 403 and _code(denied_get) == "ADMIN_REQUIRED"
+    assert client.get("/degram/admin/llm-config").status_code == 401
+    # The relay's own writer is gone: the key is entered once, in the Web UI LLM settings.
+    put = client.put("/degram/admin/llm-config", json={"baseUrl": BASE_URL, "apiKey": SYSTEM_KEY},
+                     headers=_cookie(ADMIN, admin=True))
+    assert put.status_code in (403, 404, 405), put.text
+    assert not (degram_relay.gateway_settings_path().parent / "degram-llm.json").exists()
 
 
-def test_config_put_get_masks_the_key_and_encrypts_it_at_rest(client):
-    put = _configure(client)
-    assert SYSTEM_KEY not in put.text
+def test_relay_reads_the_web_ui_llm_settings_and_masks_the_key(client):
+    _configure()
     got = client.get("/degram/admin/llm-config", headers=_cookie(ADMIN, admin=True))
     assert got.status_code == 200
     body = got.json()
     assert SYSTEM_KEY not in got.text
     assert body["configured"] is True
+    assert body["source"] == "llm-settings"
     assert body["baseUrl"] == BASE_URL
     assert body["model"] == "mimo-v2.5-pro"
-    assert body["providerLabel"] == "genpro"
+    assert body["providerLabel"] == "genpro.example"
     assert body["apiKeyPreview"] and body["apiKeyPreview"] != SYSTEM_KEY
-    stored = json.loads(degram_relay.config_path().read_text(encoding="utf-8"))
-    assert stored["apiKey"] != SYSTEM_KEY and SYSTEM_KEY not in json.dumps(stored)
-    assert decrypt_value(stored["apiKey"], "test-master-secret") == SYSTEM_KEY
-    assert degram_relay.config_path().name == "degram-llm.json"
-    assert not list(degram_relay.config_path().parent.glob("*.tmp"))
+    assert degram_relay.gateway_settings_path().name == "llm-settings.json"
+    config = degram_relay.resolve_runtime_config()
+    assert config.api_key == SYSTEM_KEY and SYSTEM_KEY not in repr(config)
 
 
-def test_config_defaults_model_and_keeps_key_when_omitted(client):
-    _configure(client, model=None, providerLabel=None)
-    admin = _cookie(ADMIN, admin=True)
-    body = client.get("/degram/admin/llm-config", headers=admin).json()
-    assert body["model"] == "mimo-v2.5-pro" and body["providerLabel"] == "genpro"
-    again = client.put("/degram/admin/llm-config", json={"model": "other-model"}, headers=admin)
-    assert again.status_code == 200 and again.json()["model"] == "other-model"
-    stored = json.loads(degram_relay.config_path().read_text(encoding="utf-8"))
-    assert decrypt_value(stored["apiKey"], "test-master-secret") == SYSTEM_KEY
+def test_openai_provider_without_base_url_uses_the_openai_endpoint(client):
+    _configure(baseUrl=None)
+    config = degram_relay.resolve_runtime_config()
+    assert config.base_url == "https://api.openai.com/v1" and config.provider_label == "api.openai.com"
+
+
+@pytest.mark.parametrize("provider", ["anthropic", "ollama"])
+def test_a_non_openai_web_ui_provider_leaves_the_relay_unconfigured(client, upstream, provider):
+    """The relay speaks OpenAI chat completions with streaming and tools; another protocol is not
+    translated and nothing falls back."""
+    _configure(provider=provider)
+    _allow("P1")
+    body = client.get("/degram/admin/llm-config", headers=_cookie(ADMIN, admin=True)).json()
+    assert body["configured"] is False and body["apiKeyPreview"] == ""
+    assert body["reason"] == "provider-not-openai-compatible"
+    response = client.post(RELAY_PATH, json=_body(), headers=_bearer(_delegated(client)))
+    assert response.status_code == 503 and _code(response) == "RELAY_NOT_CONFIGURED"
+    assert upstream.requests == []
 
 
 @pytest.mark.parametrize(
@@ -263,37 +277,29 @@ def test_config_defaults_model_and_keeps_key_when_omitted(client):
     ["http://genpro.example/v1", "ftp://x.example", "https://user:pw@genpro.example/v1",
      "https://genpro.example/v1?x=1", "not a url", "https://"],
 )
-def test_config_rejects_unsafe_base_urls(client, base_url):
-    response = client.put(
-        "/degram/admin/llm-config",
-        json={"baseUrl": base_url, "apiKey": SYSTEM_KEY},
-        headers=_cookie(ADMIN, admin=True),
-    )
-    assert response.status_code == 422, response.text
-    assert _code(response) == "RELAY_CONFIG_INVALID"
-    assert not degram_relay.config_path().exists()
+def test_an_unsafe_web_ui_base_url_leaves_the_relay_unconfigured(client, base_url):
+    _configure(baseUrl=base_url)
+    assert degram_relay.resolve_runtime_config() is None
+    body = client.get("/degram/admin/llm-config", headers=_cookie(ADMIN, admin=True)).json()
+    assert body["configured"] is False and body["reason"] == "base-url-invalid"
 
 
-def test_config_accepts_localhost_over_http(client):
-    response = client.put(
-        "/degram/admin/llm-config",
-        json={"baseUrl": "http://localhost:8123/v1/", "apiKey": SYSTEM_KEY},
-        headers=_cookie(ADMIN, admin=True),
-    )
-    assert response.status_code == 200, response.text
-    assert response.json()["baseUrl"] == "http://localhost:8123/v1"
+def test_localhost_over_http_is_accepted(client):
+    _configure(baseUrl="http://localhost:8123/v1/")
+    assert degram_relay.resolve_runtime_config().base_url == "http://localhost:8123/v1"
 
 
-def test_first_config_needs_url_and_key(client):
-    admin = _cookie(ADMIN, admin=True)
-    for payload in ({"model": "m"}, {"baseUrl": BASE_URL}, {"apiKey": SYSTEM_KEY}):
-        response = client.put("/degram/admin/llm-config", json=payload, headers=admin)
-        assert response.status_code == 422 and _code(response) == "RELAY_CONFIG_INVALID"
+@pytest.mark.parametrize("missing", ["model", "apiKey"])
+def test_missing_model_or_key_leaves_the_relay_unconfigured(client, missing):
+    _configure(**{missing: None})
+    body = client.get("/degram/admin/llm-config", headers=_cookie(ADMIN, admin=True)).json()
+    assert body["configured"] is False and body["reason"] == "incomplete"
 
 
 def test_get_config_before_setup_reports_unconfigured(client):
     body = client.get("/degram/admin/llm-config", headers=_cookie(ADMIN, admin=True)).json()
     assert body["configured"] is False and body["apiKeyPreview"] == ""
+    assert body["reason"] == "incomplete"
 
 
 # -- principal scope ---------------------------------------------------------------
@@ -370,7 +376,7 @@ def test_relay_records_provenance_without_content_or_key(client, world):
     records = _provenance()
     assert len(records) == 1
     record = records[0]
-    assert record["requestedProvider"] == "genpro"
+    assert record["requestedProvider"] == "genpro.example"
     assert record["requestedModel"] == "mimo-v2.5-pro"
     assert record["servedModel"] == "served-model-x"
     assert record["responseId"] == "chatcmpl-7"

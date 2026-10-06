@@ -153,7 +153,6 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # session, connector or service principal as a model path.
     ("POST", "/degram/v1/chat/completions"): _p(_DEL),
     ("GET", "/degram/admin/llm-config"): _p(_ADM),
-    ("PUT", "/degram/admin/llm-config"): _p(_ADM),
     # Phase 1301-08 (D-17): per-project provider-export policy, admin-only. Like the
     # company row, admin is owner everywhere so a project source adds nothing.
     ("GET", "/projects/{project}/degram-policy"): _p(_ADM),

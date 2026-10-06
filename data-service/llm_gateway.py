@@ -711,15 +711,17 @@ DATA_DIR = Path(os.getenv("DG_DATA_DIR", "/app/data"))
 LLM_SETTINGS_FILE = DATA_DIR / "llm-settings.json"
 
 
-def load_persisted_llm_settings() -> dict[str, str]:
-    """Read LLM settings from the JSON settings file.
+def load_persisted_llm_settings(path: Path | None = None) -> dict[str, str]:
+    """Read LLM settings from the JSON settings file (`path`, default
+    LLM_SETTINGS_FILE; the DeGram relay passes its per-call path).
 
     Returns an empty dict if the file is missing, malformed, or empty.
     """
-    if not LLM_SETTINGS_FILE.exists():
+    path = path or LLM_SETTINGS_FILE
+    if not path.exists():
         return {}
     try:
-        payload = json.loads(LLM_SETTINGS_FILE.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
     if not isinstance(payload, dict):

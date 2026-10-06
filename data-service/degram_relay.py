@@ -4,12 +4,14 @@
 agent. It is user-scoped (a delegated ``dgd_`` principal only), streaming and
 OpenAI-compatible:
 
-* The upstream is ONE operator-configured endpoint (``degram-llm.json``): base
-  URL, model (default ``mimo-v2.5-pro``), provider label (default ``genpro``)
-  and the system API key, Fernet-encrypted at rest with the same master secret
-  and helpers as the LLM gateway. It does not read ``llm-settings.json`` and does
-  not use ``llm_gateway.resolve_active_provider``: there is NO fallback to
-  another provider, to Ollama, or to a different model.
+* The upstream is the ONE endpoint of the DG Web UI LLM settings
+  (``llm-settings.json``, owner decision 2026-10-06 amending D-16): provider
+  type ``openai`` (OpenAI or an OpenAI-compatible base URL), its model and its
+  system key, Fernet-encrypted at rest with the LLM gateway's master secret.
+  The relay has no config file of its own and does not use
+  ``llm_gateway.resolve_active_provider``: a non-OpenAI provider leaves it
+  unconfigured, and there is NO fallback to another provider, to Ollama or to a
+  different model.
 * The user never selects the model or the provider (DGCL-02): any ``model`` /
   ``provider`` in the request is discarded and the configured model is sent.
 * Every relayed request appends one provenance record (JSONL, append-only) with
@@ -42,15 +44,13 @@ import anyio
 import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 import degram_policy
-from llm_gateway import decrypt_value, encrypt_value, mask_key
+from llm_gateway import LLM_SETTINGS_FILE, decrypt_value, load_persisted_llm_settings, mask_key
 
 _LOGGER = logging.getLogger(__name__)
 
 RELAY_ROUTE = "/degram/v1/chat/completions"
-CONFIG_FILE_NAME = "degram-llm.json"
 PROVENANCE_FILE_NAME = "degram-llm-provenance.jsonl"
 
 # Request body ceiling (T-1301-08-04); enforced before any provider contact.
@@ -63,9 +63,6 @@ SCOPE_SELECTION = "selection"
 SCOPE_WHOLE_DEFINITION = "whole-definition"
 CONTEXT_SCOPES = (SCOPE_NONE, SCOPE_SELECTION, SCOPE_WHOLE_DEFINITION)
 _CONSENT_VALUES = frozenset({"true", "1"})
-
-DEFAULT_PROVIDER_LABEL = "genpro"
-DEFAULT_MODEL = "mimo-v2.5-pro"
 
 # Request fields forwarded to the upstream besides messages/tools/tool_choice.
 # ``model``, ``provider`` and ``stream`` are never forwarded from the client.
@@ -134,7 +131,6 @@ AGENT_OUTCOMES = frozenset(
 OPERATIONAL_OUTCOMES = frozenset(RELAY_OUTCOMES | BRIDGE_OUTCOMES | AGENT_OUTCOMES)
 
 _PROVENANCE_LOCK = threading.Lock()
-_CONFIG_LOCK = threading.Lock()
 
 
 def _transport_factory() -> httpx.AsyncBaseTransport | None:
@@ -184,15 +180,27 @@ class RelayError(Exception):
         return HTTPException(status_code=self.status, detail=detail, headers=self.headers or None)
 
 
-# -- operator config store (degram-llm.json) ------------------------------------
+# -- operator config: the Web UI LLM settings (llm-settings.json) ----------------
+#
+# Owner decision 2026-10-06 (amends 1301 D-16): the relay has no config of its
+# own. Its endpoint, model and system key are the ones the operator entered in
+# the DG Web UI LLM settings (PUT /llm/settings). The relay speaks OpenAI chat
+# completions with streaming and tools, so only the `openai` provider type
+# (OpenAI or any OpenAI-compatible base URL) is runnable; anything else leaves
+# the relay unconfigured. Nothing falls back.
+
+OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1"
+CONFIG_SOURCE = "llm-settings"
 
 
 def _data_dir() -> Path:
     return Path(os.getenv("DG_DATA_DIR", "/app/data"))
 
 
-def config_path() -> Path:
-    return _data_dir() / CONFIG_FILE_NAME
+def gateway_settings_path() -> Path:
+    """The Web UI LLM settings file, resolved per call (llm_gateway resolves its
+    own copy once at import)."""
+    return _data_dir() / LLM_SETTINGS_FILE.name
 
 
 def provenance_path() -> Path:
@@ -201,42 +209,6 @@ def provenance_path() -> Path:
 
 def _master_secret() -> str:
     return os.getenv("LLM_MASTER_SECRET", "")
-
-
-def _atomic_write(path: Path, text: str) -> None:
-    """Write `text` to `path` through a temp file and ``os.replace``; the
-    result is owner-only where the platform supports it."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    try:
-        os.chmod(tmp, 0o600)
-    except OSError:  # pragma: no cover - platform dependent
-        pass
-    last: OSError | None = None
-    for attempt in range(5):  # a Windows scanner can briefly hold the target
-        try:
-            os.replace(tmp, path)
-            return
-        except PermissionError as exc:  # pragma: no cover - Windows only
-            last = exc
-            time.sleep(0.05 * (attempt + 1))
-    if last is not None:  # pragma: no cover
-        raise last
-
-
-def load_stored_config() -> dict[str, str]:
-    """The stored config dict, or ``{}`` when absent or unreadable."""
-    path = config_path()
-    if not path.exists():
-        return {}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    if not isinstance(payload, dict):
-        return {}
-    return {k: v for k, v in payload.items() if isinstance(v, str) and v.strip()}
 
 
 def validate_base_url(value: str) -> str:
@@ -261,64 +233,6 @@ def validate_base_url(value: str) -> str:
     return candidate.rstrip("/")
 
 
-class RelayConfigPayload(BaseModel):
-    baseUrl: str | None = None
-    model: str | None = None
-    providerLabel: str | None = None
-    apiKey: str | None = None
-
-
-def _clean_label(value: str, name: str, limit: int) -> str:
-    cleaned = value.strip()
-    if not cleaned or len(cleaned) > limit or any(ord(c) < 32 or ord(c) == 127 for c in cleaned):
-        raise ValueError(f"{name} must be 1-{limit} printable characters")
-    return cleaned
-
-
-def store_config(payload: RelayConfigPayload) -> dict[str, Any]:
-    """Merge `payload` into the stored config (an omitted or empty field keeps
-    the stored value) and persist it with the key encrypted. Raises
-    HTTPException 422 ``RELAY_CONFIG_INVALID`` / 500 for a missing secret."""
-    master_secret = _master_secret()
-    if not master_secret:
-        raise relay_error(
-            500,
-            "LLM_MASTER_SECRET_NOT_CONFIGURED",
-            "The server has no master secret to encrypt the relay key with.",
-            "Set LLM_MASTER_SECRET for the data-service container.",
-        )
-    with _CONFIG_LOCK:
-        stored = load_stored_config()
-        merged = dict(stored)
-        try:
-            if payload.baseUrl:
-                merged["baseUrl"] = validate_base_url(payload.baseUrl)
-            if payload.model:
-                merged["model"] = _clean_label(payload.model, "model", 200)
-            if payload.providerLabel:
-                merged["providerLabel"] = _clean_label(payload.providerLabel, "providerLabel", 60)
-        except ValueError as exc:
-            raise relay_error(
-                422,
-                "RELAY_CONFIG_INVALID",
-                f"The relay configuration is not valid: {exc}.",
-                "Use an https base URL (http only for localhost), a model name and a provider label.",
-            ) from exc
-        if payload.apiKey:
-            merged["apiKey"] = encrypt_value(payload.apiKey.strip(), master_secret)
-        if not merged.get("baseUrl") or not merged.get("apiKey"):
-            raise relay_error(
-                422,
-                "RELAY_CONFIG_INVALID",
-                "The relay configuration needs a base URL and an API key.",
-                "Send baseUrl and apiKey on the first configuration.",
-            )
-        merged.setdefault("model", DEFAULT_MODEL)
-        merged.setdefault("providerLabel", DEFAULT_PROVIDER_LABEL)
-        _atomic_write(config_path(), json.dumps(merged, indent=2))
-    return masked_config()
-
-
 @dataclass(frozen=True)
 class RelayConfig:
     base_url: str
@@ -330,36 +244,48 @@ class RelayConfig:
         return f"RelayConfig(base_url={self.base_url!r}, model={self.model!r}, provider_label={self.provider_label!r})"
 
 
-def resolve_runtime_config() -> RelayConfig | None:
-    """The runnable config with the key decrypted, or None when the relay is
-    not configured (missing file/fields/secret, or an unreadable key)."""
-    stored = load_stored_config()
+def _resolve() -> tuple[RelayConfig | None, str, dict[str, str]]:
+    """(runnable config or None, reason, settings). Reasons: ``ok``,
+    ``incomplete``, ``provider-not-openai-compatible``, ``base-url-invalid``,
+    ``key-unreadable``."""
+    settings = load_persisted_llm_settings(gateway_settings_path())
     secret = _master_secret()
-    if not stored.get("baseUrl") or not stored.get("apiKey") or not secret:
-        return None
+    if not settings.get("model") or not settings.get("apiKey") or not secret:
+        return None, "incomplete", settings
+    if settings.get("provider") != "openai":
+        return None, "provider-not-openai-compatible", settings
     try:
-        key = decrypt_value(stored["apiKey"], secret)
+        base_url = validate_base_url(settings.get("baseUrl") or OPENAI_DEFAULT_BASE_URL)
+    except ValueError:
+        return None, "base-url-invalid", settings
+    try:
+        key = decrypt_value(settings["apiKey"], secret)
     except Exception:  # noqa: BLE001 - wrong secret / corrupt token == not configured
-        return None
-    return RelayConfig(
-        base_url=stored["baseUrl"],
-        model=stored.get("model") or DEFAULT_MODEL,
-        provider_label=stored.get("providerLabel") or DEFAULT_PROVIDER_LABEL,
-        api_key=key,
-    )
+        return None, "key-unreadable", settings
+    label = urlparse(base_url).hostname or "openai"
+    return RelayConfig(base_url=base_url, model=settings["model"], provider_label=label, api_key=key), "ok", settings
+
+
+def resolve_runtime_config() -> RelayConfig | None:
+    """The runnable config with the key decrypted, or None when the Web UI LLM
+    settings do not describe a runnable OpenAI-compatible endpoint."""
+    return _resolve()[0]
 
 
 def masked_config() -> dict[str, Any]:
-    """Operator-facing view of the config: never the key."""
-    stored = load_stored_config()
-    config = resolve_runtime_config()
-    return {
+    """Operator-facing view of the effective relay config: never the key."""
+    config, reason, settings = _resolve()
+    view: dict[str, Any] = {
         "configured": config is not None,
-        "baseUrl": stored.get("baseUrl"),
-        "model": stored.get("model") or DEFAULT_MODEL,
-        "providerLabel": stored.get("providerLabel") or DEFAULT_PROVIDER_LABEL,
+        "source": CONFIG_SOURCE,
+        "baseUrl": config.base_url if config else settings.get("baseUrl"),
+        "model": settings.get("model"),
+        "providerLabel": config.provider_label if config else None,
         "apiKeyPreview": mask_key(config.api_key) if config else "",
     }
+    if config is None:
+        view["reason"] = reason
+    return view
 
 
 # -- provenance -----------------------------------------------------------------

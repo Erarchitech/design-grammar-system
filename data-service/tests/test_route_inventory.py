@@ -205,7 +205,8 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        assert len(route_policy.ROUTE_POLICIES) == 96
+        # 95 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings).
+        assert len(route_policy.ROUTE_POLICIES) == 95
 
     def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
         # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the

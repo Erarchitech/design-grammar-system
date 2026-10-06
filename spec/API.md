@@ -425,8 +425,7 @@ The user-scoped, streaming, OpenAI-compatible model path of the local DeGram age
 | Method | Path | Principal | Description |
 |--------|------|-----------|-------------|
 | POST | `/degram/v1/chat/completions` | delegated | OpenAI-compatible chat completion, always streamed (`text/event-stream`). Body `{messages, tools?, tool_choice?, temperature?, top_p?, max_tokens?, max_completion_tokens?, stop?}`; any `model`, `provider` or `stream` is ignored. |
-| GET | `/degram/admin/llm-config` | admin | `{configured, baseUrl, model, providerLabel, apiKeyPreview}`; never the key |
-| PUT | `/degram/admin/llm-config` | admin | Body `{baseUrl?, model?, providerLabel?, apiKey?}`; first call needs `baseUrl` and `apiKey`; 422 `RELAY_CONFIG_INVALID` |
+| GET | `/degram/admin/llm-config` | admin | Effective relay config from the Web UI LLM settings: `{configured, source: "llm-settings", baseUrl, model, providerLabel, apiKeyPreview, reason?}`; never the key. The relay has no writer of its own: set the endpoint, model and key with `PUT /llm/settings` (provider `openai`) |
 | GET | `/projects/{project}/degram-policy` | admin | `{project, providerExportAllowed, wholeDefinitionAllowed}`; both `false` for a project with no policy (deny by default) |
 | PUT | `/projects/{project}/degram-policy` | admin | Body `{providerExportAllowed?, wholeDefinitionAllowed?}` (strict booleans, at least one; 422 `DEGRAM_POLICY_INVALID`); a flag left out keeps its value |
 
