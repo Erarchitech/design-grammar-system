@@ -51,7 +51,29 @@ Graphify also writes per-source AST caches under each scanned area's `graphify-o
 
 A cross-repository change is not atomic: verify the child, publish its explicitly approved commit, then update the framework gitlink and run integration checks on the exact pair. Never commit a gitlink whose object is absent from the shared fork. Do not close GSD from a child summary alone. This setup keeps child source unchanged; it creates no child commit or push. `git submodule add` stages only `.gitmodules` and the gitlink as part of registration; the framework integration files still require an explicitly authorized commit before another checkout can reproduce them.
 
-Before any Desktop launch/build, implement and test separate runtime home, Electron userData, app identity and update channel. Current workspace provisioning does NOT implement that runtime isolation, product branding, installer, login or DG integration. Those remain Phase 1301 work; do not claim install acceptance. Prefer supported plugin/adapter seams over core edits. Preserve upstream MIT notices; DeGram is not an official Nous product.
+Before any Desktop launch/build, the separate runtime home, Electron userData, app identity and update channel must be in place and tested. Phase 1301 implements them on `degram/phase-1301` (see Product identity and isolation surface); install acceptance is claimed only from Phase 1301 UAT, never from a build alone. Prefer supported plugin/adapter seams over core edits. Preserve upstream MIT notices; DeGram is not an official Nous product.
+
+## Product identity and isolation surface
+
+DeGram runs beside an installed Hermes on the same PC. Every fork file that carries its identity or its isolation is listed here, so an upstream merge knows which conflicts are DeGram's own. Edits are gated on the `degram` variant (`HERMES_DESKTOP_VARIANT=degram`); stock variants stay byte-identical in behaviour, and tests assert both sides.
+
+| Concern | Fork path (under `apps/degram/apps/desktop/`) | DeGram value |
+|---|---|---|
+| Names, appId, CLI, feed | `product-identity.cjs`, `electron/product-identity.ts` | `DeGram`, `com.erarchitech.degram`, `degram`, no release feed |
+| Packaging | `electron-builder.config.cjs` | productName/exe `DeGram`, `degram://`, per-user NSIS, `extraMetadata.author` `Erarchitech` (exe CompanyName, copyright, uninstall Publisher) |
+| Runtime home, userData, lock | `electron/degram/isolation.ts`, `applyDesktopIdentity` in `electron/main.ts` | fixed `%LOCALAPPDATA%\DeGram\{home,userData}`; inherited `HERMES_HOME` ignored; `HOME_OVERLAP` fails closed; never attaches to a running Hermes backend |
+| AUMID, native window title | `electron/main.ts` (`setAppUserModelId`, `APP_WINDOW_TITLE`) | `com.erarchitech.degram`, `DeGram` |
+| Page title | `src/degram/window-title.ts` (called from `src/main.tsx`) | `DeGram` / `DeGram HUD` over index.html's `<title>Hermes</title>` |
+| Icons | `assets/icon.{ico,png,icns}`, `public/apple-touch-icon.png`, `src/components/brand-mark.tsx` image | still stock: owner supplies the DeGram icon (open finding F-04) |
+
+Rules, adapted from the Genpro «Гена» Hermes fork (`GenproMM/MastermindServices/12_GenproAI_HermesFork`, studied 2026-10-06):
+
+1. Keep every upstream-file edit narrow and recognisable; its cost is the next merge. Replace binary assets in place under the same filenames so no import site changes.
+2. Verify identity on a packaged build (exe version resource, icon hash, window and taskbar title, shortcut, uninstall entry), never on a dev `electron .` run, which shows Electron's own icon. Windows caches shortcut icons; point shortcuts at the exe or `resources\icon.ico`.
+3. The agent home never derives from an inherited `HERMES_HOME`: an installed Hermes commonly exports it user- or machine-wide.
+4. Process cleanup targets owned PIDs or the DeGram install root, never the image name `hermes.exe`; Gena's install and update once killed the other product's gateway this way.
+5. No bootstrap stage may write user-level environment variables or publish a `hermes` command to the user `PATH` for DeGram (Gena's finish stage overwrote a co-installed Hermes' `HERMES_HOME`; DeGram's exposure through install.ps1 `Publish-UserCommand` is open finding F-07).
+6. No updater feed and no `hermes update`; the upstream feed targets NousResearch.
 
 ## Revit adapter component
 
