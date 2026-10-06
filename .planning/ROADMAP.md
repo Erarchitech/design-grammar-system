@@ -183,9 +183,13 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump *(PARTIAL 2026-10-05: installer built, CLEAN-INSTALL.md written; first launch failed isolation, packaged-identity fix 910a060d is local, nothing pushed, gitlinks not bumped; see 1301-15-SUMMARY.md and 1301-BUILD.md)*
+- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump *(2026-10-06 audit-fix: rebuilt `DeGram-Setup-0.1.0.exe` from `a9e56d7e` with the DeGram icon/version/vendor; launch beside an open Hermes Desktop proven (F-10); both `degram/phase-1301` branches pushed, gitlinks bumped, `workspace.py verify` passes; see 1301-BUILD.md)*
 
 **Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 1301-17-PLAN.md — DeGram connector in the Connectors tab: user-bound pairing token (dgp_) exchanged for dgd_ (D-25, D-26)
+
+**Wave 9** *(blocked on Wave 8 completion)*
 
 - [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + two-PC DGCL-01..07 UAT
 

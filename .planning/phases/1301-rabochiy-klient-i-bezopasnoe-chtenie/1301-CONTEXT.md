@@ -63,7 +63,7 @@
 
 ### LLM-маршрут, состав контекста и отмена
 - **D-16:** Агент обращается к системной паре через новый user-scoped OpenAI-compatible chat/tools endpoint на DG backend со streaming; Hermes настроен на него как на единственный provider.
-  - **Поправка владельца 2026-10-06:** relay не имеет собственной конфигурации (`degram-llm.json` и `PUT /degram/admin/llm-config` удалены); endpoint, модель и ключ берутся из настроек LLM в DG Web UI (`llm-settings.json`, provider `openai` или OpenAI-compatible base URL). Иной provider оставляет relay ненастроенным; fallback нет. Генпро и «Гена» — только образец: данные оттуда для подключения не используются.
+  - **Поправка владельца 2026-10-06:** источник endpoint/модели/ключа relay — настройки LLM в DG Web UI, см. D-24.
   - Вызов идёт за делегированным токеном D-06. Системный ключ остаётся на сервере и никогда не попадает на ПК. Сервер проверяет company/project scope и policy передачи данных provider (1300 D-06), пишет requested/served model provenance, не делает fallback. Пользователь не видит provider/model и не вводит ключи. Новый route вносится в `spec/SECURITY-BOUNDARY.md`; LLM call site — в `spec/REPRODUCIBILITY.md`. Существующий `/llm/generate` не переиспользуется как пользовательский путь.
 - **D-17:** Состав контекста показывается постоянной карточкой у поля ввода.
   - В карточке: проект, документ, число объектов/параметров/правил/фрагментов, объём, пометки о сокращении и отсутствующих данных. Она раскрывается до точного payload (без секретов). Обычная отправка не требует подтверждения (1300 D-06); whole-definition проходит через отдельный confirm. Policy deny сервера показывается как причина и не снимается подтверждением.
@@ -81,6 +81,13 @@
   - Не регистрируются вовсе (фильтр на уровне registry, не только config): terminal, process, execute_code, file, web, browser, vision/image/tts, skills, memory, session_search, delegation, cronjob, kanban, computer_use, connections, terminal-инструменты desktop_ui. MCP sampling выключен; auxiliary LLM-вызовы закреплены за relay D-16 или отключены, discovery chain провайдеров закрыт.
 - **D-23:** Revit bridge работает только при loopback-привязке pyRevit Routes, иначе fail-closed.
   - Fork `startup.py` регистрирует только read routes; шаг установки задаёт `[routes] host = 127.0.0.1`; DeGram проверяет, что listener `:48884` слушает только loopback, иначе статус `setup-incomplete` и чтения не выполняются.
+
+- **D-24:** Relay берёт endpoint, модель и ключ из настроек LLM в DG Web UI (`llm-settings.json`), собственной конфигурации у relay нет [владелец 2026-10-06].
+  - Поправка к D-16, реализована в `c5966d4`: `degram-llm.json` и `PUT /degram/admin/llm-config` удалены; только provider `openai` (OpenAI или OpenAI-compatible base URL); иначе relay не настроен, fallback нет. Генпро и «Гена» — только образец, данные оттуда для подключения не используются.
+- **D-25:** Подключение DeGram к DG выдаётся отдельным коннектором DeGram во вкладке Connectors DG Web UI как токен сопряжения [владелец 2026-10-06].
+  - DeGram хранит токен сопряжения зашифрованным (Electron `safeStorage`) и обменивает его на тот же короткоживущий `dgd_` (D-06), который relay и инструменты принимают без изменений; отзыв в Connectors немедленно гасит все `dgd_`, выпущенные по этому сопряжению. Агент по-прежнему действует от имени пользователя (1300 D-07): токен сопряжения не является connector-принципалом и не принимается ни одним маршрутом, кроме обмена.
+- **D-26:** Токен сопряжения DeGram привязан к пользователю, а не к проекту [владелец 2026-10-06].
+  - Проект выбирается в DeGram; обмен проверяет живое членство пользователя в проекте и компанию проекта, как при выпуске `dgd_` из сессии.
 
 ### Claude's Discretion
 Planner/researcher выбирают HOW в пределах решений выше и границ 1300:
