@@ -23,6 +23,7 @@ import argparse
 import http.client
 import json
 import os
+import re
 import sys
 import time
 from urllib.parse import urlsplit
@@ -30,6 +31,9 @@ from urllib.parse import urlsplit
 ROUTE = '/degram/v1/chat/completions'
 EXCHANGE_ROUTE = '/auth/degram/exchange'
 PAIRING_ENV = 'DEGRAM_PROBE_PAIRING'
+# A pasted value is trimmed, then must have the token shape; neither the value nor a part of it is ever echoed.
+PAIRING_SHAPE = re.compile(r'^dgp_[A-Za-z0-9_-]{32,200}$')
+DELEGATED_SHAPE = re.compile(r'^dgd_[A-Za-z0-9_-]{8,200}$')
 TOOL = {
     'type': 'function',
     'function': {
@@ -157,6 +161,9 @@ def _exchange(host, port, scheme, route, pairing, project, timeout):
         raw = response.read(65536).decode('utf-8', 'replace')
     except (OSError, http.client.HTTPException) as exc:
         raise SystemExit(f'Pairing exchange unreachable: {type(exc).__name__}') from None
+    except ValueError:
+        # http.client puts the rejected header value in its message: never let it reach the output.
+        raise SystemExit('Pairing exchange not sent: the pairing token is not a valid header value') from None
     finally:
         conn.close()
     if response.status != 201:
@@ -170,8 +177,13 @@ def _exchange(host, port, scheme, route, pairing, project, timeout):
 
 def run_probe(base, token_env, route=ROUTE, timeout=120, project=None,
               pairing_env=PAIRING_ENV, exchange_route=EXCHANGE_ROUTE):
-    pairing = os.environ.get(pairing_env, '')
-    token = os.environ.get(token_env, '')
+    pairing = os.environ.get(pairing_env, '').strip()
+    token = os.environ.get(token_env, '').strip()
+    if pairing and not PAIRING_SHAPE.match(pairing):
+        raise SystemExit(f'{pairing_env} does not look like a DeGram pairing token (dgp_ + 32-200 url-safe characters). '
+                         'Copy it again from the Connectors tab.')
+    if not pairing and token and not DELEGATED_SHAPE.match(token):
+        raise SystemExit(f'{token_env} does not look like a delegated token (dgd_ + url-safe characters).')
     if pairing and not project:
         raise SystemExit(f'{pairing_env} is set: pass --project to exchange the pairing for a delegated token.')
     if not pairing and not token:

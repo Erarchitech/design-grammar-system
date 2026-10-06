@@ -9,7 +9,7 @@ from pathlib import Path
 
 MODULE = Path(__file__).resolve().parents[1] / 'relay_probe.py'
 TOKEN = 'dgd_SECRET_TOKEN_VALUE'
-PAIRING = 'dgp_SECRET_PAIRING_VALUE'
+PAIRING = 'dgp_SECRET_PAIRING_VALUE_' + 'x' * 24
 EXCHANGED = 'dgd_EXCHANGED_FROM_PAIRING'
 ROUTE = '/degram/v1/chat/completions'
 EXCHANGE = '/auth/degram/exchange'
@@ -173,6 +173,33 @@ class RelayProbeTests(unittest.TestCase):
         report = probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE)
         self.assertEqual(report['tokenSource'], 'delegated')
         self.assertTrue(all(s['path'] == ROUTE for s in FakeRelay.seen))
+
+    def test_a_pasted_pairing_with_spaces_and_a_newline_is_trimmed(self):
+        probe = load()
+        os.environ['DEGRAM_PROBE_PAIRING'] = f'  {PAIRING}   \n'
+        report = probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE, project='P1')
+        self.assertEqual(report['tokenSource'], 'pairing')
+        self.assertEqual(FakeRelay.seen[0]['auth'], f'Bearer {PAIRING}')
+
+    def test_a_malformed_pairing_is_refused_before_any_request_and_never_echoed(self):
+        probe = load()
+        bad = 'dgp_has inner space ' + 'y' * 30
+        os.environ['DEGRAM_PROBE_PAIRING'] = bad
+        with self.assertRaises(SystemExit) as raised:
+            probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE, project='P1')
+        self.assertNotIn(bad, str(raised.exception))
+        self.assertNotIn('has inner space', str(raised.exception))
+        self.assertEqual(FakeRelay.seen, [])
+
+    def test_a_delegated_token_with_a_newline_is_trimmed_and_a_broken_one_never_echoed(self):
+        probe = load()
+        os.environ['DEGRAM_PROBE_TOKEN'] = TOKEN + '\n'
+        probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE)
+        self.assertTrue(all(s['auth'] == f'Bearer {TOKEN}' for s in FakeRelay.seen))
+        os.environ['DEGRAM_PROBE_TOKEN'] = 'dgd_bad\rvalue'
+        with self.assertRaises(SystemExit) as raised:
+            probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE)
+        self.assertNotIn('dgd_bad', str(raised.exception))
 
 
 if __name__ == '__main__':
