@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 14/16 plans executed
+**Plans**: 16/17 plans executed
 **UI hint**: yes
 
 Plans:
@@ -183,11 +183,11 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump *(2026-10-06 audit-fix: rebuilt `DeGram-Setup-0.1.0.exe` from `a9e56d7e` with the DeGram icon/version/vendor; launch beside an open Hermes Desktop proven (F-10); both `degram/phase-1301` branches pushed, gitlinks bumped, `workspace.py verify` passes; see 1301-BUILD.md)*
+- [x] 1301-15-PLAN.md — Installer build, clean-install protocol, first-launch isolation, authorized push + gitlink bump *(2026-10-06 audit-fix: rebuilt `DeGram-Setup-0.1.0.exe` from `a9e56d7e` with the DeGram icon/version/vendor; launch beside an open Hermes Desktop proven (F-10); both `degram/phase-1301` branches pushed, gitlinks bumped, `workspace.py verify` passes; see 1301-BUILD.md)*
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 1301-17-PLAN.md — DeGram connector in the Connectors tab: user-bound pairing token (dgp_) exchanged for dgd_ (D-25, D-26)
+- [x] 1301-17-PLAN.md — DeGram connector in the Connectors tab: user-bound pairing token (dgp_) exchanged for dgd_ (D-25, D-26)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
@@ -335,7 +335,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 14/16 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 16/17 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
