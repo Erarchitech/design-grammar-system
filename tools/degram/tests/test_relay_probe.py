@@ -9,7 +9,10 @@ from pathlib import Path
 
 MODULE = Path(__file__).resolve().parents[1] / 'relay_probe.py'
 TOKEN = 'dgd_SECRET_TOKEN_VALUE'
+PAIRING = 'dgp_SECRET_PAIRING_VALUE'
+EXCHANGED = 'dgd_EXCHANGED_FROM_PAIRING'
 ROUTE = '/degram/v1/chat/completions'
+EXCHANGE = '/auth/degram/exchange'
 
 
 def load():
@@ -33,6 +36,16 @@ class FakeRelay(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         FakeRelay.seen.append({'path': self.path, 'auth': self.headers.get('Authorization'), 'body': body})
+        if self.path == EXCHANGE:
+            ok = FakeRelay.mode != 'exchange-revoked' and self.headers.get('Authorization') == f'Bearer {PAIRING}'
+            self.send_response(201 if ok else 401)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            answer = ({'token': EXCHANGED, 'project': body['project'], 'company': 'Acme',
+                       'expiresAt': '2026-10-06T12:00:00Z', 'expiresInSeconds': 900} if ok else
+                      {'detail': {'code': 'PAIRING_AUTH_FAILED', 'error': 'no', 'hint': 'x'}})
+            self.wfile.write(json.dumps(answer).encode())
+            return
         history_has_tool = any(m.get('role') == 'tool' for m in body['messages'])
         if FakeRelay.mode == 'history-fails' and history_has_tool:
             self.send_response(502)
@@ -62,6 +75,7 @@ class RelayProbeTests(unittest.TestCase):
         os.environ['DEGRAM_PROBE_TOKEN'] = TOKEN
         self.addCleanup(self.server.shutdown)
         self.addCleanup(os.environ.pop, 'DEGRAM_PROBE_TOKEN', None)
+        self.addCleanup(os.environ.pop, 'DEGRAM_PROBE_PAIRING', None)
 
     def test_four_cases_report_shape_and_never_the_token(self):
         probe = load()
@@ -112,6 +126,53 @@ class RelayProbeTests(unittest.TestCase):
         report = probe.run_probe('http://127.0.0.1:9', 'DEGRAM_PROBE_TOKEN', route=ROUTE, timeout=2)
         self.assertTrue(all(c['outcome'] == 'UNREACHABLE' for c in report['cases']))
         self.assertNotIn(TOKEN, json.dumps(report))
+
+    def test_pairing_is_exchanged_first_and_the_cases_use_the_minted_token(self):
+        probe = load()
+        del os.environ['DEGRAM_PROBE_TOKEN']
+        os.environ['DEGRAM_PROBE_PAIRING'] = PAIRING
+        report = probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE, project='P1')
+        self.assertEqual(FakeRelay.seen[0]['path'], EXCHANGE)
+        self.assertEqual(FakeRelay.seen[0]['body'], {'project': 'P1'})
+        self.assertEqual(FakeRelay.seen[0]['auth'], f'Bearer {PAIRING}')
+        self.assertEqual(len(FakeRelay.seen), 5)
+        self.assertTrue(all(s['auth'] == f'Bearer {EXCHANGED}' for s in FakeRelay.seen[1:]))
+        self.assertEqual(report['tokenSource'], 'pairing')
+        self.assertEqual(report['project'], 'P1')
+        self.assertEqual(report['company'], 'Acme')
+        text = json.dumps(report)
+        self.assertNotIn(PAIRING, text)
+        self.assertNotIn(EXCHANGED, text)
+
+    def test_pairing_wins_over_a_delegated_token_variable(self):
+        probe = load()
+        os.environ['DEGRAM_PROBE_PAIRING'] = PAIRING
+        report = probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE, project='P1')
+        self.assertEqual(report['tokenSource'], 'pairing')
+        self.assertFalse(any(s['auth'] == f'Bearer {TOKEN}' for s in FakeRelay.seen))
+
+    def test_pairing_without_project_is_refused_before_any_request(self):
+        probe = load()
+        os.environ['DEGRAM_PROBE_PAIRING'] = PAIRING
+        with self.assertRaises(SystemExit):
+            probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE)
+        self.assertEqual(FakeRelay.seen, [])
+
+    def test_refused_exchange_stops_with_the_code_and_no_token(self):
+        probe = load()
+        FakeRelay.mode = 'exchange-revoked'
+        os.environ['DEGRAM_PROBE_PAIRING'] = PAIRING
+        with self.assertRaises(SystemExit) as raised:
+            probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE, project='P1')
+        self.assertIn('PAIRING_AUTH_FAILED', str(raised.exception))
+        self.assertNotIn(PAIRING, str(raised.exception))
+        self.assertEqual(len(FakeRelay.seen), 1, 'no relay case after a refused exchange')
+
+    def test_delegated_token_variable_keeps_working(self):
+        probe = load()
+        report = probe.run_probe(self.base, 'DEGRAM_PROBE_TOKEN', route=ROUTE)
+        self.assertEqual(report['tokenSource'], 'delegated')
+        self.assertTrue(all(s['path'] == ROUTE for s in FakeRelay.seen))
 
 
 if __name__ == '__main__':

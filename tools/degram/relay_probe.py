@@ -10,6 +10,14 @@ token is never printed or stored in the report.
 
     DEGRAM_PROBE_TOKEN=dgd_... python tools/degram/relay_probe.py \
         --base http://localhost:8000
+
+Plan 17 (D-25): with DEGRAM_PROBE_PAIRING set to a DeGram pairing token from
+the Connectors tab and --project given, the probe first trades it at
+POST <base>/auth/degram/exchange for the delegated token it then uses. The
+pairing wins over DEGRAM_PROBE_TOKEN; neither token reaches the report.
+
+    DEGRAM_PROBE_PAIRING=dgp_... python tools/degram/relay_probe.py \
+        --base http://localhost:8000 --project v12-hexagonal-facade-01
 """
 import argparse
 import http.client
@@ -20,6 +28,8 @@ import time
 from urllib.parse import urlsplit
 
 ROUTE = '/degram/v1/chat/completions'
+EXCHANGE_ROUTE = '/auth/degram/exchange'
+PAIRING_ENV = 'DEGRAM_PROBE_PAIRING'
 TOOL = {
     'type': 'function',
     'function': {
@@ -133,17 +143,54 @@ def _run_case(host, port, scheme, route, token, name, payload, cancel, timeout):
     return case
 
 
-def run_probe(base, token_env, route=ROUTE, timeout=120):
+def _exchange(host, port, scheme, route, pairing, project, timeout):
+    """Trade the pairing token for a delegated one. Returns the 201 body or
+    raises SystemExit naming the refusal code (never the token)."""
+    factory = http.client.HTTPSConnection if scheme == 'https' else http.client.HTTPConnection
+    conn = factory(host, port, timeout=timeout)
+    try:
+        conn.request('POST', route, body=json.dumps({'project': project}).encode(), headers={
+            'Authorization': f'Bearer {pairing}',
+            'Content-Type': 'application/json',
+        })
+        response = conn.getresponse()
+        raw = response.read(65536).decode('utf-8', 'replace')
+    except (OSError, http.client.HTTPException) as exc:
+        raise SystemExit(f'Pairing exchange unreachable: {type(exc).__name__}') from None
+    finally:
+        conn.close()
+    if response.status != 201:
+        code = _error_code(raw) or f'HTTP_{response.status}'
+        raise SystemExit(f'Pairing exchange refused: {code}')
+    body = json.loads(raw)
+    if not str(body.get('token', '')).startswith('dgd_'):
+        raise SystemExit('Pairing exchange answered without a delegated token')
+    return body
+
+
+def run_probe(base, token_env, route=ROUTE, timeout=120, project=None,
+              pairing_env=PAIRING_ENV, exchange_route=EXCHANGE_ROUTE):
+    pairing = os.environ.get(pairing_env, '')
     token = os.environ.get(token_env, '')
-    if not token:
-        raise SystemExit(f'Environment variable {token_env} is empty: mint a delegated token in the signed-in DeGram session.')
+    if pairing and not project:
+        raise SystemExit(f'{pairing_env} is set: pass --project to exchange the pairing for a delegated token.')
+    if not pairing and not token:
+        raise SystemExit(f'Environment variables {pairing_env} and {token_env} are empty: create a DeGram pairing '
+                         'on the Connectors tab, or mint a delegated token in the signed-in DeGram session.')
     parts = urlsplit(base)
     scheme = parts.scheme or 'http'
     host = parts.hostname or 'localhost'
     port = parts.port or (443 if scheme == 'https' else 80)
-    cases = [_run_case(host, port, scheme, route, token, name, payload, cancel, timeout)
-             for name, payload, cancel in _cases()]
-    return {'probe': 'degram-relay-capability', 'route': route, 'base': base, 'cases': cases}
+    report = {'probe': 'degram-relay-capability', 'route': route, 'base': base,
+              'tokenSource': 'delegated', 'project': project, 'company': None}
+    if pairing:
+        exchanged = _exchange(host, port, scheme, exchange_route, pairing, project, timeout)
+        token = exchanged['token']
+        report.update(tokenSource='pairing', project=exchanged.get('project'),
+                      company=exchanged.get('company'))
+    report['cases'] = [_run_case(host, port, scheme, route, token, name, payload, cancel, timeout)
+                       for name, payload, cancel in _cases()]
+    return report
 
 
 def main(argv=None):
@@ -152,8 +199,14 @@ def main(argv=None):
     parser.add_argument('--route', default=ROUTE)
     parser.add_argument('--token-env', default='DEGRAM_PROBE_TOKEN')
     parser.add_argument('--timeout', type=int, default=120)
+    parser.add_argument('--project', default=None,
+                        help=f'project to exchange the {PAIRING_ENV} pairing token for')
+    parser.add_argument('--pairing-env', default=PAIRING_ENV)
+    parser.add_argument('--exchange-route', default=EXCHANGE_ROUTE)
     args = parser.parse_args(argv)
-    report = run_probe(args.base, args.token_env, route=args.route, timeout=args.timeout)
+    report = run_probe(args.base, args.token_env, route=args.route, timeout=args.timeout,
+                       project=args.project, pairing_env=args.pairing_env,
+                       exchange_route=args.exchange_route)
     json.dump(report, sys.stdout, indent=2)
     sys.stdout.write('\n')
 
