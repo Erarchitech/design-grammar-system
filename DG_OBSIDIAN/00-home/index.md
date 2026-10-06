@@ -109,6 +109,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/Rule ingest blends a rule invented from a bare Rule_Id into the existing rule|Rule ingest: bare Rule_Id → invented rule MERGEd into existing one; ID/recognition findings (F13, F6/F9–F12)]] (2026-10-05, open)
 - [[knowledge/debugging/Grasshopper Panels can neither be captured as parameters nor safely carry tokens|GH Panels: not capturable by PARAMETER STATE; token via Panel persists in .gh (F7/F17)]] (2026-10-05, open)
 - [[knowledge/debugging/Model Viewer shows a foreign base model and a hard-coded tile property catalogue|Model Viewer: foreign base model, shadow, black preview, camera reset, hard-coded tile props (F18–F22)]] (2026-10-05, open)
+- [[knowledge/debugging/Electron app exits silently when launched from VS Code shell with ELECTRON_RUN_AS_NODE|Electron app exits silently (exit 0) from a VS Code shell — remove ELECTRON_RUN_AS_NODE via ProcessStartInfo]]
 - [[knowledge/debugging/Packaged DeGram ignored the degram variant and attached to the live Hermes|Packaged DeGram ignored the degram variant and attached to the live Hermes — identity gate, scrubbed env]]
 - [[knowledge/debugging/GH deadline test patched the clock only after the first request|GH deadline test: clock patched only after the first request — flaky 30 s wait]]
 - [[knowledge/debugging/OBJECT STATE index ObjectRefs collide across classes for computed geometry|OBJECT STATE: index ObjectRefs (obj_i) collide across classes for computed geometry]] (2026-10-03, open)
@@ -179,6 +180,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-06 Phase 1301 plan 15 rebuild and DeGram isolation proven beside Hermes|2026-10-06 Phase 1301: installer rebuilt from 910a060d, DeGram isolation proven beside Hermes, relay probe added, plan 16 started]]
 - [[sessions/2026-10-05 Phase 1301 executed through plan 14, plan 15 launch failed isolation|2026-10-05 Phase 1301: executed through plan 14; plan 15 launch failed isolation, nothing pushed]]
 - [[sessions/2026-10-04 Phase 1301 planned|2026-10-04 Phase 1301: researched and planned — 15 plans / 8 waves, D-20..D-23, all gates pass]]
 - [[sessions/2026-10-04 Phase 1301 UI design contract|2026-10-04 Phase 1301: UI-SPEC approved — DG theme preset, wordmark, ru-first copy, DG page, 47 UI states resolved]]
