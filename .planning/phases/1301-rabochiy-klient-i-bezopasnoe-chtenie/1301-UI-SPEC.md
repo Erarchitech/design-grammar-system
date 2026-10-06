@@ -36,7 +36,7 @@ Binding upstream rules: `apps/degram/apps/desktop/DESIGN.md` (primitives, tokens
 | Icon library | Tabler via `src/lib/icons.ts` aliases; Codicon for status/tool glyphs. No third set. |
 | Font | Geist (sans), Geist Mono (mono), Oswald (wordmark only) — self-hosted, latin + cyrillic subsets |
 | Theme | New preset `degram` in `apps/degram/apps/desktop/src/themes/presets.ts` + palette `degram` in `apps/degram/apps/shared/src/theme-presets.ts`; default for variant `degram`; other skins stay selectable **[owner 2026-10-04: DG preset, not locked]** |
-| Brand mark | Text wordmark «DeGram» (Oswald 500, uppercase) on the `BrandMark` fixed tile; app/tray/installer icon generated from it through the existing `scripts/generate_icons.py` seam **[owner 2026-10-04]** |
+| Brand mark | Owner-supplied halftone hexagon (91 dots, centre + five rings) on the `BrandMark` tile and as app/taskbar/shortcut/installer icon, light tile + `#0d1117` dark tile, 19-dot reduced mark at 16–32 px, rendered by `scripts/generate_degram_icons.py` over the upstream filenames **[owner 2026-10-06, supersedes the 2026-10-04 wordmark-derived icon]**. The text wordmark «DeGram» (Oswald 500, uppercase) remains the in-app wordmark |
 | Locale | en + ru copy contract; variant `degram` starts in `ru` on first run; user may switch **[owner 2026-10-04]** |
 
 ### Theme preset `degram` (exact values)

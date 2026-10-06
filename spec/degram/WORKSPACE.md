@@ -60,11 +60,14 @@ DeGram runs beside an installed Hermes on the same PC. Every fork file that carr
 | Concern | Fork path (under `apps/degram/apps/desktop/`) | DeGram value |
 |---|---|---|
 | Names, appId, CLI, feed | `product-identity.cjs`, `electron/product-identity.ts` | `DeGram`, `com.erarchitech.degram`, `degram`, no release feed |
-| Packaging | `electron-builder.config.cjs` | productName/exe `DeGram`, `degram://`, per-user NSIS, `extraMetadata.author` `Erarchitech` (exe CompanyName, copyright, uninstall Publisher) |
+| Packaging | `electron-builder.config.cjs` | productName/exe `DeGram`, `degram://`, per-user NSIS, `extraMetadata.author` `Erarchitech` (exe CompanyName, copyright, uninstall Publisher), `extraMetadata.version` (pilot `0.1.0`; bump the patch for every installer build, never reuse a number) |
+| Build driver | `scripts/bundles/desktop.py` (repo root of the component) | `degram_icon_overlay` lays the committed icons over the commit build's red badge render; `package_version_args` passes no `extraMetadata.version` override for degram. Verify identity on the packaged exe and `app.asar`, never on the repo files: the 2026-10-06 rebuild from `69eb9a1d` still shipped the commit-badge Nous icon and version 0.0.0 |
 | Runtime home, userData, lock | `electron/degram/isolation.ts`, `applyDesktopIdentity` in `electron/main.ts` | fixed `%LOCALAPPDATA%\DeGram\{home,userData}`; inherited `HERMES_HOME` ignored; `HOME_OVERLAP` fails closed; never attaches to a running Hermes backend |
 | AUMID, native window title | `electron/main.ts` (`setAppUserModelId`, `APP_WINDOW_TITLE`) | `com.erarchitech.degram`, `DeGram` |
 | Page title | `src/degram/window-title.ts` (called from `src/main.tsx`) | `DeGram` / `DeGram HUD` over index.html's `<title>Hermes</title>` |
-| Icons | `assets/icon.{ico,png,icns}`, `public/apple-touch-icon.png`, `src/components/brand-mark.tsx` image | still stock: owner supplies the DeGram icon (open finding F-04) |
+| Locked REST paths | `electron/degram/rest-lock.ts` (used by `electron/preload.ts`) | preload answers paths outside `/api/{ws,health,status}` with the backend's own `403 DEGRAM_LOCKED`, without sending; keep in step with `ALLOWED_REST_PATHS` in `degram_variant/lockdown.py` |
+| User PATH | `hermes_cli/_launchers.py` (`expose_cli`) | variant degram publishes no command and never writes `HKCU\Environment` |
+| Icons | `scripts/generate_degram_icons.py` → `assets/icon{,-dark}.{png,ico,icns}`, `assets/icon-mac.png`, `public/apple-touch-icon.png`, `public/nous-girl{,-dark}.png` (BrandMark) | owner's halftone-hexagon mark (2026-10-06), upstream filenames kept; 16–32 px frames use a 19-dot reduced mark. Never run upstream `scripts/generate_icons.py` here (it restores the Nous art); its `icons-freshness-check.yml` lane fails on the fork by design |
 
 Rules, adapted from the Genpro «Гена» Hermes fork (`GenproMM/MastermindServices/12_GenproAI_HermesFork`, studied 2026-10-06):
 
@@ -72,7 +75,7 @@ Rules, adapted from the Genpro «Гена» Hermes fork (`GenproMM/MastermindSer
 2. Verify identity on a packaged build (exe version resource, icon hash, window and taskbar title, shortcut, uninstall entry), never on a dev `electron .` run, which shows Electron's own icon. Windows caches shortcut icons; point shortcuts at the exe or `resources\icon.ico`.
 3. The agent home never derives from an inherited `HERMES_HOME`: an installed Hermes commonly exports it user- or machine-wide.
 4. Process cleanup targets owned PIDs or the DeGram install root, never the image name `hermes.exe`; Gena's install and update once killed the other product's gateway this way.
-5. No bootstrap stage may write user-level environment variables or publish a `hermes` command to the user `PATH` for DeGram (Gena's finish stage overwrote a co-installed Hermes' `HERMES_HOME`; DeGram's exposure through install.ps1 `Publish-UserCommand` is open finding F-07).
+5. No bootstrap stage may write user-level environment variables or publish a `hermes` command to the user `PATH` for DeGram. Gena's finish stage overwrote a co-installed Hermes' `HERMES_HOME`; DeGram's first launch (2026-10-06) minted `%LOCALAPPDATA%\DeGram\home\bin\hermes.cmd` and put it first in the user PATH, because upstream `expose_cli` takes its Windows branch before the bundled-payload skip (fixed by F-07, component `69eb9a1d`). Upstream `tests/hermes_cli/test_hermes_home_shared_launchers.py` also writes the real user PATH on Windows: never run it on a pilot PC.
 6. No updater feed and no `hermes update`; the upstream feed targets NousResearch.
 
 ## Revit adapter component

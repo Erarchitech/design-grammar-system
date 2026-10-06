@@ -168,3 +168,65 @@ about 40 s, closed through `CloseMainWindow`, no process or listener left. Herme
 Open findings: the window title read `Hermes` (the product name is not applied to the title); the DG page load failed with `ERR_CONNECTION_REFUSED` on `localhost:8080` (Docker Desktop was not running at that moment);
 the renderer still polls locked endpoints and floods stderr with `DEGRAM_LOCKED`. Leftover from the first launch: `%APPDATA%\HermesBundledCommit386bd70` (stock identity userData, not removed).
 Not yet done: launch while Hermes Desktop itself is open; push of the two branches and gitlink bump (pending owner decision).
+
+## Audit-fix rebuilds (2026-10-06, `/gsd-audit-fix 1301`, Gena fork lessons)
+
+Owner decisions (AskUserQuestion, 2026-10-06): child commits without push for F-01/F-02/F-03; CompanyName `Erarchitech`;
+owner-supplied icon (halftone hexagon) with all icon recommendations; version scheme `0.1.0`, patch +1 per installer build,
+never reused; F-06 request filter; F-07 no PATH command; F-08 delete leftover; F-09 push + gitlink; F-10 launch beside an
+open Hermes Desktop; remove the 8 `hermes-pytest` user-PATH entries.
+
+Component commits on `degram/phase-1301` (local): `05d7eee8` F-01 window title, `df584929` F-02 vendor, `2103d06c` F-04 icon set
+(`apps/desktop/scripts/generate_degram_icons.py`), `a0ec2d2e` F-05 version, `43658b61` F-06 preload REST lock,
+`69eb9a1d` F-07 no user-PATH command, `a9e56d7e` F-02/F-04/F-05 through the build driver.
+
+**Rebuild 1, from `69eb9a1d`** (10:00-10:52Z, exit 0): `DeGram-Setup-0.0.0.exe`. Inspection of the packaged artifact, not the
+repo, showed three fixes had not reached it: `resources\icon.ico` and the exe icon were upstream's red commit-build icon with the
+Nous art and a `69eb9a1` badge, the version was `0.0.0`, and CompanyName was `Nous Research` with copyright `DeGram`. Causes, all in
+the build path: `scripts/bundles/desktop.py` renders upstream icons for a commit build and stages them over `apps/desktop/assets`
+while packaging; it passes `-c.extraMetadata.version=<request version>`, which overrides the config; electron-builder reads
+`author.name`, so a string `extraMetadata.author` leaves companyName empty. Fixed in `a9e56d7e` with tests. This artifact was
+deleted, never launched. Every earlier DeGram build (plan 15 included) carried the same commit-badge icon.
+
+**Rebuild 2, from `a9e56d7e`** (10:58-11:46Z, exit 0, clean clone `D:\dgb\src`, scrubbed env, clone clean afterwards):
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.0.exe`, 1,931,560,440 bytes |
+| SHA-256 | `70a73670d58090145e3a540cbc07f399548ff365ff9a5e6a4e1e7aa5f7914f9a` |
+| Exe version resource | ProductName/FileDescription `DeGram`, CompanyName `Erarchitech`, `Copyright © 2026 Erarchitech`, version `0.1.0` |
+| Icons | `resources\icon.ico` byte-identical to the committed `assets/icon.ico`; exe icon is the DeGram mark (19-dot frame at 32 px); `dist/nous-girl{,-dark}.png` and `dist/apple-touch-icon.png` in `app.asar` byte-identical to the committed files |
+
+Pilot-PC cleanup (owner-approved): DeGram's `%LOCALAPPDATA%\DeGram\home\bin` was first in the user PATH with a `hermes.cmd`
+pointing at the build clone (a new shell's `hermes` ran DeGram); the entry and the stale `hermes.cmd`/`hermes-acp.cmd` were removed.
+Eight `%TEMP%\hermes-pytest\...\bin` entries left by earlier runs of the upstream suite were removed; one more, added by this
+session's run of `tests/hermes_cli/test_hermes_home_shared_launchers.py`, was removed at once (that test writes the real user PATH).
+`%APPDATA%\HermesBundledCommit386bd70` (3.5 MB, all files from the 2026-10-05 21:19-21:21 stock-identity launch) was deleted.
+
+### F-10: launch beside an open Hermes Desktop (2026-10-06, artifact from `a9e56d7e`)
+
+Hermes Desktop opened by the owner (main window pid 31760, 5 `Hermes.exe`). Snapshots of `%USERPROFILE%\.hermes`,
+`%LOCALAPPDATA%\hermes` and `%APPDATA%\Hermes` (`D:\dgb\listing.ps1`, 303,673 entries); launch by `D:\dgb\launch3.ps1`
+(child env without `ELECTRON_RUN_AS_NODE`, **`HERMES_HOME` inherited** = the owner's Hermes home), evidence in `D:\dgb\run3\`.
+
+| Check | Result |
+|---|---|
+| Control A->B (Hermes alone, 120 s) | 2 created, 0 deleted, 23 modified (cron ticker, gateway heartbeat, kanban, spawn-ledger, state.db-wal, MCP schema cache, Desktop `SharedStorage-wal`/Preferences/cache) |
+| Launch B->C (DeGram 11:58:47-12:00:23Z beside Hermes) | **0 created, 0 deleted, 13 modified**, all of the control set's kinds; `channel_directory.json` last written 11:58:17Z, before the launch |
+| Hermes logs | `agent.log` 11:55:51Z and `desktop.log` 11:55:28Z, both last written before the launch; no attach line, no DeGram client |
+| `spawn-ledger.json` | 14 entries, none for a DeGram pid (25128, 27976, 12568) and no `degram` string |
+| DeGram run | window title `DeGram`; 7 processes under the build output incl. `agent-payload\bin\degram.exe` -> python; own listener 127.0.0.1:61543; clean close in 2.5 s, 0 processes left |
+| Hermes Desktop | 5 `Hermes.exe` before, during and after |
+| Renderer locked-endpoint flood (F-06) | 0 `DEGRAM_LOCKED` lines in DeGram stdout+stderr (was a flood) |
+| User environment | user PATH and user `HERMES_HOME` byte-identical before/after; `%LOCALAPPDATA%\DeGram\home\bin` not created (F-07) |
+
+Verdict: DeGram runs in parallel with an open Hermes Desktop without creating, deleting or modifying any Hermes file of its own;
+every modification in the launch window is of the kinds Hermes writes alone in the control window.
+
+### Publication (F-09)
+
+Pushed with owner authorization after a scan of all unpushed commits (no `.secrets`/`DG_OBSIDIAN`/`Publications` paths, no
+key-like strings, no personal names or local paths; author `Evgenii <erarchitech@gmail.com>`): `Erarchitech/degram`
+`degram/phase-1301` = `a9e56d7e` (29 commits over `8b66a510`), `Erarchitech/revit-mcp-server` `degram/phase-1301` = `937384f`.
+Framework gitlinks bumped to the same pair; `python tools/degram/workspace.py verify` passes on it (componentContextInstalled
+true), `tools/degram/tests` 19/19.
