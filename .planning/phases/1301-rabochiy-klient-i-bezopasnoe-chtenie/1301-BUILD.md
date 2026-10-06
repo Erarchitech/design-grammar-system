@@ -253,3 +253,19 @@ Run 2 (13:43-14:35Z, exit 0, clean clone `D:\dgb\src` at `97e158f2`, clean after
 | Pairing code in the artifact | `electron-main.mjs` (`degram:pairing:set`, `/auth/degram/exchange`, `degram-pairing.bin`), `electron-preload.js` (`degram:pairing:clear`), renderer `index-*.js` (`degram-pairing` panel) and `i18n-*.js` (`Токен сопряжения`) |
 
 Not launched yet: the plan 17 Task 6 live pairing is the owner's step (launch with Hermes handling per the plan 15 recipe).
+
+### Install of 0.1.1 on PC1 (owner request, 2026-10-06): not completed
+
+1. `DeGram-Setup-0.1.1.exe /S` (default per-user dir `%LOCALAPPDATA%\Programs\DeGram`, 44 chars), 15:25-15:40Z: exit code 5,
+   no uninstall entry, 103,991 of 115,546 files written. Four payload files exceed 260 chars at that dir (longest relative path
+   234 chars, so an install dir must be at most 25 chars): one in `resources\agent-payload\uv-cache\archive-v0\...` and three
+   `elevenlabs\...\__pycache__\*.pyc`. NSIS is not long-path aware even with `LongPathsEnabled=1`. **Finding F-11 (component):**
+   the payload ships `uv-cache` and long `__pycache__` names; the default install dir cannot hold them. Fix in the build
+   (exclude `uv-cache` and `__pycache__` from `agent-payload`, then re-check the longest path), not by moving the install dir.
+   Not proven that the long paths alone caused the abort: see 3. The partial dir was deleted.
+2. Re-run with `/S /D=C:\DeGram` did not start: the installer file was gone from `D:\dgb\src\apps\desktop\release` (removed
+   16:42 local; the blockmap, `builder-debug.yml` and the 0.1.0 installer remain). Nothing in this session deleted it.
+3. Kaspersky Total Security 21.3 is the active antivirus (Defender off); it already blocks network use of
+   `tools\degram\relay_probe.py` on this PC (1301-UAT.md). Quarantine of the installer, and interference with the first
+   install, are likely but unconfirmed: `avp.com QUARANTINE list` returns nothing without elevation. Owner to check Kaspersky
+   Quarantine / Reports. DeGram not launched.
