@@ -269,3 +269,21 @@ Not launched yet: the plan 17 Task 6 live pairing is the owner's step (launch wi
    `tools\degram\relay_probe.py` on this PC (1301-UAT.md). Quarantine of the installer, and interference with the first
    install, are likely but unconfirmed: `avp.com QUARANTINE list` returns nothing without elevation. Owner to check Kaspersky
    Quarantine / Reports. DeGram not launched.
+
+### F-11 analysis (2026-10-06, measured on the 0.1.1 `win-unpacked`)
+
+`uv-cache` (899 MB, offline per-install venv rebuilds) and the baked read-only `__pycache__` (warm first launch; also the
+cause of the run-1 PermissionError) are deliberate upstream features (`scripts/bundles/native.py`, `bytecode.py`).
+Longest relative path and the longest install dir NSIS can take (259 - longest):
+
+| Payload | Longest relative path | Install dir limit |
+|---|---|---|
+| as built | 234 | 25 |
+| without `uv-cache` | 234 | 25 |
+| without `uv-cache` and `__pycache__` | 209 | 50 (default dir is 44 for `Admin`, 50 for `e.ermolenko`: borderline) |
+| without `uv-cache` and the `elevenlabs`/`mistralai` SDKs | 191 | 68 |
+
+The plain "drop uv-cache and __pycache__" fix is not robust (fails for user names longer than ~10 chars) and loses the warm
+start. DeGram cannot use the TTS and direct-provider SDKs (D-22 lockdown, LLM only through the relay), so excluding those
+extras from the degram venv plus `uv-cache` gives a 68-char margin and keeps baked bytecode. Not implemented: owner choice
+and a build authorization pending.
