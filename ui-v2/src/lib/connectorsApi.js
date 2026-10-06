@@ -35,3 +35,32 @@ export async function revokeCredential(connectorId, credentialId) {
     { method: "DELETE" }
   );
 }
+
+// ── DeGram pairing (Phase 1301-17, D-25, D-26) ──
+// The "degram" card of GET /connectors lists pairings, not connector
+// credentials: each row is { credential_id, label, created_at, last_exchange,
+// revoked } (an admin also gets username). A pairing has no project; DeGram
+// chooses the project when it exchanges the token.
+export const DEGRAM_CONNECTOR_ID = "degram";
+
+// POST /connectors/degram/pairings  Body: { label? } → { credential_id, token }
+// (201; the dgp_ token is shown once). Normalised to the credential shape the
+// screen already handles.
+export async function createDegramPairing(label) {
+  const body = {};
+  if (label) body.label = label;
+  const result = await apiFetch(`${dataServiceBase()}/connectors/degram/pairings`, {
+    method: "POST",
+    body
+  });
+  return { credential_id: result.pairing_id, token: result.token };
+}
+
+// DELETE /connectors/degram/pairings/{pairingId} → 204. Also ends every
+// delegated token DeGram minted from this pairing.
+export async function revokeDegramPairing(pairingId) {
+  await apiFetch(
+    `${dataServiceBase()}/connectors/degram/pairings/${encodeURIComponent(pairingId)}`,
+    { method: "DELETE" }
+  );
+}
