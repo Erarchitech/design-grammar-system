@@ -205,8 +205,8 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        # 95 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings).
-        assert len(route_policy.ROUTE_POLICIES) == 95
+        # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes.
+        assert len(route_policy.ROUTE_POLICIES) == 98
 
     def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
         # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the
@@ -260,6 +260,7 @@ class TestInventory:
                 route_policy.PRINCIPAL_SERVICE,
                 route_policy.PRINCIPAL_CONNECTOR_SELF,
                 route_policy.PRINCIPAL_DELEGATED,
+                route_policy.PRINCIPAL_PAIRING,
             }, key
             if route_policy.PRINCIPAL_MEMBER in policy.principals:
                 assert policy.project_source and policy.min_role, key
@@ -499,3 +500,10 @@ class TestResourceNotFoundSemantics:
         )
         assert response.status_code == 200
         app_module.EXECUTION_RESULTS.pop("exec-9", None)
+
+
+def test_the_pairing_principal_is_listed_by_the_exchange_alone():
+    # Phase 1301-17 (D-25): a dgp_ token is a principal on exactly one route.
+    rows = [k for k, p in ROWS if route_policy.PRINCIPAL_PAIRING in p.principals]
+    assert rows == [("POST", "/auth/degram/exchange")]
+    assert route_policy.ROUTE_POLICIES[rows[0]].principals == {route_policy.PRINCIPAL_PAIRING}

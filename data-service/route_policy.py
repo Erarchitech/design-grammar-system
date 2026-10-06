@@ -23,7 +23,8 @@ from typing import Any, Awaitable, Callable
 # member (auth.require_principal decides which one actually applies); a
 # "connector" kind principal is permitted only by "connector"; a "service"
 # kind principal only by "service"; a "delegated" kind principal only by
-# "delegated". "public"/"connector-self" bypass
+# "delegated"; a "pairing" kind principal only by "pairing". "public"/
+# "connector-self" bypass
 # credential resolution entirely (anonymous principal).
 PRINCIPAL_PUBLIC = "public"
 PRINCIPAL_CONNECTOR_SELF = "connector-self"
@@ -36,6 +37,11 @@ PRINCIPAL_SERVICE = "service"
 # cookie session for one project (delegation.py). Permitted only where a row
 # lists it; resolves to Principal.kind "delegated" and never elevates an admin.
 PRINCIPAL_DELEGATED = "delegated"
+# Phase 1301-17 (D-25): a long-lived user-bound ``dgp_`` DeGram pairing token
+# (degram_pairing.py). Listed by exactly one row, POST /auth/degram/exchange;
+# on every other route auth.require_principal answers 401
+# PAIRING_NOT_A_PRINCIPAL before any credential resolution.
+PRINCIPAL_PAIRING = "pairing"
 
 
 @dataclass(frozen=True)
@@ -93,6 +99,7 @@ _MEM = PRINCIPAL_MEMBER
 _CON = PRINCIPAL_CONNECTOR
 _SVC = PRINCIPAL_SERVICE
 _DEL = PRINCIPAL_DELEGATED
+_PAIR = PRINCIPAL_PAIRING
 _SELF = PRINCIPAL_CONNECTOR_SELF
 
 # ── Route table (D-03/D-14) ──
@@ -114,6 +121,9 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # and self-revoke (the delegated token itself) a delegated token.
     ("POST", "/auth/delegated-token"): _p(_MEM, source="body", role="viewer"),
     ("DELETE", "/auth/delegated-token"): _p(_DEL),
+    # Phase 1301-17 (D-25, D-26): trade a DeGram pairing token for a delegated
+    # token of a project the pairing's user is a stored member of.
+    ("POST", "/auth/degram/exchange"): _p(_PAIR, source="body", role="viewer"),
     # ── project tenancy + invitations (Phase 1205-12, D-02/D-05) ──
     ("POST", "/auth/invites"): _p(_MEM, source="body", role="owner"),
     ("POST", "/auth/accept-invite"): _p(_PUB),
@@ -164,6 +174,11 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
         _MEM, source="resource:credential", role="editor"
     ),
     ("POST", "/connectors/heartbeat"): _p(_SELF),
+    # Phase 1301-17 (D-25): DeGram pairings. Any signed-in user pairs DeGram for
+    # themselves (no project, D-26); the revoke handler allows the owner or an
+    # admin and answers 404 PAIRING_NOT_FOUND otherwise.
+    ("POST", "/connectors/degram/pairings"): _p(_SES),
+    ("DELETE", "/connectors/degram/pairings/{pairing_id}"): _p(_SES),
     # ── reasoner ──
     ("GET", "/reasoner/settings"): _p(_SES),
     ("PUT", "/reasoner/settings"): _p(_ADM),

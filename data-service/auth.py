@@ -129,7 +129,21 @@ def _save(path: Path, key: str, rows: list[dict[str, Any]]) -> None:
                 os.chmod(tmp_path, 0o600)  # scrypt hashes / session token hashes
             except OSError:
                 pass  # best effort (e.g. Windows bind mounts)
-            os.replace(tmp_path, path)
+            # Windows readers can briefly deny replacement even after this
+            # process released its own read handle. Keep the atomic replace
+            # and RLock; never fall back to an in-place/truncated store write.
+            for attempt in range(8):
+                try:
+                    os.replace(tmp_path, path)
+                    break
+                except PermissionError as exc:
+                    if (
+                        os.name != "nt"
+                        or getattr(exc, "winerror", None) not in (5, 32, 33)
+                        or attempt == 7
+                    ):
+                        raise
+                    time.sleep(min(0.01 * (2 ** attempt), 0.1))
         finally:
             if tmp_path.exists():
                 try:
@@ -401,9 +415,12 @@ def revoke_user_sessions(username: str, *, except_token_hash: str | None = None)
 @dataclass(frozen=True)
 class Principal:
     """A resolved caller identity. `kind` is one of
-    anonymous/user/connector/service/delegated. A `delegated` principal
+    anonymous/user/connector/service/delegated/pairing. A `delegated` principal
     (Phase 1301-05, D-06) carries `username`, `bound_project`, `company` and
-    the parent `session_hash`; it is never an admin."""
+    the parent `session_hash` (None when minted from a pairing); it is never an
+    admin. A `pairing` principal (Phase 1301-17, D-25) carries `username` and
+    the pairing id as `credential_id`, exists only on the exchange route and is
+    never an admin."""
 
     kind: str
     username: str | None = None
@@ -1032,6 +1049,19 @@ async def require_principal(request: Request) -> Principal:
     if (request.method, path_template) == REGISTER_ROUTE and not _self_registration_open():
         raise HTTPException(status_code=404, detail="Not Found")
 
+    # (1b) Phase 1301-17 (D-25): a DeGram pairing token is a principal on the
+    # exchange route only. Everywhere else -- public routes included -- it is
+    # refused before any credential resolution, so it can never fall through
+    # to the connector branch.
+    import degram_pairing  # noqa: PLC0415 -- degram_pairing imports this module
+
+    auth_header = request.headers.get("Authorization", "")
+    pairing_bearer = auth_header.startswith("Bearer ") and auth_header[
+        len("Bearer "):
+    ].strip().startswith(degram_pairing.PAIRING_TOKEN_PREFIX)
+    if pairing_bearer and route_policy.PRINCIPAL_PAIRING not in policy.principals:
+        raise degram_pairing.pairing_not_a_principal()
+
     # (2) public / connector-self: anonymous, no credential resolution.
     if policy.principals & {route_policy.PRINCIPAL_PUBLIC, route_policy.PRINCIPAL_CONNECTOR_SELF}:
         if route_policy.PRINCIPAL_PUBLIC in policy.principals and request.method in _UNSAFE_METHODS:
@@ -1047,7 +1077,6 @@ async def require_principal(request: Request) -> Principal:
     import delegation  # noqa: PLC0415 -- delegation imports this module
 
     service_header = request.headers.get(SERVICE_TOKEN_HEADER)
-    auth_header = request.headers.get("Authorization", "")
     cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
 
     principal: Principal | None
@@ -1065,6 +1094,15 @@ async def require_principal(request: Request) -> Principal:
         if token.startswith(delegation.DELEGATED_TOKEN_PREFIX):
             # Raises the named DELEGATED_* / PROJECT_FORBIDDEN error itself.
             principal = delegation.authenticate_delegated_token(token)
+        elif pairing_bearer:
+            # Only reached on a route that lists "pairing" (step 1b).
+            pairing = degram_pairing.authenticate_pairing(token)
+            principal = Principal(
+                kind="pairing",
+                username=pairing["username"],
+                is_admin=False,
+                credential_id=pairing["pairing_id"],
+            )
         else:
             principal = resolve_connector_principal(token)
             if principal is None:
@@ -1097,6 +1135,7 @@ async def require_principal(request: Request) -> Principal:
         "connector": {route_policy.PRINCIPAL_CONNECTOR},
         "service": {route_policy.PRINCIPAL_SERVICE},
         "delegated": {route_policy.PRINCIPAL_DELEGATED},
+        "pairing": {route_policy.PRINCIPAL_PAIRING},
     }
     if policy.principals.isdisjoint(allowed_tokens_by_kind.get(principal.kind, set())):
         raise auth_error(
@@ -1139,6 +1178,12 @@ async def require_principal(request: Request) -> Principal:
             # Bound project only, and the stored membership role (no admin
             # elevation); membership/company were re-checked at resolution.
             authorized = principal.bound_project == project and role_satisfies(
+                get_role(principal.username or "", project), policy.min_role or "viewer"
+            )
+        elif principal.kind == "pairing":
+            # The pairing's user, stored membership only (no admin elevation,
+            # like the cookie mint of a delegated token).
+            authorized = role_satisfies(
                 get_role(principal.username or "", project), policy.min_role or "viewer"
             )
         elif principal.kind == "service":

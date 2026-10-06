@@ -27,6 +27,7 @@ from pydantic import BaseModel
 
 import auth
 import company
+import degram_pairing
 import delegation
 
 router = APIRouter(dependencies=[Depends(auth.require_principal)])
@@ -300,6 +301,11 @@ def mint_delegated_token(payload: DelegatedTokenRequest, request: Request, respo
         username=principal.username,
         project=project,
     )
+    return _delegated_answer(response, token, record)
+
+
+def _delegated_answer(response: Response, token: str, record: dict) -> dict:
+    """The one answer shape of both delegated-token mints."""
     response.headers["Cache-Control"] = "no-store"
     return {
         "token": token,
@@ -310,6 +316,32 @@ def mint_delegated_token(payload: DelegatedTokenRequest, request: Request, respo
         ),
         "expiresInSeconds": delegation.DELEGATED_TOKEN_TTL_SECONDS,
     }
+
+
+@router.post("/auth/degram/exchange", status_code=201)
+def exchange_degram_pairing(payload: DelegatedTokenRequest, request: Request, response: Response):
+    """Phase 1301-17 (D-25, D-26): trade the DeGram pairing token presented as
+    ``Authorization: Bearer dgp_...`` for a ``dgd_`` token of one project.
+    ``require_principal`` has already proved the pairing live (401
+    ``PAIRING_AUTH_FAILED`` otherwise) and the user's stored membership on the
+    body project (403 ``PROJECT_FORBIDDEN``; an admin who is not a member is
+    refused too). The answer equals ``POST /auth/delegated-token``'s."""
+    principal = request.state.principal
+    project = payload.project
+    if principal.kind != "pairing" or auth.get_role(principal.username or "", project) is None:
+        raise auth.auth_error(
+            "Not authorized for the requested project.",
+            "Request project access from a project owner.",
+            "PROJECT_FORBIDDEN",
+            403,
+        )
+    token, record = delegation.issue_delegated_token(
+        pairing_id=principal.credential_id,
+        username=principal.username or "",
+        project=project,
+    )
+    degram_pairing.record_exchange(principal.credential_id or "")
+    return _delegated_answer(response, token, record)
 
 
 @router.delete("/auth/delegated-token", status_code=204)
@@ -365,4 +397,6 @@ def change_password(request: Request, payload: PasswordChangeRequest):
     # D-08: a password change ends every delegated token of the user, including
     # those minted from the session that is kept.
     delegation.revoke_for_user(user["username"])
+    # D-25: and every DeGram pairing of the user (with its delegated tokens).
+    degram_pairing.revoke_for_user(user["username"])
     return None

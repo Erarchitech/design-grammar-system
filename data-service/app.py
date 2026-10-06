@@ -59,6 +59,7 @@ from llm_gateway import (
 )
 
 import connectors
+import degram_pairing
 from connectors import (
     CredentialCreatePayload,
     CredentialCreatedResponse,
@@ -1681,10 +1682,51 @@ def get_connectors(request: Request):
     """
     principal = request.state.principal
     projects = None if principal.is_admin else set(auth.list_member_projects(principal.username))
+    # Phase 1301-17 (D-25): the DeGram card lists the caller's pairings (an
+    # admin: everyone's). It is not in CONNECTOR_REGISTRY, so no dgc_ token can
+    # be minted for it.
     return {
-        "categories": connectors.CONNECTOR_CATEGORIES,
-        "connectors": connectors.get_connector_overview(projects=projects),
+        "categories": [*connectors.CONNECTOR_CATEGORIES, degram_pairing.CATEGORY],
+        "connectors": [
+            *connectors.get_connector_overview(projects=projects),
+            degram_pairing.connector_card(
+                principal.username or "", principal.is_admin, connectors.derive_status
+            ),
+        ],
     }
+
+
+class DegramPairingCreatePayload(BaseModel):
+    """Request body for POST /connectors/degram/pairings (no project, D-26)."""
+
+    label: str | None = None
+
+
+@router.post("/connectors/degram/pairings", status_code=201)
+def create_degram_pairing(
+    request: Request, response: Response, payload: DegramPairingCreatePayload | None = None
+):
+    """Phase 1301-17 (D-25): create a DeGram pairing token for the signed-in
+    caller. The ``dgp_`` token is returned once here; only its hash is stored."""
+    principal = request.state.principal
+    token, pairing_id = degram_pairing.issue_pairing(
+        principal.username or "", payload.label if payload else None
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {"pairing_id": pairing_id, "token": token}
+
+
+@router.delete("/connectors/degram/pairings/{pairing_id}", status_code=204)
+def revoke_degram_pairing(pairing_id: str, request: Request):
+    """Revoke a DeGram pairing (its owner or an admin) and every delegated
+    token minted from it. Another user's pairing answers the same 404 as an
+    unknown one."""
+    principal = request.state.principal
+    if not degram_pairing.revoke_pairing(
+        pairing_id, username=principal.username or "", is_admin=principal.is_admin
+    ):
+        raise degram_pairing.pairing_not_found()
+    return None
 
 
 @router.post("/connectors/{connector_id}/credentials", status_code=201)

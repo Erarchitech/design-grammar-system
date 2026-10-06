@@ -13,6 +13,12 @@ non-ambient credential, so it dies with whatever it was derived from:
   company it was issued under and is refused once the assignment differs;
 * its own expiry, or an explicit ``DELETE /auth/delegated-token``.
 
+Phase 1301 plan 17 (D-25): a token can also be minted from a DeGram pairing
+(``degram_pairing.py``) through ``POST /auth/degram/exchange``. Its record has
+``parent_kind`` ``"pairing"`` and a ``pairing_id`` in place of the session
+hash; the live pairing replaces the live session in every re-check, and a
+revoked pairing answers ``DELEGATED_SESSION_ENDED`` like an ended session.
+
 It never inherits admin ownership: ``is_admin`` is always False and project
 authorization is bound-project equality plus the user's *stored* role.
 Delegated use does not refresh the parent session's idle timer, so an agent
@@ -128,21 +134,27 @@ _REVOKED_ERRORS: dict[str, Callable[[], Exception]] = {
 
 def issue_delegated_token(
     *,
-    session_hash: str,
+    session_hash: str | None = None,
+    pairing_id: str | None = None,
     username: str,
     project: str,
     now: int | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Mint a ``dgd_`` token for `username` and `project`, bound to the parent
-    session identified by `session_hash` and to the project's current company.
-    Returns ``(raw_token, public_record)``; the record never carries the hash.
-    The caller must already have proved membership and a live session."""
+    """Mint a ``dgd_`` token for `username` and `project`, bound to ONE parent
+    -- the session identified by `session_hash` or the DeGram pairing
+    `pairing_id` -- and to the project's current company. Returns
+    ``(raw_token, public_record)``; the record never carries a hash. The caller
+    must already have proved membership and a live parent."""
+    if bool(session_hash) == bool(pairing_id):
+        raise ValueError("exactly one parent: session_hash or pairing_id")
     current = auth._now(now)
     normalized = username.strip().lower()
     token = DELEGATED_TOKEN_PREFIX + secrets.token_urlsafe(32)
     record: dict[str, Any] = {
         "token_hash": _hash(token),
+        "parent_kind": "pairing" if pairing_id else "session",
         "session_hash": session_hash,
+        "pairing_id": pairing_id,
         "username": normalized,
         "project": project,
         "company": company.company_for_project(project),
@@ -192,12 +204,18 @@ def authenticate_delegated_token(token: str, *, now: int | None = None) -> "auth
 
         username = record.get("username") or ""
         project = record.get("project") or ""
-        session = auth.authenticate_session_hash(record.get("session_hash") or "", now=current)
-        if (
-            session is None
-            or session.get("username") != username
-            or auth.get_user(username) is None
-        ):
+        if record.get("parent_kind") == "pairing":
+            import degram_pairing  # noqa: PLC0415 -- degram_pairing imports this module
+
+            parent_live = degram_pairing.is_live(
+                record.get("pairing_id") or "", username, now=current
+            )
+        else:
+            session = auth.authenticate_session_hash(
+                record.get("session_hash") or "", now=current
+            )
+            parent_live = session is not None and session.get("username") == username
+        if not parent_live or auth.get_user(username) is None:
             raise _session_ended()
 
         # No admin elevation: the stored membership row only.
@@ -242,6 +260,13 @@ def revoke_for_session(session_hash: str, reason: str = REASON_SESSION_ENDED) ->
     if not session_hash:
         return 0
     return _revoke_where(lambda r: r.get("session_hash") == session_hash, reason)
+
+
+def revoke_for_pairing(pairing_id: str, reason: str = REASON_SESSION_ENDED) -> int:
+    """Revoke every live token minted from the DeGram pairing `pairing_id`."""
+    if not pairing_id:
+        return 0
+    return _revoke_where(lambda r: r.get("pairing_id") == pairing_id, reason)
 
 
 def revoke_for_user(username: str, reason: str = REASON_SESSION_ENDED) -> int:

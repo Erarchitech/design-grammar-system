@@ -82,8 +82,10 @@ class TestRegistry:
         response = client.get("/connectors")
         assert response.status_code == 200
         body = response.json()
-        assert body["categories"] == EXPECTED_CATEGORIES
-        assert [c["id"] for c in body["connectors"]] == EXPECTED_IDS
+        # Phase 1301-17 (D-25): the DeGram pairing card follows the registry in
+        # its own "Agents" category; it is not a registry connector.
+        assert body["categories"] == [*EXPECTED_CATEGORIES, "Agents"]
+        assert [c["id"] for c in body["connectors"]] == [*EXPECTED_IDS, "degram"]
         for connector in body["connectors"]:
             assert connector["status"] == "never_connected"
             assert connector["last_connection"] is None
