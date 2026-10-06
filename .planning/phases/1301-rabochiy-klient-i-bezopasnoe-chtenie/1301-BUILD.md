@@ -146,3 +146,25 @@ Nothing pushed (stop rule). No `git push`, no tag, no remote change. Gitlinks no
    run with the same inherited environment only if the owner accepts a second exposure of the live Hermes, otherwise close the Hermes Desktop first or launch with
    `HERMES_HOME` removed from the process environment (isolation must not depend on it). An empty diff is only achievable while no Hermes process is running.
 3. Only then push the two branches and bump the gitlinks.
+
+## Rebuild and second launch (2026-10-06, Hermes Desktop closed by the owner)
+
+Rebuilt from component `910a060d` (clean clone `D:\dgb\src`, scrubbed build env, exit 0 at 23:31Z): `DeGram-Setup-0.0.0.exe`, 1,931,719,493 bytes,
+SHA-256 `4fa89e7e56c31f2e7d0ff100e9a6dd56145f0ca334b9bef8b7780ad65398e9a4`. Identity gate: `com.erarchitech.degram` occurs 1 time in
+`app.asar.unpacked\dist\electron-main.mjs` (0 before the fix). The first rebuild attempt failed on a stale read-only payload folder in the
+build clone; it was cleared inside `D:\dgb\src` and the build re-run.
+
+Launch: unpacked `DeGram.exe`, child environment without `ELECTRON_RUN_AS_NODE`, **`HERMES_HOME` still inherited** (`C:\Users\Admin\AppData\Local\hermes`),
+about 40 s, closed through `CloseMainWindow`, no process or listener left. Hermes Desktop was closed; its background gateway/MCP python processes were still running.
+
+| Check | Result |
+|---|---|
+| DeGram home and userData | `%LOCALAPPDATA%\DeGram\home` (own `state.db`, `skills` 12 entries, `memories`, `spawn-ledger.json`) and `\userData`; `%LOCALAPPDATA%\hermes` has no `degram` entry |
+| Backend | own `degram.exe`/python child, own port (127.0.0.1:64449); no "attached to the running Hermes backend" line; Hermes logs hold no DeGram client |
+| Hermes folders A->B control (no DeGram) | 0 created, 0 deleted, 4 modified (`hermes-agent\.git`, `kanban.db-shm/-wal`, `state\gateway.heartbeat`) |
+| Hermes folders B->C launch window | **0 created, 0 deleted, 20 modified**: all are files written by Hermes's own background gateway (cron ticker, kanban, `gateway_state.json`, model catalog caches, `agent/errors/gateway.log`, `spawn-ledger.json`). The log lines are its 10-minute MCP reconcile (09:41:55 -> 09:52:05), `spawn-ledger.json` entries are all spawned by Hermes pid 59536. Attribution is by timing and ownership, not a clean empty diff |
+| Locked surfaces | `/api/config`, `/api/profiles`, `/api/model/info` ... answer `DEGRAM_LOCKED` (403) as designed |
+
+Open findings: the window title read `Hermes` (the product name is not applied to the title); the DG page load failed with `ERR_CONNECTION_REFUSED` on `localhost:8080` (Docker Desktop was not running at that moment);
+the renderer still polls locked endpoints and floods stderr with `DEGRAM_LOCKED`. Leftover from the first launch: `%APPDATA%\HermesBundledCommit386bd70` (stock identity userData, not removed).
+Not yet done: launch while Hermes Desktop itself is open; push of the two branches and gitlink bump (pending owner decision).
