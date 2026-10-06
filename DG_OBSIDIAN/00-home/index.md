@@ -33,6 +33,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram connects through a user-bound pairing connector in the Connectors tab|DeGram connector: user-bound pairing token dgp_ from the Connectors tab, exchanged for dgd_ (D-25, D-26)]] (2026-10-06; planned, plan 17)
+- [[knowledge/decisions/DeGram relay takes its model and key from the Web UI LLM settings|DeGram relay takes endpoint, model and key from the Web UI LLM settings (D-24)]] (2026-10-06)
+- [[knowledge/decisions/DeGram product identity follows the Gena fork lessons|DeGram identity: own icon, Erarchitech vendor, pilot 0.x version; Genpro/Gena reference only]] (2026-10-06)
 - [[knowledge/decisions/ValidGraph inline reader reads both parameter shapes, D-09 exclusion lifted|ValidGraph inline reader reads both parameters[] shapes — Phase 1202 D-09 exclusion lifted (2026-10-05)]]
 - [[knowledge/decisions/DeGram Phase 1301 execution authorizations and narrowed baseline|DeGram Phase 1301 execution: owner authorizations, narrowed baseline, stop on isolation failure]]
 - [[knowledge/decisions/DeGram Phase 1301 adds company scope, Speckle proxy, registry allowlist and loopback-only Revit|DeGram Phase 1301: company map, server Speckle proxy, registry tool allowlist, loopback-only Revit (D-20..D-23)]] (2026-10-04; planned, implementation OPEN)
@@ -109,6 +112,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/Rule ingest blends a rule invented from a bare Rule_Id into the existing rule|Rule ingest: bare Rule_Id → invented rule MERGEd into existing one; ID/recognition findings (F13, F6/F9–F12)]] (2026-10-05, open)
 - [[knowledge/debugging/Grasshopper Panels can neither be captured as parameters nor safely carry tokens|GH Panels: not capturable by PARAMETER STATE; token via Panel persists in .gh (F7/F17)]] (2026-10-05, open)
 - [[knowledge/debugging/Model Viewer shows a foreign base model and a hard-coded tile property catalogue|Model Viewer: foreign base model, shadow, black preview, camera reset, hard-coded tile props (F18–F22)]] (2026-10-05, open)
+- [[knowledge/debugging/DeGram first launch put its own hermes command first in the user PATH|DeGram put its own hermes.cmd first in the user PATH — expose_cli Windows branch before the bundle skip (F-07)]] (2026-10-06, fixed)
+- [[knowledge/debugging/Commit build driver overrode the DeGram icon, version and vendor|Commit build driver overrode DeGram icon, version and vendor — verify the packaged exe]] (2026-10-06, fixed)
 - [[knowledge/debugging/Electron app exits silently when launched from VS Code shell with ELECTRON_RUN_AS_NODE|Electron app exits silently (exit 0) from a VS Code shell — remove ELECTRON_RUN_AS_NODE via ProcessStartInfo]]
 - [[knowledge/debugging/Packaged DeGram ignored the degram variant and attached to the live Hermes|Packaged DeGram ignored the degram variant and attached to the live Hermes — identity gate, scrubbed env]]
 - [[knowledge/debugging/GH deadline test patched the clock only after the first request|GH deadline test: clock patched only after the first request — flaky 30 s wait]]
@@ -180,6 +185,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-06 Phase 1301 audit-fix, DeGram identity and isolation beside open Hermes|2026-10-06 Phase 1301 audit-fix: Gena lessons, DeGram icon/version/vendor, isolation beside open Hermes proven, branches pushed, relay from Web UI settings, plan 17 pairing connector]]
 - [[sessions/2026-10-06 Phase 1301 plan 15 rebuild and DeGram isolation proven beside Hermes|2026-10-06 Phase 1301: installer rebuilt from 910a060d, DeGram isolation proven beside Hermes, relay probe added, plan 16 started]]
 - [[sessions/2026-10-05 Phase 1301 executed through plan 14, plan 15 launch failed isolation|2026-10-05 Phase 1301: executed through plan 14; plan 15 launch failed isolation, nothing pushed]]
 - [[sessions/2026-10-04 Phase 1301 planned|2026-10-04 Phase 1301: researched and planned — 15 plans / 8 waves, D-20..D-23, all gates pass]]
