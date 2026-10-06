@@ -200,7 +200,8 @@ def test_exchange_returns_the_delegated_token_shape(client, world):
     response = _exchange(client, world["pairing"])
     assert response.status_code == 201, response.text
     body = response.json()
-    assert set(body) == {"token", "project", "company", "expiresAt", "expiresInSeconds"}
+    assert set(body) == {"token", "project", "company", "expiresAt", "expiresInSeconds", "username"}
+    assert body["username"] == ALICE
     assert body["token"].startswith("dgd_")
     assert body["project"] == "P1" and body["company"] == "Acme"
     assert body["expiresInSeconds"] == delegation.DELEGATED_TOKEN_TTL_SECONDS

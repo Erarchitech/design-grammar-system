@@ -325,7 +325,8 @@ def exchange_degram_pairing(payload: DelegatedTokenRequest, request: Request, re
     ``require_principal`` has already proved the pairing live (401
     ``PAIRING_AUTH_FAILED`` otherwise) and the user's stored membership on the
     body project (403 ``PROJECT_FORBIDDEN``; an admin who is not a member is
-    refused too). The answer equals ``POST /auth/delegated-token``'s."""
+    refused too). The answer is ``POST /auth/delegated-token``'s plus
+    ``username``."""
     principal = request.state.principal
     project = payload.project
     if principal.kind != "pairing" or auth.get_role(principal.username or "", project) is None:
@@ -341,7 +342,9 @@ def exchange_degram_pairing(payload: DelegatedTokenRequest, request: Request, re
         project=project,
     )
     degram_pairing.record_exchange(principal.credential_id or "")
-    return _delegated_answer(response, token, record)
+    # Plus the pairing's user: DeGram keeps its own DG sign-in (D-27) and refuses
+    # a pairing that belongs to a different user than the signed-in one.
+    return {**_delegated_answer(response, token, record), "username": record["username"]}
 
 
 @router.delete("/auth/delegated-token", status_code=204)
