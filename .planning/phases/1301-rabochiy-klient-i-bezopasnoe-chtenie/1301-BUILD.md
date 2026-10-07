@@ -333,3 +333,17 @@ install dir; while it overwrote the ~98,750 files left by the first attempt the 
 `Uninstall DeGram.exe`, HKCU uninstall entry `DeGram 0.1.2`, publisher `Erarchitech`; the wizard reached «Установка DeGram
 выполнена». **F-11 closed live**: the default dir now holds the whole payload. Install duration on this PC: ~30 min, most
 of it in the copy phase; a slow but not broken step, recorded for CLEAN-INSTALL.md (expect up to 30 min, do not cancel).
+
+### Installed 0.1.2 cannot reach DG on PC1: per-path network block (2026-10-07)
+
+Owner report: «пустое окно без подключения к DG». nginx log: the installed DeGram/0.1.2 did reach DG at 11:21-11:23Z
+(`/auth/me` 401, not yet signed in; `/auth/options` 200). From its restarts at 11:23:40Z and 11:24:20Z on, no request
+arrived; `desktop.log`: `DG unreachable during /auth/me`, `ERR_CONNECTION_RESET` / `ERR_SOCKET_NOT_CONNECTED loading
+http://localhost:8080/`. DG itself answered every other client (curl, PowerShell, IPv4 and IPv6).
+
+Probe (`ELECTRON_RUN_AS_NODE=1 DeGram.exe -e "http.get('http://localhost:8080/data-service/auth/me')"`), same 0.1.2 binary:
+`%LOCALAPPDATA%\Programs\DeGram\DeGram.exe` → `ECONNRESET`; `D:\dgb\src\apps\desktop\release\win-unpacked\DeGram.exe` → 401.
+Connections are reset by executable path, the same pattern as `tools\degram\relay_probe.py` (1301-UAT.md). `avp`
+(Kaspersky Total Security 21.3) is running. Not a DeGram defect; needs an owner-made Kaspersky rule for the installed
+`DeGram.exe` (and `resources\agent-payload\bin\degram.exe` plus its python, which call the relay). Add to CLEAN-INSTALL.md:
+security software must trust the installed DeGram executables, or DG is unreachable from DeGram.
