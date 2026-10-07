@@ -371,3 +371,14 @@ Inside: `GRAPH_RESULT_SHARE` in `tools/degram_tools.py` (G-1 budget fix), rebran
 tray product name in `electron-main.mjs`; no lark_oapi/discord/slack/boto3/elevenlabs/mistralai/telegram in the venv.
 Not installed (owner runs `win-unpacked\DeGram.exe`). Remaining big tool: ffmpeg 427 MB (pm-required; DeGram uses no
 media tool): candidate for a later cut with a drift-skip for variant degram.
+
+## Build 0.1.4: DEGRAM wordmark, language without the config API (2026-10-07)
+
+Owner findings on 0.1.3: red "HERMES AGENT" wordmark on a new session; language change failed with
+`403 DEGRAM_LOCKED /api/config`. Fixed in component `c541b229` (framework gitlink `970aee0`). Owner asked to build.
+
+Build (clean clone at `c541b229`, exit 0, 2026-10-07 20:21Z): `DeGram-Setup-0.1.4.exe`, 490,507,051 bytes, SHA-256
+`5a5177f7089b5d2a64d5fc954fe402ca08ae75b8dec4bbcaa42812cf2f2fa307`, exe version 0.1.4.0 (DeGram, Erarchitech), unpacked
+1,619 MB. Inside: the new-session wordmark is `text: productMark('HERMES AGENT')` (DEGRAM in variant degram, module
+`brand-*.js` with the uppercase pattern), and the renderer keeps the language under `degram.display.language`.
+Not installed; owner runs `win-unpacked\DeGram.exe`.
