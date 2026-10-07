@@ -347,3 +347,27 @@ Connections are reset by executable path, the same pattern as `tools\degram\rela
 (Kaspersky Total Security 21.3) is running. Not a DeGram defect; needs an owner-made Kaspersky rule for the installed
 `DeGram.exe` (and `resources\agent-payload\bin\degram.exe` plus its python, which call the relay). Add to CLEAN-INSTALL.md:
 security software must trust the installed DeGram executables, or DG is unreachable from DeGram.
+
+## Build 0.1.3: slim payload, no Hermes name, graph tool budget (2026-10-07)
+
+Owner decisions 2026-10-07: payload option 1 (only what variant degram can use, offline) and "remove all Hermes logos
+and names". Component `0cb15c9c` (`75e65495` slim payload, branding commit, `0614b41e` graph tool budget, 0.1.3); framework
+gitlink `909c45c`. Pre-build smoke on a venv with exactly the degram extras: `serve` reached `HERMES_BACKEND_READY` in
+variant degram and 24 runtime modules imported. Owner closed DeGram and emptied `release\` before the build.
+
+Build (clean clone at `0cb15c9c`, exit 0, 2026-10-07 14:10Z):
+
+| Item | 0.1.2 | 0.1.3 |
+|---|---|---|
+| Installer | 1,926 MB | **490 MB** (`DeGram-Setup-0.1.3.exe`, 490,505,146 bytes) |
+| SHA-256 | | `3459b2074da7abb1ec7448f447bacb8c8c0d3c1fc9fdda5ee5c1f05ba857b8ae` |
+| Unpacked | 6,123 MB, 110,348 files | 1,619 MB, 32,130 files, longest path 168 |
+| `agent-payload\tools` | 3,592 MB (16 tools) | 748 MB: ffmpeg, node, npm, python, ripgrep, uv |
+| `venv` | 1,122 MB (all extras) | 199 MB, 91 dists (extras acp, cron, mcp, pty, vision, web) |
+| `uv-cache` | 892 MB | 155 MB |
+| Exe version | 0.1.2.0 | 0.1.3.0, DeGram, Erarchitech |
+
+Inside: `GRAPH_RESULT_SHARE` in `tools/degram_tools.py` (G-1 budget fix), rebrand module `brand-*.js` in the renderer,
+tray product name in `electron-main.mjs`; no lark_oapi/discord/slack/boto3/elevenlabs/mistralai/telegram in the venv.
+Not installed (owner runs `win-unpacked\DeGram.exe`). Remaining big tool: ffmpeg 427 MB (pm-required; DeGram uses no
+media tool): candidate for a later cut with a drift-skip for variant degram.
