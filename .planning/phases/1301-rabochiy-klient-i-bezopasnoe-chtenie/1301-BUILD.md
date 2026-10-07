@@ -311,3 +311,14 @@ Run 2 (from `7f9c33c1`, 2026-10-07 06:47-07:44Z, exit 0, clean clone, clean afte
 
 Not installed (owner: build only). On PC1 Kaspersky removed the 0.1.1 installer after an install attempt; keep a copy of
 this one or add an exclusion before installing.
+
+### Install of 0.1.2 on PC1 (owner, 2026-10-07): stopped by Kaspersky
+
+Owner started `DeGram-Setup-0.1.2.exe` at 09:36:35 local. It wrote files until 09:59:14 and exited at 09:59:23 with
+98,791 of 110,348 files, no uninstaller and no uninstall entry, the same truncation point as the 0.1.1 attempt. Longest
+missing full path 207 chars, so not the 260-char limit (F-11 holds). Application log at 09:59:23: two `avp` events 4662 for
+`ProcessPath d:\dgb\src\apps\desktop\release\degram-setup-0.1.2.exe` (detection numbers `28808cb6` conf 6, `32d87a95`
+conf 0). Kaspersky Total Security 21.3 terminated the installer; the 0.1.1 failure (exit 5) was most likely the same
+cause, not the long paths alone. The installer file was still present after this run. Partial dir left at
+`%LOCALAPPDATA%\Programs\DeGram`. Needs an owner-made Kaspersky exclusion (trusted application / scan exclusion);
+unsigned (self-signed) installer of 1.9 GB writing ~110k files is the likely heuristic trigger.
