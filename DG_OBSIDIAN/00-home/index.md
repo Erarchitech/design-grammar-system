@@ -33,7 +33,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
-- [[knowledge/decisions/DeGram connects through a user-bound pairing connector in the Connectors tab|DeGram connector: user-bound pairing token dgp_ from the Connectors tab, exchanged for dgd_ (D-25, D-26)]] (2026-10-06; planned, plan 17)
+- [[knowledge/decisions/DeGram keeps the DG sign-in and finishes Phase 1301 on one PC|DeGram keeps the DG sign-in, pairing without expiry (D-27); reviewer PC moves to the last v13.0 phase (D-28)]] (2026-10-07)
+- [[knowledge/decisions/DeGram payload ships only what variant degram can use|DeGram payload: only Python, pm-required tools and six extras; installer 1.9 GB → 490 MB]] (2026-10-07)
+- [[knowledge/decisions/DeGram rebrands Hermes at the catalog and the rendered interface|DeGram rebrands Hermes at the catalog and the rendered interface; language without /api/config]] (2026-10-07)
+- [[knowledge/decisions/DeGram connects through a user-bound pairing connector in the Connectors tab|DeGram connector: user-bound pairing token dgp_ from the Connectors tab, exchanged for dgd_ (D-25, D-26)]] (2026-10-06; done, plan 17, verified live 2026-10-07)
 - [[knowledge/decisions/DeGram relay takes its model and key from the Web UI LLM settings|DeGram relay takes endpoint, model and key from the Web UI LLM settings (D-24)]] (2026-10-06)
 - [[knowledge/decisions/DeGram product identity follows the Gena fork lessons|DeGram identity: own icon, Erarchitech vendor, pilot 0.x version; Genpro/Gena reference only]] (2026-10-06)
 - [[knowledge/decisions/ValidGraph inline reader reads both parameter shapes, D-09 exclusion lifted|ValidGraph inline reader reads both parameters[] shapes — Phase 1202 D-09 exclusion lifted (2026-10-05)]]
@@ -106,6 +109,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/DeGram graph tool answer was spilled to a file the agent cannot read|DeGram graph tool: 8.6 MB graph, rules read after graph, answer spilled past the agent's 100K-char threshold (G-1)]] (2026-10-07, fixed)
+- [[knowledge/debugging/Kaspersky on PC1 blocks the DeGram installer and the installed executable by path|Kaspersky on PC1 terminates the DeGram installer and resets the installed DeGram.exe by path]] (2026-10-07, open, environment)
 - [[knowledge/debugging/DESIGN STATE and VALIDATOR assumed one class per Design State|DESIGN STATE/VALIDATOR: length guard and index-matched ValidStatus assumed one class per Design State (F15/F16)]] (2026-10-05, fixed)
 - [[knowledge/debugging/Reinstate from ValidGraph read null parameters and wrote zeros into sliders|REINSTATE from ValidGraph: null parameters (D-09 silent reader) written as zeros; labels lost (F23–F25)]] (2026-10-05, fixed, install pending)
 - [[knowledge/debugging/CONNECTOR caches an unreachable heartbeat until the token or Go changes|CONNECTOR: cached Unreachable heartbeat survives data-service restart (F14)]] (2026-10-05, open)
@@ -185,6 +190,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-07 Phase 1301 DeGram pairing connector, rules read fix, 490 MB installer and no Hermes name|2026-10-07 Phase 1301 — plan 17 pairing connector done, G-1/F-11 closed live, installer 490 MB, no Hermes name, 0.1.4 approved]]
 - [[sessions/2026-10-06 Phase 1301 audit-fix, DeGram identity and isolation beside open Hermes|2026-10-06 Phase 1301 audit-fix: Gena lessons, DeGram icon/version/vendor, isolation beside open Hermes proven, branches pushed, relay from Web UI settings, plan 17 pairing connector]]
 - [[sessions/2026-10-06 Phase 1301 plan 15 rebuild and DeGram isolation proven beside Hermes|2026-10-06 Phase 1301: installer rebuilt from 910a060d, DeGram isolation proven beside Hermes, relay probe added, plan 16 started]]
 - [[sessions/2026-10-05 Phase 1301 executed through plan 14, plan 15 launch failed isolation|2026-10-05 Phase 1301: executed through plan 14; plan 15 launch failed isolation, nothing pushed]]
