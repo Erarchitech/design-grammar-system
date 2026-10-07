@@ -322,3 +322,14 @@ conf 0). Kaspersky Total Security 21.3 terminated the installer; the 0.1.1 failu
 cause, not the long paths alone. The installer file was still present after this run. Partial dir left at
 `%LOCALAPPDATA%\Programs\DeGram`. Needs an owner-made Kaspersky exclusion (trusted application / scan exclusion);
 unsigned (self-signed) installer of 1.9 GB writing ~110k files is the likely heuristic trigger.
+
+### Install of 0.1.2 on PC1, second attempt (owner, 2026-10-07): completed; F-11 verified
+
+Kaspersky turned off by the owner. Installer started 10:29:05 local into the default per-user dir
+`%LOCALAPPDATA%\Programs\DeGram` (44 chars) over the partial dir of the first attempt. It looked hung: electron-builder's
+NSIS first extracts `app-64.7z` (1.8 GB) to `%TEMP%\nsm*.tmp\7z-out` (all 110,348 files, 7.8 GB), then copies into the
+install dir; while it overwrote the ~98,750 files left by the first attempt the file count did not move for minutes
+(one CPU core busy, ~0.17-4 MB/s). New files then appeared at ~4,100/min. Result: 110,350 files (110,348 + uninstaller),
+`Uninstall DeGram.exe`, HKCU uninstall entry `DeGram 0.1.2`, publisher `Erarchitech`; the wizard reached «Установка DeGram
+выполнена». **F-11 closed live**: the default dir now holds the whole payload. Install duration on this PC: ~30 min, most
+of it in the copy phase; a slow but not broken step, recorded for CLEAN-INSTALL.md (expect up to 30 min, do not cancel).
