@@ -287,3 +287,27 @@ The plain "drop uv-cache and __pycache__" fix is not robust (fails for user name
 start. DeGram cannot use the TTS and direct-provider SDKs (D-22 lockdown, LLM only through the relay), so excluding those
 extras from the degram venv plus `uv-cache` gives a 68-char margin and keeps baked bytecode. Not implemented: owner choice
 and a build authorization pending.
+
+## Build 0.1.2: G-1 and F-11 (2026-10-07)
+
+Owner authorization 2026-10-06 (AskUserQuestion): component commits, push + gitlink, container rebuild, "only build" 0.1.2
+(no install). F-11 fix chosen by the owner: no unused SDKs (uv-cache kept, see the F-11 analysis above).
+
+Run 1 (from `4eb1a697`, 2026-10-06 21:58-22:09Z) failed: the explicit degram extras list also selected the opt-in extras
+(`[tool.hermes] opt-in-extras`: silk, kittentts, daytona) that an all-extras bundle never installs; silk's native `pilk`
+sdist needs MSVC. Fixed in `7f9c33c1` (list = declared - opt-in - excluded, test against the real pyproject).
+
+Run 2 (from `7f9c33c1`, 2026-10-07 06:47-07:44Z, exit 0, clean clone, clean afterwards):
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.2.exe`, 1,926,121,274 bytes |
+| SHA-256 | `772e8f257750ffee93b2de2185a9657f16ce07fe2d563bf6f969ab5a14fac3bd` |
+| Exe version resource | ProductName `DeGram`, CompanyName `Erarchitech`, version `0.1.2.0` |
+| Payload | 110,348 files (0.1.1: 115,546); longest relative path 191 chars, so any install dir up to 68 chars fits (default `%LOCALAPPDATA%\Programs\DeGram` = 44 for `Admin`) |
+| F-11 | no `elevenlabs`/`mistralai` package in venv or uv-cache (one hit is `skills/creative/popular-web-designs/templates/elevenlabs.md`, a markdown template) |
+| G-1 | `degram_variant/dg_client.py` reads `?compact=true`; `tools/degram_tools.py` reads rules independently |
+| Pairing (plan 17) | `degram:pairing:set` present in `electron-main.mjs` |
+
+Not installed (owner: build only). On PC1 Kaspersky removed the 0.1.1 installer after an install attempt; keep a copy of
+this one or add an exclusion before installing.
