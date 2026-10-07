@@ -382,3 +382,21 @@ Build (clean clone at `c541b229`, exit 0, 2026-10-07 20:21Z): `DeGram-Setup-0.1.
 1,619 MB. Inside: the new-session wordmark is `text: productMark('HERMES AGENT')` (DEGRAM in variant degram, module
 `brand-*.js` with the uppercase pattern), and the renderer keeps the language under `degram.display.language`.
 Not installed; owner runs `win-unpacked\DeGram.exe`.
+
+## Build 0.1.5: breathing DeGram mark on a new session (2026-10-08)
+
+Owner request 2026-10-07: replace the red DEGRAM lettering of a fresh draft with a motion version of the DeGram logo,
+motion tuned by the owner in a preview page (pulse 3.6 s, ring delay 0.32 s, stretch 0.09, centre growth 1.35, 0.04 less
+per ring). Component `ac65e101` (`DegramAnimatedMark`, 91-dot halftone hexagon from the icon generator's geometry) and
+`2da8a2aa` (version 0.1.5), pushed to the fork by the owner; framework gitlink `a2cacb5`, `workspace.py verify` exit 0.
+Tests before the build: intro 3/3, degram-build + isolation 40/40, typecheck and lint clean.
+
+Run 1 (23:32Z) failed after 2 min with the run-1 obstacle of 0.1.3: `PermissionError [WinError 5]` deleting
+`build\agent-payload\...\__pycache__\auth.cpython-314.pyc`. The ReadOnly flag was cleared on that gitignored directory only
+(6,261 files; clone still clean) and the same `D:\dgb\run-build.sh` re-run.
+
+Run 2 (23:34-23:46Z, exit 0, clean clone at `2da8a2aa`, clean afterwards): `DeGram-Setup-0.1.5.exe`, 490,510,493 bytes,
+SHA-256 `9081563b4852effb301466bc111a257d7ef3631da0d23a92baa0d900365ca348`, exe version 0.1.5 (DeGram, Erarchitech),
+unpacked 1,619 MB in 32,131 files. Inside: `app.asar.unpacked\dist\assets\index-*.css` carries
+`.degram-mark{--pulse:3.6s;--ring-lag:.32s;...}` and the renderer bundle the `degram-mark__dot` groups.
+Not installed; owner runs `win-unpacked\DeGram.exe`.
