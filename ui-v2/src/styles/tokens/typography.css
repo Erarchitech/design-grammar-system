@@ -4,6 +4,7 @@
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --font-annotation: 'Oswald', 'Arial Narrow', sans-serif; /* condensed uppercase callouts */
+  --font-display: 'Michroma', 'Geist', ui-sans-serif, system-ui, sans-serif; /* wide landing display face */
 
   /* Scale */
   --text-caption: 12px;      --leading-caption: 1.33;   --tracking-caption: 0.6px;

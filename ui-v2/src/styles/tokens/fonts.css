@@ -65,3 +65,13 @@
   font-display: swap;
   src: url('./fonts/oswald-latin-600-normal.woff2') format('woff2');
 }
+
+/* Michroma (OFL-1.1, @fontsource/michroma 5.3.0): the wide display face of
+   the landing hero and region labels. One weight only. */
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/michroma-latin-400-normal.woff2') format('woff2');
+}

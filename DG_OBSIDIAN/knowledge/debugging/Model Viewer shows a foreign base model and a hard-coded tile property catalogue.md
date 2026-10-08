@@ -1,7 +1,7 @@
 ---
-tags: [debugging, ui-v2, model-viewer, speckle, open]
+tags: [debugging, ui-v2, model-viewer, speckle, fixed]
 date: 2026-10-05
-status: open
+status: fixed
 ---
 
 # Model Viewer shows a foreign base model and a hard-coded tile property catalogue (F18–F22)
@@ -14,6 +14,15 @@ The owner observed these in step 7 of the test `v12-hexagonal-facade-01`. The va
 - **F21 — camera reset.** Returning to the previous Validation Run **resets the camera** to its default.
 - **F22 — hard-coded tile properties.** Design States → Tile properties lists 9 urban properties (Height, GFA, Units, Storeys, Site coverage, Setback, Glazing ratio, Daylight factor, Parking ratio). This is the fixed `PROPSTATES` catalogue in `ui-v2/src/screens/ModelScreen.jsx:74-84`, not the project's PropStates. The caption `bolt://dg-meta:7687` is hard-coded too (`:632`). None of them matches this project's properties.
 
+## Resolution (2026-10-08)
+
+All five fixed in `ui-v2` and deployed:
+- F18, F19: base model never loaded, checkbox removed ([[knowledge/decisions/Model Viewer shows only the validation model]]).
+- F20: thumbnails painted on the viewport background before JPEG, filed under the run on screen.
+- F21: viewer kept across run switches, camera saved per project and restored ([[knowledge/debugging/Model Viewer camera reset and Design State jump on run switch]]).
+- F22: tile properties come from the project's PropState values, shown as ranges, selection per project.
+
 ## Related
 
 - [[sessions/2026-10-05 v12 hexagonal facade test steps 2-8 and five DG fixes]]
+- [[sessions/2026-10-08 Model Viewer fixes, landing motion redesign and DeGram 0.1.5]]

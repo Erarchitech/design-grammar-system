@@ -21,6 +21,17 @@ class ProxySpeckleLoader extends SpeckleLoader {
   }
 }
 
+// A persisted camera is restored only when every coordinate is a finite number.
+function validCamera(cam) {
+  const ok = (v) => v && [v.x, v.y, v.z].every((n) => typeof n === "number" && Number.isFinite(n));
+  return cam && ok(cam.position) && ok(cam.target) ? { position: cam.position, target: cam.target } : null;
+}
+
+function sameCamera(a, b) {
+  if (!a || !b) return false;
+  return ["position", "target"].every((k) => ["x", "y", "z"].every((c) => Math.abs(a[k][c] - b[k][c]) < 1e-6));
+}
+
 function collectAllDescendantIds(node) {
   const ids = [];
   node.walk((child) => {
@@ -101,23 +112,31 @@ function collectValidationObjects(worldTree, runId, project) {
  * SpeckleViewport — wraps @speckle/viewer Viewer into a controlled React component.
  *
  * Props:
- *   resourceUrls    — DG-proxy object URLs from the view payload (view.viewerResources); the
- *                     browser holds no Speckle credential, geometry is read through the
- *                     project-authorised /speckle-proxy/ routes with the session cookie
+ *   resourceUrls    — DG-proxy object URLs from the view payload (view.viewerResources) that
+ *                     should be in the scene now; the browser holds no Speckle credential,
+ *                     geometry is read through the project-authorised /speckle-proxy/ routes
+ *                     with the session cookie. Changing the set loads/unloads only the
+ *                     difference (a run switch swaps only the validation model).
  *   project         — DG project name for world tree entity mapping
  *   runId           — Validation run ID for world tree entity mapping
  *   failedEntityIds — dgEntityIds of failing entities (colored failColor)
  *   passedEntityIds — dgEntityIds of passing entities (colored passColor)
- *   showFailed / showPassed / showBase — visibility toggles (toolbar checkboxes)
+ *   showFailed / showPassed — visibility toggles (toolbar checkboxes)
  *   failColor / passColor — hex colors for the validation overlay
  *   failOpacity / passOpacity — 0..100 opacity for each group
  *   hiddenIds       — dgEntityIds hidden via the Hide button
  *   isolateEntityId — when set, isolates that single entity
  *   viewMode        — "3d" (perspective orbit) or "map" (top-down orthographic)
  *   onEntityClick   — Called with (dgEntityId) when a Speckle geometry object is clicked
- *   onReady         — Called after viewer finishes loading all resources
+ *   onReady         — Called after each resource sync completes (first load, run switch)
+ *   onViewChanged   — Called when the camera settles after a move (thumbnail refresh)
+ *   initialCamera   — { position: {x,y,z}, target: {x,y,z} } to open the first load at,
+ *                     instead of zooming to fit (the architect's last viewpoint)
+ *   onCameraChange  — Called with { position, target } when the 3D camera settles on a
+ *                     loaded scene (not in map mode); the caller persists it
  *   onError         — Called with (message) on initialization failure
- *   apiRef          — Optional React ref; receives { screenshot() } once ready
+ *   apiRef          — Optional React ref; receives { screenshot(), sceneRunId() } once the
+ *                     viewer exists; sceneRunId() is null while resources are swapping
  *   style           — Optional container styling; defaults to { position: "absolute", inset: 0 }
  */
 export default function SpeckleViewport({
@@ -128,7 +147,6 @@ export default function SpeckleViewport({
   passedEntityIds,
   showFailed = true,
   showPassed = true,
-  showBase = true,
   failColor = "#e7000b",
   passColor = "#737373",
   failOpacity = 85,
@@ -138,6 +156,9 @@ export default function SpeckleViewport({
   viewMode = "3d",
   onEntityClick,
   onReady,
+  onViewChanged,
+  initialCamera = null,
+  onCameraChange,
   onError,
   apiRef,
   style
@@ -147,113 +168,120 @@ export default function SpeckleViewport({
   const filteringRef = React.useRef(null);
   const entityMapRef = React.useRef(new Map());
   const allValidationObjectIdsRef = React.useRef([]);
-  const disposedRef = React.useRef(false);
-  const clickHandlerRef = React.useRef(null);
+  const loadedUrlsRef = React.useRef([]); // resource URLs currently in the scene
+  const hasLoadedRef = React.useRef(false); // this viewer has loaded geometry before
+  const syncQueueRef = React.useRef(Promise.resolve()); // serialises load/unload jobs
+  const sceneRunIdRef = React.useRef(null); // run the loaded scene shows; null while syncing
   const onEntityClickRef = React.useRef(onEntityClick);
   const onReadyRef = React.useRef(onReady);
   const onErrorRef = React.useRef(onError);
-  const [ready, setReady] = React.useState(false);
+  const onViewChangedRef = React.useRef(onViewChanged);
+  const onCameraChangeRef = React.useRef(onCameraChange);
+  const initialCameraRef = React.useRef(initialCamera); // read once, at the first load
+  const viewModeRef = React.useRef(viewMode);
+  const reportCameraRef = React.useRef(null);
+  const removeInteractionListenersRef = React.useRef(null);
+  const [viewerReady, setViewerReady] = React.useState(false);
+  const [fitted, setFitted] = React.useState(false); // first load framed the camera
+  const [sceneTick, setSceneTick] = React.useState(0); // bumps after every completed sync
 
   // Keep callback refs current (effect uses refs to avoid re-running on callback reference changes)
   onEntityClickRef.current = onEntityClick;
   onReadyRef.current = onReady;
   onErrorRef.current = onError;
+  onViewChangedRef.current = onViewChanged;
+  onCameraChangeRef.current = onCameraChange;
+  viewModeRef.current = viewMode;
 
-  // Viewer lifecycle — keyed on the joined resource-url string (scalar), not
-  // the array identity: ModelScreen re-renders must never recreate the viewer.
-  const resourceKey = (resourceUrls || []).filter(Boolean).join("|");
+  // Viewer lifecycle — one viewer per mount. Run switches only load/unload
+  // resources (below), so the camera survives them.
   React.useEffect(() => {
-    const urls = resourceKey ? resourceKey.split("|") : [];
-    if (urls.length === 0) {
-      onErrorRef.current?.("No Speckle geometry resources available");
-      return;
-    }
-    if (urls.some((url) => !parseViewerResource(url))) {
-      onErrorRef.current?.("Unexpected geometry resource URL");
-      return;
-    }
-
     let disposed = false;
-    disposedRef.current = false;
-    setReady(false);
+    const host = hostRef.current;
+    if (!host) return undefined;
 
     const initViewer = async () => {
-      // Dispose previous viewer if it exists
-      if (viewerRef.current) {
-        viewerRef.current.dispose();
-        viewerRef.current = null;
-        filteringRef.current = null;
-      }
-      const host = hostRef.current;
-      if (!host) return;
-      while (host.firstChild) {
-        host.removeChild(host.firstChild);
+      const viewer = new Viewer(host, {
+        ...DefaultViewerParams,
+        verbose: false,
+        showStats: false
+      });
+      viewerRef.current = viewer;
+      await viewer.init();
+
+      if (disposed) {
+        viewer.dispose();
+        if (viewerRef.current === viewer) viewerRef.current = null;
+        return;
       }
 
-      try {
-        const viewer = new Viewer(host, {
-          ...DefaultViewerParams,
-          verbose: false,
-          showStats: false
-        });
-        viewerRef.current = viewer;
-        await viewer.init();
+      const camera = viewer.createExtension(CameraController);
+      viewer.createExtension(SelectionExtension);
+      filteringRef.current = viewer.createExtension(FilteringExtension);
 
-        if (disposed) {
-          viewer.dispose();
-          if (viewerRef.current === viewer) viewerRef.current = null;
+      // Report the camera after the architect moves it. CameraEvent.Stationary
+      // is not emitted by this @speckle/viewer build (only Dynamic is), and
+      // pointer events miss drags released outside the canvas, keyboard moves
+      // and inertia — so the camera is polled: once it holds still for a tick
+      // and differs from the last report, it is reported. getPosition() and
+      // getTarget() return the controls' goal, so the value is final even while
+      // damping still eases the view.
+      // Only a 3D view of a loaded scene is worth keeping: while resources swap
+      // the camera may sit at its default, and map mode is a fixed top-down
+      // projection.
+      const cameraReportable = () => !disposed && sceneRunIdRef.current && viewModeRef.current !== "map";
+      const readCamera = () => {
+        const p = camera.getPosition();
+        const t = camera.getTarget();
+        return { position: { x: p.x, y: p.y, z: p.z }, target: { x: t.x, y: t.y, z: t.z } };
+      };
+      let seen = null;
+      let reported = null;
+      const reportCamera = () => {
+        if (!cameraReportable()) return;
+        reported = readCamera();
+        onCameraChangeRef.current?.(reported);
+      };
+      reportCameraRef.current = reportCamera;
+      const poll = setInterval(() => {
+        if (!cameraReportable()) {
+          seen = null;
           return;
         }
-
-        viewer.createExtension(CameraController);
-        viewer.createExtension(SelectionExtension);
-        filteringRef.current = viewer.createExtension(FilteringExtension);
-
-        // Load each resource. The server already resolved model/version to a concrete
-        // object URL (speckle_proxy.resolve_view_resources); no Speckle GraphQL call
-        // and no token ever happens in the browser.
-        for (const url of urls) {
-          if (disposed) return;
-          const loader = new ProxySpeckleLoader(viewer.getWorldTree(), url);
-          await viewer.loadObject(loader, true);
+        const current = readCamera();
+        if (!sameCamera(current, seen)) {
+          seen = current; // still moving, or just changed — wait one more tick
+          return;
         }
+        if (sameCamera(current, reported)) return;
+        reportCamera();
+        onViewChangedRef.current?.(); // tile thumbnails follow the new view
+      }, 600);
+      window.addEventListener("pagehide", reportCamera);
+      removeInteractionListenersRef.current = () => {
+        clearInterval(poll);
+        window.removeEventListener("pagehide", reportCamera);
+      };
 
-        if (disposed) return;
+      viewer.on("object-clicked", (payload) => {
+        const hit = payload?.hits?.[0];
+        const raw = hit?.node?.model?.raw || {};
+        const dgEntityId = raw.dgEntityId || "";
+        if (dgEntityId && onEntityClickRef.current) {
+          onEntityClickRef.current(dgEntityId);
+        }
+      });
 
-        // Entity mapping: walk the world tree to collect dgEntityId -> objectId[] mapping
-        const worldTree = viewer.getWorldTree();
-        const collected = collectValidationObjects(worldTree, runId, project);
-        entityMapRef.current = collected.entityMap;
-        allValidationObjectIdsRef.current = collected.allValidationObjectIds;
-
-        // Debug handle for live world-tree inspection (harmless in production)
-        window.__dgSpeckleDebug = { viewer, worldTree, runId, project, entityMap: collected.entityMap };
-
-        // Click handler
-        const handleClick = (payload) => {
-          const hit = payload?.hits?.[0];
-          const raw = hit?.node?.model?.raw || {};
-          const dgEntityId = raw.dgEntityId || "";
-          if (dgEntityId && onEntityClickRef.current) {
-            onEntityClickRef.current(dgEntityId);
-          }
+      if (apiRef) {
+        apiRef.current = {
+          screenshot: () => viewer.screenshot(),
+          // Run id of the scene on screen, or null while resources are swapping —
+          // a thumbnail is filed under the run it actually shows.
+          sceneRunId: () => sceneRunIdRef.current
         };
-        clickHandlerRef.current = handleClick;
-        viewer.on("object-clicked", handleClick);
-
-        if (apiRef) {
-          apiRef.current = {
-            screenshot: () => viewer.screenshot()
-          };
-        }
-
-        setReady(true);
-        onReadyRef.current?.();
-      } catch (err) {
-        if (!disposed) {
-          onErrorRef.current?.(err.message || "Speckle viewer initialization failed");
-        }
       }
+
+      setViewerReady(true);
     };
 
     void initViewer().catch((err) => {
@@ -263,24 +291,100 @@ export default function SpeckleViewport({
     });
 
     return () => {
+      reportCameraRef.current?.(); // keep the last viewpoint when the viewer unmounts
+      reportCameraRef.current = null;
+      removeInteractionListenersRef.current?.();
+      removeInteractionListenersRef.current = null;
       disposed = true;
-      disposedRef.current = true;
-      setReady(false);
+      setViewerReady(false);
+      setFitted(false);
       if (apiRef) apiRef.current = null;
       if (viewerRef.current) {
-        if (clickHandlerRef.current && typeof viewerRef.current.off === "function") {
-          viewerRef.current.off("object-clicked", clickHandlerRef.current);
-        }
-        clickHandlerRef.current = null;
         viewerRef.current.dispose();
         viewerRef.current = null;
       }
       filteringRef.current = null;
       entityMapRef.current = new Map();
       allValidationObjectIdsRef.current = [];
+      loadedUrlsRef.current = [];
+      hasLoadedRef.current = false;
+      sceneRunIdRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourceKey, project, runId]);
+  }, []);
+
+  // Resource sync — keyed on the joined resource-url string (scalar), not the
+  // array identity. Unloads what left the set and loads what joined it. An
+  // unloaded model takes its geometry AND its baked ground shadow with it
+  // (removeRenderTree re-bakes the shadowcatcher); hiding it through the
+  // FilteringExtension would leave the shadow behind.
+  const resourceKey = (resourceUrls || []).filter(Boolean).join("|");
+  React.useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewerReady || !viewer) return undefined;
+    const urls = resourceKey ? resourceKey.split("|") : [];
+    if (urls.some((url) => !parseViewerResource(url))) {
+      onErrorRef.current?.("Unexpected geometry resource URL");
+      return undefined;
+    }
+
+    let stale = false;
+    sceneRunIdRef.current = null;
+    const job = async () => {
+      if (stale || viewerRef.current !== viewer) return;
+      const leaving = loadedUrlsRef.current.filter((url) => !urls.includes(url));
+      for (const url of leaving) {
+        await viewer.unloadObject(url);
+        loadedUrlsRef.current = loadedUrlsRef.current.filter((u) => u !== url);
+      }
+      // The server already resolved model/version to a concrete object URL
+      // (speckle_proxy.resolve_view_resources); no Speckle GraphQL call and no
+      // token ever happens in the browser. Only the very first load frames the
+      // camera — at the saved viewpoint when there is one, else zoomed to fit;
+      // later loads keep the architect's viewpoint.
+      // "First" means first for this viewer, not "the scene is empty": a run
+      // switch unloads the old validation model before loading the new one, and
+      // judging by the empty scene re-framed the camera on every switch.
+      const firstLoad = !hasLoadedRef.current;
+      const saved = firstLoad ? validCamera(initialCameraRef.current) : null;
+      const frame = firstLoad && !saved;
+      for (const url of urls) {
+        if (stale || viewerRef.current !== viewer) return;
+        if (loadedUrlsRef.current.includes(url)) continue;
+        const loader = new ProxySpeckleLoader(viewer.getWorldTree(), url);
+        await viewer.loadObject(loader, frame);
+        loadedUrlsRef.current = loadedUrlsRef.current.concat([url]);
+        hasLoadedRef.current = true;
+      }
+      if (stale || viewerRef.current !== viewer) return;
+      if (saved && urls.length > 0) {
+        viewer.getExtension(CameraController)?.setCameraView(saved, false);
+        initialCameraRef.current = null;
+      }
+
+      // Entity mapping: walk the world tree to collect dgEntityId -> objectId[] mapping
+      const worldTree = viewer.getWorldTree();
+      const collected = collectValidationObjects(worldTree, runId, project);
+      entityMapRef.current = collected.entityMap;
+      allValidationObjectIdsRef.current = collected.allValidationObjectIds;
+
+      // Debug handle for live world-tree inspection (harmless in production)
+      window.__dgSpeckleDebug = { viewer, worldTree, runId, project, entityMap: collected.entityMap };
+
+      viewer.requestRender(UpdateFlags.RENDER_RESET | UpdateFlags.SHADOWS);
+      sceneRunIdRef.current = runId || null;
+      if (urls.length > 0) setFitted(true);
+      setSceneTick((t) => t + 1);
+      onReadyRef.current?.();
+    };
+
+    syncQueueRef.current = syncQueueRef.current.then(job).catch((err) => {
+      if (!stale) onErrorRef.current?.(err.message || "Speckle geometry failed to load");
+    });
+    return () => {
+      stale = true;
+    };
+  }, [viewerReady, resourceKey, project, runId]);
 
   // Validation overlay — visibility, isolation, hiding, coloring and opacity.
   // Ported from the legacy viewer (graph-viewer/model-viewer/src/App.jsx):
@@ -289,7 +393,7 @@ export default function SpeckleViewport({
   React.useEffect(() => {
     const viewer = viewerRef.current;
     const filtering = filteringRef.current;
-    if (!ready || !viewer || !filtering) return;
+    if (!sceneTick || !viewer || !filtering) return;
 
     const entityMap = entityMapRef.current;
     const flatten = (ids) => {
@@ -315,8 +419,8 @@ export default function SpeckleViewport({
       if (isoObjectIds.length > 0) {
         filtering.isolateObjects(isoObjectIds, "dg-vis", true, true);
       }
-    } else if (showBase) {
-      // Base visible → hide only the excluded validation objects + Hide-button picks
+    } else {
+      // Hide only the excluded validation objects + Hide-button picks
       const visibleSet = new Set(visibleObjectIds);
       const hideSet = new Set(
         allValidationObjectIdsRef.current.filter((id) => !visibleSet.has(id))
@@ -325,13 +429,6 @@ export default function SpeckleViewport({
       if (hideSet.size > 0) {
         filtering.hideObjects([...hideSet], "dg-vis", true, false);
       }
-    } else if (visibleObjectIds.length > 0) {
-      // Base hidden → isolate the visible validation objects (hides the rest)
-      filtering.isolateObjects(visibleObjectIds, "dg-vis", true, false);
-    } else {
-      // Everything toggled off → isolate a sentinel id nothing matches,
-      // which hides the entire scene (empty ids would reset to show-all).
-      filtering.isolateObjects(["dg-none"], "dg-vis", true, false);
     }
 
     // Colour/material groups exclude Hide-button picks: renderer.setMaterial
@@ -390,12 +487,11 @@ export default function SpeckleViewport({
 
     viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
   }, [
-    ready,
+    sceneTick,
     failedEntityIds,
     passedEntityIds,
     showFailed,
     showPassed,
-    showBase,
     failColor,
     passColor,
     failOpacity,
@@ -408,7 +504,7 @@ export default function SpeckleViewport({
   // model (no more synthetic boxes); "3d" restores the perspective orbit.
   React.useEffect(() => {
     const viewer = viewerRef.current;
-    if (!ready || !viewer) return;
+    if (!fitted || !viewer) return;
     const cam = viewer.getExtension(CameraController);
     if (!cam) return;
     try {
@@ -422,7 +518,7 @@ export default function SpeckleViewport({
     } catch {
       // camera API drift across @speckle/viewer versions — keep current view
     }
-  }, [ready, viewMode]);
+  }, [fitted, viewMode]);
 
   // Resize handling
   React.useEffect(() => {

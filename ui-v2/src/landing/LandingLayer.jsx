@@ -63,8 +63,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
           apidocs: labelApiDocsRef.current
         },
         hint: hintRef.current
-      },
-      { density: 2 }
+      }
     );
     engineRef.current = engine;
     if (import.meta.env.DEV) window.__dgl = engine;
@@ -198,7 +197,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
                 {user.name}
               </span>
             </div>
-            <div className="dg-annotation" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--text-muted)" }}>
+            <div className="dgl-sys">
               System initiated ·{" "}
               <span style={{ color: project ? "var(--color-signal)" : "var(--text-muted)" }}>
                 {project || "Select the project"}
@@ -317,7 +316,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
       <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
         DG API Docs
       </div>
-      <div ref={hintRef} className="dg-annotation dg-annotation--muted dgl-hint">
+      <div ref={hintRef} className="dgl-hint">
         Select a region
       </div>
     </>

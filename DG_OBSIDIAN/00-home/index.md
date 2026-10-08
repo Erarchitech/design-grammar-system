@@ -33,6 +33,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/Landing opening sequence and Michroma display face|Main window opens with a clockwise current, nodes one by one, Michroma hero (owner-tuned)]] (2026-10-08)
+- [[knowledge/decisions/Model Viewer shows only the validation model|Model Viewer shows only the validation model; Base model checkbox removed (F18, F19)]] (2026-10-08)
 - [[knowledge/decisions/DeGram keeps the DG sign-in and finishes Phase 1301 on one PC|DeGram keeps the DG sign-in, pairing without expiry (D-27); reviewer PC moves to the last v13.0 phase (D-28)]] (2026-10-07)
 - [[knowledge/decisions/DeGram payload ships only what variant degram can use|DeGram payload: only Python, pm-required tools and six extras; installer 1.9 GB → 490 MB]] (2026-10-07)
 - [[knowledge/decisions/DeGram rebrands Hermes at the catalog and the rendered interface|DeGram rebrands Hermes at the catalog and the rendered interface; language without /api/config]] (2026-10-07)
@@ -109,6 +111,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/Model Viewer camera reset and Design State jump on run switch|Model Viewer: Speckle emits no Stationary event, run switch re-framed the camera, Design State persisted per run]] (2026-10-08, fixed)
 - [[knowledge/debugging/DeGram graph tool answer was spilled to a file the agent cannot read|DeGram graph tool: 8.6 MB graph, rules read after graph, answer spilled past the agent's 100K-char threshold (G-1)]] (2026-10-07, fixed)
 - [[knowledge/debugging/Kaspersky on PC1 blocks the DeGram installer and the installed executable by path|Kaspersky on PC1 terminates the DeGram installer and resets the installed DeGram.exe by path]] (2026-10-07, open, environment)
 - [[knowledge/debugging/DESIGN STATE and VALIDATOR assumed one class per Design State|DESIGN STATE/VALIDATOR: length guard and index-matched ValidStatus assumed one class per Design State (F15/F16)]] (2026-10-05, fixed)

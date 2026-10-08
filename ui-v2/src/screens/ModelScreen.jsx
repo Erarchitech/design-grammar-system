@@ -64,48 +64,56 @@ function boxPath(b) {
 
 const NO_STATE = "__no_state__";
 
-const RUN_SHOTS_KEY = "dgv2_run_shots";
+// v2: thumbnails captured before the background fill were black where the
+// (transparent) viewer canvas showed the page — drop them rather than show them.
+const RUN_SHOTS_KEY = "dgv2_run_shots_v2";
+const LEGACY_RUN_SHOTS_KEY = "dgv2_run_shots";
 const PROJECT_SHOTS_KEY = "dgv2_project_shots";
-const TILE_PROPS_KEY = "dgv2_tile_props";
+// v2: { [project]: [propIri…] } — the old global list named a fixed urban
+// catalogue (Height, GFA, …) that no real project's PropStates matched.
+const TILE_PROPS_KEY = "dgv2_tile_props_v2";
+const LEGACY_TILE_PROPS_KEY = "dgv2_tile_props";
+const DEFAULT_TILE_PROP_COUNT = 3;
+const CAMERA_KEY = "dgv2_model_camera"; // { [project]: { position, target } }
 
-// PropState ⊑ DesignState — the fixed catalogue of design-grammar properties the
-// tiles can surface (owl:subClassOf DesignState in the metagraph). Each entry maps
-// a display row to the real PropState values published from Grasshopper: `match`
-// keywords are tested against a run state's projected props (iri + displayName).
-const PROPSTATES = [
-  { key: "height", label: "Height", iri: "dg:HeightState", match: ["height"] },
-  { key: "gfa", label: "GFA", iri: "dg:GFAState", match: ["gfa", "floor area", "grossfloor"] },
-  { key: "units", label: "Units", iri: "dg:UnitCountState", match: ["unit"] },
-  { key: "storeys", label: "Storeys", iri: "dg:StoreyState", match: ["storey", "story", "floor count"] },
-  { key: "coverage", label: "Site coverage", iri: "dg:CoverageState", match: ["coverage", "site cover"] },
-  { key: "setback", label: "Setback", iri: "dg:SetbackState", match: ["setback"] },
-  { key: "glazing", label: "Glazing ratio", iri: "dg:GlazingState", match: ["glazing", "glaz"] },
-  { key: "daylight", label: "Daylight factor", iri: "dg:DaylightState", match: ["daylight"] },
-  { key: "parking", label: "Parking ratio", iri: "dg:ParkingState", match: ["parking"] }
-];
-const DEFAULT_TILE_PROPS = ["height", "gfa", "units"];
-
-function readTileProps() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(TILE_PROPS_KEY) || "null");
-    if (Array.isArray(raw)) return raw.filter((k) => PROPSTATES.some((p) => p.key === k));
-  } catch {
-    /* fall through to default */
-  }
-  return DEFAULT_TILE_PROPS;
+// "ex:hasTotalHeightM" → "Total Height M": local name, a leading "has" dropped,
+// camelCase split. The full iri stays visible in the tile-properties menu.
+function propLabel(iri) {
+  const local = String(iri).replace(/^.*[:#/]/, "").replace(/^has(?=[A-Z])/, "");
+  return local.replace(/([a-z0-9])([A-Z])/g, "$1 $2") || String(iri);
 }
 
-// Resolve a catalogue entry to a real value for a design-state group, matching the
-// state's projected props by keyword. Returns null when the state carries no such
-// property (caller renders an em dash).
-function propValueFor(state, entry) {
-  const props = state?.props;
-  if (!Array.isArray(props)) return null;
-  for (const p of props) {
-    const hay = ((p.label || "") + " " + (p.iri || "")).toLowerCase();
-    if (entry.match.some((m) => hay.includes(m))) return p.value || null;
+// The tile-property catalogue is the set of PropState properties the project's
+// design states actually carry (their projected props), never a fixed list.
+function propCatalogue(states) {
+  const byIri = new Map();
+  for (const state of states) {
+    for (const p of state?.props || []) {
+      if (p?.iri && !byIri.has(p.iri)) byIri.set(p.iri, { iri: p.iri, label: propLabel(p.iri) });
+    }
   }
-  return null;
+  return [...byIri.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function formatNumber(n) {
+  return String(Number(n.toFixed(3)));
+}
+
+// Summarise one property over a design state: a PropState usually holds one
+// value per object, so numbers show as a min – max range (a single value when
+// they agree) and text as the value or a count of distinct values. Returns null
+// when the state carries no such property (caller renders an em dash).
+function propSummary(state, iri) {
+  const values = (state?.props || []).filter((p) => p?.iri === iri).map((p) => p.value);
+  if (values.length === 0) return null;
+  const nums = values.map((v) => Number(v));
+  if (nums.every((n) => Number.isFinite(n))) {
+    const min = Math.min(...nums);
+    const max = Math.max(...nums);
+    return min === max ? formatNumber(min) : formatNumber(min) + " – " + formatNumber(max);
+  }
+  const distinct = new Set(values.map(String));
+  return distinct.size === 1 ? String(values[0]) : distinct.size + " values";
 }
 
 function readShotStore(key) {
@@ -117,8 +125,10 @@ function readShotStore(key) {
 }
 
 // Downscale a viewer screenshot to a small JPEG thumbnail so the
-// localStorage stores stay within quota (legacy viewer pattern).
-function downscaleThumb(dataUrl, tw, th) {
+// localStorage stores stay within quota (legacy viewer pattern). The Speckle
+// canvas clears to transparent, and JPEG has no alpha — so paint the
+// viewport's own background first, or the empty sky turns black.
+function downscaleThumb(dataUrl, tw, th, background) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -126,6 +136,8 @@ function downscaleThumb(dataUrl, tw, th) {
       canvas.width = tw;
       canvas.height = th;
       const ctx = canvas.getContext("2d");
+      ctx.fillStyle = background || "#ffffff";
+      ctx.fillRect(0, 0, tw, th);
       const sr = img.width / img.height;
       const tr = tw / th;
       let sw, sh, sx, sy;
@@ -202,7 +214,6 @@ export default function ModelScreen({ active, onBack, project }) {
   const [pickedStatuses, setPickedStatuses] = React.useState([]);
   const [mvFail, setMvFail] = React.useState(true);
   const [mvPass, setMvPass] = React.useState(true);
-  const [mvBase, setMvBase] = React.useState(true);
   const [aFail, setAFail] = React.useState(85);
   const [aPass, setAPass] = React.useState(55);
   const [failColor, setFailColor] = React.useState("#e7000b");
@@ -215,12 +226,13 @@ export default function ModelScreen({ active, onBack, project }) {
   const [isolate, setIsolate] = React.useState(false);
   const [hidden, setHidden] = React.useState([]);
   const [selById, setSelById] = React.useState("");
-  const [tileProps, setTileProps] = React.useState(readTileProps); // which PropState rows tiles show
+  const [tilePropSel, setTilePropSel] = React.useState(() => readShotStore(TILE_PROPS_KEY)); // { [project]: [propIri…] } tiles show
   const [dsSettingsOpen, setDsSettingsOpen] = React.useState(false);
   const [viewMode, setViewMode] = React.useState("3d");
-  const [speckleReady, setSpeckleReady] = React.useState(false);
+  const [sceneTick, setSceneTick] = React.useState(0); // bumps each time the 3D scene finishes loading
   const [speckleError, setSpeckleError] = React.useState(null);
   const [viewBox, setViewBox] = React.useState({ x: 0, y: 0, w: 880, h: 440 });
+  const rootRef = React.useRef(null);
   const svgRef = React.useRef(null);
   const mapRef = React.useRef(null);
   const panRef = React.useRef(null);
@@ -229,6 +241,13 @@ export default function ModelScreen({ active, onBack, project }) {
 
   /* ---- automatic viewport screenshots (tiles) ---- */
   const [runShots, setRunShots] = React.useState(() => readShotStore(RUN_SHOTS_KEY));
+  React.useEffect(() => {
+    try {
+      localStorage.removeItem(LEGACY_RUN_SHOTS_KEY);
+    } catch {
+      // storage unavailable — nothing to clean up
+    }
+  }, []);
   React.useEffect(() => {
     try {
       localStorage.setItem(RUN_SHOTS_KEY, JSON.stringify(runShots));
@@ -240,14 +259,12 @@ export default function ModelScreen({ active, onBack, project }) {
   /* ---- tile-properties selection persistence ---- */
   React.useEffect(() => {
     try {
-      localStorage.setItem(TILE_PROPS_KEY, JSON.stringify(tileProps));
+      localStorage.setItem(TILE_PROPS_KEY, JSON.stringify(tilePropSel));
+      localStorage.removeItem(LEGACY_TILE_PROPS_KEY);
     } catch {
       // quota exceeded — selection stays in-memory only
     }
-  }, [tileProps]);
-  const toggleTileProp = React.useCallback((key) => {
-    setTileProps((prev) => (prev.indexOf(key) >= 0 ? prev.filter((k) => k !== key) : prev.concat([key])));
-  }, []);
+  }, [tilePropSel]);
 
   /* ---- per-run graphics state (legacy runGfxMap session persistence) ---- */
   const [runGfx, setRunGfx] = React.useState(() => readShotStore("dgv2_run_gfx"));
@@ -269,12 +286,12 @@ export default function ModelScreen({ active, onBack, project }) {
     skipGfxSaveRef.current = true;
     setMvFail(saved.mvFail);
     setMvPass(saved.mvPass);
-    setMvBase(saved.mvBase);
     setAFail(saved.aFail);
     setAPass(saved.aPass);
     setFailColor(saved.failColor);
     setPassColor(saved.passColor);
-    if (saved.stateKey !== undefined) setStateKey(saved.stateKey);
+    // The Design State filter is navigation, not a run setting: restoring a
+    // run's stale saved filter jumped the selection to another Design State.
     if (saved.ruleId !== undefined) setRuleId(saved.ruleId);
   }, [runId]);
   // save settings for the active run whenever they change (not on run switch)
@@ -284,19 +301,23 @@ export default function ModelScreen({ active, onBack, project }) {
       skipGfxSaveRef.current = false;
       return;
     }
-    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, stateKey, ruleId } }));
+    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, aFail, aPass, failColor, passColor, ruleId } }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, stateKey, ruleId]);
+  }, [mvFail, mvPass, aFail, aPass, failColor, passColor, ruleId]);
 
+  // The thumbnail is filed under the run the scene actually shows (not the run
+  // just clicked, whose geometry may still be loading).
   const captureShot = React.useCallback(async () => {
     const api = speckleApiRef.current;
-    if (!api || !runId) return;
+    const shotRunId = api?.sceneRunId?.();
+    if (!api || !shotRunId) return;
     try {
       const dataUrl = await api.screenshot();
       if (!dataUrl) return;
-      const thumb = await downscaleThumb(dataUrl, 320, 180);
+      const background = rootRef.current ? getComputedStyle(rootRef.current).backgroundColor : "";
+      const thumb = await downscaleThumb(dataUrl, 320, 180, background);
       if (!thumb) return;
-      setRunShots((prev) => ({ ...prev, [runId]: thumb }));
+      setRunShots((prev) => ({ ...prev, [shotRunId]: thumb }));
       if (project) {
         try {
           const shots = readShotStore(PROJECT_SHOTS_KEY);
@@ -309,7 +330,16 @@ export default function ModelScreen({ active, onBack, project }) {
     } catch {
       // screenshot unsupported / viewer busy — tile keeps its last thumbnail
     }
-  }, [runId, project]);
+  }, [project]);
+
+  // One debounced capture for every trigger (scene loaded, graphics change,
+  // camera settled), so the progressive render has finished before the shot.
+  const shotTimerRef = React.useRef(null);
+  const scheduleShot = React.useCallback(() => {
+    clearTimeout(shotTimerRef.current);
+    shotTimerRef.current = setTimeout(() => void captureShot(), 1200);
+  }, [captureShot]);
+  React.useEffect(() => () => clearTimeout(shotTimerRef.current), []);
 
   const load = React.useCallback(async () => {
     setLoadErr("");
@@ -343,7 +373,6 @@ export default function ModelScreen({ active, onBack, project }) {
     if (!runId) {
       setView(null);
       setSpeckleError(null);
-      setSpeckleReady(false);
       return;
     }
     let gone = false;
@@ -352,7 +381,6 @@ export default function ModelScreen({ active, onBack, project }) {
         if (gone) return;
         setView(v);
         setSpeckleError(null);
-        setSpeckleReady(false);
         // restore saved ruleId if available, otherwise use first failing rule
         const saved = runGfxRef.current[runId];
         const savedRuleId = saved?.ruleId;
@@ -430,6 +458,18 @@ export default function ModelScreen({ active, onBack, project }) {
     return arr;
   }, [runs]);
 
+  /* ---- tile properties: this project's PropState properties ---- */
+  const propCatalogueList = React.useMemo(() => propCatalogue(groups.map((g) => g.state)), [groups]);
+  const tilePropKey = project || "default-project";
+  // a project never configured shows its first few properties
+  const tileProps = (tilePropSel[tilePropKey] || propCatalogueList.slice(0, DEFAULT_TILE_PROP_COUNT).map((p) => p.iri)).filter(
+    (iri) => propCatalogueList.some((p) => p.iri === iri)
+  );
+  const toggleTileProp = (iri) => {
+    const next = tileProps.indexOf(iri) >= 0 ? tileProps.filter((k) => k !== iri) : tileProps.concat([iri]);
+    setTilePropSel((prev) => ({ ...prev, [tilePropKey]: next }));
+  };
+
   const visibleRuns = stateKey ? runs.filter((r) => (r.state?.stateId || NO_STATE) === stateKey) : runs;
 
   /* ---- entities and map items ---- */
@@ -484,13 +524,13 @@ export default function ModelScreen({ active, onBack, project }) {
     setPropMode("instance");
   }, []);
 
-  // Auto-capture: once the viewer is ready, and again (debounced) whenever
-  // the graphics settings change, refresh the run/state/project thumbnails.
+  // Auto-capture: each time the scene finishes loading, and again (debounced)
+  // whenever the graphics settings change, refresh the run/state/project
+  // thumbnails. Camera moves schedule a shot through onViewChanged.
   React.useEffect(() => {
-    if (!speckleReady) return;
-    const t = setTimeout(() => void captureShot(), 1200);
-    return () => clearTimeout(t);
-  }, [speckleReady, mvFail, mvPass, mvBase, aFail, aPass, failColor, passColor, viewMode, captureShot]);
+    if (!sceneTick) return;
+    scheduleShot();
+  }, [sceneTick, mvFail, mvPass, aFail, aPass, failColor, passColor, viewMode, hidden, isolate, scheduleShot]);
 
   const retry3d = () => {
     setSpeckleError(null);
@@ -576,15 +616,39 @@ export default function ModelScreen({ active, onBack, project }) {
   const pickedFailing = picked ? failedIds.has(picked) : false;
   const zoomPct = worldRef.current.w / viewBox.w;
 
-  const speckleResourceUrls = React.useMemo(
-    () => (Array.isArray(view?.viewerResources) ? view.viewerResources.filter(Boolean) : []),
-    [view]
+  // The viewer shows only the run's validation model; the base model is never
+  // loaded (it was context geometry, often another project's). resolve_view_resources
+  // (data-service/speckle_proxy.py) lists the base model's URL first and the
+  // validation model's second, skipping a model whose id or version is missing —
+  // so the payload's ids say which URL is the validation model.
+  const sceneResourceUrls = React.useMemo(() => {
+    const all = Array.isArray(view?.viewerResources) ? view.viewerResources.filter(Boolean) : [];
+    const hasBase = Boolean(view?.baseModelId && view?.baseVersionId);
+    const hasValidation = Boolean(view?.validationModelId && view?.validationVersionId);
+    if (!hasValidation) return [];
+    return hasBase && all.length === 2 ? all.slice(1) : all.slice(-1);
+  }, [view]);
+  const handleSpeckleReady = React.useCallback(() => setSceneTick((t) => t + 1), []);
+  // The 3D viewpoint is remembered per project, so reopening the Model Viewer
+  // (or reloading the page) returns to where the architect left it.
+  const savedCamera = project ? readShotStore(CAMERA_KEY)[project] || null : null;
+  const handleCameraChange = React.useCallback(
+    (cam) => {
+      if (!project) return;
+      try {
+        const all = readShotStore(CAMERA_KEY);
+        all[project] = cam;
+        localStorage.setItem(CAMERA_KEY, JSON.stringify(all));
+      } catch {
+        // storage unavailable — the viewpoint lasts only for this session
+      }
+    },
+    [project]
   );
-  const handleSpeckleReady = React.useCallback(() => setSpeckleReady(true), []);
   const handleSpeckleError = React.useCallback((msg) => setSpeckleError(msg), []);
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", background: "var(--color-canvas)" }}>
+    <div ref={rootRef} style={{ position: "absolute", inset: 0, display: "flex", background: "var(--color-canvas)" }}>
       {/* ===== left: design states + runs ===== */}
       <aside style={{ width: 320, flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderRight: "1px solid var(--color-hairline)", overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
@@ -603,7 +667,7 @@ export default function ModelScreen({ active, onBack, project }) {
           <Badge variant="outline">{groups.length}</Badge>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
-              {tileProps.length} / {PROPSTATES.length} props
+              {tileProps.length} / {propCatalogueList.length} props
             </span>
             <div
               onClick={() => setDsSettingsOpen((v) => !v)}
@@ -626,25 +690,30 @@ export default function ModelScreen({ active, onBack, project }) {
           {dsSettingsOpen && (
             <>
               <div onClick={() => setDsSettingsOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 14 }} />
-              <div className="dg-frost" style={{ position: "absolute", right: 0, top: 38, zIndex: 15, width: 250, borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", padding: 12, display: "flex", flexDirection: "column", gap: 2 }}>
+              <div className="dg-frost" style={{ position: "absolute", right: 0, top: 38, zIndex: 15, width: 288, boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", padding: 12, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "0 4px 8px", borderBottom: "1px solid var(--color-hairline)" }}>
                   <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>Tile Properties</span>
-                  <span style={{ font: "400 9px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>PropState ⊑ DesignState · bolt://dg-meta:7687</span>
+                  <span style={{ font: "400 9px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>PropState values in {tilePropKey}</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, paddingTop: 4 }}>
-                  {PROPSTATES.map((p) => {
-                    const on = tileProps.indexOf(p.key) >= 0;
+                  {propCatalogueList.length === 0 && (
+                    <span style={{ padding: "6px 4px", font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+                      No PropState values in this project's design states
+                    </span>
+                  )}
+                  {propCatalogueList.map((p) => {
+                    const on = tileProps.indexOf(p.iri) >= 0;
                     return (
                       <div
-                        key={p.key}
-                        onClick={() => toggleTileProp(p.key)}
+                        key={p.iri}
+                        onClick={() => toggleTileProp(p.iri)}
                         style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 4px", borderRadius: 8, cursor: "pointer" }}
                       >
                         <span style={{ width: 15, height: 15, flex: "none", border: `1px solid ${on ? "var(--color-ink)" : "var(--color-hairline)"}`, background: on ? "var(--color-ink)" : "transparent", borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", font: "600 9px/1 var(--font-sans)", color: "var(--surface-card)" }}>
                           {on ? "✓" : ""}
                         </span>
-                        <span style={{ flex: 1, font: "500 12px/1.3 var(--font-sans)", color: on ? "var(--text-primary)" : "var(--text-muted)" }}>{p.label}</span>
-                        <span style={{ font: "400 9px/1.3 var(--font-mono)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{p.iri}</span>
+                        <span style={{ flex: 1, minWidth: 0, font: "500 12px/1.3 var(--font-sans)", color: on ? "var(--text-primary)" : "var(--text-muted)" }}>{p.label}</span>
+                        <span title={p.iri} style={{ maxWidth: "48%", overflow: "hidden", textOverflow: "ellipsis", font: "400 9px/1.3 var(--font-mono)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{p.iri}</span>
                       </div>
                     );
                   })}
@@ -671,11 +740,13 @@ export default function ModelScreen({ active, onBack, project }) {
           const latest = g.runs[0];
           const fails = g.runs.reduce((s, r) => s + (r.failedRuleCount || 0), 0);
           const rules = g.runs.reduce((s, r) => s + (r.ruleCount || 0), 0);
-          const stateThumb = g.runs.map((r) => runShots[r.runId]).find(Boolean);
-          const propRows = PROPSTATES.filter((p) => tileProps.indexOf(p.key) >= 0).map((entry) => ({
-            key: entry.key,
+          // the run on screen first, so the tile follows what was just captured
+          const stateThumb =
+            (g.runs.some((r) => r.runId === runId) && runShots[runId]) || g.runs.map((r) => runShots[r.runId]).find(Boolean);
+          const propRows = propCatalogueList.filter((p) => tileProps.indexOf(p.iri) >= 0).map((entry) => ({
+            key: entry.iri,
             label: entry.label,
-            value: propValueFor(g.state, entry)
+            value: propSummary(g.state, entry.iri)
           }));
           return (
             <div
@@ -752,7 +823,6 @@ export default function ModelScreen({ active, onBack, project }) {
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "10px 16px", background: "var(--surface-card)", borderBottom: "1px solid var(--color-hairline)" }}>
           <Checkbox label="Failing" checked={mvFail} onChange={setMvFail} />
           <Checkbox label="Passing" checked={mvPass} onChange={setMvPass} />
-          <Checkbox label="Base model" checked={mvBase} onChange={setMvBase} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <ColorSwatch label="Fail" color={failColor} onChange={setFailColor} />
           <Slider label="Fail α" value={aFail} onChange={setAFail} style={{ width: 150 }} />
@@ -794,17 +864,16 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          {!speckleError && speckleResourceUrls.length > 0 ? (
+          {!speckleError && sceneResourceUrls.length > 0 ? (
             <SpeckleViewport
               viewMode={viewMode}
-              resourceUrls={speckleResourceUrls}
+              resourceUrls={sceneResourceUrls}
               project={project}
-              runId={runId}
+              runId={view?.runId}
               failedEntityIds={failedEntityIdList}
               passedEntityIds={passedEntityIdList}
               showFailed={mvFail}
               showPassed={mvPass}
-              showBase={mvBase}
               failColor={failColor}
               passColor={passColor}
               failOpacity={aFail}
@@ -813,6 +882,9 @@ export default function ModelScreen({ active, onBack, project }) {
               isolateEntityId={isolate && picked ? picked : null}
               onEntityClick={pick}
               onReady={handleSpeckleReady}
+              onViewChanged={scheduleShot}
+              initialCamera={savedCamera}
+              onCameraChange={handleCameraChange}
               onError={handleSpeckleError}
               apiRef={speckleApiRef}
               style={{ position: "absolute", inset: 0 }}
@@ -831,7 +903,6 @@ export default function ModelScreen({ active, onBack, project }) {
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
               >
-                {mvBase && <path d={`M30 ${worldRef.current.h - 80} L ${worldRef.current.w - 30} ${worldRef.current.h - 80} M60 ${worldRef.current.h - 50} L ${worldRef.current.w} ${worldRef.current.h - 50}`} stroke="var(--ink-a08)" strokeWidth="1" fill="none" />}
                 {items.map((b) => (
                   <path
                     key={b.id}
