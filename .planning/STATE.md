@@ -6,15 +6,15 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 14
 status: executing
-stopped_at: "1301-15 partial: installer built, launch isolation FAILED (stop rule), push and gitlink bump not done"
-last_updated: "2026-10-05T20:28:07.674Z"
+stopped_at: "1301-16 Task 3 live UAT on PC1 run 2026-10-08/09: DGCL-01/03 pass, DGCL-02 fail (G-7 critical), 04-07 partial; gaps G-3..G-17 + D-29 recorded in 1301-UAT.md; fork revit-mcp G-8..G-12 fixes uncommitted; next: gap plans for 0.1.6"
+last_updated: "2026-10-09T15:41:40.118Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 28
-  completed_plans: 18
+  total_plans: 29
+  completed_plans: 20
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -609,9 +609,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-05T20:28:07.651Z
-Stopped at: 1301-15 partial: installer built, launch isolation FAILED (stop rule), push and gitlink bump not done
-Resume file: .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-15-SUMMARY.md
+Last session: 2026-10-09T15:41:40.097Z
+Stopped at: 1301-16 Task 3 live UAT on PC1 run 2026-10-08/09: DGCL-01/03 pass, DGCL-02 fail (G-7 critical), 04-07 partial; gaps G-3..G-17 + D-29 recorded in 1301-UAT.md; fork revit-mcp G-8..G-12 fixes uncommitted; next: gap plans for 0.1.6
+Resume file: .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-UAT.md
 
 ## Performance Metrics
 

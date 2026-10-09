@@ -18,6 +18,7 @@ Signing and an update channel are deferred.
 | DG server | A reachable Design Grammar System (the compose stack) and a DG account that is a member of the project you will use. |
 | Installer | `DeGram-Setup-<version>.exe` and its SHA-256 from `.planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-BUILD.md`. Check the hash before running it. |
 | Python for the Revit adapter | Python 3.13 and `uv` (step 7). The bundled agent Python (3.14) cannot run the locked adapter. |
+| Security software | It must trust the installed DeGram executables: `DeGram.exe` and `resources\agent-payload\bin\degram.exe` with its Python. On the pilot PC Kaspersky Total Security terminated the installer and reset every connection the installed `DeGram.exe` made to DG (1301-BUILD.md, F-11). Add the exclusion before step 6, or DG is unreachable from DeGram. |
 
 Nothing below touches an installed Hermes. DeGram keeps its own data under `%LOCALAPPDATA%\DeGram`
 and never reads `%LOCALAPPDATA%\hermes` or `~/.hermes`.
@@ -99,6 +100,12 @@ default: DeGram reports `DG_ORIGIN_INVALID` instead, so a typo cannot send a sig
    `%LOCALAPPDATA%\DeGram` appears on that first start (the window title is not verified yet). DeGram has no
    update channel: a new build is a new installer.
 
+5. **Connect DeGram to DG (pairing).** In the DG Web UI open the **Connectors** tab, DeGram card, create a
+   pairing and copy the `dgp_` token (it is shown once). In DeGram paste it into the panel «Подключение к DG»
+   and press «Подключить». The pairing belongs to your DG user, not to a project, and does not expire; it ends
+   when you revoke it on the Connectors tab, change your password or the user is removed (D-25..D-27). The DG
+   sign-in of step 6.4 stays for the embedded DG page.
+
 ## 7. Adapter interpreter (known gap)
 
 The adapter must run on an interpreter that carries `mcp` 1.x. The locked environment of
@@ -124,7 +131,7 @@ These are DG admin API calls (admin session); they are not done in DeGram.
 | Step | Call | Notes |
 |---|---|---|
 | Project to company | `PUT /projects/{project}/company` body `{"company": "<name>"}` | The company is part of DeGram's scope (user, company, project; D-20). An unassigned project has `company: null`. Reassigning a project revokes its open delegated tokens. |
-| Relay (the one model path) | `PUT /degram/admin/llm-config` body `{"baseUrl": "...", "apiKey": "...", "model": "...", "providerLabel": "..."}` | The first call needs `baseUrl` and `apiKey`; the key is stored encrypted and never read back. Until it is set DeGram answers `RELAY_NOT_CONFIGURED`. |
+| Relay (the one model path) | DG Web UI, LLM settings panel: provider `openai` (OpenAI or an OpenAI-compatible base URL), model, API key | The relay has no configuration of its own (D-24); it uses these settings. The key is stored encrypted and never read back. With another provider, or nothing set, DeGram answers `RELAY_NOT_CONFIGURED`; there is no fallback. |
 | Provider-export policy | `PUT /projects/{project}/degram-policy` body `{"providerExportAllowed": true}` | Deny by default. Add `"wholeDefinitionAllowed": true` only if the project may send a whole Grasshopper definition; the user still confirms every whole-definition send. |
 
 ## 9. Checks, one per bridge state

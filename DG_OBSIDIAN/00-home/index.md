@@ -33,6 +33,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram pins one document per bridge|DeGram pins one document per bridge: Revit model and GH definition together (D-29)]] (2026-10-09)
 - [[knowledge/decisions/Landing opening sequence and Michroma display face|Main window opens with a clockwise current, nodes one by one, Michroma hero (owner-tuned)]] (2026-10-08)
 - [[knowledge/decisions/Model Viewer shows only the validation model|Model Viewer shows only the validation model; Base model checkbox removed (F18, F19)]] (2026-10-08)
 - [[knowledge/decisions/DeGram keeps the DG sign-in and finishes Phase 1301 on one PC|DeGram keeps the DG sign-in, pairing without expiry (D-27); reviewer PC moves to the last v13.0 phase (D-28)]] (2026-10-07)
@@ -111,6 +112,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/DeGram chat stays on the first scope profile after a project or company change|DeGram chat stays on the first scope profile; other projects fail closed with CREDENTIALS_MISSING (G-7)]] (2026-10-09, open)
+- [[knowledge/debugging/DeGram Revit adapter could not load under pyRevit IronPython 3.4|DeGram Revit adapter unloadable under pyRevit IronPython 3.4: disabled by default, async def, implicit imports, urllib, JSON body (G-8..G-12)]] (2026-10-09, fixed in working tree)
 - [[knowledge/debugging/Model Viewer camera reset and Design State jump on run switch|Model Viewer: Speckle emits no Stationary event, run switch re-framed the camera, Design State persisted per run]] (2026-10-08, fixed)
 - [[knowledge/debugging/DeGram graph tool answer was spilled to a file the agent cannot read|DeGram graph tool: 8.6 MB graph, rules read after graph, answer spilled past the agent's 100K-char threshold (G-1)]] (2026-10-07, fixed)
 - [[knowledge/debugging/Kaspersky on PC1 blocks the DeGram installer and the installed executable by path|Kaspersky on PC1 terminates the DeGram installer and resets the installed DeGram.exe by path]] (2026-10-07, open, environment)
@@ -193,7 +196,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
-- [[sessions/2026-10-07 Phase 1301 DeGram pairing connector, rules read fix, 490 MB installer and no Hermes name|2026-10-07 Phase 1301 — plan 17 pairing connector done, G-1/F-11 closed live, installer 490 MB, no Hermes name, 0.1.4 approved]]
+- [[sessions/2026-10-09 Phase 1301 live UAT on PC1 and the 0.1.6 gap list|2026-10-09 Phase 1301 live UAT on PC1 — DGCL-01/03 pass, 04 bridge layer pass after adapter fixes, 02 fails (G-7), gaps G-3..G-17, D-29]]
+- [[sessions/2026-10-08 Server hosting research for DG reviewers|2026-10-08 DG hosting research + university lab server plan (16 tasks, dependency graph verified)]]
+- [[sessions/2026-10-07 PhD progress report supersession and NotebookLM materials|2026-10-07 PhD report 071026 supersedes 051026, dates removed, source preserved; NotebookLM and infographic sources prepared]]
+|- [[sessions/2026-10-07 Phase 1301 DeGram pairing connector, rules read fix, 490 MB installer and no Hermes name|2026-10-07 Phase 1301 — plan 17 pairing connector done, G-1/F-11 closed live, installer 490 MB, no Hermes name, 0.1.4 approved]]
 - [[sessions/2026-10-06 Phase 1301 audit-fix, DeGram identity and isolation beside open Hermes|2026-10-06 Phase 1301 audit-fix: Gena lessons, DeGram icon/version/vendor, isolation beside open Hermes proven, branches pushed, relay from Web UI settings, plan 17 pairing connector]]
 - [[sessions/2026-10-06 Phase 1301 plan 15 rebuild and DeGram isolation proven beside Hermes|2026-10-06 Phase 1301: installer rebuilt from 910a060d, DeGram isolation proven beside Hermes, relay probe added, plan 16 started]]
 - [[sessions/2026-10-05 Phase 1301 executed through plan 14, plan 15 launch failed isolation|2026-10-05 Phase 1301: executed through plan 14; plan 15 launch failed isolation, nothing pushed]]
