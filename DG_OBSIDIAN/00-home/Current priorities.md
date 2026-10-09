@@ -7,6 +7,10 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1301 — gap plans 18-23 EXECUTED; DeGram 0.1.6 pushed, built and installed on PC1** (2026-10-09). Gaps G-3..G-17 + D-29 closed in code (degram `d0d69691`..`02993674`, revit-mcp `d8f0f24`), D-30 = back-fill + one-time cleanup (owner). Both forks pushed on the owner's request, gitlinks bumped (`workspace.py verify` exit 0), installer `DeGram-Setup-0.1.6.exe` SHA-256 `39C9EFCE…F018`, pyRevit extension replaced and verified. All behavioural rows are **unverified live**; no DGCL requirement marked complete.
+   - **Next:** plan 16 Task 3 (`/gsd-execute-phase 1301`, no `--gaps-only`): live recheck of the gap rows on PC1 with 0.1.6 incl. D-30 cleanup observation; then phase verification. Owner: revoke pairing `DeGram_UAT_matrix`, restore own pyRevit extension.
+   - Supersedes the two 2026-10-09 entries below. See [[sessions/2026-10-09 Phase 1301 gap plans 18-23 executed and DeGram 0.1.6 shipped|session]], [[knowledge/decisions/DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once|D-30]].
+
 0. **v13.0 Phase 1301 — gap-closure plans 18-23 written for DeGram 0.1.6** (2026-10-09, `cb6c905`). 18 chat follows the scope profile (G-7, G-3, G-5, G-6) + UI-SPEC amendment; 22 commits the revit-mcp IronPython fixes (G-8..G-12); 19 failed-turn copy and preview timeouts (G-4, G-14); 20 revoke purge, DG-unreachable boot, sign-out (G-15..G-17); 21 one pin per bridge (D-29); 23 0.1.6 build with the committed adapter; plan 16 recheck moved to wave 14. Every installer up to 0.1.5 bundled a stale `D:\dgb\revit-mcp` ([[knowledge/debugging/DeGram installers bundled a stale revit-mcp copy from the build folder]]).
    - **Next:** `/gsd-execute-phase 1301 --gaps-only`; owner decides **D-30** (pre-0.1.6 profiles without a manifest) in plan 20 Task 1, pushes both forks and installs 0.1.6 in plan 23; then plan 16 Task 3 recheck on PC1.
    - Supersedes the Next of the live-UAT entry below (gap planning done; pairing `DeGram_UAT_matrix` revoke and pyRevit restore still open). See [[sessions/2026-10-09 Phase 1301 gap-closure plans for DeGram 0.1.6|session]].

@@ -34,6 +34,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ### Decisions
 - [[knowledge/decisions/DeGram pins one document per bridge|DeGram pins one document per bridge: Revit model and GH definition together (D-29)]] (2026-10-09)
+- [[knowledge/decisions/DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once|DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once (D-30)]] (2026-10-09)
 - [[knowledge/decisions/Landing opening sequence and Michroma display face|Main window opens with a clockwise current, nodes one by one, Michroma hero (owner-tuned)]] (2026-10-08)
 - [[knowledge/decisions/Model Viewer shows only the validation model|Model Viewer shows only the validation model; Base model checkbox removed (F18, F19)]] (2026-10-08)
 - [[knowledge/decisions/DeGram keeps the DG sign-in and finishes Phase 1301 on one PC|DeGram keeps the DG sign-in, pairing without expiry (D-27); reviewer PC moves to the last v13.0 phase (D-28)]] (2026-10-07)
@@ -115,6 +116,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram chat stays on the first scope profile after a project or company change|DeGram chat stays on the first scope profile; other projects fail closed with CREDENTIALS_MISSING (G-7)]] (2026-10-09, open)
 - [[knowledge/debugging/DeGram Revit adapter could not load under pyRevit IronPython 3.4|DeGram Revit adapter unloadable under pyRevit IronPython 3.4: disabled by default, async def, implicit imports, urllib, JSON body (G-8..G-12)]] (2026-10-09, fixed in working tree)
 - [[knowledge/debugging/DeGram installers bundled a stale revit-mcp copy from the build folder|DeGram installers 0.1.0-0.1.5 bundled a stale D:\dgb\revit-mcp copy (no DEGRAM_REVIT_MCP_SOURCE)]] (2026-10-09, fix planned in 1301-23)
+- [[knowledge/debugging/Backslashes lost in a shell edit corrupted the DeGram build adapter path|Backslashes lost in a shell edit corrupted the DeGram build adapter path (CR in DEGRAM_REVIT_MCP_SOURCE)]] (2026-10-09)
 - [[knowledge/debugging/Model Viewer camera reset and Design State jump on run switch|Model Viewer: Speckle emits no Stationary event, run switch re-framed the camera, Design State persisted per run]] (2026-10-08, fixed)
 - [[knowledge/debugging/DeGram graph tool answer was spilled to a file the agent cannot read|DeGram graph tool: 8.6 MB graph, rules read after graph, answer spilled past the agent's 100K-char threshold (G-1)]] (2026-10-07, fixed)
 - [[knowledge/debugging/Kaspersky on PC1 blocks the DeGram installer and the installed executable by path|Kaspersky on PC1 terminates the DeGram installer and resets the installed DeGram.exe by path]] (2026-10-07, open, environment)
@@ -199,6 +201,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 ### Operational
 - [[sessions/2026-10-09 Phase 1301 live UAT on PC1 and the 0.1.6 gap list|2026-10-09 Phase 1301 live UAT on PC1 — DGCL-01/03 pass, 04 bridge layer pass after adapter fixes, 02 fails (G-7), gaps G-3..G-17, D-29]]
 - [[sessions/2026-10-09 Phase 1301 gap-closure plans for DeGram 0.1.6|2026-10-09 Phase 1301 gap-closure plans 18-23 for 0.1.6 — G-3..G-17, D-29, D-30 pending]]
+- [[sessions/2026-10-09 Phase 1301 gap plans 18-23 executed and DeGram 0.1.6 shipped|2026-10-09 Phase 1301 gap plans 18-23 executed — 0.1.6 pushed, built, installed; D-30 decided; live recheck open]]
 - [[sessions/2026-10-08 Server hosting research for DG reviewers|2026-10-08 DG hosting research + university lab server plan (16 tasks, dependency graph verified)]]
 - [[sessions/2026-10-07 PhD progress report supersession and NotebookLM materials|2026-10-07 PhD report 071026 supersedes 051026, dates removed, source preserved; NotebookLM and infographic sources prepared]]
 |- [[sessions/2026-10-07 Phase 1301 DeGram pairing connector, rules read fix, 490 MB installer and no Hermes name|2026-10-07 Phase 1301 — plan 17 pairing connector done, G-1/F-11 closed live, installer 490 MB, no Hermes name, 0.1.4 approved]]
