@@ -95,11 +95,11 @@ The preset is the only place these literals may appear (DESIGN.md: "Tokens, not 
 
 | Element | Composed from | Behavior contract |
 |---|---|---|
-| Scope strip | statusbar row, `Button variant="text" size="micro"`, `StatusDot`, `OverflowTip` for truncated names | Segments: company, project, document, Revit, Grasshopper. Long names ellipsize at the segment; full value in `OverflowTip`. Change of project/document is reflected in the strip in the same frame and in the next request's Context card (DGCL-02). |
+| Scope strip | statusbar row, `Button variant="text" size="micro"`, `StatusDot`, `OverflowTip` for truncated names | Segments: company, project, document, Revit, Grasshopper. Long names ellipsize at the segment; full value in `OverflowTip`. Change of project/document is reflected in the strip in the same frame and in the next request's Context card (DGCL-02). Two pins (one per bridge) and the «Документы: {n}» segment: see "Gap round 2026-10-09". |
 | Project picker | `Popover` + `Command variant="menu"`, `SearchField` (hidden when ≤ 7 items), `EmptyState` (body form) | Lists only server-authorized projects (`fetchProjects`). Selecting while a response runs → `ConfirmDialog` (see copy). Selecting opens a **new chat** for that scope (D-19). |
 | Document picker | `Popover` + `Command variant="menu"`, group headings per bridge, `ListRow`-style two-line rows | Row line 1: app glyph (Codicon) + document name; line 2 (Geist Mono 11): path · document identity. Pinned row shows a red leading dot. Unavailable bridge renders its group as a single neutral notice row with the diagnostic copy, never hidden. |
 | Bridge status | `StatusDot` + label in the scope strip; detailed line in the document picker group header | States: `ready`, `pinned`, `busy`, `off`, `setup-incomplete` (routes disabled / extension not loaded / no document open — each its own copy), `identity-mismatch`. Neutral color for off/busy/setup (DESIGN.md: red reserved for explicit failures); red dot only for `pinned`. |
-| Context card | composer status-stack group (`StatusRow`/`StatusControlRow`, `status-stack.css`), `Badge` (`muted`, `warn`), `DisclosureCaret`, `LogView` for exact payload | **Always expanded to its summary line** (exception to "status groups start collapsed", justified by D-17 "постоянная карточка"). Summary: project · document · objects · parameters · rules · fragments · size. Badges: `warn` for «сокращено»/«нет данных». Caret reveals the exact payload in `LogView` (secrets never present — redaction happens before render, not in CSS). |
+| Context card | composer status-stack group (`StatusRow`/`StatusControlRow`, `status-stack.css`), `Badge` (`muted`, `warn`), `DisclosureCaret`, `LogView` for exact payload | **Always expanded to its summary line** (exception to "status groups start collapsed", justified by D-17 "постоянная карточка"). Summary: project · document · objects · parameters · rules · fragments · size. Badges: `warn` for «сокращено»/«нет данных». Caret reveals the exact payload in `LogView` (secrets never present — redaction happens before render, not in CSS). One summary line per pinned document and a blocked-document row: see "Gap round 2026-10-09". |
 | Whole-definition scope | `SegmentedControl` in the Context card: «Выделение / Всё определение» | Choosing «Всё определение» changes nothing until Send; Send then opens `ConfirmDialog`. Policy deny is never offered as confirmable. |
 | Policy deny notice | Composer error banner slot (`ErrorState` compact, neutral icon) | Shows server reason; no confirm button; offers «Сузить контекст». |
 | Request lifecycle | existing composer Stop control, `Loader` (no literal "Loading…"), composer error banner, `Badge muted` «прервано» on partial message | Stop paints in the current frame; cancellation propagates client → relay → provider and aborts an in-flight CAD read (D-18). Failure banner names the cause and offers «Повторить запрос»; no auto-retry. |
@@ -221,6 +221,13 @@ All strings go through `useI18n()`; keys are added to every complete catalog (en
 | Destructive confirmation — sign out while running | Sign out of DG: A response is still running. Signing out stops it and hides this project's chat until you sign in again. Actions: Stop and sign out · Keep working | Выход из DG: ответ ещё формируется. Выход остановит его и скроет чат проекта до повторного входа. Действия: Остановить и выйти · Продолжить работу |
 | Destructive confirmation — switch project while running | Switch project: The running response will be stopped. {project} opens in a new chat. Actions: Stop and switch · Keep working | Смена проекта: текущий ответ будет остановлен. {project} откроется в новом чате. Действия: Остановить и переключить · Продолжить работу |
 
+| Error — DG access not ready (credentials missing) | DeGram has no DG access for {project} in this window yet. Reopen the project; if it repeats, sign in again. | У DeGram пока нет доступа к DG для {project} в этом окне. Откройте проект заново; если ошибка повторится, войдите снова. |
+| Sign-out item (project picker, tray) | Sign out of DG | Выйти из DG |
+| Context card — document read blocked (one bridge) | {document}: not included — {reason} | {document}: не включён — {reason} |
+| Scope strip — documents segment | Documents: {n} | Документы: {n} |
+
+The documents segment shows n = pinned documents (0..2); with 0 the segment keeps «Выбрать документ». Rows above marked with the gap round are owned by the "Gap round 2026-10-09" section below.
+
 No user-initiated deletion exists in 1301: local history removal on revoke (D-19) is automatic and announced by the toast above, not confirmed.
 
 ---
@@ -295,6 +302,25 @@ Applicable state considerations resolved: 38 covered, 4 backstop, 5 dismissed, 0
 | long-text | E7 sign-in | dismissed | The only DeGram text here is the fixed wordmark «DeGram». |
 | overflow | E8 boot failure + dialogs | ✅ covered | Boot failure detail sits in LogView with wrapping and internal scroll; ConfirmDialog bodies have a capped height with scroll. |
 | long-text | E8 boot failure + dialogs | ✅ covered | The overlapping path in the runtime-isolation failure wraps (mono, break-all) and is never truncated — the user needs the full path to fix it. |
+
+---
+
+## Gap round 2026-10-09 (G-3..G-17, D-29)
+
+Source: live run of 0.1.5 on PC1 (`1301-UAT.md`, gaps G-3..G-17) and decision D-29 (two pins). This section is the single owner of the copy and contracts used by plans 18-21; later plans read it and do not edit it. The four new Copywriting rows (credentials missing, sign-out item, document read blocked, documents segment) are defined in the table above.
+
+| Contract | Rule | Source |
+|---|---|---|
+| Scope route | The chat, the session list and Send run on the ready scope's profile; while the active gateway route and the scope profile disagree, Send is disabled and no request goes out. A route restored from a previous run is replaced at boot, not kept. | G-7, D-19 |
+| Sessions list | A scope switch empties «Сеансы» and the open transcript in the same frame; only sessions of the active scope are listed. | G-3, D-19 |
+| Provider failures | In variant degram a failed turn shows the DeGram outcome copy; no provider, model, key, logs, diagnostics or raw-error actions are offered. | G-4 |
+| Preview timeout | A CAD preview that gets no bridge answer within 20 s shows the Revit busy or Grasshopper busy copy; a preview RPC with no answer shows "Error — timeout" with its seconds; neither shows "DG server unreachable". | G-14 |
+| Boot with DG unreachable | E7 ErrorState with «Повторить запрос» replaces any blank view; Retry re-runs the DG check and reloads the DG view. | G-16 |
+| Revoke notice | The access-revoked toast renders above the full-window gate surface, and every local profile of that user + project is removed, whatever company it was opened under. | G-15 |
+| Sign-out | «Выйти из DG» in the project picker menu and in the tray menu runs `requestDegramSignOut()`; the existing ConfirmDialog shows while a response runs. | G-17 |
+| Two pins | One pinned document per bridge (D-29, G-13). The Revit and Grasshopper strip segments each carry their pinned document name and the accent dot. The Context card shows one summary line per pinned document (document · objects · parameters) plus one project line (rules · fragments · size). Identity loss, a closed document, a busy bridge or ROUTES_NOT_LOOPBACK excludes only that bridge's document, shown with the "document read blocked" row and `Badge warn`, while Send stays available for the rest. Whole-definition scope stays Grasshopper-only. A project switch clears both pins. | D-29, G-13 |
+
+Component inventory rows "Scope strip" and "Context card" are superseded where they say "document" in the singular: read them through the Two pins contract above.
 
 ---
 
