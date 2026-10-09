@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 19
+current_plan: 20
 status: executing
-stopped_at: "Completed 1301-22-PLAN.md (G-8..G-12: fork commit d8f0f24 local on degram/phase-1301, not pushed, gitlink not bumped; CLEAN-INSTALL ae7909b); next: gap plans 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
-last_updated: "2026-10-09T16:28:13.597Z"
+stopped_at: "Completed 1301-19-PLAN.md (G-4, G-14: component commit 199ef7cd local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
+last_updated: "2026-10-09T16:48:57.530Z"
 last_activity: 2026-10-09
-last_activity_desc: Plan 1301-22 complete (gap closure G-8..G-12, revit-mcp fork fixes committed)
+last_activity_desc: Plan 1301-19 complete (gap closure G-4, G-14: error-path cards, relay error mapping, preview deadlines)
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 35
-  completed_plans: 22
+  completed_plans: 23
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 19
+Current Plan: 20
 Total Plans in Phase: 23
-Plan: 19 of 23
+Plan: 20 of 23
 Status: Ready to execute
-Last activity: 2026-10-09 — plan 1301-22 complete (G-8..G-12)
-Last Activity Description: Plan 1301-22 complete (gap closure G-8..G-12, revit-mcp fork fixes committed)
+Last activity: 2026-10-09 — plan 1301-19 complete (G-4, G-14)
+Last Activity Description: Plan 1301-19 complete (gap closure G-4, G-14: error-path cards, relay error mapping, preview deadlines)
 
 ## Deferred Verification
 
@@ -177,6 +177,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P14 | two sessions | 2 tasks | 29 files |
 | Phase 1301 P18 | 1h40m | 4 tasks | 21 files |
 | Phase 1301 P22 | 15m | 2 tasks | 29 files |
+| Phase 1301 P19 | 75min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -517,6 +518,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-13: setDgMode also shows the DG page when a revocation blanked the view (electron ipc.ts); DG view bounds are withheld until the page painted
 - [Phase ?]: 1301-14: stale preview/scope never sends; whole-definition consent is bound to the payload on the card; stock transcript Retry hidden in degram (stock-error-retry); turn events bound via startTurnEventSync on the $gateway atom
 - [Phase 1301-18]: followScopeRoute moves the chat's gateway route to the ready scope profile before any chat/session list/send (wipe lists first); route-mismatch send guard; CREDENTIALS_MISSING re-handoff once per scope open
+- [Phase 1301-19]: Variant degram failed-turn card shows only DeGram outcome copy; stock card actions and raw Details hidden by six stock-error-* ids
+- [Phase 1301-19]: Preview deadlines (Revit 20 s, GH 20 s shared budget, rules 15 s) stay below PREVIEW_RPC_TIMEOUT_MS 45 s; RPC timeout is PREVIEW_TIMEOUT, only gateway transport is DG_UNAVAILABLE
 
 ### Research Flags (carry into planning)
 
@@ -612,8 +615,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-09T16:28:13.576Z
-Stopped at: Completed 1301-22-PLAN.md (G-8..G-12: fork commit d8f0f24 local on degram/phase-1301, not pushed, gitlink not bumped; CLEAN-INSTALL ae7909b); next: gap plans 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6
+Last session: 2026-10-09T16:48:57.509Z
+Stopped at: Completed 1301-19-PLAN.md (G-4, G-14: component commit 199ef7cd local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6
 Resume file: None
 
 ## Performance Metrics
