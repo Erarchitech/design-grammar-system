@@ -41,6 +41,12 @@ repository under `apps/revit-mcp`). Its pyRevit half is `startup.py`, `degram_re
 2. Copy the four items above into `C:\pyRevitExtensions\revit-mcp.extension\` (the folder name must
    end in `.extension`).
 3. In Revit: **pyRevit tab, Settings, Custom Extension Directories**, add `C:\pyRevitExtensions`.
+   After the first load, open `%APPDATA%\pyRevit\pyRevit_config.ini` and confirm the section
+   `[revit-mcp.extension]` reads `disabled = false`. If pyRevit wrote `disabled = true`, set it to
+   `false` and reload pyRevit (this happened with installers up to 0.1.5; the extension from 0.1.6 is
+   enabled by default). pyRevit 6.5.3 on the pilot PC runs the **IronPython 3.4** engine (runtime log:
+   "Building on IronPython engine: 342"), so the pyRevit half of the adapter is written for IronPython
+   3.4 and also 2.7: no `async`, f-strings or annotations.
 4. Do **not** install "MCP Server for Revit Python" from the pyRevit extension manager, and remove any
    other extension that registers `/revit_mcp/` routes: it is the unrestricted upstream project and
    it would answer the same route names with write routes.
@@ -146,6 +152,7 @@ other than `ready`/`pinned` is shown neutral.
 | Revit **off** | Close Revit | "Revit isn't responding. Open Revit 2024 with the DeGram pyRevit extension, then refresh." | Start Revit |
 | Revit **setup-incomplete: Routes disabled** | `enabled = false` under `[routes]`, restart Revit | "pyRevit Routes are turned off. Enable Routes in pyRevit settings, restart Revit, then refresh." | Step 3 |
 | Revit **setup-incomplete: extension not loaded** | Remove the extension folder, restart Revit | "The DeGram extension isn't loaded in pyRevit. Follow the install step "pyRevit extension", then reload pyRevit." | Step 2 |
+| Revit **setup-incomplete: extension older than 0.1.6** | Revit runtime log shows "Startup script returned non-zero result for extension: revit-mcp" | The Revit segment «настройка» (setup) | The extension is older than 0.1.6; reinstall it from the 0.1.6 `resources\revit-mcp` (step 2) |
 | Revit **setup-incomplete: routes not loopback** | Set `host = "0.0.0.0"` under `[routes]`, restart Revit | The Revit group is setup-incomplete (reason `ROUTES_NOT_LOOPBACK`) and no read is made; the extension logs that it registered no routes | Set `host = "127.0.0.1"` (step 3) |
 | Revit **setup-incomplete: no document open** | Revit open on the start screen, no project | The group reports no document open; the picker lists none | Open a project |
 | Revit **busy** | Leave a Revit dialog or command open and refresh | "Revit is busy (a command or dialog is open). Finish it in Revit, then retry the request." after at most 30 s | Close the dialog |
