@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 16/17 plans executed
+**Plans**: 16/23 plans executed
 **UI hint**: yes
 
 Plans:
@@ -189,9 +189,32 @@ Plans:
 
 - [x] 1301-17-PLAN.md — DeGram connector in the Connectors tab: user-bound pairing token (dgp_) exchanged for dgd_ (D-25, D-26)
 
+**Gap closure 2026-10-09** (0.1.5 live run on PC1, gaps G-3..G-17, D-29)
+
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + two-PC DGCL-01..07 UAT
+- [ ] 1301-18-PLAN.md — Chat follows the scope profile; credentials-missing copy; locked surfaces quiet; UI-SPEC gap-round amendment (G-3, G-5, G-6, G-7)
+- [ ] 1301-22-PLAN.md — revit-mcp fork: IronPython 3.4 loading, extension enabled by default, text/plain POST bodies committed; CLEAN-INSTALL enable check (G-8..G-12)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [ ] 1301-19-PLAN.md — DeGram copy on failed turns; preview deadlines below the RPC timeout (G-4, G-14)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+
+- [ ] 1301-20-PLAN.md — Purge by project on revoke + visible toast, honest DG-unreachable boot, sign-out entries; D-30 legacy profiles (G-15, G-16, G-17)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+
+- [ ] 1301-21-PLAN.md — One pinned document per bridge (D-29, G-13)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+
+- [ ] 1301-23-PLAN.md — DeGram 0.1.6: owner push, gitlink bumps, build with the committed revit-mcp adapter, install on PC1
+
+**Wave 14** *(blocked on Wave 13 completion)*
+
+- [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + DGCL-01..07 UAT on PC1 (resumes on 0.1.6)
 
 **Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
 
