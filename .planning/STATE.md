@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 20
+current_plan: 21
 status: executing
-stopped_at: "Completed 1301-19-PLAN.md (G-4, G-14: component commit 199ef7cd local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
-last_updated: "2026-10-09T16:48:57.530Z"
+stopped_at: "Completed 1301-20-PLAN.md (G-15, G-16, G-17: component commit 9457d72b local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 21, 23, then plan 16 Task 3 recheck on 0.1.6"
+last_updated: "2026-10-09T17:34:43.503Z"
 last_activity: 2026-10-09
-last_activity_desc: Plan 1301-19 complete (gap closure G-4, G-14: error-path cards, relay error mapping, preview deadlines)
+last_activity_desc: "Plan 1301-20 complete (gap closure G-15, G-16, G-17: purge by project on revoke, honest DG-unreachable boot, sign-out entries)"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 35
-  completed_plans: 23
+  completed_plans: 24
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 20
+Current Plan: 21
 Total Plans in Phase: 23
-Plan: 20 of 23
+Plan: 21 of 23
 Status: Ready to execute
-Last activity: 2026-10-09 — plan 1301-19 complete (G-4, G-14)
-Last Activity Description: Plan 1301-19 complete (gap closure G-4, G-14: error-path cards, relay error mapping, preview deadlines)
+Last activity: 2026-10-09 — plan 1301-20 complete (G-15, G-16, G-17)
+Last Activity Description: Plan 1301-20 complete (gap closure G-15, G-16, G-17: purge by project on revoke, honest DG-unreachable boot, sign-out entries)
 
 ## Deferred Verification
 
@@ -178,6 +178,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P18 | 1h40m | 4 tasks | 21 files |
 | Phase 1301 P22 | 15m | 2 tasks | 29 files |
 | Phase 1301 P19 | 75min | 3 tasks | 22 files |
+| Phase 1301 P20 | 1h45m | 5 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -520,6 +521,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase 1301-18]: followScopeRoute moves the chat's gateway route to the ready scope profile before any chat/session list/send (wipe lists first); route-mismatch send guard; CREDENTIALS_MISSING re-handoff once per scope open
 - [Phase 1301-19]: Variant degram failed-turn card shows only DeGram outcome copy; stock card actions and raw Details hidden by six stock-error-* ids
 - [Phase 1301-19]: Preview deadlines (Revit 20 s, GH 20 s shared budget, rules 15 s) stay below PREVIEW_RPC_TIMEOUT_MS 45 s; RPC timeout is PREVIEW_TIMEOUT, only gateway transport is DG_UNAVAILABLE
+- [Phase 1301-20]: D-30 cleanup keeps the signed-in user's current memberships (back-filled) and deletes the other manifest-less scope profiles once; unreachable /auth/me at start loads no page and Retry goes through runtime.retryDg()
 
 ### Research Flags (carry into planning)
 
@@ -615,8 +617,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-09T16:48:57.509Z
-Stopped at: Completed 1301-19-PLAN.md (G-4, G-14: component commit 199ef7cd local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6
+Last session: 2026-10-09T17:34:43.482Z
+Stopped at: Completed 1301-20-PLAN.md (G-15, G-16, G-17: component commit 9457d72b local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plans 21, 23, then plan 16 Task 3 recheck on 0.1.6
 Resume file: None
 
 ## Performance Metrics
