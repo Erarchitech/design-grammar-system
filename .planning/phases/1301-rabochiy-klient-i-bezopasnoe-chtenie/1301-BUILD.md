@@ -400,3 +400,36 @@ SHA-256 `9081563b4852effb301466bc111a257d7ef3631da0d23a92baa0d900365ca348`, exe 
 unpacked 1,619 MB in 32,131 files. Inside: `app.asar.unpacked\dist\assets\index-*.css` carries
 `.degram-mark{--pulse:3.6s;--ring-lag:.32s;...}` and the renderer bundle the `degram-mark__dot` groups.
 Not installed; owner runs `win-unpacked\DeGram.exe`.
+
+## 0.1.6 build: gap round G-3..G-17 and committed revit-mcp adapter (2026-10-09)
+
+Gap plans 18-22 shipped as component commits on the fork (`d0d69691`, `199ef7cd`, `9457d72b`, `02993674`, version
+`c3e8f2e8`) and revit-mcp `d8f0f24`; the owner asked for the push on 2026-10-09 and both `degram/phase-1301` branches
+were pushed (degram `2da8a2aa..c3e8f2e8`, revit-mcp `937384f..d8f0f24`). Framework gitlinks bumped, `workspace.py verify`
+exit 0. Tests before the build: degram-build + isolation 40/40, typecheck, lint 0 errors, electron 218/218, ui
+`src/degram` 211/211, pytest `tests/degram` 400/400.
+
+Adapter source: `DEGRAM_REVIT_MCP_SOURCE='D:\dgb\revit-mcp-src'` added to `D:\dgb\run-build.sh` (outside the repo). It is a
+`--no-hardlinks` clone of `apps/revit-mcp` checked out detached at `d8f0f24`, clean; `D:\dgb\revit-mcp` (stale 0.1.5
+adapter) was left untouched. 0.1.0-0.1.5 bundled that stale adapter.
+
+Run 1 (18:33Z) was stopped by the orchestrator: the first edit of `run-build.sh` had put a carriage return into the
+adapter path. The script was rewritten, the 66 icon files the interrupted `flavored_assets` step had left modified were
+restored with `git checkout -- apps/desktop/assets` in the throwaway clone (clean at `c3e8f2e8` again), the ReadOnly flag
+on `build\agent-payload` was cleared, and the build re-run.
+
+Run 2 (18:43-18:55Z, exit 0, clean clone at `c3e8f2e8`): `DeGram-Setup-0.1.6.exe`, 490,528,570 bytes,
+SHA-256 `39C9EFCE5E472FDF1BA34A1FD8959BC55C52351E363646CAB89C058AA721F018`, exe ProductVersion 0.1.6.0,
+unpacked 1,698,015,532 bytes (1,619 MB class) in 32,131 files. Installer: `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.6.exe`.
+
+Artifact checks on `release\win-unpacked` (all pass):
+
+| Check | Result |
+|---|---|
+| `resources\revit-mcp\extension.json` has `"default_enabled": "True"` | pass |
+| `resources\revit-mcp\main.py` contains `json_body` | pass |
+| `resources\revit-mcp\revit_mcp\views.py` contains `urllib.parse` | pass |
+| `app.asar.unpacked\dist\electron-main.mjs` contains `com.erarchitech.degram` | pass |
+| no `tests\` directory under `resources\revit-mcp` | pass |
+
+Not installed and not launched. Live recheck of the gap rows runs in plan 16 Task 3 after the owner installs.
