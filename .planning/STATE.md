@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 14
+current_plan: 19
 status: executing
-stopped_at: "1301-16 Task 3 live UAT on PC1 run 2026-10-08/09: DGCL-01/03 pass, DGCL-02 fail (G-7 critical), 04-07 partial; gaps G-3..G-17 + D-29 recorded in 1301-UAT.md; fork revit-mcp G-8..G-12 fixes uncommitted; gap plans 18-23 created 2026-10-09 (plan 16 moved to wave 14); next: /gsd-execute-phase 1301 --gaps-only, waves 9-13 (plans 18+22, 19, 20, 21, 23), then plan 16 Task 3 recheck on 0.1.6"
-last_updated: "2026-10-09T16:01:35.420Z"
+stopped_at: "Completed 1301-18-PLAN.md (G-7/G-3/G-5/G-6: chat follows the scope profile; component commit d0d69691 local on degram/phase-1301, not pushed, gitlink not bumped); next: remaining gap plans 22, 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
+last_updated: "2026-10-09T16:25:49.352Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 1301 planning complete — 23 plans ready
+last_activity_desc: Plan 1301-18 complete (gap closure G-3, G-5, G-6, G-7)
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 29
-  completed_plans: 20
+  total_plans: 35
+  completed_plans: 21
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 14
+Current Plan: 19
 Total Plans in Phase: 23
-Plan: 14 of 16
+Plan: 19 of 23
 Status: Ready to execute
-Last activity: 2026-10-09 — gap-closure plans 18-23 for G-3..G-17 and D-29
-Last Activity Description: Phase 1301 planning complete — 23 plans ready
+Last activity: 2026-10-09 — plan 1301-18 complete (G-3, G-5, G-6, G-7)
+Last Activity Description: Plan 1301-18 complete (gap closure G-3, G-5, G-6, G-7)
 
 ## Deferred Verification
 
@@ -175,6 +175,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P12 | 45min | 3 tasks | 22 files |
 | Phase 1301 P13 | two sessions (~3h) | 2 tasks | 60 files |
 | Phase 1301 P14 | two sessions | 2 tasks | 29 files |
+| Phase 1301 P18 | 1h40m | 4 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -514,6 +515,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-13: hidden upstream surfaces are gated at each entry point through hidden-surfaces.ts (isSurfaceHidden), pinned by a source-audit test because the upstream shell cannot render offline; profile switcher/rail and shared-metrics consent left open for plan 15
 - [Phase ?]: 1301-13: setDgMode also shows the DG page when a revocation blanked the view (electron ipc.ts); DG view bounds are withheld until the page painted
 - [Phase ?]: 1301-14: stale preview/scope never sends; whole-definition consent is bound to the payload on the card; stock transcript Retry hidden in degram (stock-error-retry); turn events bound via startTurnEventSync on the $gateway atom
+- [Phase 1301-18]: followScopeRoute moves the chat's gateway route to the ready scope profile before any chat/session list/send (wipe lists first); route-mismatch send guard; CREDENTIALS_MISSING re-handoff once per scope open
 
 ### Research Flags (carry into planning)
 
@@ -609,9 +611,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-09T15:41:40.097Z
-Stopped at: 1301-16 Task 3 live UAT on PC1 run 2026-10-08/09: DGCL-01/03 pass, DGCL-02 fail (G-7 critical), 04-07 partial; gaps G-3..G-17 + D-29 recorded in 1301-UAT.md; fork revit-mcp G-8..G-12 fixes uncommitted; next: gap plans for 0.1.6
-Resume file: .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-UAT.md
+Last session: 2026-10-09T16:25:49.331Z
+Stopped at: Completed 1301-18-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
