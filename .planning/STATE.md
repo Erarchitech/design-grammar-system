@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 23
+current_plan: 16
 status: executing
-stopped_at: "Completed 1301-21-PLAN.md (G-13, D-29: component commit 02993674 local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plan 23, then plan 16 Task 3 recheck on 0.1.6"
+stopped_at: "Completed 1301-23-PLAN.md (0.1.6 pushed, gitlinks bumped, built c3e8f2e8, installed on PC1, pyRevit extension verified); next: plan 16 Task 3 live recheck on 0.1.6 (non-gap, run without --gaps-only)"
 last_updated: "2026-10-09T18:24:10.755Z"
 last_activity: 2026-10-09
-last_activity_desc: "Plan 1301-21 complete (gap closure G-13, D-29: one pinned document per bridge, two-document payload, per-bridge send gating, composer-focus re-read)"
+last_activity_desc: "Plan 1301-23 complete (DeGram 0.1.6: forks pushed, gitlinks bumped, installer built and installed on PC1)"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 35
-  completed_plans: 25
+  completed_plans: 26
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 23
+Current Plan: 16
 Total Plans in Phase: 23
-Plan: 23 of 23
+Plan: 16 of 23 (gap plans 18-23 done)
 Status: Ready to execute
-Last activity: 2026-10-09 — plan 1301-21 complete (G-13, D-29)
-Last Activity Description: Plan 1301-21 complete (gap closure G-13, D-29: one pinned document per bridge, two-document payload, per-bridge send gating, composer-focus re-read)
+Last activity: 2026-10-09 — plan 1301-23 complete (DeGram 0.1.6 shipped and installed)
+Last Activity Description: Plan 1301-23 complete (forks pushed, gitlinks bumped, 0.1.6 built and installed on PC1; live recheck is plan 16 Task 3)
 
 ## Deferred Verification
 
