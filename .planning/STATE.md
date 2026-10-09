@@ -6,15 +6,15 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 19
 status: executing
-stopped_at: "Completed 1301-18-PLAN.md (G-7/G-3/G-5/G-6: chat follows the scope profile; component commit d0d69691 local on degram/phase-1301, not pushed, gitlink not bumped); next: remaining gap plans 22, 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
-last_updated: "2026-10-09T16:25:49.352Z"
+stopped_at: "Completed 1301-22-PLAN.md (G-8..G-12: fork commit d8f0f24 local on degram/phase-1301, not pushed, gitlink not bumped; CLEAN-INSTALL ae7909b); next: gap plans 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6"
+last_updated: "2026-10-09T16:28:13.597Z"
 last_activity: 2026-10-09
-last_activity_desc: Plan 1301-18 complete (gap closure G-3, G-5, G-6, G-7)
+last_activity_desc: Plan 1301-22 complete (gap closure G-8..G-12, revit-mcp fork fixes committed)
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 35
-  completed_plans: 21
+  completed_plans: 22
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -41,8 +41,8 @@ Current Plan: 19
 Total Plans in Phase: 23
 Plan: 19 of 23
 Status: Ready to execute
-Last activity: 2026-10-09 — plan 1301-18 complete (G-3, G-5, G-6, G-7)
-Last Activity Description: Plan 1301-18 complete (gap closure G-3, G-5, G-6, G-7)
+Last activity: 2026-10-09 — plan 1301-22 complete (G-8..G-12)
+Last Activity Description: Plan 1301-22 complete (gap closure G-8..G-12, revit-mcp fork fixes committed)
 
 ## Deferred Verification
 
@@ -176,6 +176,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P13 | two sessions (~3h) | 2 tasks | 60 files |
 | Phase 1301 P14 | two sessions | 2 tasks | 29 files |
 | Phase 1301 P18 | 1h40m | 4 tasks | 21 files |
+| Phase 1301 P22 | 15m | 2 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -611,8 +612,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-09T16:25:49.331Z
-Stopped at: Completed 1301-18-PLAN.md
+Last session: 2026-10-09T16:28:13.576Z
+Stopped at: Completed 1301-22-PLAN.md (G-8..G-12: fork commit d8f0f24 local on degram/phase-1301, not pushed, gitlink not bumped; CLEAN-INSTALL ae7909b); next: gap plans 19, 20, 21, 23, then plan 16 Task 3 recheck on 0.1.6
 Resume file: None
 
 ## Performance Metrics

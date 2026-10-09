@@ -145,7 +145,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 17/23 plans executed
+**Plans**: 18/23 plans executed
 **UI hint**: yes
 
 Plans:
@@ -194,7 +194,7 @@ Plans:
 **Wave 9** *(blocked on Wave 8 completion)*
 
 - [x] 1301-18-PLAN.md — Chat follows the scope profile; credentials-missing copy; locked surfaces quiet; UI-SPEC gap-round amendment (G-3, G-5, G-6, G-7)
-- [ ] 1301-22-PLAN.md — revit-mcp fork: IronPython 3.4 loading, extension enabled by default, text/plain POST bodies committed; CLEAN-INSTALL enable check (G-8..G-12)
+- [x] 1301-22-PLAN.md — revit-mcp fork: IronPython 3.4 loading, extension enabled by default, text/plain POST bodies committed; CLEAN-INSTALL enable check (G-8..G-12)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
@@ -358,7 +358,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 17/23 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 18/23 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
