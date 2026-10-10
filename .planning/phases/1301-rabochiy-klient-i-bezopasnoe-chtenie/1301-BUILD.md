@@ -433,3 +433,35 @@ Artifact checks on `release\win-unpacked` (all pass):
 | no `tests\` directory under `resources\revit-mcp` | pass |
 
 Not installed and not launched. Live recheck of the gap rows runs in plan 16 Task 3 after the owner installs.
+
+## 0.1.7 build: gap round G-18..G-24, D-31, D-33..D-35 (2026-10-10)
+
+Component `degram/phase-1301` was published at `d2054ae59c0bad9d5bcf7feac3926eeda62f4444`; the framework gitlink was updated to that remote commit before the build. `apps/revit-mcp` remained at `d8f0f24d2d29c8115f1e21b6573f52a360b34cad`. `python tools/degram/workspace.py verify` passed on the exact pair.
+
+The clean no-hardlinks build checkout `D:\dgb\src` was detached at `d2054ae59c0bad9d5bcf7feac3926eeda62f4444`; `D:\dgb\revit-mcp-src` was clean at the identical `apps/revit-mcp` gitlink. The isolated driver retained `DEGRAM_REVIT_MCP_SOURCE='D:\dgb\revit-mcp-src'` and used a scrubbed Hermes environment. The build initially exposed Windows read-only payload and frontend publication races; permanent published component fixes reset the staged payload from a clean root and retry bounded transient frontend-directory rename failures. The successful build completed at 15:12:57Z.
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.7.exe` |
+| Installer size | 490,533,308 bytes |
+| Installer SHA-256 | `2825491ced4bd045cf16179d09b8ca70490ab906393957993db74fabdbcb5b7d` |
+| Component commit / gitlink | `d2054ae59c0bad9d5bcf7feac3926eeda62f4444` |
+| `revit-mcp` commit | `d8f0f24d2d29c8115f1e21b6573f52a360b34cad` |
+| ProductVersion | `0.1.7` |
+| Unpacked path | `D:\dgb\src\apps\desktop\release\win-unpacked` |
+| Unpacked payload | 1,698,030,663 bytes in 32,136 files |
+| Adapter source | `D:\dgb\revit-mcp-src` via `DEGRAM_REVIT_MCP_SOURCE` |
+
+Artifact checks — all passed:
+
+| Check | Result |
+|---|---|
+| `resources\revit-mcp\extension.json` contains `"default_enabled": "True"` | pass |
+| `resources\revit-mcp\main.py` contains `json_body` | pass |
+| `resources\revit-mcp\revit_mcp\views.py` contains `urllib.parse` | pass |
+| `app.asar.unpacked\dist\electron-main.mjs` contains `com.erarchitech.degram` | pass |
+| `app.asar.unpacked\dist\electron-main.mjs` contains `degram-select` | pass |
+| `app.asar.unpacked\dist\electron-main.mjs` contains `host=degram` | pass |
+| `resources\revit-mcp\tests` is absent | pass |
+
+The installer was built only. It was not installed or launched; installation and live UAT remain the owner checkpoint in plan 1301-28 Task 5.
