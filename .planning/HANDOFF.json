@@ -1,101 +1,56 @@
 {
   "version": "1.0",
-  "timestamp": "2026-09-30T21:53:29+01:00",
-  "context": "research",
-  "phase": null,
-  "phase_name": "DeGram design approved",
+  "timestamp": "2026-10-10T18:40:22Z",
+  "context": "phase",
+  "phase": "1302",
+  "phase_name": "istochnik-slovar-i-utverzhdennaya-redaktsiya",
   "phase_dir": null,
   "plan": null,
   "task": null,
-  "status": "paused",
+  "status": "paused_before_planning",
   "completed_tasks": [
     {
-      "id": 1,
-      "name": "Integration research and general plan",
-      "status": "done"
-    },
-    {
-      "id": 2,
-      "name": "RU/EN process diagrams and verification",
-      "status": "done"
-    },
-    {
-      "id": 3,
-      "name": "Owner approval",
-      "status": "done"
+      "id": "1301-28",
+      "name": "DeGram 0.1.7 build and owner installation",
+      "status": "done",
+      "commit": "418cfc4"
     }
   ],
   "remaining_tasks": [
     {
-      "id": 4,
-      "name": "Formalize requirements, roadmap and cross-milestone ownership",
+      "id": "1302-start",
+      "name": "Discuss and plan Phase 1302",
       "status": "not_started"
     }
   ],
-  "blockers": [],
+  "blockers": [
+    {
+      "description": "Phase 1301 has no live-acceptance exit evidence because the owner explicitly deferred the 0.1.7 live recheck.",
+      "type": "human_action",
+      "workaround": "Resume only on an explicit owner request; use the 0.1.7 rows in 1301-UAT.md. Phase 1302 may begin independently."
+    }
+  ],
   "async_jobs": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {
+      "action": "Run the deferred DeGram 0.1.7 live recheck only if the owner explicitly requests it.",
+      "context": "The recheck is not accepted or silently closed.",
+      "blocking": false
+    }
+  ],
   "decisions": [
     {
-      "decision": "Company classes; project rules; authorized copy/adapt/validate/approve lessons learned",
-      "rationale": "Reuse without global activation"
+      "decision": "Skip and defer the DeGram 0.1.7 live recheck while moving to Phase 1302.",
+      "rationale": "Explicit owner decision on 2026-10-10; it does not establish DGCL acceptance.",
+      "phase": "1301"
     }
   ],
   "uncommitted_files": [
-    " M .planning/ROADMAP.md",
-    " M .planning/STATE.md",
-    " M CLAUDE.md",
-    " M DG/src/DG.Core/Contracts/EvidenceEnvelope.cs",
-    " M DG/src/DG.Core/Contracts/EvidenceEnvelopeFactory.cs",
-    " M DG/src/DG.Core/Data/Neo4jValidGraphRepository.cs",
-    " M DG/src/DG.Core/Models/RuleEvaluationResult.cs",
-    " M DG/src/DG.Core/Models/ValidationPublishEntity.cs",
-    " M DG/src/DG.Core/Models/ValidationPublishRuleResult.cs",
-    " M DG/src/DG.Core/Validation/RuleEvaluator.cs",
-    " M DG/src/DG.Core/Validation/ValidationPublishPackageBuilder.cs",
-    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.deps.json",
-    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.dll",
-    " M DG/src/DG.Core/bin/Debug/net9.0/DG.Core.pdb",
-    " M DG/src/DG.Core/bin/Release/net7.0/DG.Core.dll",
-    " M DG/src/DG.Core/bin/Release/net7.0/DG.Core.pdb",
-    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.deps.json",
-    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.dll",
-    " M DG/src/DG.Core/bin/Release/net9.0/DG.Core.pdb",
-    " M DG/src/DG.Core/obj/DG.Core.csproj.nuget.dgspec.json",
-    " M DG/src/DG.Core/obj/DG.Core.csproj.nuget.g.props",
-    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.AssemblyInfo.cs",
-    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.AssemblyInfoInputs.cache",
-    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
-    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.GlobalUsings.g.cs",
-    " M DG/src/DG.Core/obj/Debug/net7.0/DG.Core.assets.cache",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.AssemblyInfo.cs",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.AssemblyInfoInputs.cache",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.GlobalUsings.g.cs",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.assets.cache",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.csproj.CoreCompileInputs.cache",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.pdb",
-    " M DG/src/DG.Core/obj/Debug/net9.0/DG.Core.sourcelink.json",
-    " M DG/src/DG.Core/obj/Debug/net9.0/ref/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Debug/net9.0/refint/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.AssemblyInfo.cs",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.AssemblyInfoInputs.cache",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.GeneratedMSBuildEditorConfig.editorconfig",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.GlobalUsings.g.cs",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.assets.cache",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.csproj.CoreCompileInputs.cache",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.pdb",
-    " M DG/src/DG.Core/obj/Release/net7.0/DG.Core.sourcelink.json",
-    " M DG/src/DG.Core/obj/Release/net7.0/ref/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Release/net7.0/refint/DG.Core.dll",
-    " M DG/src/DG.Core/obj/Release/net9.0/DG.Core.AssemblyInfo.cs",
-    " M DG/src/DG.Core/obj/Release/net9.0/DG.Core.AssemblyInfoInputs.cache"
+    "Workspace has 2,118 uncommitted entries; it is shared and extremely dirty. Commit only explicit session paths; never use git add -A."
   ],
-  "uncommitted_files_total": 1478,
-  "uncommitted_files_elided": 1428,
-  "snapshot_note": "Measured before session commit. Unrelated work remains; re-run status on resume.",
-  "next_action": "Read approved decision and session note, formalize DeGram requirements and roadmap.",
-  "context_notes": "STATE: v12.0 / 1205.1 verifying. Do not close or switch milestone automatically. Design and general plan approved; implementation not accepted."
+  "uncommitted_files_total": 2118,
+  "uncommitted_files_elided": 2117,
+  "snapshot_note": "Measured on 2026-10-10. The working tree contains unrelated parallel work; re-run git status before acting.",
+  "next_action": "Start Phase 1302 with /gsd-discuss-phase 1302 or the applicable Phase 1302 discovery workflow. Read ROADMAP.md §Phase 1302, REQUIREMENTS.md DGKN-01..10, and 1301 UAT/deferral boundaries first.",
+  "context_notes": "0.1.7 component commit d2054ae59c0bad9d5bcf7feac3926eeda62f4444 is published; installer SHA-256 is 2825491ced4bd045cf16179d09b8ca70490ab906393957993db74fabdbcb5b7d. Installed executable reports 0.1.7.0."
 }

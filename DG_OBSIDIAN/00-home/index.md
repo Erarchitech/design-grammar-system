@@ -33,6 +33,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Decisions
+- [[knowledge/decisions/DeGram 0.1.7 live recheck deferred while Phase 1302 begins|DeGram 0.1.7 live recheck is deferred while Phase 1302 begins]] (2026-10-10)
 - [[knowledge/decisions/DeGram pins one document per bridge|DeGram pins one document per bridge: Revit model and GH definition together (D-29)]] (2026-10-09)
 - [[knowledge/decisions/DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once|DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once (D-30)]] (2026-10-09)
 - [[knowledge/decisions/Landing opening sequence and Michroma display face|Main window opens with a clockwise current, nodes one by one, Michroma hero (owner-tuned)]] (2026-10-08)

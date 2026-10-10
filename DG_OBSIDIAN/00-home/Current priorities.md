@@ -7,6 +7,10 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1301 — DeGram 0.1.7 built and installed; live recheck deferred by owner** (2026-10-10). Component `d2054ae59c0bad9d5bcf7feac3926eeda62f4444` is published and the framework gitlink is aligned; `workspace.py verify` passes. Installer `DeGram-Setup-0.1.7.exe` SHA-256 `2825491ced4bd045cf16179d09b8ca70490ab906393957993db74fabdbcb5b7d` is installed on PC1 (`DeGram.exe` ProductVersion `0.1.7.0`). The owner explicitly deferred the remaining live recheck. No unobserved DGCL row is accepted and Phase 1301 retains no live-acceptance exit evidence.
+   - **Next:** begin Phase 1302 independently. Resume 1301 UAT only on explicit owner request, starting with the 0.1.7 recheck rows in `1301-UAT.md`.
+   - See [[sessions/2026-10-10 Phase 1301 gap closure — DeGram 0.1.7 built, installed, live recheck deferred|session]] and [[knowledge/decisions/DeGram 0.1.7 live recheck deferred while Phase 1302 begins|decision]].
+
 0. **v13.0 Phase 1301 — gap plans 18-23 EXECUTED; DeGram 0.1.6 pushed, built and installed on PC1** (2026-10-09). Gaps G-3..G-17 + D-29 closed in code (degram `d0d69691`..`02993674`, revit-mcp `d8f0f24`), D-30 = back-fill + one-time cleanup (owner). Both forks pushed on the owner's request, gitlinks bumped (`workspace.py verify` exit 0), installer `DeGram-Setup-0.1.6.exe` SHA-256 `39C9EFCE…F018`, pyRevit extension replaced and verified. All behavioural rows are **unverified live**; no DGCL requirement marked complete.
    - **Next:** plan 16 Task 3 (`/gsd-execute-phase 1301`, no `--gaps-only`): live recheck of the gap rows on PC1 with 0.1.6 incl. D-30 cleanup observation; then phase verification. Owner: revoke pairing `DeGram_UAT_matrix`, restore own pyRevit extension.
    - Supersedes the two 2026-10-09 entries below. See [[sessions/2026-10-09 Phase 1301 gap plans 18-23 executed and DeGram 0.1.6 shipped|session]], [[knowledge/decisions/DeGram 0.1.6 back-fills legacy profile manifests and cleans the rest once|D-30]].
