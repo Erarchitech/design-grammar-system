@@ -96,10 +96,10 @@ const easeOut = (v) => 1 - Math.pow(1 - clamp01(v), 3);
 const wrap = (a) => ((a % TAU) + TAU) % TAU;
 
 // Peak envelope at angle a; tt drives the per-peak breathing.
-function envAt(a, tt) {
+function envAt(a, tt, anchors = ANCH) {
   let e = RING.floor;
-  for (let k = 0; k < ANCH.length; k++) {
-    const an = ANCH[k];
+  for (let k = 0; k < anchors.length; k++) {
+    const an = anchors[k];
     const d = angDiff(a, an.ang);
     const sg = an.sig * RING.peakWidth;
     const amp = an.amp * RING.peakGain * (1 + RING.breathing * Math.sin(tt * 0.5 + k * 1.9));
@@ -112,8 +112,9 @@ export default class LandingEngine {
   /**
    * @param els {{canvas, heroTitle, heroL1, heroL2, heroBeneath, labels: Record<'graph'|'model'|'projects'|'aiengine'|'connectors'|'reasoner'|'apidocs', HTMLElement>, hint, heroForm}}
    */
-  constructor(els) {
+  constructor(els, regions = ANCH) {
     this.els = els;
+    this.anchors = regions;
     this.authOpen = false;
     this.visible = true;
     this.heroPh = "hidden";
@@ -179,7 +180,7 @@ export default class LandingEngine {
   /* ---------------- particle ring ---------------- */
   initParticles() {
     let envMax = 0;
-    for (let i = 0; i < 720; i++) envMax = Math.max(envMax, envAt((i / 720) * TAU, 0));
+    for (let i = 0; i < 720; i++) envMax = Math.max(envMax, envAt((i / 720) * TAU, 0, this.anchors));
     this._envMax = envMax;
     const R = rng(7);
     this._parts = new Array(RING.count);
@@ -188,7 +189,7 @@ export default class LandingEngine {
       let a = 0;
       for (let tries = 0; tries < 60; tries++) {
         a = R() * TAU;
-        const w = 1 - RING.peakDensity + RING.peakDensity * (envAt(a, 0) / envMax);
+        const w = 1 - RING.peakDensity + RING.peakDensity * (envAt(a, 0, this.anchors) / envMax);
         if (R() < w) break;
       }
       const wide = R() < 0.18;
@@ -213,7 +214,7 @@ export default class LandingEngine {
       R = Math.min(this._vw, this._vh) * 0.365;
     this._lls = [];
     this.pk = {};
-    for (const an of ANCH) {
+    for (const an of this.anchors) {
       const el = this.els.labels[an.key];
       const out = an.out * RING.leaderLen;
       const dx = Math.cos(an.ang),
@@ -236,7 +237,7 @@ export default class LandingEngine {
 
   /* ---------------- opening sequence ---------------- */
   playIntro() {
-    this._intro = { t0: performance.now() / 1000, fired: ANCH.map(() => null) };
+    this._intro = { t0: performance.now() / 1000, fired: this.anchors.map(() => null) };
     this.setHeroPhase("hidden");
   }
   introTimes() {
@@ -271,7 +272,7 @@ export default class LandingEngine {
 
     // envelope lookup for this frame (breathing makes it time-dependent)
     const env = this._env;
-    for (let b = 0; b < ENV_BINS; b++) env[b] = envAt((b / ENV_BINS) * TAU, tt);
+    for (let b = 0; b < ENV_BINS; b++) env[b] = envAt((b / ENV_BINS) * TAU, tt, this.anchors);
     const span = Math.max(1e-6, this._envMax - RING.floor);
 
     ctx.fillStyle = TH.ink;

@@ -3,11 +3,13 @@ import LandingEngine from "./landingEngine.js";
 import { Button, Input } from "../components/index.js";
 import * as auth from "../lib/auth.js";
 import "./landing.css";
+import { isDegramHost } from "../lib/hostMode.js";
 
 // The landing experience: particle ring, materialising hero title, region
 // callouts, and the inline auth card that rises through the particles.
 // `active` gates canvas drawing; `onFly(region, originPoint)` navigates.
 export default function LandingLayer({ active, onFly, user, project, onUser }) {
+  const degramHost = isDegramHost();
   const canvasRef = React.useRef(null);
   const heroTitleRef = React.useRef(null);
   const heroL1Ref = React.useRef(null);
@@ -39,7 +41,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
       .authOptions()
       .then((o) => setCanRegister(o.selfRegistration === true))
       .catch(() => setCanRegister(false));
-  }, []);
+  }, [degramHost]);
   React.useEffect(() => {
     refreshAuthOptions();
   }, [refreshAuthOptions]);
@@ -64,12 +66,16 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
         },
         hint: hintRef.current
       }
-    );
+    , degramHost ? [
+      { key: "graph", ang: Math.PI * 1.06, amp: 0.95, sig: 0.3, out: 62 },
+      { key: "model", ang: -0.2, amp: 1.0, sig: 0.26, out: 62 },
+      { key: "projects", ang: Math.PI * 0.62, amp: 0.72, sig: 0.22, out: 54 }
+    ] : undefined);
     engineRef.current = engine;
     if (import.meta.env.DEV) window.__dgl = engine;
     engine.start();
     return () => engine.stop();
-  }, []);
+  }, [degramHost]);
 
   // Draw while the layer is on screen; keep drawing 620ms into a fly-away
   // so the ring is visible through the scale transition.
@@ -304,18 +310,20 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
       <div ref={labelProjectsRef} className="dgl-region-label" onClick={() => fly("projects")}>
         Projects.
       </div>
-      <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>
-        AI Engine
-      </div>
-      <div ref={labelConnectorsRef} className="dgl-region-label" onClick={() => fly("connectors")}>
-        Connectors
-      </div>
-      <div ref={labelReasonerRef} className="dgl-region-label" onClick={() => fly("reasoner")}>
-        Reasoner
-      </div>
-      <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
-        DG API Docs
-      </div>
+{!degramHost && <>
+        <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>
+          AI Engine
+        </div>
+        <div ref={labelConnectorsRef} className="dgl-region-label" onClick={() => fly("connectors")}>
+          Connectors
+        </div>
+        <div ref={labelReasonerRef} className="dgl-region-label" onClick={() => fly("reasoner")}>
+          Reasoner
+        </div>
+        <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
+          DG API Docs
+        </div>
+      </>}
       <div ref={hintRef} className="dgl-hint">
         Select a region
       </div>

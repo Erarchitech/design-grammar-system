@@ -10,6 +10,7 @@ import ApiDocsScreen from "./screens/ApiDocsScreen.jsx";
 import SpecimenPage from "./specimen/SpecimenPage.jsx";
 import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } from "./lib/auth.js";
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
+import { announceProject, isRegionAllowed } from "./lib/hostMode.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
@@ -138,6 +139,7 @@ export default function App() {
       }
     }
     setProject(name);
+    announceProject(name);
   }, []);
 
   React.useEffect(() => {
@@ -148,12 +150,17 @@ export default function App() {
   // fly(region, originPoint): when leaving the landing via a region callout,
   // the landing layer zooms toward the callout's ring point.
   const fly = React.useCallback((next, origin) => {
+    if (!isRegionAllowed(next)) return;
     if (origin && landingLayerRef.current) {
       landingLayerRef.current.style.transformOrigin = origin[0] + "px " + origin[1] + "px";
     }
     setRegion(next);
   }, []);
   const goLanding = React.useCallback(() => setRegion("landing"), []);
+
+  React.useEffect(() => {
+    if (!isRegionAllowed(region)) setRegion("landing");
+  }, [region]);
 
   React.useEffect(() => {
     const onKey = (e) => {

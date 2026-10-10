@@ -4,7 +4,12 @@ Open the existing DG web origin at **`/#degram`** after the normal ui-v2 build i
 
 `main.jsx` chooses this root before dynamically importing the normal App. Switching between this hash and normal DG reloads the entry, rather than keeping hidden App layers mounted. `ReadOnlyGraph` reuses `buildRings`, `GraphEngine` and `PropertiesTable` (`editable=false`). Nodes without a graph layer remain inspectable in the node list without inventing a sixth graph. `GraphEngine.start({thinkingAssets:false})` skips an unused animation asset; normal callers retain the previous default.
 
-## Safety scope
+## Host mode (DeGram)
+
+Opening the normal DG entry with `?host=degram` is a UI-only filter for the DeGram host. It keeps only **Graph Viewer**, **Model Viewer**, and **Projects** on the landing ring. Connectors, DG API Docs, Reasoner, and AI Engine are not rendered, and navigation to those regions is refused. The flag grants no API, token, storage, or server capability; normal browser access without the flag is unchanged.
+
+When a signed-in user chooses a non-empty project name of at most 64 characters, host mode briefly announces `#degram-select=<url-encoded name>` and clears the hash with `history.replaceState`. The DeGram host must validate that untrusted name against the user's memberships before opening it. The Projects region continues to use only the existing `GET /projects` result.
+
 
 - No graph mutations, natural-language query/ingestion, history writes, model viewer token requests, connectors, CAD/files, LLM settings, provider/model/key inputs or navigation to normal screens.
 - Display projection strips provider/model/credential metadata recursively, including JSON-encoded properties, before rendering. This is **not server-side redaction** and not a promise about arbitrary prose containing a provider name.
