@@ -343,3 +343,47 @@ Component inventory rows "Scope strip" and "Context card" are superseded where t
 - [x] Dimension 6 Registry Safety: PASS
 
 **Approval:** approved 2026-10-04 — inline check: 6/6 PASS, no FLAGs after two copy fixes (Send label, unknown-reset limit copy). Check was not independent of the author.
+
+---
+
+## Amendment 2026-10-10 (0.1.7 gap round)
+
+This amendment is authoritative for the 0.1.7 gap round. Where it conflicts with the earlier D-14/D-19 singular-picker or separate-picker-screen wording, this amendment supersedes that wording.
+
+### D-33 — one start screen
+
+DeGram has one start screen: the wordmark and DG view are present together. Before sign-in it shows the DG login; after sign-in it shows the Projects region in that same view. If the signed-in user has no pairing, the pairing-token field is docked below the view. Notices render above the view. There is no second «Выберите проект» screen and no standalone «Подключение к DG» card/screen. While a project is open, the scope-strip project switcher remains the project-switch surface.
+
+### D-34 — hide management menus in DeGram
+
+The embedded DeGram DG surface hides the **Connectors**, **DG API Docs**, **Reasoner**, and **AI Engine** menu entries. Pairing tokens are created on the Connectors tab in DG opened in a browser, not inside the DeGram view.
+
+### D-35 — revoked pairing
+
+When an exchange or the start-time probe finds a revoked pairing, the start screen retains the pairing status `revoked`, focuses the token field, and displays:
+
+> Токен сопряжения отозван. Создайте новый на вкладке Connectors в DG (в браузере) и вставьте его ниже.
+
+The same notice is used whether the refusal occurs during a request or during the once-per-start probe. It never describes a revoked pairing as an expired token being renewed.
+
+### G-20 — access-revoke notice
+
+The following notice remains on the start screen until the user dismisses it or chooses a project:
+
+> У вас больше нет доступа к {project}. Его данные и локальная история чата удалены с этого компьютера.
+
+### D-31 — scoped sessions
+
+The session list contains only sessions belonging to the active scope. Its empty state is «В этом проекте пока нет сеансов.» No session belonging to another scope is displayed or reachable there.
+
+### G-24 — model request limit copy
+
+Rate-limit outcomes use model-limit wording without naming a provider or model and without saying «для проекта»:
+
+- Known reset: «Лимит запросов к модели исчерпан. Повторите после {time} или обратитесь к оператору DG.»
+- Unknown reset: «Лимит запросов к модели исчерпан. Повторите позже или уточните у оператора DG, когда лимит обновится.»
+
+### G-18 — backend start failure
+
+If the agent backend cannot start, DeGram stays on the start screen rather than silently returning to the picker. It shows «Не удалось запустить агента для проекта {project}.» and offers «Повторить запрос».
+
