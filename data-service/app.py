@@ -4751,8 +4751,8 @@ def _check_project_name(project: str) -> None:
 
 @router.get("/projects/{project}/degram-policy")
 def get_degram_policy(project: str):
-    """Admin-only (route policy): the project's provider-export policy (D-17).
-    Deny by default: an unset project reads as both flags false."""
+    """Admin-only (route policy): the project's provider-export policy (D-17, D-32).
+    An unset project reads providerExportAllowed true and wholeDefinitionAllowed false."""
     _check_project_name(project)
     return {"project": project, **degram_policy.policy_for_project(project)}
 

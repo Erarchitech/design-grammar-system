@@ -422,9 +422,19 @@ def _relay(client, token, *, headers=None, body=None):
     return client.post(RELAY_PATH, json=body or _body(), headers={**_bearer(token), **(headers or {})})
 
 
-def test_export_policy_defaults_to_deny_and_nothing_reaches_the_provider(client, upstream):
+def test_export_policy_defaults_to_allow_without_a_row(client, upstream):
+    """D-32 (owner 2026-10-09): a project with no policy row may export to the provider."""
     _configure(client)
-    token = _delegated(client)  # no policy row for P1: deny by default
+    token = _delegated(client)  # no policy row for P1: allowed by default
+    response = _relay(client, token)
+    assert response.status_code == 200, response.text
+    assert len(upstream.requests) == 1
+
+
+def test_an_explicit_export_deny_reaches_no_provider(client, upstream):
+    _configure(client)
+    degram_policy.set_policy("P1", provider_export_allowed=False)
+    token = _delegated(client)
     response = _relay(client, token)
     assert response.status_code == 403, response.text
     assert _code(response) == "POLICY_DENY"
@@ -435,6 +445,7 @@ def test_export_policy_defaults_to_deny_and_nothing_reaches_the_provider(client,
 
 def test_consent_header_never_overrides_a_policy_deny(client, upstream):
     _configure(client)
+    degram_policy.set_policy("P1", provider_export_allowed=False)
     token = _delegated(client)
     for headers in ({CONSENT: "true"}, {SCOPE: "whole-definition", CONSENT: "true"}):
         response = _relay(client, token, headers=headers)
@@ -455,6 +466,7 @@ def test_a_policy_change_takes_effect_on_the_next_request(client, world):
 def test_policy_of_another_project_does_not_allow_this_one(client, upstream):
     _configure(client)
     _allow("P2")
+    degram_policy.set_policy("P1", provider_export_allowed=False)
     token = _delegated(client, project="P1")
     response = _relay(client, token)
     assert response.status_code == 403 and _code(response) == "POLICY_DENY"

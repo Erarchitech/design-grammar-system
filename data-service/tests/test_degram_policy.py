@@ -62,9 +62,10 @@ def _code(response):
 # -- store ----------------------------------------------------------------------
 
 
-def test_policy_defaults_to_deny_for_an_unknown_project():
+def test_policy_defaults_to_export_allowed_for_an_unknown_project():
+    """D-32: export is allowed by default; whole-definition stays denied; an empty name fails closed."""
     assert degram_policy.policy_for_project("P1") == {
-        "providerExportAllowed": False,
+        "providerExportAllowed": True,
         "wholeDefinitionAllowed": False,
     }
     assert degram_policy.policy_for_project("") == {
@@ -74,17 +75,18 @@ def test_policy_defaults_to_deny_for_an_unknown_project():
 
 
 def test_set_policy_round_trips_per_project_and_merges_fields():
-    degram_policy.set_policy("P1", provider_export_allowed=True)
+    degram_policy.set_policy("P1", provider_export_allowed=False)
     assert degram_policy.policy_for_project("P1") == {
-        "providerExportAllowed": True,
+        "providerExportAllowed": False,
         "wholeDefinitionAllowed": False,
     }
+    degram_policy.set_policy("P1", provider_export_allowed=True)
     degram_policy.set_policy("P1", whole_definition_allowed=True)
     assert degram_policy.policy_for_project("P1") == {
         "providerExportAllowed": True,
         "wholeDefinitionAllowed": True,
     }
-    assert degram_policy.policy_for_project("P2")["providerExportAllowed"] is False
+    assert degram_policy.policy_for_project("P2")["providerExportAllowed"] is True
     degram_policy.set_policy("P1", provider_export_allowed=False)
     assert degram_policy.policy_for_project("P1")["providerExportAllowed"] is False
 
@@ -106,6 +108,15 @@ def test_corrupt_store_denies_by_default(content):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     assert degram_policy.policy_for_project("P1")["providerExportAllowed"] is False
+
+
+def test_set_policy_refuses_to_overwrite_an_unreadable_store():
+    path = degram_policy.policy_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("not json", encoding="utf-8")
+    with pytest.raises(ValueError):
+        degram_policy.set_policy("P1", provider_export_allowed=True)
+    assert path.read_text(encoding="utf-8") == "not json"
 
 
 def test_non_boolean_row_values_do_not_grant_anything():
@@ -132,6 +143,16 @@ def test_set_policy_refuses_non_boolean_input():
 # -- routes -----------------------------------------------------------------------
 
 
+def test_a_row_without_the_export_flag_takes_the_default_and_a_non_admin_cannot_change_it(client):
+    path = degram_policy.policy_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"policies": [{"project": "P1", "wholeDefinitionAllowed": True}]}), encoding="utf-8")
+    assert degram_policy.policy_for_project("P1") == {
+        "providerExportAllowed": True,
+        "wholeDefinitionAllowed": True,
+    }
+
+
 def test_policy_routes_are_admin_only(client):
     owner = _headers("owner@dg.local", memberships={"P1": "owner"})
     for method in ("get", "put"):
@@ -140,14 +161,16 @@ def test_policy_routes_are_admin_only(client):
         assert denied.status_code == 403 and _code(denied) == "ADMIN_REQUIRED"
         anonymous = getattr(client, method)("/projects/P1/degram-policy", **kwargs)
         assert anonymous.status_code == 401
-    assert degram_policy.policy_for_project("P1")["providerExportAllowed"] is False
+    # the denied PUTs changed nothing: still the D-32 default
+    assert degram_policy.policy_for_project("P1")["providerExportAllowed"] is True
+    assert not degram_policy.policy_path().exists()
 
 
 def test_admin_reads_defaults_then_sets_and_reads_back(client):
     admin = _headers("root@dg.local", admin=True)
     got = client.get("/projects/P1/degram-policy", headers=admin)
     assert got.status_code == 200
-    assert got.json() == {"project": "P1", "providerExportAllowed": False, "wholeDefinitionAllowed": False}
+    assert got.json() == {"project": "P1", "providerExportAllowed": True, "wholeDefinitionAllowed": False}
     put = client.put(
         "/projects/P1/degram-policy",
         json={"providerExportAllowed": True, "wholeDefinitionAllowed": True},
@@ -170,7 +193,7 @@ def test_put_rejects_non_boolean_values(client, payload):
     response = client.put("/projects/P1/degram-policy", json=payload,
                           headers=_headers("root@dg.local", admin=True))
     assert response.status_code == 422
-    assert degram_policy.policy_for_project("P1")["providerExportAllowed"] is False
+    assert not degram_policy.policy_path().exists()  # a rejected PUT writes nothing
 
 
 def test_put_with_no_field_is_422(client):

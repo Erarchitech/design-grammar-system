@@ -138,7 +138,7 @@ These are DG admin API calls (admin session); they are not done in DeGram.
 |---|---|---|
 | Project to company | `PUT /projects/{project}/company` body `{"company": "<name>"}` | The company is part of DeGram's scope (user, company, project; D-20). An unassigned project has `company: null`. Reassigning a project revokes its open delegated tokens. |
 | Relay (the one model path) | DG Web UI, LLM settings panel: provider `openai` (OpenAI or an OpenAI-compatible base URL), model, API key | The relay has no configuration of its own (D-24); it uses these settings. The key is stored encrypted and never read back. With another provider, or nothing set, DeGram answers `RELAY_NOT_CONFIGURED`; there is no fallback. |
-| Provider-export policy | `PUT /projects/{project}/degram-policy` body `{"providerExportAllowed": true}` | Deny by default. Add `"wholeDefinitionAllowed": true` only if the project may send a whole Grasshopper definition; the user still confirms every whole-definition send. |
+| Provider-export policy | `PUT /projects/{project}/degram-policy` body `{"providerExportAllowed": true}` | Optional since D-32: export is allowed by default; send `false` to switch it off for a project. Add `"wholeDefinitionAllowed": true` only if the project may send a whole Grasshopper definition; the user still confirms every whole-definition send. |
 
 ## 9. Checks, one per bridge state
 
