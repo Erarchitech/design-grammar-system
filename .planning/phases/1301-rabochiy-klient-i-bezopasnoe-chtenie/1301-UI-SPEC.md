@@ -387,3 +387,35 @@ Rate-limit outcomes use model-limit wording without naming a provider or model a
 
 If the agent backend cannot start, DeGram stays on the start screen rather than silently returning to the picker. It shows «Не удалось запустить агента для проекта {project}.» and offers «Повторить запрос».
 
+
+## Amendment 2026-10-11 (0.1.10 gap round: D-39..D-44)
+
+This amendment is authoritative for plans 30-36. It supersedes the D-33 «pairing-token field docked below the view», D-34's «pairing tokens are created on the Connectors tab» and D-35 (pairing retired by D-39).
+
+### D-39 — access without a token
+
+The start screen has no token field. After DG sign-in the user picks a project in PROJECTS; DeGram opens it when the project owner or a DG admin has issued a grant. Without a grant the start screen keeps this notice until dismissed:
+
+> Доступ DeGram к проекту {project} ещё не выдан. Запросите его в разделе «Коннекторы» или у владельца проекта.
+
+EN: «DeGram access to {project} has not been granted yet. Request it under Connectors or ask the project owner.»
+
+### D-40 — Коннекторы inside DeGram
+
+The DG CONNECTORS page in DeGram shows only the user's own grants for the active project (name, purpose, issued, last used) and one button «Запросить новый токен / Request a new token» (optional note). After a request: «Запрос отправлен»; with an active grant: «Доступ уже выдан». No key, token or copy control exists anywhere. In the DG Web UI outside DeGram, owners and admins see a member dropdown, «Название», «Назначение», «Выдать доступ», the grants list with «Отозвать», and pending requests with «Выдать».
+
+### D-44 — connecting state on the ring
+
+From the PROJECTS click until the project is open, the ring centre shows «Подключение к DG / Connecting to DG» with the Graph Viewer thinking sphere, replacing the hero headings, the user line and Sign out. Swap uses the landing fade (opacity + translateY 18px + blur 9px, 500-560 ms, cubic-bezier(0.2,0,0,1)). Cyrillic text uses the body font stack (the bundled Michroma subset is Latin-only).
+
+### D-41 — new-session pill
+
+When the project is open the hero returns with «System initiated · {project}» and Sign out, and the pill «Начать новую сессию / Start new session» fades in under Sign out (same fade). The chat opens only from the pill or from a row in the session history; choosing a project never opens a chat by itself.
+
+### D-42 — DeGram sidebar and start screen
+
+No «DEGRAM» heading above the start screen. With a project open the sidebar shows, in order: «Новая сессия», «Граф проекта» (Graph Viewer), «Валидатор» (Model Viewer), «Коннекторы», «Модели», «Меню» (Menu, the DG landing), then «Закреплённые» and the session history, both limited to the active project and user. No other inherited entries, tabs (БОТЫ), sections (messages, scheduled tasks) or «Новый проект» are shown. Граф проекта / Валидатор / Коннекторы / Меню switch the DG view in place; the graph/full toggle is removed.
+
+### D-43 — «Модели»
+
+«Модели» lists each connector (Revit, Grasshopper, further bridges) with its status and the documents it exposes; the user pins one document per bridge there (D-29), with refresh and «Открепить». The bottom strip keeps company, project and the per-bridge status only.
