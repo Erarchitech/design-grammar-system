@@ -146,7 +146,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 22/36 plans executed
+**Plans**: 29/36 plans executed
 **UI hint**: yes
 
 Plans:
@@ -215,24 +215,24 @@ Plans:
 
 **Wave 14** *(blocked on Wave 13 completion)*
 
-- [ ] 1301-24-PLAN.md — Release left scope backends, foreground spawn, backend-start failure notice; revoked pairing as access signal + start probe; provider-limit copy; UI-SPEC 0.1.7 amendment (G-18, G-21, G-24)
-- [ ] 1301-29-PLAN.md — Commit the D-32 export-policy default (seven files only; no image rebuild)
+- [x] 1301-24-PLAN.md — Release left scope backends, foreground spawn, backend-start failure notice; revoked pairing as access signal + start probe; provider-limit copy; UI-SPEC 0.1.7 amendment (G-18, G-21, G-24)
+- [x] 1301-29-PLAN.md — Commit the D-32 export-policy default (seven files only; no image rebuild)
 
 **Wave 15** *(blocked on Wave 14 completion)*
 
-- [ ] 1301-25-PLAN.md — ui-v2 host mode inside DeGram: hide Connectors, DG API Docs, Reasoner, AI Engine; announce the chosen project; rebuild design-grammars (G-22, G-23, D-33, D-34)
+- [x] 1301-25-PLAN.md — ui-v2 host mode inside DeGram: hide Connectors, DG API Docs, Reasoner, AI Engine; announce the chosen project; rebuild design-grammars (G-22, G-23, D-33, D-34)
 
 **Wave 16** *(blocked on Wave 15 completion)*
 
-- [ ] 1301-26-PLAN.md — One start screen: sign-in, token field, project from the Projects region; persistent notices (G-20, G-21, G-22, D-33, D-35)
+- [x] 1301-26-PLAN.md — One start screen: sign-in, token field, project from the Projects region; persistent notices (G-20, G-21, G-22, D-33, D-35)
 
 **Wave 17** *(blocked on Wave 16 completion)*
 
-- [ ] 1301-27-PLAN.md — Per-scope session list over RPC (G-19, G-6, D-31)
+- [x] 1301-27-PLAN.md — Per-scope session list over RPC (G-19, G-6, D-31)
 
 **Wave 18** *(blocked on Wave 17 completion)*
 
-- [ ] 1301-28-PLAN.md — DeGram 0.1.7: owner push, gitlink bump, build, install on PC1
+- [x] 1301-28-PLAN.md — DeGram 0.1.7: owner push, gitlink bump, build, install on PC1
 
 **Wave 19** *(blocked on Wave 18 completion)*
 
@@ -240,7 +240,7 @@ Plans:
 
 **Wave 20** *(0.1.10 gap round, owner comments 2026-10-11)*
 
-- [ ] 1301-30-PLAN.md — DeGram access grants issued by project owner/DG admin; session exchange; pairing retired; specs (D-39)
+- [x] 1301-30-PLAN.md — DeGram access grants issued by project owner/DG admin; session exchange; pairing retired; specs (D-39)
 - [ ] 1301-31-PLAN.md — CONNECTORS: grant issuing for owners/admins, trimmed DeGram view with «Запросить новый токен» (D-39, D-40)
 - [ ] 1301-32-PLAN.md — DG host-mode ring centre: connecting sphere, new-session pill, host<->page channel, lang (D-41, D-44)
 
@@ -402,7 +402,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 22/23 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 29/36 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |

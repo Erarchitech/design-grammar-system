@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 16
+current_plan: 31
 status: executing
-stopped_at: "Completed 1301-23-PLAN.md (0.1.6 pushed, gitlinks bumped, built c3e8f2e8, installed on PC1, pyRevit extension verified); next: plan 16 Task 3 live recheck on 0.1.6 (non-gap, run without --gaps-only)"
-last_updated: "2026-10-09T18:24:10.755Z"
-last_activity: 2026-10-09
-last_activity_desc: "Plan 1301-23 complete (DeGram 0.1.6: forks pushed, gitlinks bumped, installer built and installed on PC1)"
+stopped_at: Completed 1301-30-PLAN.md; next: 1301-31-PLAN.md
+last_updated: "2026-10-11T12:19:03.152Z"
+last_activity: 2026-10-11
+last_activity_desc: Plan 1301-30 complete (D-39 server-side grants and session exchange; next: plan 31 CONNECTORS UI)
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 0
-  total_plans: 35
-  completed_plans: 26
+  total_plans: 48
+  completed_plans: 33
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 16
-Total Plans in Phase: 23
-Plan: 16 of 23 (gap plans 18-23 done)
+Current Plan: 31
+Total Plans in Phase: 36
+Plan: 30 of 36 complete; next: 31
 Status: Ready to execute
-Last activity: 2026-10-09 — plan 1301-23 complete (DeGram 0.1.6 shipped and installed)
-Last Activity Description: Plan 1301-23 complete (forks pushed, gitlinks bumped, 0.1.6 built and installed on PC1; live recheck is plan 16 Task 3)
+Last activity: 2026-10-11 — plan 1301-30 complete (D-39 server-side grants and session exchange)
+Last Activity Description: Plan 1301-30 complete; next: 1301-31 CONNECTORS grant management and member request UI
 
 ## Deferred Verification
 
@@ -180,6 +180,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P19 | 75min | 3 tasks | 22 files |
 | Phase 1301 P20 | 1h45m | 5 tasks | 30 files |
 | Phase 1301 P21 | 3h | 3 tasks | 23 files |
+| Phase 1301 P30 | multi-session | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -524,6 +525,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 1301-19]: Preview deadlines (Revit 20 s, GH 20 s shared budget, rules 15 s) stay below PREVIEW_RPC_TIMEOUT_MS 45 s; RPC timeout is PREVIEW_TIMEOUT, only gateway transport is DG_UNAVAILABLE
 - [Phase 1301-20]: D-30 cleanup keeps the signed-in user's current memberships (back-filled) and deletes the other manifest-less scope profiles once; unreachable /auth/me at start loads no page and Retry goes through runtime.retryDg()
 - [Phase 1301-21]: D-29 implemented: one pinned document per bridge; a bridge outcome at preview time excludes only that bridge's document (summary.excluded), Send blocks only when every pinned document is identity-mismatched
+- [Phase 1301-30]: D-39: DeGram access is a server-only per-project grant issued by a project owner or DG admin; no user-visible pairing credential remains.
+- [Phase 1301-30]: D-40: DeGram members request grants; owners/admins review requests and issuing a grant closes the request.
 
 ### Research Flags (carry into planning)
 
@@ -619,8 +622,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-09T18:24:10.733Z
-Stopped at: Completed 1301-21-PLAN.md (G-13, D-29: component commit 02993674 local on degram/phase-1301, not pushed, gitlink not bumped); next: gap plan 23, then plan 16 Task 3 recheck on 0.1.6
+Last session: 2026-10-11T12:19:03.140Z
+Stopped at: Completed 1301-30-PLAN.md; next: 1301-31-PLAN.md
 Resume file: None
 
 ## Performance Metrics

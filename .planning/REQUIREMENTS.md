@@ -1,36 +1,40 @@
 # Requirements: v13.0 DeGram Agent
 
 **Подготовлено:** 2026-09-30
-**Статус:** ACTIVE — v13.0 активирован 2026-10-02 по явному запросу владельца. Требования/ownership и roadmap утверждены отдельными gates 2026-09-30. Обсуждение Phase 1300 начинается; реализация требований не начата.
+**Статус:** ACTIVE — scope revised 2026-10-04 по последнему запросу владельца. Phase 1300 остаётся incomplete / scope revision; независимый read-only slice Phase 1301 в `ui-v2` — in progress, не готов к выпуску. Ни одно требование не закрыто.
 **Core value:** участник проводит проектное требование от источника до проверенного и принятого решения, а получатель восстанавливает его контекст и доказательства без истории чата автора.
 
 Основание: [согласованный контекст](milestones/v13.0-CONTEXT.md), [распределение ownership](milestones/v13.0-OWNERSHIP.md) и сохранённое исследование, указанное в контексте. Чекбоксы обозначают реализацию с доказательствами; утверждение этого документа не закрывает ни одного требования.
 
+**Authority:** Последняя ревизия active control plane имеет приоритет над историческим preparation package, прежними решениями discussion и plan-check PASS. Архив не переписывается; прежние frozen dossier hashes/receipts требуют явной перепривязки к изменённому scope и повторного принятия затронутых обязательств, а не autoaccept. Сравнение DeGram с current DG, baseline study и benefit thresholds исключены из v13. Сравнение Design States, pre/post, evaluator agreement и recognition regression, включая OPEN v12 D08, сохраняется: это не product benchmark.
+
 ## Границы MVP
 
-- Минимальный fork Hermes Desktop; корпоративные данные/права — DG; существующий DG web и полный Model Viewer переиспользуются.
+- Целевая оболочка — минимальный fork Hermes Desktop; первый реальный increment — read-only workspace в существующем `ui-v2` для будущей reused-web интеграции, не сам Desktop. Корпоративные данные/права — DG; полный Model Viewer сохраняется.
+- Начальный deployment scope: local single-user Compose, текущий ПК, Revit 2024 / Rhino 8. Reviewer и второй ПК — поздняя независимая приёмка, не prerequisite идентичности/спецификации перед разработкой. Единственная системная пара `genpro` / `mimo-v2.5-pro` скрыта от обычного пользователя; без selector/private keys/fallback и без paid inference в текущей работе.
+- Сейчас разрешены только независимые client code/offline tests и CAD/graph read surface; live вызовы, Drive/external writes и native mutations не разрешены. Поздние write/publication возможности требований сохранены за их phase owners и требуют отдельной авторизации; read-only increment не закрывает их.
 - Общий словарь компании; проектные правила и проектная применимость. Права пользователя и область применения правила — разные проверки.
 - Lessons learned между проектами одной компании: разрешение → копия с происхождением → адаптация → проверка → утверждение. Исходные проверки не переносятся как доказательство соответствия нового проекта.
 - Пять графов сохраняют ответственность; CDE хранит документы/редакции и принятые материалы, а не заменяется DeGram.
 - Read выполняется в разрешённой области; proposal сам по себе не разрешает запись. LLM не устанавливает compliance verdict и не утверждает собственное предложение.
-- Исторические ограничения v9/v12 и исследовательские наблюдения перепроверяются в baseline, а не объявляются уже устранёнными.
+- Исторические ограничения v9/v12 и исследовательские наблюдения проверяются применимыми functional/contract/regression fixtures, а не объявляются уже устранёнными.
 
 ## MVP requirements
 
-### Контракты и baseline — DGCN
+### Контракты, проверка и ownership — DGCN
 
 - [ ] **DGCN-01**: Владелец может принять версионированный контрактный профиль, который указывает версии/хеши runtime ontology, identity, status/evidence, rule/state revision и source-authority контрактов, ответственный компонент каждой границы и решение по каждой критической несовместимости с v11/v12.
 - [ ] **DGCN-02**: Владелец может проверить единственного delivery owner каждого переносимого результата v9.1/v10 и каждого ORCH/RING debt item; перенесённый или заменённый результат имеет disposition и ссылку, а не ложную отметку completed.
-- [ ] **DGCN-03**: Владелец может до пилота утвердить воспроизводимый baseline текущего DG: конкретные задания, модели/definitions, версии CAD/plugins, источники, expert gold, протокол участников, correctness/traceability margins и измеримые benefit thresholds.
+- [ ] **DGCN-03**: Владелец может утвердить воспроизводимые функциональные и контрактные fixtures DeGram: задания, модели/definitions, версии CAD/plugins/контрактов, источники, expected outcomes и negative cases, evidence/read-back protocol и матрицу совместимости полного reused Model Viewer; проверка не требует контрольной группы или метрик сравнительной пользы.
 - [ ] **DGCN-04**: Оператор может определить разрешённую конфигурацию MVP по утверждённому decision register: LLM/data policy, login/SSO, steward/approvers, поддержанные Revit operations, CDE publication path и ограничения deployment; unresolved решение блокирует зависящую от него реализацию.
 
 ### Рабочее место и безопасное чтение — DGCL
 
-- [ ] **DGCL-01**: Участник может установить минимальный DeGram Desktop на чистом поддержанном ПК, войти существующим разрешённым способом DG и выбрать только доступный ему проект.
-- [ ] **DGCL-02**: Участник видит действующие company/project, provider/model, native document и bridge status; смена контекста явно отражается в следующем запросе, без переиспользования скрытого контекста другого проекта.
+- [ ] **DGCL-01**: Участник может установить минимальный DeGram Desktop на чистом поддержанном ПК, войти существующим разрешённым способом DG и выбрать только доступный ему проект. Plan 1301-30 supplies the server-side grant/session-exchange path; client installation and owner acceptance remain pending.
+- [ ] **DGCL-02**: Участник видит действующие company/project, native document и bridge status; смена контекста явно отражается в следующем запросе, без переиспользования скрытого контекста другого проекта. Единственная системная пара `genpro` / `mimo-v2.5-pro` управляется оператором и скрыта от обычного пользователя; пользователь не выбирает provider/model и не вводит private keys.
 - [ ] **DGCL-03**: Участник может открыть в DeGram существующие DG web-экраны и Model Viewer через изолированную web surface с разрешённым доступом; обход iframe/security headers или расширение токена до всех моделей не требуется.
 - [ ] **DGCL-04**: Участник на каждом из двух ПК может выбрать конкретный локальный Revit/GH document и получить read snapshot через локальный typed adapter; выключенный/занятый bridge выдаёт диагностируемый operational outcome, другой документ не выбирается молча.
-- [ ] **DGCL-05**: После logout, отзыва membership или credential участник теряет возможность новых защищённых чтений/записей; клиент, backend и model access проверяют company/project scope и не возвращают данные недоступного проекта через чат, web surface или tools.
+- [ ] **DGCL-05**: После logout, отзыва membership или credential участник теряет возможность новых защищённых чтений/записей; клиент, backend и model access проверяют company/project scope и не возвращают данные недоступного проекта через чат, web surface или tools. Plan 1301-30 enforces the backend grant/session revocation leg; client, relay, model-access, and live acceptance evidence remain pending.
 - [ ] **DGCL-06**: Участник может отменить долгий запрос и продолжить работу; недоступный provider/сервер, timeout и lifecycle reconnect дают конкретную причину и способ восстановления, сохраняя отзывчивость native UI и корректное освобождение локального listener.
 - [ ] **DGCL-07**: Участник видит состав и ограничение отправляемого LLM selection context; whole-definition scope требует явного подтверждения, сокращение/отсутствие данных раскрывается, а чтение selection использует существующую сериализацию DG.
 
@@ -85,12 +89,12 @@
 - [ ] **DGHN-04**: Другой участник может восстановить источник, правило, applicability, выбранный вариант, rationale и evidence по проектному артефакту без доступа к исходному chat transcript; проверка проводится получателем, а не автором пересказа.
 - [ ] **DGHN-05**: Уполномоченный участник может подтвердить передачу принятого артефакта в согласованную CDE destination с revision и read-back receipt; ошибка публикации видима, права получателя сохраняются, DeGram не создаёт вторую систему документов.
 
-### Сравнительный пилот и выпуск — DGRL
+### Приёмка и выпуск — DGRL
 
-- [ ] **DGRL-01**: Владелец получает воспроизводимый paired/counterbalanced отчёт current DG против DeGram на plan-layout, urban-block и project-documentation задачах из утверждённого corpus: time/rework, correctness, false-pass/false-fail/non-verdict, traceability, handover и review burden, включая неудачные попытки и setup отдельно.
+- [ ] **DGRL-01**: Владелец получает воспроизводимый DeGram E2E acceptance report на утверждённых plan-layout, urban-block и project-documentation fixtures: functional/contract correctness, false-pass/false-fail/non-verdict, traceability, recipient handover и recovery с raw evidence, expected/actual outcomes и всеми неудачными попытками. Приёмка проверяет DeGram, а не two-arm study.
 - [ ] **DGRL-02**: Оператор может предъявить live evidence governance/security/recovery испытаний: две компании и два проекта одной компании, concurrent editors, revoked access, injection в источнике/scribble, missing population, stale patch и timeout после apply/до publish; скрытых неразрешённых side effects нет.
 - [ ] **DGRL-03**: Оператор может установить, обновить и откатить выбранную сборку DeGram/DG adapters на двух поддержанных ПК по документированному compatibility manifest, без потери проектного контекста и без credentials в поставке/логах.
-- [ ] **DGRL-04**: Владелец может принять либо отклонить выпуск по заранее утверждённым correctness/traceability и benefit gates, raw evidence, known limitations и remaining debt; инструментальная успешность и скорость не заменяют gate, незавершённая проверка не получает PASS.
+- [ ] **DGRL-04**: Владелец может принять либо отклонить выпуск по заранее утверждённым correctness, safety, traceability и recovery gates, raw evidence, known limitations и remaining debt; tool success не заменяет gate, незавершённая проверка не получает PASS. Benefit threshold для выпуска не требуется.
 
 ## Future / retained elsewhere
 
@@ -109,7 +113,7 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 
 ## Verification contract
 
-У каждого требования должны появиться phase evidence и результат проверки. Contract/unit tests нужны для схем и negative cases, но не заменяют live CAD, multi-user, двухкомпьютерный handover и человеческое принятие. Exact fixtures, commands, numeric margins и human checkpoints фиксируются в 1300/phase plans до исполнения. Research prose и согласованная диаграмма не являются PASS evidence.
+У каждого требования должны появиться phase evidence и результат проверки. Contract/unit tests нужны для схем и negative cases, но не заменяют поздние отдельно разрешённые live CAD, multi-user, двухкомпьютерный handover и человеческое принятие. Exact fixtures, commands, expected outcomes и human checkpoints фиксируются до соответствующей проверки. Независимый bounded client implementation/offline tests 1301 не ждёт завершения всего 1300; G-01/V8, независимое техническое принятие/ownership и security gates сохраняются для потребления semantic contracts, live операций и phase acceptance. Research prose и согласованная диаграмма не являются PASS evidence.
 
 ## Traceability
 
@@ -121,11 +125,11 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 | DGCN-02 | 1300 | Pending |
 | DGCN-03 | 1300 | Pending |
 | DGCN-04 | 1300 | Pending |
-| DGCL-01 | 1301 | Pending |
+| DGCL-01 | 1301 | Pending (server grant/session leg delivered in 1301-30; client/live acceptance pending) |
 | DGCL-02 | 1301 | Pending |
 | DGCL-03 | 1301 | Pending |
 | DGCL-04 | 1301 | Pending |
-| DGCL-05 | 1301 | Pending |
+| DGCL-05 | 1301 | Pending (backend grant/session revocation leg delivered in 1301-30; end-to-end evidence pending) |
 | DGCL-06 | 1301 | Pending |
 | DGCL-07 | 1301 | Pending |
 | DGKN-01 | 1302 | Pending |
@@ -169,4 +173,4 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 | DGRL-03 | 1307 | Pending |
 | DGRL-04 | 1307 | Pending |
 
-**Coverage:** 51 MVP requirements; 51 mapped; 0 unmapped. Реализация не начата.
+**Coverage:** 51 MVP requirements; 51 mapped; 0 unmapped. Первый read-only client slice 1301 в работе; server-side D-39 grant/session-exchange leg delivered in 1301-30, but no DGCL requirement is confirmed fully until client and live acceptance evidence exist.
