@@ -465,3 +465,22 @@ Artifact checks — all passed:
 | `resources\revit-mcp\tests` is absent | pass |
 
 The installer was built only. It was not installed or launched; installation and live UAT remain the owner checkpoint in plan 1301-28 Task 5.
+
+## 0.1.8 build: F-01 host-mode start screen (2026-10-11)
+
+The 0.1.7 live UAT stopped at project open (start screen showed the `#degram` slice; see `1301-UAT.md`). Component fix `67ac0f84` and version bump `35d53793` were pushed by the owner to `degram/phase-1301`; framework gitlink `7e6e2e5` → `35d53793`, `python tools/degram/workspace.py verify` exit 0. `apps/revit-mcp` unchanged at `d8f0f24d2d29c8115f1e21b6573f52a360b34cad`.
+
+Same procedure as 0.1.7: `D:\dgb\src` (no-hardlinks clone) detached at `35d53793e3df05b9104ade4ed05a52c9e4068e63`, clean before and after; `D:\dgb\run-build.sh` with the scrubbed environment and `DEGRAM_REVIT_MCP_SOURCE='D:\dgb\revit-mcp-src'`. Build 07:53:04Z → 07:59:06Z, exit 0. D: free space after the build: 5.4 GB (older installers 0.1.3–0.1.7 kept).
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.8.exe` |
+| Installer size | 490,531,422 bytes |
+| Installer SHA-256 | `7796e6fbd7b04df1d3e3946c006bd63456298c382f93066da701128b56658a49` |
+| Unpacked `app.asar` SHA-256 | `7e23300d88a0dc03d01918c879985b8d33dcc3f2c11894a1b6d714f44e839e47` |
+| Component commit / gitlink | `35d53793e3df05b9104ade4ed05a52c9e4068e63` |
+| ProductVersion / ProductName / CompanyName | `0.1.8.0` / `DeGram` / `Erarchitech` |
+
+Artifact checks — all passed: `electron-main.mjs` contains `com.erarchitech.degram`, `degram-select`, `host=degram` and the new `showStart`; `resources\revit-mcp\extension.json` `"default_enabled": "True"`, `main.py` `json_body`, `revit_mcp\views.py` `urllib.parse`; `resources\revit-mcp\tests` absent.
+
+Built only: not installed or launched. Installation and the live recheck (sign-in → project choice in PROJECTS on the start screen → full workspace; then `v12 → B → C → v12`, revoke/pairing notices, rate-limit copy) are the owner's checkpoint.
