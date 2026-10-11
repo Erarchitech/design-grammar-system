@@ -6,15 +6,15 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 2
 status: executing
-stopped_at: Completed 1301-40-PLAN.md; framework c9665ed local (unpushed), no rebuild; plans 38, 39 then 41 remain
-last_updated: "2026-10-11T22:46:47.470Z"
+stopped_at: Completed 1301-38-PLAN.md; component 14bb25d2 local (unpushed); plans 39 then 41 remain
+last_updated: "2026-10-11T23:03:45.750Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 53
-  completed_plans: 41
+  completed_plans: 42
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -183,6 +183,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P30 | multi-session | 3 tasks | 13 files |
 | Phase 1301 P37 | ~50min | 4 tasks | 18 files |
 | Phase 1301 P40 | 75min | 4 tasks | 16 files |
+| Phase 1301 P38 | 55min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -533,6 +534,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-37: scope selectProject mints before releasing the open scope; refused picks (GRANT_REQUIRED/ACCESS_DENIED/unreachable) leave the open project running; host signals #degram-project=<name|empty> back to the DG page
 - [Phase ?]: [1301-40] Connector access is a per-(user,project,connector) grant in connector-access.json; the credential POST policy floor is viewer and the handler gates it (role >= editor or approved access, 403 CONNECTOR_ACCESS_REQUIRED)
 - [Phase ?]: [1301-40] Hosted DeGram Connectors page is one table of all connectors; --status-on (green) is used only there, the Web UI StatusDot stays monochrome
+- [Phase ?]: 1301-38: F-04 root cause is untagged DeGram session rows hidden by the sidebar profile filter; rows now carry the ready scope's profile (session-list.ts)
 
 ### Research Flags (carry into planning)
 
@@ -628,8 +630,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-11T22:46:47.448Z
-Stopped at: Completed 1301-40-PLAN.md; framework c9665ed local (unpushed), no rebuild; plans 38, 39 then 41 remain
+Last session: 2026-10-11T23:03:45.727Z
+Stopped at: Completed 1301-38-PLAN.md; component 14bb25d2 local (unpushed); plans 39 then 41 remain
 Resume file: None
 
 ## Performance Metrics
