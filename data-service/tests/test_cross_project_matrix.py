@@ -666,3 +666,61 @@ class TestListingFilters:
         b_listed = listed("B")
         assert p2_ids <= b_listed
         assert world.t1_credential_id not in b_listed
+
+
+# ── Per-connector access (Phase 1301-40, D-46) ──────────────────────────────
+
+
+class TestConnectorAccessBoundary:
+    """The four member rows of the connector-access routes are swept by the
+    generated matrix above; these cases pin the handler-side gate and the
+    project isolation of an approved access."""
+
+    def test_viewer_without_access_is_refused_by_the_handler_not_the_policy(self, client, world):
+        response = client.post(
+            "/connectors/grasshopper/credentials",
+            json={"project": P1},
+            headers=world.headers["V"],
+        )
+        assert response.status_code == 403
+        assert _code(response) == "CONNECTOR_ACCESS_REQUIRED"
+
+    def test_viewer_of_p1_asking_to_mint_for_p2_is_project_forbidden(self, client, world):
+        response = client.post(
+            "/connectors/grasshopper/credentials",
+            json={"project": P2},
+            headers=world.headers["V"],
+        )
+        assert response.status_code == 403
+        assert _code(response) == "PROJECT_FORBIDDEN"
+
+    def test_a_p1_access_never_opens_p2(self, client, world):
+        import connector_access
+
+        # V holds a P1 access only; the same connector in P2 stays closed (and V is no P2 member).
+        connector_access.issue_access(P1, world.names["V"], "grasshopper", world.names["A"])
+        try:
+            ok = client.post(
+                "/connectors/grasshopper/credentials",
+                json={"project": P1},
+                headers=world.headers["V"],
+            )
+            assert ok.status_code == 201
+            other = client.post(
+                "/connectors/grasshopper/credentials",
+                json={"project": P2},
+                headers=world.headers["V"],
+            )
+            assert other.status_code == 403
+            assert _code(other) == "PROJECT_FORBIDDEN"
+        finally:
+            connector_access.revoke_for_user_project(world.names["V"], P1)
+
+    def test_p1_connector_token_cannot_request_or_issue_access(self, client, world):
+        for method, url, body in (
+            ("POST", "/connector-access-requests", {"project": P1, "connector_id": "revit"}),
+            ("POST", f"/projects/{P1}/connector-access", {"username": "x", "connector_id": "revit"}),
+        ):
+            response = client.request(method, url, json=body, headers=world.headers["T1"])
+            assert response.status_code == 403, (method, url)
+            assert _code(response) == "PRINCIPAL_NOT_PERMITTED"

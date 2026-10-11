@@ -183,8 +183,20 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/projects/{project}/degram-policy"): _p(_ADM),
     ("PUT", "/projects/{project}/degram-policy"): _p(_ADM),
     # ── connectors ──
+    # Phase 1301-40 (D-46): per-connector access. A project viewer requests access
+    # to one connector; the owner (an admin is owner everywhere) lists, approves
+    # and revokes it. The credential POST is open to any member at the policy
+    # layer; the handler then requires owner/editor/admin or an approved access
+    # (403 CONNECTOR_ACCESS_REQUIRED).
+    ("POST", "/connector-access-requests"): _p(_MEM, source="body", role="viewer"),
+    ("GET", "/connector-access/mine"): _p(_SES, source="filtered"),
+    ("GET", "/projects/{project}/connector-access"): _p(_MEM, source="path", role="owner"),
+    ("POST", "/projects/{project}/connector-access"): _p(_MEM, source="path", role="owner"),
+    ("DELETE", "/projects/{project}/connector-access/{access_id}"): _p(
+        _MEM, source="path", role="owner"
+    ),
     ("GET", "/connectors"): _p(_SES, source="filtered"),
-    ("POST", "/connectors/{connector_id}/credentials"): _p(_MEM, source="body", role="editor"),
+    ("POST", "/connectors/{connector_id}/credentials"): _p(_MEM, source="body", role="viewer"),
     ("DELETE", "/connectors/{connector_id}/credentials/{credential_id}"): _p(
         _MEM, source="resource:credential", role="editor"
     ),

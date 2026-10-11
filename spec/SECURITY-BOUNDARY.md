@@ -8,7 +8,7 @@ This is the normative contract for the Design Grammar System security boundary. 
 
 **Enforcement shape.** This file follows the `spec/SWRL-SUBSET.md` and `spec/REPRODUCIBILITY.md` pattern. Section 4 holds four machine-checked fenced blocks, each delimited by HTML comments. `data-service/tests/test_security_boundary_spec.py` parses them and fails the suite when a block differs from the code or compose file it mirrors, in either direction. A new route, principal, published port or known-default secret therefore cannot ship without this document changing.
 
-**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only) `auth-delegated-tokens.json` (SHA-256 hashes of delegated tokens, Section 3.5) `degram-grants.json` and `degram-grant-requests.json` (DeGram access grants and member requests, no secret, Section 3.5) and `degram-pairings.json` (the retired pairing rows, Section 3.5). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
+**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only) `auth-delegated-tokens.json` (SHA-256 hashes of delegated tokens, Section 3.5) `degram-grants.json` and `degram-grant-requests.json` (DeGram access grants and member requests, no secret, Section 3.5) `connector-access.json` (per-connector access grants and member requests, no secret, Section 3.2) and `degram-pairings.json` (the retired pairing rows, Section 3.5). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
 
 Related contracts: `spec/EVIDENCE-CONTRACT.md` (validation outcome status and evidence envelope, unchanged by this phase), `spec/RULE-PARTITION-POLICY.md`, `spec/SWRL-SUBSET.md`, `spec/REPRODUCIBILITY.md`.
 
@@ -69,6 +69,11 @@ Exactly one principal type is resolved per request, by explicit credential, in t
 - Route scope is exactly the rows whose principals include `connector` in the route-policy block: `POST /computgraph/publish`, `POST /validation/publish` and the three `GET /validation/view/...` routes, each authorized only when the token's bound project equals the request project.
 - Two further routes use the connector token but carry their own credential check inside the handler and are classed `connector-self` in the policy: `POST /connectors/heartbeat` and `POST /designstate/capture` (bound-project equality, generic 403 message).
 - A connector token is denied every other route with 403 `PRINCIPAL_NOT_PERMITTED`.
+- **Who may mint a connector token (Phase 1301 plan 40, D-46).** `POST /connectors/{connector_id}/credentials` is a `member` row with `MIN_ROLE` viewer and the project in the body. The handler then requires the caller's effective role in that project to be editor or higher (an admin is owner everywhere) OR an active connector access for `(caller, project, connector_id)`; otherwise 403 `CONNECTOR_ACCESS_REQUIRED` and no credential is written. A viewer cannot revoke a credential (`DELETE .../credentials/{credential_id}` stays editor).
+  - *Access.* `{access_id, username, project, connector_id, issued_by, created_at, revoked}` in `connector-access.json`, with the pending requests `{request_id, username, project, connector_id, note (at most 200 characters), status}`. It is a record of authorization: no route returns a token or token hash for it, and `GET /connectors` carries only ids and labels. Active while not revoked, its user exists and the user still holds a stored membership of its project.
+  - *Request.* `POST /connector-access-requests` (`member`, viewer, body `{project, connector_id, note?}`; 201) records a pending request; a repeated request replaces the note; 409 `ACCESS_EXISTS` for an owner/editor/admin or when an access is active; 404 `CONNECTOR_NOT_FOUND` for an unknown connector and for `degram` (DeGram access stays on its own grant routes, Section 3.5); 403 `PROJECT_FORBIDDEN` for a non-member. `GET /connector-access/mine` (`session`, filtered) returns only the caller's own accesses and requests.
+  - *Approve and revoke.* `GET|POST /projects/{project}/connector-access` (body `{username, connector_id}`; 201) and `DELETE /projects/{project}/connector-access/{access_id}` (204) are `member` rows with `MIN_ROLE` owner (the project owner or any admin). Issuing closes the member's pending request and replaces an earlier access of the same triple; the target must be a stored member (409 `NOT_A_MEMBER`); an unknown id and another project's id answer the same 404 `ACCESS_NOT_FOUND`.
+  - *Revocation.* Removing the member from the project revokes their accesses of that project (and closes their requests), so a re-added member does not regain access; an access never crosses projects. `GET /connectors?project=P` adds `access` (`available`, `pending`, `requestable`) to each registry connector for a caller who is a member of P (or an admin), and is unchanged otherwise.
 
 ### 3.3 Internal service token
 
@@ -187,11 +192,13 @@ POST|/computgraph/generate-inputs|member|body|editor
 POST|/computgraph/publish|connector+member|body|editor
 POST|/computgraph/recognize|member|body|viewer
 POST|/computgraph/validate|member|body|viewer
+POST|/connector-access-requests|member|body|viewer
+GET|/connector-access/mine|session|filtered|-
 GET|/connectors|session|filtered|-
 POST|/connectors/degram/pairings|session|-|-
 DELETE|/connectors/degram/pairings/{pairing_id}|session|-|-
 POST|/connectors/heartbeat|connector-self|-|-
-POST|/connectors/{connector_id}/credentials|member|body|editor
+POST|/connectors/{connector_id}/credentials|member|body|viewer
 DELETE|/connectors/{connector_id}/credentials/{credential_id}|member|resource:credential|editor
 POST|/context/assemble|service|-|-
 GET|/context/debug|service|-|-
@@ -236,6 +243,9 @@ POST|/mcp|service|-|-
 GET|/projects|session|filtered|-
 POST|/projects|session|-|-
 PUT|/projects/{project}/company|admin|-|-
+GET|/projects/{project}/connector-access|member|path|owner
+POST|/projects/{project}/connector-access|member|path|owner
+DELETE|/projects/{project}/connector-access/{access_id}|member|path|owner
 GET|/projects/{project}/degram-grants|member|path|owner
 POST|/projects/{project}/degram-grants|member|path|owner
 DELETE|/projects/{project}/degram-grants/{grant_id}|member|path|owner
@@ -409,6 +419,7 @@ Order of execution:
 | No `/neo4j/` or `/n8n/` proxy, no credential in `config.js` or the UI bundle | `data-service/tests/test_static_proxy_boundary.py`, `data-service/tests/test_config_js_no_secrets.py` |
 | Delegated token mint, scope, CSRF exemption, no-fallback and every revocation case (Section 3.5); project to company map | `data-service/tests/test_delegated_token.py`, `data-service/tests/test_company_scope.py` |
 | DeGram access grants: issue, list, own view, requests, session exchange, every revocation cascade, no secret in any response (Section 3.5) | `data-service/tests/test_degram_grants.py`, `data-service/tests/test_route_inventory.py` |
+| Connector access: request, approve, token mint gated by role or access (403 `CONNECTOR_ACCESS_REQUIRED`), revoke, member-removal cascade, no token or hash in any list, project isolation (Section 3.2) | `data-service/tests/test_connector_access.py`, `data-service/tests/test_route_inventory.py`, `data-service/tests/test_cross_project_matrix.py` |
 | Retired DeGram pairing: 410 on create, 401 `PAIRING_RETIRED` on exchange, refusal on every other route, stored pairings revoked (Section 3.5) | `data-service/tests/test_degram_pairing.py` |
 | DeGram relay principal scope, single upstream with model override, key masking and encryption at rest, provenance without content (Section 3.6) | `data-service/tests/test_degram_relay.py` |
 | DeGram relay cancellation, each timeout kind, 429, 5xx, 4xx, mid-stream error event, single upstream call, outcome vocabulary disjoint from the canonical statuses (Section 3.6) | `data-service/tests/test_degram_relay.py` |

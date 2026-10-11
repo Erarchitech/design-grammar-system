@@ -205,8 +205,8 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes; 104 since plan 30 (D-39): the session exchange, the three project grant routes, GET /degram/grants/mine and POST /degram/grant-requests.
-        assert len(route_policy.ROUTE_POLICIES) == 104
+        # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes; 104 since plan 30 (D-39): the session exchange, the three project grant routes, GET /degram/grants/mine and POST /degram/grant-requests; 109 since plan 40 (D-46): POST /connector-access-requests, GET /connector-access/mine and the three project connector-access routes.
+        assert len(route_policy.ROUTE_POLICIES) == 109
 
     def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
         # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the
@@ -531,3 +531,27 @@ def test_the_degram_grant_rows_are_owner_scoped_and_the_session_exchange_is_memb
     mine = route_policy.ROUTE_POLICIES[("GET", "/degram/grants/mine")]
     assert mine.principals == {route_policy.PRINCIPAL_SESSION}
     assert mine.project_source == "filtered"
+
+
+def test_the_connector_access_rows_are_owner_scoped_and_the_credential_post_is_viewer_scoped():
+    # Phase 1301-40 (D-46): the owner approves, any member requests, and the
+    # credential POST admits a viewer at the policy layer (the handler gates it).
+    for key in (
+        ("GET", "/projects/{project}/connector-access"),
+        ("POST", "/projects/{project}/connector-access"),
+        ("DELETE", "/projects/{project}/connector-access/{access_id}"),
+    ):
+        policy = route_policy.ROUTE_POLICIES[key]
+        assert policy.principals == {route_policy.PRINCIPAL_MEMBER}, key
+        assert (policy.project_source, policy.min_role) == ("path", "owner"), key
+    request = route_policy.ROUTE_POLICIES[("POST", "/connector-access-requests")]
+    assert request.principals == {route_policy.PRINCIPAL_MEMBER}
+    assert (request.project_source, request.min_role) == ("body", "viewer")
+    mine = route_policy.ROUTE_POLICIES[("GET", "/connector-access/mine")]
+    assert mine.principals == {route_policy.PRINCIPAL_SESSION}
+    assert mine.project_source == "filtered"
+    credential = route_policy.ROUTE_POLICIES[("POST", "/connectors/{connector_id}/credentials")]
+    assert credential.principals == {route_policy.PRINCIPAL_MEMBER}
+    assert (credential.project_source, credential.min_role) == ("body", "viewer")
+    revoke = route_policy.ROUTE_POLICIES[("DELETE", "/connectors/{connector_id}/credentials/{credential_id}")]
+    assert revoke.min_role == "editor"

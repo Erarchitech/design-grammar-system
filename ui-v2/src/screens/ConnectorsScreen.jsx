@@ -4,10 +4,18 @@ import {
   listConnectors,
   createCredential,
   revokeCredential,
+  listMyGrants,
+  requestGrant,
+  requestConnectorAccess,
+  listProjectConnectorAccess,
+  issueConnectorAccess,
+  revokeConnectorAccess,
   DEGRAM_CONNECTOR_ID
 } from "../lib/connectorsApi.js";
+import { ApiError } from "../lib/apiClient.js";
 import { isDegramHost } from "../lib/hostMode.js";
 import DegramGrantsPanel from "./DegramGrantsPanel.jsx";
+import HostedConnectorsTable from "./HostedConnectorsTable.jsx";
 
 // ── Helpers ──
 
@@ -231,6 +239,43 @@ function CredentialRow({ cred, connectorId, confirmRevoke, busyBusy, onRevoke, o
   );
 }
 
+// ── ConnectorAccessAdmin ──
+// Owner/admin view of one connector's access (Phase 1301-40, D-46): the members'
+// pending requests with Grant, and the approved accesses with Revoke. Records
+// carry no token; the approved member creates their own token in DeGram.
+
+function ConnectorAccessAdmin({ requests, grants, busy, onGrant, onRevoke }) {
+  const issued = grants.filter((g) => g.active);
+  if (requests.length === 0 && issued.length === 0) return null;
+  const row = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "7px 10px",
+    borderBottom: "1px solid var(--color-hairline)",
+    font: "400 13px/1.3 var(--font-sans)"
+  };
+  const heading = { font: "500 11px/1 var(--font-sans)", color: "var(--text-muted)", padding: "8px 10px 2px" };
+  return (
+    <div data-testid="connector-access-admin">
+      {requests.length > 0 && <div style={heading}>Pending requests</div>}
+      {requests.map((r) => (
+        <div key={r.request_id} style={row}>
+          <span style={{ flex: 1 }}>{r.username} · {r.note || "—"} · {formatDate(r.created_at)}</span>
+          <Button size="sm" disabled={busy} onClick={() => onGrant(r.username)}>Grant</Button>
+        </div>
+      ))}
+      {issued.length > 0 && <div style={heading}>Approved access</div>}
+      {issued.map((g) => (
+        <div key={g.access_id} style={row}>
+          <span style={{ flex: 1 }}>{g.username} · {formatDate(g.created_at)}</span>
+          <Button size="sm" variant="destructive" disabled={busy} onClick={() => onRevoke(g.access_id)}>Revoke access</Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── CredentialSection ──
 // Credential list inside a connector card: existing credentials, create form,
 // token reveal panel.
@@ -254,6 +299,11 @@ function CredentialSection({
   onRevoke,
   onToggleConfirm,
   onDismissToken,
+  accessRequests = [],
+  accessGrants = [],
+  accessBusy = false,
+  onGrantAccess,
+  onRevokeAccess
 }) {
   const creds = connector.credentials || [];
   const reveal = tokenReveal[connector.id];
@@ -267,6 +317,13 @@ function CredentialSection({
 
   return (
     <div style={{ borderTop: "1px solid var(--color-hairline)" }}>
+      <ConnectorAccessAdmin
+        requests={accessRequests}
+        grants={accessGrants}
+        busy={accessBusy}
+        onGrant={(username) => onGrantAccess(connector.id, username)}
+        onRevoke={onRevokeAccess}
+      />
       {/* existing credentials */}
       {creds.map((cred) => (
         <CredentialRow
@@ -391,7 +448,12 @@ function ConnectorCard({
   onDismissToken,
   project,
   user,
-  active
+  active,
+  accessRequests,
+  accessGrants,
+  accessBusy,
+  onGrantAccess,
+  onRevokeAccess
 }) {
   const creds = connector.credentials || [];
   const activeCreds = creds.filter((c) => !c.revoked);
@@ -505,6 +567,11 @@ function ConnectorCard({
           onRevoke={onRevoke}
           onToggleConfirm={onToggleConfirm}
           onDismissToken={onDismissToken}
+          accessRequests={accessRequests}
+          accessGrants={accessGrants}
+          accessBusy={accessBusy}
+          onGrantAccess={onGrantAccess}
+          onRevokeAccess={onRevokeAccess}
         />
       )}
     </div>
@@ -531,23 +598,45 @@ export default function ConnectorsScreen({ active, onBack, project, user }) {
   const [busyErrs, setBusyErrs] = React.useState({});
   const [copyOk, setCopyOk] = React.useState({});
 
+  // Phase 1301-40 (D-46): per-connector access. Owners/admins see the project's
+  // requests and grants on each card (Web UI); the hosted table reads the
+  // caller's own DeGram grants and the per-connector `access` of each row.
+  const [accessData, setAccessData] = React.useState({ grants: [], requests: [] });
+  const [myGrants, setMyGrants] = React.useState(null);
+  const [accessBusy, setAccessBusy] = React.useState(false);
+  const activeRole = user?.memberships?.find((m) => m.project === project)?.role;
+  const canAdminister = activeRole === "owner" || !!user?.isAdmin;
+  const loadSeq = React.useRef(0);
+
   const load = React.useCallback(() => {
+    const seq = (loadSeq.current += 1);
     setLoading(true);
     setLoadErr("");
-    listConnectors()
-      .then((data) => {
+    const registry = hosted ? listConnectors(project) : listConnectors();
+    const extra = hosted
+      ? listMyGrants().catch(() => null)
+      : canAdminister && project
+        ? listProjectConnectorAccess(project).catch(() => null)
+        : Promise.resolve(null);
+    Promise.all([registry, extra])
+      .then(([data, more]) => {
+        if (seq !== loadSeq.current) return;
         setCategories(data.categories || []);
         setConnectors(data.connectors || []);
+        if (hosted) setMyGrants(more);
+        else setAccessData({ grants: more?.grants || [], requests: more?.requests || [] });
       })
-      .catch((err) =>
-        setLoadErr(err.message || "data-service unreachable")
-      )
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((err) => {
+        if (seq === loadSeq.current) setLoadErr(err.message || "data-service unreachable");
+      })
+      .finally(() => {
+        if (seq === loadSeq.current) setLoading(false);
+      });
+  }, [hosted, project, canAdminister]);
 
   React.useEffect(() => {
-    if (active && !hosted) load();
-  }, [active, hosted, load]);
+    if (active && (!hosted || project)) load();
+  }, [active, hosted, project, load]);
 
   // ── UI action handlers ──
 
@@ -639,6 +728,87 @@ export default function ConnectorsScreen({ active, onBack, project, user }) {
       return copy;
     });
 
+  // ── Per-connector access (D-46) ──
+
+  const setError = (id, message) =>
+    setBusyErrs((prev) => {
+      const copy = { ...prev };
+      if (message) copy[id] = message;
+      else delete copy[id];
+      return copy;
+    });
+
+  const grantAccess = async (connectorId, username) => {
+    if (accessBusy) return;
+    setAccessBusy(true);
+    setError(connectorId, "");
+    try {
+      await issueConnectorAccess(project, { username, connectorId });
+      load();
+    } catch (err) {
+      setError(connectorId, err.message || "Could not grant access");
+    } finally {
+      setAccessBusy(false);
+    }
+  };
+
+  const revokeAccess = async (accessId) => {
+    if (accessBusy || !globalThis.confirm("Revoke this connector access?")) return;
+    setAccessBusy(true);
+    try {
+      await revokeConnectorAccess(project, accessId);
+      load();
+    } catch (err) {
+      setLoadErr(err.message || "Could not revoke access");
+    } finally {
+      setAccessBusy(false);
+    }
+  };
+
+  // Hosted table actions: the caller is a project member asking for access, or an
+  // approved member creating their own token (shown once, to them only).
+  const hostedRequestAccess = async (connectorId, note) => {
+    setBusyBusy((prev) => ({ ...prev, [connectorId]: true }));
+    setError(connectorId, "");
+    try {
+      await requestConnectorAccess(project, connectorId, note);
+      load();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.code === "ACCESS_EXISTS") load();
+      else setError(connectorId, err.message || "Could not request access");
+    } finally {
+      setBusyBusy((prev) => ({ ...prev, [connectorId]: false }));
+    }
+  };
+
+  const hostedRequestDegram = async (note) => {
+    setBusyBusy((prev) => ({ ...prev, [DEGRAM_CONNECTOR_ID]: true }));
+    setError(DEGRAM_CONNECTOR_ID, "");
+    try {
+      await requestGrant(project, note);
+      load();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.code === "GRANT_EXISTS") load();
+      else setError(DEGRAM_CONNECTOR_ID, err.message || "Could not request access");
+    } finally {
+      setBusyBusy((prev) => ({ ...prev, [DEGRAM_CONNECTOR_ID]: false }));
+    }
+  };
+
+  const hostedCreateToken = async (connectorId) => {
+    setBusyBusy((prev) => ({ ...prev, [connectorId]: true }));
+    setError(connectorId, "");
+    try {
+      const result = await createCredential(connectorId, undefined, project);
+      setTokenReveal((prev) => ({ ...prev, [connectorId]: result }));
+      load();
+    } catch (err) {
+      setError(connectorId, err.message || "Create failed");
+    } finally {
+      setBusyBusy((prev) => ({ ...prev, [connectorId]: false }));
+    }
+  };
+
   // ── Group connectors by category, preserving category order ──
 
   const grouped = React.useMemo(() => {
@@ -654,7 +824,37 @@ export default function ConnectorsScreen({ active, onBack, project, user }) {
 
   const hasData = connectors.length > 0;
 
-  if (hosted) return <DegramGrantsPanel project={project} user={user} trimmed active={active} />;
+  if (hosted) {
+    return (
+      <HostedConnectorsTable
+        connectors={connectors}
+        project={project}
+        myGrants={myGrants}
+        loading={loading}
+        error={loadErr}
+        busy={busyBusy}
+        errors={busyErrs}
+        tokenReveal={tokenReveal}
+        renderReveal={(connector) => (
+          <TokenRevealPanel
+            token={tokenReveal[connector.id].token}
+            label={tokenReveal[connector.id].label}
+            connectorName={connector.name}
+            onDismiss={() => dismissToken(connector.id)}
+            onCopied={() => {
+              setCopyOk((prev) => ({ ...prev, [connector.id]: true }));
+              setTimeout(() => setCopyOk((prev) => ({ ...prev, [connector.id]: false })), 2000);
+            }}
+            copyOk={copyOk[connector.id]}
+          />
+        )}
+        onRefresh={load}
+        onRequestAccess={hostedRequestAccess}
+        onRequestDegram={hostedRequestDegram}
+        onCreateToken={hostedCreateToken}
+      />
+    );
+  }
 
   return (
     <div
@@ -803,6 +1003,11 @@ export default function ConnectorsScreen({ active, onBack, project, user }) {
                   project={project}
                   user={user}
                   active={active}
+                  accessRequests={accessData.requests.filter((r) => r.connector_id === connector.id)}
+                  accessGrants={accessData.grants.filter((g) => g.connector_id === connector.id)}
+                  accessBusy={accessBusy}
+                  onGrantAccess={grantAccess}
+                  onRevokeAccess={revokeAccess}
                 />
               ))}
             </div>

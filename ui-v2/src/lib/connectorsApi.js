@@ -9,8 +9,12 @@ import { apiFetch, dataServiceBase } from "./apiClient.js";
 // GET /connectors → { categories: string[], connectors: ConnectorOverview[] }
 // Each overview: { id, name, category, status, last_connection, credentials }
 // The server lists only credentials of the caller's member projects.
-export function listConnectors() {
-  return apiFetch(`${dataServiceBase()}/connectors`);
+// With a project the server adds `access` ("available" | "requestable" |
+// "pending") to each registry connector for a caller who is a member of it
+// (Phase 1301-40, D-46).
+export function listConnectors(project) {
+  const query = project ? `?project=${encodeURIComponent(project)}` : "";
+  return apiFetch(`${dataServiceBase()}/connectors${query}`);
 }
 
 // POST /connectors/{connectorId}/credentials
@@ -69,5 +73,40 @@ export function requestGrant(project, note) {
   return apiFetch(`${dataServiceBase()}/degram/grant-requests`, {
     method: "POST",
     body: { project, note }
+  });
+}
+
+// Per-connector access (Phase 1301-40, D-46). A project viewer asks for access
+// to a connector; the owner or an admin approves it, then the viewer creates the
+// connector's credential. Records carry no token and no hash.
+function projectAccessUrl(project) {
+  return `${dataServiceBase()}/projects/${encodeURIComponent(project)}/connector-access`;
+}
+
+export function requestConnectorAccess(project, connectorId, note) {
+  const body = { project, connector_id: connectorId };
+  if (note) body.note = note;
+  return apiFetch(`${dataServiceBase()}/connector-access-requests`, { method: "POST", body });
+}
+
+export function listMyConnectorAccess() {
+  return apiFetch(`${dataServiceBase()}/connector-access/mine`);
+}
+
+// → { project, grants: [{access_id, username, connector_id, active, ...}], requests: [{request_id, username, connector_id, note, ...}] }
+export function listProjectConnectorAccess(project) {
+  return apiFetch(projectAccessUrl(project));
+}
+
+export function issueConnectorAccess(project, { username, connectorId }) {
+  return apiFetch(projectAccessUrl(project), {
+    method: "POST",
+    body: { username, connector_id: connectorId }
+  });
+}
+
+export async function revokeConnectorAccess(project, accessId) {
+  await apiFetch(`${projectAccessUrl(project)}/${encodeURIComponent(accessId)}`, {
+    method: "DELETE"
   });
 }

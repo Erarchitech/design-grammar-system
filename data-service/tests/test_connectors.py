@@ -398,3 +398,20 @@ class TestOverviewProjectFilter:
         as_admin.cookies.set("dg_session", auth_fixtures.admin_session_token())
         all_listed = as_admin.get("/connectors").json()["connectors"]
         assert len(next(c for c in all_listed if c["id"] == "blender")["credentials"]) == 2
+
+
+# ── Per-connector access (Phase 1301-40, D-46) ──
+
+
+class TestConnectorAccessField:
+    def test_project_query_adds_access_to_registry_connectors_only(self):
+        """An admin (owner everywhere) reads every registry connector as
+        available; the DeGram card has no access field."""
+        body = client.get("/connectors", params={"project": "P1"}).json()
+        by_id = {c["id"]: c for c in body["connectors"]}
+        assert all(by_id[i]["access"] == "available" for i in EXPECTED_IDS)
+        assert "access" not in by_id["degram"]
+
+    def test_no_project_query_leaves_the_payload_unchanged(self):
+        body = client.get("/connectors").json()
+        assert all("access" not in c for c in body["connectors"])

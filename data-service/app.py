@@ -58,6 +58,7 @@ from llm_gateway import (
     LLM_SETTINGS_FILE,
 )
 
+import connector_access
 import connectors
 import degram_grants
 import degram_pairing
@@ -1683,13 +1684,26 @@ def get_connectors(request: Request):
     """
     principal = request.state.principal
     projects = None if principal.is_admin else set(auth.list_member_projects(principal.username))
+    overview = connectors.get_connector_overview(projects=projects)
+    # Phase 1301-40 (D-46): with ``?project=P`` and a caller that is a member of
+    # P (an admin counts as owner), each registry connector carries ``access``:
+    # available (owner/editor/admin or an approved access), pending (a request
+    # is open) or requestable (a viewer without access). No project, or a caller
+    # outside P, leaves the payload unchanged.
+    access_project = request.query_params.get("project") or ""
+    access_role = auth.effective_role(principal, access_project) if access_project else None
+    if access_role is not None:
+        for entry in overview:
+            entry["access"] = connector_access.access_state(
+                principal.username or "", access_project, access_role, entry["id"]
+            )
     # Phase 1301-30 (D-39): the DeGram card lists the caller's grants (an
     # admin: everyone's). It is not in CONNECTOR_REGISTRY, so no dgc_ token can
     # be minted for it, and a grant carries no secret.
     return {
         "categories": [*connectors.CONNECTOR_CATEGORIES, degram_grants.CATEGORY],
         "connectors": [
-            *connectors.get_connector_overview(projects=projects),
+            *overview,
             degram_grants.connector_card(
                 principal.username or "", principal.is_admin, connectors.derive_status
             ),
@@ -1718,9 +1732,16 @@ def revoke_degram_pairing(pairing_id: str, request: Request):
 
 
 @router.post("/connectors/{connector_id}/credentials", status_code=201)
-def create_connector_credential(connector_id: str, payload: CredentialCreatePayload | None = None):
+def create_connector_credential(
+    connector_id: str, request: Request, payload: CredentialCreatePayload | None = None
+):
     """Mint a credential for a connector. The token is returned once here
     and never again — only its SHA-256 hash is persisted (CONNB-02).
+
+    Phase 1301-40 (D-46): the route policy admits any project member (viewer);
+    the handler then requires an owner/editor/admin role in the project OR an
+    approved ``connector_access`` for this connector (403
+    ``CONNECTOR_ACCESS_REQUIRED``).
     """
     if connector_id not in connectors.CONNECTOR_IDS:
         raise _structured_error_response(
@@ -1731,6 +1752,11 @@ def create_connector_credential(connector_id: str, payload: CredentialCreatePayl
         )
     label = payload.label if payload else None
     project = payload.project if payload else None
+    principal = request.state.principal
+    if not auth.role_satisfies(
+        auth.effective_role(principal, project or ""), "editor"
+    ) and not connector_access.can_create(principal.username or "", project or "", connector_id):
+        raise connector_access.access_required()
     record, token = connectors.create_credential(connector_id, label, project)
     return CredentialCreatedResponse(credential_id=record["credential_id"], token=token)
 
@@ -4841,6 +4867,88 @@ def request_degram_grant(payload: DegramGrantRequestPayload, request: Request):
     return degram_grants.create_request(principal.username or "", payload.project, payload.note)
 
 
+class ConnectorAccessRequestPayload(BaseModel):
+    project: str
+    connector_id: str
+    note: str | None = None
+
+
+class ConnectorAccessIssuePayload(BaseModel):
+    username: str
+    connector_id: str
+
+
+@router.post("/connector-access-requests", status_code=201)
+def request_connector_access(payload: ConnectorAccessRequestPayload, request: Request):
+    """A project member (route policy: viewer) asks the owners and admins for
+    access to one registry connector (D-46). 409 ACCESS_EXISTS when the caller
+    is already an owner/editor/admin of the project or holds an approved access;
+    404 CONNECTOR_NOT_FOUND for an unknown connector and for ``degram``."""
+    principal = request.state.principal
+    username = principal.username or ""
+    if auth.role_satisfies(auth.effective_role(principal, payload.project), "editor"):
+        # An admin (effective role owner) never needs an access row.
+        connector_access.check_connector(payload.connector_id)
+        raise connector_access.access_exists()
+    return connector_access.create_request(
+        username, payload.project, payload.connector_id, payload.note
+    )
+
+
+@router.get("/connector-access/mine")
+def my_connector_access(request: Request):
+    """The caller's own connector accesses and pending requests; never another
+    user's (D-46)."""
+    username = request.state.principal.username or ""
+    return {
+        "grants": connector_access.list_mine(username),
+        "requests": connector_access.list_requests_mine(username),
+    }
+
+
+@router.get("/projects/{project}/connector-access")
+def list_connector_access(project: str):
+    """Owner or admin (route policy): the project's connector accesses and the
+    pending requests of its members. No secret exists to list."""
+    _check_project_name(project)
+    return {
+        "project": project,
+        "grants": connector_access.list_for_project(project),
+        "requests": connector_access.list_requests(project),
+    }
+
+
+@router.post("/projects/{project}/connector-access", status_code=201)
+def issue_connector_access(project: str, payload: ConnectorAccessIssuePayload, request: Request):
+    """Owner or admin (route policy): approve a member's access to one
+    connector. Closes the member's pending request for it (D-46)."""
+    _check_project_name(project)
+    principal = request.state.principal
+    try:
+        username = auth.normalize_username(payload.username)
+    except ValueError as exc:
+        raise _structured_error_response(
+            "That username is not valid.",
+            "Use 3-254 characters: lowercase letters, digits and . _ @ + -.",
+            "USERNAME_INVALID",
+            422,
+        ) from exc
+    return connector_access.issue_access(
+        project, username, payload.connector_id, principal.username or ""
+    )
+
+
+@router.delete("/projects/{project}/connector-access/{access_id}", status_code=204)
+def revoke_connector_access(project: str, access_id: str, request: Request):
+    """Owner or admin (route policy): revoke a connector access. An unknown id
+    and another project's id answer the same 404."""
+    _check_project_name(project)
+    principal = request.state.principal
+    if not connector_access.revoke_access(project, access_id, principal.username or ""):
+        raise connector_access.access_not_found()
+    return Response(status_code=204)
+
+
 @router.get("/projects/{project}/members")
 def list_project_members(project: str):
     members = sorted(auth.list_members(project), key=lambda m: m["username"])
@@ -4869,6 +4977,7 @@ def remove_project_member(project: str, username: str):
         # D-39: the user's DeGram grant on this project and its tokens end first
         # (DELEGATED_SESSION_ENDED), then every other token bound to the project (D-08).
         degram_grants.revoke_for_user_project(username, project)
+        connector_access.revoke_for_user_project(username, project)  # D-46
         delegation.revoke_for_user_project(username, project)  # D-08
     return Response(status_code=204)
 

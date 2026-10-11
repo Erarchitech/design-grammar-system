@@ -62,6 +62,9 @@
   --status-fail: var(--color-signal);
   --status-pass: var(--color-ink);
   --status-base: var(--color-mid-gray);
+  /* Hosted (DeGram) Connectors table only: Вкл/Выкл indicator. The Web UI keeps
+     its monochrome StatusDot (Signal Red is fail-only there). */
+  --status-on: #2e9e5b;
   --status-destructive: var(--color-signal-ink);
 }
 
@@ -97,6 +100,7 @@
   --color-info-soft: rgba(250, 204, 21, 0.16);
 
   --text-inverse: #111111;
+  --status-on: #4cc77f;
 }
 
 ::selection {
