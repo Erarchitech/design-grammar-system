@@ -4,10 +4,10 @@ import {
   listConnectors,
   createCredential,
   revokeCredential,
-  createDegramPairing,
-  revokeDegramPairing,
   DEGRAM_CONNECTOR_ID
 } from "../lib/connectorsApi.js";
+import { isDegramHost } from "../lib/hostMode.js";
+import DegramGrantsPanel from "./DegramGrantsPanel.jsx";
 
 // ── Helpers ──
 
@@ -79,7 +79,7 @@ const SECTION_EYEBROW = {
 // Shown exactly once after credential creation. Copy button + "shown once"
 // annotation per the design brief (CONN-02).
 
-function TokenRevealPanel({ credentialId, token, label, connectorName, isDegram, onDismiss, onCopied, copyOk }) {
+function TokenRevealPanel({ token, label, connectorName, onDismiss, onCopied, copyOk }) {
   const doCopy = () => {
     navigator.clipboard.writeText(token).then(
       () => onCopied(),
@@ -143,25 +143,14 @@ function TokenRevealPanel({ credentialId, token, label, connectorName, isDegram,
         }}
       >
         <span style={{ flex: "none" }}>&#9888;&#65039;</span>
-        {isDegram ? (
-          <span>
-            This pairing token is shown once. Paste it into{" "}
-            <strong style={{ fontWeight: 500, color: "var(--text-secondary)" }}>
-              DeGram &rsaquo; Подключение к DG
-            </strong>
-            . DeGram then acts as you, on the project you choose in DeGram. If
-            you lose it, revoke this pairing and create a new one.
-          </span>
-        ) : (
-          <span>
-            This token is shown once. Paste it into the{" "}
-            <strong style={{ fontWeight: 500, color: "var(--text-secondary)" }}>
-              {connectorName}
-            </strong>{" "}
-            connector component in your target software. If you lose it, create a
-            new credential.
-          </span>
-        )}
+        <span>
+          This token is shown once. Paste it into the{" "}
+          <strong style={{ fontWeight: 500, color: "var(--text-secondary)" }}>
+            {connectorName}
+          </strong>{" "}
+          connector component in your target software. If you lose it, create a
+          new credential.
+        </span>
       </div>
 
       <Button size="sm" variant="secondary" onClick={onDismiss} style={{ alignSelf: "flex-end" }}>
@@ -175,9 +164,7 @@ function TokenRevealPanel({ credentialId, token, label, connectorName, isDegram,
 // Single credential entry: label, created date, revoked badge, revoke button.
 
 function CredentialRow({ cred, connectorId, confirmRevoke, busyBusy, onRevoke, onToggleConfirm }) {
-  const isDegram = connectorId === DEGRAM_CONNECTOR_ID;
-  const label =
-    cred.label || `${isDegram ? "Pairing" : "Credential"} ${cred.credential_id.slice(0, 8)}`;
+  const label = cred.label || `Credential ${cred.credential_id.slice(0, 8)}`;
   const revoked = cred.revoked;
   const confirming = confirmRevoke[cred.credential_id];
   const busy = busyBusy[cred.credential_id];
@@ -200,18 +187,10 @@ function CredentialRow({ cred, connectorId, confirmRevoke, busyBusy, onRevoke, o
         }}
       >
         {label}
-        {isDegram && cred.username && (
-          <span style={{ color: "var(--text-muted)" }}> &middot; {cred.username}</span>
-        )}
       </span>
       <span style={{ font: "400 11px/1 var(--font-mono)", color: "var(--text-muted)", flex: "none" }}>
         {formatDate(cred.created_at)}
       </span>
-      {isDegram && (
-        <span style={{ font: "400 11px/1 var(--font-mono)", color: "var(--text-muted)", flex: "none" }}>
-          {cred.last_exchange ? `used ${formatDate(cred.last_exchange)}` : "never used"}
-        </span>
-      )}
       {revoked ? (
         <span
           style={{
@@ -277,7 +256,6 @@ function CredentialSection({
   onDismissToken,
 }) {
   const creds = connector.credentials || [];
-  const isDegram = connector.id === DEGRAM_CONNECTOR_ID;
   const reveal = tokenReveal[connector.id];
   const labelValue = labelInputs[connector.id] || "";
   const projectValue = projectInputs[connector.id] || "";
@@ -306,11 +284,9 @@ function CredentialSection({
       <div style={{ padding: "8px 10px" }}>
         {reveal ? (
           <TokenRevealPanel
-            credentialId={reveal.credential_id}
             token={reveal.token}
             label={reveal.label}
             connectorName={connector.name}
-            isDegram={isDegram}
             onDismiss={() => onDismissToken(connector.id)}
             onCopied={() => {
               setCopyOk((prev) => ({ ...prev, [connector.id]: true }));
@@ -339,10 +315,8 @@ function CredentialSection({
                 outline: "none"
               }}
             />
-            {/* Phase 825: the token is project-scoped — the CONNECTOR component
-                reads the project from the token, so no Project input on-canvas.
-                Phase 1301-17 (D-26): a DeGram pairing has no project. */}
-            {!isDegram && <input
+            {/* The connector credential is project-scoped. */}
+            <input
               placeholder="Project"
               value={projectValue}
               onChange={(e) => onSetProjectInput(connector.id, e.target.value)}
@@ -357,7 +331,7 @@ function CredentialSection({
                 background: "var(--surface-input)",
                 outline: "none"
               }}
-            />}
+            />
             <Button size="sm" type="submit">
               Create
             </Button>
@@ -372,7 +346,7 @@ function CredentialSection({
             onClick={() => onStartCreate(connector.id)}
             style={{ font: "400 12px/1 var(--font-sans)" }}
           >
-            {isDegram ? "+ Pair DeGram" : "+ Create credential"}
+            + Create credential
           </Button>
         )}
 
@@ -415,6 +389,9 @@ function ConnectorCard({
   onRevoke,
   onToggleConfirm,
   onDismissToken,
+  project,
+  user,
+  active
 }) {
   const creds = connector.credentials || [];
   const activeCreds = creds.filter((c) => !c.revoked);
@@ -506,9 +483,10 @@ function ConnectorCard({
         )}
       </div>
 
-      {/* Expandable credentials area */}
-      {expanded[connector.id] && (
-        <CredentialSection
+      {/* DeGram authorization is a grant record, never a connector credential. */}
+      {expanded[connector.id] && (connector.id === DEGRAM_CONNECTOR_ID
+        ? <DegramGrantsPanel project={project} user={user} active={active} />
+        : <CredentialSection
           connector={connector}
           creating={creating}
           labelInputs={labelInputs}
@@ -535,7 +513,8 @@ function ConnectorCard({
 
 // ── Main Screen ──
 
-export default function ConnectorsScreen({ active, onBack, project }) {
+export default function ConnectorsScreen({ active, onBack, project, user }) {
+  const hosted = isDegramHost();
   const [categories, setCategories] = React.useState([]);
   const [connectors, setConnectors] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -567,8 +546,8 @@ export default function ConnectorsScreen({ active, onBack, project }) {
   }, []);
 
   React.useEffect(() => {
-    if (active) load();
-  }, [active, load]);
+    if (active && !hosted) load();
+  }, [active, hosted, load]);
 
   // ── UI action handlers ──
 
@@ -607,10 +586,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
     const label = labelInputs[id]?.trim() || undefined;
     const project = projectInputs[id]?.trim() || undefined;
     try {
-      const result =
-        id === DEGRAM_CONNECTOR_ID
-          ? await createDegramPairing(label)
-          : await createCredential(id, label, project);
+      const result = await createCredential(id, label, project);
       setTokenReveal((prev) => ({ ...prev, [id]: result }));
       setCreating((prev) => ({ ...prev, [id]: false }));
       setLabelInputs((prev) => ({ ...prev, [id]: "" }));
@@ -635,8 +611,7 @@ export default function ConnectorsScreen({ active, onBack, project }) {
       return copy;
     });
     try {
-      if (connectorId === DEGRAM_CONNECTOR_ID) await revokeDegramPairing(credentialId);
-      else await revokeCredential(connectorId, credentialId);
+      await revokeCredential(connectorId, credentialId);
       setConfirmRevoke((prev) => ({ ...prev, [credentialId]: false }));
       // Clear token reveal if it was for this credential
       setTokenReveal((prev) => {
@@ -678,6 +653,8 @@ export default function ConnectorsScreen({ active, onBack, project }) {
   }, [categories, connectors]);
 
   const hasData = connectors.length > 0;
+
+  if (hosted) return <DegramGrantsPanel project={project} user={user} trimmed active={active} />;
 
   return (
     <div
@@ -823,6 +800,9 @@ export default function ConnectorsScreen({ active, onBack, project }) {
                   onRevoke={doRevoke}
                   onToggleConfirm={toggleConfirmRevoke}
                   onDismissToken={dismissToken}
+                  project={project}
+                  user={user}
+                  active={active}
                 />
               ))}
             </div>

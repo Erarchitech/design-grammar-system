@@ -210,7 +210,7 @@ export default function App() {
         <AiEngineScreen key={screenKey} active={region === "aiengine"} onBack={goLanding} project={project} />
       </Layer>
       <Layer active={region === "connectors"}>
-        <ConnectorsScreen key={screenKey} active={region === "connectors"} onBack={goLanding} project={project} />
+        <ConnectorsScreen key={screenKey} active={region === "connectors"} onBack={goLanding} project={project} user={user} />
       </Layer>
       <Layer active={region === "reasoner"}>
         <ReasonerScreen key={screenKey} active={region === "reasoner"} onBack={goLanding} project={project} />

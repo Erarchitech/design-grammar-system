@@ -16,16 +16,16 @@ test.after(() => {
   globalThis.history = originalHistory;
 });
 
-test("host flag permits only the three DeGram regions", async () => {
+test("host flag permits DeGram regions and trimmed connectors", async () => {
   const normal = await hostMode("");
   assert.equal(normal.isDegramHost(), false);
   assert.equal(normal.isRegionAllowed("connectors"), true);
 
   const hosted = await hostMode("?host=degram");
   assert.equal(hosted.isDegramHost(), true);
-  assert.deepEqual(hosted.HOST_REGIONS, ["graph", "model", "projects"]);
+  assert.deepEqual(hosted.HOST_REGIONS, ["graph", "model", "projects", "connectors"]);
   for (const region of ["landing", ...hosted.HOST_REGIONS]) assert.equal(hosted.isRegionAllowed(region), true);
-  for (const region of ["aiengine", "connectors", "reasoner", "apidocs", "unknown"]) assert.equal(hosted.isRegionAllowed(region), false);
+  for (const region of ["aiengine", "reasoner", "apidocs", "unknown"]) assert.equal(hosted.isRegionAllowed(region), false);
 });
 
 test("host project announcement is bounded, encoded and transient", async () => {

@@ -2,7 +2,7 @@
 // It grants no API, token, or storage capability.
 const DEGRAM_HOST = new URLSearchParams(globalThis.location?.search || "").get("host") === "degram";
 
-export const HOST_REGIONS = ["graph", "model", "projects"];
+export const HOST_REGIONS = ["graph", "model", "projects", "connectors"];
 
 export function isDegramHost() {
   return DEGRAM_HOST;
