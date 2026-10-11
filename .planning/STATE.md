@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 36
+current_plan: 16
 status: executing
-stopped_at: Plan 1301-36 in progress; services rebuilt from clean HEAD dee60a9, version commit 93aa2b99 unpushed; resume at plan 36 Task 3 after owner pushes degram/phase-1301
+stopped_at: Completed 1301-36-PLAN.md; gap round 0.1.10 built, awaiting owner live UAT (guide 1301-0.1.10-TEST-GUIDE.md); plan 16 still open
 last_updated: "2026-10-11T15:25:00Z"
 last_activity: 2026-10-11
-last_activity_desc: Plan 1301-36 partial - data-service and design-grammars rebuilt from a clean export of HEAD and restarted (retired exchange answers PAIRING_RETIRED, session-exchange route live); component 0.1.10 commit 93aa2b99 not yet pushed
+last_activity_desc: Plan 1301-36 complete - 0.1.10 pushed, gitlink 93aa2b99, services rebuilt from clean HEAD, installer built (sha b13d10ef...0e88), owner test guide written; live UAT pending
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 48
-  completed_plans: 38
+  completed_plans: 39
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 36
+Current Plan: 16
 Total Plans in Phase: 36
-Plan: 35 of 36 complete; next: 36
+Plan: 36 of 36 plans have summaries except 16; next: owner live UAT of 0.1.10, then plan 16
 Status: Blocked within plan 1301-33; plan not complete
-Last activity: 2026-10-11 — plan 1301-36 partial (services rebuilt, 0.1.10 version commit awaiting owner push)
-Last Activity Description: Services rebuilt from a clean git export (the working tree holds other sessions uncommitted data-service/ui-v2 edits that were NOT shipped). Next: owner pushes degram/phase-1301 (93aa2b99), then gitlink bump, workspace verify, installer build in D:\dgb\src, BUILD record and test guide.
+Last activity: 2026-10-11 — plan 1301-36 complete (0.1.10 built and published to services; owner UAT pending)
+Last Activity Description: Gap round plans 30-36 complete offline. 0.1.10 installer D:\dgb\srcpps\desktopelease\DeGram-Setup-0.1.10.exe. Next: owner runs 1301-0.1.10-TEST-GUIDE.md; then plan 16 live UAT; phase verification/completion remain open.
 
 ## Deferred Verification
 

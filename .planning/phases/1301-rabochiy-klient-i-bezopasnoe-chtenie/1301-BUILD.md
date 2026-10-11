@@ -500,3 +500,24 @@ Same procedure: build clone detached at `40bbd47f`, clean before and after; same
 | ProductVersion | `0.1.9.0` |
 
 Artifact checks — all passed: the 0.1.8 list (`com.erarchitech.degram`, `degram-select`, `host=degram`, `showStart`, revit-mcp `default_enabled`/`json_body`/`urllib.parse`, no `tests`), plus the F-02 cold-resume parameters in the packaged renderer `dist/assets/index-MWv2WNum.js` (`defer_history:!n&&s`, `s?{omit_messages:!0}:{}`). Built only; owner test guide: `1301-0.1.9-TEST-GUIDE.md`.
+
+## 0.1.10 build: grant-backed access, DeGram shell, Models screen (2026-10-11)
+
+Gap round plans 30-35 (D-39..D-44, G-25). Component commits `03785f3e` (33), `c3318b2d` (34), `38728957` (35) and version bump `93aa2b99` were pushed by the owner to `degram/phase-1301`; framework gitlink `40bbd47f` → `93aa2b99a2538efadf038f7e0b59a1545f1f863c` (commit `8c4dc7c`), `python tools/degram/workspace.py verify` exit 0; `apps/revit-mcp` unchanged at `d8f0f24d2d29c8115f1e21b6573f52a360b34cad`.
+
+**Services (owner consent "rebuild ok").** `data-service` and `design-grammars` were rebuilt with `docker build --no-cache` from a `git archive` export of framework HEAD `dee60a9`, not from the working tree: the working tree holds other sessions' uncommitted edits in `data-service/cypher_allowlist.py`, `dg_context.py`, `ui-v2/src/lib/auth.js` and `ProjectsScreen.jsx`, which therefore are **not** in the running images. Images were tagged `design-grammar-system-data-service` / `-design-grammars` and the two containers were recreated with `docker compose up -d --no-build`. Both containers run the freshly built image ids. Probes: `POST /auth/degram/session-exchange` without a session → 401 `AUTH_REQUIRED`; `POST /auth/degram/exchange` with a `dgp_` bearer → 401 `PAIRING_RETIRED`; UI on :8080 → 200. `403 GRANT_REQUIRED` with a signed-in user was not exercised (no credentials used).
+
+**Installer.** `D:\dgb\src` (clean clone) detached at the gitlink commit, clean before and after; `D:\dgb\run-build.sh` with the scrubbed environment and `DEGRAM_REVIT_MCP_SOURCE='D:\dgb\revit-mcp-src'` (clone at `d8f0f24d`). Build exit 0 (log end 2026-10-11T19:36:43Z). D: free after the build: 3.4 GB (older installers 0.1.3–0.1.9 kept).
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.10.exe` |
+| Installer size | 490,529,803 bytes |
+| Installer SHA-256 | `b13d10efd776f83c000ec3c75f91fe03706b72c94e6b3d0beec1fef4bab40e88` |
+| Unpacked `app.asar` SHA-256 | `1c60ec706219bf9058b585d7c5481d991699c3485af84822dd17324bb9db8900` |
+| Component commit / gitlink | `93aa2b99a2538efadf038f7e0b59a1545f1f863c` |
+| ProductVersion / ProductName / CompanyName | `0.1.10` / `DeGram` / `Erarchitech` |
+
+Artifact checks (all passed): `app.asar.unpacked\dist\electron-main.mjs` contains `com.erarchitech.degram`, `degram-select`, `host=degram`, `showStart`, `session-exchange`, `GRANT_REQUIRED`, `degram-new-session`, `degram-state=` and does **not** contain `auth/degram/exchange`; the packaged renderer `dist\assets\index-CovAaKx-.js` contains `degram.nav` and `/degram/models`, no `pairing-panel`; the i18n chunk has the new «Граф проекта» and «Модели» copy (the string «Подключение к DG» that remains is the sign-in state label, not the pairing panel); `resources\revit-mcp\extension.json` `"default_enabled": "True"`, `main.py` `json_body`, `revit_mcp\views.py` `urllib.parse`; `resources\revit-mcp\tests` absent.
+
+Built only: not installed or launched. Installation and live UAT are the owner's checkpoint; guide: `1301-0.1.10-TEST-GUIDE.md`.

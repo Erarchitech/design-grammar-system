@@ -146,7 +146,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 34/36 plans executed
+**Plans**: 35/36 plans executed
 **UI hint**: yes
 
 Plans:
@@ -258,7 +258,7 @@ Plans:
 
 **Wave 24** *(blocked on 1301-30..35)*
 
-- [ ] 1301-36-PLAN.md — DeGram 0.1.10: owner push, service rebuild with consent, build, Russian test guide
+- [x] 1301-36-PLAN.md — DeGram 0.1.10: owner push, service rebuild with consent, build, Russian test guide
 
 **Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
 
@@ -402,7 +402,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 34/36 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 35/36 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
