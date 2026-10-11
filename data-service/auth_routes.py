@@ -27,6 +27,7 @@ from pydantic import BaseModel
 
 import auth
 import company
+import degram_grants
 import degram_pairing
 import delegation
 
@@ -318,33 +319,46 @@ def _delegated_answer(response: Response, token: str, record: dict) -> dict:
     }
 
 
-@router.post("/auth/degram/exchange", status_code=201)
-def exchange_degram_pairing(payload: DelegatedTokenRequest, request: Request, response: Response):
-    """Phase 1301-17 (D-25, D-26): trade the DeGram pairing token presented as
-    ``Authorization: Bearer dgp_...`` for a ``dgd_`` token of one project.
-    ``require_principal`` has already proved the pairing live (401
-    ``PAIRING_AUTH_FAILED`` otherwise) and the user's stored membership on the
-    body project (403 ``PROJECT_FORBIDDEN``; an admin who is not a member is
-    refused too). The answer is ``POST /auth/delegated-token``'s plus
-    ``username``."""
+@router.post("/auth/degram/session-exchange", status_code=201)
+def exchange_degram_session(payload: DelegatedTokenRequest, request: Request, response: Response):
+    """Phase 1301-30 (D-39): trade the caller's cookie session (+ CSRF) for a
+    ``dgd_`` token of one project, but only when an owner or admin has granted
+    the caller DeGram access to it (``degram_grants``). The stored membership is
+    required (no admin elevation, like the cookie mint): 403 ``PROJECT_FORBIDDEN``
+    for a non-member, 403 ``GRANT_REQUIRED`` for a member without an active
+    grant. The token's parent is the session, so logout ends it, and it records
+    the grant, so revoking the grant ends it. The answer is the cookie mint's
+    plus ``username``."""
     principal = request.state.principal
     project = payload.project
-    if principal.kind != "pairing" or auth.get_role(principal.username or "", project) is None:
+    username = principal.username or ""
+    if not username or not principal.session_hash or auth.get_role(username, project) is None:
         raise auth.auth_error(
             "Not authorized for the requested project.",
             "Request project access from a project owner.",
             "PROJECT_FORBIDDEN",
             403,
         )
+    grant = degram_grants.active_grant(username, project)
+    if grant is None:
+        raise degram_grants.grant_required()
     token, record = delegation.issue_delegated_token(
-        pairing_id=principal.credential_id,
-        username=principal.username or "",
+        session_hash=principal.session_hash,
+        grant_id=grant["grant_id"],
+        username=username,
         project=project,
     )
-    degram_pairing.record_exchange(principal.credential_id or "")
-    # Plus the pairing's user: DeGram keeps its own DG sign-in (D-27) and refuses
-    # a pairing that belongs to a different user than the signed-in one.
+    degram_grants.record_use(grant["grant_id"])
     return {**_delegated_answer(response, token, record), "username": record["username"]}
+
+
+@router.post("/auth/degram/exchange", status_code=201)
+def exchange_degram_pairing(request: Request):
+    """Retired by D-39: the user-created ``dgp_`` pairing is replaced by owner/
+    admin grants and ``POST /auth/degram/session-exchange``. The pairing token
+    never resolves to a principal (``degram_pairing.authenticate_pairing``
+    answers 401 ``PAIRING_RETIRED`` first); this handler is a second wall."""
+    raise degram_pairing.pairing_retired()
 
 
 @router.delete("/auth/delegated-token", status_code=204)
@@ -400,6 +414,4 @@ def change_password(request: Request, payload: PasswordChangeRequest):
     # D-08: a password change ends every delegated token of the user, including
     # those minted from the session that is kept.
     delegation.revoke_for_user(user["username"])
-    # D-25: and every DeGram pairing of the user (with its delegated tokens).
-    degram_pairing.revoke_for_user(user["username"])
     return None

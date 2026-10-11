@@ -205,8 +205,8 @@ class TestInventory:
             assert extras == set()
 
     def test_policy_table_size(self):
-        # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes.
-        assert len(route_policy.ROUTE_POLICIES) == 98
+        # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes; 104 since plan 30 (D-39): the session exchange, the three project grant routes, GET /degram/grants/mine and POST /degram/grant-requests.
+        assert len(route_policy.ROUTE_POLICIES) == 104
 
     def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
         # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the
@@ -502,8 +502,32 @@ class TestResourceNotFoundSemantics:
         app_module.EXECUTION_RESULTS.pop("exec-9", None)
 
 
-def test_the_pairing_principal_is_listed_by_the_exchange_alone():
-    # Phase 1301-17 (D-25): a dgp_ token is a principal on exactly one route.
+def test_the_pairing_principal_is_listed_by_the_retired_exchange_alone():
+    # Phase 1301-17 (D-25), retired by plan 30 (D-39): a dgp_ token is still a
+    # principal on exactly one route, which answers 401 PAIRING_RETIRED.
     rows = [k for k, p in ROWS if route_policy.PRINCIPAL_PAIRING in p.principals]
     assert rows == [("POST", "/auth/degram/exchange")]
     assert route_policy.ROUTE_POLICIES[rows[0]].principals == {route_policy.PRINCIPAL_PAIRING}
+
+
+def test_the_degram_grant_rows_are_owner_scoped_and_the_session_exchange_is_member_scoped():
+    # Phase 1301-30 (D-39, D-40).
+    owner_rows = [
+        ("GET", "/projects/{project}/degram-grants"),
+        ("POST", "/projects/{project}/degram-grants"),
+        ("DELETE", "/projects/{project}/degram-grants/{grant_id}"),
+    ]
+    for key in owner_rows:
+        policy = route_policy.ROUTE_POLICIES[key]
+        assert policy.principals == {route_policy.PRINCIPAL_MEMBER}, key
+        assert (policy.project_source, policy.min_role) == ("path", "owner"), key
+    for key in (
+        ("POST", "/auth/degram/session-exchange"),
+        ("POST", "/degram/grant-requests"),
+    ):
+        policy = route_policy.ROUTE_POLICIES[key]
+        assert policy.principals == {route_policy.PRINCIPAL_MEMBER}, key
+        assert (policy.project_source, policy.min_role) == ("body", "viewer"), key
+    mine = route_policy.ROUTE_POLICIES[("GET", "/degram/grants/mine")]
+    assert mine.principals == {route_policy.PRINCIPAL_SESSION}
+    assert mine.project_source == "filtered"

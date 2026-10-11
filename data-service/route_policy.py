@@ -37,10 +37,11 @@ PRINCIPAL_SERVICE = "service"
 # cookie session for one project (delegation.py). Permitted only where a row
 # lists it; resolves to Principal.kind "delegated" and never elevates an admin.
 PRINCIPAL_DELEGATED = "delegated"
-# Phase 1301-17 (D-25): a long-lived user-bound ``dgp_`` DeGram pairing token
-# (degram_pairing.py). Listed by exactly one row, POST /auth/degram/exchange;
-# on every other route auth.require_principal answers 401
-# PAIRING_NOT_A_PRINCIPAL before any credential resolution.
+# Phase 1301-17 (D-25), retired by plan 30 (D-39): the ``dgp_`` DeGram pairing
+# token (degram_pairing.py). Still listed by exactly one row, the retired
+# POST /auth/degram/exchange, which answers 401 PAIRING_RETIRED; on every other
+# route auth.require_principal answers 401 PAIRING_NOT_A_PRINCIPAL before any
+# credential resolution.
 PRINCIPAL_PAIRING = "pairing"
 
 
@@ -121,9 +122,13 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # and self-revoke (the delegated token itself) a delegated token.
     ("POST", "/auth/delegated-token"): _p(_MEM, source="body", role="viewer"),
     ("DELETE", "/auth/delegated-token"): _p(_DEL),
-    # Phase 1301-17 (D-25, D-26): trade a DeGram pairing token for a delegated
-    # token of a project the pairing's user is a stored member of.
+    # Phase 1301-17 (D-25), retired by plan 30 (D-39): the pairing exchange now
+    # answers 401 PAIRING_RETIRED to any dgp_ Bearer.
     ("POST", "/auth/degram/exchange"): _p(_PAIR, source="body", role="viewer"),
+    # Phase 1301-30 (D-39): trade the cookie session (+ CSRF) for a delegated
+    # token of a project the caller is a stored member of AND holds an active
+    # owner/admin grant for (403 GRANT_REQUIRED otherwise).
+    ("POST", "/auth/degram/session-exchange"): _p(_MEM, source="body", role="viewer"),
     # ── project tenancy + invitations (Phase 1205-12, D-02/D-05) ──
     ("POST", "/auth/invites"): _p(_MEM, source="body", role="owner"),
     ("POST", "/auth/accept-invite"): _p(_PUB),
@@ -165,6 +170,16 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/degram/admin/llm-config"): _p(_ADM),
     # Phase 1301-08 (D-17): per-project provider-export policy, admin-only. Like the
     # company row, admin is owner everywhere so a project source adds nothing.
+    # Phase 1301-30 (D-39, D-40): DeGram access grants. The owner of the project
+    # (an admin is owner everywhere) lists, issues and revokes them; any member
+    # asks for one and reads their own.
+    ("GET", "/projects/{project}/degram-grants"): _p(_MEM, source="path", role="owner"),
+    ("POST", "/projects/{project}/degram-grants"): _p(_MEM, source="path", role="owner"),
+    ("DELETE", "/projects/{project}/degram-grants/{grant_id}"): _p(
+        _MEM, source="path", role="owner"
+    ),
+    ("GET", "/degram/grants/mine"): _p(_SES, source="filtered"),
+    ("POST", "/degram/grant-requests"): _p(_MEM, source="body", role="viewer"),
     ("GET", "/projects/{project}/degram-policy"): _p(_ADM),
     ("PUT", "/projects/{project}/degram-policy"): _p(_ADM),
     # ── connectors ──
@@ -174,9 +189,9 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
         _MEM, source="resource:credential", role="editor"
     ),
     ("POST", "/connectors/heartbeat"): _p(_SELF),
-    # Phase 1301-17 (D-25): DeGram pairings. Any signed-in user pairs DeGram for
-    # themselves (no project, D-26); the revoke handler allows the owner or an
-    # admin and answers 404 PAIRING_NOT_FOUND otherwise.
+    # Phase 1301-17 (D-25), retired by plan 30 (D-39): creating a pairing answers
+    # 410 PAIRING_RETIRED; the revoke row stays for cleanup of stored pairings
+    # (owner of the pairing or an admin, 404 PAIRING_NOT_FOUND otherwise).
     ("POST", "/connectors/degram/pairings"): _p(_SES),
     ("DELETE", "/connectors/degram/pairings/{pairing_id}"): _p(_SES),
     # ── reasoner ──

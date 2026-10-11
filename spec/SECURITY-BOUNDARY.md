@@ -8,7 +8,7 @@ This is the normative contract for the Design Grammar System security boundary. 
 
 **Enforcement shape.** This file follows the `spec/SWRL-SUBSET.md` and `spec/REPRODUCIBILITY.md` pattern. Section 4 holds four machine-checked fenced blocks, each delimited by HTML comments. `data-service/tests/test_security_boundary_spec.py` parses them and fails the suite when a block differs from the code or compose file it mirrors, in either direction. A new route, principal, published port or known-default secret therefore cannot ship without this document changing.
 
-**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only) `auth-delegated-tokens.json` (SHA-256 hashes of delegated tokens, Section 3.5) and `degram-pairings.json` (SHA-256 hashes of DeGram pairing tokens, Section 3.5). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
+**Storage note (Schema Change Propagation).** Users, sessions, memberships and invitations live in JSON files under `DG_DATA_DIR` (`auth-users.json`, `auth-sessions.json`, `auth-memberships.json`, `auth-invites.json`), not in Neo4j. Phase 1301 adds `auth-project-companies.json` (the admin-assigned project to company map, D-20; `PUT /projects/{project}/company`, admin only) `auth-delegated-tokens.json` (SHA-256 hashes of delegated tokens, Section 3.5) `degram-grants.json` and `degram-grant-requests.json` (DeGram access grants and member requests, no secret, Section 3.5) and `degram-pairings.json` (the retired pairing rows, Section 3.5). No graph node label, relationship type or property was added by Phase 1205, so the Schema Change Propagation list in `CLAUDE.md` is not triggered by this contract.
 
 Related contracts: `spec/EVIDENCE-CONTRACT.md` (validation outcome status and evidence envelope, unchanged by this phase), `spec/RULE-PARTITION-POLICY.md`, `spec/SWRL-SUBSET.md`, `spec/REPRODUCIBILITY.md`.
 
@@ -109,11 +109,14 @@ A user-scoped credential for the local DeGram agent, which holds neither the bro
 - **CSRF.** A delegated Bearer is a non-ambient credential and is exempt from `X-DG-CSRF`; the cookie session that mints it is not.
 - **Revocation (fail closed, checked on every request).** The token stops working at once when: the parent session is logged out, revoked, expired or idle-timed-out, or its user is gone (401 `DELEGATED_SESSION_ENDED`); the user changes their password (all of the user's tokens, 401 `DELEGATED_SESSION_ENDED`); the membership on the bound project is removed (403 `PROJECT_FORBIDDEN`); the project is reassigned to another company (403 `DELEGATED_SCOPE_CHANGED`); or its own expiry passes (401 `DELEGATED_EXPIRED`). `DELETE /auth/delegated-token` revokes the presented token (later use answers 401 `DELEGATED_AUTH_FAILED`). Delegated use does not refresh the parent session's idle timer.
 - **Company.** `PUT /projects/{project}/company` (admin only, D-20) assigns a project to a company; `GET /projects` rows and `GET /auth/me` memberships carry `company` (string or `null`).
-- **DeGram pairing (Phase 1301 plan 17, D-25, D-26, D-27).** A second way to mint the same delegated token, for a DeGram install that has no browser cookie.
-  - *Credential.* `Authorization: Bearer dgp_...` (`secrets.token_urlsafe(32)`), created by any signed-in user with `POST /connectors/degram/pairings` (cookie + CSRF, body `{label?}`, no project). The 201 answer `{pairing_id, token}` (`Cache-Control: no-store`) is the only time the token is shown. The token is bound to its user and to no project and has no expiry (`expires_at` null, revoke only). The server stores only its SHA-256 hash, the username, the label, `created_at` and `last_exchange` (`degram-pairings.json`); the raw token is never logged. `GET /connectors` carries a `degram` card in the `Agents` category listing the caller's pairings (an admin sees every user's, with `username`), never a token or hash. `degram` is not a connector id, so no `dgc_` token can be minted for it.
-  - *Exchange.* `POST /auth/degram/exchange` with the pairing Bearer and body `{project}` is the only route whose policy lists `pairing`. It requires a live pairing (else 401 `PAIRING_AUTH_FAILED`: unknown, revoked, or its user is gone) and the user's stored membership on the project (else 403 `PROJECT_FORBIDDEN`; an admin who is not a member is refused). It mints a delegated token with parent `pairing` (the record holds `pairing_id` in place of the session hash), records `last_exchange`, and answers as `POST /auth/delegated-token` plus `username` (DeGram keeps its own DG sign-in, D-27, and refuses a pairing whose user differs from the signed-in one). A cookie, connector, delegated or service caller answers 403 `PRINCIPAL_NOT_PERMITTED`.
-  - *Not a principal anywhere else.* `require_principal` refuses a `dgp_` Bearer on every other route, public routes included, with 401 `PAIRING_NOT_A_PRINCIPAL` before any credential resolution, so it never reaches the connector branch.
-  - *Revocation.* `DELETE /connectors/degram/pairings/{pairing_id}` by its owner or an admin (another user's pairing answers the same 404 `PAIRING_NOT_FOUND` as an unknown one), a password change of its user, or the user no longer existing ends the pairing. Every delegated token minted from it ends at once: the revoke marks them revoked and each request re-checks the live pairing in place of the live session (401 `DELEGATED_SESSION_ENDED`). Logging out of the session that created a pairing does not end it. Membership and company re-checks apply to pairing-minted tokens unchanged.
+- **DeGram access grants (Phase 1301 plan 30, D-39, D-40).** DeGram access is issued by a DG admin or the owner of the project, per project member, on the Connectors tab. The key never leaves the server and the user never handles a credential: a grant is a record of authorization, not a credential, and no route returns a secret for it.
+  - *Grant.* `{grant_id, username, project, label (1-120 characters), purpose (1-200 characters), issued_by, created_at, last_used, revoked}` in `degram-grants.json`. At most one active grant per `(username, project)`: issuing again revokes the old one and its tokens. A grant is active while it is not revoked, its user exists and the user still holds a stored membership of its project.
+  - *Issue and revoke.* `POST /projects/{project}/degram-grants` (body `{username, label, purpose}`; 201), `GET /projects/{project}/degram-grants` (grants and pending requests) and `DELETE /projects/{project}/degram-grants/{grant_id}` (204) are `member` rows with `MIN_ROLE` owner, so the project's owner or any admin (admin is owner everywhere), with cookie + CSRF. The target must be a stored member (409 `NOT_A_MEMBER`); a bad label or purpose answers 422 `GRANT_INVALID`; an unknown grant id and another project's id answer the same 404 `GRANT_NOT_FOUND`.
+  - *Own view and requests (D-40).* `GET /degram/grants/mine` (`session`, filtered) returns only the caller's grants `{project, label, purpose, created_at, last_used, active}` and pending requests, never another user's. `POST /degram/grant-requests` (`member`, viewer, body `{project, note? (at most 200 characters)}`) records a pending request, listed beside the grants for the project's owners and admins; a repeated request replaces the note; 409 `GRANT_EXISTS` when an active grant exists. Issuing a grant closes the request.
+  - *Session exchange.* `POST /auth/degram/session-exchange` with body `{project}`, the `dg_session` cookie and `X-DG-CSRF: 1` (policy `member`, viewer) mints the same delegated token as `POST /auth/delegated-token` plus `username`, but only when the caller holds a stored membership (403 `PROJECT_FORBIDDEN`; an admin who is not a member is refused) AND an active grant for the project (403 `GRANT_REQUIRED`). The token's parent is the session, so logout ends it, and its record holds `grant_id`; `last_used` of the grant is updated. A Bearer caller answers 403 `PRINCIPAL_NOT_PERMITTED`.
+  - *Revocation.* Every `dgd_` request re-checks the live grant. Revoking the grant, removing the member from the project, the user no longer existing and replacing the grant end its delegated tokens at once (401 `DELEGATED_SESSION_ENDED`); a password change ends every token of the user (the grant stays, it is the owner's decision).
+  - *Connector card.* `GET /connectors` carries a `degram` card in the `Agents` category whose credentials are the caller's grants (an admin sees everyone's, with `username`); `degram` is not a connector id, so no `dgc_` token can be minted for it.
+- **DeGram pairing, retired (Phase 1301 plan 17 retired by plan 30, D-39).** The user-created `dgp_` pairing is gone. `POST /connectors/degram/pairings` answers 410 `PAIRING_RETIRED`; `POST /auth/degram/exchange` answers 401 `PAIRING_RETIRED` to any `dgp_` Bearer (DeGram 0.1.9 maps any exchange 401 to "pairing revoked" and clears its stored token); `require_principal` still refuses a `dgp_` Bearer on every other route with 401 `PAIRING_NOT_A_PRINCIPAL` before any credential resolution; every stored pairing is treated as revoked, so a `dgd_` minted from one answers 401 `DELEGATED_SESSION_ENDED`. `DELETE /connectors/degram/pairings/{pairing_id}` stays for cleanup of the stored rows (its owner or an admin, otherwise 404 `PAIRING_NOT_FOUND`).
 
 ### 3.6 DeGram model relay (Phase 1301 plan 08, D-16)
 
@@ -166,6 +169,7 @@ Format `METHOD|PATH|PRINCIPALS|PROJECT_SOURCE|MIN_ROLE`. Principals are joined w
 GET|/|public|-|-
 POST|/auth/accept-invite|public|-|-
 POST|/auth/degram/exchange|pairing|body|viewer
+POST|/auth/degram/session-exchange|member|body|viewer
 DELETE|/auth/delegated-token|delegated|-|-
 POST|/auth/delegated-token|member|body|viewer
 POST|/auth/invites|member|body|owner
@@ -193,6 +197,8 @@ POST|/context/assemble|service|-|-
 GET|/context/debug|service|-|-
 POST|/context/generate-cypher|service|-|-
 GET|/degram/admin/llm-config|admin|-|-
+POST|/degram/grant-requests|member|body|viewer
+GET|/degram/grants/mine|session|filtered|-
 POST|/degram/v1/chat/completions|delegated|-|-
 POST|/design-rule-sessions|member|body|editor
 GET|/design-rule-sessions/{project}|member|path|viewer
@@ -230,6 +236,9 @@ POST|/mcp|service|-|-
 GET|/projects|session|filtered|-
 POST|/projects|session|-|-
 PUT|/projects/{project}/company|admin|-|-
+GET|/projects/{project}/degram-grants|member|path|owner
+POST|/projects/{project}/degram-grants|member|path|owner
+DELETE|/projects/{project}/degram-grants/{grant_id}|member|path|owner
 GET|/projects/{project}/degram-policy|admin|-|-
 PUT|/projects/{project}/degram-policy|admin|-|-
 GET|/projects/{project}/members|member|path|owner
@@ -399,7 +408,8 @@ Order of execution:
 | `published-ports` equals the compose bindings for both profiles | `data-service/tests/test_security_boundary_spec.py`, `data-service/tests/test_compose_boundary.py` |
 | No `/neo4j/` or `/n8n/` proxy, no credential in `config.js` or the UI bundle | `data-service/tests/test_static_proxy_boundary.py`, `data-service/tests/test_config_js_no_secrets.py` |
 | Delegated token mint, scope, CSRF exemption, no-fallback and every revocation case (Section 3.5); project to company map | `data-service/tests/test_delegated_token.py`, `data-service/tests/test_company_scope.py` |
-| DeGram pairing create, list, exchange, refusal on every other route, revocation cascade and no token in logs (Section 3.5) | `data-service/tests/test_degram_pairing.py`, `data-service/tests/test_route_inventory.py` |
+| DeGram access grants: issue, list, own view, requests, session exchange, every revocation cascade, no secret in any response (Section 3.5) | `data-service/tests/test_degram_grants.py`, `data-service/tests/test_route_inventory.py` |
+| Retired DeGram pairing: 410 on create, 401 `PAIRING_RETIRED` on exchange, refusal on every other route, stored pairings revoked (Section 3.5) | `data-service/tests/test_degram_pairing.py` |
 | DeGram relay principal scope, single upstream with model override, key masking and encryption at rest, provenance without content (Section 3.6) | `data-service/tests/test_degram_relay.py` |
 | DeGram relay cancellation, each timeout kind, 429, 5xx, 4xx, mid-stream error event, single upstream call, outcome vocabulary disjoint from the canonical statuses (Section 3.6) | `data-service/tests/test_degram_relay.py` |
 | DeGram relay nginx streaming location and the `/llm/` exclusion (Section 3.6) | `data-service/tests/test_static_proxy_boundary.py` |

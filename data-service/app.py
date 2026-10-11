@@ -59,6 +59,7 @@ from llm_gateway import (
 )
 
 import connectors
+import degram_grants
 import degram_pairing
 from connectors import (
     CredentialCreatePayload,
@@ -1682,44 +1683,31 @@ def get_connectors(request: Request):
     """
     principal = request.state.principal
     projects = None if principal.is_admin else set(auth.list_member_projects(principal.username))
-    # Phase 1301-17 (D-25): the DeGram card lists the caller's pairings (an
+    # Phase 1301-30 (D-39): the DeGram card lists the caller's grants (an
     # admin: everyone's). It is not in CONNECTOR_REGISTRY, so no dgc_ token can
-    # be minted for it.
+    # be minted for it, and a grant carries no secret.
     return {
-        "categories": [*connectors.CONNECTOR_CATEGORIES, degram_pairing.CATEGORY],
+        "categories": [*connectors.CONNECTOR_CATEGORIES, degram_grants.CATEGORY],
         "connectors": [
             *connectors.get_connector_overview(projects=projects),
-            degram_pairing.connector_card(
+            degram_grants.connector_card(
                 principal.username or "", principal.is_admin, connectors.derive_status
             ),
         ],
     }
 
 
-class DegramPairingCreatePayload(BaseModel):
-    """Request body for POST /connectors/degram/pairings (no project, D-26)."""
-
-    label: str | None = None
-
-
-@router.post("/connectors/degram/pairings", status_code=201)
-def create_degram_pairing(
-    request: Request, response: Response, payload: DegramPairingCreatePayload | None = None
-):
-    """Phase 1301-17 (D-25): create a DeGram pairing token for the signed-in
-    caller. The ``dgp_`` token is returned once here; only its hash is stored."""
-    principal = request.state.principal
-    token, pairing_id = degram_pairing.issue_pairing(
-        principal.username or "", payload.label if payload else None
-    )
-    response.headers["Cache-Control"] = "no-store"
-    return {"pairing_id": pairing_id, "token": token}
+@router.post("/connectors/degram/pairings", status_code=410)
+def create_degram_pairing(request: Request):
+    """Retired by D-39 (Phase 1301-30): DeGram access is granted per project by
+    its owner or a DG admin (``POST /projects/{project}/degram-grants``); a user
+    no longer creates a pairing token."""
+    raise degram_pairing.pairing_retired(status_code=410)
 
 
 @router.delete("/connectors/degram/pairings/{pairing_id}", status_code=204)
 def revoke_degram_pairing(pairing_id: str, request: Request):
-    """Revoke a DeGram pairing (its owner or an admin) and every delegated
-    token minted from it. Another user's pairing answers the same 404 as an
+    """Cleanup of a stored (retired) DeGram pairing: its owner or an admin. Another user's pairing answers the same 404 as an
     unknown one."""
     principal = request.state.principal
     if not degram_pairing.revoke_pairing(
@@ -4779,6 +4767,80 @@ def put_degram_policy(project: str, payload: DegramPolicyRequest, request: Reque
     return {"project": project, **policy}
 
 
+class DegramGrantIssuePayload(BaseModel):
+    username: str
+    label: str
+    purpose: str
+
+
+class DegramGrantRequestPayload(BaseModel):
+    project: str
+    note: str | None = None
+
+
+@router.get("/projects/{project}/degram-grants")
+def list_degram_grants(project: str):
+    """Owner or admin (route policy): the project's DeGram grants and the
+    pending requests of its members (D-39, D-40). No secret exists to list."""
+    _check_project_name(project)
+    return {
+        "project": project,
+        "grants": degram_grants.list_for_project(project),
+        "requests": degram_grants.list_requests(project),
+    }
+
+
+@router.post("/projects/{project}/degram-grants", status_code=201)
+def issue_degram_grant(project: str, payload: DegramGrantIssuePayload, request: Request):
+    """Owner or admin (route policy): grant DeGram access on `project` to one
+    of its members, with a name and a purpose (D-39). Replaces the member's
+    earlier grant and closes their pending request."""
+    _check_project_name(project)
+    principal = request.state.principal
+    try:
+        username = auth.normalize_username(payload.username)
+    except ValueError as exc:
+        raise _structured_error_response(
+            "That username is not valid.",
+            "Use 3-254 characters: lowercase letters, digits and . _ @ + -.",
+            "USERNAME_INVALID",
+            422,
+        ) from exc
+    return degram_grants.issue_grant(
+        project, username, payload.label, payload.purpose, principal.username or ""
+    )
+
+
+@router.delete("/projects/{project}/degram-grants/{grant_id}", status_code=204)
+def revoke_degram_grant(project: str, grant_id: str, request: Request):
+    """Owner or admin (route policy): revoke a grant and every delegated token
+    minted under it. An unknown id and another project's id answer the same 404."""
+    _check_project_name(project)
+    principal = request.state.principal
+    if not degram_grants.revoke_grant(project, grant_id, principal.username or ""):
+        raise degram_grants.grant_not_found()
+    return Response(status_code=204)
+
+
+@router.get("/degram/grants/mine")
+def my_degram_grants(request: Request):
+    """The caller's own DeGram grants and pending requests (D-40); never
+    another user's."""
+    username = request.state.principal.username or ""
+    return {
+        "grants": degram_grants.list_mine(username),
+        "requests": degram_grants.list_requests_mine(username),
+    }
+
+
+@router.post("/degram/grant-requests", status_code=201)
+def request_degram_grant(payload: DegramGrantRequestPayload, request: Request):
+    """A project member (route policy) asks its owners and admins for DeGram
+    access (D-40). 409 GRANT_EXISTS when the member already holds one."""
+    principal = request.state.principal
+    return degram_grants.create_request(principal.username or "", payload.project, payload.note)
+
+
 @router.get("/projects/{project}/members")
 def list_project_members(project: str):
     members = sorted(auth.list_members(project), key=lambda m: m["username"])
@@ -4804,6 +4866,9 @@ def remove_project_member(project: str, username: str):
                 409,
             )
         auth.remove_membership(username, project)
+        # D-39: the user's DeGram grant on this project and its tokens end first
+        # (DELEGATED_SESSION_ENDED), then every other token bound to the project (D-08).
+        degram_grants.revoke_for_user_project(username, project)
         delegation.revoke_for_user_project(username, project)  # D-08
     return Response(status_code=204)
 

@@ -19,6 +19,13 @@ Phase 1301 plan 17 (D-25): a token can also be minted from a DeGram pairing
 hash; the live pairing replaces the live session in every re-check, and a
 revoked pairing answers ``DELEGATED_SESSION_ENDED`` like an ended session.
 
+Phase 1301 plan 30 (D-39): the DeGram path is a session exchange gated by an
+owner/admin grant (``degram_grants.py``, ``POST /auth/degram/session-exchange``).
+Such a token keeps the session as its parent and additionally records
+``grant_id``; the live grant is re-checked on every request and a revoked grant
+answers ``DELEGATED_SESSION_ENDED`` like an ended session. The pairing parent
+above is retired: ``degram_pairing.is_live`` is always False.
+
 It never inherits admin ownership: ``is_admin`` is always False and project
 authorization is bound-project equality plus the user's *stored* role.
 Delegated use does not refresh the parent session's idle timer, so an agent
@@ -136,6 +143,7 @@ def issue_delegated_token(
     *,
     session_hash: str | None = None,
     pairing_id: str | None = None,
+    grant_id: str | None = None,
     username: str,
     project: str,
     now: int | None = None,
@@ -144,9 +152,12 @@ def issue_delegated_token(
     -- the session identified by `session_hash` or the DeGram pairing
     `pairing_id` -- and to the project's current company. Returns
     ``(raw_token, public_record)``; the record never carries a hash. The caller
-    must already have proved membership and a live parent."""
+    must already have proved membership and a live parent. `grant_id` (a
+    session parent only) records the DeGram grant the token was issued under."""
     if bool(session_hash) == bool(pairing_id):
         raise ValueError("exactly one parent: session_hash or pairing_id")
+    if grant_id and not session_hash:
+        raise ValueError("grant_id needs a session parent")
     current = auth._now(now)
     normalized = username.strip().lower()
     token = DELEGATED_TOKEN_PREFIX + secrets.token_urlsafe(32)
@@ -155,6 +166,7 @@ def issue_delegated_token(
         "parent_kind": "pairing" if pairing_id else "session",
         "session_hash": session_hash,
         "pairing_id": pairing_id,
+        "grant_id": grant_id,
         "username": normalized,
         "project": project,
         "company": company.company_for_project(project),
@@ -215,6 +227,10 @@ def authenticate_delegated_token(token: str, *, now: int | None = None) -> "auth
                 record.get("session_hash") or "", now=current
             )
             parent_live = session is not None and session.get("username") == username
+            if parent_live and record.get("grant_id"):
+                import degram_grants  # noqa: PLC0415 -- degram_grants imports this module
+
+                parent_live = degram_grants.is_live(record["grant_id"], username, project)
         if not parent_live or auth.get_user(username) is None:
             raise _session_ended()
 
@@ -267,6 +283,13 @@ def revoke_for_pairing(pairing_id: str, reason: str = REASON_SESSION_ENDED) -> i
     if not pairing_id:
         return 0
     return _revoke_where(lambda r: r.get("pairing_id") == pairing_id, reason)
+
+
+def revoke_for_grant(grant_id: str, reason: str = REASON_SESSION_ENDED) -> int:
+    """Revoke every live token minted under the DeGram grant `grant_id`."""
+    if not grant_id:
+        return 0
+    return _revoke_where(lambda r: r.get("grant_id") == grant_id, reason)
 
 
 def revoke_for_user(username: str, reason: str = REASON_SESSION_ENDED) -> int:

@@ -78,9 +78,11 @@ def _scoped_rows() -> list[tuple[tuple[str, str], route_policy.RoutePolicy]]:
         (
             (key, policy)
             for key, policy in route_policy.ROUTE_POLICIES.items()
-            # Phase 1301-17: POST /auth/degram/exchange is body-scoped but admits only
-            # a pairing principal, never a member; its cross-project and mismatch
-            # denials are covered in tests/test_degram_pairing.py.
+            # Phase 1301-17 / plan 30: POST /auth/degram/exchange is body-scoped but
+            # admits only a (retired) pairing principal, never a member; it answers
+            # 401 PAIRING_RETIRED (tests/test_degram_pairing.py). The grant routes
+            # and POST /auth/degram/session-exchange are member rows and are swept
+            # here like every other one.
             if policy.project_source in _SCOPED_SOURCES
             and route_policy.PRINCIPAL_MEMBER in policy.principals
         ),
