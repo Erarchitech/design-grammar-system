@@ -20,10 +20,15 @@ export default function HostCentre({ hostState, mode }) {
   ) : null;
 
   return (
-    <div className={`dgl-host-centre${hostState === "connecting" ? " dgl-host-centre--visible" : ""}`} aria-live="polite" aria-hidden={hostState !== "connecting"}>
+    <div
+      className={`dgl-host-centre${hostState === "connecting" ? " dgl-host-centre--visible" : ""}`}
+      role="status"
+      aria-live="polite"
+      aria-label={ru ? "Подключение к DG" : "Connecting to DG"}
+      aria-hidden={hostState !== "connecting"}
+    >
       {imageFailed ? <span className="dgl-host-centre-fallback" aria-hidden="true" /> :
         <img className="dgl-host-centre-sphere" src={theme === "dark" ? "/dg-think-dark.gif" : "/dg-think-light.gif"} onError={() => setImageFailed(true)} alt="" />}
-      <span>{ru ? "Подключение к DG" : "Connecting to DG"}</span>
     </div>
   );
 }

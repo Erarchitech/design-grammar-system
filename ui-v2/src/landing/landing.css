@@ -64,18 +64,16 @@
   will-change: opacity, transform;
 }
 
+/* D-47: the connecting sphere alone, no caption, centred on the landing ring
+   (landingEngine.js draws the ring around vw/2, vh/2). Nothing here may add a
+   gap, padding or width that shifts the sphere off that point. */
 .dgl-host-centre {
   position: absolute;
   left: 50%;
-  top: 44%;
+  top: 50%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  width: min(380px, 88vw);
-  font: 500 17px/1.4 var(--font-sans);
-  text-align: center;
-  color: var(--text-primary);
+  justify-content: center;
   opacity: 0;
   transform: translate(-50%, calc(-50% + 18px));
   filter: blur(9px);

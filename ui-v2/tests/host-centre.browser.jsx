@@ -1,10 +1,11 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from '../src/App.jsx';
+import HostCentre from '../src/landing/HostCentre.jsx';
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 window.GRAPH_CONFIG = { dataServiceUrl: '/data-service' };
-const results = [], calls = [], unexpected = [], errors = [];
+const results = [], calls = [], unexpected = [], errors = [], viewport = [];
 const queue = [];
 window.addEventListener('error', e => errors.push(e.message));
 window.addEventListener('unhandledrejection', e => errors.push(String(e.reason)));
@@ -39,7 +40,7 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     check(container.textContent.includes('System initiated'), 'Hero missing');
     check(!container.querySelector('.dgl-host-pill') && !container.querySelector('.dgl-host-centre--visible'), 'Host controls visible before selection');
   });
-  await run('PROJECTS click announces selection and immediately shows Russian connecting sphere', async () => {
+  await run('PROJECTS click announces selection and immediately shows one caption-less connecting sphere on the ring centre', async () => {
     allow('/projects', projects);
     const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Projects.');
     check(label, 'Projects callout missing');
@@ -52,9 +53,23 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     const tile = [...container.querySelectorAll('span')].find(e => e.textContent === 'A');
     await act(async () => tile.click()); await tick();
     check(container.querySelector('.dgl-host-centre--visible'), 'Connecting state waits for membership read');
-    check(container.querySelector('.dgl-host-centre--visible').textContent.includes('Подключение к DG'), 'Russian copy absent');
+    // D-47: one caption-less sphere. The state stays announced through role=status + aria-label, not visible text.
+    const centre = container.querySelector('.dgl-host-centre--visible');
+    check(centre.textContent.trim() === '', `Connecting state has a visible caption: ${centre.textContent}`);
+    check(!container.textContent.includes('Подключение к DG'), 'Connecting copy is rendered as visible text');
+    check(centre.getAttribute('role') === 'status' && centre.getAttribute('aria-label') === 'Подключение к DG', 'role=status/aria-label (RU) absent');
     check(container.querySelector('.dgl-host-centre-sphere')?.getAttribute('src') === '/dg-think-light.gif' || container.querySelector('.dgl-host-centre-fallback'), 'Sphere and fallback both absent');
     check(!container.querySelector('.dgl-host-pill'), 'Pill appeared before ready');
+    // D-47: once the 560 ms entrance has settled the sphere sits on the ring centre (landingEngine: cx = vw/2, cy = vh/2).
+    // Headless virtual time does not advance CSS transitions, so the settled geometry is read with transitions off.
+    const settle = document.createElement('style'); settle.textContent = '.dgl-host-centre{transition:none !important}'; document.head.append(settle);
+    await tick();
+    const sphere = container.querySelector('.dgl-host-centre-sphere') || container.querySelector('.dgl-host-centre-fallback');
+    const box = sphere.getBoundingClientRect();
+    const dx = box.left + box.width / 2 - window.innerWidth / 2, dy = box.top + box.height / 2 - window.innerHeight / 2;
+    viewport.push({ width: window.innerWidth, height: window.innerHeight, dx, dy, size: [box.width, box.height] });
+    check(box.width > 0 && box.height > 0, 'Sphere has no box');
+    check(Math.abs(dx) <= 2 && Math.abs(dy) <= 2, `Sphere centre off the ring centre at ${window.innerWidth}x${window.innerHeight}: dx=${dx.toFixed(2)} dy=${dy.toFixed(2)}`);
     await act(async () => resolve(response(200, user))); await tick();
     check(container.querySelector('.dgl-sys')?.textContent.includes('A'), 'Project line missing');
     check(location.search.includes('host=degram') && location.search.includes('lang=ru'), 'Host query lost');
@@ -80,6 +95,7 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
   });
   await run('host navigation only reaches permitted regions and idle hides pill', async () => {
     allow('/degram/grants/mine', { grants: [] });
+    allow('/connectors?project=A', { categories: [], connectors: [] }); // 1301-40: hosted Connectors table reads the project's access
     await signal('#degram-go=connectors');
     check(container.textContent.includes('Access') && !location.hash, 'Connectors navigation failed');
     await signal('#degram-go=landing');
@@ -91,5 +107,16 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     check(location.search.includes('host=degram'), 'Host filter lost');
     check(!unexpected.length && !errors.length && !queue.length, `Unexpected requests/errors ${unexpected.join(', ')} ${errors.join(', ')}; pending ${queue.length}`);
   });
-  const output = document.createElement('pre'); output.id = 'offline-results'; output.textContent = JSON.stringify({ results, calls, unexpected, errors }); document.body.append(output);
+  await run('English connecting label is on role=status, with no visible caption', async () => {
+    const original = location.search;
+    history.replaceState(null, '', location.pathname + '?host=degram&lang=en');
+    const host = document.createElement('div'); document.body.append(host);
+    await act(async () => { createRoot(host).render(<HostCentre hostState="connecting" mode="connecting" />); });
+    const centre = host.querySelector('.dgl-host-centre--visible');
+    history.replaceState(null, '', location.pathname + original);
+    check(centre, 'English connecting state absent');
+    check(centre.getAttribute('role') === 'status' && centre.getAttribute('aria-label') === 'Connecting to DG', 'role=status/aria-label (EN) absent');
+    check(centre.textContent.trim() === '', 'English connecting state has a visible caption');
+  });
+  const output = document.createElement('pre'); output.id = 'offline-results'; output.textContent = JSON.stringify({ results, calls, unexpected, errors, viewport }); document.body.append(output);
 })().catch(e => { document.body.textContent = `HARNESS_ERROR: ${e.stack}`; });

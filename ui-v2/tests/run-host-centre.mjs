@@ -28,10 +28,21 @@ try {
   const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; font-src data:"><style>${css}</style><body><script>${bundle}</script></body>`;
   const target = path.join(temp, 'index.html'); writeFileSync(target, html);
   const url = pathToFileURL(target); url.searchParams.set('host', 'degram'); url.searchParams.set('lang', 'ru');
-  const result = spawnSync(chrome, ['--headless=new', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--host-resolver-rules=MAP * ~NOTFOUND', `--user-data-dir=${path.join(temp, 'profile')}`, '--virtual-time-budget=12000', '--dump-dom', url.href], { encoding: 'utf8', timeout: 60000, maxBuffer: 5 * 1024 * 1024 });
-  const match = (result.stdout || '').match(/<pre id="offline-results">([\s\S]*?)<\/pre>/);
-  if (!match) throw new Error(`No result DOM: ${result.error?.message || result.stderr?.slice(-800) || result.stdout?.slice(-800)}`);
-  const data = JSON.parse(match[1].replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&'));
-  console.log(JSON.stringify(data, null, 2));
-  if (result.status !== 0 || !data.results.length || data.results.some(r => r.status !== 'PASS')) process.exitCode = 1;
+  // D-47: the sphere-on-ring-centre check runs at two viewport sizes.
+  // `--window-size` is the outer window; headless Chrome keeps a 16 x 151 px frame, so the targets are padded for it.
+  const sizes = [[1280, 800], [900, 700]];
+  const frame = [16, 151];
+  const combined = [];
+  sizes.forEach(([width, height], index) => {
+    const result = spawnSync(chrome, ['--headless=new', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--host-resolver-rules=MAP * ~NOTFOUND', `--window-size=${width + frame[0]},${height + frame[1]}`, `--user-data-dir=${path.join(temp, `profile-${index}`)}`, '--virtual-time-budget=12000', '--dump-dom', url.href], { encoding: 'utf8', timeout: 60000, maxBuffer: 5 * 1024 * 1024 });
+    const match = (result.stdout || '').match(/<pre id="offline-results">([\s\S]*?)<\/pre>/);
+    if (!match) throw new Error(`No result DOM at ${width}x${height}: ${result.error?.message || result.stderr?.slice(-800) || result.stdout?.slice(-800)}`);
+    const data = JSON.parse(match[1].replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&'));
+    console.log(JSON.stringify({ requestedViewport: `${width}x${height}`, ...data }, null, 2));
+    if (result.status !== 0 || !data.results.length || data.results.some(r => r.status !== 'PASS')) process.exitCode = 1;
+    combined.push(data);
+  });
+  const measured = combined.flatMap(d => d.viewport || []).map(v => `${v.width}x${v.height}`);
+  console.log(`Measured viewports: ${measured.join(', ')}`);
+  if (measured.length !== sizes.length || new Set(measured).size !== sizes.length) { console.error('Expected two distinct measured viewports'); process.exitCode = 1; }
 } finally { rmSync(temp, { recursive: true, force: true }); }
