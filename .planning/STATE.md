@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 35
+current_plan: 36
 status: executing
-stopped_at: Completed 1301-34-PLAN.md; next: 1301-35-PLAN.md
+stopped_at: Completed 1301-35-PLAN.md; next: 1301-36-PLAN.md (needs owner push + service rebuild consent)
 last_updated: "2026-10-11T15:25:00Z"
 last_activity: 2026-10-11
-last_activity_desc: Plan 1301-34 complete (D-41/D-42/D-44 DeGram shell, component commit c3318b2d, offline-verified; next: plan 35 Models screen)
+last_activity_desc: Plan 1301-35 complete (D-43 Models screen, G-25 backend churn gate, component commit 38728957, offline-verified; next: plan 36 needs owner push and Docker consent)
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 48
-  completed_plans: 37
+  completed_plans: 38
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 35
+Current Plan: 36
 Total Plans in Phase: 36
-Plan: 34 of 36 complete; next: 35
+Plan: 35 of 36 complete; next: 36
 Status: Blocked within plan 1301-33; plan not complete
-Last activity: 2026-10-11 — plan 1301-34 complete (D-41/D-42/D-44 DeGram shell, offline verification)
-Last Activity Description: Plan 1301-34 complete; component commit c3318b2d (not pushed, gitlink unchanged). Next: 1301-35 Models screen. Live acceptance remains pending plan 36 authorization.
+Last activity: 2026-10-11 — plan 1301-35 complete (D-43 Models screen, G-25 churn gate, offline verification)
+Last Activity Description: Plan 1301-35 complete; component commit 38728957 (not pushed, gitlink unchanged). Next: 1301-36 publication/build, blocked on owner push of degram/phase-1301 and consent for the data-service/design-grammars rebuild.
 
 ## Deferred Verification
 
