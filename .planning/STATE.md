@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 1
+current_plan: 2
 status: executing
-stopped_at: Completed 1301-36-PLAN.md; gap round 0.1.10 built, awaiting owner live UAT (guide 1301-0.1.10-TEST-GUIDE.md); plan 16 still open
-last_updated: "2026-10-11T21:59:07.028Z"
+stopped_at: Completed 1301-37-PLAN.md; component commit 45db5237 local (unpushed), framework 1f177d2; next plan 38
+last_updated: "2026-10-11T22:29:45.628Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 53
-  completed_plans: 39
+  completed_plans: 40
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,10 +37,10 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 1
+Current Plan: 2
 Total Plans in Phase: 41
-Plan: 1 of 41
-Status: Executing Phase 1301
+Plan: 2 of 41
+Status: Ready to execute
 Last activity: 2026-10-11 — Phase 1301 execution started
 Last Activity Description: Phase 1301 execution started
 
@@ -181,6 +181,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P20 | 1h45m | 5 tasks | 30 files |
 | Phase 1301 P21 | 3h | 3 tasks | 23 files |
 | Phase 1301 P30 | multi-session | 3 tasks | 13 files |
+| Phase 1301 P37 | ~50min | 4 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -527,6 +528,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 1301-21]: D-29 implemented: one pinned document per bridge; a bridge outcome at preview time excludes only that bridge's document (summary.excluded), Send blocks only when every pinned document is identity-mismatched
 - [Phase 1301-30]: D-39: DeGram access is a server-only per-project grant issued by a project owner or DG admin; no user-visible pairing credential remains.
 - [Phase 1301-30]: D-40: DeGram members request grants; owners/admins review requests and issuing a grant closes the request.
+- [Phase ?]: 1301-37: a scope-<16 hex> profile is never the primary/last-used profile in variant degram (preferences ignoreProfile + one-time rewrite to default); the G-25 gate is not weakened
+- [Phase ?]: 1301-37: scope selectProject mints before releasing the open scope; refused picks (GRANT_REQUIRED/ACCESS_DENIED/unreachable) leave the open project running; host signals #degram-project=<name|empty> back to the DG page
 
 ### Research Flags (carry into planning)
 
@@ -622,8 +625,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-11T12:19:03.140Z
-Stopped at: Completed 1301-30-PLAN.md; next: 1301-31-PLAN.md
+Last session: 2026-10-11T22:29:45.606Z
+Stopped at: Completed 1301-37-PLAN.md; component commit 45db5237 local (unpushed), framework 1f177d2; next plan 38
 Resume file: None
 
 ## Performance Metrics
