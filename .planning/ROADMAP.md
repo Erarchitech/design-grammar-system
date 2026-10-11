@@ -241,7 +241,7 @@ Plans:
 **Wave 20** *(0.1.10 gap round, owner comments 2026-10-11)*
 
 - [x] 1301-30-PLAN.md — DeGram access grants issued by project owner/DG admin; session exchange; pairing retired; specs (D-39)
-- [ ] 1301-31-PLAN.md — CONNECTORS: grant issuing for owners/admins, trimmed DeGram view with «Запросить новый токен» (D-39, D-40)
+- [x] 1301-31-PLAN.md — CONNECTORS: grant issuing for owners/admins, trimmed DeGram view with «Запросить новый токен» (D-39, D-40; offline verified, live acceptance pending plan 36)
 - [ ] 1301-32-PLAN.md — DG host-mode ring centre: connecting sphere, new-session pill, host<->page channel, lang (D-41, D-44)
 
 **Wave 21** *(blocked on 1301-30)*

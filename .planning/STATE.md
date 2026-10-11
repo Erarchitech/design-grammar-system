@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
-current_plan: 31
+current_plan: 32
 status: executing
-stopped_at: Completed 1301-30-PLAN.md; next: 1301-31-PLAN.md
-last_updated: "2026-10-11T12:19:03.152Z"
+stopped_at: Completed 1301-31-PLAN.md; next: 1301-32-PLAN.md
+last_updated: "2026-10-11T15:25:00Z"
 last_activity: 2026-10-11
-last_activity_desc: Plan 1301-30 complete (D-39 server-side grants and session exchange; next: plan 31 CONNECTORS UI)
+last_activity_desc: Plan 1301-31 complete (D-39/D-40 CONNECTORS grant UI offline-verified; next: plan 32 host ring)
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 48
-  completed_plans: 33
+  completed_plans: 34
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
-Current Plan: 31
+Current Plan: 32
 Total Plans in Phase: 36
-Plan: 30 of 36 complete; next: 31
+Plan: 31 of 36 complete; next: 32
 Status: Ready to execute
-Last activity: 2026-10-11 — plan 1301-30 complete (D-39 server-side grants and session exchange)
-Last Activity Description: Plan 1301-30 complete; next: 1301-31 CONNECTORS grant management and member request UI
+Last activity: 2026-10-11 — plan 1301-31 complete (D-39/D-40 CONNECTORS grants UI, offline verification)
+Last Activity Description: Plan 1301-31 complete; next: 1301-32 host ring and page channel. Live grant acceptance remains pending plan 36 authorization.
 
 ## Deferred Verification
 
