@@ -25,6 +25,21 @@ export function parseHostSignal(hash) {
   if (!DEGRAM_HOST || typeof hash !== "string") return null;
   if (/^#degram-state=(connecting|ready|idle)$/.test(hash)) return { state: hash.slice(14) };
   if (/^#degram-go=(landing|graph|model|connectors)$/.test(hash)) return { go: hash.slice(11) };
+  // The project DeGram actually opened (empty: none). Display-only: it moves the page's selection back after a
+  // refused pick and grants no capability. Bounded like announceProject.
+  const project = /^#degram-project=([^&#]{0,200})$/.exec(hash);
+  if (project) {
+    let name;
+    try {
+      name = decodeURIComponent(project[1]);
+    } catch {
+      return null;
+    }
+    if (name.length === 0) return { project: null };
+    // eslint-disable-next-line no-control-regex
+    if (name.length > 64 || /[\u0000-\u001f/\\]/.test(name)) return null;
+    return { project: name };
+  }
   return null;
 }
 

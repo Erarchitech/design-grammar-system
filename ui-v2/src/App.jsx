@@ -65,6 +65,17 @@ export default function App() {
       if (signal) {
         if (signal.state) setHostState(signal.state);
         if (signal.go && isRegionAllowed(signal.go)) setRegion(signal.go);
+        // F-07: the host reports the project that is actually open (or none) after a refused or failed pick, so the
+        // ring never shows the refused project as selected. No announceProject: this is not a choice to echo back.
+        if (signal.project !== undefined) {
+          setProject(signal.project);
+          try {
+            if (signal.project) localStorage.setItem("dgv2_project", signal.project);
+            else localStorage.removeItem("dgv2_project");
+          } catch {
+            // storage unavailable — the in-memory project still follows the host
+          }
+        }
         clearHostSignal();
         return;
       }

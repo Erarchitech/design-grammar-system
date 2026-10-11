@@ -61,6 +61,27 @@ test("host signals accept only exact state and navigation vocabulary", async () 
   assert.equal(english.hostLang(), "en");
 });
 
+test("host project signal names the project DeGram actually opened, or none (F-07)", async () => {
+  const hosted = await hostMode("?host=degram");
+  assert.deepEqual(hosted.parseHostSignal("#degram-project=degram-uat-c"), { project: "degram-uat-c" });
+  assert.deepEqual(hosted.parseHostSignal("#degram-project=My%20Project_1.2"), { project: "My Project_1.2" });
+  assert.deepEqual(hosted.parseHostSignal("#degram-project="), { project: null });
+  assert.deepEqual(hosted.parseHostSignal(`#degram-project=${"x".repeat(64)}`), { project: "x".repeat(64) });
+  for (const hash of [
+    `#degram-project=${"x".repeat(65)}`,
+    "#degram-project=a&x=1",
+    "#degram-project=a#b",
+    "#degram-project=%E0%A4%A",
+    "#degram-project=a%0Ab",
+    "#degram-project",
+    "#degram-project=A/B/../C"
+  ]) {
+    assert.equal(hosted.parseHostSignal(hash), null, hash);
+  }
+  const normal = await hostMode("");
+  assert.equal(normal.parseHostSignal("#degram-project=alpha"), null);
+});
+
 test("host new-session announcement is transient and absent outside host mode", async () => {
   const hosted = await hostMode("?host=degram");
   const calls = [];
@@ -84,6 +105,12 @@ test("host-only ring centre is wired without altering the normal root selector",
   assert.match(app, /parseHostSignal/);
   assert.match(app, /setHostState\(name \? "connecting" : "idle"\)/);
   assert.match(app, /clearHostSignal/);
+  // F-07: a project signal puts the page back on the open project without echoing it to the host.
+  assert.match(app, /signal\.project !== undefined/);
+  const projectBranch = app.slice(app.indexOf("signal.project !== undefined"), app.indexOf("clearHostSignal();", app.indexOf("signal.project !== undefined")));
+  assert.match(projectBranch, /setProject\(signal\.project\)/);
+  assert.match(projectBranch, /dgv2_project/);
+  assert.doesNotMatch(projectBranch, /announceProject/);
   assert.match(landing, /degramHost\s*&&\s*<HostCentre/);
   assert.match(centre, /announceNewSession/);
   assert.match(centre, /dg-think-dark\.gif/);
