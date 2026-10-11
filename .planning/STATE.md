@@ -40,9 +40,9 @@ Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
 Current Plan: 16
 Total Plans in Phase: 36
 Plan: 36 of 36 plans have summaries except 16; next: owner live UAT of 0.1.10, then plan 16
-Status: Blocked within plan 1301-33; plan not complete
+Status: Gap round 0.1.10 built; awaiting owner live UAT
 Last activity: 2026-10-11 — plan 1301-36 complete (0.1.10 built and published to services; owner UAT pending)
-Last Activity Description: Gap round plans 30-36 complete offline. 0.1.10 installer D:\dgb\srcpps\desktopelease\DeGram-Setup-0.1.10.exe. Next: owner runs 1301-0.1.10-TEST-GUIDE.md; then plan 16 live UAT; phase verification/completion remain open.
+Last Activity Description: Gap round plans 30-36 complete offline. 0.1.10 installer D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.10.exe. Next: owner runs 1301-0.1.10-TEST-GUIDE.md; then plan 16 live UAT; phase verification/completion remain open.
 
 ## Deferred Verification
 
