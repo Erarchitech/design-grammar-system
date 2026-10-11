@@ -4,11 +4,12 @@ import { Button, Input } from "../components/index.js";
 import * as auth from "../lib/auth.js";
 import "./landing.css";
 import { isDegramHost } from "../lib/hostMode.js";
+import HostCentre from "./HostCentre.jsx";
 
 // The landing experience: particle ring, materialising hero title, region
 // callouts, and the inline auth card that rises through the particles.
 // `active` gates canvas drawing; `onFly(region, originPoint)` navigates.
-export default function LandingLayer({ active, onFly, user, project, onUser }) {
+export default function LandingLayer({ active, onFly, user, project, onUser, hostState = "idle" }) {
   const degramHost = isDegramHost();
   const canvasRef = React.useRef(null);
   const heroTitleRef = React.useRef(null);
@@ -84,12 +85,21 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
     if (!engine) return;
     if (active) {
       engine.setVisible(true);
-      if (engine.fontsReady && engine.heroPh === "hidden" && !authOpen) engine.setHeroPhase("forming");
+      if (engine.fontsReady && engine.heroPh === "hidden" && !authOpen && (!degramHost || hostState !== "connecting")) engine.setHeroPhase("forming");
     } else {
       const t = setTimeout(() => engine.setVisible(false), 620);
       return () => clearTimeout(t);
     }
-  }, [active, authOpen]);
+  }, [active, authOpen, degramHost, hostState]);
+
+  React.useEffect(() => {
+    if (!degramHost) return;
+    const engine = engineRef.current;
+    if (!engine) return;
+    engine.setHostConnecting(hostState === "connecting");
+    if (hostState === "connecting") engine.setHeroPhase("dissolving");
+    else if (!authOpen && engine.fontsReady) engine.setHeroPhase("forming");
+  }, [degramHost, hostState, authOpen]);
 
   React.useEffect(() => {
     const engine = engineRef.current;
@@ -187,6 +197,8 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
         </div>
       </div>
 
+      {degramHost && <HostCentre hostState={hostState} mode="connecting" />}
+
       <div ref={heroBeneathRef} className="dgl-hero-beneath">
         {!user && !authOpen && (
           <div style={{ pointerEvents: "auto" }}>
@@ -212,6 +224,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser }) {
             <div className="dgl-signout" onClick={signOut}>
               Sign out
             </div>
+            {degramHost && <HostCentre hostState={hostState} mode="pill" />}
           </div>
         )}
       </div>

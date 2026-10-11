@@ -6,12 +6,17 @@ Open the existing DG web origin at **`/#degram`** after the normal ui-v2 build i
 
 ## Host mode (DeGram)
 
-Opening the normal DG entry with `?host=degram` is a UI-only filter for the DeGram host. It keeps only **Graph Viewer**, **Model Viewer**, and **Projects** on the landing ring. Connectors, DG API Docs, Reasoner, and AI Engine are not rendered, and navigation to those regions is refused. The flag grants no API, token, storage, or server capability; normal browser access without the flag is unchanged.
+Opening the normal DG entry with `?host=degram` is a UI-only filter for the DeGram host. It keeps only **Graph Viewer**, **Model Viewer**, and **Projects** on the landing ring. The host may navigate to **Connectors**, which renders only the caller's project grants and access-request control; the ordinary connector registry is neither loaded nor shown there. DG API Docs, Reasoner, and AI Engine are refused. The flag grants no API, token, storage, or server capability; normal browser access without the flag is unchanged. `?lang=ru` selects Russian host-only labels; English is the default.
 
-When a signed-in user chooses a non-empty project name of at most 64 characters, host mode briefly announces `#degram-select=<url-encoded name>` and clears the hash with `history.replaceState`. The DeGram host must validate that untrusted name against the user's memberships before opening it. The Projects region continues to use only the existing `GET /projects` result.
+The fragment channel is fixed vocabulary and conveys navigation or display state only:
+
+- Page → host: choosing a project announces `#degram-select=<url-encoded name>` (non-empty, at most 64 characters); the host validates it against memberships. Pressing the ready-state pill announces `#degram-new-session` to request an empty chat in the current scope. Neither message contains a token, nor grants access. The page clears the announcement with `history.replaceState` while preserving pathname and host query parameters.
+- Host → page: `#degram-state=connecting|ready|idle` changes only the ring centre, and `#degram-go=landing|graph|model|connectors` navigates only to an allowed region. Exact matches only; other fragments are ignored. The page clears an accepted signal after applying it, preserving pathname and query. `main.jsx` reloads only for the separate `#degram` root slice, never for these signals.
+
+From the Projects click until the host signals `ready`, the centre shows the theme-matched thinking sphere and a connecting label. `ready` restores the hero/project line and shows the new-session pill beneath Sign out. The host controls readiness after its own scope/grant check; the page does not infer authorization from a fragment. The Projects region continues to use only the existing `GET /projects` result.
 
 
-- No graph mutations, natural-language query/ingestion, history writes, model viewer token requests, connectors, CAD/files, LLM settings, provider/model/key inputs or navigation to normal screens.
+- No graph mutations, natural-language query/ingestion, history writes, model viewer token requests, ordinary connector credentials, CAD/files, LLM settings, provider/model/key inputs or navigation to refused screens.
 - Display projection strips provider/model/credential metadata recursively, including JSON-encoded properties, before rendering. This is **not server-side redaction** and not a promise about arbitrary prose containing a provider name.
 - A monotonic request generation rejects stale session/project/graph results after context changes, expiry, logout or access refresh. Switching/refreshing clears the canvas and inspector immediately.
 - 401 clears identity and all read context; a current-scope 403 clears projects/graph and shows denial. Shared transport conservatively treats any 401, including a stale request's response, as session expiry.

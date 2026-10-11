@@ -116,6 +116,7 @@ export default class LandingEngine {
     this.els = els;
     this.anchors = regions;
     this.authOpen = false;
+    this.hostConnecting = false;
     this.visible = true;
     this.heroPh = "hidden";
     this.heroT0 = 0;
@@ -145,6 +146,9 @@ export default class LandingEngine {
   }
   setVisible(v) {
     this.visible = v;
+  }
+  setHostConnecting(connecting) {
+    this.hostConnecting = connecting;
   }
   setAuthOpen(open) {
     this.authOpen = open;
@@ -264,7 +268,7 @@ export default class LandingEngine {
     const TL = this.introTimes();
     const headTravel = it < TL.ring0 ? 0 : easeSine((it - TL.ring0) / SEQ.loop) * TAU;
     const revealing = it < TL.end + 0.8;
-    if (it >= TL.text0 && this.fontsReady && this.heroPh === "hidden" && !this.authOpen && !this._heroDone) {
+    if (it >= TL.text0 && this.fontsReady && this.heroPh === "hidden" && !this.authOpen && !this.hostConnecting && !this._heroDone) {
       this._heroDone = true; // the opening fades the hero in once; later fades follow the auth card
       this.setHeroPhase("forming");
     }

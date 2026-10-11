@@ -10,7 +10,7 @@ import ApiDocsScreen from "./screens/ApiDocsScreen.jsx";
 import SpecimenPage from "./specimen/SpecimenPage.jsx";
 import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } from "./lib/auth.js";
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
-import { announceProject, isRegionAllowed } from "./lib/hostMode.js";
+import { announceProject, clearHostSignal, isDegramHost, isRegionAllowed, parseHostSignal } from "./lib/hostMode.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
@@ -40,6 +40,7 @@ function Layer({ active, isLanding = false, layerRef, children }) {
 export default function App() {
   const [hash, setHash] = React.useState(window.location.hash);
   const [region, setRegion] = React.useState("landing");
+  const [hostState, setHostState] = React.useState("idle");
   // D-01: identity is resolved asynchronously from GET /auth/me (session cookie).
   const [user, setUser] = React.useState(null);
   const [project, setProject] = React.useState(() => localStorage.getItem("dgv2_project") || null);
@@ -59,8 +60,18 @@ export default function App() {
   }, [theme]);
 
   React.useEffect(() => {
-    const onHash = () => setHash(window.location.hash);
+    const onHash = () => {
+      const signal = parseHostSignal(window.location.hash);
+      if (signal) {
+        if (signal.state) setHostState(signal.state);
+        if (signal.go && isRegionAllowed(signal.go)) setRegion(signal.go);
+        clearHostSignal();
+        return;
+      }
+      setHash(window.location.hash);
+    };
     window.addEventListener("hashchange", onHash);
+    onHash();
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
@@ -130,6 +141,7 @@ export default function App() {
   // Selecting a project first refreshes memberships so a project created or
   // joined a moment ago is not mistaken for a stale one by the effect above.
   const selectProject = React.useCallback(async (name) => {
+    if (isDegramHost()) setHostState(name ? "connecting" : "idle");
     if (name) {
       try {
         const fresh = await currentUser();
@@ -195,6 +207,7 @@ export default function App() {
           user={user}
           project={project}
           onUser={setUser}
+          hostState={hostState}
         />
       </Layer>
       <Layer active={region === "graph"}>
