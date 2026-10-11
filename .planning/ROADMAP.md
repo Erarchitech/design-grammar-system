@@ -48,6 +48,7 @@
 - [ ] **Phase 1305: Ограниченное GH intent editing** — автор подтверждает KB-валидированный patch, получает undo/rollback, реальный solve и восстановимую публикацию.
 - [ ] **Phase 1306: Межплатформенная передача** — получатель на другом ПК проверяет Revit counterpart, значения, выбранную зависимость и основания принятого решения, затем разрешённую передачу в CDE.
 - [ ] **Phase 1307: Приёмка и выпуск** — владелец принимает либо отклоняет выпуск DeGram по correctness/safety/traceability/recovery gates и реальным E2E evidence.
+- [ ] **Phase 1308: DG Web UI: язык интерфейса, роли участников, политика экспорта, сводки главной** — язык EN/RU (D-38), смена ролей участников (D-36), экран политики экспорта только для админа (D-37), сводки на главном экране; вне клиента DeGram.
 
 ## Порядок и capability prerequisites
 
@@ -145,7 +146,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 22/23 plans executed
+**Plans**: 22/36 plans executed
 **UI hint**: yes
 
 Plans:
@@ -214,7 +215,50 @@ Plans:
 
 **Wave 14** *(blocked on Wave 13 completion)*
 
-- [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + DGCL-01..07 UAT on PC1 (resumes on 0.1.6)
+- [ ] 1301-24-PLAN.md — Release left scope backends, foreground spawn, backend-start failure notice; revoked pairing as access signal + start probe; provider-limit copy; UI-SPEC 0.1.7 amendment (G-18, G-21, G-24)
+- [ ] 1301-29-PLAN.md — Commit the D-32 export-policy default (seven files only; no image rebuild)
+
+**Wave 15** *(blocked on Wave 14 completion)*
+
+- [ ] 1301-25-PLAN.md — ui-v2 host mode inside DeGram: hide Connectors, DG API Docs, Reasoner, AI Engine; announce the chosen project; rebuild design-grammars (G-22, G-23, D-33, D-34)
+
+**Wave 16** *(blocked on Wave 15 completion)*
+
+- [ ] 1301-26-PLAN.md — One start screen: sign-in, token field, project from the Projects region; persistent notices (G-20, G-21, G-22, D-33, D-35)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+
+- [ ] 1301-27-PLAN.md — Per-scope session list over RPC (G-19, G-6, D-31)
+
+**Wave 18** *(blocked on Wave 17 completion)*
+
+- [ ] 1301-28-PLAN.md — DeGram 0.1.7: owner push, gitlink bump, build, install on PC1
+
+**Wave 19** *(blocked on Wave 18 completion)*
+
+- [ ] 1301-16-PLAN.md — Live acceptance: relay capability probe + DGCL-01..07 UAT on PC1 (resumes on 0.1.7)
+
+**Wave 20** *(0.1.10 gap round, owner comments 2026-10-11)*
+
+- [ ] 1301-30-PLAN.md — DeGram access grants issued by project owner/DG admin; session exchange; pairing retired; specs (D-39)
+- [ ] 1301-31-PLAN.md — CONNECTORS: grant issuing for owners/admins, trimmed DeGram view with «Запросить новый токен» (D-39, D-40)
+- [ ] 1301-32-PLAN.md — DG host-mode ring centre: connecting sphere, new-session pill, host<->page channel, lang (D-41, D-44)
+
+**Wave 21** *(blocked on 1301-30)*
+
+- [ ] 1301-33-PLAN.md — DeGram opens projects through the grant-backed session exchange; token UI removed (D-39)
+
+**Wave 22** *(blocked on 1301-32, 1301-33)*
+
+- [ ] 1301-34-PLAN.md — DeGram shell stays on the ring; sidebar set; pill opens chats; no «DEGRAM» heading; scoped pins (D-41, D-42, D-44)
+
+**Wave 23** *(blocked on 1301-34)*
+
+- [ ] 1301-35-PLAN.md — «Модели» screen for document choice, status-only strip; stop re-dialing left scopes (D-43, G-25)
+
+**Wave 24** *(blocked on 1301-30..35)*
+
+- [ ] 1301-36-PLAN.md — DeGram 0.1.10: owner push, service rebuild with consent, build, Russian test guide
 
 **Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
 
@@ -386,3 +430,14 @@ Plans:
 **Текущий gate:** 1300 incomplete / scope revision; 1300-07 withdrawn, не completed. Независимый read-only client slice 1301 in progress; не Desktop delivery и не release-ready. G-01/V8, independent ownership acceptance и OPEN debt остаются capability gates для semantic consumption/live work. Исторические PASS/hashes не переносятся на изменённый scope автоматически.
 
 **Открытые риски:** accepted v12 debt может блокировать конкретный slice. V8 runtime evidence/independent acceptance, security readiness, fixture/Viewer evidence и будущие отдельно разрешаемые write/CDE/handover capabilities остаются непроверенными. Initial system pair/local deployment/CAD choices заданы выше, не открываются заново. Research findings и исторические PROJECT/MILESTONES записи не доказывают устранение проблем; reviewer подключается для поздней независимой приёмки.
+
+### Phase 1308: DG Web UI: язык интерфейса, роли участников, политика экспорта, сводки главной
+
+**Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
+**Requirements**: TBD
+**Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 1308 to break down)
