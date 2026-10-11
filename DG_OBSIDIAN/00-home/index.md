@@ -32,6 +32,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[NeoVis renders interactive graph visualization in browser]]
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
+### Debugging
+- [[knowledge/debugging/DeGram 0.1.7 shows compact read-only viewer after project selection|DeGram 0.1.7 live UAT blocked at project open]] (2026-10-11)
+
 ### Decisions
 - [[knowledge/decisions/DeGram 0.1.7 live recheck deferred while Phase 1302 begins|DeGram 0.1.7 live recheck is deferred while Phase 1302 begins]] (2026-10-10)
 - [[knowledge/decisions/DeGram pins one document per bridge|DeGram pins one document per bridge: Revit model and GH definition together (D-29)]] (2026-10-09)

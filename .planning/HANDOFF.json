@@ -1,13 +1,13 @@
 {
   "version": "1.0",
-  "timestamp": "2026-10-10T18:40:22Z",
+  "timestamp": "2026-10-11T07:22:39Z",
   "context": "phase",
-  "phase": "1302",
-  "phase_name": "istochnik-slovar-i-utverzhdennaya-redaktsiya",
-  "phase_dir": null,
-  "plan": null,
-  "task": null,
-  "status": "paused_before_planning",
+  "phase": "1301",
+  "phase_name": "rabochiy-klient-i-bezopasnoe-chtenie",
+  "phase_dir": ".planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie",
+  "plan": 16,
+  "task": 3,
+  "status": "blocked_live_uat",
   "completed_tasks": [
     {
       "id": "1301-28",
@@ -18,39 +18,38 @@
   ],
   "remaining_tasks": [
     {
+      "id": "1301-16-task3",
+      "name": "Diagnose and resume DeGram 0.1.7 live UAT after graph-only project-open result",
+      "status": "blocked"
+    },
+    {
       "id": "1302-start",
-      "name": "Discuss and plan Phase 1302",
+      "name": "Discuss and plan independent Phase 1302",
       "status": "not_started"
     }
   ],
   "blockers": [
     {
-      "description": "Phase 1301 has no live-acceptance exit evidence because the owner explicitly deferred the 0.1.7 live recheck.",
-      "type": "human_action",
-      "workaround": "Resume only on an explicit owner request; use the 0.1.7 rows in 1301-UAT.md. Phase 1302 may begin independently."
+      "description": "On installed 0.1.7, selecting v12 after DG sign-in shows only the compact read-only graph; DeGram chat/composer/navigation is not visible. Root cause unproven.",
+      "type": "technical",
+      "workaround": "Stop UAT; inspect actual embedded URL, Electron bridge scope/page/mode and renderer gate. Do not claim DGCL PASS."
     }
   ],
   "async_jobs": [],
-  "human_actions_pending": [
-    {
-      "action": "Run the deferred DeGram 0.1.7 live recheck only if the owner explicitly requests it.",
-      "context": "The recheck is not accepted or silently closed.",
-      "blocking": false
-    }
-  ],
+  "human_actions_pending": [],
   "decisions": [
     {
-      "decision": "Skip and defer the DeGram 0.1.7 live recheck while moving to Phase 1302.",
-      "rationale": "Explicit owner decision on 2026-10-10; it does not establish DGCL acceptance.",
+      "decision": "Resume the previously deferred DeGram 0.1.7 live recheck, then stop on the graph-only project-open result.",
+      "rationale": "Owner explicitly reopened UAT on 2026-10-11; screenshots do not show the expected workspace and root cause is not yet known.",
       "phase": "1301"
     }
   ],
   "uncommitted_files": [
-    "Workspace has 2,118 uncommitted entries; it is shared and extremely dirty. Commit only explicit session paths; never use git add -A."
+    "Measured dirty shared tree: 2,114 porcelain entries before this session's documentation edits; stage only explicit session paths."
   ],
-  "uncommitted_files_total": 2118,
-  "uncommitted_files_elided": 2117,
-  "snapshot_note": "Measured on 2026-10-10. The working tree contains unrelated parallel work; re-run git status before acting.",
-  "next_action": "Start Phase 1302 with /gsd-discuss-phase 1302 or the applicable Phase 1302 discovery workflow. Read ROADMAP.md §Phase 1302, REQUIREMENTS.md DGKN-01..10, and 1301 UAT/deferral boundaries first.",
-  "context_notes": "0.1.7 component commit d2054ae59c0bad9d5bcf7feac3926eeda62f4444 is published; installer SHA-256 is 2825491ced4bd045cf16179d09b8ca70490ab906393957993db74fabdbcb5b7d. Installed executable reports 0.1.7.0."
+  "uncommitted_files_total": 2114,
+  "uncommitted_files_elided": 2113,
+  "snapshot_note": "Measured on 2026-10-11 before session edits: staged 0, untracked 505. Re-run git status before acting; other parallel work remains.",
+  "next_action": "Read .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/.continue-here.md and the linked debugging note. Reproduce actual embedded URL/bridge scope/renderer gate after project click before proposing a fix or resuming UAT.",
+  "context_notes": "Installed 0.1.7 app.asar hash B6C57C9E7A9647669D54895B0D7593F038EB64F22D0B95B930B7711A0D30C335 matches clean build. Compact route /#degram versus full host /?host=degram is a hypothesis only; no code changes or automated launch were made."
 }

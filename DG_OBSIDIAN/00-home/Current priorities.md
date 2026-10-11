@@ -7,6 +7,9 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1301 — DeGram 0.1.7 live recheck blocked at project open** (2026-10-11). After DG sign-in, owner saw the compact read-only project list, selected `v12-hexagonal-facade-01`, and saw only the circular graph; no DeGram chat/composer/navigation. The installed exe reports 0.1.7.0 and its app.asar matches the clean build. Exact root cause not yet established; `/#degram` is the compact graph route whereas full host mode is `/?host=degram`. **No new DGCL PASS; later live checks not run.**
+   - **Next:** diagnose actual embedded-view URL, Electron bridge state and shell gate after selection with a tight reproduction; do not reset/reinstall or alter code on speculation. Phase 1302 remains independent. See [[sessions/2026-10-11 DeGram 0.1.7 live recheck blocked at project open|session]] and [[knowledge/debugging/DeGram 0.1.7 shows compact read-only viewer after project selection|debugging]].
+
 0. **v13.0 Phase 1301 — DeGram 0.1.7 built and installed; live recheck deferred by owner** (2026-10-10). Component `d2054ae59c0bad9d5bcf7feac3926eeda62f4444` is published and the framework gitlink is aligned; `workspace.py verify` passes. Installer `DeGram-Setup-0.1.7.exe` SHA-256 `2825491ced4bd045cf16179d09b8ca70490ab906393957993db74fabdbcb5b7d` is installed on PC1 (`DeGram.exe` ProductVersion `0.1.7.0`). The owner explicitly deferred the remaining live recheck. No unobserved DGCL row is accepted and Phase 1301 retains no live-acceptance exit evidence.
    - **Next:** begin Phase 1302 independently. Resume 1301 UAT only on explicit owner request, starting with the 0.1.7 recheck rows in `1301-UAT.md`.
    - See [[sessions/2026-10-10 Phase 1301 gap closure — DeGram 0.1.7 built, installed, live recheck deferred|session]] and [[knowledge/decisions/DeGram 0.1.7 live recheck deferred while Phase 1302 begins|decision]].
