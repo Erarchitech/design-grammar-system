@@ -7,6 +7,26 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1301 — DeGram 0.1.10 UAT done (7 pass, 4 fail); 0.1.11 fix round planned (plans 37–41, D-45..D-48)** (2026-10-11).
+   - **Fails:**
+     - F-03: startup toast; a scope profile remembered as the primary profile.
+     - F-04: the sidebar is empty after returning to a project, although the sessions are stored.
+     - F-05: «Подключение к DG» shown twice; the sphere is off the ring centre.
+     - F-07: a pick refused for a missing grant stops the open project («шлюз недоступен»).
+   - **Passes (owner):** steps 2, 5, 6, 7, 9, 10, 11 of the 0.1.10 guide.
+   - **New owner decisions:**
+     - D-45: DeGram Коннекторы becomes a table of all connectors with green/red Вкл/Выкл.
+     - D-46: per-connector access requests. A viewer requests, the owner/admin approves; editor/owner stay direct.
+     - D-47: one caption-less sphere in the ring centre.
+     - D-48: a DeGram grant stays separate from membership.
+   - **Next:**
+     - `/gsd-execute-phase 1301 --gaps-only` (plans 37-41).
+     - Plan 41 needs the owner's push and consent to rebuild `data-service` + `design-grammars`, then the 0.1.11 test guide.
+     - The owner issues the member a DeGram grant for `degram-uat-c` before the retest.
+     - Plan 16 and phase verification follow.
+   - See [[sessions/2026-10-11 DeGram 0.1.10 UAT and 0.1.11 fix round planned|session]], [[knowledge/decisions/DeGram connectors table and per-connector access requests (D-45..D-48)|D-45..D-48]], [[knowledge/debugging/DeGram boot error because a scope profile was remembered as the primary profile (F-03)|F-03]], [[knowledge/debugging/DeGram refused project pick released the open project first (F-07)|F-07]].
+   - Supersedes the 0.1.10-built entry below (its owner UAT is done).
+
 0. **v13.0 Phase 1301 — gap round plans 30–36 done; DeGram 0.1.10 built, owner live UAT pending** (2026-10-11). Plans 33 (grant-backed session exchange, pairing-panel files deleted with explicit permission), 34 (DeGram stays on the DG ring, six-item sidebar, scoped pins), 35 («Модели» screen, G-25 backend gate) and 36 (publication) are complete and offline-verified: typecheck clean, Electron 238/238, UI 10808 pass + 3 known failures (2 voice-prefs, 1 cron-detail locale). Component commits `03785f3e`, `c3318b2d`, `38728957`, `93aa2b99` pushed by the owner; gitlink bumped, `workspace.py verify` exit 0. `data-service` and `design-grammars` rebuilt from a clean export of HEAD and restarted; the other sessions' uncommitted `data-service`/`ui-v2` edits are not in the images. Installer `DeGram-Setup-0.1.10.exe` SHA-256 `b13d10efd776f83c000ec3c75f91fe03706b72c94e6b3d0beec1fef4bab40e88`, not installed. **No DGCL requirement marked complete; nothing verified live.**
    - **Next:** owner installs 0.1.10 and runs `.planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-0.1.10-TEST-GUIDE.md` (12 steps; step 10 needs timestamps for the G-25 `desktop.log` check; `403 GRANT_REQUIRED` with a real user is untested); then plan 16 live UAT, phase verification. `D:` has 3.4 GB free: remove old installers before the next build (owner decision).
    - See [[sessions/2026-10-11 Phase 1301 gap round executed and DeGram 0.1.10 built|session]], [[knowledge/decisions/Service images are rebuilt from a clean git export of HEAD, not the dirty working tree|decision]], [[knowledge/debugging/DeGram left-scope backend restarted by the renderer reconnect ladder (G-25)|G-25]]. Supersedes the plans 31–32/33-blocked entry and the 0.1.10-planned entry below.

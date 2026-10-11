@@ -122,6 +122,18 @@
 - **D-43:** Экран DeGram «Модели» показывает документы, доступные через коннекторы (Revit, Grasshopper и др.), и статус выбора; выбор документа переезжает с нижней панели на этот экран, на нижней панели остаются только статусы [владелец 2026-10-11].
 - **D-44:** Сразу после выбора проекта надпись «Подключение к DG» перемещается в центр кольца вместо начальных заголовков, с анимацией сферы как в Graph Viewer во время ingest [владелец 2026-10-11].
 
+Owner decisions from the 0.1.10 UAT (2026-10-11, `1301-UAT.md` § 0.1.10 live recheck):
+
+- **D-45:** Экран DeGram «Коннекторы» — таблица всех коннекторов как в DG Web UI: названия в первом столбце, разделители строк и столбцов невидимы, у каждого коннектора отметка «доступен» или кнопка «Запросить доступ», справа статус Вкл/Выкл с индикатором (зелёный — активен, красный — нет) [владелец 2026-10-11].
+  - Amends D-40 (DeGram access stays as one row of this table). «Вкл» = connector status `active`, «Выкл» = `stale` or `never_connected`. Green/red applies to the DeGram view; the Web UI keeps its monochrome status dot.
+- **D-46:** «Запросить доступ» у коннектора (Grasshopper, Revit и др.) отправляет запрос владельцу или админу проекта; запрос виден в DG Web UI → Connectors → Pending requests; после одобрения участник сам создаёт токен этого коннектора в DeGram, и токен видит только он [владелец 2026-10-11].
+  - New per-connector access right and request routes in data-service; touches `route_policy.py`, `spec/SECURITY-BOUNDARY.md` (route-policy table and its machine-checked blocks) and the route inventory test. Today credential creation needs role `editor` (`route_policy.py:187`).
+  - Owner clarification 2026-10-11: owner and editor stay «доступен» without a request (current Web UI rule unchanged); only a `viewer` requests access, and after approval creates the token. Admin sees and approves every project's requests.
+- **D-47:** Во время открытия проекта остаётся одна сфера без подписи строго в центре кольца; индикатор DeGram «Подключение к DG» сверху на это время убирается; индикатор до первой отрисовки страницы DG остаётся [владелец 2026-10-11].
+  - Amends D-44. Fixes F-05: `degram-gate.tsx` opening loader removed; `HostCentre` renders the sphere only (label kept as `aria-label`), centred on the ring centre `vh/2`.
+- **D-48:** Членство в проекте (в том числе editor) без гранта DeGram не открывает проект в DeGram; грант остаётся отдельным [владелец 2026-10-11].
+  - Confirms D-39. A refused pick (F-07) must keep the current project running or return to the start screen with the grant notice, never leave the window with no backend («шлюз недоступен»), and the DG page must not stay on the refused project.
+
 ### Claude's Discretion
 Planner/researcher выбирают HOW в пределах решений выше и границ 1300:
 - Кто вызывает GH bridge: typed tool/MCP в агенте (симметрично D-11) или Electron main через typed IPC. По умолчанию — симметрично с Revit, только loopback.
