@@ -484,3 +484,19 @@ Same procedure as 0.1.7: `D:\dgb\src` (no-hardlinks clone) detached at `35d53793
 Artifact checks — all passed: `electron-main.mjs` contains `com.erarchitech.degram`, `degram-select`, `host=degram` and the new `showStart`; `resources\revit-mcp\extension.json` `"default_enabled": "True"`, `main.py` `json_body`, `revit_mcp\views.py` `urllib.parse`; `resources\revit-mcp\tests` absent.
 
 Built only: not installed or launched. Installation and the live recheck (sign-in → project choice in PROJECTS on the start screen → full workspace; then `v12 → B → C → v12`, revoke/pairing notices, rate-limit copy) are the owner's checkpoint.
+
+## 0.1.9 build: F-02 session history after a project switch (2026-10-11)
+
+0.1.8 live recheck: earlier chats reopened without messages after a project switch (REST transcript read locked in DeGram; see `1301-UAT.md` F-02). Component fix `e49c5d6a` and version bump `40bbd47f` pushed by the owner; framework gitlink `187ac62` → `40bbd47f8bc6467f79fefd056b597c9423a33155`, `workspace.py verify` exit 0; `apps/revit-mcp` unchanged at `d8f0f24d`.
+
+Same procedure: build clone detached at `40bbd47f`, clean before and after; same driver and adapter source. Build 08:56:03Z → 09:01:44Z, exit 0. D: free after the build: 4.4 GB.
+
+| Item | Value |
+|---|---|
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.9.exe` |
+| Installer size | 490,533,572 bytes |
+| Installer SHA-256 | `b4998c6bc542a1fd95a5d5bd6e073312396b2b3712f62935a9234e6d2038a3bd` |
+| Unpacked `app.asar` SHA-256 | `d9946c3e1732cdde101ab685c020dcc6be67398fd191472f8f531aa767ee6827` |
+| ProductVersion | `0.1.9.0` |
+
+Artifact checks — all passed: the 0.1.8 list (`com.erarchitech.degram`, `degram-select`, `host=degram`, `showStart`, revit-mcp `default_enabled`/`json_body`/`urllib.parse`, no `tests`), plus the F-02 cold-resume parameters in the packaged renderer `dist/assets/index-MWv2WNum.js` (`defer_history:!n&&s`, `s?{omit_messages:!0}:{}`). Built only; owner test guide: `1301-0.1.9-TEST-GUIDE.md`.
