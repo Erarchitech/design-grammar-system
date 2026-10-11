@@ -6,10 +6,10 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 36
 status: executing
-stopped_at: Completed 1301-35-PLAN.md; next: 1301-36-PLAN.md (needs owner push + service rebuild consent)
+stopped_at: Plan 1301-36 in progress; services rebuilt from clean HEAD dee60a9, version commit 93aa2b99 unpushed; resume at plan 36 Task 3 after owner pushes degram/phase-1301
 last_updated: "2026-10-11T15:25:00Z"
 last_activity: 2026-10-11
-last_activity_desc: Plan 1301-35 complete (D-43 Models screen, G-25 backend churn gate, component commit 38728957, offline-verified; next: plan 36 needs owner push and Docker consent)
+last_activity_desc: Plan 1301-36 partial - data-service and design-grammars rebuilt from a clean export of HEAD and restarted (retired exchange answers PAIRING_RETIRED, session-exchange route live); component 0.1.10 commit 93aa2b99 not yet pushed
 progress:
   total_phases: 9
   completed_phases: 0
@@ -41,8 +41,8 @@ Current Plan: 36
 Total Plans in Phase: 36
 Plan: 35 of 36 complete; next: 36
 Status: Blocked within plan 1301-33; plan not complete
-Last activity: 2026-10-11 — plan 1301-35 complete (D-43 Models screen, G-25 churn gate, offline verification)
-Last Activity Description: Plan 1301-35 complete; component commit 38728957 (not pushed, gitlink unchanged). Next: 1301-36 publication/build, blocked on owner push of degram/phase-1301 and consent for the data-service/design-grammars rebuild.
+Last activity: 2026-10-11 — plan 1301-36 partial (services rebuilt, 0.1.10 version commit awaiting owner push)
+Last Activity Description: Services rebuilt from a clean git export (the working tree holds other sessions uncommitted data-service/ui-v2 edits that were NOT shipped). Next: owner pushes degram/phase-1301 (93aa2b99), then gitlink bump, workspace verify, installer build in D:\dgb\src, BUILD record and test guide.
 
 ## Deferred Verification
 
