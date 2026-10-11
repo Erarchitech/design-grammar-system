@@ -33,10 +33,12 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Debugging
+- [[knowledge/debugging/DeGram left-scope backend restarted by the renderer reconnect ladder (G-25)|DeGram left-scope backend restarted by the renderer reconnect ladder; scope gate (G-25, fixed in 0.1.10)]] (2026-10-11)
 - [[knowledge/debugging/DeGram 0.1.7 shows compact read-only viewer after project selection|DeGram 0.1.7 live UAT blocked at project open — root cause F-01, fixed in 0.1.8]] (2026-10-11)
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Service images are rebuilt from a clean git export of HEAD, not the dirty working tree|Service images are rebuilt from a clean git export of HEAD, not the dirty working tree]] (2026-10-11)
 - [[knowledge/decisions/DeGram access is granted by the project owner, not pasted by the user|DeGram access is granted by the project owner; ring-centre pill, DeGram sidebar, Модели screen (D-39..D-44)]] (2026-10-11)
 - [[knowledge/decisions/DeGram 0.1.7 live recheck deferred while Phase 1302 begins|DeGram 0.1.7 live recheck is deferred while Phase 1302 begins]] (2026-10-10)
 - [[knowledge/decisions/DeGram pins one document per bridge|DeGram pins one document per bridge: Revit model and GH definition together (D-29)]] (2026-10-09)
@@ -205,6 +207,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-11 Phase 1301 gap round executed and DeGram 0.1.10 built|2026-10-11 Phase 1301 gap plans 33–36 executed, DeGram 0.1.10 built and services rebuilt from clean HEAD; owner live UAT pending]]
 - [[sessions/2026-10-11 Phase 1301 plans 31-32 and plan 33 blocked|2026-10-11 Phase 1301 plans 31–32 offline-complete; plan 33 blocked by denied pairing-panel deletion and failing full checks]]
 - [[sessions/2026-10-09 Phase 1301 live UAT on PC1 and the 0.1.6 gap list|2026-10-09 Phase 1301 live UAT on PC1 — DGCL-01/03 pass, 04 bridge layer pass after adapter fixes, 02 fails (G-7), gaps G-3..G-17, D-29]]
 - [[sessions/2026-10-09 Phase 1301 gap-closure plans for DeGram 0.1.6|2026-10-09 Phase 1301 gap-closure plans 18-23 for 0.1.6 — G-3..G-17, D-29, D-30 pending]]
