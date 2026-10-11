@@ -22,3 +22,7 @@ Read-only checks: `%LOCALAPPDATA%\Programs\DeGram\DeGram.exe` reports ProductVer
 ## Next diagnostic step
 
 Resume with a tight repro of the owner's exact symptom: inspect current Electron bridge state (auth/scope/page/mode), actual embedded-view URL, renderer gate and network/console after project click; compare expected `/?host=degram` announcement against actual `/#degram`. Trace why the shell is absent before changing code. Avoid launching/resetting/reinstalling automatically or exposing auth cookies/tokens. Re-run `python tools/degram/workspace.py verify` before any component work. Do not mark other 0.1.7 live checks passed.
+
+## Root cause (2026-10-11, code-traced)
+
+The start screen showed the `#degram` graph slice instead of the host-mode Web UI. `ipc.ts` loaded `dgView.showDg()` on the sign-in transition, i.e. the view's current mode, which defaults to `graph` → `/#degram`. That page has no PROJECTS menu and never announces `#degram-select`, so no scope opened. Fix in component `67ac0f84`: `dgView.showStart()` loads `?host=degram` (mode `full`) whenever a signed-in session has no open project: sign-in, returning session, Retry, after access/pairing revocation. Lesson: a test that pins a URL (`/#degram` as the signed-in start page) can freeze a contract bug; check pinned values against the decision (D-33) whenever the surrounding flow changes.
