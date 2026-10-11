@@ -6,15 +6,15 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 2
 status: executing
-stopped_at: Completed 1301-37-PLAN.md; component commit 45db5237 local (unpushed), framework 1f177d2; next plan 38
-last_updated: "2026-10-11T22:29:45.628Z"
+stopped_at: Completed 1301-40-PLAN.md; framework c9665ed local (unpushed), no rebuild; plans 38, 39 then 41 remain
+last_updated: "2026-10-11T22:46:47.470Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 1301 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 53
-  completed_plans: 40
+  completed_plans: 41
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -182,6 +182,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P21 | 3h | 3 tasks | 23 files |
 | Phase 1301 P30 | multi-session | 3 tasks | 13 files |
 | Phase 1301 P37 | ~50min | 4 tasks | 18 files |
+| Phase 1301 P40 | 75min | 4 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -530,6 +531,8 @@ Shipped from Phase 20 Plan 02:
 - [Phase 1301-30]: D-40: DeGram members request grants; owners/admins review requests and issuing a grant closes the request.
 - [Phase ?]: 1301-37: a scope-<16 hex> profile is never the primary/last-used profile in variant degram (preferences ignoreProfile + one-time rewrite to default); the G-25 gate is not weakened
 - [Phase ?]: 1301-37: scope selectProject mints before releasing the open scope; refused picks (GRANT_REQUIRED/ACCESS_DENIED/unreachable) leave the open project running; host signals #degram-project=<name|empty> back to the DG page
+- [Phase ?]: [1301-40] Connector access is a per-(user,project,connector) grant in connector-access.json; the credential POST policy floor is viewer and the handler gates it (role >= editor or approved access, 403 CONNECTOR_ACCESS_REQUIRED)
+- [Phase ?]: [1301-40] Hosted DeGram Connectors page is one table of all connectors; --status-on (green) is used only there, the Web UI StatusDot stays monochrome
 
 ### Research Flags (carry into planning)
 
@@ -625,8 +628,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-11T22:29:45.606Z
-Stopped at: Completed 1301-37-PLAN.md; component commit 45db5237 local (unpushed), framework 1f177d2; next plan 38
+Last session: 2026-10-11T22:46:47.448Z
+Stopped at: Completed 1301-40-PLAN.md; framework c9665ed local (unpushed), no rebuild; plans 38, 39 then 41 remain
 Resume file: None
 
 ## Performance Metrics
