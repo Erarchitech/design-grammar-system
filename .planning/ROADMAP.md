@@ -146,7 +146,7 @@ Withdrawn: `1300-07-PLAN.md` is retained only as a non-executable historical mar
 4. Участник отменяет долгий запрос, продолжает работу при недоступном provider/сервере или timeout и восстанавливает соединение по конкретной диагностике; native UI остаётся отзывчивым, listener освобождается корректно. [DGCL-06]
 5. До LLM-вызова участник видит состав selection context, ограничения/сокращения/отсутствующие данные; whole-definition требует явного подтверждения, snapshot использует существующий serializer DG. [DGCL-07]
 
-**Plans**: 29/36 plans executed
+**Plans**: 32/36 plans executed
 **UI hint**: yes
 
 Plans:
@@ -246,7 +246,7 @@ Plans:
 
 **Wave 21** *(blocked on 1301-30)*
 
-- [ ] 1301-33-PLAN.md — DeGram opens projects through the grant-backed session exchange; token UI removed (D-39)
+- [x] 1301-33-PLAN.md — DeGram opens projects through the grant-backed session exchange; token UI removed (D-39)
 
 **Wave 22** *(blocked on 1301-32, 1301-33)*
 
@@ -402,7 +402,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
-| 1301. Рабочий клиент и безопасное чтение | 29/36 | In Progress|  |
+| 1301. Рабочий клиент и безопасное чтение | 32/36 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
 | 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
