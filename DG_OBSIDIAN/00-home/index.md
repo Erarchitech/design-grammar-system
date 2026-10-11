@@ -205,6 +205,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-11 Phase 1301 plans 31-32 and plan 33 blocked|2026-10-11 Phase 1301 plans 31–32 offline-complete; plan 33 blocked by denied pairing-panel deletion and failing full checks]]
 - [[sessions/2026-10-09 Phase 1301 live UAT on PC1 and the 0.1.6 gap list|2026-10-09 Phase 1301 live UAT on PC1 — DGCL-01/03 pass, 04 bridge layer pass after adapter fixes, 02 fails (G-7), gaps G-3..G-17, D-29]]
 - [[sessions/2026-10-09 Phase 1301 gap-closure plans for DeGram 0.1.6|2026-10-09 Phase 1301 gap-closure plans 18-23 for 0.1.6 — G-3..G-17, D-29, D-30 pending]]
 - [[sessions/2026-10-09 Phase 1301 gap plans 18-23 executed and DeGram 0.1.6 shipped|2026-10-09 Phase 1301 gap plans 18-23 executed — 0.1.6 pushed, built, installed; D-30 decided; live recheck open]]
