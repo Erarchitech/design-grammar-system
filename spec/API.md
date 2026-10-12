@@ -526,6 +526,7 @@ Public routes: `GET /`, `POST /auth/login`, `POST /auth/accept-invite`, and `POS
 | PUT | `/projects/{project}/company` | admin | Assign the project to a company (Phase 1301, D-20): body `{company}`, 1 to 120 printable characters, 422 `COMPANY_INVALID` otherwise; stored in `auth-project-companies.json` |
 | GET | `/projects/{project}/members` | owner | List members |
 | DELETE | `/projects/{project}/members/{username}` | owner | Remove a member |
+| PUT | `/projects/{project}/members/{username}` | owner | Change a member's role (Phase 1308, D-14, D-15): body `{role}` (`viewer`, `editor` or `owner`); 200 `{project, username, role}`; the same role is a no-op 200; 404 `MEMBER_NOT_FOUND`, 422 `ROLE_INVALID`, 409 `LAST_OWNER` when the change would leave the project without an owner (self-demotion included) |
 | GET | `/graph/{project}` | viewer, delegated | Graph nodes (at most 2,000) and relationships (at most 8,000) for the project. `?compact=true` (Phase 1301 gap G-1, used by the DeGram agent): every property value whose JSON form exceeds 2,048 bytes is replaced by `{omitted: true, bytes}`, validation records (`ValidationEntity`, `ValidationRun`, `Run`, `DesignState`, `IntegrationConfig`) sort after the other nodes, and the answer adds `compact: {propMaxBytes, omittedProps}` |
 | POST | `/graph/{project}/claim-untagged` | editor | Claim untagged (`project IS NULL`) nodes |
 | PUT | `/graph/{project}/node/{node_id}/property` | editor | Update one node property |

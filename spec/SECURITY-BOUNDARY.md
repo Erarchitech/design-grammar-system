@@ -101,6 +101,9 @@ Every denial uses the `{error, hint, code}` detail shape with generic messages t
 | `PROJECT_REQUIRED` | 403 | The declared project source carries no project value |
 | `PROJECT_MISMATCH` | 403 | Path, query and body carry different project values |
 | `ROUTE_UNCLASSIFIED` | 403 | The route has no policy row (fail closed) |
+| `LAST_OWNER` | 409 | A role change or removal would leave the project without an owner (`PUT` or `DELETE /projects/{project}/members/{username}`, `POST /auth/invites` on an existing owner) |
+| `MEMBER_NOT_FOUND` | 404 | The username is not a stored member of the path project |
+| `ROLE_INVALID` | 422 | The role is outside `viewer`, `editor`, `owner` |
 
 Resource-bound routes answer an unknown resource and an unauthorized one with the same 404 (`CREDENTIAL_NOT_FOUND`, `EXECUTION_NOT_FOUND`, the note not-found), so a caller cannot probe another project's resources.
 
@@ -253,6 +256,7 @@ GET|/projects/{project}/degram-policy|admin|-|-
 PUT|/projects/{project}/degram-policy|admin|-|-
 GET|/projects/{project}/members|member|path|owner
 DELETE|/projects/{project}/members/{username}|member|path|owner
+PUT|/projects/{project}/members/{username}|member|path|owner
 POST|/reasoner/consistency|member|body|viewer
 GET|/reasoner/settings|session|-|-
 PUT|/reasoner/settings|admin|-|-

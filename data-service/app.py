@@ -4638,6 +4638,10 @@ class InviteRequest(BaseModel):
     role: str
 
 
+class MemberRoleRequest(BaseModel):
+    role: str
+
+
 class AcceptInviteRequest(BaseModel):
     inviteCode: str
     password: str
@@ -4982,6 +4986,50 @@ def remove_project_member(project: str, username: str):
     return Response(status_code=204)
 
 
+def _last_owner_guard(project: str, current_role: str | None, new_role: str | None) -> None:
+    """D-15: refuse a change that would leave the project without an owner.
+    Callers hold ``auth._STORE_LOCK`` so the count and the write are one step."""
+    if current_role == "owner" and new_role != "owner" and auth.count_owners(project) <= 1:
+        raise _structured_error_response(
+            "A project must keep at least one owner.",
+            "Promote another member to owner before changing this role.",
+            "LAST_OWNER",
+            409,
+        )
+
+
+@router.put("/projects/{project}/members/{username}")
+def change_project_member_role(project: str, username: str, payload: MemberRoleRequest):
+    """Owner or admin (route policy): change a member's role (D-14). The last
+    owner cannot be demoted, self-demotion included (D-15). The same role is a
+    no-op. Delegated and connector sessions re-check the role live."""
+    _check_project_name(project)
+    if payload.role not in auth.ROLES:
+        raise _structured_error_response(
+            "That role is not valid.",
+            "Use one of: " + ", ".join(auth.ROLES) + ".",
+            "ROLE_INVALID",
+            422,
+        )
+    try:
+        normalized = auth.normalize_username(username)
+    except ValueError:
+        normalized = ""
+    with auth._STORE_LOCK:
+        current = auth.get_role(normalized, project) if normalized else None
+        if current is None:
+            raise _structured_error_response(
+                "That user is not a member of this project.",
+                "List the project members and try again.",
+                "MEMBER_NOT_FOUND",
+                404,
+            )
+        if current != payload.role:
+            _last_owner_guard(project, current, payload.role)
+            auth.set_membership(normalized, project, payload.role)
+    return {"project": project, "username": normalized, "role": payload.role}
+
+
 @router.post("/auth/invites")
 def create_project_invite(payload: InviteRequest, request: Request):
     """Add an existing user to the project directly, or mint a one-time
@@ -5008,17 +5056,7 @@ def create_project_invite(payload: InviteRequest, request: Request):
     if auth.get_user(username) is not None:
         with auth._STORE_LOCK:
             current = auth.get_role(username, payload.project)
-            if (
-                current == "owner"
-                and payload.role != "owner"
-                and auth.count_owners(payload.project) <= 1
-            ):
-                raise _structured_error_response(
-                    "A project must keep at least one owner.",
-                    "Promote another member to owner before changing this role.",
-                    "LAST_OWNER",
-                    409,
-                )
+            _last_owner_guard(payload.project, current, payload.role)
             auth.set_membership(username, payload.project, payload.role)
         return {"status": "member-added"}
 
