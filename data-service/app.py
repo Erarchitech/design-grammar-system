@@ -59,6 +59,7 @@ from llm_gateway import (
 )
 
 import connector_access
+import connector_session
 import connectors
 import degram_grants
 import degram_pairing
@@ -1781,6 +1782,25 @@ def revoke_connector_credential(connector_id: str, credential_id: str):
     return None
 
 
+def _neo4j_bundle_or_none() -> "connectors.Neo4jBundle | None":
+    """The host-facing Neo4j connection bundle for an authenticated connector.
+
+    Phase 1205 (D-07/D-19/T-1205-07-08): the Neo4j admin bundle is withheld from
+    every connector in the multi-user profile -- Bolt is not published there and
+    the GH direct-Bolt path is documented as local-only. `local` keeps today's
+    bundle so the trusted-local GH workflow is unaffected. Shared by the
+    heartbeat and the connector sign-in mint (Phase 1308-06, D-34).
+    """
+    if auth.deployment_profile() == "multi-user":
+        return None
+    return connectors.Neo4jBundle(
+        uri=NEO4J_PUBLIC_URI,
+        user=NEO4J_USER,
+        password=NEO4J_PASSWORD,
+        database=NEO4J_DATABASE,
+    )
+
+
 @router.post("/connectors/heartbeat")
 def connector_heartbeat(request: Request):
     """Token-authenticated heartbeat. Updates the connector's last_connection
@@ -1796,18 +1816,7 @@ def connector_heartbeat(request: Request):
             "CONNECTOR_AUTH_FAILED",
             401,
         )
-    # Phase 1205 (D-07/D-19/T-1205-07-08): the Neo4j admin bundle is withheld
-    # from every connector in the multi-user profile -- Bolt is not published
-    # there and the GH direct-Bolt path is documented as local-only. `local`
-    # keeps today's bundle so the trusted-local GH workflow is unaffected.
-    neo4j_bundle = None
-    if auth.deployment_profile() != "multi-user":
-        neo4j_bundle = connectors.Neo4jBundle(
-            uri=NEO4J_PUBLIC_URI,
-            user=NEO4J_USER,
-            password=NEO4J_PASSWORD,
-            database=NEO4J_DATABASE,
-        )
+    neo4j_bundle = _neo4j_bundle_or_none()
     return HeartbeatResponse(
         connector_id=record["connector_id"],
         status=connectors.derive_status(record["last_connection"]),
@@ -1817,6 +1826,98 @@ def connector_heartbeat(request: Request):
         project=record.get("project") or "default-project",
         neo4j=neo4j_bundle,
     )
+
+
+# ---------------------------------------------------------------------------
+# Connector sign-in session (Phase 1308-06: WEBUI-07, D-25, D-29, D-34, D-36)
+# ---------------------------------------------------------------------------
+
+
+class ConnectorSessionRequest(BaseModel):
+    project: str | None = None
+    connector_id: str
+
+
+def _connector_session_forbidden() -> HTTPException:
+    return _structured_error_response(
+        "Not authorized for the requested project.",
+        "Request project access from a project owner.",
+        "PROJECT_FORBIDDEN",
+        403,
+    )
+
+
+def _eligible_connector_projects(username: str, is_admin: bool, connector_id: str) -> list[str]:
+    """Sorted projects where `username` may sign in for `connector_id`: every
+    project with members for an admin (exempt everywhere), else the caller's own
+    member projects, in both cases subject to the per-connector grant rule."""
+    candidates = auth.list_all_member_projects() if is_admin else auth.list_member_projects(username)
+    return [
+        name
+        for name in candidates
+        if connector_access.is_authorized(
+            username,
+            name,
+            connector_id,
+            role=connector_session.effective_role_for(username, name),
+        )
+    ]
+
+
+@router.post("/auth/connector-session", status_code=201)
+def mint_connector_session(
+    payload: ConnectorSessionRequest, request: Request, response: Response
+):
+    """Trade the caller's cookie session (+ CSRF) for a `dgk_` connector sign-in
+    session bound to one project and one connector (D-25).
+
+    Owner and admin are exempt from the per-connector grant; an editor or a
+    viewer needs an active access row (D-29). A blank project picks the only
+    project the caller may sign in to (D-36). The policy is `session` because a
+    blank project cannot be resolved by the policy layer; this handler performs
+    the membership, exemption and grant checks itself.
+    """
+    principal = request.state.principal
+    username = principal.username or ""
+    connector_access.check_connector(payload.connector_id)
+
+    project = (payload.project or "").strip()
+    if project:
+        _check_project_name(project)
+        role = connector_session.effective_role_for(username, project)
+        if role is None or not auth.project_has_members(project):
+            raise _connector_session_forbidden()
+        if not connector_access.is_authorized(username, project, payload.connector_id, role=role):
+            raise connector_access.access_required()
+    else:
+        eligible = _eligible_connector_projects(username, principal.is_admin, payload.connector_id)
+        if not eligible:
+            raise connector_access.access_required()
+        if len(eligible) > 1:
+            raise _structured_error_response(
+                "Choose a project for this connector.",
+                "Set Project to one of: " + ", ".join(eligible),
+                "PROJECT_REQUIRED",
+                422,
+            )
+        project = eligible[0]
+
+    token, record = connector_session.issue(
+        username=username, project=project, connector_id=payload.connector_id
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return connector_session.public_answer(token, record, neo4j=_neo4j_bundle_or_none())
+
+
+@router.delete("/auth/connector-session", status_code=204)
+def revoke_connector_session(request: Request):
+    """Self-revoke: end the presented `dgk_` session (D-25). The session then
+    answers 401 CONNECTOR_SESSION_ENDED. A legacy `dgc_` Bearer has no session
+    to end, so it is a no-op for it."""
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[len("Bearer "):].strip() if auth_header.startswith("Bearer ") else ""
+    connector_session.revoke_token(token)
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------

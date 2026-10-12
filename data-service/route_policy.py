@@ -122,6 +122,13 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # and self-revoke (the delegated token itself) a delegated token.
     ("POST", "/auth/delegated-token"): _p(_MEM, source="body", role="viewer"),
     ("DELETE", "/auth/delegated-token"): _p(_DEL),
+    # Phase 1308-06 (D-25, D-36): mint a dgk_ connector sign-in session from the
+    # cookie (+ CSRF) and self-revoke it with the session itself. The mint is
+    # `session`, not `member`/body: a blank project (the server picks the only
+    # eligible one) cannot be resolved by the policy layer, so the handler does
+    # the membership, exemption and grant checks.
+    ("POST", "/auth/connector-session"): _p(_SES),
+    ("DELETE", "/auth/connector-session"): _p(_CON),
     # Phase 1301-17 (D-25), retired by plan 30 (D-39): the pairing exchange now
     # answers 401 PAIRING_RETIRED to any dgp_ Bearer.
     ("POST", "/auth/degram/exchange"): _p(_PAIR, source="body", role="viewer"),

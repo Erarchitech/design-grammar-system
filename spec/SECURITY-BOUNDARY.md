@@ -92,7 +92,10 @@ Every denial uses the `{error, hint, code}` detail shape with generic messages t
 | Code | Status | Meaning |
 |------|--------|---------|
 | `AUTH_REQUIRED` | 401 | No credential, or an invalid or expired session |
-| `CONNECTOR_AUTH_FAILED` | 401 | Invalid or revoked connector token |
+| `CONNECTOR_AUTH_FAILED` | 401 | Invalid or revoked connector token (a `dgk_` session or a legacy `dgc_` token) |
+| `CONNECTOR_SESSION_EXPIRED` | 401 | A `dgk_` connector sign-in session past its own expiry (`DG_CONNECTOR_SESSION_TTL_SECONDS`) |
+| `CONNECTOR_SESSION_ENDED` | 401 | A `dgk_` session was revoked (`DELETE /auth/connector-session`, password change, membership removal, grant revoke), its user is gone or its project changed company |
+| `CONNECTOR_ACCESS_REQUIRED` | 403 | An editor or viewer without an active per-connector access row asked to sign in or used a session after the access was revoked |
 | `SERVICE_AUTH_FAILED` | 401 | Invalid service token |
 | `DELEGATED_AUTH_FAILED` | 401 | Unknown, malformed or explicitly revoked delegated token |
 | `DELEGATED_EXPIRED` | 401 | Delegated token past its own expiry |
@@ -103,6 +106,7 @@ Every denial uses the `{error, hint, code}` detail shape with generic messages t
 | `ADMIN_REQUIRED` | 403 | Admin-only route, non-admin user |
 | `PROJECT_FORBIDDEN` | 403 | Not a member of the project, or role too low; also a delegated token whose membership on its bound project was removed |
 | `PROJECT_REQUIRED` | 403 | The declared project source carries no project value |
+| `PROJECT_REQUIRED` | 422 | `POST /auth/connector-session` with a blank project when the caller is authorized in two or more projects; the hint lists the eligible project names (the 403 form above is the policy layer's) |
 | `PROJECT_MISMATCH` | 403 | Path, query and body carry different project values |
 | `ROUTE_UNCLASSIFIED` | 403 | The route has no policy row (fail closed) |
 | `LAST_OWNER` | 409 | A role change or removal would leave the project without an owner (`PUT` or `DELETE /projects/{project}/members/{username}`, `POST /auth/invites` on an existing owner) |
@@ -180,6 +184,8 @@ Format `METHOD|PATH|PRINCIPALS|PROJECT_SOURCE|MIN_ROLE`. Principals are joined w
 ```
 GET|/|public|-|-
 POST|/auth/accept-invite|public|-|-
+DELETE|/auth/connector-session|connector|-|-
+POST|/auth/connector-session|session|-|-
 POST|/auth/degram/exchange|pairing|body|viewer
 POST|/auth/degram/session-exchange|member|body|viewer
 DELETE|/auth/delegated-token|delegated|-|-
