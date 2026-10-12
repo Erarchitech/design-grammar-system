@@ -75,8 +75,8 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     check(!host.textContent.includes('Members ·'), 'Owner panel hidden'); equal(calls.length, 1, 'No member request');
   });
   await run('PANEL-admin can administer without owner role', async () => {
-    queue.push([200, { projects: [] }], [200, { members: [{ username: 'owner', role: 'owner' }] }]);
-    await render({ ...props, user: { email: 'admin', isAdmin: true } }); await tick(); check(host.textContent.includes('Members · A'), 'Admin panel available'); equal(calls[1].url, '/data-service/projects/A/members', 'Scoped members');
+    queue.push([200, { project: 'A', providerExportAllowed: true, wholeDefinitionAllowed: false }], [200, { projects: [] }], [200, { members: [{ username: 'owner', role: 'owner' }] }]);
+    await render({ ...props, user: { email: 'admin', isAdmin: true } }); await tick(); check(host.textContent.includes('Members · A'), 'Admin panel available'); check(calls.some(c => c.url === '/data-service/projects/A/members'), 'Scoped members');
   });
   for (const status of [401, 403]) await run(`PANEL-members-${status} no foreign member state on denied read`, async () => {
     let expiries = 0; const listener = () => { expiries += 1; }; window.addEventListener('dg-auth-expired', listener);
@@ -128,7 +128,7 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
   const roleSelect = name => host.querySelector(`select[aria-label="Role of ${name}"]`);
   const pick = (select, value) => act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
   const twoMembers = [{ username: 'only-owner', role: 'owner' }, { username: 'bob', role: 'viewer' }];
-  const roleReady = async (members, p = props) => { queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members }]); await render(p); await until(() => !!roleSelect(members[0].username), 'Role selects ready'); };
+  const roleReady = async (members, p = props) => { if (p.user?.isAdmin) queue.push([200, { project: 'A', providerExportAllowed: true, wholeDefinitionAllowed: false }]); queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members }]); await render(p); await until(() => !!roleSelect(members[0].username), 'Role selects ready'); };
   await run('PANEL-role optimistic change disables the Select in flight then refreshes and announces', async () => {
     await roleReady(twoMembers);
     const inFlight = deferred(); queue.push(inFlight.promise);
@@ -171,6 +171,69 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     await roleReady(owners, { ...props, user: { email: 'admin', isAdmin: true } });
     queue.push([200, { project: 'A', username: 'admin', role: 'editor' }], [200, { members: [{ username: 'admin', role: 'editor' }, { username: 'bob', role: 'owner' }] }]);
     await pick(roleSelect('admin'), 'editor'); await until(() => queue.length === 0, 'Change consumed'); check(!host.textContent.includes('You will no longer be able'), 'No confirm for an admin');
+  });
+  // Phase 1308-10 (D-02, D-17): admin-only Project settings panel. The child panel's effect runs before the
+  // screen's own, so a DG admin's first request is the policy GET, then projects, then members.
+  const policyOf = (provider = true, whole = false) => [200, { project: 'A', providerExportAllowed: provider, wholeDefinitionAllowed: whole }];
+  const adminProps = { ...props, user: { email: 'admin', isAdmin: true } };
+  const box = label => [...host.querySelectorAll('[role="checkbox"]')].find(el => el.textContent === label);
+  const clickBox = label => act(async () => box(label).querySelector('span[id]').click());
+  const adminTail = [[200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members: [{ username: 'admin', role: 'owner' }] }]];
+  const settingsReady = async (policy = policyOf()) => { queue.push(policy, ...adminTail); await render(adminProps); await until(() => !!box('Allow provider export'), 'Policy rows ready'); };
+  const putCall = () => calls.filter(c => c.init.method === 'PUT');
+  await run('PANEL-settings loading text then both toggles at server state (admin only)', async () => {
+    const late = deferred(); queue.push(late.promise, ...adminTail);
+    await render(adminProps); await tick();
+    check(host.textContent.includes('Project settings · A'), 'Panel title'); check(host.textContent.includes('Loading settings…'), 'Loading text'); check(host.textContent.includes('Visible to DG admins only.'), 'Visibility note');
+    equal(calls[0].url, '/data-service/projects/A/degram-policy', 'Policy GET first'); equal(calls[0].init.method, 'GET', 'GET verb');
+    await act(async () => late.resolve(response(200, { project: 'A', providerExportAllowed: true, wholeDefinitionAllowed: false })));
+    await until(() => !!box('Allow provider export'), 'Rows after load'); check(!host.textContent.includes('Loading settings…'), 'Loading text gone');
+    equal(box('Allow provider export').getAttribute('aria-checked'), 'true', 'Provider export on'); equal(box('Allow whole-definition export').getAttribute('aria-checked'), 'false', 'Whole-definition export off');
+    check(host.textContent.includes('Lets DeGram request the complete Grasshopper definition.'), 'Helper text');
+  });
+  await run('PANEL-settings a project owner who is not an admin gets no panel, no placeholder and no policy call', async () => {
+    await ownerReady();
+    check(!host.textContent.includes('Project settings'), 'No panel'); check(!host.textContent.includes('Visible to DG admins only.'), 'No placeholder'); check(!calls.some(c => /degram-policy/.test(c.url)), 'No policy request');
+  });
+  await run('PANEL-settings provider export toggles without confirm and sends only the changed flag', async () => {
+    await settingsReady();
+    const inFlight = deferred(); queue.push(inFlight.promise);
+    await clickBox('Allow provider export');
+    equal(putCall().length, 1, 'One PUT'); equal(putCall()[0].url, '/data-service/projects/A/degram-policy', 'Policy PUT url'); equal(JSON.parse(putCall()[0].init.body), { providerExportAllowed: false }, 'Only the changed flag');
+    equal(box('Allow provider export').getAttribute('aria-checked'), 'false', 'Optimistic value'); equal(box('Allow provider export').getAttribute('aria-disabled'), 'true', 'Disabled in flight'); equal(box('Allow provider export').style.opacity, '0.45', 'Disabled opacity');
+    await act(async () => inFlight.resolve(response(200, { project: 'A', providerExportAllowed: false, wholeDefinitionAllowed: false }))); await tick();
+    equal(box('Allow provider export').getAttribute('aria-checked'), 'false', 'Server value kept'); equal(box('Allow provider export').getAttribute('aria-disabled'), 'false', 'Enabled again'); check(host.textContent.includes('Project settings saved'), 'Saved announced');
+  });
+  await run('PANEL-settings enabling whole-definition export asks first; Keep export off and Escape send nothing', async () => {
+    await settingsReady();
+    await clickBox('Allow whole-definition export');
+    check(host.textContent.includes('Allow whole-definition export for A? DeGram will be able to request the entire definition'), 'Confirm text with the project'); check(!!button('Allow whole-definition export') && !!button('Keep export off'), 'Confirm buttons');
+    equal(putCall().length, 0, 'No PUT before confirm'); equal(box('Allow whole-definition export').getAttribute('aria-checked'), 'false', 'Checkbox stays off');
+    await act(async () => button('Keep export off').click()); check(!button('Keep export off'), 'Confirm closed'); equal(putCall().length, 0, 'Keep export off sends nothing');
+    await clickBox('Allow whole-definition export'); await act(async () => box('Allow whole-definition export').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))); check(!button('Keep export off'), 'Escape keeps export off'); equal(putCall().length, 0, 'Escape sends nothing');
+    await clickBox('Allow whole-definition export'); queue.push(policyOf(true, true));
+    await act(async () => button('Allow whole-definition export').click()); await until(() => queue.length === 0, 'Confirmed PUT consumed'); await tick();
+    equal(JSON.parse(putCall()[0].init.body), { wholeDefinitionAllowed: true }, 'Only whole-definition flag'); equal(box('Allow whole-definition export').getAttribute('aria-checked'), 'true', 'Now on'); check(!button('Keep export off'), 'Confirm gone');
+  });
+  await run('PANEL-settings turning whole-definition export off needs no confirm', async () => {
+    await settingsReady(policyOf(true, true));
+    queue.push(policyOf(true, false)); await clickBox('Allow whole-definition export'); await until(() => queue.length === 0, 'PUT consumed'); await tick();
+    check(!button('Keep export off'), 'No confirm'); equal(JSON.parse(putCall()[0].init.body), { wholeDefinitionAllowed: false }, 'Off flag only'); equal(box('Allow whole-definition export').getAttribute('aria-checked'), 'false', 'Now off');
+  });
+  await run('PANEL-settings failed save rolls back and shows the mapped error', async () => {
+    await settingsReady();
+    queue.push([422, { detail: { error: 'No policy flag was given.', code: 'DEGRAM_POLICY_INVALID' } }]); await clickBox('Allow provider export'); await tick();
+    check(host.textContent.includes('Choose a setting to change.'), 'Mapped error'); check(!host.textContent.includes('No policy flag was given.'), 'Server text not shown'); equal(box('Allow provider export').getAttribute('aria-checked'), 'true', 'Rolled back');
+  });
+  await run('PANEL-settings 403 ADMIN_REQUIRED shows the mapped message and reloads the panel', async () => {
+    await settingsReady();
+    queue.push([403, { detail: { error: 'Admin only', code: 'ADMIN_REQUIRED' } }], policyOf(false, false)); await clickBox('Allow provider export'); await until(() => queue.length === 0, 'PUT and reload consumed'); await tick();
+    check(host.textContent.includes('Only a DG admin can change project settings.'), 'Mapped message'); equal(calls.filter(c => c.init.method === 'GET' && /degram-policy/.test(c.url)).length, 2, 'Panel reloaded');
+    await until(() => !!box('Allow provider export'), 'Rows back'); equal(box('Allow provider export').getAttribute('aria-checked'), 'false', 'Server truth after reload');
+  });
+  await run('PANEL-settings load failure shows the retry button and recovers', async () => {
+    queue.push([500, { detail: 'boom' }], ...adminTail); await render(adminProps); await until(() => host.textContent.includes('Could not load project settings.'), 'Load error'); check(!!button('Retry loading settings'), 'Retry button');
+    queue.push(policyOf()); await act(async () => button('Retry loading settings').click()); await until(() => !!box('Allow provider export'), 'Rows after retry');
   });
   const output = document.createElement('pre'); output.id = 'offline-results'; output.textContent = JSON.stringify({ proof_level: 'offline-actual-React18-ReactDOM-panel-fake-fetch', results }); document.body.append(output);
 })().catch(e => { document.body.textContent = `HARNESS_ERROR: ${e.stack}`; });

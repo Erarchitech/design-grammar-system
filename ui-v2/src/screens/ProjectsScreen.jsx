@@ -1,9 +1,10 @@
 import React from "react";
-import { Button, Input, Panel, Select, Tile } from "../components/index.js";
+import { Button, Checkbox, Input, Panel, Select, Tile } from "../components/index.js";
 import { fetchProjects } from "../lib/graphApi.js";
 import { apiFetch, dataServiceBase, ApiError } from "../lib/apiClient.js";
 import { changeMemberRole } from "../lib/memberApi.js";
 import { isSoleOwner, needsSelfDemotionConfirm } from "../lib/memberRoles.js";
+import { getDegramPolicy, policyPatch, setDegramPolicy, shouldShowProjectSettings } from "../lib/projectSettingsApi.js";
 import { describeError } from "../i18n/index.js";
 import { ROLE_VALUES, roleLabel } from "../i18n/enums.js";
 import { useT } from "../i18n/LanguageProvider.jsx";
@@ -134,6 +135,217 @@ function MemberRow({ member, members, user, project, scopeRef, onRoleChanged, on
         {saved ? t("Role updated for {username}", { username: member.username }) : ""}
       </span>
     </div>
+  );
+}
+
+// One export-policy toggle (D-17): Checkbox row with a 12px helper below (4px gap). The primitive has no input element,
+// so the wrapper carries role="checkbox", focus and the Space/Enter keys. While `confirm` is set (enabling
+// whole-definition export) the helper is replaced by the inline confirm, and Escape picks the safe answer.
+function PolicyRow({ label, helper, checked, busy, onToggle, error, confirm }) {
+  const labelId = React.useId();
+  const helperId = React.useId();
+  return (
+    <div
+      style={{ display: "flex", flexDirection: "column", gap: 4 }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && confirm) confirm.onKeep();
+      }}
+    >
+      <div
+        role="checkbox"
+        tabIndex={0}
+        aria-checked={checked}
+        aria-disabled={busy}
+        aria-labelledby={labelId}
+        aria-describedby={helperId}
+        onKeyDown={(event) => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault();
+          if (!busy) onToggle(!checked);
+        }}
+        style={{ alignSelf: "flex-start", opacity: busy ? 0.45 : 1, pointerEvents: busy ? "none" : undefined }}
+      >
+        <Checkbox
+          checked={checked}
+          onChange={(next) => {
+            if (!busy) onToggle(next);
+          }}
+          label={
+            <span id={labelId} style={{ font: "400 14px/1.43 var(--font-sans)" }}>
+              {label}
+            </span>
+          }
+        />
+      </div>
+      {confirm ? (
+        <div id={helperId} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ font: "400 14px/1.43 var(--font-sans)" }}>{confirm.text}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Button size="sm" onClick={confirm.onAllow}>
+              {confirm.allowLabel}
+            </Button>
+            <Button variant="outline" size="sm" onClick={confirm.onKeep}>
+              {confirm.keepLabel}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div id={helperId} style={{ font: "400 12px/1.33 var(--font-sans)", color: "var(--text-muted)" }}>
+          {helper}
+        </div>
+      )}
+      {error && <div style={ERR_STYLE}>{error}</div>}
+    </div>
+  );
+}
+
+function readPolicy(body, fallback) {
+  const ok = body && typeof body.providerExportAllowed === "boolean" && typeof body.wholeDefinitionAllowed === "boolean";
+  if (ok) return { providerExportAllowed: body.providerExportAllowed, wholeDefinitionAllowed: body.wholeDefinitionAllowed };
+  return fallback;
+}
+
+// DG-admin-only export policy for one project (D-02, D-17). Only the changed flag is sent. Enabling whole-definition
+// export needs an inline confirm; the checkbox stays off until it is confirmed. A 403 ADMIN_REQUIRED reloads the panel.
+function ProjectSettingsPanel({ project, active }) {
+  const { t, tc } = useT();
+  const [policy, setPolicy] = React.useState(null);
+  const [loadFailed, setLoadFailed] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [failure, setFailure] = React.useState(null);
+  const [confirming, setConfirming] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const scopeRef = React.useRef(0);
+
+  const load = React.useCallback(() => {
+    const scope = scopeRef.current;
+    setLoadFailed(false);
+    getDegramPolicy(project)
+      .then((body) => {
+        const read = readPolicy(body, null);
+        if (scope !== scopeRef.current) return;
+        if (read) setPolicy(read);
+        else setLoadFailed(true); // fail closed: never guess a flag
+      })
+      .catch(() => {
+        if (scope === scopeRef.current) setLoadFailed(true);
+      });
+  }, [project]);
+
+  // Switching project (or leaving the screen) discards the panel state; late replies of the old scope are dropped.
+  React.useEffect(() => {
+    setPolicy(null);
+    setLoadFailed(false);
+    setBusy(false);
+    setFailure(null);
+    setConfirming(false);
+    setSaved(false);
+    if (active) load();
+    return () => {
+      scopeRef.current += 1;
+    };
+  }, [active, load]);
+
+  const apply = async (flag, value) => {
+    if (!policy || busy) return;
+    const next = { ...policy, [flag]: value };
+    const patch = policyPatch(policy, next);
+    if (Object.keys(patch).length === 0) return;
+    const scope = scopeRef.current;
+    setFailure(null);
+    setSaved(false);
+    setConfirming(false);
+    setBusy(true);
+    setPolicy(next);
+    try {
+      const body = await setDegramPolicy(project, patch);
+      if (scope !== scopeRef.current) return;
+      setPolicy(readPolicy(body, next));
+      setBusy(false);
+      setSaved(true);
+    } catch (err) {
+      if (scope !== scopeRef.current) return;
+      setBusy(false);
+      setFailure({ flag, err });
+      if (err?.code === "ADMIN_REQUIRED") {
+        setPolicy(null); // back to server truth: reload the panel
+        load();
+      } else {
+        setPolicy(policy); // roll back
+      }
+    }
+  };
+
+  const onWholeToggle = (value) => {
+    setFailure(null);
+    setSaved(false);
+    if (value) setConfirming(true); // the checkbox stays off until confirmed
+    else {
+      setConfirming(false);
+      apply("wholeDefinitionAllowed", false);
+    }
+  };
+
+  const failureText = failure ? describeError(failure.err, t("Could not save the setting. Try again.")) : "";
+  const rowError = (flag) => (failure && failure.flag === flag ? failureText : "");
+
+  let body;
+  if (policy) {
+    body = (
+      <>
+        <PolicyRow
+          label={t("Allow provider export")}
+          helper={t("DeGram may send this project's data to the LLM provider. On by default.")}
+          checked={policy.providerExportAllowed}
+          busy={busy}
+          onToggle={(value) => apply("providerExportAllowed", value)}
+          error={rowError("providerExportAllowed")}
+        />
+        <PolicyRow
+          label={t("Allow whole-definition export")}
+          helper={t("Lets DeGram request the complete Grasshopper definition. Each request still needs its own consent. Off by default.")}
+          checked={policy.wholeDefinitionAllowed}
+          busy={busy}
+          onToggle={onWholeToggle}
+          error={rowError("wholeDefinitionAllowed")}
+          confirm={
+            confirming
+              ? {
+                  text: t("Allow whole-definition export for {project}? DeGram will be able to request the entire definition, each time with your consent.", { project }),
+                  allowLabel: tc("confirm", "Allow whole-definition export"),
+                  keepLabel: t("Keep export off"),
+                  onAllow: () => apply("wholeDefinitionAllowed", true),
+                  onKeep: () => setConfirming(false)
+                }
+              : null
+          }
+        />
+      </>
+    );
+  } else if (loadFailed) {
+    body = (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={ERR_STYLE}>{t("Could not load project settings.")}</span>
+        <Button variant="outline" size="sm" onClick={load}>
+          {t("Retry loading settings")}
+        </Button>
+      </div>
+    );
+  } else {
+    body = <div style={{ font: "400 14px/1.43 var(--font-sans)", color: "var(--text-muted)" }}>{t("Loading settings…")}</div>;
+  }
+
+  return (
+    <Panel title={t("Project settings · {project}", { project })} style={{ marginTop: 24, userSelect: "text" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ font: "400 12px/1.33 var(--font-sans)", color: "var(--text-muted)" }}>{t("Visible to DG admins only.")}</div>
+        {!policy && failureText && <div style={ERR_STYLE}>{failureText}</div>}
+        {body}
+        <span aria-live="polite" style={VISUALLY_HIDDEN}>
+          {saved ? t("Project settings saved") : ""}
+        </span>
+      </div>
+    </Panel>
   );
 }
 
@@ -354,74 +566,79 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
         )}
 
         {canAdminister && (
-          <Panel title={t("Members · {project}", { project })} style={{ userSelect: "text" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {membersErr && <div style={ERR_STYLE}>{membersErr}</div>}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {members.map((m) => (
-                  <MemberRow
-                    key={m.username}
-                    member={m}
-                    members={members}
-                    user={user}
-                    project={project}
-                    scopeRef={panelScope}
-                    onRoleChanged={onRoleChanged}
-                    onRemove={removeMember}
+          <div>
+            <Panel title={t("Members · {project}", { project })} style={{ userSelect: "text" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {membersErr && <div style={ERR_STYLE}>{membersErr}</div>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {members.map((m) => (
+                    <MemberRow
+                      key={m.username}
+                      member={m}
+                      members={members}
+                      user={user}
+                      project={project}
+                      scopeRef={panelScope}
+                      onRoleChanged={onRoleChanged}
+                      onRemove={removeMember}
+                    />
+                  ))}
+                  {!membersErr && members.length === 0 && (
+                    <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
+                      {t("No members listed")}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <Input
+                    placeholder="Username to invite"
+                    value={inviteUser}
+                    autoComplete="off"
+                    onChange={(e) => {
+                      setInviteUser(e.target.value);
+                      setInviteErr("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") sendInvite();
+                    }}
+                    style={{ width: 240 }}
                   />
-                ))}
-                {!membersErr && members.length === 0 && (
-                  <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                    {t("No members listed")}
+                  <Select options={roleOptions()} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ width: 130 }} />
+                  <Button size="sm" onClick={sendInvite}>
+                    Invite
+                  </Button>
+                </div>
+                {inviteErr && <div style={ERR_STYLE}>{inviteErr}</div>}
+                {inviteNote && <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{inviteNote}</div>}
+                {invite && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Input
+                        mono
+                        readOnly
+                        value={invite.code}
+                        onFocus={(e) => e.target.select()}
+                        style={{ width: 360, userSelect: "text" }}
+                      />
+                      <Button variant="secondary" size="sm" onClick={copyInvite}>
+                        Copy
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => setInvite(null)}>
+                        Dismiss
+                      </Button>
+                    </div>
+                    <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
+                      Share this code with the invitee; it is shown once and expires in 72 hours.
+                    </div>
                   </div>
                 )}
               </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <Input
-                  placeholder="Username to invite"
-                  value={inviteUser}
-                  autoComplete="off"
-                  onChange={(e) => {
-                    setInviteUser(e.target.value);
-                    setInviteErr("");
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") sendInvite();
-                  }}
-                  style={{ width: 240 }}
-                />
-                <Select options={roleOptions()} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ width: 130 }} />
-                <Button size="sm" onClick={sendInvite}>
-                  Invite
-                </Button>
-              </div>
-              {inviteErr && <div style={ERR_STYLE}>{inviteErr}</div>}
-              {inviteNote && <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{inviteNote}</div>}
-              {invite && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Input
-                      mono
-                      readOnly
-                      value={invite.code}
-                      onFocus={(e) => e.target.select()}
-                      style={{ width: 360, userSelect: "text" }}
-                    />
-                    <Button variant="secondary" size="sm" onClick={copyInvite}>
-                      Copy
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => setInvite(null)}>
-                      Dismiss
-                    </Button>
-                  </div>
-                  <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                    Share this code with the invitee; it is shown once and expires in 72 hours.
-                  </div>
-                </div>
-              )}
-            </div>
-          </Panel>
+            </Panel>
+            {shouldShowProjectSettings(user, project) && (
+              <ProjectSettingsPanel project={project} active={active} />
+            )}
+          </div>
         )}
 
         <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
