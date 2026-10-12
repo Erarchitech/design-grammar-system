@@ -7,8 +7,11 @@ date: 2026-07-18
 
 ## In Flight
 
-0. **v13.0 Phase 1308 — planned: 24 plans in 10 waves, executes before 1302** (2026-10-12).
-   - **Done:** research, CONTEXT (D-01..D-54, all recommendations owner-approved, no discuss-phase), UI-SPEC rev. 2 (6/6), 24 plans verified (0 blockers), WEBUI-01..11; commits `c64424a`, `7cbd3d6`, `ba3c529`.
+0. **v13.0 Phase 1308 — executing: 14 of 24 plans done (waves 1–3 and plan 13), paused by the owner** (2026-10-12).
+   - **Done:** plans 01–10, 12, 13, 16, 23 (server: role change, summary, `dgk_` sessions, 410 on token creation, `dgc_` refused; DG.Core sign-in client and CONNECTOR with new GUID; i18n layer with landing, Projects, Graph and screens translated). Each verified after return (pytest / node --test / dotnet test). Owner answered **proceed** on the GUID and token-retirement gates and chose to commit his WIP (plan 01).
+   - **Remaining:** 11, 14, 15, 17, 18, 19, 20, 21, 22, 24 (checkpoints in 17–20; 19/20 are the live rollout). `/gsd-execute-phase 1308` resumes at wave 4. Before closing the phase: fix STATE.md plan counters, move the live dsav tests (`test_dsav_live_loop.py`, `test_dsav_publish_leg.py`) to `dgk_`. Nothing verified live yet (no Docker/Rhino/browser).
+   - See [[sessions/2026-10-12 Phase 1308 executed plans 01-10, 12, 13, 16, 23 (14 of 24)|execution session]].
+   - **Planning record:** research, CONTEXT (D-01..D-54, all recommendations owner-approved, no discuss-phase), UI-SPEC rev. 2 (6/6), 24 plans verified (0 blockers), WEBUI-01..11; commits `c64424a`, `7cbd3d6`, `ba3c529`.
    - **Owner amendment D-50..D-54:** the interface language is switched only in DeGram Settings → Appearance → Language (Русский / English); live `#degram-lang=`; no switcher in the Web UI; a plain browser follows its primary language (recommendation, open to redirect).
    - **Next:** `/gsd-execute-phase 1308`; plan 1308-01 first: owner settles the uncommitted WIP (`ProjectsScreen.jsx`, `lib/auth.js`, `ui-v2/tests/*`, data-service WIP incl. `test_auth_store.py`, `ValidatorComponent.cs`). Owner gates: token retirement, new CONNECTOR GUID, component commit / fork push / gitlink bump, live rebuild and UAT account cleanup.
    - See [[sessions/2026-10-12 Phase 1308 planned, 24 plans, language switch moved to DeGram settings|session]], [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|D-50..D-54]], [[knowledge/debugging/GSD must_haves parse 0 truths when plan files have CRLF line endings|CRLF must_haves]]. Supersedes the «Next: /gsd-plan-phase 1308» line of the 1301 entry below.

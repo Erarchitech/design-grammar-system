@@ -215,6 +215,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-12 Phase 1308 executed plans 01-10, 12, 13, 16, 23 (14 of 24)|2026-10-12 Phase 1308 executed — 14 of 24 plans (waves 1–3, plan 13); dgk_ sessions, dgc_ retired, i18n layer; paused by the owner]]
 - [[sessions/2026-10-12 Phase 1308 planned, 24 plans, language switch moved to DeGram settings|2026-10-12 Phase 1308 planned — 24 plans in 10 waves, language switch moved to DeGram settings (D-50..D-54)]]
 - [[sessions/2026-10-12 Phase 1301 gap plans 37-41 executed, DeGram 0.1.11 built and UAT result|2026-10-12 Phase 1301 gap plans 37–41 executed, DeGram 0.1.11 built; owner UAT steps 1–5, 7 pass, step 6 became D-49]]
 - [[sessions/2026-10-11 DeGram 0.1.10 UAT and 0.1.11 fix round planned|2026-10-11 DeGram 0.1.10 UAT (7 pass, 4 fail) and the 0.1.11 fix round planned (plans 37–41, D-45..D-48)]]
