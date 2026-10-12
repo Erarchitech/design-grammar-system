@@ -1,0 +1,8 @@
+{
+  "area": "landing",
+  "files": [
+    "src/lib/summaryApi.js",
+    "src/lib/runGroups.js",
+    "src/lib/landingSummary.js"
+  ]
+}

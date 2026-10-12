@@ -3,7 +3,13 @@
 export const ru = {
   "Classes": "Классы",
   "Properties": "Свойства",
-  "Rules": "Правила"
+  "Rules": "Правила",
+  "Design States": "Состояния дизайна",
+  "Validation runs": "Прогоны валидации",
+  "Provider": "Провайдер",
+  "Model": "Модель",
+  "Active": "Активно",
+  "Grants issued": "Выдано доступов"
 };
 
 export const en = {};

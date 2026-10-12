@@ -17,6 +17,7 @@ import {
   StatBlock
 } from "../components/index.js";
 import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
+import { groupRunsByState, NO_STATE } from "../lib/runGroups.js";
 import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib/inputGenApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 
@@ -61,8 +62,6 @@ function boxPath(b) {
     " L" + p(B2) + " Z M" + p(D2) + " L" + p(B2) + " L" + p(C2) + " L" + p(E2) + " Z"
   );
 }
-
-const NO_STATE = "__no_state__";
 
 // v2: thumbnails captured before the background fill were black where the
 // (transparent) viewer canvas showed the page — drop them rather than show them.
@@ -446,17 +445,7 @@ export default function ModelScreen({ active, onBack, project }) {
   }, [picked, runId, project, fetchEntityStatuses]);
 
   /* ---- design-state grouping (stateId from statePayloadJson summaries) ---- */
-  const groups = React.useMemo(() => {
-    const buckets = new Map();
-    for (const r of runs) {
-      const key = r.state?.stateId || NO_STATE;
-      if (!buckets.has(key)) buckets.set(key, { key, state: r.state, runs: [] });
-      buckets.get(key).runs.push(r);
-    }
-    const arr = [...buckets.values()];
-    arr.sort((a, b) => (a.key === NO_STATE) - (b.key === NO_STATE) || a.key.localeCompare(b.key));
-    return arr;
-  }, [runs]);
+  const groups = React.useMemo(() => groupRunsByState(runs), [runs]);
 
   /* ---- tile properties: this project's PropState properties ---- */
   const propCatalogueList = React.useMemo(() => propCatalogue(groups.map((g) => g.state)), [groups]);

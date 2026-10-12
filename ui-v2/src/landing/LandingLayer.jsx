@@ -9,6 +9,10 @@ import { useT } from "../i18n/LanguageProvider.jsx";
 import { describeError } from "../i18n/index.js";
 import { getProjectSummary } from "../lib/summaryApi.js";
 import { buildLandingSummaries } from "../lib/landingSummary.js";
+import { fetchValidationRuns } from "../lib/modelApi.js";
+import { getSettings } from "../lib/llmApi.js";
+import { getReasonerSettings } from "../lib/reasonerApi.js";
+import { listConnectors } from "../lib/connectorsApi.js";
 
 // Client-side auth messages are stored as a code and translated at render, so a live language switch retranslates
 // them (D-52). Server errors are stored as the error object and mapped by describeError.
@@ -64,24 +68,32 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const [authErr, setAuthErr] = React.useState(null);
   // Register is offered only when the server says so; any failure hides it.
   const [canRegister, setCanRegister] = React.useState(false);
-  const [summary, setSummary] = React.useState({ status: "loading", data: null });
-  const [summaryProject, setSummaryProject] = React.useState(null);
+  const [sources, setSources] = React.useState({});
+  const [sourceScope, setSourceScope] = React.useState(null);
 
   React.useEffect(() => {
-    if (!active || !user || !project) return;
+    if (!active || !user) return;
     let stale = false;
-    setSummaryProject(project);
-    setSummary({ status: "loading", data: null });
-    getProjectSummary(project)
-      .then((data) => { if (!stale) setSummary({ status: "ok", data }); })
-      .catch(() => { if (!stale) setSummary({ status: "error", data: null }); });
+    const loading = { status: "loading", data: null };
+    setSourceScope({ project, username: user.name });
+    setSources({ summary: loading, runs: loading, llm: loading, reasoner: loading, connectors: loading });
+    const load = (key, request) => request()
+      .then(data => { if (!stale) setSources(prev => ({ ...prev, [key]: { status: "ok", data } })); })
+      .catch(() => { if (!stale) setSources(prev => ({ ...prev, [key]: { status: "error", data: null } })); });
+    if (project) {
+      load("summary", () => getProjectSummary(project));
+      load("runs", () => fetchValidationRuns(project));
+      if (!degramHost) load("connectors", () => listConnectors(project));
+    }
+    if (!degramHost) {
+      load("llm", getSettings);
+      load("reasoner", getReasonerSettings);
+    }
     return () => { stale = true; };
-  }, [active, user?.name, project]);
+  }, [active, user?.name, project, degramHost]);
 
-  const summaries = buildLandingSummaries({
-    project,
-    summary: summaryProject === project ? summary : { status: "loading", data: null }
-  });
+  const scoped = sourceScope?.project === project && sourceScope?.username === user?.name ? sources : {};
+  const summaries = buildLandingSummaries({ project, hostMode: degramHost, ...scoped });
 
   const refreshAuthOptions = React.useCallback(() => {
     auth
@@ -234,7 +246,10 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     if (parts === null) return null;
     return <span className="dgl-region-summary">{parts === "—" ? parts : parts.map(({ label, value, title }, index) => (
       <React.Fragment key={label}>
-        {index > 0 && " · "}{label}: <span style={{ color: "var(--text-primary)" }} title={title}>{value}</span>
+        {index > 0 && " · "}{label}: <span
+          style={title ? { color: "var(--text-primary)", maxWidth: "24ch", overflow: "hidden", textOverflow: "ellipsis", display: "inline-block", verticalAlign: "bottom" } : { color: "var(--text-primary)" }}
+          title={title}
+        >{value}</span>
       </React.Fragment>
     ))}</span>;
   };
@@ -375,6 +390,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
       </div>
       <div ref={labelModelRef} className="dgl-region-label" onClick={() => fly("model")}>
         {t("Model Viewer")}
+        {user && renderSummary(summaries.model)}
       </div>
       <div ref={labelProjectsRef} className="dgl-region-label" onClick={() => fly("projects")}>
         {t("Projects.")}
@@ -382,12 +398,15 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
 {!degramHost && <>
         <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>
           {t("LLM model")}
+          {user && renderSummary(summaries.aiengine)}
         </div>
         <div ref={labelConnectorsRef} className="dgl-region-label" onClick={() => fly("connectors")}>
           {t("Connectors")}
+          {user && renderSummary(summaries.connectors)}
         </div>
         <div ref={labelReasonerRef} className="dgl-region-label" onClick={() => fly("reasoner")}>
           {t("Reasoner")}
+          {user && renderSummary(summaries.reasoner)}
         </div>
         <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
           {t("DG API Docs")}
