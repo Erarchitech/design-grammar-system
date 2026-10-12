@@ -486,3 +486,171 @@ def test_the_legacy_refusal_leaves_the_credential_row_untouched(client):
     before = connectors.load_credentials()
     assert client.post("/connectors/heartbeat", headers=_bearer(token)).status_code == 401
     assert connectors.load_credentials() == before
+
+
+# -- access-change cascades (D-33) -------------------------------------------
+
+
+def _assert_ended(client, token, connector_id=GH):
+    response = client.get(f"/validation/view/{P1}", headers=_bearer(token))
+    assert response.status_code == 401, response.text
+    assert _code(response) == "CONNECTOR_SESSION_ENDED"
+    status = connector_session.status_for(connector_id, projects={P1})
+    assert status["status"] == "stale"
+    assert status["active_sessions"] == 0
+
+
+def _assert_live(client, token):
+    response = client.get(f"/validation/view/{P1}", headers=_bearer(token))
+    assert response.status_code not in (401, 403), response.text
+
+
+def test_password_change_ends_all_of_the_users_connector_sessions(client):
+    # The autouse fixture creates OWNER; set a known test password for this request.
+    password = "current-test-password-123"
+    auth.set_password(OWNER, password)
+    first = _mint(client, OWNER).json()["token"]
+    second = _mint(client, OWNER).json()["token"]
+    other = _mint(client, ROOT).json()["token"]
+    changed = client.post(
+        "/auth/password",
+        json={"currentPassword": password, "newPassword": "new-test-password-123"},
+        headers=_session_headers(OWNER),
+    )
+    assert changed.status_code == 204, changed.text
+    for token in (first, second):
+        response = client.get(f"/validation/view/{P1}", headers=_bearer(token))
+        assert response.status_code == 401 and _code(response) == "CONNECTOR_SESSION_ENDED"
+    assert connector_session.status_for(GH, projects={P1})["active_sessions"] == 1
+    _assert_live(client, other)
+
+
+def test_member_removal_ends_only_that_members_project_sessions(client):
+    _grant(EDITOR)
+    token = _mint(client, EDITOR).json()["token"]
+    other = _mint(client, OWNER).json()["token"]
+    removed = client.delete(f"/projects/{P1}/members/{EDITOR}", headers=_session_headers(OWNER))
+    assert removed.status_code == 204, removed.text
+    response = client.get(f"/validation/view/{P1}", headers=_bearer(token))
+    assert response.status_code == 401 and _code(response) == "CONNECTOR_SESSION_ENDED"
+    assert connector_session.status_for(GH, projects={P1})["active_sessions"] == 1
+    _assert_live(client, other)
+
+
+def test_company_reassignment_ends_project_sessions_even_if_reassigned_back(client):
+    token = _mint(client, OWNER).json()["token"]
+    changed = client.put(
+        f"/projects/{P1}/company", json={"company": "Acme"}, headers=_session_headers(ROOT)
+    )
+    assert changed.status_code == 200, changed.text
+    _assert_ended(client, token)
+    restored = client.put(
+        f"/projects/{P1}/company", json={"company": "Other"}, headers=_session_headers(ROOT)
+    )
+    assert restored.status_code == 200
+    _assert_ended(client, token)
+
+
+def test_access_revoke_ends_affected_connector_but_not_other_grants(client):
+    grant = _grant(EDITOR)
+    _grant(EDITOR, connector_id="revit")
+    token = _mint(client, EDITOR).json()["token"]
+    revit = _mint(client, EDITOR, connector_id="revit").json()["token"]
+    revoked = client.delete(
+        f"/projects/{P1}/connector-access/{grant['access_id']}", headers=_session_headers(OWNER)
+    )
+    assert revoked.status_code == 204, revoked.text
+    _assert_ended(client, token)
+    _assert_live(client, revit)
+
+
+def test_revoking_an_old_access_does_not_end_a_replacement_session(client):
+    old = _grant(EDITOR)
+    replacement = _grant(EDITOR)
+    token = _mint(client, EDITOR).json()["token"]
+    removed = client.delete(
+        f"/projects/{P1}/connector-access/{old['access_id']}", headers=_session_headers(OWNER)
+    )
+    assert removed.status_code == 204, removed.text
+    assert replacement["active"]
+    _assert_live(client, token)
+
+
+def test_revoking_an_access_does_not_end_an_exempt_owners_session(client):
+    grant = _grant(EDITOR)
+    auth.set_membership(EDITOR, P1, "owner")
+    token = _mint(client, EDITOR).json()["token"]
+    removed = client.delete(
+        f"/projects/{P1}/connector-access/{grant['access_id']}", headers=_session_headers(OWNER)
+    )
+    assert removed.status_code == 204, removed.text
+    _assert_live(client, token)
+
+
+def test_put_member_demotion_ends_unauthorized_session(client):
+    auth.set_membership(EDITOR, P1, "owner")  # keep an owner after demoting OWNER
+    token = _mint(client, OWNER).json()["token"]
+    changed = client.put(
+        f"/projects/{P1}/members/{OWNER}",
+        json={"role": "editor"},
+        headers=_session_headers(EDITOR),
+    )
+    assert changed.status_code == 200, changed.text
+    _assert_ended(client, token)
+
+
+def test_put_member_demotion_keeps_session_with_a_grant(client):
+    auth.set_membership(EDITOR, P1, "owner")
+    _grant(OWNER)
+    token = _mint(client, OWNER).json()["token"]
+    changed = client.put(
+        f"/projects/{P1}/members/{OWNER}",
+        json={"role": "editor"},
+        headers=_session_headers(EDITOR),
+    )
+    assert changed.status_code == 200, changed.text
+    _assert_live(client, token)
+
+
+def test_existing_account_invite_demotion_ends_unauthorized_session(client):
+    auth.set_membership(EDITOR, P1, "owner")
+    token = _mint(client, OWNER).json()["token"]
+    changed = client.post(
+        "/auth/invites",
+        json={"project": P1, "username": OWNER, "role": "viewer"},
+        headers=_session_headers(EDITOR),
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["status"] == "member-added"
+    _assert_ended(client, token)
+
+
+def test_accept_invite_cannot_lower_role_or_end_a_valid_session(client):
+    password = "current-test-password-123"
+    auth.set_password(OWNER, password)
+    token = _mint(client, OWNER).json()["token"]
+    code, _ = auth.create_invite(OWNER, P1, "viewer", created_by=EDITOR)
+    accepted = client.post(
+        "/auth/accept-invite",
+        json={"inviteCode": code, "password": password},
+        headers=CSRF,
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert auth.get_role(OWNER, P1) == "owner"
+    _assert_live(client, token)
+
+
+def test_accept_invite_role_raise_preserves_authorized_session(client):
+    _grant(EDITOR)
+    token = _mint(client, EDITOR).json()["token"]
+    password = "current-test-password-123"
+    auth.set_password(EDITOR, password)
+    code, _ = auth.create_invite(EDITOR, P1, "owner", created_by=OWNER)
+    accepted = client.post(
+        "/auth/accept-invite",
+        json={"inviteCode": code, "password": password},
+        headers=CSRF,
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert auth.get_role(EDITOR, P1) == "owner"
+    _assert_live(client, token)

@@ -27,6 +27,7 @@ from pydantic import BaseModel
 
 import auth
 import company
+import connector_session
 import degram_grants
 import degram_pairing
 import delegation
@@ -414,4 +415,5 @@ def change_password(request: Request, payload: PasswordChangeRequest):
     # D-08: a password change ends every delegated token of the user, including
     # those minted from the session that is kept.
     delegation.revoke_for_user(user["username"])
+    connector_session.revoke_for_user(user["username"])
     return None

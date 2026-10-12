@@ -4844,6 +4844,7 @@ def set_project_company(project: str, payload: ProjectCompanyRequest):
         # D-08: tokens issued under the old assignment stop working at once
         # (they are also refused by their own live company check).
         delegation.revoke_for_project(project)
+        connector_session.revoke_for_project(project)
     return {"project": project, "company": record["company"]}
 
 
@@ -5044,8 +5045,24 @@ def revoke_connector_access(project: str, access_id: str, request: Request):
     and another project's id answer the same 404."""
     _check_project_name(project)
     principal = request.state.principal
-    if not connector_access.revoke_access(project, access_id, principal.username or ""):
-        raise connector_access.access_not_found()
+    with auth._STORE_LOCK:
+        access = next(
+            (row for row in connector_access.list_for_project(project) if row["access_id"] == access_id),
+            None,
+        )
+        if access is None or not connector_access.revoke_access(
+            project, access_id, principal.username or ""
+        ):
+            raise connector_access.access_not_found()
+        if not access["revoked"] and not connector_access.is_authorized(
+            access["username"],
+            project,
+            access["connector_id"],
+            role=connector_session.effective_role_for(access["username"], project),
+        ):
+            connector_session.revoke_for_connector_grant(
+                access["username"], project, access["connector_id"]
+            )
     return Response(status_code=204)
 
 
@@ -5101,6 +5118,7 @@ def remove_project_member(project: str, username: str):
         degram_grants.revoke_for_user_project(username, project)
         connector_access.revoke_for_user_project(username, project)  # D-46
         delegation.revoke_for_user_project(username, project)  # D-08
+        connector_session.revoke_for_user_project(username, project)
     return Response(status_code=204)
 
 
@@ -5145,6 +5163,7 @@ def change_project_member_role(project: str, username: str, payload: MemberRoleR
         if current != payload.role:
             _last_owner_guard(project, current, payload.role)
             auth.set_membership(normalized, project, payload.role)
+            connector_session.revoke_unauthorized(normalized, project)
     return {"project": project, "username": normalized, "role": payload.role}
 
 
@@ -5176,6 +5195,7 @@ def create_project_invite(payload: InviteRequest, request: Request):
             current = auth.get_role(username, payload.project)
             _last_owner_guard(payload.project, current, payload.role)
             auth.set_membership(username, payload.project, payload.role)
+            connector_session.revoke_unauthorized(username, payload.project)
         return {"status": "member-added"}
 
     code, record = auth.create_invite(
@@ -5223,6 +5243,7 @@ def _accept_invite_for_existing_account(
         current = auth.get_role(username, invite["project"])
         if current is None or auth.ROLE_RANK.get(invite["role"], -1) > auth.ROLE_RANK.get(current, -1):
             auth.set_membership(username, invite["project"], invite["role"])
+            connector_session.revoke_unauthorized(username, invite["project"])
     token = auth.create_session(username)
     auth_routes.set_session_cookie(response, token)
     return {"username": username, "isAdmin": bool(existing.get("is_admin"))}
@@ -5269,6 +5290,7 @@ def accept_invite(payload: AcceptInviteRequest, request: Request, response: Resp
         # The invited username now has an account: refuse without touching it.
         raise _invite_invalid() from exc
     auth.set_membership(user["username"], invite["project"], invite["role"])
+    connector_session.revoke_unauthorized(user["username"], invite["project"])
     token = auth.create_session(user["username"])
     auth_routes.set_session_cookie(response, token)
     return {"username": user["username"], "isAdmin": False}
