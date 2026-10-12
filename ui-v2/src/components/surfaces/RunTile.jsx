@@ -1,6 +1,8 @@
 import React from "react";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
-export default function RunTile({ ruleId, date, kind = "Constraint", thumb, active = false, onSelect, onDelete, style }) {
+export default function RunTile({ ruleId, date, kind, thumb, active = false, onSelect, onDelete, style }) {
+  const { t } = useT();
   return (
     <div
       onClick={onSelect}
@@ -44,7 +46,7 @@ export default function RunTile({ ruleId, date, kind = "Constraint", thumb, acti
               e.stopPropagation();
               onDelete();
             }}
-            title="Delete run"
+            title={t("Delete run")}
             style={{ color: "var(--ink-a32)", cursor: "pointer", font: "400 13px/1 var(--font-sans)", flex: "none" }}
           >
             ×
@@ -84,7 +86,7 @@ export default function RunTile({ ruleId, date, kind = "Constraint", thumb, acti
             color: "var(--color-ink-soft)"
           }}
         >
-          {kind}
+          {kind ?? t("Constraint")}
         </span>
       </div>
     </div>

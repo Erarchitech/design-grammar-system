@@ -1,5 +1,15 @@
 {
   "area": "model",
-  "files": ["src/screens/ModelScreen.jsx"],
+  "files": [
+    "src/screens/ModelScreen.jsx",
+    "src/components/display/SessionHistory.jsx",
+    "src/components/display/CandidateTable.jsx",
+    "src/components/display/PropertiesTable.jsx",
+    "src/components/speckle/SpeckleViewport.jsx",
+    "src/components/surfaces/RunTile.jsx",
+    "src/lib/modelApi.js",
+    "src/lib/speckleProxy.js",
+    "src/lib/inputGenApi.js"
+  ],
   "allow": ["3D"]
 }

@@ -93,7 +93,43 @@ export const ru = {
   Error: "Ошибка",
   "No per-rule records": "Нет записей по правилам",
   "data-service unreachable": "Сервис данных недоступен",
-  "Could not load validation run.": "Не удалось загрузить прогон валидации."
+  "Could not load validation run.": "Не удалось загрузить прогон валидации.",
+  "Session History": "История сессий",
+  "No sessions yet": "Сессий пока нет",
+  "No sessions match this filter": "Нет сессий по этому фильтру",
+  "Rewind the graph to how it looked before this turn": "Вернуть граф к состоянию до этого шага",
+  Restore: "Восстановить",
+  "Load this prompt back into the prompt bar to edit or re-run": "Вернуть запрос в строку для правки или повторного запуска",
+  Reuse: "Повторно использовать",
+  Prompt: "Запрос",
+  Result: "Результат",
+  Time: "Время",
+  "Show more": "Показать ещё",
+  "Geometry required": "Требуется геометрия",
+  "This rule depends on geometry the model did not evaluate — candidates are proposals only":
+    "Это правило зависит от геометрии, которую модель не оценивала — кандидаты носят рекомендательный характер",
+  Strategy: "Стратегия",
+  Claim: "Утверждение",
+  Actions: "Действия",
+  limit: "предел",
+  excluded: "исключено",
+  "not checkable from parameters": "нельзя проверить по параметрам",
+  Accepted: "Принято",
+  "Accepting…": "Принятие…",
+  Accept: "Принять",
+  Reject: "Отклонить",
+  Key: "Ключ",
+  Value: "Значение",
+  "Edit value": "Изменить значение",
+  "Delete run": "Удалить прогон",
+  Constraint: "Ограничение",
+  "Speckle viewer initialization failed": "Не удалось инициализировать просмотр Speckle",
+  "Unexpected geometry resource URL": "Недопустимый URL ресурса геометрии",
+  "Speckle geometry failed to load": "Не удалось загрузить геометрию Speckle",
+  "Geometry requests may only target the DG /speckle-proxy/ routes.":
+    "Запросы геометрии разрешены только через маршруты DG /speckle-proxy/.",
+  "Not a DG Speckle proxy resource URL; refusing to load geometry from it.":
+    "Это не URL ресурса прокси DG Speckle; загрузка геометрии запрещена."
 };
 
 export const en = {

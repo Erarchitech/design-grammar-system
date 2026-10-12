@@ -1,9 +1,11 @@
 import React from "react";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 // Key/value property table. When `onEdit(key, rawValue)` is provided (and
 // `editable`), values can be edited inline: click the ✎ (or double-click the
 // value), Enter commits, Escape cancels — the legacy SPA's editing pattern.
 export default function PropertiesTable({ rows = [], editable = true, onEdit, style }) {
+  const { t } = useT();
   const [editingKey, setEditingKey] = React.useState(null);
   const [draft, setDraft] = React.useState("");
   const canEdit = editable && typeof onEdit === "function";
@@ -35,9 +37,9 @@ export default function PropertiesTable({ rows = [], editable = true, onEdit, st
       <thead>
         <tr style={{ borderBottom: "1px solid var(--color-hairline)" }}>
           <th style={{ ...cell, width: 118, textAlign: "left", fontWeight: 600, color: "var(--text-muted)" }}>
-            Key
+            {t("Key")}
           </th>
-          <th style={{ ...cell, textAlign: "left", fontWeight: 600, color: "var(--text-muted)" }}>Value</th>
+          <th style={{ ...cell, textAlign: "left", fontWeight: 600, color: "var(--text-muted)" }}>{t("Value")}</th>
         </tr>
       </thead>
       <tbody>
@@ -48,7 +50,7 @@ export default function PropertiesTable({ rows = [], editable = true, onEdit, st
                 {editable && !String(r.key).startsWith("<") && (
                   <span
                     onClick={() => begin(r)}
-                    title={canEdit ? "Edit value" : undefined}
+                    title={canEdit ? t("Edit value") : undefined}
                     style={{ color: "var(--ink-a32)", fontSize: 12, cursor: canEdit ? "pointer" : "default" }}
                   >
                     ✎

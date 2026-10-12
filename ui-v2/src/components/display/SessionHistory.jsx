@@ -1,5 +1,6 @@
 import React from "react";
 import Select from "../forms/Select.jsx";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 // Legacy graph-viewer "Session History" panel, reskinned for V2. A collapsible,
 // filterable list of persisted workflow turns (design-rule ingest/query/edit or
@@ -24,7 +25,7 @@ const BADGE_TEXT = {
   query: "QRY"
 };
 
-function formatRelativeDate(isoString) {
+function formatRelativeDate(isoString, t) {
   if (!isoString) return "";
   const then = new Date(isoString).getTime();
   if (Number.isNaN(then)) return "";
@@ -32,10 +33,10 @@ function formatRelativeDate(isoString) {
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return diffMin + "m ago";
-  if (diffHr < 24) return diffHr + "h ago";
-  if (diffDay < 7) return diffDay + "d ago";
+  if (diffMin < 1) return t("just now");
+  if (diffMin < 60) return t("{n}m ago", { n: diffMin });
+  if (diffHr < 24) return t("{n}h ago", { n: diffHr });
+  if (diffDay < 7) return t("{n}d ago", { n: diffDay });
   return String(isoString).slice(0, 10);
 }
 
@@ -54,7 +55,7 @@ function formatRelativeDate(isoString) {
  */
 export default function SessionHistory({
   sessions = [],
-  filters = [{ value: "all", label: "All" }],
+  filters,
   open = false,
   onToggle,
   onRestore,
@@ -63,8 +64,9 @@ export default function SessionHistory({
   restorePointIds,
   restoredSessionId = null,
   busy = false,
-  emptyLabel = "No sessions yet"
+  emptyLabel
 }) {
+  const { t } = useT();
   const hasPoint = (id) => !!(restorePointIds && restorePointIds.has(id) && onRestorePoint);
   const [filter, setFilter] = React.useState("all");
   const [displayCount, setDisplayCount] = React.useState(50);
@@ -108,13 +110,13 @@ export default function SessionHistory({
           >
             <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span style={{ font: "600 12px/1.3 var(--font-sans)", letterSpacing: "0.1px", color: "var(--color-ink)" }}>Session History</span>
+          <span style={{ font: "600 12px/1.3 var(--font-sans)", letterSpacing: "0.1px", color: "var(--color-ink)" }}>{t("Session History")}</span>
           <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>({filtered.length})</span>
         </div>
         <div onClick={(ev) => ev.stopPropagation()} style={{ flex: "0 0 auto" }}>
           <Select
             value={filter}
-            options={filters}
+            options={filters || [{ value: "all", label: t("All") }]}
             onChange={(ev) => {
               setFilter(ev.target.value);
               setDisplayCount(50);
@@ -128,7 +130,7 @@ export default function SessionHistory({
         <div style={{ maxHeight: 300, overflowY: "auto", padding: "4px 0", display: "flex", flexDirection: "column" }}>
           {displayed.length === 0 && (
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11, padding: "12px 0", textAlign: "center" }}>
-              {sessions.length === 0 ? emptyLabel : "No sessions match this filter"}
+              {sessions.length === 0 ? (emptyLabel ?? t("No sessions yet")) : t("No sessions match this filter")}
             </div>
           )}
 
@@ -180,12 +182,12 @@ export default function SessionHistory({
                     {session.prompt || ""}
                   </span>
                   <span style={{ flex: "0 0 auto", font: "400 10px/1.3 var(--font-sans)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                    {formatRelativeDate(session.createdAt)}
+                    {formatRelativeDate(session.createdAt, t)}
                   </span>
                   {hasPoint(session.sessionId) && (
                     <button
                       type="button"
-                      title="Rewind the graph to how it looked before this turn"
+                      title={t("Rewind the graph to how it looked before this turn")}
                       onClick={(ev) => {
                         ev.stopPropagation();
                         onRestorePoint(session);
@@ -210,12 +212,12 @@ export default function SessionHistory({
                         <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
                         <path d="M3 3v5h5" />
                       </svg>
-                      Restore
+                      {t("Restore")}
                     </button>
                   )}
                   <button
                     type="button"
-                    title="Load this prompt back into the prompt bar to edit or re-run"
+                    title={t("Load this prompt back into the prompt bar to edit or re-run")}
                     onClick={(ev) => {
                       ev.stopPropagation();
                       onRestore && onRestore(session);
@@ -232,7 +234,7 @@ export default function SessionHistory({
                     onMouseOver={(ev) => (ev.currentTarget.style.textDecoration = "underline")}
                     onMouseOut={(ev) => (ev.currentTarget.style.textDecoration = "none")}
                   >
-                    Reuse
+                    {t("Reuse")}
                   </button>
                 </div>
 
@@ -249,11 +251,11 @@ export default function SessionHistory({
                       gap: 4
                     }}
                   >
-                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Prompt</span>
+                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("Prompt")}</span>
                     <div style={{ font: "400 12px/1.5 var(--font-mono)", color: "var(--color-ink)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginBottom: 8 }}>{session.prompt || ""}</div>
-                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Result</span>
+                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("Result")}</span>
                     <div style={{ font: "400 12px/1.5 var(--font-mono)", color: "var(--text-secondary)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginBottom: 8, maxHeight: 160, overflowY: "auto" }}>{session.result || ""}</div>
-                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Time</span>
+                    <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("Time")}</span>
                     <div style={{ font: "400 11px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>
                       {session.createdAt ? String(session.createdAt).replace("T", " ").slice(0, 16) : ""}
                     </div>
@@ -280,7 +282,7 @@ export default function SessionHistory({
                 textAlign: "center"
               }}
             >
-              Show more
+              {t("Show more")}
             </button>
           )}
         </div>

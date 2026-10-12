@@ -206,7 +206,7 @@ export default function ModelScreen({ active, onBack, project }) {
     }
   };
   const [runs, setRuns] = React.useState([]);
-  const [loadErr, setLoadErr] = React.useState("");
+  const [loadErr, setLoadErr] = React.useState(null); // { err, fallback: "runs" | "view" }
   const [stateKey, setStateKey] = React.useState(null); // design-state group filter
   const [runId, setRunId] = React.useState(null);
   const [view, setView] = React.useState(null); // validation view payload
@@ -221,7 +221,7 @@ export default function ModelScreen({ active, onBack, project }) {
   const [candidateCount, setCandidateCount] = React.useState(4);
   const [paramOverrides, setParamOverrides] = React.useState("");
   const [candidates, setCandidates] = React.useState(null); // full generate-inputs response, or null
-  const [genErr, setGenErr] = React.useState("");
+  const [genErr, setGenErr] = React.useState(null); // error object; translated on render
   const [genBusy, setGenBusy] = React.useState(false);
   const [acceptedStates, setAcceptedStates] = React.useState([]); // [{candidateId, stateId}]
   const [busyCandidateId, setBusyCandidateId] = React.useState(null);
@@ -358,7 +358,7 @@ export default function ModelScreen({ active, onBack, project }) {
   React.useEffect(() => () => clearTimeout(shotTimerRef.current), []);
 
   const load = React.useCallback(async () => {
-    setLoadErr("");
+    setLoadErr(null);
     try {
       const data = await fetchValidationRuns(project);
       const list = data.runs || [];
@@ -366,9 +366,9 @@ export default function ModelScreen({ active, onBack, project }) {
       // keep the current run only if it still exists under this project scope
       setRunId((prev) => (prev && list.some((r) => r.runId === prev) ? prev : list[0]?.runId || null));
     } catch (err) {
-      setLoadErr(describeError(err, t("data-service unreachable")));
+      setLoadErr({ err, fallback: "runs" });
     }
-  }, [project, t]);
+  }, [project]);
 
   // project switch invalidates every run-scoped bit of state
   React.useEffect(() => {
@@ -409,11 +409,11 @@ export default function ModelScreen({ active, onBack, project }) {
         setHidden([]);
         setIsolate(false);
       })
-      .catch((err) => !gone && setLoadErr(describeError(err, t("Could not load validation run."))));
+      .catch((err) => !gone && setLoadErr({ err, fallback: "view" }));
     return () => {
       gone = true;
     };
-  }, [runId, project, fetchValidationView, t]);
+  }, [runId, project, fetchValidationView]);
 
   // rule details (SWRL from the metagraph)
   React.useEffect(() => {
@@ -438,7 +438,7 @@ export default function ModelScreen({ active, onBack, project }) {
   React.useEffect(() => {
     setRuleForGen(ruleId);
     setCandidates(null);
-    setGenErr("");
+    setGenErr(null);
     // CR-02: candidateId is only unique within one generate-inputs
     // response (c0..cN-1, reused verbatim by the next response) — clear
     // acceptedStates alongside candidates so an unrelated future candidate
@@ -730,7 +730,7 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
         {loadErr && (
           <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>
-            {loadErr}{" "}
+            {describeError(loadErr.err, loadErr.fallback === "runs" ? t("data-service unreachable") : t("Could not load validation run."))}{" "}
             <span onClick={load} style={{ cursor: "pointer", textDecoration: "underline" }}>
               {t("Retry")}
             </span>
@@ -1172,7 +1172,7 @@ export default function ModelScreen({ active, onBack, project }) {
                       size="sm"
                       disabled={genBusy}
                       onClick={async () => {
-                        setGenErr("");
+                        setGenErr(null);
                         setGenBusy(true);
                         // CR-02: a fresh response reuses the same c0..cN-1
                         // candidateId values as any prior response — reset
@@ -1193,7 +1193,7 @@ export default function ModelScreen({ active, onBack, project }) {
                           );
                           setCandidates(result);
                         } catch (err) {
-                          setGenErr(describeError(err, t("Candidate request failed.")));
+                          setGenErr(err);
                         } finally {
                           setGenBusy(false);
                         }
@@ -1204,7 +1204,7 @@ export default function ModelScreen({ active, onBack, project }) {
                   </div>
                   {genErr && (
                     <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)", marginTop: 8 }}>
-                      {genErr}
+                      {describeError(genErr, t("Candidate request failed."))}
                     </div>
                   )}
                   {candidates && (
@@ -1221,7 +1221,7 @@ export default function ModelScreen({ active, onBack, project }) {
                           // — inside this click-triggered handler, never in
                           // an effect (GHIN-04/D-19/SC3).
                           setBusyCandidateId(candidate.candidateId);
-                          setGenErr("");
+                          setGenErr(null);
                           try {
                             const res = await acceptCandidate(
                               project,
@@ -1237,7 +1237,7 @@ export default function ModelScreen({ active, onBack, project }) {
                             // optimism.
                             await fetchAcceptedCandidates(project, candidates.ruleId).catch(() => null);
                           } catch (err) {
-                            setGenErr(describeError(err, t("Candidate request failed.")));
+                            setGenErr(err);
                           } finally {
                             setBusyCandidateId(null);
                           }

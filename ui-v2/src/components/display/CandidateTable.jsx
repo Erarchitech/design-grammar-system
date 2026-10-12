@@ -2,6 +2,7 @@ import React from "react";
 import Badge from "./Badge.jsx";
 import Callout from "./Callout.jsx";
 import Button from "../forms/Button.jsx";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 // Row-per-candidate, column-per-parameter table for AI-generated Grasshopper
 // script inputs (Phase 38). Follows the Colibri/MIT design-space-exploration
@@ -53,6 +54,7 @@ export default function CandidateTable({
   onReject,
   busyCandidateId
 }) {
+  const { t } = useT();
   // acceptedStateIds is keyed by candidateId as returned within THIS
   // generate-inputs response — the panel tracks "already accepted in this
   // UI session" per candidate rather than recomputing the server's content
@@ -66,15 +68,15 @@ export default function CandidateTable({
       {determinabilityClass === "geometry-required" && (
         <Callout
           signal
-          title="Geometry required"
-          detail="This rule depends on geometry the model did not evaluate — candidates are proposals only"
+          title={t("Geometry required")}
+          detail={t("This rule depends on geometry the model did not evaluate — candidates are proposals only")}
           style={{ marginBottom: 12 }}
         />
       )}
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
-            <th style={headStyle}>Strategy</th>
+            <th style={headStyle}>{t("Strategy")}</th>
             {boundParameters.map((bp) => (
               <th key={bp.cgId} style={headStyle}>
                 {bp.parameterName}
@@ -83,8 +85,8 @@ export default function CandidateTable({
                 </div>
               </th>
             ))}
-            <th style={headStyle}>Claim</th>
-            <th style={headStyle}>Actions</th>
+            <th style={headStyle}>{t("Claim")}</th>
+            <th style={headStyle}>{t("Actions")}</th>
           </tr>
         </thead>
         <tbody>
@@ -93,7 +95,7 @@ export default function CandidateTable({
             const busy = busyCandidateId === candidate.candidateId;
             const claim = candidate.ruleSatisfaction?.claim;
             const basis = candidate.ruleSatisfaction?.basis || "";
-            const limitLabel = ruleLimit !== null && ruleLimit !== undefined ? `≤ ${ruleLimit}` : "limit";
+            const limitLabel = ruleLimit !== null && ruleLimit !== undefined ? `≤ ${ruleLimit}` : t("limit");
             return (
               <tr key={candidate.candidateId}>
                 <td style={cellStyle}>
@@ -114,7 +116,7 @@ export default function CandidateTable({
                   // (D-04): a parameter left out must be visible, not missing.
                   const reason = findExcludedReason(candidate, bp);
                   return (
-                    <td key={bp.cgId} style={{ ...cellStyle, color: "var(--text-muted)" }} title={reason || "excluded"}>
+                    <td key={bp.cgId} style={{ ...cellStyle, color: "var(--text-muted)" }} title={reason || t("excluded")}>
                       &mdash;
                     </td>
                   );
@@ -130,13 +132,13 @@ export default function CandidateTable({
                     // satisfaction for a geometry-level rule would be a
                     // fabrication the system never actually computed.
                     <Badge variant="soft" title={basis}>
-                      not checkable from parameters
+                      {t("not checkable from parameters")}
                     </Badge>
                   )}
                 </td>
                 <td style={cellStyle}>
                   {accepted ? (
-                    <Badge variant="outline">Accepted</Badge>
+                    <Badge variant="outline">{t("Accepted")}</Badge>
                   ) : (
                     <div style={{ display: "flex", gap: 6 }}>
                       <Button
@@ -144,7 +146,7 @@ export default function CandidateTable({
                         disabled={busy}
                         onClick={() => onAccept && onAccept(candidate)}
                       >
-                        {busy ? "Accepting…" : "Accept"}
+                        {busy ? t("Accepting…") : t("Accept")}
                       </Button>
                       <Button
                         size="sm"
@@ -157,7 +159,7 @@ export default function CandidateTable({
                           onReject && onReject(candidate);
                         }}
                       >
-                        Reject
+                        {t("Reject")}
                       </Button>
                     </div>
                   )}

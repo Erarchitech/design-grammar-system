@@ -9,6 +9,7 @@ import {
   Viewer
 } from "@speckle/viewer";
 import { createProxyObjectLoader, parseViewerResource } from "../../lib/speckleProxy.js";
+import { describeError, t } from "../../i18n/index.js";
 
 // D-21 (Phase 1301-09): the stock SpeckleLoader keeps only the origin of its resource
 // URL, takes a token and falls back to a stored one, so it could never go through the
@@ -286,7 +287,7 @@ export default function SpeckleViewport({
 
     void initViewer().catch((err) => {
       if (!disposed) {
-        onErrorRef.current?.(err.message || "Speckle viewer initialization failed");
+        onErrorRef.current?.(describeError(err, t("Speckle viewer initialization failed")));
       }
     });
 
@@ -324,7 +325,7 @@ export default function SpeckleViewport({
     if (!viewerReady || !viewer) return undefined;
     const urls = resourceKey ? resourceKey.split("|") : [];
     if (urls.some((url) => !parseViewerResource(url))) {
-      onErrorRef.current?.("Unexpected geometry resource URL");
+      onErrorRef.current?.(t("Unexpected geometry resource URL"));
       return undefined;
     }
 
@@ -379,7 +380,7 @@ export default function SpeckleViewport({
     };
 
     syncQueueRef.current = syncQueueRef.current.then(job).catch((err) => {
-      if (!stale) onErrorRef.current?.(err.message || "Speckle geometry failed to load");
+      if (!stale) onErrorRef.current?.(describeError(err, t("Speckle geometry failed to load")));
     });
     return () => {
       stale = true;

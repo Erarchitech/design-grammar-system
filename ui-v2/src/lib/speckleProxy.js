@@ -13,6 +13,7 @@
 
 import { ObjectLoader2Factory } from "@speckle/objectloader2";
 import { CSRF_HEADER } from "./apiClient.js";
+import { t } from "../i18n/index.js";
 
 const OBJECT_HASH = "[0-9a-f]{32}";
 const RESOURCE_PATTERN = new RegExp(
@@ -74,7 +75,7 @@ function plainHeaders(headers) {
 export async function speckleProxyFetch(input, init = {}) {
   const url = typeof input === "string" ? input : input && input.url;
   if (!isProxyPath(url)) {
-    throw new Error("Geometry requests may only target the DG /speckle-proxy/ routes.");
+    throw new Error(t("Geometry requests may only target the DG /speckle-proxy/ routes."));
   }
   const method = String(init.method || "GET").toUpperCase();
   const headers = plainHeaders(init.headers);
@@ -88,7 +89,7 @@ export async function speckleProxyFetch(input, init = {}) {
 export function createProxyObjectLoader(resourceUrl, { attributeMask, objectTypeMask } = {}) {
   const target = parseViewerResource(resourceUrl);
   if (!target) {
-    throw new Error("Not a DG Speckle proxy resource URL; refusing to load geometry from it.");
+    throw new Error(t("Not a DG Speckle proxy resource URL; refusing to load geometry from it."));
   }
   return ObjectLoader2Factory.createFromUrl({
     serverUrl: target.serverUrl,
