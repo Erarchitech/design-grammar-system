@@ -63,11 +63,7 @@ import connector_session
 import connectors
 import degram_grants
 import degram_pairing
-from connectors import (
-    CredentialCreatePayload,
-    CredentialCreatedResponse,
-    HeartbeatResponse,
-)
+from connectors import CredentialCreatePayload, HeartbeatResponse
 
 import auth
 import auth_routes

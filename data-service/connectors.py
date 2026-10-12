@@ -1,21 +1,13 @@
-"""Connector credential backend — registry, token minting, persistence, status derivation.
+"""Connector registry, session-based overview, and legacy credential cleanup.
 
-Mirrors the llm_gateway settings-persistence style: JSON file under DATA_DIR,
-small load/save helpers, module-level file path constant (patched in tests).
-
-Security model: connector tokens (`dgc_` + secrets.token_urlsafe(32)) are
-generated server-side and returned exactly once on creation. Only the SHA-256
-hash of the token is persisted — hashing beats encryption here because we never
-need the plaintext back (CONNB-02).
+The JSON credential store remains only for revoking tokens issued before the
+account sign-in transition; it cannot mint or authenticate a connector token.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
-import logging
 import os
-import secrets
 import threading
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -71,7 +63,6 @@ def tokens_retired(status_code: int = 410) -> HTTPException:
         },
     )
 
-TOKEN_PREFIX = "dgc_"
 STALE_THRESHOLD_DAYS = 7
 
 
@@ -79,20 +70,12 @@ STALE_THRESHOLD_DAYS = 7
 
 
 class CredentialCreatePayload(BaseModel):
-    """Request body for POST /connectors/{connector_id}/credentials."""
+    """Legacy request body accepted by the retired creation route (410)."""
 
     label: str | None = None
-    # Phase 825 (CONNG-03): the token is project-scoped. The project bound here
-    # is what the heartbeat echoes back so the CONNECTOR component no longer needs
-    # a Project input. Missing → server defaults to "default-project".
+    # Retained so old request bodies still reach the 410 tombstone; neither
+    # field can cause a credential to be created.
     project: str | None = None
-
-
-class CredentialCreatedResponse(BaseModel):
-    """Response for credential creation — the ONLY time the token is visible."""
-
-    credential_id: str
-    token: str
 
 
 class Neo4jBundle(BaseModel):
@@ -129,10 +112,8 @@ CREDENTIALS_FILE = DATA_DIR / "connector-credentials.json"
 class CredentialStoreError(RuntimeError):
     """The credential store exists but cannot be read as a credential list.
 
-    WR-03 (1205 review): a corrupt file is an ERROR, never an empty list --
-    treating it as empty would let the next mint overwrite (and so wipe) every
-    existing credential, and would silently un-revoke nothing but also
-    authenticate nothing.
+    A corrupt file must fail closed, not be treated as an empty list: cleanup
+    must not overwrite or silently omit legacy credentials.
     """
 
 
@@ -193,67 +174,11 @@ def save_credentials(credentials: list[dict[str, Any]]) -> None:
                     pass
 
 
-# ── Token Utilities ──
-
-
-def generate_token() -> str:
-    """Mint a new connector token: dgc_ + 32 bytes of url-safe randomness."""
-    return TOKEN_PREFIX + secrets.token_urlsafe(32)
-
-
-def hash_token(token: str) -> str:
-    """SHA-256 hex digest of a token. Only the hash is ever persisted."""
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
-# ── Credential Lifecycle ──
-
-
-def create_credential(
-    connector_id: str,
-    label: str | None = None,
-    project: str | None = None,
-) -> tuple[dict[str, Any], str]:
-    """Create and persist a credential for a connector.
-
-    Args:
-        project: Project this token is scoped to (Phase 825, CONNG-03). Persisted
-            on the record and echoed by the heartbeat; defaults to
-            "default-project" when not supplied.
-
-    Returns:
-        Tuple of (persisted credential record, plaintext token). The plaintext
-        token is returned once here and never stored.
-
-    Raises:
-        ValueError: If connector_id is not in the registry.
-    """
-    if connector_id not in CONNECTOR_IDS:
-        raise ValueError(f"Unknown connector: {connector_id}")
-
-    token = generate_token()
-    record: dict[str, Any] = {
-        "credential_id": uuid.uuid4().hex,
-        "connector_id": connector_id,
-        "label": label or "",
-        "project": project or "default-project",
-        "token_hash": hash_token(token),
-        "created_at": _utc_now_iso(),
-        "revoked": False,
-        "last_connection": None,
-    }
-    with _STORE_LOCK:
-        credentials = load_credentials()
-        credentials.append(record)
-        save_credentials(credentials)
-    return record, token
+# ── Cleanup-only credential lifecycle ──
 
 
 def revoke_credential(connector_id: str, credential_id: str) -> bool:
-    """Mark a credential as revoked. Returns True if found and revoked.
-
-    Revoked credentials stop authenticating heartbeats immediately (CONNB-01).
-    """
+    """Mark a legacy credential as revoked for cleanup. Returns True if found."""
     with _STORE_LOCK:
         credentials = load_credentials()
         changed = False
@@ -269,55 +194,7 @@ def revoke_credential(connector_id: str, credential_id: str) -> bool:
         return changed
 
 
-def authenticate_token(token: str) -> dict[str, Any] | None:
-    """Match a plaintext token against non-revoked credentials by hash.
-
-    Returns the credential record or None if unknown/revoked.
-    """
-    if not token:
-        return None
-    digest = hash_token(token)
-    try:
-        credentials = load_credentials()
-    except CredentialStoreError:
-        logging.getLogger(__name__).exception("connector credential store unreadable; refusing token")
-        return None  # fail closed: an unreadable store authenticates nobody
-    for record in credentials:
-        if record.get("token_hash") == digest and not record.get("revoked"):
-            return record
-    return None
-
-
-def record_heartbeat(token: str) -> dict[str, Any] | None:
-    """Authenticate a token and stamp last_connection on its credential.
-
-    Returns the updated credential record, or None if the token is
-    unknown or revoked (caller maps this to 401).
-    """
-    if not token:
-        return None
-    digest = hash_token(token)
-    # Read-modify-write under the lock so a heartbeat can never write back a
-    # stale list over a concurrent revoke (WR-03).
-    with _STORE_LOCK:
-        try:
-            credentials = load_credentials()
-        except CredentialStoreError:
-            logging.getLogger(__name__).exception("connector credential store unreadable; refusing token")
-            return None
-        for record in credentials:
-            if record.get("token_hash") == digest and not record.get("revoked"):
-                record["last_connection"] = _utc_now_iso()
-                save_credentials(credentials)
-                return record
-    return None
-
-
 # ── Status Derivation ──
-
-
-def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def derive_status(last_connection: str | None, now: datetime | None = None) -> str:
@@ -339,22 +216,6 @@ def derive_status(last_connection: str | None, now: datetime | None = None) -> s
     if current - last <= timedelta(days=STALE_THRESHOLD_DAYS):
         return "active"
     return "stale"
-
-
-def connector_last_connection(
-    connector_id: str,
-    credentials: list[dict[str, Any]] | None = None,
-) -> str | None:
-    """Most recent last_connection across a connector's credentials (incl. revoked —
-    a past successful connection still happened)."""
-    if credentials is None:
-        credentials = load_credentials()
-    timestamps = [
-        record["last_connection"]
-        for record in credentials
-        if record.get("connector_id") == connector_id and record.get("last_connection")
-    ]
-    return max(timestamps) if timestamps else None
 
 
 def get_connector_overview(

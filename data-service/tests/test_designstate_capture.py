@@ -20,6 +20,7 @@ redirection both follow `test_connectors.py`.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
 import time
@@ -130,7 +131,7 @@ def test_unknown_token_returns_401_auth_failed(capture_recorder):
 def test_legacy_credential_token_returns_401_auth_failed(capture_recorder):
     """D-26: a stored, non-revoked legacy `dgc_` token is accepted nowhere, the
     capture route included."""
-    token = connectors.TOKEN_PREFIX + "a-valid-looking-legacy-token-0123456789"
+    token = "dgc_a-valid-looking-legacy-token-0123456789"
     connectors.save_credentials(
         connectors.load_credentials()
         + [
@@ -139,7 +140,7 @@ def test_legacy_credential_token_returns_401_auth_failed(capture_recorder):
                 "connector_id": "grasshopper",
                 "label": "",
                 "project": FIXTURE_PROJECT,
-                "token_hash": connectors.hash_token(token),
+                "token_hash": hashlib.sha256(token.encode()).hexdigest(),
                 "created_at": "2026-01-01T00:00:00+00:00",
                 "revoked": False,
                 "last_connection": None,

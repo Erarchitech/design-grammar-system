@@ -66,7 +66,14 @@ from dsav_fixtures import FIXTURE_PROJECT, capture_envelope, capture_envelope_js
 # state (it scrubs every p39-autoval row) and so must never be collected by a
 # bare `pytest` run. Same convention as `test_dsav_publish_leg.py`, so both
 # modules behave identically under `-m "integration and live"`.
-pytestmark = [pytest.mark.integration, pytest.mark.live]
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.live,
+    pytest.mark.skipif(
+        not os.getenv("DSAV_USERNAME") or not os.getenv("DSAV_PASSWORD"),
+        reason="DSAV_USERNAME and DSAV_PASSWORD are required for live connector sign-in",
+    ),
+]
 
 # ── T-39-10 isolation guard ─────────────────────────────────────────────────
 # Every write this module performs is scoped to this one project string, and
@@ -360,22 +367,44 @@ def live_session():
 
 @pytest.fixture(scope="module")
 def capture_token():
-    """Mint a real project-scoped connector credential (T-39-01: the measured
-    path is the authenticated path) and revoke it at teardown. The plaintext
-    token lives in this process only -- never in the evidence artifact, never
-    in a committed file."""
-    created = httpx.post(
-        f"{BASE_URL}/connectors/{CONNECTOR_ID}/credentials",
-        json={"label": "phase-39 live loop driver", "project": FIXTURE_PROJECT},
-        timeout=HTTP_TIMEOUT_SECONDS,
-    )
-    assert created.status_code == 201, (created.status_code, created.text)
-    body = created.json()
-    yield body["token"]
-    httpx.delete(
-        f"{BASE_URL}/connectors/{CONNECTOR_ID}/credentials/{body['credential_id']}",
-        timeout=HTTP_TIMEOUT_SECONDS,
-    )
+    """Sign in with a DG account and revoke the project-scoped session at teardown.
+
+    The password and Bearer stay in this process, never in the evidence artifact.
+    """
+    username = os.getenv("DSAV_USERNAME")
+    password = os.getenv("DSAV_PASSWORD")
+    if not username or not password:
+        pytest.skip(
+            "DSAV_USERNAME and DSAV_PASSWORD are required for live connector sign-in"
+        )
+
+    with httpx.Client(base_url=BASE_URL, timeout=HTTP_TIMEOUT_SECONDS) as account:
+        login = account.post(
+            "/auth/login",
+            json={"username": username, "password": password},
+            headers={"X-DG-CSRF": "1"},
+        )
+        assert login.status_code == 200, f"DG account login failed ({login.status_code})"
+        created = account.post(
+            "/auth/connector-session",
+            json={"project": FIXTURE_PROJECT, "connector_id": CONNECTOR_ID},
+            headers={"X-DG-CSRF": "1"},
+        )
+        assert created.status_code == 201, (
+            f"Connector sign-in failed ({created.status_code})"
+        )
+        token = created.json()["token"]
+        assert token.startswith("dgk_")
+        try:
+            yield token
+        finally:
+            ended = account.delete(
+                "/auth/connector-session",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert ended.status_code == 204, (
+                f"Connector sign-out failed ({ended.status_code})"
+            )
 
 
 def _derive_findings() -> list[dict[str, Any]]:

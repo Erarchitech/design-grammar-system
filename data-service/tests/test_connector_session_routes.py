@@ -82,7 +82,7 @@ def _stored_legacy_token(project):
     """A retired ``dgc_`` token that is still present, hashed and non-revoked, in
     the credential store -- the strongest case a refusal has to cover (D-26).
     Built without the legacy minting helpers."""
-    token = connectors.TOKEN_PREFIX + secrets.token_urlsafe(32)
+    token = "dgc_" + secrets.token_urlsafe(32)
     connectors.save_credentials(
         connectors.load_credentials()
         + [

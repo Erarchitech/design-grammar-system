@@ -70,7 +70,14 @@ from speckle_validation import (  # noqa: E402
 
 # P-15: both markers. `integration` = needs the compose network; `live` =
 # reaches a real external system and is deselected by a bare pytest run.
-pytestmark = [pytest.mark.integration, pytest.mark.live]
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.live,
+    pytest.mark.skipif(
+        not os.getenv("DSAV_USERNAME") or not os.getenv("DSAV_PASSWORD"),
+        reason="DSAV_USERNAME and DSAV_PASSWORD are required for live connector sign-in",
+    ),
+]
 
 # ── T-39-10 isolation guard ─────────────────────────────────────────────────
 assert FIXTURE_PROJECT == "p39-autoval", (
@@ -433,20 +440,41 @@ def publish_flag_guard(live_session):
 
 @pytest.fixture(scope="module")
 def capture_token():
-    """A real project-scoped connector credential, revoked at teardown. The
-    plaintext token lives in this process only (T-39-09)."""
-    created = httpx.post(
-        f"{BASE_URL}/connectors/{CONNECTOR_ID}/credentials",
-        json={"label": "phase-39 publish leg", "project": FIXTURE_PROJECT},
-        timeout=HTTP_TIMEOUT_SECONDS,
-    )
-    assert created.status_code == 201, (created.status_code, created.text)
-    body = created.json()
-    yield body["token"]
-    httpx.delete(
-        f"{BASE_URL}/connectors/{CONNECTOR_ID}/credentials/{body['credential_id']}",
-        timeout=HTTP_TIMEOUT_SECONDS,
-    )
+    """Sign in with a DG account; keep its connector Bearer out of evidence."""
+    username = os.getenv("DSAV_USERNAME")
+    password = os.getenv("DSAV_PASSWORD")
+    if not username or not password:
+        pytest.skip(
+            "DSAV_USERNAME and DSAV_PASSWORD are required for live connector sign-in"
+        )
+
+    with httpx.Client(base_url=BASE_URL, timeout=HTTP_TIMEOUT_SECONDS) as account:
+        login = account.post(
+            "/auth/login",
+            json={"username": username, "password": password},
+            headers={"X-DG-CSRF": "1"},
+        )
+        assert login.status_code == 200, f"DG account login failed ({login.status_code})"
+        created = account.post(
+            "/auth/connector-session",
+            json={"project": FIXTURE_PROJECT, "connector_id": CONNECTOR_ID},
+            headers={"X-DG-CSRF": "1"},
+        )
+        assert created.status_code == 201, (
+            f"Connector sign-in failed ({created.status_code})"
+        )
+        token = created.json()["token"]
+        assert token.startswith("dgk_")
+        try:
+            yield token
+        finally:
+            ended = account.delete(
+                "/auth/connector-session",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert ended.status_code == 204, (
+                f"Connector sign-out failed ({ended.status_code})"
+            )
 
 
 @pytest.fixture(scope="module", autouse=True)
