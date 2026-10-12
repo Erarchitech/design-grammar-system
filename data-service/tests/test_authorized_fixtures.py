@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import auth  # noqa: E402
 import auth_fixtures  # noqa: E402
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
 import secrets_policy  # noqa: E402
 
@@ -205,7 +206,7 @@ def test_service_headers_carry_the_configured_token():
 def test_connector_token_for_binds_the_project(tmp_path, monkeypatch):
     monkeypatch.setattr(connectors, "CREDENTIALS_FILE", tmp_path / "creds.json")
     token = auth_fixtures.connector_token_for("P1")
-    assert token.startswith(connectors.TOKEN_PREFIX)
+    assert token.startswith(connector_session.SESSION_TOKEN_PREFIX)
     principal = auth.resolve_connector_principal(token)
     assert principal is not None
     assert principal.kind == "connector"

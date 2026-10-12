@@ -16,6 +16,7 @@ from typing import Any, Callable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import auth  # noqa: E402
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
 
 TEST_ADMIN_USERNAME = "test-admin@dg.local"
@@ -76,10 +77,24 @@ def service_headers() -> dict[str, str]:
     return {auth.SERVICE_TOKEN_HEADER: os.environ["DG_SERVICE_TOKEN"]}
 
 
-def connector_token_for(project: str) -> str:
-    """Create a real connector credential bound to ``project`` in the
-    currently configured CREDENTIALS_FILE and return its plaintext token."""
-    _record, token = connectors.create_credential("grasshopper", project=project)
+def connector_token_for(
+    project: str, *, username: str | None = None, connector_id: str = "grasshopper"
+) -> str:
+    """Issue a real ``dgk_`` connector sign-in session bound to ``project`` and
+    return its plaintext token (Phase 1308-06, D-26).
+
+    Defaults to the shared test admin, created the way ``admin_session_token``
+    creates it; an admin is exempt from the per-connector grant, so no
+    membership or access row is added. Pass ``username`` for any other user
+    (the caller is then responsible for that user's membership and grant).
+    """
+    if username is None:
+        if auth.get_user(TEST_ADMIN_USERNAME) is None:
+            make_user(TEST_ADMIN_USERNAME, is_admin=True)
+        username = TEST_ADMIN_USERNAME
+    token, _record = connector_session.issue(
+        username=username, project=project, connector_id=connector_id
+    )
     return token
 
 

@@ -420,7 +420,10 @@ class Principal:
     the parent `session_hash` (None when minted from a pairing); it is never an
     admin. A `pairing` principal (Phase 1301-17, D-25) carries `username` and
     the pairing id as `credential_id`, exists only on the exchange route and is
-    never an admin."""
+    never an admin. A `connector` principal from a `dgk_` sign-in session
+    (Phase 1308-06, D-26) additionally carries the signing-in `username`, the
+    `connector_id` it signed in for, the project's `company`, and the session id
+    as `credential_id`; a legacy `dgc_` connector principal has none of those."""
 
     kind: str
     username: str | None = None
@@ -429,6 +432,7 @@ class Principal:
     credential_id: str | None = None
     session_hash: str | None = None
     company: str | None = None
+    connector_id: str | None = None
 
 
 def resolve_session_principal(token: str, *, now: int | None = None) -> Principal | None:
@@ -449,12 +453,33 @@ def resolve_session_principal(token: str, *, now: int | None = None) -> Principa
 
 
 def resolve_connector_principal(token: str) -> Principal | None:
-    """Resolve a `dgc_` connector token via connectors.authenticate_token --
-    this is an auth check, not a liveness stamp, so it must never touch
-    last_connection. None for a revoked/unknown token or a non-`dgc_`-prefixed
-    string.
+    """Resolve a connector Bearer token to a `connector` Principal.
+
+    A `dgk_` sign-in session (Phase 1308, D-26) goes through
+    `connector_session.authenticate`, which re-checks the user, the company and
+    the per-connector authorization live and raises its own named 401/403
+    errors. A legacy `dgc_` token (accepted only until the retirement in plan
+    1308-13) goes through `connectors.authenticate_token` -- an auth check, not a
+    liveness stamp, so it must never touch last_connection. None for a
+    revoked/unknown legacy token or any other prefix.
     """
-    if not token or not token.startswith(connectors.TOKEN_PREFIX):
+    if not token:
+        return None
+    import connector_session  # noqa: PLC0415 -- connector_session imports this module
+
+    if token.startswith(connector_session.SESSION_TOKEN_PREFIX):
+        record = connector_session.authenticate(token)
+        if record is None:
+            return None
+        return Principal(
+            kind="connector",
+            username=record["username"],
+            bound_project=record["project"],
+            credential_id=record["session_id"],
+            connector_id=record["connector_id"],
+            company=record.get("company"),
+        )
+    if not token.startswith(connectors.TOKEN_PREFIX):
         return None
     record = connectors.authenticate_token(token)
     if record is None:
@@ -1108,7 +1133,7 @@ async def require_principal(request: Request) -> Principal:
             if principal is None:
                 raise auth_error(
                     "Invalid or revoked connector token.",
-                    "Create a new credential via POST /connectors/{connector_id}/credentials.",
+                    "Sign in from the connector with your DG account (POST /auth/connector-session).",
                     "CONNECTOR_AUTH_FAILED",
                     401,
                 )
