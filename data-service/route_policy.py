@@ -194,9 +194,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # ── connectors ──
     # Phase 1301-40 (D-46): per-connector access. A project viewer requests access
     # to one connector; the owner (an admin is owner everywhere) lists, approves
-    # and revokes it. The credential POST is open to any member at the policy
-    # layer; the handler then requires owner/editor/admin or an approved access
-    # (403 CONNECTOR_ACCESS_REQUIRED).
+    # and revokes it (an editor needs a grant like a viewer, Phase 1308 D-29).
+    # The credential POST is a 410 tombstone since Phase 1308 D-31 (connector
+    # tokens are retired; the sign-in is POST /auth/connector-session), so it
+    # is a plain session row like the retired DeGram pairing route.
     ("POST", "/connector-access-requests"): _p(_MEM, source="body", role="viewer"),
     ("GET", "/connector-access/mine"): _p(_SES, source="filtered"),
     ("GET", "/projects/{project}/connector-access"): _p(_MEM, source="path", role="owner"),
@@ -205,7 +206,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
         _MEM, source="path", role="owner"
     ),
     ("GET", "/connectors"): _p(_SES, source="filtered"),
-    ("POST", "/connectors/{connector_id}/credentials"): _p(_MEM, source="body", role="viewer"),
+    ("POST", "/connectors/{connector_id}/credentials"): _p(_SES),
     ("DELETE", "/connectors/{connector_id}/credentials/{credential_id}"): _p(
         _MEM, source="resource:credential", role="editor"
     ),

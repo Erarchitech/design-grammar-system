@@ -64,6 +64,14 @@ def _read_store() -> list[dict]:
     return json.loads(connectors.CREDENTIALS_FILE.read_text(encoding="utf-8"))["credentials"]
 
 
+def _mint(connector_id: str, project: str | None = "P1", label: str | None = None):
+    """Seed a legacy dgc_ credential directly in the store. Phase 1308 (D-31)
+    retired ``POST /connectors/{id}/credentials``, so no route can mint one;
+    ``connectors.create_credential`` stays only to seed legacy rows here until
+    plan 1308-13 refuses them and 1308-24 deletes the function."""
+    return connectors.create_credential(connector_id, label, project)
+
+
 # ── Registry Shape ──
 
 
@@ -97,40 +105,28 @@ class TestRegistry:
 
 
 class TestCreateCredential:
-    def test_create_returns_token_once_and_persists_only_hash(self):
-        """POST returns dgc_ token; store holds only the SHA-256 hash."""
+    """Phase 1308 (D-31): connector-token creation is retired. Every signed-in
+    caller gets 410 CONNECTOR_TOKENS_RETIRED for a registry connector and the
+    store is never written; an unknown connector id and `degram` stay 404."""
+
+    @pytest.mark.parametrize("connector_id", EXPECTED_IDS)
+    def test_create_is_retired_for_every_registry_connector(self, connector_id):
         response = client.post(
-            "/connectors/revit/credentials", json={"label": "Office seat", "project": "P1"}
+            f"/connectors/{connector_id}/credentials",
+            json={"label": "Office seat", "project": "P1"},
         )
-        assert response.status_code == 201
-        body = response.json()
-        token = body["token"]
-        assert token.startswith("dgc_")
-        assert len(token) > 20
+        assert response.status_code == 410
+        detail = response.json()["detail"]
+        assert detail["code"] == "CONNECTOR_TOKENS_RETIRED"
+        assert "/auth/connector-session" in detail["hint"]
+        assert "token" not in response.json()
+        assert not connectors.CREDENTIALS_FILE.exists()
 
-        stored = _read_store()
-        assert len(stored) == 1
-        record = stored[0]
-        assert record["credential_id"] == body["credential_id"]
-        assert record["connector_id"] == "revit"
-        assert record["label"] == "Office seat"
-        assert record["token_hash"] == connectors.hash_token(token)
-        assert token not in json.dumps(stored)
-        assert record["revoked"] is False
-        assert record["last_connection"] is None
-
-    def test_create_without_body_fails_closed_project_required(self):
-        """Phase 1205: the project is now required (research gap 3) -- a POST
-        with no body is 403 PROJECT_REQUIRED, never an unscoped default."""
+    def test_create_without_body_is_also_410(self):
+        """The policy row is `session`: no project source, no PROJECT_REQUIRED."""
         response = client.post("/connectors/grasshopper/credentials")
-        assert response.status_code == 403
-        assert response.json()["detail"]["code"] == "PROJECT_REQUIRED"
-
-    def test_create_with_project_only_label_is_optional(self):
-        """Label is optional -- a body carrying only the project works."""
-        response = client.post("/connectors/grasshopper/credentials", json={"project": "P1"})
-        assert response.status_code == 201
-        assert response.json()["token"].startswith("dgc_")
+        assert response.status_code == 410
+        assert response.json()["detail"]["code"] == "CONNECTOR_TOKENS_RETIRED"
 
     def test_create_unknown_connector_404(self):
         """Unknown connector id → 404 structured error."""
@@ -138,9 +134,21 @@ class TestCreateCredential:
         assert response.status_code == 404
         assert response.json()["detail"]["code"] == "CONNECTOR_NOT_FOUND"
 
+    def test_degram_is_not_a_connector_id(self):
+        response = client.post("/connectors/degram/credentials", json={"project": "P1"})
+        assert response.status_code == 404
+        assert response.json()["detail"]["code"] == "CONNECTOR_NOT_FOUND"
+
+    def test_tokens_retired_factory_shape(self):
+        error = connectors.tokens_retired()
+        assert error.status_code == 410
+        assert error.detail["code"] == "CONNECTOR_TOKENS_RETIRED"
+        assert error.detail["error"] == "Connector tokens are retired."
+        assert connectors.tokens_retired(status_code=401).status_code == 401
+
     def test_token_never_exposed_by_listing(self):
         """GET /connectors credential summaries omit token and token_hash."""
-        token = client.post("/connectors/dynamo/credentials", json={"project": "P1"}).json()["token"]
+        _record, token = _mint("dynamo")
         body = client.get("/connectors").json()
         dump = json.dumps(body)
         assert token not in dump
@@ -155,7 +163,7 @@ class TestCreateCredential:
 
 class TestHeartbeat:
     def test_valid_token_activates_and_stamps_last_connection(self):
-        token = client.post("/connectors/blender/credentials", json={"project": "P1"}).json()["token"]
+        _record, token = _mint("blender")
         response = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         )
@@ -189,8 +197,8 @@ class TestHeartbeat:
         )
 
     def test_revoked_token_401(self):
-        created = client.post("/connectors/tekla/credentials", json={"project": "P1"}).json()
-        token = created["token"]
+        record, token = _mint("tekla")
+        created = {"credential_id": record["credential_id"]}
         assert (
             client.delete(
                 f"/connectors/tekla/credentials/{created['credential_id']}"
@@ -208,9 +216,7 @@ class TestHeartbeat:
 
 class TestHeartbeatBundle:
     def test_created_project_is_echoed_by_heartbeat(self):
-        token = client.post(
-            "/connectors/grasshopper/credentials", json={"project": "urban-tower"}
-        ).json()["token"]
+        _record, token = _mint("grasshopper", "urban-tower")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -226,7 +232,7 @@ class TestHeartbeatBundle:
         assert body["project"] == "default-project"
 
     def test_heartbeat_returns_host_facing_neo4j_bundle(self):
-        token = client.post("/connectors/grasshopper/credentials", json={"project": "P1"}).json()["token"]
+        _record, token = _mint("grasshopper")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -243,7 +249,7 @@ class TestHeartbeatBundle:
         import app as app_module
 
         monkeypatch.setattr(app_module, "NEO4J_PUBLIC_URI", "bolt://10.0.0.5:7687")
-        token = client.post("/connectors/grasshopper/credentials", json={"project": "P1"}).json()["token"]
+        _record, token = _mint("grasshopper")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -270,7 +276,7 @@ class TestStatusDerivation:
 
     def test_stale_surfaces_in_endpoint(self):
         """A connection older than 7 days shows as stale via GET /connectors."""
-        client.post("/connectors/lumion/credentials", json={"project": "P1"})
+        _mint("lumion")
         stored = _read_store()
         stored[0]["last_connection"] = (
             datetime.now(timezone.utc) - timedelta(days=30)
@@ -288,9 +294,8 @@ class TestStatusDerivation:
 
 class TestRevokeLifecycle:
     def test_revoke_marks_credential_and_reflects_in_listing(self):
-        created = client.post(
-            "/connectors/navisworks/credentials", json={"label": "Site laptop", "project": "P1"}
-        ).json()
+        record, _token = _mint("navisworks", "P1", "Site laptop")
+        created = {"credential_id": record["credential_id"]}
         response = client.delete(
             f"/connectors/navisworks/credentials/{created['credential_id']}"
         )
@@ -315,10 +320,11 @@ class TestRevokeLifecycle:
 
     def test_revoke_preserves_last_connection_history(self):
         """Revoking a credential keeps the connector's past connection date."""
-        created = client.post("/connectors/solibri/credentials", json={"project": "P1"}).json()
+        record, token = _mint("solibri")
+        created = {"credential_id": record["credential_id"]}
         client.post(
             "/connectors/heartbeat",
-            headers={"Authorization": f"Bearer {created['token']}"},
+            headers={"Authorization": f"Bearer {token}"},
         )
         client.delete(f"/connectors/solibri/credentials/{created['credential_id']}")
 

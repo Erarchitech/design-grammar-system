@@ -1733,18 +1733,15 @@ def revoke_degram_pairing(pairing_id: str, request: Request):
     return None
 
 
-@router.post("/connectors/{connector_id}/credentials", status_code=201)
+@router.post("/connectors/{connector_id}/credentials", status_code=410)
 def create_connector_credential(
     connector_id: str, request: Request, payload: CredentialCreatePayload | None = None
 ):
-    """Mint a credential for a connector. The token is returned once here
-    and never again — only its SHA-256 hash is persisted (CONNB-02).
-
-    Phase 1301-40 (D-46): the route policy admits any project member (viewer);
-    the handler then requires an owner/editor/admin role in the project OR an
-    approved ``connector_access`` for this connector (403
-    ``CONNECTOR_ACCESS_REQUIRED``).
-    """
+    """Retired by D-31 (Phase 1308-09): a connector signs in with the user's DG
+    account (``POST /auth/connector-session``) and no longer holds a minted
+    ``dgc_`` token, so this route mints nothing for any caller. An unknown
+    connector id (and ``degram``) keeps its 404; ``DELETE`` of a stored
+    credential stays for one release as cleanup."""
     if connector_id not in connectors.CONNECTOR_IDS:
         raise _structured_error_response(
             f"Unknown connector: {connector_id}",
@@ -1752,15 +1749,7 @@ def create_connector_credential(
             "CONNECTOR_NOT_FOUND",
             404,
         )
-    label = payload.label if payload else None
-    project = payload.project if payload else None
-    principal = request.state.principal
-    if not auth.role_satisfies(
-        auth.effective_role(principal, project or ""), "editor"
-    ) and not connector_access.can_create(principal.username or "", project or "", connector_id):
-        raise connector_access.access_required()
-    record, token = connectors.create_credential(connector_id, label, project)
-    return CredentialCreatedResponse(credential_id=record["credential_id"], token=token)
+    raise connectors.tokens_retired(status_code=410)
 
 
 @router.delete("/connectors/{connector_id}/credentials/{credential_id}", status_code=204)

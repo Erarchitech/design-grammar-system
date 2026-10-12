@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from fastapi import HTTPException
 from pydantic import BaseModel
 
 
@@ -53,6 +54,21 @@ CONNECTOR_REGISTRY: list[dict[str, str]] = [
 ]
 
 CONNECTOR_IDS: set[str] = {c["id"] for c in CONNECTOR_REGISTRY}
+
+
+def tokens_retired(status_code: int = 410) -> HTTPException:
+    """The structured error of the retired connector-token creation route
+    (Phase 1308, D-31): 410 for ``POST /connectors/{id}/credentials``. Built
+    here, not through ``auth.auth_error``, because ``auth`` imports this module
+    (same ``{error, hint, code}`` detail shape)."""
+    return HTTPException(
+        status_code=status_code,
+        detail={
+            "error": "Connector tokens are retired.",
+            "hint": "Sign in from the connector with your DG account (POST /auth/connector-session).",
+            "code": "CONNECTOR_TOKENS_RETIRED",
+        },
+    )
 
 TOKEN_PREFIX = "dgc_"
 STALE_THRESHOLD_DAYS = 7

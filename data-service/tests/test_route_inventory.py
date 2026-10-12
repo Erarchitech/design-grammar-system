@@ -551,7 +551,8 @@ def test_the_connector_access_rows_are_owner_scoped_and_the_credential_post_is_v
     assert mine.principals == {route_policy.PRINCIPAL_SESSION}
     assert mine.project_source == "filtered"
     credential = route_policy.ROUTE_POLICIES[("POST", "/connectors/{connector_id}/credentials")]
-    assert credential.principals == {route_policy.PRINCIPAL_MEMBER}
-    assert (credential.project_source, credential.min_role) == ("body", "viewer")
+    # Phase 1308 (D-31): the credential POST is a 410 tombstone on a session row.
+    assert credential.principals == {route_policy.PRINCIPAL_SESSION}
+    assert credential.project_source is None
     revoke = route_policy.ROUTE_POLICIES[("DELETE", "/connectors/{connector_id}/credentials/{credential_id}")]
     assert revoke.min_role == "editor"

@@ -2,9 +2,11 @@
 
 A project viewer asks for access to a connector (Grasshopper, Revit, ...); the
 owner or an admin approves it under the connector's «Pending requests»; the
-approved viewer can then create that connector's credential. Owner, editor and
-admin create one without a request. Every request goes through the real
-``require_principal``; credentials come from the 1205-08 fixtures.
+approved member can then sign in with that connector. Owner and admin need no
+grant (Phase 1308, D-29); editor and viewer do. Connector-token creation is
+retired (D-31): the credentials POST answers 410 for everyone, and the grant is
+exercised through ``POST /auth/connector-session``. Every request goes through
+the real ``require_principal``; credentials come from the 1205-08 fixtures.
 """
 
 from __future__ import annotations
@@ -102,6 +104,16 @@ def _credential(client, cookie, project="P1", connector="grasshopper"):
     )
 
 
+def _connector_session_for(client, cookie, project="P1", connector="grasshopper"):
+    response = client.post(
+        "/auth/connector-session",
+        json={"project": project, "connector_id": connector},
+        headers=cookie,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["token"]
+
+
 def _access_file():
     return auth.MEMBERSHIPS_FILE.parent / connector_access.FILE_NAME
 
@@ -113,7 +125,7 @@ def _stored():
 # -- the D-46 flow ----------------------------------------------------------
 
 
-def test_viewer_requests_owner_approves_viewer_creates_the_token(client, world):
+def test_viewer_requests_owner_approves_viewer_signs_in(client, world):
     sent = _request(client, world["alice"], note="need it for the model")
     assert sent.status_code == 201, sent.text
     assert sent.json()["connector_id"] == "grasshopper"
@@ -135,33 +147,58 @@ def test_viewer_requests_owner_approves_viewer_creates_the_token(client, world):
     assert after["requests"] == []
     assert [g["username"] for g in after["grants"]] == [ALICE]
 
+    # D-31: the credentials POST is a tombstone for everyone, grant or not.
     created = _credential(client, world["alice"])
-    assert created.status_code == 201, created.text
-    assert created.json()["token"].startswith("dgc_")
+    assert created.status_code == 410, created.text
+    assert _code(created) == "CONNECTOR_TOKENS_RETIRED"
+    assert "token" not in created.json()
+
+    # the grant opens the connector sign-in instead
+    assert _connector_session_for(client, world["alice"]).startswith("dgk_")
 
     again = _request(client, world["alice"])
     assert again.status_code == 409
     assert _code(again) == "ACCESS_EXISTS"
 
 
-def test_a_viewer_without_access_cannot_create_a_credential(client, world):
+def test_a_viewer_without_access_gets_410_and_no_credential(client, world):
     response = _credential(client, world["alice"])
-    assert response.status_code == 403
-    assert _code(response) == "CONNECTOR_ACCESS_REQUIRED"
+    assert response.status_code == 410
+    assert _code(response) == "CONNECTOR_TOKENS_RETIRED"
     assert connectors.load_credentials() == []
 
 
 def test_access_is_per_connector(client, world):
     assert _issue(client, world["olga"], connector="grasshopper").status_code == 201
-    other = _credential(client, world["alice"], connector="revit")
+    other = client.post(
+        "/auth/connector-session",
+        json={"project": "P1", "connector_id": "revit"},
+        headers=world["alice"],
+    )
     assert other.status_code == 403
     assert _code(other) == "CONNECTOR_ACCESS_REQUIRED"
 
 
-def test_owner_editor_and_admin_create_without_a_request(client, world):
-    assert _credential(client, world["olga"]).status_code == 201
-    assert _credential(client, world["eric"]).status_code == 201
-    assert _credential(client, world["root"]).status_code == 201
+def test_the_credentials_post_is_410_for_every_role(client, world):
+    for who in ("olga", "eric", "alice", "root"):
+        response = _credential(client, world[who])
+        assert response.status_code == 410, who
+        assert _code(response) == "CONNECTOR_TOKENS_RETIRED", who
+    assert connectors.load_credentials() == []
+
+
+def test_owner_and_admin_sign_in_without_a_request_editor_needs_a_grant(client, world):
+    assert _connector_session_for(client, world["olga"]).startswith("dgk_")
+    assert _connector_session_for(client, world["root"]).startswith("dgk_")
+    denied = client.post(
+        "/auth/connector-session",
+        json={"project": "P1", "connector_id": "grasshopper"},
+        headers=world["eric"],
+    )
+    assert denied.status_code == 403
+    assert _code(denied) == "CONNECTOR_ACCESS_REQUIRED"
+    assert _issue(client, world["olga"], username=ERIC).status_code == 201
+    assert _connector_session_for(client, world["eric"]).startswith("dgk_")
 
 
 def test_editor_without_a_grant_can_request_access(client, world):
@@ -197,10 +234,14 @@ def test_admin_request_for_an_unknown_connector_is_404_not_exists(client, world)
 
 def test_owner_revoke_ends_the_access(client, world):
     access_id = _issue(client, world["olga"]).json()["access_id"]
-    assert _credential(client, world["alice"]).status_code == 201
+    assert _connector_session_for(client, world["alice"]).startswith("dgk_")
     revoked = client.delete(f"/projects/P1/connector-access/{access_id}", headers=world["olga"])
     assert revoked.status_code == 204
-    denied = _credential(client, world["alice"])
+    denied = client.post(
+        "/auth/connector-session",
+        json={"project": "P1", "connector_id": "grasshopper"},
+        headers=world["alice"],
+    )
     assert denied.status_code == 403
     assert _code(denied) == "CONNECTOR_ACCESS_REQUIRED"
     listed = client.get("/projects/P1/connector-access", headers=world["olga"]).json()
@@ -302,7 +343,11 @@ def test_access_never_crosses_projects(client, world):
     _issue(client, world["olga"], project="P1")
     assert connector_access.can_create(ALICE, "P1", "grasshopper")
     assert not connector_access.can_create(ALICE, "P2", "grasshopper")
-    denied = _credential(client, world["alice"], project="P2")
+    denied = client.post(
+        "/auth/connector-session",
+        json={"project": "P2", "connector_id": "grasshopper"},
+        headers=world["alice"],
+    )
     assert _code(denied) == "CONNECTOR_ACCESS_REQUIRED"
 
 
@@ -333,14 +378,14 @@ def test_mine_lists_only_the_callers_rows(client, world):
 def test_list_payloads_carry_no_token_or_hash(client, world):
     _request(client, world["alice"])
     _issue(client, world["olga"])
-    created = _credential(client, world["alice"]).json()
+    session_token = _connector_session_for(client, world["alice"])
     dumps = [
         client.get("/projects/P1/connector-access", headers=world["olga"]).text,
         client.get("/connector-access/mine", headers=world["alice"]).text,
         client.get("/connectors", params={"project": "P1"}, headers=world["alice"]).text,
     ]
     for text in dumps:
-        assert created["token"] not in text
+        assert session_token not in text
         assert "token_hash" not in text
         assert '"token"' not in text
     assert "token" not in json.dumps(_stored())
@@ -417,16 +462,6 @@ def test_reissue_is_idempotent_one_active_row(client, world):
 
 
 # -- D-30: a viewer with a grant has the connector's full route scope -----------
-
-
-def _connector_session_for(client, cookie, project="P1", connector="grasshopper"):
-    response = client.post(
-        "/auth/connector-session",
-        json={"project": project, "connector_id": connector},
-        headers=cookie,
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["token"]
 
 
 def test_viewer_with_a_grant_publishes_for_its_bound_project(client, world, monkeypatch):

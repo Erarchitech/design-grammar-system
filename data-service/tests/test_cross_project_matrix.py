@@ -676,19 +676,32 @@ class TestConnectorAccessBoundary:
     generated matrix above; these cases pin the handler-side gate and the
     project isolation of an approved access."""
 
-    def test_viewer_without_access_is_refused_by_the_handler_not_the_policy(self, client, world):
+    def test_credentials_post_is_410_for_every_member_role(self, client, world):
+        """D-31: the credential POST is a session-policy tombstone; no member
+        role, grant or project in the body changes the answer, and nothing is minted."""
+        for actor in ("A", "V", "B", "ADMIN"):
+            for project in (P1, P2):
+                response = client.post(
+                    "/connectors/grasshopper/credentials",
+                    json={"project": project},
+                    headers=world.headers[actor],
+                )
+                assert response.status_code == 410, (actor, project)
+                assert _code(response) == "CONNECTOR_TOKENS_RETIRED", (actor, project)
+
+    def test_viewer_without_access_gets_no_connector_session(self, client, world):
         response = client.post(
-            "/connectors/grasshopper/credentials",
-            json={"project": P1},
+            "/auth/connector-session",
+            json={"project": P1, "connector_id": "grasshopper"},
             headers=world.headers["V"],
         )
         assert response.status_code == 403
         assert _code(response) == "CONNECTOR_ACCESS_REQUIRED"
 
-    def test_viewer_of_p1_asking_to_mint_for_p2_is_project_forbidden(self, client, world):
+    def test_viewer_of_p1_asking_a_session_for_p2_is_project_forbidden(self, client, world):
         response = client.post(
-            "/connectors/grasshopper/credentials",
-            json={"project": P2},
+            "/auth/connector-session",
+            json={"project": P2, "connector_id": "grasshopper"},
             headers=world.headers["V"],
         )
         assert response.status_code == 403
@@ -701,14 +714,14 @@ class TestConnectorAccessBoundary:
         connector_access.issue_access(P1, world.names["V"], "grasshopper", world.names["A"])
         try:
             ok = client.post(
-                "/connectors/grasshopper/credentials",
-                json={"project": P1},
+                "/auth/connector-session",
+                json={"project": P1, "connector_id": "grasshopper"},
                 headers=world.headers["V"],
             )
-            assert ok.status_code == 201
+            assert ok.status_code == 201, ok.text
             other = client.post(
-                "/connectors/grasshopper/credentials",
-                json={"project": P2},
+                "/auth/connector-session",
+                json={"project": P2, "connector_id": "grasshopper"},
                 headers=world.headers["V"],
             )
             assert other.status_code == 403
