@@ -60,6 +60,13 @@ def dependencies(service):
     return set(depends_on if isinstance(depends_on, (dict, list)) else [])
 
 
+def environment_map(service):
+    entries = service.get("environment") or {}
+    if isinstance(entries, list):
+        return dict(entry.split("=", 1) for entry in entries)
+    return entries
+
+
 class ComposeProfileTests(unittest.TestCase):
     def test_local_two_file_model_retains_ollama_and_dependency(self):
         local = model(BASE, MULTI_USER)
@@ -74,7 +81,8 @@ class ComposeProfileTests(unittest.TestCase):
         local = model(BASE, MULTI_USER)
         hosted = model(BASE, MULTI_USER, HOSTED)
         services = hosted["services"]
-        self.assertEqual(set(services), set(local["services"]) - {"ollama"})
+        # Расширение графа только явным TLS edge; все прежние не-Ollama сервисы остаются.
+        self.assertEqual(set(services), (set(local["services"]) - {"ollama"}) | {"hosted-edge"})
         self.assertNotIn("ollama", hosted.get("volumes", {}))
         self.assertEqual(dependencies(services["n8n"]), {"data-service"})
         for name, service in services.items():
@@ -95,6 +103,50 @@ class ComposeProfileTests(unittest.TestCase):
                     self.assertEqual(port.get("host_ip"), "127.0.0.1", "unintended public port")
         for key in ("OLLAMA_URL", "OLLAMA_HOST", "OLLAMA_MODEL"):
             self.assertNotIn(key, services["n8n"].get("environment", {}))
+
+    def test_hosted_edge_wiring_origins_and_port_boundary(self):
+        hosted = model(BASE, MULTI_USER, HOSTED)
+        services = hosted["services"]
+        self.assertEqual(
+            {name: service.get("ports") for name, service in services.items() if service.get("ports")},
+            {"hosted-edge": [{"mode": "ingress", "host_ip": "127.0.0.1", "target": 443,
+                               "published": "443", "protocol": "tcp"}]},
+        )
+        edge = services["hosted-edge"]
+        self.assertIn("hosted_edge", edge["networks"])
+        self.assertEqual(set(services["design-grammars"]["networks"]), {"default", "hosted_edge"})
+        self.assertEqual(set(services["speckle-ingress"]["networks"]), {"default", "hosted_edge"})
+        self.assertEqual(set(services["speckle-minio"]["networks"]), {"default", "hosted_edge"})
+        self.assertEqual(edge["environment"]["HOSTED_DG_HOST"],
+                         "${HOSTED_DG_HOST:?set approved DG DNS hostname}")
+        self.assertEqual(edge["environment"]["HOSTED_SPECKLE_HOST"],
+                         "${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}")
+        self.assertEqual(edge["environment"]["HOSTED_OBJECT_HOST"],
+                         "${HOSTED_OBJECT_HOST:?set approved distinct object DNS hostname}")
+        mounts = {item["target"]: item for item in edge["volumes"]}
+        self.assertTrue(mounts["/etc/caddy/Caddyfile"]["read_only"])
+        self.assertTrue(mounts["/etc/caddy/certs"]["read_only"])
+        self.assertTrue(mounts["/etc/caddy/certs"]["source"].startswith("${HOSTED_EDGE_CERT_DIR:?"))
+        self.assertEqual(hosted["networks"]["hosted_edge"]["enable_ipv6"], False)
+        self.assertTrue(hosted["networks"]["hosted_edge"]["ipam"]["config"][0]["subnet"].startswith(
+            "${HOSTED_EDGE_CIDR:?"))
+        ds = environment_map(services["data-service"])
+        ui = environment_map(services["design-grammars"])
+        server = environment_map(services["speckle-server"])
+        frontend = environment_map(services["speckle-frontend-2"])
+        self.assertEqual(ds["DG_COOKIE_SECURE"], "true")
+        self.assertEqual(ds["DG_TRUSTED_PROXIES"], ui["DG_TRUSTED_PROXIES"])
+        self.assertEqual(ds["DG_TRUSTED_PROXIES"], "${HOSTED_EDGE_IP:?set actual private Caddy IPv4}/32")
+        dg_origin = "https://${HOSTED_DG_HOST:?set approved DG DNS hostname}"
+        speckle_origin = "https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}"
+        object_origin = "https://${HOSTED_OBJECT_HOST:?set approved distinct object DNS hostname}"
+        self.assertEqual(ds["DG_BASE_URL"], dg_origin)
+        for value in (ds["SPECKLE_BASE_URL"], ui["SPECKLE_BASE_URL"],
+                      server["CANONICAL_URL"], server["FRONTEND_ORIGIN"],
+                      frontend["NUXT_PUBLIC_API_ORIGIN"], frontend["NUXT_PUBLIC_BASE_URL"]):
+            self.assertEqual(value, speckle_origin)
+        self.assertEqual(server["S3_PUBLIC_ENDPOINT"], object_origin)
+        self.assertEqual(server["S3_ENDPOINT"], "http://speckle-minio:9000")
 
     def test_required_runner_rejects_zero_tests_and_skips(self):
         runner = Path(__file__).with_name("run_required.py")

@@ -1,9 +1,7 @@
-# Offline hosted structural overlay, applied LAST after the base and multi-user
-# Compose files. Requires Docker Compose >= 2.24.4 (!override and !reset);
-# verified with v2.40.3-desktop.1 on Windows. Linux/remote acceptance is separate.
-# This only binds inherited ingress to loopback for a future approved TLS edge.
-# It is NOT a deployment recipe: origins, signed object URLs, credentials,
-# immutable images, backup and host firewall still require gated work.
+# Хостинговый профиль: ВСЕГДА последним после base + multi-user.
+# Требуется Compose >=2.24.4 (!override); проверено только offline в 2.40.3.
+# Входящий TLS только на loopback: внешний маршрут требует отдельного разрешения.
+# Имена, edge-IP/CIDR и каталог одобренных сертификатов обязательны; см. ORIGINS.md.
 services:
   ollama: !reset null
 
@@ -15,13 +13,84 @@ services:
       OLLAMA_HOST: !reset null
       OLLAMA_MODEL: !reset null
 
+  neo4j:
+    ports: !override []
+
+  dg-reasoner:
+    ports: !override []
+
+  data-service:
+    ports: !override []
+    networks:
+      - default
+      - hosted_edge
+    environment:
+      DG_BASE_URL: https://${HOSTED_DG_HOST:?set approved DG DNS hostname}
+      SPECKLE_BASE_URL: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      DG_COOKIE_SECURE: "true"
+      # Только IP Caddy на выделенной сети, в формате IPv4/32 (не вся сеть).
+      DG_TRUSTED_PROXIES: ${HOSTED_EDGE_IP:?set actual private Caddy IPv4}/32
+
   design-grammars:
-    ports: !override
-      - "127.0.0.1:8080:80"
+    ports: !override []
+    networks:
+      - default
+      - hosted_edge
+    environment:
+      SPECKLE_BASE_URL: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      DG_TRUSTED_PROXIES: ${HOSTED_EDGE_IP:?set actual private Caddy IPv4}/32
+
+  speckle-minio:
+    ports: !override []
+    networks:
+      - default
+      - hosted_edge
+
+  speckle-server:
+    environment:
+      CANONICAL_URL: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      FRONTEND_ORIGIN: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      S3_ENDPOINT: http://speckle-minio:9000
+      S3_PUBLIC_ENDPOINT: https://${HOSTED_OBJECT_HOST:?set approved distinct object DNS hostname}
+
+  speckle-frontend-2:
+    environment:
+      NUXT_PUBLIC_API_ORIGIN: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      NUXT_PUBLIC_BASE_URL: https://${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
 
   speckle-ingress:
-    ports: !override
-      - "127.0.0.1:8090:8080"
+    ports: !override []
+    networks:
+      - default
+      - hosted_edge
+
+  hosted-edge:
+    # Образ/дайджест фиксируется release manifest до любой установки на хост.
+    image: caddy:2.10.2-alpine
+    ports:
+      - "127.0.0.1:443:443/tcp"
+    environment:
+      HOSTED_DG_HOST: ${HOSTED_DG_HOST:?set approved DG DNS hostname}
+      HOSTED_SPECKLE_HOST: ${HOSTED_SPECKLE_HOST:?set approved Speckle DNS hostname}
+      HOSTED_OBJECT_HOST: ${HOSTED_OBJECT_HOST:?set approved distinct object DNS hostname}
+    volumes:
+      - ./deploy/hosted/edge/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${HOSTED_EDGE_CERT_DIR:?set approved read-only certificate directory}:/etc/caddy/certs:ro
+    networks:
+      hosted_edge:
+        ipv4_address: ${HOSTED_EDGE_IP:?set actual private Caddy IPv4}
+    depends_on:
+      - design-grammars
+      - speckle-ingress
+      - speckle-minio
+
+networks:
+  hosted_edge:
+    # Сеть Caddy + три явных upstream; не заменяет сетевую политику хоста.
+    enable_ipv6: false
+    ipam:
+      config:
+        - subnet: ${HOSTED_EDGE_CIDR:?set approved private Docker edge CIDR}
 
 volumes:
   ollama: !reset null
