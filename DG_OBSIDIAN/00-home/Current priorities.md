@@ -7,6 +7,13 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1301 — gap plans 37–41 executed, DeGram 0.1.11 built; owner UAT: steps 1–5, 7 pass, step 6 became D-49** (2026-10-12).
+   - **Done:** F-03, F-04 (root cause: untagged session rows), F-05, F-07/D-48 and R-1/D-45/D-46 closed in code; component `7edf519c` pushed by the owner, gitlink `4bb6e38`, `workspace.py verify` exit 0; `data-service` and `design-grammars` rebuilt from `git archive HEAD`; installer `DeGram-Setup-0.1.11.exe` SHA-256 `938305fb…04fa`.
+   - **Owner UAT (live):** steps 1–5 and 7 confirmed pass. Step 6 became **D-49**: grants per connector, no connector tokens, the Grasshopper add-in signs in with the user's account, owner and admin exempt, planned in **Phase 1308** (amends D-46). Phase 1308 also got the sidebar item «Проекты / Projects» under «Модели».
+   - **Open:** meaning of the status «Вкл» without a token heartbeat; a DG page that sometimes stays on a refused project after a pick without a grant (suspected hash-signal race, unproven); owner grants on `degram-uat-b`/`degram-uat-c` needed to test A→B→A; plan 16 live acceptance and phase verification; DGCL-05/06 not marked complete.
+   - **Next:** `/gsd-plan-phase 1308` (D-36, D-37, D-38, landing summaries, sidebar «Проекты», D-49); optional fix of the signal race with a failing browser test first (rebuild of `design-grammars` needs fresh consent).
+   - See [[sessions/2026-10-12 Phase 1301 gap plans 37-41 executed, DeGram 0.1.11 built and UAT result|session]], [[knowledge/decisions/Connector access is a per-connector grant without tokens, owner and admin exempt (D-49)|D-49]], [[knowledge/debugging/DeGram sidebar session list hidden because scope session rows had no profile (F-04)|F-04]], [[knowledge/debugging/DeGram project pick refused without a grant while the DG page kept the refused project|refused pick]]. Supersedes the 0.1.10 UAT entry below (its fix round is executed).
+
 0. **v13.0 Phase 1301 — DeGram 0.1.10 UAT done (7 pass, 4 fail); 0.1.11 fix round planned (plans 37–41, D-45..D-48)** (2026-10-11).
    - **Fails:**
      - F-03: startup toast; a scope profile remembered as the primary profile.

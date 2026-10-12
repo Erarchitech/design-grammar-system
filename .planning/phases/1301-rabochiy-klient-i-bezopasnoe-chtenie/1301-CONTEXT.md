@@ -134,6 +134,13 @@ Owner decisions from the 0.1.10 UAT (2026-10-11, `1301-UAT.md` § 0.1.10 live re
 - **D-48:** Членство в проекте (в том числе editor) без гранта DeGram не открывает проект в DeGram; грант остаётся отдельным [владелец 2026-10-11].
   - Confirms D-39. A refused pick (F-07) must keep the current project running or return to the start screen with the grant notice, never leave the window with no backend («шлюз недоступен»), and the DG page must not stay on the refused project.
 
+Owner decisions from the 0.1.11 UAT (2026-10-12, `1301-UAT.md` § 0.1.11 live recheck, requirement R-2):
+
+- **D-49:** Доступ к коннектору (Grasshopper, Revit и др.) выдаётся только грантом на каждый коннектор отдельно; токены коннекторов не создаются, аддин Grasshopper входит по учётной записи пользователя, как DeGram; владелец проекта и админ DG освобождены от гранта; реализация в фазе 1308 [владелец 2026-10-12].
+  - Amends D-46: the token flow («Создать токен», one-time reveal) is retired, and an `editor` no longer creates a connector credential without a grant (today `role_satisfies(..., "editor")` in `POST /connectors/{id}/credentials` lets editor, owner and admin in; the editor part is inferred from the owner's step-6 remark that a member created a Grasshopper token without a grant). Only the project owner and a DG admin are exempt; editor and viewer need a per-connector grant.
+  - Replaces the connector-token authentication (`POST /connectors/heartbeat`, `ConnectorHeartbeatClient.cs`, `ConnectorComponent.cs`) with an account sign-in in the DG add-in; touches `spec/SECURITY-BOUNDARY.md`, the route policy and the connector spec. Planned in Phase 1308, not in a Phase 1301 gap round.
+  - Still open: what the connector status «Вкл» means once there is no token heartbeat (today: last token use or DeGram grant exchange within 7 days, not «Grasshopper is open now»).
+
 ### Claude's Discretion
 Planner/researcher выбирают HOW в пределах решений выше и границ 1300:
 - Кто вызывает GH bridge: typed tool/MCP в агенте (симметрично D-11) или Electron main через typed IPC. По умолчанию — симметрично с Revit, только loopback.

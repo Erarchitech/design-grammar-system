@@ -33,13 +33,16 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Debugging
-- [[knowledge/debugging/DeGram boot error because a scope profile was remembered as the primary profile (F-03)|DeGram boot error: a scope profile remembered as the primary profile (F-03, fix planned in 0.1.11)]] (2026-10-11)
-- [[knowledge/debugging/DeGram refused project pick released the open project first (F-07)|DeGram refused project pick released the open project first (F-07, fix planned in 0.1.11)]] (2026-10-11)
+- [[knowledge/debugging/DeGram sidebar session list hidden because scope session rows had no profile (F-04)|DeGram sidebar session list hidden: scope session rows had no profile (F-04, fixed in 0.1.11)]] (2026-10-12)
+- [[knowledge/debugging/DeGram project pick refused without a grant while the DG page kept the refused project|DeGram project pick refused without a grant while the DG page kept the refused project (signal race unproven)]] (2026-10-12)
+- [[knowledge/debugging/DeGram boot error because a scope profile was remembered as the primary profile (F-03)|DeGram boot error: a scope profile remembered as the primary profile (F-03, fixed in 0.1.11, owner pass 2026-10-12)]] (2026-10-11)
+- [[knowledge/debugging/DeGram refused project pick released the open project first (F-07)|DeGram refused project pick released the open project first (F-07, fixed in 0.1.11, owner pass 2026-10-12)]] (2026-10-11)
 - [[knowledge/debugging/DeGram left-scope backend restarted by the renderer reconnect ladder (G-25)|DeGram left-scope backend restarted by the renderer reconnect ladder; scope gate (G-25, fixed in 0.1.10)]] (2026-10-11)
 - [[knowledge/debugging/DeGram 0.1.7 shows compact read-only viewer after project selection|DeGram 0.1.7 live UAT blocked at project open — root cause F-01, fixed in 0.1.8]] (2026-10-11)
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Connector access is a per-connector grant without tokens, owner and admin exempt (D-49)|Connector access is a per-connector grant without tokens, owner and admin exempt; add-in signs in with the account (D-49, Phase 1308)]] (2026-10-12)
 - [[knowledge/decisions/DeGram connectors table and per-connector access requests (D-45..D-48)|DeGram connectors table, per-connector access requests, one centred sphere, grant separate from membership (D-45..D-48)]] (2026-10-11)
 - [[knowledge/decisions/Service images are rebuilt from a clean git export of HEAD, not the dirty working tree|Service images are rebuilt from a clean git export of HEAD, not the dirty working tree]] (2026-10-11)
 - [[knowledge/decisions/DeGram access is granted by the project owner, not pasted by the user|DeGram access is granted by the project owner; ring-centre pill, DeGram sidebar, Модели screen (D-39..D-44)]] (2026-10-11)
@@ -210,6 +213,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - `graphify-out/` — сырой граф (1836 nodes, 198 communities); regen заметок: `scripts/refresh_graphify.sh`
 
 ### Operational
+- [[sessions/2026-10-12 Phase 1301 gap plans 37-41 executed, DeGram 0.1.11 built and UAT result|2026-10-12 Phase 1301 gap plans 37–41 executed, DeGram 0.1.11 built; owner UAT steps 1–5, 7 pass, step 6 became D-49]]
 - [[sessions/2026-10-11 DeGram 0.1.10 UAT and 0.1.11 fix round planned|2026-10-11 DeGram 0.1.10 UAT (7 pass, 4 fail) and the 0.1.11 fix round planned (plans 37–41, D-45..D-48)]]
 - [[sessions/2026-10-11 Phase 1301 gap round executed and DeGram 0.1.10 built|2026-10-11 Phase 1301 gap plans 33–36 executed, DeGram 0.1.10 built and services rebuilt from clean HEAD; owner live UAT pending]]
 - [[sessions/2026-10-11 Phase 1301 plans 31-32 and plan 33 blocked|2026-10-11 Phase 1301 plans 31–32 offline-complete; plan 33 blocked by denied pairing-panel deletion and failing full checks]]
