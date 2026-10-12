@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1308
 current_phase_name: dg-web-ui
-current_plan: 9
+current_plan: 10
 status: executing
-stopped_at: Completed 1308-09-PLAN.md
-last_updated: "2026-10-12T14:08:51.207Z"
+stopped_at: Completed 1308-23-PLAN.md
+last_updated: "2026-10-12T14:16:02.365Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 1308 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 77
-  completed_plans: 53
+  completed_plans: 54
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1308 (dg-web-ui) — EXECUTING
 Current Phase: 1308
 Current Phase Name: dg-web-ui
-Current Plan: 9
+Current Plan: 10
 Total Plans in Phase: 24
-Plan: 9 of 24
+Plan: 10 of 24
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 1308 execution started
 Last Activity Description: Phase 1308 execution started
@@ -194,6 +194,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1308 P08 | 25min | 2 tasks | 2 files |
 | Phase 1308 P07 | 40min | 3 tasks | 12 files |
 | Phase 1308 P09 | 50min | 3 tasks | 10 files |
+| Phase 1308 P23 | 25min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -554,6 +555,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [1308-08] d49_store_cleanup.py: fixed targets, --apply only flag, plan-all-then-write, exit 2 refusal if another member in uat-pw-bd30ce, exit 3 on malformed store
 - [Phase ?]: 1308-07: owner approved fresh CONNECTOR GUID EF2E6F2A-3450-4907-94CB-31B1240AB848; sign-in completing after supersession is signed out immediately
 - [Phase ?]: 1308-09: owner answered proceed on one-way retirement; POST /connectors/{id}/credentials is a 410 CONNECTOR_TOKENS_RETIRED tombstone on a session policy row; owner/admin exempt, editor/viewer need a connector grant
+- [Phase ?]: 1308-23: landing relayout runs one frame after dg-lang (React re-renders after the event); auth errors stored as codes and translated at render
 
 ### Research Flags (carry into planning)
 
@@ -649,8 +651,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T14:08:51.184Z
-Stopped at: Completed 1308-09-PLAN.md
+Last session: 2026-10-12T14:16:02.342Z
+Stopped at: Completed 1308-23-PLAN.md
 Resume file: None
 
 ## Performance Metrics

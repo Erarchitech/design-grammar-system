@@ -453,7 +453,7 @@ Plans:
 **Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
 **Requirements**: WEBUI-01, WEBUI-02, WEBUI-03, WEBUI-04, WEBUI-05, WEBUI-06, WEBUI-07, WEBUI-08, WEBUI-09, WEBUI-10, WEBUI-11
 **Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
-**Plans:** 9/24 plans executed
+**Plans:** 10/24 plans executed
 
 Plans:
 **Wave 1**
@@ -476,7 +476,7 @@ Plans:
 - [ ] 1308-10-PLAN.md — ui-v2 Projects: role Select + admin-only Project settings (export policy)
 - [ ] 1308-12-PLAN.md — ui-v2 translation: Graph area
 - [ ] 1308-16-PLAN.md — ui-v2 translation: Reasoner, LLM model (title rename), API docs chrome, DeGram grants panel, lib messages
-- [ ] 1308-23-PLAN.md — ui-v2 landing translated (owner-fixed hero strings, LLM model label, live relayout on dg-lang)
+- [x] 1308-23-PLAN.md — ui-v2 landing translated (owner-fixed hero strings, LLM model label, live relayout on dg-lang)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
