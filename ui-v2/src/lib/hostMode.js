@@ -24,7 +24,8 @@ export function clearHostSignal() {
 export function parseHostSignal(hash) {
   if (!DEGRAM_HOST || typeof hash !== "string") return null;
   if (/^#degram-state=(connecting|ready|idle)$/.test(hash)) return { state: hash.slice(14) };
-  if (/^#degram-go=(landing|graph|model|connectors)$/.test(hash)) return { go: hash.slice(11) };
+  // Keep this vocabulary paired with the fork's HOST_GO_FRAGMENT in apps/degram/apps/desktop/electron/degram/dg-view.ts.
+  if (/^#degram-go=(landing|graph|model|connectors|projects)$/.test(hash)) return { go: hash.slice(11) };
   // The language DeGram Settings -> Appearance -> Language selected (sender: DeGram dg-view.ts `signal`, plan
   // 1308-21). Closed vocabulary; it only changes the display language and grants no API, storage or navigation
   // capability (D-52).

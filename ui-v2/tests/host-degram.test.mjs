@@ -50,8 +50,8 @@ test("host signals accept only exact state and navigation vocabulary", async () 
   const hosted = await hostMode("?host=degram&lang=ru");
   assert.equal(hosted.hostLang(), "ru");
   for (const state of ["connecting", "ready", "idle"]) assert.deepEqual(hosted.parseHostSignal(`#degram-state=${state}`), { state });
-  for (const go of ["landing", "graph", "model", "connectors"]) assert.deepEqual(hosted.parseHostSignal(`#degram-go=${go}`), { go });
-  for (const hash of ["#degram", "#degram-state=READY", "#degram-state=ready&x=1", "#degram-go=reasoner", "#degram-go=projects", "#degram-go=graph/other", "#degram-select=A", "#degram-new-session"]) {
+  for (const go of ["landing", "graph", "model", "connectors", "projects"]) assert.deepEqual(hosted.parseHostSignal(`#degram-go=${go}`), { go });
+  for (const hash of ["#degram", "#degram-state=READY", "#degram-state=ready&x=1", "#degram-go=reasoner", "#degram-go=aiengine", "#degram-go=", "#degram-go=graph/other", "#degram-select=A", "#degram-new-session"]) {
     assert.equal(hosted.parseHostSignal(hash), null, hash);
   }
   const normal = await hostMode("?lang=ru");
