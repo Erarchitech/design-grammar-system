@@ -42,7 +42,6 @@ from typing import Any, Mapping
 
 from fastapi import HTTPException, Request
 
-import connectors
 import route_policy
 
 # ── Constants (Claude's discretion per 1205-02-PLAN.md Artifacts table) ──
@@ -423,7 +422,8 @@ class Principal:
     never an admin. A `connector` principal from a `dgk_` sign-in session
     (Phase 1308-06, D-26) additionally carries the signing-in `username`, the
     `connector_id` it signed in for, the project's `company`, and the session id
-    as `credential_id`; a legacy `dgc_` connector principal has none of those."""
+    as `credential_id`. The retired `dgc_` connector token resolves to no
+    principal at all (1308-13)."""
 
     kind: str
     username: str | None = None
@@ -455,40 +455,29 @@ def resolve_session_principal(token: str, *, now: int | None = None) -> Principa
 def resolve_connector_principal(token: str) -> Principal | None:
     """Resolve a connector Bearer token to a `connector` Principal.
 
-    A `dgk_` sign-in session (Phase 1308, D-26) goes through
+    Only a `dgk_` sign-in session (Phase 1308, D-26) resolves. It goes through
     `connector_session.authenticate`, which re-checks the user, the company and
     the per-connector authorization live and raises its own named 401/403
-    errors. A legacy `dgc_` token (accepted only until the retirement in plan
-    1308-13) goes through `connectors.authenticate_token` -- an auth check, not a
-    liveness stamp, so it must never touch last_connection. None for a
-    revoked/unknown legacy token or any other prefix.
+    errors. Every other value -- the retired `dgc_` connector token included
+    (refused since 1308-13) -- returns None, which the callers map to 401
+    CONNECTOR_AUTH_FAILED with the sign-in hint.
     """
     if not token:
         return None
     import connector_session  # noqa: PLC0415 -- connector_session imports this module
 
-    if token.startswith(connector_session.SESSION_TOKEN_PREFIX):
-        record = connector_session.authenticate(token)
-        if record is None:
-            return None
-        return Principal(
-            kind="connector",
-            username=record["username"],
-            bound_project=record["project"],
-            credential_id=record["session_id"],
-            connector_id=record["connector_id"],
-            company=record.get("company"),
-        )
-    if not token.startswith(connectors.TOKEN_PREFIX):
+    if not token.startswith(connector_session.SESSION_TOKEN_PREFIX):
         return None
-    record = connectors.authenticate_token(token)
+    record = connector_session.authenticate(token)
     if record is None:
         return None
-    bound_project = record.get("project") or "default-project"
     return Principal(
         kind="connector",
-        bound_project=bound_project,
-        credential_id=record.get("credential_id"),
+        username=record["username"],
+        bound_project=record["project"],
+        credential_id=record["session_id"],
+        connector_id=record["connector_id"],
+        company=record.get("company"),
     )
 
 

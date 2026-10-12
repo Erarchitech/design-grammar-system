@@ -23,6 +23,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
+import auth  # noqa: E402
+import auth_fixtures  # noqa: E402
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
 from app import app  # noqa: E402
 
@@ -70,6 +73,28 @@ def _mint(connector_id: str, project: str | None = "P1", label: str | None = Non
     ``connectors.create_credential`` stays only to seed legacy rows here until
     plan 1308-13 refuses them and 1308-24 deletes the function."""
     return connectors.create_credential(connector_id, label, project)
+
+
+def _session(connector_id: str = "grasshopper", project: str = "P1", now: int | None = None) -> str:
+    """A real ``dgk_`` connector sign-in session (D-26): what the heartbeat
+    authenticates with since 1308-13. The shared test admin is exempt from the
+    per-connector grant."""
+    if now is None:
+        return auth_fixtures.connector_token_for(project, connector_id=connector_id)
+    auth_fixtures.connector_token_for(project, connector_id=connector_id)  # ensure the admin exists
+    token, _record = connector_session.issue(
+        username=auth_fixtures.TEST_ADMIN_USERNAME,
+        project=project,
+        connector_id=connector_id,
+        now=now,
+    )
+    return token
+
+
+def _stored_session_row(token: str) -> dict:
+    digest = connector_session._hash(token)
+    rows = auth._load(connector_session._file(), "sessions")
+    return next(r for r in rows if r["token_hash"] == digest)
 
 
 # ── Registry Shape ──
@@ -158,50 +183,63 @@ class TestCreateCredential:
         assert set(summary) == {"credential_id", "label", "created_at", "revoked"}
 
 
-# ── Heartbeat (CONNB-03) ──
+# ── Heartbeat (CONNB-03, D-26/D-34) ──
+#
+# The heartbeat is a normal connector row now: the caller is a `dgk_` sign-in
+# session, never an anonymous token check. No cookie is attached, so the
+# principal is exactly what the Bearer says.
 
 
+@pytest.mark.dg_principal("none")
 class TestHeartbeat:
-    def test_valid_token_activates_and_stamps_last_connection(self):
-        _record, token = _mint("blender")
+    def test_valid_session_activates_and_stamps_last_seen(self):
+        issued_at = int(datetime.now(timezone.utc).timestamp()) - 3600
+        token = _session("blender", now=issued_at)
+        assert _stored_session_row(token)["last_seen"] == issued_at
+
         response = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 200
         body = response.json()
         assert body["connector_id"] == "blender"
+        assert body["project"] == "P1"
         assert body["status"] == "active"
+        assert _stored_session_row(token)["last_seen"] > issued_at
 
-        overview = client.get("/connectors").json()["connectors"]
-        blender = next(c for c in overview if c["id"] == "blender")
-        assert blender["status"] == "active"
-        assert blender["last_connection"] is not None
-        # Stamped timestamp parses and is recent
-        stamped = datetime.fromisoformat(blender["last_connection"])
-        assert datetime.now(timezone.utc) - stamped < timedelta(minutes=1)
-
-    def test_unknown_token_401(self):
+    def test_unknown_session_401(self):
         response = client.post(
-            "/connectors/heartbeat", headers={"Authorization": "Bearer dgc_not-a-real-token"}
+            "/connectors/heartbeat",
+            headers={"Authorization": "Bearer dgk_not-a-real-session"},
         )
         assert response.status_code == 401
         assert response.json()["detail"]["code"] == "CONNECTOR_AUTH_FAILED"
+
+    def test_legacy_stored_token_401(self):
+        """D-26: a valid, non-revoked legacy `dgc_` credential no longer
+        authenticates the heartbeat, and the refusal stamps nothing."""
+        _record, token = _mint("tekla")
+        response = client.post(
+            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"]["code"] == "CONNECTOR_AUTH_FAILED"
+        assert _read_store()[0]["last_connection"] is None
 
     def test_missing_or_malformed_authorization_401(self):
         assert client.post("/connectors/heartbeat").status_code == 401
         assert (
             client.post(
-                "/connectors/heartbeat", headers={"Authorization": "Basic dgc_whatever"}
+                "/connectors/heartbeat", headers={"Authorization": "Basic dgk_whatever"}
             ).status_code
             == 401
         )
 
-    def test_revoked_token_401(self):
-        record, token = _mint("tekla")
-        created = {"credential_id": record["credential_id"]}
+    def test_revoked_session_401(self):
+        token = _session("tekla")
         assert (
             client.delete(
-                f"/connectors/tekla/credentials/{created['credential_id']}"
+                "/auth/connector-session", headers={"Authorization": f"Bearer {token}"}
             ).status_code
             == 204
         )
@@ -209,35 +247,38 @@ class TestHeartbeat:
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 401
+        assert response.json()["detail"]["code"] == "CONNECTOR_SESSION_ENDED"
+
+    def test_a_user_session_cookie_is_not_a_connector(self):
+        """The row lists the connector principal only: a signed-in user cookie
+        is refused, not treated as a heartbeat."""
+        cookie = auth_fixtures.admin_session_token()
+        as_user = TestClient(app, raise_server_exceptions=False)
+        as_user.cookies.set(auth.SESSION_COOKIE_NAME, cookie)
+        response = as_user.post("/connectors/heartbeat", headers={auth.CSRF_HEADER: "1"})
+        assert response.status_code == 403
+        assert response.json()["detail"]["code"] == "PRINCIPAL_NOT_PERMITTED"
 
 
-# ── Phase 825 (CONNG-03): project-scoped token + connection bundle ──
+# ── Phase 825 (CONNG-03): project-scoped session + connection bundle ──
 
 
+@pytest.mark.dg_principal("none")
 class TestHeartbeatBundle:
-    def test_created_project_is_echoed_by_heartbeat(self):
-        _record, token = _mint("grasshopper", "urban-tower")
+    def test_session_project_is_echoed_by_heartbeat(self):
+        token = _session("grasshopper", "urban-tower")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
         assert body["project"] == "urban-tower"
 
-    def test_missing_project_defaults_to_default_project(self):
-        # A legacy credential minted with no project (the route now requires
-        # one, so it is created directly in the store).
-        _record, token = connectors.create_credential("grasshopper")
-        body = client.post(
-            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
-        ).json()
-        assert body["project"] == "default-project"
-
     def test_heartbeat_returns_host_facing_neo4j_bundle(self):
-        _record, token = _mint("grasshopper")
+        token = _session("grasshopper")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
         bundle = body["neo4j"]
-        # Host-facing URI so an off-Docker connector can reach Neo4j — never the
+        # Host-facing URI so an off-Docker connector can reach Neo4j, never the
         # Docker-internal bolt://neo4j:7687 (Phase 825 ADR-825-2).
         assert bundle["uri"] == "bolt://localhost:7687"
         assert bundle["uri"] != "bolt://neo4j:7687"
@@ -249,7 +290,7 @@ class TestHeartbeatBundle:
         import app as app_module
 
         monkeypatch.setattr(app_module, "NEO4J_PUBLIC_URI", "bolt://10.0.0.5:7687")
-        _record, token = _mint("grasshopper")
+        token = _session("grasshopper")
         body = client.post(
             "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
         ).json()
@@ -319,13 +360,14 @@ class TestRevokeLifecycle:
         assert response.json()["detail"]["code"] == "CREDENTIAL_NOT_FOUND"
 
     def test_revoke_preserves_last_connection_history(self):
-        """Revoking a credential keeps the connector's past connection date."""
-        record, token = _mint("solibri")
+        """Revoking a credential keeps the connector's past connection date.
+        The legacy row is stamped directly: the heartbeat no longer touches it
+        (the overview moves to sessions in 1308-24)."""
+        record, _token = _mint("solibri")
         created = {"credential_id": record["credential_id"]}
-        client.post(
-            "/connectors/heartbeat",
-            headers={"Authorization": f"Bearer {token}"},
-        )
+        stored = _read_store()
+        stored[0]["last_connection"] = datetime.now(timezone.utc).isoformat()
+        connectors.save_credentials(stored)
         client.delete(f"/connectors/solibri/credentials/{created['credential_id']}")
 
         overview = client.get("/connectors").json()["connectors"]

@@ -7,7 +7,9 @@ from the 1205-08 fixtures and from ``connector_session`` itself.
 
 from __future__ import annotations
 
+import hashlib
 import os
+import secrets
 import sys
 
 import pytest
@@ -76,6 +78,29 @@ def _grant(username, project=P1, connector_id=GH):
     return connector_access.issue_access(project, username, connector_id, OWNER)
 
 
+def _stored_legacy_token(project):
+    """A retired ``dgc_`` token that is still present, hashed and non-revoked, in
+    the credential store -- the strongest case a refusal has to cover (D-26).
+    Built without the legacy minting helpers."""
+    token = connectors.TOKEN_PREFIX + secrets.token_urlsafe(32)
+    connectors.save_credentials(
+        connectors.load_credentials()
+        + [
+            {
+                "credential_id": secrets.token_hex(16),
+                "connector_id": GH,
+                "label": "",
+                "project": project,
+                "token_hash": hashlib.sha256(token.encode()).hexdigest(),
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "revoked": False,
+                "last_connection": None,
+            }
+        ]
+    )
+    return token
+
+
 def _session_headers(username):
     token = auth_fixtures.session_cookie_for(username)
     return {"Cookie": f"{auth.SESSION_COOKIE_NAME}={token}", **CSRF}
@@ -101,11 +126,9 @@ def test_resolver_returns_none_for_a_foreign_prefix():
     assert auth.resolve_connector_principal("") is None
 
 
-def test_resolver_still_accepts_a_legacy_dgc_token_until_retirement():
-    _record, token = connectors.create_credential(GH, project=P1)
-    principal = auth.resolve_connector_principal(token)
-    assert principal is not None and principal.bound_project == P1
-    assert principal.connector_id is None
+def test_resolver_refuses_a_stored_legacy_dgc_token():
+    token = _stored_legacy_token(P1)
+    assert auth.resolve_connector_principal(token) is None
 
 
 def test_resolver_raises_the_named_error_for_an_unknown_dgk_token():
@@ -372,10 +395,10 @@ def test_a_delegated_token_cannot_reach_connector_write_routes(client):
 
 
 def test_a_legacy_dgc_token_cannot_mint(client):
-    _record, token = connectors.create_credential(GH, project=P1)
+    token = _stored_legacy_token(P1)
     response = _mint(client, OWNER, headers={**_bearer(token), **CSRF})
-    assert response.status_code == 403
-    assert _code(response) == "PRINCIPAL_NOT_PERMITTED"
+    assert response.status_code == 401
+    assert _code(response) == "CONNECTOR_AUTH_FAILED"
 
 
 def test_the_store_holds_only_the_hash(client):
@@ -430,3 +453,36 @@ def test_policy_rows_are_the_documented_shape():
     assert mint.project_source is None
     assert revoke.principals == frozenset({route_policy.PRINCIPAL_CONNECTOR})
     assert revoke.project_source is None
+
+
+# -- the retired dgc_ token is accepted nowhere (D-26, T-1308-13-01) ---------
+
+LEGACY_SWEEP = [
+    ("POST", "/connectors/heartbeat", None),
+    ("POST", "/designstate/capture", {"project": P1, "statePayloadJson": "{}"}),
+    ("POST", "/validation/publish", {"project": P1}),
+    ("POST", "/computgraph/publish", {"project": P1}),
+    ("GET", f"/validation/view/{P1}", None),
+    ("DELETE", "/auth/connector-session", None),
+]
+
+
+@pytest.mark.parametrize("method,path,body", LEGACY_SWEEP, ids=[f"{m} {p}" for m, p, _ in LEGACY_SWEEP])
+def test_a_stored_legacy_token_answers_401_on_every_connector_route(client, method, path, body):
+    token = _stored_legacy_token(P1)
+    kwargs = {"headers": _bearer(token)}
+    if body is not None:
+        kwargs["json"] = body
+    response = client.request(method, path, **kwargs)
+    assert response.status_code == 401, (method, path, response.status_code, response.text)
+    assert _code(response) == "CONNECTOR_AUTH_FAILED"
+    detail = response.json()["detail"]
+    assert "POST /auth/connector-session" in detail["hint"]
+    assert token not in response.text
+
+
+def test_the_legacy_refusal_leaves_the_credential_row_untouched(client):
+    token = _stored_legacy_token(P1)
+    before = connectors.load_credentials()
+    assert client.post("/connectors/heartbeat", headers=_bearer(token)).status_code == 401
+    assert connectors.load_credentials() == before

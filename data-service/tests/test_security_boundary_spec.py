@@ -5,7 +5,7 @@ The spec carries four machine-checked fenced blocks (each wrapped in
 ``<!-- security-boundary:<name>:start/end -->`` comments, the same convention as
 ``spec/REPRODUCIBILITY.md``):
 
-* ``public-routes``        == the public policy rows plus ``POST /connectors/heartbeat``
+* ``public-routes``        == the public policy rows (exactly five)
 * ``route-policy``         == ``route_policy.ROUTE_POLICIES`` field by field, and
                               the registered app routes
 * ``known-default-secrets`` == ``secrets_policy`` literals, prefixes and digests
@@ -46,9 +46,7 @@ BLOCKS = ("public-routes", "route-policy", "known-default-secrets", "published-p
 # Public credential column: everything is "none" unless named here.
 PUBLIC_CREDENTIALS = {
     ("POST", "/auth/accept-invite"): "invite-code",
-    ("POST", "/connectors/heartbeat"): "connector-token",
 }
-HEARTBEAT = ("POST", "/connectors/heartbeat")
 
 _HEX64 = re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{64}(?![0-9A-Fa-f])")
 
@@ -154,14 +152,11 @@ def code_route_policy() -> dict[tuple[str, str], tuple]:
 
 
 def code_public_routes() -> dict[tuple[str, str], str]:
-    rows = {
+    return {
         key: PUBLIC_CREDENTIALS.get(key, "none")
         for key, policy in route_policy.ROUTE_POLICIES.items()
         if route_policy.PRINCIPAL_PUBLIC in policy.principals
     }
-    assert HEARTBEAT in route_policy.ROUTE_POLICIES, "the heartbeat has no policy row"
-    rows[HEARTBEAT] = PUBLIC_CREDENTIALS[HEARTBEAT]
-    return rows
 
 
 def code_known_defaults() -> dict[str, set[str]]:
@@ -339,17 +334,16 @@ def test_route_policy_block_equals_the_registered_app_routes(spec_text):
     assert stale == set(), f"spec rows naming no app route: {sorted(stale)}"
 
 
-def test_public_routes_block_equals_public_and_heartbeat_policies(spec_text):
+def test_public_routes_block_equals_public_policies(spec_text):
     spec_rows = parse_public_block(block_lines(spec_text, "public-routes"))
     assert _diff_rows("public-routes", spec_rows, code_public_routes()) == []
-    # the allowlist really is the six documented routes
+    # the allowlist really is the five documented routes
     assert set(spec_rows) == {
         ("GET", "/"),
         ("GET", "/auth/options"),
         ("POST", "/auth/login"),
         ("POST", "/auth/register"),
         ("POST", "/auth/accept-invite"),
-        HEARTBEAT,
     }
 
 

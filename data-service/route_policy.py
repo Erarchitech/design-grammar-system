@@ -210,7 +210,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("DELETE", "/connectors/{connector_id}/credentials/{credential_id}"): _p(
         _MEM, source="resource:credential", role="editor"
     ),
-    ("POST", "/connectors/heartbeat"): _p(_SELF),
+    ("POST", "/connectors/heartbeat"): _p(_CON),
     # Phase 1301-17 (D-25), retired by plan 30 (D-39): creating a pairing answers
     # 410 PAIRING_RETIRED; the revoke row stays for cleanup of stored pairings
     # (owner of the pairing or an admin, 404 PAIRING_NOT_FOUND otherwise).

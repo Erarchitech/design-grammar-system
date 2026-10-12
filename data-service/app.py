@@ -1793,28 +1793,29 @@ def _neo4j_bundle_or_none() -> "connectors.Neo4jBundle | None":
 
 @router.post("/connectors/heartbeat")
 def connector_heartbeat(request: Request):
-    """Token-authenticated heartbeat. Updates the connector's last_connection
-    and returns its derived status. 401 on unknown/revoked token (CONNB-03).
+    """Session heartbeat (CONNB-03, D-26, D-34). A normal connector route: the
+    dispatch has already resolved the `dgk_` sign-in session into a connector
+    principal (401 CONNECTOR_AUTH_FAILED for an unknown, malformed or retired
+    `dgc_` Bearer; the named session errors for an expired, ended or
+    unauthorized one). This stamps `last_seen` on that session and answers the
+    connector's derived status over its bound project.
     """
+    principal = request.state.principal
     auth_header = request.headers.get("Authorization", "")
     token = auth_header[len("Bearer "):].strip() if auth_header.startswith("Bearer ") else ""
-    record = connectors.record_heartbeat(token) if token.startswith(connectors.TOKEN_PREFIX) else None
-    if record is None:
-        raise _structured_error_response(
-            "Invalid or revoked connector token.",
-            "Create a new credential via POST /connectors/{connector_id}/credentials.",
-            "CONNECTOR_AUTH_FAILED",
-            401,
-        )
-    neo4j_bundle = _neo4j_bundle_or_none()
+    if connector_session.touch(token) is None:
+        # Resolved a moment ago and gone now (revoked or expired in between).
+        raise connector_session.session_ended()
+    project = principal.bound_project
     return HeartbeatResponse(
-        connector_id=record["connector_id"],
-        status=connectors.derive_status(record["last_connection"]),
-        # Phase 825: unlock the project scope + host-facing Neo4j connection bundle
-        # for the authenticated connector. Old records without a project read as
-        # "default-project".
-        project=record.get("project") or "default-project",
-        neo4j=neo4j_bundle,
+        connector_id=principal.connector_id,
+        status=connector_session.status_for(
+            principal.connector_id, projects={project}
+        )["status"],
+        # Phase 825 / D-34: the project scope + the host-facing Neo4j bundle,
+        # withheld in the multi-user profile (`_neo4j_bundle_or_none`).
+        project=project,
+        neo4j=_neo4j_bundle_or_none(),
     )
 
 
@@ -3075,11 +3076,13 @@ def capture_design_state(request: Request, payload: DesignStateCaptureRequest):
     component wiring and no live Rhino behind it -- the GH-side capture client
     is deferred to a follow-up milestone.
 
-    Authentication is the inline connector-token check of P-01. The token is
-    resolved through the connectors module's `authenticate_token`, deliberately
-    NOT through its `record_heartbeat`: the latter stamps `last_connection` on
-    the credential, which would misrepresent capture traffic as liveness.
-    The credential's bound `project` must equal the body's `project` exactly
+    Authentication is the inline connector-session check of P-01 (D-26). The
+    Bearer is resolved through `auth.resolve_connector_principal`, so only a
+    `dgk_` sign-in session authenticates (the named session errors propagate;
+    anything else, the retired `dgc_` token included, is 401). It is
+    deliberately NOT stamped through `connector_session.touch`: that would
+    misrepresent capture traffic as liveness.
+    The session's bound `project` must equal the body's `project` exactly
     (T-39-02) -- no other endpoint accepts a caller-supplied project alongside
     a connector token, so this comparison is new logic, not a borrowed idiom.
 
@@ -3091,24 +3094,24 @@ def capture_design_state(request: Request, payload: DesignStateCaptureRequest):
     """
     auth_header = request.headers.get("Authorization", "")
     token = auth_header[len("Bearer "):].strip() if auth_header.startswith("Bearer ") else ""
-    record = connectors.authenticate_token(token) if token.startswith(connectors.TOKEN_PREFIX) else None
-    if record is None:
+    principal = auth.resolve_connector_principal(token)
+    if principal is None:
         raise _structured_error_response(
-            "Invalid or revoked connector token.",
-            "Create a new credential via POST /connectors/{connector_id}/credentials.",
+            "Invalid or retired connector token.",
+            "Sign in from the connector with your DG account (POST /auth/connector-session).",
             "CONNECTOR_AUTH_FAILED",
             401,
         )
 
     # T-39-02. The message is deliberately generic (T-39-06): it names neither
-    # the credential's bound project nor the requested one, so this endpoint
+    # the session's bound project nor the requested one, so this endpoint
     # cannot be used to probe which projects exist or which project a stolen
     # token belongs to.
-    if (record.get("project") or "default-project") != payload.project:
+    if principal.bound_project != payload.project:
         raise _structured_error_response(
-            "This connector token is not authorized for the requested project.",
-            "Create a credential scoped to the project you are capturing into, via "
-            "POST /connectors/{connector_id}/credentials.",
+            "This connector session is not authorized for the requested project.",
+            "Sign in from the connector for the project you are capturing into "
+            "(POST /auth/connector-session).",
             "CAPTURE_PROJECT_MISMATCH",
             403,
         )

@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret-for-deployment-profile")
 
 import auth  # noqa: E402
+import auth_fixtures  # noqa: E402
 import connectors  # noqa: E402
 import dsav_watcher  # noqa: E402
 import app as app_module  # noqa: E402
@@ -75,7 +76,7 @@ def _set_passing_secrets(monkeypatch, *, except_neo4j_password=False):
 
 def test_heartbeat_local_profile_includes_neo4j_bundle(monkeypatch):
     monkeypatch.setenv("DG_DEPLOYMENT", "local")
-    _record, token = connectors.create_credential("grasshopper", project="P1")
+    token = auth_fixtures.connector_token_for("P1")
 
     client = TestClient(app, raise_server_exceptions=False)
     resp = client.post("/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"})
@@ -89,7 +90,7 @@ def test_heartbeat_local_profile_includes_neo4j_bundle(monkeypatch):
 
 def test_heartbeat_multi_user_profile_omits_neo4j_bundle(monkeypatch):
     monkeypatch.setenv("DG_DEPLOYMENT", "multi-user")
-    _record, token = connectors.create_credential("grasshopper", project="P1")
+    token = auth_fixtures.connector_token_for("P1")
 
     client = TestClient(app, raise_server_exceptions=False)
     resp = client.post("/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"})

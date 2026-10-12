@@ -34,6 +34,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
+import auth_fixtures  # noqa: E402
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
 import dsav_watcher  # noqa: E402
 from app import app  # noqa: E402
@@ -50,7 +52,8 @@ CAPTURE_URL = "/designstate/capture"
 @pytest.fixture(autouse=True)
 def isolated_store(tmp_path, monkeypatch):
     """Redirect credential persistence to a per-test temp file so no real
-    credential store is ever read or written (test_connectors.py convention)."""
+    credential store is ever read or written (test_connectors.py convention).
+    The legacy store is only read by the legacy-refusal test."""
     monkeypatch.setattr(connectors, "CREDENTIALS_FILE", tmp_path / "connector-credentials.json")
 
 
@@ -72,11 +75,9 @@ def capture_recorder(monkeypatch):
 
 
 def _mint_token(project: str = FIXTURE_PROJECT) -> str:
-    """Mint a connector credential scoped to `project` and return its plaintext
-    token. `create_credential` returns `(record, token)` and defaults `project`
-    to "default-project" when not supplied -- always supplied here."""
-    _record, token = connectors.create_credential("grasshopper", "phase-39-capture", project)
-    return token
+    """A real ``dgk_`` connector sign-in session bound to `project` (D-26): the
+    only credential the capture route accepts since 1308-13."""
+    return auth_fixtures.connector_token_for(project)
 
 
 def _body(project: str = FIXTURE_PROJECT, payload_json: str | None = None) -> dict:
@@ -105,8 +106,8 @@ def test_non_bearer_header_returns_401_auth_failed(capture_recorder):
 
 
 def test_wrong_prefix_token_returns_401_auth_failed(capture_recorder):
-    """A Bearer value that does not carry `connectors.TOKEN_PREFIX` is rejected
-    before `authenticate_token` is ever consulted."""
+    """A Bearer value that does not carry the `dgk_` prefix is rejected before
+    any session lookup."""
     response = client.post(
         CAPTURE_URL, json=_body(), headers={"Authorization": "Bearer not-a-dg-connector-token"}
     )
@@ -117,7 +118,7 @@ def test_wrong_prefix_token_returns_401_auth_failed(capture_recorder):
 
 def test_unknown_token_returns_401_auth_failed(capture_recorder):
     """Well-formed (correct prefix) but never issued."""
-    unknown = connectors.generate_token()
+    unknown = connector_session.SESSION_TOKEN_PREFIX + "never-issued-0123456789abcdef"
     response = client.post(
         CAPTURE_URL, json=_body(), headers={"Authorization": f"Bearer {unknown}"}
     )
@@ -126,16 +127,43 @@ def test_unknown_token_returns_401_auth_failed(capture_recorder):
     assert capture_recorder == []
 
 
-def test_revoked_credential_token_returns_401_auth_failed(capture_recorder):
-    """Revocation takes effect immediately on the capture route, exactly as it
-    does on the heartbeat (CONNB-01)."""
-    record, token = connectors.create_credential("grasshopper", "revoke-me", FIXTURE_PROJECT)
-    assert connectors.revoke_credential("grasshopper", record["credential_id"]) is True
+def test_legacy_credential_token_returns_401_auth_failed(capture_recorder):
+    """D-26: a stored, non-revoked legacy `dgc_` token is accepted nowhere, the
+    capture route included."""
+    token = connectors.TOKEN_PREFIX + "a-valid-looking-legacy-token-0123456789"
+    connectors.save_credentials(
+        connectors.load_credentials()
+        + [
+            {
+                "credential_id": "legacy-capture",
+                "connector_id": "grasshopper",
+                "label": "",
+                "project": FIXTURE_PROJECT,
+                "token_hash": connectors.hash_token(token),
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "revoked": False,
+                "last_connection": None,
+            }
+        ]
+    )
     response = client.post(
         CAPTURE_URL, json=_body(), headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 401
     assert response.json()["detail"]["code"] == "CONNECTOR_AUTH_FAILED"
+    assert capture_recorder == []
+
+
+def test_revoked_session_token_returns_401_session_ended(capture_recorder):
+    """Revocation takes effect immediately on the capture route; the session
+    resolver's named error propagates."""
+    token = _mint_token()
+    assert connector_session.revoke_token(token) is True
+    response = client.post(
+        CAPTURE_URL, json=_body(), headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "CONNECTOR_SESSION_ENDED"
     assert capture_recorder == []
 
 
@@ -202,15 +230,15 @@ def test_matching_project_returns_202_accepted_and_records_one_capture(capture_r
     assert call["captured_at"] == body["capturedAt"]
 
 
-def test_capture_never_calls_record_heartbeat_on_accepted_path(capture_recorder, monkeypatch):
-    """P-01: the route resolves the token with `authenticate_token`, never with
-    `record_heartbeat` -- stamping `last_connection` would misrepresent capture
-    traffic as connector liveness."""
+def test_capture_never_stamps_session_liveness_on_accepted_path(capture_recorder, monkeypatch):
+    """P-01: the route resolves the session through the principal resolver,
+    never through `connector_session.touch` -- stamping `last_seen` would
+    misrepresent capture traffic as connector liveness."""
 
     def _fail(*_args, **_kwargs):
-        raise AssertionError("capture must not call connectors.record_heartbeat")
+        raise AssertionError("capture must not call connector_session.touch")
 
-    monkeypatch.setattr(connectors, "record_heartbeat", _fail)
+    monkeypatch.setattr(connector_session, "touch", _fail)
     token = _mint_token(FIXTURE_PROJECT)
     response = client.post(
         CAPTURE_URL, json=_body(), headers={"Authorization": f"Bearer {token}"}
