@@ -1,0 +1,27 @@
+# Offline hosted structural overlay, applied LAST after the base and multi-user
+# Compose files. Requires Docker Compose >= 2.24.4 (!override and !reset);
+# verified with v2.40.3-desktop.1 on Windows. Linux/remote acceptance is separate.
+# This only binds inherited ingress to loopback for a future approved TLS edge.
+# It is NOT a deployment recipe: origins, signed object URLs, credentials,
+# immutable images, backup and host firewall still require gated work.
+services:
+  ollama: !reset null
+
+  n8n:
+    depends_on: !override
+      - data-service
+    environment:
+      OLLAMA_URL: !reset null
+      OLLAMA_HOST: !reset null
+      OLLAMA_MODEL: !reset null
+
+  design-grammars:
+    ports: !override
+      - "127.0.0.1:8080:80"
+
+  speckle-ingress:
+    ports: !override
+      - "127.0.0.1:8090:8080"
+
+volumes:
+  ollama: !reset null

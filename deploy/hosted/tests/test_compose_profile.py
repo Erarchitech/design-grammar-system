@@ -3,7 +3,9 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -28,7 +30,7 @@ def model(*files):
     with tempfile.TemporaryDirectory(prefix="dg-compose-profile-") as directory:
         fixture = Path(directory) / "fixture.env"
         fixture.write_text(FIXTURE, encoding="utf-8")
-        command = ["docker", "compose", "--env-file", str(fixture)]
+        command = [shutil.which("docker") or "docker", "compose", "--env-file", str(fixture)]
         for file in files:
             command.extend(("-f", str(file)))
         command.extend(("config", "--no-interpolate", "--format", "json"))
@@ -36,9 +38,10 @@ def model(*files):
         # Remove inherited project and variable overrides without affecting PATH/Docker CLI.
         environment = {
             key: value for key, value in os.environ.items()
-            if not key.startswith(("COMPOSE_", "OLLAMA_", "DG_", "NEO4J_", "N8N_", "SPECKLE_", "MINIO_"))
+            if not key.startswith(("COMPOSE_", "OLLAMA_", "DG_", "NEO4J_", "N8N_", "SPECKLE_", "MINIO_", "DOCKER_"))
             and key not in ("POSTGRES_PASSWORD", "LLM_MASTER_SECRET")
         }
+        environment["DOCKER_CONFIG"] = str(Path(directory) / "empty-docker-config")
         completed = subprocess.run(
             command, cwd=directory, env=environment, capture_output=True,
             text=True, check=False, timeout=30,
@@ -80,10 +83,33 @@ class ComposeProfileTests(unittest.TestCase):
                 devices = (service.get("deploy", {}).get("resources", {})
                            .get("reservations", {}).get("devices", []))
                 self.assertFalse(devices, "hosted reservation devices are forbidden")
+                self.assertNotIn("nvidia", str(service.get("runtime", "")).lower())
+                self.assertFalse(service.get("gpus"), "hosted GPU allocation is forbidden")
+                self.assertFalse(
+                    set(service.get("environment", {})) & {"OLLAMA_URL", "OLLAMA_HOST", "OLLAMA_MODEL"},
+                    "hosted Ollama environment is forbidden",
+                )
+                for mount in service.get("volumes", []):
+                    self.assertNotEqual(mount.get("source"), "ollama")
                 for port in service.get("ports", []):
                     self.assertEqual(port.get("host_ip"), "127.0.0.1", "unintended public port")
         for key in ("OLLAMA_URL", "OLLAMA_HOST", "OLLAMA_MODEL"):
             self.assertNotIn(key, services["n8n"].get("environment", {}))
+
+    def test_required_runner_rejects_zero_tests_and_skips(self):
+        runner = Path(__file__).with_name("run_required.py")
+        with tempfile.TemporaryDirectory(prefix="dg-required-tests-") as directory:
+            copy = Path(directory) / "run_required.py"
+            copy.write_bytes(runner.read_bytes())
+            for name, source in (
+                ("test_empty.py", "# deliberately no tests\n"),
+                ("test_skip.py", "import unittest\nclass Skipped(unittest.TestCase):\n"
+                 "    @unittest.skip('required')\n    def test_required(self): pass\n"),
+            ):
+                (Path(directory) / name).write_text(source, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(copy), name],
+                                        capture_output=True, text=True, check=False)
+                self.assertNotEqual(result.returncode, 0, name)
 
 
 if __name__ == "__main__":
