@@ -1,0 +1,5 @@
+{
+  "area": "model",
+  "files": ["src/screens/ModelScreen.jsx"],
+  "allow": ["3D"]
+}

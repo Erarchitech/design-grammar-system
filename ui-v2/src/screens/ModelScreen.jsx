@@ -20,6 +20,8 @@ import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntity
 import { groupRunsByState, NO_STATE } from "../lib/runGroups.js";
 import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib/inputGenApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
+import { useT } from "../i18n/LanguageProvider.jsx";
+import { describeError } from "../i18n/index.js";
 
 // ---- deterministic synthetic massing: degraded-mode fallback only. When
 // Speckle is unavailable (no viewer resources or init error) the viewport renders
@@ -102,7 +104,7 @@ function formatNumber(n) {
 // value per object, so numbers show as a min – max range (a single value when
 // they agree) and text as the value or a count of distinct values. Returns null
 // when the state carries no such property (caller renders an em dash).
-function propSummary(state, iri) {
+function propSummary(state, iri, t) {
   const values = (state?.props || []).filter((p) => p?.iri === iri).map((p) => p.value);
   if (values.length === 0) return null;
   const nums = values.map((v) => Number(v));
@@ -112,7 +114,7 @@ function propSummary(state, iri) {
     return min === max ? formatNumber(min) : formatNumber(min) + " – " + formatNumber(max);
   }
   const distinct = new Set(values.map(String));
-  return distinct.size === 1 ? String(values[0]) : distinct.size + " values";
+  return distinct.size === 1 ? String(values[0]) : t("{n} values", { n: distinct.size });
 }
 
 function readShotStore(key) {
@@ -162,12 +164,13 @@ function downscaleThumb(dataUrl, tw, th, background) {
 // Clickable colour swatch backed by a hidden <input type="color"> —
 // same pattern as the legacy viewer's graphics bar.
 function ColorSwatch({ label, color, onChange }) {
+  const { t } = useT();
   const ref = React.useRef(null);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span
         onClick={() => ref.current?.click()}
-        title={label + " colour"}
+        title={t("{label} colour", { label })}
         style={{
           width: 18,
           height: 18,
@@ -188,6 +191,20 @@ function ColorSwatch({ label, color, onChange }) {
 // validation colouring + minimap + zoom (MVIEW-03), SWRL rule panel and
 // orbit-glyph status legend (MVIEW-04).
 export default function ModelScreen({ active, onBack, project }) {
+  const { t, tc, tp } = useT();
+  const validationStatusLabel = (status) => {
+    switch (status) {
+      case "passed": return t("Passed");
+      case "failed": return tc("validation", "Failed");
+      case "unknown": return t("Unknown");
+      case "not_evaluated": return t("Not evaluated");
+      case "no_population": return t("No population");
+      case "unsupported": return t("Unsupported");
+      case "indeterminate": return t("Indeterminate");
+      case "error": return t("Error");
+      default: return status || t("Unknown");
+    }
+  };
   const [runs, setRuns] = React.useState([]);
   const [loadErr, setLoadErr] = React.useState("");
   const [stateKey, setStateKey] = React.useState(null); // design-state group filter
@@ -349,9 +366,9 @@ export default function ModelScreen({ active, onBack, project }) {
       // keep the current run only if it still exists under this project scope
       setRunId((prev) => (prev && list.some((r) => r.runId === prev) ? prev : list[0]?.runId || null));
     } catch (err) {
-      setLoadErr(err.message || "data-service unreachable");
+      setLoadErr(describeError(err, t("data-service unreachable")));
     }
-  }, [project]);
+  }, [project, t]);
 
   // project switch invalidates every run-scoped bit of state
   React.useEffect(() => {
@@ -392,11 +409,11 @@ export default function ModelScreen({ active, onBack, project }) {
         setHidden([]);
         setIsolate(false);
       })
-      .catch((err) => !gone && setLoadErr(err.message));
+      .catch((err) => !gone && setLoadErr(describeError(err, t("Could not load validation run."))));
     return () => {
       gone = true;
     };
-  }, [runId, project, fetchValidationView]);
+  }, [runId, project, fetchValidationView, t]);
 
   // rule details (SWRL from the metagraph)
   React.useEffect(() => {
@@ -503,7 +520,7 @@ export default function ModelScreen({ active, onBack, project }) {
         ty1: b.y - b.h - 48,
         ty2: b.y - b.h - 34,
         name: b.id.toUpperCase(),
-        status: fail ? "FAILING · " + (ruleId || "").toUpperCase() : "PASSING"
+        status: fail ? t("FAILING · {rule}", { rule: (ruleId || "").toUpperCase() }) : t("PASSING")
       };
     }
   }
@@ -642,25 +659,25 @@ export default function ModelScreen({ active, onBack, project }) {
       <aside style={{ width: 320, flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderRight: "1px solid var(--color-hairline)", overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
           <Button variant="outline" size="sm" onClick={onBack}>
-            ← Back
+            {t("← Back")}
           </Button>
         </div>
         <div>
-          <h3 style={{ margin: 0, font: "600 20px/1.2 var(--font-sans)", letterSpacing: "-0.5px" }}>Model Viewer</h3>
+          <h3 style={{ margin: 0, font: "600 20px/1.2 var(--font-sans)", letterSpacing: "-0.5px" }}>{t("Model Viewer")}</h3>
           <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
             {project || "default-project"}
           </span>
         </div>
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-          <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>Design States</span>
+          <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Design States")}</span>
           <Badge variant="outline">{groups.length}</Badge>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
-              {tileProps.length} / {propCatalogueList.length} props
+              {t("{selected} / {total} props", { selected: tileProps.length, total: propCatalogueList.length })}
             </span>
             <div
               onClick={() => setDsSettingsOpen((v) => !v)}
-              title="Configure tile properties"
+              title={t("Configure tile properties")}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-buttons)", cursor: "pointer", color: "var(--text-secondary)", background: "var(--surface-card)" }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -681,13 +698,13 @@ export default function ModelScreen({ active, onBack, project }) {
               <div onClick={() => setDsSettingsOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 14 }} />
               <div className="dg-frost" style={{ position: "absolute", right: 0, top: 38, zIndex: 15, width: 288, boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", padding: 12, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "0 4px 8px", borderBottom: "1px solid var(--color-hairline)" }}>
-                  <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>Tile Properties</span>
-                  <span style={{ font: "400 9px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>PropState values in {tilePropKey}</span>
+                  <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>{t("Tile Properties")}</span>
+                  <span style={{ font: "400 9px/1.4 var(--font-mono)", color: "var(--text-muted)" }}>{t("PropState values in {project}", { project: tilePropKey })}</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, paddingTop: 4 }}>
                   {propCatalogueList.length === 0 && (
                     <span style={{ padding: "6px 4px", font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
-                      No PropState values in this project's design states
+                      {t("No PropState values in this project's design states")}
                     </span>
                   )}
                   {propCatalogueList.map((p) => {
@@ -715,13 +732,13 @@ export default function ModelScreen({ active, onBack, project }) {
           <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>
             {loadErr}{" "}
             <span onClick={load} style={{ cursor: "pointer", textDecoration: "underline" }}>
-              Retry
+              {t("Retry")}
             </span>
           </div>
         )}
         {!loadErr && runs.length === 0 && (
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-            No validation runs · publish from Grasshopper
+            {t("No validation runs · publish from Grasshopper")}
           </div>
         )}
         {groups.map((g) => {
@@ -735,7 +752,7 @@ export default function ModelScreen({ active, onBack, project }) {
           const propRows = propCatalogueList.filter((p) => tileProps.indexOf(p.iri) >= 0).map((entry) => ({
             key: entry.iri,
             label: entry.label,
-            value: propSummary(g.state, entry.iri)
+            value: propSummary(g.state, entry.iri, t)
           }));
           return (
             <div
@@ -754,10 +771,10 @@ export default function ModelScreen({ active, onBack, project }) {
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ font: "600 13px/1.2 var(--font-mono)", letterSpacing: "-0.1px", color: on ? "var(--color-signal-ink)" : "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {g.key === NO_STATE ? "No design state" : (g.state?.label || g.key)}
+                  {g.key === NO_STATE ? t("No design state") : (g.state?.label || g.key)}
                 </span>
                 <span style={{ font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                  {g.runs.length} run{g.runs.length === 1 ? "" : "s"}
+                  {tp("{n} run", g.runs.length)}
                 </span>
               </div>
               {g.state?.label && g.key !== NO_STATE && (
@@ -784,13 +801,13 @@ export default function ModelScreen({ active, onBack, project }) {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                  <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>Captured</span>
+                  <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Captured")}</span>
                   <span style={{ font: "500 11px/1.3 var(--font-mono)", color: "var(--text-secondary)" }}>
                     {g.state?.capturedAtUtc ? String(g.state.capturedAtUtc).slice(0, 16).replace("T", " ") : "—"}
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                  <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>States</span>
+                  <span style={{ font: "400 10px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("States")}</span>
                   <span style={{ font: "500 11px/1.3 var(--font-mono)", color: "var(--text-secondary)" }}>{g.state?.parameterCount ?? "—"}</span>
                 </div>
               </div>
@@ -799,7 +816,7 @@ export default function ModelScreen({ active, onBack, project }) {
                   {latest?.createdAt ? String(latest.createdAt).slice(0, 10) : ""}
                 </span>
                 <span style={{ font: "500 10px/1.3 var(--font-mono)", color: fails ? "var(--color-signal-ink)" : "var(--text-secondary)" }}>
-                  {rules - fails} / {rules} pass
+                  {t("{passed} / {total} pass", { passed: rules - fails, total: rules })}
                 </span>
               </div>
             </div>
@@ -810,16 +827,16 @@ export default function ModelScreen({ active, onBack, project }) {
       {/* ===== centre: toolbar + map + runs strip ===== */}
       <main style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "10px 16px", background: "var(--surface-card)", borderBottom: "1px solid var(--color-hairline)" }}>
-          <Checkbox label="Failing" checked={mvFail} onChange={setMvFail} />
-          <Checkbox label="Passing" checked={mvPass} onChange={setMvPass} />
+          <Checkbox label={t("Failing")} checked={mvFail} onChange={setMvFail} />
+          <Checkbox label={t("Passing")} checked={mvPass} onChange={setMvPass} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
-          <ColorSwatch label="Fail" color={failColor} onChange={setFailColor} />
-          <Slider label="Fail α" value={aFail} onChange={setAFail} style={{ width: 150 }} />
-          <ColorSwatch label="Pass" color={passColor} onChange={setPassColor} />
-          <Slider label="Pass α" value={aPass} onChange={setAPass} style={{ width: 150 }} />
+          <ColorSwatch label={t("Fail")} color={failColor} onChange={setFailColor} />
+          <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 150 }} />
+          <ColorSwatch label={t("Pass")} color={passColor} onChange={setPassColor} />
+          <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 150 }} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <SearchField
-            placeholder="Select by Id…"
+            placeholder={t("Select by Id…")}
             value={selById}
             style={{ width: 170 }}
             onChange={(e) => {
@@ -831,22 +848,22 @@ export default function ModelScreen({ active, onBack, project }) {
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <div style={{ display: "flex", gap: 4 }}>
             <Button variant="outline" size="sm" selected={viewMode === "3d"} onClick={() => { if (speckleError) retry3d(); else setViewMode("3d"); }}>
-              {speckleError ? "Retry 3D" : "3D"}
+              {speckleError ? t("Retry 3D") : "3D"}
             </Button>
             <Button variant="outline" size="sm" selected={viewMode === "map"} onClick={() => setViewMode("map")}>
-              Map
+              {t("Map")}
             </Button>
           </div>
           <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
             <Button variant="outline" size="sm" selected={isolate} onClick={() => setIsolate((v) => !v)}>
-              Isolate
+              {t("Isolate")}
             </Button>
             <Button variant="outline" size="sm" onClick={() => picked && setHidden((h) => [...h, picked])}>
-              Hide
+              {t("Hide")}
             </Button>
             {hidden.length > 0 && (
               <Button variant="secondary" size="sm" onClick={() => setHidden([])}>
-                Show all
+                {t("Show all")}
               </Button>
             )}
           </div>
@@ -919,7 +936,7 @@ export default function ModelScreen({ active, onBack, project }) {
                 )}
                 {entities.length === 0 && (
                   <text x={viewBox.x + viewBox.w / 2} y={viewBox.y + viewBox.h / 2} textAnchor="middle" fontFamily="Oswald, sans-serif" fontSize="12" letterSpacing="1.4" fill="var(--color-mid-gray)">
-                    {runId ? "NO ENTITIES IN THIS RUN" : "SELECT A VALIDATION RUN"}
+                    {runId ? t("NO ENTITIES IN THIS RUN") : t("SELECT A VALIDATION RUN")}
                   </text>
                 )}
               </svg>
@@ -929,7 +946,7 @@ export default function ModelScreen({ active, onBack, project }) {
                 <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 8, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 2px" }}>
                     <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
-                      Overview
+                      {t("Overview")}
                     </span>
                     <span style={{ font: "500 9px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>{zoomPct.toFixed(1)}×</span>
                   </div>
@@ -942,7 +959,7 @@ export default function ModelScreen({ active, onBack, project }) {
 
         <div style={{ background: "var(--surface-card)", borderTop: "1px solid var(--color-hairline)", padding: "10px 16px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>Validation runs</span>
+            <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Validation runs")}</span>
             <Badge variant="outline">{visibleRuns.length}</Badge>
           </div>
           <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
@@ -951,7 +968,7 @@ export default function ModelScreen({ active, onBack, project }) {
                 key={r.runId}
                 ruleId={r.ruleIds?.[0] ? r.ruleIds[0] + (r.ruleCount > 1 ? " +" + (r.ruleCount - 1) : "") : r.runId}
                 date={r.createdAt ? String(r.createdAt).slice(0, 10) : ""}
-                kind={r.failedRuleCount ? r.failedRuleCount + " failing" : "All pass"}
+                kind={r.failedRuleCount ? tp("{n} failing", r.failedRuleCount) : t("All pass")}
                 thumb={runShots[r.runId]}
                 active={r.runId === runId}
                 onSelect={() => {
@@ -967,22 +984,22 @@ export default function ModelScreen({ active, onBack, project }) {
       {/* ===== right: properties sidebar ===== */}
       <aside style={{ width: 344, flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderLeft: "1px solid var(--color-hairline)", overflow: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
-          <span style={{ font: "600 15px/1.2 var(--font-sans)", letterSpacing: "-0.2px" }}>Properties</span>
+          <span style={{ font: "600 15px/1.2 var(--font-sans)", letterSpacing: "-0.2px" }}>{t("Properties")}</span>
           <span style={{ marginLeft: "auto", font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-            {propMode === "run" ? "Validation run" : "Geometry instance"}
+            {propMode === "run" ? t("Validation run") : t("Geometry instance")}
           </span>
         </div>
 
         {propMode === "run" && view && (
           <>
-            <Panel title="Validation run">
-              <KVRow label="Run Id" value={view.runId} />
-              <KVRow label="Date Created" value={view.createdAt ? String(view.createdAt).slice(0, 19).replace("T", " ") : "—"} />
-              <KVRow label="Base Model" value={view.baseModelId || "—"} />
-              <KVRow label="Validation Model" value={view.validationModelId || "—"} />
+            <Panel title={t("Validation run")}>
+              <KVRow label={t("Run Id")} value={view.runId} />
+              <KVRow label={t("Date Created")} value={view.createdAt ? String(view.createdAt).slice(0, 19).replace("T", " ") : "—"} />
+              <KVRow label={t("Base Model")} value={view.baseModelId || "—"} />
+              <KVRow label={t("Validation Model")} value={view.validationModelId || "—"} />
               <div style={{ display: "flex", gap: 28, marginTop: 10 }}>
-                <StatBlock label="Failing" value={String(failItems.length)} signal={failItems.length > 0} />
-                <StatBlock label="Passing" value={String(passItems.length)} />
+                <StatBlock label={t("Failing")} value={String(failItems.length)} signal={failItems.length > 0} />
+                <StatBlock label={t("Passing")} value={String(passItems.length)} />
               </div>
             </Panel>
             {(() => {
@@ -993,22 +1010,22 @@ export default function ModelScreen({ active, onBack, project }) {
               const shaclReport = view.shaclReport;
               if (!shaclReport) {
                 return (
-                  <Panel title="SHACL Data Integrity">
-                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>Not checked</div>
+                  <Panel title={t("SHACL Data Integrity")}>
+                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{t("Not checked")}</div>
                     <div style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)", marginTop: 2 }}>
-                      This run predates SHACL validation.
+                      {t("This run predates SHACL validation.")}
                     </div>
                   </Panel>
                 );
               }
               if (shaclReport.status === "unavailable" || shaclReport.status === "timeout") {
                 return (
-                  <Panel title="SHACL Data Integrity">
-                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>Not evaluated</div>
+                  <Panel title={t("SHACL Data Integrity")}>
+                    <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{t("Not evaluated")}</div>
                     <div style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)", marginTop: 2 }}>
                       {shaclReport.status === "timeout"
-                        ? "SHACL validation timed out when this run published."
-                        : "SHACL validator was unreachable when this run published."}
+                        ? t("SHACL validation timed out when this run published.")
+                        : t("SHACL validator was unreachable when this run published.")}
                     </div>
                   </Panel>
                 );
@@ -1016,15 +1033,15 @@ export default function ModelScreen({ active, onBack, project }) {
               const shaclResults = shaclReport.results || [];
               if (shaclResults.length === 0) {
                 return (
-                  <Panel title="SHACL Data Integrity">
+                  <Panel title={t("SHACL Data Integrity")}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--color-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
                         <path d="M20 6 9 17l-5-5" />
                       </svg>
-                      <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--color-ink)" }}>Conforms</span>
+                      <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--color-ink)" }}>{t("Conforms")}</span>
                     </div>
                     <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)", marginTop: 4 }}>
-                      No data-integrity issues found in this run.
+                      {t("No data-integrity issues found in this run.")}
                     </div>
                   </Panel>
                 );
@@ -1034,9 +1051,9 @@ export default function ModelScreen({ active, onBack, project }) {
                 (bySeverity[f.severity] || bySeverity.violation).push(f);
               });
               const chipDefs = [
-                { severity: "violation", variant: "violation", singular: "Violation", plural: "Violations" },
-                { severity: "warning", variant: "warning", singular: "Warning", plural: "Warnings" },
-                { severity: "info", variant: "info", singular: "Info", plural: "Info" }
+                { severity: "violation", variant: "violation", singular: t("Violation"), plural: t("Violations") },
+                { severity: "warning", variant: "warning", singular: t("Warning"), plural: t("Warnings") },
+                { severity: "info", variant: "info", singular: t("Info"), plural: t("Info") }
               ];
               const chips = chipDefs
                 .map((d) => ({ ...d, n: bySeverity[d.severity].length }))
@@ -1054,8 +1071,8 @@ export default function ModelScreen({ active, onBack, project }) {
                 >
                   <span style={{ font: "500 12px/1.3 var(--font-mono)", color: "var(--color-ink)" }}>{f.focusLabel || "—"}</span>
                   <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-secondary)" }}>{f.what || "—"}</span>
-                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>Where: {f.where || "—"}</span>
-                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>Fix: {f.howToFix || "—"}</span>
+                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>{t("Where: {value}", { value: f.where || "—" })}</span>
+                  <span style={{ font: "400 11px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>{t("Fix: {value}", { value: f.howToFix || "—" })}</span>
                 </div>
               );
               const severityGroup = (label, tone, items, open, setOpen) =>
@@ -1065,7 +1082,7 @@ export default function ModelScreen({ active, onBack, project }) {
                   </Collapsible>
                 );
               return (
-                <Panel title="SHACL Data Integrity">
+                <Panel title={t("SHACL Data Integrity")}>
                   <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                     {chips.map((c, i) => (
                       <React.Fragment key={c.severity}>
@@ -1077,24 +1094,24 @@ export default function ModelScreen({ active, onBack, project }) {
                     ))}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-                    {severityGroup("Violations", "violation", bySeverity.violation, shaclViolationOpen, setShaclViolationOpen)}
-                    {severityGroup("Warnings", "warning", bySeverity.warning, shaclWarningOpen, setShaclWarningOpen)}
-                    {severityGroup("Info", "info", bySeverity.info, shaclInfoOpen, setShaclInfoOpen)}
+                    {severityGroup(t("Violations"), "violation", bySeverity.violation, shaclViolationOpen, setShaclViolationOpen)}
+                    {severityGroup(t("Warnings"), "warning", bySeverity.warning, shaclWarningOpen, setShaclWarningOpen)}
+                    {severityGroup(t("Info"), "info", bySeverity.info, shaclInfoOpen, setShaclInfoOpen)}
                   </div>
                 </Panel>
               );
             })()}
-            <Collapsible label="Failing items" count={failItems.length} signal={failItems.length > 0} open={failOpen} onToggle={() => setFailOpen((v) => !v)}>
+            <Collapsible label={t("Failing items")} count={failItems.length} signal={failItems.length > 0} open={failOpen} onToggle={() => setFailOpen((v) => !v)}>
               {failItems.map((it) => (
                 <CollapsibleItem key={it.id} primary={it.primary} secondary={it.secondary} selected={picked === it.id} onClick={() => pick(it.id)} />
               ))}
             </Collapsible>
-            <Collapsible label="Passing items" count={passItems.length} open={passOpen} onToggle={() => setPassOpen((v) => !v)}>
+            <Collapsible label={t("Passing items")} count={passItems.length} open={passOpen} onToggle={() => setPassOpen((v) => !v)}>
               {passItems.map((it) => (
                 <CollapsibleItem key={it.id} primary={it.primary} secondary={it.secondary} selected={picked === it.id} onClick={() => pick(it.id)} />
               ))}
             </Collapsible>
-            <Panel title="Rule">
+            <Panel title={t("Rule")}>
               {(view.rules || []).length > 1 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                   {view.rules.map((r) => (
@@ -1105,10 +1122,10 @@ export default function ModelScreen({ active, onBack, project }) {
                 </div>
               )}
               <KVRow label="Rule_Id" value={ruleId || "—"} />
-              <KVRow label="Name" value={rule?.name || "—"} mono={false} />
-              <KVRow label="Description" value={rule?.description || "—"} mono={false} />
+              <KVRow label={t("Name")} value={rule?.name || "—"} mono={false} />
+              <KVRow label={t("Description")} value={rule?.description || "—"} mono={false} />
               <div style={{ marginTop: 10 }}>
-                <CodeBlock label="SWRL Expression">{rule?.swrl || "—"}</CodeBlock>
+                <CodeBlock label={t("SWRL Expression")}>{rule?.swrl || "—"}</CodeBlock>
               </div>
             </Panel>
 
@@ -1122,18 +1139,18 @@ export default function ModelScreen({ active, onBack, project }) {
                 on rule selection (SC3). Rejecting a candidate is a local
                 dismissal only (D-19) — CandidateTable issues no request for
                 it. */}
-            <Panel title="AI input candidates">
+            <Panel title={t("AI input candidates")}>
               {!ruleId && (
                 <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
-                  Select a rule first to generate candidate inputs for it.
+                  {t("Select a rule first to generate candidate inputs for it.")}
                 </div>
               )}
               {ruleId && (
                 <>
-                  <KVRow label="Target rule" value={ruleForGen || ruleId} />
+                  <KVRow label={t("Target rule")} value={ruleForGen || ruleId} />
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginTop: 8, flexWrap: "wrap" }}>
                     <Input
-                      label="Candidate count (1–8)"
+                      label={t("Candidate count (1–8)")}
                       type="number"
                       min={1}
                       max={8}
@@ -1146,7 +1163,7 @@ export default function ModelScreen({ active, onBack, project }) {
                       style={{ width: 110 }}
                     />
                     <Input
-                      label="Parameter overrides (optional, comma-separated)"
+                      label={t("Parameter overrides (optional, comma-separated)")}
                       value={paramOverrides}
                       onChange={(e) => setParamOverrides(e.target.value)}
                       style={{ minWidth: 240 }}
@@ -1176,13 +1193,13 @@ export default function ModelScreen({ active, onBack, project }) {
                           );
                           setCandidates(result);
                         } catch (err) {
-                          setGenErr(err.message + (err.hint ? " — " + err.hint : ""));
+                          setGenErr(describeError(err, t("Candidate request failed.")));
                         } finally {
                           setGenBusy(false);
                         }
                       }}
                     >
-                      {genBusy ? "Generating…" : "Generate"}
+                      {genBusy ? t("Generating…") : t("Generate")}
                     </Button>
                   </div>
                   {genErr && (
@@ -1220,7 +1237,7 @@ export default function ModelScreen({ active, onBack, project }) {
                             // optimism.
                             await fetchAcceptedCandidates(project, candidates.ruleId).catch(() => null);
                           } catch (err) {
-                            setGenErr(err.message + (err.hint ? " — " + err.hint : ""));
+                            setGenErr(describeError(err, t("Candidate request failed.")));
                           } finally {
                             setBusyCandidateId(null);
                           }
@@ -1243,7 +1260,7 @@ export default function ModelScreen({ active, onBack, project }) {
         )}
         {propMode === "run" && !view && (
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-            {runs.length ? "Loading run…" : "No validation run selected"}
+            {runs.length ? t("Loading run…") : t("No validation run selected")}
           </div>
         )}
 
@@ -1253,22 +1270,22 @@ export default function ModelScreen({ active, onBack, project }) {
               onClick={() => setPropMode("run")}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", cursor: "pointer", font: "500 11px/1.2 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--text-muted)" }}
             >
-              ← Validation run
+              {t("← Validation run")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Chip selected>{pickedFailing ? "Failing" : "Passing"}</Chip>
+              <Chip selected>{pickedFailing ? t("Failing") : t("Passing")}</Chip>
               <span style={{ font: "500 13px/1.3 var(--font-mono)", letterSpacing: "-0.2px" }}>{picked}</span>
             </div>
-            <Panel title="Instance properties">
-              <KVRow label="Id" value={picked || "—"} />
-              <KVRow label="Display name" value={pickedEntity?.displayName || picked || "—"} />
-              <KVRow label="Run" value={view?.runId || "—"} />
+            <Panel title={t("Instance properties")}>
+              <KVRow label={t("Id")} value={picked || "—"} />
+              <KVRow label={t("Display name")} value={pickedEntity?.displayName || picked || "—"} />
+              <KVRow label={t("Run")} value={view?.runId || "—"} />
             </Panel>
-            <Panel title="Validation">
+            <Panel title={t("Validation")}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, paddingBottom: 8, borderBottom: "1px solid var(--color-hairline)" }}>
-                <span style={{ font: "400 12px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>Status</span>
+                <span style={{ font: "400 12px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>{t("Status")}</span>
                 <span style={{ font: "600 12px/1.3 var(--font-mono)", color: pickedFailing ? "var(--color-signal)" : "var(--text-secondary)" }}>
-                  {pickedFailing ? "FAIL" : "PASS"}
+                  {pickedFailing ? t("FAIL") : t("PASS")}
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 6 }}>
@@ -1276,13 +1293,13 @@ export default function ModelScreen({ active, onBack, project }) {
                   <div key={r.ruleId} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, padding: "5px 0" }}>
                     <span style={{ font: "400 12px/1.3 var(--font-mono)", color: "var(--text-secondary)" }}>{r.ruleId}</span>
                     <span style={{ font: "500 11px/1.3 var(--font-mono)", color: r.status === "failed" ? "var(--color-signal)" : "var(--text-secondary)" }}>
-                      {r.status === "failed" ? "Fail" : "Pass"}
+                      {validationStatusLabel(r.status)}
                     </span>
                   </div>
                 ))}
                 {pickedStatuses.length === 0 && (
                   <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9, paddingTop: 6 }}>
-                    No per-rule records
+                    {t("No per-rule records")}
                   </span>
                 )}
               </div>
