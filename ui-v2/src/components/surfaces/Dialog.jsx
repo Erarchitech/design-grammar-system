@@ -1,6 +1,8 @@
 import React from "react";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 export default function Dialog({ title, open = true, onClose, footer, children, style }) {
+  const { t } = useT();
   if (!open) return null;
   return (
     <div
@@ -30,6 +32,8 @@ export default function Dialog({ title, open = true, onClose, footer, children, 
         {onClose && (
           <button
             onClick={onClose}
+            type="button"
+            aria-label={t("Close dialog")}
             style={{
               border: "none",
               background: "transparent",

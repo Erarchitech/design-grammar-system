@@ -1,0 +1,32 @@
+{
+  "area": "shell",
+  "files": [
+    "src/App.jsx",
+    "src/shell/ScreenHeader.jsx",
+    "src/degram/DeGramWorkspace.jsx",
+    "src/degram/ReadOnlyGraph.jsx",
+    "src/degram/inspection.js",
+    "src/components/index.js",
+    "src/components/display/Avatar.jsx",
+    "src/components/display/Badge.jsx",
+    "src/components/display/Callout.jsx",
+    "src/components/display/Chip.jsx",
+    "src/components/display/CodeBlock.jsx",
+    "src/components/display/KVRow.jsx",
+    "src/components/display/Progress.jsx",
+    "src/components/forms/Button.jsx",
+    "src/components/forms/Checkbox.jsx",
+    "src/components/forms/Combobox.jsx",
+    "src/components/forms/Input.jsx",
+    "src/components/forms/SearchField.jsx",
+    "src/components/forms/Select.jsx",
+    "src/components/forms/Slider.jsx",
+    "src/components/forms/Textarea.jsx",
+    "src/components/surfaces/Collapsible.jsx",
+    "src/components/surfaces/Dialog.jsx",
+    "src/components/surfaces/Panel.jsx",
+    "src/components/surfaces/Tabs.jsx",
+    "src/components/surfaces/Tile.jsx"
+  ],
+  "allow": []
+}

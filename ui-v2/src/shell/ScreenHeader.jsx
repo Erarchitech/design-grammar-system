@@ -1,13 +1,15 @@
 import React from "react";
 import { Button } from "../components/index.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
 
 // Global chrome (NAV-02): Back pill + screen title + mono connection subtitle,
 // rendered top-left on every non-landing screen.
 export default function ScreenHeader({ title, subtitle, onBack, style }) {
+  const { t } = useT();
   return (
     <div style={{ position: "absolute", left: 20, top: 20, display: "flex", alignItems: "center", gap: 14, zIndex: 5, ...style }}>
       <Button variant="outline" size="sm" onClick={onBack}>
-        ← Back
+        ← {t("Back")}
       </Button>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <div style={{ font: "600 16px/1.2 var(--font-sans)", letterSpacing: "-0.3px" }}>{title}</div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 // Searchable value picker: a text field (styled like SearchField) plus an
 // anchored dropdown listing the available values (styled like the frost
@@ -12,14 +13,17 @@ export default function Combobox({
   onChange,
   onPick,
   options = [],
-  placeholder = "Search…",
-  emptyLabel = "No values",
+  placeholder,
+  emptyLabel,
   openDirection = "down",
   maxVisible = 200,
   style,
   listStyle,
   ...rest
 }) {
+  const { t } = useT();
+  const resolvedPlaceholder = placeholder ?? t("Search…");
+  const resolvedEmptyLabel = emptyLabel ?? t("No values");
   const wrapRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const [open, setOpen] = React.useState(false);
@@ -122,7 +126,7 @@ export default function Combobox({
           className="dg-annotation dg-annotation--muted"
           style={{ flex: "none", padding: "8px 8px", fontSize: 10, whiteSpace: "nowrap" }}
         >
-          {emptyLabel}
+          {resolvedEmptyLabel}
         </div>
       )}
       {shown.map((o, k) => {
@@ -163,7 +167,7 @@ export default function Combobox({
           className="dg-annotation dg-annotation--muted"
           style={{ flex: "none", padding: "6px 8px", fontSize: 9, whiteSpace: "nowrap", borderTop: "1px solid var(--color-hairline)" }}
         >
-          +{truncated} more · keep typing to narrow
+          {t("+{n} more · keep typing to narrow", { n: truncated })}
         </div>
       )}
     </div>
@@ -199,7 +203,7 @@ export default function Combobox({
         </svg>
         <input
           ref={inputRef}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           value={value}
           onChange={(e) => {
             setOpen(true);
@@ -224,7 +228,7 @@ export default function Combobox({
             setOpen((v) => !v);
             inputRef.current?.focus();
           }}
-          title={open ? "Hide values" : "Show all values"}
+          title={open ? t("Hide values") : t("Show all values")}
           style={{
             flex: "none",
             width: 20,

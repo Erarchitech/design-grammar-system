@@ -14,6 +14,10 @@ export function inspectionValue(value) {
   }
   return value;
 }
+export function inspectionDisplayValue(value, t) {
+  return value === "[Structured value unavailable]" ? `[${t("Structured value unavailable")}]` : value;
+}
+
 export function inspectionGraph(graph) {
   return { nodes: graph.nodes.map(node => ({ ...node, props: inspectionValue(node.props) })), rels: graph.rels };
 }

@@ -1,13 +1,15 @@
 import React from "react";
+import { useT } from "../../i18n/LanguageProvider.jsx";
 
 export default function SearchField({
-  placeholder = "Search projects...",
+  placeholder,
   shortcut,
   value,
   onChange,
   style,
   ...rest
 }) {
+  const { t } = useT();
   return (
     <div
       style={{
@@ -37,7 +39,7 @@ export default function SearchField({
         <path d="m21 21-4.3-4.3" />
       </svg>
       <input
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("Search projects...")}
         value={value}
         onChange={onChange}
         style={{

@@ -132,7 +132,46 @@ export const ru = {
 
   // ── lib messages built in apiClient.js and auth.js (server texts and error codes pass through describeError)
   "Request failed (HTTP {status})": "Запрос не выполнен (HTTP {status})",
-  "Session could not be established. Sign in again.": "Не удалось начать сеанс. Войдите снова."
+  "Session could not be established. Sign in again.": "Не удалось начать сеанс. Войдите снова.",
+
+  // ── App shell, DeGram read-only workspace and primitive defaults (1308-22)
+  "Switch to light mode": "Переключить на светлую тему",
+  "Switch to dark mode": "Переключить на тёмную тему",
+  "Read-only workspace": "Рабочая область только для чтения",
+  "Refresh access": "Обновить доступ",
+  "Retry sign-out": "Повторить выход",
+  Projects: "Проекты",
+  "Checking session…": "Проверка сеанса…",
+  "Sign in to DeGram — session expired.": "Войдите в DeGram — срок сеанса истёк.",
+  "Sign in to DeGram": "Войдите в DeGram",
+  "Select a project": "Выберите проект",
+  "No accessible projects. Ask your project owner for access.": "Нет доступных проектов. Запросите доступ у владельца проекта.",
+  "Access denied. Refresh access or ask your project owner.": "Доступ запрещён. Обновите доступ или обратитесь к владельцу проекта.",
+  "Service unavailable. Try again.": "Сервис недоступен. Повторите попытку.",
+  "Loading graph…": "Загрузка графа…",
+  "This project has no graph nodes.": "В этом проекте нет узлов графа.",
+  "Graph unavailable. Try again.": "Граф недоступен. Повторите попытку.",
+  "Signing in…": "Вход…",
+  "Sign in failed. Check your account and try again.": "Не удалось войти. Проверьте учётную запись и повторите попытку.",
+  "Signing out…": "Выход…",
+  "Read context cleared. Server sign-out unavailable; retry sign-out.": "Данные просмотра очищены. Выход на сервере недоступен; повторите выход.",
+  Username: "Имя пользователя",
+  Password: "Пароль",
+  "Sign in": "Войти",
+  "Project graph": "Граф проекта",
+  "Graph inspection": "Просмотр графа",
+  Nodes: "Узлы",
+  "Nodes without a graph layer are not placed on graph rings.": "Узлы без слоя графа не размещаются на кольцах графа.",
+  "Node properties": "Свойства узла",
+  "Select a node to inspect its properties.": "Выберите узел, чтобы посмотреть его свойства.",
+  "Structured value unavailable": "Структурированное значение недоступно",
+  "Close dialog": "Закрыть диалог",
+  "Search projects...": "Поиск проектов...",
+  "Search…": "Поиск…",
+  "No values": "Нет значений",
+  "+{n} more · keep typing to narrow": "Ещё {n} · продолжайте ввод для уточнения",
+  "Hide values": "Скрыть значения",
+  "Show all values": "Показать все значения"
 };
 
 export const en = {

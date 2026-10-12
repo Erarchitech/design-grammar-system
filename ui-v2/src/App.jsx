@@ -11,7 +11,7 @@ import SpecimenPage from "./specimen/SpecimenPage.jsx";
 import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } from "./lib/auth.js";
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
 import { announceProject, clearHostSignal, isDegramHost, isRegionAllowed, parseHostSignal } from "./lib/hostMode.js";
-import { LanguageProvider } from "./i18n/LanguageProvider.jsx";
+import { LanguageProvider, useT } from "./i18n/LanguageProvider.jsx";
 import { setLang } from "./i18n/index.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -49,6 +49,7 @@ export default function App() {
 }
 
 function AppShell() {
+  const { t } = useT();
   const [hash, setHash] = React.useState(window.location.hash);
   const [region, setRegion] = React.useState("landing");
   const [hostState, setHostState] = React.useState("idle");
@@ -261,7 +262,7 @@ function AppShell() {
       <div
         className="dg-frost"
         onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        title={theme === "dark" ? t("Switch to light mode") : t("Switch to dark mode")}
         style={{
           position: "absolute",
           right: 18,

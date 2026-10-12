@@ -3,10 +3,13 @@ import GraphEngine from "../graph/graphEngine.js";
 import buildRings from "../graph/buildRings.js";
 import Button from "../components/forms/Button.jsx";
 import PropertiesTable from "../components/display/PropertiesTable.jsx";
+import { useT } from "../i18n/LanguageProvider.jsx";
+import { inspectionDisplayValue } from "./inspection.js";
 
 // Presentation only: the existing engine owns layout/camera/selection. No API,
 // editor callback, workflow/history import or persistent graph store here.
 export default function ReadOnlyGraph({ graph }) {
+  const { t } = useT();
   const canvas = React.useRef(null);
   const engine = React.useRef(null);
   const [selected, setSelected] = React.useState(null);
@@ -24,9 +27,9 @@ export default function ReadOnlyGraph({ graph }) {
     return () => { view.stop(); engine.current = null; };
   }, [mapped]);
   return <>
-    <canvas ref={canvas} className="degram-canvas" aria-label="Project graph" />
-    <aside className="degram-panel degram-inspector" aria-label="Graph inspection">
-      <h2>Nodes</h2>
+    <canvas ref={canvas} className="degram-canvas" aria-label={t("Project graph")} />
+    <aside className="degram-panel degram-inspector" aria-label={t("Graph inspection")}>
+      <h2>{t("Nodes")}</h2>
       <div className="degram-nodes">
         {mapped.rings.flatMap((ring, r) => ring.nodes.map((node, i) =>
           <Button key={node.neoId} variant="outline" selected={selected?.neoId === node.neoId}
@@ -39,11 +42,11 @@ export default function ReadOnlyGraph({ graph }) {
           }}>{node.props.label || node.props.name || String(node.id)}</Button>
         )}
       </div>
-      {graph.nodes.some(node => !node.props.graph) && <p>Nodes without a graph layer are not placed on graph rings.</p>}
-      {selected ? <section aria-label="Node properties">
+      {graph.nodes.some(node => !node.props.graph) && <p>{t("Nodes without a graph layer are not placed on graph rings.")}</p>}
+      {selected ? <section aria-label={t("Node properties")}>
         <h2>{selected.label}</h2><p>{selected.kind}</p>
-        <PropertiesTable editable={false} rows={selected.props.map(([key, value]) => ({ key, value: typeof value === "object" ? JSON.stringify(value) : String(value) }))} />
-      </section> : <p>Select a node to inspect its properties.</p>}
+        <PropertiesTable editable={false} rows={selected.props.map(([key, value]) => ({ key, value: typeof value === "object" ? JSON.stringify(value) : inspectionDisplayValue(String(value), t) }))} />
+      </section> : <p>{t("Select a node to inspect its properties.")}</p>}
     </aside>
   </>;
 }

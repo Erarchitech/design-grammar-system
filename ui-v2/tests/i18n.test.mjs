@@ -546,7 +546,54 @@ test("raw-text guard accepts t() calls, proper nouns, allow-listed text, console
   assert.deepEqual(scan("<div>  </div><b>42</b>"), []);
 });
 
-test("raw-text guard passes every swept file listed in tests/i18n-swept/*.json (zero manifests is a pass)", async () => {
+test("every source file is covered by exactly one manifest", async () => {
+  const expected = (await sourceFiles())
+    .filter((file) => !COVERAGE_EXCLUDED.some((pattern) => pattern.test(file)))
+    .map((file) => `src/${file.slice(SRC_DIR.length).replaceAll("\\", "/")}`)
+    .sort();
+  const manifests = (await readdir(SWEPT_DIR)).filter((name) => name.endsWith(".json"));
+  const seen = new Map();
+  for (const name of manifests) {
+    const { files } = JSON.parse(await readFile(`${SWEPT_DIR}${name}`, "utf8"));
+    assert.ok(Array.isArray(files), `${name}: files`);
+    for (const file of files) {
+      assert.match(file, /^src\/(?!.*\.\.\/)[\w./-]+\.(?:js|jsx)$/, `${name}: canonical source path`);
+      assert.ok(!seen.has(file), `${file} occurs in both ${seen.get(file)} and ${name}`);
+      seen.set(file, name);
+    }
+  }
+  assert.deepEqual([...seen.keys()].sort(), expected, "manifest union must equal all non-excluded JS/JSX source files");
+});
+
+test("font stacks fall back to Cyrillic-capable system faces", async (t) => {
+  const typography = await readFile(new URL("../src/styles/tokens/typography.css", import.meta.url), "utf8");
+  const fonts = await readFile(new URL("../src/styles/tokens/fonts.css", import.meta.url), "utf8");
+  const stack = (name) => {
+    const match = new RegExp(`--font-${name}:\\s*([^;]+);`).exec(typography);
+    assert.ok(match, `--font-${name} stack`);
+    return match[1];
+  };
+  assert.match(stack("sans"), /Segoe UI|system-ui/);
+  assert.match(stack("mono"), /Consolas|monospace/);
+  assert.match(stack("annotation"), /sans-serif/);
+  assert.match(stack("display"), /system-ui|sans-serif/);
+  const hosted = [...fonts.matchAll(/url\(['"]?([^)'"\s]+\.woff2)['"]?\)/g)].map((match) => match[1]);
+  assert.ok(hosted.length > 0, "self-hosted faces are declared");
+  const latinOnly = hosted.filter((path) => /-latin-/.test(path) && !/-cyrillic-/.test(path));
+  t.diagnostic(`Latin-only self-hosted files without Cyrillic subsets (system fallback): ${latinOnly.join(", ")}`);
+});
+
+test("source has no obsolete AI Engine UI text or toLocale calls", async () => {
+  const findings = [];
+  for (const file of await sourceFiles()) {
+    const source = stripComments(await readFile(file, "utf8"));
+    if (/AI Engine/.test(source)) findings.push(`${file.slice(SRC_DIR.length)}: AI Engine`);
+    if (/\.toLocale\w*\s*\(/.test(source)) findings.push(`${file.slice(SRC_DIR.length)}: toLocale call`);
+  }
+  assert.deepEqual(findings, []);
+});
+
+test("raw-text guard passes every swept file listed in tests/i18n-swept/*.json", async () => {
   const { PROPER_NOUNS } = await fresh();
   let manifests = [];
   try {
