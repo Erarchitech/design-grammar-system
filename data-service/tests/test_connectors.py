@@ -61,6 +61,7 @@ EXPECTED_CATEGORIES = [
 def isolated_store(tmp_path, monkeypatch):
     """Redirect credential persistence to a per-test temp file."""
     monkeypatch.setattr(connectors, "CREDENTIALS_FILE", tmp_path / "connector-credentials.json")
+    monkeypatch.setattr(auth, "MEMBERSHIPS_FILE", tmp_path / "auth-memberships.json")
 
 
 def _read_store() -> list[dict]:
@@ -68,11 +69,14 @@ def _read_store() -> list[dict]:
 
 
 def _mint(connector_id: str, project: str | None = "P1", label: str | None = None):
-    """Seed a legacy dgc_ credential directly in the store. Phase 1308 (D-31)
-    retired ``POST /connectors/{id}/credentials``, so no route can mint one;
-    ``connectors.create_credential`` stays only to seed legacy rows here until
-    plan 1308-13 refuses them and 1308-24 deletes the function."""
-    return connectors.create_credential(connector_id, label, project)
+    """Seed a cleanup-only legacy credential; no route mints one anymore."""
+    record = auth_fixtures.seed_legacy_credential(project or "default-project", connector_id)
+    if label:
+        rows = connectors.load_credentials()
+        rows[-1]["label"] = label
+        connectors.save_credentials(rows)
+        record = rows[-1]
+    return record
 
 
 def _session(connector_id: str = "grasshopper", project: str = "P1", now: int | None = None) -> str:
@@ -111,7 +115,7 @@ class TestRegistry:
         assert {c["category"] for c in connectors.CONNECTOR_REGISTRY} == set(EXPECTED_CATEGORIES)
 
     def test_get_connectors_endpoint_shape(self):
-        """GET /connectors returns registry joined with status + credentials."""
+        """GET /connectors reports sign-in sessions, not stored credentials."""
         response = client.get("/connectors")
         assert response.status_code == 200
         body = response.json()
@@ -122,7 +126,9 @@ class TestRegistry:
         for connector in body["connectors"]:
             assert connector["status"] == "never_connected"
             assert connector["last_connection"] is None
-            assert connector["credentials"] == []
+            if connector["id"] != "degram":
+                assert connector["active_sessions"] == 0
+                assert "credentials" not in connector
             assert "name" in connector and "category" in connector
 
 
@@ -171,16 +177,17 @@ class TestCreateCredential:
         assert error.detail["error"] == "Connector tokens are retired."
         assert connectors.tokens_retired(status_code=401).status_code == 401
 
-    def test_token_never_exposed_by_listing(self):
-        """GET /connectors credential summaries omit token and token_hash."""
-        _record, token = _mint("dynamo")
+    def test_legacy_credential_not_exposed_by_listing(self):
+        """A cleanup-only credential must not influence or appear in the registry."""
+        record = _mint("dynamo")
         body = client.get("/connectors").json()
         dump = json.dumps(body)
-        assert token not in dump
-        assert "token_hash" not in dump
+        assert record["token_hash"] not in dump
+        assert record["credential_id"] not in dump
         dynamo = next(c for c in body["connectors"] if c["id"] == "dynamo")
-        summary = dynamo["credentials"][0]
-        assert set(summary) == {"credential_id", "label", "created_at", "revoked"}
+        assert dynamo["status"] == "never_connected"
+        assert dynamo["active_sessions"] == 0
+        assert "credentials" not in dynamo
 
 
 # ── Heartbeat (CONNB-03, D-26/D-34) ──
@@ -218,9 +225,9 @@ class TestHeartbeat:
     def test_legacy_stored_token_401(self):
         """D-26: a valid, non-revoked legacy `dgc_` credential no longer
         authenticates the heartbeat, and the refusal stamps nothing."""
-        _record, token = _mint("tekla")
+        _mint("tekla")
         response = client.post(
-            "/connectors/heartbeat", headers={"Authorization": f"Bearer {token}"}
+            "/connectors/heartbeat", headers={"Authorization": "Bearer dgc_retired"}
         )
         assert response.status_code == 401
         assert response.json()["detail"]["code"] == "CONNECTOR_AUTH_FAILED"
@@ -315,36 +322,32 @@ class TestStatusDerivation:
         old = (now - timedelta(days=8)).isoformat()
         assert connectors.derive_status(old, now=now) == "stale"
 
-    def test_stale_surfaces_in_endpoint(self):
-        """A connection older than 7 days shows as stale via GET /connectors."""
-        _mint("lumion")
-        stored = _read_store()
-        stored[0]["last_connection"] = (
-            datetime.now(timezone.utc) - timedelta(days=30)
-        ).isoformat()
-        connectors.save_credentials(stored)
-
+    def test_ended_session_surfaces_as_stale_in_endpoint(self):
+        token = _session("lumion")
+        assert connector_session.revoke_token(token)
         overview = client.get("/connectors").json()["connectors"]
         lumion = next(c for c in overview if c["id"] == "lumion")
         assert lumion["status"] == "stale"
-        assert lumion["last_connection"] == stored[0]["last_connection"]
+        assert lumion["active_sessions"] == 0
+        assert lumion["last_connection"] is not None
 
 
 # ── Revoke Lifecycle (CONNB-01) ──
 
 
 class TestRevokeLifecycle:
-    def test_revoke_marks_credential_and_reflects_in_listing(self):
-        record, _token = _mint("navisworks", "P1", "Site laptop")
-        created = {"credential_id": record["credential_id"]}
+    def test_revoke_marks_cleanup_credential_without_activating_listing(self):
+        record = _mint("navisworks", "P1", "Site laptop")
         response = client.delete(
-            f"/connectors/navisworks/credentials/{created['credential_id']}"
+            f"/connectors/navisworks/credentials/{record['credential_id']}"
         )
         assert response.status_code == 204
+        assert _read_store()[0]["revoked"] is True
 
         overview = client.get("/connectors").json()["connectors"]
         navisworks = next(c for c in overview if c["id"] == "navisworks")
-        assert navisworks["credentials"][0]["revoked"] is True
+        assert navisworks["status"] == "never_connected"
+        assert "credentials" not in navisworks
 
     def test_revoke_unknown_credential_404(self):
         response = client.delete("/connectors/navisworks/credentials/nope")
@@ -359,21 +362,18 @@ class TestRevokeLifecycle:
         assert response.status_code == 404
         assert response.json()["detail"]["code"] == "CREDENTIAL_NOT_FOUND"
 
-    def test_revoke_preserves_last_connection_history(self):
-        """Revoking a credential keeps the connector's past connection date.
-        The legacy row is stamped directly: the heartbeat no longer touches it
-        (the overview moves to sessions in 1308-24)."""
-        record, _token = _mint("solibri")
-        created = {"credential_id": record["credential_id"]}
+    def test_revoke_preserves_cleanup_row_but_not_overview_history(self):
+        record = _mint("solibri")
         stored = _read_store()
         stored[0]["last_connection"] = datetime.now(timezone.utc).isoformat()
         connectors.save_credentials(stored)
-        client.delete(f"/connectors/solibri/credentials/{created['credential_id']}")
+        client.delete(f"/connectors/solibri/credentials/{record['credential_id']}")
 
+        assert _read_store()[0]["last_connection"] == stored[0]["last_connection"]
         overview = client.get("/connectors").json()["connectors"]
         solibri = next(c for c in overview if c["id"] == "solibri")
-        assert solibri["last_connection"] is not None
-        assert solibri["status"] == "active"
+        assert solibri["last_connection"] is None
+        assert solibri["status"] == "never_connected"
 
 
 # ── Phase 1205 plan 10: tenant-filtered overview (T-1205-10-06) ──
@@ -381,57 +381,44 @@ class TestRevokeLifecycle:
 
 class TestOverviewProjectFilter:
     def _seed(self):
-        _rec_a, token_a = connectors.create_credential("blender", "mine", "P1")
-        _rec_b, token_b = connectors.create_credential("blender", "theirs", "P2")
-        _rec_c, _tok_c = connectors.create_credential("solibri", "theirs-too", "P2")
-        # Legacy record with no project reads as default-project.
-        creds = connectors.load_credentials()
-        creds.append(
-            {
-                "credential_id": "legacy1",
-                "connector_id": "revit",
-                "label": "legacy",
-                "token_hash": "x",
-                "created_at": "2026-01-01T00:00:00+00:00",
-                "revoked": False,
-                "last_connection": None,
-            }
-        )
-        connectors.save_credentials(creds)
-        connectors.record_heartbeat(token_b)  # P2 activity only
-        return token_a, token_b
+        token_p1 = _session("blender", "P1")
+        token_p2 = _session("blender", "P2")
+        _session("solibri", "P2")
+        _mint("revit", "default-project")  # Legacy rows are cleanup-only.
+        return token_p1, token_p2
 
-    def test_projects_none_returns_every_credential(self):
+    def test_projects_none_returns_every_live_session(self):
         self._seed()
-        overview = connectors.get_connector_overview()
-        blender = next(c for c in overview if c["id"] == "blender")
-        assert len(blender["credentials"]) == 2
+        blender = next(c for c in connectors.get_connector_overview() if c["id"] == "blender")
+        assert blender["status"] == "active"
+        assert blender["active_sessions"] == 2
+        assert blender["last_connection"] is not None
 
-    def test_credentials_outside_the_set_are_dropped_before_status_is_derived(self):
-        self._seed()
+    def test_other_projects_are_dropped_before_status_is_derived(self):
+        _token_p1, token_p2 = self._seed()
+        assert connector_session.revoke_token(token_p2)
         overview = connectors.get_connector_overview(projects={"P1"})
         blender = next(c for c in overview if c["id"] == "blender")
-        assert [c["label"] for c in blender["credentials"]] == ["mine"]
-        # P2's heartbeat must not leak into P1's view of the connector.
-        assert blender["last_connection"] is None
-        assert blender["status"] == "never_connected"
+        assert blender["active_sessions"] == 1
+        assert blender["status"] == "active"
         solibri = next(c for c in overview if c["id"] == "solibri")
-        assert solibri["credentials"] == []
+        assert solibri["status"] == "never_connected"
+        assert solibri["last_connection"] is None
+        assert "credentials" not in blender
 
-    def test_empty_set_lists_no_credentials(self):
+    def test_empty_set_lists_no_sessions(self):
         self._seed()
         overview = connectors.get_connector_overview(projects=set())
-        assert all(c["credentials"] == [] for c in overview)
+        assert all(c["active_sessions"] == 0 and c["last_connection"] is None for c in overview)
 
-    def test_legacy_record_counts_as_default_project(self):
+    def test_legacy_record_does_not_count_as_session(self):
         self._seed()
         overview = connectors.get_connector_overview(projects={"default-project"})
         revit = next(c for c in overview if c["id"] == "revit")
-        assert [c["credential_id"] for c in revit["credentials"]] == ["legacy1"]
+        assert revit["status"] == "never_connected"
+        assert "credentials" not in revit
 
     def test_route_filters_by_membership_and_admin_sees_all(self):
-        import auth_fixtures
-
         self._seed()
         member = auth_fixtures.make_user("p1member@dg.local", memberships={"P1": "viewer"})
         cookie = auth_fixtures.session_cookie_for(member["username"])
@@ -439,13 +426,25 @@ class TestOverviewProjectFilter:
         as_member.cookies.set("dg_session", cookie)
         listed = as_member.get("/connectors").json()["connectors"]
         blender = next(c for c in listed if c["id"] == "blender")
-        assert [c["label"] for c in blender["credentials"]] == ["mine"]
-        assert blender["last_connection"] is None
+        assert blender["status"] == "active"
+        assert blender["active_sessions"] == 1
+        solibri = next(c for c in listed if c["id"] == "solibri")
+        assert solibri["status"] == "never_connected"
 
         as_admin = TestClient(app, raise_server_exceptions=False)
         as_admin.cookies.set("dg_session", auth_fixtures.admin_session_token())
         all_listed = as_admin.get("/connectors").json()["connectors"]
-        assert len(next(c for c in all_listed if c["id"] == "blender")["credentials"]) == 2
+        assert next(c for c in all_listed if c["id"] == "blender")["active_sessions"] == 2
+
+    def test_ended_session_becomes_stale_without_exposing_other_projects(self):
+        _token_p1, token_p2 = self._seed()
+        assert connector_session.revoke_token(token_p2)
+        p2 = next(c for c in connectors.get_connector_overview(projects={"P2"}) if c["id"] == "blender")
+        assert p2["status"] == "stale"
+        assert p2["active_sessions"] == 0
+        assert p2["last_connection"] is not None
+        p1 = next(c for c in connectors.get_connector_overview(projects={"P1"}) if c["id"] == "blender")
+        assert p1["status"] == "active"
 
 
 # ── Per-connector access (Phase 1301-40, D-46) ──
