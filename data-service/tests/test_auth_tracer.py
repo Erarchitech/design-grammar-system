@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import auth  # noqa: E402
+import auth_fixtures  # noqa: E402
 import connectors  # noqa: E402
 import route_policy  # noqa: E402
 import app as app_module  # noqa: E402
@@ -72,8 +73,8 @@ def client(deployment_profile):
 
 
 def _connector_token(project: str) -> str:
-    _record, token = connectors.create_credential("grasshopper", project=project)
-    return token
+    """A real dgk_ connector sign-in session bound to `project` (D-26)."""
+    return auth_fixtures.connector_token_for(project)
 
 
 # ── Login / logout / me / password (D-01) ──────────────────────────────────
@@ -258,7 +259,7 @@ def test_invalid_bearer_plus_valid_cookie_401_connector_auth_failed_no_fallback(
 
     resp = client.get(
         "/validation/runs/P1",
-        headers={"Authorization": "Bearer dgc_not-a-real-token"},
+        headers={"Authorization": "Bearer dgk_not-a-real-session"},
     )
 
     assert resp.status_code == 401

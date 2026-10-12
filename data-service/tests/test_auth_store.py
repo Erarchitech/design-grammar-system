@@ -17,12 +17,15 @@ import threading
 import time
 
 import pytest
+from fastapi import HTTPException
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 os.environ.setdefault("LLM_MASTER_SECRET", "test-master-secret")
 
 import auth  # noqa: E402
+import auth_fixtures  # noqa: E402
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
 
 
@@ -221,27 +224,40 @@ def test_resolve_service_principal_empty_env_never_authenticates(monkeypatch):
 # ── resolve_connector_principal ──
 
 
-def test_resolve_connector_principal_valid_token_with_project():
-    _record, token = connectors.create_credential("grasshopper", project="p1")
+def _session_for(project: str = "p1", username: str = "grasshopper-user@dg.local"):
+    """Issue a real dgk_ sign-in session for an admin user (exempt from the
+    per-connector grant) and return its token."""
+    auth_fixtures.make_user(username, is_admin=True)
+    token, _record = connector_session.issue(
+        username=username, project=project, connector_id="grasshopper"
+    )
+    return token
+
+
+def test_resolve_connector_principal_valid_session_token():
+    token = _session_for("p1")
     principal = auth.resolve_connector_principal(token)
     assert principal is not None
     assert principal.kind == "connector"
     assert principal.bound_project == "p1"
+    assert principal.connector_id == "grasshopper"
 
 
-def test_resolve_connector_principal_no_project_defaults():
-    _record, token = connectors.create_credential("grasshopper")
-    principal = auth.resolve_connector_principal(token)
-    assert principal.bound_project == "default-project"
+def test_resolve_connector_principal_unknown_dgk_raises_auth_failed():
+    with pytest.raises(HTTPException) as exc_info:
+        auth.resolve_connector_principal("dgk_not-a-real-session")
+    assert exc_info.value.detail["code"] == "CONNECTOR_AUTH_FAILED"
 
 
-def test_resolve_connector_principal_revoked_returns_none():
-    record, token = connectors.create_credential("grasshopper", project="p1")
-    connectors.revoke_credential(record["connector_id"], record["credential_id"])
-    assert auth.resolve_connector_principal(token) is None
+def test_resolve_connector_principal_revoked_session_raises_session_ended():
+    token = _session_for("p1")
+    assert connector_session.revoke_token(token) is True
+    with pytest.raises(HTTPException) as exc_info:
+        auth.resolve_connector_principal(token)
+    assert exc_info.value.detail["code"] == "CONNECTOR_SESSION_ENDED"
 
 
-def test_resolve_connector_principal_non_dgc_string_returns_none():
+def test_resolve_connector_principal_non_dgk_string_returns_none():
     assert auth.resolve_connector_principal("dgs_not-a-connector-token") is None
     assert auth.resolve_connector_principal("") is None
 

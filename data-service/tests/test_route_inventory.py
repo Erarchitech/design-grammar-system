@@ -415,7 +415,7 @@ def test_body_route_without_project_fails_closed(client, key, policy):
 
 class TestResourceNotFoundSemantics:
     def test_credential_of_another_project_is_the_same_404_as_unknown(self, client):
-        record, _token = connectors.create_credential("grasshopper", project="P2")
+        record = auth_fixtures.seed_legacy_credential("P2")
         headers = _user_headers("p1editor@dg.local", memberships={"P1": "editor"})
         known = client.delete(
             f"/connectors/grasshopper/credentials/{record['credential_id']}",
@@ -432,7 +432,7 @@ class TestResourceNotFoundSemantics:
         assert stored and not stored[0].get("revoked")
 
     def test_credential_of_own_project_is_revocable_by_an_editor(self, client):
-        record, _token = connectors.create_credential("grasshopper", project="P1")
+        record = auth_fixtures.seed_legacy_credential("P1")
         headers = _user_headers("p1editor@dg.local", memberships={"P1": "editor"})
         response = client.delete(
             f"/connectors/grasshopper/credentials/{record['credential_id']}",

@@ -220,7 +220,10 @@ def world(tmp_path_factory):
         token = auth_fixtures.session_cookie_for(username)
         headers[actor] = {"Cookie": f"{auth.SESSION_COOKIE_NAME}={token}", **CSRF}
 
-    t1_record, t1_token = connectors.create_credential("grasshopper", project=P1)
+    # T1 is a dgk_ connector sign-in session bound to P1 (D-26); the stored
+    # legacy row only feeds the overview and cleanup-route cases.
+    t1_token = auth_fixtures.connector_token_for(P1)
+    t1_record = auth_fixtures.seed_legacy_credential(P1)
     headers["T1"] = {"Authorization": f"Bearer {t1_token}"}
     headers["SERVICE"] = auth_fixtures.service_headers()
 
@@ -420,7 +423,7 @@ class TestResourceBola:
     answers the same 404 as an unknown one, and nothing is changed."""
 
     def test_p2_credential_is_404_to_a_p1_editor_and_stays_unrevoked(self, client, world):
-        record, _token = connectors.create_credential("grasshopper", project=P2)
+        record = auth_fixtures.seed_legacy_credential(P2)
         cred_id = record["credential_id"]
         route = f"/connectors/grasshopper/credentials/{cred_id}"
         known = client.delete(route, headers=world.headers["A"])
@@ -440,7 +443,7 @@ class TestResourceBola:
         }[cred_id].get("revoked")
 
     def test_p2_owner_can_revoke_the_p2_credential(self, client, world):
-        record, _token = connectors.create_credential("grasshopper", project=P2)
+        record = auth_fixtures.seed_legacy_credential(P2)
         cred_id = record["credential_id"]
         response = client.delete(
             f"/connectors/grasshopper/credentials/{cred_id}",
@@ -451,7 +454,7 @@ class TestResourceBola:
         assert stored[cred_id].get("revoked")
 
     def test_p1_connector_token_cannot_revoke_any_credential(self, client, world):
-        record, _token = connectors.create_credential("grasshopper", project=P2)
+        record = auth_fixtures.seed_legacy_credential(P2)
         response = client.delete(
             f"/connectors/grasshopper/credentials/{record['credential_id']}",
             headers=world.headers["T1"],
@@ -644,7 +647,7 @@ class TestListingFilters:
         assert [p["projects"] for p in seen] == [[P1], [P1], [P2], [P2]]
 
     def test_connectors_lists_no_credential_of_another_project(self, client, world):
-        record, _token = connectors.create_credential("grasshopper", project=P2)
+        record = auth_fixtures.seed_legacy_credential(P2)
         p2_ids = {
             r["credential_id"]
             for r in connectors.load_credentials()

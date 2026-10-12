@@ -8,9 +8,12 @@ bypass -- a test client authenticates exactly as production callers do.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import secrets
 import sys
+import uuid
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -96,6 +99,31 @@ def connector_token_for(
         username=username, project=project, connector_id=connector_id
     )
     return token
+
+
+def seed_legacy_credential(project: str, connector_id: str = "grasshopper") -> dict[str, Any]:
+    """Append one non-revoked legacy credential row to the (conftest- or
+    test-redirected) credential store and return the stored record.
+
+    The legacy ``dgc_`` token is retired (1308-13, D-26): no route accepts it
+    any more. The stored row still exists in a deployed store until the live
+    cleanup (1308-19/20), and the overview and DELETE cleanup routes still read
+    and revoke it, so those tests need a row -- never a usable token. The raw
+    token is never created; ``token_hash`` is a random digest nothing can
+    present.
+    """
+    record: dict[str, Any] = {
+        "credential_id": uuid.uuid4().hex,
+        "connector_id": connector_id,
+        "label": "",
+        "project": project,
+        "token_hash": hashlib.sha256(secrets.token_bytes(32)).hexdigest(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "revoked": False,
+        "last_connection": None,
+    }
+    connectors.save_credentials(connectors.load_credentials() + [record])
+    return record
 
 
 def resolve_principal_name(marker_value: Any, module: Any) -> Any:

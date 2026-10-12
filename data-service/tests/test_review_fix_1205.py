@@ -567,7 +567,9 @@ class TestWr02PostProcessGuard:
 
 import threading  # noqa: E402
 
+import connector_session  # noqa: E402
 import connectors  # noqa: E402
+from fastapi import HTTPException as _HTTPException  # noqa: E402
 
 
 @pytest.fixture
@@ -577,37 +579,61 @@ def cred_store(tmp_path, monkeypatch):
 
 
 class TestWr03ConnectorStore:
+    """The legacy credential store keeps its locked/atomic/fail-closed contract
+    (it is still read and cleaned up until the live cleanup, 1308-19/20); the
+    connector authentication that matters now is the ``dgk_`` session store,
+    which must hold the same properties (D-26)."""
+
     def test_corrupt_store_is_an_error_not_an_empty_list(self, cred_store):
         cred_store.write_text("{not json", encoding="utf-8")
         with pytest.raises(connectors.CredentialStoreError):
             connectors.load_credentials()
-        # a mint must NOT wipe whatever is on disk
+        # seeding a row must NOT wipe whatever is on disk
         with pytest.raises(connectors.CredentialStoreError):
-            connectors.create_credential("grasshopper", project="p")
+            auth_fixtures.seed_legacy_credential("p")
         assert cred_store.read_text(encoding="utf-8") == "{not json"
 
-    def test_corrupt_store_authenticates_nobody(self, cred_store):
-        cred_store.write_text("", encoding="utf-8")
-        assert connectors.authenticate_token("dgc_anything") is None
-        assert connectors.record_heartbeat("dgc_anything") is None
+    def test_corrupt_store_makes_the_cleanup_refuse_without_rewriting(self, cred_store):
+        cred_store.write_text("{not json", encoding="utf-8")
+        with pytest.raises(connectors.CredentialStoreError):
+            connectors.revoke_credential("grasshopper", "any-id")
+        assert cred_store.read_text(encoding="utf-8") == "{not json"
+
+    def test_corrupt_connector_session_store_authenticates_nobody(self, cred_store, tmp_path, monkeypatch):
+        monkeypatch.setattr(auth, "MEMBERSHIPS_FILE", tmp_path / "auth-memberships.json")
+        auth_fixtures.make_user("ws@dg.local", is_admin=True)
+        token, _record = connector_session.issue(
+            username="ws@dg.local", project="p", connector_id="grasshopper"
+        )
+        sessions = tmp_path / connector_session.SESSIONS_FILE_NAME
+        sessions.write_text("", encoding="utf-8")
+        with pytest.raises(auth.AuthStoreError):
+            connector_session.authenticate(token)
+        with pytest.raises(auth.AuthStoreError):
+            connector_session.touch(token)
+        assert sessions.read_text(encoding="utf-8") == ""
 
     def test_missing_store_is_empty(self, cred_store):
         assert connectors.load_credentials() == []
 
     def test_save_is_atomic_and_leaves_no_temp_files(self, cred_store):
-        connectors.create_credential("grasshopper", project="p")
+        auth_fixtures.seed_legacy_credential("p")
         leftovers = [p for p in cred_store.parent.iterdir() if p.name != cred_store.name]
         assert leftovers == []
 
-    def test_heartbeats_never_resurrect_a_revoked_credential(self, cred_store):
-        record, token = connectors.create_credential("grasshopper", project="p")
+    def test_heartbeats_never_resurrect_a_revoked_session(self, cred_store, tmp_path, monkeypatch):
+        monkeypatch.setattr(auth, "MEMBERSHIPS_FILE", tmp_path / "auth-memberships.json")
+        auth_fixtures.make_user("ws@dg.local", is_admin=True)
+        token, _record = connector_session.issue(
+            username="ws@dg.local", project="p", connector_id="grasshopper"
+        )
         stop = threading.Event()
         errors: list[BaseException] = []
 
         def beat():
             try:
                 while not stop.is_set():
-                    connectors.record_heartbeat(token)
+                    connector_session.touch(token)
             except BaseException as exc:  # pragma: no cover - surfaced below
                 errors.append(exc)
 
@@ -616,18 +642,17 @@ class TestWr03ConnectorStore:
             t.start()
         try:
             # the revoke must stick despite the racing heartbeats
-            connectors.revoke_credential("grasshopper", record["credential_id"])
-            assert connectors.authenticate_token(token) is None
-            still_revoked = all(
-                r["revoked"] for r in connectors.load_credentials() if r["credential_id"] == record["credential_id"]
-            )
+            assert connector_session.revoke_token(token) is True
+            assert connector_session.touch(token) is None
         finally:
             stop.set()
             for t in threads:
                 t.join()
         assert not errors
-        assert still_revoked
-        assert connectors.authenticate_token(token) is None
+        assert connector_session.touch(token) is None
+        with pytest.raises(_HTTPException) as exc_info:
+            connector_session.authenticate(token)
+        assert exc_info.value.detail["code"] == "CONNECTOR_SESSION_ENDED"
 
 
 # --------------------------------------------------------------------------
