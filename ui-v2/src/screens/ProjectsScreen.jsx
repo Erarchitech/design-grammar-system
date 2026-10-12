@@ -353,22 +353,22 @@ function ProjectSettingsPanel({ project, active }) {
 // only the caller's projects with their role; opening one scopes every Graph /
 // Model Viewer request to it (PROJ-01/02). Owners administer members here.
 export default function ProjectsScreen({ active, onBack, project, onProject, user }) {
-  const { t } = useT();
+  const { t, tp } = useT();
   const [projects, setProjects] = React.useState([]);
-  const [loadErr, setLoadErr] = React.useState("");
+  const [loadErr, setLoadErr] = React.useState(null);
   const [creating, setCreating] = React.useState(false);
   const [newName, setNewName] = React.useState("");
-  const [createErr, setCreateErr] = React.useState("");
+  const [createErr, setCreateErr] = React.useState(null);
   const [shots, setShots] = React.useState({});
 
   // Owner members panel state. The invite code lives only in this component
   // state (rendered once, never written to browser storage).
   const [members, setMembers] = React.useState([]);
-  const [membersErr, setMembersErr] = React.useState("");
+  const [membersErr, setMembersErr] = React.useState(null);
   const [inviteUser, setInviteUser] = React.useState("");
   const [inviteRole, setInviteRole] = React.useState("viewer");
-  const [inviteErr, setInviteErr] = React.useState("");
-  const [inviteNote, setInviteNote] = React.useState("");
+  const [inviteErr, setInviteErr] = React.useState(null);
+  const [inviteNote, setInviteNote] = React.useState(null);
   const [invite, setInvite] = React.useState(null);
   const panelScope = React.useRef(0);
   const activeRole = projects.find((p) => p.project === project)?.role;
@@ -385,10 +385,10 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
   }, [active]);
 
   const load = React.useCallback(() => {
-    setLoadErr("");
+    setLoadErr(null);
     fetchProjects()
       .then(setProjects)
-      .catch((err) => setLoadErr(err.message || "Projects unreachable"));
+      .catch(setLoadErr);
   }, []);
 
   React.useEffect(() => {
@@ -403,15 +403,11 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
   const createProject = async () => {
     const name = newName.trim();
     if (!name) return;
-    setCreateErr("");
+    setCreateErr(null);
     try {
       await apiFetch(`${dataServiceBase()}/projects`, { method: "POST", body: { project: name } });
     } catch (err) {
-      setCreateErr(
-        err instanceof ApiError && err.status === 409
-          ? "That project name is unavailable."
-          : err.message || "Could not create the project."
-      );
+      setCreateErr(err instanceof ApiError && err.status === 409 ? { unavailable: true } : err);
       return;
     }
     setCreating(false);
@@ -422,13 +418,13 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
   const loadMembers = React.useCallback(() => {
     if (!project || !canAdminister) return;
     const scope = panelScope.current;
-    setMembersErr("");
+    setMembersErr(null);
     apiFetch(projectUrl(project, "/members"))
       .then((body) => {
         if (scope === panelScope.current) setMembers(Array.isArray(body?.members) ? body.members : []);
       })
       .catch((err) => {
-        if (scope === panelScope.current) setMembersErr(err.message || "Members unavailable.");
+        if (scope === panelScope.current) setMembersErr({ err, kind: "load" });
       });
   }, [project, canAdminister]);
 
@@ -437,9 +433,9 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
   React.useEffect(() => {
     setMembers([]);
     setInvite(null);
-    setInviteNote("");
-    setInviteErr("");
-    setMembersErr("");
+    setInviteNote(null);
+    setInviteErr(null);
+    setMembersErr(null);
     if (active) loadMembers();
     // Late reads from a previous project/owner scope must not refill this panel.
     return () => { panelScope.current += 1; };
@@ -447,9 +443,9 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
 
   const sendInvite = async () => {
     const username = inviteUser.trim();
-    if (!username) return setInviteErr("Enter a username.");
-    setInviteErr("");
-    setInviteNote("");
+    if (!username) return setInviteErr({ missing: true });
+    setInviteErr(null);
+    setInviteNote(null);
     setInvite(null);
     const scope = panelScope.current;
     try {
@@ -461,24 +457,24 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
       if (res?.status === "invited") {
         setInvite({ code: res.inviteCode, expiresAt: res.expiresAt });
       } else if (res?.status === "member-added") {
-        setInviteNote(`${username} was added to ${project} as ${inviteRole}.`);
+        setInviteNote({ username, project, role: inviteRole });
       }
       setInviteUser("");
       loadMembers();
     } catch (err) {
-      if (scope === panelScope.current) setInviteErr(err.message || "Could not send the invitation.");
+      if (scope === panelScope.current) setInviteErr(err);
     }
   };
 
   const removeMember = async (username) => {
     const scope = panelScope.current;
-    setMembersErr("");
+    setMembersErr(null);
     try {
       await apiFetch(projectUrl(project, `/members/${encodeURIComponent(username)}`), { method: "DELETE" });
       if (scope === panelScope.current) loadMembers();
     } catch (err) {
-      // 409 LAST_OWNER and the rest arrive with the server's own message
-      if (scope === panelScope.current) setMembersErr(err.message || "Could not remove the member.");
+      // 409 LAST_OWNER and the rest are mapped by code (describeError)
+      if (scope === panelScope.current) setMembersErr({ err, kind: "remove" });
     }
   };
 
@@ -497,19 +493,19 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 40px 60px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Button variant="outline" size="sm" onClick={onBack}>
-            ← Back
+            ← {t("Back")}
           </Button>
-          <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>Projects.</div>
+          <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>{t("Projects.")}</div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             {creating && (
               <>
                 <Input
-                  placeholder="Project name"
+                  placeholder={t("Project name")}
                   value={newName}
                   autoFocus
                   onChange={(e) => {
                     setNewName(e.target.value);
-                    setCreateErr("");
+                    setCreateErr(null);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") createProject();
@@ -518,28 +514,32 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
                   style={{ width: 220 }}
                 />
                 <Button size="sm" onClick={createProject}>
-                  Create
+                  {t("Create")}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => setCreating(false)}>
-                  Cancel
+                  {t("Cancel")}
                 </Button>
               </>
             )}
             {!creating && (
               <Button size="sm" onClick={() => setCreating(true)}>
-                New Project
+                {t("New Project")}
               </Button>
             )}
           </div>
         </div>
 
-        {createErr && <div style={ERR_STYLE}>{createErr}</div>}
+        {createErr && (
+          <div style={ERR_STYLE}>
+            {createErr.unavailable ? t("That project name is unavailable.") : describeError(createErr, t("Could not create the project."))}
+          </div>
+        )}
 
         {loadErr && (
           <div style={ERR_STYLE}>
-            Projects unavailable · {loadErr}{" "}
+            {t("Projects unavailable · {reason}", { reason: describeError(loadErr, t("Projects unreachable")) })}{" "}
             <span onClick={load} style={{ cursor: "pointer", textDecoration: "underline" }}>
-              Retry
+              {t("Retry")}
             </span>
           </div>
         )}
@@ -549,7 +549,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
             <Tile
               key={p.project}
               title={p.project}
-              description={`${p.role || "member"} · ${p.nodes} node${p.nodes === 1 ? "" : "s"} in graph${p.project === project ? " · active" : ""}`}
+              description={`${p.role ? roleLabel(p.role) : t("member")} · ${tp("{n} node in graph", p.nodes)}${p.project === project ? ` · ${t("active")}` : ""}`}
               thumbnail={
                 shots[p.project] ? (
                   <img src={shots[p.project]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -561,7 +561,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
         </div>
         {!loadErr && projects.length === 0 && (
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-            No projects yet · create one with New Project, or ask an owner for an invitation
+            {t("No projects yet · create one with New Project, or ask an owner for an invitation")}
           </div>
         )}
 
@@ -569,7 +569,11 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
           <div>
             <Panel title={t("Members · {project}", { project })} style={{ userSelect: "text" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {membersErr && <div style={ERR_STYLE}>{membersErr}</div>}
+                {membersErr && (
+                <div style={ERR_STYLE}>
+                  {describeError(membersErr.err, membersErr.kind === "remove" ? t("Could not remove the member.") : t("Members unavailable."))}
+                </div>
+              )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {members.map((m) => (
                     <MemberRow
@@ -592,12 +596,12 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
 
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <Input
-                    placeholder="Username to invite"
+                    placeholder={t("Username to invite")}
                     value={inviteUser}
                     autoComplete="off"
                     onChange={(e) => {
                       setInviteUser(e.target.value);
-                      setInviteErr("");
+                      setInviteErr(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") sendInvite();
@@ -606,11 +610,23 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
                   />
                   <Select options={roleOptions()} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ width: 130 }} />
                   <Button size="sm" onClick={sendInvite}>
-                    Invite
+                    {t("Send invitation")}
                   </Button>
                 </div>
-                {inviteErr && <div style={ERR_STYLE}>{inviteErr}</div>}
-                {inviteNote && <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{inviteNote}</div>}
+                {inviteErr && (
+                <div style={ERR_STYLE}>
+                  {inviteErr.missing ? t("Enter a username.") : describeError(inviteErr, t("Could not send the invitation."))}
+                </div>
+              )}
+                {inviteNote && (
+                <div style={{ font: "400 12px/1.33 var(--font-sans)", color: "var(--text-muted)" }}>
+                  {t("{username} was added to {project} as {role}.", {
+                    username: inviteNote.username,
+                    project: inviteNote.project,
+                    role: roleLabel(inviteNote.role)
+                  })}
+                </div>
+              )}
                 {invite && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -622,14 +638,14 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
                         style={{ width: 360, userSelect: "text" }}
                       />
                       <Button variant="secondary" size="sm" onClick={copyInvite}>
-                        Copy
+                        {t("Copy invite code")}
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => setInvite(null)}>
-                        Dismiss
+                        {t("Hide invite code")}
                       </Button>
                     </div>
                     <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                      Share this code with the invitee; it is shown once and expires in 72 hours.
+                      {t("Share this code with the invitee; it is shown once and expires in 72 hours.")}
                     </div>
                   </div>
                 )}
@@ -642,7 +658,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
         )}
 
         <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-          {projects.length} project{projects.length === 1 ? "" : "s"}
+          {tp("{n} project", projects.length)}
         </div>
       </div>
     </div>

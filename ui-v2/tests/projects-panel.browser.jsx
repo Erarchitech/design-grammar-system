@@ -1,6 +1,7 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import ProjectsScreen from '../src/screens/ProjectsScreen.jsx';
+import { setLang } from '../src/i18n/index.js';
 
 // Render the actual panel/primitives with real ReactDOM; only fetch is faked.
 const results = [], calls = [], unexpected = [], queue = [];
@@ -60,7 +61,7 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     const input = host.querySelector('input[placeholder="Username to invite"]');
     await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'invitee'); input.dispatchEvent(new Event('input', { bubbles: true })); });
     const late = deferred(); queue.push(late.promise);
-    await act(async () => [...host.querySelectorAll('button')].find(b => b.textContent === 'Invite').click());
+    await act(async () => [...host.querySelectorAll('button')].find(b => b.textContent === 'Send invitation').click());
     queue.push([200, { members: [] }]); await render({ ...props, project: 'B' }); await tick();
     // Old implementation reloads A members after the late invitation; keep
     // that local reply available to expose code leakage rather than harness noise.
@@ -91,20 +92,20 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
   const ownerReady = async () => { queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members: [{ username: 'only-owner', role: 'owner' }] }]); await render(props); await until(() => !!button('Remove member'), 'Owner members ready'); };
   await run('PANEL-invite once-only display dismiss/hide/remount no token persistence', async () => {
     await ownerReady(); await fillInvite();
-    queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-ONCE-CODE' }], [200, { members: [] }]); await act(async () => button('Invite').click()); await tick();
+    queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-ONCE-CODE' }], [200, { members: [] }]); await act(async () => button('Send invitation').click()); await tick();
     equal(JSON.parse(calls[2].init.body), { username: 'invitee', project: 'A', role: 'viewer' }, 'Invite scoped body');
     equal([...host.querySelectorAll('input')].filter(i => i.value === 'SYNTHETIC-ONCE-CODE').length, 1, 'Single displayed code'); equal(localStorage.length, 0, 'No code persisted');
-    await act(async () => button('Dismiss').click()); check(![...host.querySelectorAll('input')].some(i => i.value === 'SYNTHETIC-ONCE-CODE'), 'Dismiss discards code');
+    await act(async () => button('Hide invite code').click()); check(![...host.querySelectorAll('input')].some(i => i.value === 'SYNTHETIC-ONCE-CODE'), 'Dismiss discards code');
     await render({ ...props, active: false });
     queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members: [] }]); await render(props); await tick();
     check(![...host.querySelectorAll('input')].some(i => i.value === 'SYNTHETIC-ONCE-CODE'), 'No code replay on reactivation');
   });
   await run('PANEL-existing-account member-added note not invite code', async () => {
-    await ownerReady(); await fillInvite(); queue.push([200, { status: 'member-added' }], [200, { members: [{ username: 'invitee', role: 'viewer' }] }]); await act(async () => button('Invite').click()); await tick();
-    check(host.textContent.includes('invitee was added to A as viewer.'), 'Member note shown'); check(!button('Copy'), 'No invite code copy surface'); equal(localStorage.length, 0, 'No credential persisted');
+    await ownerReady(); await fillInvite(); queue.push([200, { status: 'member-added' }], [200, { members: [{ username: 'invitee', role: 'viewer' }] }]); await act(async () => button('Send invitation').click()); await tick();
+    check(host.textContent.includes('invitee was added to A as Viewer.'), 'Member note shown'); check(!button('Copy invite code'), 'No invite code copy surface'); equal(localStorage.length, 0, 'No credential persisted');
   });
   for (const status of [401, 403]) await run(`PANEL-invite-${status} denial no code or member refresh`, async () => {
-    await ownerReady(); await fillInvite(); queue.push([status, { detail: 'Invite denied' }]); await act(async () => button('Invite').click()); await tick(); check(host.textContent.includes('Invite denied'), 'Invite error visible'); check(!button('Copy'), 'No code'); equal(calls.length, 3, 'No member reload on denial');
+    await ownerReady(); await fillInvite(); queue.push([status, { detail: 'Invite denied' }]); await act(async () => button('Send invitation').click()); await tick(); check(host.textContent.includes('Invite denied'), 'Invite error visible'); check(!button('Copy invite code'), 'No code'); equal(calls.length, 3, 'No member reload on denial');
   });
   await run('PANEL-LAST_OWNER 409 keeps existing member and shows refusal', async () => {
     await ownerReady(); queue.push([409, { detail: { error: 'Cannot remove last owner', code: 'LAST_OWNER' } }]); await act(async () => button('Remove member').click()); await tick();
@@ -114,7 +115,7 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     await ownerReady(); queue.push([204, null], [200, { members: [] }]); await act(async () => button('Remove member').click()); await tick(); check(!host.textContent.includes('only-owner'), 'Member refresh applied'); equal(calls[2].url, '/data-service/projects/A/members/only-owner', 'Scoped member deletion');
   });
   await run('PANEL-rights-loss hides and clears invitation and members', async () => {
-    await ownerReady(); await fillInvite(); queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-OWNER-CODE' }], [200, { members: [] }]); await act(async () => button('Invite').click()); await tick();
+    await ownerReady(); await fillInvite(); queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-OWNER-CODE' }], [200, { members: [] }]); await act(async () => button('Send invitation').click()); await tick();
     await render({ ...props, active: false }); queue.push([200, { projects: [{ project: 'A', role: 'viewer' }] }], [200, { members: [] }]); await render(props); await tick(); check(!host.textContent.includes('Members ·'), 'Rights loss hides panel'); check(![...host.querySelectorAll('input')].some(i => i.value === 'SYNTHETIC-OWNER-CODE'), 'Code erased');
   });
   await run('PANEL-03 late A member-removal failure must not appear in B panel', async () => {
@@ -234,6 +235,19 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
   await run('PANEL-settings load failure shows the retry button and recovers', async () => {
     queue.push([500, { detail: 'boom' }], ...adminTail); await render(adminProps); await until(() => host.textContent.includes('Could not load project settings.'), 'Load error'); check(!!button('Retry loading settings'), 'Retry button');
     queue.push(policyOf()); await act(async () => button('Retry loading settings').click()); await until(() => !!box('Allow provider export'), 'Rows after retry');
+  });
+  // Phase 1308-10 (WEBUI-02): the whole Projects screen follows the language; names and usernames stay data.
+  await run('PANEL-ru Members, role Select, invite form and Project settings render in Russian', async () => {
+    setLang('ru');
+    try {
+      queue.push([200, { project: 'A', providerExportAllowed: true, wholeDefinitionAllowed: false }], [200, { projects: [{ project: 'A', role: 'owner', nodes: 1 }, { project: 'B', role: 'editor', nodes: 5 }] }], [200, { members: [{ username: 'only-owner', role: 'owner' }, { username: 'bob', role: 'viewer' }] }]);
+      await render({ ...props, user: { email: 'admin', isAdmin: true } }); const ruSelect = name => host.querySelector(`select[aria-label="Роль пользователя ${name}"]`); await until(() => !!ruSelect('bob'), 'RU rows ready');
+      const text = host.textContent;
+      for (const expected of ['Участники · A', 'Настройки проекта · A', 'Видно только администраторам DG.', 'Разрешить экспорт провайдеру', 'Отправить приглашение', 'Исключить участника', 'Назад', 'Проекты.', 'Новый проект', '1 узел в графе', '5 узлов в графе', '2 проекта', 'Владелец', 'Наблюдатель']) check(text.includes(expected), `RU text missing: ${expected}`);
+      equal(ruSelect('bob').getAttribute('aria-label'), 'Роль пользователя bob', 'RU accessible name'); equal(ruSelect('only-owner').title, 'В проекте должен остаться хотя бы один владелец. Сначала назначьте другого владельца.', 'RU sole-owner tooltip');
+      check(!!host.querySelector('input[placeholder="Имя пользователя для приглашения"]'), 'RU invite placeholder');
+      check(text.includes('only-owner') && text.includes('bob'), 'Usernames stay as data'); check(!/Members ·|Project settings|Send invitation/.test(text), 'No English chrome left');
+    } finally { setLang('en'); }
   });
   const output = document.createElement('pre'); output.id = 'offline-results'; output.textContent = JSON.stringify({ proof_level: 'offline-actual-React18-ReactDOM-panel-fake-fetch', results }); document.body.append(output);
 })().catch(e => { document.body.textContent = `HARNESS_ERROR: ${e.stack}`; });

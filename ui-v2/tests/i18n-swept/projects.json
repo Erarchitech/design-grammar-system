@@ -1,0 +1,10 @@
+{
+  "area": "projects",
+  "files": [
+    "src/screens/ProjectsScreen.jsx",
+    "src/lib/memberApi.js",
+    "src/lib/memberRoles.js",
+    "src/lib/projectSettingsApi.js"
+  ],
+  "allow": []
+}

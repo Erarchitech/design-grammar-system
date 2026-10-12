@@ -34,7 +34,50 @@ export const ru = {
   "Could not load project settings.": "Не удалось загрузить настройки проекта.",
   "Retry loading settings": "Повторить загрузку настроек",
   "Project settings saved": "Настройки проекта сохранены",
-  "Could not save the setting. Try again.": "Не удалось сохранить настройку. Повторите попытку."
+  "Could not save the setting. Try again.": "Не удалось сохранить настройку. Повторите попытку.",
+
+  // Project tiles, create-project form and the screen chrome. "Cancel" lives in the core dictionary.
+  Back: "Назад",
+  "Project name": "Название проекта",
+  Create: "Создать",
+  "New Project": "Новый проект",
+  "That project name is unavailable.": "Это имя проекта недоступно.",
+  "Could not create the project.": "Не удалось создать проект.",
+  "Projects unavailable · {reason}": "Проекты недоступны · {reason}",
+  "Projects unreachable": "Сервер проектов недоступен",
+  Retry: "Повторить",
+  member: "участник",
+  active: "активный",
+  "No projects yet · create one with New Project, or ask an owner for an invitation":
+    "Проектов пока нет · создайте проект кнопкой «Новый проект» или попросите владельца о приглашении",
+  "{n} node in graph": {
+    one: "{n} узел в графе",
+    few: "{n} узла в графе",
+    many: "{n} узлов в графе",
+    other: "{n} узла в графе"
+  },
+  "{n} project": {
+    one: "{n} проект",
+    few: "{n} проекта",
+    many: "{n} проектов",
+    other: "{n} проекта"
+  },
+
+  // Members panel: loading, invitation and removal
+  "Members unavailable.": "Список участников недоступен.",
+  "Could not remove the member.": "Не удалось исключить участника.",
+  "Username to invite": "Имя пользователя для приглашения",
+  "Send invitation": "Отправить приглашение",
+  "Enter a username.": "Введите имя пользователя.",
+  "Could not send the invitation.": "Не удалось отправить приглашение.",
+  "{username} was added to {project} as {role}.": "{username} добавлен в проект {project} с ролью «{role}».",
+  "Copy invite code": "Скопировать код приглашения",
+  "Hide invite code": "Скрыть код приглашения",
+  "Share this code with the invitee; it is shown once and expires in 72 hours.":
+    "Передайте этот код приглашённому: он показывается один раз и действует 72 часа."
 };
 
-export const en = {};
+export const en = {
+  "{n} node in graph": { one: "{n} node in graph", other: "{n} nodes in graph" },
+  "{n} project": { one: "{n} project", other: "{n} projects" }
+};
