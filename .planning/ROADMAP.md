@@ -453,8 +453,59 @@ Plans:
 **Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
 **Requirements**: WEBUI-01, WEBUI-02, WEBUI-03, WEBUI-04, WEBUI-05, WEBUI-06, WEBUI-07, WEBUI-08, WEBUI-09, WEBUI-10, WEBUI-11
 **Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
-**Plans:** 0 plans
+**Plans:** 24 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run /gsd-plan-phase 1308 to break down)
+- [ ] 1308-01-PLAN.md — settle owner WIP on files 1308 edits (D-49, decision checkpoint)
+- [ ] 1308-02-PLAN.md — data-service: PUT member role (last-owner guard) + GET project summary, spec rows
+- [ ] 1308-03-PLAN.md — data-service: dgk_ connector session store + owner/admin exemption helpers (TDD)
+- [ ] 1308-04-PLAN.md — DG.Core ConnectorSessionClient (account sign-in, dgk_ prefix, templates)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 1308-05-PLAN.md — ui-v2 i18n core driven by DeGram (#degram-lang / ?lang=) or primary browser language, no control; coverage rules and raw-text guard
+- [ ] 1308-06-PLAN.md — data-service: dgk_ resolver + POST/DELETE /auth/connector-session, fixture seam, spec
+- [ ] 1308-07-PLAN.md — Grasshopper CONNECTOR account sign-in (new GUID, gate), Session → VALIDATOR/COMPUTGRAPH PUBLISH
+- [ ] 1308-08-PLAN.md — d49_store_cleanup.py (token retirement + UAT account removal, dry-run default, TDD)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 1308-09-PLAN.md — data-service: owner/admin exemption everywhere + 410 on credentials (reversibility gate)
+- [ ] 1308-10-PLAN.md — ui-v2 Projects: role Select + admin-only Project settings (export policy)
+- [ ] 1308-12-PLAN.md — ui-v2 translation: Graph area
+- [ ] 1308-16-PLAN.md — ui-v2 translation: Reasoner, LLM model (title rename), API docs chrome, DeGram grants panel, lib messages
+- [ ] 1308-23-PLAN.md — ui-v2 landing translated (owner-fixed hero strings, LLM model label, live relayout on dg-lang)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 1308-11-PLAN.md — ui-v2 landing summaries + shared run grouping
+- [ ] 1308-13-PLAN.md — data-service: legacy-token tests moved to dgk_, heartbeat/capture on sessions, legacy prefix refused, spec blocks
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 1308-14-PLAN.md — ui-v2 translation: Model area
+- [ ] 1308-24-PLAN.md — data-service: session-based connector status, legacy helpers removed, D-33 cascades incl. invite paths
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 1308-15-PLAN.md — ui-v2 Connectors screen, DeGram-hosted table and API docs without tokens
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 1308-22-PLAN.md — ui-v2 translation: App shell, DeGram host workspace, primitives + completeness gate and font check
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 1308-17-PLAN.md — DeGram sidebar «Projects»: ui-v2 host signal + component commit (authorization checkpoint)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 1308-19-PLAN.md — live: D-32 closure, rebuild from git archive HEAD (human-verify)
+- [ ] 1308-21-PLAN.md — DeGram: one language setting (Русский/English only, live #degram-lang to the DG page, RU catalog complete), component commit
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [ ] 1308-18-PLAN.md — owner pushes the fork; gitlink bump + workspace verify
+- [ ] 1308-20-PLAN.md — live: backup, dry run, apply cleanup (human-verify), owner actions

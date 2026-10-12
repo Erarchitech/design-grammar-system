@@ -362,7 +362,9 @@ RETURN sum(CASE WHEN n:Class THEN 1 ELSE 0 END) AS classes,
 | A8 | Landing summary «Keys issued» is renamed «Grants issued» / «Выдано доступов» because no keys exist after D-49 | Q1 | Owner may keep wording; trivial text change |
 | A9 | Masked password dialog for GH deferred; non-persistent Username/Password inputs accepted | Q3 | Password visible in a GH panel on screen |
 
-## Open Questions — Recommendations
+## Open Questions — Recommendations (RESOLVED)
+
+> All recommendations below were adopted as locked decisions in `1308-CONTEXT.md` (owner instruction 2026-10-12). **Q4 language badge and `dgv2_lang` storage are SUPERSEDED by CONTEXT D-50..D-53** (single language switch in DeGram Settings → Appearance → Language; `ui-v2` has no control and stores no language).
 
 These resolve every open item of the seed; each is a **locked decision** per the owner instruction.
 
@@ -400,7 +402,7 @@ These resolve every open item of the seed; each is a **locked decision** per the
 **Web UI:** `ConnectorsScreen` removes `TokenRevealPanel`, `CredentialRow`, create-credential form and the `createCredential`/`revokeCredential` calls from `connectorsApi.js`; the card shows access (grants for owner/admin, own state for others) and live sign-in count; `HostedConnectorsTable` drops the «Создать токен» button («Доступен» becomes plain text; editors now see «Запросить доступ»); API docs content pages 01-05 and 07 (all mention `dgc_`/heartbeat, verified by grep) are rewritten around account sign-in. Per-connector grants are issued from the card (`ConnectorAccessAdmin` already does Grant/Revoke); owner/admin also get a "grant to member" action for members who never requested (new small form: member select + connector, calls the existing `POST /projects/{p}/connector-access`).
 **Deferred:** masked password dialog in GH (A9).
 
-### 4. D-38 i18n approach
+### 4. D-38 i18n approach (badge/persistence parts SUPERSEDED by CONTEXT D-50..D-53)
 **Recommendation:** in-house dictionary + context, **English text as the key**, `LanguageProvider`/`useT()` at `App` root.
 - **Library vs in-house:** in-house (zero dependencies, ~100 lines, `Intl.PluralRules` for Russian). Rationale: 2 locales, no installs authorized, fully testable with `node:test`.
 - **Persistence/resolution:** inside the DeGram host (`isDegramHost()`): `hostLang()` (`?lang=ru|en`, passed by the fork) wins and the badge is hidden; otherwise `localStorage["dgv2_lang"]` ∈ {en, ru}; default `en` (glossary proposal, A5). No server profile (A6). Also set `document.documentElement.lang` and window title. `KEPT_KEYS` gains `dgv2_lang`.

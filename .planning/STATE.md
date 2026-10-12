@@ -6,10 +6,10 @@ current_phase: 1301
 current_phase_name: rabochiy-klient-i-bezopasnoe-chtenie
 current_plan: 2
 status: executing
-stopped_at: Completed 1301-41-PLAN.md; DeGram 0.1.11 built (SHA 938305fb), component 7edf519c pushed by owner, framework 84debe6; owner live UAT pending
-last_updated: "2026-10-12T06:51:38.270Z"
+stopped_at: Phase 1308 UI-SPEC approved
+last_updated: "2026-10-12T11:40:03.413Z"
 last_activity: 2026-10-11
-last_activity_desc: Phase 1301 execution started
+last_activity_desc: Phase 1308 planning complete — 24 plans ready
 progress:
   total_phases: 9
   completed_phases: 0
@@ -38,11 +38,11 @@ Phase: 1301 (rabochiy-klient-i-bezopasnoe-chtenie) — EXECUTING
 Current Phase: 1301
 Current Phase Name: rabochiy-klient-i-bezopasnoe-chtenie
 Current Plan: 2
-Total Plans in Phase: 41
+Total Plans in Phase: 24
 Plan: 2 of 41
 Status: Ready to execute
 Last activity: 2026-10-11 — Phase 1301 execution started
-Last Activity Description: Phase 1301 execution started
+Last Activity Description: Phase 1308 planning complete — 24 plans ready
 
 ## Deferred Verification
 
@@ -633,9 +633,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T06:51:38.248Z
-Stopped at: Completed 1301-41-PLAN.md; DeGram 0.1.11 built (SHA 938305fb), component 7edf519c pushed by owner, framework 84debe6; owner live UAT pending
-Resume file: 1301-0.1.11-TEST-GUIDE.md
+Last session: 2026-10-12T09:58:32.738Z
+Stopped at: Phase 1308 UI-SPEC approved
+Resume file: .planning/phases/1308-dg-web-ui/1308-UI-SPEC.md
 
 ## Performance Metrics
 
@@ -678,6 +678,8 @@ Resume file: 1301-0.1.11-TEST-GUIDE.md
 | Phase 27-speckle-3d-embed P27-01 | ~18m | - tasks | - files |
 
 ## Operator Next Steps
+
+- **Execution order (owner 2026-10-12):** Phase 1308 (DG Web UI, 24 plans, 10 waves) executes BEFORE Phase 1302. Next: `/gsd-execute-phase 1308`. Plan 1308-01 is an owner checkpoint: settle the uncommitted v12 WIP (`ui-v2/src/screens/ProjectsScreen.jsx`, `ui-v2/src/lib/auth.js`, untracked `ui-v2/tests/*`, data-service WIP incl. `data-service/tests/test_auth_store.py`, `DG/src/DG.Grasshopper/Components/ValidatorComponent.cs`) before the plans that edit those files.
 
 - Continue bounded independent 1301 read-only workspace implementation/offline tests in `ui-v2`; do not wait for blanket 1300 completion and do not claim Desktop delivery, test completion or release acceptance.
 - Reconcile remaining active 1300 plans and dossier hashes to the latest scope; 1300-07 is withdrawn, not completed. G-01/V8 independent verification/owner acceptance and security gates remain mandatory before dependent semantic consumption/live operations and phase acceptance.

@@ -44,7 +44,7 @@ Requirement-level map; the planner/executor fills task IDs.
 
 | Requirement | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |-------------|-----------------|-----------|-------------------|-------------|--------|
-| WEBUI-01 | `?lang=` allowlisted (en/ru) | unit | `node --test ui-v2/tests/i18n.test.mjs` | ❌ W0 | ⬜ pending |
+| WEBUI-01 | `?lang=` / `#degram-lang=` allowlisted (en/ru); DeGram switcher lists only ru/en | unit | `node --test ui-v2/tests/i18n.test.mjs ui-v2/tests/host-degram.test.mjs`; fork vitest on the language-switcher / dg-view tests (plan 1308-21) | ❌ W0 | ⬜ pending |
 | WEBUI-02 | text nodes only, no server HTML interpolated | unit | `node --test ui-v2/tests/i18n.test.mjs` | ❌ W0 | ⬜ pending |
 | WEBUI-03 | owner/admin only, `LAST_OWNER` under lock, CSRF | integration | `python -m pytest data-service/tests/test_member_roles.py -q`; `node --test ui-v2/tests/member-roles-api.test.mjs` | ❌ W0 | ⬜ pending |
 | WEBUI-04 | admin-only route (existing), UI hidden for non-admin | unit | `node --test ui-v2/tests/project-settings-api.test.mjs`; `python -m pytest data-service/tests/test_degram_policy.py -q` | ❌ W0 / ✅ | ⬜ pending |
@@ -78,7 +78,7 @@ Requirement-level map; the planner/executor fills task IDs.
 |----------|-------------|------------|-------------------|
 | Grasshopper add-in signs in and publishes with the user account | WEBUI-08 | needs owner's Rhino 8 session | wire CONNECTOR (Username/Password/Connect) → Session → VALIDATOR / COMPUTGRAPH PUBLISH; confirm «Вкл» on Connectors screen, then Connect=false → «Выкл» |
 | DeGram sidebar «Projects» row | WEBUI-06 | Desktop launch not authorized in 1308 | accepted in the next DeGram release under separate authorization |
-| Russian UI visual pass | WEBUI-02 | layout overflow in RU | switch badge to RU, walk landing + each screen |
+| Russian UI visual pass | WEBUI-01/02 | layout overflow in RU; live switch | in DeGram Settings → Appearance → Language pick «Русский» with the DG page open, walk landing + each screen; switch back to «English» (D-50..D-52) |
 | Live rollout steps | WEBUI-11 | destructive live store and restarts | each behind `checkpoint:human-verify` |
 
 ---

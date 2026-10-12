@@ -20,18 +20,18 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 ### Owner decisions carried in (not re-discussed)
 - **D-01:** Member role change in DG Web UI (1301 D-36): data-service route plus Web UI action; the last owner is never demoted.
 - **D-02:** Export policy (`providerExportAllowed`, `wholeDefinitionAllowed`) is visible to and changed by a DG admin only (1301 D-37); a project owner does not see it.
-- **D-03:** EN/RU badge on the start screen; RU makes the whole DG Web UI Russian; owner-fixed strings «Грамматика.», «Граф правил проекта.», «Система инициализирована»; rest per `1301-D38-GLOSSARY.md` (1301 D-38).
+- **D-03:** RU makes the whole interface Russian (DeGram and every DG Web UI screen); owner-fixed strings «Грамматика.», «Граф правил проекта.», «Система инициализирована»; rest per `1301-D38-GLOSSARY.md` (1301 D-38; the start-screen badge is replaced by D-50, owner 2026-10-12).
 - **D-04:** Connector access only by per-connector grant, no connector tokens, add-in signs in with the user account, owner and DG admin exempt, editor and viewer need a grant (1301 D-49, amends 1301 D-46).
 - **D-05:** D-32 default (export allowed, whole definition off, malformed store fails closed) is already committed; 1308 only verifies the running image and closes D-32.
 
 ### i18n (WEBUI-01, WEBUI-02)
 - **D-06:** In-house i18n in `ui-v2/src/i18n/` with English text as the key, `LanguageProvider` and `useT()` at the App root, `Intl.PluralRules` for Russian; no new packages.
-- **D-07:** Language resolution order is DeGram host `?lang=` (badge hidden), then `localStorage` key `dgv2_lang` (en or ru), then default EN; `dgv2_lang` is added to `KEPT_KEYS` so sign-out keeps it.
-- **D-08:** The badge is a small «EN | RU» control fixed top-right on the landing layer only; it also sets `document.documentElement.lang`.
+- **D-07:** Language resolution in `ui-v2`: inside DeGram the host language wins (live `#degram-lang=` signal, else `?lang=` at load); outside DeGram the browser's primary language (`navigator.languages[0]`, else `navigator.language`; starts with `ru` → RU, else EN); no `dgv2_lang` storage and no `KEPT_KEYS` change (amended 2026-10-12 by D-50).
+- **D-08:** `ui-v2` renders no language control on any screen (the start-screen «EN | RU» badge is withdrawn by D-50); the resolved language sets `document.documentElement.lang`.
 - **D-09:** Server errors are translated by `code` through `describeError(err)` (`error.<CODE>` keys), falling back to server text; at minimum the 15 codes listed in RESEARCH Q4.
 - **D-10:** API-docs body content stays English; only its chrome is translated (assumption A4 adopted).
-- **D-11:** Per-browser persistence only, no server-side language profile (assumption A6 adopted).
-- **D-12:** A pure-Node key-coverage test `ui-v2/tests/i18n.test.mjs` enforces literal keys, no missing or unused RU keys, placeholder parity, owner strings verbatim, resolution order and `KEPT_KEYS`; `ui-v2/package.json` gains a `test` script.
+- **D-11:** No server-side language profile; DeGram keeps its choice in its own renderer storage (`degram.display.language`, `locale-config.ts`) (assumption A6 adopted, amended by D-50).
+- **D-12:** A pure-Node key-coverage test `ui-v2/tests/i18n.test.mjs` enforces literal keys, no missing or unused RU keys, placeholder parity, owner strings verbatim and the D-07 resolution order (host signal, `?lang=`, browser language); `ui-v2/package.json` gains a `test` script.
 - **D-13:** Proper nouns stay Latin in RU (Neo4j, Speckle, Grasshopper, Rhino, Revit, DeGram, Pellet, HermiT, Rule_Id, IRI, SWRL, layer names); server enum words (roles, statuses) are always mapped through keys.
 
 ### Member roles and export policy (WEBUI-03, WEBUI-04)
@@ -79,6 +79,13 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 - **D-47:** A one-off dry-run-by-default ops script (pattern `rotate_llm_master_secret.py`, under `auth._STORE_LOCK`) retires all `dgc_` credentials and removes UAT user `uat-pw-bd30ce@dg.local` with its memberships, sessions, grants and pairing row, after a backup of `data-service/data/*.json`, behind `checkpoint:human-verify`.
 - **D-48:** Editor `asiyagerey94@gmail.com` (degram-uat-c) needs connector grants after rollout; the rollout plan lists it as an owner action.
 
+### Owner amendment 2026-10-12 (after planning): one language switch in DeGram
+- **D-50:** The interface language of every element and every screen (DeGram and the embedded DG Web UI) is switched in one place only: DeGram Settings → Appearance → Language (`appearance-settings.tsx`, `LanguageSwitcher`) [owner 2026-10-12].
+- **D-51:** In the `degram` variant the Language switcher offers only «Русский» (`ru`) and «English» (`en`); other bundled, plugin or backend locales are not listed, and a stored other locale is coerced to English on load [owner 2026-10-12].
+- **D-52:** A language change in DeGram reaches the open DG page live, without reload, through a new host signal fragment `#degram-lang=ru|en` (allowlisted in `dg-view.ts` `signal` and `ui-v2` `parseHostSignal`), and `setLocale` keeps `&lang=` for later full loads.
+- **D-53:** A DG Web UI opened in a plain browser outside DeGram has no language control and follows the browser language (recommendation adopted under the owner instruction; owner may redirect).
+- **D-54:** The `degram` variant RU catalog is complete for every surface DeGram shows (existing `catalog-completeness.test.ts` pattern), so switching to «Русский» leaves no English text in visible DeGram chrome apart from the D-13 proper nouns.
+
 ### Working tree hygiene
 - **D-49:** Uncommitted v12 offline-repair changes in `ui-v2/src/screens/ProjectsScreen.jsx`, `ui-v2/src/lib/auth.js`, untracked `ui-v2/tests/*`, and the data-service WIP are settled by the owner before tasks that edit those files; 1308 commits stage by explicit path only.
 
@@ -102,5 +109,5 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 
 - Aligning DeGram's 7-day status rule with the session-based «Вкл» meaning.
 - Removing `DELETE /connectors/{id}/credentials/{credential_id}` (next release).
-- Full Russian API-docs body; masked password dialog in Grasshopper; browser-language detection.
+- Full Russian API-docs body; masked password dialog in Grasshopper.
 </deferred>
