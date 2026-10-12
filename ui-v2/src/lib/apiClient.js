@@ -3,6 +3,8 @@
 // HttpOnly dg_session cookie, and every unsafe request carries a CSRF marker
 // header that a cross-site form post cannot set.
 
+import { t } from "../i18n/index.js";
+
 export const AUTH_EXPIRED_EVENT = "dg-auth-expired";
 export const CSRF_HEADER = "X-DG-CSRF";
 
@@ -57,7 +59,7 @@ function messageFrom(body, res) {
   }
   if (typeof detail === "string" && detail) return detail;
   if (typeof body === "string" && body) return body;
-  return res.statusText || `HTTP ${res.status}`;
+  return res.statusText || t("Request failed (HTTP {status})", { status: res.status });
 }
 
 // apiFetch(url, { method, body, headers, allow404, signal, passthrough })

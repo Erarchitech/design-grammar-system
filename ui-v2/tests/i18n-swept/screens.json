@@ -4,8 +4,11 @@
     "src/screens/AiEngineScreen.jsx",
     "src/screens/ReasonerScreen.jsx",
     "src/screens/ApiDocsScreen.jsx",
+    "src/screens/DegramGrantsPanel.jsx",
+    "src/lib/apiClient.js",
+    "src/lib/auth.js",
     "src/lib/llmApi.js",
     "src/lib/reasonerApi.js"
   ],
-  "allow": []
+  "allow": ["DeGram access", "Requested access"]
 }

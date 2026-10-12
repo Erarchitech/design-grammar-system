@@ -99,7 +99,41 @@ export const ru = {
   Yes: "Да",
   No: "Нет",
   "Request example": "Пример запроса",
-  "Response example": "Пример ответа"
+  "Response example": "Пример ответа",
+
+  // ── DeGram grants panel. The same Russian wording the host-trimmed panel used before the i18n layer.
+  "DeGram access": "Доступ DeGram",
+  "Request a new token": "Запросить новый токен",
+  "Request sent": "Запрос отправлен",
+  "Access already granted": "Доступ уже выдан",
+  "Note (optional)": "Примечание (необязательно)",
+  "My access": "Мой доступ",
+  "No access granted yet": "Доступ пока не выдан",
+  Refresh: "Обновить",
+  "Select a project to manage DeGram access.": "Выберите проект, чтобы управлять доступом DeGram.",
+  "Sign in to view DeGram access.": "Войдите, чтобы увидеть доступ DeGram.",
+  "DeGram access unavailable.": "Доступ DeGram недоступен.",
+  "Could not grant access.": "Не удалось выдать доступ.",
+  "Could not revoke access.": "Не удалось отозвать доступ.",
+  "Could not request access.": "Не удалось запросить доступ.",
+  "Revoke this DeGram grant?": "Отозвать этот доступ DeGram?",
+  "Loading...": "Загрузка...",
+  Member: "Участник",
+  "Select member": "Выберите участника",
+  "grant\u0004Name": "Название",
+  Purpose: "Назначение",
+  "Grant access": "Выдать доступ",
+  "Issued grants": "Выданный доступ",
+  "No active grants.": "Нет активного доступа.",
+  "Created {date}": "Создано {date}",
+  "Last used {date}": "Последнее использование {date}",
+  Revoke: "Отозвать",
+  "Pending requests": "Ожидающие запросы",
+  Grant: "Выдать",
+
+  // ── lib messages built in apiClient.js and auth.js (server texts and error codes pass through describeError)
+  "Request failed (HTTP {status})": "Запрос не выполнен (HTTP {status})",
+  "Session could not be established. Sign in again.": "Не удалось начать сеанс. Войдите снова."
 };
 
 export const en = {

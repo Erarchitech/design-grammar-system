@@ -4,6 +4,7 @@
 // a password, hash, session token or invite code in browser storage.
 
 import { apiFetch, dataServiceBase, ApiError } from "./apiClient.js";
+import { t } from "../i18n/index.js";
 
 const LEGACY_KEYS = ["dg_users", "dg_current_user"];
 
@@ -68,7 +69,7 @@ async function establish(sessionResponse) {
   if (me) return me;
   // A successful login response is not proof of a still-live session. In
   // particular, a 401 from /auth/me must not resurrect the response identity.
-  throw new ApiError("Session could not be established. Sign in again.", { status: 401 });
+  throw new ApiError(t("Session could not be established. Sign in again."), { status: 401 });
 }
 
 export async function login(username, password) {
