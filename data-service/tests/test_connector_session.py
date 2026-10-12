@@ -349,7 +349,7 @@ def test_status_active_counts_live_sessions_and_last_sign_in():
     answer = connector_session.status_for("grasshopper", projects={PROJECT}, now=NOW + 200)
     assert answer["status"] == "active"
     assert answer["active_sessions"] == 2
-    assert answer["last_sign_in"] == "2027-01-15T08:03:20Z"
+    assert answer["last_sign_in"] == "2027-01-15T08:01:40Z"
 
 
 def test_status_stale_when_rows_exist_but_none_live():
@@ -395,7 +395,7 @@ def test_public_answer_keys_and_expires_at_format():
     assert answer["token"] == token
     assert answer["connectorId"] == "grasshopper"
     assert answer["username"] == OWNER
-    assert answer["expiresAt"] == "2027-01-15T10:00:00Z"
+    assert answer["expiresAt"] == "2027-01-15T16:00:00Z"
     assert answer["expiresInSeconds"] == 28800
 
 

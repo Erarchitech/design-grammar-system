@@ -246,3 +246,136 @@ def revoke_token(token: str | None) -> bool:
         return False
     digest = _hash(token)
     return _revoke_where(lambda r: r.get("token_hash") == digest, REASON_EXPLICIT) > 0
+
+
+def revoke_for_user(username: str, reason: str = REASON_USER_GONE) -> int:
+    """Revoke every live session of `username` (password change, deletion)."""
+    normalized = (username or "").strip().lower()
+    return _revoke_where(lambda r: r.get("username") == normalized, reason)
+
+
+def revoke_for_user_project(
+    username: str, project: str, reason: str = REASON_MEMBERSHIP_REMOVED
+) -> int:
+    """Revoke the live sessions of `username` bound to `project` (membership
+    removal)."""
+    normalized = (username or "").strip().lower()
+    return _revoke_where(
+        lambda r: r.get("username") == normalized and r.get("project") == project, reason
+    )
+
+
+def revoke_for_project(project: str, reason: str = REASON_PROJECT_SCOPE) -> int:
+    """Revoke every live session bound to `project` (company reassignment,
+    project deletion)."""
+    return _revoke_where(lambda r: r.get("project") == project, reason)
+
+
+def revoke_for_connector_grant(
+    username: str, project: str, connector_id: str, reason: str = REASON_GRANT_REVOKED
+) -> int:
+    """Revoke the live sessions of one (user, project, connector) triple (the
+    per-connector access grant was revoked)."""
+    normalized = (username or "").strip().lower()
+    return _revoke_where(
+        lambda r: r.get("username") == normalized
+        and r.get("project") == project
+        and r.get("connector_id") == connector_id,
+        reason,
+    )
+
+
+def revoke_unauthorized(username: str, project: str, reason: str = REASON_UNAUTHORIZED) -> int:
+    """Revoke the live sessions of `username` on `project` for connectors the
+    user is no longer authorized for (demotion, grant revoked), keeping the
+    authorized ones. Keeps the connector status honest between requests."""
+    normalized = (username or "").strip().lower()
+    with auth._STORE_LOCK:
+        role = effective_role_for(normalized, project)
+        return _revoke_where(
+            lambda r: r.get("username") == normalized
+            and r.get("project") == project
+            and not connector_access.is_authorized(
+                normalized, project, r.get("connector_id") or "", role=role
+            ),
+            reason,
+        )
+
+
+# -- touch, status, answer --------------------------------------------------
+
+
+def _is_live(row: dict[str, Any], current: int) -> bool:
+    return not row.get("revoked") and current < int(row.get("expires_at", 0))
+
+
+def touch(token: str | None, *, now: int | None = None) -> dict[str, Any] | None:
+    """Stamp ``last_seen`` of a live session (heartbeat) and return its public
+    record; None for a non-``dgk_``, unknown, revoked or expired token."""
+    if not token or not isinstance(token, str) or not token.startswith(SESSION_TOKEN_PREFIX):
+        return None
+    digest = _hash(token)
+    current = auth._now(now)
+    with auth._STORE_LOCK:
+        rows = auth._load(_file(), _KEY)
+        record = next((r for r in rows if r.get("token_hash") == digest), None)
+        if record is None or not _is_live(record, current):
+            return None
+        record["last_seen"] = current
+        auth._save(_file(), _KEY, rows)
+        return _public(record)
+
+
+def _iso(ts: int) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(int(ts)))
+
+
+def status_for(
+    connector_id: str,
+    *,
+    projects: set[str] | frozenset[str] | None = None,
+    now: int | None = None,
+) -> dict[str, Any]:
+    """The sign-in status of one connector over `projects` (D-32; None means all
+    projects, the admin view): ``active`` when at least one non-revoked,
+    non-expired session exists, ``stale`` when sessions existed but none is
+    live, ``never_connected`` when none is stored (or all were pruned)."""
+    current = auth._now(now)
+    with auth._STORE_LOCK:
+        rows = auth._load(_file(), _KEY)
+    scoped = [
+        r
+        for r in rows
+        if r.get("connector_id") == connector_id
+        and (projects is None or r.get("project") in projects)
+    ]
+    if not scoped:
+        return {"status": "never_connected", "active_sessions": 0, "last_sign_in": None}
+    live = sum(1 for r in scoped if _is_live(r, current))
+    newest = max(int(r.get("issued_at", 0)) for r in scoped)
+    return {
+        "status": "active" if live else "stale",
+        "active_sessions": live,
+        "last_sign_in": _iso(newest),
+    }
+
+
+def public_answer(
+    token: str, record: dict[str, Any], *, neo4j: Any = None
+) -> dict[str, Any]:
+    """The one answer shape of the sign-in mint (the only place the raw token is
+    returned). `neo4j` (a dict or a model with ``model_dump``) is added only when
+    given."""
+    expires_at = int(record["expires_at"])
+    answer: dict[str, Any] = {
+        "token": token,
+        "project": record["project"],
+        "connectorId": record["connector_id"],
+        "username": record["username"],
+        "company": record.get("company"),
+        "expiresAt": _iso(expires_at),
+        "expiresInSeconds": expires_at - int(record["issued_at"]),
+    }
+    if neo4j is not None:
+        answer["neo4j"] = neo4j.model_dump() if hasattr(neo4j, "model_dump") else neo4j
+    return answer
