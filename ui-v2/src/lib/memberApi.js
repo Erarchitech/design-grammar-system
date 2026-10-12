@@ -6,6 +6,10 @@
 
 import { apiFetch, dataServiceBase } from "./apiClient.js";
 
+export function listProjectMembers(project) {
+  return apiFetch(`${dataServiceBase()}/projects/${encodeURIComponent(project)}/members`);
+}
+
 export function changeMemberRole(project, username, role) {
   return apiFetch(
     `${dataServiceBase()}/projects/${encodeURIComponent(project)}/members/${encodeURIComponent(username)}`,

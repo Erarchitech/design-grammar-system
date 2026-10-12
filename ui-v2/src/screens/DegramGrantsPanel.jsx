@@ -165,7 +165,7 @@ export default function DegramGrantsPanel({ project, user, trimmed = false, acti
     requestForm = (
       <form onSubmit={request} style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <input aria-label={t("Note (optional)")} placeholder={t("Note (optional)")} maxLength={200} value={note} onChange={(event) => setNote(event.target.value)} style={fieldStyle} />
-        <Button size="sm" type="submit" disabled={busy || loading}>{t("Request a new token")}</Button>
+        <Button size="sm" type="submit" disabled={busy || loading}>{t("Request access")}</Button>
       </form>
     );
   }

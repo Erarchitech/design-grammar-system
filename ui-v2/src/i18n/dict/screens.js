@@ -103,7 +103,6 @@ export const ru = {
 
   // ── DeGram grants panel. The same Russian wording the host-trimmed panel used before the i18n layer.
   "DeGram access": "Доступ DeGram",
-  "Request a new token": "Запросить новый токен",
   "Request sent": "Запрос отправлен",
   "Access already granted": "Доступ уже выдан",
   "Note (optional)": "Примечание (необязательно)",

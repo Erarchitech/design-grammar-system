@@ -1,6 +1,7 @@
 import test, { beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { CSRF_HEADER } from '../src/lib/apiClient.js';
+import { listProjectMembers } from '../src/lib/memberApi.js';
 import {
   issueConnectorAccess,
   listConnectors,
@@ -38,6 +39,7 @@ for (const [name, call, method, url, body] of [
   ['requestConnectorAccess', () => requestConnectorAccess(project, 'revit', 'Review'), 'POST', '/data-service/connector-access-requests', { project, connector_id: 'revit', note: 'Review' }],
   ['listMyConnectorAccess', () => listMyConnectorAccess(), 'GET', '/data-service/connector-access/mine'],
   ['listProjectConnectorAccess', () => listProjectConnectorAccess(project), 'GET', accessPath],
+  ['listProjectMembers', () => listProjectMembers(project), 'GET', `/data-service/projects/${encodeURIComponent(project)}/members`],
   ['issueConnectorAccess', () => issueConnectorAccess(project, { username: 'member', connectorId: 'revit' }), 'POST', accessPath, { username: 'member', connector_id: 'revit' }],
   ['revokeConnectorAccess', () => revokeConnectorAccess(project, 'a/1'), 'DELETE', `${accessPath}/a%2F1`]
 ]) {

@@ -1,5 +1,50 @@
-// connectors area dictionary. Filled by the plan that translates this area; `ru` maps English text to Russian, `en` holds
-// only tp() plural tables (English is otherwise the key).
-export const ru = {};
+// Connector screen and hosted-table copy. English text is the key; EN entries
+// are needed only for plural forms.
+export const ru = {
+  "Connectors": "Коннекторы",
+  "Connectors.": "Коннекторы.",
+  "Region · Connectors": "Раздел · Коннекторы",
+  "Connector": "Коннектор",
+  "Access": "Доступ",
+  "Status": "Статус",
+  "Available": "Доступен",
+  "Request access": "Запросить доступ",
+  "Request sent": "Запрос отправлен",
+  "On": "Вкл",
+  "Off": "Выкл",
+  "Note (optional)": "Примечание (необязательно)",
+  "Refresh": "Обновить",
+  "Refreshing...": "Обновление...",
+  "Loading...": "Загрузка...",
+  "Select a project.": "Выберите проект.",
+  "No connectors.": "Нет коннекторов.",
+  "Sign in from the add-in with your DG account.": "Входите из аддина под своей учётной записью DG.",
+  "Connectors let external applications access your project. Sign in from each add-in with your DG account.": "Коннекторы дают внешним приложениям доступ к проекту. Входите из каждого аддина под своей учётной записью DG.",
+  "Last sign-in {date}": "Последний вход {date}",
+  "Never signed in": "Входов не было",
+  "{n} live sign-ins": { one: "{n} активный вход", few: "{n} активных входа", many: "{n} активных входов", other: "{n} активного входа" },
+  "Access: included with your role": "Доступ: входит в вашу роль",
+  "Access: granted": "Доступ: выдан",
+  "Access: requested": "Доступ: запрошен",
+  "Access: not granted": "Доступ: не выдан",
+  "Sign in from {connector} with your DG account. No token is needed.": "Войдите в {connector} под своей учётной записью DG. Токен не нужен.",
+  "Grant access to a member": "Выдать доступ участнику",
+  "Member": "Участник",
+  "Select a member": "Выберите участника",
+  "Access requests": "Запросы доступа",
+  "Granted access": "Выданные доступы",
+  "Grant access": "Выдать доступ",
+  "Revoke access": "Отозвать доступ",
+  "Revoke this connector access?": "Отозвать этот доступ к коннектору?",
+  "All editors and viewers already have access.": "У всех редакторов и наблюдателей уже есть доступ.",
+  "No access has been granted yet.": "Доступы пока не выданы.",
+  "Could not complete the request. Try again.": "Не удалось выполнить запрос. Повторите попытку.",
+  "Connectors unavailable.": "Коннекторы недоступны.",
+  "Retry": "Повторить",
+  "Loading connectors...": "Загрузка коннекторов...",
+  "No connector data · data-service may be unreachable": "Нет данных о коннекторах · сервис данных может быть недоступен"
+};
 
-export const en = {};
+export const en = {
+  "{n} live sign-ins": { one: "{n} live sign-in", other: "{n} live sign-ins" }
+};

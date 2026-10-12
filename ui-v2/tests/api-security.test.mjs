@@ -62,8 +62,6 @@ const cases = [
   ['inputs.acceptCandidate', () => inputs.acceptCandidate(project, 'def', rule, { id: 'candidate', values: [1] }), 'POST', '/data-service/computgraph/candidates/accept', { project, definitionId: 'def', ruleId: rule, candidate: { id: 'candidate', values: [1] } }],
   ['inputs.fetchAcceptedCandidates', () => inputs.fetchAcceptedCandidates(project, rule), 'GET', `/data-service/computgraph/candidates/${encoded}?ruleId=${er}`],
   ['connectors.listConnectors', () => connectors.listConnectors(), 'GET', '/data-service/connectors'],
-  ['connectors.createCredential', () => connectors.createCredential('C/1', 'label', project), 'POST', '/data-service/connectors/C%2F1/credentials', { project, label: 'label' }],
-  ['connectors.revokeCredential', () => connectors.revokeCredential('C/1', 'key/1'), 'DELETE', '/data-service/connectors/C%2F1/credentials/key%2F1'],
   ['connectors.listProjectGrants', () => connectors.listProjectGrants(project), 'GET', `/data-service/projects/${encoded}/degram-grants`],
   ['connectors.issueGrant', () => connectors.issueGrant(project, { username: 'member', label: 'Studio', purpose: 'Review' }), 'POST', `/data-service/projects/${encoded}/degram-grants`, { username: 'member', label: 'Studio', purpose: 'Review' }],
   ['connectors.revokeGrant', () => connectors.revokeGrant(project, 'grant/1'), 'DELETE', `/data-service/projects/${encoded}/degram-grants/grant%2F1`],

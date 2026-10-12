@@ -1,0 +1,9 @@
+{
+  "area": "connectors",
+  "files": [
+    "src/screens/ConnectorsScreen.jsx",
+    "src/screens/HostedConnectorsTable.jsx",
+    "src/lib/connectorsApi.js"
+  ],
+  "allow": []
+}
