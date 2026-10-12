@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1308
 current_phase_name: dg-web-ui
-current_plan: 12
+current_plan: 13
 status: executing
-stopped_at: Completed 1308-12-PLAN.md
-last_updated: "2026-10-12T14:39:04.230Z"
+stopped_at: Completed 1308-16-PLAN.md
+last_updated: "2026-10-12T14:47:10.700Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 1308 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 77
-  completed_plans: 56
+  completed_plans: 57
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1308 (dg-web-ui) — EXECUTING
 Current Phase: 1308
 Current Phase Name: dg-web-ui
-Current Plan: 12
+Current Plan: 13
 Total Plans in Phase: 24
-Plan: 12 of 24
+Plan: 13 of 24
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 1308 execution started
 Last Activity Description: Phase 1308 execution started
@@ -197,6 +197,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1308 P23 | 25min | 2 tasks | 7 files |
 | Phase 1308 P10 | 75min | 3 tasks | 9 files |
 | Phase 1308 P12 | 80 min | 2 tasks | 5 files |
+| Phase 1308 P16 | 55min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -560,6 +561,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1308-23: landing relayout runs one frame after dg-lang (React re-renders after the event); auth errors stored as codes and translated at render
 - [Phase ?]: 1308-10: Members and Project settings panels share one wrapper so the 24px marginTop is the only gap; policy toggles wrap the Checkbox primitive in role=checkbox (no input element) instead of adding a primitive
 - [Phase ?]: 1308-10: whole-definition confirm button uses tc('confirm', ...) because UI-SPEC gives it a different RU text than the toggle label; malformed policy GET body fails closed to load error
+- [Phase ?]: 1308-16: grant-request defaults 'DeGram access'/'Requested access' stay English payload data (allow-listed), not display text
 
 ### Research Flags (carry into planning)
 
@@ -655,8 +657,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T14:39:04.204Z
-Stopped at: Completed 1308-12-PLAN.md
+Last session: 2026-10-12T14:47:10.676Z
+Stopped at: Completed 1308-16-PLAN.md
 Resume file: None
 
 ## Performance Metrics
