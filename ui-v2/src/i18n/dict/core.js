@@ -4,7 +4,13 @@
 export const ru = {
   "Design Grammars.": "Грамматика.",
   "Encode your design intent.": "Граф правил проекта.",
-  "System initiated": "Система инициализирована"
+  "System initiated": "Система инициализирована",
+  Viewer: "Наблюдатель",
+  Editor: "Редактор",
+  Owner: "Владелец",
+  On: "Вкл",
+  Off: "Выкл",
+  "Never connected": "Не подключался"
 };
 
 export const en = {};
