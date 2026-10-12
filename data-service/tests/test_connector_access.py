@@ -164,10 +164,35 @@ def test_owner_editor_and_admin_create_without_a_request(client, world):
     assert _credential(client, world["root"]).status_code == 201
 
 
-def test_editor_request_is_access_exists(client, world):
+def test_editor_without_a_grant_can_request_access(client, world):
+    """Phase 1308 D-29: an editor is no longer exempt; it asks like a viewer."""
+    response = _request(client, world["eric"], note="need the add-in")
+    assert response.status_code == 201, response.text
+    assert response.json()["username"] == ERIC
+    assert response.json()["connector_id"] == "grasshopper"
+    pending = client.get("/projects/P1/connector-access", headers=world["olga"]).json()["requests"]
+    assert [r["username"] for r in pending] == [ERIC]
+
+
+def test_owner_and_admin_request_is_access_exists(client, world):
+    for who in ("olga", "root"):
+        response = _request(client, world[who])
+        assert response.status_code == 409, who
+        assert _code(response) == "ACCESS_EXISTS", who
+    assert not _access_file().exists()
+
+
+def test_editor_with_an_active_grant_request_is_access_exists(client, world):
+    assert _issue(client, world["olga"], username=ERIC).status_code == 201
     response = _request(client, world["eric"])
     assert response.status_code == 409
     assert _code(response) == "ACCESS_EXISTS"
+
+
+def test_admin_request_for_an_unknown_connector_is_404_not_exists(client, world):
+    response = _request(client, world["root"], connector="sketchup")
+    assert response.status_code == 404
+    assert _code(response) == "CONNECTOR_NOT_FOUND"
 
 
 def test_owner_revoke_ends_the_access(client, world):
@@ -343,9 +368,25 @@ def test_connectors_access_field_per_role_and_state(client, world):
     assert viewer["grasshopper"] == "pending"
     assert viewer["revit"] == "available"
     assert viewer["dynamo"] == "requestable"
-    for who in ("olga", "eric", "root"):
+    for who in ("olga", "root"):
         row = _access_by_id(client.get("/connectors", params={"project": "P1"}, headers=world[who]))
         assert all(row[c["id"]] == "available" for c in connectors.CONNECTOR_REGISTRY), who
+
+
+def test_connectors_access_field_for_an_editor_follows_the_grant(client, world):
+    """D-29: owner/admin are exempt, an editor is requestable, pending, then available."""
+
+    def state():
+        body = client.get("/connectors", params={"project": "P1"}, headers=world["eric"])
+        return _access_by_id(body)
+
+    assert state()["grasshopper"] == "requestable"
+    assert _request(client, world["eric"], connector="grasshopper").status_code == 201
+    assert state()["grasshopper"] == "pending"
+    assert _issue(client, world["olga"], username=ERIC, connector="grasshopper").status_code == 201
+    row = state()
+    assert row["grasshopper"] == "available"
+    assert row["revit"] == "requestable"
 
 
 def test_connectors_access_field_absent_for_a_non_member(client, world):
@@ -358,7 +399,9 @@ def test_connectors_access_field_absent_for_a_non_member(client, world):
 
 def test_access_state_values(client, world):
     assert connector_access.access_state(ALICE, "P1", "viewer", "grasshopper") == "requestable"
-    assert connector_access.access_state(ERIC, "P1", "editor", "grasshopper") == "available"
+    assert connector_access.access_state(ERIC, "P1", "editor", "grasshopper") == "requestable"
+    assert connector_access.access_state(OLGA, "P1", "owner", "grasshopper") == "available"
+    assert connector_access.access_state(ROOT, "P1", "owner", "grasshopper") == "available"
     connector_access.create_request(ALICE, "P1", "grasshopper", None)
     assert connector_access.access_state(ALICE, "P1", "viewer", "grasshopper") == "pending"
     connector_access.issue_access("P1", ALICE, "grasshopper", OLGA)
@@ -371,3 +414,45 @@ def test_reissue_is_idempotent_one_active_row(client, world):
     active = [g for g in _stored()["grants"] if not g.get("revoked")]
     assert [g["access_id"] for g in active] == [second]
     assert first != second
+
+
+# -- D-30: a viewer with a grant has the connector's full route scope -----------
+
+
+def _connector_session_for(client, cookie, project="P1", connector="grasshopper"):
+    response = client.post(
+        "/auth/connector-session",
+        json={"project": project, "connector_id": connector},
+        headers=cookie,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["token"]
+
+
+def test_viewer_with_a_grant_publishes_for_its_bound_project(client, world, monkeypatch):
+    """D-30: the route policy admits POST /validation/publish for a dgk_ session
+    bound to P1 whatever the project role (it answers the Speckle config 404,
+    not a 401/403); another project in the body is still refused."""
+    monkeypatch.setattr(app_module, "_auto_configure_integration", lambda *a, **k: None)
+    monkeypatch.setattr(app_module, "get_integration_config", lambda *a, **k: None)
+    assert _issue(client, world["olga"]).status_code == 201
+    token = _connector_session_for(client, world["alice"])
+    assert token.startswith("dgk_")
+    bearer = {"Authorization": f"Bearer {token}"}
+
+    own = client.post("/validation/publish", json={"project": "P1", "rules": [], "entities": []}, headers=bearer)
+    assert own.status_code == 404, own.text
+    assert _code(own) == "SPECKLE_CONFIG_MISSING"
+
+    other = client.post("/validation/publish", json={"project": "P2", "rules": [], "entities": []}, headers=bearer)
+    assert other.status_code == 403, other.text
+
+
+def test_editor_without_a_grant_gets_no_connector_session(client, world):
+    response = client.post(
+        "/auth/connector-session",
+        json={"project": "P1", "connector_id": "grasshopper"},
+        headers=world["eric"],
+    )
+    assert response.status_code == 403
+    assert _code(response) == "CONNECTOR_ACCESS_REQUIRED"

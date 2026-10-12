@@ -1,14 +1,14 @@
 """Per-connector access grants and requests (Phase 1301 plan 40, D-46, DGCL-05, DGCL-06).
 
-A project owner, editor and an admin create connector credentials (Grasshopper,
-Revit, ...) without ceremony. A project *viewer* can ask for access to one
-connector of the project; the owner or an admin approves it, and only then may
-that viewer create the connector's credential. Approving = issuing: issuing
-access closes the viewer's pending request for the same connector.
+A project owner and an admin (Phase 1308, D-29) use a connector (Grasshopper,
+Revit, ...) without ceremony. A project *editor* or *viewer* can ask for access
+to one connector of the project; the owner or an admin approves it, and only
+then may that member sign in with the connector. Approving = issuing: issuing
+access closes the member's pending request for the same connector.
 
 A grant is a record of authorization only. It carries no secret and no route
-returns one; the credential token still comes from
-``POST /connectors/{connector_id}/credentials`` and is shown once to the caller.
+returns one; the connector sign-in session comes from
+``POST /auth/connector-session`` and is shown once to the caller.
 
 A grant is bound to ``(username, project, connector_id)``. It is active while it
 is not revoked, its user still exists and the user is still a stored member of
@@ -113,8 +113,8 @@ def access_required():
 
 def access_exists():
     return auth.auth_error(
-        "You can already create credentials for this connector in this project.",
-        "Create the credential on the Connectors tab.",
+        "You can already sign in with this connector in this project.",
+        "Sign in from the connector with your DG account.",
         "ACCESS_EXISTS",
         409,
     )
@@ -206,8 +206,8 @@ def _public_request(row: dict[str, Any]) -> dict[str, Any]:
 
 def can_create(username: str, project: str, connector_id: str) -> bool:
     """True while `username` holds an active access for `connector_id` on
-    `project`. Owner, editor and admin never need one (the handler checks the
-    role first)."""
+    `project`. Owner and admin never need one (``is_exempt``); editor and viewer
+    do (Phase 1308, D-29)."""
     normalized = (username or "").strip().lower()
     with auth._STORE_LOCK:
         grants, _requests = _load()
@@ -245,9 +245,10 @@ def _has_pending(username: str, project: str, connector_id: str, requests) -> bo
 
 def access_state(username: str, project: str, role: str | None, connector_id: str) -> str:
     """The caller's access to one connector in one project: ``available`` for
-    an owner/editor (or an admin, whose effective role is owner) or an active
-    grant, ``pending`` for an open request, else ``requestable``."""
-    if auth.role_satisfies(role, "editor"):
+    an owner (or an admin, whose effective role is owner) or an active grant,
+    ``pending`` for an open request, else ``requestable`` (editor and viewer
+    alike, Phase 1308 D-29)."""
+    if is_exempt(role):
         return STATE_AVAILABLE
     normalized = (username or "").strip().lower()
     with auth._STORE_LOCK:
@@ -276,10 +277,10 @@ def create_request(
     *,
     now: int | None = None,
 ) -> dict[str, Any]:
-    """Record a pending request of a project viewer. A second request of the
-    same (user, project, connector) replaces the note instead of adding a row.
-    409 ``ACCESS_EXISTS`` when the caller is already an owner/editor of the
-    project or holds an active access."""
+    """Record a pending request of a project editor or viewer. A second request
+    of the same (user, project, connector) replaces the note instead of adding
+    a row. 409 ``ACCESS_EXISTS`` when the caller is already an owner of the
+    project (an exempt role) or holds an active access."""
     check_connector(connector_id)
     clean_note = (note or "").strip()
     if len(clean_note) > NOTE_MAX:
@@ -287,7 +288,7 @@ def create_request(
     normalized = username.strip().lower()
     current = auth._now(now)
     with auth._STORE_LOCK:
-        if auth.role_satisfies(auth.get_role(normalized, project), "editor") or can_create(
+        if is_exempt(auth.get_role(normalized, project)) or can_create(
             normalized, project, connector_id
         ):
             raise access_exists()

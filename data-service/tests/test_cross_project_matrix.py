@@ -716,6 +716,26 @@ class TestConnectorAccessBoundary:
         finally:
             connector_access.revoke_for_user_project(world.names["V"], P1)
 
+    def test_editor_without_a_grant_is_not_exempt_and_can_request(self, client, world):
+        """D-29: only owner/admin are exempt; a P1 editor asks like a viewer and
+        sees the connector as requestable until an owner approves it."""
+        import connector_access
+
+        try:
+            listed = client.get("/connectors", params={"project": P1}, headers=world.headers["A"])
+            states = {c["id"]: c.get("access") for c in listed.json()["connectors"]}
+            assert states["grasshopper"] == "requestable"
+            sent = client.post(
+                "/connector-access-requests",
+                json={"project": P1, "connector_id": "grasshopper"},
+                headers=world.headers["A"],
+            )
+            assert sent.status_code == 201, sent.text
+            again = client.get("/connectors", params={"project": P1}, headers=world.headers["A"])
+            assert {c["id"]: c.get("access") for c in again.json()["connectors"]}["grasshopper"] == "pending"
+        finally:
+            connector_access.revoke_for_user_project(world.names["A"], P1)
+
     def test_p1_connector_token_cannot_request_or_issue_access(self, client, world):
         for method, url, body in (
             ("POST", "/connector-access-requests", {"project": P1, "connector_id": "revit"}),

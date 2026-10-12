@@ -1688,9 +1688,10 @@ def get_connectors(request: Request):
     overview = connectors.get_connector_overview(projects=projects)
     # Phase 1301-40 (D-46): with ``?project=P`` and a caller that is a member of
     # P (an admin counts as owner), each registry connector carries ``access``:
-    # available (owner/editor/admin or an approved access), pending (a request
-    # is open) or requestable (a viewer without access). No project, or a caller
-    # outside P, leaves the payload unchanged.
+    # available (owner/admin or an approved access), pending (a request
+    # is open) or requestable (an editor or viewer without access). No project,
+    # or a caller outside P, leaves the payload unchanged. Phase 1308 (D-29):
+    # only an owner or an admin is exempt; editor and viewer need a grant.
     access_project = request.query_params.get("project") or ""
     access_role = auth.effective_role(principal, access_project) if access_project else None
     if access_role is not None:
@@ -4995,11 +4996,12 @@ class ConnectorAccessIssuePayload(BaseModel):
 def request_connector_access(payload: ConnectorAccessRequestPayload, request: Request):
     """A project member (route policy: viewer) asks the owners and admins for
     access to one registry connector (D-46). 409 ACCESS_EXISTS when the caller
-    is already an owner/editor/admin of the project or holds an approved access;
-    404 CONNECTOR_NOT_FOUND for an unknown connector and for ``degram``."""
+    is already an owner/admin of the project (exempt, D-29) or holds an approved
+    access; an editor or viewer without access gets 201 pending. 404
+    CONNECTOR_NOT_FOUND for an unknown connector and for ``degram``."""
     principal = request.state.principal
     username = principal.username or ""
-    if auth.role_satisfies(auth.effective_role(principal, payload.project), "editor"):
+    if connector_access.is_exempt(auth.effective_role(principal, payload.project)):
         # An admin (effective role owner) never needs an access row.
         connector_access.check_connector(payload.connector_id)
         raise connector_access.access_exists()
