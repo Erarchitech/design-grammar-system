@@ -1,17 +1,23 @@
 import React from "react";
 import { Button, Input, Select, Badge } from "../components/index.js";
 import { getSettings, saveSettings, testConnection, fetchModels } from "../lib/llmApi.js";
+import { describeError } from "../i18n/index.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
 
+// Provider names are proper nouns (D-13): they stay Latin and never go through t().
 const PROVIDERS = [
   { value: "anthropic", label: "Anthropic" },
   { value: "openai", label: "OpenAI" },
   { value: "ollama", label: "Ollama" }
 ];
 
-// AI Engine region — LLM provider/model/API-key setup over the data-service gateway.
+// LLM model region — LLM provider/model/API-key setup over the data-service gateway.
 // Phase 811 fills the shell (Phase 810) with provider selection, encrypted key
-// management, and connection testing.
+// management, and connection testing. Phase 1308 (D-21) names the region "LLM model"
+// and runs every label through the i18n layer; the API key handling is untouched. Errors are kept as objects and described at render so
+// the text follows a live language switch.
 export default function AiEngineScreen({ active, onBack, project }) {
+  const { t, tp } = useT();
   const [provider, setProvider] = React.useState("");
   const [model, setModel] = React.useState("");
   const [apiKey, setApiKey] = React.useState("");
@@ -22,11 +28,11 @@ export default function AiEngineScreen({ active, onBack, project }) {
   const [modelsLoading, setModelsLoading] = React.useState(false);
 
   const [loading, setLoading] = React.useState(true);
-  const [loadError, setLoadError] = React.useState("");
+  const [loadError, setLoadError] = React.useState(null);
 
   const [saving, setSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState(""); // "" | "saved" | "error"
-  const [saveError, setSaveError] = React.useState("");
+  const [saveError, setSaveError] = React.useState(null);
 
   const [testing, setTesting] = React.useState(false);
   const [testResult, setTestResult] = React.useState(null);
@@ -35,7 +41,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
   React.useEffect(() => {
     if (!active) return;
     setLoading(true);
-    setLoadError("");
+    setLoadError(null);
     setTestResult(null);
     getSettings()
       .then((s) => {
@@ -44,7 +50,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
         setKeyConfigured(s.apiKeyConfigured || false);
         setBaseUrl(s.baseUrl || "");
       })
-      .catch((err) => setLoadError(err.message || "Failed to load settings"))
+      .catch((err) => setLoadError(err || new Error("")))
       .finally(() => setLoading(false));
   }, [active]);
 
@@ -65,16 +71,16 @@ export default function AiEngineScreen({ active, onBack, project }) {
   const modelOptions = React.useMemo(() => {
     const fetched = models.map((m) => ({ value: m, label: m }));
     if (model && !models.includes(model)) {
-      fetched.unshift({ value: model, label: `${model} (saved)` });
+      fetched.unshift({ value: model, label: t("{model} (saved)", { model }) });
     }
     return fetched;
-  }, [models, model]);
+  }, [models, model, t]);
 
   // ── Save settings ──
   const handleSave = async () => {
     setSaving(true);
     setSaveMsg("");
-    setSaveError("");
+    setSaveError(null);
     try {
       const payload = {};
       if (provider) payload.provider = provider;
@@ -88,7 +94,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
       setSaveMsg("saved");
     } catch (err) {
       setSaveMsg("error");
-      setSaveError(err.message || "Failed to save settings");
+      setSaveError(err || new Error(""));
     } finally {
       setSaving(false);
     }
@@ -107,7 +113,8 @@ export default function AiEngineScreen({ active, onBack, project }) {
       const result = await testConnection(selection);
       setTestResult(result);
     } catch (err) {
-      setTestResult({ success: false, error: err.message || "Connection test failed" });
+      // `failure` keeps the thrown error; a server-reported `error` string (data) is shown as received.
+      setTestResult({ success: false, failure: err || new Error("") });
     } finally {
       setTesting(false);
     }
@@ -116,7 +123,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
   // ── Retry load ──
   const handleRetry = () => {
     setLoading(true);
-    setLoadError("");
+    setLoadError(null);
     getSettings()
       .then((s) => {
         setProvider(s.provider || "");
@@ -124,9 +131,13 @@ export default function AiEngineScreen({ active, onBack, project }) {
         setKeyConfigured(s.apiKeyConfigured || false);
         setBaseUrl(s.baseUrl || "");
       })
-      .catch((err) => setLoadError(err.message || "Failed to load settings"))
+      .catch((err) => setLoadError(err || new Error("")))
       .finally(() => setLoading(false));
   };
+
+  const testErrorText = testResult?.failure
+    ? describeError(testResult.failure, t("Connection test failed"))
+    : testResult?.error;
 
   // ── Render ──
   return (
@@ -152,14 +163,14 @@ export default function AiEngineScreen({ active, onBack, project }) {
         {/* ── Header ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Button variant="outline" size="sm" onClick={onBack}>
-            ← Back
+            ← {t("Back")}
           </Button>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-              Region · AI Engine
+              {t("Region · LLM model")}
             </div>
             <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>
-              AI Engine.
+              {t("LLM model.")}
             </div>
           </div>
         </div>
@@ -168,7 +179,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
         {loading && (
           <div className="dg-frost" style={{ borderRadius: "var(--radius-cards)", padding: 26, boxShadow: "var(--shadow-panel)" }}>
             <div style={{ font: "400 14px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-              Loading settings…
+              {t("Loading settings…")}
             </div>
           </div>
         )}
@@ -177,9 +188,9 @@ export default function AiEngineScreen({ active, onBack, project }) {
         {loadError && (
           <div className="dg-frost" style={{ borderRadius: "var(--radius-cards)", padding: 26, boxShadow: "var(--shadow-panel)" }}>
             <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>
-              Settings unavailable · {loadError}{" "}
+              {t("Settings unavailable · {reason}", { reason: describeError(loadError, t("Failed to load settings")) })}{" "}
               <span onClick={handleRetry} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                Retry
+                {t("Retry")}
               </span>
             </div>
           </div>
@@ -194,12 +205,12 @@ export default function AiEngineScreen({ active, onBack, project }) {
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-                  Configuration
+                  {t("Configuration")}
                 </div>
 
                 {/* Provider */}
                 <Select
-                  label="Provider"
+                  label={t("Provider")}
                   options={PROVIDERS}
                   value={provider}
                   onChange={(e) => {
@@ -211,11 +222,11 @@ export default function AiEngineScreen({ active, onBack, project }) {
                 {/* Model */}
                 <div>
                   <Select
-                    label="Model"
+                    label={t("Model")}
                     options={
                       modelOptions.length > 0
                         ? modelOptions
-                        : [{ value: "", label: "Select a provider first" }]
+                        : [{ value: "", label: t("Select a provider first") }]
                     }
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
@@ -229,7 +240,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         marginTop: 6
                       }}
                     >
-                      Loading models…
+                      {t("Loading models…")}
                     </div>
                   )}
                   {!modelsLoading && provider && models.length === 0 && (
@@ -240,7 +251,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         marginTop: 6
                       }}
                     >
-                      No models discovered — they will populate after a successful connection test
+                      {t("No models discovered — they will populate after a successful connection test")}
                     </div>
                   )}
                 </div>
@@ -250,12 +261,12 @@ export default function AiEngineScreen({ active, onBack, project }) {
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
                     <div style={{ flex: 1 }}>
                       <Input
-                        label="API Key"
+                        label={t("API Key")}
                         type="password"
                         placeholder={
                           keyConfigured
-                            ? "Leave blank to keep current key"
-                            : "Enter API key"
+                            ? t("Leave blank to keep current key")
+                            : t("Enter API key")
                         }
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
@@ -266,7 +277,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                       disabled={saving}
                       style={{ marginBottom: 0, flexShrink: 0 }}
                     >
-                      {saving ? "Saving…" : "Save"}
+                      {saving ? t("Saving…") : t("Save")}
                     </Button>
                   </div>
 
@@ -280,9 +291,9 @@ export default function AiEngineScreen({ active, onBack, project }) {
                     }}
                   >
                     {keyConfigured ? (
-                      <Badge variant="soft">Key configured</Badge>
+                      <Badge variant="soft">{t("Key configured")}</Badge>
                     ) : (
-                      <Badge variant="outline">No key</Badge>
+                      <Badge variant="outline">{t("No key")}</Badge>
                     )}
 
                     {saveMsg === "saved" && (
@@ -292,7 +303,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           color: "var(--color-signal-ink, #2d7a4b)"
                         }}
                       >
-                        Saved
+                        {t("Saved")}
                       </span>
                     )}
                     {saveMsg === "error" && (
@@ -302,7 +313,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           color: "var(--color-signal)"
                         }}
                       >
-                        {saveError}
+                        {describeError(saveError, t("Failed to save settings"))}
                       </span>
                     )}
                   </div>
@@ -310,8 +321,8 @@ export default function AiEngineScreen({ active, onBack, project }) {
 
                 {/* Base URL (optional) */}
                 <Input
-                  label="Base URL"
-                  hint="Optional — for OpenAI-compatible providers using a custom endpoint"
+                  label={t("Base URL")}
+                  hint={t("Optional — for OpenAI-compatible providers using a custom endpoint")}
                   placeholder={
                     provider === "openai"
                       ? "https://api.openai.com/v1"
@@ -319,7 +330,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         ? "http://ollama:11434"
                         : provider === "anthropic"
                           ? "https://api.anthropic.com/v1"
-                          : "Custom API base URL"
+                          : t("Custom API base URL")
                   }
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
@@ -334,7 +345,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-                  Active Configuration
+                  {t("Active Configuration")}
                 </div>
                 <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
                   <div>
@@ -345,7 +356,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         display: "block"
                       }}
                     >
-                      Provider
+                      {t("Provider")}
                     </span>
                     <span
                       style={{
@@ -364,7 +375,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         display: "block"
                       }}
                     >
-                      Model
+                      {t("Model")}
                     </span>
                     <span
                       style={{
@@ -383,7 +394,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         display: "block"
                       }}
                     >
-                      API Key
+                      {t("API Key")}
                     </span>
                     <span
                       style={{
@@ -392,9 +403,9 @@ export default function AiEngineScreen({ active, onBack, project }) {
                       }}
                     >
                       {keyConfigured ? (
-                        <Badge variant="soft">Configured</Badge>
+                        <Badge variant="soft">{t("Configured")}</Badge>
                       ) : (
-                        <Badge variant="outline">Not configured</Badge>
+                        <Badge variant="outline">{t("Not configured")}</Badge>
                       )}
                     </span>
                   </div>
@@ -407,7 +418,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           display: "block"
                         }}
                       >
-                        Base URL
+                        {t("Base URL")}
                       </span>
                       <span
                         style={{
@@ -430,7 +441,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-                  Connection Test
+                  {t("Connection Test")}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Button
@@ -438,7 +449,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                     onClick={handleTest}
                     disabled={testing || (!keyConfigured && !apiKey.trim())}
                   >
-                    {testing ? "Testing…" : "Test Connection"}
+                    {testing ? t("Testing…") : t("Test Connection")}
                   </Button>
                   {!keyConfigured && (
                     <span
@@ -447,7 +458,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                         color: "var(--text-muted)"
                       }}
                     >
-                      Save an API key first
+                      {t("Save an API key first")}
                     </span>
                   )}
                 </div>
@@ -477,7 +488,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           : "var(--color-signal)"
                       }}
                     >
-                      {testResult.success ? "Connected" : "Failed"}
+                      {testResult.success ? t("Connected") : t("Failed")}
                     </div>
                     {testResult.success && (
                       <div
@@ -486,12 +497,12 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           color: "var(--text-muted)"
                         }}
                       >
-                        Latency: {Math.round(testResult.latencyMs)}ms
+                        {t("Latency: {ms} ms", { ms: Math.round(testResult.latencyMs) })}
                         {testResult.models?.length > 0 &&
-                          ` · ${testResult.models.length} model${testResult.models.length === 1 ? "" : "s"} available`}
+                          ` · ${tp("{n} model available", testResult.models.length)}`}
                       </div>
                     )}
-                    {!testResult.success && testResult.error && (
+                    {!testResult.success && testErrorText && (
                       <div
                         style={{
                           font: "400 13px/1.4 var(--font-sans)",
@@ -499,7 +510,7 @@ export default function AiEngineScreen({ active, onBack, project }) {
                           whiteSpace: "pre-wrap"
                         }}
                       >
-                        {testResult.error}
+                        {testErrorText}
                       </div>
                     )}
                   </div>

@@ -5,6 +5,8 @@ import {
   selectReasoner,
   runConsistencyCheck,
 } from "../lib/reasonerApi.js";
+import { describeError, t } from "../i18n/index.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
 
 // Lifted verbatim from SessionHistory.jsx L27-40 (module-private there) —
 // the one relative-time convention in this codebase; do not write a second one.
@@ -16,10 +18,10 @@ function formatRelativeDate(isoString) {
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return diffMin + "m ago";
-  if (diffHr < 24) return diffHr + "h ago";
-  if (diffDay < 7) return diffDay + "d ago";
+  if (diffMin < 1) return t("just now");
+  if (diffMin < 60) return t("{n}m ago", { n: diffMin });
+  if (diffHr < 24) return t("{n}h ago", { n: diffHr });
+  if (diffDay < 7) return t("{n}d ago", { n: diffDay });
   return String(isoString).slice(0, 10);
 }
 
@@ -29,18 +31,19 @@ function formatRelativeDate(isoString) {
 // ("integration pending" — selection persists server-side but does not yet
 // drive validation). Selection survives revisits (Phase 814: REAS-01..03).
 export default function ReasonerScreen({ active, onBack, project }) {
+  const { t, tp } = useT();
   const [reasoners, setReasoners] = React.useState([]);
   const [selected, setSelected] = React.useState(null);
 
   const [loading, setLoading] = React.useState(true);
-  const [loadError, setLoadError] = React.useState("");
+  const [loadError, setLoadError] = React.useState(null); // error objects are described at render (live language switch)
 
   const [saving, setSaving] = React.useState(false);
-  const [saveError, setSaveError] = React.useState("");
+  const [saveError, setSaveError] = React.useState(null);
 
   // ── Consistency-check run-state machine (HermiT card, D-01/D-07/D-08/D-09/D-11) ──
   const [runState, setRunState] = React.useState("idle");
-  const [runError, setRunError] = React.useState("");
+  const [runError, setRunError] = React.useState(null); // { text } from the server body, or { err } thrown
   const [runResult, setRunResult] = React.useState(null);
   const [lastCheckedAt, setLastCheckedAt] = React.useState(null);
   const [elapsedSec, setElapsedSec] = React.useState(0);
@@ -50,14 +53,14 @@ export default function ReasonerScreen({ active, onBack, project }) {
   React.useEffect(() => {
     if (!active) return;
     setLoading(true);
-    setLoadError("");
-    setSaveError("");
+    setLoadError(null);
+    setSaveError(null);
     getReasonerSettings()
       .then((s) => {
         setReasoners(s.reasoners || []);
         setSelected(s.selected || null);
       })
-      .catch((err) => setLoadError(err.message || "Failed to load settings"))
+      .catch((err) => setLoadError(err || new Error("")))
       .finally(() => setLoading(false));
   }, [active]);
 
@@ -65,12 +68,12 @@ export default function ReasonerScreen({ active, onBack, project }) {
   const handleSelect = async (id) => {
     if (id === selected) return; // already selected
     setSaving(true);
-    setSaveError("");
+    setSaveError(null);
     try {
       const result = await selectReasoner(id);
       setSelected(result.selected || null);
     } catch (err) {
-      setSaveError(err.message || "Failed to save selection");
+      setSaveError(err || new Error(""));
     } finally {
       setSaving(false);
     }
@@ -79,13 +82,13 @@ export default function ReasonerScreen({ active, onBack, project }) {
   // ── Retry load ──
   const handleRetry = () => {
     setLoading(true);
-    setLoadError("");
+    setLoadError(null);
     getReasonerSettings()
       .then((s) => {
         setReasoners(s.reasoners || []);
         setSelected(s.selected || null);
       })
-      .catch((err) => setLoadError(err.message || "Failed to load settings"))
+      .catch((err) => setLoadError(err || new Error("")))
       .finally(() => setLoading(false));
   };
 
@@ -94,7 +97,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
     const controller = new AbortController();
     abortRef.current = controller;
     setRunState("running");
-    setRunError("");
+    setRunError(null);
     setElapsedSec(0);
     const t0 = Date.now();
     const timer = setInterval(() => {
@@ -113,7 +116,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
         setLastCheckedAt(new Date().toISOString());
       } else if (!result.ok) {
         // Transport/hard error — distinct error line, never folded into Unknown (D-09).
-        setRunError(body?.detail?.error || "Reasoner unavailable");
+        setRunError({ text: body?.detail?.error || "" });
         setRunState("error");
       } else {
         setRunResult(body);
@@ -124,7 +127,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
       if (err.name === "AbortError") {
         setRunState("cancelled"); // D-07 — kept distinct from Unknown
       } else {
-        setRunError(err.message || "Reasoner unavailable");
+        setRunError({ err: err || new Error("") });
         setRunState("error");
       }
     } finally {
@@ -137,6 +140,10 @@ export default function ReasonerScreen({ active, onBack, project }) {
   const handleCancel = () => {
     abortRef.current?.abort();
   };
+
+  const runErrorText = runError?.err
+    ? describeError(runError.err, t("Reasoner unavailable"))
+    : runError?.text || t("Reasoner unavailable");
 
   // ── Render ──
   return (
@@ -162,14 +169,14 @@ export default function ReasonerScreen({ active, onBack, project }) {
         {/* ── Header ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Button variant="outline" size="sm" onClick={onBack}>
-            ← Back
+            ← {t("Back")}
           </Button>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-              Region · Reasoner
+              {t("Region · Reasoner")}
             </div>
             <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>
-              Reasoner.
+              {t("Reasoner.")}
             </div>
           </div>
         </div>
@@ -185,7 +192,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
             }}
           >
             <div style={{ font: "400 14px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-              Loading reasoner settings…
+              {t("Loading reasoner settings…")}
             </div>
           </div>
         )}
@@ -201,12 +208,12 @@ export default function ReasonerScreen({ active, onBack, project }) {
             }}
           >
             <div style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>
-              Settings unavailable · {loadError}{" "}
+              {t("Settings unavailable · {reason}", { reason: describeError(loadError, t("Failed to load settings")) })}{" "}
               <span
                 onClick={handleRetry}
                 style={{ cursor: "pointer", textDecoration: "underline" }}
               >
-                Retry
+                {t("Retry")}
               </span>
             </div>
           </div>
@@ -228,10 +235,9 @@ export default function ReasonerScreen({ active, onBack, project }) {
                 color: "var(--text-muted)",
               }}
             >
-              Select the ontology reasoner used to evaluate design rules against the
-              Validation Graph. Selection persists across sessions. HermiT runs a live
-              schema-consistency check against the active project; reasoners marked{" "}
-              <strong>integration pending</strong> do not yet change validation behavior.
+              {t("Select the ontology reasoner used to evaluate design rules against the Validation Graph. Selection persists across sessions. HermiT runs a live schema-consistency check against the active project; reasoners marked")}{" "}
+              <strong>{t("integration pending")}</strong>{" "}
+              {t("do not yet change validation behavior.")}
             </div>
           </div>
         )}
@@ -284,10 +290,10 @@ export default function ReasonerScreen({ active, onBack, project }) {
                         {r.name}
                       </div>
                       {isActive && (
-                        <Badge variant="solid">Active</Badge>
+                        <Badge variant="solid">{t("Active")}</Badge>
                       )}
                       {r.status === "placeholder" && (
-                        <Badge variant="outline">Integration pending</Badge>
+                        <Badge variant="outline">{t("Integration pending")}</Badge>
                       )}
                     </div>
                     <div
@@ -313,8 +319,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                             color: "var(--text-muted)",
                           }}
                         >
-                          Schema-consistency check — verifies the ontology's logical
-                          structure, not design compliance.
+                          {t("Schema-consistency check — verifies the ontology's logical structure, not design compliance.")}
                         </div>
 
                         {runState === "idle" && (
@@ -325,8 +330,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                 color: "var(--text-secondary)",
                               }}
                             >
-                              No check run yet. Run a schema-consistency check against
-                              the active project.
+                              {t("No check run yet. Run a schema-consistency check against the active project.")}
                             </div>
                             <div>
                               <Button
@@ -337,7 +341,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   handleRunCheck();
                                 }}
                               >
-                                Run check
+                                {t("Run check")}
                               </Button>
                             </div>
                           </>
@@ -368,7 +372,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                 color: "var(--text-muted)",
                               }}
                             >
-                              Running… {elapsedSec}s
+                              {t("Running… {sec}s", { sec: elapsedSec })}
                             </div>
                             <Button
                               variant="outline"
@@ -378,10 +382,10 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                 handleCancel();
                               }}
                             >
-                              Cancel
+                              {t("Cancel")}
                             </Button>
                             <Button variant="outline" size="sm" disabled>
-                              Run check
+                              {t("Run check")}
                             </Button>
                           </div>
                         )}
@@ -397,9 +401,9 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   color: "var(--color-ink)",
                                 }}
                               >
-                                ✓ Schema consistent — no unsatisfiable classes found.
+                                {t("✓ Schema consistent — no unsatisfiable classes found.")}
                               </div>
-                              <Badge variant="solid">Consistent</Badge>
+                              <Badge variant="solid">{t("Consistent")}</Badge>
                             </div>
                             {lastCheckedAt && (
                               <div
@@ -408,7 +412,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   color: "var(--text-muted)",
                                 }}
                               >
-                                Last checked {formatRelativeDate(lastCheckedAt)}
+                                {t("Last checked {when}", { when: formatRelativeDate(lastCheckedAt) })}
                               </div>
                             )}
                             <div>
@@ -420,7 +424,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   handleRunCheck();
                                 }}
                               >
-                                Run check
+                                {t("Run check")}
                               </Button>
                             </div>
                           </>
@@ -455,10 +459,9 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                         color: "var(--color-signal)",
                                       }}
                                     >
-                                      Schema inconsistent — {n} unsatisfiable class
-                                      {n === 1 ? "" : "es"}.
+                                      {tp("Schema inconsistent — {n} unsatisfiable class", n)}
                                     </div>
-                                    <Badge variant="signal">Inconsistent</Badge>
+                                    <Badge variant="signal">{t("Inconsistent")}</Badge>
                                   </div>
                                   {n > 0 && (
                                     <ul
@@ -491,7 +494,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                       color: "var(--text-muted)",
                                     }}
                                   >
-                                    Last checked {formatRelativeDate(lastCheckedAt)}
+                                    {t("Last checked {when}", { when: formatRelativeDate(lastCheckedAt) })}
                                   </div>
                                 )}
                                 <div>
@@ -503,7 +506,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                       handleRunCheck();
                                     }}
                                   >
-                                    Run check
+                                    {t("Run check")}
                                   </Button>
                                 </div>
                               </>
@@ -521,10 +524,9 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   color: "var(--text-muted)",
                                 }}
                               >
-                                – Inconclusive — the reasoner timed out before
-                                finishing. Try again.
+                                {t("– Inconclusive — the reasoner timed out before finishing. Try again.")}
                               </div>
-                              <Badge variant="outline">Inconclusive</Badge>
+                              <Badge variant="outline">{t("Inconclusive")}</Badge>
                             </div>
                             {lastCheckedAt && (
                               <div
@@ -533,7 +535,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   color: "var(--text-muted)",
                                 }}
                               >
-                                Last checked {formatRelativeDate(lastCheckedAt)}
+                                {t("Last checked {when}", { when: formatRelativeDate(lastCheckedAt) })}
                               </div>
                             )}
                             <div>
@@ -545,7 +547,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   handleRunCheck();
                                 }}
                               >
-                                Run check
+                                {t("Run check")}
                               </Button>
                             </div>
                           </>
@@ -559,7 +561,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                 color: "var(--ink-a56)",
                               }}
                             >
-                              × Run cancelled — no result.
+                              {t("× Run cancelled — no result.")}
                             </div>
                             <div>
                               <Button
@@ -570,7 +572,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                                   handleRunCheck();
                                 }}
                               >
-                                Run check
+                                {t("Run check")}
                               </Button>
                             </div>
                           </>
@@ -583,7 +585,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                               color: "var(--color-signal-ink)",
                             }}
                           >
-                            Reasoner unavailable · {runError}{" "}
+                            {t("Reasoner unavailable · {reason}", { reason: runErrorText })}{" "}
                             <span
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -591,7 +593,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                               }}
                               style={{ cursor: "pointer", textDecoration: "underline" }}
                             >
-                              Retry
+                              {t("Retry")}
                             </span>
                           </div>
                         )}
@@ -605,7 +607,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                             color: "var(--accent-selection)",
                           }}
                         >
-                          Selected — will be used when integration is complete.
+                          {t("Selected — will be used when integration is complete.")}
                         </div>
                       )
                     )}
@@ -622,7 +624,7 @@ export default function ReasonerScreen({ active, onBack, project }) {
                   color: "var(--color-signal)",
                 }}
               >
-                {saveError}
+                {describeError(saveError, t("Failed to save selection"))}
               </div>
             )}
           </>

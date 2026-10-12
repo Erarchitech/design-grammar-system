@@ -1,0 +1,11 @@
+{
+  "area": "screens",
+  "files": [
+    "src/screens/AiEngineScreen.jsx",
+    "src/screens/ReasonerScreen.jsx",
+    "src/screens/ApiDocsScreen.jsx",
+    "src/lib/llmApi.js",
+    "src/lib/reasonerApi.js"
+  ],
+  "allow": []
+}

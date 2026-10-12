@@ -1,10 +1,15 @@
 import React from "react";
 import { Button, CodeBlock } from "../components/index.js";
 import sections from "./apidocs/content/index.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
+
+// D-10: only the chrome around the documentation is translated. The content under ./apidocs/content/ (section and page
+// titles, summaries, blocks, code, endpoint paths) stays English.
 
 // ── Block Renderer ──────────────────────────────────────────────────────────
 
 function EndpointBlock({ block }) {
+  const { t, tc } = useT();
   const labelStyle = { font: "400 12px/1.33 var(--font-sans)", color: "var(--text-muted)", marginBottom: 6 };
   const methodColors = {
     GET: { bg: "rgba(0, 150, 100, 0.10)", text: "var(--color-ink)" },
@@ -38,15 +43,15 @@ function EndpointBlock({ block }) {
       {/* Parameter table */}
       {block.params && block.params.length > 0 && (
         <div>
-          <div style={labelStyle}>Parameters</div>
+          <div style={labelStyle}>{t("Parameters")}</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-hairline)" }}>
-                <th style={thCell}>Name</th>
-                <th style={thCell}>Type</th>
-                <th style={thCell}>Location</th>
-                <th style={thCell}>Required</th>
-                <th style={thCell}>Description</th>
+                <th style={thCell}>{tc("parameter", "Name")}</th>
+                <th style={thCell}>{t("Type")}</th>
+                <th style={thCell}>{t("Location")}</th>
+                <th style={thCell}>{t("Required")}</th>
+                <th style={thCell}>{t("Description")}</th>
               </tr>
             </thead>
             <tbody>
@@ -55,7 +60,7 @@ function EndpointBlock({ block }) {
                   <td style={{ ...cell, font: "500 12px/1.4 var(--font-mono)" }}>{p.name}</td>
                   <td style={{ ...cell, color: "var(--text-muted)" }}>{p.type}</td>
                   <td style={{ ...cell, color: "var(--text-muted)" }}>{p.location}</td>
-                  <td style={{ ...cell, color: "var(--text-muted)" }}>{p.required ? "Yes" : "No"}</td>
+                  <td style={{ ...cell, color: "var(--text-muted)" }}>{p.required ? t("Yes") : t("No")}</td>
                   <td style={{ ...cell, font: "400 12px/1.4 var(--font-sans)", color: "var(--text-secondary)" }}>{p.description}</td>
                 </tr>
               ))}
@@ -66,14 +71,14 @@ function EndpointBlock({ block }) {
 
       {/* Request example */}
       {block.request && (
-        <CodeBlock label="Request example">
+        <CodeBlock label={t("Request example")}>
           {block.request}
         </CodeBlock>
       )}
 
       {/* Response example */}
       {block.response && (
-        <CodeBlock label="Response example">
+        <CodeBlock label={t("Response example")}>
           {block.response}
         </CodeBlock>
       )}
@@ -218,6 +223,7 @@ function TreeSection({ section, isExpanded, selectedPageId, onToggle, onSelect }
 // ── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function ApiDocsScreen({ active, onBack, project }) {
+  const { t } = useT();
   const [expanded, setExpanded] = React.useState(() => {
     // Auto-expand first section
     const init = {};
@@ -255,14 +261,14 @@ export default function ApiDocsScreen({ active, onBack, project }) {
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 32px 0", flexShrink: 0 }}>
         <Button variant="outline" size="sm" onClick={onBack}>
-          ← Back
+          ← {t("Back")}
         </Button>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-            Region · DG API Docs
+            {t("Region · DG API Docs")}
           </div>
           <div style={{ font: "600 30px/1.1 var(--font-sans)", letterSpacing: "-1px" }}>
-            DG API Docs
+            {t("DG API Docs")}
           </div>
         </div>
       </div>
@@ -315,7 +321,7 @@ export default function ApiDocsScreen({ active, onBack, project }) {
             </div>
           ) : (
             <div style={{ font: "400 14px/1.5 var(--font-sans)", color: "var(--text-muted)", padding: 40 }}>
-              Select a page from the tree.
+              {t("Select a page from the tree.")}
             </div>
           )}
         </div>

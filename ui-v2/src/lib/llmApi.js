@@ -1,4 +1,4 @@
-// AI Engine backend access — LLM gateway settings, model discovery, connection test.
+// LLM model backend access — LLM gateway settings, model discovery, connection test.
 // nginx proxies /llm/ to data-service (nginx.conf line 23). The vite dev proxy
 // also forwards /llm to localhost:8080 for development.
 // Phase 1205: every call goes through apiFetch (session cookie + CSRF header).
