@@ -10,19 +10,25 @@ namespace DG.Grasshopper.Components;
 
 public sealed class ConnectorComponent : GH_Component
 {
-    // Phase 825 (CONNG-03): the platform token is the single credential. It is
-    // authenticated by data-service, which returns the project scope and the
-    // Neo4j connection bundle — so the component needs no URI/User/Password/
-    // Database/Project/DataServiceUrl inputs. data-service base URL is a compile
+    // Phase 1308 (WEBUI-08, D-35/D-36): the component signs in with a DG account
+    // (Username + Password) and receives a connector session (dgk_) plus the
+    // project scope and the Neo4j connection bundle from data-service. The
+    // session is exposed on the Session output; VALIDATOR and COMPUTGRAPH
+    // PUBLISH take it on their Token input. data-service base URL is a compile
     // default (ADR-825-4); a future CONN-F can re-expose it.
     private const string DataServiceUrl = "http://localhost:8000";
 
     private readonly INeo4jConnectorService _connectorService = new Neo4jConnectorService();
-    private readonly IConnectorHeartbeatClient _heartbeatClient = new ConnectorHeartbeatClient();
+    private readonly IConnectorSessionClient _sessionClient = new ConnectorSessionClient();
     private Task<ConnectResult>? _connectTask;
     private CancellationTokenSource? _connectCts;
     private string _activeRequestKey = string.Empty;
-    private HeartbeatResult _latestAuth = HeartbeatResult.NotAttempted;
+
+    // The live session, kept only so it can be ended (D-32). The account password
+    // is never stored in a field: it lives in the sign-in task's locals and is gone
+    // when that task finishes.
+    private ConnectorSessionResult? _session;
+    private ConnectorSessionResult _latestAuth = ConnectorSessionResult.NotAttempted;
     private ConnectionInfo _latestConnection = new()
     {
         IsConnected = false,
@@ -30,68 +36,86 @@ public sealed class ConnectorComponent : GH_Component
     };
 
     public ConnectorComponent()
-        : base("CONNECTOR", "CONNECTOR", "Connect to Neo4j for DG validation using a platform token.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
+        : base("CONNECTOR", "CONNECTOR", "Sign in with your DG account and connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 
-    // ADR-825-3: a fresh GUID (was 24E78A17-…). The input surface changed from 8
-    // ports to 2, so old canvases intentionally show a missing-component
-    // placeholder rather than silently rebinding old panels by index.
-    public override Guid ComponentGuid => new("3F9B1C7E-6A24-4D53-8E10-9C2A5B7D40F1");
+    // ADR-825-3 (renewed Phase 1308, D-36): a fresh GUID (was 3F9B1C7E-6A24-4D53-8E10-9C2A5B7D40F1).
+    // The inputs changed from Token/Connect to Username/Password/Project/Connect, so
+    // old canvases intentionally show a missing-component placeholder rather than
+    // silently rebinding old panels by index. See docs/RELEASE-NOTES-v13.0.md.
+    public override Guid ComponentGuid => new("EF2E6F2A-3450-4907-94CB-31B1240AB848");
 
     protected override Bitmap Icon => DgIcons.Connector24;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        // Token: a custom non-persistent param so a typed/pasted value is usable
-        // live but is never serialized into the .gh (SC-6). Optional so the
-        // component can show its own "Awaiting token" feedback instead of GH's
-        // generic collect-data error.
+        // Username and Password: custom non-persistent params so a typed/pasted value
+        // is usable live but is never serialized into the .gh (D-38). Optional so the
+        // component can show its own "not signed in" feedback instead of GH's generic
+        // collect-data error.
         pManager.AddParameter(
             new NonPersistentStringParam(),
-            "Platform Token",
-            "Token",
-            "Platform credential (dgc_… token minted from the Connectors screen, Grasshopper connector). It resolves the project and Neo4j connection — no other inputs are needed.",
+            "Username",
+            "User",
+            "Your DG account username. Not saved in the .gh file.",
             GH_ParamAccess.item);
-        pManager.AddBooleanParameter("Connect", "Go", "Set true to authenticate the token and connect", GH_ParamAccess.item, false);
+        pManager.AddParameter(
+            new NonPersistentStringParam(),
+            "Password",
+            "Pwd",
+            "Your DG account password. Not saved in the .gh file.",
+            GH_ParamAccess.item);
+        pManager.AddTextParameter("Project", "Project", "Leave empty when you have one eligible project", GH_ParamAccess.item);
+        pManager.AddBooleanParameter("Connect", "Go", "Set true to sign in and connect; set false to sign out", GH_ParamAccess.item, false);
         pManager[0].Optional = true;
+        pManager[1].Optional = true;
+        pManager[2].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Database", "Database", "DG connection object from CONNECTOR", GH_ParamAccess.item);
-        pManager.AddTextParameter("Project", "Project", "Project name resolved from the platform token", GH_ParamAccess.item);
+        pManager.AddTextParameter("Project", "Project", "Project the session is bound to", GH_ParamAccess.item);
+        pManager.AddTextParameter("Session", "Session", "Connector session for the Token input of VALIDATOR and COMPUTGRAPH PUBLISH. Not saved in the .gh file.", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
     {
-        var token = string.Empty;
+        var username = string.Empty;
+        var password = string.Empty;
+        var project = string.Empty;
         var connect = false;
 
-        da.GetData(0, ref token);
-        da.GetData(1, ref connect);
+        da.GetData(0, ref username);
+        da.GetData(1, ref password);
+        da.GetData(2, ref project);
+        da.GetData(3, ref connect);
 
         if (!connect)
         {
+            // D-32: Connect=false ends the session so the web UI reads "off" at once.
             CancelPendingConnection();
-            _latestConnection = NotConnected("Connection prepared. Set Connect=true to authenticate the token and connect.");
-            _latestAuth = HeartbeatResult.NotAttempted;
+            SignOutCurrentSession();
+            _latestConnection = NotConnected("Connection prepared. Set Connect=true to sign in and connect.");
+            _latestAuth = ConnectorSessionResult.NotAttempted;
             Message = "Idle";
         }
-        else if (string.IsNullOrWhiteSpace(token))
+        else if (string.IsNullOrWhiteSpace(username) || string.IsNullOrEmpty(password))
         {
             CancelPendingConnection();
-            _latestConnection = NotConnected("No platform token supplied.");
-            _latestAuth = HeartbeatResult.NotAttempted;
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ConnectorTokenMissing());
-            Message = "Awaiting token";
+            SignOutCurrentSession();
+            _latestConnection = NotConnected("Not signed in.");
+            _latestAuth = ConnectorSessionResult.NotAttempted;
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ConnectorSignInMissing());
+            Message = "Awaiting sign-in";
         }
         else
         {
-            var requestKey = HashToken(token);
+            var requestKey = HashRequest(username, project, password);
             if (_connectTask is null || !string.Equals(_activeRequestKey, requestKey, StringComparison.Ordinal))
             {
-                StartConnection(token, requestKey);
+                StartConnection(username, password, project, requestKey);
             }
 
             if (_connectTask is { IsCompletedSuccessfully: true })
@@ -104,15 +128,15 @@ public sealed class ConnectorComponent : GH_Component
             }
             else if (_connectTask is { IsFaulted: true })
             {
-                var error = _connectTask.Exception?.GetBaseException().Message ?? "Connection task failed.";
-                _latestConnection = NotConnected(error);
-                _latestAuth = HeartbeatResult.NotAttempted;
+                // The exception text is not shown: nothing from the sign-in path may reach the canvas.
+                _latestConnection = NotConnected("Connection task failed.");
+                _latestAuth = ConnectorSessionResult.NotAttempted;
                 Message = "Connect failed";
             }
             else if (_connectTask is { IsCanceled: true })
             {
                 _latestConnection = NotConnected("Connection canceled.");
-                _latestAuth = HeartbeatResult.NotAttempted;
+                _latestAuth = ConnectorSessionResult.NotAttempted;
                 Message = "Canceled";
             }
             else
@@ -121,27 +145,31 @@ public sealed class ConnectorComponent : GH_Component
             }
         }
 
-        // The connection is derived entirely from the authenticated token (ADR-825-6):
+        // The connection is derived entirely from the signed-in account (ADR-825-6):
         // no bundle → no live connection, and the Database output carries a
         // not-connected ConnectionInfo describing why.
         da.SetData(0, _latestConnection);
         da.SetData(1, _latestConnection.Project);
+        da.SetData(2, _latestAuth.Outcome == ConnectorSessionOutcome.SignedIn ? _latestAuth.SessionToken : null);
     }
 
     public override void RemovedFromDocument(GH_Document document)
     {
         CancelPendingConnection();
+        SignOutCurrentSession();
         base.RemovedFromDocument(document);
     }
 
-    private void StartConnection(string token, string requestKey)
+    private void StartConnection(string username, string password, string project, string requestKey)
     {
+        // A new account or project: end the previous session before opening another.
         CancelPendingConnection();
+        SignOutCurrentSession();
 
         _activeRequestKey = requestKey;
-        _latestConnection = NotConnected("Authenticating platform token...");
+        _latestConnection = NotConnected("Signing in...");
         _connectCts = new CancellationTokenSource();
-        _connectTask = RunConnectAsync(token, _connectCts.Token);
+        _connectTask = RunConnectAsync(username, password, project, _connectCts.Token);
 
         _ = _connectTask.ContinueWith(
             _ =>
@@ -152,26 +180,40 @@ public sealed class ConnectorComponent : GH_Component
             TaskScheduler.Default);
     }
 
-    private async Task<ConnectResult> RunConnectAsync(string token, CancellationToken cancellationToken)
+    private async Task<ConnectResult> RunConnectAsync(string username, string password, string project, CancellationToken cancellationToken)
     {
-        var auth = await _heartbeatClient.CheckAsync(DataServiceUrl, token, cancellationToken).ConfigureAwait(false);
+        var auth = await _sessionClient
+            .SignInAsync(DataServiceUrl, username, password, string.IsNullOrWhiteSpace(project) ? null : project.Trim(), cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
-        // Only an authenticated token yields a connection bundle; otherwise there
-        // is nothing to connect with, so we skip the bolt attempt entirely and
-        // report the auth reason on a not-connected ConnectionInfo.
-        if (auth.Outcome != HeartbeatOutcome.Authenticated || auth.Bundle is not { } bundle)
+        if (auth.Outcome == ConnectorSessionOutcome.SignedIn && !string.IsNullOrEmpty(auth.SessionToken))
         {
-            // D-07: an authenticated heartbeat with no bundle means this deployment
-            // (multi-user profile) doesn't hand out a direct graph connection --
-            // distinct from "no token", which would be misleading here.
-            var reason = auth.Outcome switch
+            if (cancellationToken.IsCancellationRequested)
             {
-                HeartbeatOutcome.Rejected => "Platform token rejected — invalid, revoked, or expired.",
-                HeartbeatOutcome.Unreachable => "Could not reach data-service to authenticate the token.",
-                HeartbeatOutcome.Authenticated => ErrorMessageTemplates.ConnectorNoGraphBundle(),
-                _ => "No platform token.",
+                // Superseded or switched off while the sign-in was in flight: end the session
+                // we just received instead of leaving it live until its TTL.
+                await _sessionClient.SignOutAsync(DataServiceUrl, auth.SessionToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            Interlocked.Exchange(ref _session, auth);
+        }
+
+        // Only a signed-in account yields a connection bundle; otherwise there is
+        // nothing to connect with, so we skip the bolt attempt entirely and report
+        // the reason on a not-connected ConnectionInfo.
+        if (auth.Outcome != ConnectorSessionOutcome.SignedIn || auth.Bundle is not { } bundle)
+        {
+            // D-07: a signed-in session with no bundle means this deployment
+            // (multi-user profile) doesn't hand out a direct graph connection.
+            var reason = SignInMessage(auth);
+            var info = new ConnectionInfo
+            {
+                IsConnected = false,
+                StatusMessage = reason,
+                Project = auth.Project ?? "default-project",
             };
-            return new ConnectResult(NotConnected(reason), auth);
+            return new ConnectResult(info, auth);
         }
 
         var request = new ConnectionInfo
@@ -180,29 +222,73 @@ public sealed class ConnectorComponent : GH_Component
             User = bundle.User ?? "neo4j",
             Password = bundle.Password ?? string.Empty,
             Database = bundle.Database ?? "neo4j",
-            Project = bundle.Project ?? "default-project",
+            Project = bundle.Project ?? auth.Project ?? "default-project",
         };
 
         var connection = await _connectorService.TryConnectAsync(request, cancellationToken).ConfigureAwait(false);
         return new ConnectResult(connection, auth);
     }
 
-    private void ReportAuth(HeartbeatResult auth)
+    private static string SignInMessage(ConnectorSessionResult auth)
+    {
+        return auth.Outcome switch
+        {
+            ConnectorSessionOutcome.Rejected => ErrorMessageTemplates.ConnectorSignInRejected(),
+            ConnectorSessionOutcome.Forbidden => ErrorMessageTemplates.ConnectorSignInForbidden(auth.ServerCode),
+            ConnectorSessionOutcome.ProjectRequired => ErrorMessageTemplates.ConnectorProjectRequired(auth.ServerMessage),
+            ConnectorSessionOutcome.Throttled => ErrorMessageTemplates.ConnectorSignInThrottled(),
+            ConnectorSessionOutcome.InsecureTransport => ErrorMessageTemplates.ConnectorSignInInsecureTransport(DataServiceUrl),
+            ConnectorSessionOutcome.Unreachable => ErrorMessageTemplates.ConnectorSignInUnreachable(DataServiceUrl),
+            ConnectorSessionOutcome.SignedIn => ErrorMessageTemplates.ConnectorNoGraphBundle(),
+            _ => ErrorMessageTemplates.ConnectorSignInMissing(),
+        };
+    }
+
+    private void ReportAuth(ConnectorSessionResult auth)
     {
         switch (auth.Outcome)
         {
-            case HeartbeatOutcome.Rejected:
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, ErrorMessageTemplates.ConnectorTokenRejected());
+            case ConnectorSessionOutcome.Rejected:
+            case ConnectorSessionOutcome.Forbidden:
+            case ConnectorSessionOutcome.ProjectRequired:
+            case ConnectorSessionOutcome.InsecureTransport:
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, SignInMessage(auth));
                 break;
-            case HeartbeatOutcome.Unreachable:
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ErrorMessageTemplates.ConnectorHeartbeatUnreachable(DataServiceUrl));
+            case ConnectorSessionOutcome.Throttled:
+            case ConnectorSessionOutcome.Unreachable:
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, SignInMessage(auth));
                 break;
-            case HeartbeatOutcome.Authenticated when auth.Bundle is null:
-                // D-07: multi-user profile withholds the Neo4j bundle -- authenticated,
+            case ConnectorSessionOutcome.SignedIn when auth.Bundle is null:
+                // D-07: multi-user profile withholds the Neo4j bundle -- signed in,
                 // but no direct graph connection is available in this deployment.
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ErrorMessageTemplates.ConnectorNoGraphBundle());
                 break;
         }
+    }
+
+    /// <summary>
+    /// Ends the current connector session, if any, without blocking the solve (D-32).
+    /// Best effort: the 8 h session TTL bounds a failure.
+    /// </summary>
+    private void SignOutCurrentSession()
+    {
+        var session = Interlocked.Exchange(ref _session, null);
+        if (session?.SessionToken is not { Length: > 0 } sessionToken)
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _sessionClient.SignOutAsync(DataServiceUrl, sessionToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // no-op: sign-out is best-effort and must never surface secrets.
+            }
+        });
     }
 
     private void CancelPendingConnection()
@@ -230,26 +316,26 @@ public sealed class ConnectorComponent : GH_Component
         StatusMessage = status,
     };
 
-    private static string AuthSuffix(HeartbeatOutcome outcome)
+    private static string AuthSuffix(ConnectorSessionOutcome outcome)
     {
         return outcome switch
         {
-            HeartbeatOutcome.Authenticated => " · Auth OK",
-            HeartbeatOutcome.Rejected => " · Auth failed",
-            HeartbeatOutcome.Unreachable => " · Auth unreachable",
-            _ => string.Empty,
+            ConnectorSessionOutcome.SignedIn => " · Signed in",
+            ConnectorSessionOutcome.NotAttempted => string.Empty,
+            ConnectorSessionOutcome.Unreachable => " · Sign-in unreachable",
+            _ => " · Sign-in failed",
         };
     }
 
-    private static string HashToken(string token)
+    private static string HashRequest(string username, string project, string password)
     {
-        // The raw token never enters the dedup key — only its SHA-256 hash.
+        // The raw username, project and password never enter the dedup key — only their SHA-256 hash.
         return Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes(token ?? string.Empty)));
+                System.Text.Encoding.UTF8.GetBytes($"{username}\u0000{project}\u0000{password}")));
     }
 
-    private readonly record struct ConnectResult(ConnectionInfo Connection, HeartbeatResult Auth);
+    private readonly record struct ConnectResult(ConnectionInfo Connection, ConnectorSessionResult Auth);
 }
 #else
 namespace DG.Grasshopper.Components;

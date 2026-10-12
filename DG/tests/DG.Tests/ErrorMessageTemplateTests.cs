@@ -372,34 +372,6 @@ public sealed class ErrorMessageTemplateTests
         Assert.DoesNotContain("..", result);
     }
 
-    // --- Connector credential template tests (Phase 824) ---
-
-    [Fact]
-    public void ConnectorTokenRejected_ReturnsHouseStyleMessage()
-    {
-        var result = ErrorMessageTemplates.ConnectorTokenRejected();
-
-        Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        Assert.Contains("CONNECTOR", result);
-        Assert.Contains("Connectors", result);
-        Assert.Contains(": ", result);
-        Assert.EndsWith(".", result);
-    }
-
-    [Fact]
-    public void ConnectorHeartbeatUnreachable_IncludesUrlAndEndsWithPeriod()
-    {
-        var result = ErrorMessageTemplates.ConnectorHeartbeatUnreachable("http://localhost:8000");
-
-        Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        Assert.Contains("CONNECTOR", result);
-        Assert.Contains("http://localhost:8000", result);
-        Assert.Contains(": ", result);
-        Assert.EndsWith(".", result);
-    }
-
     // --- Object-vs-Geometry list-length guard (Phase 1202-11, CR-02 / gap 2) ---
 
     [Theory]
@@ -605,7 +577,6 @@ public sealed class ErrorMessageTemplateTests
             ErrorMessageTemplates.PublishTokenRejected("VALIDATOR"),
             ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR"),
             ErrorMessageTemplates.ConnectorNoGraphBundle(),
-            ErrorMessageTemplates.ConnectorTokenMissing(),
             ErrorMessageTemplates.ConnectorSignInMissing(),
             ErrorMessageTemplates.ConnectorSignInRejected(),
             ErrorMessageTemplates.ConnectorSignInForbidden("PROJECT_FORBIDDEN"),

@@ -184,26 +184,9 @@ public static class ErrorMessageTemplates
         return $"SHACL {severity}: {what} at {where}. {fix}.";
     }
 
-    // --- Connector credential templates (Phase 824, CONNG-02) ---
-
-    public static string ConnectorTokenRejected()
-    {
-        return "CONNECTOR: platform token rejected — invalid, revoked, or expired. Mint a new token from the Connectors screen (Grasshopper connector) and re-paste it into the Token input.";
-    }
-
-    public static string ConnectorHeartbeatUnreachable(string dataServiceUrl)
-    {
-        return $"CONNECTOR: could not reach data-service at {dataServiceUrl} to verify the platform token and resolve the connection. Check that data-service is running.";
-    }
-
-    // Phase 825: the token is now the only input, so a missing token blocks the
-    // whole connection (there is no fallback URI/User/Password to connect with).
-    public static string ConnectorTokenMissing()
-    {
-        return "CONNECTOR: not signed in. Enter Username and Password (your DG account) and set Connect=true.";
-    }
-
     // --- Connector sign-in templates (Phase 1308-04, D-35) ---
+    // The Phase 824/825 heartbeat templates (token rejected / heartbeat unreachable /
+    // token missing) were retired in 1308-07 together with the heartbeat client (D-35).
 
     /// <summary>CONNECTOR has no username/password yet — nothing was attempted.</summary>
     public static string ConnectorSignInMissing()
@@ -298,7 +281,7 @@ public static class ErrorMessageTemplates
     }
 
     /// <summary>
-    /// D-07: an authenticated heartbeat carried no Neo4j bundle — this deployment
+    /// D-07: a signed-in connector session carried no Neo4j bundle — this deployment
     /// (multi-user profile) does not hand out a direct graph connection.
     /// </summary>
     public static string ConnectorNoGraphBundle()
