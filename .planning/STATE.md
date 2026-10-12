@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1308
 current_phase_name: dg-web-ui
-current_plan: 3
+current_plan: 4
 status: executing
-stopped_at: Completed 1308-03-PLAN.md
-last_updated: "2026-10-12T12:20:57.627Z"
+stopped_at: Completed 1308-04-PLAN.md
+last_updated: "2026-10-12T12:27:16.778Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 1308 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 77
-  completed_plans: 47
+  completed_plans: 48
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1308 (dg-web-ui) — EXECUTING
 Current Phase: 1308
 Current Phase Name: dg-web-ui
-Current Plan: 3
+Current Plan: 4
 Total Plans in Phase: 24
-Plan: 3 of 24
+Plan: 4 of 24
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 1308 execution started
 Last Activity Description: Phase 1308 execution started
@@ -188,6 +188,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1301 P41 | 40min | 3 tasks | 3 files |
 | Phase 1308 P02 | 25min | 2 tasks | 7 files |
 | Phase 1308 P03 | 30min | 2 tasks | 3 files |
+| Phase 1308 P04 | 35min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -542,6 +543,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1301-39: connecting state is one caption-less sphere (role=status + aria-label) on the ring centre; DeGram gate renders no opening loader (F-05, D-47)
 - [Phase ?]: [Phase 1308 P03]: connector_session.authenticate returns None for non-dgk_ input and raises named 401/403 only for dgk_ strings; only user-gone/company-change mark the row revoked, a lost grant answers 403 and keeps the row
 - [Phase ?]: [Phase 1308 P03]: connector session rows retained 90 days after expiry so status_for can answer stale (D-32)
+- [Phase ?]: [1308-04] ConnectorSessionResult redacts both SessionToken and the Neo4j Bundle in ToString; SignOutAsync refuses remote plain http
 
 ### Research Flags (carry into planning)
 
@@ -637,8 +639,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T12:20:57.605Z
-Stopped at: Completed 1308-03-PLAN.md
+Last session: 2026-10-12T12:27:16.755Z
+Stopped at: Completed 1308-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics

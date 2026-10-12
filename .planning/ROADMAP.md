@@ -453,7 +453,7 @@ Plans:
 **Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
 **Requirements**: WEBUI-01, WEBUI-02, WEBUI-03, WEBUI-04, WEBUI-05, WEBUI-06, WEBUI-07, WEBUI-08, WEBUI-09, WEBUI-10, WEBUI-11
 **Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
-**Plans:** 3/24 plans executed
+**Plans:** 4/24 plans executed
 
 Plans:
 **Wave 1**
@@ -461,7 +461,7 @@ Plans:
 - [x] 1308-01-PLAN.md — settle owner WIP on files 1308 edits (D-49, decision checkpoint)
 - [x] 1308-02-PLAN.md — data-service: PUT member role (last-owner guard) + GET project summary, spec rows
 - [x] 1308-03-PLAN.md — data-service: dgk_ connector session store + owner/admin exemption helpers (TDD)
-- [ ] 1308-04-PLAN.md — DG.Core ConnectorSessionClient (account sign-in, dgk_ prefix, templates)
+- [x] 1308-04-PLAN.md — DG.Core ConnectorSessionClient (account sign-in, dgk_ prefix, templates)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
