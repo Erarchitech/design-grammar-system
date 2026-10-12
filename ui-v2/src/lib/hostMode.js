@@ -25,6 +25,10 @@ export function parseHostSignal(hash) {
   if (!DEGRAM_HOST || typeof hash !== "string") return null;
   if (/^#degram-state=(connecting|ready|idle)$/.test(hash)) return { state: hash.slice(14) };
   if (/^#degram-go=(landing|graph|model|connectors)$/.test(hash)) return { go: hash.slice(11) };
+  // The language DeGram Settings -> Appearance -> Language selected (sender: DeGram dg-view.ts `signal`, plan
+  // 1308-21). Closed vocabulary; it only changes the display language and grants no API, storage or navigation
+  // capability (D-52).
+  if (/^#degram-lang=(ru|en)$/.test(hash)) return { lang: hash.slice(13) };
   // The project DeGram actually opened (empty: none). Display-only: it moves the page's selection back after a
   // refused pick and grants no capability. Bounded like announceProject.
   const project = /^#degram-project=([^&#]{0,200})$/.exec(hash);

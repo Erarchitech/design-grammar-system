@@ -11,6 +11,8 @@ import SpecimenPage from "./specimen/SpecimenPage.jsx";
 import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } from "./lib/auth.js";
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
 import { announceProject, clearHostSignal, isDegramHost, isRegionAllowed, parseHostSignal } from "./lib/hostMode.js";
+import { LanguageProvider } from "./i18n/LanguageProvider.jsx";
+import { setLang } from "./i18n/index.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
@@ -37,7 +39,16 @@ function Layer({ active, isLanding = false, layerRef, children }) {
   );
 }
 
+// The language provider wraps the whole app (D-06); the language itself comes from the DeGram host or the browser.
 export default function App() {
+  return (
+    <LanguageProvider>
+      <AppShell />
+    </LanguageProvider>
+  );
+}
+
+function AppShell() {
   const [hash, setHash] = React.useState(window.location.hash);
   const [region, setRegion] = React.useState("landing");
   const [hostState, setHostState] = React.useState("idle");
@@ -65,6 +76,9 @@ export default function App() {
       if (signal) {
         if (signal.state) setHostState(signal.state);
         if (signal.go && isRegionAllowed(signal.go)) setRegion(signal.go);
+        // D-52: DeGram's language setting reaches the open page live; setLang re-renders every t() text, sets
+        // <html lang> and dispatches dg-lang for the canvas engines.
+        if (signal.lang) setLang(signal.lang);
         // F-07: the host reports the project that is actually open (or none) after a refused or failed pick, so the
         // ring never shows the refused project as selected. No announceProject: this is not a choice to echo back.
         if (signal.project !== undefined) {

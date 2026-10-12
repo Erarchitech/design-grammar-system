@@ -61,6 +61,17 @@ test("host signals accept only exact state and navigation vocabulary", async () 
   assert.equal(english.hostLang(), "en");
 });
 
+test("host language signal accepts only ru and en, in host mode only (D-52)", async () => {
+  const hosted = await hostMode("?host=degram");
+  assert.deepEqual(hosted.parseHostSignal("#degram-lang=ru"), { lang: "ru" });
+  assert.deepEqual(hosted.parseHostSignal("#degram-lang=en"), { lang: "en" });
+  for (const hash of ["#degram-lang=de", "#degram-lang=RU", "#degram-lang=ru ", "#degram-lang=", "#degram-lang", "#degram-lang=ru&x=1", "#degram-lang=ruru", "#degram-lang=ru#a"]) {
+    assert.equal(hosted.parseHostSignal(hash), null, hash);
+  }
+  const normal = await hostMode("");
+  assert.equal(normal.parseHostSignal("#degram-lang=ru"), null);
+});
+
 test("host project signal names the project DeGram actually opened, or none (F-07)", async () => {
   const hosted = await hostMode("?host=degram");
   assert.deepEqual(hosted.parseHostSignal("#degram-project=degram-uat-c"), { project: "degram-uat-c" });

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "cd .. && node --test ui-v2/tests/"
   },
   "dependencies": {
     "@speckle/objectloader2": "^2.31.14",
