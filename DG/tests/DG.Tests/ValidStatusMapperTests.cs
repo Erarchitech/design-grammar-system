@@ -1,5 +1,7 @@
+using DG.Core.Contracts;
 using DG.Core.Models;
 using DG.Core.Services;
+using DG.Core.Validation;
 
 namespace DG.Tests;
 
@@ -9,6 +11,100 @@ namespace DG.Tests;
 // v12-hexagonal-facade-01, finding F16: R3 on HexagonalUnit reported onto GlassPanel slots).
 public sealed class ValidStatusMapperTests
 {
+    [Theory]
+    [InlineData(EvidenceStatus.Passed, true)]
+    [InlineData(EvidenceStatus.Failed, false)]
+    [InlineData(EvidenceStatus.Unknown, false)]
+    [InlineData(EvidenceStatus.NotEvaluated, false)]
+    [InlineData(EvidenceStatus.NoPopulation, false)]
+    [InlineData(EvidenceStatus.Unsupported, false)]
+    [InlineData(EvidenceStatus.Indeterminate, false)]
+    [InlineData(EvidenceStatus.Error, false)]
+    public void TypedOutcome_OnlyPassedProjectsToTrue(EvidenceStatus outcome, bool expected)
+    {
+        var row = new BindingRow { SourceObjStateIndex = 1 };
+        var status = ValidStatusMapper.PerObjState(3,
+            new[] { new BindingEvaluationResult(row, outcome, null) });
+
+        Assert.Equal(new[] { false, expected, false }, status);
+    }
+
+    [Fact]
+    public void MissingTypedEvidence_LeavesAllObjStatesNotPassed()
+    {
+        Assert.Equal(new[] { false, false }, ValidStatusMapper.PerObjState(2, null));
+        Assert.Equal(new[] { false, false },
+            ValidStatusMapper.PerObjState(2, Array.Empty<BindingEvaluationResult>()));
+    }
+
+    [Fact]
+    public void MixedOutcomes_PreserveOnlyActuallyPassingObjStates()
+    {
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 3 }, EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 1 }, EvidenceStatus.Unsupported, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 0 }, EvidenceStatus.Failed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 2 }, EvidenceStatus.Unknown, null),
+        };
+
+        Assert.Equal(new[] { false, false, false, true, false },
+            ValidStatusMapper.PerObjState(5, outcomes));
+    }
+
+    [Fact]
+    public void MissingOrOutOfRangeSourceIndex_DoesNotWriteAnotherObjState()
+    {
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(new BindingRow(), EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = -1 }, EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 2 }, EvidenceStatus.Passed, null),
+        };
+
+        Assert.Equal(new[] { false, false }, ValidStatusMapper.PerObjState(2, outcomes));
+    }
+
+    [Fact]
+    public void ObjectPropertyRefusal_DoesNotBecomePassingObjState()
+    {
+        var rule = new Rule
+        {
+            Id = "R_FAC_A1_CONTROL_V",
+            Variables = { new Variable { Name = "?m" }, new Variable { Name = "?v1" } },
+            BodyAtoms =
+            {
+                new Atom
+                {
+                    Type = "ClassAtom", PredicateIri = "FacadeModule", Side = AtomSide.Body,
+                    Args = { new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?m" } },
+                },
+                new Atom
+                {
+                    Type = "ObjectPropertyAtom", PredicateIri = "hasUpperVertex", Side = AtomSide.Body,
+                    Args =
+                    {
+                        new AtomArg { Pos = 1, Kind = ArgKind.Variable, Value = "?m" },
+                        new AtomArg { Pos = 2, Kind = ArgKind.Variable, Value = "?v1" },
+                    },
+                },
+            },
+        };
+        var state = new DesignState
+        {
+            ObjStates = { new ObjState { ObjectRef = "module_0", ClassIri = "FacadeModule" } },
+        };
+        var bindings = DesignStateBindingService.BuildBindings(rule, state);
+        var result = new RuleEvaluator().EvaluateRule(rule, bindings);
+
+        Assert.Equal(EvidenceStatus.Unsupported, result.Status);
+        Assert.Empty(result.FailingBindings);
+        Assert.Single(result.BindingResults!);
+        var status = ValidStatusMapper.PerObjState(state.ObjStates.Count, result.BindingResults);
+
+        Assert.Equal(new[] { false }, status);
+    }
+
     [Fact]
     public void RuleOnSecondClass_StatusLandsOnThatClassesObjStates()
     {
@@ -37,9 +133,12 @@ public sealed class ValidStatusMapperTests
             },
         };
         var bindings = DesignStateBindingService.BuildBindings(rule, designState);
-        var failing = new[] { bindings[1] }; // second hexagonal unit violates
-
-        var status = ValidStatusMapper.PerObjState(designState.ObjStates.Count, bindings, failing);
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(bindings[0], EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(bindings[1], EvidenceStatus.Failed, null),
+        };
+        var status = ValidStatusMapper.PerObjState(designState.ObjStates.Count, outcomes);
 
         Assert.Equal(new[] { false, false, true, false }, status);
     }
@@ -71,7 +170,12 @@ public sealed class ValidStatusMapperTests
         };
         var bindings = DesignStateBindingService.BuildBindings(rule, designState);
 
-        var status = ValidStatusMapper.PerObjState(designState.ObjStates.Count, bindings, new[] { bindings[0] });
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(bindings[0], EvidenceStatus.Failed, null),
+            new BindingEvaluationResult(bindings[1], EvidenceStatus.Passed, null),
+        };
+        var status = ValidStatusMapper.PerObjState(designState.ObjStates.Count, outcomes);
 
         Assert.Equal(new[] { false, true, false }, status);
     }

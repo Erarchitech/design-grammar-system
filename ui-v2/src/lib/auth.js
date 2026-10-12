@@ -66,7 +66,9 @@ async function establish(sessionResponse) {
   // login / accept-invite answer {username, isAdmin}; /auth/me adds memberships.
   const me = await currentUser();
   if (me) return me;
-  return toUser({ username: sessionResponse?.username || "", isAdmin: sessionResponse?.isAdmin });
+  // A successful login response is not proof of a still-live session. In
+  // particular, a 401 from /auth/me must not resurrect the response identity.
+  throw new ApiError("Session could not be established. Sign in again.", { status: 401 });
 }
 
 export async function login(username, password) {

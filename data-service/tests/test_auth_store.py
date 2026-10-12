@@ -430,6 +430,86 @@ def test_ensure_bootstrap_admin_never_logs_password(caplog):
 # ── concurrency proof (ALGN12-17) ──
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows replacement sharing boundary")
+def test_revoke_session_survives_transient_windows_file_lock(monkeypatch):
+    import ctypes
+    from ctypes import wintypes
+
+    token = auth.create_session("walter")
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create_file = kernel32.CreateFileW
+    create_file.argtypes = [
+        wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+        wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+    ]
+    create_file.restype = wintypes.HANDLE
+    close_handle = kernel32.CloseHandle
+    close_handle.argtypes = [wintypes.HANDLE]
+    close_handle.restype = wintypes.BOOL
+    # An independent reader allows reads/writes, but not replacement/deletion.
+    handle = create_file(str(auth.SESSIONS_FILE), 0x80000000, 0x00000003,
+                         None, 3, 0x80, None)
+    assert handle != ctypes.c_void_p(-1).value, ctypes.get_last_error()
+    blocked = threading.Event()
+    released = threading.Event()
+    real_replace = os.replace
+
+    def observe_replace(src, dst):
+        try:
+            return real_replace(src, dst)
+        except PermissionError:
+            blocked.set()
+            assert released.wait(2), "independent reader did not release its handle"
+            raise
+
+    def release_reader():
+        try:
+            assert blocked.wait(2), "replacement did not reach the locked file"
+        finally:
+            close_handle(handle)
+            released.set()
+
+    monkeypatch.setattr(auth.os, "replace", observe_replace)
+    reader = threading.Thread(target=release_reader)
+    reader.start()
+    try:
+        assert auth.revoke_session(token) is True
+        assert auth.authenticate_session(token) is None
+        assert not list(auth.SESSIONS_FILE.parent.glob(".auth-sessions.json.tmp-*"))
+    finally:
+        reader.join(timeout=3)
+        assert not reader.is_alive()
+
+
+@pytest.mark.parametrize("winerror,expected_attempts", [(5, 8), (32, 8), (33, 8), (None, 1), (87, 1)])
+def test_failed_session_store_replace_preserves_bytes_and_cleans_temp(
+    monkeypatch, winerror, expected_attempts
+):
+    token = auth.create_session("walter")
+    before = auth.SESSIONS_FILE.read_bytes()
+    attempts = []
+    sleeps = []
+
+    def denied_replace(src, dst):
+        attempts.append((src, dst))
+        error = PermissionError("test replacement denied")
+        if winerror is not None:
+            error.winerror = winerror
+        raise error
+
+    monkeypatch.setattr(auth.os, "replace", denied_replace)
+    monkeypatch.setattr(auth.time, "sleep", sleeps.append)
+    with pytest.raises(PermissionError, match="test replacement denied"):
+        auth.revoke_session(token)
+    expected = expected_attempts if os.name == "nt" else 1
+    assert len(attempts) == expected
+    assert len(sleeps) == expected - 1
+    assert all(0 < delay <= 0.1 for delay in sleeps)
+    assert auth.SESSIONS_FILE.read_bytes() == before
+    assert auth.authenticate_session(token) is not None
+    assert not list(auth.SESSIONS_FILE.parent.glob(".auth-sessions.json.tmp-*"))
+
+
 def test_concurrent_create_and_revoke_session_never_resurrects_revoked():
     auth.create_user("walter", "walter-password-1234")
     barrier = threading.Barrier(16)

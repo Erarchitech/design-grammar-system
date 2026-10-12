@@ -40,7 +40,7 @@ public sealed class ValidatorComponent : GH_Component
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddBooleanParameter("ValidStatus", "ValidStatus", "Per-ObjState Boolean list: true=passing, false=failing. Index-matched to DesignState.ObjStates order.", GH_ParamAccess.list);
+        pManager.AddBooleanParameter("ValidStatus", "ValidStatus", "Per-ObjState legacy Boolean list: true=typed Passed; false=not passed, non-verdict or outside the rule population. Index-matched to DesignState.ObjStates order.", GH_ParamAccess.list);
         pManager.AddTextParameter("RuleName", "RuleName", "Rule name from the bound Rule", GH_ParamAccess.item);
         pManager.AddTextParameter("RuleDescription", "RuleDescription", "Rule description from the bound Rule", GH_ParamAccess.item);
         pManager.AddTextParameter("Report", "Report", "Per-rule report lines", GH_ParamAccess.list);
@@ -99,7 +99,7 @@ public sealed class ValidatorComponent : GH_Component
         // was built from (rows exist only for the rule's class, so row position != ObjState index).
         // D-02: ObjStates without a row get false but are excluded from the overall pass AND.
         var validStatus = designState is not null
-            ? ValidStatusMapper.PerObjState(designState.ObjStates.Count, bindings, result.FailingBindings)
+            ? ValidStatusMapper.PerObjState(designState.ObjStates.Count, result.BindingResults)
             : new List<bool>();
 
         // 6. Set outputs

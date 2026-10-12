@@ -35,6 +35,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
   const [inviteErr, setInviteErr] = React.useState("");
   const [inviteNote, setInviteNote] = React.useState("");
   const [invite, setInvite] = React.useState(null);
+  const panelScope = React.useRef(0);
   const activeRole = projects.find((p) => p.project === project)?.role;
   const canAdminister = !!project && (activeRole === "owner" || !!user?.isAdmin);
 
@@ -85,10 +86,15 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
 
   const loadMembers = React.useCallback(() => {
     if (!project || !canAdminister) return;
+    const scope = panelScope.current;
     setMembersErr("");
     apiFetch(projectUrl(project, "/members"))
-      .then((body) => setMembers(Array.isArray(body?.members) ? body.members : []))
-      .catch((err) => setMembersErr(err.message || "Members unavailable."));
+      .then((body) => {
+        if (scope === panelScope.current) setMembers(Array.isArray(body?.members) ? body.members : []);
+      })
+      .catch((err) => {
+        if (scope === panelScope.current) setMembersErr(err.message || "Members unavailable.");
+      });
   }, [project, canAdminister]);
 
   // Switching project (or losing owner rights) discards the panel state,
@@ -100,6 +106,8 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
     setInviteErr("");
     setMembersErr("");
     if (active) loadMembers();
+    // Late reads from a previous project/owner scope must not refill this panel.
+    return () => { panelScope.current += 1; };
   }, [active, loadMembers]);
 
   const sendInvite = async () => {
@@ -108,11 +116,13 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
     setInviteErr("");
     setInviteNote("");
     setInvite(null);
+    const scope = panelScope.current;
     try {
       const res = await apiFetch(`${dataServiceBase()}/auth/invites`, {
         method: "POST",
         body: { username, project, role: inviteRole }
       });
+      if (scope !== panelScope.current) return;
       if (res?.status === "invited") {
         setInvite({ code: res.inviteCode, expiresAt: res.expiresAt });
       } else if (res?.status === "member-added") {
@@ -121,18 +131,19 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
       setInviteUser("");
       loadMembers();
     } catch (err) {
-      setInviteErr(err.message || "Could not send the invitation.");
+      if (scope === panelScope.current) setInviteErr(err.message || "Could not send the invitation.");
     }
   };
 
   const removeMember = async (username) => {
+    const scope = panelScope.current;
     setMembersErr("");
     try {
       await apiFetch(projectUrl(project, `/members/${encodeURIComponent(username)}`), { method: "DELETE" });
-      loadMembers();
+      if (scope === panelScope.current) loadMembers();
     } catch (err) {
       // 409 LAST_OWNER and the rest arrive with the server's own message
-      setMembersErr(err.message || "Could not remove the member.");
+      if (scope === panelScope.current) setMembersErr(err.message || "Could not remove the member.");
     }
   };
 
