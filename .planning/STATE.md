@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1308
 current_phase_name: dg-web-ui
-current_plan: 6
+current_plan: 7
 status: executing
-stopped_at: Completed 1308-06-PLAN.md
-last_updated: "2026-10-12T12:52:10.768Z"
+stopped_at: Completed 1308-08-PLAN.md
+last_updated: "2026-10-12T12:59:34.851Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 1308 execution started
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 77
-  completed_plans: 50
+  completed_plans: 51
   percent: 0
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1308 (dg-web-ui) — EXECUTING
 Current Phase: 1308
 Current Phase Name: dg-web-ui
-Current Plan: 6
+Current Plan: 7
 Total Plans in Phase: 24
-Plan: 6 of 24
+Plan: 7 of 24
 Status: Ready to execute
 Last activity: 2026-10-12 — Phase 1308 execution started
 Last Activity Description: Phase 1308 execution started
@@ -191,6 +191,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1308 P04 | 35min | 2 tasks | 8 files |
 | Phase 1308 P05 | 50 min | 2 tasks | 17 files |
 | Phase 1308 P06 | 45min | 2 tasks | 10 files |
+| Phase 1308 P08 | 25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -548,6 +549,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: [1308-04] ConnectorSessionResult redacts both SessionToken and the Neo4j Bundle in ToString; SignOutAsync refuses remote plain http
 - [Phase ?]: 1308-05: npm test is 'cd .. && node --test ui-v2/tests/' (Windows/Node 20 has no glob expansion; degram-boundary test needs repo-root cwd)
 - [Phase ?]: 1308-06: connector mint is policy session (handler checks project, exemption, grant); blank-project admin eligibility = every project with members; dgc_ stays accepted until 1308-13
+- [Phase ?]: [1308-08] d49_store_cleanup.py: fixed targets, --apply only flag, plan-all-then-write, exit 2 refusal if another member in uat-pw-bd30ce, exit 3 on malformed store
 
 ### Research Flags (carry into planning)
 
@@ -643,8 +645,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T12:52:01.216Z
-Stopped at: Completed 1308-06-PLAN.md
+Last session: 2026-10-12T12:59:34.828Z
+Stopped at: Completed 1308-08-PLAN.md
 Resume file: None
 
 ## Performance Metrics
