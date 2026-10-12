@@ -254,3 +254,171 @@ def test_raw_token_never_in_store_bytes_after_mutations():
     connector_session.authenticate(token, now=NOW + 1)
     connector_session.revoke_token(token)
     assert token.encode() not in connector_session._file().read_bytes()
+
+
+# -- Task 2: revoke cascades, touch, status, public answer, TTL --------------
+
+
+def _live_count() -> int:
+    return sum(1 for r in _rows() if not r["revoked"])
+
+
+def test_revoke_token_true_once_false_for_unknown():
+    token, _ = _issue(OWNER)
+    assert connector_session.revoke_token(token) is True
+    assert connector_session.revoke_token(token) is False
+    assert connector_session.revoke_token("dgk_unknown") is False
+    assert connector_session.revoke_token("") is False
+
+
+def test_revoke_for_user_touches_only_that_user():
+    _issue(OWNER)
+    _issue(OWNER, connector_id="revit")
+    _issue(ROOT)
+    assert connector_session.revoke_for_user(OWNER) == 2
+    assert connector_session.revoke_for_user(OWNER) == 0
+    assert _live_count() == 1
+
+
+def test_revoke_for_user_project():
+    auth.set_membership(OWNER, OTHER, "owner")
+    _issue(OWNER, project=PROJECT)
+    _issue(OWNER, project=OTHER)
+    assert connector_session.revoke_for_user_project(OWNER, PROJECT) == 1
+    assert _live_count() == 1
+
+
+def test_revoke_for_project():
+    _issue(OWNER, project=PROJECT)
+    _issue(ROOT, project=PROJECT)
+    _issue(ROOT, project=OTHER)
+    assert connector_session.revoke_for_project(PROJECT) == 2
+    assert _live_count() == 1
+
+
+def test_revoke_for_connector_grant_matches_the_triple_only():
+    _issue(VIEWER, connector_id="grasshopper")
+    _issue(VIEWER, connector_id="revit")
+    _issue(EDITOR, connector_id="grasshopper")
+    assert connector_session.revoke_for_connector_grant(VIEWER, PROJECT, "grasshopper") == 1
+    assert _live_count() == 2
+
+
+def test_revoke_unauthorized_keeps_authorized_sessions():
+    _grant(VIEWER, connector_id="grasshopper")
+    _issue(VIEWER, connector_id="grasshopper")
+    _issue(VIEWER, connector_id="revit")  # never granted
+    _issue(OWNER, connector_id="revit")  # exempt, other user
+    assert connector_session.revoke_unauthorized(VIEWER, PROJECT) == 1
+    live = [(r["username"], r["connector_id"]) for r in _rows() if not r["revoked"]]
+    assert sorted(live) == [(OWNER, "revit"), (VIEWER, "grasshopper")]
+
+
+def test_revoke_unauthorized_after_demotion():
+    _issue(OWNER, connector_id="grasshopper")
+    auth.set_membership(OWNER, PROJECT, "viewer")
+    assert connector_session.revoke_unauthorized(OWNER, PROJECT) == 1
+
+
+def test_touch_updates_last_seen_of_a_live_session():
+    token, _ = _issue(OWNER)
+    record = connector_session.touch(token, now=NOW + 60)
+    assert record["last_seen"] == NOW + 60
+    assert _rows()[0]["last_seen"] == NOW + 60
+    assert "token_hash" not in record
+
+
+def test_touch_none_for_revoked_expired_unknown_and_foreign_prefix():
+    token, record = _issue(OWNER)
+    assert connector_session.touch(token, now=record["expires_at"]) is None
+    assert connector_session.touch("dgk_unknown", now=NOW) is None
+    assert connector_session.touch("abc", now=NOW) is None
+    assert connector_session.touch(None, now=NOW) is None
+    connector_session.revoke_token(token)
+    assert connector_session.touch(token, now=NOW + 1) is None
+
+
+def test_status_never_connected_without_rows():
+    answer = connector_session.status_for("grasshopper", projects={PROJECT}, now=NOW)
+    assert answer == {"status": "never_connected", "active_sessions": 0, "last_sign_in": None}
+
+
+def test_status_active_counts_live_sessions_and_last_sign_in():
+    _issue(OWNER, now=NOW)
+    _issue(ROOT, now=NOW + 100)
+    answer = connector_session.status_for("grasshopper", projects={PROJECT}, now=NOW + 200)
+    assert answer["status"] == "active"
+    assert answer["active_sessions"] == 2
+    assert answer["last_sign_in"] == "2027-01-15T08:03:20Z"
+
+
+def test_status_stale_when_rows_exist_but_none_live():
+    token, record = _issue(OWNER, now=NOW)
+    later = record["expires_at"] + 1
+    assert connector_session.status_for("grasshopper", projects={PROJECT}, now=later)["status"] == "stale"
+    _, _ = _issue(OWNER, now=later)
+    connector_session.revoke_for_user(OWNER)
+    answer = connector_session.status_for("grasshopper", projects={PROJECT}, now=later)
+    assert answer["status"] == "stale"
+    assert answer["active_sessions"] == 0
+    assert answer["last_sign_in"] is not None
+
+
+def test_status_boundary_expires_at_is_not_live():
+    _, record = _issue(OWNER, now=NOW)
+    at = connector_session.status_for("grasshopper", projects=None, now=record["expires_at"])
+    before = connector_session.status_for("grasshopper", projects=None, now=record["expires_at"] - 1)
+    assert at["status"] == "stale"
+    assert before["status"] == "active"
+
+
+def test_status_projects_filter_and_none_means_all():
+    _issue(ROOT, project=OTHER)
+    assert connector_session.status_for("grasshopper", projects={PROJECT}, now=NOW)["status"] == "never_connected"
+    assert connector_session.status_for("grasshopper", projects={OTHER}, now=NOW)["status"] == "active"
+    assert connector_session.status_for("grasshopper", projects=None, now=NOW)["status"] == "active"
+    assert connector_session.status_for("grasshopper", projects=set(), now=NOW)["status"] == "never_connected"
+
+
+def test_status_is_per_connector():
+    _issue(OWNER, connector_id="revit")
+    assert connector_session.status_for("grasshopper", projects=None, now=NOW)["status"] == "never_connected"
+    assert connector_session.status_for("revit", projects=None, now=NOW)["status"] == "active"
+
+
+def test_public_answer_keys_and_expires_at_format():
+    token, record = _issue(OWNER)
+    answer = connector_session.public_answer(token, record)
+    assert set(answer) == {
+        "token", "project", "connectorId", "username", "company", "expiresAt", "expiresInSeconds",
+    }
+    assert answer["token"] == token
+    assert answer["connectorId"] == "grasshopper"
+    assert answer["username"] == OWNER
+    assert answer["expiresAt"] == "2027-01-15T10:00:00Z"
+    assert answer["expiresInSeconds"] == 28800
+
+
+def test_public_answer_adds_neo4j_only_when_given():
+    token, record = _issue(OWNER)
+    bundle = {"uri": "bolt://localhost:7687", "user": "u", "password": "p", "database": "neo4j"}
+    assert "neo4j" not in connector_session.public_answer(token, record)
+    assert connector_session.public_answer(token, record, neo4j=bundle)["neo4j"] == bundle
+
+
+def test_ttl_env_override(monkeypatch):
+    monkeypatch.setenv(connector_session.TTL_ENV, "60")
+    assert connector_session.session_ttl_seconds() == 60
+    _, record = _issue(OWNER)
+    assert record["expires_at"] == record["issued_at"] + 60
+
+
+@pytest.mark.parametrize("bad", ["abc", "0", "-5", "", "1.5"])
+def test_ttl_env_invalid_falls_back(monkeypatch, bad):
+    monkeypatch.setenv(connector_session.TTL_ENV, bad)
+    assert connector_session.session_ttl_seconds() == 28800
+
+
+def test_ttl_accepts_explicit_env_mapping():
+    assert connector_session.session_ttl_seconds({connector_session.TTL_ENV: "120"}) == 120
+    assert connector_session.session_ttl_seconds({}) == 28800
