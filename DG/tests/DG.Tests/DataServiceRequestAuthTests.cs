@@ -14,13 +14,13 @@ public sealed class DataServiceRequestAuthTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:8000/validation/publish");
 
-        var applied = DataServiceRequestAuth.TryApplyConnectorToken(request, "  dgc_abc  ", out var failure);
+        var applied = DataServiceRequestAuth.TryApplyConnectorToken(request, "  dgk_abc  ", out var failure);
 
         Assert.True(applied);
         Assert.Equal(PublishAuthOutcome.Ok, failure);
         Assert.NotNull(request.Headers.Authorization);
         Assert.Equal("Bearer", request.Headers.Authorization!.Scheme);
-        Assert.Equal("dgc_abc", request.Headers.Authorization.Parameter);
+        Assert.Equal("dgk_abc", request.Headers.Authorization.Parameter);
     }
 
     [Theory]
@@ -44,6 +44,27 @@ public sealed class DataServiceRequestAuthTests
         using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:8000/validation/publish");
 
         var applied = DataServiceRequestAuth.TryApplyConnectorToken(request, "abc", out var failure);
+
+        Assert.False(applied);
+        Assert.Equal(PublishAuthOutcome.MalformedToken, failure);
+        Assert.Null(request.Headers.Authorization);
+    }
+
+    [Fact]
+    public void TokenPrefix_IsDgk()
+    {
+        Assert.Equal("dgk_", DataServiceRequestAuth.TokenPrefix);
+    }
+
+    [Theory]
+    [InlineData("dgc_abc")]
+    [InlineData("Bearer dgk_abc")]
+    [InlineData("xdgk_abc")]
+    public void TryApplyConnectorToken_OtherPrefix_IsNotApplied(string token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:8000/validation/publish");
+
+        var applied = DataServiceRequestAuth.TryApplyConnectorToken(request, token, out var failure);
 
         Assert.False(applied);
         Assert.Equal(PublishAuthOutcome.MalformedToken, failure);

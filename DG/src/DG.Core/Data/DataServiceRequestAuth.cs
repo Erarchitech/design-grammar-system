@@ -6,23 +6,25 @@ using System.Net.Http.Headers;
 namespace DG.Core.Data;
 
 /// <summary>
-/// Applies the connector's <c>dgc_</c> platform token to outgoing data-service
-/// publish requests (VALIDATOR, COMPUTGRAPH PUBLISH) and classifies the HTTP
-/// response status those requests come back with (D-04, Correction 5).
+/// Applies the connector sign-in session (<c>dgk_</c> token, D-35) to outgoing
+/// data-service publish requests (VALIDATOR, COMPUTGRAPH PUBLISH) and classifies
+/// the HTTP response status those requests come back with (D-04, Correction 5).
+/// The session is minted by <see cref="ConnectorSessionClient"/> after an account
+/// sign-in in CONNECTOR.
 ///
 /// The token flows only into the Authorization header — never into a field,
 /// log, or exception message. This mirrors the discipline already followed by
-/// <see cref="ConnectorHeartbeatClient"/>. This class has no Grasshopper SDK
+/// <see cref="ConnectorSessionClient"/>. This class has no Grasshopper SDK
 /// dependency so it is directly testable from DG.Tests.
 /// </summary>
 public static class DataServiceRequestAuth
 {
-    /// <summary>The required prefix for a well-formed connector platform token.</summary>
-    public const string TokenPrefix = "dgc_";
+    /// <summary>The required prefix for a well-formed connector session token (D-35).</summary>
+    public const string TokenPrefix = "dgk_";
 
     /// <summary>
-    /// Trims <paramref name="token"/> and, if it is a well-formed <c>dgc_</c>
-    /// token, sets <paramref name="request"/>'s Authorization header to
+    /// Trims <paramref name="token"/> and, if it is a well-formed <c>dgk_</c>
+    /// session token, sets <paramref name="request"/>'s Authorization header to
     /// <c>Bearer &lt;token&gt;</c> and returns true. On failure no header is
     /// set and the specific reason is returned via <paramref name="failure"/>.
     /// </summary>
