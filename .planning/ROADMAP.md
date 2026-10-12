@@ -453,7 +453,7 @@ Plans:
 **Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
 **Requirements**: WEBUI-01, WEBUI-02, WEBUI-03, WEBUI-04, WEBUI-05, WEBUI-06, WEBUI-07, WEBUI-08, WEBUI-09, WEBUI-10, WEBUI-11
 **Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
-**Plans:** 7/24 plans executed
+**Plans:** 8/24 plans executed
 
 Plans:
 **Wave 1**
@@ -467,7 +467,7 @@ Plans:
 
 - [x] 1308-05-PLAN.md — ui-v2 i18n core driven by DeGram (#degram-lang / ?lang=) or primary browser language, no control; coverage rules and raw-text guard
 - [x] 1308-06-PLAN.md — data-service: dgk_ resolver + POST/DELETE /auth/connector-session, fixture seam, spec
-- [ ] 1308-07-PLAN.md — Grasshopper CONNECTOR account sign-in (new GUID, gate), Session → VALIDATOR/COMPUTGRAPH PUBLISH
+- [x] 1308-07-PLAN.md — Grasshopper CONNECTOR account sign-in (new GUID, gate), Session → VALIDATOR/COMPUTGRAPH PUBLISH
 - [x] 1308-08-PLAN.md — d49_store_cleanup.py (token retirement + UAT account removal, dry-run default, TDD)
 
 **Wave 3** *(blocked on Wave 2 completion)*

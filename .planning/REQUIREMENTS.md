@@ -107,7 +107,7 @@
 - [x] **WEBUI-05**: Пункты главного экрана показывают сводки под подписью (Graph Viewer, Model Viewer, «LLM model», Connectors, Reasoner); «AI Engine» переименован в «LLM model».
 - [ ] **WEBUI-06**: В боковой панели DeGram под «Models» / «Модели» есть пункт «Projects» / «Проекты», открывающий экран DG PROJECTS.
 - [ ] **WEBUI-07**: Доступ к коннектору — только грантом на каждый коннектор (владелец и админ освобождены, editor/viewer — по гранту); токены коннекторов заменены сессией входа коннектора; `POST /connectors/{id}/credentials` выведен (410); статус «Вкл» означает живую сессию входа.
-- [ ] **WEBUI-08**: Аддин Grasshopper входит под учётной записью пользователя (CONNECTOR, VALIDATOR, COMPUTGRAPH PUBLISH) без токена коннектора.
+- [x] **WEBUI-08**: Аддин Grasshopper входит под учётной записью пользователя (CONNECTOR, VALIDATOR, COMPUTGRAPH PUBLISH) без токена коннектора.
 - [ ] **WEBUI-09**: Экран Connectors в Web UI, таблица коннекторов в DeGram и документация API больше не содержат сценария токенов.
 - [x] **WEBUI-10**: `spec/SECURITY-BOUNDARY.md` (и API/GRASSHOPPER/DEPLOYMENT, release notes) и инвентарь маршрутов отражают все изменения маршрутов и принципалов.
 - [ ] **WEBUI-11**: Живое развёртывание: проверка D-32, пересборка образов из закоммиченного кода, вывод `dgc_` токенов, удаление UAT-учётки `uat-pw-bd30ce` — каждое за контрольной точкой.
