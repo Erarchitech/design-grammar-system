@@ -257,6 +257,7 @@ PUT|/projects/{project}/degram-policy|admin|-|-
 GET|/projects/{project}/members|member|path|owner
 DELETE|/projects/{project}/members/{username}|member|path|owner
 PUT|/projects/{project}/members/{username}|member|path|owner
+GET|/projects/{project}/summary|member|path|viewer
 POST|/reasoner/consistency|member|body|viewer
 GET|/reasoner/settings|session|-|-
 PUT|/reasoner/settings|admin|-|-

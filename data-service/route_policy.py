@@ -137,6 +137,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/projects/{project}/members"): _p(_MEM, source="path", role="owner"),
     ("DELETE", "/projects/{project}/members/{username}"): _p(_MEM, source="path", role="owner"),
     ("PUT", "/projects/{project}/members/{username}"): _p(_MEM, source="path", role="owner"),
+    ("GET", "/projects/{project}/summary"): _p(_MEM, source="path", role="viewer"),
     # ── project -> company attribute (Phase 1301-05, D-20) ──
     # Admin-only and admin is owner of every project, so a project source would
     # add no authorization; the handler validates the path value itself.

@@ -4626,6 +4626,14 @@ PROJECT_NODE_COUNTS_QUERY = (
     "RETURN n.project AS project, count(n) AS nodes"
 )
 PROJECT_EXISTS_IN_GRAPH_QUERY = "MATCH (n) WHERE n.project = $project RETURN true AS present LIMIT 1"
+# D-19: landing counts for one project. One CASE over the property OR, so a node
+# carrying both property labels counts once; Rule counts only in the Metagraph.
+PROJECT_SUMMARY_QUERY = (
+    "MATCH (n) WHERE n.project = $project "
+    "RETURN sum(CASE WHEN n:Class THEN 1 ELSE 0 END) AS classes, "
+    "sum(CASE WHEN n:DatatypeProperty OR n:ObjectProperty THEN 1 ELSE 0 END) AS properties, "
+    "sum(CASE WHEN n:Rule AND n.graph = 'Metagraph' THEN 1 ELSE 0 END) AS rules"
+)
 
 
 class ProjectCreateRequest(BaseModel):
@@ -4957,6 +4965,28 @@ def revoke_connector_access(project: str, access_id: str, request: Request):
 def list_project_members(project: str):
     members = sorted(auth.list_members(project), key=lambda m: m["username"])
     return {"project": project, "members": members}
+
+
+@router.get("/projects/{project}/summary")
+def get_project_summary(project: str):
+    """Member (viewer and up, route policy): counts only for the landing page
+    (D-19). Graph counts come from one project-scoped read; ``grantsIssued`` is
+    the active connector accesses plus the active DeGram grants of the project.
+    No names, rule text or ids are returned."""
+    _check_project_name(project)
+    row = read_single(PROJECT_SUMMARY_QUERY, {"project": project}) or {}
+    grants_issued = sum(1 for r in connector_access.list_for_project(project) if r.get("active")) + sum(
+        1 for r in degram_grants.list_for_project(project) if r.get("active")
+    )
+    return {
+        "project": project,
+        "graph": {
+            "classes": int(row.get("classes") or 0),
+            "properties": int(row.get("properties") or 0),
+            "rules": int(row.get("rules") or 0),
+        },
+        "connectors": {"grantsIssued": grants_issued},
+    }
 
 
 @router.delete("/projects/{project}/members/{username}", status_code=204)
