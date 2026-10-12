@@ -7,6 +7,8 @@ import { isDegramHost } from "../lib/hostMode.js";
 import HostCentre from "./HostCentre.jsx";
 import { useT } from "../i18n/LanguageProvider.jsx";
 import { describeError } from "../i18n/index.js";
+import { getProjectSummary } from "../lib/summaryApi.js";
+import { buildLandingSummaries } from "../lib/landingSummary.js";
 
 // Client-side auth messages are stored as a code and translated at render, so a live language switch retranslates
 // them (D-52). Server errors are stored as the error object and mapped by describeError.
@@ -62,6 +64,24 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const [authErr, setAuthErr] = React.useState(null);
   // Register is offered only when the server says so; any failure hides it.
   const [canRegister, setCanRegister] = React.useState(false);
+  const [summary, setSummary] = React.useState({ status: "loading", data: null });
+  const [summaryProject, setSummaryProject] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!active || !user || !project) return;
+    let stale = false;
+    setSummaryProject(project);
+    setSummary({ status: "loading", data: null });
+    getProjectSummary(project)
+      .then((data) => { if (!stale) setSummary({ status: "ok", data }); })
+      .catch(() => { if (!stale) setSummary({ status: "error", data: null }); });
+    return () => { stale = true; };
+  }, [active, user?.name, project]);
+
+  const summaries = buildLandingSummaries({
+    project,
+    summary: summaryProject === project ? summary : { status: "loading", data: null }
+  });
 
   const refreshAuthOptions = React.useCallback(() => {
     auth
@@ -210,6 +230,15 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     ? { transitionDelay: "260ms", opacity: 1, transform: "translateY(0)", filter: "blur(0px)", pointerEvents: "auto" }
     : { transitionDelay: "0ms", opacity: 0, transform: "translateY(18px)", filter: "blur(9px)", pointerEvents: "none" };
 
+  const renderSummary = (parts) => {
+    if (parts === null) return null;
+    return <span className="dgl-region-summary">{parts === "—" ? parts : parts.map(({ label, value, title }, index) => (
+      <React.Fragment key={label}>
+        {index > 0 && " · "}{label}: <span style={{ color: "var(--text-primary)" }} title={title}>{value}</span>
+      </React.Fragment>
+    ))}</span>;
+  };
+
   return (
     <>
       <canvas ref={canvasRef} className="dgl-canvas" />
@@ -342,6 +371,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
 
       <div ref={labelGraphRef} className="dgl-region-label" onClick={() => fly("graph")}>
         {t("Graph Viewer")}
+        {user && renderSummary(summaries.graph)}
       </div>
       <div ref={labelModelRef} className="dgl-region-label" onClick={() => fly("model")}>
         {t("Model Viewer")}

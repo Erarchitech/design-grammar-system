@@ -140,6 +140,15 @@
 .dgl-region-label:hover {
   opacity: 0.55 !important;
 }
+.dgl-region-summary {
+  display: block;
+  margin-top: 4px;
+  font: 400 12px/1.33 var(--font-mono);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .dgl-hint {
   position: absolute;
