@@ -24,7 +24,7 @@ export default {
         {
           type: "text",
           content:
-            "The index.js uses Vite's import.meta.glob to discover all [0-9][0-9]-*.js files eagerly and sort them by their numeric prefix. Adding a new file to the content directory automatically registers the section.",
+            "The index.js uses Vite's import.meta.glob to discover all [0-9][0-9]-*.js files eagerly and sort them by their numeric prefix. Adding a new file to the content directory automatically registers the section. New connector examples should use account sign-in (POST /auth/login, then POST /auth/connector-session) and a short-lived dgk_ Bearer, not a credential-creation flow; sign out with DELETE /auth/connector-session.",
         },
         {
           type: "text",
@@ -46,7 +46,7 @@ export default {
           type: "code",
           label: "Example: endpoint block",
           content:
-            '{\n  type: "endpoint",\n  method: "POST",\n  path: "/data-service/connectors/{id}/credentials",\n  description: "Creates a new credential and returns the token once.",\n  params: [\n    { name: "id", type: "string", location: "path", required: true, description: "Connector ID" },\n  ],\n  request: \'POST /path\\nContent-Type: application/json\\n\\n{"key": "value"}\',\n  response: \'HTTP/1.1 201 Created\\n\\n{"token": "dgc_..."}\',\n}',
+            '{\n  type: "endpoint",\n  method: "POST",\n  path: "/data-service/auth/connector-session",\n  description: "Sign the add-in in after POST /auth/login, using the DG account cookie.",\n  params: [\n    { name: "connector_id", type: "string", location: "body", required: true, description: "Registry connector ID" },\n  ],\n  request: \'POST /data-service/auth/connector-session\\nCookie: dg_session=...\\nX-DG-CSRF: 1\\n\\n{"project":"example-project","connector_id":"grasshopper"}\',\n  response: \'HTTP/1.1 201 Created\\nCache-Control: no-store\\n\\n{"token":"dgk_..."}\',\n}',
         },
         {
           type: "note",
