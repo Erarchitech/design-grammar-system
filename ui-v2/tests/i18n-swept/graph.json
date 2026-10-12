@@ -1,0 +1,9 @@
+{
+  "area": "graph",
+  "files": [
+    "src/screens/GraphScreen.jsx"
+  ],
+  "allow": [
+    "Cypher"
+  ]
+}

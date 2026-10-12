@@ -1,7 +1,7 @@
 import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
-import buildRings from "../graph/buildRings.js";
+import buildRings, { orbitFallbackName } from "../graph/buildRings.js";
 import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules, checkRuleConflict, supersedeRule, acceptRuleOverlap } from "../lib/graphApi.js";
 import {
   Badge,
@@ -18,13 +18,144 @@ import {
   SessionHistory,
   Tabs
 } from "../components/index.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
+import { t, tc, tp, describeError, formatTime, getLang } from "../i18n/index.js";
 
-const MODES = ["Ingest", "Query", "Edit"];
+// Turn kinds in tab order (index = the legacy numeric mode). Every user-visible text of a turn is looked up at render
+// time (modeName, stepLabel, turnResponse, metaText), so a live language switch re-labels turns already on screen
+// (D-06, D-07). Turn state holds codes and data, never translated text.
+const KINDS = ["ingest", "query", "edit"];
 const STEPS = {
-  0: ["Parsing intent", "Reasoning over ontology", "Encoding SWRL / Cypher", "Committing to metagraph"],
-  1: ["Parsing query", "Traversing graph", "Ranking matches"],
-  2: ["Locating rule", "Reasoning over ontology", "Re-encoding SWRL / Cypher", "Rewriting metagraph"]
+  0: ["intent", "reason", "encode", "commit"],
+  1: ["parseq", "traverse", "rank"],
+  2: ["locate", "reason", "reencode", "rewrite"]
 };
+const CLOCK = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+
+const kindOf = (mode) => (mode === "query" ? "query" : mode === "edit" ? "edit" : "ingest");
+
+function modeName(kind) {
+  return kind === "query" ? t("Query") : kind === "edit" ? t("Edit") : t("Ingest");
+}
+
+// The mode word inside the restore-point banner ("graph as before {mode} turn").
+function restoreModeWord(kind) {
+  return kind === "query" ? tc("restore", "query") : kind === "edit" ? tc("restore", "edit") : tc("restore", "ingest");
+}
+
+function stepLabel(id) {
+  switch (id) {
+    case "intent":
+      return t("Parsing intent");
+    case "reason":
+      return t("Reasoning over ontology");
+    case "encode":
+      return t("Encoding SWRL / Cypher");
+    case "commit":
+      return t("Committing to metagraph");
+    case "parseq":
+      return t("Parsing query");
+    case "traverse":
+      return t("Traversing graph");
+    case "rank":
+      return t("Ranking matches");
+    case "locate":
+      return t("Locating rule");
+    case "reencode":
+      return t("Re-encoding SWRL / Cypher");
+    case "rewrite":
+      return t("Rewriting metagraph");
+    default:
+      return "";
+  }
+}
+
+function fmtSecs(n) {
+  return new Intl.NumberFormat(getLang() === "ru" ? "ru-RU" : "en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n);
+}
+
+function progressSteps(turn) {
+  return turn.steps.map((x) => ({
+    label: stepLabel(x.id),
+    active: x.active,
+    time: x.secs == null ? "" : t("{secs}s", { secs: fmtSecs(x.secs) })
+  }));
+}
+
+// What a finished turn says. The same text is saved to the persisted session (language at save time) and shown in the
+// console; LLM answers and server texts inside it are data and are shown verbatim (D-13).
+function outcomeText(outcome) {
+  switch (outcome && outcome.type) {
+    case "ingested":
+      return t("Rule ingested into the metagraph.");
+    case "rewritten":
+      return t("Rule {ruleId} rewritten in the metagraph.", { ruleId: outcome.ruleId });
+    case "empty":
+      return t("(empty answer)");
+    case "error":
+      return t("ERROR — {message}", { message: describeError(outcome.err, t("workflow failed")) });
+    case "answer":
+    case "text":
+      return outcome.text;
+    default:
+      return "";
+  }
+}
+
+function warningText(w) {
+  switch (w.type) {
+    case "unidentified":
+      return (
+        t("Could not identify the newly created rule, so the conflict decision was not recorded.") +
+        " " +
+        (w.ruleId ? t("{ruleId} is still the rule in force.", { ruleId: w.ruleId }) : t("No overlap provenance was recorded."))
+      );
+    case "refused":
+      return t("Update did not apply — {ruleId} is still the rule in force.", { ruleId: w.ruleId }) + (w.detail ? " " + w.detail : "");
+    default:
+      return (
+        t("Recording the conflict decision failed: {message}.", { message: describeError(w.err, t("unknown error")) }) +
+        (w.ruleId ? " " + t("{ruleId} may still be the rule in force.", { ruleId: w.ruleId }) : "")
+      );
+  }
+}
+
+function turnResponse(turn) {
+  return [outcomeText(turn.outcome)].concat((turn.warnings || []).map((w) => "⚠ " + warningText(w))).join("\n\n");
+}
+
+function metaText(meta) {
+  if (!meta) return "";
+  const secs = meta.secs == null ? "" : fmtSecs(meta.secs);
+  switch (meta.type) {
+    case "committed":
+      return t("Committed → Metagraph · {secs}s", { secs });
+    case "rewritten":
+      return t("Rewritten → Metagraph · {secs}s", { secs });
+    case "query":
+      return t("Query · {project} · {secs}s", { project: meta.project || t("all projects"), secs });
+    case "failed":
+      return t("Failed");
+    case "history":
+      return t("History · {date}", { date: meta.date });
+    default:
+      return "";
+  }
+}
+
+// Search field names: the property keys are graph data and stay as they are; only the two fixed choices are chrome.
+const chipField = (prop) => (prop === "*" ? t("any") : prop === "__label" ? t("label") : prop);
+const placeholderField = (prop) => (prop === "*" ? t("any field") : prop === "__label" ? t("label") : prop);
+
+const orbitNames = (ring) => ring.orbits.map((name, o) => name || orbitFallbackName(o));
+
+function deleteFallback(kind) {
+  return kind === "preview"
+    ? t("Could not load deletion preview")
+    : kind === "resolve"
+      ? t("Could not resolve the deletion request")
+      : t("Delete failed");
+}
 
 const frost = (extra) => ({
   borderRadius: "var(--radius-nested)",
@@ -67,14 +198,6 @@ function parseCreatedNodes(cypher) {
   return nodes;
 }
 
-function clockNow() {
-  try {
-    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  } catch {
-    return "";
-  }
-}
-
 // Persisted DR-session results embed the Cypher after a "// Cypher" delimiter.
 // The Session History panel shows only the human response; the raw Cypher stays
 // in the live Session console's collapsible dropdown block.
@@ -89,6 +212,7 @@ function stripCypher(result) {
 // selection with divergence callout + details panel, n8n prompt console,
 // and node search (right-click popover + persistent property-scoped bar).
 export default function GraphScreen({ active, onBack, project }) {
+  useT(); // subscribes the screen to the language; texts are looked up with the module-level t() at render
   const canvasRef = React.useRef(null);
   const mapRef = React.useRef(null);
   const zoomRef = React.useRef(null);
@@ -101,7 +225,7 @@ export default function GraphScreen({ active, onBack, project }) {
   const engineRef = React.useRef(null);
 
   const [data, setData] = React.useState(null); // {rings, cross, ...}
-  const [loadErr, setLoadErr] = React.useState("");
+  const [loadErr, setLoadErr] = React.useState(null); // null | { err, fb: "load" | "prop" }
   const [type, setType] = React.useState(0);
   const [sel, setSel] = React.useState(null); // {r, i}
   const [selBig, setSelBig] = React.useState(false);
@@ -128,7 +252,7 @@ export default function GraphScreen({ active, onBack, project }) {
   // are mirrored to localStorage (capped) so Restore survives reloads.
   const snapshotsRef = React.useRef({});
   const [restoreIds, setRestoreIds] = React.useState([]);
-  const [restoredAt, setRestoredAt] = React.useState(null); // {sessionId, modeLabel, ts} | null
+  const [restoredAt, setRestoredAt] = React.useState(null); // {sessionId, kind, ts} | null
 
   // Fold the Session History panel closed on any click outside it.
   React.useEffect(() => {
@@ -216,7 +340,7 @@ export default function GraphScreen({ active, onBack, project }) {
   const cfg = React.useMemo(() => getConfig(), []);
 
   const loadGraph = React.useCallback(async () => {
-    setLoadErr("");
+    setLoadErr(null);
     try {
       const raw = await fetchGraph(project);
       const built = buildRings(raw);
@@ -224,7 +348,7 @@ export default function GraphScreen({ active, onBack, project }) {
       if (engineRef.current) engineRef.current.setData(built);
       setRestoredAt(null); // fetching live data exits any restore-point view
     } catch (err) {
-      setLoadErr(err.message || "Could not reach Neo4j.");
+      setLoadErr({ err, fb: "load" });
     }
   }, [project]);
 
@@ -318,8 +442,8 @@ export default function GraphScreen({ active, onBack, project }) {
     if (!engine) return;
     if (active) engine.setVisible(true);
     else {
-      const t = setTimeout(() => engine.setVisible(false), 620);
-      return () => clearTimeout(t);
+      const hideTimer = setTimeout(() => engine.setVisible(false), 620);
+      return () => clearTimeout(hideTimer);
     }
   }, [active]);
 
@@ -440,16 +564,16 @@ export default function GraphScreen({ active, onBack, project }) {
             const cypher = ix >= 0 ? result.slice(ix + 12) : "";
             return {
               id: s.sessionId,
-              modeLabel: s.mode === "query" ? "Query" : s.mode === "edit" ? "Edit" : "Ingest",
+              kind: kindOf(s.mode),
               text: s.prompt || "",
               steps: [],
               progress: 100,
               status: "done",
-              response: ix >= 0 ? result.slice(0, ix) : result,
+              outcome: { type: "text", text: ix >= 0 ? result.slice(0, ix) : result },
               cypher,
               createdNodes: parseCreatedNodes(cypher),
               cypherOpen: false,
-              meta: "History · " + String(s.createdAt || "").slice(0, 10),
+              metaInfo: { type: "history", date: String(s.createdAt || "").slice(0, 10) },
               clock: String(s.createdAt || "").slice(11, 19),
               history: true
             };
@@ -480,7 +604,7 @@ export default function GraphScreen({ active, onBack, project }) {
 
   /* -------- prompt console (rules-ingest / graph-query webhooks) -------- */
   const patchTurn = (id, patch) =>
-    setSession((s) => s.map((t) => (t.id !== id ? t : { ...t, ...(typeof patch === "function" ? patch(t) : patch) })));
+    setSession((s) => s.map((tm) => (tm.id !== id ? tm : { ...tm, ...(typeof patch === "function" ? patch(tm) : patch) })));
 
   const autoScroll = () =>
     requestAnimationFrame(() => {
@@ -509,14 +633,14 @@ export default function GraphScreen({ active, onBack, project }) {
       s.concat([
         {
           id,
-          modeLabel: MODES[turnMode],
+          kind: KINDS[turnMode],
           text: sentText,
-          steps: steps.map((l) => ({ label: l, active: false, time: "" })),
+          steps: steps.map((stepId) => ({ id: stepId, active: false, secs: null })),
           progress: 5,
           status: "processing",
-          response: "",
-          meta: "",
-          clock: ""
+          outcome: null,
+          metaInfo: null,
+          clockAt: null
         }
       ])
     );
@@ -530,12 +654,12 @@ export default function GraphScreen({ active, onBack, project }) {
     const t0 = Date.now();
     const timer = setInterval(() => {
       if (step < steps.length - 1) step++;
-      patchTurn(id, (t) => ({
+      patchTurn(id, (tm) => ({
         progress: Math.min(90, Math.round(((step + 0.5) / steps.length) * 100)),
-        steps: t.steps.map((x, i) => ({
+        steps: tm.steps.map((x, i) => ({
           ...x,
           active: i === step,
-          time: i < step ? x.time || ((Date.now() - t0) / 1000 / steps.length).toFixed(1) + "s" : x.time
+          secs: i < step ? x.secs ?? (Date.now() - t0) / 1000 / steps.length : x.secs
         }))
       }));
     }, 1400);
@@ -544,36 +668,37 @@ export default function GraphScreen({ active, onBack, project }) {
       const payload =
         turnMode === 1 ? await queryGraph(txt, project) : await ingestRules(sentText, project);
       clearInterval(timer);
-      const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      let response, meta, cypher = "", createdNodes = [];
+      const secs = (Date.now() - t0) / 1000;
+      let outcome, metaInfo, cypher = "", createdNodes = [];
       if (turnMode !== 1) {
         cypher = Array.isArray(payload.cypher) ? payload.cypher.join("\n\n") : payload.cypher || "";
         createdNodes = parseCreatedNodes(cypher);
-        response = turnMode === 2 ? "Rule " + editRule + " rewritten in the metagraph." : "Rule ingested into the metagraph.";
-        meta = (turnMode === 2 ? "Rewritten" : "Committed") + " → Metagraph · " + secs + "s";
+        outcome = turnMode === 2 ? { type: "rewritten", ruleId: editRule } : { type: "ingested" };
+        metaInfo = { type: turnMode === 2 ? "rewritten" : "committed", secs };
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
         // loadGraph() → setData() cleared streams; repopulate against the fresh
         // rings so streams target exactly the nodes this turn just created.
         engineRef.current?.emitNewNodeStreams?.(prevIds);
       } else {
-        response = payload.answer || payload.response || "(empty answer)";
-        meta = "Query · " + (project || "all projects") + " · " + secs + "s";
+        const answer = payload.answer || payload.response;
+        outcome = answer ? { type: "answer", text: answer } : { type: "empty" };
+        metaInfo = { type: "query", project, secs };
       }
-      patchTurn(id, (t) => ({
+      patchTurn(id, (tm) => ({
         status: "done",
         progress: 100,
-        steps: t.steps.map((x) => ({ ...x, active: false, time: x.time || "·" })),
-        response,
+        steps: tm.steps.map((x) => ({ ...x, active: false })),
+        outcome,
         cypher,
         createdNodes,
         cypherOpen: false,
-        meta,
-        clock: clockNow()
+        metaInfo,
+        clockAt: new Date()
       }));
       // persist the turn so it survives reloads (legacy saveDrSession parity)
       const savedMode = turnMode === 1 ? "query" : turnMode === 2 ? "edit" : "ingest";
-      const savedResult = response + (cypher ? "\n\n// Cypher\n" + cypher : "");
+      const savedResult = outcomeText(outcome) + (cypher ? "\n\n// Cypher\n" + cypher : "");
       const serverSessionId = await saveDrSession(project, savedMode, sentText, savedResult);
       const finalId = serverSessionId || id;
       // Re-key the checkpoint to the durable server session id and persist it so
@@ -602,13 +727,13 @@ export default function GraphScreen({ active, onBack, project }) {
       return { id, createdNodes };
     } catch (err) {
       clearInterval(timer);
-      patchTurn(id, (t) => ({
+      patchTurn(id, (tm) => ({
         status: "done",
         progress: 100,
-        steps: t.steps.map((x) => ({ ...x, active: false })),
-        response: "ERROR — " + (err.message || "workflow failed"),
-        meta: "Failed",
-        clock: clockNow()
+        steps: tm.steps.map((x) => ({ ...x, active: false })),
+        outcome: { type: "error", err },
+        metaInfo: { type: "failed" },
+        clockAt: new Date()
       }));
       return null;
     } finally {
@@ -708,18 +833,13 @@ export default function GraphScreen({ active, onBack, project }) {
     if (oldRuleIdToSupersede || acceptedOverlapWith) {
       const newRuleId = (turnResult?.createdNodes || []).find((n) => n.label === "Rule")?.display;
       const turnId = turnResult?.id;
-      const appendWarning = (text) => {
+      const appendWarning = (warning) => {
         if (!turnId) return;
-        patchTurn(turnId, (t) => ({ response: (t.response || "") + "\n\n⚠ " + text }));
+        patchTurn(turnId, (tm) => ({ warnings: (tm.warnings || []).concat([warning]) }));
       };
       try {
         if (!newRuleId) {
-          appendWarning(
-            "Could not identify the newly created rule, so the conflict decision was not recorded. " +
-              (oldRuleIdToSupersede
-                ? `${oldRuleIdToSupersede} is still the rule in force.`
-                : "No overlap provenance was recorded.")
-          );
+          appendWarning({ type: "unidentified", ruleId: oldRuleIdToSupersede });
         } else if (oldRuleIdToSupersede) {
           await supersedeRule(project, oldRuleIdToSupersede, newRuleId, txt);
         } else if (acceptedOverlapWith) {
@@ -730,16 +850,13 @@ export default function GraphScreen({ active, onBack, project }) {
           // The safety net worked as intended: refuse to disarm a working
           // rule in favor of a malformed one. This is not a warning to
           // dismiss — the user's Update/Replace did NOT apply.
-          appendWarning(
-            `Update did not apply — ${oldRuleIdToSupersede} is still the rule in force. ` +
-              (err.message || "") +
-              (err.hint ? " " + err.hint : "")
-          );
+          appendWarning({
+            type: "refused",
+            ruleId: oldRuleIdToSupersede,
+            detail: [err.message, err.hint].filter(Boolean).join(" ")
+          });
         } else {
-          appendWarning(
-            "Recording the conflict decision failed: " + (err.message || "unknown error") + ". " +
-              (oldRuleIdToSupersede ? `${oldRuleIdToSupersede} may still be the rule in force.` : "")
-          );
+          appendWarning({ type: "failed", ruleId: oldRuleIdToSupersede, err });
         }
         console.warn("Rule provenance write failed:", err);
       }
@@ -796,7 +913,7 @@ export default function GraphScreen({ active, onBack, project }) {
     setSelBig(false);
     setRestoredAt({
       sessionId: s.sessionId,
-      modeLabel: s.mode === "edit" ? "edit" : s.mode === "query" ? "query" : "ingest",
+      kind: kindOf(s.mode),
       ts: s.createdAt || ""
     });
   }, []);
@@ -851,7 +968,7 @@ export default function GraphScreen({ active, onBack, project }) {
         setSel((s) => (s ? { ...s } : s));
       }
     } catch (err) {
-      setLoadErr(err.message || "Property update failed");
+      setLoadErr({ err, fb: "prop" });
     }
   };
 
@@ -862,7 +979,7 @@ export default function GraphScreen({ active, onBack, project }) {
   // "delete the rule and its atoms" reads as if everything below it goes.
   const [delOpen, setDelOpen] = React.useState(false);
   const [delBusy, setDelBusy] = React.useState(false);
-  const [delErr, setDelErr] = React.useState("");
+  const [delErr, setDelErr] = React.useState(null); // null | { err, fb: "preview" | "resolve" | "delete" }
   const [delTarget, setDelTarget] = React.useState(null); // { ruleId } — set by menu or prompt
   const [menuOpen, setMenuOpen] = React.useState(false);
   const kebabRef = React.useRef(null);
@@ -925,7 +1042,7 @@ export default function GraphScreen({ active, onBack, project }) {
     setDelMatches([]);
     setDelReason("");
     setDelGhosts([]);
-    setDelErr("");
+    setDelErr(null);
   };
 
   // Header menu → a single known rule.
@@ -938,7 +1055,7 @@ export default function GraphScreen({ active, onBack, project }) {
     try {
       setDelMatches([await fetchRuleDeletePreview(project, ruleId)]);
     } catch (err) {
-      setDelErr(err.message || "Could not load deletion preview");
+      setDelErr({ err, fb: "preview" });
     } finally {
       setDelResolving(false);
     }
@@ -957,7 +1074,7 @@ export default function GraphScreen({ active, onBack, project }) {
       setDelReason(res.reason || "");
       setDelGhosts(res.hallucinated || []);
     } catch (err) {
-      setDelErr(err.message || "Could not resolve the deletion request");
+      setDelErr({ err, fb: "resolve" });
     } finally {
       setDelResolving(false);
     }
@@ -966,7 +1083,7 @@ export default function GraphScreen({ active, onBack, project }) {
   const confirmDelete = async () => {
     if (!project || delMatches.length === 0) return;
     setDelBusy(true);
-    setDelErr("");
+    setDelErr(null);
     try {
       await bulkDeleteRules(project, delMatches.map((m) => m.ruleId));
       setDelOpen(false);
@@ -975,7 +1092,7 @@ export default function GraphScreen({ active, onBack, project }) {
       engineRef.current?.clearSel();
       await loadGraph(); // refetch rings so the deleted nodes leave the datascape
     } catch (err) {
-      setDelErr(err.message || "Delete failed");
+      setDelErr({ err, fb: "delete" });
     } finally {
       setDelBusy(false);
     }
@@ -989,10 +1106,10 @@ export default function GraphScreen({ active, onBack, project }) {
   }, [se]);
 
   const searchProps = ringN
-    ? [{ value: "*", label: "Any field" }, { value: "__label", label: "Label" }].concat(
+    ? [{ value: "*", label: t("Any field") }, { value: "__label", label: t("Label") }].concat(
         [...new Set([].concat(...ringN.nodes.map((n) => n.props.map((p) => p[0]))))].map((k) => ({ value: k, label: k }))
       )
-    : [{ value: "*", label: "Any field" }];
+    : [{ value: "*", label: t("Any field") }];
 
   // Every distinct value present in the active ring for the selected field —
   // feeds the search bar's value dropdown so it adapts to `searchProp`.
@@ -1019,33 +1136,38 @@ export default function GraphScreen({ active, onBack, project }) {
     return [...seen].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
   }, [ringN, searchProp]);
 
+  const loadErrText = loadErr
+    ? describeError(loadErr.err, loadErr.fb === "prop" ? t("Property update failed") : t("Could not reach Neo4j."))
+    : "";
+  const delErrText = delErr ? describeError(delErr.err, deleteFallback(delErr.fb)) : "";
+
   return (
     <div style={{ position: "absolute", inset: 0, background: "var(--color-canvas)" }}>
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none" }} />
 
-      <ScreenHeader title="Graph Viewer" subtitle={`${project || "All projects"} · ${cfg.neo4jUri || "bolt://neo4j:7687"}`} onBack={onBack} />
+      <ScreenHeader title={t("Graph Viewer")} subtitle={`${project || t("All projects")} · ${cfg.neo4jUri || "bolt://neo4j:7687"}`} onBack={onBack} />
 
       {loadErr && (
         <div
           className="dg-annotation dg-annotation--muted"
           style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 11, display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 4 }}
         >
-          <span style={{ color: "var(--color-signal)" }}>Graph unavailable · {loadErr}</span>
+          <span style={{ color: "var(--color-signal)" }}>{t("Graph unavailable · {reason}", { reason: loadErrText })}</span>
           <Button variant="outline" size="sm" onClick={loadGraph}>
-            Retry
+            {t("Retry")}
           </Button>
         </div>
       )}
       {!loadErr && data && rings.length === 0 && (
         <div className="dg-annotation dg-annotation--muted" style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 11, zIndex: 4 }}>
-          No graph data · ingest a rule to begin
+          {t("No graph data · ingest a rule to begin")}
         </div>
       )}
 
       {filterOn && (
         <div style={{ position: "absolute", left: "50%", top: 24, transform: "translateX(-50%)", zIndex: 5 }}>
           <Chip selected onRemove={clearFilter}>
-            {(searchProp === "*" ? "any" : searchProp === "__label" ? "label" : searchProp) + ' ~ "' + filterQ + '" · ' + matchCount + " nodes"}
+            {tp("{field} ~ \"{query}\" · {n} layer node", matchCount, { field: chipField(searchProp), query: filterQ })}
           </Chip>
         </div>
       )}
@@ -1061,16 +1183,16 @@ export default function GraphScreen({ active, onBack, project }) {
               <path d="M3 3v5h5" />
             </svg>
             <span style={{ font: "500 11px/1.3 var(--font-sans)", color: "var(--color-ink)" }}>
-              Restore point · graph as before {restoredAt.modeLabel} turn
+              {t("Restore point · graph as before {mode} turn", { mode: restoreModeWord(restoredAt.kind) })}
               {restoredAt.ts ? " · " + String(restoredAt.ts).replace("T", " ").slice(0, 16) : ""}
             </span>
             {!restoredAt.confirmed && (
               <>
                 <Button size="sm" onClick={() => setRestoredAt((prev) => ({ ...prev, confirmed: true }))}>
-                  Confirm
+                  {t("Confirm")}
                 </Button>
                 <Button size="sm" variant="outline" onClick={returnToLive}>
-                  Return to live
+                  {t("Return to live")}
                 </Button>
               </>
             )}
@@ -1084,10 +1206,10 @@ export default function GraphScreen({ active, onBack, project }) {
           <div className="dg-frost" style={frost()}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "2px 6px 6px" }}>
               <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-                Graph Layers
+                {t("Graph Layers")}
               </span>
               <span style={{ font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>
-                Grouped · {rings.length}×3
+                {t("Grouped · {n}×3", { n: rings.length })}
               </span>
             </div>
             {rings.map((rg, r) => {
@@ -1106,11 +1228,11 @@ export default function GraphScreen({ active, onBack, project }) {
                       {rg.name}
                     </span>
                     <span style={{ font: "400 10px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>
-                      {rg.nodes.length + " nodes" + (on ? " · " + (rg.edges.length + (data.xPerRing[r] || 0)) + " edges" : "")}
+                      {tp("{n} layer node", rg.nodes.length) + (on ? " · " + tp("{n} edge", rg.edges.length + (data.xPerRing[r] || 0)) : "")}
                     </span>
                     {on && (
                       <span style={{ font: "400 9px/1.4 var(--font-annotation)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {rg.orbits.join(" · ")}
+                        {orbitNames(rg).join(" · ")}
                       </span>
                     )}
                   </div>
@@ -1120,7 +1242,7 @@ export default function GraphScreen({ active, onBack, project }) {
             })}
             <div style={{ marginTop: 5, padding: "7px 6px 2px", borderTop: "1px solid var(--color-hairline)" }}>
               <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 9.5, lineHeight: 1.5 }}>
-                Drag to rotate · click to align · double-click to inspect · right-click to search
+                {t("Drag to rotate · click to align · double-click to inspect · right-click to search")}
               </div>
             </div>
           </div>
@@ -1129,13 +1251,13 @@ export default function GraphScreen({ active, onBack, project }) {
             <div className="dg-frost" style={frost()}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "2px 6px 6px" }}>
                 <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-                  Orbits
+                  {t("Orbits")}
                 </span>
                 <span style={{ font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 118 }}>
                   {ringN.name}
                 </span>
               </div>
-              {ringN.orbits.map((nm, o) => {
+              {orbitNames(ringN).map((nm, o) => {
                 const rng = ringN.ob[o] || [0, 0];
                 const on = (k) => (k === o ? "var(--color-signal)" : "var(--ink-a16)");
                 return (
@@ -1148,7 +1270,7 @@ export default function GraphScreen({ active, onBack, project }) {
                     <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
                       <span style={{ font: "600 11px/1.3 var(--font-sans)", letterSpacing: "0.1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{nm}</span>
                       <span style={{ font: "400 9px/1.4 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--text-muted)" }}>
-                        {rng[1] - rng[0]} nodes
+                        {tp("{n} layer node", rng[1] - rng[0])}
                       </span>
                     </span>
                   </div>
@@ -1182,8 +1304,8 @@ export default function GraphScreen({ active, onBack, project }) {
                 {selectedRuleId && (
                   <button
                     onClick={() => setMenuOpen((v) => !v)}
-                    title="Rule actions"
-                    aria-label="Rule actions"
+                    title={t("Rule actions")}
+                    aria-label={t("Rule actions")}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     style={{
@@ -1233,7 +1355,7 @@ export default function GraphScreen({ active, onBack, project }) {
                         borderRadius: "var(--radius-nested)"
                       }}
                     >
-                      Delete rule…
+                      {t("Delete rule…")}
                     </button>
                   </div>
                 )}
@@ -1246,13 +1368,13 @@ export default function GraphScreen({ active, onBack, project }) {
             <div style={{ flex: "1 1 auto", overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                  Properties
+                  {t("Properties")}
                 </div>
                 <PropertiesTable rows={rowsOf(se, 24)} onEdit={editNodeProp} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                  Edges · {conns.length}
+                  {t("Edges · {n}", { n: conns.length })}
                 </div>
                 {conns.map((c, k) => (
                   <div
@@ -1276,7 +1398,7 @@ export default function GraphScreen({ active, onBack, project }) {
           <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 6, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6, width: 330 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <SearchField
-                placeholder={"Search " + (ringN ? ringN.name : "") + "…"}
+                placeholder={t("Search {layer}…", { layer: ringN ? ringN.name : "" })}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => {
@@ -1285,7 +1407,7 @@ export default function GraphScreen({ active, onBack, project }) {
                 style={{ flex: 1 }}
               />
               <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 10, whiteSpace: "nowrap" }}>
-                {q ? matchCount + " MATCH" + (matchCount === 1 ? "" : "ES") : "TYPE TO SEARCH"}
+                {q ? tp("{n} match", matchCount).toUpperCase() : t("Type to search").toUpperCase()}
               </span>
             </div>
             {matchList.length > 0 && (
@@ -1321,27 +1443,27 @@ export default function GraphScreen({ active, onBack, project }) {
               restoredSessionId={restoredAt?.sessionId || null}
               busy={busy}
               filters={[
-                { value: "all", label: "All" },
-                { value: "ingest", label: "Ingest" },
-                { value: "query", label: "Query" },
-                { value: "edit", label: "Edit" }
+                { value: "all", label: t("All") },
+                { value: "ingest", label: t("Ingest") },
+                { value: "query", label: t("Query") },
+                { value: "edit", label: t("Edit") }
               ]}
-              emptyLabel="No design rule sessions yet"
+              emptyLabel={t("No design rule sessions yet")}
             />
           </div>
           {sessionOpen && (
             <div ref={sessionPanelRef} className="dg-frost dg-frost-sheer" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderBottom: "1px solid var(--color-hairline)" }}>
-                <span style={{ font: "500 10px/1 var(--font-annotation)", letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--text-muted)" }}>Session</span>
+                <span style={{ font: "500 10px/1 var(--font-annotation)", letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Session")}</span>
                 <Badge variant="outline">{session.length}</Badge>
                 <span style={{ flex: 1 }} />
                 <span
                   onClick={() => setSession([])}
                   style={{ cursor: "pointer", font: "400 10px/1 var(--font-annotation)", letterSpacing: "1.1px", textTransform: "uppercase", color: "var(--text-muted)", padding: "3px 5px" }}
                 >
-                  Clear
+                  {t("Clear")}
                 </span>
-                <div onClick={() => setSessionOpen(false)} title="Collapse session" style={{ cursor: "pointer", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "var(--text-secondary)" }}>
+                <div onClick={() => setSessionOpen(false)} title={t("Collapse session")} style={{ cursor: "pointer", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "var(--text-secondary)" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m6 9 6 6 6-6" />
                   </svg>
@@ -1352,26 +1474,26 @@ export default function GraphScreen({ active, onBack, project }) {
                   <div key={turn.id} style={{ padding: "11px 12px", borderBottom: "1px solid var(--color-hairline)", display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                       <span style={{ flex: "none", font: "500 9px/1.5 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--text-secondary)", border: "1px solid var(--color-hairline)", borderRadius: 5, padding: "2px 6px" }}>
-                        {turn.modeLabel}
+                        {modeName(turn.kind)}
                       </span>
                       <span style={{ flex: 1, font: "400 12px/1.5 var(--font-mono)", overflowWrap: "anywhere" }}>{turn.text}</span>
                     </div>
-                    {turn.status === "processing" && <Progress value={turn.progress} steps={turn.steps} />}
+                    {turn.status === "processing" && <Progress value={turn.progress} steps={progressSteps(turn)} />}
                     {turn.status === "done" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 10, borderLeft: "2px solid var(--color-hairline)" }}>
-                        <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>Response</span>
-                        <pre style={{ margin: 0, font: "400 11px/1.6 var(--font-mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{turn.response}</pre>
+                        <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Response")}</span>
+                        <pre style={{ margin: 0, font: "400 11px/1.6 var(--font-mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{turnResponse(turn)}</pre>
                         {turn.createdNodes && turn.createdNodes.length > 0 && (
                           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                             <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)" }}>
-                              Created nodes · {turn.createdNodes.length}
+                              {t("Created nodes · {n}", { n: turn.createdNodes.length })}
                             </span>
                             {turn.createdNodes.map((n, k) => (
                               <div key={k} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                                 <button
                                   type="button"
                                   onClick={() => selectCreatedNode(n)}
-                                  title={"Select " + n.label + " node in graph"}
+                                  title={t("Select {kind} node in graph", { kind: n.label })}
                                   style={{ flex: "none", font: "500 9px/1.5 var(--font-annotation)", letterSpacing: "0.8px", textTransform: "uppercase", color: n.label === "Rule" ? "var(--color-signal-ink)" : "var(--text-secondary)", background: "none", border: "1px solid var(--color-hairline)", borderRadius: 5, padding: "1px 6px", minWidth: 44, textAlign: "center", cursor: "pointer" }}
                                 >
                                   {n.label}
@@ -1385,7 +1507,7 @@ export default function GraphScreen({ active, onBack, project }) {
                           <Collapsible
                             label="Cypher"
                             open={!!turn.cypherOpen}
-                            onToggle={() => patchTurn(turn.id, (t) => ({ cypherOpen: !t.cypherOpen }))}
+                            onToggle={() => patchTurn(turn.id, (tm) => ({ cypherOpen: !tm.cypherOpen }))}
                           >
                             <pre style={{ margin: 0, padding: "8px 12px", font: "400 10.5px/1.6 var(--font-mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 220, overflowY: "auto" }}>
                               {turn.cypher}
@@ -1393,8 +1515,8 @@ export default function GraphScreen({ active, onBack, project }) {
                           </Collapsible>
                         )}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 2 }}>
-                          <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--color-signal)" }}>{turn.meta}</span>
-                          <span style={{ font: "400 10px/1 var(--font-mono)", color: "var(--text-muted)" }}>{turn.clock}</span>
+                          <span style={{ font: "500 9px/1 var(--font-annotation)", letterSpacing: "1px", textTransform: "uppercase", color: "var(--color-signal)" }}>{metaText(turn.metaInfo)}</span>
+                          <span style={{ font: "400 10px/1 var(--font-mono)", color: "var(--text-muted)" }}>{turn.clockAt ? formatTime(turn.clockAt, CLOCK) : turn.clock}</span>
                         </div>
                       </div>
                     )}
@@ -1406,12 +1528,12 @@ export default function GraphScreen({ active, onBack, project }) {
 
           <div className="dg-frost" style={{ width: "100%", boxSizing: "border-box", borderRadius: "var(--radius-buttons)", padding: 6, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
-              <Tabs tabs={MODES} active={mode} onChange={setMode} style={{ height: 30, width: 240, flex: "none" }} />
+              <Tabs tabs={KINDS.map((kind) => modeName(kind))} active={mode} onChange={setMode} style={{ height: 30, width: 240, flex: "none" }} />
               <span style={{ flex: 1, minWidth: 0, textAlign: "right", font: "500 9px/1.3 var(--font-annotation)", letterSpacing: "1.1px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {ringN ? ringN.name + " · text" : "No data"}
+                {ringN ? t("{layer} · text", { layer: ringN.name }) : t("No data")}
               </span>
               {!sessionOpen && session.length > 0 && (
-                <div onClick={() => setSessionOpen(true)} title="Show session" style={{ cursor: "pointer", width: 24, height: 24, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "var(--text-secondary)" }}>
+                <div onClick={() => setSessionOpen(true)} title={t("Show session")} style={{ cursor: "pointer", width: 24, height: 24, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "var(--text-secondary)" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m18 15-6-6-6 6" />
                   </svg>
@@ -1421,11 +1543,11 @@ export default function GraphScreen({ active, onBack, project }) {
             {mode === 2 && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
                 <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9, whiteSpace: "nowrap" }}>
-                  Rule
+                  {t("Rule")}
                 </span>
                 <Select
                   value={editRuleId}
-                  options={[{ value: "", label: editRules.length ? "Select a rule to edit…" : "No rules in this project" }].concat(
+                  options={[{ value: "", label: editRules.length ? t("Select a rule to edit…") : t("No rules in this project") }].concat(
                     editRules.map((r) => ({ value: r.ruleId, label: r.ruleId }))
                   )}
                   onChange={(e) => setEditRuleId(e.target.value)}
@@ -1443,12 +1565,12 @@ export default function GraphScreen({ active, onBack, project }) {
                 mono
                 placeholder={
                   mode === 0
-                    ? "Encode a design rule…"
+                    ? t("Encode a design rule…")
                     : mode === 1
-                      ? "Ask the graph a question…"
+                      ? t("Ask the graph a question…")
                       : editRuleId
-                        ? "Describe the changes to apply to " + editRuleId + "…"
-                        : "Select a rule above first…"
+                        ? t("Describe the changes to apply to {ruleId}…", { ruleId: editRuleId })
+                        : t("Select a rule above first…")
                 }
                 value={promptVal}
                 onChange={(e) => setPromptVal(e.target.value)}
@@ -1464,7 +1586,7 @@ export default function GraphScreen({ active, onBack, project }) {
                 onClick={sendPrompt}
                 disabled={busy || (mode === 2 && !editRuleId && !DELETE_INTENT.test(promptVal))}
               >
-                {mode === 0 ? "Ingest" : mode === 1 ? "Query" : DELETE_INTENT.test(promptVal) ? "Delete Rule" : "Apply Edit"}
+                {mode === 0 ? tc("action", "Ingest") : mode === 1 ? tc("action", "Query") : DELETE_INTENT.test(promptVal) ? t("Delete Rule") : t("Apply Edit")}
               </Button>
             </div>
           </div>
@@ -1472,7 +1594,7 @@ export default function GraphScreen({ active, onBack, project }) {
 
         <div className="dg-frost" style={{ boxSizing: "border-box", borderRadius: "var(--radius-buttons)", padding: 6, boxShadow: "var(--shadow-panel)", display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
           <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9, paddingLeft: 4, whiteSpace: "nowrap" }}>
-            Search by
+            {t("Search by")}
           </span>
           <Select
             value={searchProp}
@@ -1485,11 +1607,11 @@ export default function GraphScreen({ active, onBack, project }) {
             style={{ height: 32, width: 136, fontSize: 12, padding: "0 30px 0 12px" }}
           />
           <Combobox
-            placeholder={"filter by " + (searchProp === "*" ? "any field" : searchProp === "__label" ? "label" : searchProp) + "…"}
+            placeholder={t("filter by {field}…", { field: placeholderField(searchProp) })}
             value={q}
             options={fieldValues}
             openDirection="up"
-            emptyLabel={fieldValues.length ? "No matching values" : "No values in this layer"}
+            emptyLabel={fieldValues.length ? t("No matching values") : t("No values in this layer")}
             onChange={(e) => {
               setQ(e.target.value);
               setFilterOn(!!e.target.value);
@@ -1514,7 +1636,7 @@ export default function GraphScreen({ active, onBack, project }) {
           <div className="dg-frost" style={{ borderRadius: "var(--radius-nested)", padding: 8, boxShadow: "var(--shadow-panel)", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 2px" }}>
               <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 9 }}>
-                Overview
+                {t("Overview")}
               </span>
               <span ref={zoomRef} style={{ font: "500 9px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>
                 1.0×
@@ -1537,20 +1659,20 @@ export default function GraphScreen({ active, onBack, project }) {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Dialog
-              title={delMatches.length > 1 ? `Delete ${delMatches.length} rules?` : "Delete rule?"}
+              title={delMatches.length > 1 ? tp("Delete {n} rules?", delMatches.length) : t("Delete rule?")}
               onClose={delBusy ? undefined : () => setDelOpen(false)}
               style={{ width: 420, maxHeight: "80vh", overflow: "auto" }}
               footer={
                 <>
                   <Button variant="outline" disabled={delBusy} onClick={() => setDelOpen(false)}>
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                   <Button
                     variant="destructive"
                     disabled={delBusy || delResolving || delMatches.length === 0}
                     onClick={confirmDelete}
                   >
-                    {delBusy ? "Deleting…" : delMatches.length > 1 ? `Delete ${delMatches.length}` : "Delete"}
+                    {delBusy ? t("Deleting…") : delMatches.length > 1 ? t("Delete {n}", { n: delMatches.length }) : t("Delete")}
                   </Button>
                 </>
               }
@@ -1562,18 +1684,18 @@ export default function GraphScreen({ active, onBack, project }) {
               )}
 
               {delErr && (
-                <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>{delErr}</div>
+                <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>{delErrText}</div>
               )}
 
               {delResolving && (
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 12 }}>
-                  {delTarget?.kind === "prompt" ? "Finding matching rules…" : "Loading preview…"}
+                  {delTarget?.kind === "prompt" ? t("Finding matching rules…") : t("Loading preview…")}
                 </div>
               )}
 
               {!delResolving && !delErr && delMatches.length === 0 && (
                 <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-                  No rules matched that request. Nothing will be deleted.
+                  {t("No rules matched that request. Nothing will be deleted.")}
                 </div>
               )}
 
@@ -1593,22 +1715,26 @@ export default function GraphScreen({ active, onBack, project }) {
                     </div>
                   )}
                   <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
-                    {m.atoms.length} atom{m.atoms.length === 1 ? "" : "s"}
-                    {m.orphaned.length > 0 && ` · also deletes ${m.orphaned.map((a) => String(a.value)).join(", ")}`}
-                    {m.shared.length > 0 && ` · keeps ${m.shared.map((a) => String(a.value)).join(", ")} (used elsewhere)`}
+                    {[
+                      tp("{n} atom", m.atoms.length),
+                      m.orphaned.length > 0 && t("also deletes {items}", { items: m.orphaned.map((a) => String(a.value)).join(", ") }),
+                      m.shared.length > 0 && t("keeps {items} (used elsewhere)", { items: m.shared.map((a) => String(a.value)).join(", ") })
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </div>
                 </div>
               ))}
 
               {delGhosts.length > 0 && (
                 <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>
-                  Ignored — no such rule in this project: {delGhosts.join(", ")}
+                  {t("Ignored — no such rule in this project: {ids}", { ids: delGhosts.join(", ") })}
                 </div>
               )}
 
               {delMatches.length > 0 && (
                 <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-                  This cannot be undone.
+                  {t("This cannot be undone.")}
                 </div>
               )}
             </Dialog>
@@ -1628,22 +1754,22 @@ export default function GraphScreen({ active, onBack, project }) {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Dialog
-              title="This rule may conflict with an existing one"
+              title={t("This rule may conflict with an existing one")}
               onClose={() => closeConflictDialog("cancel")}
               style={{ width: 460, maxHeight: "80vh", overflow: "auto" }}
               footer={
                 <>
                   <Button variant="outline" onClick={() => closeConflictDialog("cancel")}>
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                   <Button variant="outline" onClick={() => closeConflictDialog("keep")}>
-                    Keep both
+                    {t("Keep both")}
                   </Button>
                   <Button variant="outline" onClick={() => closeConflictDialog("update")}>
-                    Update existing
+                    {t("Update existing")}
                   </Button>
                   <Button variant="primary" onClick={() => closeConflictDialog("replace")}>
-                    Replace
+                    {t("Replace")}
                   </Button>
                 </>
               }
@@ -1658,8 +1784,8 @@ export default function GraphScreen({ active, onBack, project }) {
 
               <div style={{ font: "400 12px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
                 {conflictMatches.length > 1
-                  ? `${conflictMatches.length} existing rules already constrain this same class, property, and comparator:`
-                  : "An existing rule already constrains this same class, property, and comparator:"}
+                  ? tp("{n} existing rules already constrain this same class, property, and comparator:", conflictMatches.length)
+                  : t("An existing rule already constrains this same class, property, and comparator:")}
               </div>
 
               {conflictMatches.map((m) => (
@@ -1673,7 +1799,7 @@ export default function GraphScreen({ active, onBack, project }) {
                   )}
                   {m.currentValue != null && (
                     <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
-                      Current threshold: {String(m.currentValue)}
+                      {t("Current threshold: {value}", { value: String(m.currentValue) })}
                     </div>
                   )}
                   {m.swrl && (
@@ -1685,10 +1811,7 @@ export default function GraphScreen({ active, onBack, project }) {
               ))}
 
               <div style={{ font: "400 11px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-                Replace/Update keep the existing rule in the graph (marked superseded, with
-                provenance) and stop it from taking part in validation — nothing is deleted.
-                Keep both authors the new rule anyway and records that you saw this overlap.
-                Cancel sends nothing.
+                {t("Replace/Update keep the existing rule in the graph (marked superseded, with provenance) and stop it from taking part in validation — nothing is deleted. Keep both authors the new rule anyway and records that you saw this overlap. Cancel sends nothing.")}
               </div>
             </Dialog>
           </div>

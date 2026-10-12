@@ -2,6 +2,7 @@
 // one ring layer per `graph` property value, three orbits per layer
 // grouped by node label. Same-layer relationships become ring edges;
 // relationships spanning layers become labelled cross edges.
+import { t } from "../i18n/index.js";
 
 // Fixed layer order (mockup order); only layers present in the data render.
 // KnowledgeGraph is pre-v7 data that may coexist with SpecGraph.
@@ -52,6 +53,12 @@ const CAPTIONS = {
 };
 
 const TAU = 6.283185307;
+
+// Display name of an orbit that holds no node label yet. It is chrome, not graph data (D-13), so it is looked up at
+// render time and follows the language; ring.orbits keeps "" for such an orbit.
+export function orbitFallbackName(o) {
+  return o === 0 ? t("Core") : o === 1 ? t("Mid") : t("Outer");
+}
 
 function primaryLabel(labels) {
   return labels.find((l) => CAPTIONS[l]) || labels[0] || "Node";
@@ -115,7 +122,7 @@ export default function buildRings({ nodes, rels }) {
       const c = Math.max(1, rng[1] - rng[0]);
       for (let i = rng[0]; i < rng[1]; i++) nodesFlat[i].ang = ((i - rng[0]) / c) * TAU + o * 0.26;
     });
-    const orbits = orbitLabels.map((s, o) => ([...s].join(" / ") || ["Core", "Mid", "Outer"][o]));
+    const orbits = orbitLabels.map((s) => [...s].join(" / "));
     return { key: layerKey, name: layerKey, orbits, nodes: nodesFlat, edges: [], ob };
   });
 
