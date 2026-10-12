@@ -5,11 +5,37 @@ import * as auth from "../lib/auth.js";
 import "./landing.css";
 import { isDegramHost } from "../lib/hostMode.js";
 import HostCentre from "./HostCentre.jsx";
+import { useT } from "../i18n/LanguageProvider.jsx";
+import { describeError } from "../i18n/index.js";
+
+// Client-side auth messages are stored as a code and translated at render, so a live language switch retranslates
+// them (D-52). Server errors are stored as the error object and mapped by describeError.
+function authMessage(t, e) {
+  if (!e) return "";
+  if (e.err) return describeError(e.err, t("Authentication failed."));
+  switch (e.key) {
+    case "invite-code":
+      return t("Enter your invite code.");
+    case "password-length":
+      return t("Password must be at least 12 characters.");
+    case "choose-username":
+      return t("Choose a username.");
+    case "password-mismatch":
+      return t("The passwords do not match.");
+    case "enter-username":
+      return t("Enter your username.");
+    case "enter-password":
+      return t("Enter your password.");
+    default:
+      return t("Authentication failed.");
+  }
+}
 
 // The landing experience: particle ring, materialising hero title, region
 // callouts, and the inline auth card that rises through the particles.
 // `active` gates canvas drawing; `onFly(region, originPoint)` navigates.
 export default function LandingLayer({ active, onFly, user, project, onUser, hostState = "idle" }) {
+  const { t } = useT();
   const degramHost = isDegramHost();
   const canvasRef = React.useRef(null);
   const heroTitleRef = React.useRef(null);
@@ -33,7 +59,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const [authUser, setAuthUser] = React.useState("");
   const [authPass, setAuthPass] = React.useState("");
   const [authPass2, setAuthPass2] = React.useState("");
-  const [authErr, setAuthErr] = React.useState("");
+  const [authErr, setAuthErr] = React.useState(null);
   // Register is offered only when the server says so; any failure hides it.
   const [canRegister, setCanRegister] = React.useState(false);
 
@@ -87,8 +113,8 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
       engine.setVisible(true);
       if (engine.fontsReady && engine.heroPh === "hidden" && !authOpen && (!degramHost || hostState !== "connecting")) engine.setHeroPhase("forming");
     } else {
-      const t = setTimeout(() => engine.setVisible(false), 620);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => engine.setVisible(false), 620);
+      return () => clearTimeout(timer);
     }
   }, [active, authOpen, degramHost, hostState]);
 
@@ -105,29 +131,29 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     const engine = engineRef.current;
     if (engine) engine.setAuthOpen(authOpen);
     if (authOpen) {
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         const inp = document.querySelector("#dgl-hero-form-card input");
         if (inp) inp.focus();
       }, 620);
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
   }, [authOpen]);
 
   const openAuth = () => {
     engineRef.current?.setHeroPhase("dissolving");
     setAuthMode("login");
-    setAuthErr("");
+    setAuthErr(null);
     refreshAuthOptions();
     setAuthOpen(true);
   };
   const cancelAuth = () => {
     setAuthOpen(false);
-    setAuthErr("");
+    setAuthErr(null);
     engineRef.current?.setHeroPhase("forming");
   };
   const goAuthMode = (next) => {
     setAuthMode(next);
-    setAuthErr("");
+    setAuthErr(null);
     setAuthPass("");
     setAuthPass2("");
   };
@@ -139,16 +165,16 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     const username = authUser.trim();
     const code = authCode.trim();
     if (invite) {
-      if (!code) return setAuthErr("Enter your invite code.");
+      if (!code) return setAuthErr({ key: "invite-code" });
       // Client-side floor only; the server enforces the password policy.
-      if (authPass.length < 12) return setAuthErr("Password must be at least 12 characters.");
+      if (authPass.length < 12) return setAuthErr({ key: "password-length" });
     } else if (register) {
-      if (!username) return setAuthErr("Choose a username.");
-      if (authPass.length < 12) return setAuthErr("Password must be at least 12 characters.");
-      if (authPass !== authPass2) return setAuthErr("The passwords do not match.");
+      if (!username) return setAuthErr({ key: "choose-username" });
+      if (authPass.length < 12) return setAuthErr({ key: "password-length" });
+      if (authPass !== authPass2) return setAuthErr({ key: "password-mismatch" });
     } else {
-      if (!username) return setAuthErr("Enter your username.");
-      if (!authPass) return setAuthErr("Enter your password.");
+      if (!username) return setAuthErr({ key: "enter-username" });
+      if (!authPass) return setAuthErr({ key: "enter-password" });
     }
     try {
       const u = invite
@@ -158,13 +184,13 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
           : await auth.login(username, authPass);
       onUser(u);
       setAuthOpen(false);
-      setAuthErr("");
+      setAuthErr(null);
       setAuthPass("");
       setAuthPass2("");
       setAuthCode("");
       engineRef.current?.setHeroPhase("forming");
     } catch (err) {
-      setAuthErr(err.message || "Authentication failed.");
+      setAuthErr({ err });
     }
   };
   const signOut = async () => {
@@ -190,10 +216,10 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
 
       <div ref={heroTitleRef} className="dgl-hero-title">
         <div ref={heroL1Ref} className="dgl-hero-l1">
-          Design Grammars.
+          {t("Design Grammars.")}
         </div>
         <div ref={heroL2Ref} className="dgl-hero-l2">
-          Encode your design intent.
+          {t("Encode your design intent.")}
         </div>
       </div>
 
@@ -203,7 +229,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
         {!user && !authOpen && (
           <div style={{ pointerEvents: "auto" }}>
             <Button variant="outline" size="lg" onClick={openAuth}>
-              Log in
+              {t("Log in")}
             </Button>
           </div>
         )}
@@ -216,13 +242,13 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
               </span>
             </div>
             <div className="dgl-sys">
-              System initiated ·{" "}
+              {t("System initiated")} ·{" "}
               <span style={{ color: project ? "var(--color-signal)" : "var(--text-muted)" }}>
-                {project || "Select the project"}
+                {project || t("Select the project")}
               </span>
             </div>
             <div className="dgl-signout" onClick={signOut}>
-              Sign out
+              {t("Sign out")}
             </div>
             {degramHost && <HostCentre hostState={hostState} mode="pill" />}
           </div>
@@ -249,96 +275,96 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
-              {reg ? "Invitation" : signUp ? "Register" : "Access"}
+              {reg ? t("Invitation") : signUp ? t("Register") : t("Access")}
             </div>
             <div style={{ font: "600 22px/1.15 var(--font-sans)", letterSpacing: "-0.6px", color: "var(--text-primary)" }}>
-              {reg ? "Accept your invite" : signUp ? "Create your account" : "Welcome back"}
+              {reg ? t("Accept your invite") : signUp ? t("Create your account") : t("Welcome back")}
             </div>
             <div style={{ font: "400 13px/1.45 var(--font-sans)", color: "var(--text-muted)" }}>
               {reg
-                ? "Enter the code from your project owner and choose a password."
+                ? t("Enter the code from your project owner and choose a password.")
                 : signUp
-                  ? "Choose a username and a password of at least 12 characters. You can create your own projects afterwards."
-                  : "Enter your credentials to access Design Grammars."}
+                  ? t("Choose a username and a password of at least 12 characters. You can create your own projects afterwards.")
+                  : t("Enter your credentials to access Design Grammars.")}
             </div>
           </div>
           {reg ? (
-            <Input placeholder="Invite code" value={authCode} autoComplete="off" onChange={(e) => { setAuthCode(e.target.value); setAuthErr(""); }} />
+            <Input placeholder={t("Invite code")} value={authCode} autoComplete="off" onChange={(e) => { setAuthCode(e.target.value); setAuthErr(null); }} />
           ) : (
-            <Input placeholder="Username" value={authUser} autoComplete="username" onChange={(e) => { setAuthUser(e.target.value); setAuthErr(""); }} />
+            <Input placeholder={t("Username")} value={authUser} autoComplete="username" onChange={(e) => { setAuthUser(e.target.value); setAuthErr(null); }} />
           )}
           <Input
             type="password"
-            placeholder={reg || signUp ? "New password (12+ characters)" : "Password"}
+            placeholder={reg || signUp ? t("New password (12+ characters)") : t("Password")}
             autoComplete={reg || signUp ? "new-password" : "current-password"}
             value={authPass}
-            onChange={(e) => { setAuthPass(e.target.value); setAuthErr(""); }}
+            onChange={(e) => { setAuthPass(e.target.value); setAuthErr(null); }}
             onKeyDown={(e) => { if (e.key === "Enter") submitAuth(); }}
           />
           {signUp && (
             <Input
               type="password"
-              placeholder="Confirm password"
+              placeholder={t("Confirm password")}
               autoComplete="new-password"
               value={authPass2}
-              onChange={(e) => { setAuthPass2(e.target.value); setAuthErr(""); }}
+              onChange={(e) => { setAuthPass2(e.target.value); setAuthErr(null); }}
               onKeyDown={(e) => { if (e.key === "Enter") submitAuth(); }}
             />
           )}
-          {authErr && <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>{authErr}</div>}
+          {authErr && <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>{authMessage(t, authErr)}</div>}
           <Button size="lg" style={{ width: "100%" }} onClick={submitAuth}>
-            {reg ? "Accept invite" : signUp ? "Register" : "Log in"}
+            {reg ? t("Accept invite") : signUp ? t("Register") : t("Log in")}
           </Button>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 2 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {mode !== "login" && (
                 <div className="dgl-auth-switch" onClick={() => goAuthMode("login")}>
-                  Have an account? Log in
+                  {t("Have an account? Log in")}
                 </div>
               )}
               {mode !== "invite" && (
                 <div className="dgl-auth-switch" onClick={() => goAuthMode("invite")}>
-                  Have an invite code? Accept invite
+                  {t("Have an invite code? Accept invite")}
                 </div>
               )}
               {canRegister && mode !== "register" && (
                 <div className="dgl-auth-switch" onClick={() => goAuthMode("register")}>
-                  New here? Register
+                  {t("New here? Register")}
                 </div>
               )}
             </div>
             <div className="dgl-auth-cancel" onClick={cancelAuth}>
-              Cancel
+              {t("Cancel")}
             </div>
           </div>
         </div>
       </div>
 
       <div ref={labelGraphRef} className="dgl-region-label" onClick={() => fly("graph")}>
-        Graph Viewer
+        {t("Graph Viewer")}
       </div>
       <div ref={labelModelRef} className="dgl-region-label" onClick={() => fly("model")}>
-        Model Viewer
+        {t("Model Viewer")}
       </div>
       <div ref={labelProjectsRef} className="dgl-region-label" onClick={() => fly("projects")}>
-        Projects.
+        {t("Projects.")}
       </div>
 {!degramHost && <>
         <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>
-          AI Engine
+          {t("LLM model")}
         </div>
         <div ref={labelConnectorsRef} className="dgl-region-label" onClick={() => fly("connectors")}>
-          Connectors
+          {t("Connectors")}
         </div>
         <div ref={labelReasonerRef} className="dgl-region-label" onClick={() => fly("reasoner")}>
-          Reasoner
+          {t("Reasoner")}
         </div>
         <div ref={labelApiDocsRef} className="dgl-region-label" onClick={() => fly("apidocs")}>
-          DG API Docs
+          {t("DG API Docs")}
         </div>
       </>}
       <div ref={hintRef} className="dgl-hint">
-        Select a region
+        {t("Select a region")}
       </div>
     </>
   );

@@ -137,12 +137,28 @@ export default class LandingEngine {
     this.initHeroWhenReady();
     this._onResize = () => this.resize();
     window.addEventListener("resize", this._onResize);
+    // D-52: a live language switch changes the label and hero text widths. React re-renders the new text after this
+    // event, so the relayout waits one frame.
+    this._onLang = () => {
+      cancelAnimationFrame(this._langRaf);
+      this._langRaf = requestAnimationFrame(() => {
+        if (!this._stop) this.relayout();
+      });
+    };
+    window.addEventListener("dg-lang", this._onLang);
     this._raf = requestAnimationFrame(this.tick.bind(this));
   }
   stop() {
     this._stop = true;
     cancelAnimationFrame(this._raf);
+    cancelAnimationFrame(this._langRaf);
     window.removeEventListener("resize", this._onResize);
+    window.removeEventListener("dg-lang", this._onLang);
+  }
+  // Re-measures the region label boxes and the hero block; drawNode repositions every label on the next frame.
+  relayout() {
+    this.layoutLanding();
+    this.layoutHero();
   }
   setVisible(v) {
     this.visible = v;
