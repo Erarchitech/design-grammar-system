@@ -220,6 +220,19 @@ def can_create(username: str, project: str, connector_id: str) -> bool:
     )
 
 
+def is_exempt(role: str | None) -> bool:
+    """True for an owner (stored) or an admin (effective role ``owner``): they
+    never need a per-connector access row (Phase 1308, D-29). Editor, viewer and
+    a missing role are not exempt."""
+    return auth.role_satisfies(role, "owner")
+
+
+def is_authorized(username: str, project: str, connector_id: str, *, role: str | None) -> bool:
+    """The connector sign-in predicate (Phase 1308, D-29): an exempt role, or an
+    active per-connector access row for this (user, project, connector)."""
+    return is_exempt(role) or can_create(username, project, connector_id)
+
+
 def _has_pending(username: str, project: str, connector_id: str, requests) -> bool:
     return any(
         r.get("username") == username
