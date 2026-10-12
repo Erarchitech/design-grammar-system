@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from '../src/App.jsx';
 import HostCentre from '../src/landing/HostCentre.jsx';
+import { setLang } from '../src/i18n/index.js';
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 window.GRAPH_CONFIG = { dataServiceUrl: '/data-service' };
@@ -37,12 +38,14 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
   const container = document.createElement('div'); container.id = 'root'; document.body.append(container);
   await act(async () => { createRoot(container).render(<App />); }); await tick();
   await run('Host defaults to idle hero and no new-session pill', async () => {
-    check(container.textContent.includes('System initiated'), 'Hero missing');
+    // D-03: ?lang=ru under host=degram resolves RU, so the owner-fixed boot line is Russian.
+    check(container.textContent.includes('Система инициализирована'), 'Hero missing');
+    check(container.textContent.includes('Грамматика.') && container.textContent.includes('Граф правил проекта.'), 'RU hero title/subtitle missing');
     check(!container.querySelector('.dgl-host-pill') && !container.querySelector('.dgl-host-centre--visible'), 'Host controls visible before selection');
   });
   await run('PROJECTS click announces selection and immediately shows one caption-less connecting sphere on the ring centre', async () => {
     allow('/projects', projects);
-    const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Projects.');
+    const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Проекты.');
     check(label, 'Projects callout missing');
     await act(async () => label.click());
     await until(() => [...container.querySelectorAll('span')].some(e => e.textContent === 'A'), 'Project tile missing');
@@ -97,7 +100,7 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     allow('/degram/grants/mine', { grants: [] });
     allow('/connectors?project=A', { categories: [], connectors: [] }); // 1301-40: hosted Connectors table reads the project's access
     await signal('#degram-go=connectors');
-    check(container.textContent.includes('Access') && !location.hash, 'Connectors navigation failed');
+    check(container.textContent.includes('Доступ') && !location.hash, 'Connectors navigation failed');
     await signal('#degram-go=landing');
     check(container.querySelector('.dgl-host-pill'), 'Landing navigation failed');
     await signal('#degram-go=reasoner');
@@ -110,6 +113,8 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
   await run('English connecting label is on role=status, with no visible caption', async () => {
     const original = location.search;
     history.replaceState(null, '', location.pathname + '?host=degram&lang=en');
+    // The language is a module store now (1308-05); a live host switch reaches it through setLang.
+    act(() => setLang('en'));
     const host = document.createElement('div'); document.body.append(host);
     await act(async () => { createRoot(host).render(<HostCentre hostState="connecting" mode="connecting" />); });
     const centre = host.querySelector('.dgl-host-centre--visible');

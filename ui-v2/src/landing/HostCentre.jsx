@@ -1,8 +1,9 @@
 import React from "react";
-import { announceNewSession, hostLang } from "../lib/hostMode.js";
+import { announceNewSession } from "../lib/hostMode.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
 
 export default function HostCentre({ hostState, mode }) {
-  const ru = hostLang() === "ru";
+  const { t } = useT();
   const [theme, setTheme] = React.useState(() => document.documentElement.dataset.theme);
   const [imageFailed, setImageFailed] = React.useState(false);
 
@@ -15,7 +16,7 @@ export default function HostCentre({ hostState, mode }) {
 
   if (mode === "pill") return hostState === "ready" ? (
     <button type="button" className="dgl-host-pill" onClick={announceNewSession}>
-      {ru ? "Начать новую сессию" : "Start new session"}
+      {t("Start new session")}
     </button>
   ) : null;
 
@@ -24,7 +25,7 @@ export default function HostCentre({ hostState, mode }) {
       className={`dgl-host-centre${hostState === "connecting" ? " dgl-host-centre--visible" : ""}`}
       role="status"
       aria-live="polite"
-      aria-label={ru ? "Подключение к DG" : "Connecting to DG"}
+      aria-label={t("Connecting to DG")}
       aria-hidden={hostState !== "connecting"}
     >
       {imageFailed ? <span className="dgl-host-centre-fallback" aria-hidden="true" /> :
