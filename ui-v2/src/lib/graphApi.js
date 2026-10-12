@@ -5,6 +5,7 @@
 // polled by executionId. Project isolation is enforced by the server.
 
 import { apiFetch, dataServiceBase, getConfig } from "./apiClient.js";
+import { t } from "../i18n/index.js";
 
 // Existing importers keep reading the runtime config from here.
 export { getConfig };
@@ -165,16 +166,18 @@ export async function saveDrSession(project, mode, prompt, result) {
 // The server binds each execution to the user who started it, so a foreign or
 // unknown id is a 404 — there is no latest-by-workflow fallback.
 
+// The Error messages thrown here are UI text (D-06) and are looked up with t() at throw time; a server-supplied
+// `data.message` and any ApiError from apiFetch (code/hint passthrough) stay untouched so describeError can map them.
 async function pollExecution(executionId, { onProgress, intervalMs = 1500, timeoutMs = 180000 } = {}) {
   const url = `${dataServiceBase()}/execution-result/${enc(executionId)}`;
   const t0 = Date.now();
   for (;;) {
-    if (Date.now() - t0 > timeoutMs) throw new Error("Workflow timed out.");
+    if (Date.now() - t0 > timeoutMs) throw new Error(t("Workflow timed out."));
     let data = null;
     try {
       data = await apiFetch(url);
     } catch (err) {
-      if (err?.status === 404) throw new Error("Execution not found or not permitted.");
+      if (err?.status === 404) throw new Error(t("Execution not found or not permitted."));
       // Auth/permission problems are terminal; anything else (transient 5xx,
       // network blip) keeps polling until the timeout, as before.
       if (err?.status === 401 || err?.status === 403) throw err;
@@ -182,8 +185,8 @@ async function pollExecution(executionId, { onProgress, intervalMs = 1500, timeo
     if (data) {
       const status = data.status || "running";
       if (status === "completed") return data.payload || {};
-      if (status === "failed") throw new Error(data.message || "Workflow failed.");
-      if (status === "cancelled") throw new Error("Workflow cancelled.");
+      if (status === "failed") throw new Error(data.message || t("Workflow failed."));
+      if (status === "cancelled") throw new Error(t("Workflow cancelled."));
       if (onProgress) onProgress(data);
     }
     await new Promise((r) => setTimeout(r, intervalMs));
@@ -193,7 +196,7 @@ async function pollExecution(executionId, { onProgress, intervalMs = 1500, timeo
 async function callWorkflow(path, body, { onProgress } = {}) {
   const data = await apiFetch(`${dataServiceBase()}${path}`, { method: "POST", body });
   if (data?.status !== "accepted" || !data?.executionId) {
-    throw new Error("Workflow relay did not return an execution id.");
+    throw new Error(t("Workflow relay did not return an execution id."));
   }
   return pollExecution(data.executionId, { onProgress });
 }

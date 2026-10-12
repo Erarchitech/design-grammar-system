@@ -174,7 +174,14 @@ export const ru = {
   "This cannot be undone.": "Это действие нельзя отменить.",
   "Could not load deletion preview": "Не удалось загрузить предпросмотр удаления",
   "Could not resolve the deletion request": "Не удалось обработать запрос на удаление",
-  "Delete failed": "Не удалось удалить"
+  "Delete failed": "Не удалось удалить",
+
+  // graphApi.js (workflow relay errors, thrown with the text of the language at that moment)
+  "Workflow timed out.": "Время ожидания рабочего процесса истекло.",
+  "Execution not found or not permitted.": "Запуск не найден или недоступен.",
+  "Workflow failed.": "Рабочий процесс завершился сбоем.",
+  "Workflow cancelled.": "Рабочий процесс отменён.",
+  "Workflow relay did not return an execution id.": "Ретранслятор рабочего процесса не вернул идентификатор запуска."
 };
 
 export const en = {

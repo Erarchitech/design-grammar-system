@@ -1,9 +1,10 @@
 {
   "area": "graph",
   "files": [
-    "src/screens/GraphScreen.jsx"
+    "src/screens/GraphScreen.jsx",
+    "src/graph/graphEngine.js",
+    "src/graph/buildRings.js",
+    "src/lib/graphApi.js"
   ],
-  "allow": [
-    "Cypher"
-  ]
+  "allow": ["Cypher"]
 }
