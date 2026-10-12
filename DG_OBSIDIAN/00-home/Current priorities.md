@@ -7,6 +7,12 @@ date: 2026-07-18
 
 ## In Flight
 
+0. **v13.0 Phase 1308 — planned: 24 plans in 10 waves, executes before 1302** (2026-10-12).
+   - **Done:** research, CONTEXT (D-01..D-54, all recommendations owner-approved, no discuss-phase), UI-SPEC rev. 2 (6/6), 24 plans verified (0 blockers), WEBUI-01..11; commits `c64424a`, `7cbd3d6`, `ba3c529`.
+   - **Owner amendment D-50..D-54:** the interface language is switched only in DeGram Settings → Appearance → Language (Русский / English); live `#degram-lang=`; no switcher in the Web UI; a plain browser follows its primary language (recommendation, open to redirect).
+   - **Next:** `/gsd-execute-phase 1308`; plan 1308-01 first: owner settles the uncommitted WIP (`ProjectsScreen.jsx`, `lib/auth.js`, `ui-v2/tests/*`, data-service WIP incl. `test_auth_store.py`, `ValidatorComponent.cs`). Owner gates: token retirement, new CONNECTOR GUID, component commit / fork push / gitlink bump, live rebuild and UAT account cleanup.
+   - See [[sessions/2026-10-12 Phase 1308 planned, 24 plans, language switch moved to DeGram settings|session]], [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|D-50..D-54]], [[knowledge/debugging/GSD must_haves parse 0 truths when plan files have CRLF line endings|CRLF must_haves]]. Supersedes the «Next: /gsd-plan-phase 1308» line of the 1301 entry below.
+
 0. **v13.0 Phase 1301 — gap plans 37–41 executed, DeGram 0.1.11 built; owner UAT: steps 1–5, 7 pass, step 6 became D-49** (2026-10-12).
    - **Done:** F-03, F-04 (root cause: untagged session rows), F-05, F-07/D-48 and R-1/D-45/D-46 closed in code; component `7edf519c` pushed by the owner, gitlink `4bb6e38`, `workspace.py verify` exit 0; `data-service` and `design-grammars` rebuilt from `git archive HEAD`; installer `DeGram-Setup-0.1.11.exe` SHA-256 `938305fb…04fa`.
    - **Owner UAT (live):** steps 1–5 and 7 confirmed pass. Step 6 became **D-49**: grants per connector, no connector tokens, the Grasshopper add-in signs in with the user's account, owner and admin exempt, planned in **Phase 1308** (amends D-46). Phase 1308 also got the sidebar item «Проекты / Projects» under «Модели».
