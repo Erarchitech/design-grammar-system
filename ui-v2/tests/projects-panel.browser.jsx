@@ -88,7 +88,7 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'invitee'); input.dispatchEvent(new Event('input', { bubbles: true })); });
   };
   const button = label => [...host.querySelectorAll('button')].find(b => b.textContent === label);
-  const ownerReady = async () => { queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members: [{ username: 'only-owner', role: 'owner' }] }]); await render(props); await until(() => !!button('Remove'), 'Owner members ready'); };
+  const ownerReady = async () => { queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members: [{ username: 'only-owner', role: 'owner' }] }]); await render(props); await until(() => !!button('Remove member'), 'Owner members ready'); };
   await run('PANEL-invite once-only display dismiss/hide/remount no token persistence', async () => {
     await ownerReady(); await fillInvite();
     queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-ONCE-CODE' }], [200, { members: [] }]); await act(async () => button('Invite').click()); await tick();
@@ -107,22 +107,70 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
     await ownerReady(); await fillInvite(); queue.push([status, { detail: 'Invite denied' }]); await act(async () => button('Invite').click()); await tick(); check(host.textContent.includes('Invite denied'), 'Invite error visible'); check(!button('Copy'), 'No code'); equal(calls.length, 3, 'No member reload on denial');
   });
   await run('PANEL-LAST_OWNER 409 keeps existing member and shows refusal', async () => {
-    await ownerReady(); queue.push([409, { detail: { error: 'Cannot remove last owner', code: 'LAST_OWNER' } }]); await act(async () => button('Remove').click()); await tick();
-    check(host.textContent.includes('Cannot remove last owner'), 'LAST_OWNER refusal rendered'); check(host.textContent.includes('only-owner'), 'Owner retained'); equal(calls.length, 3, 'No false-success refresh'); equal(calls[2].init.method, 'DELETE', 'Member deletion verb');
+    await ownerReady(); queue.push([409, { detail: { error: 'Cannot remove last owner', code: 'LAST_OWNER' } }]); await act(async () => button('Remove member').click()); await tick();
+    check(host.textContent.includes('A project must keep at least one owner. Promote another member first.'), 'LAST_OWNER refusal rendered with the mapped text'); check(host.textContent.includes('only-owner'), 'Owner retained'); equal(calls.length, 3, 'No false-success refresh'); equal(calls[2].init.method, 'DELETE', 'Member deletion verb');
   });
   await run('PANEL-remove success scoped DELETE followed by fresh members', async () => {
-    await ownerReady(); queue.push([204, null], [200, { members: [] }]); await act(async () => button('Remove').click()); await tick(); check(!host.textContent.includes('only-owner'), 'Member refresh applied'); equal(calls[2].url, '/data-service/projects/A/members/only-owner', 'Scoped member deletion');
+    await ownerReady(); queue.push([204, null], [200, { members: [] }]); await act(async () => button('Remove member').click()); await tick(); check(!host.textContent.includes('only-owner'), 'Member refresh applied'); equal(calls[2].url, '/data-service/projects/A/members/only-owner', 'Scoped member deletion');
   });
   await run('PANEL-rights-loss hides and clears invitation and members', async () => {
     await ownerReady(); await fillInvite(); queue.push([201, { status: 'invited', inviteCode: 'SYNTHETIC-OWNER-CODE' }], [200, { members: [] }]); await act(async () => button('Invite').click()); await tick();
     await render({ ...props, active: false }); queue.push([200, { projects: [{ project: 'A', role: 'viewer' }] }], [200, { members: [] }]); await render(props); await tick(); check(!host.textContent.includes('Members ·'), 'Rights loss hides panel'); check(![...host.querySelectorAll('input')].some(i => i.value === 'SYNTHETIC-OWNER-CODE'), 'Code erased');
   });
   await run('PANEL-03 late A member-removal failure must not appear in B panel', async () => {
-    queue.push([200, { projects: [{ project: 'A', role: 'owner' }, { project: 'B', role: 'owner' }] }], [200, { members: [{ username: 'A-member', role: 'viewer' }] }]); await render(props); await until(() => !!button('Remove'), 'A member ready');
-    const late = deferred(); queue.push(late.promise); await act(async () => button('Remove').click());
+    queue.push([200, { projects: [{ project: 'A', role: 'owner' }, { project: 'B', role: 'owner' }] }], [200, { members: [{ username: 'A-member', role: 'viewer' }] }]); await render(props); await until(() => !!button('Remove member'), 'A member ready');
+    const late = deferred(); queue.push(late.promise); await act(async () => button('Remove member').click());
     queue.push([200, { members: [{ username: 'B-only-member', role: 'viewer' }] }]); await render({ ...props, project: 'B' }); await until(() => host.textContent.includes('B-only-member'), 'B member ready');
     await act(async () => late.resolve(response(403, { detail: 'A-FOREIGN-REMOVAL-ERROR' }))); await until(() => queue.length === 0, 'Replies consumed'); await tick();
     check(!host.textContent.includes('A-FOREIGN-REMOVAL-ERROR'), 'Foreign A removal error leaked into B panel');
+  });
+  // Phase 1308-10 (D-16): role Select on the Members panel.
+  const roleSelect = name => host.querySelector(`select[aria-label="Role of ${name}"]`);
+  const pick = (select, value) => act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  const twoMembers = [{ username: 'only-owner', role: 'owner' }, { username: 'bob', role: 'viewer' }];
+  const roleReady = async (members, p = props) => { queue.push([200, { projects: [{ project: 'A', role: 'owner' }] }], [200, { members }]); await render(p); await until(() => !!roleSelect(members[0].username), 'Role selects ready'); };
+  await run('PANEL-role optimistic change disables the Select in flight then refreshes and announces', async () => {
+    await roleReady(twoMembers);
+    const inFlight = deferred(); queue.push(inFlight.promise);
+    await pick(roleSelect('bob'), 'editor');
+    equal(roleSelect('bob').value, 'editor', 'Optimistic value shown at once'); check(roleSelect('bob').disabled, 'Disabled while in flight'); equal(roleSelect('bob').style.opacity, '0.45', 'Disabled opacity');
+    equal(calls[2].url, '/data-service/projects/A/members/bob', 'Scoped role PUT'); equal(calls[2].init.method, 'PUT', 'PUT verb'); equal(JSON.parse(calls[2].init.body), { role: 'editor' }, 'Role body');
+    queue.push([200, { members: [{ username: 'only-owner', role: 'owner' }, { username: 'bob', role: 'editor' }] }]);
+    await act(async () => inFlight.resolve(response(200, { project: 'A', username: 'bob', role: 'editor' }))); await until(() => queue.length === 0, 'Refresh consumed'); await tick();
+    equal(roleSelect('bob').value, 'editor', 'Server value kept'); check(!roleSelect('bob').disabled, 'Enabled again');
+    check(host.querySelector('[aria-live="polite"]') && host.textContent.includes('Role updated for bob'), 'Role saved announced');
+  });
+  await run('PANEL-role failure rolls back and shows the mapped inline error', async () => {
+    await roleReady(twoMembers);
+    queue.push([409, { detail: { error: 'Cannot demote the last owner', code: 'LAST_OWNER' } }]);
+    await pick(roleSelect('bob'), 'owner'); await until(() => host.textContent.includes('A project must keep at least one owner. Promote another member first.'), 'Mapped error shown');
+    equal(roleSelect('bob').value, 'viewer', 'Rolled back to the server value'); check(!host.textContent.includes('Cannot demote the last owner'), 'Server text not shown when the code is mapped'); equal(calls.length, 3, 'No reload after a failure');
+  });
+  await run('PANEL-role sole owner Select is disabled with tooltip and aria-describedby', async () => {
+    await roleReady(twoMembers);
+    const select = roleSelect('only-owner'); check(select.disabled, 'Sole owner disabled'); check(!roleSelect('bob').disabled, 'Other member enabled');
+    const text = 'A project must keep at least one owner. Promote another member first.';
+    equal(select.title, text, 'Tooltip'); const described = document.getElementById(select.getAttribute('aria-describedby')); check(described && described.textContent === text, 'Described-by node carries the text');
+  });
+  await run('PANEL-role two owners: no Select is disabled', async () => {
+    await roleReady([{ username: 'only-owner', role: 'owner' }, { username: 'bob', role: 'owner' }]);
+    check(!roleSelect('only-owner').disabled && !roleSelect('bob').disabled, 'Both owners can change');
+  });
+  await run('PANEL-role non-admin owner self-demotion asks first (Keep my role / Change role)', async () => {
+    const owners = [{ username: 'owner', role: 'owner' }, { username: 'bob', role: 'owner' }];
+    await roleReady(owners);
+    await pick(roleSelect('owner'), 'editor');
+    check(host.textContent.includes('You will no longer be able to manage members of this project.'), 'Confirm text'); equal(calls.length, 2, 'No PUT before confirm'); equal(roleSelect('owner').value, 'owner', 'Select stays on the server value');
+    await act(async () => button('Keep my role').click()); check(!host.textContent.includes('You will no longer be able'), 'Confirm closed'); equal(calls.length, 2, 'Keep my role sends nothing');
+    await pick(roleSelect('owner'), 'editor'); await act(async () => roleSelect('owner').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))); check(!host.textContent.includes('You will no longer be able'), 'Escape keeps the role');
+    await pick(roleSelect('owner'), 'editor'); queue.push([200, { project: 'A', username: 'owner', role: 'editor' }], [200, { members: [{ username: 'owner', role: 'editor' }, { username: 'bob', role: 'owner' }] }]);
+    await act(async () => button('Change role').click()); await until(() => queue.length === 0, 'Change consumed'); await tick(); equal(calls[2].init.method, 'PUT', 'Confirmed PUT'); equal(JSON.parse(calls[2].init.body), { role: 'editor' }, 'Self-demotion body');
+  });
+  await run('PANEL-role admin demoting themselves needs no confirm', async () => {
+    const owners = [{ username: 'admin', role: 'owner' }, { username: 'bob', role: 'owner' }];
+    await roleReady(owners, { ...props, user: { email: 'admin', isAdmin: true } });
+    queue.push([200, { project: 'A', username: 'admin', role: 'editor' }], [200, { members: [{ username: 'admin', role: 'editor' }, { username: 'bob', role: 'owner' }] }]);
+    await pick(roleSelect('admin'), 'editor'); await until(() => queue.length === 0, 'Change consumed'); check(!host.textContent.includes('You will no longer be able'), 'No confirm for an admin');
   });
   const output = document.createElement('pre'); output.id = 'offline-results'; output.textContent = JSON.stringify({ proof_level: 'offline-actual-React18-ReactDOM-panel-fake-fetch', results }); document.body.append(output);
 })().catch(e => { document.body.textContent = `HARNESS_ERROR: ${e.stack}`; });

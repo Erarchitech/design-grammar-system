@@ -1,24 +1,147 @@
 import React from "react";
-import { Badge, Button, Input, Panel, Select, Tile } from "../components/index.js";
+import { Button, Input, Panel, Select, Tile } from "../components/index.js";
 import { fetchProjects } from "../lib/graphApi.js";
 import { apiFetch, dataServiceBase, ApiError } from "../lib/apiClient.js";
+import { changeMemberRole } from "../lib/memberApi.js";
+import { isSoleOwner, needsSelfDemotionConfirm } from "../lib/memberRoles.js";
+import { describeError } from "../i18n/index.js";
+import { ROLE_VALUES, roleLabel } from "../i18n/enums.js";
+import { useT } from "../i18n/LanguageProvider.jsx";
 
-const ROLE_OPTIONS = [
-  { value: "viewer", label: "Viewer" },
-  { value: "editor", label: "Editor" },
-  { value: "owner", label: "Owner" }
-];
+function roleOptions() {
+  return ROLE_VALUES.map((value) => ({ value, label: roleLabel(value) }));
+}
 
 function projectUrl(project, suffix) {
   return `${dataServiceBase()}/projects/${encodeURIComponent(project)}${suffix}`;
 }
 
-const ERR_STYLE = { font: "400 13px/1.4 var(--font-sans)", color: "var(--color-signal)" };
+const ERR_STYLE = { font: "400 12px/1.33 var(--font-sans)", color: "var(--color-signal)" };
+
+// Screen-reader-only text (live regions and aria-describedby targets).
+const VISUALLY_HIDDEN = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap"
+};
+
+// Role Select of one member (D-16). Dumb: value, disabled state and the sole-owner hint come from MemberRow.
+function MemberRoleSelect({ username, value, disabled, soleOwner, soleOwnerText, noteId, onChange }) {
+  const { t } = useT();
+  return (
+    <>
+      <Select
+        options={roleOptions()}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        aria-label={t("Role of {username}", { username })}
+        aria-describedby={soleOwner ? noteId : undefined}
+        title={soleOwner ? soleOwnerText : undefined}
+        style={{ minWidth: 130, width: "auto", opacity: disabled ? 0.45 : 1, cursor: disabled ? "default" : "pointer" }}
+      />
+      {soleOwner && (
+        <span id={noteId} style={VISUALLY_HIDDEN}>
+          {soleOwnerText}
+        </span>
+      )}
+    </>
+  );
+}
+
+// One Members row: optimistic role change with rollback and a mapped inline error (D-16, D-09). A non-admin owner
+// lowering their own role confirms first because the panel disappears after the change. `scopeRef` is the screen's
+// panelScope race guard: a reply that lands after the project switched is dropped.
+function MemberRow({ member, members, user, project, scopeRef, onRoleChanged, onRemove }) {
+  const { t } = useT();
+  const [pending, setPending] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [confirm, setConfirm] = React.useState(null);
+  const [saved, setSaved] = React.useState(false);
+  const noteId = React.useId();
+  const soleOwner = isSoleOwner(members, member.username);
+  const busy = pending !== null;
+
+  const commit = async (next) => {
+    const scope = scopeRef.current;
+    setConfirm(null);
+    setError(null);
+    setSaved(false);
+    setPending(next);
+    try {
+      await changeMemberRole(project, member.username, next);
+      if (scope !== scopeRef.current) return;
+      setPending(null);
+      setSaved(true);
+      onRoleChanged(member.username, next);
+    } catch (err) {
+      if (scope !== scopeRef.current) return;
+      setPending(null); // roll back to the server's value
+      setError(err);
+    }
+  };
+
+  const onChange = (event) => {
+    const next = event.target.value;
+    if (busy || next === member.role) return;
+    setError(null);
+    setSaved(false);
+    if (needsSelfDemotionConfirm({ user, username: member.username, from: member.role, to: next })) {
+      setConfirm(next);
+      return;
+    }
+    commit(next);
+  };
+
+  return (
+    <div
+      style={{ display: "flex", flexDirection: "column", gap: 4 }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && confirm) setConfirm(null);
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, font: "400 14px/1.43 var(--font-sans)" }}>
+        <span style={{ flex: 1, minWidth: 0 }}>{member.username}</span>
+        <MemberRoleSelect
+          username={member.username}
+          value={pending ?? member.role}
+          disabled={busy || soleOwner}
+          soleOwner={soleOwner}
+          soleOwnerText={t("A project must keep at least one owner. Promote another member first.")}
+          noteId={noteId}
+          onChange={onChange}
+        />
+        <Button variant="secondary" size="sm" onClick={() => onRemove(member.username)}>
+          {t("Remove member")}
+        </Button>
+      </div>
+      {confirm && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", font: "400 14px/1.43 var(--font-sans)" }}>
+          <span>{t("You will no longer be able to manage members of this project.")}</span>
+          <Button size="sm" onClick={() => commit(confirm)}>
+            {t("Change role")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setConfirm(null)}>
+            {t("Keep my role")}
+          </Button>
+        </div>
+      )}
+      {error && <div style={ERR_STYLE}>{describeError(error, t("Could not change the role. Try again."))}</div>}
+      <span aria-live="polite" style={VISUALLY_HIDDEN}>
+        {saved ? t("Role updated for {username}", { username: member.username }) : ""}
+      </span>
+    </div>
+  );
+}
 
 // Projects are membership-scoped (phase 1205, D-02/D-05): the tile grid lists
 // only the caller's projects with their role; opening one scopes every Graph /
 // Model Viewer request to it (PROJ-01/02). Owners administer members here.
 export default function ProjectsScreen({ active, onBack, project, onProject, user }) {
+  const { t } = useT();
   const [projects, setProjects] = React.useState([]);
   const [loadErr, setLoadErr] = React.useState("");
   const [creating, setCreating] = React.useState(false);
@@ -147,6 +270,12 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
     }
   };
 
+  // A role change succeeded: show it at once, then take the server's list (guarded by panelScope inside loadMembers).
+  const onRoleChanged = (username, role) => {
+    setMembers((list) => list.map((m) => (m.username === username ? { ...m, role } : m)));
+    loadMembers();
+  };
+
   const copyInvite = () => {
     if (invite?.code && navigator.clipboard) navigator.clipboard.writeText(invite.code).catch(() => {});
   };
@@ -225,22 +354,25 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
         )}
 
         {canAdminister && (
-          <Panel title={`Members · ${project}`} style={{ userSelect: "text" }}>
+          <Panel title={t("Members · {project}", { project })} style={{ userSelect: "text" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {membersErr && <div style={ERR_STYLE}>{membersErr}</div>}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {members.map((m) => (
-                  <div key={m.username} style={{ display: "flex", alignItems: "center", gap: 10, font: "400 14px/1.4 var(--font-sans)" }}>
-                    <span style={{ flex: 1 }}>{m.username}</span>
-                    <Badge variant={m.role === "owner" ? "signal" : "soft"}>{m.role}</Badge>
-                    <Button variant="secondary" size="sm" onClick={() => removeMember(m.username)}>
-                      Remove
-                    </Button>
-                  </div>
+                  <MemberRow
+                    key={m.username}
+                    member={m}
+                    members={members}
+                    user={user}
+                    project={project}
+                    scopeRef={panelScope}
+                    onRoleChanged={onRoleChanged}
+                    onRemove={removeMember}
+                  />
                 ))}
                 {!membersErr && members.length === 0 && (
                   <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
-                    No members listed
+                    {t("No members listed")}
                   </div>
                 )}
               </div>
@@ -259,7 +391,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
                   }}
                   style={{ width: 240 }}
                 />
-                <Select options={ROLE_OPTIONS} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ width: 130 }} />
+                <Select options={roleOptions()} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ width: 130 }} />
                 <Button size="sm" onClick={sendInvite}>
                   Invite
                 </Button>
