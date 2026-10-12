@@ -6,12 +6,13 @@ namespace DG.Grasshopper.Params;
 
 /// <summary>
 /// A <see cref="Param_String"/> whose persistent (internalised) data is never
-/// serialized to the .gh file (Phase 825, SC-6 / v8.2 "no token in .gh").
+/// serialized to the .gh file (Phase 825, SC-6; reused in Phase 1308, D-38).
 ///
-/// Unlike the Phase 824 every-solve scrub — which cleared a typed token on each
-/// solve and made the field feel dead — this lets the user type/paste a token
-/// and use it for the whole session; the value is only stripped when the document
-/// is written to disk. A saved .gh therefore contains no <c>dgc_</c> secret.
+/// CONNECTOR uses it for the DG account Username and Password, and VALIDATOR and
+/// COMPUTGRAPH PUBLISH use it for the Token input that takes CONNECTOR.Session.
+/// The user can type or paste a value and use it for the whole session; the value
+/// is only stripped when the document is written to disk. A saved .gh therefore
+/// contains no account password and no connector session.
 /// </summary>
 public sealed class NonPersistentStringParam : Param_String
 {

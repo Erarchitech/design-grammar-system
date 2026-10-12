@@ -52,7 +52,7 @@ DG/
 
 | Component | Category | Purpose | Inputs | Outputs |
 |-----------|----------|---------|--------|---------|
-| `CONNECTOR` | DG | Create Neo4j connection | URI, User, Password | ConnectionInfo |
+| `CONNECTOR` | DG | Sign in with a DG account and connect | Username, Password, Project, Connect | Database, Project, Session |
 | `METAGRAPH` | DG | Load rules from graph | ConnectionInfo, Project | Rules list |
 | `RULE DECONSTRUCT` | DG | Extract rule details | Rule | Variables, SWRL, Name, Text |
 | `CLASSIFICATOR` | DG | Bind GH values to variables | Variables, DataTree | BindingRows |
@@ -92,13 +92,17 @@ dotnet build .\DG\DG.sln -c Release -p:RhinoInstallDir="D:\Apps\Rhino 8"
 - **Async polling** — Components use `ScheduleSolution()` + task caching instead of blocking the GH UI thread.
 - **SWRL parsing** — Bespoke regex parser, not a vendor OWL library. Handles `Class(?var)`, `Property(?var1, ?var2)`, and `Builtin(?var, literal)` patterns.
 
-## Connector token on publish components (Phase 1205)
+## Connector session on publish components (Phase 1308)
 
-Every Grasshopper call to data-service is authenticated with a project-bound connector token (`dgc_...`); see `spec/SECURITY-BOUNDARY.md` (section 3.2).
+The Grasshopper add-in signs in with a DG account; there are no pasted connector tokens any more (the Connectors screen no longer creates them and `POST /connectors/{id}/credentials` answers 410). See `spec/SECURITY-BOUNDARY.md` (section 3.2).
 
-- The **VALIDATOR** and **COMPUTGRAPH PUBLISH** components have a `Token` input. It takes the same `dgc_` token that the **CONNECTOR** component uses. The token is a runtime input and is not saved into the `.gh` file; re-supply it when the canvas is reopened.
-- A token works only for its bound project and only on the connector-scoped routes: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, `POST /connectors/heartbeat` and `POST /designstate/capture`. Any other route answers 403.
-- The direct-Bolt components (`Neo4j*Repository` based, connecting to `bolt://localhost:7687`) are a trusted-local boundary in the `local` profile and are **unsupported in `multi-user`**: Bolt is not published and the heartbeat withholds the Neo4j bundle. Use the data-service API instead.
+- The **CONNECTOR** component takes `Username`, `Password`, an optional `Project` (leave empty when the account has one eligible project) and `Connect`. With `Connect=true` it signs in through `POST /auth/login` and `POST /auth/connector-session` and outputs `Database`, `Project` and `Session` (a `dgk_` connector session). `Connect=false`, or removing the component, ends the session (`DELETE /auth/connector-session`), so the connector reads off in the web UI at once.
+- The **VALIDATOR** and **COMPUTGRAPH PUBLISH** components keep their GUIDs and port order. Their `Token` input takes `CONNECTOR.Session`. Only a `dgk_` value is accepted.
+- Access is per connector: owners and admins are exempt; editors and viewers need an active per-connector grant. A session lasts 8 hours (absolute) and works only for its bound project and only on the connector-scoped routes: `POST /computgraph/publish`, `POST /validation/publish`, `GET /validation/view/...`, `POST /connectors/heartbeat` and `POST /designstate/capture`. Any other route answers 403.
+- The account password and the session are runtime values only. `Username`, `Password` and `Token` are non-persistent parameters, so a saved `.gh` file holds neither; supply them again when the canvas is reopened. A masked password dialog is not part of this release.
+- Sign-in over plain `http://` to a remote (non-loopback) host is refused before any request is sent, so the password never travels unencrypted.
+- The direct-Bolt components (`Neo4j*Repository` based, connecting to `bolt://localhost:7687`) are a trusted-local boundary in the `local` profile and are **unsupported in `multi-user`**: Bolt is not published and the sign-in withholds the Neo4j bundle. Use the data-service API instead.
+- Old canvases wired to the previous CONNECTOR show a missing-component placeholder and must be re-wired by hand; see `docs/RELEASE-NOTES-v13.0.md`.
 
 ## Canvas bridge
 

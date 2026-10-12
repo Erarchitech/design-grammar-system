@@ -46,7 +46,7 @@ public sealed class ComputgraphPublishComponent : GH_Component
             new NonPersistentStringParam(),
             "Platform Token",
             "Token",
-            "Platform credential (dgc_ token from the Connectors screen, same token as CONNECTOR). Required to publish.",
+            "Connector session: wire CONNECTOR.Session. Required to publish.",
             GH_ParamAccess.item);
         pManager[3].Optional = true;
     }

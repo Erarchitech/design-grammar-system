@@ -33,7 +33,7 @@ public sealed class ValidatorComponent : GH_Component
             new NonPersistentStringParam(),
             "Platform Token",
             "Token",
-            "Platform credential (dgc_ token from the Connectors screen, same token as CONNECTOR). Required to publish; evaluation runs without it.",
+            "Connector session: wire CONNECTOR.Session. Required to publish; evaluation runs without it.",
             GH_ParamAccess.item);
         pManager[4].Optional = true;
     }
