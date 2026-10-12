@@ -54,7 +54,14 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 import auth
+import company
+import connector_access
+import connector_session
 import connectors
+import degram_grants
+import degram_pairing
+import degram_policy
+import delegation
 
 UAT_USERNAME = "uat-pw-bd30ce@dg.local"
 UAT_PROJECT = "uat-pw-bd30ce"
@@ -72,7 +79,22 @@ EXIT_UNREADABLE = 3
 
 # Counts that mean "a write would happen". ``credentials_already_revoked`` is
 # informational only.
-_CHANGE_KEYS = ("credentials_to_retire",)
+_CHANGE_KEYS = (
+    "credentials_to_retire",
+    "connector_sessions",
+    "delegated_tokens",
+    "sessions",
+    "degram_grants",
+    "degram_grant_requests",
+    "pairings",
+    "connector_access_grants",
+    "connector_access_requests",
+    "export_policies",
+    "project_companies",
+    "invites",
+    "memberships",
+    "users",
+)
 
 
 class StoreUnreadable(Exception):
@@ -115,6 +137,92 @@ def _plan_credentials(now: int | None) -> tuple[dict[str, int], Writer | None]:
     return counts, write
 
 
+def _norm(value: Any) -> str:
+    return value.strip().lower() if isinstance(value, str) else ""
+
+
+def _targets(username: str, project: str, *, creator: bool = False) -> Callable[[dict[str, Any]], bool]:
+    """Row predicate: the row belongs to the target user or names the target project.
+
+    ``creator`` additionally matches rows the target user created (invites).
+    """
+
+    def matches(row: dict[str, Any]) -> bool:
+        if _norm(row.get("username")) == username:
+            return True
+        if row.get("project") == project:
+            return True
+        return creator and _norm(row.get("created_by")) == username
+
+    return matches
+
+
+def _plan_auth_rows(
+    label: str,
+    count_key: str,
+    path: Any,
+    key: str,
+    matches: Callable[[dict[str, Any]], bool],
+) -> tuple[dict[str, int], Writer | None]:
+    """Plan the removal of matching rows from one ``auth._load`` style store.
+
+    A store that does not exist is empty and stays absent. Returns the counts
+    and a writer (None when nothing changes).
+    """
+    try:
+        rows = auth._load(path, key)
+    except auth.AuthStoreError as exc:
+        raise StoreUnreadable(label) from exc
+    kept = [row for row in rows if not matches(row)]
+    removed = len(rows) - len(kept)
+    if not removed:
+        return {count_key: 0}, None
+
+    def write() -> None:
+        auth._save(path, key, kept)
+
+    return {count_key: removed}, write
+
+
+def _plan_connector_access(
+    matches: Callable[[dict[str, Any]], bool],
+) -> tuple[dict[str, int], Writer | None]:
+    try:
+        grants, requests = connector_access._load()
+    except auth.AuthStoreError as exc:
+        raise StoreUnreadable("connector-access") from exc
+    kept_grants = [row for row in grants if not matches(row)]
+    kept_requests = [row for row in requests if not matches(row)]
+    counts = {
+        "connector_access_grants": len(grants) - len(kept_grants),
+        "connector_access_requests": len(requests) - len(kept_requests),
+    }
+    if not any(counts.values()):
+        return counts, None
+
+    def write() -> None:
+        connector_access._save(kept_grants, kept_requests)
+
+    return counts, write
+
+
+def _plan_policy(
+    matches: Callable[[dict[str, Any]], bool],
+) -> tuple[dict[str, int], Writer | None]:
+    rows = degram_policy._load_rows_checked()
+    if rows is None:
+        raise StoreUnreadable("degram-policy")
+    kept = [row for row in rows if not matches(row)]
+    removed = len(rows) - len(kept)
+    if not removed:
+        return {"export_policies": 0}, None
+
+    def write() -> None:
+        degram_policy._save_rows(kept)
+
+    return {"export_policies": removed}, write
+
+
 def plan_changes(
     *,
     username: str = UAT_USERNAME,
@@ -123,17 +231,103 @@ def plan_changes(
 ) -> dict[str, Any]:
     """Read every store and compute what ``--apply`` would change; write nothing.
 
-    Returns ``{"counts": {...}, "other_members": int, "writes": [(label, fn)]}``.
+    Returns ``{"counts": {...}, "other_members": int, "writes": [(label, fn)]}``
+    with the writes in the order ``--apply`` runs them (the user row last).
     Raises :class:`StoreUnreadable` when any store is malformed.
     """
+    target = _norm(username)
+    matches = _targets(target, project)
     counts: dict[str, int] = {}
     writes: list[tuple[str, Writer]] = []
+
+    def take(label: str, part: dict[str, int], writer: Writer | None) -> None:
+        counts.update(part)
+        if writer is not None:
+            writes.append((label, writer))
+
     with auth._STORE_LOCK, connectors._STORE_LOCK:
-        cred_counts, cred_writer = _plan_credentials(now)
-        counts.update(cred_counts)
-        if cred_writer is not None:
-            writes.append(("connector-credentials", cred_writer))
-    return {"counts": counts, "other_members": 0, "writes": writes}
+        take("connector-credentials", *_plan_credentials(now))
+        take(
+            "connector-sessions",
+            *_plan_auth_rows(
+                "connector-sessions", "connector_sessions", connector_session._file(), "sessions", matches
+            ),
+        )
+        take(
+            "delegated-tokens",
+            *_plan_auth_rows(
+                "delegated-tokens", "delegated_tokens", delegation._file(), "tokens", matches
+            ),
+        )
+        take(
+            "sessions",
+            *_plan_auth_rows("sessions", "sessions", auth.SESSIONS_FILE, "sessions", matches),
+        )
+        take(
+            "degram-grants",
+            *_plan_auth_rows(
+                "degram-grants", "degram_grants", degram_grants._grants_file(), "grants", matches
+            ),
+        )
+        take(
+            "degram-grant-requests",
+            *_plan_auth_rows(
+                "degram-grant-requests",
+                "degram_grant_requests",
+                degram_grants._requests_file(),
+                "requests",
+                matches,
+            ),
+        )
+        take(
+            "degram-pairings",
+            *_plan_auth_rows(
+                "degram-pairings", "pairings", degram_pairing._file(), "pairings", matches
+            ),
+        )
+        take("connector-access", *_plan_connector_access(matches))
+        take("degram-policy", *_plan_policy(matches))
+        take(
+            "project-companies",
+            *_plan_auth_rows(
+                "project-companies", "project_companies", company._file(), "companies", matches
+            ),
+        )
+        take(
+            "invites",
+            *_plan_auth_rows(
+                "invites",
+                "invites",
+                auth.INVITES_FILE,
+                "invites",
+                _targets(target, project, creator=True),
+            ),
+        )
+        # Memberships are read once more up front: the refusal needs the members
+        # of the target project who are NOT the target user, which the removal
+        # filter would otherwise hide.
+        try:
+            membership_rows = auth._load(auth.MEMBERSHIPS_FILE, "memberships")
+        except auth.AuthStoreError as exc:
+            raise StoreUnreadable("memberships") from exc
+        other_members = sum(
+            1
+            for row in membership_rows
+            if row.get("project") == project and _norm(row.get("username")) != target
+        )
+        take(
+            "memberships",
+            *_plan_auth_rows(
+                "memberships", "memberships", auth.MEMBERSHIPS_FILE, "memberships", matches
+            ),
+        )
+        take(
+            "users",
+            *_plan_auth_rows(
+                "users", "users", auth.USERS_FILE, "users", lambda row: _norm(row.get("username")) == target
+            ),
+        )
+    return {"counts": counts, "other_members": other_members, "writes": writes}
 
 
 def run(
