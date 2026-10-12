@@ -4,6 +4,8 @@
 
 **Статус:** ACTIVE — owner scope revision 2026-10-04. Phase 1300 incomplete / scope revision; независимый read-only client slice 1301 в `ui-v2` — in progress, не готов к выпуску. Все 51 ID и ownership 1300–1307 сохранены; ни одна фаза не объявлена завершённой.
 
+**Отдельный будущий milestone:** согласованная владельцем интеграция строительных норм записана как изолированный [v14.0 roadmap](milestones/v14.0-ROADMAP.md) и [v14.0 requirements](milestones/v14.0-REQUIREMENTS.md) (1400–1408). Это не новая фаза v13, не передача DGKN/DGBN/DGST/DGHN/DGRL/WEBUI/HOST ownership и не активация v14: действующие `.planning/phases/`, STATE.md и Current Milestone сохраняются. Полный нормативный pipeline и Jev не считаются доставленными фазой 1302 или любым другим v13 ID.
+
 **Authority:** Последняя active revision имеет приоритет над историческими preparation/discussion/plan-check материалами. Архивный пакет не изменяется; frozen dossier hashes/receipts требуют явной перепривязки к изменённому scope и применимого независимого принятия, не autoaccept. Сравнение DeGram/current DG, baseline study и benefit thresholds исключены из milestone. Design State/pre-post/evaluator agreement/recognition regression и OPEN v12 D08 сохраняются как самостоятельные обязательства, не product benchmark. Directory slug `1300-kontrakty-baseline-i-ownership` сохранён только как стабильный путь.
 
 **Цель milestone:** участник проводит проектное требование от доступного источника через утверждённую редакцию правила, точную native-привязку и измеренную проверку к принятому решению; другой участник восстанавливает контекст и доказательства без чата автора.

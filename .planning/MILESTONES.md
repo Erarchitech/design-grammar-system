@@ -10,6 +10,15 @@
 
 ---
 
+## v14.0 Normative Sources and Model Binding (Future: 2026-10-12)
+
+**Status:** PLANNED (isolated, not activated) — owner accepted a separate milestone for building-code integration; v13.0 remains active. No requirements are complete, no phase plans executed, and no implementation or external data transfer is authorized by this entry.
+**Scope:** 9 proposed phases (1400–1408), 27 future IDs: source file/site/Drive ingestion and clause revisions; standard-linked company vocabulary with steward-reviewed alignments and scoped decision memory; clause-grounded rule proposals, deterministic compilation and measured Revit/GH bindings; partial library acceptance with separate project activation; a rule-based LLM router with Jev only after an offline quality/privacy/cost gate; independent normative UAT across two authorized jurisdiction profiles.
+**Ownership:** v13/1302 source/release/revision foundation, 1303 native GH bindings, 1304 evidence, 1306 Revit read and 1307 DeGram acceptance retain their own delivery gates; 1308 Web UI and 1309 hosting remain v13 work. v14 adds normative product behavior, never auto-completes or duplicates these outcomes. External texts/dictionaries and live connectors require explicit rights and separate execution consent.
+**Activation:** Only at an authorized milestone boundary after v13 work and affecting residual debt are reconciled; do not run a state-clearing milestone init or move `.planning/phases/` while v13 is in flight. Future artifacts: [Requirements](milestones/v14.0-REQUIREMENTS.md) and [Roadmap](milestones/v14.0-ROADMAP.md).
+
+---
+
 ## v9.0 AI Workflow Intelligence (Override Closeout: 2026-09-19)
 
 **Phases:** 28–40  

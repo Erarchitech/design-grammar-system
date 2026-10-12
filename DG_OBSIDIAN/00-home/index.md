@@ -9,6 +9,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-12 Building code integration research and v14 planning|Building-code integration research and future v14.0 GSD plan]] (2026-10-12)
+- [[knowledge/decisions/Building code integration is isolated as future v14.0|Decision: normative integration is a separate, unactivated v14.0 milestone]] (2026-10-12)
 ### Atlas (Architecture & Stack)
 - [[degram/index|DeGram — integrated Desktop component, shared GSD/context and official upstream fork]]
 - [[Architecture is a microservices Docker pipeline]]
