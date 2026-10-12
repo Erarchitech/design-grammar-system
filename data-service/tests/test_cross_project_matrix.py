@@ -646,29 +646,36 @@ class TestListingFilters:
         # the graph query itself was restricted to the caller's projects
         assert [p["projects"] for p in seen] == [[P1], [P1], [P2], [P2]]
 
-    def test_connectors_lists_no_credential_of_another_project(self, client, world):
-        record = auth_fixtures.seed_legacy_credential(P2)
-        p2_ids = {
-            r["credential_id"]
-            for r in connectors.load_credentials()
-            if r.get("project") == P2
-        }
-        assert record["credential_id"] in p2_ids
+    def test_connectors_lists_only_visible_project_sessions(self, client, world):
+        before_b = client.get("/connectors", headers=world.headers["B"]).json()
+        before_b_dynamo = next(c for c in before_b["connectors"] if c["id"] == "dynamo")
+        record = auth_fixtures.seed_legacy_credential(P2, "dynamo")
+        auth_fixtures.connector_token_for(P2, connector_id="dynamo")
 
         def listed(actor):
             body = client.get("/connectors", headers=world.headers[actor]).json()
-            return {
-                c["credential_id"]
-                for connector in body["connectors"]
-                for c in connector["credentials"]
-            }
+            assert record["credential_id"] not in json.dumps(body)
+            assert world.t1_credential_id not in json.dumps(body)
+            assert all(
+                "credentials" not in c for c in body["connectors"] if c["id"] != "degram"
+            )
+            return {c["id"]: c for c in body["connectors"]}
 
         a_listed = listed("A")
-        assert world.t1_credential_id in a_listed  # positive control
-        assert a_listed.isdisjoint(p2_ids)
+        assert a_listed["grasshopper"]["active_sessions"] == 1  # positive control
+        assert a_listed["dynamo"]["status"] == "never_connected"
         b_listed = listed("B")
-        assert p2_ids <= b_listed
-        assert world.t1_credential_id not in b_listed
+        assert (
+            b_listed["dynamo"]["active_sessions"]
+            == before_b_dynamo["active_sessions"] + 1
+        )
+        assert b_listed["grasshopper"]["status"] == "never_connected"
+        admin_listed = listed("ADMIN")
+        assert admin_listed["grasshopper"]["active_sessions"] == 1
+        assert (
+            admin_listed["dynamo"]["active_sessions"]
+            == b_listed["dynamo"]["active_sessions"]
+        )
 
 
 # ── Per-connector access (Phase 1301-40, D-46) ──────────────────────────────

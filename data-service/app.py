@@ -1676,12 +1676,9 @@ def get_llm_models(provider: str):
 
 @router.get("/connectors")
 def get_connectors(request: Request):
-    """Connector registry joined with per-connector status, last-connection
-    date, and credential summaries (never tokens or hashes). CONNB-01, CONNB-04.
-
-    Phase 1205 (T-1205-10-06): only credentials bound to a project the caller
-    is a member of are listed, and status / last-connection are derived from
-    those credentials alone. An admin sees every credential.
+    """Connector registry with live sign-in counts and last sign-in, never
+    legacy credential data. Status reflects the caller's visible projects;
+    an admin sees all projects (Phase 1308 D-32).
     """
     principal = request.state.principal
     projects = None if principal.is_admin else set(auth.list_member_projects(principal.username))

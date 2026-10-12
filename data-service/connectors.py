@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import connector_session
 from fastapi import HTTPException
 from pydantic import BaseModel
 
@@ -359,42 +360,26 @@ def connector_last_connection(
 def get_connector_overview(
     now: datetime | None = None, *, projects: set[str] | None = None
 ) -> list[dict[str, Any]]:
-    """Registry joined with per-connector status, last-connection date, and
-    credential summaries. Never exposes tokens or token hashes (CONNB-01, CONNB-04).
+    """Registry joined with sign-in session status for the caller's visible projects.
 
-    `projects` (Phase 1205, T-1205-10-06): when given, credentials whose bound
-    project is outside the set are dropped BEFORE status and last-connection
-    are derived, so no cross-project activity leaks. None means all (admin).
-    Records without a project read as "default-project".
+    `projects` limits status and the last sign-in to visible projects; None
+    means every project (admin). Legacy credentials are cleanup-only and do
+    not affect status or appear in the overview.
     """
-    credentials = load_credentials()
-    if projects is not None:
-        credentials = [
-            record
-            for record in credentials
-            if (record.get("project") or "default-project") in projects
-        ]
+    current = int(now.timestamp()) if now is not None else None
     overview: list[dict[str, Any]] = []
     for connector in CONNECTOR_REGISTRY:
-        last_connection = connector_last_connection(connector["id"], credentials)
-        summaries = [
-            {
-                "credential_id": record.get("credential_id"),
-                "label": record.get("label", ""),
-                "created_at": record.get("created_at"),
-                "revoked": bool(record.get("revoked")),
-            }
-            for record in credentials
-            if record.get("connector_id") == connector["id"]
-        ]
+        session_status = connector_session.status_for(
+            connector["id"], projects=projects, now=current
+        )
         overview.append(
             {
                 "id": connector["id"],
                 "name": connector["name"],
                 "category": connector["category"],
-                "status": derive_status(last_connection, now),
-                "last_connection": last_connection,
-                "credentials": summaries,
+                "status": session_status["status"],
+                "last_connection": session_status["last_sign_in"],
+                "active_sessions": session_status["active_sessions"],
             }
         )
     return overview
