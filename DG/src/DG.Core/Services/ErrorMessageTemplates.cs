@@ -200,7 +200,59 @@ public static class ErrorMessageTemplates
     // whole connection (there is no fallback URI/User/Password to connect with).
     public static string ConnectorTokenMissing()
     {
-        return "CONNECTOR: no platform token. Paste a dgc_ token (minted on the Connectors screen, Grasshopper connector) into the Token input — it resolves the project and Neo4j connection.";
+        return "CONNECTOR: not signed in. Enter Username and Password (your DG account) and set Connect=true.";
+    }
+
+    // --- Connector sign-in templates (Phase 1308-04, D-35) ---
+
+    /// <summary>CONNECTOR has no username/password yet — nothing was attempted.</summary>
+    public static string ConnectorSignInMissing()
+    {
+        return "CONNECTOR: not signed in. Enter Username and Password (your DG account) and set Connect=true.";
+    }
+
+    /// <summary>The account credentials were rejected by data-service (login HTTP 401).</summary>
+    public static string ConnectorSignInRejected()
+    {
+        return "CONNECTOR: sign-in rejected — wrong username or password. Check the DG account details and set Connect=true again.";
+    }
+
+    /// <summary>
+    /// The account authenticated but may not open a connector session (HTTP 403). The server
+    /// code distinguishes a missing connector grant from a project the account cannot use.
+    /// </summary>
+    public static string ConnectorSignInForbidden(string? serverCode)
+    {
+        return string.Equals(serverCode, "PROJECT_FORBIDDEN", StringComparison.Ordinal)
+            ? "CONNECTOR: this account has no access to that project. Pick a project you are a member of, or ask a project owner to add you."
+            : "CONNECTOR: this account is not allowed to use the Grasshopper connector. Ask a project owner to grant connector access (Connectors screen).";
+    }
+
+    /// <summary>The server could not pick a project (HTTP 422); append its hint listing the eligible ones.</summary>
+    public static string ConnectorProjectRequired(string? serverHint)
+    {
+        var hint = (serverHint ?? string.Empty).Trim().TrimEnd('.');
+        return hint.Length == 0
+            ? "CONNECTOR: a project is required. Enter the project name in the Project input and set Connect=true."
+            : $"CONNECTOR: a project is required. Enter the project name in the Project input and set Connect=true. {hint}.";
+    }
+
+    /// <summary>The login endpoint throttled the attempt (HTTP 429).</summary>
+    public static string ConnectorSignInThrottled()
+    {
+        return "CONNECTOR: too many sign-in attempts. Wait a minute, then set Connect=true again.";
+    }
+
+    /// <summary>Plain http to a non-loopback host — the password was not sent.</summary>
+    public static string ConnectorSignInInsecureTransport(string dataServiceUrl)
+    {
+        return $"CONNECTOR: {dataServiceUrl} uses plain http to a non-local host, so sign-in was not attempted and no password was sent. Use an https URL.";
+    }
+
+    /// <summary>data-service could not be reached during sign-in.</summary>
+    public static string ConnectorSignInUnreachable(string dataServiceUrl)
+    {
+        return $"CONNECTOR: could not reach data-service at {dataServiceUrl} to sign in. Check that data-service is running and the URL is correct.";
     }
 
     // --- Publish-auth templates (Phase 1205-03, D-04/D-19) ---
@@ -211,38 +263,38 @@ public static class ErrorMessageTemplates
     /// </summary>
     public static string PublishTokenMissing(string component)
     {
-        return $"{component}: no platform token. Paste the same dgc_ platform token used on CONNECTOR into this component's Token input to publish — evaluation still runs without it.";
+        return $"{component}: no connector session. Wire CONNECTOR.Session into this component's Token input to publish — evaluation still runs without it.";
     }
 
     /// <summary>
-    /// The Token input holds something, but it is not a dgc_ token (WR-17): a
-    /// mistyped or truncated paste must not read as "no platform token".
+    /// The Token input holds something, but it is not a connector session (dgk_) (WR-17): a
+    /// mistyped or truncated value must not read as "no connector session".
     /// </summary>
     public static string PublishTokenMalformed(string component)
     {
-        return $"{component}: the value in the Token input is not a dgc_ platform token - it must start with dgc_. Copy the whole token from the Connectors screen (Grasshopper connector) into the Token input.";
+        return $"{component}: the value in the Token input is not a connector session (dgk_…). Wire CONNECTOR.Session into it.";
     }
 
     /// <summary>
     /// The data-service URL is plain http to a non-loopback host, so the bearer
-    /// platform token would travel unencrypted (WR-17). A warning, not a block:
+    /// connector session would travel unencrypted (WR-17). A warning, not a block:
     /// the stack terminates no TLS itself.
     /// </summary>
     public static string PublishInsecureTransport(string component)
     {
-        return $"{component}: the data-service URL uses plain http to a non-local host, so the dgc_ platform token is sent unencrypted. Use an https URL (or a trusted private network) before publishing.";
+        return $"{component}: the data-service URL uses plain http to a non-local host, so the connector session is sent unencrypted. Use an https URL.";
     }
 
-    /// <summary>A publish request's token was rejected by data-service (HTTP 401).</summary>
+    /// <summary>A publish request's connector session was rejected by data-service (HTTP 401).</summary>
     public static string PublishTokenRejected(string component)
     {
-        return $"{component}: platform token rejected — invalid, revoked, or expired. Mint a new token from the Connectors screen and re-paste it into the Token input.";
+        return $"{component}: connector session rejected — expired, ended or no longer authorized. Sign in again with your DG account in CONNECTOR (Connect=true) and wire CONNECTOR.Session into the Token input.";
     }
 
-    /// <summary>A publish request's token authenticated but is bound to a different project (HTTP 403).</summary>
+    /// <summary>A publish request's session authenticated but is bound to a different project (HTTP 403).</summary>
     public static string PublishProjectForbidden(string component)
     {
-        return $"{component}: platform token is bound to a different project than the one being published. Mint a credential scoped to this project from the Connectors screen.";
+        return $"{component}: the connector session is bound to a different project than the one being published. Sign in again in CONNECTOR with the project you are publishing to.";
     }
 
     /// <summary>
@@ -251,7 +303,7 @@ public static class ErrorMessageTemplates
     /// </summary>
     public static string ConnectorNoGraphBundle()
     {
-        return "CONNECTOR: platform token authenticated, but this deployment does not hand out a direct graph connection. Direct-Bolt DG components are unsupported in this profile.";
+        return "CONNECTOR: signed in, but this deployment does not hand out a direct graph connection. Direct-Bolt DG components are unsupported in this profile.";
     }
 
     public static string FormatMessage(ReinstatementResult result)

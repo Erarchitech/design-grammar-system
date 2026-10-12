@@ -454,18 +454,19 @@ public sealed class ErrorMessageTemplateTests
         Assert.NotEmpty(result);
         Assert.Contains("VALIDATOR", result);
         Assert.Contains("Token input", result);
-        Assert.Contains("CONNECTOR", result);
-        Assert.Contains("dgc_ platform token", result);
+        Assert.Contains("CONNECTOR.Session", result);
+        Assert.Contains("connector session", result);
         Assert.EndsWith(".", result);
     }
 
     [Fact]
-    public void PublishTokenMalformed_SaysItMustStartWithDgcAndIsDistinctFromMissing()
+    public void PublishTokenMalformed_NamesDgkSessionAndIsDistinctFromMissing()
     {
         var result = ErrorMessageTemplates.PublishTokenMalformed("VALIDATOR");
 
         Assert.Contains("VALIDATOR", result);
-        Assert.Contains("must start with dgc_", result);
+        Assert.Contains("dgk_", result);
+        Assert.Contains("CONNECTOR.Session", result);
         Assert.NotEqual(ErrorMessageTemplates.PublishTokenMissing("VALIDATOR"), result);
         Assert.EndsWith(".", result);
     }
@@ -481,7 +482,7 @@ public sealed class ErrorMessageTemplateTests
     }
 
     [Fact]
-    public void PublishTokenRejected_MentionsRevokedOrExpiredAndConnectorsScreen()
+    public void PublishTokenRejected_TellsToSignInAgainInConnector()
     {
         var result = ErrorMessageTemplates.PublishTokenRejected("COMPUTGRAPH PUBLISH");
 
@@ -489,12 +490,15 @@ public sealed class ErrorMessageTemplateTests
         Assert.NotEmpty(result);
         Assert.Contains("COMPUTGRAPH PUBLISH", result);
         Assert.Contains("rejected", result);
-        Assert.Contains("Connectors screen", result);
+        Assert.Contains("Sign in again", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CONNECTOR.Session", result);
+        Assert.DoesNotContain("Mint a new token", result);
+        Assert.DoesNotContain("Connectors screen", result);
         Assert.EndsWith(".", result);
     }
 
     [Fact]
-    public void PublishProjectForbidden_MentionsDifferentProjectAndConnectorsScreen()
+    public void PublishProjectForbidden_MentionsDifferentProjectAndSigningInAgain()
     {
         var result = ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR");
 
@@ -502,8 +506,120 @@ public sealed class ErrorMessageTemplateTests
         Assert.NotEmpty(result);
         Assert.Contains("VALIDATOR", result);
         Assert.Contains("different project", result);
-        Assert.Contains("Connectors screen", result);
+        Assert.Contains("Sign in again", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Connectors screen", result);
         Assert.EndsWith(".", result);
+    }
+
+    // --- Connector sign-in template tests (Phase 1308-04, D-35) ---
+
+    [Fact]
+    public void ConnectorSignInMissing_AsksForAccountCredentials()
+    {
+        var result = ErrorMessageTemplates.ConnectorSignInMissing();
+
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("Username and Password", result);
+        Assert.Contains("Connect=true", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorSignInRejected_SaysCredentialsWrong()
+    {
+        var result = ErrorMessageTemplates.ConnectorSignInRejected();
+
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("rejected", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorSignInForbidden_DistinguishesProjectFromConnectorAccess()
+    {
+        var access = ErrorMessageTemplates.ConnectorSignInForbidden("CONNECTOR_ACCESS_REQUIRED");
+        var project = ErrorMessageTemplates.ConnectorSignInForbidden("PROJECT_FORBIDDEN");
+        var unknown = ErrorMessageTemplates.ConnectorSignInForbidden(null);
+
+        Assert.Contains("grant connector access", access);
+        Assert.Contains("Connectors screen", access);
+        Assert.Contains("no access to that project", project);
+        Assert.NotEqual(access, project);
+        Assert.Equal(access, unknown);
+        Assert.EndsWith(".", access);
+        Assert.EndsWith(".", project);
+    }
+
+    [Fact]
+    public void ConnectorProjectRequired_AppendsServerHint()
+    {
+        var withHint = ErrorMessageTemplates.ConnectorProjectRequired("Eligible projects: alpha, beta.");
+        var without = ErrorMessageTemplates.ConnectorProjectRequired(null);
+
+        Assert.Contains("Eligible projects: alpha, beta", withHint);
+        Assert.DoesNotContain("..", withHint);
+        Assert.EndsWith(".", withHint);
+        Assert.Contains("Project input", without);
+        Assert.EndsWith(".", without);
+    }
+
+    [Fact]
+    public void ConnectorSignInThrottled_AsksToWait()
+    {
+        var result = ErrorMessageTemplates.ConnectorSignInThrottled();
+
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("Wait", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorSignInInsecureTransport_IncludesUrlAndSaysNoPasswordSent()
+    {
+        var result = ErrorMessageTemplates.ConnectorSignInInsecureTransport("http://dg.example.com:8000");
+
+        Assert.Contains("http://dg.example.com:8000", result);
+        Assert.Contains("no password was sent", result);
+        Assert.Contains("https", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void ConnectorSignInUnreachable_IncludesUrl()
+    {
+        var result = ErrorMessageTemplates.ConnectorSignInUnreachable("http://localhost:8000");
+
+        Assert.Contains("CONNECTOR", result);
+        Assert.Contains("http://localhost:8000", result);
+        Assert.EndsWith(".", result);
+    }
+
+    [Fact]
+    public void NoPublishOrSignInTemplate_MentionsRetiredTokenFlow()
+    {
+        var templates = new[]
+        {
+            ErrorMessageTemplates.PublishTokenMissing("VALIDATOR"),
+            ErrorMessageTemplates.PublishTokenMalformed("VALIDATOR"),
+            ErrorMessageTemplates.PublishInsecureTransport("VALIDATOR"),
+            ErrorMessageTemplates.PublishTokenRejected("VALIDATOR"),
+            ErrorMessageTemplates.PublishProjectForbidden("VALIDATOR"),
+            ErrorMessageTemplates.ConnectorNoGraphBundle(),
+            ErrorMessageTemplates.ConnectorTokenMissing(),
+            ErrorMessageTemplates.ConnectorSignInMissing(),
+            ErrorMessageTemplates.ConnectorSignInRejected(),
+            ErrorMessageTemplates.ConnectorSignInForbidden("PROJECT_FORBIDDEN"),
+            ErrorMessageTemplates.ConnectorProjectRequired("hint"),
+            ErrorMessageTemplates.ConnectorSignInThrottled(),
+            ErrorMessageTemplates.ConnectorSignInInsecureTransport("http://h"),
+            ErrorMessageTemplates.ConnectorSignInUnreachable("http://h"),
+        };
+
+        foreach (var text in templates)
+        {
+            Assert.DoesNotContain("dgc_", text);
+            Assert.DoesNotContain("Mint a new token", text);
+        }
     }
 
     [Fact]
@@ -523,7 +639,7 @@ public sealed class ErrorMessageTemplateTests
     public void PublishAuthTemplates_NeverLeakARealTokenValue()
     {
         // The four templates are static text (no token parameter) — this asserts
-        // none of them contains anything beyond the bare "dgc_" prefix hint, i.e.
+        // none of them contains anything beyond the bare "dgk_" prefix hint, i.e.
         // no template accidentally interpolates an actual token value.
         var templates = new[]
         {
@@ -537,18 +653,18 @@ public sealed class ErrorMessageTemplateTests
 
         foreach (var text in templates)
         {
-            var idx = text.IndexOf("dgc_", StringComparison.Ordinal);
+            var idx = text.IndexOf("dgk_", StringComparison.Ordinal);
             if (idx < 0)
             {
                 continue;
             }
 
-            var afterPrefix = text.Substring(idx + "dgc_".Length);
-            // Only the word "platform" or "token" (the hint) may immediately follow;
-            // a real token would be alphanumeric with no space.
+            var afterPrefix = text.Substring(idx + "dgk_".Length);
+            // Only an ellipsis or a space (the hint) may immediately follow;
+            // a real token would continue alphanumerically.
             Assert.True(
-                afterPrefix.Length == 0 || afterPrefix[0] == ' ',
-                $"Template appears to embed a token value after the dgc_ prefix: '{text}'");
+                afterPrefix.Length == 0 || !char.IsLetterOrDigit(afterPrefix[0]),
+                $"Template appears to embed a token value after the dgk_ prefix: '{text}'");
         }
     }
 }

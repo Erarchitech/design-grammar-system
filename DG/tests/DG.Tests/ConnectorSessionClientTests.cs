@@ -422,6 +422,67 @@ public sealed class ConnectorSessionClientTests
         Assert.Contains("SignedIn", text);
     }
 
+    // --- SignOutAsync (D-32) ---
+
+    [Fact]
+    public async Task SignOut_Http204_SendsDeleteWithBearerAndReturnsTrue()
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        var client = new ConnectorSessionClient(handler);
+
+        var ok = await client.SignOutAsync(Url, "dgk_x");
+
+        Assert.True(ok);
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Delete, request.Method);
+        Assert.EndsWith("/auth/connector-session", request.Uri!.AbsolutePath);
+        Assert.Equal("Bearer dgk_x", request.Headers["Authorization"]);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task SignOut_OtherStatus_ReturnsFalse(HttpStatusCode status)
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(status));
+        var client = new ConnectorSessionClient(handler);
+
+        Assert.False(await client.SignOutAsync(Url, "dgk_x"));
+    }
+
+    [Fact]
+    public async Task SignOut_TransportError_ReturnsFalseAndDoesNotThrow()
+    {
+        var handler = new RecordingHandler(new HttpRequestException("connection refused"));
+        var client = new ConnectorSessionClient(handler);
+
+        Assert.False(await client.SignOutAsync(Url, "dgk_x"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("dgc_old")]
+    public async Task SignOut_BlankOrWrongPrefix_ReturnsFalseWithZeroRequests(string token)
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        var client = new ConnectorSessionClient(handler);
+
+        Assert.False(await client.SignOutAsync(Url, token));
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task SignOut_RemoteHttp_ReturnsFalseWithZeroRequests()
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        var client = new ConnectorSessionClient(handler);
+
+        Assert.False(await client.SignOutAsync("http://dg.example.com:8000", "dgk_x"));
+        Assert.Empty(handler.Requests);
+    }
+
     [Fact]
     public async Task SignIn_ServerMessages_NeverContainPassword()
     {
