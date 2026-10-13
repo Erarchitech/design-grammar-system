@@ -3,6 +3,7 @@
 This module deliberately fails nonzero when approval/harness is absent; a skip or
 static substitute cannot attest live mounts, data-service, or n8n file access.
 """
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -28,6 +29,16 @@ class HostedBundleRuntimeTests(unittest.TestCase):
         """
         approval = os.environ.get("DG_HOSTED_SANDBOX_APPROVAL_REF")
         self.assertTrue(approval, "BLOCKED: named owner sandbox runtime permission required")
+        sandbox = os.environ.get("DG_HOSTED_SANDBOX_SPEC")
+        self.assertTrue(sandbox, "BLOCKED: isolated target and sanitized fixture spec required")
+        try:
+            specification = json.loads(Path(sandbox).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            self.fail(f"BLOCKED: invalid sandbox specification ({type(error).__name__})")
+        for key in ("target", "compose_project", "fixtures", "resource_limits",
+                    "network_limits", "cleanup", "approval_ref"):
+            self.assertTrue(specification.get(key), f"BLOCKED: missing sandbox {key}")
+        self.assertEqual(specification["approval_ref"], approval, "approval/sandbox mismatch")
         harness = ROOT / "deploy" / "hosted" / "tests" / "run_bundle_runtime.py"
         self.assertTrue(harness.is_file(), "BLOCKED: actual service integration harness absent")
         result = subprocess.run(["python", str(harness), "--approval-ref", approval],
