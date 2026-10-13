@@ -8,6 +8,11 @@ services:
   n8n:
     depends_on: !override
       - data-service
+    # /files contains only curated workflow JSON. Production workflows currently
+    # do not have file-read nodes; test the capability in an approved sandbox.
+    volumes: !override
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/files/workflows:ro
     environment:
       OLLAMA_URL: !reset null
       OLLAMA_HOST: !reset null
@@ -18,8 +23,22 @@ services:
 
   dg-reasoner:
     ports: !override []
+    volumes: !override
+      - ./ontology/DesignGrammar-V7.owl:/app/ontology/DesignGrammar-V7.owl:ro
+      - ./ontology/dg-disjointness.ttl:/app/ontology/dg-disjointness.ttl:ro
+      - ./ontology/dg-shapes.ttl:/app/ontology/dg-shapes.ttl:ro
 
   data-service:
+    # Replace inherited whole-checkout read-only bind and developer data bind.
+    # Named /mnt/repo capabilities preserve path resolution without exposing DG_OBSIDIAN.
+    volumes: !override
+      - hosted_data:/app/data
+      - ./llm/cypher_catalog.json:/mnt/repo/llm/cypher_catalog.json:ro
+      - ./llm/structure_rules.json:/mnt/repo/llm/structure_rules.json:ro
+      - ./ontology/DesignGrammar-V7.owl:/mnt/repo/ontology/DesignGrammar-V7.owl:ro
+      - ./ontology/export_to_markdown_v7.py:/mnt/repo/ontology/export_to_markdown_v7.py:ro
+      - ./spec/evidence-contract.schema.json:/mnt/repo/spec/evidence-contract.schema.json:ro
+      - ./deploy/hosted/ingest:/mnt/repo/hosted-ingest:ro
     ports: !override []
     networks:
       - default
@@ -93,4 +112,5 @@ networks:
         - subnet: ${HOSTED_EDGE_CIDR:?set approved private Docker edge CIDR}
 
 volumes:
+  hosted_data:
   ollama: !reset null

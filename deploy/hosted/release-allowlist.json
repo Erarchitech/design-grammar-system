@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "policy": "Exact paths/globs only; archive a clean framework revision, expand patterns only against tracked paths, fail on missing input, unexpected output, symlink, forbidden component or unenumerated capability.",
+  "manifestRequired": {
+    "frameworkRevision": "exact full commit SHA (unresolved until 1308 freeze)",
+    "degramGitlink": "exact child SHA if included; otherwise explicit null",
+    "files": "sorted exact relative file path to SHA-256 for every bundle file",
+    "images": "every merged Compose service to repository@sha256 digest; built DG images included; unresolved pending build/registry provenance"
+  },
+  "forbiddenComponents": [
+    ".secrets", "DG_OBSIDIAN", "Publications", ".git", ".planning",
+    ".degram", "graphify-out", "node_modules", "__pycache__", ".pytest_cache",
+    "bin", "obj", ".venv", "profiles", "personal-cv", "personal-graph"
+  ],
+  "inputs": [
+    {"path": "docker-compose.yml", "purpose": "base service graph and build contexts"},
+    {"path": "docker-compose.multi-user.yml", "purpose": "invite-only profile and internal port policy"},
+    {"path": "docker-compose.hosted.yml", "purpose": "CPU hosted override with named mounts"},
+    {"path": "neo4j/Dockerfile", "purpose": "pinned Neo4j/n10s image build recipe"},
+    {"path": "dg-reasoner/Dockerfile", "purpose": "reasoner build recipe"},
+    {"path": "dg-reasoner/requirements.txt", "purpose": "reasoner build dependencies"},
+    {"path": "dg-reasoner/*.py", "purpose": "reasoner runtime modules only, not tests"},
+    {"path": "data-service/Dockerfile", "purpose": "API build recipe"},
+    {"path": "data-service/requirements.txt", "purpose": "API build dependencies"},
+    {"path": "data-service/*.py", "exclude": ["data-service/rotate_llm_master_secret.py"], "purpose": "API runtime modules only; rotation maintenance tool is excluded"},
+    {"path": "data-service/prompts/input_generation_system.md", "purpose": "runtime input-generation prompt"},
+    {"path": "data-service/prompts/recognition_system.md", "purpose": "runtime recognition prompt"},
+    {"path": "data-service/fixtures/frame_recognition_fewshot.json", "purpose": "curated recognition few-shot fixture; approve before release"},
+    {"path": "ui-v2/Dockerfile", "purpose": "UI build recipe"},
+    {"path": "ui-v2/.dockerignore", "purpose": "exclude UI build cache"},
+    {"path": "ui-v2/package.json", "purpose": "UI dependency declaration"},
+    {"path": "ui-v2/package-lock.json", "purpose": "UI frozen dependency tree"},
+    {"path": "ui-v2/vite.config.js", "purpose": "UI build configuration"},
+    {"path": "ui-v2/index.html", "purpose": "SPA entry"},
+    {"path": "ui-v2/nginx.conf", "purpose": "UI reverse proxy"},
+    {"path": "ui-v2/entrypoint.sh", "purpose": "UI startup"},
+    {"path": "ui-v2/gen-config.sh", "purpose": "UI public config generation"},
+    {"path": "ui-v2/src/**/*", "exclude": ["ui-v2/src/degram/README.md"], "purpose": "recursive UI source and self-hosted assets; development README excluded"},
+    {"path": "ui-v2/public/config.js", "purpose": "public UI config skeleton; no credentials"},
+    {"path": "ui-v2/public/dg-think-dark.gif", "purpose": "public UI animation"},
+    {"path": "ui-v2/public/dg-think-light.gif", "purpose": "public UI animation"},
+    {"path": "ontology/DesignGrammar-V7.owl", "purpose": "reasoner/data-service ontology"},
+    {"path": "ontology/dg-shapes.ttl", "purpose": "reasoner SHACL shapes"},
+    {"path": "ontology/dg-disjointness.ttl", "purpose": "reasoner disjointness axioms"},
+    {"path": "ontology/export_to_markdown_v7.py", "purpose": "API OWL catalog reader"},
+    {"path": "llm/cypher_catalog.json", "purpose": "API context catalog mounted as an exact file"},
+    {"path": "llm/structure_rules.json", "purpose": "API structure checks mounted as an exact file"},
+    {"path": "spec/evidence-contract.schema.json", "purpose": "API evidence validation mounted as an exact file"},
+    {"path": "n8n/workflows/graph-query-mcp.json", "purpose": "graph query webhook definition"},
+    {"path": "n8n/workflows/rules-to-metagraph.json", "purpose": "rule ingest webhook definition"},
+    {"path": "n8n/workflows/spec-ingest.json", "purpose": "spec ingest webhook definition"},
+    {"path": "n8n/workflows/spec-query.json", "purpose": "spec query webhook definition"},
+    {"path": "n8n/workflows/spec-update.json", "purpose": "spec update webhook definition"},
+    {"path": "speckle/bootstrap-local.sql", "purpose": "Speckle PostgreSQL first-boot bootstrap"},
+    {"path": "deploy/hosted/edge/Caddyfile", "purpose": "HTTPS edge route policy; certificates remain outside bundle"},
+    {"path": "deploy/hosted/ingest/README.md", "purpose": "synthetic, public markdown fixture mounted only at /mnt/repo/hosted-ingest"}
+  ],
+  "runtimeMounts": [
+    {"service": "data-service", "source": "deploy/hosted/ingest", "target": "/mnt/repo/hosted-ingest", "purpose": "read-only synthetic knowledge-ingest folder; no broad repo mount"},
+    {"service": "data-service", "source": "data-service runtime volume hosted_data", "target": "/app/data", "purpose": "isolated writable runtime auth/settings state; never copy local data"},
+    {"service": "n8n", "source": "n8n/workflows", "target": "/files/workflows", "purpose": "read-only workflow definitions, not entire n8n tree"},
+    {"service": "dg-reasoner", "source": "three explicit ontology files", "target": "/app/ontology/<exact file>", "purpose": "read-only reasoner ontology/shapes/disjointness"},
+    {"service": "speckle-postgres", "source": "speckle/bootstrap-local.sql", "target": "/docker-entrypoint-initdb.d/20-bootstrap-local.sql", "purpose": "read-only bootstrap"},
+    {"service": "hosted-edge", "source": "deploy/hosted/edge/Caddyfile", "target": "/etc/caddy/Caddyfile", "purpose": "read-only edge policy"}
+  ],
+  "unresolved": [
+    "Exact framework revision and optional DeGram gitlink after 1308/1301 freeze",
+    "Every service image digest, including built neo4j, dg-reasoner, data-service, ui-v2; no registry/build provenance approved",
+    "Sandbox permission and actual runtime ingest/n8n file-read capability evidence"
+  ]
+}
