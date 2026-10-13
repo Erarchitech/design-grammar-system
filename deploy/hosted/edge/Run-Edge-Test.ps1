@@ -53,7 +53,7 @@ function Request([string]$hostName, [string]$method, [string]$path, [string]$ext
 }
 $server = {
     param([int]$port, [string]$service)
-    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $port)
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
     $listener.Start()
     try {
         while ($true) {
@@ -62,7 +62,7 @@ $server = {
             try {
                 $client.ReceiveTimeout = 3500; $client.SendTimeout = 3500
                 $stream = $client.GetStream()
-                $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 1024, $true)
+                $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::ASCII, $false, 1024, $true)
                 $line = $reader.ReadLine()
                 if (-not $line) { continue }
                 $hostHeader = ''; $forwarded = ''; $length = 0
@@ -115,7 +115,8 @@ try {
     Assert-Result 'eight-quoted-test-cert-paths' ([regex]::Matches($source, 'tls "[^"\r\n]+" "[^"\r\n]+"').Count -eq 4)
     # All sites, including fallback, bind only loopback. Explicit certs; disable auto redirects/admin.
     $source = "{`n admin off`n auto_https off`n}`n" + ($source -replace '(?m)^([\t ]*)(tls )', '${1}bind 127.0.0.1' + "`n" + '${1}${2}')
-    Assert-Result 'four-loopback-binds' ([regex]::Matches($source, 'bind 127\.0\.0\.1').Count -eq 4)
+    $tls = @($source -split "`n" | Where-Object { $_ -match '^\s*tls "' })
+    Assert-Result 'four-loopback-binds' ([regex]::Matches($source, 'bind 127\.0\.0\.1').Count -eq 4 -and $tls.Count -eq 4)
     # Explicit origins only; the fallback site still has its own cert and loopback binding.
     if (Test-Path $work) { throw 'work directory already exists; remove after reviewing previous run' }
     [void](New-Item -ItemType Directory -Path $work)
@@ -128,7 +129,7 @@ try {
         Assert-Result 'caddy-validate' ($validator.ExitCode -eq 0)
     } finally { if (-not $validator.HasExited) { $validator.Kill() } }
     foreach ($port in @(18443,18501,18502,18503)) {
-        $probe = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $port)
+        $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
         try { $probe.Start() } finally { $probe.Stop() }
     }
     foreach ($item in @(@(18501,'dg'),@(18502,'speckle'),@(18503,'object'))) {
@@ -166,6 +167,8 @@ try {
 } finally {
     if ($null -ne $caddy) { try { if (-not $caddy.HasExited) { $caddy.Kill(); $caddy.WaitForExit(5000) | Out-Null } } catch { } }
     foreach ($job in $jobs) { try { Stop-Job -Job $job -ErrorAction SilentlyContinue; Remove-Job -Job $job -Force -ErrorAction SilentlyContinue } catch { } }
+    # Only processes launched above are stopped; cleanup failures fail the report.
+    if ($null -ne $caddy -and -not $caddy.HasExited) { [void]$checks.Add([ordered]@{ name='cleanup-caddy'; pass=$false }) }
     $passes = @($checks | Where-Object { $_.pass }).Count
     $failed = @($checks | Where-Object { -not $_.pass }).Count
     $result = [ordered]@{ schema='dg-edge-synthetic-v1'; machine=$env:COMPUTERNAME; startedByOwner=$true; finishedUtc=(Get-Date).ToUniversalTime().ToString('o'); total=$checks.Count; passed=$passes; failed=$failed; blackBoxComplete=($failed -eq 0 -and $checks.Count -ge 29); checks=@($checks); limitations='Synthetic Caddy+loopback only; no real Speckle/MinIO, S3 signature/CORS/import proof or public deployment.' }
