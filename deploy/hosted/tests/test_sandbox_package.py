@@ -50,6 +50,22 @@ class SandboxPackageTests(unittest.TestCase):
         self.assertIn("request(opener, '/auth/login', {'username': user, 'password': password}, csrf=True)", probe)
         self.assertIn("headers['X-DG-CSRF'] = '1'", probe)
 
+    def test_windows_powershell_preflight_reads_extracted_members(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        path_line = next(line.strip() for line in script.splitlines() if '$relative = $item.FullName.Substring' in line)
+        zip_init = next((line.strip() for line in script.splitlines() if 'Add-Type -AssemblyName System.IO.Compression.FileSystem' in line), '')
+        with tempfile.TemporaryDirectory() as temp:
+            member = Path(temp) / 'data-service' / 'app.py'
+            member.parent.mkdir()
+            member.write_text('synthetic', encoding='utf-8')
+            code = ("$root=(Resolve-Path -LiteralPath '" + str(Path(temp)).replace("'", "''") + "').Path; "
+                    "$item=Get-Item -LiteralPath (Join-Path $root 'data-service/app.py'); "
+                    + path_line + "; if($relative -cne 'data-service/app.py'){exit 2}; "
+                    + zip_init + "; if(-not ('System.IO.Compression.ZipFile' -as [type])){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'

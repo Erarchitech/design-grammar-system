@@ -84,10 +84,11 @@ try {
   $actual = @(Get-ChildItem -LiteralPath $root -Recurse -Force -File)
   Assert-Ok ($actual.Count -eq ($allowed.Count + 1)) 'extra or missing files'
   foreach ($item in $actual) {
-    $relative = $item.FullName.Substring($root.Length + 1).Replace('\','/')
+    $relative = $item.FullName.Substring($root.Length + 1).Replace([IO.Path]::DirectorySeparatorChar, '/')
     Assert-Ok ($relative -ceq 'sandbox-manifest.json' -or $allowed.ContainsKey($relative)) 'unknown package input'
   }
   Assert-Ok (-not @(Get-ChildItem -LiteralPath $root -Recurse -Force -Attributes ReparsePoint).Count) 'linked directory'
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($zip)
   try {
     $zipNames = @($archive.Entries | ForEach-Object { $_.FullName })
@@ -100,6 +101,7 @@ try {
     Assert-Ok ($zipManifest -ceq (Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8)) 'ZIP manifest differs from extraction'
   } finally { $archive.Dispose() }
   $report.checks.packageHash = $true
+  $stage = 'disk-and-docker-preflight'
   $drive = Get-PSDrive -Name ([IO.Path]::GetPathRoot($root).Substring(0,1))
   Assert-Ok ($drive.Free -ge 12GB) 'insufficient disk'
   $report.checks.diskPreflight = $true
