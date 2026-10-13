@@ -2,6 +2,9 @@
 import ipaddress
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 from test_compose_profile import (BASE, MULTI_USER, HOSTED, HOSTED_INPUTS,
@@ -62,6 +65,42 @@ class EdgeFixtureMachineTests(unittest.TestCase):
                 text = (edge / name).read_text(encoding="utf-8")
                 self.assertIn(actual, text)
                 self.assertNotIn(mistaken, text)
+    def test_fixture_failure_report_identifies_stage_without_exception_text(self):
+        edge = Path(__file__).resolve().parents[1] / "edge"
+        script = (edge / "Run-Edge-Test.ps1").read_text(encoding="utf-8")
+        self.assertIn("$stage = 'preflight'", script)
+        for stage in ("rewrite", "validate", "ports", "upstreams", "proxy", "routes"):
+            with self.subTest(stage=stage):
+                self.assertIn("$stage = '" + stage + "'", script)
+        self.assertIn("stage=$stage", script)
+        self.assertNotIn("message=$_.Exception.Message", script)
+
+    def test_fixture_preflight_reaches_loopback_assertion(self):
+        powershell = shutil.which("powershell.exe")
+        if not powershell:
+            self.skipTest("Windows PowerShell required for this Windows fixture regression")
+        edge = Path(__file__).resolve().parents[1] / "edge"
+        # Execute the exact source transformation on Windows PowerShell without
+        # starting Caddy or opening a socket. Parse-only checks miss runtime operators.
+        script = (edge / "Run-Edge-Test.ps1").read_text(encoding="utf-8")
+        start = script.index("    $replacements = [ordered]@{")
+        end = script.index("    # Explicit origins only;", start)
+        excerpt = script[start:end]
+        excerpt = excerpt.replace("    Assert-Result 'four-loopback-binds' ",
+                                  "    if (-not ", 1)
+        excerpt = excerpt.replace("-and $tls.Count -eq 4)\n", "-and $tls.Count -eq 4)) { throw 'loopback-binds-failed' }\n", 1)
+        with tempfile.TemporaryDirectory(prefix="dg-edge-repro-") as directory:
+            probe = Path(directory) / "probe.ps1"
+            probe.write_text("$ErrorActionPreference = 'Stop'\n" +
+                             "function Assert-Result([string]$name, [bool]$ok) { if (-not $ok) { throw $name } }\n" +
+                             "$root = " + "'" + str(edge).replace("'", "''") + "'\n" +
+                             "$source = [System.IO.File]::ReadAllText((Join-Path $root 'Caddyfile'))\n" +
+                             excerpt + "Write-Output 'LOOPBACK_PREFLIGHT_OK'\n", encoding="utf-8")
+            result = subprocess.run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass",
+                                     "-File", str(probe)], capture_output=True, text=True,
+                                    encoding="utf-8", errors="replace", timeout=20, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("LOOPBACK_PREFLIGHT_OK", result.stdout)
 
 
 class HostedInterpolationTests(unittest.TestCase):

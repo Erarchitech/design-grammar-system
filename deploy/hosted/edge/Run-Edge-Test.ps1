@@ -9,6 +9,7 @@ $jobs = New-Object System.Collections.ArrayList
 $caddy = $null
 $work = Join-Path $root 'work'
 $report = Join-Path $root 'edge-report.json'
+$stage = 'preflight'
 $expected = @{
     'caddy.exe' = 'CADDY_SHA256_REPLACE'
     'Caddyfile.source' = 'SOURCE_SHA256_REPLACE'
@@ -95,6 +96,7 @@ try {
         $parsed = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $cert
         Assert-Result ('cert-current-' + $name) ((Get-Date) -ge $parsed.NotBefore -and (Get-Date) -lt $parsed.NotAfter)
     }
+    $stage = 'rewrite'
     $source = [System.IO.File]::ReadAllText((Join-Path $root 'Caddyfile.source'))
     # Exact, counted transformations: no alternate policy or accidental partial replacement.
     $replacements = [ordered]@{
@@ -114,7 +116,7 @@ try {
     $source = [regex]::Replace($source, $certPrefix + '(?:dg|speckle|object)\.(?:crt|key)', { param($match) '"' + $match.Value + '"' })
     Assert-Result 'eight-quoted-test-cert-paths' ([regex]::Matches($source, 'tls "[^"\r\n]+" "[^"\r\n]+"').Count -eq 4)
     # All sites, including fallback, bind only loopback. Explicit certs; disable auto redirects/admin.
-    $source = "{`n admin off`n auto_https off`n}`n" + ($source -replace '(?m)^([\t ]*)(tls )', '${1}bind 127.0.0.1' + "`n" + '${1}${2}')
+    $source = "{`n admin off`n auto_https off`n}`n" + ($source -replace '(?m)^([\t ]*)(tls )', ('${1}bind 127.0.0.1' + "`n" + '${1}${2}'))
     $tls = @($source -split "`n" | Where-Object { $_ -match '^\s*tls "' })
     Assert-Result 'four-loopback-binds' ([regex]::Matches($source, 'bind 127\.0\.0\.1').Count -eq 4 -and $tls.Count -eq 4)
     # Explicit origins only; the fallback site still has its own cert and loopback binding.
@@ -123,19 +125,23 @@ try {
     $config = Join-Path $work 'Caddyfile'
     [System.IO.File]::WriteAllText($config, $source, (New-Object System.Text.UTF8Encoding($false)))
     # Validation is real Caddy; kill a hung validation by its own PID.
+    $stage = 'validate'
     $validator = Start-Process -FilePath (Join-Path $root 'caddy.exe') -ArgumentList @('validate','--config',('"'+$config+'"'),'--adapter','caddyfile') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'validate.out') -RedirectStandardError (Join-Path $work 'validate.err')
     try {
         if (-not $validator.WaitForExit(15000)) { $validator.Kill(); throw 'validation timeout' }
         Assert-Result 'caddy-validate' ($validator.ExitCode -eq 0)
     } finally { if (-not $validator.HasExited) { $validator.Kill() } }
+    $stage = 'ports'
     foreach ($port in @(18443,18501,18502,18503)) {
         $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
         try { $probe.Start() } finally { $probe.Stop() }
     }
+    $stage = 'upstreams'
     foreach ($item in @(@(18501,'dg'),@(18502,'speckle'),@(18503,'object'))) {
         $job = Start-Job -ScriptBlock $server -ArgumentList $item[0],$item[1]
         [void]$jobs.Add($job)
     }
+    $stage = 'proxy'
     $caddy = Start-Process -FilePath (Join-Path $root 'caddy.exe') -ArgumentList @('run','--config',('"'+$config+'"'),'--adapter','caddyfile') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'caddy.out') -RedirectStandardError (Join-Path $work 'caddy.err')
     $ready = $false
     for ($attempt=0; $attempt -lt 40; $attempt++) {
@@ -144,6 +150,7 @@ try {
         try { $probe = Request 'dg.example.invalid' 'GET' '/' ''; if ($probe.status -eq 200) { $ready = $true; break } } catch { Start-Sleep -Milliseconds 150 }
     }
     Assert-Result 'caddy-started-and-routed' $ready
+    $stage = 'routes'
     $dg = Request 'dg.example.invalid' 'GET' '/data-service/graph/P' ''
     $dgBody = $dg.text.Substring($dg.text.IndexOf("`r`n`r`n") + 4) | ConvertFrom-Json
     Assert-Result 'dg-allow-and-spoof-reset' ($dg.status -eq 200 -and $dgBody.service -eq 'dg' -and $dgBody.forwarded -eq '127.0.0.1')
@@ -163,7 +170,7 @@ try {
     Assert-Result 'object-post-denied' ((Request 'objects.example.invalid' 'POST' '/speckle-server/file' '').status -eq 404)
 } catch {
     # Deliberately do not return exception text, config, headers or arbitrary upstream responses.
-    [void]$checks.Add([ordered]@{ name='runner-error'; pass=$false; code='preflight-or-runtime-failure' })
+    [void]$checks.Add([ordered]@{ name='runner-error'; pass=$false; code='preflight-or-runtime-failure'; stage=$stage })
 } finally {
     if ($null -ne $caddy) { try { if (-not $caddy.HasExited) { $caddy.Kill(); $caddy.WaitForExit(5000) | Out-Null } } catch { } }
     foreach ($job in $jobs) { try { Stop-Job -Job $job -ErrorAction SilentlyContinue; Remove-Job -Job $job -Force -ErrorAction SilentlyContinue } catch { } }
