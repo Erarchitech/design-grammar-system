@@ -1,0 +1,9 @@
+{
+  "id":"dg1309DeniedRead", "name":"DG 1309 denied file read (synthetic)", "active":false,
+  "nodes":[
+    {"id":"e0000000-0000-4000-8000-000000000001","name":"Manual Start","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[0,0],"parameters":{}},
+    {"id":"e0000000-0000-4000-8000-000000000002","name":"Read outside named mount","type":"n8n-nodes-base.readWriteFile","typeVersion":1,"position":[220,0],"parameters":{"operation":"read","fileSelector":"/etc/passwd","options":{}}}
+  ],
+  "connections":{"Manual Start":{"main":[[{"node":"Read outside named mount","type":"main","index":0}]]}},
+  "settings":{}
+}
