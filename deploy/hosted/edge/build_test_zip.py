@@ -64,7 +64,7 @@ def build(release, checksums):
                 "certificates": "Synthetic self-signed 7-day test keys; no production use",
                 "source": "deploy/hosted/edge/Caddyfile byte-for-byte"}
     payload["manifest.json"] = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
-    output = SCRATCH / "dg-edge-blackbox-DESKTOP-OS4Q8CP_V5.zip"
+    output = SCRATCH / "dg-edge-blackbox-DESKTOP-OS4Q8CP_V6.zip"
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as z:
         for name, data in payload.items():
             z.writestr(name, data)

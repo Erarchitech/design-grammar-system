@@ -28,7 +28,15 @@ function Invoke-CheckedProcess([string]$executable, [string[]]$arguments, [strin
     # with RedirectStandardOutput/RedirectStandardError even after WaitForExit.
     # Native invocation preserves $LASTEXITCODE; keep stdout/stderr in fixture files.
     $global:LASTEXITCODE = $null
-    & $executable @arguments 1> $stdout 2> $stderr
+    $previousErrorAction = $ErrorActionPreference
+    try {
+        # PS 5.1 promotes native stderr to NativeCommandError under Stop.
+        # Preserve stderr for diagnostics and judge success only by process exit.
+        $ErrorActionPreference = 'Continue'
+        & $executable @arguments 1> $stdout 2> $stderr
+    } finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
     if ($null -eq $LASTEXITCODE) { throw 'native process produced no exit code' }
     return [int]$LASTEXITCODE
 }

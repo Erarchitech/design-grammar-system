@@ -89,7 +89,7 @@ class EdgeFixtureMachineTests(unittest.TestCase):
             out = Path(directory) / "out.txt"
             err = Path(directory) / "err.txt"
             probe.write_text("$ErrorActionPreference = 'Stop'\n" + function +
-                             "$code = Invoke-CheckedProcess $env:ComSpec @('/c', 'echo Valid configuration') " +
+                             "$code = Invoke-CheckedProcess $env:ComSpec @('/c', 'echo warning 1>&2 & echo Valid configuration') " +
                              "'" + str(out).replace("'", "''") + "' '" +
                              str(err).replace("'", "''") + "'\n" +
                              "if ($code -ne 0) { throw 'exit-code-not-zero' }\n" +
@@ -100,6 +100,8 @@ class EdgeFixtureMachineTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("VALIDATION_EXIT_OK", result.stdout)
             self.assertIn("Valid configuration".encode("utf-16-le"), out.read_bytes())
+            self.assertTrue(err.is_file())
+            self.assertIn("warning".encode("utf-16-le"), err.read_bytes())
 
     def test_fixture_preflight_reaches_loopback_assertion(self):
         powershell = shutil.which("powershell.exe")
