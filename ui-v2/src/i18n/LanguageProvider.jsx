@@ -2,8 +2,8 @@ import React from "react";
 import { getLang, initLang, subscribe, translate, plural, CONTEXT_SEP } from "./index.js";
 
 // The store is module-level, so useT() works without the provider (browser harnesses keep rendering). The provider
-// only resolves the language once, before the first child renders. It renders no control: the language is switched
-// in DeGram Settings and reaches the page as a host signal (D-50, D-52).
+// only resolves the language once, before the first child renders. The browser control lives in AppShell; DeGram
+// Settings reaches the embedded page as a host signal.
 export function useT() {
   const lang = React.useSyncExternalStore(subscribe, getLang, getLang);
   return React.useMemo(

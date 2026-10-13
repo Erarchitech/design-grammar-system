@@ -1,9 +1,9 @@
 // In-house EN/RU i18n for ui-v2 (phase 1308, D-06..D-13).
 //
 // English text is the key: EN returns the key itself (after {name} interpolation), RU looks the key up in the
-// merged dictionary and falls back to the English key. The language is never chosen inside ui-v2 and never stored
-// (D-07, D-11, D-50): it comes from the DeGram host (live #degram-lang signal, else ?lang= at load) or, in a plain
-// browser, from the primary browser language. The only writers are initLang() and setLang().
+// merged dictionary and falls back to the English key. In DeGram the language comes from the host (live
+// #degram-lang signal, else ?lang= at load). A plain browser starts from a remembered choice, then its primary
+// browser language. Both paths share the same store; only the browser persists a choice.
 import { hostLang, isDegramHost } from "../lib/hostMode.js";
 import { EN, RU } from "./dict/index.js";
 
@@ -36,6 +36,7 @@ export const OWNER_FIXED = Object.freeze({
 });
 
 export const LANG_EVENT = "dg-lang";
+export const BROWSER_LANG_KEY = "dgv2_lang";
 const CONTEXT_SEP = "\u0004";
 
 function isLang(value) {
@@ -71,8 +72,9 @@ export function plural(lang, key, n, params) {
 }
 
 // D-07: host live signal is applied through setLang; this resolves the language at load.
-export function resolveLang({ isHost = false, hostLang: fromHost, browserLanguages } = {}) {
+export function resolveLang({ isHost = false, hostLang: fromHost, browserChoice, browserLanguages } = {}) {
   if (isHost) return isLang(fromHost) ? fromHost : "en";
+  if (isLang(browserChoice)) return browserChoice;
   const first = Array.isArray(browserLanguages) ? browserLanguages[0] : undefined;
   return typeof first === "string" && first.toLowerCase().startsWith("ru") ? "ru" : "en";
 }
@@ -105,6 +107,17 @@ export function setLang(lang) {
   if (changed) announce();
 }
 
+// Browser choice is presentation-only, never an authority over DeGram's host language.
+export function chooseBrowserLang(lang) {
+  if (!isLang(lang) || isDegramHost()) return;
+  try {
+    globalThis.localStorage?.setItem(BROWSER_LANG_KEY, lang);
+  } catch {
+    // Unavailable storage leaves the choice active for this page only.
+  }
+  setLang(lang);
+}
+
 export function subscribe(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -117,11 +130,18 @@ function browserLanguages() {
   return nav.language ? [nav.language] : [];
 }
 
-// Resolves the language at load from the host, else the browser. The optional argument lets a test inject the
-// environment; production calls it with none.
+function savedBrowserLang() {
+  try {
+    return globalThis.localStorage?.getItem(BROWSER_LANG_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// The optional argument lets a test inject the environment; production calls it with none.
 export function initLang(env) {
   const lang = resolveLang(
-    env || { isHost: isDegramHost(), hostLang: hostLang(), browserLanguages: browserLanguages() }
+    env || { isHost: isDegramHost(), hostLang: hostLang(), browserChoice: savedBrowserLang(), browserLanguages: browserLanguages() }
   );
   const changed = apply(lang);
   if (changed) announce();

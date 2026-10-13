@@ -43,8 +43,19 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     check(container.textContent.includes('Грамматика.') && container.textContent.includes('Граф правил проекта.'), 'RU hero title/subtitle missing');
     check(!container.querySelector('.dgl-host-pill') && !container.querySelector('.dgl-host-centre--visible'), 'Host controls visible before selection');
   });
+  await run('DeGram locale signal switches the mounted landing and other screen copy in both directions', async () => {
+    check(!container.querySelector('[aria-label="Interface language"]'), 'Browser language dropdown leaked into DeGram');
+    await signal('#degram-lang=en');
+    check(document.documentElement.lang === 'en' && !location.hash, 'English signal did not update html language');
+    check(container.textContent.includes('Design Grammars.') && container.textContent.includes('Encode your design intent.'), 'English landing copy missing');
+    await signal('#degram-lang=ru');
+    check(document.documentElement.lang === 'ru' && !location.hash, 'Russian signal did not update html language');
+    check(container.textContent.includes('Грамматика.') && container.textContent.includes('Граф правил проекта.'), 'Russian landing copy missing');
+  });
   await run('PROJECTS click announces selection and immediately shows one caption-less connecting sphere on the ring centre', async () => {
     allow('/projects', projects);
+    allow('/projects/A/summary', {});
+    allow('/validation/runs/A', { runs: [] });
     const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Проекты.');
     check(label, 'Projects callout missing');
     await act(async () => label.click());
@@ -79,7 +90,7 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     check(!location.hash, 'Project announcement not cleared');
   });
   await run('Theme change swaps sphere and broken image falls back without network', async () => {
-    const toggle = container.querySelector('[title="Switch to dark mode"]'); check(toggle, 'Theme control missing');
+    const toggle = container.querySelector('[title="Переключить на тёмную тему"]'); check(toggle, 'Theme control missing');
     await act(async () => toggle.click()); await tick();
     check(container.querySelector('.dgl-host-centre-sphere')?.getAttribute('src') === '/dg-think-dark.gif' || container.querySelector('.dgl-host-centre-fallback'), 'Dark sphere/fallback absent');
     const image = container.querySelector('.dgl-host-centre-sphere');
@@ -101,6 +112,12 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     allow('/connectors?project=A', { categories: [], connectors: [] }); // 1301-40: hosted Connectors table reads the project's access
     await signal('#degram-go=connectors');
     check(container.textContent.includes('Доступ') && !location.hash, 'Connectors navigation failed');
+    await signal('#degram-lang=en');
+    check(document.documentElement.lang === 'en' && container.textContent.includes('Access'), 'English connector screen did not follow the host');
+    await signal('#degram-lang=ru');
+    check(document.documentElement.lang === 'ru' && container.textContent.includes('Доступ'), 'Russian connector screen did not follow the host');
+    allow('/projects/A/summary', {});
+    allow('/validation/runs/A', { runs: [] });
     await signal('#degram-go=landing');
     check(container.querySelector('.dgl-host-pill'), 'Landing navigation failed');
     await signal('#degram-go=reasoner');
@@ -108,10 +125,13 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
     await signal('#degram-state=idle');
     check(!container.querySelector('.dgl-host-pill'), 'Idle still shows pill');
     check(location.search.includes('host=degram'), 'Host filter lost');
+    await tick();
     check(!unexpected.length && !errors.length && !queue.length, `Unexpected requests/errors ${unexpected.join(', ')} ${errors.join(', ')}; pending ${queue.length}`);
   });
   await run('English connecting label is on role=status, with no visible caption', async () => {
     const original = location.search;
+    allow('/projects/A/summary', {});
+    allow('/validation/runs/A', { runs: [] });
     history.replaceState(null, '', location.pathname + '?host=degram&lang=en');
     // The language is a module store now (1308-05); a live host switch reaches it through setLang.
     act(() => setLang('en'));

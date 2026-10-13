@@ -75,9 +75,9 @@ for (const status of [200, 401, 403]) test(`AUTH-password-${status} unsafe cooki
   replies.push([status, { detail: 'Offline reply' }]); if (status === 200) await auth.changePassword('SYNTHETIC-OLD', 'SYNTHETIC-NEW'); else await assert.rejects(auth.changePassword('SYNTHETIC-OLD', 'SYNTHETIC-NEW'), e => e.status === status);
   assert.deepEqual(JSON.parse(calls[0].init.body), { currentPassword: 'SYNTHETIC-OLD', newPassword: 'SYNTHETIC-NEW' }); assert.equal(calls[0].init.headers['X-DG-CSRF'], '1'); assert.equal(storage.size, 0);
 });
-test('AUTH-storage-clear removes every tenant key and preserves only theme plus foreign namespace', () => {
-  for (const key of ['dgv2_project', 'dgv2_owner', 'dgv2_graph_A', 'dgv2_project_shots', 'dgv2_secret_future', 'dgv2_theme', 'other-app']) storage.set(key, 'synthetic');
-  auth.clearTenantBrowserData(); assert.deepEqual([...storage.keys()], ['dgv2_theme', 'other-app']); auth.clearTenantBrowserData(); assert.equal(storage.size, 2);
+test('AUTH-storage-clear removes tenant keys and preserves browser display preferences plus foreign namespace', () => {
+  for (const key of ['dgv2_project', 'dgv2_owner', 'dgv2_graph_A', 'dgv2_project_shots', 'dgv2_secret_future', 'dgv2_theme', 'dgv2_lang', 'other-app']) storage.set(key, 'synthetic');
+  auth.clearTenantBrowserData(); assert.deepEqual([...storage.keys()], ['dgv2_theme', 'dgv2_lang', 'other-app']); auth.clearTenantBrowserData(); assert.equal(storage.size, 3);
 });
 test('AUTH-legacy-purge deletes old accounts without migration or touching unrelated storage', () => {
   storage.set('dg_users', 'synthetic-old-hash'); storage.set('dg_current_user', 'old-owner'); storage.set('other-app', 'kept'); auth.purgeLegacyLocalAuth(); assert.deepEqual([...storage], [['other-app', 'kept']]); assert.equal(calls.length, 0);

@@ -12,7 +12,8 @@ import { currentUser, purgeLegacyLocalAuth, clearTenantBrowserData, OWNER_KEY } 
 import { AUTH_EXPIRED_EVENT } from "./lib/apiClient.js";
 import { announceProject, clearHostSignal, isDegramHost, isRegionAllowed, parseHostSignal } from "./lib/hostMode.js";
 import { LanguageProvider, useT } from "./i18n/LanguageProvider.jsx";
-import { setLang } from "./i18n/index.js";
+import { chooseBrowserLang, setLang } from "./i18n/index.js";
+import { Select } from "./components/index.js";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
@@ -39,7 +40,7 @@ function Layer({ active, isLanding = false, layerRef, children }) {
   );
 }
 
-// The language provider wraps the whole app (D-06); the language itself comes from the DeGram host or the browser.
+// The language provider wraps every screen; DeGram owns its embedded language, while the browser offers a choice.
 export default function App() {
   return (
     <LanguageProvider>
@@ -49,7 +50,7 @@ export default function App() {
 }
 
 function AppShell() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [hash, setHash] = React.useState(window.location.hash);
   const [region, setRegion] = React.useState("landing");
   const [hostState, setHostState] = React.useState("idle");
@@ -257,6 +258,17 @@ function AppShell() {
       <Layer active={region === "apidocs"}>
         <ApiDocsScreen key={screenKey} active={region === "apidocs"} onBack={goLanding} project={project} />
       </Layer>
+
+      {!isDegramHost() && (
+        <div style={{ position: "absolute", top: 16, right: 16, zIndex: 50, width: 150, maxWidth: "calc(100vw - 32px)", boxShadow: "var(--shadow-panel)", borderRadius: "var(--radius-inputs)" }}>
+          <Select
+            aria-label={t("Interface language")}
+            value={lang}
+            onChange={(event) => chooseBrowserLang(event.target.value)}
+            options={[{ value: "ru", label: "Русский" }, { value: "en", label: "English" }]}
+          />
+        </div>
+      )}
 
       {/* dark / light toggle — global, floats above every layer */}
       <div

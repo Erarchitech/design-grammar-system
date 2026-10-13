@@ -12,6 +12,7 @@ export const ru = {
   On: "Вкл",
   Off: "Выкл",
   "Never connected": "Не подключался",
+  "Interface language": "Язык интерфейса",
 
   // Landing region labels and hint (D-21: «AI Engine» is now «LLM model»)
   "Graph Viewer": "Просмотр графа",

@@ -3,7 +3,7 @@ tags: [decision, degram, i18n, ui-v2, phase-1308]
 date: 2026-10-12
 ---
 
-# Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)
+# DeGram owns embedded language; the browser owns its language dropdown (D-50..D-54 amended)
 
 ## Context
 
@@ -14,12 +14,12 @@ Phase 1308 research (D-38 of 1301) proposed an «EN | RU» badge on the DG Web U
 - **D-50:** the language of every element and every screen (DeGram and the embedded DG Web UI) is switched in one place only: DeGram Settings → Appearance → Language.
 - **D-51:** in the `degram` variant the switcher offers only «Русский» and «English»; a stored other locale is coerced to English.
 - **D-52:** a change reaches the open DG page live, without reload, through a new host signal `#degram-lang=ru|en`; `setLocale` keeps `&lang=` for later loads.
-- **D-53 (recommendation, owner may redirect):** a DG Web UI opened in a plain browser has no control and follows the browser's primary language (`navigator.languages[0]` starting with `ru` → RU, else EN).
+- **D-53 (amended by owner during Phase 1308 UAT):** a DG Web UI opened in a plain browser has a global language dropdown at the upper-right on every screen (Русский / English). The saved browser choice (`dgv2_lang`) wins over the primary browser language on later loads. This control is absent inside DeGram; Settings → Appearance → Language remains the sole control for its embedded page.
 - **D-54:** the `degram` RU catalog is complete for every visible DeGram surface.
 
 ## Consequences
 
-- The ui-v2 badge, `dgv2_lang` and the `KEPT_KEYS` change are withdrawn (D-07, D-08, D-11 amended).
+- The former landing-only badge remains withdrawn. The browser-only global dropdown, `dgv2_lang`, and the `KEPT_KEYS` exception are reinstated by the later UAT instruction; the DeGram host neither renders nor reads this browser choice.
 - New plan 1308-21 (component repo `apps/degram/apps/desktop`) carries D-51, D-52, D-54; it shares the owner-authorized component commit and the single fork push with the sidebar «Projects» row (1308-17 → 1308-18).
 
 ## Related

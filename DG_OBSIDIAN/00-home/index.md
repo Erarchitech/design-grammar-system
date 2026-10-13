@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-13 Browser language dropdown and DeGram host locale recheck|Browser language dropdown and DeGram host locale recheck — live acceptance open]] (2026-10-13)
 - [[sessions/2026-10-13 DeGram language setting and local test build|DeGram language setting and unpacked test build — manual acceptance open]] (2026-10-13)
 - [[sessions/2026-10-12 Building code integration research and v14 planning|Building-code integration research and future v14.0 GSD plan]] (2026-10-12)
 - [[knowledge/decisions/Building code integration is isolated as future v14.0|Decision: normative integration is a separate, unactivated v14.0 milestone]] (2026-10-12)

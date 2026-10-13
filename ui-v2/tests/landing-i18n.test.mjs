@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-// Plan 1308-23: the landing layer is bilingual (D-03, D-21), relayouts on a live switch (D-52) and has no language control (D-08).
+// Plan 1308-23: the landing layer is bilingual (D-03, D-21) and relayouts on a live switch (D-52); the browser control lives above every layer in App.
 const read = (path) => readFile(new URL(`../src/landing/${path}`, import.meta.url), "utf8");
 
 test("landing engine adds and removes a dg-lang listener next to the dg-theme one (D-52, T-1308-23-02)", async () => {
@@ -35,7 +35,7 @@ test("landing hero, region labels and hint go through t(); AI Engine is renamed 
   assert.doesNotMatch(landing, /AI Engine/);
 });
 
-test("the landing renders no language control (D-08, D-50)", async () => {
+test("the landing itself has no separate language control (browser uses AppShell)", async () => {
   const landing = await read("LandingLayer.jsx");
   assert.doesNotMatch(landing, /setLang|LanguageBadge|dgv2_lang|EN\s*\|\s*RU/);
 });

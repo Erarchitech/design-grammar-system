@@ -25,9 +25,9 @@ export function purgeLegacyLocalAuth() {
 // WR-09 (1205 review): tenant content (built graphs, run thumbnails, the last
 // project selection, ...) lives under dgv2_* keys. It must not survive a
 // logout, an expired session or a change of account in the same browser.
-// Only the theme preference is user-agnostic and kept.
+// Theme and interface language are user-agnostic browser preferences and stay across sign-outs.
 const TENANT_KEY_PREFIX = "dgv2_";
-const KEPT_KEYS = new Set(["dgv2_theme"]);
+const KEPT_KEYS = new Set(["dgv2_theme", "dgv2_lang"]);
 export const OWNER_KEY = "dgv2_owner";
 
 export function clearTenantBrowserData() {

@@ -90,7 +90,15 @@ test("resolveLang: host uses the allowlisted host language and ignores the brows
   assert.equal(resolveLang({ isHost: true, hostLang: "RU ", browserLanguages: [] }), "en");
 });
 
-test("resolveLang: outside the host only the primary browser language counts (D-53)", async () => {
+test("resolveLang: a saved browser choice wins over the primary browser language", async () => {
+  const { resolveLang } = await fresh();
+  assert.equal(resolveLang({ isHost: false, browserChoice: "en", browserLanguages: ["ru-RU"] }), "en");
+  assert.equal(resolveLang({ isHost: false, browserChoice: "ru", browserLanguages: ["en-US"] }), "ru");
+  assert.equal(resolveLang({ isHost: false, browserChoice: "de", browserLanguages: ["ru-RU"] }), "ru");
+  assert.equal(resolveLang({ isHost: true, hostLang: "en", browserChoice: "ru", browserLanguages: ["ru-RU"] }), "en");
+});
+
+test("resolveLang: outside the host defaults to the primary browser language", async () => {
   const { resolveLang } = await fresh();
   assert.equal(resolveLang({ isHost: false, browserLanguages: ["ru"] }), "ru");
   assert.equal(resolveLang({ isHost: false, browserLanguages: ["ru-RU", "en"] }), "ru");
@@ -155,6 +163,26 @@ test("initLang with an injected plain-browser environment follows the browser la
   assert.equal(i18n.getLang(), "ru");
   assert.equal(i18n.initLang({ isHost: false, hostLang: "ru", browserLanguages: [] }), "en");
   assert.equal(i18n.getLang(), "en");
+});
+
+test("DeGram host ignores browser selection and does not persist it", async () => {
+  const originalStorage = globalThis.localStorage;
+  const values = new Map();
+  try {
+    globalThis.localStorage = { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+    const { doc } = stubBrowser();
+    const i18n = await fresh();
+    i18n.initLang({ isHost: false, browserLanguages: ["en-US"] });
+    // The host flag is bound at import: this process is a DeGram host, so a browser choice must be ignored.
+    i18n.chooseBrowserLang("ru");
+    assert.equal(i18n.getLang(), "en");
+    assert.equal(values.size, 0);
+    assert.equal(i18n.resolveLang({ isHost: false, browserChoice: "ru", browserLanguages: ["en-US"] }), "ru");
+    assert.equal(doc.documentElement.lang, "en");
+  } finally {
+    if (originalStorage === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = originalStorage;
+  }
 });
 
 test("t, tc and tp are bound to the current language", async () => {
@@ -331,7 +359,7 @@ test("formatDate and formatTime use the current language and show a dash for emp
   assert.equal(i18n.formatTime(new Date(iso), timeOpts), new Intl.DateTimeFormat("ru-RU", timeOpts).format(new Date(iso)));
 });
 
-test("rule (f): resolution precedence is host live signal, then ?lang=, then browser (outside host only), then en", async () => {
+test("resolution precedence: host live signal, host query, browser choice, navigator, then en", async () => {
   stubBrowser();
   const i18n = await fresh();
   // host live signal over ?lang= at load
@@ -464,17 +492,15 @@ test("dict/index exports RU, EN and AREAS with the eight area modules", async ()
   assert.deepEqual(Object.keys(AREAS), ["core", "errors", "projects", "landing", "graph", "model", "connectors", "screens"]);
 });
 
-test("D-50/D-11: no language control, no language storage and no LanguageBadge in ui-v2", async () => {
+test("browser language control is global and absent inside DeGram", async () => {
+  const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  const store = await readFile(new URL("../src/i18n/index.js", import.meta.url), "utf8");
+  assert.match(app, /!isDegramHost\(\) && \(/);
+  assert.match(app, /<Select[\s\S]*?chooseBrowserLang\(event\.target\.value\)/);
+  assert.match(store, /if \(!isLang\(lang\) \|\| isDegramHost\(\)\) return;/);
+  assert.match(store, /BROWSER_LANG_KEY = "dgv2_lang"/);
   const files = await walk(SRC_DIR);
   assert.deepEqual(files.filter((file) => /LanguageBadge/i.test(file)), []);
-  for (const file of files.filter((f) => /\.(js|jsx|css)$/.test(f))) {
-    const text = await readFile(file, "utf8");
-    assert.doesNotMatch(text, /dgv2_lang/, file);
-    assert.doesNotMatch(text, /\bEN\s*\|\s*RU\b/, file);
-    if (/[\\/]i18n[\\/]/.test(file)) {
-      assert.doesNotMatch(text, /localStorage|sessionStorage|document\.cookie/, file);
-    }
-  }
 });
 
 test("package.json adds no dependency for i18n and keeps the test script", async () => {

@@ -26,8 +26,8 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 
 ### i18n (WEBUI-01, WEBUI-02)
 - **D-06:** In-house i18n in `ui-v2/src/i18n/` with English text as the key, `LanguageProvider` and `useT()` at the App root, `Intl.PluralRules` for Russian; no new packages.
-- **D-07:** Language resolution in `ui-v2`: inside DeGram the host language wins (live `#degram-lang=` signal, else `?lang=` at load); outside DeGram the browser's primary language (`navigator.languages[0]`, else `navigator.language`; starts with `ru` → RU, else EN); no `dgv2_lang` storage and no `KEPT_KEYS` change (amended 2026-10-12 by D-50).
-- **D-08:** `ui-v2` renders no language control on any screen (the start-screen «EN | RU» badge is withdrawn by D-50); the resolved language sets `document.documentElement.lang`.
+- **D-07 (UAT amendment):** In DeGram the host language wins (live `#degram-lang=` signal, else `?lang=` at load), regardless of browser storage. In a plain browser, validated `dgv2_lang` wins over the primary browser language (`ru` prefix → RU, else EN); this presentation preference survives sign-out via `KEPT_KEYS`.
+- **D-08 (UAT amendment):** A global Русский / English dropdown appears in the upper-right on every plain-browser screen, never in DeGram. The old landing-only badge remains withdrawn. The resolved language sets `document.documentElement.lang`.
 - **D-09:** Server errors are translated by `code` through `describeError(err)` (`error.<CODE>` keys), falling back to server text; at minimum the 15 codes listed in RESEARCH Q4.
 - **D-10:** API-docs body content stays English; only its chrome is translated (assumption A4 adopted).
 - **D-11:** No server-side language profile; DeGram keeps its choice in its own renderer storage (`degram.display.language`, `locale-config.ts`) (assumption A6 adopted, amended by D-50).
@@ -83,7 +83,7 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 - **D-50:** The interface language of every element and every screen (DeGram and the embedded DG Web UI) is switched in one place only: DeGram Settings → Appearance → Language (`appearance-settings.tsx`, `LanguageSwitcher`) [owner 2026-10-12].
 - **D-51:** In the `degram` variant the Language switcher offers only «Русский» (`ru`) and «English» (`en`); other bundled, plugin or backend locales are not listed, and a stored other locale is coerced to English on load [owner 2026-10-12].
 - **D-52:** A language change in DeGram reaches the open DG page live, without reload, through a new host signal fragment `#degram-lang=ru|en` (allowlisted in `dg-view.ts` `signal` and `ui-v2` `parseHostSignal`), and `setLocale` keeps `&lang=` for later full loads.
-- **D-53:** A DG Web UI opened in a plain browser outside DeGram has no language control and follows the browser language (recommendation adopted under the owner instruction; owner may redirect).
+- **D-53 (redirected by owner during UAT):** A DG Web UI opened in a plain browser has its own global language dropdown and persists a valid choice; browser language is the fallback. DeGram's embedded page has no dropdown and continues to follow its Settings language.
 - **D-54:** The `degram` variant RU catalog is complete for every surface DeGram shows (existing `catalog-completeness.test.ts` pattern), so switching to «Русский» leaves no English text in visible DeGram chrome apart from the D-13 proper nouns.
 
 ### Working tree hygiene

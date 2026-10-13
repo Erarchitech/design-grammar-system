@@ -96,7 +96,7 @@ Accent reserved for (explicit; nothing else):
 4. Existing selected-region highlight on the landing ring (unchanged).
 
 Explicit non-uses:
-- `ui-v2` has no language control (D-08), so no language-related color is declared here. The DeGram language setting follows DeGram's own styling (Surface 1).
+- The browser-only `ui-v2` language dropdown uses the existing `Select` colors; no new language-specific accent. The DeGram language setting follows DeGram's own styling (Surface 1).
 - Web UI connector status stays monochrome: `StatusDot` ink (`--status-pass`) when On, `--status-base` gray when Off, opacity 0.35 for never connected. «Вкл»/«Выкл» text next to the dot in `--text-primary`/`--text-muted`.
 - DeGram-hosted connectors table only: «Вкл» uses `--status-on` (#2e9e5b light / #4cc77f dark) dot, «Выкл» keeps its existing red dot (unchanged from 1301-40; hosted exception documented in `colors.css`).
 - Warning/info hues (`--color-warning`, `--color-info`) stay SHACL-only; not used here.
@@ -108,7 +108,7 @@ Explicit non-uses:
 
 | Screen | Primary visual anchor | Supporting hierarchy |
 |--------|----------------------|----------------------|
-| Landing | The hero title «Design Grammars.» / «Грамматика.» (Michroma, centre of the ring); region labels are the secondary layer, summaries the tertiary (muted mono). The landing carries no language control, so nothing competes with the hero | hero title → region labels → summary lines → hint |
+| Landing | The hero title «Design Grammars.» / «Грамматика.» (Michroma, centre of the ring); region labels are the secondary layer, summaries the tertiary (muted mono). The landing itself has no language control; the browser-only global dropdown floats above all layers | hero title → region labels → summary lines → hint |
 | ProjectsScreen | The Members panel (first and visually heaviest `Panel`: the member rows with their role Selects). The admin-only «Project settings» panel sits below it as a secondary surface, same width, same `Panel` styling, no accent | project tiles → Members panel → Project settings panel |
 | ConnectorsScreen | The connector card header (name + status dot + On/Off); the access line and grant form are secondary | card header → status/count/access lines → admin form |
 
@@ -290,7 +290,7 @@ Removed copy (must no longer appear in `ui-v2/src`): «Create token», «Revoke 
 
 ### 1. Language setting in DeGram (WEBUI-01, D-50..D-54) — component repo `apps/degram/apps/desktop`
 
-The ONLY language control in the product. It is a contract for the component repo; it follows DeGram's existing settings styling (Tailwind / DeGram tokens, `Button variant="outline" size="sm"` trigger, `Popover` menu), NOT `ui-v2` tokens. No new component is created.
+The only language control inside DeGram. A later owner UAT amendment adds a separate global dropdown only to DG Web UI opened in a plain browser. This DeGram control follows existing settings styling (Tailwind / DeGram tokens, `Button variant="outline" size="sm"` trigger, `Popover` menu), NOT `ui-v2` tokens. No new DeGram component is created.
 
 - **Location:** Settings → Appearance → Language, the existing row in `src/app/settings/appearance-settings.tsx` rendering `LanguageSwitcher` (`src/components/language-switcher.tsx`). Trigger (existing): Globe icon + endonym of the current language + chevron; menu is the existing `Popover` (`w-56`, `align="end"`).
 - **Options (D-51):** in the `degram` variant the list contains exactly two entries: «Русский» (`ru`) then «English» (`en`). Order: Русский first, English second **[rec]** (owner's order; the switcher renders `languageOptions()` in array order without re-sorting, so the degram-variant filter returns `['ru', 'en']` in that order). Labels are endonyms and never translated. Each row keeps the existing layout: endonym (truncate, flex-1), mono code `RU` / `EN`, selected check mark; the selected row is `font-medium`. Other bundled, plugin-registered or backend locales are not listed.
@@ -302,10 +302,10 @@ The ONLY language control in the product. It is a contract for the component rep
 - **State coverage:** the DG page re-renders in place on `#degram-lang`; at most one frame of the previous language is acceptable (no reload, no blank, no fade); if the DG view is not shown at switch time, nothing is sent and the next load carries `&lang=`.
 - **Accessibility:** inherited from the existing switcher (`aria-label` = `t.language.switchTo`, `aria-expanded`, cmdk listbox roles); do not add a separate announcement.
 
-### 1b. `ui-v2` language resolution (no control, D-07, D-08, D-53)
+### 1b. `ui-v2` language resolution (D-07, D-08, D-53, owner UAT amendment)
 
-- `ui-v2` renders no language control on any screen, including the landing; nothing is added next to the theme toggle and there is no top-right element. No `dgv2_lang` key, no `KEPT_KEYS` change, no persistence of language in `ui-v2`.
-- Resolution order: inside DeGram (`isDegramHost()`) the host language wins: live `#degram-lang=` signal, else `?lang=` at load; outside DeGram (plain browser) the browser language: the primary browser language (`navigator.languages[0]`, else `navigator.language`) starting with `ru` gives RU, otherwise EN (`["en-US","ru"]` → EN). Values outside `ru` / `en` are never reflected; default EN.
+- In a plain browser only, a global native `Select` appears in the upper-right above every screen layer, including the landing. Options: Русский then English. The accessible label is «Язык интерфейса» / “Interface language”. It is not shown inside DeGram; the former landing-only badge is not restored. The choice uses `dgv2_lang`, preserved by `KEPT_KEYS` during tenant cleanup.
+- Resolution order: inside DeGram (`isDegramHost()`) the host language wins: live `#degram-lang=` signal, else `?lang=` at load; the browser choice is ignored. Outside DeGram, a validated `dgv2_lang` choice wins over the primary browser language (`navigator.languages[0]`, else `navigator.language`), whose `ru` prefix gives RU and otherwise EN (`["en-US","ru"]` → EN). Unsupported choices are ignored; default EN. Storage access failure leaves a live choice until reload.
 - The resolved language sets `document.documentElement.lang`. On a live host signal the provider updates in place: all `t()` text re-renders without reload, canvas label text is redrawn and the landing layout re-measures the region labels (label widths change between EN and RU).
 
 ### 2. Landing summaries (WEBUI-05, D-18..D-24)
@@ -381,7 +381,7 @@ Applicable state considerations resolved: 24 covered, 4 backstop, 0 unresolved (
 | populated | DeGram Language switcher, options | ✅ covered | The `degram` variant lists exactly two options, «Русский» then «English» (endonyms), with the current one checked; no other locale appears, the search box is hidden, and a stored other locale is coerced to English on load |
 | populated | Live switch with the DG page open | ✅ covered | Selecting a language applies at once to DeGram chrome and, through `#degram-lang=ru|en`, to the open DG page without reload; no confirm and no success toast |
 | empty | DG view hidden at switch time | ✅ covered | Nothing is signaled while the DG view is not shown; the next DG load carries `&lang=` and opens in the current language |
-| populated | `ui-v2` in a plain browser (outside DeGram) | ✅ covered | No control is rendered; the primary browser language starting with `ru` gives RU, otherwise EN; no storage involved |
+| populated | `ui-v2` in a plain browser (outside DeGram) | ✅ covered | A global upper-right dropdown chooses Русский / English; validated `dgv2_lang` persists across reload/sign-out and wins over the primary browser language; unavailable storage leaves the live choice active until reload |
 | loading | Live switch re-render of the DG page | 🧪 backstop | Held-out visual check in the next DeGram release (0.1.12): the page re-renders in place with at most one frame of the previous language, no reload or blank flash |
 | overflow | Connectors screen card list and granted-access list | ✅ covered | Both lists grow with the page, as today; no cap and no inner scroll |
 | empty / loading / error | DeGram-hosted connectors table | ✅ covered | Existing hosted-table empty, loading and error rendering is unchanged; this phase only removes «Создать токен» and adds the caption; the existing hosted-table tests stay green |
@@ -414,7 +414,7 @@ Applicable state considerations resolved: 24 covered, 4 backstop, 0 unresolved (
 | Panels | `Panel` | none |
 | Status text/dot | existing `StatusDot` in `ConnectorsScreen` | none |
 | Grant form | `Select`, `Button` | none |
-| Language setting | existing DeGram `LanguageSwitcher` in `appearance-settings.tsx` (component repo); degram-variant option filter | none in `ui-v2` (no `LanguageBadge`, no control); `ui-v2` only gets the host-language reader (D-07) |
+| Language setting | existing DeGram `LanguageSwitcher` in `appearance-settings.tsx` (component repo); degram-variant option filter | plain-browser `ui-v2` uses a global existing `Select`; embedded DeGram uses only the host-language reader (D-07), no `LanguageBadge` |
 | Summary line | `.dgl-region-label` | `.dgl-region-summary` CSS rule (6 declarations) |
 | Visually hidden live region | inline style `{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}` | none |
 
