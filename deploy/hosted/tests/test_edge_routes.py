@@ -75,6 +75,32 @@ class EdgeFixtureMachineTests(unittest.TestCase):
         self.assertIn("stage=$stage", script)
         self.assertNotIn("message=$_.Exception.Message", script)
 
+    def test_validation_process_reports_real_exit_code_with_redirection(self):
+        powershell = shutil.which("powershell.exe")
+        if not powershell:
+            self.skipTest("Windows PowerShell required for this Windows fixture regression")
+        edge = Path(__file__).resolve().parents[1] / "edge"
+        script = (edge / "Run-Edge-Test.ps1").read_text(encoding="utf-8")
+        start = script.index("function Invoke-CheckedProcess(")
+        end = script.index("function Request(", start)
+        function = script[start:end]
+        with tempfile.TemporaryDirectory(prefix="dg-exit-repro-") as directory:
+            probe = Path(directory) / "probe.ps1"
+            out = Path(directory) / "out.txt"
+            err = Path(directory) / "err.txt"
+            probe.write_text("$ErrorActionPreference = 'Stop'\n" + function +
+                             "$code = Invoke-CheckedProcess $env:ComSpec @('/c', 'echo Valid configuration') " +
+                             "'" + str(out).replace("'", "''") + "' '" +
+                             str(err).replace("'", "''") + "'\n" +
+                             "if ($code -ne 0) { throw 'exit-code-not-zero' }\n" +
+                             "Write-Output 'VALIDATION_EXIT_OK'\n", encoding="utf-8")
+            result = subprocess.run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass",
+                                     "-File", str(probe)], capture_output=True, text=True,
+                                    encoding="utf-8", errors="replace", timeout=20, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("VALIDATION_EXIT_OK", result.stdout)
+            self.assertIn("Valid configuration".encode("utf-16-le"), out.read_bytes())
+
     def test_fixture_preflight_reaches_loopback_assertion(self):
         powershell = shutil.which("powershell.exe")
         if not powershell:

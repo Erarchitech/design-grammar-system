@@ -23,6 +23,15 @@ function Assert-Result([string]$name, [bool]$ok) {
 function Hash-File([string]$name) {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $root $name)).Hash.ToLowerInvariant()
 }
+function Invoke-CheckedProcess([string]$executable, [string[]]$arguments, [string]$stdout, [string]$stderr) {
+    # PowerShell 5.1 may return $null ExitCode for Start-Process -PassThru
+    # with RedirectStandardOutput/RedirectStandardError even after WaitForExit.
+    # Native invocation preserves $LASTEXITCODE; keep stdout/stderr in fixture files.
+    $global:LASTEXITCODE = $null
+    & $executable @arguments 1> $stdout 2> $stderr
+    if ($null -eq $LASTEXITCODE) { throw 'native process produced no exit code' }
+    return [int]$LASTEXITCODE
+}
 function Request([string]$hostName, [string]$method, [string]$path, [string]$extra) {
     Assert-Time
     $tcp = New-Object System.Net.Sockets.TcpClient
@@ -124,13 +133,10 @@ try {
     [void](New-Item -ItemType Directory -Path $work)
     $config = Join-Path $work 'Caddyfile'
     [System.IO.File]::WriteAllText($config, $source, (New-Object System.Text.UTF8Encoding($false)))
-    # Validation is real Caddy; kill a hung validation by its own PID.
+    # Validation is real Caddy; native invocation preserves the exit code on PS 5.1.
     $stage = 'validate'
-    $validator = Start-Process -FilePath (Join-Path $root 'caddy.exe') -ArgumentList @('validate','--config',('"'+$config+'"'),'--adapter','caddyfile') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'validate.out') -RedirectStandardError (Join-Path $work 'validate.err')
-    try {
-        if (-not $validator.WaitForExit(15000)) { $validator.Kill(); throw 'validation timeout' }
-        Assert-Result 'caddy-validate' ($validator.ExitCode -eq 0)
-    } finally { if (-not $validator.HasExited) { $validator.Kill() } }
+    $validateCode = Invoke-CheckedProcess (Join-Path $root 'caddy.exe') @('validate','--config',$config,'--adapter','caddyfile') (Join-Path $work 'validate.out') (Join-Path $work 'validate.err')
+    Assert-Result 'caddy-validate' ($validateCode -eq 0)
     $stage = 'ports'
     foreach ($port in @(18443,18501,18502,18503)) {
         $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
