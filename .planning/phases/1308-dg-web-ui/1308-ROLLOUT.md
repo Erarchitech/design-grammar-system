@@ -78,4 +78,39 @@ Expected downtime: `data-service` and the UI on `:8080` restart, roughly 10–30
 
 ## Approval
 
-_Pending — owner reply "rebuild ok"._
+Owner reply 2026-10-13 ~22:26Z: **"rebuild ok"** (plan as written above, no changes).
+
+## Build (D-46) — 2026-10-13T22:26Z → 22:28Z
+
+Gate at the start: `git rev-parse HEAD:data-service HEAD:ui-v2` = `b787ca84…` / `9b2c05e4…`, equal to the Build plan (HEAD had moved to `26fa79f`, the commit of this record only).
+
+| Image | Built from | New image id | Container image id after `compose up --no-build --no-deps` | Started (UTC) |
+|---|---|---|---|---|
+| `design-grammar-system-data-service` | `C:/dgsrc1308/data-service` | `sha256:c1e018ee32566329483284e93508bbe167435228f80c830a42b311f18576d1e5` | same | 22:28:06Z |
+| `design-grammar-system-design-grammars` | `C:/dgsrc1308/ui-v2` | `sha256:3b790ebbb5a19f8b50f46b630c1ccc1a41c9bd272c8c616ba51b22d2e2c19445` | same | 22:28:06Z |
+
+`neo4j` was running throughout (start time unchanged, 14:04:16Z); no other container was touched.
+
+**Stale-image checks.** `docker exec data-service grep -c "auth/connector-session" /app/app.py` = 5. The served UI chunk `/assets/PropertiesTable-DmQGXmWU.js` (HTTP 200) contains «Свод правил проекта» once; no served JS asset contains «Грамматика.». The entry `index-DJyq5RIH.js` does not hold the string (it lives in the lazily loaded i18n chunk).
+
+## Probes (no credentials)
+
+| Request | `127.0.0.1:8000` | `127.0.0.1:8080/data-service` |
+|---|---|---|
+| `POST /auth/connector-session` | 401 `AUTH_REQUIRED` | 401 `AUTH_REQUIRED` |
+| `GET /projects/x/summary` | 401 `AUTH_REQUIRED` | 401 `AUTH_REQUIRED` |
+| `PUT /projects/x/members/u` | 401 `AUTH_REQUIRED` | 401 `AUTH_REQUIRED` |
+| `GET /` (UI on `:8080`) | — | 200 |
+
+## Test baseline (in-container)
+
+`docker exec data-service python -m pytest tests -q --continue-on-collection-errors` (a plain run stops at collection on `test_freeze_rule_ingest_prompts.py`, which reads the unmounted `/fixtures/golden/fixture.json`):
+
+**13 failed, 5249 passed, 53 skipped, 8 deselected, 296 errors** in 184 s.
+
+- **13 failed — all environmental, the known 13** (repo-root files not in the image): `test_cq3_attribute_of.py` ×10 (`/fixtures/golden/cq3-attribute-of/…`), `test_degram_relay.py` ×2 (`/spec/degram/OPERATIONAL-OUTCOMES.md`), `recognition_eval/test_repeat_sweep.py::test_llm_report_schema_has_no_shared_or_accuracy_fields` (`/tools/de01/report_schema.json`).
+- **296 errors — all environmental:** 295 setup errors `FileNotFoundError: 'dotnet'` in `test_evidence_raw_admission.py` (114), `test_gh_publish_wire.py` (71), `test_evidence_versions.py` (60), `test_evidence_unicode_containers.py` (50) — these tests drive the C# factory and need a .NET SDK, which the data-service image has never contained (Dockerfile unchanged since 2026-07-26; the tests were added 2026-09-30); plus 1 collection error (`/fixtures/golden/fixture.json`).
+- The pass count outgrew the recorded baseline (1130) because the suite has grown since it was recorded; the rule "every failure is environmental" holds.
+- **1308 test files** (28 files named in the 1308 plans and summaries, incl. `test_connector_session*.py`, `test_project_summary.py`, `test_member_roles.py`, `test_d49_store_cleanup.py`): **3234 passed, 3 skipped, 2 failed** — the two `test_degram_relay.py` environmental failures above.
+
+**No regression.** Running stack = committed HEAD sources; the uncommitted files listed in the Build plan are not in either image.
