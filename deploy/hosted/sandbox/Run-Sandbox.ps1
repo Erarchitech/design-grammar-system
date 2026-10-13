@@ -68,6 +68,24 @@ function Get-ServiceStates {
   }
   return $states
 }
+function Get-StartupFailureSignature {
+  # Only fixed labels from an allowlist enter the report; never pass through log text.
+  $signature = [ordered]@{ phase='unknown'; errorClass='unknown' }
+  try {
+    $log = Compose @('logs','--no-color','--no-log-prefix','--tail','120','data-service') 15
+    if ($log.code -ne 0) { return $signature }
+    $text = $log.text
+    if ($text.Length -gt 32768) { $text = $text.Substring($text.Length - 32768) }
+    if ($text -match 'ensure_spec_indexes') { $signature.phase = 'neo4j-availability' }
+    elseif ($text -match 'ensure_bootstrap_admin') { $signature.phase = 'bootstrap-admin' }
+    elseif ($text -match 'enforce_startup_secrets') { $signature.phase = 'secret-policy' }
+    elseif ($text -match 'self_registration_enabled|deployment_profile') { $signature.phase = 'deployment-profile' }
+    if ($text -match '(?m)^(?:[\w.]+\.)?(ServiceUnavailable|AuthError|RuntimeError|ValueError|FileNotFoundError|PermissionError|ModuleNotFoundError|OSError|ClientError):') {
+      $signature.errorClass = $Matches[1]
+    }
+  } catch {} # Diagnostics must not override cleanup or expose raw logs.
+  return $signature
+}
 function New-RandomSecret {
   $bytes = [byte[]]::new(48)
   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -187,6 +205,9 @@ try {
   if (-not $ready) {
     $report.checks.startDetail = 'readiness-timeout'
     $report.checks.startState = Get-ServiceStates
+    if ($report.checks.startState.'data-service'.status -ceq 'exited') {
+      $report.checks.startSignature = Get-StartupFailureSignature
+    }
     throw 'data-service not ready'
   }
   $stage = 'data-service-ingest'

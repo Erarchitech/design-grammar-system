@@ -90,6 +90,37 @@ class SandboxPackageTests(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_startup_log_signature_is_sanitized_and_bounded(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        start = script.index('function Get-StartupFailureSignature')
+        end = script.index('function New-RandomSecret', start)
+        helper = script[start:end]
+        samples = (
+            ('Traceback (most recent call last):\n  File "app.py", line 127, in lifespan\n'
+             '  File "app.py", line 1400, in ensure_spec_indexes\n'
+             'neo4j.exceptions.ServiceUnavailable: SECRET_DO_NOT_EMIT', 'neo4j-availability', 'ServiceUnavailable'),
+            ('  File "app.py", line 122, in lifespan\n'
+             '  File "auth.py", line 753, in ensure_bootstrap_admin\n'
+             'RuntimeError: SECRET_DO_NOT_EMIT', 'bootstrap-admin', 'RuntimeError'),
+            ('  File "app.py", line 121, in lifespan\n'
+             '  File "secrets_policy.py", line 137, in enforce_startup_secrets\n'
+             'RuntimeError: SECRET_DO_NOT_EMIT', 'secret-policy', 'RuntimeError'),
+            ('Secret-only log SECRET_DO_NOT_EMIT', 'unknown', 'unknown'),
+        )
+        for sample, expected_phase, expected_error in samples:
+            code = ("$ErrorActionPreference='Stop'; "
+                    "function Compose([string[]]$a,[int]$t) { "
+                    "return @{code=0;text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + __import__('base64').b64encode(sample.encode()).decode() + "'))} }; "
+                    + helper + "; $x=Get-StartupFailureSignature; "
+                    "$j=$x | ConvertTo-Json -Compress; "
+                    "if($x.phase -cne '" + expected_phase + "' -or $x.errorClass -cne '"
+                    + expected_error + "' -or $j.Contains('SECRET_DO_NOT_EMIT')){exit 2}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('$report.checks.startSignature = Get-StartupFailureSignature', script)
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'
