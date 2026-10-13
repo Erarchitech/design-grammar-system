@@ -26,33 +26,50 @@ FIXTURE = "\n".join(
 ) + "\n"
 
 
-def model(*files):
+HOSTED_INPUTS = {
+    "HOSTED_DG_HOST": "dg.example.invalid",
+    "HOSTED_SPECKLE_HOST": "speckle.example.invalid",
+    "HOSTED_OBJECT_HOST": "objects.example.invalid",
+    "HOSTED_EDGE_CIDR": "172.30.90.0/28",
+    "HOSTED_EDGE_IP": "172.30.90.2",
+    "HOSTED_EDGE_CERT_DIR": "C:/synthetic-edge-certs",
+}
+
+
+def compose_result(*files, interpolate=False, overrides=None):
     with tempfile.TemporaryDirectory(prefix="dg-compose-profile-") as directory:
         fixture = Path(directory) / "fixture.env"
-        fixture.write_text(FIXTURE, encoding="utf-8")
+        fixture.write_text(FIXTURE + "".join(
+            f"{key}={value}\n" for key, value in
+            ((HOSTED_INPUTS if overrides is None else overrides).items())
+        ), encoding="utf-8")
         command = [shutil.which("docker") or "docker", "compose", "--env-file", str(fixture)]
         for file in files:
             command.extend(("-f", str(file)))
-        command.extend(("config", "--no-interpolate", "--format", "json"))
-        # Keep cwd outside the repository so an implicit repo .env cannot be read.
-        # Remove inherited project and variable overrides without affecting PATH/Docker CLI.
+        command.extend(("config", "--format", "json"))
+        if not interpolate:
+            command.append("--no-interpolate")
+        # Keep cwd outside repository and scrub interpolation/Compose variables.
+        # Allow only OS/toolchain variables; no real .env or process credentials.
         environment = {
             key: value for key, value in os.environ.items()
-            if not key.startswith(("COMPOSE_", "OLLAMA_", "DG_", "NEO4J_", "N8N_", "SPECKLE_", "MINIO_", "DOCKER_"))
-            and key not in ("POSTGRES_PASSWORD", "LLM_MASTER_SECRET")
+            if key.upper() in ("PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "COMSPEC",
+                               "APPDATA", "LOCALAPPDATA", "PROGRAMFILES", "PROGRAMFILES(X86)",
+                               "PROGRAMDATA", "USERPROFILE", "HOME", "TEMP", "TMP", "TMPDIR")
         }
         environment["DOCKER_CONFIG"] = str(Path(directory) / "empty-docker-config")
         completed = subprocess.run(
             command, cwd=directory, env=environment, capture_output=True,
             text=True, check=False, timeout=30,
         )
-        if completed.returncode:
-            # Do not echo potentially expanded configuration or credentials.
-            raise AssertionError(
-                f"docker compose config failed (exit={completed.returncode}); "
-                "verify Compose availability, parser support and sanitized fixture"
-            )
-        return json.loads(completed.stdout)
+        return completed
+
+
+def model(*files):
+    completed = compose_result(*files)
+    if completed.returncode:
+        raise AssertionError("docker compose config failed; sanitized structural fixture")
+    return json.loads(completed.stdout)
 
 
 def dependencies(service):
