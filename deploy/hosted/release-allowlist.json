@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
+  "includeDegram": false,
   "policy": "Exact paths/globs only; archive a clean framework revision, expand patterns only against tracked paths, fail on missing input, unexpected output, symlink, forbidden component or unenumerated capability.",
   "manifestRequired": {
     "frameworkRevision": "exact full commit SHA (unresolved until 1308 freeze)",
-    "degramGitlink": "exact child SHA if included; otherwise explicit null",
+    "degramGitlink": "null for this explicitly excluded component; exact gitlink if separately included",
     "files": "sorted exact relative file path to SHA-256 for every bundle file",
     "images": "every merged Compose service to repository@sha256 digest; built DG images included; unresolved pending build/registry provenance"
   },
@@ -13,6 +14,7 @@
     "bin", "obj", ".venv", "profiles", "personal-cv", "personal-graph"
   ],
   "inputs": [
+    {"path": "deploy/hosted/release-allowlist.json", "purpose": "self-contained source selection policy for freeze validation"},
     {"path": "docker-compose.yml", "purpose": "base service graph and build contexts"},
     {"path": "docker-compose.multi-user.yml", "purpose": "invite-only profile and internal port policy"},
     {"path": "docker-compose.hosted.yml", "purpose": "CPU hosted override with named mounts"},
@@ -64,8 +66,8 @@
     {"service": "hosted-edge", "source": "deploy/hosted/edge/Caddyfile", "target": "/etc/caddy/Caddyfile", "purpose": "read-only edge policy"}
   ],
   "unresolved": [
-    "Exact framework revision and optional DeGram gitlink after 1308/1301 freeze",
+    "Exact framework revision after 1308/1301 freeze; DeGram explicitly excluded in this candidate",
     "Every service image digest, including built neo4j, dg-reasoner, data-service, ui-v2; no registry/build provenance approved",
-    "Sandbox permission and actual runtime ingest/n8n file-read capability evidence"
+    "Owner scoped sandbox authorization exists for DESKTOP-OS4Q8CP; target access and actual runtime ingest/n8n file-read capability evidence remain blocked"
   ]
 }

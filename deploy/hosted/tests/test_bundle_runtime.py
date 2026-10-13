@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -38,10 +39,15 @@ class HostedBundleRuntimeTests(unittest.TestCase):
         for key in ("target", "compose_project", "fixtures", "resource_limits",
                     "network_limits", "cleanup", "approval_ref"):
             self.assertTrue(specification.get(key), f"BLOCKED: missing sandbox {key}")
+        self.assertEqual(set(specification["fixtures"]), {"deploy/hosted/ingest/README.md", "n8n/workflows/sandbox-file-read.json"})
         self.assertEqual(specification["approval_ref"], approval, "approval/sandbox mismatch")
         harness = ROOT / "deploy" / "hosted" / "tests" / "run_bundle_runtime.py"
+        self.assertEqual(specification["target"], "DESKTOP-OS4Q8CP", "wrong machine")
+        self.assertEqual(specification["compose_project"], "dg-hosted-1309-sandbox", "wrong project")
+        import platform
+        self.assertEqual(platform.node().upper(), "DESKTOP-OS4Q8CP", "BLOCKED: runtime must execute on authorized target")
         self.assertTrue(harness.is_file(), "BLOCKED: actual service integration harness absent")
-        result = subprocess.run(["python", str(harness), "--approval-ref", approval],
+        result = subprocess.run([sys.executable, str(harness), "--approval-ref", approval],
                                 cwd=ROOT, capture_output=True, text=True, timeout=300)
         self.assertEqual(result.returncode, 0, "actual authorized service harness failed (not static PASS)")
 

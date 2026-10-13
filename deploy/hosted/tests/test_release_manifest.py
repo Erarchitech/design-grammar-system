@@ -61,7 +61,7 @@ class ReleaseManifestTests(unittest.TestCase):
             # Targeted RED: missing assembler, not git setup or an import typo.
             self.assertTrue((HOSTED / "assemble.py").is_file(), "absent assembler: Task 2 must implement clean export assembly")
             allowlist = root / "allowlist.json"
-            allowlist.write_text(json.dumps({"schemaVersion": 1, "inputs": [
+            allowlist.write_text(json.dumps({"schemaVersion": 1, "includeDegram": False, "inputs": [
                 {"path": "sample.txt", "purpose": "synthetic export proof"}
             ]}), encoding="utf-8")
             bundle = root / "bundle"
@@ -69,10 +69,197 @@ class ReleaseManifestTests(unittest.TestCase):
                                      "--repo", str(source), "--revision", revision,
                                      "--allowlist", str(allowlist), "--output", str(bundle)],
                                     capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, "clean export assembly must succeed with resolved digests")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads((bundle / "manifest.json").read_text())["status"], "BLOCKED")
             self.assertEqual((bundle / "sample.txt").read_bytes(), b"committed fixture\n",
                              "dirty working-tree contents must not enter bundle")
             self.assertNotIn(b"dirty private", (bundle / "sample.txt").read_bytes())
+
+    def test_unexpected_source_suffix_in_recursive_ui_glob_rejected(self):
+        from test_helpers import fixture_repository, assemble
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, _ = fixture_repository(root)
+            ui = source / 'ui-v2' / 'src'
+            ui.mkdir(parents=True)
+            (ui / 'App.jsx').write_text('export default 1;')
+            (ui / 'secret.key').write_text('fixture only')
+            subprocess.run(['git', '-C', str(source), 'add', 'ui-v2/src'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'ui'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            self.assertNotEqual(assemble(source, revision, root / 'bundle', 'ui-v2/src/**/*').returncode, 0)
+
+    def test_forbidden_private_filename_rejected(self):
+        from test_helpers import fixture_repository, assemble
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, _ = fixture_repository(root)
+            (source / '.env.production').write_text('fixture only')
+            subprocess.run(['git', '-C', str(source), 'add', '.env.production'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'env'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            self.assertNotEqual(assemble(source, revision, root / 'bundle', '.env.production').returncode, 0)
+
+    def test_untrusted_allowlist_inputs_rejected(self):
+        from test_helpers import fixture_repository, assemble
+        for path in ("../secret.txt", ".secrets/private.txt", "sample.txt/../secret.txt"):
+            with self.subTest(path=path), tempfile.TemporaryDirectory() as temp:
+                source, revision = fixture_repository(Path(temp))
+                result = assemble(source, revision, Path(temp) / "bundle", path)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((Path(temp) / "bundle").exists())
+
+    def test_symlink_source_and_unexpected_private_output_rejected(self):
+        from test_helpers import fixture_repository, assemble, validator
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root, symlink=True)
+            self.assertNotEqual(assemble(source, revision, root / "bad", "link.txt").returncode, 0)
+            bundle = root / "bundle"
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            (bundle / "Publications").mkdir()
+            (bundle / "Publications" / "private.txt").write_text("private")
+            self.assertNotEqual(validator(bundle).returncode, 0)
+
+    def test_missing_digest_and_floating_images_rejected(self):
+        from test_helpers import fixture_repository, assemble, validator
+        import hashlib
+        sys.path.insert(0, str(HOSTED))
+        from validate_manifest import validate
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            bundle = root / "bundle"
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            self.assertNotEqual(validator(bundle).returncode, 0)  # blocked draft is never release
+            manifest = json.loads((bundle / "manifest.json").read_text())
+            for filename, text in (
+                ("docker-compose.yml", "services:\n  service:\n    image: fixture:latest\n"),
+                ("docker-compose.multi-user.yml", "services: {}\n"),
+                ("docker-compose.hosted.yml", "services: {}\n"),
+            ):
+                (bundle / filename).write_text(text)
+                manifest["files"][filename] = hashlib.sha256((bundle / filename).read_bytes()).hexdigest()
+            manifest["files"] = dict(sorted(manifest["files"].items()))
+            policy_path = bundle / 'deploy' / 'hosted' / 'release-allowlist.json'
+            policy_path.parent.mkdir(parents=True)
+            policy_path.write_text(json.dumps({'schemaVersion': 1, 'includeDegram': False,
+                'inputs': [{'path': name, 'purpose': 'synthetic'} for name in manifest['files']] +
+                          [{'path': 'deploy/hosted/release-allowlist.json', 'purpose': 'policy'}]}))
+            manifest['files'][policy_path.relative_to(bundle).as_posix()] = hashlib.sha256(policy_path.read_bytes()).hexdigest()
+            manifest["files"] = dict(sorted(manifest["files"].items()))
+            manifest["status"] = "FROZEN"
+            manifest["unresolved"] = []
+            manifest["imageProvenance"] = {"service": {"registryDigest": "fixture:latest"}}
+            manifest["images"] = {}
+            (bundle / "manifest.json").write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "missing/extra service image digest"):
+                validate(bundle)
+            manifest["images"] = {"service": "fixture:latest"}
+            (bundle / "manifest.json").write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "mutable or missing image digest"):
+                validate(bundle)
+
+    def test_repo_root_mount_and_secret_logs_rejected(self):
+        from test_helpers import fixture_repository, assemble, validator
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            bundle = root / "bundle"
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            (bundle / "docker-compose.yml").write_text("services:\n  x:\n    image: fixture:latest\n    volumes:\n      - .:/mnt/repo:ro\n")
+            self.assertNotEqual(validator(bundle).returncode, 0)
+            (bundle / "docker-compose.yml").unlink()
+            manifest = json.loads((bundle / "manifest.json").read_text())
+            manifest["logs"] = "password=known-secret-value"
+            (bundle / "manifest.json").write_text(json.dumps(manifest))
+            self.assertNotEqual(validator(bundle, "--allow-blocked").returncode, 0)
+            self.assertNotIn("known-secret-value", validator(bundle, "--allow-blocked").stderr)
+
+    def test_broad_mount_rejected_even_when_manifest_hash_updated(self):
+        from test_helpers import fixture_repository, assemble, validator
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            bundle = root / "bundle"
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            # Three minimal Compose files: parser inspects actual effective model.
+            for filename, content in (
+                ("docker-compose.yml", "services:\n  data-service:\n    image: fixture:latest\n    volumes:\n      - .:/mnt/repo:ro\n"),
+                ("docker-compose.multi-user.yml", "services: {}\n"),
+                ("docker-compose.hosted.yml", "services: {}\n"),
+            ):
+                (bundle / filename).write_text(content)
+            manifest = json.loads((bundle / "manifest.json").read_text())
+            for filename in ("docker-compose.yml", "docker-compose.multi-user.yml", "docker-compose.hosted.yml"):
+                manifest["files"][filename] = hashlib.sha256((bundle / filename).read_bytes()).hexdigest()
+            manifest["files"] = dict(sorted(manifest["files"].items()))
+            (bundle / "manifest.json").write_text(json.dumps(manifest))
+            self.assertNotEqual(validator(bundle, "--allow-blocked").returncode, 0)
+
+    def test_dirty_selection_policy_is_rejected(self):
+        from test_helpers import fixture_repository
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, _ = fixture_repository(root)
+            policy_path = source / 'deploy/hosted/release-allowlist.json'
+            policy_path.parent.mkdir(parents=True)
+            policy = {'schemaVersion': 1, 'includeDegram': False, 'inputs': [
+                {'path': 'sample.txt', 'purpose': 'fixture'},
+                {'path': 'deploy/hosted/release-allowlist.json', 'purpose': 'policy'}]}
+            policy_path.write_text(json.dumps(policy))
+            subprocess.run(['git', '-C', str(source), 'add', 'deploy/hosted/release-allowlist.json'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'policy'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            policy['inputs'].append({'path': 'missing.txt', 'purpose': 'dirty'})
+            policy_path.write_text(json.dumps(policy))
+            result = subprocess.run([sys.executable, str(HOSTED / 'assemble.py'), '--repo', str(source),
+                '--revision', revision, '--allowlist', str(policy_path), '--output', str(root / 'bundle')],
+                capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse((root / 'bundle').exists())
+
+    def test_allowlisted_policy_rejects_extra_rehashed_file(self):
+        from test_helpers import fixture_repository, assemble, validator
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            policy_path = source / 'deploy/hosted/release-allowlist.json'
+            policy_path.parent.mkdir(parents=True)
+            policy_path.write_text(json.dumps({'schemaVersion': 1, 'includeDegram': False,
+                'inputs': [{'path': 'sample.txt', 'purpose': 'fixture'},
+                           {'path': 'deploy/hosted/release-allowlist.json', 'purpose': 'policy'}]}))
+            subprocess.run(['git', '-C', str(source), 'add', 'deploy/hosted/release-allowlist.json'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'policy'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            bundle = root / 'bundle'
+            result = subprocess.run([sys.executable, str(HOSTED / 'assemble.py'), '--repo', str(source),
+                '--revision', revision, '--allowlist', str(policy_path), '--output', str(bundle)],
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(validator(bundle, '--allow-blocked').returncode, 0)
+            (bundle / 'extra.txt').write_text('fixture')
+            manifest = json.loads((bundle / 'manifest.json').read_text())
+            manifest['files']['extra.txt'] = hashlib.sha256((bundle / 'extra.txt').read_bytes()).hexdigest()
+            manifest['files'] = dict(sorted(manifest['files'].items()))
+            (bundle / 'manifest.json').write_text(json.dumps(manifest))
+            self.assertNotEqual(validator(bundle, '--allow-blocked').returncode, 0)
+
+    def test_extra_unlisted_regular_file_rejected(self):
+        from test_helpers import fixture_repository, assemble, validator
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            bundle = root / "bundle"
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            (bundle / "extra.txt").write_text("unexpected")
+            self.assertNotEqual(validator(bundle, "--allow-blocked").returncode, 0)
 
     def test_manifest_validator_requires_real_file_and_image_digests(self):
         # Targeted RED until Task 2; schema must contain revision, optional gitlink,
