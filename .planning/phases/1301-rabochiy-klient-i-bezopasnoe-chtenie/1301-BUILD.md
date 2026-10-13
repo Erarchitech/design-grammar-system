@@ -546,3 +546,21 @@ Probes (no credentials used; run against `127.0.0.1:8000`): `POST /connector-acc
 Artifact checks (all passed): `app.asar.unpacked\dist\electron-main.mjs` contains `com.erarchitech.degram`, `degram-select`, `host=degram`, `showStart`, `session-exchange`, `GRANT_REQUIRED`, `degram-new-session`, `degram-state=`, the new `degram-project` and `ignoreProfile` (scope-profile preference guard), and the G-25 gate message `refused to start the backend of a scope profile`; it does **not** contain `auth/degram/exchange`; `resources\revit-mcp\extension.json` `"default_enabled": "True"`, `main.py` `json_body`, `revit_mcp\views.py` `urllib.parse`; `resources\revit-mcp\tests` absent. The HostedConnectorsTable code lives in the DG UI (`ui-v2`, served by the rebuilt `design-grammars` container), not in the installer: its presence is the bundle check above (the minified bundle keeps strings, not component names).
 
 Built only: not installed, DeGram not launched, the installed Hermes profile untouched, nothing pushed. Installation and live UAT are the owner's checkpoint; guide: `1301-0.1.11-TEST-GUIDE.md`.
+
+## 1308 UAT build: Projects sidebar row and single language setting (2026-10-13)
+
+Owner-authorized local build of `win-unpacked` for the Phase 1308 group F UAT (DeGram sidebar «Projects», Settings → Appearance → Language). Component `c476c236ad04be8aa28f42410ed20f2e1372858e` (`degram/phase-1308`: `5f1d3aa8` 1308-17 + `c476c236` 1308-21), on the fork and pinned by the framework gitlink (`workspace.py verify` exit 0). `apps/revit-mcp` unchanged at `d8f0f24d`. The builder config still sets version `0.1.11`, so the 0.1.11 artifacts of `7edf519c` were renamed first, not overwritten: `release\DeGram-Setup-0.1.11-7edf519c.exe` (+ `.blockmap`) and `release\win-unpacked-0.1.11-7edf519c\`.
+
+**Build.** `D:\dgb\src` (clean clone) fetched from the local component repo and detached at `c476c236`, 0 `git status` entries before and after; ReadOnly cleared on `apps\desktop\build\agent-payload`; `D:\dgb\run-build.sh` with the scrubbed environment and `DEGRAM_REVIT_MCP_SOURCE='D:\dgb\revit-mcp-src'` (clone at `d8f0f24d`, clean). Build 2026-10-13T21:23:06Z → 21:35:19Z, exit 0. D: free after the build: 15 GB.
+
+| Item | Value |
+|---|---|
+| Unpacked app | `D:\dgb\src\apps\desktop\release\win-unpacked\DeGram.exe` (1.7 GB, 32,136 files) |
+| Unpacked `app.asar` SHA-256 | `ea34886f3aff6d066b4194fdd92b8e674e80734b48dfdac3545cc24b143c9d62` |
+| Installer (by-product, same version name) | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.11.exe`, 490,542,483 bytes, SHA-256 `9fbe6bb8dc9191a3315dc2be7a64abb629895f5c915da543aafb6728f215440f` |
+| `resources\install-stamp.json` | commit `c476c236ad04be8aa28f42410ed20f2e1372858e`, `dirty: false` |
+| ProductVersion / ProductName / CompanyName | `0.1.11.0` / `DeGram` / `Erarchitech` |
+
+Artifact checks (all passed): `app.asar.unpacked\dist\electron-main.mjs` contains `com.erarchitech.degram`, `degram-select`, `host=degram`, `showStart`, `session-exchange`, `GRANT_REQUIRED`, `degram-new-session`, `degram-state=`, `degram-project`, `ignoreProfile` and the new `degram-lang`; it does **not** contain `auth/degram/exchange`. The packaged `app.asar` (extracted to a temp dir on D:, then deleted) has the `degram-go=(landing|graph|model|connectors|projects)` fragment (1308-17), `degram-lang`, «Русский», «Проекты» and spot-checked RU catalog strings added in `c476c236` («Подключить», «Удаление…»). `resources\revit-mcp\extension.json` `"default_enabled": "True"`; `resources\revit-mcp\tests` absent.
+
+This supersedes the 1308-21 in-tree test package (`apps/degram/apps/desktop/release/win-unpacked`, dirty stamp `5f1d3aa8`) for UAT. Built only: not installed, DeGram not launched, the installed Hermes profile untouched, nothing pushed. D-54 completeness test still 1 failed / 65 passed (deferred to the in-app review).
