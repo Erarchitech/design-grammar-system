@@ -66,6 +66,30 @@ class SandboxPackageTests(unittest.TestCase):
                                     capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_start_failure_reports_only_allowlisted_container_state(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        self.assertIn("$report.checks.startDetail = 'compose-up-nonzero'", script)
+        self.assertIn("$report.checks.startDetail = 'readiness-timeout'", script)
+        self.assertIn("$report.checks.startState = Get-ServiceStates", script)
+        self.assertNotIn("$report.checks.startState = $up.text", script)
+        start = script.index('function Get-ServiceStates')
+        end = script.index('function New-RandomSecret', start)
+        helper = script[start:end]
+        # The diagnostic is exercised with mocked Docker responses; no Docker runs here.
+        code = ("$ErrorActionPreference='Stop'; "
+                "function Compose([string[]]$a,[int]$t) { return @{code=0;text='abc123def456'} }; "
+                "function Invoke-Bounded([string[]]$a,[int]$t) { "
+                "return @{code=0;text='{\"Status\":\"exited\",\"ExitCode\":137,\"OOMKilled\":true,\"Error\":\"SECRET_DO_NOT_EMIT\"}'} }; "
+                + helper + "; $x=Get-ServiceStates; "
+                "if($x.'neo4j'.status -cne 'exited' -or $x.'neo4j'.exitCode -ne 137 "
+                "-or -not $x.'neo4j'.oomKilled){exit 2}; "
+                "$j=$x | ConvertTo-Json -Depth 5; "
+                "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
+                "if($x.'data-service'.status -cne 'exited'){exit 4}")
+        result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'

@@ -45,6 +45,29 @@ function Assert-Ok($value, [string]$message) { if (-not $value) { throw $message
 function Compose([string[]]$Arguments, [int]$Seconds) {
   return Invoke-Bounded (@('compose','-p',$project,'-f',$compose) + $Arguments) $Seconds
 }
+function Get-ServiceStates {
+  # Inspect only fixed Docker state fields; never serialize CLI text or container logs.
+  $states = [ordered]@{}
+  foreach ($service in @('neo4j','data-service')) {
+    $state = [ordered]@{ status='unknown'; exitCode=$null; oomKilled=$false }
+    try {
+      $found = Compose @('ps','--all','-q',$service) 15
+      if ($found.code -eq 0 -and -not $found.text.Trim()) {
+        $state.status = 'absent'
+      } elseif ($found.code -eq 0 -and $found.text.Trim() -match '^[0-9a-fA-F]{12,64}$') {
+        $inspection = Invoke-Bounded @('inspect','--format','{{json .State}}',$found.text.Trim()) 15
+        if ($inspection.code -eq 0) {
+          $raw = $inspection.text | ConvertFrom-Json
+          if ($raw.Status -cin @('created','running','restarting','exited','paused','dead')) { $state.status = $raw.Status }
+          if ($null -ne $raw.ExitCode -and [int]$raw.ExitCode -ge 0 -and [int]$raw.ExitCode -le 255) { $state.exitCode = [int]$raw.ExitCode }
+          $state.oomKilled = ($raw.OOMKilled -eq $true)
+        }
+      }
+    } catch {} # Diagnostics must not override the original stage or cleanup.
+    $states[$service] = $state
+  }
+  return $states
+}
 function New-RandomSecret {
   $bytes = [byte[]]::new(48)
   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -150,14 +173,22 @@ try {
   Assert-Ok ($built.code -eq 0) 'data-service build failed'
   $stage = 'service-start'
   $up = Compose @('up','-d','--no-build','neo4j','data-service') 300
-  Assert-Ok ($up.code -eq 0) 'sandbox start failed'
+  if ($up.code -ne 0) {
+    $report.checks.startDetail = 'compose-up-nonzero'
+    $report.checks.startState = Get-ServiceStates
+    throw 'sandbox start failed'
+  }
   $ready = $false
   for ($i=0; $i -lt 24; $i++) {
     $check = Compose @('exec','-T','data-service','python','-c','import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/auth/options",timeout=3)') 10
     if ($check.code -eq 0) { $ready = $true; break }
     Start-Sleep -Seconds 5
   }
-  Assert-Ok ($ready) 'data-service not ready'
+  if (-not $ready) {
+    $report.checks.startDetail = 'readiness-timeout'
+    $report.checks.startState = Get-ServiceStates
+    throw 'data-service not ready'
+  }
   $stage = 'data-service-ingest'
   $probe = Compose @('exec','-T','data-service','python','/app/sandbox_probe.py') 120
   Assert-Ok ($probe.code -eq 0) 'data-service probe failed'
