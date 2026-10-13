@@ -59,7 +59,10 @@ def build(repo, revision, destination):
             raise ValueError('private selected path')
         if name.startswith('data-service/') and name.endswith('.py') and 'rotate_llm_master_secret' in name:
             raise ValueError('maintenance tool not permitted')
-    archive = subprocess.check_output(['git', '-C', str(repo), 'archive', '--format=tar', revision,
+    # Keep archive members byte-identical to committed blobs even when this
+    # Windows checkout has core.autocrlf=true (git archive otherwise emits CRLF).
+    archive = subprocess.check_output(['git', '-C', str(repo), '-c', 'core.autocrlf=input',
+                                       'archive', '--format=tar', revision,
                                        '--', *sorted(selected)])
     payload = {}
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:

@@ -32,6 +32,12 @@ class SandboxPackageTests(unittest.TestCase):
                 self.assertIn('n8n/workflows/sandbox-file-read.json', files)
                 self.assertIn('deploy/hosted/sandbox/Run-Sandbox.ps1', files)
                 self.assertIn('deploy/hosted/sandbox/compose.yaml', files)
+                for member in ('deploy/hosted/sandbox/compose.yaml',
+                               'deploy/hosted/sandbox/Run-Sandbox.ps1'):
+                    committed = subprocess.check_output(['git', '-C', str(ROOT),
+                                                          'show', f'{revision}:{member}'])
+                    self.assertEqual(archive.read(member), committed,
+                                     f'{member} must preserve exact committed bytes')
             verify = subprocess.run([*command, '--verify-only'], capture_output=True, text=True)
             self.assertEqual(verify.returncode, 0, verify.stderr)
 
