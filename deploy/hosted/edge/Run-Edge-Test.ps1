@@ -85,7 +85,7 @@ $server = {
     } finally { $listener.Stop() }
 }
 try {
-    Assert-Result 'named-machine' ($env:COMPUTERNAME -eq 'DESKTOP-0S4Q8CP')
+    Assert-Result 'named-machine' ($env:COMPUTERNAME -eq 'DESKTOP-OS4Q8CP')
     Assert-Result 'windows-powershell-5-or-newer' ($PSVersionTable.PSVersion.Major -ge 5)
     foreach ($entry in $expected.GetEnumerator()) { Assert-Result ('integrity-' + $entry.Key) ((Hash-File $entry.Key) -eq $entry.Value) }
     foreach ($name in $names) {

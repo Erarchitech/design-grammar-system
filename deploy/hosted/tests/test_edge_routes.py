@@ -51,6 +51,19 @@ def check_hosted(model):
         raise ValueError("internal S3 endpoint drift")
 
 
+class EdgeFixtureMachineTests(unittest.TestCase):
+    def test_owner_report_machine_matches_package_guard(self):
+        edge = Path(__file__).resolve().parents[1] / "edge"
+        # Owner's preflight report is the source of truth: O, not zero, after the hyphen.
+        actual = "DESKTOP-OS4Q8CP"
+        mistaken = "DESKTOP-0S4Q8CP"
+        for name in ("Run-Edge-Test.ps1", "build_test_zip.py", "TEST-PACKAGE.md"):
+            with self.subTest(name=name):
+                text = (edge / name).read_text(encoding="utf-8")
+                self.assertIn(actual, text)
+                self.assertNotIn(mistaken, text)
+
+
 class HostedInterpolationTests(unittest.TestCase):
     def render(self, overrides=None):
         result = compose_result(BASE, MULTI_USER, HOSTED, interpolate=True, overrides=overrides)
