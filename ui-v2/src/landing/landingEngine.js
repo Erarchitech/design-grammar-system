@@ -4,11 +4,13 @@
 // beneath, region labels, hint) are styled ONLY here — their React JSX carries
 // classes, not style props, so re-renders never clobber engine-owned values.
 //
-// Opening sequence (owner-tuned 2026-10-08 in the landing motion tuner): a
-// bright current runs once round the ring clockwise from the top, the ring
-// lights up behind it, and each region's node pops in — with the Graph
-// Viewer's arrival impulse — as the current passes it; its leader line draws
-// out and its label fades in. The hero words then fade in by opacity alone.
+// Opening sequence (owner-tuned in the landing motion tuner, 2026-10-08 and
+// 2026-10-13): the thinking sphere fades in at the centre, a bright current
+// leaves its rim for the ring and runs once along the crescent from tip to
+// tip, the ring lights up behind it, and each region's node pops in — with
+// the Graph Viewer's arrival impulse — as the current passes it; its leader
+// line draws out and its label fades in. The hero lines then assemble from
+// glyph fragments (AssembleText.jsx).
 
 const ANCH = [
   { key: "graph", ang: Math.PI * 1.06, amp: 0.95, sig: 0.3, out: 62 },
@@ -37,17 +39,42 @@ const RING = {
   speed: 1.4, // shimmer time scale
   drift: 0.2, // dot oscillation about its home angle
   breathing: 0.35, // each peak rises and falls on its own beat
-  leaderLen: 1.15
+  leaderLen: 1.15,
+  // Crescent (landing tuner, 2026-10-13): the ring is cut open at gapDir and its full circle mapped onto the
+  // remaining arc; thickness and brightness thin out towards the two tips.
+  closure: 0.8, // share of a full circle drawn
+  gapDir: (-40 * Math.PI) / 180, // the opening faces up and to the right
+  tipTaper: 0.93
+};
+// Thinking sphere that opens the sequence (landing tuner, 2026-10-13); the current then leaves its rim.
+const SPHERE = {
+  size: 0.2, // radius, × ring radius
+  fadeIn: 0.5, // s
+  hold: 1.4, // s before the current leaves the rim
+  radial: 0.4, // s for the current to reach the ring
+  fadeOut: 0.8 // s
 };
 const SEQ = {
-  start: -Math.PI / 2, // the current enters at the top
-  flow0: 0.25, // s before the current starts
+  start: -Math.PI / 2, // the current enters at the top of a closed ring
+  flow0: SPHERE.fadeIn + SPHERE.hold, // s before the current leaves the sphere
   loop: 1.0, // s for one turn of the ring
   reveal: 0.7, // rad of ring fading in behind the head
   labelFade: 1.0,
   textDelay: -0.1, // hero start relative to the current's end
   textFade: 1.0
 };
+
+const HERO_SUB_DELAY = 0.35; // s between the title's and the subtitle's assembly
+
+// Writes data-assemble only on change, so the per-frame hero pass never restarts a running CSS assembly.
+function setAssemble(el, v) {
+  if (!el) return;
+  if (v == null) {
+    if (el.hasAttribute("data-assemble")) el.removeAttribute("data-assemble");
+  } else if (el.getAttribute("data-assemble") !== v) {
+    el.setAttribute("data-assemble", v);
+  }
+}
 
 const ENV_BINS = 2048; // per-frame peak-envelope lookup table resolution
 const TAU = 6.283185307;
@@ -95,6 +122,20 @@ const easeSine = (v) => 0.5 - 0.5 * Math.cos(Math.PI * clamp01(v));
 const easeOut = (v) => 1 - Math.pow(1 - clamp01(v), 3);
 const wrap = (a) => ((a % TAU) + TAU) % TAU;
 
+// Ring shape. Peaks, dots and anchors keep their full-circle angles; an open ring maps that circle onto an arc
+// cut at gapDir, so the first tip is where the cut begins and the current runs from tip to tip.
+const isOpen = () => RING.closure < 0.999;
+const tipA = () => RING.gapDir + Math.PI * (1 - RING.closure);
+const mapA = (a) => (isOpen() ? tipA() + wrap(a - RING.gapDir) * RING.closure : a); // full-circle → screen angle
+const curStart = () => (isOpen() ? RING.gapDir : SEQ.start); // where the current enters, full-circle angle
+const travelA = (s) => (isOpen() ? tipA() + s * RING.closure : SEQ.start + s); // screen angle after s rad of travel
+// 1 opposite the opening, falling towards it.
+function taperAt(a) {
+  if (!RING.tipTaper) return 1;
+  const dc = Math.abs(wrap(a - RING.gapDir) / TAU - 0.5) * 2;
+  return 1 - RING.tipTaper * Math.pow(dc, 1.6);
+}
+
 // Peak envelope at angle a; tt drives the per-peak breathing.
 function envAt(a, tt, anchors = ANCH) {
   let e = RING.floor;
@@ -110,7 +151,7 @@ function envAt(a, tt, anchors = ANCH) {
 
 export default class LandingEngine {
   /**
-   * @param els {{canvas, heroTitle, heroL1, heroL2, heroBeneath, labels: Record<'graph'|'model'|'projects'|'aiengine'|'connectors'|'reasoner'|'apidocs', HTMLElement>, hint, heroForm}}
+   * @param els {{canvas, sphere, heroTitle, heroL1, heroL2, heroBeneath, labels: Record<'graph'|'model'|'projects'|'aiengine'|'connectors'|'reasoner'|'apidocs', HTMLElement>, hint, heroForm}}
    */
   constructor(els, regions = ANCH) {
     this.els = els;
@@ -237,15 +278,16 @@ export default class LandingEngine {
     for (const an of this.anchors) {
       const el = this.els.labels[an.key];
       const out = an.out * RING.leaderLen;
-      const dx = Math.cos(an.ang),
-        dy = Math.sin(an.ang);
+      const ang = mapA(an.ang);
+      const dx = Math.cos(ang),
+        dy = Math.sin(ang);
       const P = [cx + dx * R, cy + dy * R];
       const K = [cx + dx * (R + out), cy + dy * (R + out)];
       const right = dx >= 0;
       const tx = K[0] + (right ? 14 : -14);
       const hx = K[0] + (right ? 8 : -8);
       const base = "translate(" + tx + "px, " + K[1] + "px) translate(" + (right ? "0" : "-100%") + ", -50%)";
-      this._lls.push({ key: an.key, rel: wrap(an.ang - SEQ.start), P, K, hx, ty: K[1], right, base, el });
+      this._lls.push({ key: an.key, rel: wrap(an.ang - curStart()), P, K, hx, ty: K[1], right, base, el });
       this.pk[an.key] = P;
       if (el) {
         el.style.left = "0px";
@@ -261,9 +303,29 @@ export default class LandingEngine {
     this.setHeroPhase("hidden");
   }
   introTimes() {
-    const ring0 = SEQ.flow0;
+    const flow0 = SEQ.flow0; // the current leaves the sphere's rim
+    const ring0 = flow0 + SPHERE.radial; // and reaches the ring
     const end = ring0 + SEQ.loop;
-    return { ring0, end, text0: Math.max(ring0 + 0.2, end + SEQ.textDelay) };
+    return { flow0, ring0, end, text0: Math.max(ring0 + 0.2, end + SEQ.textDelay) };
+  }
+
+  // The thinking sphere at the centre: fades in, holds while the ring is dark, fades as the current leaves it.
+  drawSphere(it, TL, cx, cy, R) {
+    const el = this.els.sphere;
+    if (!el) return;
+    let o = 0;
+    if (Number.isFinite(it) && !this.hostConnecting) {
+      if (it < SPHERE.fadeIn) o = easeOut(it / SPHERE.fadeIn);
+      else if (it < TL.flow0 + 0.25) o = 1;
+      else o = 1 - easeSine((it - TL.flow0 - 0.25) / SPHERE.fadeOut);
+    }
+    const src = document.documentElement.dataset.theme === "dark" ? "/dg-think-dark.gif" : "/dg-think-light.gif";
+    if (o > 0 && el.getAttribute("src") !== src) el.setAttribute("src", src);
+    const S = R * SPHERE.size * 2.2;
+    el.style.width = S + "px";
+    el.style.height = S + "px";
+    el.style.transform = "translate(" + (cx - S / 2) + "px, " + (cy - S / 2) + "px) scale(" + (0.92 + 0.08 * o) + ")";
+    el.style.opacity = String(Math.max(0, o));
   }
 
   drawLanding(now, dt) {
@@ -296,11 +358,12 @@ export default class LandingEngine {
     const span = Math.max(1e-6, this._envMax - RING.floor);
 
     ctx.fillStyle = TH.ink;
+    const start = curStart();
     for (const p of this._parts) {
       const a = p.a + Math.sin(tt * 0.35 + p.oph) * p.osc * RING.drift;
       let vis = 1;
       if (revealing) {
-        vis = clamp01((headTravel - wrap(a - SEQ.start)) / SEQ.reveal);
+        vis = clamp01((headTravel - wrap(a - start)) / SEQ.reveal);
         if (vis <= 0) continue;
       }
       const e = env[Math.min(ENV_BINS - 1, ((wrap(a) / TAU) * ENV_BINS) | 0)];
@@ -308,19 +371,22 @@ export default class LandingEngine {
         Math.pow(Math.abs(Math.sin(a * 41 + p.w + tt * 0.1)), 3) * 0.62 +
         Math.pow(Math.abs(Math.sin(a * 13 - tt * 0.05 + p.w * 2)), 2) * 0.38;
       const disp = e * (0.22 + 0.78 * sp);
-      const rad = R + p.j * RING.thickness + disp * p.u * R * RING.peakHeight;
+      const tf = taperAt(a);
+      const rad = R + (p.j * RING.thickness + disp * p.u * R * RING.peakHeight) * tf;
       const en = clamp01((e - RING.floor) / span);
       const bright =
         1 - RING.brightContrast + RING.brightContrast * (0.12 + 0.88 * Math.pow(en, 0.8)) * (1 + 0.5 * en);
-      const al = p.al * (0.55 + 0.45 * sp) * RING.dotAlpha * bright * vis;
+      const al = p.al * (0.55 + 0.45 * sp) * RING.dotAlpha * bright * vis * (0.15 + 0.85 * tf);
       if (al <= 0.003) continue;
       ctx.globalAlpha = al > 1 ? 1 : al;
       const sz = p.s * RING.dotSize;
-      ctx.fillRect(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad, sz, sz);
+      const am = mapA(a);
+      ctx.fillRect(cx + Math.cos(am) * rad, cy + Math.sin(am) * rad, sz, sz);
     }
     ctx.globalAlpha = 1;
 
-    if (I && it >= TL.ring0 && it < TL.end + 0.8) this.drawCurrent(it, TL, cx, cy, R, headTravel);
+    this.drawSphere(it, TL, cx, cy, R);
+    if (I && it >= TL.flow0 && it < TL.end + 0.8) this.drawCurrent(it, TL, cx, cy, R, headTravel);
 
     // nodes, leader lines and labels: fired as the current passes each anchor;
     // all hidden while the auth card is open
@@ -340,27 +406,48 @@ export default class LandingEngine {
     this.drawHero();
   }
 
-  // The current: a bright head with a shimmering wake, running clockwise round
-  // the ring (the Graph Viewer's core→node stream, minus its strands).
+  // The current: a bright head with a shimmering wake. It leaves the sphere's rim, runs out to the ring, then
+  // clockwise along it (the Graph Viewer's core→node stream, minus its strands).
   drawCurrent(it, TL, cx, cy, R, headTravel) {
     const ctx = this._ctx;
     const fade = it > TL.end ? 1 - clamp01((it - TL.end) / 0.8) : 1;
-    const steps = Math.max(2, Math.ceil((R * headTravel) / 7));
+    const pts = [];
+    let dist = 0,
+      px = null,
+      py = null;
+    const push = (x, y) => {
+      if (px != null) dist += Math.hypot(x - px, y - py);
+      pts.push(x, y, dist);
+      px = x;
+      py = y;
+    };
+    const a0 = travelA(0);
+    const r0 = R * SPHERE.size * 0.92;
+    const rp = easeOut((it - TL.flow0) / SPHERE.radial);
+    for (let i = 0; i <= 14; i++) {
+      const r = r0 + (R - r0) * (i / 14) * rp;
+      push(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+    }
+    if (it >= TL.ring0) {
+      const steps = Math.max(2, Math.ceil((R * headTravel * RING.closure) / 7));
+      for (let i = 1; i <= steps; i++) {
+        const a = travelA((headTravel * i) / steps);
+        push(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      }
+    }
     const wake = R * 0.32;
-    const headD = R * headTravel;
+    const headD = dist;
     ctx.fillStyle = TH.ink;
-    for (let i = steps; i >= 0; i--) {
-      const a = SEQ.start + (headTravel * i) / steps;
-      const d = (headD * i) / steps;
+    for (let i = pts.length - 3; i >= 0; i -= 3) {
+      const d = pts[i + 2];
       const behind = headD - d;
       if (behind > wake) break;
       ctx.globalAlpha = (1 - behind / wake) * 0.6 * fade * (0.5 + 0.5 * Math.sin(d * 0.9 + it * 5));
-      ctx.fillRect(cx + Math.cos(a) * R - 0.9, cy + Math.sin(a) * R - 0.9, 1.8, 1.8);
+      ctx.fillRect(pts[i] - 0.9, pts[i + 1] - 0.9, 1.8, 1.8);
     }
     if (it < TL.end) {
-      const ha = SEQ.start + headTravel;
-      const hx = cx + Math.cos(ha) * R,
-        hy = cy + Math.sin(ha) * R;
+      const hx = pts[pts.length - 3],
+        hy = pts[pts.length - 2];
       const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 16);
       glow.addColorStop(0, "rgba(" + TH.rgb + ",0.35)");
       glow.addColorStop(1, "rgba(" + TH.rgb + ",0)");
@@ -435,6 +522,8 @@ export default class LandingEngine {
       el.style.opacity = String(o);
       el.style.transform = L.base + " translateX(" + ((1 - lo) * (L.right ? -8 : 8)).toFixed(2) + "px)";
       el.style.pointerEvents = o > 0.5 ? "auto" : "none";
+      // the label's figures start rising word by word once the label is a third in (landing.css .dgl-w)
+      if (lo > 0.35 && !el.dataset.on) el.dataset.on = "1";
     }
   }
 
@@ -471,22 +560,32 @@ export default class LandingEngine {
     let o1 = 0,
       o2 = 0,
       o3 = 0;
+    // Title and subtitle assemble from glyph fragments (AssembleText.jsx, landing.css): "on" runs the
+    // CSS assembly once, "done" shows the settled line, no attribute keeps the fragments collapsed.
+    let a1 = null,
+      a2 = null;
     if (ph === "shown") {
       o1 = o2 = o3 = 1;
+      a1 = a2 = "done";
     } else if (ph === "forming") {
       const s = (performance.now() - this.heroT0) / 1000;
-      o1 = easeSine(s / SEQ.textFade);
-      o2 = easeSine((s - 0.25) / SEQ.textFade);
-      o3 = easeSine((s - 0.6) / SEQ.textFade);
+      o1 = s >= 0 ? 1 : 0;
+      o2 = s >= HERO_SUB_DELAY ? 1 : 0;
+      a1 = o1 ? "on" : null;
+      a2 = o2 ? "on" : null;
+      o3 = easeSine((s - 0.9) / SEQ.textFade);
       if (o3 >= 1) this.heroPh = "shown";
     } else if (ph === "dissolving") {
       const s = (performance.now() - this.heroT0) / 1000;
       o1 = o2 = o3 = 1 - easeSine(s / 0.4);
+      a1 = a2 = "done";
       if (s >= 0.4) this.heroPh = "hidden";
     }
     if (el) el.style.opacity = "1";
     if (l1) l1.style.opacity = String(o1);
     if (l2) l2.style.opacity = String(o2);
+    setAssemble(l1, a1);
+    setAssemble(l2, a2);
     if (be) {
       const on = !this.authOpen;
       be.style.opacity = String(on ? o3 : 0);

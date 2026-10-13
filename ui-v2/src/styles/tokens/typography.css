@@ -1,10 +1,13 @@
 /* Design Grammars — Typography */
 
 :root {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Two faces: ALNST for main screen headings, Tektur for subheadings and text.
+     Every heading is uppercase. Mono is kept for code and data only. */
+  --font-sans: 'Tektur', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-annotation: 'Oswald', 'Arial Narrow', sans-serif; /* condensed uppercase callouts */
-  --font-display: 'Michroma', 'Geist', ui-sans-serif, system-ui, sans-serif; /* wide landing display face */
+  --font-annotation: 'Tektur', 'Arial Narrow', sans-serif; /* uppercase callouts */
+  --font-display: 'ALNST', 'Tektur', ui-sans-serif, system-ui, sans-serif; /* main headings and landing hero */
+  --tracking-screen-title: 0.08em; /* uppercase ALNST screen headings */
 
   /* Scale */
   --text-caption: 12px;      --leading-caption: 1.33;   --tracking-caption: 0.6px;

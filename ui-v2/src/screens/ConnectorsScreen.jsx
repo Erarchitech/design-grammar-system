@@ -230,7 +230,7 @@ export default function ConnectorsScreen({ active, onBack, project, user }) {
           <Button variant="outline" size="sm" onClick={onBack}>&larr; {t("Back")}</Button>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>{t("Region · Connectors")}</div>
-            <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>{t("Connectors.")}</div>
+            <div style={{ font: "400 30px/1.1 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>{t("Connectors")}</div>
           </div>
           <div style={{ marginLeft: "auto" }}><Button size="sm" variant="secondary" onClick={load} disabled={loading}>{loading ? t("Refreshing...") : t("Refresh")}</Button></div>
         </div>

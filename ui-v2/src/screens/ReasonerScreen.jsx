@@ -175,8 +175,8 @@ export default function ReasonerScreen({ active, onBack, project }) {
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
               {t("Region · Reasoner")}
             </div>
-            <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>
-              {t("Reasoner.")}
+            <div style={{ font: "400 30px/1.1 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>
+              {t("Reasoner")}
             </div>
           </div>
         </div>
@@ -284,7 +284,8 @@ export default function ReasonerScreen({ active, onBack, project }) {
                         style={{
                           font: "600 18px/1.3 var(--font-sans)",
                           color: "var(--color-ink)",
-                          letterSpacing: "-0.3px",
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
                         }}
                       >
                         {r.name}

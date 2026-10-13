@@ -7,8 +7,10 @@
     "src/lib/hostMode.js",
     "src/landing/LandingLayer.jsx",
     "src/landing/HostCentre.jsx",
+    "src/landing/AssembleText.jsx",
+    "src/landing/alnstStrokes.js",
     "src/landing/landingEngine.js",
     "src/main.jsx"
   ],
-  "allow": ["Design Grammars.", "Encode your design intent.", "System initiated"]
+  "allow": ["Encode Design Grammars", "System initiated"]
 }

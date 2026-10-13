@@ -44,7 +44,7 @@ export default function Tile({ title, description, thumbnail, onClick, style }) 
         )}
       </div>
       <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <span style={{ font: "600 15px/1.3 var(--font-sans)", color: "var(--color-ink)" }}>{title}</span>
+        <span style={{ font: "600 15px/1.3 var(--font-sans)", color: "var(--color-ink)", letterSpacing: "0.04em", textTransform: "uppercase" }}>{title}</span>
         {description && (
           <span style={{ font: "400 13px/1.45 var(--font-sans)", color: "var(--text-muted)" }}>{description}</span>
         )}

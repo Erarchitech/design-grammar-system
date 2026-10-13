@@ -154,7 +154,7 @@ export default function SpecimenPage() {
             Design Grammars.
           </h1>
           <span style={{ font: "400 14px/1.43 var(--font-mono)", color: "var(--text-muted)" }}>
-            v2 tokens · Geist / Geist Mono / Oswald · 23 primitives
+            v2 tokens · ALNST / Tektur / Geist Mono · 23 primitives
           </span>
         </header>
 
@@ -190,18 +190,20 @@ export default function SpecimenPage() {
         </Group>
 
         <Group title="Type">
-          <Card title="Display & headings — Geist 600, tracking tightens with size">
-            <div style={{ font: "600 var(--text-display)/var(--leading-display) var(--font-sans)", letterSpacing: "var(--tracking-display)" }}>
+          <Card title="Main headings — ALNST 400, uppercase, open tracking">
+            <div style={{ font: "400 var(--text-display)/var(--leading-display) var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>
               Encode design intent
             </div>
-            <div style={{ font: "600 var(--text-heading)/var(--leading-heading) var(--font-sans)", letterSpacing: "var(--tracking-heading)" }}>
+            <div style={{ font: "400 var(--text-heading)/var(--leading-heading) var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>
               Validation run complete
             </div>
-            <div style={{ font: "600 var(--text-heading-sm)/var(--leading-heading-sm) var(--font-sans)", letterSpacing: "var(--tracking-heading-sm)" }}>
+          </Card>
+          <Card title="Subheadings — Tektur 600, uppercase">
+            <div style={{ font: "600 var(--text-heading-sm)/var(--leading-heading-sm) var(--font-sans)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
               Node details
             </div>
           </Card>
-          <Card title="Body & caption — Geist 14/400">
+          <Card title="Body & caption — Tektur 14/400">
             <p style={{ margin: 0, font: "400 var(--text-body)/var(--leading-body) var(--font-sans)" }}>
               Designers write design rules in natural language. An LLM parses them into SWRL atoms that
               live in the Neo4j metagraph and validate 3D building models.
@@ -215,7 +217,7 @@ export default function SpecimenPage() {
               "R_height_max" · bolt://localhost:7687 · b(building2): h(84)
             </span>
           </Card>
-          <Card title="Annotation caps — the divergence caption voice (Oswald)">
+          <Card title="Annotation caps — the divergence caption voice (Tektur)">
             <span className="dg-annotation">System initiated</span>
             <span className="dg-annotation dg-annotation--muted">Divergence detected · 0.6741</span>
           </Card>

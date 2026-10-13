@@ -9,6 +9,9 @@ import { EN, RU } from "./dict/index.js";
 
 export const LANGS = Object.freeze(["en", "ru"]);
 
+// Owner, 2026-10-13: the product is named SVOD in every language; as a proper noun it never goes through t().
+export const PRODUCT_NAME = "SVOD";
+
 // D-13: proper nouns and identifiers stay Latin in every language and never go through t().
 export const PROPER_NOUNS = Object.freeze([
   "Neo4j",
@@ -17,6 +20,7 @@ export const PROPER_NOUNS = Object.freeze([
   "Rhino",
   "Revit",
   "DeGram",
+  PRODUCT_NAME,
   "Pellet",
   "HermiT",
   "Rule_Id",
@@ -29,9 +33,10 @@ export const PROPER_NOUNS = Object.freeze([
 ]);
 
 // D-03: strings fixed by the owner. The landing renders them in plan 1308-23; the test pins them verbatim.
+// Amended by the owner on 2026-10-13: the product name became the proper noun PRODUCT_NAME (SVOD), and headings carry no
+// closing full stop.
 export const OWNER_FIXED = Object.freeze({
-  "Design Grammars.": "Грамматика.",
-  "Encode your design intent.": "Граф правил проекта.",
+  "Encode Design Grammars": "Свод правил проекта",
   "System initiated": "Система инициализирована"
 });
 

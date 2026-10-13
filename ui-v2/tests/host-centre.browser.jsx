@@ -40,23 +40,23 @@ const projects = { projects: [{ project: 'A', role: 'viewer', nodes: 1 }] };
   await run('Host defaults to idle hero and no new-session pill', async () => {
     // D-03: ?lang=ru under host=degram resolves RU, so the owner-fixed boot line is Russian.
     check(container.textContent.includes('Система инициализирована'), 'Hero missing');
-    check(container.textContent.includes('Грамматика.') && container.textContent.includes('Граф правил проекта.'), 'RU hero title/subtitle missing');
+    check(container.textContent.includes('SVOD') && container.textContent.includes('Свод правил проекта'), 'RU hero title/subtitle missing');
     check(!container.querySelector('.dgl-host-pill') && !container.querySelector('.dgl-host-centre--visible'), 'Host controls visible before selection');
   });
   await run('DeGram locale signal switches the mounted landing and other screen copy in both directions', async () => {
     check(!container.querySelector('[aria-label="Interface language"]'), 'Browser language dropdown leaked into DeGram');
     await signal('#degram-lang=en');
     check(document.documentElement.lang === 'en' && !location.hash, 'English signal did not update html language');
-    check(container.textContent.includes('Design Grammars.') && container.textContent.includes('Encode your design intent.'), 'English landing copy missing');
+    check(container.textContent.includes('SVOD') && container.textContent.includes('Encode Design Grammars'), 'English landing copy missing');
     await signal('#degram-lang=ru');
     check(document.documentElement.lang === 'ru' && !location.hash, 'Russian signal did not update html language');
-    check(container.textContent.includes('Грамматика.') && container.textContent.includes('Граф правил проекта.'), 'Russian landing copy missing');
+    check(container.textContent.includes('SVOD') && container.textContent.includes('Свод правил проекта'), 'Russian landing copy missing');
   });
   await run('PROJECTS click announces selection and immediately shows one caption-less connecting sphere on the ring centre', async () => {
     allow('/projects', projects);
     allow('/projects/A/summary', {});
     allow('/validation/runs/A', { runs: [] });
-    const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Проекты.');
+    const label = [...container.querySelectorAll('.dgl-region-label')].find(e => e.textContent === 'Проекты');
     check(label, 'Projects callout missing');
     await act(async () => label.click());
     await until(() => [...container.querySelectorAll('span')].some(e => e.textContent === 'A'), 'Project tile missing');

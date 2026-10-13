@@ -5,8 +5,9 @@ import * as auth from "../lib/auth.js";
 import "./landing.css";
 import { isDegramHost } from "../lib/hostMode.js";
 import HostCentre from "./HostCentre.jsx";
+import AssembleText from "./AssembleText.jsx";
 import { useT } from "../i18n/LanguageProvider.jsx";
-import { describeError } from "../i18n/index.js";
+import { describeError, PRODUCT_NAME } from "../i18n/index.js";
 import { getProjectSummary } from "../lib/summaryApi.js";
 import { buildLandingSummaries } from "../lib/landingSummary.js";
 import { fetchValidationRuns } from "../lib/modelApi.js";
@@ -45,6 +46,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const degramHost = isDegramHost();
   const canvasRef = React.useRef(null);
   const heroTitleRef = React.useRef(null);
+  const sphereRef = React.useRef(null);
   const heroL1Ref = React.useRef(null);
   const heroL2Ref = React.useRef(null);
   const heroBeneathRef = React.useRef(null);
@@ -109,6 +111,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     const engine = new LandingEngine(
       {
         canvas: canvasRef.current,
+        sphere: sphereRef.current,
         heroTitle: heroTitleRef.current,
         heroL1: heroL1Ref.current,
         heroL2: heroL2Ref.current,
@@ -242,28 +245,41 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
     ? { transitionDelay: "260ms", opacity: 1, transform: "translateY(0)", filter: "blur(0px)", pointerEvents: "auto" }
     : { transitionDelay: "0ms", opacity: 0, transform: "translateY(18px)", filter: "blur(9px)", pointerEvents: "none" };
 
+  // One row per figure; every word rises out of its own mask in reading order once the engine marks the
+  // label shown (data-on, landing.css .dgl-w).
   const renderSummary = (parts) => {
     if (parts === null) return null;
-    return <span className="dgl-region-summary">{parts === "—" ? parts : parts.map(({ label, value, title }, index) => (
-      <React.Fragment key={label}>
-        {index > 0 && " · "}{label}: <span
-          style={title ? { color: "var(--text-primary)", maxWidth: "24ch", overflow: "hidden", textOverflow: "ellipsis", display: "inline-block", verticalAlign: "bottom" } : { color: "var(--text-primary)" }}
-          title={title}
-        >{value}</span>
-      </React.Fragment>
-    ))}</span>;
+    let n = 0;
+    const word = (text, key, valueStyle, title) => (
+      <span key={key} className="dgl-w" style={{ "--d": `${(n++ * 0.07).toFixed(2)}s` }}>
+        <span style={valueStyle} title={title}>{text}</span>
+      </span>
+    );
+    const rows = parts === "—" ? [<span key="dash" className="dgl-sum-row">{word("—", "w")}</span>] : parts.map(({ label, value, title }) => (
+      <span key={label} className="dgl-sum-row">
+        {String(label).split(" ").map((w, i, all) => (
+          <React.Fragment key={i}>{i > 0 && " "}{word(i === all.length - 1 ? `${w}:` : w, `l${i}`)}</React.Fragment>
+        ))}
+        {" "}
+        {word(value, "v", title
+          ? { color: "var(--text-primary)", maxWidth: "24ch", overflow: "hidden", textOverflow: "ellipsis", display: "inline-block", verticalAlign: "bottom" }
+          : { color: "var(--text-primary)" }, title)}
+      </span>
+    ));
+    return <span className="dgl-region-summary">{rows}</span>;
   };
 
   return (
     <>
       <canvas ref={canvasRef} className="dgl-canvas" />
+      <img ref={sphereRef} className="dgl-think" alt="" aria-hidden="true" />
 
       <div ref={heroTitleRef} className="dgl-hero-title">
         <div ref={heroL1Ref} className="dgl-hero-l1">
-          {t("Design Grammars.")}
+          <AssembleText text={PRODUCT_NAME} tracking={0.3} />
         </div>
         <div ref={heroL2Ref} className="dgl-hero-l2">
-          {t("Encode your design intent.")}
+          <AssembleText text={t("Encode Design Grammars")} tracking={0.3} />
         </div>
       </div>
 
@@ -281,7 +297,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
           <div style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--color-signal)", flex: "none" }} />
-              <span style={{ font: "600 21px/1.1 var(--font-sans)", letterSpacing: "-0.5px", color: "var(--text-primary)" }}>
+              <span className="dgl-user">
                 {user.name}
               </span>
             </div>
@@ -321,7 +337,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
               {reg ? t("Invitation") : signUp ? t("Register") : t("Access")}
             </div>
-            <div style={{ font: "600 22px/1.15 var(--font-sans)", letterSpacing: "-0.6px", color: "var(--text-primary)" }}>
+            <div style={{ font: "600 20px/1.15 var(--font-sans)", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-primary)" }}>
               {reg ? t("Accept your invite") : signUp ? t("Create your account") : t("Welcome back")}
             </div>
             <div style={{ font: "400 13px/1.45 var(--font-sans)", color: "var(--text-muted)" }}>
@@ -329,7 +345,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
                 ? t("Enter the code from your project owner and choose a password.")
                 : signUp
                   ? t("Choose a username and a password of at least 12 characters. You can create your own projects afterwards.")
-                  : t("Enter your credentials to access Design Grammars.")}
+                  : t("Enter your credentials to access {product}.", { product: PRODUCT_NAME })}
             </div>
           </div>
           {reg ? (
@@ -393,7 +409,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
         {user && renderSummary(summaries.model)}
       </div>
       <div ref={labelProjectsRef} className="dgl-region-label" onClick={() => fly("projects")}>
-        {t("Projects.")}
+        {t("Projects")}
       </div>
 {!degramHost && <>
         <div ref={labelAiEngineRef} className="dgl-region-label" onClick={() => fly("aiengine")}>

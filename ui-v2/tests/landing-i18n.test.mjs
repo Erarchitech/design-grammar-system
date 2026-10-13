@@ -18,12 +18,11 @@ test("landing engine adds and removes a dg-lang listener next to the dg-theme on
 test("landing hero, region labels and hint go through t(); AI Engine is renamed LLM model (D-03, D-21)", async () => {
   const landing = await read("LandingLayer.jsx");
   for (const key of [
-    "Design Grammars.",
-    "Encode your design intent.",
+    "Encode Design Grammars",
     "System initiated",
     "Graph Viewer",
     "Model Viewer",
-    "Projects.",
+    "Projects",
     "LLM model",
     "Connectors",
     "Reasoner",
@@ -33,6 +32,7 @@ test("landing hero, region labels and hint go through t(); AI Engine is renamed 
     assert.ok(landing.includes(`t("${key}")`), `t("${key}") missing`);
   }
   assert.doesNotMatch(landing, /AI Engine/);
+  assert.ok(landing.includes("text={PRODUCT_NAME}"), "the hero title is the product name, a proper noun");
 });
 
 test("the landing itself has no separate language control (browser uses AppShell)", async () => {

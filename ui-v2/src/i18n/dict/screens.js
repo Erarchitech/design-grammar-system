@@ -5,7 +5,6 @@
 export const ru = {
   // ── LLM model screen (D-21: «AI Engine» is now «LLM model»)
   "Region · LLM model": "Раздел · Модель LLM",
-  "LLM model.": "Модель LLM.",
   "Settings unavailable · {reason}": "Настройки недоступны · {reason}",
   "Failed to load settings": "Не удалось загрузить настройки",
   "Failed to save settings": "Не удалось сохранить настройки",
@@ -49,7 +48,6 @@ export const ru = {
 
   // ── Reasoner screen (reasoner names and descriptions come from the server and stay as received)
   "Region · Reasoner": "Раздел · Ризонер",
-  "Reasoner.": "Ризонер.",
   "Loading reasoner settings…": "Загрузка настроек ризонера…",
   "Select the ontology reasoner used to evaluate design rules against the Validation Graph. Selection persists across sessions. HermiT runs a live schema-consistency check against the active project; reasoners marked":
     "Выберите ризонер онтологии, который проверяет правила проекта по графу валидации. Выбор сохраняется между сеансами. HermiT выполняет проверку согласованности схемы активного проекта; ризонеры с пометкой",

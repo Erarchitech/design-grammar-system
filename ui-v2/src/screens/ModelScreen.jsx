@@ -663,7 +663,7 @@ export default function ModelScreen({ active, onBack, project }) {
           </Button>
         </div>
         <div>
-          <h3 style={{ margin: 0, font: "600 20px/1.2 var(--font-sans)", letterSpacing: "-0.5px" }}>{t("Model Viewer")}</h3>
+          <h3 style={{ margin: 0, font: "400 20px/1.2 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>{t("Model Viewer")}</h3>
           <span style={{ font: "400 13px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
             {project || "default-project"}
           </span>
@@ -926,16 +926,16 @@ export default function ModelScreen({ active, onBack, project }) {
                 {callout && (
                   <g>
                     <path d={callout.d} stroke="var(--ink-a32)" strokeWidth="1" fill="none" />
-                    <text x={callout.tx} y={callout.ty1} fontFamily="Oswald, sans-serif" fontSize="13" letterSpacing="1.4" fill="var(--color-ink)">
+                    <text x={callout.tx} y={callout.ty1} fontFamily="Tektur, sans-serif" fontSize="13" letterSpacing="1.4" fill="var(--color-ink)">
                       {callout.name}
                     </text>
-                    <text x={callout.tx} y={callout.ty2} fontFamily="Oswald, sans-serif" fontSize="10" letterSpacing="1.2" fill="var(--color-mid-gray)">
+                    <text x={callout.tx} y={callout.ty2} fontFamily="Tektur, sans-serif" fontSize="10" letterSpacing="1.2" fill="var(--color-mid-gray)">
                       {callout.status}
                     </text>
                   </g>
                 )}
                 {entities.length === 0 && (
-                  <text x={viewBox.x + viewBox.w / 2} y={viewBox.y + viewBox.h / 2} textAnchor="middle" fontFamily="Oswald, sans-serif" fontSize="12" letterSpacing="1.4" fill="var(--color-mid-gray)">
+                  <text x={viewBox.x + viewBox.w / 2} y={viewBox.y + viewBox.h / 2} textAnchor="middle" fontFamily="Tektur, sans-serif" fontSize="12" letterSpacing="1.4" fill="var(--color-mid-gray)">
                     {runId ? t("NO ENTITIES IN THIS RUN") : t("SELECT A VALIDATION RUN")}
                   </text>
                 )}

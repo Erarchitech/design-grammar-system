@@ -169,8 +169,8 @@ export default function AiEngineScreen({ active, onBack, project }) {
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
               {t("Region · LLM model")}
             </div>
-            <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>
-              {t("LLM model.")}
+            <div style={{ font: "400 30px/1.1 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>
+              {t("LLM model")}
             </div>
           </div>
         </div>

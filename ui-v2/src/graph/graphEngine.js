@@ -1181,7 +1181,7 @@ export default class GraphEngine {
     const tx = mx + ox,
       ty = my + oy;
     ctx.save();
-    ctx.font = '500 9px "Oswald", "Geist", sans-serif';
+    ctx.font = '500 9px "Tektur", sans-serif';
     try {
       ctx.letterSpacing = "1px";
     } catch {
@@ -1225,14 +1225,14 @@ export default class GraphEngine {
     } catch {
       /* older engines */
     }
-    ctx.font = '600 17px "Oswald", "Geist", sans-serif';
+    ctx.font = '600 17px "Tektur", sans-serif';
     const lw = ctx.measureText(label.toUpperCase()).width;
     try {
       ctx.letterSpacing = "1.4px";
     } catch {
       /* older engines */
     }
-    ctx.font = '500 10px "Oswald", "Geist", sans-serif';
+    ctx.font = '500 10px "Tektur", sans-serif';
     const kw = ctx.measureText(kind.toUpperCase()).width;
     try {
       ctx.letterSpacing = "0px";
@@ -1286,7 +1286,7 @@ export default class GraphEngine {
     } catch {
       /* older engines */
     }
-    ctx.font = '600 17px "Oswald", "Geist", sans-serif';
+    ctx.font = '600 17px "Tektur", sans-serif';
     ctx.fillStyle = TH.ink;
     ctx.fillText(label.toUpperCase(), tX, ey - 2);
     try {
@@ -1294,7 +1294,7 @@ export default class GraphEngine {
     } catch {
       /* older engines */
     }
-    ctx.font = '500 10px "Oswald", "Geist", sans-serif';
+    ctx.font = '500 10px "Tektur", sans-serif';
     ctx.fillStyle = TH.signal;
     ctx.fillText(kind.toUpperCase(), tX, ey + 12);
     ctx.strokeStyle = TH.leader;

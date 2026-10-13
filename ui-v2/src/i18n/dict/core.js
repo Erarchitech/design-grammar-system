@@ -3,8 +3,7 @@
 // `en` carries only entries whose English is not the key (error.* codes and tp() plural tables).
 // Wording follows the 1301-D38 glossary; proper nouns stay Latin (D-13).
 export const ru = {
-  "Design Grammars.": "Грамматика.",
-  "Encode your design intent.": "Граф правил проекта.",
+  "Encode Design Grammars": "Свод правил проекта",
   "System initiated": "Система инициализирована",
   Viewer: "Наблюдатель",
   Editor: "Редактор",
@@ -17,7 +16,7 @@ export const ru = {
   // Landing region labels and hint (D-21: «AI Engine» is now «LLM model»)
   "Graph Viewer": "Просмотр графа",
   "Model Viewer": "Просмотр модели",
-  "Projects.": "Проекты.",
+  Projects: "Проекты",
   "LLM model": "Модель LLM",
   Connectors: "Коннекторы",
   Reasoner: "Ризонер",
@@ -30,7 +29,7 @@ export const ru = {
   "Sign out": "Выйти",
   Access: "Доступ",
   "Welcome back": "С возвращением",
-  "Enter your credentials to access Design Grammars.": "Введите данные для входа в Грамматику.",
+  "Enter your credentials to access {product}.": "Введите данные для входа в {product}.",
   Register: "Регистрация",
   "Create your account": "Создать аккаунт",
   "Choose a username and a password of at least 12 characters. You can create your own projects afterwards.":

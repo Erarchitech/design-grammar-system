@@ -17,3 +17,5 @@ status: accepted
 **Notes:** the opening plays once per page load; returning from a region does not replay it. The envelope is computed once per frame into a 2,048-bin table to keep 26,000 dots at 55–60 fps.
 
 Related: [[sessions/2026-10-08 Model Viewer fixes, landing motion redesign and DeGram 0.1.5]]
+
+**Superseded (2026-10-13)** for type, name and hero motion by [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero]]; the `RING` values above still hold, the ring is now a crescent.

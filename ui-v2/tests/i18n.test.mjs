@@ -38,14 +38,14 @@ test.after(() => {
 
 test("owner-fixed strings translate verbatim and EN returns the key (D-03)", async () => {
   const i18n = await fresh();
-  assert.equal(i18n.translate("ru", "Design Grammars."), "Грамматика.");
-  assert.equal(i18n.translate("ru", "Encode your design intent."), "Граф правил проекта.");
+  assert.equal(i18n.translate("ru", "Encode Design Grammars"), "Свод правил проекта");
   assert.equal(i18n.translate("ru", "System initiated"), "Система инициализирована");
-  assert.equal(i18n.translate("en", "Design Grammars."), "Design Grammars.");
+  assert.equal(i18n.translate("en", "Encode Design Grammars"), "Encode Design Grammars");
+  assert.equal(i18n.PRODUCT_NAME, "SVOD");
+  assert.ok(i18n.PROPER_NOUNS.includes("SVOD"), "the product name is a proper noun (D-13)");
   assert.equal(i18n.translate("en", "anything at all"), "anything at all");
   assert.deepEqual({ ...i18n.OWNER_FIXED }, {
-    "Design Grammars.": "Грамматика.",
-    "Encode your design intent.": "Граф правил проекта.",
+    "Encode Design Grammars": "Свод правил проекта",
     "System initiated": "Система инициализирована"
   });
 });
@@ -138,9 +138,9 @@ test("setLang notifies subscribers, sets html lang, dispatches dg-lang and rejec
   i18n.setLang("en");
   assert.deepEqual(seen, ["ru"]);
   assert.equal(doc.documentElement.lang, "en");
-  assert.equal(i18n.t("Design Grammars."), "Design Grammars.");
+  assert.equal(i18n.t("Encode Design Grammars"), "Encode Design Grammars");
   i18n.setLang("ru");
-  assert.equal(i18n.t("Design Grammars."), "Грамматика.");
+  assert.equal(i18n.t("Encode Design Grammars"), "Свод правил проекта");
 });
 
 test("initLang in host mode reads ?lang= and ignores the browser; the live signal then wins", async () => {
@@ -388,8 +388,7 @@ test("rule (e): owner strings are verbatim in the dictionary and in OWNER_FIXED"
   const { RU } = await dictionary();
   const { OWNER_FIXED } = await fresh();
   const expected = [
-    ["Design Grammars.", "Грамматика."],
-    ["Encode your design intent.", "Граф правил проекта."],
+    ["Encode Design Grammars", "Свод правил проекта"],
     ["System initiated", "Система инициализирована"]
   ];
   for (const [en, ru] of expected) {

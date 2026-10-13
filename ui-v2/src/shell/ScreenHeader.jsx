@@ -12,7 +12,7 @@ export default function ScreenHeader({ title, subtitle, onBack, style }) {
         ← {t("Back")}
       </Button>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <div style={{ font: "600 16px/1.2 var(--font-sans)", letterSpacing: "-0.3px" }}>{title}</div>
+        <div style={{ font: "400 16px/1.2 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>{title}</div>
         <div style={{ font: "400 11px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>{subtitle}</div>
       </div>
     </div>

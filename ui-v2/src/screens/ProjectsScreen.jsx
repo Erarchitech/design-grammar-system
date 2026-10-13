@@ -495,7 +495,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
           <Button variant="outline" size="sm" onClick={onBack}>
             ← {t("Back")}
           </Button>
-          <div style={{ font: "600 34px/1.1 var(--font-sans)", letterSpacing: "-1.2px" }}>{t("Projects.")}</div>
+          <div style={{ font: "400 30px/1.1 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>{t("Projects")}</div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             {creating && (
               <>

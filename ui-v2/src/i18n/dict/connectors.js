@@ -2,7 +2,6 @@
 // are needed only for plural forms.
 export const ru = {
   "Connectors": "Коннекторы",
-  "Connectors.": "Коннекторы.",
   "Region · Connectors": "Раздел · Коннекторы",
   "Connector": "Коннектор",
   "Access": "Доступ",

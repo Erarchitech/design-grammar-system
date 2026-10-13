@@ -28,7 +28,7 @@ export default function Dialog({ title, open = true, onClose, footer, children, 
           borderBottom: "1px solid var(--color-hairline)"
         }}
       >
-        <span style={{ font: "600 15px/1.2 var(--font-sans)", color: "var(--color-ink)" }}>{title}</span>
+        <span style={{ font: "600 15px/1.2 var(--font-sans)", color: "var(--color-ink)", letterSpacing: "0.04em", textTransform: "uppercase" }}>{title}</span>
         {onClose && (
           <button
             onClick={onClose}

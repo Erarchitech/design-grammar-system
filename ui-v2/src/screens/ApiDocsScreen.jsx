@@ -267,7 +267,7 @@ export default function ApiDocsScreen({ active, onBack, project }) {
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
             {t("Region · DG API Docs")}
           </div>
-          <div style={{ font: "600 30px/1.1 var(--font-sans)", letterSpacing: "-1px" }}>
+          <div style={{ font: "400 30px/1.1 var(--font-display)", letterSpacing: "var(--tracking-screen-title)", textTransform: "uppercase" }}>
             {t("DG API Docs")}
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function ApiDocsScreen({ active, onBack, project }) {
               </div>
 
               {/* Title */}
-              <div style={{ font: "600 26px/1.2 var(--font-sans)", color: "var(--color-ink)", letterSpacing: "-0.8px" }}>
+              <div style={{ font: "600 24px/1.2 var(--font-sans)", color: "var(--color-ink)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 {currentPage.title}
               </div>
 

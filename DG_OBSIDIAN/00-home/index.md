@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-13 SVOD rebrand, ALNST and Tektur design system, drawn landing hero|SVOD rebrand, ALNST + Tektur design system, drawn landing hero — design accepted]] (2026-10-13)
 - [[sessions/2026-10-13 Browser language dropdown and DeGram host locale recheck|Browser language dropdown and DeGram host locale recheck — live acceptance open]] (2026-10-13)
 - [[sessions/2026-10-13 DeGram language setting and local test build|DeGram language setting and unpacked test build — manual acceptance open]] (2026-10-13)
 - [[sessions/2026-10-12 Building code integration research and v14 planning|Building-code integration research and future v14.0 GSD plan]] (2026-10-12)
@@ -47,6 +48,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|SVOD name; ALNST + Tektur design system; uppercase headings without full stops; crescent ring and drawn hero]] (2026-10-13)
 - [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54, Phase 1308)]] (2026-10-12)
 - [[knowledge/decisions/Connector access is a per-connector grant without tokens, owner and admin exempt (D-49)|Connector access is a per-connector grant without tokens, owner and admin exempt; add-in signs in with the account (D-49, Phase 1308)]] (2026-10-12)
 - [[knowledge/decisions/DeGram connectors table and per-connector access requests (D-45..D-48)|DeGram connectors table, per-connector access requests, one centred sphere, grant separate from membership (D-45..D-48)]] (2026-10-11)
@@ -133,6 +135,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/docker compose build alone leaves the old design-grammars container running|docker compose build alone leaves the old design-grammars container running; recreate it after a build]] (2026-10-13, resolved)
 - [[knowledge/debugging/DeGram chat stays on the first scope profile after a project or company change|DeGram chat stays on the first scope profile; other projects fail closed with CREDENTIALS_MISSING (G-7)]] (2026-10-09, open)
 - [[knowledge/debugging/DeGram Revit adapter could not load under pyRevit IronPython 3.4|DeGram Revit adapter unloadable under pyRevit IronPython 3.4: disabled by default, async def, implicit imports, urllib, JSON body (G-8..G-12)]] (2026-10-09, fixed in working tree)
 - [[knowledge/debugging/DeGram installers bundled a stale revit-mcp copy from the build folder|DeGram installers 0.1.0-0.1.5 bundled a stale D:\dgb\revit-mcp copy (no DEGRAM_REVIT_MCP_SOURCE)]] (2026-10-09, fix planned in 1301-23)
