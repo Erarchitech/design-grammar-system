@@ -190,7 +190,15 @@ try {
   $built = Compose @('build','--quiet','data-service') 1200
   Assert-Ok ($built.code -eq 0) 'data-service build failed'
   $stage = 'service-start'
-  $up = Compose @('up','-d','--no-build','neo4j','data-service') 300
+  # First wait for an authenticated Neo4j query; "running" is not ready for
+  # ensure_spec_indexes() and the app does not retry its startup transaction.
+  $neoUp = Compose @('up','-d','--no-build','--wait','--wait-timeout','180','neo4j') 210
+  if ($neoUp.code -ne 0) {
+    $report.checks.startDetail = 'neo4j-not-ready'
+    $report.checks.startState = Get-ServiceStates
+    throw 'sandbox Neo4j not ready'
+  }
+  $up = Compose @('up','-d','--no-build','data-service') 90
   if ($up.code -ne 0) {
     $report.checks.startDetail = 'compose-up-nonzero'
     $report.checks.startState = Get-ServiceStates

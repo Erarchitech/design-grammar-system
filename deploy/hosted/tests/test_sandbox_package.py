@@ -121,6 +121,26 @@ class SandboxPackageTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('$report.checks.startSignature = Get-StartupFailureSignature', script)
 
+    def test_neo4j_readiness_precedes_data_service_start(self):
+        compose = (HOSTED / 'sandbox/compose.yaml').read_text(encoding='utf-8')
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        self.assertIn('healthcheck:', compose)
+        self.assertIn('condition: service_healthy', compose)
+        self.assertIn('cypher-shell', compose)
+        self.assertIn('$${NEO4J_AUTH#neo4j/}', compose)
+        self.assertIn('NEO4J_PASSWORD=', compose)
+        self.assertNotIn('cypher-shell -u neo4j -p ', compose)
+        self.assertIn("'--wait-timeout','180'", script)
+        self.assertLess(script.index("$neoUp = Compose @('up'"),
+                        script.index("$up = Compose @('up'"))
+        self.assertLess(script.index("$stage = 'service-start'"),
+                        script.index("$stage = 'data-service-ingest'"))
+
+    def test_neo4j_wait_has_bounded_failure_evidence(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        self.assertIn("$report.checks.startDetail = 'neo4j-not-ready'", script)
+        self.assertIn("$report.checks.startDetail = 'readiness-timeout'", script)
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'

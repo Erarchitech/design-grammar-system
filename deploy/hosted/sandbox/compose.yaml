@@ -6,6 +6,13 @@ services:
       NEO4J_server_memory_heap_initial__size: 256m
       NEO4J_server_memory_heap_max__size: 512m
       NEO4J_server_memory_pagecache_size: 256m
+    healthcheck:
+      # Docker sets NEO4J_AUTH; expose the derived password only to cypher-shell's environment.
+      test: ["CMD-SHELL", "NEO4J_PASSWORD=\"$${NEO4J_AUTH#neo4j/}\" cypher-shell -u neo4j 'RETURN 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     volumes:
       - graph:/data
     mem_limit: 1500m
@@ -34,7 +41,9 @@ services:
       SPECKLE_BASE_URL: http://127.0.0.1:9
       N8N_INTERNAL_URL: http://n8n:5678
       OLLAMA_URL: http://127.0.0.1:9
-    depends_on: [neo4j]
+    depends_on:
+      neo4j:
+        condition: service_healthy
     volumes:
       - api_state:/app/data
       - ../ingest:/mnt/repo/hosted-ingest:ro
