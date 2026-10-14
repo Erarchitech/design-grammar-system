@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-14 Phase 1308 rollout, UAT C-E and phase closed|Phase 1308 rollout (rebuild from HEAD, D-49 cleanup), UAT C–E, verification and security — phase closed]] (2026-10-14)
 - [[sessions/2026-10-13 Phase 1308 UAT audit, DeGram c476c236 build and group F pass|Phase 1308 UAT audit, DeGram c476c236 build, group F passed — rollout 19/20 open]] (2026-10-13)
 - [[sessions/2026-10-13 SVOD rebrand, ALNST and Tektur design system, drawn landing hero|SVOD rebrand, ALNST + Tektur design system, drawn landing hero — design accepted]] (2026-10-13)
 - [[sessions/2026-10-13 Browser language dropdown and DeGram host locale recheck|Browser language dropdown and DeGram host locale recheck — live acceptance open]] (2026-10-13)

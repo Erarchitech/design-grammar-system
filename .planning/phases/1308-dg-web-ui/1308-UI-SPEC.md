@@ -108,7 +108,7 @@ Explicit non-uses:
 
 | Screen | Primary visual anchor | Supporting hierarchy |
 |--------|----------------------|----------------------|
-| Landing | The hero title «Design Grammars.» / «Грамматика.» (Michroma, centre of the ring); region labels are the secondary layer, summaries the tertiary (muted mono). The landing itself has no language control; the browser-only global dropdown floats above all layers | hero title → region labels → summary lines → hint |
+| Landing | The hero title is the product name SVOD with the subtitle «Encode Design Grammars» / «Свод правил проекта» (ALNST, centre of the ring; owner rebrand 2026-10-13); region labels are the secondary layer, summaries the tertiary (muted mono). The landing itself has no language control; the browser-only global dropdown floats above all layers | hero title → region labels → summary lines → hint |
 | ProjectsScreen | The Members panel (first and visually heaviest `Panel`: the member rows with their role Selects). The admin-only «Project settings» panel sits below it as a secondary surface, same width, same `Panel` styling, no accent | project tiles → Members panel → Project settings panel |
 | ConnectorsScreen | The connector card header (name + status dot + On/Off); the access line and grant form are secondary | card header → status/count/access lines → admin form |
 
@@ -127,8 +127,8 @@ Button-label rule: every NEW button label is a specific verb plus object. No bar
 | Primary CTA — role change | (no button; the Select commits on change) | (нет кнопки; Select применяется сразу) |
 | Primary CTA — grant to member | Grant access | Выдать доступ |
 | Primary CTA — confirm whole-definition export | Allow whole-definition export | Разрешить экспорт целиком |
-| Hero title | Design Grammars. | Грамматика. **owner** |
-| Hero subtitle | Encode your design intent. | Граф правил проекта. **owner** |
+| Hero title | SVOD | SVOD **owner** (product name, not translated) |
+| Hero subtitle | Encode Design Grammars | Свод правил проекта **owner** |
 | System boot line | System initiated | Система инициализирована **owner** |
 | Region hint | Select a region | Выберите раздел **[rec]** |
 
@@ -390,7 +390,7 @@ Applicable state considerations resolved: 24 covered, 4 backstop, 0 unresolved (
 | populated / long-text | DeGram sidebar «Projects» row | ✅ covered | Label is the fixed «Projects» / «Проекты», the same length class as neighbouring rows; collapsed and selected states are inherited from neighbouring `dg-*` rows |
 | long-text | RU landing summary lines vs ring layout | 🧪 backstop | Held-out visual check at 1280px and 1920px that no RU label/summary crosses the ring centre or viewport edge, light and dark |
 | long-text | Model name, project names, connector name lists | 🧪 backstop | Model value ellipsis at 24ch with `title`; connector names capped at 2 plus `+N`; project name in panel titles wraps inside the Panel; visual backstop |
-| fonts | Cyrillic glyphs in Geist, Geist Mono and Michroma (landing labels, hero «Грамматика.») | 🧪 backstop | Visual backstop: confirm the self-hosted `fonts.css` faces include Cyrillic subsets; if Michroma lacks Cyrillic, labels fall back through `var(--font-display)` to Geist, which is accepted |
+| fonts | Cyrillic glyphs in ALNST (headings, hero «Свод правил проекта») and Tektur (text); Geist Mono only for code and data | 🧪 backstop | Visual backstop: ALNST and Tektur ship Latin + Cyrillic (owner rebrand 2026-10-13, replacing Michroma/Geist/Oswald in the tokens); passed in UAT group C |
 
 ---
 

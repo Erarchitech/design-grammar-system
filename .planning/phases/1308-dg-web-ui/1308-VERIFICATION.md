@@ -188,7 +188,7 @@ No `scripts/*/tests/probe-*.sh` is declared by the 1308 plans. The rollout HTTP 
 
 1. **REQUIREMENTS.md:103 (WEBUI-01) contradicts the implemented and owner-amended behavior.** The text says DG Web UI has no switcher of its own and follows the browser language outside DeGram. `ui-v2/src/App.jsx:262-267` renders a global language Select outside DeGram, and `ui-v2/src/i18n/index.js:44,112-121` persists `dgv2_lang`. That behavior matches CONTEXT D-07/D-08/D-53 (UAT amendment), so the requirement text is stale. Owner decision 2 above.
 2. **Planning bookkeeping is stale.** In ROADMAP.md:459, "Plans: 17/24 plans executed" and plans 15, 22, 17, 19, 21, 18 and 20 are unchecked (:497-518). WEBUI-01, 02, 06, 07, 09 and 11 are unchecked in REQUIREMENTS.md. Close these at phase completion. The git index already holds another session's staged edits to both files.
-3. **CONTEXT D-03 (1308-CONTEXT.md:23) and UI-SPEC copy rows still list «Грамматика.» / «Граф правил проекта.».** The code uses the SVOD strings. This is documentation drift only.
+3. **CONTEXT D-03 (1308-CONTEXT.md:23) and UI-SPEC copy rows still list «Грамматика.» / «Граф правил проекта.».** The code uses the SVOD strings. This is documentation drift only. **Resolved 2026-10-14:** CONTEXT D-03 and the UI-SPEC rows now carry SVOD / «Свод правил проекта» and the ALNST/Tektur faces; PLAN, SUMMARY and RESEARCH files keep the original strings as historical records.
 4. **1308-18 commit shape.** See owner decision 1.
 5. **DG.Tests not re-run by the verifier**, because tracked bin/obj would be rewritten. WEBUI-08 rests on a static review plus owner UAT E.
 

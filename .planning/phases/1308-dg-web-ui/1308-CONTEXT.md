@@ -20,7 +20,7 @@ Not in scope: Desktop build or launch, `hermes update`, installed-profile writes
 ### Owner decisions carried in (not re-discussed)
 - **D-01:** Member role change in DG Web UI (1301 D-36): data-service route plus Web UI action; the last owner is never demoted.
 - **D-02:** Export policy (`providerExportAllowed`, `wholeDefinitionAllowed`) is visible to and changed by a DG admin only (1301 D-37); a project owner does not see it.
-- **D-03:** RU makes the whole interface Russian (DeGram and every DG Web UI screen); owner-fixed strings «Грамматика.», «Граф правил проекта.», «Система инициализирована»; rest per `1301-D38-GLOSSARY.md` (1301 D-38; the start-screen badge is replaced by D-50, owner 2026-10-12).
+- **D-03:** RU makes the whole interface Russian (DeGram and every DG Web UI screen); owner-fixed strings «Свод правил проекта» (hero subtitle, EN «Encode Design Grammars») and «Система инициализирована»; the hero title is the untranslated product name SVOD (owner rebrand 2026-10-13, commit 28fa6f6, superseding «Грамматика.» / «Граф правил проекта.»); rest per `1301-D38-GLOSSARY.md` (1301 D-38; the start-screen badge is replaced by D-50, owner 2026-10-12).
 - **D-04:** Connector access only by per-connector grant, no connector tokens, add-in signs in with the user account, owner and DG admin exempt, editor and viewer need a grant (1301 D-49, amends 1301 D-46).
 - **D-05:** D-32 default (export allowed, whole definition off, malformed store fails closed) is already committed; 1308 only verifies the running image and closes D-32.
 
