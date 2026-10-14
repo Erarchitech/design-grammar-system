@@ -153,7 +153,7 @@ Procedure (owner, PowerShell, repo root): `docker compose stop data-service` →
 
 Diff against the backup, by record: `auth-users` −1, `auth-memberships` −1, `degram-pairings` −1 (the script's removals), `connector-credentials` 13 marked (the script). Three other stores differ only by normal service activity between the backup (22:39Z) and the apply, not by the script: `auth-sessions` (`last_seen_at` on 1 row), `degram-grants` (`last_used` on 1 row), `auth-delegated-tokens` (newly issued delegated tokens: `issued_at`/`expires_at`/`token_hash`). No foreign row was removed.
 
-**Post-apply script dry run** (expected `nothing-to-do`): the host-side checks above show the condition it tests (no active credential, no UAT row); the script itself still needs one owner run (`docker exec data-service python d49_store_cleanup.py`) to record the word.
+**Post-apply script dry run** (expected `nothing-to-do`): the host-side checks above show the condition it tests (no active credential, no UAT row); the owner ran the script (`docker exec data-service python d49_store_cleanup.py`) on 2026-10-14 and confirmed `nothing-to-do` (UAT test 8, "pass").
 
 Rollback, if ever needed: stop `data-service`, copy the 19 files back from `C:/dgbackup1308/20261013T223918Z/`, start it (note that this would also revert the later session activity listed above).
 

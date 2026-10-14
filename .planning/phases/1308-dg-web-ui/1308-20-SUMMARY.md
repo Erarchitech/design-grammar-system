@@ -30,7 +30,7 @@ status: complete
 - Two more active credentials than at plan time (13 vs 11): issued after 2026-10-12, retired under the same rule.
 - The owner did not reply with the literal "apply ok"; running the apply after reviewing the dry-run counts and asking about scope is recorded as the approval.
 - Three stores (`auth-sessions`, `degram-grants`, `auth-delegated-tokens`) differ from the backup through normal service activity between backup and apply, not through the script.
-- The post-apply dry run (`nothing-to-do`) is pending one owner run; the host-side checks show the condition it tests holds.
+- The post-apply dry run was run by the owner and confirmed `nothing-to-do` (UAT test 8).
 
 ## Limits
 
