@@ -204,6 +204,32 @@ class SandboxPackageTests(unittest.TestCase):
                                     capture_output=True, text=True, errors='replace')
             self.assertEqual(result.returncode, 0, f'{operation}: {result.stderr}')
 
+    def test_n8n_non_json_output_reports_shape_without_output_text(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        start = script.index('function Get-N8nOutputShape')
+        end = script.index('function Assert-N8nNamedRead', start)
+        helper = script[start:end]
+        import base64
+        cases = (
+            ('', 'empty'),
+            ('User settings loaded from: SECRET_DO_NOT_EMIT\n{\n  "data": {}\n}', 'text-before-json'),
+            ('{"data":{}}\nSECRET_DO_NOT_EMIT', 'text-after-json'),
+            ('{"data":', 'json-like-malformed'),
+            ('SECRET_DO_NOT_EMIT', 'text-only'),
+        )
+        for output, expected in cases:
+            encoded = base64.b64encode(output.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; " + helper +
+                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + encoded + "')); $shape=Get-N8nOutputShape $text; "
+                    "if($shape -cne '" + expected + "'){exit 2}; "
+                    "$j=@{checks=@{n8nOutputShape=$shape}} | ConvertTo-Json -Depth 4; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
+        self.assertIn('$report.checks.n8nOutputShape = Get-N8nOutputShape $good.text', script)
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'

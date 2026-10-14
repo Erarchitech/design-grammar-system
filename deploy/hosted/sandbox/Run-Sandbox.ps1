@@ -86,6 +86,17 @@ function Get-StartupFailureSignature {
   } catch {} # Diagnostics must not override cleanup or expose raw logs.
   return $signature
 }
+function Get-N8nOutputShape([string]$Text) {
+  # Diagnostic vocabulary only. Never extract or accept a JSON fragment as proof.
+  if ([string]::IsNullOrWhiteSpace($Text)) { return 'empty' }
+  $value = $Text.Trim()
+  if ($value.StartsWith('{') -or $value.StartsWith('[')) {
+    if (-not ($value.EndsWith('}') -or $value.EndsWith(']')) -and $value.Contains('}')) { return 'text-after-json' }
+    return 'json-like-malformed'
+  }
+  if ($value -match '(?m)^\s*[\{\[]') { return 'text-before-json' }
+  return 'text-only'
+}
 function Assert-N8nNamedRead {
   try {
     $importGood = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-read.json') 120
@@ -110,6 +121,7 @@ function Assert-N8nNamedRead {
   $goodData = $null
   try { $goodData = $good.text | ConvertFrom-Json -ErrorAction Stop } catch {
     $report.checks.n8nDetail = 'output-not-json'
+    $report.checks.n8nOutputShape = Get-N8nOutputShape $good.text
     throw 'n8n output not JSON'
   }
   try {
