@@ -50,7 +50,7 @@
 - [ ] **Phase 1305: Ограниченное GH intent editing** — автор подтверждает KB-валидированный patch, получает undo/rollback, реальный solve и восстановимую публикацию.
 - [ ] **Phase 1306: Межплатформенная передача** — получатель на другом ПК проверяет Revit counterpart, значения, выбранную зависимость и основания принятого решения, затем разрешённую передачу в CDE.
 - [ ] **Phase 1307: Приёмка и выпуск** — владелец принимает либо отклоняет выпуск DeGram по correctness/safety/traceability/recovery gates и реальным E2E evidence.
-- [ ] **Phase 1308: DG Web UI: язык интерфейса, роли участников, политика экспорта, сводки главной** — язык EN/RU (D-38), смена ролей участников (D-36), экран политики экспорта только для админа (D-37), сводки на главном экране; вне клиента DeGram.
+- [x] **Phase 1308: DG Web UI: язык интерфейса, роли участников, политика экспорта, сводки главной** — язык EN/RU (D-38), смена ролей участников (D-36), экран политики экспорта только для админа (D-37), сводки на главном экране; вне клиента DeGram.
 
 ## Порядок и capability prerequisites
 
@@ -455,7 +455,7 @@ Plans:
 **Goal:** администратор и участники проекта работают с DG Web UI на выбранном языке (EN/RU), админ управляет политикой экспорта проекта, владелец меняет роли участников, а главный экран показывает сводные данные модулей; вынесено из live-приёмки 1301 (решение владельца 2026-10-10, не часть клиента DeGram).
 **Requirements**: WEBUI-01, WEBUI-02, WEBUI-03, WEBUI-04, WEBUI-05, WEBUI-06, WEBUI-07, WEBUI-08, WEBUI-09, WEBUI-10, WEBUI-11
 **Depends on:** Phase 1301 (находки live-приёмки: D-36, D-37, D-38, образ data-service с D-32)
-**Plans:** 15/24 plans executed
+**Plans:** 24/24 plans executed; UAT 11/11, VERIFICATION passed (2026-10-14)
 
 Plans:
 **Wave 1**
@@ -487,27 +487,27 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 1308-14-PLAN.md — ui-v2 translation: Model area
-- [ ] 1308-24-PLAN.md — data-service: session-based connector status, legacy helpers removed, D-33 cascades incl. invite paths
+- [x] 1308-14-PLAN.md — ui-v2 translation: Model area
+- [x] 1308-24-PLAN.md — data-service: session-based connector status, legacy helpers removed, D-33 cascades incl. invite paths
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 1308-15-PLAN.md — ui-v2 Connectors screen, DeGram-hosted table and API docs without tokens
+- [x] 1308-15-PLAN.md — ui-v2 Connectors screen, DeGram-hosted table and API docs without tokens
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 1308-22-PLAN.md — ui-v2 translation: App shell, DeGram host workspace, primitives + completeness gate and font check
+- [x] 1308-22-PLAN.md — ui-v2 translation: App shell, DeGram host workspace, primitives + completeness gate and font check
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 1308-17-PLAN.md — DeGram sidebar «Projects»: ui-v2 host signal + component commit (authorization checkpoint)
+- [x] 1308-17-PLAN.md — DeGram sidebar «Projects»: ui-v2 host signal + component commit (authorization checkpoint)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 1308-19-PLAN.md — live: D-32 closure, rebuild from git archive HEAD (human-verify)
-- [ ] 1308-21-PLAN.md — DeGram: one language setting (Русский/English only, live #degram-lang to the DG page, RU catalog complete), component commit
+- [x] 1308-19-PLAN.md — live: D-32 closure, rebuild from git archive HEAD (human-verify)
+- [x] 1308-21-PLAN.md — DeGram: one language setting (Русский/English only, live #degram-lang to the DG page, RU catalog complete), component commit
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 1308-18-PLAN.md — owner pushes the fork; gitlink bump + workspace verify
-- [ ] 1308-20-PLAN.md — live: backup, dry run, apply cleanup (human-verify), owner actions
+- [x] 1308-18-PLAN.md — owner pushes the fork; gitlink bump + workspace verify
+- [x] 1308-20-PLAN.md — live: backup, dry run, apply cleanup (human-verify), owner actions
