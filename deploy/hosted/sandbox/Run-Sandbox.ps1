@@ -86,6 +86,44 @@ function Get-StartupFailureSignature {
   } catch {} # Diagnostics must not override cleanup or expose raw logs.
   return $signature
 }
+function Assert-N8nNamedRead {
+  try {
+    $importGood = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-read.json') 120
+  } catch {
+    $report.checks.n8nDetail = 'import-command-error'
+    throw 'n8n workflow import command failed'
+  }
+  if ($importGood.code -ne 0) {
+    $report.checks.n8nDetail = 'import-nonzero'
+    throw 'n8n workflow import failed'
+  }
+  try {
+    $good = Compose @('run','--rm','--no-deps','n8n','execute','--id=dg1309FileRead','--rawOutput') 120
+  } catch {
+    $report.checks.n8nDetail = 'execute-command-error'
+    throw 'n8n workflow execute command failed'
+  }
+  if ($good.code -ne 0) {
+    $report.checks.n8nDetail = 'execute-nonzero'
+    throw 'n8n workflow execute failed'
+  }
+  $goodData = $null
+  try { $goodData = $good.text | ConvertFrom-Json -ErrorAction Stop } catch {
+    $report.checks.n8nDetail = 'output-not-json'
+    throw 'n8n output not JSON'
+  }
+  try {
+    $assertions = @($goodData.data.resultData.runData.'Assert named content')
+    Assert-Ok ($assertions.Count -eq 1 -and
+               $assertions[0].data.main[0][0].json.fileReadVerified -eq $true -and
+               $assertions[0].data.main[0][0].json.workflowId -ceq 'dg1309FileRead' -and
+               -not $goodData.data.resultData.error) 'n8n evidence mismatch'
+  } catch {
+    $report.checks.n8nDetail = 'unexpected-evidence'
+    throw 'n8n file-reading execution failed'
+  }
+  $report.checks.n8nNamedRead = $true
+}
 function New-RandomSecret {
   $bytes = [byte[]]::new(48)
   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -225,17 +263,7 @@ try {
   Assert-Ok ($evidence.ingest_inserted -eq 1 -and $evidence.neo4j_scoped_notes -eq 1 -and $evidence.denied_paths -eq 4 -and $evidence.csrf_denied -eq $true) 'data-service evidence anomaly'
   $report.checks.dataService = $evidence
   $stage = 'n8n-named-file-read'
-  $importGood = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-read.json') 120
-  Assert-Ok ($importGood.code -eq 0) 'n8n workflow import failed'
-  $good = Compose @('run','--rm','--no-deps','n8n','execute','--id=dg1309FileRead','--rawOutput') 120
-  $goodData = $null
-  try { $goodData = $good.text | ConvertFrom-Json } catch {}
-  $assertions = @($goodData.data.resultData.runData.'Assert named content')
-  Assert-Ok ($good.code -eq 0 -and $assertions.Count -eq 1 -and
-             $assertions[0].data.main[0][0].json.fileReadVerified -eq $true -and
-             $assertions[0].data.main[0][0].json.workflowId -ceq 'dg1309FileRead' -and
-             -not $goodData.data.resultData.error) 'n8n file-reading execution failed'
-  $report.checks.n8nNamedRead = $true
+  Assert-N8nNamedRead
   $stage = 'n8n-denied-file-read'
   $importDenied = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-denied.json') 120
   Assert-Ok ($importDenied.code -eq 0) 'n8n denial workflow import failed'

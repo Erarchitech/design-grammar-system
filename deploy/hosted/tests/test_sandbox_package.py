@@ -147,6 +147,63 @@ class SandboxPackageTests(unittest.TestCase):
         self.assertIn("$report.checks.startDetail = 'neo4j-not-ready'", script)
         self.assertIn("$report.checks.startDetail = 'readiness-timeout'", script)
 
+    def test_n8n_named_read_failure_reports_only_bounded_stage(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        start = script.index('function Assert-N8nNamedRead')
+        end = script.index('function New-RandomSecret', start)
+        helper = script[start:end]
+        good = json.dumps({'data': {'resultData': {'runData': {
+            'Assert named content': [{'data': {'main': [[{'json': {
+                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
+            }}]]}}]
+        }}}})
+        cases = (
+            (1, 0, good, 'import-nonzero'),
+            (0, 1, 'SECRET_DO_NOT_EMIT', 'execute-nonzero'),
+            (0, 0, 'SECRET_DO_NOT_EMIT', 'output-not-json'),
+            (0, 0, '{}', 'unexpected-evidence'),
+            (0, 0, good, None),
+        )
+        import base64
+        for import_code, execute_code, output, expected in cases:
+            encoded = base64.b64encode(output.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
+                    "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
+                    "function Compose([string[]]$a,[int]$t) { "
+                    "if($a -contains 'import:workflow'){return @{code=" + str(import_code) + ";text='SECRET_DO_NOT_EMIT'}}; "
+                    "return @{code=" + str(execute_code) + ";text=[Text.Encoding]::UTF8.GetString("
+                    "[Convert]::FromBase64String('" + encoded + "'))} }; "
+                    + helper + "; try { Assert-N8nNamedRead } catch {}; "
+                    "$j=$report | ConvertTo-Json -Depth 5; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
+                    "if('" + (expected or '') + "' -ne '' -and "
+                    "$report.checks.n8nDetail -cne '" + (expected or '') + "'){exit 4}; "
+                    "if('" + (expected or '') + "' -eq '' -and "
+                    "$report.checks.ContainsKey('n8nDetail')){ "
+                    "Write-Output ($report | ConvertTo-Json -Depth 5);exit 4 }; "
+                    "if([bool]$report.checks.n8nNamedRead -ne " +
+                    ('$true' if expected is None else '$false') + "){exit 5}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{expected}: {result.stdout} {result.stderr}')
+
+        # Command exceptions (including bounded timeouts) must also produce fixed labels.
+        for operation in ('import:workflow', 'execute'):
+            code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
+                    "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
+                    "function Compose([string[]]$a,[int]$t) { "
+                    "if($a -contains '" + operation + "'){throw 'SECRET_DO_NOT_EMIT'}; "
+                    "return @{code=0;text='{}'} }; "
+                    + helper + "; try { Assert-N8nNamedRead } catch {}; "
+                    "$j=$report | ConvertTo-Json -Depth 5; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
+                    "if($report.checks.n8nDetail -cne '" +
+                    ('import-command-error' if operation == 'import:workflow' else 'execute-command-error') +
+                    "'){exit 4}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{operation}: {result.stderr}')
+
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'
