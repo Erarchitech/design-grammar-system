@@ -149,7 +149,7 @@ class SandboxPackageTests(unittest.TestCase):
 
     def test_n8n_named_read_failure_reports_only_bounded_stage(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        start = script.index('function Assert-N8nNamedRead')
+        start = script.index('function Get-N8nOutputShape')
         end = script.index('function New-RandomSecret', start)
         helper = script[start:end]
         good = json.dumps({'data': {'resultData': {'runData': {
@@ -161,6 +161,8 @@ class SandboxPackageTests(unittest.TestCase):
             (1, 0, good, 'import-nonzero'),
             (0, 1, 'SECRET_DO_NOT_EMIT', 'execute-nonzero'),
             (0, 0, 'SECRET_DO_NOT_EMIT', 'output-not-json'),
+            (0, 0, 'User settings loaded from: /home/node/.n8n/config\n' + good, None),
+            (0, 0, 'SECRET_DO_NOT_EMIT\n' + good, 'output-not-json'),
             (0, 0, '{}', 'unexpected-evidence'),
             (0, 0, good, None),
         )
@@ -229,6 +231,76 @@ class SandboxPackageTests(unittest.TestCase):
                                     capture_output=True, text=True, errors='replace')
             self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
         self.assertIn('$report.checks.n8nOutputShape = Get-N8nOutputShape $good.text', script)
+
+    def test_n8n_execution_json_allows_only_exact_settings_notice(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        helper = script[script.index('function Read-N8nExecutionJson'):script.index('function Assert-N8nNamedRead')]
+        import base64
+        evidence = json.dumps({'data': {'resultData': {'runData': {
+            'Assert named content': [{'data': {'main': [[{'json': {
+                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
+            }}]]}}]
+        }}}})
+        notice = 'User settings loaded from: /home/node/.n8n/config\n'
+        cases = (
+            (evidence, True),
+            (notice + evidence, True),
+            ('User settings loaded from: /home/node/.n8n/other\n' + evidence, False),
+            ('SECRET_DO_NOT_EMIT\n' + evidence, False),
+            (notice + evidence + '\nSECRET_DO_NOT_EMIT', False),
+            (notice + notice + evidence, False),
+            (notice + '{"data":', False),
+        )
+        for text, accepted in cases:
+            encoded = base64.b64encode(text.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; " + helper +
+                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + encoded + "')); $valid=$false; "
+                    "try{$data=Read-N8nExecutionJson $text; "
+                    "$valid=($data.data.resultData.runData.'Assert named content'[0].data.main[0][0].json.fileReadVerified -eq $true)}catch{}; "
+                    "if($valid -ne " + ('$true' if accepted else '$false') + "){exit 2}; "
+                    "$j=@{valid=$valid} | ConvertTo-Json -Compress; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{accepted}: {result.stderr}')
+        self.assertIn('$goodData = Read-N8nExecutionJson $good.text', script)
+
+    def test_n8n_denied_read_requires_read_node_error_and_sanitizes_output(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        start = script.index('function Assert-N8nDeniedRead')
+        end = script.index('function New-RandomSecret', start)
+        helper = script[start:end]
+        import base64
+        denied = json.dumps({'data': {'resultData': {
+            'lastNodeExecuted': 'Read outside named mount',
+            'error': {'message': 'SECRET_DO_NOT_EMIT'}, 'runData': {}
+        }}})
+        unrelated = json.dumps({'data': {'resultData': {
+            'lastNodeExecuted': 'Manual Start',
+            'error': {'message': 'SECRET_DO_NOT_EMIT'}, 'runData': {}
+        }}})
+        notice = 'User settings loaded from: /home/node/.n8n/config\n'
+        for output, accepted in ((denied, True), (notice + denied, True),
+                                 (notice + unrelated, False),
+                                 ('SECRET_DO_NOT_EMIT\n' + denied, False)):
+            encoded = base64.b64encode(output.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
+                    "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
+                    "function Compose([string[]]$a,[int]$t){ "
+                    "if($a -contains 'import:workflow'){return @{code=0;text=''}}; "
+                    "return @{code=0;text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + encoded + "'))} }; "
+                    + script[script.index('function Read-N8nExecutionJson'):start]
+                    + helper + "; try{Assert-N8nDeniedRead}catch{}; "
+                    "if([bool]$report.checks.n8nDeniedRead -ne "
+                    + ('$true' if accepted else '$false') + "){exit 2}; "
+                    "$j=$report|ConvertTo-Json -Depth 5; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{accepted}: {result.stderr}')
+        self.assertIn('Assert-N8nDeniedRead', script[script.index("$stage = 'n8n-denied-file-read'"):])
 
     def test_manifest_rejects_changed_zip_member(self):
         with tempfile.TemporaryDirectory() as temp:

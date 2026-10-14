@@ -97,6 +97,22 @@ function Get-N8nOutputShape([string]$Text) {
   if ($value -match '(?m)^\s*[\{\[]') { return 'text-before-json' }
   return 'text-only'
 }
+function Read-N8nExecutionJson([string]$Text) {
+  # n8n 2.4.8 can print this fixed settings notice even with --rawOutput.
+  # Permit exactly one known line, not arbitrary text before a JSON fragment.
+  $notice = "User settings loaded from: /home/node/.n8n/config`n"
+  if ($Text.StartsWith($notice, [StringComparison]::Ordinal)) {
+    $Text = $Text.Substring($notice.Length)
+  } else {
+    $windowsNotice = $notice.Replace("`n", "`r`n")
+    if ($Text.StartsWith($windowsNotice, [StringComparison]::Ordinal)) {
+      $Text = $Text.Substring($windowsNotice.Length)
+    }
+  }
+  $data = $Text | ConvertFrom-Json -ErrorAction Stop
+  if ($null -eq $data -or $data -isnot [pscustomobject]) { throw 'n8n execution JSON object required' }
+  return $data
+}
 function Assert-N8nNamedRead {
   try {
     $importGood = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-read.json') 120
@@ -119,7 +135,7 @@ function Assert-N8nNamedRead {
     throw 'n8n workflow execute failed'
   }
   $goodData = $null
-  try { $goodData = $good.text | ConvertFrom-Json -ErrorAction Stop } catch {
+  try { $goodData = Read-N8nExecutionJson $good.text } catch {
     $report.checks.n8nDetail = 'output-not-json'
     $report.checks.n8nOutputShape = Get-N8nOutputShape $good.text
     throw 'n8n output not JSON'
@@ -135,6 +151,17 @@ function Assert-N8nNamedRead {
     throw 'n8n file-reading execution failed'
   }
   $report.checks.n8nNamedRead = $true
+}
+function Assert-N8nDeniedRead {
+  $importDenied = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-denied.json') 120
+  Assert-Ok ($importDenied.code -eq 0) 'n8n denial workflow import failed'
+  $denied = Compose @('run','--rm','--no-deps','n8n','execute','--id=dg1309DeniedRead','--rawOutput') 120
+  $deniedData = $null
+  try { $deniedData = Read-N8nExecutionJson $denied.text } catch {}
+  Assert-Ok ($deniedData.data.resultData.error -and
+             $deniedData.data.resultData.lastNodeExecuted -ceq 'Read outside named mount' -and
+             -not $deniedData.data.resultData.runData.'Assert named content') 'n8n file denial not observed at read node'
+  $report.checks.n8nDeniedRead = $true
 }
 function New-RandomSecret {
   $bytes = [byte[]]::new(48)
@@ -277,15 +304,7 @@ try {
   $stage = 'n8n-named-file-read'
   Assert-N8nNamedRead
   $stage = 'n8n-denied-file-read'
-  $importDenied = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-denied.json') 120
-  Assert-Ok ($importDenied.code -eq 0) 'n8n denial workflow import failed'
-  $denied = Compose @('run','--rm','--no-deps','n8n','execute','--id=dg1309DeniedRead') 120
-  $deniedData = $null
-  try { $deniedData = $denied.text | ConvertFrom-Json } catch {}
-  Assert-Ok ($deniedData.data.resultData.error -and
-             $deniedData.data.resultData.lastNodeExecuted -ceq 'Read outside named mount' -and
-             -not $deniedData.data.resultData.runData.'Assert named content') 'n8n file denial not observed at read node'
-  $report.checks.n8nDeniedRead = $true
+  Assert-N8nDeniedRead
   Assert-Ok (([DateTime]::UtcNow - $started).TotalMinutes -le 35) 'overall runtime exceeded 35 minutes'
   $report.status = 'PASS'
 } catch {
