@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-14 Phase 1302 context research and planning gate|Phase 1302 — context, preliminary research and blocked GSD planning]] (2026-10-14)
 - [[sessions/2026-10-14 Phase 1308 rollout, UAT C-E and phase closed|Phase 1308 rollout (rebuild from HEAD, D-49 cleanup), UAT C–E, verification and security — phase closed]] (2026-10-14)
 - [[sessions/2026-10-13 Phase 1308 UAT audit, DeGram c476c236 build and group F pass|Phase 1308 UAT audit, DeGram c476c236 build, group F passed — rollout 19/20 open]] (2026-10-13)
 - [[sessions/2026-10-13 SVOD rebrand, ALNST and Tektur design system, drawn landing hero|SVOD rebrand, ALNST + Tektur design system, drawn landing hero — design accepted]] (2026-10-13)
@@ -50,6 +51,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Phase 1302 source vocabulary and revision boundaries|Phase 1302 — source, vocabulary, rule revision and lessons-learned boundaries]] (2026-10-14)
 - [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|SVOD name; ALNST + Tektur design system; uppercase headings without full stops; crescent ring and drawn hero]] (2026-10-13)
 - [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54, Phase 1308)]] (2026-10-12)
 - [[knowledge/decisions/Connector access is a per-connector grant without tokens, owner and admin exempt (D-49)|Connector access is a per-connector grant without tokens, owner and admin exempt; add-in signs in with the account (D-49, Phase 1308)]] (2026-10-12)
