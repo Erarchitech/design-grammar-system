@@ -258,6 +258,40 @@ class SandboxPackageTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
         self.assertIn('$report.checks.n8nCliSignal = Get-N8nCliSignal $good.text', script)
 
+    def test_n8n_tail_diagnostic_classifies_evidence_without_accepting_it(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        helper = script[script.index('function Get-N8nJsonTailKind'):script.index('function Read-N8nExecutionJson')]
+        import base64
+        verified = json.dumps({'data': {'resultData': {'runData': {
+            'Assert named content': [{'data': {'main': [[{'json': {
+                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
+            }}]]}}]
+        }}}}, indent=2)
+        failed = json.dumps({'data': {'resultData': {'error': {
+            'message': 'SECRET_DO_NOT_EMIT'
+        }, 'runData': {}}}}, indent=2)
+        cases = (
+            ('unclassified SECRET_DO_NOT_EMIT\n' + verified, 'claimed-node'),
+            ('unclassified SECRET_DO_NOT_EMIT\n' + failed, 'workflow-error'),
+            ('unclassified SECRET_DO_NOT_EMIT\n{}', 'other-json'),
+            ('unclassified SECRET_DO_NOT_EMIT\n{bad', 'no-json'),
+            ('unclassified SECRET_DO_NOT_EMIT\n' + verified + '\n' + verified, 'ambiguous'),
+            ('unclassified SECRET_DO_NOT_EMIT\n' + verified + '\nTRAILER', 'no-json'),
+        )
+        for text, expected in cases:
+            encoded = base64.b64encode(text.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; " + helper +
+                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + encoded + "')); $kind=Get-N8nJsonTailKind $text; "
+                    "if($kind -cne '" + expected + "'){exit 2}; "
+                    "$j=@{checks=@{n8nJsonTailKind=$kind}}|ConvertTo-Json -Compress; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
+        self.assertIn('$report.checks.n8nJsonTailKind = Get-N8nJsonTailKind $good.text', script)
+        self.assertIn("throw 'n8n output not JSON'", script)
+
     def test_n8n_execution_json_allows_only_exact_settings_notice(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
         helper = script[script.index('function Read-N8nExecutionJson'):script.index('function Assert-N8nNamedRead')]

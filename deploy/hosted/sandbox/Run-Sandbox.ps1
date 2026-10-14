@@ -108,6 +108,21 @@ function Get-N8nCliSignal([string]$Text) {
   }
   return 'none'
 }
+function Get-N8nJsonTailKind([string]$Text) {
+  # Diagnostic only: a suffix is not accepted as execution proof when its prefix
+  # is unknown. Do not serialize parsed content or return it to the caller.
+  if ($Text.Length -gt 524288) { return 'no-json' }
+  $starts = [regex]::Matches($Text, '(?m)^\{')
+  if ($starts.Count -gt 1) { return 'ambiguous' }
+  if ($starts.Count -ne 1) { return 'no-json' }
+  try {
+    $candidate = $Text.Substring($starts[0].Index) | ConvertFrom-Json -ErrorAction Stop
+    if ($candidate -isnot [pscustomobject]) { return 'no-json' }
+    if ($candidate.data.resultData.error) { return 'workflow-error' }
+    if ($candidate.data.resultData.runData.'Assert named content') { return 'claimed-node' }
+    return 'other-json'
+  } catch { return 'no-json' }
+}
 function Read-N8nExecutionJson([string]$Text) {
   # n8n 2.4.8 can print this fixed settings notice even with --rawOutput.
   # Permit exactly one known line, not arbitrary text before a JSON fragment.
@@ -150,6 +165,7 @@ function Assert-N8nNamedRead {
     $report.checks.n8nDetail = 'output-not-json'
     $report.checks.n8nOutputShape = Get-N8nOutputShape $good.text
     $report.checks.n8nCliSignal = Get-N8nCliSignal $good.text
+    $report.checks.n8nJsonTailKind = Get-N8nJsonTailKind $good.text
     throw 'n8n output not JSON'
   }
   try {
