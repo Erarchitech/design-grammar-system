@@ -97,6 +97,17 @@ function Get-N8nOutputShape([string]$Text) {
   if ($value -match '(?m)^\s*[\{\[]') { return 'text-before-json' }
   return 'text-only'
 }
+function Get-N8nCliSignal([string]$Text) {
+  # Match only n8n 2.4.8 CLI's fixed execution-failure banners.
+  # Never report an error message, JSON body, path, or arbitrary stdout.
+  if ($Text -cmatch '(?m)^Execution was NOT successful\. See log message for details\.$') {
+    return 'execution-failed'
+  }
+  if ($Text -cmatch '(?m)^Error executing workflow\. See log messages for details\.$') {
+    return 'execute-catch'
+  }
+  return 'none'
+}
 function Read-N8nExecutionJson([string]$Text) {
   # n8n 2.4.8 can print this fixed settings notice even with --rawOutput.
   # Permit exactly one known line, not arbitrary text before a JSON fragment.
@@ -138,6 +149,7 @@ function Assert-N8nNamedRead {
   try { $goodData = Read-N8nExecutionJson $good.text } catch {
     $report.checks.n8nDetail = 'output-not-json'
     $report.checks.n8nOutputShape = Get-N8nOutputShape $good.text
+    $report.checks.n8nCliSignal = Get-N8nCliSignal $good.text
     throw 'n8n output not JSON'
   }
   try {

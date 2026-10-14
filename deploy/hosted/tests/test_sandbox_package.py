@@ -232,6 +232,32 @@ class SandboxPackageTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
         self.assertIn('$report.checks.n8nOutputShape = Get-N8nOutputShape $good.text', script)
 
+    def test_n8n_cli_signal_reports_only_fixed_execution_labels(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        helper = script[script.index('function Get-N8nCliSignal'):script.index('function Read-N8nExecutionJson')]
+        import base64
+        cases = (
+            ('User settings loaded from: /home/node/.n8n/config\n{\"data\":{}}', 'none'),
+            ('Execution was NOT successful. See log message for details.\n'
+             'Execution error:\n{\"data\":{\"resultData\":{\"error\":{\"message\":\"SECRET_DO_NOT_EMIT\"}}}',
+             'execution-failed'),
+            ('Error executing workflow. See log messages for details.\nSECRET_DO_NOT_EMIT',
+             'execute-catch'),
+            ('SECRET_DO_NOT_EMIT\n{\"data\":{}}', 'none'),
+        )
+        for text, expected in cases:
+            encoded = base64.b64encode(text.encode()).decode()
+            code = ("$ErrorActionPreference='Stop'; " + helper +
+                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
+                    + encoded + "')); $signal=Get-N8nCliSignal $text; "
+                    "if($signal -cne '" + expected + "'){exit 2}; "
+                    "$j=@{checks=@{n8nCliSignal=$signal}}|ConvertTo-Json -Compress; "
+                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
+                                    capture_output=True, text=True, errors='replace')
+            self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
+        self.assertIn('$report.checks.n8nCliSignal = Get-N8nCliSignal $good.text', script)
+
     def test_n8n_execution_json_allows_only_exact_settings_notice(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
         helper = script[script.index('function Read-N8nExecutionJson'):script.index('function Assert-N8nNamedRead')]
