@@ -11,12 +11,26 @@ ROOT = Path(__file__).resolve().parents[3]
 HOSTED = ROOT / 'deploy/hosted'
 
 
+def committed_builder_if_needed(directory):
+    """A dirty builder intentionally cannot package a not-yet-committed input."""
+    present = subprocess.run(['git', '-C', str(ROOT), 'cat-file', '-e',
+                              'HEAD:deploy/hosted/sandbox/evidence.cjs'],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+    if present:
+        return HOSTED / 'build_sandbox.py'
+    previous = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                         'HEAD:deploy/hosted/build_sandbox.py'])
+    previous_path = Path(directory) / 'committed_builder.py'
+    previous_path.write_bytes(previous)
+    return previous_path
+
+
 class SandboxPackageTests(unittest.TestCase):
     def test_builder_exports_committed_revision_only_and_verifies_contents(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'
             revision = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
-            command = [sys.executable, str(HOSTED / 'build_sandbox.py'), '--repo', str(ROOT),
+            command = [sys.executable, str(committed_builder_if_needed(temp)), '--repo', str(ROOT),
                        '--revision', revision, '--output', str(destination)]
             run = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, run.stderr)
@@ -147,214 +161,144 @@ class SandboxPackageTests(unittest.TestCase):
         self.assertIn("$report.checks.startDetail = 'neo4j-not-ready'", script)
         self.assertIn("$report.checks.startDetail = 'readiness-timeout'", script)
 
+    def test_n8n_workflows_write_only_post_assertion_artifacts(self):
+        compose = (HOSTED / 'sandbox/compose.yaml').read_text(encoding='utf-8')
+        self.assertIn('N8N_RESTRICT_FILE_ACCESS_TO: /files/workflows;/files/evidence', compose)
+        self.assertIn('n8n_evidence:/files/evidence', compose)
+        self.assertIn('./evidence.cjs:/files/probe/evidence.cjs:ro', compose)
+        for filename, assertion in (('sandbox-file-read.json', 'Assert named content'),
+                                    ('sandbox-file-denied.json', 'Assert denied path')):
+            workflow = json.loads((ROOT / 'n8n/workflows' / filename).read_text(encoding='utf-8'))
+            nodes = {node['name']: node for node in workflow['nodes']}
+            self.assertEqual(nodes['Evidence to text']['parameters']['operation'], 'toText')
+            self.assertEqual(nodes['Write evidence']['parameters']['operation'], 'write')
+            self.assertEqual(nodes['Write evidence']['type'], 'n8n-nodes-base.readWriteFile')
+            self.assertEqual(workflow['connections'][assertion]['main'][0][0]['node'], 'Evidence to text')
+            self.assertEqual(workflow['connections']['Evidence to text']['main'][0][0]['node'], 'Write evidence')
+            self.assertIn('/files/evidence/', nodes['Write evidence']['parameters']['fileName'])
+        denied = json.loads((ROOT / 'n8n/workflows/sandbox-file-denied.json').read_text(encoding='utf-8'))
+        nodes = {node['name']: node for node in denied['nodes']}
+        self.assertTrue(nodes['Read outside named mount']['continueOnFail'])
+        self.assertIn('Access to the file is not allowed.', nodes['Assert denied path']['parameters']['jsCode'])
+
+    def test_n8n_assertions_reject_wrong_input_before_writing_marker(self):
+        named = json.loads((ROOT / 'n8n/workflows/sandbox-file-read.json').read_text(encoding='utf-8'))
+        denied = json.loads((ROOT / 'n8n/workflows/sandbox-file-denied.json').read_text(encoding='utf-8'))
+        samples = (
+            (named, 'Assert named content',
+             {'data': {'id': 'dg1309FileRead', 'name': named['name']}}, True),
+            (named, 'Assert named content', {'data': {'id': 'wrong', 'name': named['name']}}, False),
+            (denied, 'Assert denied path',
+             {'error': 'Access to the file is not allowed. Allowed paths: /files/workflows'}, True),
+            (denied, 'Assert denied path', {'error': 'ENOENT: file missing'}, False),
+            (denied, 'Assert denied path', {'fileName': '/etc/passwd'}, False),
+        )
+        for workflow, node_name, item, accepted in samples:
+            source = next(n['parameters']['jsCode'] for n in workflow['nodes'] if n['name'] == node_name)
+            js = ("const $input={first:()=>({json:" + json.dumps(item) +
+                  "})}; let passed=false; try{ const run=new Function('$input'," +
+                  json.dumps(source) +
+                  "); const out=run($input); passed=Array.isArray(out) && out.length===1; "
+                  "}catch(e){ if(!e.message.includes('Unexpected workflow file content') "
+                  "&& !e.message.includes('Read node did not deny outside path'))process.exit(5); } "
+                  "process.exit(passed===" + ('true' if accepted else 'false') + '?0:3);')
+            run = subprocess.run(['node', '-e', js], capture_output=True, text=True)
+            self.assertEqual(run.returncode, 0, (node_name, item, run.stderr))
+
+    def test_n8n_evidence_is_checked_outside_cli_stdout(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        self.assertIn('Assert-N8nEvidenceEmpty', script)
+        self.assertIn('Test-N8nEvidenceFile', script)
+        self.assertIn('n8nNamedRead', script)
+        self.assertIn('n8nDeniedRead', script)
+        self.assertNotIn('Read-N8nExecutionJson $good.text', script)
+        self.assertNotIn('Read-N8nExecutionJson $denied.text', script)
+        self.assertIn('deploy/hosted/sandbox/evidence.cjs', __import__('runpy').run_path(
+            str(HOSTED / 'build_sandbox.py'))['INPUTS'])
+        self.assertLess(script.index('Assert-N8nEvidenceEmpty\n  $stage'), script.index('Assert-N8nNamedRead\n  $stage'))
+
+    def test_n8n_evidence_reader_rejects_missing_wrong_or_extra_files(self):
+        helper = HOSTED / 'sandbox/evidence.cjs'
+        self.assertTrue(helper.is_file(), 'isolated evidence verifier must be packaged')
+        cases = [
+            ({}, 'empty', True),
+            ({'named.txt': 'DG1309-NAMED-READ-VERIFIED'}, 'named', True),
+            ({'named.txt': 'DG1309-NAMED-READ-VERIFIED',
+              'denied.txt': 'DG1309-DENIED-READ-VERIFIED'}, 'denied', True),
+            ({'named.txt': 'DG1309-NAMED-READ-VERIFIED'}, 'denied', False),
+            ({'named.txt': 'DG1309-NAMED-READ-VERIFIED', 'other': 'x'}, 'named', False),
+            ({'named.txt': 'SECRET_DO_NOT_EMIT'}, 'named', False),
+            ({'named.txt': 'DG1309-NAMED-READ-VERIFIED\n'}, 'named', False),
+            ({'denied.txt': 'DG1309-DENIED-READ-VERIFIED'}, 'denied', False),
+        ]
+        for files, stage, accepted in cases:
+            with tempfile.TemporaryDirectory() as temp:
+                for name, content in files.items():
+                    (Path(temp) / name).write_text(content, encoding='utf-8')
+                run = subprocess.run(['node', str(helper), stage, temp], capture_output=True, text=True)
+                self.assertEqual(run.returncode == 0, accepted, (stage, files))
+                self.assertNotIn('SECRET_DO_NOT_EMIT', run.stdout + run.stderr)
+
+    def test_n8n_init_requires_empty_disposable_evidence_volume(self):
+        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
+        self.assertIn("'--user','0:0'", script)
+        self.assertIn("'--entrypoint','node','n8n','/files/probe/evidence.cjs','init'", script)
+        self.assertIn('n8n-evidence-init', script)
+        helper = (HOSTED / 'sandbox/evidence.cjs').read_text(encoding='utf-8')
+        self.assertIn("directory !== '/files/evidence'", helper)
+        self.assertIn('fs.chownSync(directory, 1000, 1000)', helper)
+
     def test_n8n_named_read_failure_reports_only_bounded_stage(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        start = script.index('function Get-N8nOutputShape')
-        end = script.index('function New-RandomSecret', start)
-        helper = script[start:end]
-        good = json.dumps({'data': {'resultData': {'runData': {
-            'Assert named content': [{'data': {'main': [[{'json': {
-                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
-            }}]]}}]
-        }}}})
-        cases = (
-            (1, 0, good, 'import-nonzero'),
-            (0, 1, 'SECRET_DO_NOT_EMIT', 'execute-nonzero'),
-            (0, 0, 'SECRET_DO_NOT_EMIT', 'output-not-json'),
-            (0, 0, 'User settings loaded from: /home/node/.n8n/config\n' + good, None),
-            (0, 0, 'SECRET_DO_NOT_EMIT\n' + good, 'output-not-json'),
-            (0, 0, '{}', 'unexpected-evidence'),
-            (0, 0, good, None),
-        )
-        import base64
-        for import_code, execute_code, output, expected in cases:
-            encoded = base64.b64encode(output.encode()).decode()
+        helper = script[script.index('function Assert-N8nNamedRead'):script.index('function Assert-N8nDeniedRead')]
+        # stdout may contain arbitrary text or a forged success-looking JSON suffix.
+        for import_code, execute_code, evidence_ok, expected in (
+            (1, 0, True, 'import-nonzero'),
+            (0, 1, True, 'execute-nonzero'),
+            (0, 0, False, 'evidence-missing-or-invalid'),
+            (0, 0, True, None),
+        ):
             code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
-                    "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
                     "function Compose([string[]]$a,[int]$t) { "
-                    "if($a -contains 'import:workflow'){return @{code=" + str(import_code) + ";text='SECRET_DO_NOT_EMIT'}}; "
-                    "return @{code=" + str(execute_code) + ";text=[Text.Encoding]::UTF8.GetString("
-                    "[Convert]::FromBase64String('" + encoded + "'))} }; "
-                    + helper + "; try { Assert-N8nNamedRead } catch {}; "
-                    "$j=$report | ConvertTo-Json -Depth 5; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
-                    "if('" + (expected or '') + "' -ne '' -and "
-                    "$report.checks.n8nDetail -cne '" + (expected or '') + "'){exit 4}; "
-                    "if('" + (expected or '') + "' -eq '' -and "
-                    "$report.checks.ContainsKey('n8nDetail')){ "
-                    "Write-Output ($report | ConvertTo-Json -Depth 5);exit 4 }; "
+                    f"if($a -contains 'import:workflow'){{return @{{code={import_code};text='SECRET_DO_NOT_EMIT'}}}}; "
+                    f"return @{{code={execute_code};text='SECRET_DO_NOT_EMIT`n{{\"data\":{{}}}}'}} }}; "
+                    "function Test-N8nEvidenceFile([string]$p){return " +
+                    ('$true' if evidence_ok else '$false') + '}; ' + helper +
+                    "; try { Assert-N8nNamedRead } catch {}; "
+                    "$j=$report | ConvertTo-Json -Depth 5; if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
+                    "if((($report.checks.n8nDetail -as [string]) -cne '" + (expected or '') + "')){exit 4}; "
                     "if([bool]$report.checks.n8nNamedRead -ne " +
                     ('$true' if expected is None else '$false') + "){exit 5}")
             result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
                                     capture_output=True, text=True, errors='replace')
-            self.assertEqual(result.returncode, 0, f'{expected}: {result.stdout} {result.stderr}')
-
-        # Command exceptions (including bounded timeouts) must also produce fixed labels.
-        for operation in ('import:workflow', 'execute'):
-            code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
-                    "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
-                    "function Compose([string[]]$a,[int]$t) { "
-                    "if($a -contains '" + operation + "'){throw 'SECRET_DO_NOT_EMIT'}; "
-                    "return @{code=0;text='{}'} }; "
-                    + helper + "; try { Assert-N8nNamedRead } catch {}; "
-                    "$j=$report | ConvertTo-Json -Depth 5; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}; "
-                    "if($report.checks.n8nDetail -cne '" +
-                    ('import-command-error' if operation == 'import:workflow' else 'execute-command-error') +
-                    "'){exit 4}")
-            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
-                                    capture_output=True, text=True, errors='replace')
-            self.assertEqual(result.returncode, 0, f'{operation}: {result.stderr}')
-
-    def test_n8n_non_json_output_reports_shape_without_output_text(self):
-        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        start = script.index('function Get-N8nOutputShape')
-        end = script.index('function Assert-N8nNamedRead', start)
-        helper = script[start:end]
-        import base64
-        cases = (
-            ('', 'empty'),
-            ('User settings loaded from: SECRET_DO_NOT_EMIT\n{\n  "data": {}\n}', 'text-before-json'),
-            ('{"data":{}}\nSECRET_DO_NOT_EMIT', 'text-after-json'),
-            ('{"data":', 'json-like-malformed'),
-            ('SECRET_DO_NOT_EMIT', 'text-only'),
-        )
-        for output, expected in cases:
-            encoded = base64.b64encode(output.encode()).decode()
-            code = ("$ErrorActionPreference='Stop'; " + helper +
-                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
-                    + encoded + "')); $shape=Get-N8nOutputShape $text; "
-                    "if($shape -cne '" + expected + "'){exit 2}; "
-                    "$j=@{checks=@{n8nOutputShape=$shape}} | ConvertTo-Json -Depth 4; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
-            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
-                                    capture_output=True, text=True, errors='replace')
             self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
-        self.assertIn('$report.checks.n8nOutputShape = Get-N8nOutputShape $good.text', script)
 
-    def test_n8n_cli_signal_reports_only_fixed_execution_labels(self):
+    def test_n8n_cli_stdout_is_never_used_as_evidence(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        helper = script[script.index('function Get-N8nCliSignal'):script.index('function Read-N8nExecutionJson')]
-        import base64
-        cases = (
-            ('User settings loaded from: /home/node/.n8n/config\n{\"data\":{}}', 'none'),
-            ('Execution was NOT successful. See log message for details.\n'
-             'Execution error:\n{\"data\":{\"resultData\":{\"error\":{\"message\":\"SECRET_DO_NOT_EMIT\"}}}',
-             'execution-failed'),
-            ('Error executing workflow. See log messages for details.\nSECRET_DO_NOT_EMIT',
-             'execute-catch'),
-            ('SECRET_DO_NOT_EMIT\n{\"data\":{}}', 'none'),
-        )
-        for text, expected in cases:
-            encoded = base64.b64encode(text.encode()).decode()
-            code = ("$ErrorActionPreference='Stop'; " + helper +
-                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
-                    + encoded + "')); $signal=Get-N8nCliSignal $text; "
-                    "if($signal -cne '" + expected + "'){exit 2}; "
-                    "$j=@{checks=@{n8nCliSignal=$signal}}|ConvertTo-Json -Compress; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
-            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
-                                    capture_output=True, text=True, errors='replace')
-            self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
-        self.assertIn('$report.checks.n8nCliSignal = Get-N8nCliSignal $good.text', script)
-
-    def test_n8n_tail_diagnostic_classifies_evidence_without_accepting_it(self):
-        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        helper = script[script.index('function Get-N8nJsonTailKind'):script.index('function Read-N8nExecutionJson')]
-        import base64
-        verified = json.dumps({'data': {'resultData': {'runData': {
-            'Assert named content': [{'data': {'main': [[{'json': {
-                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
-            }}]]}}]
-        }}}}, indent=2)
-        failed = json.dumps({'data': {'resultData': {'error': {
-            'message': 'SECRET_DO_NOT_EMIT'
-        }, 'runData': {}}}}, indent=2)
-        cases = (
-            ('unclassified SECRET_DO_NOT_EMIT\n' + verified, 'claimed-node'),
-            ('unclassified SECRET_DO_NOT_EMIT\n' + failed, 'workflow-error'),
-            ('unclassified SECRET_DO_NOT_EMIT\n{}', 'other-json'),
-            ('unclassified SECRET_DO_NOT_EMIT\n{bad', 'no-json'),
-            ('unclassified SECRET_DO_NOT_EMIT\n' + verified + '\n' + verified, 'ambiguous'),
-            ('unclassified SECRET_DO_NOT_EMIT\n' + verified + '\nTRAILER', 'no-json'),
-        )
-        for text, expected in cases:
-            encoded = base64.b64encode(text.encode()).decode()
-            code = ("$ErrorActionPreference='Stop'; " + helper +
-                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
-                    + encoded + "')); $kind=Get-N8nJsonTailKind $text; "
-                    "if($kind -cne '" + expected + "'){exit 2}; "
-                    "$j=@{checks=@{n8nJsonTailKind=$kind}}|ConvertTo-Json -Compress; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
-            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
-                                    capture_output=True, text=True, errors='replace')
-            self.assertEqual(result.returncode, 0, f'{expected}: {result.stderr}')
-        self.assertIn('$report.checks.n8nJsonTailKind = Get-N8nJsonTailKind $good.text', script)
-        self.assertIn("throw 'n8n output not JSON'", script)
-
-    def test_n8n_execution_json_allows_only_exact_settings_notice(self):
-        script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        helper = script[script.index('function Read-N8nExecutionJson'):script.index('function Assert-N8nNamedRead')]
-        import base64
-        evidence = json.dumps({'data': {'resultData': {'runData': {
-            'Assert named content': [{'data': {'main': [[{'json': {
-                'fileReadVerified': True, 'workflowId': 'dg1309FileRead'
-            }}]]}}]
-        }}}})
-        notice = 'User settings loaded from: /home/node/.n8n/config\n'
-        cases = (
-            (evidence, True),
-            (notice + evidence, True),
-            ('User settings loaded from: /home/node/.n8n/other\n' + evidence, False),
-            ('SECRET_DO_NOT_EMIT\n' + evidence, False),
-            (notice + evidence + '\nSECRET_DO_NOT_EMIT', False),
-            (notice + notice + evidence, False),
-            (notice + '{"data":', False),
-        )
-        for text, accepted in cases:
-            encoded = base64.b64encode(text.encode()).decode()
-            code = ("$ErrorActionPreference='Stop'; " + helper +
-                    "; $text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
-                    + encoded + "')); $valid=$false; "
-                    "try{$data=Read-N8nExecutionJson $text; "
-                    "$valid=($data.data.resultData.runData.'Assert named content'[0].data.main[0][0].json.fileReadVerified -eq $true)}catch{}; "
-                    "if($valid -ne " + ('$true' if accepted else '$false') + "){exit 2}; "
-                    "$j=@{valid=$valid} | ConvertTo-Json -Compress; "
-                    "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
-            result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
-                                    capture_output=True, text=True, errors='replace')
-            self.assertEqual(result.returncode, 0, f'{accepted}: {result.stderr}')
-        self.assertIn('$goodData = Read-N8nExecutionJson $good.text', script)
+        segment = script[script.index('function Test-N8nEvidenceFile'):script.index('function New-RandomSecret')]
+        self.assertNotIn('ConvertFrom-Json', segment)
+        self.assertNotIn('$good.text', segment)
+        self.assertNotIn('$denied.text', segment)
+        self.assertIn("Test-N8nEvidenceFile 'named'", segment)
+        self.assertIn("Test-N8nEvidenceFile 'denied'", segment)
 
     def test_n8n_denied_read_requires_read_node_error_and_sanitizes_output(self):
         script = (HOSTED / 'sandbox/Run-Sandbox.ps1').read_text(encoding='utf-8')
-        start = script.index('function Assert-N8nDeniedRead')
-        end = script.index('function New-RandomSecret', start)
-        helper = script[start:end]
-        import base64
-        denied = json.dumps({'data': {'resultData': {
-            'lastNodeExecuted': 'Read outside named mount',
-            'error': {'message': 'SECRET_DO_NOT_EMIT'}, 'runData': {}
-        }}})
-        unrelated = json.dumps({'data': {'resultData': {
-            'lastNodeExecuted': 'Manual Start',
-            'error': {'message': 'SECRET_DO_NOT_EMIT'}, 'runData': {}
-        }}})
-        notice = 'User settings loaded from: /home/node/.n8n/config\n'
-        for output, accepted in ((denied, True), (notice + denied, True),
-                                 (notice + unrelated, False),
-                                 ('SECRET_DO_NOT_EMIT\n' + denied, False)):
-            encoded = base64.b64encode(output.encode()).decode()
+        helper = script[script.index('function Assert-N8nDeniedRead'):script.index('function New-RandomSecret')]
+        for import_code, execute_code, evidence_ok, accepted in (
+            (0, 0, True, True), (1, 0, True, False),
+            (0, 1, True, False), (0, 0, False, False),
+        ):
             code = ("$ErrorActionPreference='Stop'; $report=@{checks=@{}}; "
                     "function Assert-Ok($v,[string]$m){if(-not $v){throw $m}}; "
                     "function Compose([string[]]$a,[int]$t){ "
-                    "if($a -contains 'import:workflow'){return @{code=0;text=''}}; "
-                    "return @{code=0;text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"
-                    + encoded + "'))} }; "
-                    + script[script.index('function Read-N8nExecutionJson'):start]
-                    + helper + "; try{Assert-N8nDeniedRead}catch{}; "
-                    "if([bool]$report.checks.n8nDeniedRead -ne "
-                    + ('$true' if accepted else '$false') + "){exit 2}; "
+                    f"if($a -contains 'import:workflow'){{return @{{code={import_code};text='SECRET_DO_NOT_EMIT'}}}}; "
+                    f"return @{{code={execute_code};text='SECRET_DO_NOT_EMIT'}} }}; "
+                    "function Test-N8nEvidenceFile([string]$p){return " +
+                    ('$true' if evidence_ok else '$false') + '}; ' + helper +
+                    "; try{Assert-N8nDeniedRead}catch{}; "
+                    "if([bool]$report.checks.n8nDeniedRead -ne " +
+                    ('$true' if accepted else '$false') + "){exit 2}; "
                     "$j=$report|ConvertTo-Json -Depth 5; "
                     "if($j.Contains('SECRET_DO_NOT_EMIT')){exit 3}")
             result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', code],
@@ -366,7 +310,7 @@ class SandboxPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / 'sandbox.zip'
             revision = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
-            command = [sys.executable, str(HOSTED / 'build_sandbox.py'), '--repo', str(ROOT),
+            command = [sys.executable, str(committed_builder_if_needed(temp)), '--repo', str(ROOT),
                        '--revision', revision, '--output', str(destination)]
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
             with zipfile.ZipFile(destination) as source:

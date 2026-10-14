@@ -86,58 +86,15 @@ function Get-StartupFailureSignature {
   } catch {} # Diagnostics must not override cleanup or expose raw logs.
   return $signature
 }
-function Get-N8nOutputShape([string]$Text) {
-  # Diagnostic vocabulary only. Never extract or accept a JSON fragment as proof.
-  if ([string]::IsNullOrWhiteSpace($Text)) { return 'empty' }
-  $value = $Text.Trim()
-  if ($value.StartsWith('{') -or $value.StartsWith('[')) {
-    if (-not ($value.EndsWith('}') -or $value.EndsWith(']')) -and $value.Contains('}')) { return 'text-after-json' }
-    return 'json-like-malformed'
-  }
-  if ($value -match '(?m)^\s*[\{\[]') { return 'text-before-json' }
-  return 'text-only'
+function Test-N8nEvidenceFile([string]$Phase) {
+  # Verify exact bytes from the disposable named volume INSIDE a fresh n8n container.
+  # No CLI stdout (including a JSON-looking suffix) contributes to this decision.
+  $check = Compose @('run','--rm','--no-deps','--entrypoint','node','n8n',
+                     '/files/probe/evidence.cjs',$Phase,'/files/evidence') 60
+  return ($check.code -eq 0)
 }
-function Get-N8nCliSignal([string]$Text) {
-  # Match only n8n 2.4.8 CLI's fixed execution-failure banners.
-  # Never report an error message, JSON body, path, or arbitrary stdout.
-  if ($Text -cmatch '(?m)^Execution was NOT successful\. See log message for details\.$') {
-    return 'execution-failed'
-  }
-  if ($Text -cmatch '(?m)^Error executing workflow\. See log messages for details\.$') {
-    return 'execute-catch'
-  }
-  return 'none'
-}
-function Get-N8nJsonTailKind([string]$Text) {
-  # Diagnostic only: a suffix is not accepted as execution proof when its prefix
-  # is unknown. Do not serialize parsed content or return it to the caller.
-  if ($Text.Length -gt 524288) { return 'no-json' }
-  $starts = [regex]::Matches($Text, '(?m)^\{')
-  if ($starts.Count -gt 1) { return 'ambiguous' }
-  if ($starts.Count -ne 1) { return 'no-json' }
-  try {
-    $candidate = $Text.Substring($starts[0].Index) | ConvertFrom-Json -ErrorAction Stop
-    if ($candidate -isnot [pscustomobject]) { return 'no-json' }
-    if ($candidate.data.resultData.error) { return 'workflow-error' }
-    if ($candidate.data.resultData.runData.'Assert named content') { return 'claimed-node' }
-    return 'other-json'
-  } catch { return 'no-json' }
-}
-function Read-N8nExecutionJson([string]$Text) {
-  # n8n 2.4.8 can print this fixed settings notice even with --rawOutput.
-  # Permit exactly one known line, not arbitrary text before a JSON fragment.
-  $notice = "User settings loaded from: /home/node/.n8n/config`n"
-  if ($Text.StartsWith($notice, [StringComparison]::Ordinal)) {
-    $Text = $Text.Substring($notice.Length)
-  } else {
-    $windowsNotice = $notice.Replace("`n", "`r`n")
-    if ($Text.StartsWith($windowsNotice, [StringComparison]::Ordinal)) {
-      $Text = $Text.Substring($windowsNotice.Length)
-    }
-  }
-  $data = $Text | ConvertFrom-Json -ErrorAction Stop
-  if ($null -eq $data -or $data -isnot [pscustomobject]) { throw 'n8n execution JSON object required' }
-  return $data
+function Assert-N8nEvidenceEmpty {
+  Assert-Ok (Test-N8nEvidenceFile 'empty') 'evidence volume not empty'
 }
 function Assert-N8nNamedRead {
   try {
@@ -160,23 +117,9 @@ function Assert-N8nNamedRead {
     $report.checks.n8nDetail = 'execute-nonzero'
     throw 'n8n workflow execute failed'
   }
-  $goodData = $null
-  try { $goodData = Read-N8nExecutionJson $good.text } catch {
-    $report.checks.n8nDetail = 'output-not-json'
-    $report.checks.n8nOutputShape = Get-N8nOutputShape $good.text
-    $report.checks.n8nCliSignal = Get-N8nCliSignal $good.text
-    $report.checks.n8nJsonTailKind = Get-N8nJsonTailKind $good.text
-    throw 'n8n output not JSON'
-  }
-  try {
-    $assertions = @($goodData.data.resultData.runData.'Assert named content')
-    Assert-Ok ($assertions.Count -eq 1 -and
-               $assertions[0].data.main[0][0].json.fileReadVerified -eq $true -and
-               $assertions[0].data.main[0][0].json.workflowId -ceq 'dg1309FileRead' -and
-               -not $goodData.data.resultData.error) 'n8n evidence mismatch'
-  } catch {
-    $report.checks.n8nDetail = 'unexpected-evidence'
-    throw 'n8n file-reading execution failed'
+  if (-not (Test-N8nEvidenceFile 'named')) {
+    $report.checks.n8nDetail = 'evidence-missing-or-invalid'
+    throw 'n8n named file evidence invalid'
   }
   $report.checks.n8nNamedRead = $true
 }
@@ -184,11 +127,8 @@ function Assert-N8nDeniedRead {
   $importDenied = Compose @('run','--rm','--no-deps','n8n','import:workflow','--input=/files/workflows/sandbox-file-denied.json') 120
   Assert-Ok ($importDenied.code -eq 0) 'n8n denial workflow import failed'
   $denied = Compose @('run','--rm','--no-deps','n8n','execute','--id=dg1309DeniedRead','--rawOutput') 120
-  $deniedData = $null
-  try { $deniedData = Read-N8nExecutionJson $denied.text } catch {}
-  Assert-Ok ($deniedData.data.resultData.error -and
-             $deniedData.data.resultData.lastNodeExecuted -ceq 'Read outside named mount' -and
-             -not $deniedData.data.resultData.runData.'Assert named content') 'n8n file denial not observed at read node'
+  Assert-Ok ($denied.code -eq 0) 'n8n denial workflow execution failed'
+  Assert-Ok (Test-N8nEvidenceFile 'denied') 'n8n file denial evidence invalid'
   $report.checks.n8nDeniedRead = $true
 }
 function New-RandomSecret {
@@ -329,6 +269,12 @@ try {
   $evidence = $probe.text.Trim() | ConvertFrom-Json
   Assert-Ok ($evidence.ingest_inserted -eq 1 -and $evidence.neo4j_scoped_notes -eq 1 -and $evidence.denied_paths -eq 4 -and $evidence.csrf_denied -eq $true) 'data-service evidence anomaly'
   $report.checks.dataService = $evidence
+  $stage = 'n8n-evidence-init'
+  # Only the empty disposable volume is chowned, using a one-shot root process.
+  $initEvidence = Compose @('run','--rm','--no-deps','--user','0:0',
+                            '--entrypoint','node','n8n','/files/probe/evidence.cjs','init','/files/evidence') 60
+  Assert-Ok ($initEvidence.code -eq 0) 'evidence volume initialization failed'
+  Assert-N8nEvidenceEmpty
   $stage = 'n8n-named-file-read'
   Assert-N8nNamedRead
   $stage = 'n8n-denied-file-read'

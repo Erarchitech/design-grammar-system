@@ -6,12 +6,16 @@
     {"id":"d0000000-0000-4000-8000-000000000001","name":"Manual Start","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[0,0],"parameters":{}},
     {"id":"d0000000-0000-4000-8000-000000000002","name":"Read named workflow","type":"n8n-nodes-base.readWriteFile","typeVersion":1,"position":[220,0],"parameters":{"operation":"read","fileSelector":"/files/workflows/sandbox-file-read.json","options":{}}},
     {"id":"d0000000-0000-4000-8000-000000000003","name":"Extract workflow JSON","type":"n8n-nodes-base.extractFromFile","typeVersion":1,"position":[440,0],"parameters":{"operation":"fromJson","binaryPropertyName":"data","destinationKey":"data","options":{}}},
-    {"id":"d0000000-0000-4000-8000-000000000004","name":"Assert named content","type":"n8n-nodes-base.code","typeVersion":2,"position":[660,0],"parameters":{"jsCode":"const obj = $input.first().json.data; if (obj.id !== 'dg1309FileRead' || obj.name !== 'DG 1309 isolated file read capability (synthetic)') throw new Error('Unexpected workflow file content'); return [{json:{fileReadVerified:true,workflowId:obj.id}}];"}}
+    {"id":"d0000000-0000-4000-8000-000000000004","name":"Assert named content","type":"n8n-nodes-base.code","typeVersion":2,"position":[660,0],"parameters":{"jsCode":"const obj = $input.first().json.data; if (obj.id !== 'dg1309FileRead' || obj.name !== 'DG 1309 isolated file read capability (synthetic)') throw new Error('Unexpected workflow file content'); return [{json:{evidence:'DG1309-NAMED-READ-VERIFIED',workflowId:obj.id}}];"}},
+    {"id":"d0000000-0000-4000-8000-000000000005","name":"Evidence to text","type":"n8n-nodes-base.convertToFile","typeVersion":1,"position":[880,0],"parameters":{"operation":"toText","sourceProperty":"evidence","binaryPropertyName":"data","options":{}}},
+    {"id":"d0000000-0000-4000-8000-000000000006","name":"Write evidence","type":"n8n-nodes-base.readWriteFile","typeVersion":1,"position":[1100,0],"parameters":{"operation":"write","fileName":"/files/evidence/named.txt","dataPropertyName":"data","options":{}}}
   ],
   "connections": {
     "Manual Start":{"main":[[{"node":"Read named workflow","type":"main","index":0}]]},
     "Read named workflow":{"main":[[{"node":"Extract workflow JSON","type":"main","index":0}]]},
-    "Extract workflow JSON":{"main":[[{"node":"Assert named content","type":"main","index":0}]]}
+    "Extract workflow JSON":{"main":[[{"node":"Assert named content","type":"main","index":0}]]},
+    "Assert named content":{"main":[[{"node":"Evidence to text","type":"main","index":0}]]},
+    "Evidence to text":{"main":[[{"node":"Write evidence","type":"main","index":0}]]}
   },
   "settings":{}
 }

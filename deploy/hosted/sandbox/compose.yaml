@@ -61,7 +61,8 @@ services:
     image: n8nio/n8n:2.4.8
     environment:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?required}
-      N8N_RESTRICT_FILE_ACCESS_TO: /files/workflows
+      # Separate writable evidence volume; workflow definitions stay read-only.
+      N8N_RESTRICT_FILE_ACCESS_TO: /files/workflows;/files/evidence
       N8N_DEFAULT_BINARY_DATA_MODE: filesystem
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
@@ -69,6 +70,8 @@ services:
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "true"
     volumes:
       - n8n_state:/home/node/.n8n
+      - n8n_evidence:/files/evidence
+      - ./evidence.cjs:/files/probe/evidence.cjs:ro
       - ../../../n8n/workflows/sandbox-file-read.json:/files/workflows/sandbox-file-read.json:ro
       - ../../../n8n/workflows/sandbox-file-denied.json:/files/workflows/sandbox-file-denied.json:ro
     mem_limit: 1250m
@@ -83,3 +86,4 @@ volumes:
   graph: {}
   api_state: {}
   n8n_state: {}
+  n8n_evidence: {}

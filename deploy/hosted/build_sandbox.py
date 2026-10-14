@@ -25,7 +25,8 @@ INPUTS = (
     'deploy/hosted/ingest/README.md', 'n8n/workflows/sandbox-file-read.json',
     'n8n/workflows/sandbox-file-denied.json',
     'deploy/hosted/sandbox/compose.yaml', 'deploy/hosted/sandbox/Run-Sandbox.ps1',
-    'deploy/hosted/sandbox/probe.py', 'deploy/hosted/sandbox/README.md',
+    'deploy/hosted/sandbox/probe.py', 'deploy/hosted/sandbox/evidence.cjs',
+    'deploy/hosted/sandbox/README.md',
 )
 
 
