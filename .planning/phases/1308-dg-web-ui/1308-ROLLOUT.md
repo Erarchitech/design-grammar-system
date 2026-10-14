@@ -114,3 +114,52 @@ Gate at the start: `git rev-parse HEAD:data-service HEAD:ui-v2` = `b787ca84…` 
 - **1308 test files** (28 files named in the 1308 plans and summaries, incl. `test_connector_session*.py`, `test_project_summary.py`, `test_member_roles.py`, `test_d49_store_cleanup.py`): **3234 passed, 3 skipped, 2 failed** — the two `test_degram_relay.py` environmental failures above.
 
 **No regression.** Running stack = committed HEAD sources; the uncommitted files listed in the Build plan are not in either image.
+
+## Cleanup dry run (D-47, plan 20) — 2026-10-13T22:39Z
+
+**Backup (before any write).** All 19 `data-service/data/*.json` stores copied with `cp -p` to `C:/dgbackup1308/20261013T223918Z/` (outside the repository, not committed). Verified: 19 files in source and backup, `sha256sum -c` over all 19 equal; the checksum list is kept beside the copy as `SHA256SUMS.txt` (list digest `e612f12fe976dcb0…`). The container sees the same 19 files at `DG_DATA_DIR=/app/data` (bind mount). Inventory change since plan time: `connector-access.json` now exists (330 bytes).
+
+**Neo4j (read-only, READ session through the data-service driver):** `MATCH (n) WHERE n.project = 'uat-pw-bd30ce' RETURN count(n)` → **0**.
+
+**Script dry run** (reads only). The agent's `docker exec` was refused by the auto-mode classifier; the owner ran it from PowerShell (`docker exec data-service python d49_store_cleanup.py`) on 2026-10-14 and pasted the output:
+
+| Store / item | Planned change |
+|---|---|
+| `credentials_to_retire` | **13** (get `revoked: true`, `revoked_at`, `retired: "D-49"`) |
+| `credentials_already_revoked` | 11 (left byte-identical) |
+| `users` | 1 (UAT user) |
+| `memberships` | 1 (UAT user in UAT project) |
+| `pairings` | 1 (retired pairing of the UAT user) |
+| `connector_access_grants`, `connector_access_requests`, `connector_sessions`, `degram_grant_requests`, `degram_grants`, `delegated_tokens`, `export_policies`, `invites`, `project_companies`, `sessions` | 0 each |
+
+Status `dry-run-ok`, exit 0. Against the plan-time inventory (22 credentials, 11 active): 24 credentials, 13 active — two connector credentials were issued since 2026-10-12 and are retired too (D-49 retires every `dgc_` credential). The UAT rows (1 user, 1 membership, 1 pairing) match the inventory; no other user or project is touched.
+
+## Approval (cleanup)
+
+The owner asked why the cleanup is needed and whether projects, graphs and validation runs survive (answer: the script reads and writes only the JSON stores, never Neo4j; targets are hard-coded to the UAT user and project; credentials are marked, not deleted), then ran `--apply` themselves from PowerShell on 2026-10-14 and pasted the output. That run is the approval of record (the agent's `docker exec` was refused by the auto-mode classifier, so it could not run the apply).
+
+## Cleanup apply (D-47) — 2026-10-14, owner-run
+
+Procedure (owner, PowerShell, repo root): `docker compose stop data-service` → `docker compose run --rm --no-deps data-service python d49_store_cleanup.py --apply` → `docker compose start data-service`. Output identical in counts to the dry run (13 credentials retired, 11 already revoked, 1 user, 1 membership, 1 pairing, every other store 0), status **`applied`**, exit 0. `data-service` restarted at 2026-10-14T08:13:39Z on the same image `sha256:c1e018ee…`; no `data-service-run` container left behind; `POST :8080/data-service/auth/connector-session` without credentials → 401.
+
+**Verification (agent, read-only, from the host bind mount; only counts and field names printed):**
+
+| Check | Result |
+|---|---|
+| `connector-credentials.json` | 24 records, **0 active**, 13 carry `retired: "D-49"` |
+| Any store mentioning `uat-pw-bd30ce@dg.local` or `uat-pw-bd30ce` | **none** (all 19 files scanned) |
+| `auth-users.json` | 2 users remain (was 3) |
+| Neo4j nodes with `project = 'uat-pw-bd30ce'` | 0 (before the apply; the script never contacts Neo4j) |
+
+Diff against the backup, by record: `auth-users` −1, `auth-memberships` −1, `degram-pairings` −1 (the script's removals), `connector-credentials` 13 marked (the script). Three other stores differ only by normal service activity between the backup (22:39Z) and the apply, not by the script: `auth-sessions` (`last_seen_at` on 1 row), `degram-grants` (`last_used` on 1 row), `auth-delegated-tokens` (newly issued delegated tokens: `issued_at`/`expires_at`/`token_hash`). No foreign row was removed.
+
+**Post-apply script dry run** (expected `nothing-to-do`): the host-side checks above show the condition it tests (no active credential, no UAT row); the script itself still needs one owner run (`docker exec data-service python d49_store_cleanup.py`) to record the word.
+
+Rollback, if ever needed: stop `data-service`, copy the 19 files back from `C:/dgbackup1308/20261013T223918Z/`, start it (note that this would also revert the later session activity listed above).
+
+## Owner actions (D-48)
+
+1. **Connector access for the editor.** On the Connectors screen of project `degram-uat-c`, grant connector access to editor `asiyagerey94@gmail.com` for each connector she uses (editors and viewers need a per-connector grant; owner and DG admin are exempt — D-04).
+2. **Grasshopper plugin.** Rebuild (`dotnet build .\DG\DG.sln -c Release`) and install the add-in; re-wire canvases per `docs/RELEASE-NOTES-v13.0.md`. Old `dgc_` tokens no longer work anywhere (D-26): CONNECTOR signs in with Username/Password.
+3. **Add-in live check (WEBUI-08, backstop):** CONNECTOR with Username/Password and Connect=true signs in; VALIDATOR publishes with `CONNECTOR.Session`; the Connectors screen shows «Вкл» for Grasshopper; Connect=false turns it to «Выкл».
+4. **RU visual pass (backstop):** with RU selected, the landing (incl. summaries) and every screen read in Russian at 1280 px and 1920 px, light and dark, with no overlapping or clipped labels.
