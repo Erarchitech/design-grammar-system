@@ -298,8 +298,22 @@ Plans:
 4. Проверяющий восстанавливает полный executable ruleset, vocabulary/source revisions старого run после изменения/retirement; затронутые bindings/states/runs требуют повторной проверки, исторический verdict сохранён. Через единый typed `/dg-` registry участник получает аргументы/risk/help, deterministic dispatch без LLM, ранний отказ неверных аргументов и confirmation точного mutation/publication scope. [DGKN-06, DGKN-10]
 5. Участник с разрешением source transfer и destination write создаёт копию в другом проекте той же компании с новым независимым ID, source project/rule revision, условиями и основанием передачи; принимающий автор адаптирует её и активирует лишь после свежей проверки и утверждения назначения. Исходный run не служит destination compliance evidence, изменения копий независимы. [DGKN-08, DGKN-09]
 
-**Plans**: TBD
+**Plans**: 10 planned / 0 executed; independent plan check: 0 blockers, 0 warnings, 4 scope advisories. Product entry and acceptance gates remain open; this is not execution authorization.
 **UI hint**: yes
+
+Plans (wave order; plan numbers are stable identifiers, not execution order):
+- **Wave 1**: `1302-08` — offline contract inventory and owner decision on 1300/1301, appointments and permitted CDE sources; pause dependent product work if evidence is absent.
+- **Wave 2** *(requires 08 approval)*: `1302-01` — HTTP source/rule tracer and legacy HTTP fence.
+- **Wave 3** *(requires 01)*: `1302-02` — company vocabulary releases and retirement.
+- **Wave 4** *(requires 01/02)*: `1302-03` — owner store decision, real CAS and audit proof.
+- **Wave 5** *(requires 01/02/03)*: `1302-09` — graph schema and tracked/deployed n8n writer reconciliation; separately authorized read-only live inventory or no rollout.
+- **Wave 6** *(requires 03/09)*: `1302-10` — backend run/manifest persistence.
+- **Wave 7** *(requires 02/03/09/10)*: `1302-04` — actual evaluator corpus pin and historical read-back.
+- **Wave 8** *(requires 04)*: `1302-05` — independent destination copy and approval.
+- **Wave 9** *(requires 05)*: `1302-06` — governed web UI and typed `/dg-` commands.
+- **Wave 10** *(requires 06/08/09/10)*: `1302-07` — per-ID evidence, validation and human exit review.
+
+**Cross-cutting constraints**: Fixtures and structural workspace checks are not source permission, real Neo4j concurrency, deployed-writer compatibility, destination evidence or product acceptance. Published identity/store choices and external provider/approval authority require explicit owner checkpoints. No dependent activation while a required gate remains open.
 
 **Entry gate**: Scoped access 1301 проверен; соответствующие source-authority, vocabulary и revision clauses профиля 1300 согласованы с v11/v12. Назначены steward/approvers и разрешённые CDE sources. Новые product endpoints/store/UI принадлежат только v13.
 
