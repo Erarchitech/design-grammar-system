@@ -75,6 +75,58 @@ class ReleaseManifestTests(unittest.TestCase):
                              "dirty working-tree contents must not enter bundle")
             self.assertNotIn(b"dirty private", (bundle / "sample.txt").read_bytes())
 
+    def test_release_policy_names_only_the_reviewed_ttf(self):
+        policy = json.loads((HOSTED / 'release-allowlist.json').read_text(encoding='utf-8'))
+        font = 'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf'
+        ui = next(entry for entry in policy['inputs'] if entry['path'] == 'ui-v2/src/**/*')
+        self.assertIn(font, ui['exclude'])
+        self.assertEqual([entry['path'] for entry in policy['inputs'] if entry['path'].endswith('.ttf')], [font])
+
+    def test_exact_alnst_ttf_is_exported_without_permitting_other_ttf_files(self):
+        from test_helpers import fixture_repository, validator
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, _ = fixture_repository(root)
+            fonts = source / 'ui-v2' / 'src' / 'styles' / 'tokens' / 'fonts'
+            fonts.mkdir(parents=True)
+            font = fonts / 'alnst-400-normal.ttf'
+            font.write_bytes(b'synthetic font bytes')
+            (source / 'ui-v2' / 'src' / 'App.jsx').write_text('export default 1;')
+            subprocess.run(['git', '-C', str(source), 'add', 'ui-v2/src'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fonts'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            policy = {'schemaVersion': 1, 'includeDegram': False, 'inputs': [
+                {'path': 'ui-v2/src/**/*', 'exclude': [
+                    'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf'], 'purpose': 'UI source'},
+                {'path': 'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf',
+                 'purpose': 'reviewed UI font'}]}
+            policy_file = root / 'allowlist.json'
+            policy_file.write_text(json.dumps(policy))
+            bundle = root / 'bundle'
+            result = subprocess.run([sys.executable, str(HOSTED / 'assemble.py'),
+                                     '--repo', str(source), '--revision', revision,
+                                     '--allowlist', str(policy_file), '--output', str(bundle)],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((bundle / 'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf').read_bytes(),
+                             b'synthetic font bytes')
+            self.assertNotIn('ui-v2/src/styles/tokens/fonts/unreviewed.ttf',
+                             json.loads((bundle / 'manifest.json').read_text())['files'])
+            self.assertEqual(validator(bundle, '--allow-blocked').returncode, 0)
+            # The recursive source glob still rejects any additional TTF, including
+            # one in the same reviewed directory.
+            (fonts / 'unreviewed.ttf').write_bytes(b'unreviewed bytes')
+            subprocess.run(['git', '-C', str(source), 'add', 'ui-v2/src'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'unreviewed font'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            bad = subprocess.run([sys.executable, str(HOSTED / 'assemble.py'),
+                                  '--repo', str(source), '--revision', revision,
+                                  '--allowlist', str(policy_file), '--output', str(root / 'bad')],
+                                 capture_output=True, text=True)
+            self.assertNotEqual(bad.returncode, 0)
+
     def test_unexpected_source_suffix_in_recursive_ui_glob_rejected(self):
         from test_helpers import fixture_repository, assemble
         with tempfile.TemporaryDirectory() as temp:
@@ -250,6 +302,25 @@ class ReleaseManifestTests(unittest.TestCase):
             manifest['files'] = dict(sorted(manifest['files'].items()))
             (bundle / 'manifest.json').write_text(json.dumps(manifest))
             self.assertNotEqual(validator(bundle, '--allow-blocked').returncode, 0)
+
+    def test_rehashed_draft_does_not_impersonate_exact_source_revision(self):
+        from test_helpers import fixture_repository, assemble
+        import hashlib
+        sys.path.insert(0, str(HOSTED))
+        from validate_manifest import validate
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, revision = fixture_repository(root)
+            bundle = root / 'bundle'
+            self.assertEqual(assemble(source, revision, bundle).returncode, 0)
+            self.assertGreater(validate(bundle, allow_blocked=True, source=source), 0)
+            (bundle / 'sample.txt').write_bytes(b'altered but rehashed\n')
+            manifest_path = bundle / 'manifest.json'
+            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+            manifest['files']['sample.txt'] = hashlib.sha256((bundle / 'sample.txt').read_bytes()).hexdigest()
+            manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'source blob mismatch'):
+                validate(bundle, allow_blocked=True, source=source)
 
     def test_extra_unlisted_regular_file_rejected(self):
         from test_helpers import fixture_repository, assemble, validator

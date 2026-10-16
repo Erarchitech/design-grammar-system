@@ -52,8 +52,11 @@ def assemble(repo, revision, allowlist_file, output):
                                                         stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             raise ValueError('selection policy absent from exact commit') from None
-        if committed_policy != policy_path.read_bytes():
+        if committed_policy.replace(b'\r\n', b'\n') != policy_path.read_bytes().replace(b'\r\n', b'\n'):
             raise ValueError('selection policy differs from exact commit')
+        # Interpret only the committed blob, never checkout-converted policy
+        # bytes. The selected policy exported below remains byte-exact.
+        config = json.loads(committed_policy)
     if config.get('includeDegram') is True:
         raise ValueError('component-bearing bundle requires separate approved child artifact allowlist')
     forbidden = config.get('forbiddenComponents', [])
@@ -102,7 +105,9 @@ def assemble(repo, revision, allowlist_file, output):
                 continue
             if tracked[name] not in ('100644', '100755'):
                 raise ValueError('link or unsupported selected source')
-            if glob.startswith('ui-v2/src/') and not name.endswith(('.jsx', '.js', '.css', '.woff2')):
+            if (glob.startswith('ui-v2/src/') and
+                    not name.endswith(('.jsx', '.js', '.css', '.woff2')) and
+                    not (glob == name == 'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf')):
                 raise ValueError('unknown UI source suffix')
             selected.add(name)
     if not selected:
@@ -114,7 +119,9 @@ def assemble(repo, revision, allowlist_file, output):
     folds = [name.casefold() for name in selected]
     if len(set(folds)) != len(folds):
         raise ValueError('selected case-fold collision')
-    archive = subprocess.run(['git', '-C', str(repo), 'archive', '--format=tar', revision,
+    # Export committed blob bytes, not checkout-filtered CRLF on Windows.
+    archive = subprocess.run(['git', '-C', str(repo), '-c', 'core.autocrlf=input',
+                              'archive', '--format=tar', revision,
                               '--', *sorted(selected)], capture_output=True, check=True).stdout
     with tempfile.TemporaryDirectory(prefix='dg-hosted-clean-export-') as scratch:
         clean = Path(scratch) / 'export'

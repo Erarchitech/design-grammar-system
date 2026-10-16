@@ -3,6 +3,7 @@
 No secrets, interpolated Compose JSON or file contents are emitted on errors.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,13 +46,31 @@ def validate(root, *, allow_blocked=False, source=None):
     if source:
         repo = Path(source).resolve()
         rev = manifest['frameworkRevision']
-        tree = subprocess.check_output(['git', '-C', str(repo), 'ls-tree', rev, 'apps/degram'],
-                                       stderr=subprocess.DEVNULL, text=True).strip()
-        if gitlink is not None and (not tree or tree.split()[2] != gitlink):
-            raise ValueError('gitlink mismatch')
         if subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--verify', rev + '^{commit}'],
                                    stderr=subprocess.DEVNULL, text=True).strip() != rev:
             raise ValueError('framework revision mismatch')
+        tree = subprocess.check_output(['git', '-C', str(repo), 'ls-tree', '-rz', '--full-tree', rev])
+        committed = {}
+        for row in tree.split(b'\0'):
+            if row:
+                header, raw = row.split(b'\t', 1)
+                committed[raw.decode('utf-8', 'strict')] = header.split()
+        for path, expected in files.items():
+            fields = committed.get(path)
+            if fields is None or fields[0] not in (b'100644', b'100755') or fields[1] != b'blob':
+                raise ValueError('source input absent or not a regular blob')
+            # Git's blob ID is computed from the canonical committed bytes; no
+            # checkout filters, broad archive or unrelated source data are read.
+            payload = (b'blob ' + str((root / path).stat().st_size).encode('ascii') +
+                       b'\0' + (root / path).read_bytes())
+            blob_id = (hashlib.sha1(payload).hexdigest() if len(fields[2]) == 40 else
+                       hashlib.sha256(payload).hexdigest()).encode('ascii')
+            if blob_id != fields[2] or actual[path] != expected:
+                raise ValueError('source blob mismatch')
+        gitlink_fields = committed.get('apps/degram')
+        if gitlink is not None and (not gitlink_fields or gitlink_fields[0:2] != [b'160000', b'commit'] or
+                                    gitlink_fields[2].decode('ascii') != gitlink):
+            raise ValueError('gitlink mismatch')
     if 'deploy/hosted/release-allowlist.json' in files:
         policy = json.loads((root / 'deploy/hosted/release-allowlist.json').read_text(encoding='utf-8'))
         if policy.get('schemaVersion') != 1 or not isinstance(policy.get('inputs'), list):
