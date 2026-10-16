@@ -75,6 +75,45 @@ class ReleaseManifestTests(unittest.TestCase):
                              "dirty working-tree contents must not enter bundle")
             self.assertNotIn(b"dirty private", (bundle / "sample.txt").read_bytes())
 
+    def test_recursive_ui_glob_exports_root_entry_and_app(self):
+        from test_helpers import fixture_repository, assemble
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, _ = fixture_repository(root)
+            ui = source / 'ui-v2/src'
+            (ui / 'nested/deeper').mkdir(parents=True)
+            files = {'main.jsx': b'import "./App.jsx";\n',
+                     'App.jsx': b'export default 1;\n',
+                     'nested/deeper/view.jsx': b'export default 2;\n'}
+            for name, data in files.items():
+                (ui / name).write_bytes(data)
+            subprocess.run(['git', '-C', str(source), 'add', 'ui-v2/src'], check=True)
+            subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'UI entry'], check=True)
+            revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+            bundle = root / 'bundle'
+            result = assemble(source, revision, bundle, 'ui-v2/src/**/*')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((bundle / 'manifest.json').read_text())
+            self.assertEqual(set(manifest['files']), {'ui-v2/src/' + name for name in files})
+            for name, data in files.items():
+                self.assertEqual((bundle / 'ui-v2/src' / name).read_bytes(), data)
+
+    def test_recursive_glob_keeps_component_and_case_boundaries(self):
+        sys.path.insert(0, str(HOSTED))
+        from release_core import matches
+        for path, glob, expected in (
+            ('ui-v2/src/main.jsx', 'ui-v2/src/**/*', True),
+            ('ui-v2/src/a/b/view.jsx', 'ui-v2/src/**/*', True),
+            ('ui-v2/src/a/view.jsx', 'ui-v2/src/*.jsx', False),
+            ('ui-v2/src2/main.jsx', 'ui-v2/src/**/*', False),
+            ('ui-v2/src/Main.JSX', 'ui-v2/src/**/*.jsx', False),
+            ('ui-v2/src/a/view.jsx', 'ui-v2/src/**/view.jsx', True),
+            ('ui-v2/src/view.jsx', 'ui-v2/src/**/view.jsx', True),
+        ):
+            with self.subTest(path=path, glob=glob):
+                self.assertEqual(matches(path, glob), expected)
+
     def test_release_policy_names_only_the_reviewed_ttf(self):
         policy = json.loads((HOSTED / 'release-allowlist.json').read_text(encoding='utf-8'))
         font = 'ui-v2/src/styles/tokens/fonts/alnst-400-normal.ttf'

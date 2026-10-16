@@ -1,7 +1,7 @@
 """Shared fail-closed path and file policies for hosted bundle preparation."""
 import fnmatch
 import hashlib
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
 
 DEFAULT_FORBIDDEN = frozenset({'.secrets', 'dg_obsidian', 'publications', '.git', '.planning',
@@ -33,13 +33,19 @@ def pattern(value, forbidden=()):
 
 
 def matches(path, glob):
-    # fnmatch's * crosses /, which is acceptable only when the glob expressly
-    # includes **; a single-star segment must stay within its directory.
-    if '**' in glob:
-        return fnmatch.fnmatchcase(path, glob)
-    if '*' in glob or '?' in glob or '[' in glob:
-        return PurePosixPath(path).match(glob) and path.count('/') == glob.count('/')
-    return path == glob
+    # Match components: ** consumes zero or more whole directories, while
+    # fnmatch wildcards in any other component never cross a slash.
+    parts, patterns = path.split('/'), glob.split('/')
+
+    def match_from(i, j):
+        if j == len(patterns):
+            return i == len(parts)
+        if patterns[j] == '**':
+            return any(match_from(k, j + 1) for k in range(i, len(parts) + 1))
+        return (i < len(parts) and fnmatch.fnmatchcase(parts[i], patterns[j]) and
+                match_from(i + 1, j + 1))
+
+    return match_from(0, 0)
 
 
 def digest(data):
