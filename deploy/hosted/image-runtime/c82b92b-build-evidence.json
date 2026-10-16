@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "owner-build-report-projection-not-original-file",
+  "evidenceSource": "Owner pasted full controlled-build report and process exit code in this conversation; original file bytes were not transferred.",
+  "status": "BUILD_EXPORT_COMPLETE",
+  "processExitCode": 0,
+  "independentlyObservedRuntime": false,
+  "releaseAccepted": false,
+  "reproducibleDependencies": false,
+  "runtimeTimestamp": null,
+  "target": "DESKTOP-OS4Q8CP",
+  "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438",
+  "packageZipSha256": "9d391a82f5dac6bf53d8d83e5154c67c448fc4f56ea008e84c01c2f2916c7717",
+  "sourceManifestSha256": "47cc21bfdc32af2fc37af93758f44eb8eb71b692d7084bdcccac969b7b544b23",
+  "images": {
+    "neo4j": {
+      "tag": "dg-controlled/neo4j:76f122e26a864855b9b83f401e563551",
+      "imageId": "sha256:0efd832ad89fcc0526e80abf8b26bb79f196ebe87eac655c6f19c08c5be766b8",
+      "archive": "neo4j.tar",
+      "archiveSha256": "193239970482286ff777ed10f07cc32115e470f857575749e35f83bb0f075436",
+      "archiveBytes": 363024384,
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    "dg-reasoner": {
+      "tag": "dg-controlled/dg-reasoner:8d568d03024140d4a38834fb0e1b0a13",
+      "imageId": "sha256:a17c07849171d41517e866355d0869618e659b073f79fe8331d93f8150390750",
+      "archive": "dg-reasoner.tar",
+      "archiveSha256": "60029e284bfd9efc812f43b7f4c5131d3d7b80d60b91c70b2cf4b44c6f5c9b75",
+      "archiveBytes": 294436864,
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    "data-service": {
+      "tag": "dg-controlled/data-service:d3a9aad55fff4e0682798f6a383db131",
+      "imageId": "sha256:9787e347b10eb8303498fed9e79651b89a3a1d4f62501ee98e51f6f25d0b22d1",
+      "archive": "data-service.tar",
+      "archiveSha256": "627cfa41e0549f6d5c27791a222c33ee2ab82424aefb4ce3ada8c4e9ec80ad4d",
+      "archiveBytes": 212922880,
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    "design-grammars": {
+      "tag": "dg-controlled/design-grammars:1df8f72472bf4de0a58fb8052c184ebe",
+      "imageId": "sha256:949b456de06e738c6a65c73ae2e710ee04735b7509345cfdf2099051cae46868",
+      "archive": "design-grammars.tar",
+      "archiveSha256": "f71dfa23aeb5a01c53f643296e0ffd0253289e2f906b7107fdf06864f5cb440f",
+      "archiveBytes": 33114112,
+      "os": "linux",
+      "architecture": "amd64"
+    }
+  }
+}

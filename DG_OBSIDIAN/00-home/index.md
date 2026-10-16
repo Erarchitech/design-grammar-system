@@ -9,6 +9,12 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
+- Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
+- Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
+- Phase 1309 latest: owner-returned actual-candidate `2dedbfb` subset PASS + exit 0 matched to issued ZIP; full hosted/images/restore/freeze remain open. Earlier runner-pending entry below is historical. See [[00-home/Current priorities|priorities]] and `deploy/hosted/runtime-evidence/README.md`.
+- Phase 1309 owner clarification (2026-10-16): ALNST web-use rights confirmed by owner; no further licence investigation. Physical-only access to `DESKTOP-OS4Q8CP`: manual ZIP/run/sanitized-report handoff, separate hosted-bundle runner not yet ready; see [[00-home/Current priorities|priorities]] and [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|design decision]].
+
 - [[sessions/2026-10-15 Phase 1302 executable plans verified|Phase 1302 — 10 plans / 25 tasks independently checked; product gates open]] (2026-10-15)
 - [[sessions/2026-10-14 Phase 1302 context research and planning gate|Phase 1302 — context, preliminary research and blocked GSD planning]] (2026-10-14)
 - [[sessions/2026-10-14 Phase 1308 rollout, UAT C-E and phase closed|Phase 1308 rollout (rebuild from HEAD, D-49 cleanup), UAT C–E, verification and security — phase closed]] (2026-10-14)
@@ -42,6 +48,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Debugging
+- [[knowledge/debugging/Offline recovery inventory and process cleanup regressions|Recovery NTFS streams, cached timestamps, child cleanup and CLI sanitization]] (2026-10-16)
 - [[knowledge/debugging/GSD must_haves parse 0 truths when plan files have CRLF line endings|GSD must_haves parse 0 truths when plan files have CRLF line endings]] (2026-10-12)
 - [[knowledge/debugging/DeGram sidebar session list hidden because scope session rows had no profile (F-04)|DeGram sidebar session list hidden: scope session rows had no profile (F-04, fixed in 0.1.11)]] (2026-10-12)
 - [[knowledge/debugging/DeGram project pick refused without a grant while the DG page kept the refused project|DeGram project pick refused without a grant while the DG page kept the refused project (signal race unproven)]] (2026-10-12)

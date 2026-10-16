@@ -1,0 +1,63 @@
+{
+  "provenance": "Owner-provided chat transcription; not original target file bytes. Target timestamp unknown. Ciphertext bytes were not transferred or independently hashed by the agent.",
+  "process": {
+    "schemaVersion": 1,
+    "processExitCode": 0,
+    "runtimeAccepted": false
+  },
+  "report": {
+    "schemaVersion": 1,
+    "kind": "synthetic-two-store-recovery-not-release",
+    "status": "TWO_STORE_RECOVERY_COMPLETE",
+    "failureStage": null,
+    "dockerInvoked": true,
+    "releaseAccepted": false,
+    "fullRecoveryAccepted": false,
+    "offMachineRestoreProven": false,
+    "cleanup": "owned-projects-volumes-removed",
+    "checks": {
+      "packageIntegrity": true,
+      "daemonAndImages": true,
+      "isolationAndVacancy": true,
+      "seed": {
+        "admin_login": true,
+        "user_login": true,
+        "membership_restored": true,
+        "project_isolation": true,
+        "revoked_session_denied": true,
+        "llm_settings_decrypted": true,
+        "csrf_denied": true,
+        "projects_created": 2,
+        "authenticated_ingests": 2,
+        "neo4j_scoped_notes": 2
+      },
+      "writersStopped": true,
+      "nativeDump": true,
+      "ciphertextCopiedAndVerified": true,
+      "wrongKeyAndCorruptionDenied": true,
+      "nativeLoad": true,
+      "restore": {
+        "admin_login": true,
+        "user_login": true,
+        "membership_restored": true,
+        "project_isolation": true,
+        "revoked_session_denied": true,
+        "llm_settings_decrypted": true,
+        "seed_csrf_denied": true,
+        "seed_projects_created": 2,
+        "seed_authenticated_ingests": 2,
+        "neo4j_scoped_notes": 2
+      },
+      "sourceStillStopped": true,
+      "cleanupVerified": true
+    },
+    "packageZipSha256": "c4433e5b4d77b0f7414c980de36ac321a1f4e8c669c91d95ffa323390eba0e37",
+    "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438",
+    "backupSha256": "79d5bd93d1c994f0132ec24b2919003ff32a04b288ce23586d9634e0b3857efc",
+    "backupBytes": 22033
+  },
+  "console": ["RECOVERY_PROCESS_EXIT=0"],
+  "disposition": "OWNER_REPORTED_TWO_STORE_RECOVERY_PASS_WITH_EXIT_ZERO_NOT_FULL_RELEASE",
+  "independentlyObservedTargetRun": false,
+  "fullHostedGateClosed": false
+}

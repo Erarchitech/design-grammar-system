@@ -1,0 +1,21 @@
+{
+  "buildReportSha256": "783d9b077ddac21c75d5c748f58bead460d2c1b223fb3d926a9d042eaa252b75",
+  "crossDaemonPortabilityProven": false,
+  "evidenceComplete": false,
+  "fullHostedAcceptance": false,
+  "gaps": [
+    "process-exit-not-captured"
+  ],
+  "independentlyObservedRuntime": false,
+  "packageZipSha256": "6fc3b7ad060db3e79a1452e2a2868f87e339aed8bfa70c39b2f3c82b1fa8199f",
+  "processExitCode": null,
+  "releaseAccepted": false,
+  "reportChecksMatched": true,
+  "reportProvenance": "owner-chat-transcription-not-original-file",
+  "reportTranscriptionSha256": "0a4828653178aa3ade89cf9310acb271846dbc6f8a2796eaf62042c73cb9244d",
+  "runtimeTimestamp": null,
+  "schemaVersion": 1,
+  "sourceManifestSha256": "47cc21bfdc32af2fc37af93758f44eb8eb71b692d7084bdcccac969b7b544b23",
+  "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438",
+  "status": "OWNER_REPORTED_SMOKE_COMPLETE_EXIT_UNKNOWN"
+}

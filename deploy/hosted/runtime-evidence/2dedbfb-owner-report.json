@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "kind": "hosted-candidate-capability-test-not-release",
+  "candidateManifestSha256": "864878de1e60aadc79211f20e574f32cb5f97a096c06dac696a1f52215f04810",
+  "target": "DESKTOP-OS4Q8CP",
+  "status": "PASS",
+  "failureStage": null,
+  "frameworkRevision": "2dedbfb3e138c2b437e781696197105dca93342a",
+  "zipSha256": "1e032824fbb3006d3e001a3460185a97e1d4661941910671f6f4f62ecc4af87e",
+  "checks": {
+    "packageHash": true,
+    "candidateIntegrity": true,
+    "diskPreflight": true,
+    "composeVersion": true,
+    "projectVacant": true,
+    "composeIsolation": true,
+    "dataService": {
+      "admin_login": true,
+      "csrf_denied": true,
+      "ingest_inserted": 1,
+      "neo4j_scoped_notes": 1,
+      "denied_paths": 4
+    },
+    "n8nNamedRead": true,
+    "n8nDeniedRead": true,
+    "cleanupVerified": true
+  },
+  "cleanup": "project-down-volumes-removed"
+}

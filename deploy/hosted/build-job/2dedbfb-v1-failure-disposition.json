@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "kind": "owner-report-projection-and-local-diagnosis-not-release",
+  "evidenceSource": "Projection transcribed from owner chat report; not original report file bytes or independent target observation",
+  "target": "DESKTOP-OS4Q8CP",
+  "sourceRevision": "2dedbfb3e138c2b437e781696197105dca93342a",
+  "packageZipSha256": "7be35265add9dcc56494adb0d1b247d522c9df0189c6ab29d4437216d68f02b6",
+  "ownerReportedStatus": "FAILED",
+  "ownerReportedFailureStage": "build:design-grammars",
+  "ownerReportedProcessExitCode": 1,
+  "ownerReportedExports": {
+    "neo4j": {
+      "imageId": "sha256:f5a6973e95e3a3ddada390c03c322e4f87f1127eea641ee40b47f47af421353a",
+      "archive": "neo4j.tar",
+      "archiveSha256": "7878592ebca72d1cff74eecafea03ef5f24f4e94e31ab0b06331787f60af0efb",
+      "archiveBytes": 363024384
+    },
+    "dg-reasoner": {
+      "imageId": "sha256:f3bfc4e81b3158240a51af4cac83ba26b1a0302b6c2071d291488dabff37022e",
+      "archive": "dg-reasoner.tar",
+      "archiveSha256": "eaff89f3fefbd46fc5fad81848f1b392f7bed2cda4de136ba5fe179efb0ee9b1",
+      "archiveBytes": 294436864
+    },
+    "data-service": {
+      "imageId": "sha256:806eeecfe6912d8197c1769d3aea49558652ed3be3ba228ff3fc22dfeec89061",
+      "archive": "data-service.tar",
+      "archiveSha256": "347418dc9ec3e4a292612da350ec8be9e3dc993a5fa8c3b39b37925a951e3b6d",
+      "archiveBytes": 212922880
+    }
+  },
+  "uiBuildExportComplete": false,
+  "localDiagnosis": {
+    "issuedZipHashIndependentlyMatched": true,
+    "missingCommittedUiInputs": ["ui-v2/src/main.jsx", "ui-v2/src/App.jsx"],
+    "rootCause": "release_core.matches used fnmatch on the entire path: src/**/* required a subdirectory, silently omitting source files immediately under src",
+    "originalZipViteBuildExitCode": 1,
+    "originalZipViteError": "Rollup failed to resolve import /src/main.jsx from index.html",
+    "correctedSelectorExportFileCount": 187,
+    "correctedExportGitBlobValidation": "PASS",
+    "correctedExportViteBuildExitCode": 0,
+    "correctedExportViteModules": 981,
+    "dependencyBoundary": "Local Vite build used existing development node_modules through a temporary junction; not target Alpine npm ci or Docker image verification",
+    "targetRawErrorAvailable": false,
+    "targetFailureCauseIndependentlyProven": false,
+    "dockerInvokedLocally": false
+  },
+  "releaseAccepted": false,
+  "reproducibleDependencies": false,
+  "commitOrPushPerformed": false,
+  "replacementZipIssued": false
+}

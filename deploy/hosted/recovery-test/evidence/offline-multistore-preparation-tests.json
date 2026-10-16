@@ -1,0 +1,120 @@
+{
+  "kind": "offline-synthetic-recovery-tooling-not-native-validation",
+  "suites": [
+    {
+      "module": "test_recovery_checkpoint.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 14,
+        "ran": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_postgres.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_package.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_execution.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 9,
+        "ran": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_runner.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_probe.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 17,
+        "ran": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_snapshot.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_diagnostic.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_cleanup.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "totalTestsRun": 90,
+  "reviewFollowUp": {
+    "review": "deleg_119a1570",
+    "findingsFixedWithRedGreenRegressions": ["reader setup child leak", "checkpoint CLI argument echo"],
+    "nativeQualificationPending": true
+  },
+  "nativeRecoveryProven": false,
+  "offMachineRestoreProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "limitations": [
+    "PostgreSQL native binaries not invoked; disposable Python children substitute commands",
+    "NTFS streams/hardlinks/junctions tested on Windows; Linux path not runtime qualified",
+    "Legacy archive suite excluded; earlier symlink skip remains open",
+    "No integrated multi-store runner or current-PC encrypted transfer"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "provenance": "Owner-provided chat transcription, not original target file bytes. Target timestamp and process exit not provided.",
+  "report": {
+    "schemaVersion": 1,
+    "kind": "recovery-read-only-diagnostic",
+    "packageZipSha256": "e430407e70a21af210a0a3d8816ca01f2fc8c54844b82dd879eb8a959e56b135",
+    "completed": true,
+    "projects": ["dg-recovery-3b9148574bb84061babce755691900d3"],
+    "containers": [
+      {"exitCode": 0, "service": "graph-admin", "imageMatches": true, "state": "running", "project": "dg-recovery-3b9148574bb84061babce755691900d3", "volumes": [
+        {"anonymousName": false, "knownProjectVolume": false, "target": "/data"},
+        {"anonymousName": false, "knownProjectVolume": false, "target": "/logs"},
+        {"anonymousName": false, "knownProjectVolume": false, "target": "/exchange"}
+      ]},
+      {"exitCode": 0, "service": "snapshot", "imageMatches": true, "state": "running", "project": "dg-recovery-3b9148574bb84061babce755691900d3", "volumes": [
+        {"anonymousName": false, "knownProjectVolume": false, "target": "/state"},
+        {"anonymousName": false, "knownProjectVolume": false, "target": "/exchange"}
+      ]}
+    ],
+    "networks": [],
+    "volumes": [
+      {"project": "dg-recovery-3b9148574bb84061babce755691900d3", "expectedIdentity": true},
+      {"project": "dg-recovery-3b9148574bb84061babce755691900d3", "expectedIdentity": true},
+      {"project": "dg-recovery-3b9148574bb84061babce755691900d3", "expectedIdentity": true},
+      {"project": "dg-recovery-3b9148574bb84061babce755691900d3", "expectedIdentity": true}
+    ],
+    "failureSection": null
+  },
+  "disposition": "Two helpers remain running; cleanup unverified. knownProjectVolume=false is defective diagnostic evidence: PS5 comma/concatenation precedence built a single element instead of four names. Real ownership admission regression RED then GREEN after parenthesizing each concatenation. No actual cleanup or native recovery established."
+}

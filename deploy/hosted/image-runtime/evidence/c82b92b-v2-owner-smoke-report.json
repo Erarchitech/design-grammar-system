@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "kind": "controlled-image-load-smoke-not-release",
+  "status": "LOAD_AND_ISOLATED_SMOKE_COMPLETE",
+  "failureStage": null,
+  "dockerInvoked": true,
+  "releaseAccepted": false,
+  "archiveBytesVerified": true,
+  "crossDaemonPortabilityProven": false,
+  "fullHostedAcceptance": false,
+  "cleanup": "project-down-volumes-removed",
+  "checks": {
+    "packageIntegrity": true,
+    "buildReportBoundToIssuedPackage": true,
+    "daemonPreflight": true,
+    "composeIsolation": true,
+    "projectVacant": true,
+    "readiness": true,
+    "smoke": {
+      "api": {
+        "admin_login": true,
+        "csrf_denied": true,
+        "ingest_inserted": 1,
+        "neo4j_scoped_notes": 1,
+        "denied_paths": 4
+      },
+      "uiAssets": 2,
+      "uiHeaders": true,
+      "uiProxyTombstones": true,
+      "uiRuntimeConfig": true,
+      "reasonerNeo4jUp": true,
+      "selfRegistrationDisabled": true
+    },
+    "cleanupVerified": true,
+    "imagesAndArchivesRetained": true
+  },
+  "images": {
+    "data-service": {
+      "imageId": "sha256:9787e347b10eb8303498fed9e79651b89a3a1d4f62501ee98e51f6f25d0b22d1",
+      "status": "LOADED_AND_VERIFIED",
+      "os": "linux",
+      "architecture": "amd64",
+      "revision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+    },
+    "design-grammars": {
+      "imageId": "sha256:949b456de06e738c6a65c73ae2e710ee04735b7509345cfdf2099051cae46868",
+      "status": "LOADED_AND_VERIFIED",
+      "os": "linux",
+      "architecture": "amd64",
+      "revision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+    },
+    "dg-reasoner": {
+      "imageId": "sha256:a17c07849171d41517e866355d0869618e659b073f79fe8331d93f8150390750",
+      "status": "LOADED_AND_VERIFIED",
+      "os": "linux",
+      "architecture": "amd64",
+      "revision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+    },
+    "neo4j": {
+      "imageId": "sha256:0efd832ad89fcc0526e80abf8b26bb79f196ebe87eac655c6f19c08c5be766b8",
+      "status": "LOADED_AND_VERIFIED",
+      "os": "linux",
+      "architecture": "amd64",
+      "revision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+    }
+  },
+  "packageZipSha256": "6fc3b7ad060db3e79a1452e2a2868f87e339aed8bfa70c39b2f3c82b1fa8199f",
+  "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438",
+  "sourceManifestSha256": "47cc21bfdc32af2fc37af93758f44eb8eb71b692d7084bdcccac969b7b544b23",
+  "buildReportSha256": "783d9b077ddac21c75d5c748f58bead460d2c1b223fb3d926a9d042eaa252b75"
+}

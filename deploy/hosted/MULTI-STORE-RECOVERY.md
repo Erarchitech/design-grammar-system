@@ -1,0 +1,64 @@
+# Multi-store recovery — offline checkpoint preparation
+
+Status: **PREPARATION ONLY; runtime BLOCKED pending a separate approved harness**.
+Authority remains framework `.planning/phases/1309-dg-hosting-package-without-local-ollama/1309-04-PLAN.md` and HOST-04. This is a technical contract, not a second roadmap. Two-store v3 PASS is preserved; no retry is needed.
+
+## Working artifact
+
+`recovery_checkpoint.py` reads a previously exported directory. It verifies strict declaration shape, exact revision and recipient fingerprint supplied independently, distinct synthetic project identities, fixed image config-ID syntax, stopped-writer declarations, zero queue declarations in BOTH Redis and PostgreSQL, required escrow-reference labels, complete five-class file inventory, file sizes/SHA256 and unsafe path/link rejection. It streams file hashing in <=1 MiB chunks (64 GiB total/4096 entries/1 MiB JSON bounds). No Docker, services, network, key generation, export, restore or file writes.
+
+CLI: `python3 -B deploy/hosted/recovery_checkpoint.py --export-directory <synthetic-export> --revision <40-hex> --recipient-fingerprint <64-hex>`.
+
+Success is **OFFLINE_CHECKPOINT_VALIDATED_NOT_RECOVERY**, with `nativeRecoveryProven`, `offMachineRestoreProven`, `releaseAccepted` all false. Exit 0 means only that these checks passed. A hand-written declaration with internally consistent bogus native dump bytes can pass; the tool cannot recognize native formats or independently prove quiescence, queue discovery, complete object metadata/versions, escrow availability, recipient ownership, or restore. It MUST NOT gate real mutation or generate `export-complete.json` by itself. Hashes do not authenticate the exporter. Image config IDs are not registry digests.
+
+Schema v2 (unreleased preparation; v1 aggregate queue declaration rejected) is a deliberately strict synthetic producer contract in the implementation/tests, NOT the old encrypted archive schema. Root marker `export-checkpoint.json`; exact five directories `neo4j/`, `postgres/`, `objects/`, `n8n/`, `api/`; every regular file individually listed with `bytes`/`sha256`, no extras, links or reparse points. Empty files are supported. Stored secret material belongs inside the later encrypted protected export; this JSON carries only opaque `escrow:...` references, never actual values. It is not an exhaustive secret scanner. Trusted local filesystem/no hostile concurrent mutation is assumed. No plaintext production export should be fed into this preparation exercise.
+
+Required stop declarations: data-service, dg-reasoner, n8n, speckle-server, speckle-frontend-2, speckle-preview-service, speckle-webhook-service, speckle-fileimport-service, neo4j. This conservative schema stops n8n and Neo4j completely and admits only declared empty Redis state that is NOT replayed. Pending/active/retry or scheduled jobs are not silently dropped. Counters are declarations until a version-specific producer demonstrates actual queue enumeration. Schema v2 requires six separate logical groups: previewRequest and previewResponse (waiting/active/delayed); fileImport (queued/processing/retry); webhook (pending/processing/retry); legacyUpload (pending/processing); n8nExecution (new/running/waiting). Every counter is an exact integer zero. These are required recovery categories, NOT asserted physical table/key/status names. Unknown schemas and unexamined queues must block the producer, never become zeroes. First block new producers, drain with consumers running, then stop all writers and repeat a stable read; stopping consumers alone does not drain jobs.
+
+## PostgreSQL helper — offline exercised, native qualification pending
+
+`recovery_postgres.py` provides a module-only export/restore adapter and read-only integrity CLI. Export uses exclusive private output, bounded streaming/hash, fixed pg_dump custom arguments, timeout/own-partial cleanup. Restore checks file/hash before attestation and rehashes afterwards before pg_restore with single transaction/exit-on-error. Mutations require a trusted outer-runner callback proving authorized scope, actual source/destination mapping, empty owned destination, pinned versions, protected scratch and quiescence. This callback is not implemented by the helper and cannot be replaced by a user-supplied true flag. Names/hashes do not establish ownership or safe SQL provenance. All reports keep nativeRecoveryProven=false.
+
+Parent verification reproduced and fixed three classes beyond the child implementation: official Alpine binary install-prefix mismatch (/usr/local/bin, not Debian /usr/lib/postgresql/16/bin), interrupted export retaining plaintext, and Windows timestamp-cached mutation after attestation (now second full hash). NTFS named streams were reproduced as unlisted content in checkpoint and PostgreSQL input/output paths; shared recovery_filesystem.py rejects streams on files, marker, directories/ancestors and explicit stream destinations. No hostile concurrent mutation guarantee, no non-Windows xattr coverage, no Windows ACL certification.
+
+CLI `python3 -B deploy/hosted/recovery_postgres.py --archive <synthetic-file> --expected-sha256 <64-hex>` is read-only and refuses mutation flags. Offline tests use disposable Python processes in place of native binaries; real pg_dump/pg_restore, role/migration ordering and clean database restore are untested. No executable full multi-store runner/package has been issued. Independent review deleg_119a1570 reproduced reader-start process leakage and checkpoint CLI argument echo. Parent reproduced RED, extended process cleanup across reader setup and sanitized parser errors; all90 tests now pass. Native qualification remains pending.
+
+## Runtime mechanisms that remain to implement and exercise
+
+| Class | Required mechanism | Important boundary |
+|---|---|---|
+| Neo4j | Existing proven native offline dump/load pattern | Exact image/plugin identity; source writers and DB stopped |
+| PostgreSQL | Native custom pg_dump and clean pg_restore | Role/config dependencies; version and all Speckle job tables must be identified |
+| MinIO/S3 | Object bytes + metadata + bucket policy/config/version disposition | A volume tar or successful object GET alone does not prove coverage; reconcile DB references |
+| Valkey/Redis | Enumerate all supported job queues, drain to zero, restore empty | Redis DB size alone is not a queue proof; PostgreSQL file-import queues also exist |
+| n8n 2.4.8 | Stop executions, complete quiesced .n8n state including SQLite sidecars/config/binary data | Workflow JSON alone omits credentials/users/execution data and key; no activation on destination |
+| API | Existing proven entire quiesced /app/data tree | Exactly one worker/replica; secret/settings key must match |
+
+The four earlier custom image archives do not establish identities of PostgreSQL/MinIO/Valkey/Speckle/n8n images needed for the full test. Current base has floating MinIO/Speckle tags. No pull/build/inventory inspection of an existing owner stack is implied.
+
+## Audited version boundaries and cold-start hazards
+
+Repository evidence (parent-read): `docker-compose.yml:167-199` selects PostgreSQL16.4/Valkey8.1 by tags and floating MinIO; `201-310` selects floating Speckle images. `233-234` enables next-gen PostgreSQL fileimport; `272-297` supplies PostgreSQL to webhook/import workers. Thus Redis-only drain cannot establish consistency. Parent independently fetched the following exact public source blobs, without service calls:
+
+- [Speckle preview queue](https://github.com/specklesystems/speckle-server/blob/51d43b91c4681a75bff8b285da7f443a4599da67/packages/server/modules/previews/queues/previews.ts#L72): drain count includes waiting + active + delayed.
+- [Speckle webhook worker](https://github.com/specklesystems/speckle-server/blob/51d43b91c4681a75bff8b285da7f443a4599da67/packages/webhook-service/src/main.js#L16-L29): `webhooks_events` PostgreSQL pending0 → processing1, later success2/failure3. These status numbers are not installed as target assumptions.
+- [Speckle fileimport queue](https://github.com/specklesystems/speckle-server/blob/51d43b91c4681a75bff8b285da7f443a4599da67/packages/server/modules/fileuploads/queues/fileimports.ts#L51): queue shutdown is a no-op, not drain proof.
+- [n8n exact 2.4.8 source](https://github.com/n8n-io/n8n/blob/e040ab67e5acf63df4438a7f9352ab91cd43ccc4/packages/%40n8n/config/src/configs/database.config.ts#L135-L167): SQLite default, pool3, WAL enabled by default; full stopped state and matching config/encryption key required, not workflow-only export. Repo compose does not explicitly set DB_TYPE/EXECUTIONS_MODE/N8N_ENCRYPTION_KEY; no inference that Speckle PostgreSQL/Valkey serves n8n.
+
+The audited Speckle commit is **NOT bound to the floating target images**. Physical schemas/queue names and version-specific probes remain unresolved. The six logical queue groups in schema2 are a minimum declaration contract, not a runtime query implementation or proof that no other job categories exist.
+
+`docker-compose.yml:177` mounts `speckle/bootstrap-local.sql` into first-init PostgreSQL. Parent read `speckle/bootstrap-local.sql:1-17`: INSERTs reference scopes/server_apps_scopes/token_scopes/user_server_app_tokens without creating tables. A virgin restore project must omit that application bootstrap until restored schema exists; existing-volume startup cannot prove cold-start safety. Do not change the owner's base compose to work around a restore-only initialization problem. Prepare a new isolated restore model with clean PostgreSQL init, perform native restore before application startup, then explicitly validate post-restore migrations/role configuration.
+
+MinIO mechanism stays unresolved: do not assume `mc mirror` preserves version history/metadata or `mc replicate export` exports objects (it exports rules). A first synthetic unversioned-bucket qualification would be a declared limitation, not a production version-aware backup. Pin MinIO and helper first, inspect supported API/version metadata semantics and verify every seeded object/metadata field against PostgreSQL references.
+
+## Retained-key and current-PC transfer contract (not provisioned)
+
+- Use a reviewed streaming authenticated-encryption tool for full exports, not expanded custom crypto or the legacy 8 MiB in-memory prototype. Pin and verify its distribution before packaging; currently none selected/installed.
+- Encryption recipient public fingerprint is independently approved. The private recipient key stays in owner-controlled protected custody, never chat/repo/report or beside ciphertext. A target-generated ephemeral discarded key is insufficient for operational recovery.
+- Include the exact n8n encryption key/config, LLM master secret and required DB/object/service identities in an approved protected key-escrow mechanism. A reference label alone proves nothing. Verify decrypt/mismatch failure before destination creation; do not silently regenerate keys.
+- Only ciphertext travels to the selected current PC; exact protected directory, retention and transfer route are still owner gates. Verify hash on both endpoints; preserve original reports and immediately saved process exits. This is not yet off-machine evidence.
+- No completion marker until native exports, inventory, encryption, transferred-ciphertext verification and cleanup have succeeded. Do not modify the previous v3 package or output.
+
+## Validation performed
+
+RED: new test failed with the targeted absent-checkpoint assertion before implementation. Added empty-file and hardlink regressions failed before their fixes. GREEN: strict `test_recovery_checkpoint.py` initially **10/10, zero skips**, including real NTFS hardlink and junction rejection, corruption, absent store/key reference, PostgreSQL active jobs, bool-as-int, duplicate JSON keys, bounds, non-echoing CLI rejection and real CLI success. Probe **17/17** and two-store snapshot **20/20** regression tests also passed. These are offline synthetic checks only; legacy archive symlink skip remains unchanged. No services/daemon/deployment/commit/push or owner data/key access. After the queue audit, aggregate-zero rejection regression was RED before the schema-v2 correction; checkpoint now **12/12**, with every group missing and all 17 counters independently tested against positive/negative/bool/string/null values. Seven two-store strict suites rerun **56/56** with zero skips; total **68/68** offline. Legacy archive suite is excluded and its previous skip is not hidden. Latest parent run after NTFS/path/interruption/hash fixes: checkpoint14 + PostgreSQL20 + seven two-store suites56 = **90/90**, zero skips, all exits0. Actual local run summaries retained at `recovery-test/evidence/offline-multistore-preparation-tests.json`; this is agent-observed offline evidence, NOT a native runtime report.

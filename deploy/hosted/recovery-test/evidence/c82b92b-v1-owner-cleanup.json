@@ -1,0 +1,17 @@
+{
+  "provenance": "Owner-provided chat transcription, not original target file bytes. Target timestamp unknown. Process exit captured by owner immediately after native cleanup command.",
+  "scriptSha256": "001bba1b55501fda882422a9353c6c944e3855ebdc70cb4bb144496d894641f1",
+  "report": {
+    "schemaVersion": 1,
+    "kind": "failed-recovery-owned-cleanup",
+    "project": "dg-recovery-3b9148574bb84061babce755691900d3",
+    "status": "OWNED_CLEANUP_COMPLETE",
+    "failureStage": null,
+    "ownershipVerified": true,
+    "cleanupVerified": true
+  },
+  "ownerReportedProcessExitCode": 0,
+  "disposition": "OWNER_REPORTED_OWNED_CLEANUP_COMPLETE",
+  "nativeRecoveryProven": false,
+  "fullRecoveryAccepted": false
+}

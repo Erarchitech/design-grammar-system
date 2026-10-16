@@ -1,0 +1,30 @@
+{
+  "provenance": "Owner-provided chat transcription; not original target file bytes. Target timestamp unknown.",
+  "process": {
+    "schemaVersion": 1,
+    "processExitCode": 1,
+    "runtimeAccepted": false
+  },
+  "report": {
+    "schemaVersion": 1,
+    "kind": "synthetic-two-store-recovery-not-release",
+    "status": "FAILED",
+    "failureStage": "seed",
+    "dockerInvoked": true,
+    "releaseAccepted": false,
+    "fullRecoveryAccepted": false,
+    "offMachineRestoreProven": false,
+    "cleanup": "owned-projects-volumes-removed",
+    "checks": {
+      "packageIntegrity": true,
+      "daemonAndImages": true,
+      "isolationAndVacancy": true,
+      "cleanupVerified": true
+    },
+    "packageZipSha256": "8d4e032ad4995c2dfaa97e9136f7765511427718d3548727910b8c274d295af1",
+    "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+  },
+  "disposition": "FAILED_AT_SEED_OWNER_REPORTED_CLEANUP_VERIFIED_NO_RETRY",
+  "seedSubstage": null,
+  "nativeRecoveryProven": false
+}

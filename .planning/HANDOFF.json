@@ -1,55 +1,118 @@
 {
   "version": "1.0",
-  "timestamp": "2026-10-11T07:22:39Z",
+  "timestamp": "2026-10-16T23:08:11.383126+01:00",
   "context": "phase",
-  "phase": "1301",
-  "phase_name": "rabochiy-klient-i-bezopasnoe-chtenie",
-  "phase_dir": ".planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie",
-  "plan": 16,
-  "task": 3,
-  "status": "blocked_live_uat",
+  "phase": "1309",
+  "phase_name": "dg-hosting-package-without-local-ollama",
+  "phase_dir": ".planning/phases/1309-dg-hosting-package-without-local-ollama",
+  "plan": 4,
+  "task": null,
+  "status": "paused_offline_preparation",
   "completed_tasks": [
     {
-      "id": "1301-28",
-      "name": "DeGram 0.1.7 build and owner installation",
+      "id": "two-store-v3",
+      "name": "Owner-reported synthetic Neo4j/API recovery",
       "status": "done",
-      "commit": "418cfc4"
+      "nativeFullRecoveryProven": false
+    },
+    {
+      "id": "offline-tooling",
+      "name": "Checkpoint schema2 and PostgreSQL helper; review corrections",
+      "status": "done",
+      "tests": 90,
+      "skipped": 0
     }
   ],
   "remaining_tasks": [
     {
-      "id": "1301-16-task3",
-      "name": "Diagnose and resume DeGram 0.1.7 live UAT after graph-only project-open result",
-      "status": "blocked"
+      "id": "full-runner",
+      "name": "Offline integrated multi-store runner and native adapters",
+      "status": "not_started"
     },
     {
-      "id": "1302-start",
-      "name": "Discuss and plan independent Phase 1302",
-      "status": "not_started"
+      "id": "native-qualification",
+      "name": "Separately authorized target test",
+      "status": "blocked"
     }
   ],
   "blockers": [
     {
-      "description": "On installed 0.1.7, selecting v12 after DG sign-in shows only the compact read-only graph; DeGram chat/composer/navigation is not visible. Root cause unproven.",
-      "type": "technical",
-      "workaround": "Stop UAT; inspect actual embedded URL, Electron bridge scope/page/mode and renderer gate. Do not claim DGCL PASS."
+      "description": "No immutable full-store identities/version-bound queue queries, trusted outer runner, native PG/MinIO/n8n qualification, retained-key/current-PC transfer proof",
+      "type": "technical"
     }
   ],
   "async_jobs": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {
+      "action": "Separate bounded target runtime approval and manual execution when package ready",
+      "blocking": false
+    },
+    {
+      "action": "Protected backup path, key custody and transport selection before operational backup",
+      "blocking": false
+    }
+  ],
   "decisions": [
     {
-      "decision": "Resume the previously deferred DeGram 0.1.7 live recheck, then stop on the graph-only project-open result.",
-      "rationale": "Owner explicitly reopened UAT on 2026-10-11; screenshots do not show the expected workspace and root cause is not yet known.",
-      "phase": "1301"
+      "decision": "Continue offline preparation; no development Docker; preserve successful subset; no push",
+      "phase": "1309"
     }
   ],
   "uncommitted_files": [
-    "Measured dirty shared tree: 2,114 porcelain entries before this session's documentation edits; stage only explicit session paths."
+    " M .planning/MILESTONES.md",
+    " M .planning/PROJECT.md",
+    "M  .planning/REQUIREMENTS.md",
+    " M .planning/RETROSPECTIVE.md",
+    "MM .planning/ROADMAP.md",
+    "MM .planning/STATE.md",
+    "A  .planning/UNIVERSITY-LAB-DEPLOYMENT-PLAN.md",
+    " M .planning/milestones/v12.0-REQUIREMENTS.md",
+    " M .planning/milestones/v12.0-ROADMAP.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-01-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-01-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-02-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-02-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-03-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-03-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-04-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-04-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-05-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-05-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-06-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-06-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-07-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-07-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-08-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-08-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-09-PLAN.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-09-SUMMARY.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-CONTEXT.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-DISCUSSION-LOG.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-PATTERNS.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-RESEARCH.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-REVIEW.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-VALIDATION.md",
+    " D .planning/phases/1200-contract-status-vocabulary-evidence-envelope-and-golden-fixt/1200-VERIFICATION.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-01-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-01-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-02-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-02-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-03-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-03-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-04-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-04-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-05-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-05-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-06-PLAN.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-06-SUMMARY.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-CONTEXT.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-RESEARCH.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/1201-VERIFICATION.md",
+    " D .planning/phases/1201-rule-parser-and-evaluator-conformance/evidence/1201-06-de01-report.json"
   ],
-  "uncommitted_files_total": 2114,
-  "uncommitted_files_elided": 2113,
-  "snapshot_note": "Measured on 2026-10-11 before session edits: staged 0, untracked 505. Re-run git status before acting; other parallel work remains.",
-  "next_action": "Read .planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/.continue-here.md and the linked debugging note. Reproduce actual embedded URL/bridge scope/renderer gate after project click before proposing a fix or resuming UAT.",
-  "context_notes": "Installed 0.1.7 app.asar hash B6C57C9E7A9647669D54895B0D7593F038EB64F22D0B95B930B7711A0D30C335 matches clean build. Compact route /#degram versus full host /?host=degram is a hypothesis only; no code changes or automated launch were made."
+  "uncommitted_files_total": 9063,
+  "uncommitted_files_elided": 9013,
+  "snapshot_note": "Measured before scoped session-close commit. Dirty tree remains; remeasure on resume. Original 19 staged paths must survive. Earlier1301 handoff superseded only as active resume routing; historical phase artifacts retained.",
+  "next_action": "Read phase1309 .continue-here.md and linked session, verify Git and repeat strict suites; continue offline TDD runner/adapters.",
+  "context_notes": "Full HOST-04/release/freeze not accepted. Product artifact revision remains c82b92b29423c515e353e3fa4f9c17e9b0d83438. All90 tests offline. No services/jobs from this work running."
 }

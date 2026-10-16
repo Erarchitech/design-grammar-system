@@ -1,0 +1,31 @@
+{
+  "provenance": "Owner-provided chat transcription; not original target file bytes. Duplicate identical process-exit object reported once here. Target timestamp unknown.",
+  "process": {
+    "schemaVersion": 1,
+    "processExitCode": 1,
+    "runtimeAccepted": false
+  },
+  "report": {
+    "schemaVersion": 1,
+    "kind": "synthetic-two-store-recovery-not-release",
+    "status": "FAILED",
+    "failureStage": "cleanup",
+    "dockerInvoked": true,
+    "releaseAccepted": false,
+    "fullRecoveryAccepted": false,
+    "offMachineRestoreProven": false,
+    "cleanup": "FAILED",
+    "checks": {
+      "packageIntegrity": true,
+      "daemonAndImages": true,
+      "isolationAndVacancy": true,
+      "cleanupVerified": false
+    },
+    "packageZipSha256": "e430407e70a21af210a0a3d8816ca01f2fc8c54844b82dd879eb8a959e56b135",
+    "sourceRevision": "c82b92b29423c515e353e3fa4f9c17e9b0d83438"
+  },
+  "console": ["RECOVERY_FAILED: cleanup", "RECOVERY_PROCESS_EXIT=1"],
+  "disposition": "FAILED_WITH_UNVERIFIED_CLEANUP_NO_RERUN",
+  "primaryFailureStage": null,
+  "nativeRecoveryProven": false
+}
