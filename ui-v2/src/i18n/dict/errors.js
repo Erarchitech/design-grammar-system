@@ -15,7 +15,13 @@ export const en = {
   "error.ACCESS_EXISTS": "This member already has access.",
   "error.NOT_A_MEMBER": "That user is not a member of this project.",
   "error.DEGRAM_POLICY_INVALID": "Choose a setting to change.",
-  "error.CONNECTOR_TOKENS_RETIRED": "Connector tokens are retired. Sign in with your DG account."
+  "error.CONNECTOR_TOKENS_RETIRED": "Connector tokens are retired. Sign in with your DG account.",
+  // Phase 1303 mapping routes (1303-API-CONTRACT §2)
+  "error.MAPPING_SESSION_NOT_FOUND": "This mapping session was not found. Refresh the list and try again.",
+  "error.MAPPING_QUESTION_NOT_FOUND": "This question is no longer open. Refresh the session and answer the current questions.",
+  "error.MAPPING_OPTION_INVALID": "That answer is not valid for this question. Refresh the session and choose again.",
+  "error.MAPPING_INPUT_INVALID": "The mapping request is not valid. Check the descriptor file and try again.",
+  "error.MAPPING_TOO_MANY_ELEMENTS": "Too many elements for one session. Send at most 5000 elements."
 };
 
 export const ru = {
@@ -33,5 +39,10 @@ export const ru = {
   "error.ACCESS_EXISTS": "У этого участника уже есть доступ.",
   "error.NOT_A_MEMBER": "Этот пользователь не участвует в проекте.",
   "error.DEGRAM_POLICY_INVALID": "Выберите настройку для изменения.",
-  "error.CONNECTOR_TOKENS_RETIRED": "Токены коннекторов больше не используются. Войдите под своей учётной записью DG."
+  "error.CONNECTOR_TOKENS_RETIRED": "Токены коннекторов больше не используются. Войдите под своей учётной записью DG.",
+  "error.MAPPING_SESSION_NOT_FOUND": "Сессия меппинга не найдена. Обновите список и повторите попытку.",
+  "error.MAPPING_QUESTION_NOT_FOUND": "Этот вопрос уже закрыт. Обновите сессию и ответьте на текущие вопросы.",
+  "error.MAPPING_OPTION_INVALID": "Этот ответ недопустим для данного вопроса. Обновите сессию и выберите снова.",
+  "error.MAPPING_INPUT_INVALID": "Запрос меппинга недопустим. Проверьте файл дескрипторов и повторите попытку.",
+  "error.MAPPING_TOO_MANY_ELEMENTS": "Слишком много элементов для одной сессии. Отправьте не более 5000 элементов."
 };

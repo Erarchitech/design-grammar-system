@@ -7,6 +7,7 @@ import * as inputs from '../src/lib/inputGenApi.js';
 import * as llm from '../src/lib/llmApi.js';
 import * as connectors from '../src/lib/connectorsApi.js';
 import * as reasoner from '../src/lib/reasonerApi.js';
+import * as mapping from '../src/lib/mappingApi.js';
 
 const legacyToken = 'SYNTHETIC-LEGACY-TOKEN-NEVER-SEND';
 const originals = Object.fromEntries(['fetch', 'window', 'localStorage'].map(k => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
@@ -73,7 +74,15 @@ const cases = [
   ['llm.fetchModels', () => llm.fetchModels('offline/a'), 'GET', '/llm/models?provider=offline%2Fa'],
   ['reasoner.getReasonerSettings', () => reasoner.getReasonerSettings(), 'GET', '/reasoner/settings'],
   ['reasoner.runConsistencyCheck', () => reasoner.runConsistencyCheck(project), 'POST', '/reasoner/consistency', { project, engine: 'hermit' }, 'passthrough'],
-  ['reasoner.selectReasoner', () => reasoner.selectReasoner('hermit'), 'PUT', '/reasoner/settings', { reasoner: 'hermit' }]
+  ['reasoner.selectReasoner', () => reasoner.selectReasoner('hermit'), 'PUT', '/reasoner/settings', { reasoner: 'hermit' }],
+  // Phase 1303-05: mapping routes (1303-API-CONTRACT §2) — project in the query (GET) or the body (POST).
+  ['mapping.listSessions', () => mapping.listSessions(project, 20), 'GET', `/data-service/mapping/sessions?project=${encoded}&limit=20`],
+  ['mapping.getSession', () => mapping.getSession(project, 'ms/1 ?#'), 'GET', `/data-service/mapping/sessions/${encodeURIComponent('ms/1 ?#')}?project=${encoded}`],
+  ['mapping.createSession', () => mapping.createSession(project, { project: 'FOREIGN', platform: 'grasshopper', label: 'act1', elements: [{ nativeId: 'gh:f:HU:{0;0}:0' }] }), 'POST', '/data-service/mapping/sessions', { project, platform: 'grasshopper', label: 'act1', elements: [{ nativeId: 'gh:f:HU:{0;0}:0' }] }],
+  ['mapping.postDecision', () => mapping.postDecision(project, 'ms/1', { questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }), 'POST', '/data-service/mapping/sessions/ms%2F1/decisions', { project, questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }],
+  ['mapping.applySession', () => mapping.applySession(project, 'ms/1'), 'POST', '/data-service/mapping/sessions/ms%2F1/apply', { project }],
+  ['mapping.listProfiles', () => mapping.listProfiles(project), 'GET', `/data-service/mapping/profiles?project=${encoded}`],
+  ['mapping.createProfile', () => mapping.createProfile(project, { platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }), 'POST', '/data-service/mapping/profiles', { project, platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }]
 ];
 for (const [name, invoke, method, url, body, mode] of cases) {
   for (const status of [200, 401, 403]) {

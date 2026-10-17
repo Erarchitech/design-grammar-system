@@ -4,7 +4,9 @@
     "src/screens/ProjectsScreen.jsx",
     "src/lib/memberApi.js",
     "src/lib/memberRoles.js",
-    "src/lib/projectSettingsApi.js"
+    "src/lib/projectSettingsApi.js",
+    "src/screens/MappingPanel.jsx",
+    "src/lib/mappingApi.js"
   ],
   "allow": []
 }

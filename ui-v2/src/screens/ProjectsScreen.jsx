@@ -8,6 +8,7 @@ import { getDegramPolicy, policyPatch, setDegramPolicy, shouldShowProjectSetting
 import { describeError } from "../i18n/index.js";
 import { ROLE_VALUES, roleLabel } from "../i18n/enums.js";
 import { useT } from "../i18n/LanguageProvider.jsx";
+import MappingPanel from "./MappingPanel.jsx";
 
 function roleOptions() {
   return ROLE_VALUES.map((value) => ({ value, label: roleLabel(value) }));
@@ -654,6 +655,7 @@ export default function ProjectsScreen({ active, onBack, project, onProject, use
             {shouldShowProjectSettings(user, project) && (
               <ProjectSettingsPanel project={project} active={active} />
             )}
+            {project && <MappingPanel key={project} project={project} active={active} />}
           </div>
         )}
 
