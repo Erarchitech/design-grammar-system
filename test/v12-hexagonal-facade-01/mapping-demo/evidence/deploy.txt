@@ -1,0 +1,35 @@
+Phase 1303 MVP slice — deployment evidence (2026-10-17, controller)
+
+Source: branch feature/mapping-mvp, git archive of HEAD (data-service, ui-v2) into a new empty scratch folder.
+  design-grammars image built from HEAD 4701963 (ui-v2 tree b81f9c4678c96e36056a17901c34af588e40c653)
+  data-service image rebuilt from HEAD a0cead0 (rule-body conjunction fix)
+
+Rollback tags (Phase 1308 release images):
+  design-grammar-system-data-service:pre-1303     sha256:c1e018ee32566329483284e93508bbe167435228f80c830a42b311f18576d1e5
+  design-grammar-system-design-grammars:pre-1303  sha256:3b790ebbb5a19f8b50f46b630c1ccc1a41c9bd272c8c616ba51b22d2e2c19445
+  Rollback: docker tag <name>:pre-1303 <name> && docker compose -p design-grammar-system up -d --no-build --no-deps data-service design-grammars
+
+Running images (docker inspect):
+  /data-service     sha256:f241574d4e6e491e01175f9eda7a0fb5f78c5c483af8276595fd25ccc46cfab4
+  /design-grammars  sha256:b3c9b98eb6d7705d5d7d51a988827d79d8518573b28a9a334f384984c928faa1
+  /neo4j            sha256:f59149932e0ac12e42f6734a907446e336322f60360ef433b242f169c68e4d6f (recreated by compose; named data volume kept)
+
+Compose: project design-grammar-system, compose file and env of the main checkout used read-only;
+  diff main/docker-compose.yml branch/docker-compose.yml: identical.
+  First start: data-service exited (Neo4j not yet accepting Bolt) and was started again after Neo4j logged "Started" — not a code error.
+
+Probes:
+  POST http://127.0.0.1:8000/mapping/sessions (no credentials)                -> 401 AUTH_REQUIRED
+  POST http://127.0.0.1:8080/data-service/mapping/sessions (no credentials)   -> 401 AUTH_REQUIRED
+  GET  http://127.0.0.1:8080/                                                 -> 200
+  data-service /app/app.py "/mapping/" occurrences                            -> 8
+  design-grammars bundle contains «Меппинг»                                   -> assets/PropertiesTable-*.js
+  Neo4j project v12-hexagonal-facade-01                                       -> 4152 nodes, 13 non-superseded rules (incl. stray Corridor rule R_COR_LENGTH_MAX_28_V)
+  In-container pytest (Python 3.11): tests/test_mapping_engine.py tests/test_mapping_routes.py -> 26 passed, 1 skipped (rules-approved.json not mounted)
+  EXPLAIN of all 10 mapping_store statements against live Neo4j               -> 10 ok, 0 failed (nothing executed)
+  Dress rehearsal, engine on real project classes/rules + synthetic V1 geometry (read-only):
+    376 elements, 2 questions: mapping-or-design (25 from HU, 5 vertices: R12 violated x25 vs R11 passes x25)
+    and batch-assign (GlassPanel 0.88, BottomTriangularPanel 0.82, Facade 0.85, HexagonalUnit 0.99)
+
+Finding fixed during deployment: the live R9 body is a conjunction of two comparisons
+  (greaterThanOrEqual(?count,0) ^ greaterThan(?count,0)); the engine now evaluates a rule's comparisons together (commit a0cead0).
