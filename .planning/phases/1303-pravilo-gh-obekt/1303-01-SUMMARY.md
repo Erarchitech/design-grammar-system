@@ -66,6 +66,10 @@ Deviations from the plan text (shape only, behaviour as planned): `decide` retur
 - `data-service/tests/mapping_fixtures.py` (new; rule rows embedded; `test_fixture_rules_match_rules_approved_json` checks them against `test/v12-hexagonal-facade-01/rules-approved.json` and skips when that file is not mounted, e.g. in the container)
 - `data-service/tests/test_mapping_engine.py` (new)
 
+## Refinement after review (2026-10-17, same day)
+
+While writing the Grasshopper intake (plan 03) it became clear that class-agnostic measurement gives range-only classes (GlassPanel: four range rules) more satisfied rules than a class with one exact signature (BottomTriangularPanel: vertex count = 3). Rule evidence is therefore weighted by specificity: equality satisfied +2.5 / violated −1.5, range satisfied +0.75 / violated −2.0 (cap 4.0); and a `mapping-or-design` question is raised whenever, of the two leading candidates within the margin, one violates its rules while the other is rule-consistent (either order). New regression test `test_range_rules_do_not_outvote_a_signature`; all engine tests still pass (16).
+
 ## Open issues
 
 - Real Revit family names are unknown; Revit synonyms are configuration (`context.vocabulary`) to be authored in plan 06 from the actual model.

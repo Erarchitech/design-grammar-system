@@ -32,9 +32,15 @@ CONFIG: dict[str, float] = {
     "w_name_subsequence": 1.0,
     "w_name_token": 1.5,
     "w_name_cap": 3.0,
-    "w_rule_satisfied": 2.5,
+    # Rule consistency is weighted by specificity: an equality constraint
+    # (hasVertexCount == 6) is a class signature, a range constraint
+    # (hasWidthM >= 4.5) is weak support, so a class with many range rules
+    # cannot outvote a class with one matching signature.
+    "w_rule_eq_satisfied": 2.5,
+    "w_rule_range_satisfied": 0.75,
     "w_rule_cap": 4.0,
-    "w_rule_violated": -1.5,
+    "w_rule_eq_violated": -1.5,
+    "w_rule_range_violated": -2.0,
     "w_ifc": 2.0,
     "w_population": 1.0,
     "tau_candidate": 0.6,
@@ -399,26 +405,33 @@ def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[
     return out
 
 
+def _is_equality(c: Constraint) -> bool:
+    return c.op in ("==", "!=")
+
+
 def ev_rules(feats: Mapping, constraints: Sequence[Constraint], cfg: Mapping) -> tuple:
     """Returns (evidence, stats) with stats[class] = {"sat": [...], "vio": [(rule, detail)]}."""
     stats: dict[str, dict] = {}
+    weights: dict[str, dict] = {}
     for c in constraints:
         value = property_value(feats, c.prop_local)
         if value is None:
             continue
         s = stats.setdefault(c.class_local, {"sat": [], "vio": []})
+        w = weights.setdefault(c.class_local, {"sat": 0.0, "vio": 0.0})
         if check_constraint(c, value):
             s["sat"].append(c.rule_id)
+            w["sat"] += cfg["w_rule_eq_satisfied"] if _is_equality(c) else cfg["w_rule_range_satisfied"]
         else:
             s["vio"].append((c.rule_id, f"{c.prop_local} = {_fmt(value)}, required {c.op} {_fmt(c.value)}"))
+            w["vio"] += cfg["w_rule_eq_violated"] if _is_equality(c) else cfg["w_rule_range_violated"]
     evidence = []
     for cls, s in sorted(stats.items()):
         if s["sat"]:
-            w = min(len(s["sat"]) * cfg["w_rule_satisfied"], cfg["w_rule_cap"])
-            evidence.append(Evidence(cls, "rule", w, "rules satisfied: " + ", ".join(sorted(set(s["sat"])))))
+            evidence.append(Evidence(cls, "rule", min(weights[cls]["sat"], cfg["w_rule_cap"]), "rules satisfied: " + ", ".join(sorted(set(s["sat"])))))
         if s["vio"]:
             ids = sorted({r for r, _ in s["vio"]})
-            evidence.append(Evidence(cls, "rule", len(ids) * cfg["w_rule_violated"], "rules violated: " + ", ".join(ids)))
+            evidence.append(Evidence(cls, "rule", weights[cls]["vio"], "rules violated: " + ", ".join(ids)))
     return evidence, stats
 
 
@@ -611,7 +624,12 @@ def compute(
         top = cands[0]
         second = cands[1] if len(cands) > 1 else None
         margin = conf[top] - conf[second] if second else 1.0
-        if _blocking(stats, top, cands[1:], accepted):
+        # Mapping error or design error: one of the two leading classes violates
+        # its rules while the other is rule-consistent (in either order).
+        pair_conflict = bool(second) and margin < cfg["margin_delta"] and any(
+            _blocking(stats, a, [b], accepted) for a, b in ((top, second), (second, top))
+        )
+        if _blocking(stats, top, cands[1:], accepted) or pair_conflict:
             row["state"], row["reason"] = "ambiguous", "mapping-or-design"
         elif second and margin < cfg["margin_delta"]:
             row["state"], row["reason"] = "ambiguous", "disambiguate"
@@ -1009,6 +1027,14 @@ def _label_set(el: Mapping, groups: Mapping) -> tuple:
     return tuple(local_name(c["classIri"]) for c in g["candidates"][:2])
 
 
+def profile_id(platform: str, selector: Mapping, roles: Sequence[str], excluded: Sequence[str] = ()) -> str:
+    """Deterministic profile id over (platform, normalised selector, roles, excluded roles)."""
+    role_set = tuple(sorted(local_name(r) for r in roles))
+    excluded_t = tuple(sorted(local_name(r) for r in excluded))
+    norm_sel = {k: _norm(v) for k, v in sorted(selector.items())}
+    return "P-" + _sha(canonical_json([str(platform).lower(), norm_sel, role_set, excluded_t]), 12)
+
+
 def induce_profile(
     member_feats: Sequence[Mapping],
     other_feats: Sequence[tuple],
@@ -1053,10 +1079,8 @@ def induce_profile(
     else:
         selector.pop("platform", None)
     selector = dict(sorted(selector.items()))
-    excluded_t = tuple(sorted(local_name(r) for r in excluded))
-    profile_id = "P-" + _sha(canonical_json([profile_platform, {k: _norm(v) for k, v in selector.items()}, role_set, excluded_t]), 12)
     return {
-        "profileId": profile_id,
+        "profileId": profile_id(profile_platform, selector, roles, excluded),
         "project": project,
         "platform": profile_platform,
         "selector": selector,

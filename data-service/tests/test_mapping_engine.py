@@ -242,6 +242,22 @@ def test_revit_like_population_and_names():
     assert metrics["overall"]["precision"] == 1.0 and metrics["overall"]["recall"] == 1.0
 
 
+def test_range_rules_do_not_outvote_a_signature():
+    """A triangle that also satisfies all four GlassPanel range rules is asked about, not
+    silently mapped to GlassPanel; with a violated range rule it stays BottomTriangularPanel."""
+    base = {"source": "PA", "geometry": {"kind": "surface", "vertexCount": 3, "closed": True}}
+    contested = dict(base, nativeId="t1", properties={"hasVertexCount": 3, "hasAspectRatio": 2.0, "hasPlanarityDeviationM": 0.0, "hasWidthM": 5.0})
+    narrow = dict(base, nativeId="t2", properties={"hasVertexCount": 3, "hasAspectRatio": 2.0, "hasPlanarityDeviationM": 0.0, "hasWidthM": 4.2})
+    r = _compute([contested, narrow])
+    by_id = {e["nativeId"]: e for e in r["elements"]}
+    groups = {g["groupId"]: g for g in r["groups"]}
+    assert by_id["t1"]["state"] == "ambiguous"
+    labels = [c["label"] for c in groups[by_id["t1"]["groupId"]]["candidates"]]
+    assert "BottomTriangularPanel" in labels and "GlassPanel" in labels
+    assert by_id["t2"]["state"] == "suggested"
+    assert by_id["t2"]["roles"][0]["classIri"] == "ex:BottomTriangularPanel"
+
+
 # 8 -------------------------------------------------------------------------
 
 
