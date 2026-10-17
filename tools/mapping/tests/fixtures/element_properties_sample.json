@@ -1,0 +1,205 @@
+{
+  "_note": "SYNTHETIC element_properties responses in the revit-mcp parameters.py shape.",
+  "responses": [
+    {
+      "status": "success",
+      "element_id": 100101,
+      "category": "Generic Models",
+      "family": "Facade_Module_Hex",
+      "type": "Hex",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "H",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100102,
+      "category": "Generic Models",
+      "family": "Facade_Module_Hex",
+      "type": "Hex",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "H",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100103,
+      "category": "Generic Models",
+      "family": "Facade_Module_Pent",
+      "type": "Pent",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "P",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100104,
+      "category": "Generic Models",
+      "family": "Facade_Module_Pent",
+      "type": "Pent",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "P",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100105,
+      "category": "Generic Models",
+      "family": "Facade_Panel_Glass",
+      "type": "Glass",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "G",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Glass",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100106,
+      "category": "Generic Models",
+      "family": "Facade_Panel_Glass",
+      "type": "Glass",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "G",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Glass",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100107,
+      "category": "Generic Models",
+      "family": "Facade_Panel_Tri",
+      "type": "Tri",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "T",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    },
+    {
+      "status": "success",
+      "element_id": 100108,
+      "category": "Generic Models",
+      "family": "Facade_Panel_Tri",
+      "type": "Tri",
+      "parameters": [
+        {
+          "name": "Type Mark",
+          "value": "T",
+          "storage_type": "String",
+          "read_only": false,
+          "group": "Identity Data",
+          "is_instance": false
+        },
+        {
+          "name": "Material",
+          "value": "Aluminium",
+          "storage_type": "ElementId",
+          "read_only": false,
+          "group": "Materials",
+          "is_instance": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "_note": "SYNTHETIC fixture in the exact revit-mcp documents.py selection_snapshot shape; not read from a real Revit model.",
+  "status": "success",
+  "emptySelection": false,
+  "elements": [
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100101-0001b00",
+      "elementId": 100101,
+      "category": "Generic Models",
+      "typeName": "Hex",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Hex-1",
+          "value": "Hex-1"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100102-0001b01",
+      "elementId": 100102,
+      "category": "Generic Models",
+      "typeName": "Hex",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Hex-2",
+          "value": "Hex-2"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100103-0001b10",
+      "elementId": 100103,
+      "category": "Generic Models",
+      "typeName": "Pent",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Pent-1",
+          "value": "Pent-1"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100104-0001b11",
+      "elementId": 100104,
+      "category": "Generic Models",
+      "typeName": "Pent",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Pent-2",
+          "value": "Pent-2"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100105-0001b20",
+      "elementId": 100105,
+      "category": "Generic Models",
+      "typeName": "Glass",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Glass-1",
+          "value": "Glass-1"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        },
+        {
+          "name": "IfcExportAs",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "IfcPlate.CURTAIN_PANEL",
+          "value": "IfcPlate.CURTAIN_PANEL"
+        }
+      ],
+      "parametersTotal": 4
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100106-0001b21",
+      "elementId": 100106,
+      "category": "Generic Models",
+      "typeName": "Glass",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Glass-2",
+          "value": "Glass-2"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100107-0001b30",
+      "elementId": 100107,
+      "category": "Generic Models",
+      "typeName": "Tri",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Tri-1",
+          "value": "Tri-1"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        },
+        {
+          "name": "Экспорт в IFC как",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "IfcPlate",
+          "value": "IfcPlate"
+        }
+      ],
+      "parametersTotal": 4
+    },
+    {
+      "uniqueId": "5f3c1a2e-0000-4000-8000-000000100108-0001b31",
+      "elementId": 100108,
+      "category": "Generic Models",
+      "typeName": "Tri",
+      "parameters": [
+        {
+          "name": "Mark",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "Tri-2",
+          "value": "Tri-2"
+        },
+        {
+          "name": "Comments",
+          "storageType": "String",
+          "unit": null,
+          "displayValue": "",
+          "value": ""
+        },
+        {
+          "name": "Offset from Host",
+          "storageType": "Double",
+          "unit": "Millimeters",
+          "displayValue": "304.8 mm",
+          "value": 1.0
+        }
+      ],
+      "parametersTotal": 3
+    }
+  ],
+  "truncation": {
+    "elementsTotal": 8,
+    "elementsKept": 8,
+    "parametersTruncated": 0,
+    "maxElements": 1000,
+    "maxParameters": 200
+  },
+  "identity": {
+    "creationGuid": "0f0e0d0c-1111-2222-3333-444455556666",
+    "pathName": "C:\\Models\\facade-synthetic.rvt"
+  }
+}
