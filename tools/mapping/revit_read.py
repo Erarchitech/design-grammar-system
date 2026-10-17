@@ -57,6 +57,9 @@ _ELEMENT_ID_RE = re.compile(r"[1-9][0-9]{0,18}")
 #: Server-side caps of selection_snapshot (revit-mcp documents.py).
 MAX_ELEMENTS_CAP = 1000
 MAX_PARAMETERS_CAP = 200
+#: CLI default: keeps an upload of ~400 facade elements well under nginx's 1 MB request limit.
+DEFAULT_MAX_PARAMETERS = 40
+UPLOAD_WARN_BYTES = 900 * 1024
 
 FEET_TO_METRES = 0.3048
 
@@ -767,6 +770,9 @@ def build_parser():
                         help="element_properties worker threads (default 1 = sequential)")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT,
                         help="seconds per Revit request (default %(default)s)")
+    parser.add_argument("--max-parameters", type=int, default=DEFAULT_MAX_PARAMETERS,
+                        help="instance parameters kept per element (default %(default)s; the Web UI import "
+                             "goes through nginx, whose request limit is 1 MB)")
     parser.add_argument("--dry-run-fixture", metavar="SNAPSHOT_JSON",
                         help="convert a saved selection_snapshot response instead of reading Revit")
     parser.add_argument("--properties-fixture", metavar="PROPERTIES_JSON",
@@ -781,6 +787,8 @@ def main(argv=None, client=None):
         parser.error("--properties-fixture needs --dry-run-fixture")
     if args.workers < 1:
         parser.error("--workers must be at least 1")
+    if not 1 <= args.max_parameters <= MAX_PARAMETERS_CAP:
+        parser.error("--max-parameters must be between 1 and {}".format(MAX_PARAMETERS_CAP))
     if not (args.timeout > 0 and math.isfinite(args.timeout)):
         parser.error("--timeout must be a positive number")
     if not args.project.strip() or not args.label.strip():
@@ -799,7 +807,8 @@ def main(argv=None, client=None):
             if client is None:
                 client = RevitReadClient(timeout=args.timeout)
             identity, descriptors, truncation = read_selection(
-                client, with_properties=with_properties, max_workers=args.workers)
+                client, with_properties=with_properties, max_workers=args.workers,
+                max_parameters=args.max_parameters)
     except RevitReadError as exc:
         print("error: Revit read failed: {}".format(exc), file=sys.stderr)
         if exc.code in _HINTS:
@@ -817,13 +826,18 @@ def main(argv=None, client=None):
     body = build_upload_body(args.project.strip(), args.label.strip(), identity, descriptors,
                              truncation, dry_run=bool(args.dry_run_fixture))
     out = Path(args.out)
+    text = json.dumps(body, ensure_ascii=False, separators=(",", ":")) + "\n"
     try:
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+        out.write_text(text, encoding="utf-8", newline="\n")
     except OSError as exc:
         print("error: cannot write {}: {}".format(out, exc), file=sys.stderr)
         return 1
     print(_summary(out, identity, descriptors, truncation, with_properties))
+    size = len(text.encode("utf-8"))
+    if size > UPLOAD_WARN_BYTES:
+        print("WARNING: the file is {} KB; the Web UI import accepts about 1 MB. Re-run with a lower "
+              "--max-parameters.".format(size // 1024))
     return 0
 
 
