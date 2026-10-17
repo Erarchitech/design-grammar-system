@@ -7,7 +7,7 @@ current_phase_name: pravilo-gh-obekt
 current_plan: 6
 status: executing
 stopped_at: "Phase 1303 MVP slice — plans 01-05 complete offline; plan 06 (rebuild + live demo) in progress (2026-10-17)"
-last_updated: "2026-10-17T12:30:00.000Z"
+last_updated: "2026-10-17T22:30:00.000Z"
 last_activity: 2026-10-17
 last_activity_desc: Owner priority — Phase 1303 MVP slice for automated GH/Revit mapping (demo 2026-10-19)
 progress:
@@ -667,9 +667,9 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-12T17:18:19.488Z
-Stopped at: Completed 1308-11-PLAN.md
-Resume file: None
+Last session: 2026-10-17T22:30:00.000Z
+Stopped at: Phase 1303 plan 06 — stack rebuilt, RhinoCode act wrappers ready; owner rehearsal 18.10 not yet run
+Resume file: .planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md
 
 ## Performance Metrics
 

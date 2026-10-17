@@ -9,6 +9,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-17 Phase 1303 mapping MVP built and deployed locally, rehearsal guide ready|Phase 1303 session — GH/Revit mapping MVP built, deployed locally from worktree `dg-mapping`, rehearsal guide ready; live acts open]] (2026-10-17)
+- Phase 1303 mapping MVP (branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`): owner rehearsal 18.10 per `.planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md`, demo 19.10; 1309 untouched. See [[knowledge/decisions/Automated mapping MVP uses group questions and learned profiles (Phase 1303)|mapping decision]] and [[00-home/Current priorities|priorities]].
 - [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
 - Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
 - Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
@@ -48,6 +50,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Debugging
+- [[knowledge/debugging/Rule body comparisons must be evaluated as one conjunction (R9)|Mapping engine: R9 body comparisons must be evaluated as one conjunction]] (2026-10-17, resolved)
+- [[knowledge/debugging/RhinoCode script passes no arguments to the Python script|RhinoCode `script <PATH>` passes no arguments; one wrapper per act, reload helpers]] (2026-10-17, live check open)
+- [[knowledge/debugging/data-service exits at startup when Neo4j does not accept Bolt yet|data-service exits (3) when Neo4j does not accept Bolt yet; `docker start data-service`]] (2026-10-17, open)
 - [[knowledge/debugging/Offline recovery inventory and process cleanup regressions|Recovery NTFS streams, cached timestamps, child cleanup and CLI sanitization]] (2026-10-16)
 - [[knowledge/debugging/GSD must_haves parse 0 truths when plan files have CRLF line endings|GSD must_haves parse 0 truths when plan files have CRLF line endings]] (2026-10-12)
 - [[knowledge/debugging/DeGram sidebar session list hidden because scope session rows had no profile (F-04)|DeGram sidebar session list hidden: scope session rows had no profile (F-04, fixed in 0.1.11)]] (2026-10-12)
@@ -59,6 +64,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Automated mapping MVP uses group questions and learned profiles (Phase 1303)|Phase 1303 mapping MVP — evidence, group questions, learned profiles; deterministic engine, LLM only explains]] (2026-10-17)
+- [[knowledge/decisions/Mapping MVP is developed in a separate git worktree so Phase 1309 is not interrupted|Mapping MVP in git worktree `dg-mapping` on `feature/mapping-mvp`; 1309 untouched]] (2026-10-17)
 - [[knowledge/decisions/Phase 1302 source vocabulary and revision boundaries|Phase 1302 — source, vocabulary, rule revision and lessons-learned boundaries]] (2026-10-14)
 - [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|SVOD name; ALNST + Tektur design system; uppercase headings without full stops; crescent ring and drawn hero]] (2026-10-13)
 - [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54, Phase 1308)]] (2026-10-12)

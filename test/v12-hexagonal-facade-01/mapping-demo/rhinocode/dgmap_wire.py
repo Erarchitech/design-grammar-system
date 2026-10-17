@@ -10,12 +10,18 @@
 Usage: RhinoCode.exe script <this file>   (log: %TEMP%\\dgmap-rhinocode.log)
 """
 
+import importlib
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+except NameError:  # a runner that does not set __file__
+    sys.path.insert(0, r"C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mapping-demo\rhinocode")
 
 import dgmap_common as c  # noqa: E402
+
+importlib.reload(c)  # Rhino keeps modules loaded between runs
 
 PROJECT = "v12-hexagonal-facade-01"
 URL = "http://localhost:8000"
@@ -85,4 +91,4 @@ def main(log_path):
     c.log(log_path, "wire: done")
 
 
-c.run_main(main, sys.argv[1] if len(sys.argv) > 1 else c.DEFAULT_LOG)
+c.run_main(main, c.DEFAULT_LOG)  # RhinoCode passes no script arguments

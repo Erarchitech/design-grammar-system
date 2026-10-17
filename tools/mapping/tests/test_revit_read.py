@@ -196,6 +196,35 @@ class CliTests(unittest.TestCase):
         self.assertNotIn("token", json.dumps(body).lower())
         self.assertIn("Facade_Module_Hex", stdout.getvalue())
 
+    def test_vocabulary_and_populations_go_into_context(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vocab = Path(tmp) / "vocabulary.json"
+            vocab.write_text(json.dumps({"_note": "x", "synonyms": {"HexagonalUnit": ["hex"]}, "ifcHints": {"GlassPanel": ["IfcPlate"]}}), encoding="utf-8")
+            out = Path(tmp) / "upload.json"
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                code = rr.main(["--dry-run-fixture", str(SNAPSHOT), "--out", str(out), "--vocabulary", str(vocab), "--populations-from", "ms-0123456789ab"])
+            self.assertEqual(code, 0)
+            body = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(body["context"]["vocabulary"], {"synonyms": {"HexagonalUnit": ["hex"]}, "ifcHints": {"GlassPanel": ["IfcPlate"]}})
+        self.assertEqual(body["context"]["populationsFromSessionId"], "ms-0123456789ab")
+
+    def test_bad_vocabulary_and_session_id_are_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vocab = Path(tmp) / "vocabulary.json"
+            vocab.write_text(json.dumps({"synonyms": {"HexagonalUnit": "hex"}}), encoding="utf-8")
+            out = Path(tmp) / "upload.json"
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                code = rr.main(["--dry-run-fixture", str(SNAPSHOT), "--out", str(out), "--vocabulary", str(vocab)])
+            self.assertEqual(code, 1)
+            self.assertFalse(out.exists())
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                rr.main(["--dry-run-fixture", str(SNAPSHOT), "--out", str(out), "--populations-from", "abc"])
+
+    def test_example_vocabulary_is_valid(self):
+        example = HERE.parents[2] / "test" / "v12-hexagonal-facade-01" / "mapping-demo" / "vocabulary.example.json"
+        vocabulary = rr.load_vocabulary(example)
+        self.assertIn("HexagonalUnit", vocabulary["synonyms"])
+
     def test_live_read_through_injected_client(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "upload.json"

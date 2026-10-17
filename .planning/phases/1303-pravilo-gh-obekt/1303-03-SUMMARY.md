@@ -29,3 +29,9 @@ executor: controller (inline; the wave-1 subagent stopped on a rate limit before
 - Rhino 8 runs the C# script on .NET 7/8 (System.Text.Json and HttpClient present); the RunScript signature must match the created parameters (Tree / List / Item and type hints as in the runbook).
 - Slider nicknames `Module Width F1` and `Наклон нечет сот` (from 3b-variants.md / 5-wiring.md); CONNECTOR output `Session`, METAGRAPH output `Objects`; the measure script is the only component with inputs PB, HU, GU, PA, F, LZ.
 - PROPERTY STATE alignment in act 4 holds when every class comes from one stream; with `GuAsHu = true` the GroundFloorUnit branch keeps GU order (elements are appended per stream in input order).
+
+## Revision 2026-10-17 (during plan 06)
+
+`RhinoCode.exe script <PATH>` passes no script arguments, so `dgmap_run_act.py <act>` could not select an act. It is replaced by the library `dgmap_acts.py` and one wrapper per action: `dgmap_act_v1.py` … `dgmap_act_v4.py`, `dgmap_act_validate_v1.py`, `dgmap_refresh.py`, `dgmap_apply.py`, `dgmap_reset_v1.py`. Each wrapper adds its own folder to `sys.path` (with a fixed-path fallback if the runner sets no `__file__`), reloads the helpers because Rhino keeps modules loaded between runs, and writes import failures to the same log. `dgmap_wire.py` now always logs to `%TEMP%\dgmap-rhinocode.log` and ignores `sys.argv`.
+
+Act behaviour changed for the demo. Each act sets both variant sliders (`Module Width F1`, `Наклон нечет сот`) and leaves the variant on the canvas, so its colours can be shown in Rhino. If the act fails, the previous slider values are restored and `Run` is cleared. Checked with a host smoke test against stubbed Grasshopper objects (wiring, 8 actions, failure restore, refusal on a non-copy definition). It has not been run in a live Rhino yet.

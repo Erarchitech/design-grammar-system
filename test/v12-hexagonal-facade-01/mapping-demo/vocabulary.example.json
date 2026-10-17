@@ -1,0 +1,14 @@
+{
+  "_note": "Example only. After the first Revit read, replace the words with tokens from the REAL family/type names printed by revit_read.py (e.g. a family 'Hex_Module_6pt' -> 'hex'). Keys are DG class labels of v12-hexagonal-facade-01.",
+  "synonyms": {
+    "HexagonalUnit": ["hex", "hexagon"],
+    "GroundFloorUnit": ["pent", "pentagon", "ground"],
+    "GlassPanel": ["glass", "glazing"],
+    "BottomTriangularPanel": ["tri", "triangle", "bottom"],
+    "Facade": ["frame"]
+  },
+  "ifcHints": {
+    "GlassPanel": ["IfcPlate.CURTAIN_PANEL", "IfcWindow"],
+    "BottomTriangularPanel": ["IfcPlate"]
+  }
+}

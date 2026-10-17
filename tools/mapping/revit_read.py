@@ -645,8 +645,13 @@ def read_selection(client, with_properties=True, max_workers=1,
 
 # --- upload body, fixtures and CLI ---------------------------------------------
 
-def build_upload_body(project, label, identity, descriptors, truncation=None, read_at=None, dry_run=False):
-    """Body of POST /mapping/sessions (1303-API-CONTRACT section 2) plus a ``source`` block."""
+def build_upload_body(project, label, identity, descriptors, truncation=None, read_at=None, dry_run=False,
+                      context=None):
+    """Body of POST /mapping/sessions (1303-API-CONTRACT section 2) plus a ``source`` block.
+
+    ``context`` (optional) is passed through to the session: ``vocabulary`` (class synonyms /
+    IFC hints authored from the real family names) and ``populationsFromSessionId``.
+    """
     identity = identity if isinstance(identity, dict) else {}
     source = {
         "document": _text(identity.get("pathName")),
@@ -657,8 +662,29 @@ def build_upload_body(project, label, identity, descriptors, truncation=None, re
         source["dryRun"] = True
     if truncation:
         source["truncation"] = truncation
-    return {"project": project, "platform": PLATFORM, "label": label, "source": source,
+    body = {"project": project, "platform": PLATFORM, "label": label, "source": source,
             "elements": list(descriptors)}
+    if context:
+        body["context"] = context
+    return body
+
+
+def load_vocabulary(path):
+    """``{"synonyms": {class: [words]}, "ifcHints": {class: [hints]}}`` from a JSON file (validated)."""
+    data = _load_json(path)
+    if not isinstance(data, dict):
+        raise ValueError("{}: the vocabulary must be a JSON object".format(path))
+    vocabulary = {}
+    for key in ("synonyms", "ifcHints"):
+        block = data.get(key) or {}
+        if not isinstance(block, dict) or not all(
+                isinstance(v, list) and all(isinstance(x, str) for x in v) for v in block.values()):
+            raise ValueError("{}: '{}' must map class labels to lists of strings".format(path, key))
+        if block:
+            vocabulary[key] = {str(k): list(v) for k, v in block.items()}
+    if not vocabulary:
+        raise ValueError("{}: no 'synonyms' or 'ifcHints' found".format(path))
+    return vocabulary
 
 
 def _load_json(path):
@@ -770,6 +796,11 @@ def build_parser():
                         help="element_properties worker threads (default 1 = sequential)")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT,
                         help="seconds per Revit request (default %(default)s)")
+    parser.add_argument("--vocabulary", metavar="VOCABULARY_JSON",
+                        help="class synonyms / IFC hints for the real family names "
+                             "({\"synonyms\": {\"HexagonalUnit\": [\"hex\"]}}); sent as context.vocabulary")
+    parser.add_argument("--populations-from", metavar="SESSION_ID",
+                        help="id of the confirmed Grasshopper session whose class counts are used as evidence")
     parser.add_argument("--max-parameters", type=int, default=DEFAULT_MAX_PARAMETERS,
                         help="instance parameters kept per element (default %(default)s; the Web UI import "
                              "goes through nginx, whose request limit is 1 MB)")
@@ -799,6 +830,17 @@ def main(argv=None, client=None):
             reconfigure(errors="replace")
 
     with_properties = not args.no_properties
+    context = {}
+    try:
+        if args.vocabulary:
+            context["vocabulary"] = load_vocabulary(args.vocabulary)
+    except (OSError, ValueError) as exc:
+        print("error: {}".format(exc), file=sys.stderr)
+        return 1
+    if args.populations_from:
+        if not re.fullmatch(r"ms-[0-9a-f]{12}", args.populations_from.strip()):
+            parser.error("--populations-from must be a session id like ms-0123456789ab")
+        context["populationsFromSessionId"] = args.populations_from.strip()
     try:
         if args.dry_run_fixture:
             identity, descriptors, truncation = convert_fixture(args.dry_run_fixture, args.properties_fixture)
@@ -824,7 +866,7 @@ def main(argv=None, client=None):
         return 3
 
     body = build_upload_body(args.project.strip(), args.label.strip(), identity, descriptors,
-                             truncation, dry_run=bool(args.dry_run_fixture))
+                             truncation, dry_run=bool(args.dry_run_fixture), context=context or None)
     out = Path(args.out)
     text = json.dumps(body, ensure_ascii=False, separators=(",", ":")) + "\n"
     try:

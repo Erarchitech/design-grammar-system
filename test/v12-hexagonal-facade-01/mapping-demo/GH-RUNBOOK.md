@@ -21,7 +21,7 @@
 | `DefinitionKey`, `Project`, `Url`, `Token`, `Label`, `SessionId` | Item | string | | |
 
    Вставить тело из `gh-mapping-intake.cs` (сигнатура `RunScript` должна совпасть с параметрами).
-5. **Проводка.** Запустить `"C:\Program Files\Rhino 8\System\RhinoCode.exe" script C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mapping-demo\rhinocode\dgmap_wire.py` — скрипт подключит к `DG MAPPING` те же источники, что у скрипта замеров (`PB, HU, GU, PA, F, LZ`), `CONNECTOR.Session → Token`, `METAGRAPH.Objects → OntoClasses`, и задаст Project / Url / DefinitionKey / порядок `Classes`. Лог: `%TEMP%\dgmap-rhinocode.log`.
+5. **Проводка.** В PowerShell задать `$rc = "C:\Program Files\Rhino 8\System\RhinoCode.exe"` и `$dg = "C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mapping-demo\rhinocode"`, затем `& $rc script "$dg\dgmap_wire.py"` — скрипт подключит к `DG MAPPING` те же источники, что у скрипта замеров (`PB, HU, GU, PA, F, LZ`), `CONNECTOR.Session → Token`, `METAGRAPH.Objects → OntoClasses`, и задаст Project / Url / DefinitionKey / порядок `Classes`. Лог: `%TEMP%\dgmap-rhinocode.log`.
 6. Добавить стандартный **Custom Preview**: Geometry ← `DG MAPPING.Geometry`, Material ← `DG MAPPING.Colour`.
 
 Цвета: подтверждено `#2E7D32`, авто по профилю `#1565C0`, предложено `#F9A825`, неоднозначно `#E65100`, без меппинга `#9E9E9E` (как в Web UI).
@@ -32,15 +32,18 @@
 
 ## 2. Акты
 
-| Акт | Команда | Ожидание |
-|---|---|---|
-| 1 холодный старт | `dgmap_run_act.py v1` | 2 вопроса: пакетное подтверждение 4 групп и «ошибка меппинга или проекта?» для 25 пятиугольников (GU отправлены как HU, F5) |
-| — ответы | Web UI → Проекты → проект → Меппинг | ответить на вопросы |
-| — обновление | `dgmap_run_act.py refresh` | цвета зелёные, `Questions = 0` |
-| 2 обучение | `dgmap_run_act.py v2`, затем `v3` (и `v4`) | 0 вопросов, всё «авто по профилю»; нарушения R2/R7 (V2), R1 (V3), R6 (V4) — сигналы проекта, не вопросы |
-| 4 валидация | `dgmap_run_act.py apply` | `ByClass` + `ClassObjects` подаются в 5 OBJECT STATE вместо индексных List Item; VALIDATOR даёт V1 11/11 PASS |
+`RhinoCode.exe script` не передаёт скрипту аргументы, поэтому у каждого действия свой файл; запуск — `& $rc script "$dg\<файл>"`.
 
-После каждого акта слайдеры возвращаются (флаг `--keep` оставляет вариант). Строки `EVIDENCE` в логе — материал протокола.
+| Акт | Файл | Ожидание |
+|---|---|---|
+| 1 холодный старт | `dgmap_act_v1.py` | 2 вопроса: пакетное подтверждение 4 групп и «ошибка меппинга или проекта?» для 25 пятиугольников (GU отправлены как HU, F5) |
+| — ответы | Web UI → Проекты → проект → Меппинг | ответить на вопросы |
+| — обновление | `dgmap_refresh.py` | цвета зелёные, `Questions = 0` |
+| 2 обучение | `dgmap_act_v2.py`, затем `dgmap_act_v3.py` (и `dgmap_act_v4.py`) | 0 вопросов, всё «авто по профилю»; нарушения R2/R7 (V2), R1 (V3), R6 (V4) — сигналы проекта, не вопросы |
+| 4 валидация | `dgmap_act_validate_v1.py`, затем `dgmap_apply.py` | холст снова V1, новая сессия `act4-validate-v1` без вопросов; `ByClass` + `ClassObjects` подаются в 5 OBJECT STATE вместо индексных List Item; VALIDATOR даёт V1 11/11 PASS |
+| — сброс | `dgmap_reset_v1.py` | слайдеры варианта снова V1, запроса в DG нет |
+
+Каждый акт выставляет оба слайдера варианта (`Module Width F1`, `Наклон нечет сот`) и оставляет вариант на холсте, чтобы были видны цвета; при ошибке слайдеры возвращаются к прежним значениям. Строки `EVIDENCE` в логе — материал протокола.
 
 ## 3. Подключение к OBJECT STATE (акт 4)
 
