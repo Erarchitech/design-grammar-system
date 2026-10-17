@@ -86,6 +86,8 @@ import cg_structure_checks
 import cg_input_bindings
 import cg_input_generation
 import cg_paramstate_store
+import mapping_engine
+import mapping_store
 import dsav_watcher
 import evidence_contract
 import design_state_projection
@@ -5323,7 +5325,17 @@ PROTECTED_NODE_KEYS_CI = frozenset(
 PROTECTED_NODE_KEY_PATTERN = re.compile(r"(?i)(^(evidence|shacl)|json$)")
 # Node labels whose whole property set is written only by the validation and
 # publish pipelines; a viewer edit on them is refused.
-LOCKED_NODE_LABELS = ["ValidationRun", "ValidationEntity", "Run", "DesignState", "IntegrationConfig"]
+LOCKED_NODE_LABELS = [
+    "ValidationRun",
+    "ValidationEntity",
+    "Run",
+    "DesignState",
+    "IntegrationConfig",
+    # Phase 1303 MVP slice: mapping learning state is written only by /mapping routes.
+    "MappingSession",
+    "MappingDecision",
+    "MappingProfile",
+]
 
 
 def is_protected_node_key(key: str) -> bool:
@@ -5575,6 +5587,143 @@ def list_accepted_candidates(project: str, ruleId: str | None = Query(default=No
             for row in rows
         ]
     }
+
+
+# ── Mapping (Phase 1303 MVP slice; .planning/phases/1303-pravilo-gh-obekt/1303-API-CONTRACT.md) ──
+#
+# Group questions, decisions and learned profiles over element descriptors from
+# Grasshopper or a read-only Revit snapshot. Thin routes: mapping_store opens no
+# session of its own here and the engine (mapping_engine) is deterministic.
+
+_MAPPING_HINTS = {
+    "MAPPING_SESSION_NOT_FOUND": "Use a sessionId returned by POST /mapping/sessions for this project.",
+    "MAPPING_QUESTION_NOT_FOUND": "Reload the session; questions change after every decision.",
+    "MAPPING_OPTION_INVALID": "Use an optionId (and groupIds) offered by the question.",
+    "MAPPING_INPUT_INVALID": "Check the element descriptors and the request body against the mapping API contract.",
+    "MAPPING_TOO_MANY_ELEMENTS": "Send at most 5000 elements per session.",
+}
+
+
+class MappingSessionCreateRequest(BaseModel):
+    project: str
+    platform: str = Field(pattern="^(grasshopper|revit)$")
+    label: str | None = Field(default=None, max_length=200)
+    elements: list[dict]
+    context: dict | None = None
+
+
+class MappingDecisionRequest(BaseModel):
+    project: str
+    questionId: str
+    optionId: str
+    groupIds: list[str] | None = None
+    roles: list[str] | None = None
+    comment: str | None = Field(default=None, max_length=500)
+
+
+class MappingApplyRequest(BaseModel):
+    project: str
+
+
+class MappingProfileCreateRequest(BaseModel):
+    project: str
+    platform: str = Field(pattern="^(grasshopper|revit|\\*)$")
+    selector: dict
+    roles: list[str]
+    comment: str | None = Field(default=None, max_length=500)
+
+
+def _mapping_actor(request: Request) -> str:
+    principal = getattr(request.state, "principal", None)
+    return str(getattr(principal, "username", None) or "unknown")
+
+
+def _mapping_error(exc: mapping_engine.MappingInputError) -> HTTPException:
+    return _structured_error_response(exc.detail, _MAPPING_HINTS.get(exc.code, ""), exc.code, exc.status)
+
+
+def _mapping_call(fn, *args):
+    try:
+        with driver.session() as session:
+            return fn(session, *args)
+    except mapping_engine.MappingInputError as exc:
+        raise _mapping_error(exc)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _internal_failure(exc, "Check Neo4j availability.", "MAPPING_FAILED", 502) from exc
+
+
+@router.post("/mapping/sessions")
+def post_mapping_session(payload: MappingSessionCreateRequest, request: Request):
+    """Create a mapping session from element descriptors (DGMAP-01/02)."""
+    return _mapping_call(
+        mapping_store.create_session,
+        payload.project,
+        payload.platform,
+        payload.label,
+        payload.elements,
+        payload.context or {},
+        _mapping_actor(request),
+        mapping_store.utc_now(),
+    )
+
+
+@router.get("/mapping/sessions")
+def get_mapping_sessions(project: str = Query(...), limit: int = Query(20, ge=1, le=100)):
+    """Newest mapping sessions of the project (summaries only)."""
+    return {"sessions": _mapping_call(mapping_store.list_sessions, project, limit)}
+
+
+@router.get("/mapping/sessions/{session_id}")
+def get_mapping_session(session_id: str, project: str = Query(...)):
+    """One mapping session with questions, groups and element results."""
+    return _mapping_call(mapping_store.get_session, project, session_id)
+
+
+@router.post("/mapping/sessions/{session_id}/decisions")
+def post_mapping_decision(session_id: str, payload: MappingDecisionRequest, request: Request):
+    """Answer one question; stores decisions and profiles and returns the recomputed session (DGMAP-03/04)."""
+    return _mapping_call(
+        mapping_store.post_decision,
+        payload.project,
+        session_id,
+        payload.questionId,
+        payload.optionId,
+        payload.groupIds,
+        payload.roles,
+        _mapping_actor(request),
+        mapping_store.utc_now(),
+    )
+
+
+@router.post("/mapping/sessions/{session_id}/apply")
+def post_mapping_apply(session_id: str, payload: MappingApplyRequest, request: Request):
+    """Partition confirmed and auto-mapped elements by class for the OBJECT STATE components (DGMAP-05)."""
+    return _mapping_call(
+        mapping_store.apply_session, payload.project, session_id, _mapping_actor(request), mapping_store.utc_now()
+    )
+
+
+@router.get("/mapping/profiles")
+def get_mapping_profiles(project: str = Query(...)):
+    """Learned and authored mapping profiles of the project."""
+    return _mapping_call(mapping_store.list_profiles, project)
+
+
+@router.post("/mapping/profiles")
+def post_mapping_profile(payload: MappingProfileCreateRequest, request: Request):
+    """Author a profile by hand (e.g. Revit category + parameters → classes)."""
+    return _mapping_call(
+        mapping_store.create_authored_profile,
+        payload.project,
+        payload.platform,
+        payload.selector,
+        payload.roles,
+        payload.comment,
+        _mapping_actor(request),
+        mapping_store.utc_now(),
+    )
 
 
 app.include_router(router)

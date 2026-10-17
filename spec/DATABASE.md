@@ -12,7 +12,7 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 | `Metagraph` | Rule, Atom, Builtin, Var, Literal | SWRL rules and atom structures |
 | `ValidGraph` | DesignState, Run, IntegrationConfig, ValidationEntity | Validation runs, design state metadata, integration config; see [IntegrationConfig](#integrationconfig) |
 | `SpecGraph` | SpecNote, SpecTag, SpecSession, SpecClass | Project spec storage |
-| `Computgraph` | Object, Behavior, Algorithm, Procedure, Pattern, Parameter, Interface, Representation, SharedProperty | Computgraph runtime entities (Phase 36) + cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) |
+| `Computgraph` | Object, Behavior, Algorithm, Procedure, Pattern, Parameter, Interface, Representation, SharedProperty, MappingSession, MappingDecision, MappingProfile | Computgraph runtime entities (Phase 36) + cross-platform identity registry (Phase 32.1) — see [Identity Registry](#identity-registry-phase-321) — + mapping learning state (Phase 1303 MVP slice, experimental) — see [Mapping learning state](#mapping-learning-state-experimental--phase-1303-mvp-slice) |
 
 ## Node Labels
 
@@ -580,6 +580,30 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 
 **Normative spec:** `spec/DG-ID.md` — this database schema documents the structural shape; `DG-ID.md` is the normative contract for format, minting, rename/collision rules, the binding model, and shared-property semantics.
 
+#### Mapping learning state (experimental — Phase 1303 MVP slice)
+
+Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); all three labels are in `LOCKED_NODE_LABELS`, so the graph property editor refuses them. Contract: `.planning/phases/1303-pravilo-gh-obekt/1303-API-CONTRACT.md`. The slice writes **no** `Representation` and no element-to-class edge: element results live in the session (1303-CONTEXT D-32). Large JSON properties end in `Z` (zlib + base64 of canonical JSON), small ones in `Json`.
+
+**MappingSession** — one import of element descriptors from Grasshopper or a read-only Revit snapshot and its current engine result.
+```
+(:MappingSession {graph: "Computgraph", project: "1", sessionId: "ms-<12 hex>", platform: "grasshopper", label: "act1-cold-start", engineVersion: "dgmap-0.1", createdAt: "...", createdBy: "owner", updatedAt: "...", summaryJson: "{...}", contextJson: "{...}", descriptorsZ: "...", resultZ: "...", appliedAt?: "...", appliedBy?: "...", appliedCount?: 376})
+```
+- Merge key: `(sessionId, project)`
+- `contextJson` — authored vocabulary (class synonyms, IFC hints) and populations used by the engine; `resultZ` — questions, groups, element roles and states, human decisions of this session
+
+**MappingDecision** — one human answer to one question for one group.
+```
+(:MappingDecision {graph: "Computgraph", project: "1", decisionId: "D-<12 hex>", sessionId: "ms-...", questionId: "Q-...", groupId: "G-...", optionId: "class:ex:GroundFloorUnit", rolesJson: "[...]", memberCount: 25, memberIdsJson|memberIdsZ, questionText: "...", evidenceJson|evidenceZ, consequencesJson|consequencesZ, decidedBy: "owner", decidedAt: "...", profileId: "P-..."})
+```
+- Merge key: `(decisionId, project)`; never updated after creation
+
+**MappingProfile** — a reusable selector learned from a decision (`source: "learned"`) or authored by hand (`source: "authored"`), mapping matching elements to one or more class roles.
+```
+(:MappingProfile {graph: "Computgraph", project: "1", profileId: "P-<12 hex>", platform: "grasshopper|revit|*", selectorJson: "{\"geometry.vertexCount\":5}", rolesJson: "[\"ex:GroundFloorUnit\"]", excludedRolesJson: "[]", acceptsViolationsJson: "[]", decisionIdsJson: "[...]", source: "learned", state: "active", confirmations: 1, rejections: 0, support: 25, createdBy: "owner", createdAt: "...", updatedAt: "...", engineVersion: "dgmap-0.1"})
+```
+- Merge key: `(profileId, project)`; `profileId` is a deterministic hash of platform, normalised selector, roles and excluded roles
+- Confidence (computed, not stored) = `(confirmations + 4) / (confirmations + rejections + 5)`; a profile applies automatically at ≥ 0.8
+
 ## Relationships
 
 | Relationship | From | To | Properties | Description |
@@ -605,6 +629,9 @@ The identity registry comprises the `Representation` and `SharedProperty` node l
 | `PARAM_LINK` | Parameter | Interface | — | Parameter → interface, wire-derived |
 | `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 | `ATTRIBUTE_OF` | Atom (`type: 'DataPropertyAtom'`) | Parameter | `derivedFromRuleId`, `source` (`binding`\|`override`\|`default`), `determinability` (`direct-parameter`\|`monotone-bound`\|`geometry-required`) | Metagraph → Computgraph cross-layer bridge; project-scoped on both endpoints (Rule matched by `Rule_Id`+`project`, Parameter matched by `cgId`+`definitionId`+`project`); the Atom is reached via `HAS_BODY` from the project-scoped Rule (Metagraph `Atom` nodes carry no `definitionId` of their own). Derived at `POST /computgraph/publish` time from the existing `inputBindings` resolution (`cg_input_bindings.classify_rule`) — never authored by rule ingestion. Written only by `data-service/computgraph_publish.py`'s `_publish_attribute_of`. |
+| `HAS_DECISION` | MappingSession | MappingDecision | — | Experimental (Phase 1303 MVP slice): the answers given in a mapping session; written only by `mapping_store.save_decision` |
+| `CREATED_PROFILE` | MappingDecision | MappingProfile | — | Experimental (Phase 1303 MVP slice): the decision that created or re-confirmed the profile; written only by `mapping_store.save_profile` |
+| `ASSIGNS_ROLE` | MappingProfile | Class | — | Experimental (Phase 1303 MVP slice): the class roles a profile assigns to matching elements (Computgraph → OntoGraph cross-layer, Class matched by `iri`); written only by `mapping_store.save_profile` |
 
 ## Rule ID Format
 
@@ -751,3 +778,9 @@ write-verb policy — before any LLM-generated Cypher reaches Neo4j
 - Added: `Parameter.reinstateParameterId` (Computgraph, nullable) — the PARAMETER STATE input NickName a published Computgraph `Parameter` maps to
 - Added: a second, standalone-node `DesignState` writer, `POST /computgraph/candidates/accept` — writes a Run-less `ParamState` carrying provenance properties `source`, `sourceRuleId`, `provider`, `model`, `confidence`, `definitionId`, `publishedAt`, `strategy`, `determinabilityClass`, `generatedAt`
 - Amended: the DesignState single-writer invariant and the always-linked-Run invariant (both now two-writer / intended-Run-less-interim statements — see the DesignState block above)
+
+### Phase 1303 MVP slice (automated GH/Revit mapping, experimental, 2026-10-17)
+
+- Added: `MappingSession`, `MappingDecision`, `MappingProfile` (Computgraph, project-scoped, locked) and `HAS_DECISION`, `CREATED_PROFILE`, `ASSIGNS_ROLE` — see [Mapping learning state](#mapping-learning-state-experimental--phase-1303-mvp-slice)
+- Not added in this slice: `Representation` writes and element-to-class edges for mapped elements (deferred to post-demo 1303 hardening with DG-native Grasshopper identity)
+- Full Schema Change Propagation (cypher_template, dataset_schema, n8n prompts, SHACL shapes, README, copilot instructions) is deferred to that hardening; the labels are not produced by rule ingestion or by the LLM

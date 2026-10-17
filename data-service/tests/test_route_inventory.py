@@ -206,7 +206,7 @@ class TestInventory:
 
     def test_policy_table_size(self):
         # 98 since 2026-10-06: PUT /degram/admin/llm-config removed (the relay reads the Web UI LLM settings), then plan 17 added the DeGram exchange and the two pairing routes; 104 since plan 30 (D-39): the session exchange, the three project grant routes, GET /degram/grants/mine and POST /degram/grant-requests; 109 since plan 40 (D-46): POST /connector-access-requests, GET /connector-access/mine and the three project connector-access routes; 111 since 1308-02: PUT /projects/{project}/members/{username} and GET /projects/{project}/summary; 113 since 1308-06 (D-25): POST and DELETE /auth/connector-session.
-        assert len(route_policy.ROUTE_POLICIES) == 113
+        assert len(route_policy.ROUTE_POLICIES) == 120
 
     def test_speckle_proxy_routes_are_member_or_delegated_viewer_only(self):
         # Phase 1301-09 (D-21): the geometry proxy admits a project viewer or the

@@ -433,6 +433,22 @@ The relay forwards the upstream SSE lines unchanged, always sends the operator-c
 
 Request headers: `X-DeGram-Context-Scope: none | selection | whole-definition` (default `selection`; other values 422 `CONTEXT_SCOPE_INVALID`) and `X-DeGram-Whole-Definition-Consent: true`. Checks run before any provider contact, in this order: 403 `POLICY_DENY` with `reason` `provider-export-not-allowed` when the project's `providerExportAllowed` is false, i.e. an admin switched it off, the stored value is malformed or the store is unreadable (consent never overrides it); for `whole-definition`, 403 `POLICY_DENY` with `reason` `whole-definition-not-allowed` unless `wholeDefinitionAllowed`, then 428 `CONSENT_REQUIRED` without the consent header; 413 `RELAY_BODY_TOO_LARGE` over 1 MiB.
 
+### Mapping (`/mapping/*`, Phase 1303 MVP slice, experimental)
+
+Group questions, decisions and learned profiles that map element descriptors from Grasshopper or a read-only Revit snapshot to DG classes. Shapes: `.planning/phases/1303-pravilo-gh-obekt/1303-API-CONTRACT.md`; engine: `data-service/mapping_engine.py` (deterministic, no LLM); persistence: `data-service/mapping_store.py` (`spec/DATABASE.md`, "Mapping learning state"). `project` travels in the body (POST) or the query (GET), because a Grasshopper connector session only passes when its bound project equals the request project.
+
+| Method | Path | Body / Params | Principals | Description |
+|--------|------|---------------|------------|-------------|
+| POST | `/mapping/sessions` | `{project, platform: grasshopper\|revit, label?, elements: [ElementDescriptor], context?: {vocabulary?: {synonyms, ifcHints}, populationsFromSessionId?}}` | member editor, connector | Map the elements; returns the session with summary, questions (`batch-assign`, `assign`, `disambiguate`, `mapping-or-design`), groups and element results. |
+| GET | `/mapping/sessions` | Query: `project, limit=20` | member viewer, connector | Newest sessions (summaries). |
+| GET | `/mapping/sessions/{session_id}` | Query: `project` | member viewer, connector | One session. |
+| POST | `/mapping/sessions/{session_id}/decisions` | `{project, questionId, optionId, groupIds?, roles?, comment?}` | member editor | Answer one question: stores decisions and learned profiles, returns `{decisions, profiles, session}` with the recomputed session. |
+| POST | `/mapping/sessions/{session_id}/apply` | `{project}` | member editor, connector | Partition of confirmed and auto-mapped elements by class (`byClass`) for the OBJECT STATE components; records `appliedAt`. Writes no element edges. |
+| GET | `/mapping/profiles` | Query: `project` | member viewer, connector | Learned and authored profiles with computed confidence. |
+| POST | `/mapping/profiles` | `{project, platform: grasshopper\|revit\|*, selector, roles, comment?}` | member editor | Author a profile (e.g. Revit category + parameters → classes); repeating it adds a confirmation. |
+
+Errors use the structured `{error, hint, code}` detail: `MAPPING_SESSION_NOT_FOUND` (404), `MAPPING_QUESTION_NOT_FOUND` (404), `MAPPING_OPTION_INVALID` (400), `MAPPING_INPUT_INVALID` (400), `MAPPING_TOO_MANY_ELEMENTS` (400, more than 5000 elements), `MAPPING_FAILED` (502, correlation id only).
+
 ### Identity (`/identity/*`, Phase 32.1/1203)
 
 The identity registry API. Normative contract: `spec/DG-ID.md` (format, minting, collision policy, binding model). This is a first-write for this document — no `/identity/*` route was previously documented here.

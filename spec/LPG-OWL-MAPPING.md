@@ -361,6 +361,19 @@ The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]
 |---|---|---|
 | `ATTRIBUTE_OF` relationship (`Atom {type:'DataPropertyAtom'}` → `Parameter`) | `dgc:attributeOf` | Cross-layer bridge connecting a Metagraph `Atom` to a Computgraph `Parameter`, mirroring `dgm:refersTo`'s Metagraph→OntoGraph pattern. Project-scoped on both endpoints; carries `derivedFromRuleId`, `source`, `determinability` as edge properties (no direct RDF equivalent for these — they would map as reified statement annotations if ever exported, following the same edge-property-reification pattern as `ARG.pos`/`HAS_BODY.order`). Derived at Computgraph publish time from `inputBindings`; records ComputGraph structure and makes the rule-parameter relation queryable — it does NOT prove solver equivalence or executable design semantics. |
 
+### Mapping learning state (experimental, Phase 1303 MVP slice)
+
+**Status:** LPG only; no TBox term yet. Mapping sessions, decisions and profiles are operational provenance of a human-in-the-loop mapping activity (closest W3C analogue: `prov:Activity` / `prov:Entity` / `prov:wasGeneratedBy`), not ontology vocabulary, and are not exported to the reasoner. Element results are not written as graph edges in this slice (see `spec/DATABASE.md`, "Mapping learning state").
+
+| DG (Neo4j) | RDF/OWL Term | Notes |
+|---|---|---|
+| `MappingSession` node | — (candidate `prov:Activity`) | One import of element descriptors and its engine result. Not exported. |
+| `MappingDecision` node | — (candidate `prov:Activity` with `prov:wasAssociatedWith` the deciding user) | One human answer for one group. Not exported. |
+| `MappingProfile` node | — (candidate `prov:Entity`) | Learned or authored selector → class roles. Not exported. |
+| `HAS_DECISION` relationship (`MappingSession` → `MappingDecision`) | — (candidate `prov:wasInformedBy`, inverse) | Provenance only. |
+| `CREATED_PROFILE` relationship (`MappingDecision` → `MappingProfile`) | — (candidate `prov:wasGeneratedBy`, inverse) | Provenance only. |
+| `ASSIGNS_ROLE` relationship (`MappingProfile` → `Class`) | — | Points at an OntoGraph `owl:Class`; asserts nothing about individuals. A future export would need an explicit mapping-assertion vocabulary (cf. v14 NMOD-02 BindingProfile) rather than `rdf:type`. |
+
 ### UNA Interaction
 
 Because ValidGraph nodes are named individuals, the `owl:AllDifferent` requirement (see [UNA section](#unique-name-assumption-una)) is critical: every DesignState and Run IRI is listed in the project's `owl:distinctMembers` declaration, alongside the Metagraph individuals, to prevent the reasoner from merging e.g. two distinct `dgv:ObjState` individuals with overlapping property values. This is implemented (not merely required) as of Phase 823 -- see the [UNA section](#unique-name-assumption-una) status note.

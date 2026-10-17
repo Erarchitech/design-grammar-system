@@ -251,6 +251,17 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/validation/view/{project}/{run_id}/{rule_id}"): _p(
         _MEM, _CON, source="path", role="viewer"
     ),
+    # ── mapping (Phase 1303 MVP slice, D-18) ──
+    # Sessions, reads and apply also accept the Grasshopper connector session
+    # bound to the same project; answering questions and authoring profiles are
+    # human decisions and stay member-only.
+    ("POST", "/mapping/sessions"): _p(_MEM, _CON, source="body", role="editor"),
+    ("GET", "/mapping/sessions"): _p(_MEM, _CON, source="query", role="viewer"),
+    ("GET", "/mapping/sessions/{session_id}"): _p(_MEM, _CON, source="query", role="viewer"),
+    ("POST", "/mapping/sessions/{session_id}/decisions"): _p(_MEM, source="body", role="editor"),
+    ("POST", "/mapping/sessions/{session_id}/apply"): _p(_MEM, _CON, source="body", role="editor"),
+    ("GET", "/mapping/profiles"): _p(_MEM, _CON, source="query", role="viewer"),
+    ("POST", "/mapping/profiles"): _p(_MEM, source="body", role="editor"),
     # ── Speckle geometry proxy (Phase 1301-09, D-21) ──
     # Member (viewer) or the delegated principal for the path project; connector and
     # service tokens are refused. The handler additionally requires the requested
