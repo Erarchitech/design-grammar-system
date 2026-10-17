@@ -409,22 +409,40 @@ def _is_equality(c: Constraint) -> bool:
     return c.op in ("==", "!=")
 
 
+def rule_groups(constraints: Iterable[Constraint]) -> dict:
+    """Constraints of one rule and class, evaluated together.
+
+    A SWRL body is a conjunction: a violation-pattern rule fires only when
+    every body comparison holds. Each Constraint stores the negation of one
+    comparison, so the rule is satisfied when ANY of its constraints holds and
+    violated only when all of them fail (e.g. R9 `greaterThanOrEqual(?n, 0) ^
+    greaterThan(?n, 0)` is violated iff n > 0).
+    """
+    groups: dict[tuple, list] = {}
+    for c in constraints:
+        groups.setdefault((c.rule_id, c.class_local), []).append(c)
+    return groups
+
+
 def ev_rules(feats: Mapping, constraints: Sequence[Constraint], cfg: Mapping) -> tuple:
     """Returns (evidence, stats) with stats[class] = {"sat": [...], "vio": [(rule, detail)]}."""
     stats: dict[str, dict] = {}
     weights: dict[str, dict] = {}
-    for c in constraints:
-        value = property_value(feats, c.prop_local)
-        if value is None:
+    for (rule_id, cls), group in sorted(rule_groups(constraints).items()):
+        values = [(c, property_value(feats, c.prop_local)) for c in group]
+        if any(v is None for _, v in values):
             continue
-        s = stats.setdefault(c.class_local, {"sat": [], "vio": []})
-        w = weights.setdefault(c.class_local, {"sat": 0.0, "vio": 0.0})
-        if check_constraint(c, value):
-            s["sat"].append(c.rule_id)
-            w["sat"] += cfg["w_rule_eq_satisfied"] if _is_equality(c) else cfg["w_rule_range_satisfied"]
+        s = stats.setdefault(cls, {"sat": [], "vio": []})
+        w = weights.setdefault(cls, {"sat": 0.0, "vio": 0.0})
+        equality = all(_is_equality(c) for c in group)
+        if any(check_constraint(c, v) for c, v in values):
+            s["sat"].append(rule_id)
+            w["sat"] += cfg["w_rule_eq_satisfied"] if equality else cfg["w_rule_range_satisfied"]
         else:
-            s["vio"].append((c.rule_id, f"{c.prop_local} = {_fmt(value)}, required {c.op} {_fmt(c.value)}"))
-            w["vio"] += cfg["w_rule_eq_violated"] if _is_equality(c) else cfg["w_rule_range_violated"]
+            measured = sorted({f"{c.prop_local} = {_fmt(v)}" for c, v in values})
+            required = " or ".join(f"{c.op} {_fmt(c.value)}" for c in group)
+            s["vio"].append((rule_id, ", ".join(measured) + ", required " + required))
+            w["vio"] += cfg["w_rule_eq_violated"] if equality else cfg["w_rule_range_violated"]
     evidence = []
     for cls, s in sorted(stats.items()):
         if s["sat"]:

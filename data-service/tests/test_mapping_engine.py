@@ -67,6 +67,20 @@ def test_constraints_from_rows_inverts_violation_pattern():
     assert m.constraints_from_rows(bad) == []
 
 
+def test_rule_body_is_a_conjunction():
+    """Live graph form of R9: `greaterThanOrEqual(?count, 0) ^ greaterThan(?count, 0)` is violated iff count > 0."""
+    rows = [
+        {"ruleId": "R_HEX_HASGAPCOUNT_MAX_0_V", "classIri": "ex:HexagonalUnit", "propertyIri": "ex:hasGapCount", "builtinIri": "swrlb:greaterThanOrEqual", "lex": "0"},
+        {"ruleId": "R_HEX_HASGAPCOUNT_MAX_0_V", "classIri": "ex:HexagonalUnit", "propertyIri": "ex:hasGapCount", "builtinIri": "swrlb:greaterThan", "lex": "0"},
+    ]
+    cons = m.constraints_from_rows(rows)
+    assert len(cons) == 2
+    _, closed = m.ev_rules({"properties.hasGapCount": 0}, cons, m.CONFIG)
+    _, open_ = m.ev_rules({"properties.hasGapCount": 1}, cons, m.CONFIG)
+    assert closed["HexagonalUnit"] == {"sat": ["R_HEX_HASGAPCOUNT_MAX_0_V"], "vio": []}
+    assert open_["HexagonalUnit"]["sat"] == [] and open_["HexagonalUnit"]["vio"][0][0] == "R_HEX_HASGAPCOUNT_MAX_0_V"
+
+
 def test_constraints_from_swrl_plain_pattern():
     cons = m.constraints_from_swrl(
         "R_HEX_HASVERTEXCOUNT_REQ_6_V", "HexagonalUnit(?u) ^ hasVertexCount(?u, ?n) ^ swrlb:notEqual(?n, 6) -> violation(?u)"
