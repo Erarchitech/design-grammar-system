@@ -4,9 +4,9 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1303
 current_phase_name: pravilo-gh-obekt
-current_plan: 0
-status: planning
-stopped_at: "Phase 1303 MVP slice (automated GH/Revit mapping) — plan revision and context written (2026-10-17)"
+current_plan: 6
+status: executing
+stopped_at: "Phase 1303 MVP slice — plans 01-05 complete offline; plan 06 (rebuild + live demo) in progress (2026-10-17)"
 last_updated: "2026-10-17T12:30:00.000Z"
 last_activity: 2026-10-17
 last_activity_desc: Owner priority — Phase 1303 MVP slice for automated GH/Revit mapping (demo 2026-10-19)
@@ -34,15 +34,15 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Priority update (2026-10-17, branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`):** the owner made the MVP slice of Phase 1303 — automated GH/Revit → DG mapping with group questions and learned profiles — the priority for a demo on 2026-10-19 (DGMAP-01…06, outside the 51 MVP IDs; `.planning/phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Deferred until after the demo: 1302 (incl. gate 1302-08), remaining 1300/1301 work (incl. the 1301-16 live UAT), 1304–1307, v14 activation and Phase 35. Phase 1309 is **not** deferred: it continues in a parallel session on `feature/hosting-dg-pilot` in the main folder; this branch merges after the demo and after a 1309 commit point. Historical 1308/1302 lines below are kept unchanged.
 
-Phase: 1303 (pravilo-gh-obekt) — MVP slice PLANNING (2026-10-17)
+Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)
 Current Phase: 1303
 Current Phase Name: pravilo-gh-obekt
-Current Plan: 0
-Total Plans in Phase: TBD
-Plan: 0 of TBD (MVP slice)
-Status: Phase 1303 MVP slice — planning (priority, demo 2026-10-19); 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
-Last activity: 2026-10-17 — owner priority: Phase 1303 MVP slice for automated GH/Revit mapping; plan revision and 1303-CONTEXT.md written in branch feature/mapping-mvp
-Last Activity Description: Phase 1303 MVP slice planning started
+Current Plan: 6
+Total Plans in Phase: 7 (MVP slice; 07 optional)
+Plan: 5 of 7 complete (01 engine, 02 routes/persistence, 03 GH script, 04 Revit reader, 05 Web UI panel)
+Status: Phase 1303 MVP slice — offline plans done; plan 06 rebuild + live demo with the owner; 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
+Last activity: 2026-10-17 — plans 1303-01..05 executed and committed on feature/mapping-mvp (engine 16 tests, routes 10, Revit reader 14, ui-v2 322/322, GH script compiles against Rhino 8)
+Last Activity Description: Phase 1303 MVP slice offline plans complete
 
 **Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
 
