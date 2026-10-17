@@ -4,6 +4,8 @@
 
 **Статус:** ACTIVE — owner scope revision 2026-10-04. Phase 1300 incomplete / scope revision; независимый read-only client slice 1301 в `ui-v2` — in progress, не готов к выпуску. Все 51 ID и ownership 1300–1307 сохранены; ни одна фаза не объявлена завершённой.
 
+**Приоритет владельца 2026-10-17 (ветка `feature/mapping-mvp`):** до демо 2026-10-19 приоритет — MVP-срез автоматизированного меппинга GH/Revit → DG в Phase 1303 (раздел «MVP-срез 1303» ниже, DGMAP-01…06 вне 51 MVP ID, `phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Отложены до после демо: 1302 (включая gate 1302-08), оставшиеся работы 1300/1301 (в т.ч. live UAT плана 1301-16), 1304–1307, активация v14 и Phase 35. Phase 1309 не откладывается: она продолжается в параллельной сессии на ветке `feature/hosting-dg-pilot`; срез ведётся в отдельном worktree `C:\Users\Admin\source\repos\dg-mapping` и сливается после демо и точки фиксации 1309. Нумерация 1300–1307 и ownership сохраняются; новых фаз нет.
+
 **Отдельный будущий milestone:** согласованная владельцем интеграция строительных норм записана как изолированный [v14.0 roadmap](milestones/v14.0-ROADMAP.md) и [v14.0 requirements](milestones/v14.0-REQUIREMENTS.md) (1400–1408). Это не новая фаза v13, не передача DGKN/DGBN/DGST/DGHN/DGRL/WEBUI/HOST ownership и не активация v14: действующие `.planning/phases/`, STATE.md и Current Milestone сохраняются. Полный нормативный pipeline и Jev не считаются доставленными фазой 1302 или любым другим v13 ID.
 
 **Authority:** Последняя active revision имеет приоритет над историческими preparation/discussion/plan-check материалами. Архивный пакет не изменяется; frozen dossier hashes/receipts требуют явной перепривязки к изменённому scope и применимого независимого принятия, не autoaccept. Сравнение DeGram/current DG, baseline study и benefit thresholds исключены из milestone. Design State/pre-post/evaluator agreement/recognition regression и OPEN v12 D08 сохраняются как самостоятельные обязательства, не product benchmark. Directory slug `1300-kontrakty-baseline-i-ownership` сохранён только как стабильный путь.
@@ -45,7 +47,7 @@
 - [ ] **Phase 1300: Контракты, проверка и ownership** — владелец принимает границы MVP, контрактный профиль, функциональные/контрактные fixtures DeGram и Viewer compatibility; dependent capability gates сохраняются.
 - [ ] **Phase 1301: Рабочий клиент и безопасное чтение** — участник входит в DG, выбирает свой проект и native document, безопасно читает через локальные adapters и reused web.
 - [ ] **Phase 1302: Источник, словарь и утверждённая редакция** — автор управляет source-linked правилами, а steward — release словаря; история и lessons learned имеют отдельные доказательства.
-- [ ] **Phase 1303: Правило ↔ GH ↔ объект** — пользователь получает точную native-привязку и inspect/trace с совместимыми tagging, recognition и publication.
+- [ ] **Phase 1303: Правило ↔ GH ↔ объект** — пользователь получает точную native-привязку и inspect/trace с совместимыми tagging, recognition и publication. **Приоритет 2026-10-17:** MVP-срез автоматизированного меппинга GH/Revit с групповыми вопросами и обучаемыми профилями (демо 2026-10-19).
 - [ ] **Phase 1304: Design State, проверка и review** — участник сохраняет и сравнивает проверяемые состояния, reviewer видит evidence, человек отдельно принимает решение.
 - [ ] **Phase 1305: Ограниченное GH intent editing** — автор подтверждает KB-валидированный patch, получает undo/rollback, реальный solve и восстановимую публикацию.
 - [ ] **Phase 1306: Межплатформенная передача** — получатель на другом ПК проверяет Revit counterpart, значения, выбранную зависимость и основания принятого решения, затем разрешённую передачу в CDE.
@@ -325,7 +327,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 
 **Goal**: Пользователь DG addin прослеживает requirement до точного native input и объекта, безопасно подтверждает существующие annotations/recognition и публикует результат без потери совместимости reference definitions.
 **Depends on**: Phase 1302
-**Requirements**: DGBN-01, DGBN-02, DGBN-03, DGBN-04, DGBN-05, DGBN-06
+**Requirements**: DGBN-01, DGBN-02, DGBN-03, DGBN-04, DGBN-05, DGBN-06, DGMAP-01, DGMAP-02, DGMAP-03, DGMAP-04, DGMAP-05, DGMAP-06
 **Success Criteria**:
 
 1. Пользователь addin читает нужные company/project данные через авторизованный HTTP repository path без рабочего доступа к Bolt и без service-only полномочий; exact binding связывает rule revision и atom/property с document/definition, component instance, parameter/port и object identity, а ambiguity, одинаковые имена и stale target дают отказ. [DGBN-01, DGBN-02]
@@ -334,7 +336,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 4. Автор запускает существующее распознавание, просматривает предложения, частично принимает/отклоняет их; unrecognized остаются видимыми, отдельное подтверждение публикации показывает target project, revision и реально записанный результат. [DGBN-05]
 5. Пользователь открывает согласованные reference `.gh` с прежними компонентами/GUIDs и получает эквивалентные успешные tagging/publish результаты без новых missing-component placeholders; заранее известные исключения, включая CONNECTOR post-825, перечислены явно. [DGBN-06]
 
-**Plans**: TBD
+**Plans**: MVP-срез — `phases/1303-pravilo-gh-obekt/` (см. «MVP-срез 1303» ниже); полный объём DGBN — TBD после демо
 **UI hint**: yes
 
 **Entry gate**: Выход 1302 даёт pin/revision и typed risk/confirm contract; профиль identity/mapping/security согласован. Выбраны реальные reference definitions и зафиксирован recognition baseline с открытым качественным долгом, а не предполагаемым PASS.
@@ -342,6 +344,24 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 **Verification evidence**: HTTP authorization/denial tests; exact identity/port fixtures и live GH trace; same-name/duplicate/stale negative cases; serializer parity и tag undo на живом canvas; partial recognition confirm, publish read-back и regressions старых `.gh`/GUIDs. Качество распознавания сравнивается с принятым baseline без сокрытия unrecognized.
 
 **Exit gate**: Цепочка source→rule→native input→object и назначенные ID проверены. Tag-specific confirmation/undo используют существующий механизм native/shared annotation service: generalized batch engine 1305 не нужен для выхода и не создаётся здесь повторно. Ownership старого recognition debt сохраняется; успешный workflow не объявляет его закрытым автоматически.
+
+#### MVP-срез 1303: автоматизированный меппинг GH/Revit → DG (приоритет владельца 2026-10-17, демо 2026-10-19)
+
+**Goal (срез)**: Пользователь отправляет элементы из GH и из Revit (только чтение); DG предлагает классы по нескольким свидетельствам, задаёт немногие групповые вопросы с последствиями для правил и учится на ответах через проверяемые профили; подтверждённые роли проходят существующий VALIDATOR.
+**Requirements (срез, вне 51 MVP ID)**: DGMAP-01, DGMAP-02, DGMAP-03, DGMAP-04, DGMAP-05, DGMAP-06. Срез частично продвигает DGBN-03 (различение authored / recognized / user-confirmed для связей меппинга) и DGBN-05 (частичное принятие/отклонение предложений), но не закрывает их; понятия NMOD-01/02 v14 (сигналы-кандидаты, BindingProfile) используются без передачи ownership.
+**Success Criteria (срез)**:
+
+1. Элементы GH и Revit приходят как дескрипторы и получают многоролевые кандидаты классов DG с объяснением по источникам свидетельств; без подтверждения или применимого профиля привязка не возникает. [DGMAP-01]
+2. Неоднозначные группы упорядочены по неопределённости × влиянию; вопрос показывает последствия для правил проекта и различает ошибку меппинга и ошибку проекта. [DGMAP-02]
+3. Ответ сохраняется как MappingDecision и порождает MappingProfile; ручной меппинг — тот же объект с `source=authored`; повторный импорт тех же дескрипторов детерминирован, профили переносятся между платформами. [DGMAP-03, DGMAP-04]
+4. Несколько ролей допустимы, несовместимые — нет; роли превращаются в ObjState и проходят существующий VALIDATOR без изменения его логики. [DGMAP-05]
+5. На `v12-hexagonal-facade-01` показаны холодный старт GH, повтор на V2/V3 и живая Revit-модель фасада с прогрессом в DG Web UI и окраской в Rhino; протокол фиксирует число вопросов, precision/recall против эталона V1 и долю авто-применения. [DGMAP-06]
+
+**Entry gate (срез)**: Исключение владельца 2026-10-17: срез стартует без выхода 1302 и без принятого профиля 1300; входной gate 1303 выше остаётся обязательным для полной приёмки фазы. Работа идёт в ветке `feature/mapping-mvp` (worktree `C:\Users\Admin\source\repos\dg-mapping`) и не затрагивает 1309. На 17–19.10 разрешены Docker на этом ПК, живой Rhino/GH на копии `.gh` фасада, только чтение Revit-модели фасада и платные вызовы LLM; запись в Revit не разрешена.
+
+**Verification evidence (срез)**: pytest движка и маршрутов `/mapping/*`; тесты и сборка Web UI; детерминизм повторного импорта; живой прогон на копии `.gh` и Revit-модели фасада с протоколом метрик.
+
+**Exit (срез)**: demo-grade. Срез не закрывает DGBN-01…06 и не заменяет exit gate 1303; DGMAP отмечаются выполненными только по evidence живого прогона.
 
 ### Phase 1304: Design State, проверка и review
 
@@ -437,7 +457,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
 | 1301. Рабочий клиент и безопасное чтение | 40/41 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
-| 1303. Правило ↔ GH ↔ объект | 0/TBD | Not started | — |
+| 1303. Правило ↔ GH ↔ объект | 0/TBD | MVP slice planning — priority, demo 2026-10-19 | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
 | 1305. Ограниченное GH intent editing | 0/TBD | Not started | — |
 | 1306. Межплатформенная передача | 0/TBD | Not started | — |
@@ -452,13 +472,13 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 | 1300 | 4 | 4 |
 | 1301 | 7 | 5 |
 | 1302 | 10 | 5 |
-| 1303 | 6 | 5 |
+| 1303 | 6 (+6 DGMAP вне MVP) | 5 (+5 среза) |
 | 1304 | 7 | 5 |
 | 1305 | 8 | 5 |
 | 1306 | 5 | 5 |
 | 1307 | 4 | 4 |
 
-**Проверяемые инварианты roadmap:** ровно 8 фаз 1300–1307; все 51 MVP ID назначены ровно один раз; ни одного нового/пропущенного ID; назначение совпадает с requirements; у каждой фазы 2–5 наблюдаемых критериев, вместе ссылающихся на все её IDs; внутренний dependency graph ацикличен. Это структурная проверка планирования, не выполнение 51 требований.
+**Проверяемые инварианты roadmap:** ровно 8 фаз 1300–1307; все 51 MVP ID назначены ровно один раз; ни одного нового/пропущенного ID; назначение совпадает с requirements; у каждой фазы 2–5 наблюдаемых критериев, вместе ссылающихся на все её IDs; внутренний dependency graph ацикличен. Это структурная проверка планирования, не выполнение 51 требований. DGMAP-01…06 (MVP-срез 1303, приоритет владельца 2026-10-17) не входят в 51 MVP ID — как WEBUI 1308 — и не меняют этих инвариантов.
 
 **Текущий gate:** 1300 incomplete / scope revision; 1300-07 withdrawn, не completed. Независимый read-only client slice 1301 in progress; не Desktop delivery и не release-ready. G-01/V8, independent ownership acceptance и OPEN debt остаются capability gates для semantic consumption/live work. Исторические PASS/hashes не переносятся на изменённый scope автоматически.
 

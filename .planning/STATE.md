@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: DeGram Agent
-current_phase: 1308
-current_phase_name: dg-web-ui
-current_plan: 24
-status: phase-complete
-stopped_at: "Phase 1308 complete — UAT 11/11, VERIFICATION passed (2026-10-14)"
-last_updated: "2026-10-14T12:30:00.000Z"
-last_activity: 2026-10-14
-last_activity_desc: Phase 1308 complete
+current_phase: 1303
+current_phase_name: pravilo-gh-obekt
+current_plan: 0
+status: planning
+stopped_at: "Phase 1303 MVP slice (automated GH/Revit mapping) — plan revision and context written (2026-10-17)"
+last_updated: "2026-10-17T12:30:00.000Z"
+last_activity: 2026-10-17
+last_activity_desc: Owner priority — Phase 1303 MVP slice for automated GH/Revit mapping (demo 2026-10-19)
 progress:
   total_phases: 9
   completed_phases: 1
@@ -26,25 +26,30 @@ state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Architects can express design constraints in plain language and instantly validate 3D building models against them — no coding or ontology expertise required
-**Current focus:** Phase 1308 — dg-web-ui
+**Current focus:** Phase 1303 — MVP slice: automated GH/Revit → DG mapping (demo 2026-10-19)
 
 **Authority:** Latest owner revision removes the DeGram/current-DG comparative study and benefit gates. Historical preparation package/discussion/plan-check PASS cannot override it; archived files remain unchanged. Frozen dossier hashes/receipts require explicit scope rebinding and applicable independent reacceptance, never autoaccept. Design State/pre-post/evaluator agreement/recognition regression comparisons and v12 D08 debt remain intact. Historical sections below do not authorize current work.
 
 ## Current Position
 
+**Priority update (2026-10-17, branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`):** the owner made the MVP slice of Phase 1303 — automated GH/Revit → DG mapping with group questions and learned profiles — the priority for a demo on 2026-10-19 (DGMAP-01…06, outside the 51 MVP IDs; `.planning/phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Deferred until after the demo: 1302 (incl. gate 1302-08), remaining 1300/1301 work (incl. the 1301-16 live UAT), 1304–1307, v14 activation and Phase 35. Phase 1309 is **not** deferred: it continues in a parallel session on `feature/hosting-dg-pilot` in the main folder; this branch merges after the demo and after a 1309 commit point. Historical 1308/1302 lines below are kept unchanged.
+
+Phase: 1303 (pravilo-gh-obekt) — MVP slice PLANNING (2026-10-17)
+Current Phase: 1303
+Current Phase Name: pravilo-gh-obekt
+Current Plan: 0
+Total Plans in Phase: TBD
+Plan: 0 of TBD (MVP slice)
+Status: Phase 1303 MVP slice — planning (priority, demo 2026-10-19); 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
+Last activity: 2026-10-17 — owner priority: Phase 1303 MVP slice for automated GH/Revit mapping; plan revision and 1303-CONTEXT.md written in branch feature/mapping-mvp
+Last Activity Description: Phase 1303 MVP slice planning started
+
 **Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
 
-Phase: 1308 (dg-web-ui) — COMPLETE (2026-10-14)
-Current Phase: 1308
-Current Phase Name: dg-web-ui
-Current Plan: 24
-Total Plans in Phase: 24
-Plan: 24 of 24 completed
-Status: Phase 1308 complete (UAT 11/11, VERIFICATION passed). Next phase is the owner's choice: 1309 runs in a separate session; 1300 gates remain open
+Historical (before 2026-10-17): Phase 1308 (dg-web-ui) — COMPLETE (2026-10-14), plan 24 of 24 completed; Phase 1308 complete (UAT 11/11, VERIFICATION passed). Next phase was the owner's choice: 1309 runs in a separate session; 1300 gates remain open
 
 **Phase 1302 planning update (2026-10-15):** 10 plans / 25 tasks authored; independent GSD plan checker: 0 blockers, 0 warnings, 4 scope advisories. Planning is ready for an owner review, **not** authorized product execution: `1302-08` holds the 1300/1301/source/steward entry decision, and later CAS, deployed n8n, CDE, destination and human evidence gates remain open. Current Phase 1308 completion metadata above is preserved; this cross-phase planning update does not change it.
-Last activity: 2026-10-14 — Phase 1308 complete: rollout 1308-19/20 on the live stack, UAT 11/11, VERIFICATION passed
-Last Activity Description: Phase 1308 complete
+Historical last activity (2026-10-14): Phase 1308 complete — rollout 1308-19/20 on the live stack, UAT 11/11, VERIFICATION passed
 
 ## Deferred Verification
 
