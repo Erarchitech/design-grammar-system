@@ -578,6 +578,7 @@ Shipped from Phase 20 Plan 02:
 
 ### Pending Todos
 
+- **PRIORITY (2026-10-17, demo 2026-10-19):** Deliver automated GH and Revit to DG mapping MVP — `.planning/todos/pending/2026-10-17-deliver-automated-gh-and-revit-to-dg-mapping-mvp-by-19-10.md` (branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`; Phase 1309 continues in parallel on `feature/hosting-dg-pilot`)
 - **USER APPROVAL NEEDED**: run `migrations/2026-07-07_validationgraph_to_validgraph.cypher` — v2.0-era validation runs (project TestA, 20 runs/1148 entities) invisible to data-service until then (auto-mode denied the bulk mutation)
 - Optional cleanup: test rules ingested during v8.0 verification now live under project `v8-ui-smoke` (claimed from default-project); delete with `MATCH (n {project:'v8-ui-smoke'}) DETACH DELETE n` if unwanted — note: `v8-ui-smoke` is currently the reasoner/SHACL verification fixture (822/823 evidence runs use it), so keep it until an alternative fixture project exists
 - Phase 28 UAT item "E2E provider switch" still human-needed (cloud-llm-connector, archived in .planning/milestones/v9.0-phases/28-cloud-llm-connector/)
