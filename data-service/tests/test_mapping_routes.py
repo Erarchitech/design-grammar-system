@@ -325,6 +325,16 @@ def test_profiles_list_and_authored(fake_store):
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "MAPPING_INPUT_INVALID"
 
 
+def test_profiles_list_leaves_out_retired_profiles(fake_store):
+    # Rehearsal 2026-10-18: profiles retired for a cold restart still showed in the Web UI
+    # «Профили» table, which has no state column. The list shows the profiles that map.
+    _learn(fake_store)
+    key = sorted(fake_store.profiles)[0]
+    fake_store.profiles[key]["state"] = "retired"
+    listed = client.get("/mapping/profiles", params={"project": PROJECT}).json()["profiles"]
+    assert len(listed) == 4 and key[1] not in {p["profileId"] for p in listed}
+
+
 def test_error_codes():
     missing = client.get("/mapping/sessions/ms-nope", params={"project": PROJECT})
     assert missing.status_code == 404 and missing.json()["detail"]["code"] == "MAPPING_SESSION_NOT_FOUND"

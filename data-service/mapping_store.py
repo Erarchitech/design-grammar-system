@@ -686,7 +686,8 @@ def apply_session(session, project: str, session_id: str, actor: str, at: str) -
 
 
 def list_profiles(session, project: str) -> dict:
-    return {"profiles": fetch_profiles(session, project)}
+    # Only profiles that map: retired ones stay in the graph (an answer can switch them back on).
+    return {"profiles": [p for p in fetch_profiles(session, project) if p.get("state", "active") == "active"]}
 
 
 def create_authored_profile(session, project, platform, selector, roles, comment, actor, at) -> dict:
