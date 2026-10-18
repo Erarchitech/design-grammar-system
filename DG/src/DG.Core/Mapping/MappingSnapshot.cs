@@ -52,6 +52,9 @@ public sealed class MappingMeasureStream
 
     public bool Constant { get; init; }
 
+    /// <summary>The calculation component reads this stream directly (it measures these elements).</summary>
+    public bool Input { get; init; }
+
     /// <summary>Property name (hasAspectRatio …) → share of elements whose computed value equals the output value.</summary>
     public IReadOnlyDictionary<string, double> Agreement { get; init; } = new Dictionary<string, double>();
 }
@@ -164,6 +167,7 @@ public sealed class MappingSnapshot
                         ["stream"] = s.Stream,
                         ["pathMatch"] = s.PathMatch,
                         ["constant"] = s.Constant,
+                        ["input"] = s.Input,
                         ["agreement"] = new SortedDictionary<string, double>(
                             s.Agreement.ToDictionary(kv => kv.Key, kv => Math.Round(kv.Value, 4)), StringComparer.Ordinal),
                     })

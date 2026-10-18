@@ -160,6 +160,8 @@ function evidenceKindLabel(t, kind) {
       return t("Population");
     case "llm":
       return "LLM";
+    case "measure":
+      return t("Calculation output");
     default:
       return kind || "";
   }
@@ -773,6 +775,24 @@ export default function MappingPanel({ project, active }) {
     return () => clearInterval(timer);
   }, [open, active, status, project, load]);
 
+  // The LLM proposal refines a session in the background; re-read it until the proposal lands.
+  const llmPending = session?.llm?.status === "pending";
+  React.useEffect(() => {
+    if (!(open && active && llmPending && selectedId)) return undefined;
+    const timer = setInterval(() => {
+      if (busyRef.current) return;
+      const scope = scopeRef.current;
+      const read = readRef.current;
+      getSession(project, selectedId)
+        .then((full) => {
+          if (scope !== scopeRef.current || read !== readRef.current || busyRef.current) return;
+          if (full && typeof full === "object" && full.llm?.status !== "pending") setSession(full);
+        })
+        .catch(() => {});
+    }, FOLLOW_MS);
+    return () => clearInterval(timer);
+  }, [open, active, llmPending, selectedId, project]);
+
   const selectSession = (id) => {
     if (!id || id === selectedId || busy) return;
     followRef.current = id === sessions[0]?.sessionId;
@@ -1044,8 +1064,12 @@ export default function MappingPanel({ project, active }) {
 
         {session && <ParametersTable parameters={list(session.parameters)} />}
 
-        {session?.llm?.status && (
-          <div style={MUTED}>{t("LLM proposal: {status}", { status: session.llm.model ? `${session.llm.status} · ${session.llm.model}` : session.llm.status })}</div>
+        {llmPending ? (
+          <div style={MUTED}>{t("LLM proposal is being prepared; the questions update when it arrives")}</div>
+        ) : (
+          session?.llm?.status && (
+            <div style={MUTED}>{t("LLM proposal: {status}", { status: session.llm.model ? `${session.llm.status} · ${session.llm.model}` : session.llm.status })}</div>
+          )
         )}
 
         {notice?.kind === "arrived" && <div style={MUTED}>{noticeText}</div>}

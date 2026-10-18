@@ -110,11 +110,15 @@ class GenerationOptions(BaseModel):
         output_schema: A provider-acceptable JSON Schema dict, already emitted
             by `cg_schemas.to_strict_json_schema()`. None means "no constrained
             decoding" -- the prose + validator path.
+        timeout_s: HTTP timeout for this call. A background caller with a large
+            max_tokens on a reasoning model (the Phase 1303 mapping proposal)
+            needs longer than the 120 s the interactive routes use.
     """
 
     temperature: float | None = None
     max_tokens: int | None = None
     output_schema: dict | None = None
+    timeout_s: float | None = None
 
 
 class StructuredOutputCapability(BaseModel):
@@ -241,6 +245,13 @@ def _resolved_max_tokens(options: "GenerationOptions | None", fallback: int) -> 
     """
     if options is not None and options.max_tokens is not None:
         return options.max_tokens
+    return fallback
+
+
+def _resolved_timeout(options: "GenerationOptions | None", fallback: float) -> float:
+    """Caller-sized HTTP timeout; the adapter's own constant when not given."""
+    if options is not None and options.timeout_s is not None:
+        return options.timeout_s
     return fallback
 
 
@@ -413,7 +424,7 @@ class AnthropicAdapter(LLMAdapter):
                 "format": {"type": "json_schema", "schema": options.output_schema}
             }
 
-        with httpx.Client(timeout=120.0) as client:
+        with httpx.Client(timeout=_resolved_timeout(options, 120.0)) as client:
             resp = client.post(f"{self.base_url}/messages", json=body, headers=headers)
             resp.raise_for_status()
             data = resp.json()
@@ -497,7 +508,7 @@ class OpenAIAdapter(LLMAdapter):
                 },
             }
 
-        with httpx.Client(timeout=120.0) as client:
+        with httpx.Client(timeout=_resolved_timeout(options, 120.0)) as client:
             resp = client.post(
                 f"{self.base_url}/chat/completions",
                 json=body,
@@ -582,7 +593,7 @@ class OllamaAdapter(LLMAdapter):
             # models can be schema-constrained too.
             body["format"] = options.output_schema
 
-        with httpx.Client(timeout=300.0) as client:
+        with httpx.Client(timeout=_resolved_timeout(options, 300.0)) as client:
             resp = client.post(f"{self.base_url}/api/generate", json=body)
             resp.raise_for_status()
             data = resp.json()

@@ -223,9 +223,12 @@ export const ru = {
   "DG parameters": "Параметры DG",
   "DG parameter": "Параметр DG",
   "Calculation outputs": "Расчётные выходы",
+  "Calculation output": "Расчётный выход",
   Output: "Выход",
   Reason: "Обоснование",
   "LLM proposal: {status}": "Предложение LLM: {status}",
+  "LLM proposal is being prepared; the questions update when it arrives":
+    "Предложение LLM готовится; вопросы обновятся, когда оно придёт",
   Slider: "Слайдер",
   State: "Состояние",
   Property: "Свойство",

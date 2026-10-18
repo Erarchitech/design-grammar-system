@@ -20,7 +20,12 @@ from typing import Any, Mapping, Optional, Sequence
 import llm_gateway
 import mapping_engine as engine
 
-MAX_TOKENS = 4000
+# Reasoning models spend completion tokens on hidden reasoning before the answer; 4 000
+# tokens ended in an empty, truncated answer on the live facade digest (2026-10-18).
+MAX_TOKENS = 24000
+# The proposal runs in the background (mapping_store.LLM_ASYNC); at 24 000 tokens the reasoning
+# model needed more than the gateway's interactive 120 s on the clean facade (2026-10-18).
+TIMEOUT_S = 420.0
 MAX_STREAMS = 60
 MAX_MEASURES = 80
 MAX_SLIDERS = 80
@@ -32,7 +37,7 @@ SYSTEM = (
     "calculation component (for example Area, or a script that measures the elements of one stream). "
     "Use the names, group names, scribble text, counts, geometry features and value ranges given. "
     "Russian and English names both occur. Propose only what the evidence supports; use null when nothing fits. "
-    "Answer with ONE JSON object and nothing else."
+    "Keep reasons to a few words and keep thinking short. Answer with ONE JSON object and nothing else."
 )
 
 SCHEMA_HINT = {
@@ -169,7 +174,7 @@ def propose_mapping(elements, measures, parameters, classes, properties, constra
         provider, model, api_key = llm_gateway.resolve_active_provider(settings, os.getenv("LLM_MASTER_SECRET", ""))
         adapter = llm_gateway.get_adapter(provider, settings.get("baseUrl"))
         request = llm_gateway.GenerateRequest(prompt=build_prompt(digest), system=SYSTEM, model=model, provider=provider)
-        response = adapter.generate(request, api_key, options=llm_gateway.GenerationOptions(temperature=0.0, max_tokens=MAX_TOKENS))
+        response = adapter.generate(request, api_key, options=llm_gateway.GenerationOptions(temperature=0.0, max_tokens=MAX_TOKENS, timeout_s=TIMEOUT_S))
     except Exception as exc:  # noqa: BLE001 - the proposal is optional; the engine works without it
         try:
             code = llm_gateway.map_provider_error(exc)[2]

@@ -59,11 +59,64 @@ public sealed class MappingPlacementTests
             again.Classes.Select(c => (c.ClassIri, string.Join(",", c.Streams))));
         var byClass = plan.Classes.ToDictionary(c => c.ClassIri);
         Assert.Equal(new[] { "HU" }, byClass["ex:HexagonalUnit"].Streams);
-        Assert.Equal(new[] { "PB", "PX" }, byClass["ex:GlassPanel"].Streams);
+        // GlassPanel's rule is measured on PB only: PX would reach VALIDATOR without values.
+        Assert.Equal(new[] { "PB" }, byClass["ex:GlassPanel"].Streams);
+        Assert.Contains(plan.Notes, n => n.Contains("stream PX of class GlassPanel", StringComparison.Ordinal));
         Assert.Equal(new[] { "PX" }, byClass["ex:FacadeModule"].Streams);
         Assert.False(byClass.ContainsKey("ex:Facade"));
         Assert.Contains(plan.Notes, n => n.Contains("SPLIT", StringComparison.Ordinal));
         Assert.Equal("HexagonalUnit", byClass["ex:HexagonalUnit"].Label);
+    }
+
+    [Fact]
+    public void Plan_PlacesOneObjectStatePerMeasuredStream()
+    {
+        var applied = new MappingApplyResult
+        {
+            RolesByElement = new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["a1"] = new[] { "ex:HexagonalUnit" },
+                ["b1"] = new[] { "ex:HexagonalUnit" },
+            },
+            ElementStreams = new Dictionary<string, string> { ["a1"] = "M6", ["b1"] = "M5" },
+            Bindings = new[]
+            {
+                new MappingRuleBinding("R_GAP", "ex:HexagonalUnit", "ex:hasGapCount", "gh:doc:measure:g6", "M6"),
+                new MappingRuleBinding("R_VC", "ex:HexagonalUnit", "ex:hasVertexCount", "gh:doc:measure:v6", "M6"),
+                new MappingRuleBinding("R_GAP5", "ex:HexagonalUnit", "ex:hasGapCount", "gh:doc:measure:g5", "M5"),
+                new MappingRuleBinding("R_ELSE", "ex:HexagonalUnit", "ex:hasGapCount", "gh:doc:measure:g0", "ELSEWHERE"),
+            },
+        };
+        var plan = MappingPlacementPlan.From(applied);
+        Assert.Equal(new[] { "M5", "M6" }, plan.Classes.Select(c => Assert.Single(c.Streams)).OrderBy(s => s, StringComparer.Ordinal));
+        Assert.All(plan.Classes, c => Assert.Equal("ex:HexagonalUnit", c.ClassIri));
+        Assert.Equal(new[] { "R_GAP", "R_GAP5", "R_VC" }, plan.Bindings.Select(b => b.RuleId));
+        Assert.Contains(plan.Notes, n => n.Contains("R_ELSE", StringComparison.Ordinal) && n.Contains("ELSEWHERE", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void StreamDedupe_DropsDuplicatesAndUnions()
+    {
+        var found = MappingStreamDedupe.Find(new (string, string, IReadOnlyCollection<string>)[]
+        {
+            ("A", "Panels A", new[] { "a1", "a2", "a3" }),
+            ("B", "Panels B", new[] { "b1", "b2" }),
+            ("ALL", "All panels", new[] { "a1", "a2", "a3", "b1", "b2" }),
+            ("F1", "bbox F", new[] { "f" }),
+            ("F2", "bbox F", new[] { "f" }),
+            ("H", "Hex", new[] { "h1", "h2", "a1" }),
+            ("M6", "6-Module contours", new[] { "curve|m1", "curve|m2" }),
+            ("M5", "5-Module contours", new[] { "curve|m3" }),
+            ("MS", "modules", new[] { "surface|m1", "surface|m2", "surface|m3" }),
+            ("MC", "module outlines", new[] { "curve|m1", "curve|m2", "curve|m3", "curve|m9" }),
+            ("MD", "module copy", new[] { "surface|m1", "surface|m2", "surface|m3" }),
+        });
+        Assert.Equal(new[] { "ALL", "F2", "MC", "MD", "MS" }, found.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        Assert.Equal("union of Panels A + Panels B", found["ALL"]);
+        Assert.Equal("same elements as bbox F", found["F2"]);
+        Assert.Equal("same elements as modules", found["MD"]);
+        Assert.Equal("union of 6-Module contours + 5-Module contours", found["MS"]);
+        Assert.Empty(MappingStreamDedupe.Find(new (string, string, IReadOnlyCollection<string>)[] { ("A", "a", new[] { "x" }), ("B", "b", Array.Empty<string>()) }));
     }
 
     [Fact]

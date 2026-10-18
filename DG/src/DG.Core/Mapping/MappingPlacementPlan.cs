@@ -34,8 +34,9 @@ public sealed record PlacedParameter(string SliderGuid, string Name);
 
 /// <summary>
 /// What CONNECTOR places after the mapping is agreed (Phase 1303, D-38): one OBJECT STATE per
-/// class, one RULE BY ID + PROPERTY STATE per rule binding, one PARAMETER STATE for the DG
-/// parameters, then DESIGN STATE and VALIDATOR. Pure: built from the apply result only.
+/// class and measured stream (per class when none of its rules is measured), one RULE BY ID +
+/// PROPERTY STATE per rule binding, one PARAMETER STATE for the DG parameters, then DESIGN STATE
+/// and VALIDATOR. Pure: built from the apply result only.
 /// </summary>
 public sealed class MappingPlacementPlan
 {
@@ -88,25 +89,57 @@ public sealed class MappingPlacementPlan
             notes.Add($"stream {stream} is split between classes; it is not wired whole into an OBJECT STATE");
         }
 
-        var classes = rolesOfStream
+        var streamsOfClass = rolesOfStream
             .Where(kv => !split.Contains(kv.Key))
             .SelectMany(kv => kv.Value.Select(cls => (cls, stream: kv.Key)))
             .GroupBy(t => t.cls, StringComparer.Ordinal)
             .OrderBy(g => MappingSessionClient.LocalName(g.Key), StringComparer.Ordinal)
-            .Select(g => new PlacedClass(g.Key, MappingSessionClient.LocalName(g.Key) ?? g.Key, g.Select(t => t.stream).Distinct(StringComparer.Ordinal).OrderBy(s => s, StringComparer.Ordinal).ToList()))
-            .ToList();
+            .ToDictionary(g => g.Key, g => g.Select(t => t.stream).Distinct(StringComparer.Ordinal).OrderBy(s => s, StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
 
-        var placedClasses = new HashSet<string>(classes.Select(c => c.ClassIri), StringComparer.Ordinal);
+        // A PROPERTY STATE pairs one calculation output with the elements of one stream, so a class
+        // whose rules are measured gets one OBJECT STATE per measured stream. Its unmeasured streams
+        // would reach VALIDATOR without property values and are left out with a note.
         var bindings = new List<PlacedBinding>();
+        var measured = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
         foreach (var b in applied.Bindings.OrderBy(b => b.RuleId, StringComparer.Ordinal))
         {
-            if (!placedClasses.Contains(b.ClassIri))
+            var local = MappingSessionClient.LocalName(b.ClassIri);
+            if (!streamsOfClass.TryGetValue(b.ClassIri, out var own))
             {
-                notes.Add($"rule {b.RuleId}: class {MappingSessionClient.LocalName(b.ClassIri)} has no OBJECT STATE");
+                notes.Add($"rule {b.RuleId}: class {local} has no OBJECT STATE");
+                continue;
+            }
+
+            if (!own.Contains(b.Stream))
+            {
+                notes.Add($"rule {b.RuleId}: its calculation output follows stream {b.Stream}, not a stream of class {local}");
                 continue;
             }
 
             bindings.Add(new PlacedBinding(b.RuleId, b.ClassIri, b.PropertyIri, LastSegment(b.MeasureId), b.Stream));
+            if (!measured.TryGetValue(b.ClassIri, out var set))
+            {
+                measured[b.ClassIri] = set = new SortedSet<string>(StringComparer.Ordinal);
+            }
+
+            set.Add(b.Stream);
+        }
+
+        var classes = new List<PlacedClass>();
+        foreach (var (cls, streams) in streamsOfClass)
+        {
+            var label = MappingSessionClient.LocalName(cls) ?? cls;
+            if (!measured.TryGetValue(cls, out var withOutputs))
+            {
+                classes.Add(new PlacedClass(cls, label, streams));
+                continue;
+            }
+
+            classes.AddRange(withOutputs.Select(s => new PlacedClass(cls, label, new[] { s })));
+            foreach (var s in streams.Where(s => !withOutputs.Contains(s)))
+            {
+                notes.Add($"stream {s} of class {label} has no calculation output for its rules; it is not placed");
+            }
         }
 
         var parameters = applied.Parameters

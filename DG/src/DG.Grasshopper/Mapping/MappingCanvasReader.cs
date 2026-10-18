@@ -126,6 +126,8 @@ internal static class MappingCanvasReader
         // 2. Elements, with per-stream keyed properties for measure matching.
         var elements = new List<MappingElement>();
         var keyed = new Dictionary<string, Dictionary<string, IReadOnlyDictionary<string, object>>>(StringComparer.Ordinal);
+        var geometryKeys = new List<(string Stream, string Label, IReadOnlyCollection<string> Keys)>();
+        var streamCounts = new Dictionary<string, (string Label, int Count)>(StringComparer.Ordinal);
         foreach (var (param, hints) in streams)
         {
             var top = Top(param);
@@ -136,6 +138,7 @@ internal static class MappingCanvasReader
             var count = 0;
             var perBranch = data.PathCount > 1;
             var byKey = new Dictionary<string, IReadOnlyDictionary<string, object>>(StringComparer.Ordinal);
+            var shapes = new List<string>();
             for (var b = 0; b < data.PathCount && elements.Count < MaxElements; b++)
             {
                 var path = data.get_Path(b);
@@ -181,6 +184,10 @@ internal static class MappingCanvasReader
                     if (described.Preview is not null)
                     {
                         read.Previews[nativeId] = described.Preview;
+                        var bb = described.Preview.GetBoundingBox(true);
+                        shapes.Add(string.Join("|", new[] { bb.Min.X, bb.Min.Y, bb.Min.Z, bb.Max.X, bb.Max.Y, bb.Max.Z }
+                            .Select(c => Math.Round(c, 3).ToString("R", System.Globalization.CultureInfo.InvariantCulture))
+                            .Prepend(described.Kind)));
                     }
 
                     count++;
@@ -189,17 +196,46 @@ internal static class MappingCanvasReader
 
             if (count > 0)
             {
-                read.Streams.Add($"{source} ({count})");
+                streamCounts[streamId] = (source, count);
                 read.StreamParams[streamId] = param;
                 keyed[streamId] = byKey;
+                geometryKeys.Add((streamId, source, shapes));
             }
         }
 
-        // 3. Measures: numeric outputs of calculation components.
+        // Duplicates and unions of other streams would map the same elements twice.
+        var dropped = read.HasDgWiring ? new Dictionary<string, string>() : MappingStreamDedupe.Find(geometryKeys);
+        if (dropped.Count > 0)
+        {
+            var gone = new HashSet<string>(elements.Where(e => dropped.ContainsKey(e.Stream)).Select(e => e.NativeId), StringComparer.Ordinal);
+            elements.RemoveAll(e => gone.Contains(e.NativeId));
+            read.Order.RemoveAll(gone.Contains);
+            foreach (var id in gone)
+            {
+                read.Previews.Remove(id);
+            }
+
+            foreach (var (stream, reason) in dropped)
+            {
+                read.StreamParams.Remove(stream);
+                keyed.Remove(stream);
+                read.Notes.Insert(0, $"stream {streamCounts[stream].Label} skipped: {reason}");
+            }
+        }
+
+        foreach (var (stream, (label, count)) in streamCounts)
+        {
+            if (!dropped.ContainsKey(stream))
+            {
+                read.Streams.Add($"{label} ({count})");
+            }
+        }
+
+        // 3. Measures: final (terminal) numeric outputs of calculation components.
         var measures = new List<MappingMeasure>();
         foreach (var component in doc.Objects.OfType<IGH_Component>())
         {
-            if (IsDg(component) || !component.Params.Input.Any(i => i.Sources.Any(HasGeometry)))
+            if (!IsCalculation(component))
             {
                 continue;
             }
@@ -211,16 +247,28 @@ internal static class MappingCanvasReader
                     break;
                 }
 
+                if (output.Recipients.Count > 0 && !read.HasDgWiring)
+                {
+                    continue; // an intermediate value, not a result
+                }
+
                 var values = NumericValues(output);
                 if (values.Count == 0)
                 {
                     continue;
                 }
 
+                var inputs = new HashSet<string>(
+                    component.Params.Input.SelectMany(i => i.Sources).Select(s => s.InstanceGuid.ToString("N")), StringComparer.Ordinal);
                 var matches = keyed
-                    .Select(kv => MappingMeasureMatcher.Match(kv.Key, values, kv.Value))
-                    .Where(m => m.PathMatch || m.Agreement.Count > 0)
+                    .Select(kv => WithInput(MappingMeasureMatcher.Match(kv.Key, values, kv.Value), inputs.Contains(kv.Key)))
+                    .Where(m => m.PathMatch)
                     .ToList();
+                if (matches.Count == 0)
+                {
+                    continue; // its values follow no element stream: not a property of these elements
+                }
+
                 var guid = output.InstanceGuid.ToString("N");
                 measures.Add(new MappingMeasure
                 {
@@ -235,6 +283,44 @@ internal static class MappingCanvasReader
                 });
                 read.MeasureParams[guid] = output;
             }
+        }
+
+        // 3b. Computed number parameters the author named ('B Panel Ratio'): measures as well.
+        foreach (var param in doc.Objects.OfType<IGH_Param>())
+        {
+            if (measures.Count >= MaxMeasures || param is GH_NumberSlider || param.SourceCount == 0 || IsDg(param) || !IsAuthorNamed(param))
+            {
+                continue;
+            }
+
+            var values = NumericValues(param);
+            if (values.Count == 0)
+            {
+                continue;
+            }
+
+            var paramMatches = keyed
+                .Select(kv => MappingMeasureMatcher.Match(kv.Key, values, kv.Value))
+                .Where(m => m.PathMatch)
+                .ToList();
+            if (paramMatches.Count == 0)
+            {
+                continue;
+            }
+
+            var guid = param.InstanceGuid.ToString("N");
+            measures.Add(new MappingMeasure
+            {
+                NativeId = $"gh:{read.DocumentKey}:measure:{guid}",
+                Name = MappingCanvasText.Clean(param.NickName),
+                Component = param.Name,
+                Names = CanvasText(param),
+                Count = values.Count,
+                Min = values.Values.Min(),
+                Max = values.Values.Max(),
+                Streams = paramMatches,
+            });
+            read.MeasureParams[guid] = param;
         }
 
         // 4. Parameters: named number sliders with the canvas text around them.
@@ -269,14 +355,42 @@ internal static class MappingCanvasReader
 
     public static IGH_DocumentObject Top(IGH_Param param) => param.Attributes?.GetTopLevel?.DocObject ?? param;
 
-    /// <summary>Terminal geometry (named or visible) plus geometry read by calculation components, minus pure ancestors of other candidates.</summary>
+    /// <summary>
+    /// Element streams of a definition without DG states: the geometry its calculation
+    /// components measure, and the geometry the author named (a nickname other than the
+    /// component's default) at the end of a chain. When one candidate only reshapes another
+    /// with the same number of elements (contours → Join Curves), the measured one is kept.
+    /// </summary>
     private static List<IGH_Param> CandidateStreams(GH_Document doc)
     {
-        var candidates = new Dictionary<Guid, IGH_Param>();
+        // Measured geometry: author-named sources of components whose numeric results are final
+        // (a terminal numeric output) — a measure script, an Area whose value is the result.
+        var measured = new Dictionary<Guid, IGH_Param>();
+        foreach (var component in doc.Objects.OfType<IGH_Component>())
+        {
+            if (!IsCalculation(component))
+            {
+                continue;
+            }
+
+            foreach (var input in component.Params.Input)
+            {
+                foreach (var source in input.Sources)
+                {
+                    if (!IsDg(Top(source)) && HasGeometry(source) && IsAuthorNamed(Top(source)))
+                    {
+                        measured[source.InstanceGuid] = source;
+                    }
+                }
+            }
+        }
+
+        var candidates = new Dictionary<Guid, IGH_Param>(measured);
         foreach (var param in AllOutputParams(doc))
         {
             var top = Top(param);
-            if (IsDg(top) || top is GH_NumberSlider || !HasGeometry(param) || (top is IGH_ActiveObject active && active.Locked))
+            if (candidates.ContainsKey(param.InstanceGuid) || IsDg(top) || top is GH_NumberSlider || !HasGeometry(param)
+                || (top is IGH_ActiveObject active && active.Locked))
             {
                 continue;
             }
@@ -287,48 +401,84 @@ internal static class MappingCanvasReader
                 continue;
             }
 
-            var named = !MappingCanvasText.IsDefaultNickname(top.NickName, top.Name)
-                || (!ReferenceEquals(top, param) && !MappingCanvasText.IsDefaultNickname(param.NickName, param.Name));
-            if (param.Recipients.Count == 0 && (named || IsVisible(param)))
+            if (param.Recipients.Count == 0 && IsAuthorNamed(top))
             {
                 candidates[param.InstanceGuid] = param;
             }
         }
 
-        foreach (var component in doc.Objects.OfType<IGH_Component>())
+        var drop = new HashSet<Guid>();
+        foreach (var y in candidates.Values)
         {
-            if (IsDg(component) || !component.Params.Output.Any(o => NumericValues(o).Count > 0))
+            foreach (var up in Upstream(y, AncestorDepth))
             {
-                continue;
-            }
-
-            foreach (var input in component.Params.Input)
-            {
-                foreach (var source in input.Sources)
+                if (!candidates.TryGetValue(up, out var x) || ElementCount(x) != ElementCount(y))
                 {
-                    if (!IsDg(Top(source)) && HasGeometry(source))
-                    {
-                        candidates[source.InstanceGuid] = source;
-                    }
+                    continue;
                 }
-            }
-        }
 
-        // A candidate that only feeds another candidate (raw HU → Join Curves → join HU) is dropped.
-        var ancestors = new HashSet<Guid>();
-        foreach (var param in candidates.Values)
-        {
-            foreach (var up in Upstream(param, AncestorDepth))
-            {
-                ancestors.Add(up);
+                // Same elements twice: keep the measured one, else the downstream one.
+                var keepX = measured.ContainsKey(x.InstanceGuid) && !measured.ContainsKey(y.InstanceGuid);
+                drop.Add(keepX ? y.InstanceGuid : x.InstanceGuid);
             }
         }
 
         return candidates.Values
-            .Where(p => !ancestors.Contains(p.InstanceGuid))
+            .Where(p => !drop.Contains(p.InstanceGuid))
             .OrderBy(p => Top(p).Attributes.Pivot.Y)
             .ThenBy(p => Top(p).Attributes.Pivot.X)
             .ToList();
+    }
+
+    private static MappingMeasureStream WithInput(MappingMeasureStream m, bool input) => new()
+    {
+        Stream = m.Stream,
+        PathMatch = m.PathMatch,
+        Constant = m.Constant,
+        Agreement = m.Agreement,
+        Input = input,
+    };
+
+    /// <summary>A non-DG component with a geometry input and a final (terminal) numeric output.</summary>
+    private static bool IsCalculation(IGH_Component component) =>
+        !IsDg(component)
+        && component.Params.Input.Any(i => i.Sources.Any(HasGeometry))
+        && component.Params.Output.Any(o => o.Recipients.Count == 0 && NumericValues(o).Count > 0);
+
+    /// <summary>True when the author gave the object a nickname other than its name and its default nickname.</summary>
+    private static bool IsAuthorNamed(IGH_DocumentObject obj)
+    {
+        string? fallback = null;
+        try
+        {
+            fallback = global::Grasshopper.Instances.ComponentServer.EmitObjectProxy(obj.ComponentGuid)?.Desc.NickName;
+        }
+        catch
+        {
+            // unknown proxy: compare with the name only
+        }
+
+        return !MappingCanvasText.IsDefaultNickname(obj.NickName, obj.Name, fallback);
+    }
+
+    private static int ElementCount(IGH_Param param)
+    {
+        var data = param.VolatileData;
+        if (data.PathCount > 1)
+        {
+            var n = 0;
+            for (var b = 0; b < data.PathCount; b++)
+            {
+                if (data.get_Branch(b) is { Count: > 0 })
+                {
+                    n++;
+                }
+            }
+
+            return n;
+        }
+
+        return data.DataCount;
     }
 
     private static HashSet<Guid> Upstream(IGH_Param param, int depth)

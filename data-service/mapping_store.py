@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import threading
 import zlib
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -542,15 +543,67 @@ def create_session(session, project, platform, label, elements, context, actor, 
 
     result = run()
     # D-37: ask the LLM only when the deterministic pass leaves questions (learned variants
-    # need no paid call); its proposal is recorded and reused for every recompute.
-    if use_llm and result["summary"]["openQuestions"] > 0:
+    # need no paid call); its proposal is recorded and reused for every recompute. A slow
+    # (reasoning) model must not hold the session back: by default the session is saved at
+    # once and the proposal refines it in the background, keeping answers already given.
+    ask = use_llm and result["summary"]["openQuestions"] > 0
+    if ask and not LLM_ASYNC:
         ctx["llm"] = mapping_llm.propose_mapping(elements, measures or [], parameters or [], classes, properties, constraints)
         if _llm_for_engine(ctx):
             result = run(_llm_for_engine(ctx))
+    elif ask:
+        ctx["llm"] = {"status": "pending"}
     session_id = save_session(session, project, platform, label, elements, result, actor, created_at, ctx)
+    if ask and LLM_ASYNC:
+        threading.Thread(
+            target=_refine_with_llm,
+            args=(project, session_id, elements, measures or [], parameters or [], classes, properties, constraints),
+            daemon=True,
+        ).start()
     meta = {"sessionId": session_id, "project": project, "platform": platform, "label": label, "createdAt": created_at, "createdBy": actor,
             "context": ctx}
     return public_session(meta, result)
+
+
+# Background LLM refinement (D-37). Tests set this to False for a synchronous call.
+LLM_ASYNC = True
+
+
+def _refine_with_llm(project, session_id, elements, measures, parameters, classes, properties, constraints) -> None:
+    proposal = mapping_llm.propose_mapping(elements, measures, parameters, classes, properties, constraints)
+    try:
+        with _get_driver().session() as session:
+            s = load_session(session, project, session_id)
+            if s is None:
+                return
+            ctx = dict(s.get("context") or {})
+            ctx["llm"] = proposal
+            result = s["result"]
+            # An applied session keeps the result it was applied with; the proposal is only recorded.
+            if proposal.get("status") == "ok" and not s.get("appliedAt"):
+                c2, k2, rule_classes, profiles = _engine_inputs(session, project, ctx.get("vocabulary"))
+                result = engine.compute(
+                    s["descriptors"], c2, k2, profiles,
+                    populations=ctx.get("populations"),
+                    platform_default=s.get("platform") or "grasshopper",
+                    decided=result.get("decided") or {},
+                    splits=result.get("splits") or {},
+                    rule_classes=rule_classes,
+                    parameters=ctx.get("parameters") or None,
+                    properties=properties,
+                    decided_parameters=result.get("decidedParameters") or {},
+                    measures=ctx.get("measures") or None,
+                    decided_measures=result.get("decidedMeasures") or {},
+                    llm=proposal,
+                )
+            _run(session, SESSION_UPDATE_QUERY, {"project": project, "sessionId": session_id, "props": {
+                "contextJson": engine.canonical_json(ctx),
+                "resultZ": pack(result),
+                "summaryJson": engine.canonical_json(result["summary"]),
+                "updatedAt": utc_now(),
+            }})
+    except Exception:  # noqa: BLE001 - a lost refinement leaves the deterministic session in place
+        return
 
 
 def get_session(session, project: str, session_id: str) -> dict:

@@ -24,7 +24,8 @@ public static class MappingMeasureMatcher
             && measure.Count == elementProperties.Count
             && measure.Keys.All(elementProperties.ContainsKey);
         var values = measure.Values.ToList();
-        var constant = values.Count > 1 && values.All(v => Equal(v, values[0]));
+        // One value agrees by coincidence as easily as a constant column: both are weak evidence.
+        var constant = values.Count <= 1 || values.All(v => Equal(v, values[0]));
         var agreement = new Dictionary<string, double>(StringComparer.Ordinal);
         if (pathMatch)
         {

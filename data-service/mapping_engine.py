@@ -59,6 +59,9 @@ CONFIG: dict[str, float] = {
     "w_measure_acronym": 2.0,
     "w_measure_agree": 4.0,
     "w_measure_agree_const": 1.5,
+    # A stream measured by an output whose property only some classes' rules use.
+    "w_measure_class": 2.5,
+    "w_measure_class_cap": 3.0,
     # An LLM proposal (D-37) is one vote among the deterministic evidence.
     "w_llm": 2.5,
     "max_parameters": 500,
@@ -517,6 +520,9 @@ def _name_tokens(feats: Mapping) -> set:
 def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[Evidence]:
     toks = _name_tokens(feats)
     ctx = set(split_tokens(feats.get(CONTEXT_FIELD, ""))) - toks
+    # A one-letter token is an abbreviation only when it is the whole name ("F"), not a
+    # letter inside one ("Panels C" is not Corridor).
+    whole = {split_tokens(feats[k])[0] for k in NAME_FIELDS if k in feats and len(split_tokens(feats[k])) == 1}
     if not toks and not ctx:
         return []
     out = []
@@ -529,10 +535,11 @@ def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[
         # match (bottom + triangular + panel) outweighs a shared word (panel).
         total, parts, hits = 0.0, [], set()
         for t in sorted(toks):
-            if acr and t == acr:
+            abbreviation_ok = len(t) >= 2 or t in whole
+            if acr and t == acr and abbreviation_ok:
                 total += cfg["w_name_acronym"]
                 parts.append(f"'{t}' is the acronym of {c.label}")
-            elif acr and len(t) < len(acr) and t[0] == acr[0] and _is_subsequence(t, acr):
+            elif acr and abbreviation_ok and len(t) < len(acr) and t[0] == acr[0] and _is_subsequence(t, acr):
                 total += cfg["w_name_subsequence"]
                 parts.append(f"'{t}' abbreviates {c.label}")
             hit = _word_hit(t, words) if len(t) >= 3 else None
@@ -720,6 +727,12 @@ def compute(
         [p for p in profiles if p.get("state", "active") == "active"], key=lambda p: str(p.get("profileId"))
     )
 
+    # Calculation outputs first: the property an output carries is evidence for its stream's class.
+    decided_parameters = {str(k): sorted(v) for k, v in (decided_parameters or {}).items()}
+    decided_measures = {str(k): sorted(v) for k, v in (decided_measures or {}).items()}
+    measure_rows: list = map_measures(measures, properties, active_profiles, decided_measures, llm, platform_default, cfg) if measures else []
+    measure_ev = measure_class_evidence(measure_rows, known, cfg)
+
     # 1. Element-level evidence and base groups.
     rows = []
     base_groups: dict[str, list] = {}
@@ -732,6 +745,7 @@ def compute(
         evidence += rule_ev
         evidence += ev_ifc(feats, classes, cfg)
         stream = str(d["stream"]) if d.get("stream") else None
+        evidence += measure_ev.get(stream, []) if stream else []
         proposal = _llm_entry(llm, "objects", stream) if stream else None
         if proposal and local_name(proposal.get("classIri")) in known:
             evidence.append(
@@ -874,11 +888,7 @@ def compute(
     # 5. Questions (element groups, then calculation outputs, then sliders).
     questions = _build_questions(ordered_groups, iri_of, label_of, disjoint_pairs, cfg)
     param_rows: list = []
-    measure_rows: list = []
-    decided_parameters = {str(k): sorted(v) for k, v in (decided_parameters or {}).items()}
-    decided_measures = {str(k): sorted(v) for k, v in (decided_measures or {}).items()}
     if measures:
-        measure_rows = map_measures(measures, properties, active_profiles, decided_measures, llm, platform_default, cfg)
         questions = questions + _measure_questions(measure_rows)
     if parameters:
         param_rows = map_parameters(parameters, active_profiles, decided_parameters, llm, platform_default, cfg)
@@ -1465,10 +1475,15 @@ def map_measures(
         own = concepts(name_toks)
         ctx = concepts(t for x in _texts(item.get("names")) + _texts([item.get("component")]) for t in split_tokens(x)) - own
         streams = [s for s in (item.get("streams") or []) if isinstance(s, Mapping) and s.get("stream")]
+        path_streams = sorted(str(s["stream"]) for s in streams if s.get("pathMatch"))
+        input_streams = [s for s in path_streams if any(str(x["stream"]) == s and x.get("input") for x in streams)]
         entry = _llm_entry(llm, "measures", nid)
+        # The LLM's stream counts only when the output's branches follow it.
+        llm_stream = str(entry["stream"]) if entry is not None and entry.get("stream") and (not path_streams or str(entry["stream"]) in path_streams) else None
         score: dict = {}
         evid: dict = {}
         stream_of: dict = {}
+        ties_of: dict = {}
         for p in props:
             s, parts = 0.0, []
             acr = property_acronym(p)
@@ -1483,21 +1498,27 @@ def map_measures(
                 elif w in ctx:
                     s += cfg["w_param_context"] * k
                     parts.append(f"canvas text → {w}")
-            best_f, best_stream, constant = 0.0, None, False
+            best_f, best_stream, constant, best_input = 0.0, None, False, False
             for st in streams:
                 agreement = st.get("agreement") or {}
                 f = _num(agreement.get(p.local)) if isinstance(agreement, Mapping) else None
-                if f is not None and f > best_f:
-                    best_f, best_stream, constant = f, str(st["stream"]), bool(st.get("constant"))
+                # Equal agreement on two streams (copies of the same panels): the stream the
+                # calculation component reads itself is the one it measures.
+                if f is not None and (f > best_f or (f == best_f and f > 0 and st.get("input") and not best_input)):
+                    best_f, best_stream, constant, best_input = f, str(st["stream"]), bool(st.get("constant")), bool(st.get("input"))
             if best_f >= 0.95:
                 s += (cfg["w_measure_agree_const"] if constant else cfg["w_measure_agree"]) * best_f
                 parts.append(f"values equal {p.label} of stream {best_stream} ({best_f:.2f}{', constant' if constant else ''})")
                 stream_of[p.local] = best_stream
+                # Streams agreeing just as well (one script reads Panels A and B, both all zero):
+                # the rule's class picks among them when the rule is bound.
+                tied = sorted(str(st["stream"]) for st in streams if _num((st.get("agreement") or {}).get(p.local)) == best_f)
+                ties_of[p.local] = [t for t in tied if t in input_streams] or tied
             if entry is not None and local_name(entry.get("propertyIri")) == p.local:
                 s += cfg["w_llm"] * _llm_conf(entry)
                 parts.append("LLM: " + (str(entry.get("reason") or "proposed")[:200]))
-                if entry.get("stream") and p.local not in stream_of:
-                    stream_of[p.local] = str(entry["stream"])
+                if llm_stream and (p.local not in stream_of or llm_stream in ties_of.get(p.local, ())):
+                    stream_of[p.local] = llm_stream
             if s:
                 score[p.local] = s
                 evid[p.local] = parts
@@ -1535,13 +1556,13 @@ def map_measures(
                     state, prop_local, source = "suggested", top, "evidence"
                 else:
                     state = "ambiguous"
-        path_streams = [str(s["stream"]) for s in streams if s.get("pathMatch")]
-
         def stream_for(local: Optional[str]) -> Optional[str]:
             if local and local in stream_of:
                 return stream_of[local]
-            if entry is not None and entry.get("stream"):
-                return str(entry["stream"])
+            if llm_stream:
+                return llm_stream
+            if len(input_streams) == 1:
+                return input_streams[0]
             return path_streams[0] if len(path_streams) == 1 else None
 
         rows.append(
@@ -1556,6 +1577,8 @@ def map_measures(
                 "source": source,
                 "property": _prop_ref(by_local[prop_local]) if prop_local else None,
                 "stream": stream_for(prop_local),
+                "streamOptions": ties_of.get(prop_local, []) if prop_local else [],
+                "pathStreams": path_streams,
                 "candidates": [
                     {
                         "propertyIri": by_local[k].iri,
@@ -1564,6 +1587,7 @@ def map_measures(
                         "confidence": conf_of[k],
                         "evidence": evid.get(k, []),
                         "stream": stream_for(k),
+                        "streamOptions": ties_of.get(k, []),
                     }
                     for k in cands[:4]
                 ],
@@ -1571,6 +1595,46 @@ def map_measures(
             }
         )
     return rows
+
+
+def measure_class_evidence(measure_rows: Sequence[Mapping], known: set, cfg: Mapping) -> dict:
+    """Stream → class evidence from the calculation outputs that measure it.
+
+    An output on a stream carries a DG property, so the stream's class is one whose rules use
+    that property (H on 'bbox F' → hasTotalHeightM → Facade). The vote is shared between the
+    classes using the property, between streams whose values agree equally well, and, for an
+    open output, between its two leading candidates.
+    """
+    acc: dict = {}
+    for r in measure_rows:
+        state = r.get("state")
+        cands = r.get("candidates") or []
+        if state in ("confirmed", "auto") and r.get("property"):
+            prop = r["property"]
+            picks = [(prop.get("label"), prop.get("classes") or [], 1.0, r.get("stream"), r.get("streamOptions") or [])]
+        elif state == "suggested" and cands:
+            c = cands[0]
+            picks = [(c["label"], c.get("classes") or [], c["confidence"], c.get("stream"), c.get("streamOptions") or [])]
+        elif state == "ambiguous":
+            picks = [(c["label"], c.get("classes") or [], c["confidence"], c.get("stream"), c.get("streamOptions") or []) for c in cands[:2]]
+        else:
+            continue
+        for label, classes, conf, stream, ties in picks:
+            users = sorted({local_name(c) for c in classes} & known)
+            targets = ties if len(ties) > 1 else ([stream] if stream else [])
+            if not targets or not users:
+                continue
+            w = cfg["w_measure_class"] * float(conf) / len(picks) / len(users) / len(targets)
+            for target in targets:
+                for cls in users:
+                    slot = acc.setdefault((str(target), cls), [0.0, []])
+                    slot[0] += w
+                    slot[1].append(f"output {r['name']} → {label}")
+    out: dict = {}
+    for (stream, cls), (w, parts) in sorted(acc.items()):
+        detail = "calculation outputs used by its rules: " + ", ".join(sorted(set(parts)))
+        out.setdefault(stream, []).append(Evidence(cls, "measure", _r(min(w, cfg["w_measure_class_cap"])), detail[:300]))
+    return out
 
 
 def _measure_label(r: Mapping) -> str:
@@ -1724,7 +1788,9 @@ def rule_bindings(result: Mapping, constraints: Sequence[Constraint]) -> list:
     """Rule → class → property → calculation output, for PROPERTY STATE placement.
 
     A rule binds when its class has applied elements, its property is the confirmed (or
-    auto) property of a measure, and that measure's stream is one of the class's streams.
+    auto) property of a measure, and that measure's stream, or a stream whose values agree
+    with it just as well, is one of the class's streams. A measure without branch-matched
+    streams (no path information) binds to a class with a single stream.
     """
     streams_of: dict = {}
     iri_of: dict = {}
@@ -1738,9 +1804,15 @@ def rule_bindings(result: Mapping, constraints: Sequence[Constraint]) -> list:
     for (rule_id, cls), group in sorted(rule_groups(constraints).items()):
         cls_streams = streams_of.get(cls) or set()
         for prop in sorted({c.prop_local for c in group}):
-            match = next((m for m in measures if local_name(m["property"]["iri"]) == prop and m.get("stream") in cls_streams), None)
+            cands = [m for m in measures if local_name(m["property"]["iri"]) == prop]
+            match, stream = next(((m, m["stream"]) for m in cands if m.get("stream") in cls_streams), (None, None))
             if match is None:
-                match = next((m for m in measures if local_name(m["property"]["iri"]) == prop and not m.get("stream") and len(cls_streams) == 1), None)
+                match, stream = next(
+                    ((m, t) for m in cands for t in m.get("streamOptions") or [] if t in cls_streams), (None, None)
+                )
+            if match is None and len(cls_streams) == 1:
+                match = next((m for m in cands if not m.get("stream") and not m.get("pathStreams")), None)
+                stream = next(iter(cls_streams))
             if match is not None:
                 out.append(
                     {
@@ -1749,7 +1821,7 @@ def rule_bindings(result: Mapping, constraints: Sequence[Constraint]) -> list:
                         "classIri": iri_of.get(cls, cls),
                         "propertyIri": match["property"]["iri"],
                         "measureId": match["nativeId"],
-                        "stream": match.get("stream") or next(iter(cls_streams)),
+                        "stream": stream,
                     }
                 )
     return out

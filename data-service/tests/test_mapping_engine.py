@@ -469,6 +469,55 @@ def test_llm_votes_for_element_classes():
     assert r["elements"][0]["stream"] == "S1"
 
 
+def test_calculation_outputs_vote_for_their_stream_class():
+    # 'bbox F.B': no class word, one solid; the output H on it carries hasTotalHeightM, which
+    # only the Facade rule uses.
+    d = [{"nativeId": "f1", "stream": "BB", "source": "bbox F.B", "geometry": {"kind": "solid"}, "properties": {"hasTotalHeightM": 114.275}}]
+    h = [{"nativeId": "gh:doc:measure:h", "name": "H", "component": "C#", "count": 1, "min": 114.275, "max": 114.275,
+          "streams": [{"stream": "BB", "pathMatch": True, "constant": True, "input": True, "agreement": {"hasTotalHeightM": 1.0}}]}]
+    without = _compute(d, properties=_properties())
+    assert not without["groups"][0]["candidates"]
+    r = _compute(d, measures=h, properties=_properties())
+    top = r["groups"][0]["candidates"][0]
+    assert top["label"] == "Facade" and any(e["kind"] == "measure" and "output H" in e["detail"] for e in top["evidence"])
+    # A property several classes' rules use shares the vote between them.
+    known = {c.local for c in _setup()[0]}
+    full = _full(measures=_measures())
+    ev = m.measure_class_evidence(full["measures"], known, m.CONFIG)
+    pa = {e.class_local: e.weight for e in ev["PA"]}
+    assert set(pa) == {"BottomTriangularPanel", "GroundFloorUnit", "HexagonalUnit"} and len(set(pa.values())) == 1
+    assert {e.class_local for e in ev["PB"]} == {"GlassPanel"}
+    assert max(e.weight for es in ev.values() for e in es) <= m.CONFIG["w_measure_class_cap"]
+
+
+def test_rule_bindings_pick_the_tied_stream_of_the_rule_class():
+    # One script reads Panels A and Panels B; planarity is 0 on both. The glass rule binds to
+    # Panels B; an output following other branches (bbox, basement) never binds to glass.
+    _, constraints = _setup()
+    result = {
+        "elements": [
+            {"state": "confirmed", "stream": "PB", "roles": [{"classIri": "ex:GlassPanel"}]},
+            {"state": "confirmed", "stream": "PA", "roles": [{"classIri": "ex:BottomTriangularPanel"}]},
+        ],
+        "measures": [
+            {"nativeId": "d1", "state": "confirmed", "property": {"iri": "ex:hasPlanarityDeviationM"}, "stream": None, "pathStreams": ["BB", "BS"]},
+            {"nativeId": "pd", "state": "confirmed", "property": {"iri": "ex:hasPlanarityDeviationM"}, "stream": "PA",
+             "streamOptions": ["PA", "PB"], "pathStreams": ["PA", "PB", "PC"]},
+        ],
+    }
+    bound = {b["ruleId"]: (b["measureId"], b["stream"]) for b in m.rule_bindings(result, constraints)}
+    assert bound["R_GLASS_PLANARITYDEVIATION_MAX_0p005_V"] == ("pd", "PB")
+    # Measure rows carry the tie; an LLM stream the branches do not follow is ignored.
+    pd = [{"nativeId": "gh:doc:measure:pd", "name": "PD", "component": "C#", "count": 125, "min": 0, "max": 0,
+           "streams": [{"stream": s, "pathMatch": True, "input": s != "PC", "constant": True, "agreement": {"hasPlanarityDeviationM": 1.0}} for s in ("PA", "PB", "PC")]}]
+    row = m.map_measures(pd, _properties())[0]
+    assert row["streamOptions"] == ["PA", "PB"] and row["pathStreams"] == ["PA", "PB", "PC"]
+    llm = {"measures": {"gh:doc:measure:pd": {"propertyIri": "ex:hasPlanarityDeviationM", "stream": "ZZ", "confidence": 0.9}}}
+    assert m.map_measures(pd, _properties(), llm=llm)[0]["stream"] in ("PA", "PB")
+    llm["measures"]["gh:doc:measure:pd"]["stream"] = "PB"
+    assert m.map_measures(pd, _properties(), llm=llm)[0]["stream"] == "PB"
+
+
 def test_rule_bindings_link_rule_class_property_and_output():
     d = _stream_descriptors()
     r = _full(measures=_measures())

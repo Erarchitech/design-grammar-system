@@ -12,8 +12,8 @@ namespace DG.Grasshopper.Mapping;
 
 /// <summary>
 /// Places and wires the DG components once the mapping is agreed (Phase 1303, 1303-CONTEXT
-/// D-38): GRAPH DECONSTRUCT → METAGRAPH; one OBJECT STATE per class (Object = "class:&lt;IRI&gt;",
-/// Geometry ← the element streams); one RULE BY ID + PROPERTY STATE per rule binding
+/// D-38): GRAPH DECONSTRUCT → METAGRAPH; one OBJECT STATE per class and measured stream
+/// (Object = "class:&lt;IRI&gt;", Geometry ← the element streams); one RULE BY ID + PROPERTY STATE per rule binding
 /// (DataProperty = property IRI, PropValue ← the calculation output, ObjState ← the class's
 /// OBJECT STATE); one PARAMETER STATE with an input per DG parameter slider; DESIGN STATE; and
 /// VALIDATOR (SendValid = false, Token ← CONNECTOR.Session). Classes and rules are bound by
@@ -75,12 +75,19 @@ internal static class MappingPlacer
         var metagraph = Add(new MetagraphComponent(), x0 + 220f, y0);
         In(metagraph, "Metagraph").AddSource(Out(graph, "Metagraph"));
 
-        // One OBJECT STATE per class, bound by IRI.
-        var objectStates = new Dictionary<string, IGH_Component>(StringComparer.Ordinal);
+        // One OBJECT STATE per class (and measured stream), bound by IRI.
+        var objectStates = new Dictionary<(string ClassIri, string Stream), IGH_Component>();
+        var repeated = plan.Classes.GroupBy(c => c.ClassIri, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
         var row = 0;
         foreach (var cls in plan.Classes)
         {
-            var os = Add(new ObjectStateComponent(), x0 + 520f, y0 + 150f + 110f * row++, $"OS {cls.Label}");
+            var nick = $"OS {cls.Label}";
+            if (repeated.Contains(cls.ClassIri) && read.StreamParams.TryGetValue(cls.Streams[0], out var first))
+            {
+                nick += " · " + first.NickName;
+            }
+
+            var os = Add(new ObjectStateComponent(), x0 + 520f, y0 + 150f + 110f * row++, nick);
             SetText(In(os, "Object"), MappingClassText.For(cls.ClassIri));
             var geometry = In(os, "Geometry");
             geometry.DataMapping = GH_DataMapping.Flatten;
@@ -90,9 +97,9 @@ internal static class MappingPlacer
                 {
                     geometry.AddSource(source);
                 }
-            }
 
-            objectStates[cls.ClassIri] = os;
+                objectStates[(cls.ClassIri, stream)] = os;
+            }
         }
 
         // One RULE BY ID + PROPERTY STATE per rule binding.
@@ -101,7 +108,7 @@ internal static class MappingPlacer
         row = 0;
         foreach (var b in plan.Bindings)
         {
-            if (!objectStates.TryGetValue(b.ClassIri, out var os) || !read.MeasureParams.TryGetValue(b.MeasureParam, out var measure))
+            if (!objectStates.TryGetValue((b.ClassIri, b.Stream), out var os) || !read.MeasureParams.TryGetValue(b.MeasureParam, out var measure))
             {
                 continue;
             }
@@ -157,7 +164,7 @@ internal static class MappingPlacer
         var design = Add(new DesignStateCompositionComponent(), x0 + 1120f, y0 + 150f, "DESIGN STATE (auto)");
         var designObj = In(design, "ObjState");
         designObj.DataMapping = GH_DataMapping.Flatten;
-        foreach (var os in objectStates.Values)
+        foreach (var os in objectStates.Values.Distinct())
         {
             designObj.AddSource(Out(os, "ObjState"));
         }

@@ -181,6 +181,7 @@ def test_sliders_measures_llm_and_bindings(fake_store, monkeypatch):
                 "measures": {"gh:doc:measure:ar": {"propertyIri": "ex:hasAspectRatio", "stream": "PB", "confidence": 0.9, "reason": "AR"}}}
 
     monkeypatch.setattr(mapping_store.mapping_llm, "propose_mapping", fake_propose)
+    monkeypatch.setattr(mapping_store, "LLM_ASYNC", False)
     d = fx.facade_v1_descriptors()
     for el in d:
         el["stream"] = el["nativeId"].split(":")[2]
@@ -215,6 +216,69 @@ def test_sliders_measures_llm_and_bindings(fake_store, monkeypatch):
     assert calls == [376]
     bad = _create(fx.facade_v1_descriptors(), measures=[{"nativeId": "x"}])
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "MAPPING_INPUT_INVALID"
+
+
+def test_llm_refines_in_the_background_and_keeps_answers(fake_store, monkeypatch):
+    started = []
+
+    class DeferredThread:
+        def __init__(self, target, args, daemon):
+            started.append((target, args))
+
+        def start(self):
+            pass
+
+    monkeypatch.setattr(mapping_store.threading, "Thread", DeferredThread)
+    monkeypatch.setattr(mapping_store, "LLM_ASYNC", True)
+    monkeypatch.setattr(
+        mapping_store.mapping_llm,
+        "propose_mapping",
+        lambda *a: {"status": "ok", "model": "slow-1", "objects": {}, "parameters": {},
+                    "measures": {"gh:doc:measure:hg": {"propertyIri": "ex:hasGapCount", "stream": "HU", "confidence": 0.9, "reason": "hex gaps"}}},
+    )
+    d = fx.facade_v1_descriptors()
+    for el in d:
+        el["stream"] = el["nativeId"].split(":")[2]
+    measures = [{"nativeId": "gh:doc:measure:hg", "name": "HG", "count": 100,
+                 "streams": [{"stream": "HU", "pathMatch": True, "constant": True, "agreement": {"hasGapCount": 1.0}}]}]
+    s = _create(d, measures=measures, context={"llm": True}).json()
+    assert s["llm"]["status"] == "pending" and len(started) == 1
+    sid = s["sessionId"]
+    batch = next(q for q in s["questions"] if q["type"] == "batch-assign")
+    assert _decide(sid, batch["questionId"], "accept-all").status_code == 200
+
+    updates = []
+
+    def fake_run(session, query, params):
+        updates.append(params["props"])
+        stored = fake_store.sessions[(PROJECT, sid)]
+        stored["context"] = mapping_store.json.loads(params["props"]["contextJson"])
+        stored["result"] = mapping_store.unpack(params["props"]["resultZ"])
+        return []
+
+    monkeypatch.setattr(mapping_store, "_run", fake_run)
+    monkeypatch.setattr(mapping_store, "_get_driver", lambda: app_module.driver)
+    target, args = started[0]
+    target(*args)
+    refined = client.get(f"/mapping/sessions/{sid}", params={"project": PROJECT}).json()
+    assert refined["llm"]["status"] == "ok" and refined["llm"]["model"] == "slow-1"
+    hg = refined["measures"][0]
+    assert hg["state"] == "suggested" and hg["property"]["label"] == "hasGapCount"
+    # The answer given before the proposal arrived is kept.
+    assert refined["summary"]["confirmed"] >= 351
+
+    # A proposal landing after apply is recorded; the applied result stays as it was.
+    fake_store.sessions[(PROJECT, sid)]["appliedAt"] = "2026-10-18T12:00:00Z"
+    monkeypatch.setattr(
+        mapping_store.mapping_llm,
+        "propose_mapping",
+        lambda *a: {"status": "ok", "model": "slow-2", "objects": {}, "parameters": {},
+                    "measures": {"gh:doc:measure:hg": {"propertyIri": "ex:hasLevelOffsetM", "stream": "HU", "confidence": 1.0, "reason": "offset"}}},
+    )
+    target(*args)
+    late = client.get(f"/mapping/sessions/{sid}", params={"project": PROJECT}).json()
+    assert late["llm"]["model"] == "slow-2"
+    assert late["measures"][0]["property"]["label"] == "hasGapCount"
 
 
 def test_new_session_on_v2_uses_profiles(fake_store):
