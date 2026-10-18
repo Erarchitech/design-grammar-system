@@ -193,7 +193,9 @@ Supersede D-10 and D-20 (Revit read-only), D-27 (no geometry from Revit), the Re
   - At apply: the shared instance parameters `DG_Class` (class labels, `;`-joined) and `DG_MappingState`. They are bound to the categories of the mapped elements from a shared-parameter file shipped with the connector, created when missing.
 - **D-51: Clicking a Revit row in DeGram shows it in Revit.** Revit rows of the DeGram Mapping sub-tab become clickable. The DeGram backend resolves the row (group) to its members' UniqueIds from the session. A connector command then selects those elements in Revit and zooms the active view to them (`Selection.SetElementIds` + `ShowElements`). Web UI chips stay non-clickable (D-39).
 - **D-52: Verification protocol (supersedes the Revit line of D-24).**
-  - Every write test runs on a copy of the facade model (`<name>-dg-mapping.rvt` beside the original the owner names; not in git). The original is never opened for writing.
+  - Every write test runs on a copy of the facade model. The original is never opened for writing.
+    - Owner's model (2026-10-18): `G:\Общие диски\10_BIM_LAB\7_Personal\eermolenko\Фасад_Орион\AdaptComponent_V18.rvt` (8.9 MB, 02.09.2026).
+    - The copy is local, `D:\dgb\revit-models\AdaptComponent_V18-dg-mapping.rvt`, not beside the original: G: is a shared Google Drive, and a copy there would sync to the team. Not in git.
   - The 18.10 profiles stay retired. Live read 1 then gives at most one question per family/type group: separation comes from the vertex-count equality rules and population, not from profiles.
   - An offline recompute of the same descriptors with the 18.10 profiles active in memory (no write) must give 0 questions. This is the proof of the GH → Revit transfer.
   - Live read 2 gives 0 questions.
