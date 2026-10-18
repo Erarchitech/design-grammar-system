@@ -1,12 +1,11 @@
 ---
 phase: 1303-pravilo-gh-obekt
 plan: "09"
-status: in-progress
-updated: 2026-10-18
+status: complete
+completed: 2026-10-18
 requirements: [DGMAP-01, DGMAP-02, DGMAP-03, DGMAP-04, DGMAP-05]
 executor: "controller (Claude, inline); no DSH worker"
 commits: [5d723de, 4a131a6, 5ae3972, b6bfd20, 761da66, ab04bb3]
-open: "Task 5 live run on the clean copy: rerun of steps 2-5 by the owner after the cold restart (2026-10-18 ~12:15)"
 ---
 
 # 1303-09 Summary — DG roles on the canvas, LLM proposal, automatic placement up to VALIDATOR
@@ -54,7 +53,15 @@ The recorded LLM proposal explains the question. It put GlassPanel on Panels A a
 
 **Owner decision (~12:10):** retire the two profiles from these answers and start again. `P-07e78a4b6bf6` (Panels C → GlassPanel, accepts R_GLASS_ASPECTRATIO_MIN_1.3_V) and `P-7a2d45d381f1` (Panels A → BottomTriangularPanel) are set to `state = retired` with `retiredAt` / `retiredReason`. A read-only recompute of the session data with the new engine and these profiles gives 6 questions again.
 
-**Not yet checked live:** answers through to «Map ✓», apply, placement on the live session, METAGRAPH with rules after sign-in, VALIDATOR Report, variant V2.
+**Checked live on 2026-10-18, run 2 (`ms-56907a90d11f`, after plan 1303-10 was deployed):**
+- 13 → 6 questions; the owner answered in DeGram, including one undo;
+- applied at 13:35:24Z, 502 elements;
+- placement «placed 5 OBJECT STATE, 11 PROPERTY STATE (+RULE BY ID), 13 parameters, DESIGN STATE, VALIDATOR»; the OBJECT STATE streams equal the V1 gold set (376);
+- VALIDATOR (auto) reported all 11 rules PASS on V1. From that we infer that METAGRAPH delivered the rules after sign-in and every `R <Rule_Id>` resolved; the R components' own messages were not read.
+
+Details in `test/v12-hexagonal-facade-01/mapping-demo/PROTOCOL.md` and `1303-UAT.md`.
+
+**Not yet checked live:** variants V2/V3 (UAT test 11).
 
 ## Observations not fixed
 
