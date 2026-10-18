@@ -1,5 +1,5 @@
-// Mapping API client — Phase 1303 MVP slice (1303-API-CONTRACT v0.1; 1303-CONTEXT D-18, D-21, D-29).
-// Seven routes under /data-service/mapping. `project` always travels in the JSON body (POST) or in the query (GET),
+// Mapping API client — Phase 1303 MVP slice (1303-API-CONTRACT v0.1 + §7; 1303-CONTEXT D-18, D-21, D-29).
+// Eight routes under /data-service/mapping (the eighth, undo, is contract §7.2). `project` always travels in the JSON body (POST) or in the query (GET),
 // because a connector session passes only when its bound project equals the requested project. Every call goes
 // through apiFetch (session cookie, CSRF marker on POST), never a token. The pure helpers below hold the Mapping
 // panel's data logic so that node tests can cover it without rendering.
@@ -52,6 +52,12 @@ export function postDecision(project, sessionId, { questionId, optionId, groupId
   if (Array.isArray(roles)) body.roles = [...roles];
   if (typeof comment === "string" && comment.trim()) body.comment = comment.trim();
   return apiFetch(mappingUrl(`${sessionPath(sessionId)}/decisions`), { method: "POST", body });
+}
+
+// Takes back one given answer (contract §7.2) → the recomputed session, same shape as getSession. 409
+// MAPPING_SESSION_APPLIED once the session is applied, 404 MAPPING_ANSWER_NOT_FOUND for an unknown or undone answer.
+export function undoAnswer(project, sessionId, answerId) {
+  return apiFetch(mappingUrl(`${sessionPath(sessionId)}/undo`), { method: "POST", body: { project, answerId } });
 }
 
 // → MappingApplyResult { applied, byClass, elements, skipped }
@@ -230,4 +236,77 @@ export function selectorEntries(selector) {
 export function confidencePercent(value) {
   const n = Number(value);
   return Number.isFinite(n) ? `${Math.round(n * 100)}%` : "—";
+}
+
+// ── proposal cards and answers (contract §7, plan 1303-10) ─────────────────────────────────────────────────────
+
+export const ITEM_KINDS = Object.freeze(["stream", "measure", "parameter"]);
+
+// The one-line title of a question or an answer in the UI language; "" when the server sent none (older sessions).
+export function proposalTitle(entry, lang) {
+  if (!entry || typeof entry !== "object") return "";
+  if (lang === "ru" && typeof entry.titleRu === "string" && entry.titleRu.trim()) return entry.titleRu.trim();
+  return typeof entry.title === "string" ? entry.title.trim() : "";
+}
+
+// One row per proposed canvas component. Older sessions have no items: the panel then keeps the text rendering.
+export function proposalItems(entry) {
+  return (Array.isArray(entry?.items) ? entry.items : []).filter((item) => item && typeof item === "object" && !Array.isArray(item));
+}
+
+function candidateLabel(candidate) {
+  if (!candidate || typeof candidate !== "object") return "";
+  if (typeof candidate.label === "string" && candidate.label) return candidate.label;
+  return candidate.iri ? classLocalName(candidate.iri) : "";
+}
+
+// Normalised view of one item row: state in MAPPING_STATES (else unmapped), the proposed label or null, up to three
+// alternative labels, and the count (elements of a stream, values of an output; null for a slider or when unknown).
+export function itemView(item, index = 0) {
+  const source = item && typeof item === "object" ? item : {};
+  const kind = ITEM_KINDS.includes(source.kind) ? source.kind : "";
+  const raw = source.count;
+  const n = typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "") ? Number(raw) : NaN;
+  const proposal = candidateLabel(source.proposal) || null;
+  const alternatives = (Array.isArray(source.alternatives) ? source.alternatives : [])
+    .map(candidateLabel)
+    .filter((label) => label && label !== proposal)
+    .slice(0, 3);
+  return {
+    key: typeof source.itemId === "string" && source.itemId ? source.itemId : `${kind || "item"}:${source.name ?? ""}:${index}`,
+    itemId: typeof source.itemId === "string" ? source.itemId : "",
+    kind,
+    name: typeof source.name === "string" && source.name ? source.name : String(source.itemId ?? ""),
+    state: MAPPING_STATES.includes(source.state) ? source.state : "unmapped",
+    proposal,
+    alternatives,
+    count: kind !== "parameter" && Number.isFinite(n) && n >= 0 ? Math.floor(n) : null
+  };
+}
+
+// Expansion state of the proposal and answer cards, keyed by questionId / answerId. A card the owner never toggled
+// keeps its default (the first open proposal expanded, everything else collapsed).
+export function cardOpen(state, id, fallback = false) {
+  return state && typeof state === "object" && Object.hasOwn(state, id) ? Boolean(state[id]) : Boolean(fallback);
+}
+
+export function toggleCard(state, id, fallback = false) {
+  return { ...(state && typeof state === "object" ? state : {}), [id]: !cardOpen(state, id, fallback) };
+}
+
+// Given answers, newest first; an answer without an answerId cannot be undone and is not shown.
+export function sessionAnswers(session) {
+  return (Array.isArray(session?.answers) ? session.answers : []).filter((answer) => answer && typeof answer.answerId === "string" && answer.answerId);
+}
+
+// `undoable` comes from the server (the session is not applied); an applied session is never undoable.
+export function answerUndoable(answer, session) {
+  return Boolean(answer) && answer.undoable !== false && !session?.appliedAt;
+}
+
+// Every question answered and the session not applied yet: CONNECTOR applies it about 10 s after the last answer.
+export function awaitingApply(session) {
+  const summary = session?.summary;
+  if (!session || !summary || typeof summary !== "object" || session.appliedAt) return false;
+  return Number(summary.openQuestions) === 0;
 }

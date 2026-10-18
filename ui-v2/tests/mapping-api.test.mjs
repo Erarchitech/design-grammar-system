@@ -1,12 +1,18 @@
 import test, { beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
 import { CSRF_HEADER } from '../src/lib/apiClient.js';
 import {
+  ITEM_KINDS,
   MAPPING_STATES,
   MAX_ELEMENTS,
+  answerUndoable,
   appliedByClass,
   applySession,
+  awaitingApply,
+  cardOpen,
   classLabels,
   classLocalName,
   confidencePercent,
@@ -15,6 +21,7 @@ import {
   createSession,
   getSession,
   includedGroupIds,
+  itemView,
   labelFromFileName,
   listProfiles,
   listSessions,
@@ -23,10 +30,15 @@ import {
   parseDescriptorUpload,
   postDecision,
   progressSegments,
+  proposalItems,
+  proposalTitle,
   questionText,
   selectorEntries,
+  sessionAnswers,
   sessionSummary,
   summaryTotals,
+  toggleCard,
+  undoAnswer,
   upsertSession
 } from '../src/lib/mappingApi.js';
 
@@ -117,6 +129,27 @@ test('applySession POSTs the project to the session apply route', async () => {
   assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
   assert.deepEqual(body(), { project });
   assert.equal(res.applied, 3);
+});
+
+test('undoAnswer POSTs the project and the answer id to the session undo route with the CSRF marker (contract §7.2)', async () => {
+  reply = [200, { sessionId: sid, questions: [{ questionId: 'Q-1' }], answers: [] }];
+  const res = await undoAnswer(project, sid, 'A-0123');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, `${sessionPath}/undo`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
+  assert.deepEqual(body(), { project, answerId: 'A-0123' }, 'only project and answerId travel');
+  assert.deepEqual(res, { sessionId: sid, questions: [{ questionId: 'Q-1' }], answers: [] }, 'the recomputed session is returned as is');
+  reply = [409, { detail: { error: 'Applied', code: 'MAPPING_SESSION_APPLIED' } }];
+  await assert.rejects(() => undoAnswer(project, sid, 'A-0123'), err => err.status === 409 && err.code === 'MAPPING_SESSION_APPLIED');
+  reply = [404, { detail: { error: 'Gone', code: 'MAPPING_ANSWER_NOT_FOUND' } }];
+  await assert.rejects(() => undoAnswer(project, sid, 'A-gone'), err => err.status === 404 && err.code === 'MAPPING_ANSWER_NOT_FOUND');
+  const { EN, RU } = await import('../src/i18n/dict/index.js');
+  for (const code of ['MAPPING_SESSION_APPLIED', 'MAPPING_ANSWER_NOT_FOUND']) {
+    assert.equal(typeof EN[`error.${code}`], 'string', `EN ${code}`);
+    assert.equal(typeof RU[`error.${code}`], 'string', `RU ${code}`);
+    assert.notEqual(EN[`error.${code}`], RU[`error.${code}`], code);
+  }
 });
 
 test('listProfiles GETs and createProfile POSTs the authored profile', async () => {
@@ -235,6 +268,58 @@ test('session list, profile merge and option helpers', () => {
   assert.equal(confidencePercent('x'), '—');
 });
 
+test('proposal card helpers: title by language, one item view per component, card state by id, answers and undo', () => {
+  const q = { title: 'Panels A · 120 elements', titleRu: 'Panels A · 120 элементов' };
+  assert.equal(proposalTitle(q, 'ru'), q.titleRu);
+  assert.equal(proposalTitle(q, 'en'), q.title);
+  assert.equal(proposalTitle({ title: 'only en', titleRu: ' ' }, 'ru'), 'only en');
+  assert.equal(proposalTitle({ text: 'an older session has no title' }, 'ru'), '');
+  assert.equal(proposalTitle(null, 'en'), '');
+
+  assert.deepEqual(proposalItems({ items: [{ itemId: 'G-1' }, null, 'x', [1], { itemId: 'G-2' }] }), [{ itemId: 'G-1' }, { itemId: 'G-2' }]);
+  assert.deepEqual(proposalItems({ text: 'older session' }), []);
+  assert.deepEqual([...ITEM_KINDS], ['stream', 'measure', 'parameter']);
+
+  const stream = itemView({ itemId: 'G-1', kind: 'stream', name: 'Panels A', count: 120, state: 'ambiguous',
+    proposal: { iri: 'ex:GlassPanel', label: 'GlassPanel' },
+    alternatives: [{ iri: 'ex:BottomTriangularPanel', label: 'BottomTriangularPanel' }, { iri: 'ex:GlassPanel', label: 'GlassPanel' }, { iri: 'ex:A' }, { iri: 'ex:B' }, { iri: 'ex:C' }] });
+  assert.deepEqual(stream, { key: 'G-1', itemId: 'G-1', kind: 'stream', name: 'Panels A', state: 'ambiguous', proposal: 'GlassPanel',
+    alternatives: ['BottomTriangularPanel', 'A', 'B'], count: 120 }, 'the proposal is not repeated as an alternative; at most three');
+  assert.equal(itemView({ kind: 'measure', count: '125', proposal: { iri: 'ex:hasAreaM2' } }).count, 125);
+  assert.equal(itemView({ kind: 'measure', proposal: { iri: 'ex:hasAreaM2' } }).proposal, 'hasAreaM2', 'label falls back to the local name');
+  assert.equal(itemView({ kind: 'parameter', count: 4 }).count, null, 'a slider has no count');
+  assert.equal(itemView({ kind: 'stream', count: null }).count, null);
+  assert.equal(itemView({ kind: 'stream', count: -2 }).count, null);
+  assert.equal(itemView({ kind: 'stream', proposal: null }).proposal, null);
+  assert.equal(itemView({ state: 'weird' }).state, 'unmapped');
+  assert.equal(itemView({ kind: 'robot' }).kind, '');
+  assert.equal(itemView({ kind: 'stream', name: 'X' }, 4).key, 'stream:X:4', 'rows without an itemId still get a stable key');
+
+  assert.equal(cardOpen({}, 'Q-1', true), true, 'default when never toggled');
+  assert.equal(cardOpen({}, 'Q-2', false), false);
+  assert.equal(cardOpen({ 'Q-1': false }, 'Q-1', true), false, 'an explicit toggle wins over the default');
+  let state = toggleCard({}, 'Q-1', true);
+  assert.deepEqual(state, { 'Q-1': false });
+  state = toggleCard(state, 'Q-2', false);
+  assert.deepEqual(state, { 'Q-1': false, 'Q-2': true }, 'each card keeps its own state');
+  assert.deepEqual(toggleCard(state, 'Q-1', true), { 'Q-1': true, 'Q-2': true });
+  assert.deepEqual(toggleCard(undefined, 'A-1', false), { 'A-1': true });
+
+  assert.deepEqual(sessionAnswers({ answers: [{ answerId: 'A-2' }, { answerId: '' }, null, { questionId: 'Q-1' }, { answerId: 'A-1' }] }).map(a => a.answerId), ['A-2', 'A-1']);
+  assert.deepEqual(sessionAnswers({}), []);
+  assert.equal(answerUndoable({ answerId: 'A-1', undoable: true }, {}), true);
+  assert.equal(answerUndoable({ answerId: 'A-1', undoable: false }, {}), false);
+  assert.equal(answerUndoable({ answerId: 'A-1' }, {}), true, 'an absent flag follows the session');
+  assert.equal(answerUndoable({ answerId: 'A-1', undoable: true }, { appliedAt: '2026-10-18T09:10:00Z' }), false, 'an applied session is never undoable');
+  assert.equal(answerUndoable(null, {}), false);
+
+  assert.equal(awaitingApply({ summary: { openQuestions: 0 } }), true);
+  assert.equal(awaitingApply({ summary: { openQuestions: 2 } }), false);
+  assert.equal(awaitingApply({ summary: { openQuestions: 0 }, appliedAt: '2026-10-18T09:10:00Z' }), false);
+  assert.equal(awaitingApply({ summary: {} }), false, 'no count, no claim');
+  assert.equal(awaitingApply(null), false);
+});
+
 // ── source wiring (the panel is JSX, so these are structural checks) ─────────────────────────────────────────
 
 test('ProjectsScreen mounts one MappingPanel for the active project and keeps its own initial requests', async () => {
@@ -261,7 +346,7 @@ test('MappingPanel starts collapsed, loads only when open and active, and uses t
   // Sessions created by CONNECTOR are followed only while the panel is open on an active screen (2026-10-18).
   assert.match(source, /if \(!\(open && active && status === "ready"\)\) return undefined;/);
   assert.match(source, /return \(\) => clearInterval\(timer\);/);
-  for (const fn of ['listSessions', 'listProfiles', 'getSession', 'createSession', 'postDecision', 'applySession']) {
+  for (const fn of ['listSessions', 'listProfiles', 'getSession', 'createSession', 'postDecision', 'applySession', 'undoAnswer']) {
     assert.match(source, new RegExp(`\\b${fn}\\(`), `${fn} wired`);
   }
   assert.match(source, /from "\.\.\/lib\/mappingApi\.js"/);
@@ -285,4 +370,204 @@ test('MappingPanel defines the five state colours as local custom properties wit
   }
   assert.match(source, /<style>\{MAPPING_CSS\}<\/style>/);
   assert.match(source, /var\(--mapping-\$\{state\}\)/);
+});
+
+// ── proposal and answer cards (contract §7, plan 1303-10, owner 2026-10-18) ──────────────────────────────────
+// The cards are rendered for real: esbuild bundles them with React and react-dom/server (installed dependencies, no
+// network), and the static markup is checked. The bundle carries its own i18n store, switched with its setLang.
+
+let partsPromise;
+function panelParts() {
+  partsPromise ??= build({
+    stdin: {
+      contents: [
+        'export { ProposalCard, AnswerCard, ItemRow } from "./src/screens/MappingPanel.jsx";',
+        'export { renderToStaticMarkup } from "react-dom/server.browser";',
+        'export { createElement } from "react";',
+        'export { setLang } from "./src/i18n/index.js";'
+      ].join('\n'),
+      resolveDir: fileURLToPath(new URL('..', import.meta.url)),
+      loader: 'jsx'
+    },
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+    jsx: 'automatic',
+    loader: { '.js': 'jsx' },
+    define: { 'process.env.NODE_ENV': '"production"' },
+    logLevel: 'silent'
+  }).then(result => import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`));
+  return partsPromise;
+}
+
+async function render(name, props, lang = 'en') {
+  const parts = await panelParts();
+  parts.setLang(lang);
+  try {
+    return parts.renderToStaticMarkup(parts.createElement(parts[name], props));
+  } finally {
+    parts.setLang('en');
+  }
+}
+
+const count = (html, pattern) => (html.match(pattern) || []).length;
+// Opening tag attributes of the button whose only content is `text` (option and undo buttons hold plain text).
+const buttonTag = (html, text) => [...html.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)].find(m => m[2] === text)?.[1];
+
+const streamItem = { itemId: 'G-1', kind: 'stream', name: 'Panels A', componentId: '24549b0264794f1bb333b7768ab72820', count: 120,
+  proposal: { iri: 'ex:GlassPanel', label: 'GlassPanel' }, alternatives: [{ iri: 'ex:BottomTriangularPanel', label: 'BottomTriangularPanel' }], state: 'ambiguous' };
+const measureItem = { itemId: 'M-1', kind: 'measure', name: 'Panel area', componentId: null, count: 125,
+  proposal: { iri: 'ex:hasAreaM2', label: 'hasAreaM2' }, alternatives: [], state: 'suggested' };
+const sliderItem = { itemId: 'S-1', kind: 'parameter', name: 'Module width', componentId: null, count: null, proposal: null, alternatives: [], state: 'unmapped' };
+const cardQuestion = {
+  questionId: 'Q-1', type: 'mapping-or-design', groupIds: ['G-1'],
+  text: 'Full canonical explanation that stays behind Details.', textRu: 'Полное каноническое объяснение под «Подробнее».',
+  title: 'Panels A · 120 elements: BottomTriangularPanel or GlassPanel?', titleRu: 'Panels A · 120 элементов: BottomTriangularPanel или GlassPanel?',
+  items: [streamItem, measureItem, sliderItem],
+  options: [{ optionId: 'class:ex:GlassPanel', label: 'GlassPanel' }, { optionId: 'design-error:ex:BottomTriangularPanel' }, { optionId: 'none' }],
+  consequences: [{ optionId: 'class:ex:GlassPanel', rules: [{ ruleId: 'R_GP_WIDTH_MIN_4.5_V', effect: 'violated', count: 3 }] }]
+};
+const cardProps = (question, extra = {}) => ({
+  question, expanded: true, onToggleExpanded() {}, groupsById: new Map(), labelOf: iri => String(iri).split(':').pop(),
+  excluded: undefined, busy: false, posting: false, error: null, onToggleGroup() {}, onAnswer() {}, ...extra
+});
+
+test('ProposalCard renders one row per proposed component, never a paragraph, and keeps the full text behind Details', async () => {
+  const html = await render('ProposalCard', cardProps(cardQuestion));
+  assert.match(html, /data-question-id="Q-1"/);
+  assert.match(html, /<button type="button" aria-expanded="true" aria-controls="[^"]+"/, 'the header toggles this card');
+  assert.match(html, /Panels A · 120 elements: BottomTriangularPanel or GlassPanel\?/);
+  assert.match(html, />3 components</, 'item count in the header');
+  assert.equal(count(html, /data-mapping-item="/g), 3, 'one row per item');
+  assert.equal(count(html, /<li><div data-mapping-item="/g), 3, 'each item is its own list row');
+  for (const [key, state] of [['G-1', 'ambiguous'], ['M-1', 'suggested'], ['S-1', 'unmapped']]) {
+    const row = new RegExp(`data-mapping-item="${key}"[^>]*>(.*?)</div></li>`).exec(html);
+    assert.ok(row, `row ${key}`);
+    assert.match(row[1], new RegExp(`border:1px solid var\\(--mapping-${state}\\)`), `${key} state chip colour`);
+  }
+  assert.match(html, /Panels A<\/span><span[^>]*>Element stream<\/span><span[^>]*>→ <span[^>]*>GlassPanel<\/span><\/span><span[^>]*>120 elements<\/span><span[^>]*>or BottomTriangularPanel<\/span>/);
+  assert.match(html, /Panel area<\/span><span[^>]*>Calculation output<\/span><span[^>]*>→ <span[^>]*>hasAreaM2<\/span><\/span><span[^>]*>125 values<\/span>/);
+  assert.match(html, /Module width<\/span><span[^>]*>Slider<\/span><span[^>]*>→ <span[^>]*>no proposal<\/span><\/span><\/div>/, 'no count for a slider');
+  assert.doesNotMatch(html, /role="checkbox"|<button[^>]*data-mapping-item|data-mapping-item="[^"]*"[^>]*(?:onclick|tabindex)/i, 'item chips are not interactive in the Web UI');
+  for (const label of ['GlassPanel', 'BottomTriangularPanel — rule violations are design errors', 'None of these']) {
+    const tag = buttonTag(html, label);
+    assert.ok(tag !== undefined, `option ${label}`);
+    assert.doesNotMatch(tag, /disabled/);
+  }
+  assert.match(html, /<button type="button" aria-expanded="false"[^>]*><svg[\s\S]*?<\/svg><span>Details<\/span><\/button>/);
+  assert.doesNotMatch(html, /Full canonical explanation|R_GP_WIDTH_MIN_4\.5_V/, 'text and consequences stay folded by default');
+});
+
+test('ProposalCard collapsed shows only the one-line header; the RU UI uses titleRu and Russian row labels', async () => {
+  const collapsed = await render('ProposalCard', cardProps(cardQuestion, { expanded: false }));
+  assert.match(collapsed, /<button type="button" aria-expanded="false" style=/);
+  assert.match(collapsed, /Mapping or design error/);
+  assert.match(collapsed, /Panels A · 120 elements/);
+  assert.match(collapsed, />3 components</);
+  assert.doesNotMatch(collapsed, /data-mapping-item|None of these|Details/);
+
+  const ru = await render('ProposalCard', cardProps(cardQuestion), 'ru');
+  assert.match(ru, /Panels A · 120 элементов: BottomTriangularPanel или GlassPanel\?/);
+  assert.doesNotMatch(ru, /Panels A · 120 elements/);
+  for (const text of ['>3 компонента<', '>Поток элементов<', '>Расчётный выход<', '>Слайдер<', '>120 эл.<', '>125 знач.<', '>или BottomTriangularPanel<', '>нет предложения<', '>Подробнее<', '>Ни один из вариантов<']) {
+    assert.ok(ru.includes(text), text);
+  }
+});
+
+test('ProposalCard of an older session without items or title keeps the text rendering', async () => {
+  const legacy = { questionId: 'Q-2', type: 'assign', groupIds: ['G-9'], text: 'Legacy canonical question text.', textRu: 'Старый текст вопроса.',
+    options: [{ optionId: 'class:ex:Alpha', label: 'Alpha' }, { optionId: 'none' }] };
+  const groupsById = new Map([['G-9', { groupId: 'G-9', size: 25, status: 'suggested', candidates: [{ classIri: 'ex:Alpha', label: 'Alpha', confidence: 0.9, evidence: [], conflicts: [] }] }]]);
+  const html = await render('ProposalCard', cardProps(legacy, { groupsById }));
+  assert.match(html, /Legacy canonical question text\./, 'full text shown without a Details toggle');
+  assert.doesNotMatch(html, /data-mapping-item|<span>Details<\/span>/);
+  assert.match(html, />1 component</, 'header falls back to type + component count');
+  assert.ok(buttonTag(html, 'Alpha') !== undefined);
+  assert.match(await render('ProposalCard', cardProps(legacy, { groupsById }), 'ru'), /Старый текст вопроса\./);
+});
+
+test('ProposalCard batch-assign rows carry the group checkboxes; no checked row disables the options', async () => {
+  const batch = { questionId: 'Q-3', type: 'batch-assign', groupIds: ['G-1', 'G-2'], text: 'Accept all?', title: 'Accept 2 streams',
+    items: [streamItem, { ...streamItem, itemId: 'G-2', name: 'Panels B', state: 'suggested' }],
+    options: [{ optionId: 'accept-all' }, { optionId: 'none' }] };
+  const html = await render('ProposalCard', cardProps(batch, { excluded: ['G-2'] }));
+  assert.equal(count(html, /role="checkbox" tabindex="0" aria-checked="true"/g), 1);
+  assert.equal(count(html, /role="checkbox" tabindex="0" aria-checked="false"/g), 1);
+  assert.equal(count(html, /data-mapping-item="/g), 2);
+  assert.doesNotMatch(buttonTag(html, 'Accept all proposed classes'), /disabled/);
+  const none = await render('ProposalCard', cardProps(batch, { excluded: ['G-1', 'G-2'] }));
+  assert.match(buttonTag(none, 'Accept all proposed classes'), /disabled=""/);
+  assert.match(none, /Select at least one group\./);
+});
+
+const givenAnswer = {
+  answerId: 'A-1', questionId: 'Q-7', type: 'batch-assign', optionId: 'accept-all',
+  title: 'Panels B · 125 elements: GlassPanel', titleRu: 'Panels B · 125 элементов: GlassPanel',
+  items: [{ itemId: 'G-2', kind: 'stream', name: 'Panels B', componentId: null, count: 125, proposal: { iri: 'ex:GlassPanel', label: 'GlassPanel' }, alternatives: [], state: 'confirmed' }],
+  decidedAt: '2026-10-18T09:05:00Z', decidedBy: 'owner', undoable: true
+};
+const answerProps = (extra = {}) => ({
+  answer: givenAnswer, expanded: true, onToggleExpanded() {}, labelOf: iri => String(iri).split(':').pop(),
+  undoable: true, undoing: false, busy: false, error: null, onUndo() {}, ...extra
+});
+
+test('AnswerCard is collapsed by default to a header: green chip, title, chosen option, who and when', async () => {
+  const html = await render('AnswerCard', answerProps({ expanded: false }));
+  assert.match(html, /data-answer-id="A-1"/);
+  assert.match(html, /<button type="button" aria-expanded="false" style=/);
+  assert.match(html, /border:1px solid var\(--mapping-confirmed\)/);
+  assert.match(html, /Panels B · 125 elements: GlassPanel/);
+  assert.match(html, /Accept all proposed classes · owner · /);
+  assert.doesNotMatch(html, /Undo decision|data-mapping-item/);
+});
+
+test('AnswerCard has its own undo button, disabled with a hint once the session is applied', async () => {
+  const open = await render('AnswerCard', answerProps());
+  assert.equal(count(open, /data-mapping-item="G-2"/g), 1, 'the decided components as rows');
+  const tag = buttonTag(open, 'Undo decision');
+  assert.ok(tag !== undefined, 'undo button');
+  assert.doesNotMatch(tag, /disabled/);
+  assert.doesNotMatch(open, /undo is not available/);
+
+  const applied = await render('AnswerCard', answerProps({ undoable: false }));
+  assert.match(buttonTag(applied, 'Undo decision'), /disabled=""/);
+  assert.match(applied, /The session is applied — undo is not available/);
+
+  assert.ok(buttonTag(await render('AnswerCard', answerProps({ undoing: true })), 'Undoing…') !== undefined, 'running label');
+  assert.match(buttonTag(await render('AnswerCard', answerProps({ busy: true })), 'Undo decision'), /disabled=""/, 'no undo while another request runs');
+  assert.match(await render('AnswerCard', answerProps({ error: { code: 'MAPPING_SESSION_APPLIED' } })), /This session is already applied/);
+
+  const ru = await render('AnswerCard', answerProps({ undoable: false }), 'ru');
+  assert.match(buttonTag(ru, 'Отменить решение'), /disabled=""/);
+  assert.match(ru, /Сессия применена — отмена недоступна/);
+  assert.match(ru, /Panels B · 125 элементов: GlassPanel/);
+  assert.ok(buttonTag(await render('AnswerCard', answerProps({ undoing: true }), 'ru'), 'Отмена…') !== undefined);
+});
+
+test('MappingPanel keys card state by questionId / answerId, undoes per answer and offers no start-mapping action', async () => {
+  const source = await readFile(new URL('../src/screens/MappingPanel.jsx', import.meta.url), 'utf8');
+  const api = await readFile(new URL('../src/lib/mappingApi.js', import.meta.url), 'utf8');
+  // first open proposal expanded, the rest collapsed, each card toggled on its own
+  assert.match(source, /const expanded = cardOpen\(questionOpen, question\.questionId, index === 0\);/);
+  assert.match(source, /setQuestionOpen\(\(prev\) => toggleCard\(prev, question\.questionId, index === 0\)\)/);
+  // answers collapsed by default, each with its own expansion and undo state
+  assert.match(source, /expanded=\{cardOpen\(answerOpen, entry\.answerId, false\)\}/);
+  assert.match(source, /setAnswerOpen\(\(prev\) => toggleCard\(prev, entry\.answerId, false\)\)/);
+  assert.match(source, /undoable=\{answerUndoable\(entry, session\)\}/);
+  assert.match(source, /undoing=\{undoing === entry\.answerId\}/);
+  assert.match(source, /error=\{undoErr\?\.answerId === entry\.answerId \? undoErr\.err : null\}/);
+  // the undo reply replaces the session like a decision reply does
+  assert.match(source, /const next = await undoAnswer\(project, sessionId, entry\.answerId\);/);
+  assert.match(source, /if \(!session \|\| busy \|\| !answerUndoable\(entry, session\)\) return;/);
+  assert.ok(count(source, /setSession\(merged\);/g) >= 2, 'decision and undo both replace the session');
+  assert.match(source, /const busy = posting !== null \|\| undoing !== null \|\|/);
+  assert.match(source, /\{waitingApply \? \(/);
+  assert.match(source, /t\("All questions are answered\. CONNECTOR applies the mapping in about 10 s; until then a decision can be undone\."\)/);
+  assert.match(source, /t\("Decisions made"\)/);
+  // owner 2026-10-18: the Web UI shows only existing sessions; the descriptor import stays for the Revit act
+  for (const text of [source, api]) assert.doesNotMatch(text, /start_mapping|startMapping|start mapping|startSession/i);
+  const { RU } = await import('../src/i18n/dict/index.js');
+  assert.ok(!Object.keys(RU).some(key => /start mapping|start a mapping/i.test(key)), 'no start-mapping text');
+  assert.match(source, /t\("Import descriptors \(JSON\)"\)/);
 });

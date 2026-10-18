@@ -1,5 +1,6 @@
 // screens area dictionary: the LLM model, Reasoner, DG API Docs and DeGram grants screens and the lib-level messages
-// (plan 1308-16). `ru` maps English text to Russian, `en` holds only tp() plural tables (English is otherwise the key).
+// (plan 1308-16). `ru` maps English text to Russian, `en` holds only tp() plural tables (English is otherwise the key)
+// and the two mapping-undo error texts (plan 1303-10).
 // Wording follows the 1301-D38 glossary; proper nouns (HermiT, Pellet, provider names) stay Latin (D-13).
 // "Back", "Cancel" and "Retry" live in the core and projects dictionaries; "Loading settings…" in projects.
 export const ru = {
@@ -208,8 +209,27 @@ export const ru = {
   Suggested: "Предложено",
   Ambiguous: "Неоднозначно",
   Unmapped: "Без меппинга",
-  Questions: "Вопросы",
   "No open questions.": "Открытых вопросов нет.",
+  // proposal cards, given answers and undo (contract §7, plan 1303-10, owner 2026-10-18)
+  Proposals: "Предложения",
+  "Decisions made": "Принятые решения",
+  "Element stream": "Поток элементов",
+  "no proposal": "нет предложения",
+  "or {labels}": "или {labels}",
+  Details: "Подробнее",
+  "Undo decision": "Отменить решение",
+  "Undoing…": "Отмена…",
+  "The session is applied — undo is not available": "Сессия применена — отмена недоступна",
+  "Could not undo the decision.": "Не удалось отменить решение.",
+  "Decision undone": "Решение отменено",
+  "All questions are answered. CONNECTOR applies the mapping in about 10 s; until then a decision can be undone.":
+    "Все вопросы отвечены. CONNECTOR применит меппинг примерно через 10 с; до этого решение можно отменить.",
+  "{n} component": { one: "{n} компонент", few: "{n} компонента", many: "{n} компонентов", other: "{n} компонента" },
+  "{n} el.": { one: "{n} эл.", few: "{n} эл.", many: "{n} эл.", other: "{n} эл." },
+  "{n} val.": { one: "{n} знач.", few: "{n} знач.", many: "{n} знач.", other: "{n} знач." },
+  // The two undo error codes (contract §7.2) live with the mapping panel that shows them.
+  "error.MAPPING_SESSION_APPLIED": "Сессия уже применена; её решения больше нельзя отменить.",
+  "error.MAPPING_ANSWER_NOT_FOUND": "Это решение уже отменено или не найдено. Обновите сессию.",
   "Accept proposed classes": "Принять предложенные классы",
   "Assign a class": "Назначить класс",
   "Choose roles": "Выбрать роли",
@@ -283,6 +303,11 @@ export const ru = {
 };
 
 export const en = {
+  "error.MAPPING_SESSION_APPLIED": "This session is already applied; its decisions can no longer be undone.",
+  "error.MAPPING_ANSWER_NOT_FOUND": "This decision was already undone or is unknown. Refresh the session.",
+  "{n} component": { one: "{n} component", other: "{n} components" },
+  "{n} el.": { one: "{n} element", other: "{n} elements" },
+  "{n} val.": { one: "{n} value", other: "{n} values" },
   "{n} element": { one: "{n} element", other: "{n} elements" },
   "{n} element applied": { one: "{n} element applied", other: "{n} elements applied" },
   "{n} decision recorded": { one: "{n} decision recorded", other: "{n} decisions recorded" },
