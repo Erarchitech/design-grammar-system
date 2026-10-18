@@ -9,8 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-18 Phase 1303 automatic mapping in CONNECTOR with LLM proposal and placement up to VALIDATOR|Phase 1303 session — automatic mapping in CONNECTOR, background LLM proposal, DG components placed by identity; owner run on the clean copy open]] (2026-10-18)
 - [[sessions/2026-10-17 Phase 1303 mapping MVP built and deployed locally, rehearsal guide ready|Phase 1303 session — GH/Revit mapping MVP built, deployed locally from worktree `dg-mapping`, rehearsal guide ready; live acts open]] (2026-10-17)
-- Phase 1303 mapping MVP (branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`): owner rehearsal 18.10 per `.planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md`, demo 19.10; 1309 untouched. See [[knowledge/decisions/Automated mapping MVP uses group questions and learned profiles (Phase 1303)|mapping decision]] and [[00-home/Current priorities|priorities]].
+- Phase 1303 mapping MVP (branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`): owner run on `v12-hexagonal-facade-01-auto-mapping.gh` per `.planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md` (steps 3–5), demo 19.10; 1309 untouched. See [[knowledge/decisions/Mapping is proposed with an LLM and CONNECTOR places DG components bound by identity (Phase 1303)|LLM + placement decision]] and [[00-home/Current priorities|priorities]].
 - [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
 - Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
 - Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
@@ -50,6 +51,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[FastAPI data-service bridges MCP Neo4j and Speckle]]
 
 ### Debugging
+- [[knowledge/debugging/LLM mapping proposal lost measures and sliders on long native ids|Mapping LLM proposal: empty at 4 000 tokens, 120 s timeout, miscopied long ids → background call, 420 s, short aliases]] (2026-10-18, resolved)
+- [[knowledge/debugging/Clean-file mapping noise from union streams, tied outputs and a single-value fallback|Clean-file mapping noise: union/duplicate streams, tied outputs, single-value fallback, OBJECT STATE per measured stream]] (2026-10-18, resolved)
+- [[knowledge/debugging/Facade gh copies sign in to CONNECTOR on open from Panels|Facade .gh copies sign in to CONNECTOR on open: password in a Panel, a session per open]] (2026-10-18, open)
 - [[knowledge/debugging/Rule body comparisons must be evaluated as one conjunction (R9)|Mapping engine: R9 body comparisons must be evaluated as one conjunction]] (2026-10-17, resolved)
 - [[knowledge/debugging/RhinoCode script passes no arguments to the Python script|RhinoCode `script <PATH>` passes no arguments; one wrapper per act, reload helpers]] (2026-10-17, live check open)
 - [[knowledge/debugging/data-service exits at startup when Neo4j does not accept Bolt yet|data-service exits (3) when Neo4j does not accept Bolt yet; `docker start data-service`]] (2026-10-17, open)
@@ -64,6 +68,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Mapping is proposed with an LLM and CONNECTOR places DG components bound by identity (Phase 1303)|Phase 1303 D-33..D-38 — mapping in CONNECTOR, sliders = DG parameters, outputs = properties, LLM as one vote, placement bound by identity]] (2026-10-18)
 - [[knowledge/decisions/Automated mapping MVP uses group questions and learned profiles (Phase 1303)|Phase 1303 mapping MVP — evidence, group questions, learned profiles; deterministic engine, LLM only explains]] (2026-10-17)
 - [[knowledge/decisions/Mapping MVP is developed in a separate git worktree so Phase 1309 is not interrupted|Mapping MVP in git worktree `dg-mapping` on `feature/mapping-mvp`; 1309 untouched]] (2026-10-17)
 - [[knowledge/decisions/Phase 1302 source vocabulary and revision boundaries|Phase 1302 — source, vocabulary, rule revision and lessons-learned boundaries]] (2026-10-14)

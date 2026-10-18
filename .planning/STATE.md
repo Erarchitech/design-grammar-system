@@ -6,10 +6,10 @@ current_phase: 1303
 current_phase_name: pravilo-gh-obekt
 current_plan: 6
 status: executing
-stopped_at: "Phase 1303 MVP slice — plans 01-05 complete offline; plan 06 (rebuild + live demo) in progress (2026-10-17)"
-last_updated: "2026-10-17T22:30:00.000Z"
-last_activity: 2026-10-17
-last_activity_desc: Owner priority — Phase 1303 MVP slice for automated GH/Revit mapping (demo 2026-10-19)
+stopped_at: "Phase 1303 MVP slice — plans 08/09 executed (CONNECTOR auto mapping, LLM proposal, placement up to VALIDATOR); owner live run on the clean copy open (2026-10-18)"
+last_updated: "2026-10-18T11:30:00.000Z"
+last_activity: 2026-10-18
+last_activity_desc: Phase 1303 plans 08/09 — automatic mapping in CONNECTOR, background LLM proposal, DG components placed by identity
 progress:
   total_phases: 9
   completed_phases: 1
@@ -38,11 +38,11 @@ Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)
 Current Phase: 1303
 Current Phase Name: pravilo-gh-obekt
 Current Plan: 6
-Total Plans in Phase: 7 (MVP slice; 07 optional)
-Plan: 5 of 7 complete (01 engine, 02 routes/persistence, 03 GH script, 04 Revit reader, 05 Web UI panel)
-Status: Phase 1303 MVP slice — offline plans done; plan 06 rebuild + live demo with the owner; 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
-Last activity: 2026-10-17 — plans 1303-01..05 executed and committed on feature/mapping-mvp (engine 16 tests, routes 10, Revit reader 14, ui-v2 322/322, GH script compiles against Rhino 8)
-Last Activity Description: Phase 1303 MVP slice offline plans complete
+Total Plans in Phase: 9 (MVP slice; 07 optional; 08/09 added by owner amendments 2026-10-18, D-33..D-38)
+Plan: 7 of 9 complete (01 engine, 02 routes/persistence, 03 GH script, 04 Revit reader, 05 Web UI panel, 08 CONNECTOR automatic intake, 09 parameters/measures/LLM/placement); 06 live demo open; 07 cut line
+Status: Phase 1303 MVP slice — automatic mapping on a definition without DG states verified up to the live LLM-refined session (13 → 6 questions, CONNECTOR "Map: 6?"); owner answers, apply, placement on a live session and the VALIDATOR report are not yet verified; 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
+Last activity: 2026-10-18 — plans 1303-08/09 executed and committed (6014cbc…761da66); data-service image from b6bfd20, UI from 5ae3972, DG.gha installed (32BC8602…)
+Last Activity Description: Phase 1303 automatic mapping through VALIDATOR, owner live run pending
 
 **Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
 
@@ -667,8 +667,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-17T22:30:00.000Z
-Stopped at: Phase 1303 plan 06 — stack rebuilt, RhinoCode act wrappers ready; owner rehearsal 18.10 not yet run
+Last session: 2026-10-18T11:30:00.000Z
+Stopped at: Phase 1303 plans 08/09 executed; owner live run on v12-hexagonal-facade-01-auto-mapping.gh (session ms-98a39fa841bc, 6 questions) from step 2 of the guide
 Resume file: .planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md
 
 ## Performance Metrics
