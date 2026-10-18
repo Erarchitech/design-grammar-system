@@ -120,9 +120,38 @@ def test_cold_start_v1_two_questions():
     effects = {(c["optionId"], x["ruleId"], x["effect"], x["count"]) for c in mod["consequences"] for x in c["rules"]}
     assert ("design-error:ex:HexagonalUnit", "R_HEX_HASVERTEXCOUNT_REQ_6_V", "violated", 25) in effects
     assert ("class:ex:GroundFloorUnit", "R_GF_HASVERTEXCOUNT_REQ_5_V", "passes", 25) in effects
-    assert "Mapping error or design error?" in mod["text"]
-    assert "ошибка меппинга" in mod["textRu"]
+    assert "Is the mapping wrong or the design?" in mod["text"]
+    assert "Где ошибка — в меппинге или в проекте?" in mod["textRu"]
     assert all(not e["roles"] or e["roles"][0]["state"] == "suggested" for e in r["elements"])
+
+
+def test_mapping_or_design_text_explains_each_option():
+    # Owner 2026-10-18: "mapping error or design error?" was unclear. The text names the
+    # evidence behind the conflicting class and says what each button (quoted with its UI
+    # label) does to the elements.
+    r = _compute(fx.facade_v1_descriptors())
+    mod = _question(r, "mapping-or-design")
+    ru, en = mod["textRu"], mod["text"]
+    assert ru.startswith("25 элементов из HU (5 вершин). Свидетельства за HexagonalUnit: названия на холсте; но как HexagonalUnit: R_HEX_HASVERTEXCOUNT_REQ_6_V нарушено ×25")
+    assert "«GroundFloorUnit»: ошибся меппинг; элементы получат класс GroundFloorUnit." in ru
+    assert (
+        "«HexagonalUnit — нарушения правил — ошибки проекта»: класс верен, ошибся проект; элементы получат класс HexagonalUnit, "
+        "а нарушения R_HEX_HASVERTEXCOUNT_REQ_6_V останутся в отчёте VALIDATOR и больше не вызовут этот вопрос." in ru
+    )
+    assert "«Обе роли»: элементы получат оба класса и будут проверяться правилами обоих." in ru
+    assert "«Ни один из вариантов»: элементы останутся без класса DG и не будут проверяться." in ru
+    assert ru.endswith("Ответ запомнится как профиль для похожих элементов.")
+    assert en.startswith("25 elements from HU (5 vertices). Evidence for HexagonalUnit: canvas names; but as HexagonalUnit: R_HEX_HASVERTEXCOUNT_REQ_6_V violated ×25")
+    assert '"GroundFloorUnit": the mapping is wrong; the elements get GroundFloorUnit.' in en
+    assert (
+        '"HexagonalUnit — rule violations are design errors": the class is right and the design is wrong; the elements get HexagonalUnit, '
+        "and the violations of R_HEX_HASVERTEXCOUNT_REQ_6_V stay in the VALIDATOR report without raising this question again." in en
+    )
+    assert '"Both roles": the elements get both classes and are checked by the rules of both.' in en
+    assert '"None of these": the elements get no DG class and are not checked.' in en
+    assert en.endswith("The answer is remembered as a profile for similar elements.")
+    # Every offered option is explained, and only offered ones.
+    assert [o["optionId"] for o in mod["options"]] == ["class:ex:GroundFloorUnit", "design-error:ex:HexagonalUnit", "both", "none"]
 
 
 # 3 -------------------------------------------------------------------------
@@ -437,6 +466,28 @@ def test_parameter_answers_are_learned():
     r4 = _full(params=[{"nativeId": "gh:other:slider:mw7", "name": "Module Width F7"}], profiles=none["profiles"])
     assert r4["parameters"][0]["state"] == "unmapped"
     assert m.partition(r2)["parameters"][0]["name"].startswith(("Module Width", "Наклон", "КолВо"))
+
+
+def test_answer_reactivates_a_retired_profile():
+    # Rehearsal 2026-10-18: profiles are retired (state != active) for a cold restart; the same
+    # answer gives the same profileId, and a human answer must switch it back on, or the
+    # next variant is asked again instead of being mapped by the profile.
+    d, _, _, profiles = _learn_v1()
+    retired = [dict(p, state="retired") for p in profiles]
+    cold = _compute(d, retired)
+    assert sorted(q["type"] for q in cold["questions"]) == ["batch-assign", "mapping-or-design"]
+    gfu = _decide(cold, d, _question(cold, "mapping-or-design"), "class:ex:GroundFloorUnit", retired)
+    again = next(p for p in gfu["profiles"] if p["roles"] == ["ex:GroundFloorUnit"])
+    assert again["profileId"] in {p["profileId"] for p in retired}
+    assert again["state"] == "active" and again["confirmations"] == 2
+    # Slider (item) profiles behave the same.
+    r = _full(params=_sliders())
+    q = next(q for q in r["questions"] if q["type"] == "batch-parameters")
+    first = _decide(r, _stream_descriptors(), q, "accept-all")["profiles"]
+    off = [dict(p, state="retired") for p in first]
+    assert {p["state"] for p in _full(params=_sliders(), profiles=off)["parameters"]} == {"suggested"}
+    on = _decide(r, _stream_descriptors(), q, "accept-all", off)["profiles"]
+    assert {p["state"] for p in on} == {"active"} and {p["profileId"] for p in on} == {p["profileId"] for p in off}
 
 
 def test_calculation_outputs_map_to_properties_by_values_and_names():

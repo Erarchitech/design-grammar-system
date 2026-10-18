@@ -1137,6 +1137,65 @@ def _split_feature(g: Mapping) -> Optional[str]:
     return best
 
 
+# Evidence kinds named in the mapping-or-design text (rule evidence is the conflict itself).
+_EVIDENCE_WORDS = {
+    "name": ("canvas names", "названия на холсте"),
+    "profile": ("a learned profile", "выученный профиль"),
+    "llm": ("the LLM proposal", "предложение LLM"),
+    "measure": ("a calculation output", "расчётный выход"),
+    "ifc": ("the IFC class", "класс IFC"),
+    "population": ("the element count", "численность элементов"),
+}
+
+
+def _mapping_or_design_text(g: Mapping, conflicting: Mapping, alt: Optional[Mapping], option_ids: Sequence[str]) -> tuple:
+    """EN/RU text of a mapping-or-design question (owner 2026-10-18: say what each option means).
+
+    Names the evidence behind the conflicting class, the rule outcomes per class, and what
+    each offered button does; buttons are quoted with their Web UI labels.
+    """
+    c_lab, c_iri = conflicting["label"], conflicting["classIri"]
+    kinds: list = []
+    for e in conflicting["evidence"]:
+        if e["weight"] > 0 and e["kind"] in _EVIDENCE_WORDS and e["kind"] not in kinds:
+            kinds.append(e["kind"])
+    if kinds:
+        en = f"{_describe_group(g, 'en')}. Evidence for {c_lab}: " + ", ".join(_EVIDENCE_WORDS[k][0] for k in kinds)
+        en += f"; but as {c_lab}: {_impact_phrase(g, c_iri, 'en')}."
+        ru = f"{_describe_group(g, 'ru')}. Свидетельства за {c_lab}: " + ", ".join(_EVIDENCE_WORDS[k][1] for k in kinds)
+        ru += f"; но как {c_lab}: {_impact_phrase(g, c_iri, 'ru')}."
+    else:
+        en = f"{_describe_group(g, 'en')}. As {c_lab}: {_impact_phrase(g, c_iri, 'en')}."
+        ru = f"{_describe_group(g, 'ru')}. Как {c_lab}: {_impact_phrase(g, c_iri, 'ru')}."
+    if alt:
+        en += f" As {alt['label']}: {_impact_phrase(g, alt['classIri'], 'en')}."
+        ru += f" Как {alt['label']}: {_impact_phrase(g, alt['classIri'], 'ru')}."
+    en += " Is the mapping wrong or the design?"
+    ru += " Где ошибка — в меппинге или в проекте?"
+    violated = ", ".join(x["ruleId"] for x in conflicting["conflicts"]) or "—"
+    if alt and f"class:{alt['classIri']}" in option_ids:
+        a = alt["label"]
+        en += f' "{a}": the mapping is wrong; the elements get {a}.'
+        ru += f" «{a}»: ошибся меппинг; элементы получат класс {a}."
+    en += (
+        f' "{c_lab} — rule violations are design errors": the class is right and the design is wrong; the elements get {c_lab}, '
+        f"and the violations of {violated} stay in the VALIDATOR report without raising this question again."
+    )
+    ru += (
+        f" «{c_lab} — нарушения правил — ошибки проекта»: класс верен, ошибся проект; элементы получат класс {c_lab}, "
+        f"а нарушения {violated} останутся в отчёте VALIDATOR и больше не вызовут этот вопрос."
+    )
+    if "both" in option_ids:
+        en += ' "Both roles": the elements get both classes and are checked by the rules of both.'
+        ru += " «Обе роли»: элементы получат оба класса и будут проверяться правилами обоих."
+    # "None of these" is offered with every group question.
+    en += ' "None of these": the elements get no DG class and are not checked.'
+    ru += " «Ни один из вариантов»: элементы останутся без класса DG и не будут проверяться."
+    en += " The answer is remembered as a profile for similar elements."
+    ru += " Ответ запомнится как профиль для похожих элементов."
+    return en, ru
+
+
 def _build_questions(groups: Sequence[dict], iri_of: Mapping, label_of: Mapping, disjoint: set, cfg: Mapping) -> list:
     questions = []
     suggested = [g for g in groups if g["state"] == "suggested"]
@@ -1194,13 +1253,7 @@ def _build_questions(groups: Sequence[dict], iri_of: Mapping, label_of: Mapping,
             )
             if alt and frozenset((local_name(alt["classIri"]), local_name(conflicting["classIri"]))) not in disjoint:
                 options.append({"optionId": "both", "label": "Both roles", "roles": sorted([alt["classIri"], conflicting["classIri"]])})
-            text = f"{_describe_group(g, 'en')}. As {conflicting['label']}: {_impact_phrase(g, conflicting['classIri'], 'en')}."
-            text_ru = f"{_describe_group(g, 'ru')}. Как {conflicting['label']}: {_impact_phrase(g, conflicting['classIri'], 'ru')}."
-            if alt:
-                text += f" As {alt['label']}: {_impact_phrase(g, alt['classIri'], 'en')}."
-                text_ru += f" Как {alt['label']}: {_impact_phrase(g, alt['classIri'], 'ru')}."
-            text += " Mapping error or design error?"
-            text_ru += " Это ошибка меппинга или ошибка проекта?"
+            text, text_ru = _mapping_or_design_text(g, conflicting, alt, [o["optionId"] for o in options])
         elif reason == "assign" and cands:
             top = cands[0]
             options.append({"optionId": f"class:{top['classIri']}", "label": top["label"], "roles": [top["classIri"]]})
@@ -1696,6 +1749,7 @@ def _measure_questions(rows: Sequence[dict]) -> list:
 def _item_profile(existing: Mapping, out: dict, pid: str, project, platform, selector, roles, excluded, actor, at, decision_id, support, cfg) -> None:
     prof = dict(out.get(pid) or existing.get(pid) or {})
     if prof:
+        prof["state"] = "active"  # a human answer switches a retired profile back on
         prof["confirmations"] = int(prof.get("confirmations", 0)) + 1
         prof["decisionIds"] = sorted(set(prof.get("decisionIds", [])) | {decision_id})
         prof["support"] = max(int(prof.get("support", 0)), support)
@@ -2000,6 +2054,8 @@ def decide(
         prof = existing.get(pid) or out_profiles.get(pid)
         if prof:
             prof = dict(prof)
+            # A human answer that gives a retired profile again switches it back on.
+            prof["state"] = "active"
             prof["confirmations"] = int(prof.get("confirmations", 0)) + 1
             prof["decisionIds"] = sorted(set(prof.get("decisionIds", [])) | {decision_id})
             prof["support"] = max(int(prof.get("support", 0)), len(members))
