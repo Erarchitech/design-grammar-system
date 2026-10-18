@@ -120,13 +120,18 @@ ORDER BY classIri
 """
 
 
+# Design properties only: the ones rule bodies constrain, plus project properties that never
+# appear in a rule head (heads carry violation flags such as widthBelowMin, which are not
+# something a slider can drive).
 PROPERTIES_QUERY = """
 // op=mapping_properties
 MATCH (p:DatatypeProperty)
-WHERE p.project = $project
-   OR EXISTS {
-     MATCH (r:Rule {project: $project, graph: 'Metagraph'})-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:REFERS_TO]->(p)
+WHERE EXISTS {
+     MATCH (r:Rule {project: $project, graph: 'Metagraph'})-[:HAS_BODY]->(:Atom)-[:REFERS_TO]->(p)
    }
+   OR (p.project = $project AND NOT EXISTS {
+     MATCH (:Rule)-[:HAS_HEAD]->(:Atom)-[:REFERS_TO]->(p)
+   })
 RETURN DISTINCT p.iri AS iri, coalesce(p.SWRL_label, p.label, p.iri) AS label
 ORDER BY iri
 """
