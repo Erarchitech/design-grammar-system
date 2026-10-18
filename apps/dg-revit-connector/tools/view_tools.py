@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """View inspection and image export tools."""
 
-from typing import Union
-
-from mcp.server.fastmcp import Image
+from typing import Any
 
 from .utils import Context, format_response
 
@@ -13,7 +11,7 @@ def register_view_tools(mcp, revit_get, revit_post, revit_image):
     del revit_post  # not needed by these tools
 
     @mcp.tool()
-    async def get_revit_view(view_name: str, ctx: Context = None) -> Union[Image, str]:
+    async def get_revit_view(view_name: str, ctx: Context = None) -> Any:
         """Render a Revit view to a PNG image so you can see it.
 
         Args:

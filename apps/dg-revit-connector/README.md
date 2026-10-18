@@ -1,3 +1,82 @@
+# DG Revit connector
+
+Design Grammars' own fork of revit-mcp: a pyRevit extension plus an MCP server
+that expose Autodesk Revit over the pyRevit Routes API and let an MCP client
+(DeGram, Claude Desktop, Claude Code, ...) read **and write** the model.
+
+Provenance, the source commit and the list of Design Grammars changes are in
+[UPSTREAM.md](UPSTREAM.md). The copy is a plain-file copy of
+`Erarchitech/revit-mcp-server` `degram/phase-1301` `d8f0f24`, itself a fork of
+`Demolinator/revit-mcp-server` (merge base `74a8ddc`).
+
+## What it is
+
+Two halves:
+
+| Half | Files | Runs in | Role |
+|------|-------|---------|------|
+| pyRevit extension | `startup.py`, `dg_transport.py`, `dg_revit_mcp/` | IronPython 3.4 **inside Revit** (pyRevit Routes) | Serves the Revit API as HTTP routes under the Routes API name `dg_revit` |
+| MCP server | `main.py`, `tools/` | CPython, started by the MCP client as a stdio child | Exposes those routes as MCP tools: 48 upstream tools, 2 identity-pinned document tools and 4 DG connector tools |
+
+The extension answers on pyRevit Routes, port **48884**, under
+`http://127.0.0.1:48884/dg_revit/` — a different API name from the
+`revit_mcp` extension of the upstream project, so both can be installed at the
+same time. The MCP server reads `REVIT_HOST` / `REVIT_PORT` (default
+`localhost:48884`) and talks to `/dg_revit`.
+
+DeGram points at this folder with `DEGRAM_REVIT_MCP_DIR` (or its `revitMcpDir`
+setting) and runs `main.py` as a stdio child. Generated settings carry no
+secret: the server holds no credentials.
+
+## All Revit routes, writes included (owner decision 2026-10-18, D-45)
+
+The Design Grammars owner lifted every restriction on Revit, so this fork
+registers the complete upstream surface, not a read-only subset:
+
+- parameters (`/set_parameter/`), element creation, `/delete_elements/`,
+  `/modify_element/`, `/transform_elements/`, `/place_family/`, `/load_family/`;
+- colour and graphic overrides (`/color_splash/`, `/clear_colors/`);
+- selection, view creation/activation and code execution (`/execute_code/`);
+- IFC export, file linking, sheets, schedules, rooms, MEP, clash detection.
+
+Any MCP client connected to this server can modify the model. That is intended.
+The only gate left is **transport hygiene, not a Revit restriction**: the
+extension registers nothing unless the pyRevit Routes host is loopback, and the
+MCP client refuses a non-loopback `REVIT_HOST` or a Routes server that answers
+on a non-loopback local address. In DeGram (`DEGRAM_MODE=1`) the server is
+stdio-only: `--http`, `--sse` and `--combined` are refused.
+
+## DG connector tools
+
+On top of the upstream tools, `tools/dg_connector_tools.py` exposes the Design
+Grammars mapping session of the open model:
+
+| Tool | Route | What it does |
+|------|-------|--------------|
+| `dg_mapping_status` | `GET /mapping_status/` | Sign-in state, open session, its label, element count and answer/apply progress |
+| `dg_start_mapping` | `POST /start_mapping/` | Reads the selection (else the model instances visible in the active view, ≤ 5000), starts a DG mapping session and colours elements by mapping state |
+| `dg_show_elements` | `POST /show_elements/` | Selects the given `unique_ids` (≤ 5000) in Revit and zooms the active view to them |
+| `dg_clear_mapping_colours` | `POST /clear_colours/` | Removes the mapping graphic overrides from the active view |
+
+These four routes are added by a later task of plan 1303-11; until that module
+(`dg_revit_mcp/dg_connector_routes.py`) exists, `startup.py` registers every
+Revit route and the tools answer `EXTENSION_NOT_LOADED`.
+
+## Install and tests
+
+- Install the extension with `install.py` (later task of plan 1303-11) into
+  `%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension`, then reload
+  pyRevit. The old `revit-mcp.extension` is left untouched.
+- Offline tests: `python -m pytest -q tests` (needs `mcp`, `httpx`, `pytest`).
+  No Revit and no pyRevit are required.
+
+The developer documentation below is the **upstream** README. It describes the
+upstream project under its old names — package `revit_mcp/`, Routes API
+`revit_mcp`, read-only tools — use the Design Grammars names in this section
+instead.
+
+# Upstream README
+
 # Revit MCP Server
 
 MCP server for Autodesk Revit 2024/2025/2026/2027 via pyRevit — 48 tools for building design, editing, analysis, clash detection, MEP, interop, documentation, and model persistence.

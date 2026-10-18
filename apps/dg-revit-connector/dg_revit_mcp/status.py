@@ -29,14 +29,14 @@ def register_status_routes(api):
                     "health": "healthy",
                     "revit_available": True,
                     "document_title": doc.Title if doc.Title else "Untitled",
-                    "api_name": "revit_mcp"
+                    "api_name": "dg_revit"
                 })
             else:
                 return routes.make_response(data={
                     "status": "unhealthy", 
                     "revit_available": False,
                     "error": "No active Revit document",
-                    "api_name": "revit_mcp"
+                    "api_name": "dg_revit"
                 }, status=503)
                 
         except Exception as e:
@@ -45,7 +45,7 @@ def register_status_routes(api):
                 "status": "unhealthy",
                 "revit_available": False, 
                 "error": str(e),
-                "api_name": "revit_mcp"
+                "api_name": "dg_revit"
             }, status=503)
     
     logger.info("Status routes registered successfully")

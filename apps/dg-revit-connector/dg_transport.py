@@ -1,65 +1,27 @@
 # -*- coding: utf-8 -*-
-"""DeGram read-only guard for the Revit MCP fork (phase 1301, D-10/D-11/D-13/D-23).
+"""Transport hygiene shared by both halves of the DG Revit connector.
 
-One module, imported from BOTH halves of the adapter, so the two allowlists
-cannot drift apart:
+The Design Grammars owner lifted every Revit restriction on 2026-10-18
+(D-45), so this module no longer allowlists routes or tools: the extension
+registers all of them and the MCP server exposes all of them. What remains is
+transport hygiene, not a Revit restriction:
 
-* the pyRevit extension (``startup.py``, IronPython) registers only the routes
-  in ``ALLOWED_ROUTES`` and nothing at all unless the Routes host is loopback;
-* the MCP server (``main.py`` + ``tools/``, CPython) registers only the tools in
-  ``ALLOWED_TOOLS``, refuses non-stdio transports in DeGram mode, and probes
-  that port 48884 does not answer on any non-loopback local address.
+* the pyRevit Routes host must be loopback before the extension registers
+  anything (``configured_routes_host`` / ``is_loopback_host``);
+* the MCP client refuses a non-loopback ``REVIT_HOST`` or a Routes server that
+  answers on a non-loopback local address;
+* ``DEGRAM_MODE=1`` allows the stdio transport only, so no HTTP/SSE port is
+  ever opened for DeGram.
 
 Keep this file free of f-strings, type hints and third-party imports: it must
 load under IronPython as well as CPython. The async client lives in main.py.
 """
 
-import json
 import os
 import socket
 
-# --- allowlists ---------------------------------------------------------------
-
-#: MCP tools exposed to the agent. Every name is a read verb.
-ALLOWED_TOOLS = frozenset([
-    "get_revit_status",
-    "get_revit_model_info",
-    "list_open_documents",
-    "get_selection_snapshot",
-    "get_element_properties",
-    "list_levels",
-    "get_current_view_info",
-    "list_category_parameters",
-])
-
-#: (HTTP method, route pattern) pairs the pyRevit extension may register.
-#: POST appears twice only because the request needs a body; both routes read.
-ALLOWED_ROUTES = frozenset([
-    ("GET", "/status/"),
-    ("GET", "/model_info/"),
-    ("GET", "/list_open_documents/"),
-    ("POST", "/selection_snapshot/"),
-    ("GET", "/element_properties/<element_id>"),
-    ("GET", "/list_levels/"),
-    ("GET", "/current_view_info/"),
-    ("POST", "/list_category_parameters/"),
-])
-
-#: Route modules that back allowed routes: (module under revit_mcp, register function).
-#: Several are mixed read/write modules; ReadOnlyApi drops the write routes they
-#: declare, so a write handler is imported but never reachable.
-ALLOWED_ROUTE_MODULES = (
-    ("status", "register_status_routes"),
-    ("model_info", "register_model_info_routes"),
-    ("documents", "register_document_read_routes"),
-    ("views", "register_views_routes"),
-    ("placement", "register_placement_routes"),
-    ("parameters", "register_parameter_routes"),
-    ("colors", "register_color_routes"),
-)
-
 #: Structured outcome codes returned by the MCP half and the document routes.
-#: SETUP_INCOMPLETE carries a ``reason``: ROUTES_NOT_LOOPBACK (D-23),
+#: SETUP_INCOMPLETE carries a ``reason``: ROUTES_NOT_LOOPBACK,
 #: REVIT_HOST_NOT_LOOPBACK or NO_DOCUMENT_OPEN.
 ERROR_CODES = frozenset([
     "BUSY",
@@ -120,65 +82,7 @@ def configured_routes_host():
         return None
 
 
-# --- pyRevit side: route allowlist -------------------------------------------
-
-class ReadOnlyApi(object):
-    """Proxy over ``pyrevit.routes.API`` that registers allowlisted routes only.
-
-    Only ``route`` is exposed; any other attribute raises AttributeError so a
-    forked module cannot reach around the filter.
-    """
-
-    def __init__(self, api, allowed=None):
-        self._api = api
-        self._allowed = ALLOWED_ROUTES if allowed is None else allowed
-        self.registered = []
-        self.dropped = []
-
-    def route(self, pattern, methods=None):
-        wanted = [str(m).upper() for m in (methods if methods else ["GET"])]
-        keep = [m for m in wanted if (m, pattern) in self._allowed]
-        for m in wanted:
-            if m not in keep:
-                self.dropped.append((m, pattern))
-
-        def decorator(func):
-            if keep:
-                self._api.route(pattern, methods=keep)(func)
-                for m in keep:
-                    self.registered.append((m, pattern))
-            return func
-
-        return decorator
-
-
-# --- MCP side: tool allowlist -------------------------------------------------
-
-class ReadOnlyToolRegistry(object):
-    """Proxy over FastMCP whose ``tool`` decorator drops non-allowlisted names.
-
-    Mixed modules can still be imported and registered through it: the
-    decorated function stays callable but never becomes an MCP tool.
-    """
-
-    def __init__(self, mcp, allowed=None):
-        self._mcp = mcp
-        self._allowed = ALLOWED_TOOLS if allowed is None else allowed
-
-    def tool(self, *args, **kwargs):
-        real = self._mcp.tool(*args, **kwargs)
-        explicit = kwargs.get("name")
-        if explicit is None and args and isinstance(args[0], str):
-            explicit = args[0]
-
-        def decorator(func):
-            name = explicit or func.__name__
-            if name in self._allowed:
-                return real(func)
-            return func
-
-        return decorator
-
+# --- structured outcomes ------------------------------------------------------
 
 def is_outcome(value):
     return (isinstance(value, dict) and value.get("status") == "error"
@@ -203,14 +107,14 @@ def degram_mode(env=None):
 
 
 def enforce_transport(transport, env=None):
-    """D-11: in DeGram mode only stdio is allowed."""
+    """In DeGram mode only stdio is allowed: no HTTP/SSE port (1301 D-11)."""
     if degram_mode(env) and transport != "stdio":
         raise DegramModeError(
             "DEGRAM_TRANSPORT_REFUSED: DEGRAM_MODE=1 allows stdio only, "
             "got '{}' (no HTTP/SSE port may be opened)".format(transport))
 
 
-# --- MCP side: loopback probe (D-23) ------------------------------------------
+# --- MCP side: loopback probe -------------------------------------------------
 
 def local_addresses(hostname=None):
     """Non-loopback, non-wildcard addresses of this machine."""

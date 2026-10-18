@@ -9,7 +9,11 @@ import json
 import logging
 import sys
 import traceback
-from StringIO import StringIO
+
+try:
+    from StringIO import StringIO  # IronPython 2.7 / CPython 2
+except ImportError:
+    from io import StringIO  # IronPython 3.4 / CPython 3
 
 # Standard logger setup
 logger = logging.getLogger(__name__)

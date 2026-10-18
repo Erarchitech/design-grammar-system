@@ -9,15 +9,18 @@ monkeypatched for the loopback probe (asyncio itself needs real sockets).
 import asyncio
 import importlib
 import json
+import os
+import shutil
 import socket
 import sys
+import uuid
 from types import SimpleNamespace
 
 import httpx
 import pytest
 
-import degram_readonly as dro
-from test_degram_readonly import install_pyrevit_stubs, load_startup
+import dg_transport as dt
+from pyrevit_stubs import install_pyrevit_stubs, load_startup
 
 
 def run(coro):
@@ -108,10 +111,10 @@ def make_uiapp(docs, active_index=0, selected=()):
 @pytest.fixture
 def documents(monkeypatch):
     registry = install_pyrevit_stubs(monkeypatch)
-    module = importlib.import_module("revit_mcp.documents")
+    module = importlib.import_module("dg_revit_mcp.documents")
     monkeypatch.setattr(module, "_unit_label", lambda param: "mm" if param._unit else "")
     handlers = {}
-    api = sys.modules["pyrevit.routes"].API("revit_mcp")
+    api = sys.modules["pyrevit.routes"].API("dg_revit")
     module.register_document_read_routes(api)
     for method, pattern, func in registry:
         handlers[pattern] = func
@@ -317,14 +320,14 @@ def test_document_handlers_declare_api_context(documents):
 @pytest.fixture
 def no_machine_config(monkeypatch):
     """Isolate from this PC's pyRevit config and network."""
-    monkeypatch.setattr(dro, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
-    monkeypatch.setattr(dro, "probe_non_loopback", lambda port=48884, **k: None)
+    monkeypatch.setattr(dt, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
+    monkeypatch.setattr(dt, "probe_non_loopback", lambda port=48884, **k: None)
 
 
 def client_with(handler):
     import main
 
-    client = main.DegramClient("http://127.0.0.1:48884/revit_mcp", host="127.0.0.1", port=48884)
+    client = main.DegramClient("http://127.0.0.1:48884/dg_revit", host="127.0.0.1", port=48884)
     client._http = httpx.AsyncClient(base_url=client.root, transport=httpx.MockTransport(handler))
     return client
 
@@ -346,7 +349,7 @@ def test_connection_refused_maps_to_bridge_off(no_machine_config):
 
 
 def test_connection_refused_with_routes_disabled_in_config(monkeypatch, no_machine_config):
-    monkeypatch.setattr(dro, "read_routes_config", lambda path=None: {"enabled": False, "host": "127.0.0.1"})
+    monkeypatch.setattr(dt, "read_routes_config", lambda path=None: {"enabled": False, "host": "127.0.0.1"})
 
     def handler(request):
         raise httpx.ConnectError("refused", request=request)
@@ -402,7 +405,7 @@ def test_outcomes_never_use_free_text_error_strings(no_machine_config):
 
     for handler in (boom, lambda r: httpx.Response(500, text="<html>oops</html>")):
         out = run(client_with(handler).get("/status/"))
-        assert isinstance(out, dict) and out["status"] == "error" and out["code"] in dro.ERROR_CODES
+        assert isinstance(out, dict) and out["status"] == "error" and out["code"] in dt.ERROR_CODES
 
 
 def test_tool_returns_structured_json_not_error_text(no_machine_config):
@@ -502,15 +505,15 @@ def test_no_automatic_retry(no_machine_config):
 # --- loopback fail-closed (D-23) ------------------------------------------------------
 
 def test_non_loopback_listener_refuses_every_read(monkeypatch):
-    monkeypatch.setattr(dro, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
-    monkeypatch.setattr(dro, "local_addresses", lambda hostname=None: ["192.168.1.50"])
+    monkeypatch.setattr(dt, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
+    monkeypatch.setattr(dt, "local_addresses", lambda hostname=None: ["192.168.1.50"])
     attempts = []
 
     def fake_connect(addr, port, timeout):
         attempts.append((addr, port))
         return addr == "192.168.1.50" and port == 48884
 
-    monkeypatch.setattr(dro, "_connect", fake_connect)
+    monkeypatch.setattr(dt, "_connect", fake_connect)
     reads = []
 
     def handler(request):
@@ -525,18 +528,18 @@ def test_non_loopback_listener_refuses_every_read(monkeypatch):
 
 
 def test_loopback_only_listener_is_ok(monkeypatch):
-    monkeypatch.setattr(dro, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
-    monkeypatch.setattr(dro, "local_addresses", lambda hostname=None: ["192.168.1.50", "fe80::1"])
+    monkeypatch.setattr(dt, "read_routes_config", lambda path=None: {"enabled": None, "host": None})
+    monkeypatch.setattr(dt, "local_addresses", lambda hostname=None: ["192.168.1.50", "fe80::1"])
 
-    monkeypatch.setattr(dro, "_connect", lambda addr, port, timeout: False)
+    monkeypatch.setattr(dt, "_connect", lambda addr, port, timeout: False)
     out = run(client_with(lambda r: httpx.Response(200, json={"ok": True})).get("/status/"))
     assert out == {"ok": True}
 
 
 def test_probe_returns_the_answering_address(monkeypatch):
-    monkeypatch.setattr(dro, "_connect", lambda addr, port, timeout: addr == "10.0.0.7")
-    assert dro.probe_non_loopback(48884, addresses=["10.0.0.5", "10.0.0.7"]) == "10.0.0.7"
-    assert dro.probe_non_loopback(48884, addresses=["10.0.0.5"]) is None
+    monkeypatch.setattr(dt, "_connect", lambda addr, port, timeout: addr == "10.0.0.7")
+    assert dt.probe_non_loopback(48884, addresses=["10.0.0.5", "10.0.0.7"]) == "10.0.0.7"
+    assert dt.probe_non_loopback(48884, addresses=["10.0.0.5"]) is None
 
 
 def test_connect_uses_a_real_tcp_connect():
@@ -545,10 +548,10 @@ def test_connect_uses_a_real_tcp_connect():
     server.listen(1)
     port = server.getsockname()[1]
     try:
-        assert dro._connect("127.0.0.1", port, 0.3) is True
+        assert dt._connect("127.0.0.1", port, 0.3) is True
     finally:
         server.close()
-    assert dro._connect("127.0.0.1", port, 0.3) is False  # nothing listens any more
+    assert dt._connect("127.0.0.1", port, 0.3) is False  # nothing listens any more
 
 
 def test_local_addresses_excludes_loopback_and_wildcards(monkeypatch):
@@ -556,12 +559,12 @@ def test_local_addresses_excludes_loopback_and_wildcards(monkeypatch):
              (23, 1, 6, "", ("::1", 0, 0, 0)), (2, 1, 6, "", ("0.0.0.0", 0))]
     monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: infos)
     monkeypatch.setattr(socket, "gethostbyname_ex", lambda h: (h, [], ["10.1.1.1", "127.0.1.1"]))
-    assert dro.local_addresses("pc") == ["10.1.1.1", "192.168.1.9"]
+    assert dt.local_addresses("pc") == ["10.1.1.1", "192.168.1.9"]
 
 
 def test_config_host_not_loopback_refuses_reads(monkeypatch):
-    monkeypatch.setattr(dro, "read_routes_config", lambda path=None: {"enabled": True, "host": "0.0.0.0"})
-    monkeypatch.setattr(dro, "probe_non_loopback", lambda port=48884, **k: None)
+    monkeypatch.setattr(dt, "read_routes_config", lambda path=None: {"enabled": True, "host": "0.0.0.0"})
+    monkeypatch.setattr(dt, "probe_non_loopback", lambda port=48884, **k: None)
     reads = []
     out = run(client_with(lambda r: reads.append(r) or httpx.Response(200, json={})).get("/status/"))
     assert out["code"] == "SETUP_INCOMPLETE" and out["reason"] == "ROUTES_NOT_LOOPBACK"
@@ -571,18 +574,28 @@ def test_config_host_not_loopback_refuses_reads(monkeypatch):
 def test_non_loopback_revit_host_is_refused(monkeypatch, no_machine_config):
     import main
 
-    client = main.DegramClient("http://10.0.0.9:48884/revit_mcp", host="10.0.0.9", port=48884)
+    client = main.DegramClient("http://10.0.0.9:48884/dg_revit", host="10.0.0.9", port=48884)
     out = run(client.get("/status/"))
     assert out["code"] == "SETUP_INCOMPLETE" and out["reason"] == "REVIT_HOST_NOT_LOOPBACK"
 
 
-def test_routes_config_reader(tmp_path):
-    ini = tmp_path / "pyRevit_config.ini"
-    ini.write_text('[routes]\nenabled = true\nhost = "127.0.0.1"\nport = 48884\n', encoding="utf-8")
-    assert dro.read_routes_config(str(ini)) == {"enabled": True, "host": "127.0.0.1"}
-    ini.write_text('[routes]\nenabled = false\nhost = "0.0.0.0"\n', encoding="utf-8")
-    assert dro.read_routes_config(str(ini)) == {"enabled": False, "host": "0.0.0.0"}
-    assert dro.read_routes_config(str(tmp_path / "missing.ini")) == {"enabled": None, "host": None}
+def test_routes_config_reader():
+    # The ini is written inside the repository, not in %TEMP%: this environment
+    # refuses writes to the platform temp directory. ``os.mkdir`` runs without
+    # ``mode`` on purpose - a 0o700 directory cannot be written into on Windows.
+    folder = os.path.join(os.path.dirname(__file__), "pyrevit-config-" + uuid.uuid4().hex[:8])
+    os.mkdir(folder)
+    try:
+        ini = os.path.join(folder, "pyRevit_config.ini")
+        with open(ini, "w", encoding="utf-8") as handle:
+            handle.write('[routes]\nenabled = true\nhost = "127.0.0.1"\nport = 48884\n')
+        assert dt.read_routes_config(ini) == {"enabled": True, "host": "127.0.0.1"}
+        with open(ini, "w", encoding="utf-8") as handle:
+            handle.write('[routes]\nenabled = false\nhost = "0.0.0.0"\n')
+        assert dt.read_routes_config(ini) == {"enabled": False, "host": "0.0.0.0"}
+        assert dt.read_routes_config(os.path.join(folder, "missing.ini")) == {"enabled": None, "host": None}
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 def test_extension_registers_nothing_off_loopback_end_to_end(monkeypatch):

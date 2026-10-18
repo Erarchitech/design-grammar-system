@@ -86,7 +86,7 @@ def test_non_ascii_survives():
 # --- RevitClient ----------------------------------------------------------------
 
 def client_with(handler):
-    client = main.RevitClient("http://revit.test/revit_mcp")
+    client = main.RevitClient("http://revit.test/dg_revit")
     client._http = httpx.AsyncClient(base_url=client.root, transport=httpx.MockTransport(handler))
     return client
 
