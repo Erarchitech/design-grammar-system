@@ -4,12 +4,12 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1303
 current_phase_name: pravilo-gh-obekt
-current_plan: 6
+current_plan: 14
 status: executing
-stopped_at: Phase 1303 Revit slice context gathered (D-44..D-53)
-last_updated: "2026-10-18T19:31:39.071Z"
+stopped_at: Phase 1303 plan 14 human-action checkpoint — pyRevit installation denied; owner install/open/sign-in pending
+last_updated: "2026-10-18T22:06:33Z"
 last_activity: 2026-10-18
-last_activity_desc: Phase 1303 Revit slice discussed — DG revit-mcp fork as Revit connector, writes allowed (D-44..D-53)
+last_activity_desc: Phase 1303 plans 11–13 implemented; DG Revit connector bundled in DeGram 1aa3b39c, build and isolated launch verified; live Revit act 3 blocked
 progress:
   total_phases: 9
   completed_phases: 1
@@ -37,12 +37,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)
 Current Phase: 1303
 Current Phase Name: pravilo-gh-obekt
-Current Plan: 6
-Total Plans in Phase: 9 (MVP slice; 07 optional; 08/09 added by owner amendments 2026-10-18, D-33..D-38)
-Plan: 7 of 9 complete (01 engine, 02 routes/persistence, 03 GH script, 04 Revit reader, 05 Web UI panel, 08 CONNECTOR automatic intake, 09 parameters/measures/LLM/placement); 06 live demo open; 07 cut line
-Status: Phase 1303 MVP slice — automatic mapping on a definition without DG states verified up to the live LLM-refined session (13 → 6 questions, CONNECTOR "Map: 6?"); owner answers, apply, placement on a live session and the VALIDATOR report are not yet verified; 1309 continues in a separate session; 1300 gates remain open for full 1303 acceptance
-Last activity: 2026-10-18 — plans 1303-08/09 executed and committed (6014cbc…761da66); data-service image from b6bfd20, UI from 5ae3972, DG.gha installed (32BC8602…)
-Last Activity Description: Phase 1303 automatic mapping through VALIDATOR, owner live run pending
+Current Plan: 14
+Total Plans in Phase: 14 (MVP slice; 07 optional; 10 proposal cards/DeGram; 11–14 owner-authorized Revit connector/server/DeGram/live act)
+Plan: 11 of 14 complete (01–05, 08–13); 06 live demo open; 07 cut line; 14 blocked at installation/open/sign-in checkpoint
+Status: GH rehearsal through proposal answers/undo, apply, placement and VALIDATOR V1/V2 recorded in 1303-10-SUMMARY.md. Revit connector/server/DeGram implementation and build complete, but real Revit reads, writes, transfer and gold metrics remain unverified. Prior pyRevit installation was denied and has not been retried. Demo profiles remain retired; 1309 continues separately; 1300 gates remain open for full 1303 acceptance.
+Last activity: 2026-10-18 — plans 11–13 implemented; data-service 82378ca1 from committed export, connector 400 tests and mapping 63 tests passed; DeGram 1aa3b39c built (exit 0), launched isolated; bundled MCP lists 54 tools and status returns BRIDGE_OFF (Revit not running)
+Last Activity Description: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
 
 **Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
 
