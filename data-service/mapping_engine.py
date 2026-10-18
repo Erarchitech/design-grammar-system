@@ -1255,7 +1255,7 @@ def _decorate_questions(questions: list, groups: Sequence[dict], measure_rows: S
             src = items[0]["name"] if items else "?"
             labels = [o["label"] for o in q.get("options") or [] if o.get("roles") and len(o["roles"]) == 1 and str(o["optionId"]).startswith("class:")]
             labels += [local_name(o["roles"][0]) for o in q.get("options") or [] if str(o["optionId"]).startswith("design-error:")]
-            labels = list(dict.fromkeys(labels))[:3]
+            labels = [] if q.get("unmatched") else list(dict.fromkeys(labels))[:3]
             choice_en = " or ".join(labels) if labels else "which class"
             choice_ru = " или ".join(labels) if labels else "какой класс"
             q["title"] = f"{src} · {n} {_en_plural(n, 'element', 'elements')}: {choice_en}?"
@@ -1412,6 +1412,33 @@ def _build_questions(groups: Sequence[dict], iri_of: Mapping, label_of: Mapping,
                 "groupIds": [g["groupId"]],
                 "text": text,
                 "textRu": text_ru,
+                "options": options,
+                "consequences": cons,
+                "_priority": g["priority"],
+            }
+        )
+    # A Revit group with no candidate at all (no profile, rule, name, IFC or population
+    # support) is asked once with every class, so a cold Revit read never leaves a family
+    # unmapped without a question (D-52). Grasshopper keeps its LLM proposal for this.
+    for g in groups:
+        if g["state"] != "unmapped" or str(g["sig"].get("platform") or "") != "revit":
+            continue
+        if any(r.get("decidedNone") or r.get("matched") for r in g["rows"]):
+            continue
+        options = [
+            {"optionId": f"class:{iri_of[c]}", "label": label_of[c], "roles": [iri_of[c]]}
+            for c in sorted(iri_of, key=lambda c: label_of[c])
+        ]
+        cons = [_consequences(g, o["optionId"], o["roles"]) for o in options]
+        options.append({"optionId": "none", "label": "None of these", "roles": []})
+        questions.append(
+            {
+                "questionId": "Q-" + _sha("assign-unmatched|" + g["groupId"], 8),
+                "type": "assign",
+                "unmatched": True,
+                "groupIds": [g["groupId"]],
+                "text": f"{_describe_group(g, 'en')}: no profile, rule, name or IFC evidence points to a DG class. Which class are they?",
+                "textRu": f"{_describe_group(g, 'ru')}: ни профиль, ни правила, ни имена, ни IFC не указывают на класс DG. Какой это класс?",
                 "options": options,
                 "consequences": cons,
                 "_priority": g["priority"],

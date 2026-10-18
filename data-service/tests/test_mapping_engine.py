@@ -778,3 +778,60 @@ def test_parameters_and_measures_are_validated_and_deterministic():
     assert json.dumps(a, sort_keys=True, ensure_ascii=False) == json.dumps(b, sort_keys=True, ensure_ascii=False)
     assert m.name_stem("1 оффсет") == "оффсет" and m.name_stem("T4_Offset") == "offset"
     assert m.property_acronym(m.PropertyInfo("ex:hasPlanarityDeviationM", "hasPlanarityDeviationM")) == "pd"
+
+
+# 7c — a Revit group with no evidence at all is asked once (plan 1303-14, D-52) ------
+
+
+def _revit_family(name, n, vertex_count):
+    return [
+        {
+            "nativeId": f"rvt-{name}-{i:03d}",
+            "platform": "revit",
+            "category": "Generic Models",
+            "family": name,
+            "type": "Type 1",
+            "name": f"{name} : Type 1",
+            "parameters": {},
+            "geometry": {"vertexCount": vertex_count},
+        }
+        for i in range(n)
+    ]
+
+
+def test_revit_group_without_evidence_gets_one_assign_question_with_every_class():
+    d = _revit_family("AC_Odd7", 12, 7)
+    r = _compute(d, platform_default="revit")
+    [group] = r["groups"]
+    assert group["status"] == "unmapped" and group["candidates"] == []
+    [q] = [q for q in r["questions"] if group["groupId"] in q["groupIds"]]
+    assert q["type"] == "assign" and q.get("unmatched") is True
+    classes, _ = _setup()
+    offered = sorted(o["roles"][0] for o in q["options"] if o["roles"])
+    assert offered == sorted(c.iri for c in classes)
+    assert q["options"][-1]["optionId"] == "none"
+    assert q["title"].endswith("which class?") and q["titleRu"].endswith("какой класс?")
+    # The answer maps the group and learns a profile; the next read asks nothing.
+    gp = next(o for o in q["options"] if o["label"] == "GlassPanel")
+    out = _decide(r, d, q, gp["optionId"], platform="revit")
+    r2 = _compute(d, platform_default="revit", decided=out["decided"])
+    assert r2["summary"]["confirmed"] == 12 and r2["summary"]["openQuestions"] == 0
+    r3 = _compute(_revit_family("AC_Odd7", 12, 7), out["profiles"], platform_default="revit")
+    assert r3["summary"]["auto"] == 12 and r3["summary"]["openQuestions"] == 0
+
+
+def test_grasshopper_group_without_evidence_still_gets_no_question():
+    d = [dict(x, platform="grasshopper", source="Odd") for x in _revit_family("AC_Odd7", 12, 7)]
+    r = _compute(d)
+    [group] = r["groups"]
+    assert group["status"] == "unmapped"
+    assert not [q for q in r["questions"] if group["groupId"] in q["groupIds"]]
+
+
+def test_revit_group_answered_none_is_not_asked_again():
+    d = _revit_family("AC_Odd7", 5, 7)
+    r = _compute(d, platform_default="revit")
+    q = r["questions"][0]
+    out = _decide(r, d, q, "none", platform="revit")
+    r2 = _compute(d, platform_default="revit", decided=out["decided"])
+    assert r2["summary"]["unmapped"] == 5 and r2["summary"]["openQuestions"] == 0
