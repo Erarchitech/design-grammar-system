@@ -468,6 +468,28 @@ def test_parameter_answers_are_learned():
     assert m.partition(r2)["parameters"][0]["name"].startswith(("Module Width", "Наклон", "КолВо"))
 
 
+def test_llm_excluded_slider_is_shown_and_learned_with_the_batch():
+    # Rehearsal 2026-10-18: the LLM held one of 14 sliders back as "not a DG parameter"; it was not
+    # in the batch question, so no answer and no profile covered it, and every later variant asked
+    # about it again (and paid an LLM call). The batch now shows it and accepting learns it.
+    llm = {"parameters": {"gh:doc:slider:ribs": {"isParameter": False, "confidence": 0.9, "reason": "profile detail"}}}
+    r = _full(params=_sliders(), llm=llm)
+    q = next(q for q in r["questions"] if q["type"] == "batch-parameters")
+    assert len(q["parameterIds"]) == 6 and q["heldParameterIds"] == ["gh:doc:slider:ribs"]
+    held = next(i for i in q["items"] if i["itemId"] == "gh:doc:slider:ribs")
+    assert held["proposal"] is None and held["state"] == "unmapped"
+    assert "КолВо ребер" in q["textRu"] and "не параметр" in q["textRu"]
+    assert q["titleRu"] == "6 слайдеров → параметры DG, 1 — не параметр (LLM)"
+    out = _decide(r, _stream_descriptors(), q, "accept-all")
+    assert out["decidedParameters"]["gh:doc:slider:ribs"] == []
+    assert sum(1 for v in out["decidedParameters"].values() if v == [m.PARAMETER_ROLE]) == 6
+    # Without an LLM proposal, the learned profiles map every slider: no question is left.
+    later = _full(params=_sliders(), profiles=out["profiles"])
+    assert not [x for x in later["questions"] if x["type"] == "batch-parameters"]
+    ribs = next(p for p in later["parameters"] if p["name"] == "КолВо ребер")
+    assert ribs["state"] == "unmapped" and ribs["source"] == "profile"
+
+
 def test_answer_reactivates_a_retired_profile():
     # Rehearsal 2026-10-18: profiles are retired (state != active) for a cold restart; the same
     # answer gives the same profileId, and a human answer must switch it back on, or the

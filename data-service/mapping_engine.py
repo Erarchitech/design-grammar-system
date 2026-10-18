@@ -1195,7 +1195,7 @@ def _parameter_item(r: Mapping) -> dict:
         "name": str(r["name"]),
         "componentId": _guid_or_none(nid.rsplit(":slider:", 1)[-1]) if ":slider:" in nid else None,
         "count": None,
-        "proposal": _ref(PARAMETER_ROLE, "DG parameter"),
+        "proposal": None if r["state"] == "unmapped" else _ref(PARAMETER_ROLE, "DG parameter"),
         "alternatives": [],
         "state": r["state"],
     }
@@ -1211,7 +1211,8 @@ def _decorate_questions(questions: list, groups: Sequence[dict], measure_rows: S
         if qtype in ("batch-measures", "map-measure"):
             items = [_measure_item(by_measure[i]) for i in q.get("measureIds") or [] if i in by_measure]
         elif qtype == "batch-parameters":
-            items = [_parameter_item(by_param[i]) for i in q.get("parameterIds") or [] if i in by_param]
+            ids = list(q.get("parameterIds") or []) + list(q.get("heldParameterIds") or [])
+            items = [_parameter_item(by_param[i]) for i in ids if i in by_param]
         else:
             items = [_group_item(by_group[i]) for i in q.get("groupIds") or [] if i in by_group]
         q["items"] = items
@@ -1231,8 +1232,10 @@ def _decorate_questions(questions: list, groups: Sequence[dict], measure_rows: S
             q["title"] = f"Output «{name}»: which DG property?"
             q["titleRu"] = f"Выход «{name}»: какое свойство DG?"
         elif qtype == "batch-parameters":
-            q["title"] = f"{k} {_en_plural(k, 'slider', 'sliders')} → DG parameters"
-            q["titleRu"] = f"{k} {_ru_plural(k, ('слайдер', 'слайдера', 'слайдеров'))} → параметры DG"
+            h = len(q.get("heldParameterIds") or [])
+            k -= h
+            q["title"] = f"{k} {_en_plural(k, 'slider', 'sliders')} → DG parameters" + (f", {h} not a parameter (LLM)" if h else "")
+            q["titleRu"] = f"{k} {_ru_plural(k, ('слайдер', 'слайдера', 'слайдеров'))} → параметры DG" + (f", {h} — не параметр (LLM)" if h else "")
         else:
             src = items[0]["name"] if items else "?"
             labels = [o["label"] for o in q.get("options") or [] if o.get("roles") and len(o["roles"]) == 1 and str(o["optionId"]).startswith("class:")]
@@ -1577,23 +1580,35 @@ def _parameter_questions(rows: Sequence[dict]) -> list:
     members = [r for r in rows if r["state"] == "suggested"]
     if not members:
         return []
+    # Sliders the LLM holds back as "not a DG parameter" have no human decision yet: they are shown
+    # in the same question, and its answer decides them too (rehearsal 2026-10-18: otherwise every
+    # later variant asked about them again).
+    held = [r for r in rows if r["state"] == "unmapped" and r.get("source") == "llm"]
     ids = sorted(m["nativeId"] for m in members)
+    held_ids = sorted(h["nativeId"] for h in held)
     n = len(members)
     shown = _shown_names([m["name"] for m in members])
-    qid = "Q-" + _sha("batch-parameters|" + "|".join(ids), 8)
-    for m in members:
+    qid = "Q-" + _sha("batch-parameters|" + "|".join(ids) + ("|held:" + "|".join(held_ids) if held_ids else ""), 8)
+    for m in members + held:
         m["questionId"] = qid
+    text = f"{n} {_en_plural(n, 'slider', 'sliders')} look like DG parameters of the design (PARAMETER STATE): {shown}."
+    text_ru = (
+        f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} {'похож' if n == 1 else 'похожи'} на параметры DG "
+        f"(PARAMETER STATE): {shown}."
+    )
+    if held:
+        names = _shown_names([h["name"] for h in held])
+        text += f" The LLM holds {names} back as not a DG parameter."
+        text_ru += f" LLM считает не параметром DG: {names}."
     return [
         {
             "questionId": qid,
             "type": "batch-parameters",
             "groupIds": [],
             "parameterIds": ids,
-            "text": f"{n} {_en_plural(n, 'slider', 'sliders')} look like DG parameters of the design (PARAMETER STATE): {shown}. Accept all?",
-            "textRu": (
-                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} {'похож' if n == 1 else 'похожи'} на параметры DG "
-                f"(PARAMETER STATE): {shown}. Принять все?"
-            ),
+            "heldParameterIds": held_ids,
+            "text": text + " Accept all?",
+            "textRu": text_ru + " Принять все?",
             "options": [
                 {"optionId": "accept-all", "label": "Accept all as DG parameters", "roles": None},
                 {"optionId": "none", "label": "None of these", "roles": []},
@@ -1900,7 +1915,8 @@ def _decide_items(
     kind = "parameters" if qtype == "batch-parameters" else "measures"
     by_id = {r["nativeId"]: r for r in result.get(kind) or []}
     ids = question.get("parameterIds") if kind == "parameters" else question.get("measureIds")
-    members = [nid for nid in sorted(ids or []) if nid in by_id]
+    held = set(question.get("heldParameterIds") or []) if kind == "parameters" else set()
+    members = [nid for nid in sorted(list(ids or []) + sorted(held)) if nid in by_id]
     if not members:
         raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question['questionId']} has nothing left to decide", 404)
     platform = str(result.get("platform") or platform_default).lower()
@@ -1912,7 +1928,8 @@ def _decide_items(
     for nid in members:
         row = by_id[nid]
         if kind == "parameters":
-            chosen = [PARAMETER_ROLE] if option_id == "accept-all" else []
+            # Accepting the batch accepts the proposal as shown: the LLM-held sliders are not parameters.
+            chosen = [PARAMETER_ROLE] if option_id == "accept-all" and nid not in held else []
             selector = {"kind": "parameter", "nameStem": row["nameStem"]}
             excluded = [] if chosen else [PARAMETER_ROLE]
         else:
