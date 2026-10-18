@@ -6,10 +6,10 @@ current_phase: 1303
 current_phase_name: pravilo-gh-obekt
 current_plan: 6
 status: executing
-stopped_at: "Phase 1303 MVP slice — plans 08/09 executed (CONNECTOR auto mapping, LLM proposal, placement up to VALIDATOR); owner live run on the clean copy open (2026-10-18)"
-last_updated: "2026-10-18T11:30:00.000Z"
+stopped_at: "Phase 1303 MVP slice — plans 08-10 executed; live rehearsal in DeGram through placement, VALIDATOR V1 11/11 and V2; profiles retired for the demo 19.10; next: demo, then Revit mapping (plan 1303-11)"
+last_updated: "2026-10-18T14:45:00.000Z"
 last_activity: 2026-10-18
-last_activity_desc: Phase 1303 plans 08/09 — automatic mapping in CONNECTOR, background LLM proposal, DG components placed by identity
+last_activity_desc: Phase 1303 plan 10 — proposal cards with per-answer undo, canvas tags, DeGram Mapping sub-tab; owner rehearsal passed through VALIDATOR and V2
 progress:
   total_phases: 9
   completed_phases: 1

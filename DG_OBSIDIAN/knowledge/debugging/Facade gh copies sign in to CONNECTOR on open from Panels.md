@@ -19,4 +19,6 @@ The panel values were not read. The source types were checked with a read-only R
 
 **Lesson for agents.** Reopening these copies is a real sign-in and a real session plus an LLM call. Do it only on purpose.
 
+**Update 2026-10-18 (afternoon).** To check the new mapping tags, Claude rendered the live canvas to a PNG (`GH_Canvas.DrawToBitmap` through RhinoCode). The view had just been zoomed near CONNECTOR, so the render showed the Username and Password Panels in plain text. The file was deleted at once and the values were not repeated anywhere; the owner was told and advised to change the password and remove the Panel before the demo, where the canvas is shown on screen. **Do not render or screenshot the canvas of these copies while the Panels exist.** Check tags and placement through component outputs (`Mapping`, `Report`) instead.
+
 Related: [[sessions/2026-10-18 Phase 1303 automatic mapping in CONNECTOR with LLM proposal and placement up to VALIDATOR|session]], `DG/src/DG.Grasshopper/Components/ConnectorComponent.cs`.
