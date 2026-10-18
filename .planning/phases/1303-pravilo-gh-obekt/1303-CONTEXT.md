@@ -95,6 +95,7 @@ Not in the slice: DGBN-01 (GH still reads via Bolt), DGBN-02 exact rule-to-port 
 - `C:\Users\Admin\source\repos\design-grammar-system\apps\revit-mcp\revit_mcp\documents.py` lines 173-199 — `get_selection_snapshot` (submodule checked out in the main folder only; read-only)
 - `C:\Users\Admin\source\repos\design-grammar-system\apps\revit-mcp\revit_mcp\degram_readonly.py` lines 24-46 — read-only allowlist
 - `.planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-CONTEXT.md` — D-09..D-15 (fork, no write routes, document pinning, snapshot shape)
+- Revit slice (D-44..D-53): copy source `C:\Users\Admin\source\repos\design-grammar-system\apps\revit-mcp` at `d8f0f24` (read only: `revit_mcp/documents.py`, `revit_mcp/parameters.py`, `degram_readonly.py`, `startup.py`, `main.py`, `extension.json`); installed copy `%APPDATA%\pyRevit\Extensions\revit-mcp.extension` (09.10); `tools/mapping/revit_read.py` (descriptor conversion to reuse); `data-service/mapping_engine.py` (`ev_population`, `populations_of`, `induce_profile`, `features`), `data-service/mapping_store.py` (`create_session`, `document_of`); `data-service/connectors.py` (`revit` connector id); `DG/src/DG.Core/Data/ConnectorSessionClient.cs` (sign-in sequence to mirror); DeGram `D:\dgb\src\degram_variant\{revit_bridge.py,mapping.py,lockdown.py,config_template.yaml}`, `apps/desktop/electron/degram/dg-config.ts` (`revitMcpDir`), `apps/desktop/src/degram/mapping-panel.tsx`
 
 ### Server and contracts
 - `data-service/dg_identity.py` lines 107-108, 335-354 — Representation platform/nativeIdKind, bind MERGE
@@ -134,7 +135,8 @@ Not in the slice: DGBN-01 (GH still reads via Bolt), DGBN-02 exact rule-to-port 
 <deferred>
 ## Deferred Ideas
 
-- Revit colour overrides / view filters / legends and writing `DG_MappingState` parameters (Revit write, Phase 1306 allowlist).
+- ~~Revit colour overrides / view filters / legends and writing `DG_MappingState` parameters~~ — pulled into the slice by D-50 (overrides and parameters); view filters and legends stay deferred.
+- LLM vote for Revit family groups; automatic Revit sessions on `DocumentChanged`; a separate GitHub repository for the DG Revit connector; the fate of the read-only `apps/revit-mcp` submodule (post-demo merge).
 - bSDD lookup client and IFC/bSDD alignment fields on `:Class` (ontology module rebuild per the alignment decision).
 - Label model over evidence sources (Snorkel-style source-accuracy estimation), conformal calibration of thresholds, ML classifiers on geometry.
 - Collaborative sessions and reconciliation of conflicting decisions between users.
@@ -162,7 +164,48 @@ Not in the slice: DGBN-01 (GH still reads via Bolt), DGBN-02 exact rule-to-port 
 - **D-41: DeGram boundary widened (owner decision).** The DeGram delegated principal reads mapping sessions and profiles and answers or undoes answers for its bound project with the user's stored role (route policy and SECURITY-BOUNDARY updated). DeGram has full access to the Grasshopper canvas bridge (all commands, owner: «создание и редактирование компонентов в Grasshopper, то есть полный доступ»); new bridge commands focus_component, start_mapping, get_mapping_status. No new canvas-editing command is built in this plan.
 - **D-42: DeGram «Модели → Mapping».** Under each connected model a Mapping sub-tab: progress bar, collapsible proposals and answers, coloured clickable component buttons (Grasshopper editor to the front, component selected and zoomed), per-answer undo, and «Запустить меппинг» when the model has no session (Grasshopper only; a Revit model shows existing sessions — Claude's call).
 - **D-43: Component work and build.** DeGram changes are committed in the build clone `D:\dgb\src` on `feature/mapping-mvp`, not pushed to the fork and no gitlink bump before the post-demo merge; an unsigned local test build is made and launched on this PC (owner authorized commits, build and launch).
+
+## Owner decisions 2026-10-18, Revit slice (plans 1303-11 and on)
+
+Supersede D-10 and D-20 (Revit read-only), D-27 (no geometry from Revit), the Revit line of D-24, the Revit-write item of the deferred list and the session prompt's "Revit — только чтение". Facts behind them, checked on 2026-10-18: no learned GH profile can match a Revit descriptor (the five cross-platform element profiles select on `geometry.vertexCount` only, Revit descriptors carry no geometry); `populations_of(ms-56907a90d11f)` = BottomTriangularPanel 250, GlassPanel 125, GroundFloorUnit 26, HexagonalUnit 100, Facade 1, so a Revit group of 125 triangular panels would get «GlassPanel» population evidence; Revit sessions have `document = null`, so the DeGram Revit row filters them out; all 28 profiles of 18.10 are retired.
+
+- **D-44: Design Grammars has its own revit-mcp fork — the DG Revit connector.** The source of the pinned DeGram fork (`Erarchitech/revit-mcp-server`, branch `degram/phase-1301`, `d8f0f24`, itself a fork of `Demolinator/revit-mcp-server`) is copied into the framework as `apps/dg-revit-connector/`: plain files committed in the worktree on `feature/mapping-mvp`, no submodule, no new GitHub repository, no push. The upstream and the source commit are recorded in `apps/dg-revit-connector/UPSTREAM.md`. The main-folder submodule `apps/revit-mcp` is only read (it is the copy source), never changed; its fate is decided at the post-demo merge. The connector installs as its own pyRevit extension (`dg-revit-connector.extension`) under its own Routes API name, beside the existing `revit-mcp.extension`. The existing extension is backed up and left as is; it remains the read path of `tools/mapping/revit_read.py`.
+- **D-45: All restrictions on Revit are lifted (owner: «разрешить запись и редактирование параметров и создание и удаление элементов в revit. сними все ограничения»).** This is the fresh explicit decision on CAD writes that CLAUDE.md requires. The DG fork registers every upstream route and MCP tool: parameter writes, element creation and deletion, colour and graphic overrides, selection, view operations and code execution. The 1301 read-only allowlists (`degram_readonly.py`, DeGram `REVIT_TOOL_NAMES`) do not apply to it. Kept as transport hygiene, not as Revit restrictions: the Routes and DG URLs stay loopback, and in DeGram the MCP server is a stdio child with no HTTP/SSE port. `spec/SECURITY-BOUNDARY.md` records the Revit connector zone and this decision.
+- **D-46: DeGram uses the DG fork.** DeGram's `DEGRAM_REVIT_MCP_DIR` (or its `revitMcpDir` setting) points to `apps/dg-revit-connector`. `degram_variant/lockdown.REVIT_TOOL_NAMES` and the `tools.include` list of `config_template.yaml` cover every tool of the fork, so the DeGram agent may write to Revit. Changes go in `D:\dgb\src` on `feature/mapping-mvp`: no push, no `hermes update`, no write to the installed Hermes profile; launched from `win-unpacked` with a scrubbed environment (D-43).
+- **D-47: The Revit connector works like CONNECTOR in Grasshopper.**
+  - A «DG» panel on the pyRevit ribbon holds «Вход», «Меппинг DG», «Очистить цвета» and a status line.
+  - Sign-in: a dialog asks for DG URL, username, password and project. The connector calls `POST /auth/login`, then `POST /auth/connector-session` with `connector_id = "revit"` (already in `connectors.CONNECTOR_IDS`), then a best-effort logout. The `dgk_` token lives only in Revit's process memory; the password is never stored or logged. Access is granted per connector as in Phase 1308 (connector-access for `revit`).
+  - As the connector principal it creates, reads and applies mapping sessions, so the route policy for create and apply does not change.
+  - DeGram starts a Revit mapping through a connector command (MCP tool → connector route, the analogue of GH `start_mapping`), reads its status the same way, and answers or undoes answers with its delegated token as now (D-41).
+  - After the last answer the connector applies the session itself, with a 10 s grace for undo (D-40 analogue).
+- **D-48: What the connector reads.**
+  - Scope: the selection when it is not empty, otherwise every model element instance visible in the active view (no annotations, views or types), at most 5000 (`max_elements`).
+  - A session is created on command only («Меппинг DG» or DeGram «Запустить меппинг»), never on `DocumentChanged`.
+  - Descriptor: the `revit_read.py` descriptor (UniqueId, category, family, type, parameters, IFC export) plus geometry read inside Revit. The adaptive placement-point count goes into `geometry.vertexCount` (required for adaptive components); bounding-box sizes in metres where cheap.
+  - Session label: `<document key> · HH:MM:SS`, the key being the `.rvt` name under the GH `DocumentKey` rule. `document` is filled for Revit sessions too (server `document_of` widened), so DeGram matches them to the open Revit model (`degram_variant.mapping.document_key` already strips `.rvt`).
+- **D-49: GH → Revit transfer goes through geometry; population is corrected.**
+  - With `geometry.vertexCount` on Revit descriptors, the cross-platform learned profiles (`platform = "*"`, selector `geometry.vertexCount`) and the equality rules (`hasVertexCount == 3/4/5/6` via the alias) apply to Revit unchanged. That is the transfer.
+  - No LLM call for Revit sessions in this slice.
+  - Population evidence is recomputed per applied group, not per class. Each class has the set of its confirmed group sizes (BottomTriangularPanel {125, 125}, GroundFloorUnit {25, 1}…). A group gets the evidence only when its size matches exactly one class, so a 125-group (GlassPanel and BottomTriangularPanel) gets none.
+  - A Revit session without `populationsFromSessionId` uses the latest applied Grasshopper session of the project.
+- **D-50: What the connector writes after mapping.** One Revit transaction per write, so each can be undone in Revit.
+  - Graphic overrides in the active view by mapping state, in the GH palette: orange ambiguous, yellow suggested, green confirmed, blue auto by profile. Written when the session is created and refreshed on apply and on command; «Очистить цвета» removes them.
+  - At apply: the shared instance parameters `DG_Class` (class labels, `;`-joined) and `DG_MappingState`. They are bound to the categories of the mapped elements from a shared-parameter file shipped with the connector, created when missing.
+- **D-51: Clicking a Revit row in DeGram shows it in Revit.** Revit rows of the DeGram Mapping sub-tab become clickable. The DeGram backend resolves the row (group) to its members' UniqueIds from the session. A connector command then selects those elements in Revit and zooms the active view to them (`Selection.SetElementIds` + `ShowElements`). Web UI chips stay non-clickable (D-39).
+- **D-52: Verification protocol (supersedes the Revit line of D-24).**
+  - Every write test runs on a copy of the facade model (`<name>-dg-mapping.rvt` beside the original the owner names; not in git). The original is never opened for writing.
+  - The 18.10 profiles stay retired. Live read 1 then gives at most one question per family/type group: separation comes from the vertex-count equality rules and population, not from profiles.
+  - An offline recompute of the same descriptors with the 18.10 profiles active in memory (no write) must give 0 questions. This is the proof of the GH → Revit transfer.
+  - Live read 2 gives 0 questions.
+  - After the live test, every profile created or switched back on during it is retired again with retiredReason «cold start for the demo…». This includes `*` vertex-count profiles: a Revit answer can induce the same profile id as a retired GH profile and reactivate it. Check: 0 active profiles.
+  - Gold for Revit is V1, HexagonalUnit only: 100 HexagonalUnit, 25 GroundFloorUnit, 125 GlassPanel, 125 BottomTriangularPanel, 1 Facade. «Both roles» stays an option, not an expected answer.
+  - Precision/recall 100 % against the gold for the elements the model holds. Real counts per family are recorded once the model is open.
+  - Evidence goes in `test/v12-hexagonal-facade-01/mapping-demo/` and PROTOCOL.md «Акт 3».
+- **D-53: Paths kept and ordering.**
+  - The Web UI «Импорт дескрипторов (JSON)» + `revit_read.py` path stays as a fallback.
+  - Plans are split by committing repository. Framework: connector fork, server, Web UI, docs. Component: DeGram in `D:\dgb\src`.
+  - The demo setup must stay intact. Images come from `git archive` with `pre-1303-11` rollback tags. The pyRevit extension is installed with a backup. DG.gha is not touched by this work.
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43)*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice)*
