@@ -85,7 +85,8 @@ def set_slider(doc, nickname, value):
     import System
 
     s = slider(doc, nickname)
-    old = float(s.CurrentValue)
+    # Rhino 8 CPython: CurrentValue is a System.Decimal, which float() does not accept.
+    old = System.Decimal.ToDouble(s.CurrentValue)
     s.SetSliderValue(System.Decimal(value))
     return old
 
