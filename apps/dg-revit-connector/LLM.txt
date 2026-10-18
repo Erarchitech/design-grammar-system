@@ -1,0 +1,86 @@
+# Revit MCP Server: brief for AI coding assistants
+
+Read this before changing code in this repository. Human contributors should
+start with CONTRIBUTING.md, which covers the same ground in more depth.
+
+## What this is
+
+An MCP server with 48 tools that let an AI assistant create, edit, query, and
+analyze a live Autodesk Revit model (Revit 2024-2027).
+
+    MCP client --(stdio | HTTP | SSE)--> main.py + tools/        [CPython 3.11+, user's PC]
+                                             |
+                                             | HTTP JSON, localhost:48884/revit_mcp/...
+                                             v
+                                         startup.py + revit_mcp/ [IronPython 2.7, inside Revit via pyRevit Routes]
+                                             |
+                                             v
+                                         Revit API
+
+Every tool is a pair: a thin MCP tool in tools/<name>_tools.py that calls an
+HTTP route implemented in revit_mcp/<module>.py.
+
+## Two runtimes - the rule that matters most
+
+| Path | Runtime | Allowed syntax |
+|---|---|---|
+| main.py, tools/, tests/ | CPython 3.11+ | modern Python |
+| startup.py, revit_mcp/ | IronPython 2.7 inside Revit | Python 2.7 only: no f-strings, type hints, async, walrus, pathlib |
+
+In revit_mcp/, import shared helpers with `from utils import ...`, log with
+`logger` rather than print, and start files with `# -*- coding: UTF-8 -*-`.
+
+## Files
+
+- main.py: FastMCP instance `mcp`, configuration (REVIT_HOST, REVIT_PORT,
+  MCP_HOST, MCP_PORT), `RevitClient` (get/post/image; never raises and returns
+  "Error: ..." strings for connection problems), and transport flags.
+- tools/__init__.py: the `_MODULES` table; one row registers a tool module.
+- tools/utils.py: `format_response()` converts a route's JSON into text for
+  the model. It also re-exports `Context`.
+- startup.py: registers every route module with the pyRevit `routes.API("revit_mcp")`.
+- revit_mcp/utils.py: `make_element_id`, `get_element_id_value`,
+  `suppress_warnings`, `get_element_name`, `find_family_symbol_safely`.
+- tests/test_offline.py: runs without Revit (`uv run pytest`).
+  tests/tool_contract.json pins every tool's name and input schema.
+- tests/live/: manual checks that need a running Revit.
+
+## Tool module -> route module
+
+analysis -> analysis | annotation -> annotation | building -> building
+clash -> clash | code_execution -> code_execution | colors -> colors
+detail -> detail | document -> document | documentation -> documentation
+editing -> editing | family -> placement | interop -> interop | mep -> mep
+model -> placement (list_levels) | parameter -> parameters | room -> rooms
+status -> status + model_info | structure -> structure | tag -> tags
+transform -> transforms | view_management -> view_management | view -> views
+
+## Conventions you must follow
+
+1. Units: tools take millimeters. Convert in the route (feet = mm / 304.8).
+2. Element IDs: always use make_element_id() / get_element_id_value(). A bare
+   DB.ElementId(int) is ambiguous in Revit 2027 because of the Int64 overloads.
+3. Transactions: wrap model changes in DB.Transaction, call suppress_warnings(t)
+   right after t.Start(), and roll back on exceptions. Without this a Revit
+   warning dialog blocks the Routes server. Do not open a transaction around
+   doc.Save/SaveAs, exports, or reads.
+4. Route responses: success returns {"status": "success", "message": ..., <data>};
+   failure returns {"error": "<actionable reason>"} with a 4xx/5xx status.
+   format_response keeps every data field, so return the IDs you create.
+5. Request bodies may arrive as str or dict:
+   data = json.loads(request.data) if isinstance(request.data, str) else request.data
+6. Tool docstrings are the model-facing UI: state units, valid values, and when
+   to prefer this tool over a similar one. Document each argument under Args.
+7. Use revit_post for anything that changes the model and revit_get for reads.
+8. Changing a tool's name or arguments is a breaking change: update
+   tests/tool_contract.json deliberately and say so in the PR.
+
+## Adding a tool (checklist)
+
+1. Route in revit_mcp/<module>.py (IronPython 2.7), registered in startup.py.
+2. Tool in tools/<module>_tools.py, registered via a row in tools/__init__.py.
+3. Regenerate tests/tool_contract.json; `uv run pytest` must pass.
+4. Update README.md tool tables and every "48 tools" count.
+5. Verify inside Revit: pyRevit Reload, then call the tool, including one failure case.
+
+A full worked example is in CONTRIBUTING.md under "Adding a new tool".

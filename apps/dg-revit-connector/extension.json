@@ -1,0 +1,14 @@
+{
+    "type": "extension",
+    "name": "revit-mcp-python",
+    "description": "Routes API that lets MCP clients (Claude, Cursor, Copilot, ...) drive Revit through pyRevit Routes. Pair with the MCP server in this repository.",
+    "url": "https://github.com/Demolinator/revit-mcp-server.git",
+    "website": "https://github.com/Demolinator/revit-mcp-server",
+    "author": "Talal Ahmed, based on work by Juan D. Rodriguez and Jean-Marc Couffin",
+    "author_profile": "https://github.com/Demolinator",
+    "builtin": "False",
+    "default_enabled": "True",
+    "rocket_mode_compatible": "True",
+    "image": "",
+    "dependencies": []
+}

@@ -1,0 +1,82 @@
+{
+ "get_current_view_info": {
+  "properties": {},
+  "title": "get_current_view_infoArguments",
+  "type": "object"
+ },
+ "get_element_properties": {
+  "properties": {
+   "element_id": {
+    "title": "Element Id",
+    "type": "integer"
+   },
+   "include_type_params": {
+    "default": true,
+    "title": "Include Type Params",
+    "type": "boolean"
+   }
+  },
+  "required": [
+   "element_id"
+  ],
+  "title": "get_element_propertiesArguments",
+  "type": "object"
+ },
+ "get_revit_model_info": {
+  "properties": {},
+  "title": "get_revit_model_infoArguments",
+  "type": "object"
+ },
+ "get_revit_status": {
+  "properties": {},
+  "title": "get_revit_statusArguments",
+  "type": "object"
+ },
+ "get_selection_snapshot": {
+  "properties": {
+   "identity": {
+    "additionalProperties": true,
+    "title": "Identity",
+    "type": "object"
+   },
+   "max_elements": {
+    "default": 200,
+    "title": "Max Elements",
+    "type": "integer"
+   },
+   "max_parameters": {
+    "default": 50,
+    "title": "Max Parameters",
+    "type": "integer"
+   }
+  },
+  "required": [
+   "identity"
+  ],
+  "title": "get_selection_snapshotArguments",
+  "type": "object"
+ },
+ "list_category_parameters": {
+  "properties": {
+   "category_name": {
+    "title": "Category Name",
+    "type": "string"
+   }
+  },
+  "required": [
+   "category_name"
+  ],
+  "title": "list_category_parametersArguments",
+  "type": "object"
+ },
+ "list_levels": {
+  "properties": {},
+  "title": "list_levelsArguments",
+  "type": "object"
+ },
+ "list_open_documents": {
+  "properties": {},
+  "title": "list_open_documentsArguments",
+  "type": "object"
+ }
+}
