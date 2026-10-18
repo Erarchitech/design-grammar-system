@@ -1,21 +1,30 @@
 # Инструкция по тестированию автоматического меппинга (Phase 1303, MVP-срез)
 
 **Для кого:** владелец проекта, репетиция 18.10 перед демо 19.10.
-**Что проверяем:** DG сам предлагает меппинг элементов фасада `v12-hexagonal-facade-01` из Grasshopper и Revit на классы DG, а слайдеров — на свойства DG. Подтверждение — групповыми вопросами в Web UI, дальше работают обучаемые профили и проверка правилами.
-**Время:** около 1–1,5 часа.
+**Что проверяем:** на определении фасада **без компонентов DG** система сама находит связи. Потоки элементов становятся классами, выходы расчётных компонентов — свойствами DG, слайдеры — параметрами DG. LLM предлагает, вы подтверждаете в Web UI. После согласования CONNECTOR сам расставляет компоненты DG вплоть до VALIDATOR.
+**Время:** около 1 часа.
 
-**Что изменилось (18.10, план 1303-08):** компонент C# Script, проводка и Custom Preview больше не нужны. Меппинг встроен в **CONNECTOR**: после входа он сам читает холст. Элементы — это геометрия, подключённая к OBJECT STATE. Учитываются названия групп, тексты scribble, имена компонентов и класс, уже выбранный в OBJECT STATE. Именованные слайдеры тоже идут в меппинг. CONNECTOR отправляет сессию в DG, раскрашивает элементы в Rhino, следит за ответами и сам применяет меппинг, когда вопросов не осталось.
+**Что изменилось (18.10, план 1303-09):**
+- Слайдер — это **параметр DG** (вход PARAMETER STATE, ParameterId = имя слайдера), а не свойство.
+- Значение свойства берётся из выхода расчётного компонента (скрипт измерений, Area…). Выход сопоставляется со свойством по совпадению значений, имени, тексту на холсте и предложению LLM.
+- LLM вызывается один раз на сессию, в фоне, и работает около 2–3 минут. Пока он думает, сессия уже открыта с детерминированными вопросами; когда предложение приходит, вопросы пересчитываются, а уже данные ответы сохраняются.
+- После согласования CONNECTOR **сам ставит** компоненты: GRAPH DECONSTRUCT → METAGRAPH, по OBJECT STATE на класс, RULE BY ID + PROPERTY STATE на каждое правило, PARAMETER STATE, DESIGN STATE, VALIDATOR.
+- Класс в OBJECT STATE задаётся текстом `class:<IRI>`, правило — по Rule_Id. **Индексных List Item больше нет.** Поэтому новые классы в онтологии не сдвинут выбор: прежняя проблема «индексные выборщики сдвинулись, и в OBJECT STATE стоят не те классы» закрыта.
 
 **Где всё лежит:** рабочая папка `C:\Users\Admin\source\repos\dg-mapping` (ветка `feature/mapping-mvp`). Основная папка и работа 1309 не затрагиваются.
+**Тестовый файл:** `test\v12-hexagonal-facade-01\v12-hexagonal-facade-01-auto-mapping.gh` — очищенная копия фасада. Из неё удалены состояния DG, VALIDATION GRAPH, REINSTATE, LISTENER и 17 индексных List Item. Оставлены CONNECTOR, геометрия, Join Curves, Bounding Box и скрипт измерений. Копия не в git; не сохраняйте её поверх, если хотите повторить прогон с нуля.
 
-**Уже сделано без вас:**
-- стек пересобран из коммитов `6014cbc`…`efc3e3a`;
-- новый DG.gha установлен в `%APPDATA%\Grasshopper\Libraries\DG`, старая версия сохранена в `%LOCALAPPDATA%\DG\plugin-backups\pre-1303-08-20261018-085637`;
-- Rhino открыт с копиями `v12-hexagonal-facade-01-mapping.3dm` и `.gh`;
-- пробное чтение этого холста без отправки дало 376 элементов в 5 потоках и 14 именованных слайдеров;
-- расчёт на реальном графе проекта дал 6 вопросов (ниже).
+**Уже сделано без вас (18.10):**
+- стек пересобран: data-service из коммита `b6bfd20`, Web UI из `5ae3972`; DG.gha этой версии установлен (`%APPDATA%\Grasshopper\Libraries\DG`, хеш DG.gha начинается с `32BC8602`);
+- Rhino открыт с `v12-hexagonal-facade-01-mapping.3dm` и очищенной копией `.gh`;
+- чтение холста: 502 элемента в 7 потоках, 18 расчётных выходов, 14 слайдеров. Пропущены «All panels» (объединение Panels A/B/C), «modules» (поверхности над контурами 6- и 5-модулей) и второй «bbox F»;
+- пробный расчёт на реальном графе проекта с настоящим LLM (`mimo-v2.5-pro`): 13 вопросов без LLM, 6 с LLM. Все 11 правил проекта нашли свой выход и поток так же, как в ручной разводке: AR/W/PD → Panels B, VC → Panels A, LO/HG/HV → 6-Module contours, GG/GV → 5-Module contours, H → bbox F;
+- пробная расстановка на этой копии (без сохранения): 5 OBJECT STATE (125 / 1 / 125 / 25 / 100), 11 RULE BY ID + PROPERTY STATE (у каждого столько значений, сколько элементов в его OBJECT STATE), PARAMETER STATE, DESIGN STATE (376 объектов, 976 значений свойств), VALIDATOR. После проверки копия переоткрыта с диска в исходном виде;
+- **живая сессия из Rhino** на новом стеке (`ms-98a39fa841bc`, 10:54): создана сама при открытии копии с 13 вопросами; предложение LLM пришло в фоне через 2 мин 17 с, вопросов стало 6; CONNECTOR показал «Map: 6?».
 
-**Вживую не проверено:** вход CONNECTOR, создание сессии из Rhino, цвета, ответы в браузере, применение. Это и есть этот прогон.
+**Важно про вход.** В обеих копиях фасада (`…-mapping.gh` и `…-auto-mapping.gh`) Username и Password подаются на CONNECTOR из двух Panel, а Toggle Connect сохранён в True. Значит, пароль хранится в этих .gh открытым текстом, и копия входит в систему сама при каждом открытии. Значения я не читал. Копии в `.gitignore` и в git не попадают, но не передавайте их. Надёжнее удалить Panel с паролем и вводить пароль прямо во вход Password: он не сохраняется в .gh. Из-за автовхода каждое открытие копии создаёт сессию; за 18.10 их накопилось около 10 (`…-auto-mapping · ЧЧ:ММ:СС`, не применены). Берите самую новую — панель так и делает.
+
+**Вживую не проверено:** ответы в браузере, применение, расстановка после применения на живой сессии, METAGRAPH с правилами после входа, отчёт VALIDATOR. Это и есть этот прогон.
 
 ---
 
@@ -26,41 +35,50 @@
 
 ## Шаг 1. Панель «Меппинг» (1 минута)
 
-Войдите в Web UI → «Проекты» → `v12-hexagonal-facade-01` → раскройте **«Меппинг»**. **Оставьте панель открытой:** она сама подхватывает новые сессии, приходящие из Grasshopper (раз в 5 секунд).
+Войдите в Web UI → «Проекты» → `v12-hexagonal-facade-01` → раскройте **«Меппинг»**. **Оставьте панель открытой:** она подхватывает новые сессии из Grasshopper и перечитывает сессию, пока готовится предложение LLM (раз в 5 секунд).
 
-## Шаг 2. Вход в CONNECTOR — меппинг стартует сам (3 минуты)
+## Шаг 2. Вход в CONNECTOR — меппинг стартует сам (5 минут)
 
-1. В Rhino открыта копия `v12-hexagonal-facade-01-mapping.gh`. Если Rhino закрыт, откройте `test\v12-hexagonal-facade-01\v12-hexagonal-facade-01-mapping.3dm`, затем `.gh` из папки `dg-mapping`.
-2. На **CONNECTOR** введите Username и Password, Project = `v12-hexagonal-facade-01`, затем Connect = True. Вход `AutoMap` по умолчанию включён. **К выходу `Session` не подключайте Panel.**
+1. В Rhino открыта очищенная копия `v12-hexagonal-facade-01-auto-mapping.gh`. Если Rhino закрыт: откройте `test\v12-hexagonal-facade-01\v12-hexagonal-facade-01-mapping.3dm`, затем `…-auto-mapping.gh`.
+2. Если CONNECTOR уже пишет «Signed in», вход выполнен из сохранённых Panel (см. «Важно про вход»). Иначе введите Username и Password, Project = `v12-hexagonal-facade-01`, затем Connect = True. Вход `AutoMap` по умолчанию включён. **К выходу `Session` не подключайте Panel.** Для чистого старта в Web UI закройте копию без сохранения и откройте снова: новая сессия создастся сама.
 3. **Ожидаемо через 3–5 секунд:**
-   - сообщение на CONNECTOR: «Connected · Signed in · Map: 6?»;
+   - на CONNECTOR: «Connected · Signed in · Map: 13?» (число может отличаться на 1–2);
    - в Rhino элементы раскрашены: оранжевый — неоднозначно, жёлтый — предложено;
-   - в Web UI появилась сессия `v12-hexagonal-facade-01-mapping · ЧЧ:ММ:СС` с **6 вопросами** и таблицей «Слайдеры».
-4. Выход `Mapping` у CONNECTOR (можно подключить Panel) показывает сводку: элементы, слайдеры, открытые вопросы, потоки.
+   - в Web UI появилась сессия `v12-hexagonal-facade-01-auto-mapping · ЧЧ:ММ:СС`. Под таблицами строка «Предложение LLM готовится; вопросы обновятся, когда оно придёт». Таблицы «Расчётные выходы» и «Параметры DG» заполнены.
+4. **Подождите 2–3 минуты**, пока строка не сменится на «Предложение LLM: ok · mimo-v2.5-pro». Вопросов станет около 6, CONNECTOR покажет новое число в течение 3 секунд. Отвечать раньше можно: ответы сохранятся, но вопросов будет больше.
 
 ## Шаг 3. Акт 1 — ответы (10 минут)
 
-Вопросы показывают реальные ошибки подключения. Индексные List Item сдвинулись, и в OBJECT STATE стоят не те классы. Отвечайте так:
+После прихода LLM вопросы такие (порядок и формулировки могут немного отличаться):
 
 | Вопрос (кратко) | Что увидите | Ответ |
 |---|---|---|
-| 125 элементов из **Panels B** (4 вершины) | GlassPanel 0.99 / FacadeModule 0.88 — «OS GlassPanel» подключён к FacadeModule | **GlassPanel** (или «Обе роли») |
-| 100 элементов из **join HU** (6 вершин) — «ошибка меппинга или проекта?» | как GroundFloorUnit нарушено R11 ×100, как HexagonalUnit всё выполняется | **HexagonalUnit** |
-| 25 элементов из **join GU** (5 вершин) | GroundFloorUnit / GlassPanel — «OS GroundFloorUnit» подключён к GlassPanel | **GroundFloorUnit** |
-| 1 элемент из **bbox F** | Facade / FacadeModule / Corridor — «OS Facade» подключён к Corridor | **Facade** |
-| 125 из **Panels A** → BottomTriangularPanel | пакетное подтверждение | **«Принять все предложенные классы»** |
-| 5 слайдеров «Module Width F1 … F5» | похожи на свойство DG hasWidthM (GlassPanel) | **hasWidthM** |
+| 120 элементов из **Panels A** (3 вершины) — «ошибка меппинга или проекта?» | как GlassPanel нарушено R_GLASS_ASPECTRATIO_MIN ×120, как BottomTriangularPanel всё выполняется | **BottomTriangularPanel** |
+| 123 элемента из **Panels C** (3 вершины) — то же | то же | **BottomTriangularPanel** (Panels C не измеряется скриптом, поэтому OBJECT STATE для него не ставится — так и задумано) |
+| 7 групп с одним очевидным классом | bbox F → Facade, 5-Module contours → GroundFloorUnit, 6-Module contours → HexagonalUnit, Panels B → GlassPanel, … | **«Принять все предложенные классы»** |
+| 12 расчётных выходов с одним очевидным свойством | AR → hasAspectRatio, W → hasWidthM, PD → hasPlanarityDeviationM, VC/HV/GV → hasVertexCount, HG/GG → hasGapCount, LO → hasLevelOffsetM, H → hasTotalHeightM, … | **«Принять все предложенные свойства»** |
+| Выход «D (Planar)» (1 значение) | hasGapCount (0.62) | **«Не свойство DG»** (это планарность bbox/подвала, правилами не используется) |
+| 14 слайдеров как параметры DG | 1 оффсет, 2 оффсет, Module Width F1…F5, Наклон …, КолВо ребер, … | **«Принять все как параметры DG»** |
 
-**Ожидаемо:**
-- цвета в Rhino становятся зелёными: CONNECTOR проверяет сессию каждые 3 с;
-- после последнего ответа CONNECTOR сам применяет меппинг: сообщение «· Map ✓», выход `ClassNames` = BottomTriangularPanel, Facade, GlassPanel, GroundFloorUnit, HexagonalUnit, `ByClass` — 5 веток (125 / 1 / 125 / 25 / 100);
-- в Web UI в таблице «Профили» появились выученные профили (классы и слайдер), в таблице «Слайдеры» Module Width F1…F5 → hasWidthM «Подтверждено».
+Если LLM не пришёл (строка «unavailable»), вопросов 13: добавятся отдельные вопросы по выходам. Отвечайте по смыслу: B Panel Ratio → hasAspectRatio, GG и HG → hasGapCount, GV и HV → hasVertexCount, H → hasTotalHeightM, D (1 значение) → «Не свойство DG».
 
-**Запишите id сессии** (`ms-…`, в Web UI или в выходе `Mapping`) — он нужен в шаге 5.
+**Ожидаемо после последнего ответа (CONNECTOR проверяет сессию каждые 3 с):**
+- цвета в Rhino зелёные; на CONNECTOR «· Map ✓»;
+- справа от холста появляется группа **«DG · автоматический меппинг (CONNECTOR)»**: GRAPH DECONSTRUCT, METAGRAPH, 5 OBJECT STATE (`OS BottomTriangularPanel`, `OS Facade`, `OS GlassPanel`, `OS GroundFloorUnit`, `OS HexagonalUnit`), 11 пар `R <Rule_Id>` + `PS <Rule_Id>`, `PARAMETER STATE (auto)`, `DESIGN STATE (auto)`, `VALIDATOR (auto)`;
+- выход `Mapping` у CONNECTOR (можно подключить Panel) содержит строку «placed 5 OBJECT STATE, 11 PROPERTY STATE (+RULE BY ID), 14 parameters, DESIGN STATE, VALIDATOR» (13 параметров, если LLM счёл один слайдер вспомогательным) и примечания: потоки Panels C и Basement contour не поставлены, потому что их не измеряет ни один выход;
+- у каждого OBJECT STATE вход `Object` — текст `class:…#<Класс>`, без List Item.
 
-## Шаг 4. Акт 2 — обучение на вариантах (5 минут)
+**Запишите id сессии** (`ms-…`, в Web UI или в выходе `Mapping`) — он нужен в шаге 6.
 
-В PowerShell (одно окно до конца):
+## Шаг 4. VALIDATOR (5 минут)
+
+1. METAGRAPH получает правила после входа CONNECTOR. Каждый `R <Rule_Id>` показывает найденное правило; предупреждение «not found» значит, что такого Rule_Id в проекте нет.
+2. Подключите Panel к `VALIDATOR (auto)` → `Report`. `SendValid` = False, в Speckle ничего не отправляется. **Ожидаемо на текущих слайдерах (V1):** по 11 правилам нарушений нет.
+3. Если хотите увидеть нарушения: в Шаге 5 запустите вариант V2.
+
+## Шаг 5. Акт 2 — обучение на вариантах (5 минут)
+
+Сразу после расстановки CONNECTOR видит новую разводку DG и создаёт ещё одну сессию. Ожидаемо: без вопросов, по выученным профилям. В PowerShell (одно окно до конца):
 
 ```powershell
 $rc = "C:\Program Files\Rhino 8\System\RhinoCode.exe"
@@ -68,11 +86,9 @@ $dg = "C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mappi
 & $rc script "$dg\dgmap_act_v2.py"
 ```
 
-Скрипт только выставляет слайдеры варианта. **Через несколько секунд CONNECTOR сам отправляет новое состояние, и в Web UI появляется новая сессия.** Ожидаемо: 0 вопросов, всё синее (авто по профилю), Module Width → hasWidthM «Авто по профилю». Нарушения правил (V2: R2 ×12, R7 ×57) — сигналы проекта, а не вопросы. Затем так же `dgmap_act_v3.py` (R1 ×4) и по желанию `dgmap_act_v4.py` (R6 ×14).
+Скрипт только выставляет слайдеры варианта. Через несколько секунд CONNECTOR сам отправит новое состояние, в Web UI появится новая сессия. Ожидаемо: 0 вопросов, всё синее (авто по профилю). VALIDATOR пересчитается, и нарушения правил V2 станут сигналами проекта, а не вопросами меппинга. Затем так же `dgmap_act_v3.py` и по желанию `dgmap_act_v4.py`. Вернуть V1: `& $rc script "$dg\dgmap_reset_v1.py"`. Сводку CONNECTOR в `%TEMP%\dgmap-rhinocode.log` пишет `& $rc script "$dg\dgmap_refresh.py"`. RhinoCode не передаёт скрипту параметры, поэтому у каждого действия свой файл; первый запуск после паузы иногда проходит вхолостую — тогда повторите.
 
-`& $rc script "$dg\dgmap_refresh.py"` записывает в `%TEMP%\dgmap-rhinocode.log` то, что показывает CONNECTOR (строка `EVIDENCE`). Вернуть V1: `& $rc script "$dg\dgmap_reset_v1.py"`. RhinoCode не передаёт скрипту параметры, поэтому у каждого действия свой файл. Первый запуск после паузы иногда проходит вхолостую — тогда повторите.
-
-## Шаг 5. Акт 3 — Revit, только чтение (15 минут)
+## Шаг 6. Акт 3 — Revit, только чтение (15 минут, по желанию)
 
 1. Откройте модель фасада в Revit 2024 (pyRevit с расширением DeGram). Проверка: http://127.0.0.1:48884/revit_mcp/status/ отвечает JSON.
 2. Выделите элементы фасада (до 1000), окно модели фасада активно.
@@ -82,20 +98,11 @@ $dg = "C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mappi
    python tools\mapping\revit_read.py --out test\v12-hexagonal-facade-01\mapping-demo\evidence\act3-revit-read1.json --label act3-revit-read1 --populations-from ms-XXXXXXXXXXXX
    ```
    Скрипт печатает число элементов по семействам. В Revit ничего не записывается.
-4. Если имена семейств осмысленные (`Hex…`, `Glass…`), скопируйте `mapping-demo\vocabulary.example.json` в `vocabulary.json`, впишите слова из реальных имён и повторите команду с `--vocabulary test\v12-hexagonal-facade-01\mapping-demo\vocabulary.json`.
-5. Web UI → «Меппинг» → **«Импорт дескрипторов (JSON)»** → файл → «Создать сессию». Ожидаемо: вопросы по группам семейств. Повторное чтение (`act3-revit-read2`) — 0 вопросов.
-
-## Шаг 6. Акт 4 — проверка правилами (10 минут, по желанию)
-
-Индексные выборщики классов перед OBJECT STATE сейчас дают не те классы. Замените их выходами CONNECTOR:
-- для каждого из 5 OBJECT STATE: `Object` ← List Item(`CONNECTOR.ClassObjects`, k), `Geometry` ← Tree Branch(`CONNECTOR.ByClass`, {k});
-- k по порядку `ClassNames`: 0 BottomTriangularPanel, 1 Facade, 2 GlassPanel, 3 GroundFloorUnit, 4 HexagonalUnit.
-
-CONNECTOR увидит новое подключение и создаст ещё одну сессию, на этот раз без вопросов. VALIDATOR (`SendValid` = False) → `Report`: на V1 ожидается 11 из 11 правил пройдены.
+4. Web UI → «Меппинг» → **«Импорт дескрипторов (JSON)»** → файл → «Создать сессию». Ожидаемо: вопросы по группам семейств. Повторное чтение (`act3-revit-read2`) — 0 вопросов.
 
 ## Шаг 7. Что сохранить и прислать мне
 
-- Скриншоты: CONNECTOR с сообщением «Map: 6?», цвета в Rhino до и после ответов, вопросы и таблицы «Слайдеры» и «Профили» в Web UI, сессия варианта V2 без вопросов, Revit-сессия, VALIDATOR Report.
+- Скриншоты: CONNECTOR с числом вопросов до и после прихода LLM, вопросы и таблицы «Расчётные выходы», «Параметры DG», «Профили» в Web UI, холст с группой «DG · автоматический меппинг (CONNECTOR)», вход `Object` одного OBJECT STATE, VALIDATOR Report, сессия варианта V2 без вопросов.
 - Текст выхода `Mapping` CONNECTOR и лог `%TEMP%\dgmap-rhinocode.log`.
 - Где результат не совпал с «Ожидаемо»: номер шага и текст.
 
@@ -106,10 +113,13 @@ CONNECTOR увидит новое подключение и создаст ещ�
 | 502 или «Меппинг недоступен» | `docker start data-service`, через 20 с Ctrl+Shift+R |
 | CONNECTOR «Map !», в выходе `Mapping` «DG refused the session (401 …)» | вход истёк — Connect = False, затем True |
 | `Mapping` «403 PROJECT_FORBIDDEN» | CONNECTOR привязан к другому проекту — проверьте Project |
+| «Предложение LLM: unavailable» | LLM недоступен или не уложился в 7 минут; отвечайте на 13 вопросов по таблице выше |
 | Сессия не появилась в Web UI | нажмите «Обновить» в панели; проверьте выход `Mapping` у CONNECTOR |
+| Компоненты не появились после «Map ✓» | в выходе `Mapping` смотрите строку `placed …` или `nothing to place …`; расстановка выполняется только на холсте без OBJECT STATE / PROPERTY STATE / VALIDATOR |
+| `R <Rule_Id>` пишет «No rules yet» | METAGRAPH ещё не получил правила — проверьте вход CONNECTOR |
+| Хотите повторить с нуля | закройте `.gh` без сохранения и откройте очищенную копию снова |
 | Слишком много сессий при перетаскивании слайдера | так задумано: сессия создаётся после 1,5 с покоя холста; можно временно выключить `AutoMap` |
 | В логе RhinoCode `refusing to run` | открыт не тот файл — нужна копия `…-mapping.gh` |
-| Компоненты-«пустышки» на холсте | старые GUID — замените компонент текущим |
 
 ## Откат
 
@@ -120,4 +130,4 @@ CONNECTOR увидит новое подключение и создаст ещ�
   docker tag design-grammar-system-design-grammars:pre-1303 design-grammar-system-design-grammars
   docker compose -p design-grammar-system -f C:\Users\Admin\source\repos\design-grammar-system\docker-compose.yml --project-directory C:\Users\Admin\source\repos\design-grammar-system up -d --no-build --no-deps data-service design-grammars
   ```
-- **Запасной путь:** прототип `gh-mapping-intake.cs` (C# Script) лежит в `test\v12-hexagonal-facade-01`.
+- **Прежний сценарий:** копия `v12-hexagonal-facade-01-mapping.gh` с ручной разводкой осталась без изменений.
