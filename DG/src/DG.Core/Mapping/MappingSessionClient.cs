@@ -1,0 +1,310 @@
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using DG.Core.Data;
+
+namespace DG.Core.Mapping;
+
+/// <summary>Mapping state of one element as the session reports it.</summary>
+public sealed record MappingElementState(string State, IReadOnlyList<string> RoleLabels);
+
+/// <summary>Mapping state of one slider: state and the proposed or confirmed property.</summary>
+public sealed record MappingParameterState(string NativeId, string Name, string State, string? PropertyLabel, string? PropertyIri);
+
+/// <summary>The parts of a mapping session CONNECTOR shows on the canvas.</summary>
+public sealed class MappingSessionState
+{
+    public string SessionId { get; init; } = string.Empty;
+
+    public int Total { get; init; }
+
+    public int OpenQuestions { get; init; }
+
+    public IReadOnlyDictionary<string, int> Counts { get; init; } = new Dictionary<string, int>();
+
+    public IReadOnlyDictionary<string, MappingElementState> Elements { get; init; } = new Dictionary<string, MappingElementState>();
+
+    public IReadOnlyList<MappingParameterState> Parameters { get; init; } = Array.Empty<MappingParameterState>();
+
+    /// <summary>Changes whenever an answer in the Web UI changes something visible on the canvas.</summary>
+    public string Revision { get; init; } = string.Empty;
+}
+
+/// <summary>Applied mapping: class IRIs per element and the property of each mapped slider.</summary>
+public sealed class MappingApplyResult
+{
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> RolesByElement { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    public IReadOnlyList<MappingParameterState> Parameters { get; init; } = Array.Empty<MappingParameterState>();
+}
+
+/// <summary>Outcome of one call: the parsed value, or the HTTP status and DG error code.</summary>
+public sealed record MappingCallResult<T>(T? Value, int Status, string? ErrorCode)
+    where T : class
+{
+    public bool Ok => Value is not null;
+}
+
+/// <summary>
+/// HTTP client for the mapping routes (<c>/mapping/sessions</c>, <c>/{id}</c>, <c>/{id}/apply</c>).
+/// The connector session (<c>dgk_</c>) goes only into the Authorization header, never into a
+/// field, URI, log or exception message (as <see cref="ConnectorSessionClient"/>).
+/// No Grasshopper SDK dependency, so it is testable from DG.Tests.
+/// </summary>
+public sealed class MappingSessionClient
+{
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
+    private readonly HttpClient _httpClient;
+
+    public MappingSessionClient(HttpMessageHandler? handler = null)
+    {
+        _httpClient = handler is null ? new HttpClient() : new HttpClient(handler);
+        _httpClient.Timeout = RequestTimeout;
+    }
+
+    public Task<MappingCallResult<MappingSessionState>> CreateAsync(
+        string dataServiceUrl, string? token, string requestJson, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Post, $"{Normalize(dataServiceUrl)}/mapping/sessions", token, requestJson, ParseSession, cancellationToken);
+
+    public Task<MappingCallResult<MappingSessionState>> GetAsync(
+        string dataServiceUrl, string? token, string project, string sessionId, CancellationToken cancellationToken = default) =>
+        SendAsync(
+            HttpMethod.Get,
+            $"{Normalize(dataServiceUrl)}/mapping/sessions/{Uri.EscapeDataString(sessionId)}?project={Uri.EscapeDataString(project)}",
+            token,
+            null,
+            ParseSession,
+            cancellationToken);
+
+    public Task<MappingCallResult<MappingApplyResult>> ApplyAsync(
+        string dataServiceUrl, string? token, string project, string sessionId, CancellationToken cancellationToken = default) =>
+        SendAsync(
+            HttpMethod.Post,
+            $"{Normalize(dataServiceUrl)}/mapping/sessions/{Uri.EscapeDataString(sessionId)}/apply",
+            token,
+            JsonSerializer.Serialize(new Dictionary<string, string> { ["project"] = project }),
+            ParseApply,
+            cancellationToken);
+
+    private async Task<MappingCallResult<T>> SendAsync<T>(
+        HttpMethod method, string url, string? token, string? body, Func<string, T> parse, CancellationToken cancellationToken)
+        where T : class
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(method, url);
+            if (!DataServiceRequestAuth.TryApplyConnectorToken(request, token, out _))
+            {
+                return new MappingCallResult<T>(null, 0, "SIGN_IN_REQUIRED");
+            }
+
+            if (body is not null)
+            {
+                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                return new MappingCallResult<T>(null, (int)response.StatusCode, ErrorCode(text));
+            }
+
+            return new MappingCallResult<T>(parse(text), (int)response.StatusCode, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            // Network failure, timeout or malformed response; message-free by design.
+            return new MappingCallResult<T>(null, 0, "UNREACHABLE");
+        }
+    }
+
+    public static MappingSessionState ParseSession(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var total = 0;
+        var open = 0;
+        if (root.TryGetProperty("summary", out var summary) && summary.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var p in summary.EnumerateObject())
+            {
+                if (p.Value.ValueKind == JsonValueKind.Number && p.Value.TryGetInt32(out var n))
+                {
+                    counts[p.Name] = n;
+                }
+            }
+
+            counts.TryGetValue("total", out total);
+            counts.TryGetValue("openQuestions", out open);
+        }
+
+        var elements = new Dictionary<string, MappingElementState>(StringComparer.Ordinal);
+        var revision = new StringBuilder();
+        if (root.TryGetProperty("elements", out var els) && els.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var el in els.EnumerateArray())
+            {
+                var id = Text(el, "nativeId");
+                if (id is null)
+                {
+                    continue;
+                }
+
+                var state = Text(el, "state") ?? "unmapped";
+                var labels = new List<string>();
+                if (el.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var r in roles.EnumerateArray())
+                    {
+                        var label = Text(r, "label") ?? LocalName(Text(r, "classIri"));
+                        if (!string.IsNullOrEmpty(label))
+                        {
+                            labels.Add(label);
+                        }
+                    }
+                }
+
+                elements[id] = new MappingElementState(state, labels);
+                revision.Append(id).Append('=').Append(state).Append(':').Append(string.Join("+", labels)).Append(';');
+            }
+        }
+
+        var parameters = ParseParameters(root);
+        foreach (var p in parameters)
+        {
+            revision.Append(p.NativeId).Append('=').Append(p.State).Append(':').Append(p.PropertyIri).Append(';');
+        }
+
+        return new MappingSessionState
+        {
+            SessionId = Text(root, "sessionId") ?? string.Empty,
+            Total = total,
+            OpenQuestions = open,
+            Counts = counts,
+            Elements = elements,
+            Parameters = parameters,
+            Revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
+        };
+    }
+
+    public static MappingApplyResult ParseApply(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var roles = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        if (root.TryGetProperty("elements", out var els) && els.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var el in els.EnumerateArray())
+            {
+                var id = Text(el, "nativeId");
+                if (id is null || !el.TryGetProperty("roles", out var rs) || rs.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                roles[id] = rs.EnumerateArray()
+                    .Where(r => r.ValueKind == JsonValueKind.String)
+                    .Select(r => r.GetString()!)
+                    .ToList();
+            }
+        }
+
+        var parameters = new List<MappingParameterState>();
+        if (root.TryGetProperty("parameters", out var ps) && ps.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var p in ps.EnumerateArray())
+            {
+                var iri = Text(p, "propertyIri");
+                parameters.Add(new MappingParameterState(Text(p, "nativeId") ?? string.Empty, Text(p, "name") ?? string.Empty, "applied", LocalName(iri), iri));
+            }
+        }
+
+        return new MappingApplyResult { RolesByElement = roles, Parameters = parameters };
+    }
+
+    private static List<MappingParameterState> ParseParameters(JsonElement root)
+    {
+        var list = new List<MappingParameterState>();
+        if (!root.TryGetProperty("parameters", out var ps) || ps.ValueKind != JsonValueKind.Array)
+        {
+            return list;
+        }
+
+        foreach (var p in ps.EnumerateArray())
+        {
+            string? label = null;
+            string? iri = null;
+            if (p.TryGetProperty("property", out var prop) && prop.ValueKind == JsonValueKind.Object)
+            {
+                iri = Text(prop, "iri");
+                label = Text(prop, "label") ?? LocalName(iri);
+            }
+            else if (p.TryGetProperty("candidates", out var cands) && cands.ValueKind == JsonValueKind.Array && cands.GetArrayLength() > 0)
+            {
+                var first = cands[0];
+                iri = Text(first, "propertyIri");
+                label = Text(first, "label") ?? LocalName(iri);
+            }
+
+            list.Add(new MappingParameterState(Text(p, "nativeId") ?? string.Empty, Text(p, "name") ?? string.Empty, Text(p, "state") ?? "unmapped", label, iri));
+        }
+
+        return list;
+    }
+
+    public static string? LocalName(string? iri)
+    {
+        if (string.IsNullOrEmpty(iri))
+        {
+            return iri;
+        }
+
+        var cut = iri.LastIndexOfAny(new[] { '#', '/', ':' });
+        return cut >= 0 ? iri[(cut + 1)..] : iri;
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
+            ? v.GetString()
+            : null;
+
+    private static string ErrorCode(string text)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("detail", out var detail))
+            {
+                if (detail.ValueKind == JsonValueKind.Object && detail.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String)
+                {
+                    return code.GetString()!;
+                }
+
+                if (detail.ValueKind == JsonValueKind.String)
+                {
+                    return detail.GetString()!;
+                }
+            }
+
+            if (root.TryGetProperty("code", out var c) && c.ValueKind == JsonValueKind.String)
+            {
+                return c.GetString()!;
+            }
+        }
+        catch
+        {
+            // not JSON
+        }
+
+        return "HTTP_ERROR";
+    }
+
+    private static string Normalize(string url) => (string.IsNullOrWhiteSpace(url) ? "http://localhost:8000" : url.Trim()).TrimEnd('/');
+}

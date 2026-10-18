@@ -120,6 +120,33 @@ ORDER BY classIri
 """
 
 
+PROPERTIES_QUERY = """
+// op=mapping_properties
+MATCH (p:DatatypeProperty)
+WHERE p.project = $project
+   OR EXISTS {
+     MATCH (r:Rule {project: $project, graph: 'Metagraph'})-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:REFERS_TO]->(p)
+   }
+RETURN DISTINCT p.iri AS iri, coalesce(p.SWRL_label, p.label, p.iri) AS label
+ORDER BY iri
+"""
+
+
+def fetch_properties(session, project: str, constraints) -> list:
+    """Datatype properties of the project; `classes` = classes whose rules constrain the property."""
+    rows = _run(session, PROPERTIES_QUERY, {"project": project})
+    classes_of: dict = {}
+    for c in constraints:
+        classes_of.setdefault(c.prop_local, set()).add(c.class_local)
+    out = []
+    for r in rows:
+        if not r.get("iri"):
+            continue
+        local = engine.local_name(r["iri"])
+        out.append(engine.PropertyInfo(str(r["iri"]), str(r["label"]), tuple(sorted(classes_of.get(local, ())))))
+    return out
+
+
 def fetch_classes(session, project: str) -> list:
     rows = _run(session, CLASSES_QUERY, {"project": project})
     return [engine.ClassInfo(str(r["iri"]), str(r["label"])) for r in rows if r.get("iri")]
@@ -416,12 +443,27 @@ def _clean_context(context: Optional[dict]) -> dict:
     return out
 
 
+def _apply_property_vocabulary(properties: list, vocabulary: Optional[dict]) -> list:
+    synonyms = (vocabulary or {}).get("synonyms") or {}
+    if not synonyms:
+        return properties
+    out = []
+    for p in properties:
+        syn = next((synonyms[k] for k in (p.label, p.local, p.iri) if k in synonyms), ())
+        out.append(engine.PropertyInfo(p.iri, p.label, p.classes, tuple(str(s) for s in syn)))
+    return out
+
+
 def _engine_inputs(session, project: str, vocabulary: Optional[dict]):
     classes = _apply_vocabulary(fetch_classes(session, project), vocabulary)
     constraints = engine.constraints_from_rows(fetch_rule_rows(session, project))
     rule_classes = fetch_class_rules(session, project)
     profiles = fetch_profiles(session, project)
     return classes, constraints, rule_classes, profiles
+
+
+def _engine_properties(session, project: str, vocabulary: Optional[dict], constraints) -> list:
+    return _apply_property_vocabulary(fetch_properties(session, project, constraints), vocabulary)
 
 
 def public_session(meta: dict, result: dict) -> dict:
@@ -437,6 +479,7 @@ def public_session(meta: dict, result: dict) -> dict:
         "questions": result["questions"],
         "groups": result["groups"],
         "elements": result["elements"],
+        "parameters": result.get("parameters", []),
     }
     for key in ("updatedAt", "appliedAt", "appliedBy", "appliedCount"):
         if meta.get(key) is not None:
@@ -444,12 +487,17 @@ def public_session(meta: dict, result: dict) -> dict:
     return body
 
 
-def create_session(session, project, platform, label, elements, context, actor, created_at) -> dict:
+def create_session(session, project, platform, label, elements, context, actor, created_at, parameters=None) -> dict:
     platform = str(platform).lower()
     if platform not in ("grasshopper", "revit"):
         raise engine.MappingInputError("MAPPING_INPUT_INVALID", "platform must be grasshopper or revit")
     ctx = _clean_context(context)
     classes, constraints, rule_classes, profiles = _engine_inputs(session, project, ctx.get("vocabulary"))
+    properties = []
+    if parameters:
+        engine._validate_parameters(parameters, engine.CONFIG)
+        ctx["parameters"] = parameters
+        properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints)
     populations = None
     if ctx.get("populationsFromSessionId"):
         ref = load_session(session, project, ctx["populationsFromSessionId"])
@@ -465,6 +513,8 @@ def create_session(session, project, platform, label, elements, context, actor, 
         populations=populations,
         platform_default=platform,
         rule_classes=rule_classes,
+        parameters=parameters or None,
+        properties=properties,
     )
     session_id = save_session(session, project, platform, label, elements, result, actor, created_at, ctx)
     meta = {"sessionId": session_id, "project": project, "platform": platform, "label": label, "createdAt": created_at, "createdBy": actor}
@@ -510,6 +560,10 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
     decided.update(out["decided"])
     splits = dict(result.get("splits") or {})
     splits.update(out["splits"])
+    parameters = ctx.get("parameters") or None
+    decided_parameters = dict(result.get("decidedParameters") or {})
+    decided_parameters.update(out.get("decidedParameters") or {})
+    properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints) if parameters else []
     result2 = engine.compute(
         s["descriptors"],
         classes,
@@ -520,6 +574,9 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
         decided=decided,
         splits=splits,
         rule_classes=rule_classes,
+        parameters=parameters,
+        properties=properties,
+        decided_parameters=decided_parameters,
     )
     update_session_result(session, project, session_id, result2, at)
     s["updatedAt"] = at

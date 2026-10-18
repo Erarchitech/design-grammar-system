@@ -2,6 +2,7 @@
 using DG.Core.Data;
 using DG.Core.Models;
 using DG.Core.Services;
+using DG.Grasshopper.Mapping;
 using DG.Grasshopper.Params;
 using Grasshopper.Kernel;
 using System.Drawing;
@@ -34,6 +35,10 @@ public sealed class ConnectorComponent : GH_Component
         IsConnected = false,
         StatusMessage = "Idle",
     };
+
+    // Phase 1303 (owner amendment 2026-10-18): after sign-in CONNECTOR proposes the mapping
+    // of this definition to DG automatically — no mapping component and no wiring.
+    private MappingAutoRunner? _mapping;
 
     public ConnectorComponent()
         : base("CONNECTOR", "CONNECTOR", "Sign in with your DG account and connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
@@ -68,9 +73,16 @@ public sealed class ConnectorComponent : GH_Component
             GH_ParamAccess.item);
         pManager.AddTextParameter("Project", "Project", "Leave empty when you have one eligible project", GH_ParamAccess.item);
         pManager.AddBooleanParameter("Connect", "Go", "Set true to sign in and connect; set false to sign out", GH_ParamAccess.item, false);
+        pManager.AddBooleanParameter(
+            "AutoMap",
+            "Map",
+            "Propose the mapping of this definition to DG classes and properties automatically after sign-in. Questions are answered in the DG Web UI → Projects → Mapping.",
+            GH_ParamAccess.item,
+            true);
         pManager[0].Optional = true;
         pManager[1].Optional = true;
         pManager[2].Optional = true;
+        pManager[4].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -78,6 +90,11 @@ public sealed class ConnectorComponent : GH_Component
         pManager.AddGenericParameter("Database", "Database", "DG connection object from CONNECTOR", GH_ParamAccess.item);
         pManager.AddTextParameter("Project", "Project", "Project the session is bound to", GH_ParamAccess.item);
         pManager.AddTextParameter("Session", "Session", "Connector session for the Token input of VALIDATOR and COMPUTGRAPH PUBLISH. Not saved in the .gh file.", GH_ParamAccess.item);
+        pManager.AddTextParameter("Mapping", "Mapping", "Automatic mapping of this definition: elements, sliders, open questions and where to answer them.", GH_ParamAccess.item);
+        pManager.AddGeometryParameter("ByClass", "ByClass", "Applied mapping: branch {k} holds the geometry mapped to ClassNames[k], in canvas order. Feed OBJECT STATE Geometry.", GH_ParamAccess.tree);
+        pManager.AddTextParameter("ClassNames", "ClassNames", "Classes of the applied mapping, aligned with ByClass branches.", GH_ParamAccess.list);
+        pManager.AddGenericParameter("ClassObjects", "ClassObjects", "DG classes aligned with ByClass branches. Feed OBJECT STATE Object.", GH_ParamAccess.list);
+        pManager.AddTextParameter("Sliders", "Sliders", "Named sliders and the DG property proposed or confirmed for each.", GH_ParamAccess.list);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -86,11 +103,13 @@ public sealed class ConnectorComponent : GH_Component
         var password = string.Empty;
         var project = string.Empty;
         var connect = false;
+        var autoMap = true;
 
         da.GetData(0, ref username);
         da.GetData(1, ref password);
         da.GetData(2, ref project);
         da.GetData(3, ref connect);
+        da.GetData(4, ref autoMap);
 
         if (!connect)
         {
@@ -150,14 +169,43 @@ public sealed class ConnectorComponent : GH_Component
         // not-connected ConnectionInfo describing why.
         da.SetData(0, _latestConnection);
         da.SetData(1, _latestConnection.Project);
-        da.SetData(2, _latestAuth.Outcome == ConnectorSessionOutcome.SignedIn ? _latestAuth.SessionToken : null);
+        var sessionToken = _latestAuth.Outcome == ConnectorSessionOutcome.SignedIn ? _latestAuth.SessionToken : null;
+        da.SetData(2, sessionToken);
+
+        // Automatic mapping (Phase 1303): reads the canvas after the solution settles; never
+        // blocks this solve. The token stays inside the plugin (Authorization header only).
+        _mapping ??= new MappingAutoRunner(this, DataServiceUrl);
+        _mapping.Configure(OnPingDocument(), sessionToken, _latestConnection.Project ?? _latestAuth.Project, autoMap);
+        var mapping = _mapping.Outputs;
+        da.SetData(3, mapping.Summary);
+        da.SetDataTree(4, mapping.ByClass);
+        da.SetDataList(5, mapping.ClassNames);
+        da.SetDataList(6, mapping.ClassObjects);
+        da.SetDataList(7, mapping.Sliders);
+        if (sessionToken is not null)
+        {
+            Message += mapping.MessageSuffix;
+        }
     }
 
     public override void RemovedFromDocument(GH_Document document)
     {
+        _mapping?.Dispose();
+        _mapping = null;
         CancelPendingConnection();
         SignOutCurrentSession();
         base.RemovedFromDocument(document);
+    }
+
+    public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+    {
+        if (context is GH_DocumentContext.Close or GH_DocumentContext.Unloaded)
+        {
+            _mapping?.Dispose();
+            _mapping = null;
+        }
+
+        base.DocumentContextChanged(document, context);
     }
 
     private void StartConnection(string username, string password, string project, string requestKey)

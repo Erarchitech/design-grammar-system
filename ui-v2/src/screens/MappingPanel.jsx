@@ -33,6 +33,7 @@ import { useT } from "../i18n/LanguageProvider.jsx";
 // (the exact-request browser tests rely on this). Shapes follow 1303-API-CONTRACT v0.1. The server owns every
 // decision; this panel only shows its queue, posts one answer per click and re-renders the session it returns.
 
+const FOLLOW_MS = 5000;
 const ERR_STYLE = { font: "400 12px/1.33 var(--font-sans)", color: "var(--color-signal)" };
 const MUTED = { font: "400 12px/1.33 var(--font-sans)", color: "var(--text-muted)" };
 const BODY = { font: "400 14px/1.43 var(--font-sans)" };
@@ -134,6 +135,8 @@ function questionTypeLabel(t, type) {
       return t("Choose roles");
     case "mapping-or-design":
       return t("Mapping or design error");
+    case "map-parameter":
+      return t("Map sliders to a property");
     default:
       return type || "";
   }
@@ -426,7 +429,11 @@ function QuestionCard({ question, groupsById, labelOf, excluded, busy, posting, 
   const included = includedGroupIds(question, excluded);
   const skip = new Set(list(excluded));
   const options = list(question.options);
-  const optionText = (optionId) => optionLabel(t, options.find((option) => option.optionId === optionId) || { optionId }, labelOf);
+  const isParameter = question.type === "map-parameter";
+  const optionText = (optionId) =>
+    isParameter && optionId === "none"
+      ? t("Not a DG property")
+      : optionLabel(t, options.find((option) => option.optionId === optionId) || { optionId }, labelOf);
   const noneSelected = isBatch && included.length === 0;
   return (
     <div style={CARD}>
@@ -544,6 +551,50 @@ function ProfilesTable({ profiles, labelOf }) {
   );
 }
 
+// Named Grasshopper sliders and the DG property proposed or confirmed for each (owner amendment 2026-10-18).
+function ParametersTable({ parameters }) {
+  const { t } = useT();
+  if (parameters.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <h5 style={CAPTION}>{t("Sliders")}</h5>
+      <div style={{ overflowX: "auto" }}>
+        <table style={TABLE}>
+          <thead>
+            <tr>
+              <th style={TH}>{t("Slider")}</th>
+              <th style={TH}>{t("State")}</th>
+              <th style={TH}>{t("Property")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parameters.map((p) => {
+              const shown = p.property || list(p.candidates)[0];
+              const label = shown ? shown.label || classLocalName(shown.iri || shown.propertyIri) : "—";
+              const classes = list(shown?.classes).map((iri) => classLocalName(iri)).join(", ");
+              return (
+                <tr key={p.nativeId}>
+                  <td style={TD}>{p.name}</td>
+                  <td style={TD}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <StateDot state={p.state} />
+                      {stateLabel(t, p.state)}
+                    </span>
+                  </td>
+                  <td style={TD}>
+                    {label}
+                    {classes ? <span style={MUTED}>{` · ${classes}`}</span> : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ApplyResult({ result, labelOf }) {
   const { t, tp } = useT();
   const rows = appliedByClass(result);
@@ -595,6 +646,11 @@ export default function MappingPanel({ project, active }) {
   const fileRef = React.useRef(null);
   const bodyId = React.useId();
   const busy = posting !== null || creating || applying || sessionBusy;
+  // CONNECTOR creates sessions by itself (owner amendment 2026-10-18): while the panel is open the newest session
+  // is followed until the owner picks an older one.
+  const followRef = React.useRef(true);
+  const busyRef = React.useRef(false);
+  busyRef.current = busy;
 
   React.useEffect(() => {
     selectedRef.current = selectedId;
@@ -650,8 +706,29 @@ export default function MappingPanel({ project, active }) {
     };
   }, [open, active, load]);
 
+  // Follow new sessions (from Grasshopper CONNECTOR) while the panel is open on this screen.
+  React.useEffect(() => {
+    if (!(open && active && status === "ready")) return undefined;
+    const timer = setInterval(() => {
+      if (busyRef.current || !followRef.current) return;
+      const scope = scopeRef.current;
+      listSessions(project, SESSION_LIMIT)
+        .then((listed) => {
+          if (scope !== scopeRef.current || busyRef.current || !followRef.current) return;
+          const newest = list(listed?.sessions)[0]?.sessionId;
+          if (newest && newest !== selectedRef.current) {
+            load(newest);
+            setNotice({ kind: "arrived" });
+          }
+        })
+        .catch(() => {});
+    }, FOLLOW_MS);
+    return () => clearInterval(timer);
+  }, [open, active, status, project, load]);
+
   const selectSession = (id) => {
     if (!id || id === selectedId || busy) return;
+    followRef.current = id === sessions[0]?.sessionId;
     const scope = scopeRef.current;
     const read = ++readRef.current;
     setSelectedId(id);
@@ -799,6 +876,7 @@ export default function MappingPanel({ project, active }) {
   if (notice?.kind === "decided") noticeText = tp("{n} decision recorded", notice.n);
   else if (notice?.kind === "applied") noticeText = tp("{n} element applied", notice.n);
   else if (notice?.kind === "created") noticeText = t("Mapping session created");
+  else if (notice?.kind === "arrived") noticeText = t("New mapping session from Grasshopper");
 
   const labels = classLabels(session);
   const labelOf = (iri) => labels.get(iri) || classLocalName(iri);
@@ -914,6 +992,10 @@ export default function MappingPanel({ project, active }) {
             )}
           </div>
         )}
+
+        {session && <ParametersTable parameters={list(session.parameters)} />}
+
+        {notice?.kind === "arrived" && <div style={MUTED}>{noticeText}</div>}
 
         <ProfilesTable profiles={profiles} labelOf={labelOf} />
 

@@ -253,7 +253,14 @@ test('MappingPanel starts collapsed, loads only when open and active, and uses t
   assert.match(source, /export default function MappingPanel\(\{ project, active \}\)/);
   assert.match(source, /const \[open, setOpen\] = React\.useState\(false\);/);
   assert.match(source, /if \(open && active\) load\(selectedRef\.current\);/);
-  assert.equal((source.match(/\bload\(/g) || []).length, 3, 'load runs from the open/active effect and the Retry/Refresh buttons only');
+  assert.equal(
+    (source.match(/\bload\(/g) || []).length,
+    4,
+    'load runs from the open/active effect, the Retry/Refresh buttons and the follow-new-sessions timer only'
+  );
+  // Sessions created by CONNECTOR are followed only while the panel is open on an active screen (2026-10-18).
+  assert.match(source, /if \(!\(open && active && status === "ready"\)\) return undefined;/);
+  assert.match(source, /return \(\) => clearInterval\(timer\);/);
   for (const fn of ['listSessions', 'listProfiles', 'getSession', 'createSession', 'postDecision', 'applySession']) {
     assert.match(source, new RegExp(`\\b${fn}\\(`), `${fn} wired`);
   }

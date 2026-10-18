@@ -142,7 +142,14 @@ Not in the slice: DGBN-01 (GH still reads via Bolt), DGBN-02 exact rule-to-port 
 - Full Schema Change Propagation list for the new labels (cypher_template, dataset_schema, n8n prompts, shapes, copilot-instructions, README).
 </deferred>
 
+## Owner amendment 2026-10-18 (supersedes D-19)
+
+- **D-33: Mapping is proposed automatically; no mapping component.** A hand-built script component whose inputs are wired to one definition's streams is not automatic mapping. CONNECTOR (already on every DG canvas, holding the `dgk_` session) reads the open definition after sign-in and after every settled change (1.5 s debounce), sends a new session only when the canvas content fingerprint changed, colours elements in Rhino by mapping state (plugin display conduit, no Custom Preview), follows the answers given in the Web UI and applies the session when no question is left. New input `AutoMap` (default true); new outputs `Mapping`, `ByClass`, `ClassNames`, `ClassObjects`, `Sliders`. Built into DG.gha (owner choice "встроить в DG.gha сейчас"); the prototype script stays only as a fallback.
+- **D-34: Element streams come from the canvas itself.** Geometry sources wired into DG components (OBJECT STATE etc.) are the streams; a definition without DG wiring falls back to visible terminal geometry. One element per branch (multi-branch data) or per item (single list).
+- **D-35: Canvas text is mapping evidence.** Group names (nested groups included), scribble text (same group or within 250 canvas units), component names and nicknames, and the class an OBJECT STATE already names travel as `names` and count as word evidence (no acronyms from them). A small bilingual lexicon (Russian stems → English concept words) lets «Ширина соты», «панели» meet `hasWidthM`, `GlassPanel`.
+- **D-36: Named sliders are proposed as DG datatype properties.** Sliders with a non-default nickname are sent as `parameters` (name, canvas text, value, domain). The engine scores them against the project's datatype properties (own name ×2, canvas text ×1, generic words such as "count" ×0.5), groups sliders by name stem (`Module Width F1…F5` → one question), asks `map-parameter` questions (property options + "Not a DG property") and learns parameter profiles (selector `{kind: parameter, nameStem}`), so a later definition is mapped automatically. Deterministic; an LLM semantic vote stays out of the slice.
+
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36)*

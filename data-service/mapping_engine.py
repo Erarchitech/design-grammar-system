@@ -51,6 +51,12 @@ CONFIG: dict[str, float] = {
     "profile_beta": 1,
     "max_elements": 5000,
     "representatives": 3,
+    # Parameters (GH sliders) → DG datatype properties, by name.
+    "prior_param": -1.0,
+    "w_param_own": 2.0,
+    "w_param_context": 1.0,
+    "w_param_cap": 4.0,
+    "max_parameters": 500,
 }
 
 SELECTOR_FEATURES = (
@@ -88,6 +94,78 @@ BUILTIN_TO_REQUIRED = {
 
 STATES = ("confirmed", "auto", "suggested", "ambiguous", "unmapped")
 NAME_FIELDS = ("source", "family", "type", "name", "category")
+# Canvas text around an element (group names, scribbles, component nicknames,
+# the class an OBJECT STATE already names). Word evidence only, no acronyms.
+CONTEXT_FIELD = "context.names"
+
+# Small bilingual vocabulary: Russian stems and English variants → English
+# concept words, so canvas text such as «Ширина соты» or "Panels" meets
+# class and property labels (hasWidthM, GlassPanel). Prefix match on stems.
+LEXICON_RU = (
+    ("ширин", ("width",)),
+    ("высот", ("height",)),
+    ("длин", ("length",)),
+    ("глубин", ("depth",)),
+    ("толщин", ("thickness",)),
+    ("наклон", ("tilt", "slope", "inclination")),
+    ("угол", ("angle",)),
+    ("угл", ("angle",)),
+    ("площад", ("area",)),
+    ("колво", ("count",)),
+    ("количеств", ("count",)),
+    ("вершин", ("vertex",)),
+    ("ребр", ("edge",)),
+    ("ребер", ("edge",)),
+    ("сторон", ("side",)),
+    ("уров", ("level",)),
+    ("этаж", ("floor", "storey", "level")),
+    ("отступ", ("offset",)),
+    ("оффсет", ("offset",)),
+    ("смещ", ("offset",)),
+    ("выступ", ("projection", "protrusion")),
+    ("шаг", ("spacing", "step", "pitch")),
+    ("соотнош", ("ratio",)),
+    ("пропорц", ("ratio", "proportion")),
+    ("отношен", ("ratio",)),
+    ("планар", ("planarity",)),
+    ("плоск", ("planarity", "flat")),
+    ("отклон", ("deviation",)),
+    ("радиус", ("radius",)),
+    ("диаметр", ("diameter",)),
+    ("панел", ("panel",)),
+    ("стекл", ("glass",)),
+    ("остекл", ("glazing", "glass")),
+    ("сот", ("hexagonal", "cell", "honeycomb")),
+    ("шестиуг", ("hexagonal",)),
+    ("пятиуг", ("pentagon", "pentagonal")),
+    ("треуг", ("triangular", "triangle")),
+    ("модул", ("module", "unit")),
+    ("фасад", ("facade",)),
+    ("каркас", ("frame",)),
+    ("стойк", ("mullion", "post")),
+    ("ригел", ("transom",)),
+    ("нижн", ("bottom",)),
+    ("верх", ("top",)),
+    ("разрыв", ("gap",)),
+    ("зазор", ("gap",)),
+    ("замкн", ("closed",)),
+    ("контур", ("outline",)),
+)
+EN_ALIASES = {
+    "hex": ("hexagonal",),
+    "hexagon": ("hexagonal",),
+    "pent": ("pentagon",),
+    "tri": ("triangular",),
+    "triangle": ("triangular",),
+    "glazing": ("glass",),
+    "proportion": ("ratio",),
+    "storey": ("level",),
+}
+# Property label words that carry no meaning of their own.
+PROPERTY_STOP = {"has", "is", "of", "the", "value", "values"}
+UNIT_TOKENS = {"m", "mm", "cm", "m2", "m3", "deg", "rad", "pct"}
+# Generic words count half: "КолВо ребер" must not become hasVertexCount by "count" alone.
+GENERIC_WORDS = {"count", "number", "size", "value"}
 
 
 class MappingInputError(ValueError):
@@ -130,6 +208,20 @@ class Evidence:
     kind: str
     weight: float
     detail: str
+
+
+@dataclass(frozen=True)
+class PropertyInfo:
+    """A DG datatype property a GH parameter can be mapped to; `classes` = classes whose rules use it."""
+
+    iri: str
+    label: str
+    classes: tuple = ()
+    synonyms: tuple = ()
+
+    @property
+    def local(self) -> str:
+        return local_name(self.iri)
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +280,37 @@ def _is_subsequence(short: str, long: str) -> bool:
     return all(ch in it for ch in short)
 
 
+def _singular(t: str) -> str:
+    if len(t) > 3 and t.endswith("ies"):
+        return t[:-3] + "y"
+    if len(t) > 3 and t.endswith("s") and not t.endswith("ss"):
+        return t[:-1]
+    return t
+
+
+def concepts(tokens: Iterable[str]) -> set:
+    """Token set expanded with singular forms, English aliases and Russian stems."""
+    out: set = set()
+    for raw in tokens:
+        t = str(raw or "").lower()
+        if not t:
+            continue
+        s = _singular(t)
+        out.update((t, s))
+        out.update(EN_ALIASES.get(s, ()))
+        if len(t) >= 3 and re.search("[а-яё]", t):
+            for stem, words in LEXICON_RU:
+                if t.startswith(stem):
+                    out.update(words)
+    return out
+
+
+def _word_hit(token: str, words: set) -> Optional[str]:
+    if token in words:
+        return token
+    return next((w for w in sorted(concepts([token])) if len(w) >= 3 and w in words), None)
+
+
 def _num(v: Any) -> Optional[float]:
     if isinstance(v, bool):
         return None
@@ -243,6 +366,11 @@ def features(descriptor: Mapping, platform_default: str = "grasshopper") -> dict
         v = descriptor.get(key)
         if v not in (None, ""):
             f[key] = str(v)
+    names = descriptor.get("names")
+    if isinstance(names, (list, tuple)):
+        texts = [str(n).strip() for n in names if isinstance(n, (str, int, float)) and not isinstance(n, bool) and str(n).strip()]
+        if texts:
+            f[CONTEXT_FIELD] = " ; ".join(texts[:20])
     ifc = descriptor.get("ifc")
     if isinstance(ifc, Mapping):
         if ifc.get("entity"):
@@ -381,7 +509,8 @@ def _name_tokens(feats: Mapping) -> set:
 
 def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[Evidence]:
     toks = _name_tokens(feats)
-    if not toks:
+    ctx = set(split_tokens(feats.get(CONTEXT_FIELD, ""))) - toks
+    if not toks and not ctx:
         return []
     out = []
     for c in classes:
@@ -397,9 +526,15 @@ def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[
             elif acr and len(t) < len(acr) and t[0] == acr[0] and _is_subsequence(t, acr):
                 total += cfg["w_name_subsequence"]
                 parts.append(f"'{t}' abbreviates {c.label}")
-            if len(t) >= 3 and t in words:
+            hit = _word_hit(t, words) if len(t) >= 3 else None
+            if hit:
                 total += cfg["w_name_token"]
-                parts.append(f"word '{t}' matches {c.label}")
+                parts.append(f"word '{t}' matches {c.label}" + (f" ({hit})" if hit != t else ""))
+        for t in sorted(ctx):
+            hit = _word_hit(t, words) if len(t) >= 3 else None
+            if hit:
+                total += cfg["w_name_token"]
+                parts.append(f"canvas text '{t}' matches {c.label}" + (f" ({hit})" if hit != t else ""))
         if total:
             out.append(Evidence(c.local, "name", min(total, cfg["w_name_cap"]), "; ".join(parts)))
     return out
@@ -539,12 +674,17 @@ def compute(
     decided: Optional[Mapping] = None,
     splits: Optional[Mapping] = None,
     rule_classes: Optional[Mapping] = None,
+    parameters: Optional[list] = None,
+    properties: Sequence[PropertyInfo] = (),
+    decided_parameters: Optional[Mapping] = None,
 ) -> dict:
     """Map descriptors to DG classes. Returns the deterministic session body.
 
     `decided` maps nativeId → list of class IRIs confirmed by a human in this
     session ([] = explicitly none); `splits` maps nativeId → extra signature
-    features requested by a split answer.
+    features requested by a split answer. `parameters` (GH sliders) are mapped
+    to `properties` the same way; `decided_parameters` maps parameter nativeId
+    → [property IRI] or [].
     """
     cfg = dict(CONFIG)
     cfg.update(config or {})
@@ -679,8 +819,13 @@ def compute(
 
     ordered_groups = sorted(groups.values(), key=lambda g: (-g["priority"], g["groupId"]))
 
-    # 5. Questions.
+    # 5. Questions (element groups first, then parameters).
     questions = _build_questions(ordered_groups, iri_of, label_of, disjoint_pairs, cfg)
+    param_rows: list = []
+    decided_parameters = {str(k): sorted(v) for k, v in (decided_parameters or {}).items()}
+    if parameters:
+        param_rows = map_parameters(parameters, properties, active_profiles, decided_parameters, platform_default, cfg)
+        questions = questions + _parameter_questions(param_rows)
     qid_of = {}
     for q in questions:
         for gid in q["groupIds"]:
@@ -731,7 +876,7 @@ def compute(
     for row in rows:
         counts[row["state"]] += 1
     summary = {"total": len(rows), **counts, "openQuestions": len(questions)}
-    return {
+    body = {
         "engineVersion": ENGINE_VERSION,
         "platform": str(platform_default).lower(),
         "summary": summary,
@@ -741,6 +886,14 @@ def compute(
         "decided": {k: sorted(v) for k, v in sorted(decided.items())},
         "splits": {k: sorted(v) for k, v in sorted(splits.items())},
     }
+    if parameters:
+        pcounts = {s: 0 for s in STATES}
+        for r in param_rows:
+            pcounts[r["state"]] += 1
+        summary["parameters"] = {"total": len(param_rows), **pcounts}
+        body["parameters"] = param_rows
+        body["decidedParameters"] = dict(sorted(decided_parameters.items()))
+    return body
 
 
 def _finish_group(g: dict, iri_of: Mapping, label_of: Mapping, rmap: Mapping, constraints: Sequence[Constraint], cfg: Mapping) -> None:
@@ -1021,6 +1174,317 @@ def _src(g: Mapping) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Parameters (Grasshopper sliders) → DG datatype properties
+# ---------------------------------------------------------------------------
+
+_INDEX_TOKEN = re.compile(r"^(?:\d+|[a-zа-яё]\d+|\d+[a-zа-яё])$")
+
+
+def name_stem(name: Any) -> str:
+    """Name without index tokens: 'Module Width F1' → 'module width', '1 оффсет' → 'оффсет'."""
+    toks = split_tokens(name)
+    core = [t for t in toks if not _INDEX_TOKEN.match(t)]
+    return " ".join(core or toks)
+
+
+def property_words(p: PropertyInfo) -> set:
+    words: set = set()
+    for t in split_tokens(p.label) + split_tokens(p.local):
+        if len(t) < 3 or t in PROPERTY_STOP or t in UNIT_TOKENS:
+            continue
+        words.add(_singular(t))
+    for syn in p.synonyms:
+        words |= {w for w in concepts(split_tokens(syn)) if len(w) >= 3}
+    return words
+
+
+def parameter_features(p: Mapping, platform_default: str = "grasshopper") -> dict:
+    platform = p.get("platform") or platform_default
+    return {"platform": str(platform).strip().lower(), "kind": "parameter", "nameStem": name_stem(p.get("name"))}
+
+
+def _texts(values: Any) -> list:
+    if not isinstance(values, (list, tuple)):
+        return []
+    return [str(v).strip() for v in values if isinstance(v, (str, int, float)) and not isinstance(v, bool) and str(v).strip()]
+
+
+def _validate_parameters(parameters: Any, cfg: Mapping) -> list:
+    if parameters is None:
+        return []
+    if not isinstance(parameters, list):
+        raise MappingInputError("MAPPING_INPUT_INVALID", "parameters must be a list")
+    if len(parameters) > int(cfg["max_parameters"]):
+        raise MappingInputError("MAPPING_INPUT_INVALID", f"at most {int(cfg['max_parameters'])} parameters per session")
+    seen = set()
+    for p in parameters:
+        if not isinstance(p, Mapping) or not str(p.get("nativeId") or "").strip() or not str(p.get("name") or "").strip():
+            raise MappingInputError("MAPPING_INPUT_INVALID", "every parameter needs a nativeId and a name")
+        nid = str(p["nativeId"])
+        if nid in seen:
+            raise MappingInputError("MAPPING_INPUT_INVALID", f"duplicate parameter nativeId {nid}")
+        seen.add(nid)
+    return sorted(parameters, key=lambda p: str(p["nativeId"]))
+
+
+def _prop_ref(p: PropertyInfo) -> dict:
+    return {"iri": p.iri, "label": p.label, "classes": list(p.classes)}
+
+
+def map_parameters(
+    parameters: Any,
+    properties: Sequence[PropertyInfo],
+    profiles: Sequence[Mapping] = (),
+    decided: Optional[Mapping] = None,
+    platform_default: str = "grasshopper",
+    config: Optional[Mapping] = None,
+) -> list:
+    """Propose a DG datatype property for every parameter by its name and canvas text.
+
+    Deterministic like `compute`: the parameter's own name counts twice as much
+    as the group names and scribbles around it; learned parameter profiles
+    (selector {kind: parameter, nameStem}) map recurring names automatically.
+    """
+    cfg = dict(CONFIG)
+    cfg.update(config or {})
+    items = _validate_parameters(parameters, cfg)
+    decided = {str(k): list(v) for k, v in (decided or {}).items()}
+    props = sorted(properties, key=lambda p: p.local)
+    by_local = {p.local: p for p in props}
+    words_of = {p.local: property_words(p) for p in props}
+    active = sorted(
+        [p for p in profiles if p.get("state", "active") == "active" and (p.get("selector") or {}).get("kind") == "parameter"],
+        key=lambda p: str(p.get("profileId")),
+    )
+    rows = []
+    for item in items:
+        nid = str(item["nativeId"])
+        name = str(item["name"]).strip()
+        feats = parameter_features(item, platform_default)
+        own = concepts(split_tokens(name))
+        ctx = concepts(t for x in _texts(item.get("names")) for t in split_tokens(x)) - own
+        score: dict = {}
+        evid: dict = {}
+        for p in props:
+            s, parts = 0.0, []
+            for w in sorted(words_of[p.local]):
+                k = 0.5 if w in GENERIC_WORDS else 1.0
+                if w in own:
+                    s += cfg["w_param_own"] * k
+                    parts.append(f"name '{name}' → {w}")
+                elif w in ctx:
+                    s += cfg["w_param_context"] * k
+                    parts.append(f"canvas text → {w}")
+            if s:
+                score[p.local] = min(s, cfg["w_param_cap"])
+                evid[p.local] = parts
+        matched = []
+        for pr in active:
+            if not profile_matches(pr, feats):
+                continue
+            conf = _profile_conf(pr, cfg)
+            matched.append((pr, conf))
+            for r in pr.get("roles") or ():
+                lr = local_name(r)
+                if lr in by_local:
+                    score[lr] = score.get(lr, 0.0) + cfg["w_profile"] * conf
+                    evid.setdefault(lr, []).append(f"profile {pr['profileId']} (confidence {conf:.2f})")
+            for r in pr.get("excludedRoles") or ():
+                lr = local_name(r)
+                if lr in score:
+                    score[lr] -= cfg["w_profile"] * conf
+                    evid.setdefault(lr, []).append(f"profile {pr['profileId']} excludes this property")
+        conf_of = {k: _r(_logistic(cfg["prior_param"] + v)) for k, v in score.items()}
+        cands = sorted((k for k in conf_of if conf_of[k] >= cfg["tau_candidate"]), key=lambda k: (-conf_of[k], k))
+        prop_local, source = None, None
+        if nid in decided:
+            chosen = [local_name(r) for r in decided[nid] if local_name(r) in by_local]
+            state = "confirmed" if chosen else "unmapped"
+            prop_local, source = (chosen[0] if chosen else None), "human"
+        else:
+            auto = [(pr, c) for pr, c in matched if c >= cfg["profile_auto"]]
+            roles = sorted({local_name(r) for pr, _ in auto for r in pr.get("roles") or () if local_name(r) in by_local})
+            if auto and roles:
+                state, prop_local, source = "auto", roles[0], "profile"
+            elif auto:
+                state, source = "unmapped", "profile"
+            elif not cands:
+                state = "unmapped"
+            else:
+                top = cands[0]
+                margin = conf_of[top] - conf_of[cands[1]] if len(cands) > 1 else 1.0
+                if conf_of[top] >= cfg["tau_clear"] and margin >= cfg["margin_delta"]:
+                    state, prop_local, source = "suggested", top, "evidence"
+                else:
+                    state = "ambiguous"
+        rows.append(
+            {
+                "nativeId": nid,
+                "name": name,
+                "nameStem": feats["nameStem"],
+                "state": state,
+                "source": source,
+                "property": _prop_ref(by_local[prop_local]) if prop_local else None,
+                "candidates": [
+                    {
+                        "propertyIri": by_local[k].iri,
+                        "label": by_local[k].label,
+                        "classes": list(by_local[k].classes),
+                        "confidence": conf_of[k],
+                        "evidence": evid.get(k, []),
+                    }
+                    for k in cands[:4]
+                ],
+                "questionId": None,
+            }
+        )
+    return rows
+
+
+def _natural_key(text: str) -> list:
+    return [int(x) if x.isdigit() else x.lower() for x in re.split(r"(\d+)", text)]
+
+
+def _parameter_questions(rows: Sequence[dict]) -> list:
+    groups: dict = {}
+    for r in rows:
+        if r["state"] in ("suggested", "ambiguous") and r["candidates"]:
+            key = (r["nameStem"], tuple(c["propertyIri"] for c in r["candidates"][:3]))
+            groups.setdefault(key, []).append(r)
+    questions = []
+    for (stem, _), members in sorted(groups.items()):
+        ids = sorted(m["nativeId"] for m in members)
+        names = sorted({m["name"] for m in members}, key=_natural_key)
+        shown = ", ".join(names) if len(names) <= 3 else f"{names[0]} … {names[-1]}"
+        n = len(members)
+        cands = members[0]["candidates"][:3]
+
+        def cls(c: Mapping) -> str:
+            return f" ({', '.join(local_name(x) for x in c['classes'])})" if c["classes"] else ""
+
+        if len(cands) == 1:
+            c = cands[0]
+            text = (
+                f"{n} {_en_plural(n, 'slider', 'sliders')} «{shown}» {'looks' if n == 1 else 'look'} like the DG property "
+                f"{c['label']}{cls(c)}. Map {'it' if n == 1 else 'them'}?"
+            )
+            text_ru = (
+                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} «{shown}» {'похож' if n == 1 else 'похожи'} "
+                f"на свойство DG {c['label']}{cls(c)}. Сопоставить?"
+            )
+        else:
+            listing = "; ".join(f"{c['label']}{cls(c)} ({c['confidence']:.2f})" for c in cands)
+            text = f"{n} {_en_plural(n, 'slider', 'sliders')} «{shown}» could be one of the DG properties: {listing}. Which one?"
+            text_ru = (
+                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} «{shown}» "
+                f"{'может' if n == 1 else 'могут'} соответствовать свойствам DG: {listing}. Какому?"
+            )
+        options = [{"optionId": f"property:{c['propertyIri']}", "label": f"{c['label']}{cls(c)}", "roles": [c["propertyIri"]]} for c in cands]
+        options.append({"optionId": "none", "label": "Not a DG property", "roles": []})
+        qid = "Q-" + _sha("map-parameter|" + stem + "|" + "|".join(ids), 8)
+        for m in members:
+            m["questionId"] = qid
+        questions.append(
+            {
+                "questionId": qid,
+                "type": "map-parameter",
+                "groupIds": [],
+                "parameterIds": ids,
+                "nameStem": stem,
+                "text": text,
+                "textRu": text_ru,
+                "options": options,
+                "consequences": [],
+            }
+        )
+    return questions
+
+
+def _decide_parameters(
+    result: Mapping,
+    question: Mapping,
+    option: Mapping,
+    actor: str,
+    at: str,
+    profiles: Sequence[Mapping],
+    project: Optional[str],
+    platform_default: str,
+    cfg: Mapping,
+) -> dict:
+    by_id = {r["nativeId"]: r for r in result.get("parameters") or []}
+    members = [nid for nid in sorted(question.get("parameterIds") or []) if nid in by_id]
+    if not members:
+        raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question['questionId']} has no parameters", 404)
+    stem = str(question.get("nameStem") or "")
+    chosen = sorted(option.get("roles") or [])
+    excluded = [] if chosen else sorted({r for o in question["options"] for r in (o.get("roles") or [])})
+    platform = str(result.get("platform") or platform_default).lower()
+    selector = {"kind": "parameter", "nameStem": stem}
+    feats = {"platform": platform, **selector}
+    pid = profile_id(platform, selector, chosen, excluded)
+    decision_id = "D-" + _sha(f"{question['questionId']}|parameters|{option['optionId']}|{at}", 12)
+    existing = {p["profileId"]: dict(p) for p in profiles}
+    prof = existing.get(pid)
+    if prof:
+        prof["confirmations"] = int(prof.get("confirmations", 0)) + 1
+        prof["decisionIds"] = sorted(set(prof.get("decisionIds", [])) | {decision_id})
+        prof["support"] = max(int(prof.get("support", 0)), len(members))
+        prof["updatedAt"] = at
+    else:
+        prof = {
+            "profileId": pid,
+            "project": project,
+            "platform": platform,
+            "selector": selector,
+            "roles": chosen,
+            "excludedRoles": excluded,
+            "acceptsViolations": [],
+            "source": "learned",
+            "confirmations": 1,
+            "rejections": 0,
+            "support": len(members),
+            "createdBy": actor,
+            "createdAt": at,
+            "updatedAt": at,
+            "decisionIds": [decision_id],
+            "engineVersion": ENGINE_VERSION,
+            "state": "active",
+        }
+    prof["confidence"] = profile_confidence(prof["confirmations"], prof.get("rejections", 0), cfg)
+    out = {pid: prof}
+    for other in profiles:
+        if other["profileId"] != pid and profile_matches(other, feats) and sorted(other.get("roles") or []) != chosen:
+            rej = dict(other)
+            rej["rejections"] = int(rej.get("rejections", 0)) + 1
+            rej["updatedAt"] = at
+            rej["confidence"] = profile_confidence(int(rej.get("confirmations", 0)), rej["rejections"], cfg)
+            out[rej["profileId"]] = rej
+    decision = {
+        "decisionId": decision_id,
+        "project": project,
+        "questionId": question["questionId"],
+        "groupId": f"parameters:{stem}",
+        "optionId": option["optionId"],
+        "roles": chosen,
+        "memberCount": len(members),
+        "memberIds": members,
+        "questionText": question["text"],
+        "evidenceShown": [{"parameterId": nid, "candidates": by_id[nid]["candidates"]} for nid in members],
+        "consequencesShown": [],
+        "decidedBy": actor,
+        "decidedAt": at,
+        "profileId": pid,
+    }
+    return {
+        "decisions": [decision],
+        "profiles": [out[k] for k in sorted(out)],
+        "decided": {},
+        "splits": {},
+        "decidedParameters": {nid: chosen for nid in members},
+    }
+
+
+# ---------------------------------------------------------------------------
 # Decisions and profiles
 # ---------------------------------------------------------------------------
 
@@ -1133,6 +1597,10 @@ def decide(
     if question is None:
         raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question_id} not found", 404)
     option = next((o for o in question["options"] if o["optionId"] == option_id), None)
+    if question.get("type") == "map-parameter":
+        if option is None:
+            raise MappingInputError("MAPPING_OPTION_INVALID", f"option {option_id} is not offered by {question_id}")
+        return _decide_parameters(result, question, option, actor, at, profiles, project, platform_default, cfg)
     iri_of = {c.local: c.iri for c in classes}
     if option is None and not (option_id == "custom" and roles):
         raise MappingInputError("MAPPING_OPTION_INVALID", f"option {option_id} is not offered by {question_id}")
@@ -1280,12 +1748,19 @@ def partition(result: Mapping) -> dict:
             applied += 1
         else:
             skipped.append({"nativeId": el["nativeId"], "reason": el["state"]})
-    return {
+    out = {
         "applied": applied,
         "byClass": {k: sorted(v) for k, v in sorted(by_class.items())},
         "elements": elements,
         "skipped": skipped,
     }
+    if result.get("parameters"):
+        out["parameters"] = [
+            {"nativeId": r["nativeId"], "name": r["name"], "propertyIri": r["property"]["iri"]}
+            for r in result["parameters"]
+            if r["state"] in ("confirmed", "auto") and r.get("property")
+        ]
+    return out
 
 
 def populations_of(result: Mapping) -> dict:

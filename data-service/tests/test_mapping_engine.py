@@ -340,3 +340,113 @@ def test_no_adapter_names_and_pure_imports():
     assert "adapter" not in src.lower()
     for banned in ("import requests", "import httpx", "import urllib", "import random", "import time", "import datetime", "from datetime"):
         assert banned not in src
+
+
+# 11 Canvas text and parameters (owner amendment 2026-10-18: group names,
+# scribbles, component names and slider names take part in mapping) -------
+
+FACADE_PROPERTIES = (
+    ("hasWidthM", ("GlassPanel",)),
+    ("hasAspectRatio", ("GlassPanel",)),
+    ("hasPlanarityDeviationM", ("GlassPanel",)),
+    ("hasVertexCount", ("BottomTriangularPanel", "GroundFloorUnit", "HexagonalUnit")),
+    ("hasOutlineGapCount", ("GroundFloorUnit", "HexagonalUnit")),
+    ("hasLevelOffsetM", ("HexagonalUnit",)),
+    ("hasHeightM", ("Facade",)),
+)
+
+
+def _properties():
+    return [m.PropertyInfo(f"ex:{name}", name, tuple(f"ex:{c}" for c in classes)) for name, classes in FACADE_PROPERTIES]
+
+
+def _sliders():
+    out = [
+        {"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}", "names": ["Ширина соты"], "value": 7600, "min": 2800, "max": 12000}
+        for i in range(1, 6)
+    ]
+    out.append({"nativeId": "gh:doc:slider:tilt-even", "name": "Наклон чет сот", "names": ["Наклон сот"], "value": -1})
+    out.append({"nativeId": "gh:doc:slider:ribs", "name": "КолВо ребер", "value": 5})
+    out.append({"nativeId": "gh:doc:slider:ratio", "name": "Ratio", "names": ["Group B Panel Ratio"], "value": 2.5})
+    return out
+
+
+def _param_compute(params, profiles=(), decided_parameters=None):
+    return _compute(fx.facade_v1_descriptors(), profiles, parameters=params, properties=_properties(), decided_parameters=decided_parameters)
+
+
+def test_canvas_text_is_word_evidence_without_acronyms():
+    classes, _ = _setup()
+    feats = m.features({"nativeId": "x", "source": "Result", "names": ["Стеклянные панели", "Group B"]})
+    ev = {e.class_local: e for e in m.ev_name(feats, classes, m.CONFIG)}
+    assert ev["GlassPanel"].weight > ev["BottomTriangularPanel"].weight
+    assert "canvas text" in ev["GlassPanel"].detail
+    # A one-letter token from a group name is not an abbreviation of BottomTriangularPanel.
+    assert "abbreviates" not in ev["BottomTriangularPanel"].detail
+    assert m.CONTEXT_FIELD not in m.SELECTOR_FEATURES
+
+
+def test_sliders_are_proposed_as_dg_properties():
+    r = _param_compute(_sliders())
+    by_name = {p["name"]: p for p in r["parameters"]}
+    width = by_name["Module Width F3"]
+    assert width["candidates"][0]["propertyIri"] == "ex:hasWidthM"
+    assert width["nameStem"] == "module width"
+    assert by_name["Ratio"]["candidates"][0]["propertyIri"] == "ex:hasAspectRatio"
+    # "count" alone is generic; tilt has no DG property in this project.
+    assert by_name["КолВо ребер"]["state"] == "unmapped"
+    assert by_name["Наклон чет сот"]["state"] == "unmapped"
+    qs = [q for q in r["questions"] if q["type"] == "map-parameter"]
+    width_q = next(q for q in qs if q["nameStem"] == "module width")
+    assert len(width_q["parameterIds"]) == 5
+    assert width_q["options"][0]["optionId"] == "property:ex:hasWidthM"
+    assert width_q["options"][-1]["optionId"] == "none"
+    assert "Module Width F1 … Module Width F5" in width_q["text"]
+    assert "слайдеров" in width_q["textRu"]
+    assert r["summary"]["parameters"]["total"] == 8
+    assert r["summary"]["openQuestions"] == len(r["questions"])
+    # Element questions keep their place before parameter questions.
+    assert r["questions"][0]["type"] != "map-parameter"
+
+
+def test_parameter_answer_learns_a_profile_for_the_next_variant():
+    params = _sliders()
+    r = _param_compute(params)
+    q = next(q for q in r["questions"] if q["type"] == "map-parameter" and q["nameStem"] == "module width")
+    out = _decide(r, fx.facade_v1_descriptors(), q, "property:ex:hasWidthM")
+    assert out["decidedParameters"] == {nid: ["ex:hasWidthM"] for nid in q["parameterIds"]}
+    assert out["profiles"][0]["selector"] == {"kind": "parameter", "nameStem": "module width"}
+    assert out["decisions"][0]["groupId"] == "parameters:module width"
+    r2 = _param_compute(params, out["profiles"], out["decidedParameters"])
+    assert {p["state"] for p in r2["parameters"] if p["nameStem"] == "module width"} == {"confirmed"}
+    assert not any(q["type"] == "map-parameter" and q["nameStem"] == "module width" for q in r2["questions"])
+    # A new definition with a sixth width slider is mapped by the learned profile.
+    r3 = _param_compute([{"nativeId": "gh:other:slider:mw6", "name": "Module Width F6"}], out["profiles"])
+    assert r3["parameters"][0]["state"] == "auto"
+    assert r3["parameters"][0]["property"]["iri"] == "ex:hasWidthM"
+    # Parameter profiles never match elements.
+    assert all(e["state"] != "auto" for e in r3["elements"])
+    part = m.partition(r2)
+    assert {p["propertyIri"] for p in part["parameters"]} == {"ex:hasWidthM"}
+
+
+def test_parameter_none_answer_is_remembered():
+    params = [p for p in _sliders() if p["name"] == "Ratio"]
+    r = _param_compute(params)
+    q = next(q for q in r["questions"] if q["type"] == "map-parameter")
+    out = _decide(r, fx.facade_v1_descriptors(), q, "none")
+    assert out["decidedParameters"] == {"gh:doc:slider:ratio": []}
+    r2 = _param_compute(params, out["profiles"])
+    assert r2["parameters"][0]["state"] == "unmapped"
+    assert not any(q["type"] == "map-parameter" for q in r2["questions"])
+
+
+def test_parameters_are_validated_and_deterministic():
+    with pytest.raises(m.MappingInputError):
+        _param_compute([{"nativeId": "a"}])
+    with pytest.raises(m.MappingInputError):
+        _param_compute([{"nativeId": "a", "name": "x"}, {"nativeId": "a", "name": "y"}])
+    a = _param_compute(_sliders())
+    b = _param_compute(list(reversed(_sliders())))
+    assert json.dumps(a, sort_keys=True, ensure_ascii=False) == json.dumps(b, sort_keys=True, ensure_ascii=False)
+    assert m.name_stem("1 оффсет") == "оффсет" and m.name_stem("T4_Offset") == "offset"

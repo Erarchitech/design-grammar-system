@@ -48,6 +48,12 @@ class FakeStore:
     def fetch_class_rules(self, session, project):
         return dict(fx.EXTRA_RULE_CLASSES)
 
+    def fetch_properties(self, session, project, constraints):
+        classes_of = {}
+        for c in constraints:
+            classes_of.setdefault(c.prop_local, set()).add(c.class_local)
+        return [mapping_engine.PropertyInfo(f"ex:{p}", p, tuple(sorted(cs))) for p, cs in sorted(classes_of.items())]
+
     # profiles
     def fetch_profiles(self, session, project):
         return [dict(p) for k, p in sorted(self.profiles.items()) if k[0] == project]
@@ -98,6 +104,7 @@ def fake_store(monkeypatch):
         "fetch_classes",
         "fetch_rule_rows",
         "fetch_class_rules",
+        "fetch_properties",
         "fetch_profiles",
         "save_profile",
         "save_session",
@@ -162,6 +169,27 @@ def test_decisions_confirm_everything_and_store_profiles(fake_store):
     assert all(d["sessionId"] == sid for _, _, d in fake_store.decisions)
     assert "ex:GroundFloorUnit" in {r for roles in fake_store.role_links.values() for r in roles}
     assert all("memberIds" not in d for d in out["decisions"])
+
+
+def test_parameters_are_proposed_answered_and_learned(fake_store):
+    params = [{"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}", "names": ["Ширина соты"]} for i in range(1, 4)]
+    r = _create(fx.facade_v1_descriptors(), parameters=params)
+    assert r.status_code == 200, r.text
+    s = r.json()
+    assert s["summary"]["parameters"]["total"] == 3
+    q = next(q for q in s["questions"] if q["type"] == "map-parameter")
+    assert q["options"][0]["optionId"] == "property:ex:hasWidthM" and q["parameterIds"]
+    r1 = _decide(s["sessionId"], q["questionId"], "property:ex:hasWidthM")
+    assert r1.status_code == 200, r1.text
+    assert {p["state"] for p in r1.json()["session"]["parameters"]} == {"confirmed"}
+    assert fake_store.decisions[-1][2]["groupId"] == "parameters:module width"
+    r2 = _create(fx.facade_v2_descriptors(), parameters=[{"nativeId": "gh:doc2:slider:mw", "name": "Module Width F4"}])
+    assert r2.json()["parameters"][0]["state"] == "auto"
+    applied = client.post(f"/mapping/sessions/{s['sessionId']}/apply", json={"project": PROJECT}, headers=CSRF)
+    assert applied.status_code == 200, applied.text
+    assert {p["propertyIri"] for p in applied.json()["parameters"]} == {"ex:hasWidthM"}
+    bad = _create(fx.facade_v1_descriptors(), parameters=[{"nativeId": "x"}])
+    assert bad.status_code == 400 and bad.json()["detail"]["code"] == "MAPPING_INPUT_INVALID"
 
 
 def test_new_session_on_v2_uses_profiles(fake_store):
