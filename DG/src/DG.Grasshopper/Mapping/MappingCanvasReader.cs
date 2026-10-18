@@ -680,7 +680,8 @@ internal static class MappingCanvasReader
         return new List<double>();
     }
 
-    private static string DocumentKey(GH_Document doc)
+    /// <summary>The key a session's element ids and label carry (also the bridge's mapping status, plan 1303-10).</summary>
+    internal static string DocumentKey(GH_Document doc)
     {
         var path = doc.FilePath;
         var name = string.IsNullOrWhiteSpace(path) ? doc.DocumentID.ToString("N")[..8] : Path.GetFileNameWithoutExtension(path);

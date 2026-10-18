@@ -147,6 +147,48 @@ public sealed class MappingAutoIntakeTests
     }
 
     [Fact]
+    public void Client_ParsesCanvasTags_FromProposalAndAnswerRows()
+    {
+        // Plan 1303-10: every proposed component gets a temporary frame and tag on the canvas.
+        const string json = """
+        {"sessionId":"s","document":"facade","summary":{"openQuestions":1},"elements":[],
+         "questions":[{"questionId":"Q-1","type":"mapping-or-design","items":[
+            {"itemId":"G-1","kind":"stream","name":"Panels A","componentId":"24549b0264794f1bb333b7768ab72820","count":120,
+             "proposal":{"iri":"ex:GlassPanel","label":"GlassPanel"},"alternatives":[{"iri":"ex:BottomTriangularPanel","label":"BottomTriangularPanel"}],"state":"ambiguous"},
+            {"itemId":"G-2","kind":"stream","name":"Revit","componentId":null,"count":3,"proposal":null,"alternatives":[],"state":"ambiguous"}]}],
+         "answers":[{"answerId":"A-1","items":[
+            {"itemId":"m1","kind":"measure","name":"AR (C#)","componentId":"71de70f3be6c494485dfa75af7e598e1","count":125,
+             "proposal":{"iri":"ex:hasAspectRatio","label":"hasAspectRatio"},"alternatives":[],"state":"confirmed"}]}]}
+        """;
+        var state = MappingSessionClient.ParseSession(json);
+        Assert.Equal("facade", state.Document);
+        Assert.Equal(2, state.Tags.Count);
+        var open = state.Tags[0];
+        Assert.Equal("24549b0264794f1bb333b7768ab72820", open.ComponentId);
+        Assert.Equal("ambiguous", open.State);
+        Assert.Equal("DG ? Panels A → GlassPanel | BottomTriangularPanel", open.Text);
+        Assert.Equal("DG ✓ AR (C#) → hasAspectRatio", state.Tags[1].Text);
+        // An undo (the answer disappears) changes the revision, so CONNECTOR redraws.
+        var undone = MappingSessionClient.ParseSession(json.Replace("\"answers\":[{", "\"answersX\":[{"));
+        Assert.NotEqual(state.Revision, undone.Revision);
+        Assert.Equal("DG · W → hasWidthM", MappingSessionClient.TagText("suggested", "W", "hasWidthM", new[] { "hasAspectRatio" }));
+    }
+
+    [Fact]
+    public void BridgeCommands_All_IncludeTheMappingCommands_ReadCommandsUnchanged()
+    {
+        // Plan 1303-10: DeGram focuses components and starts mapping through the canvas bridge.
+        Assert.Equal("focus_component", DG.Core.Bridge.CanvasBridgeCommands.FocusComponent);
+        Assert.Equal("start_mapping", DG.Core.Bridge.CanvasBridgeCommands.StartMapping);
+        Assert.Equal("get_mapping_status", DG.Core.Bridge.CanvasBridgeCommands.GetMappingStatus);
+        foreach (var c in new[] { "focus_component", "start_mapping", "get_mapping_status" })
+        {
+            Assert.Contains(c, DG.Core.Bridge.CanvasBridgeCommands.All);
+            Assert.DoesNotContain(c, DG.Core.Bridge.CanvasBridgeCommands.ReadCommands);
+        }
+    }
+
+    [Fact]
     public async Task Client_Apply_ParsesRolesAndSliderProperties()
     {
         const string applied = """

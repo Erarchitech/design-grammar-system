@@ -148,6 +148,9 @@ public sealed class CanvasListenerComponent : GH_Component
             [CanvasBridgeCommands.PreviewStructure] = HandlePreviewStructure,
             [CanvasBridgeCommands.ClearPreview] = HandleClearPreview,
             [CanvasBridgeCommands.GetPreviewStatus] = HandleGetPreviewStatus,
+            [CanvasBridgeCommands.FocusComponent] = HandleFocusComponent,
+            [CanvasBridgeCommands.StartMapping] = HandleStartMapping,
+            [CanvasBridgeCommands.GetMappingStatus] = HandleGetMappingStatus,
         };
 
         return new CanvasCommandDispatcher(handlers);
@@ -190,6 +193,113 @@ public sealed class CanvasListenerComponent : GH_Component
                 doc.DisplayName,
                 doc.IsModified,
                 DateTimeOffset.UtcNow);
+        });
+    }
+
+    /// <summary>
+    /// Plan 1303-10: show one canvas object (a mapping proposal row clicked in DeGram). Brings the
+    /// Grasshopper editor to the front, selects the object's top-level component and centres and zooms
+    /// the canvas on it. The definition itself is not changed.
+    /// </summary>
+    private object? HandleFocusComponent(CanvasCommandRequest request)
+    {
+        var id = request.TryGetString("componentId") ?? string.Empty;
+        if (!Guid.TryParseExact(id, "N", out var guid) && !Guid.TryParse(id, out guid))
+        {
+            throw new ArgumentException("componentId must be a Grasshopper InstanceGuid.");
+        }
+
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            var obj = doc.FindObject(guid, false);
+            var top = obj?.Attributes?.GetTopLevel;
+            if (obj is null || top?.DocObject is null)
+            {
+                return (object?)new { found = false, componentId = id };
+            }
+
+            var editor = global::Grasshopper.Instances.DocumentEditor;
+            if (editor is not null)
+            {
+                if (editor.WindowState == FormWindowState.Minimized)
+                {
+                    editor.WindowState = FormWindowState.Normal;
+                }
+
+                editor.Show();
+                editor.TopMost = true; // Windows lets a background process raise its window only this way
+                editor.TopMost = false;
+                editor.Activate();
+            }
+
+            var canvas = global::Grasshopper.Instances.ActiveCanvas;
+            if (canvas is not null && !ReferenceEquals(canvas.Document, doc))
+            {
+                canvas.Document = doc;
+            }
+
+            foreach (var other in doc.Objects)
+            {
+                if (other.Attributes is { Selected: true } && !ReferenceEquals(other, top.DocObject))
+                {
+                    other.Attributes.Selected = false;
+                }
+            }
+
+            top.Selected = true;
+            if (canvas is not null)
+            {
+                var b = top.Bounds;
+                var zoom = Math.Min(canvas.Width / (b.Width + 400f), canvas.Height / (b.Height + 300f));
+                canvas.Viewport.Zoom = Math.Clamp(zoom, 0.4f, 1.6f);
+                canvas.Viewport.MidPoint = new PointF(b.X + b.Width / 2f, b.Y + b.Height / 2f);
+                canvas.Refresh();
+            }
+
+            return (object?)new { found = true, componentId = id, name = top.DocObject.NickName };
+        });
+    }
+
+    /// <summary>Plan 1303-10 (DeGram «Запустить меппинг»): CONNECTOR reads the canvas and creates a session now.</summary>
+    private object? HandleStartMapping(CanvasCommandRequest request)
+    {
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            var connector = doc.Objects.OfType<ConnectorComponent>().FirstOrDefault();
+            if (connector is null)
+            {
+                return (object?)new { started = false, message = "No CONNECTOR on this canvas." };
+            }
+
+            var mapping = connector.Mapping;
+            if (mapping is null)
+            {
+                return (object?)new { started = false, message = "Sign in on CONNECTOR (AutoMap on) to map this definition." };
+            }
+
+            var (started, message) = mapping.StartNow();
+            return (object?)new { started, message };
+        });
+    }
+
+    /// <summary>Plan 1303-10: what DeGram needs to find this definition's mapping session.</summary>
+    private object? HandleGetMappingStatus(CanvasCommandRequest request)
+    {
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            var connector = doc.Objects.OfType<ConnectorComponent>().FirstOrDefault();
+            var mapping = connector?.Mapping;
+            return (object?)new
+            {
+                document = DG.Grasshopper.Mapping.MappingCanvasReader.DocumentKey(doc),
+                connector = connector is not null,
+                signedIn = mapping?.Enabled ?? false,
+                sessionId = mapping?.SessionId,
+                message = mapping?.Status ?? (connector is null ? "No CONNECTOR on this canvas." : "Sign in on CONNECTOR."),
+            };
         });
     }
 

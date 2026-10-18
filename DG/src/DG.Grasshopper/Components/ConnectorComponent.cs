@@ -40,6 +40,9 @@ public sealed class ConnectorComponent : GH_Component
     // of this definition to DG automatically — no mapping component and no wiring.
     private MappingAutoRunner? _mapping;
 
+    /// <summary>The automatic mapping of this definition (plan 1303-10: the canvas bridge starts it and reads its status).</summary>
+    internal MappingAutoRunner? Mapping => _mapping;
+
     public ConnectorComponent()
         : base("CONNECTOR", "CONNECTOR", "Sign in with your DG account and connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {

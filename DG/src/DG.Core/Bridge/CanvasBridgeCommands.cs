@@ -19,6 +19,18 @@ public static class CanvasBridgeCommands
     /// </summary>
     public const string GetDocumentIdentity = "get_document_identity";
 
+    /// <summary>
+    /// Phase 1303-10 (owner decision 2026-10-18, DeGram has full access to the GH canvas): bring the
+    /// Grasshopper editor to the front, select one object by its InstanceGuid and zoom to it.
+    /// </summary>
+    public const string FocusComponent = "focus_component";
+
+    /// <summary>Phase 1303-10: CONNECTOR reads the canvas and creates a mapping session now.</summary>
+    public const string StartMapping = "start_mapping";
+
+    /// <summary>Phase 1303-10: the document key, current mapping session and CONNECTOR mapping status.</summary>
+    public const string GetMappingStatus = "get_mapping_status";
+
     public static IReadOnlyList<string> All { get; } = new[]
     {
         GetCanvasContext,
@@ -27,6 +39,9 @@ public static class CanvasBridgeCommands
         ClearPreview,
         GetPreviewStatus,
         GetDocumentIdentity,
+        FocusComponent,
+        StartMapping,
+        GetMappingStatus,
     };
 
     /// <summary>

@@ -38,10 +38,14 @@ internal sealed class MappingAutoRunner : IDisposable
     private const int DebounceMs = 1500;
     private const int PollMs = 3000;
 
+    // Plan 1303-10: after the last answer CONNECTOR waits before apply, so that answer can still be undone.
+    private static readonly TimeSpan ApplyGrace = TimeSpan.FromSeconds(10);
+
     private readonly GH_Component _owner;
     private readonly string _dataServiceUrl;
     private readonly MappingSessionClient _client = new();
     private readonly MappingPreviewConduit _conduit = new();
+    private readonly MappingCanvasTags _tags = new();
     private readonly object _timerGate = new();
 
     private GH_Document? _doc;
@@ -58,6 +62,7 @@ internal sealed class MappingAutoRunner : IDisposable
     private MappingSessionState? _session;
     private MappingApplyResult? _applied;
     private bool _placed;
+    private DateTime? _allAnsweredAt;
     private string? _placement;
     private string _status = "Mapping: sign in to map automatically";
     private volatile MappingOutputs _outputs = new() { Summary = "Mapping: sign in to map automatically" };
@@ -69,6 +74,29 @@ internal sealed class MappingAutoRunner : IDisposable
     }
 
     public MappingOutputs Outputs => _outputs;
+
+    /// <summary>Signed in with AutoMap on: the runner reads the canvas and follows sessions.</summary>
+    public bool Enabled => _enabled;
+
+    public string? SessionId => _session?.SessionId;
+
+    public string Status => _status;
+
+    /// <summary>
+    /// Plan 1303-10 (DeGram «Запустить меппинг», bridge command start_mapping): read the canvas now and
+    /// create a session even when its content was already sent. UI thread.
+    /// </summary>
+    public (bool Started, string Message) StartNow()
+    {
+        if (!_enabled || _doc is null || string.IsNullOrEmpty(_token))
+        {
+            return (false, _status);
+        }
+
+        _postedFingerprint = null;
+        ScheduleScan();
+        return (true, "Mapping: reading the canvas");
+    }
 
     /// <summary>Called from CONNECTOR.SolveInstance on the UI thread.</summary>
     public void Configure(GH_Document? doc, string? token, string? project, bool enabled)
@@ -110,6 +138,7 @@ internal sealed class MappingAutoRunner : IDisposable
         Stop("Mapping: off");
         Detach();
         _conduit.Enabled = false;
+        _tags.Dispose();
     }
 
     private void Detach()
@@ -136,6 +165,8 @@ internal sealed class MappingAutoRunner : IDisposable
         _read = null;
         _session = null;
         _applied = null;
+        _allAnsweredAt = null;
+        _tags.Clear();
         _status = reason;
         _outputs = new MappingOutputs { Summary = reason };
         _conduit.Update(Array.Empty<(Rhino.Geometry.GeometryBase, System.Drawing.Color)>());
@@ -230,6 +261,7 @@ internal sealed class MappingAutoRunner : IDisposable
         _read = read;
         _session = created.Value;
         _applied = null;
+        _allAnsweredAt = null;
         UpdateConduit();
         BuildOutputs(expire: true);
         if (_session!.OpenQuestions == 0)
@@ -297,10 +329,20 @@ internal sealed class MappingAutoRunner : IDisposable
                 }));
             }
 
-            if (state.OpenQuestions == 0)
+            if (state.OpenQuestions > 0)
             {
-                StopPolling();
-                await ApplyAsync(state.SessionId).ConfigureAwait(false);
+                _allAnsweredAt = null;
+            }
+            else
+            {
+                // Keep polling during the grace period: an undo brings questions back.
+                _allAnsweredAt ??= DateTime.UtcNow;
+                if (DateTime.UtcNow - _allAnsweredAt.Value >= ApplyGrace)
+                {
+                    StopPolling();
+                    _allAnsweredAt = null;
+                    await ApplyAsync(state.SessionId).ConfigureAwait(false);
+                }
             }
         }
         catch
@@ -330,6 +372,7 @@ internal sealed class MappingAutoRunner : IDisposable
             }
 
             _applied = applied.Value;
+            _tags.Clear();
             BuildOutputs(expire: true);
             TryPlace();
         }));
@@ -389,6 +432,10 @@ internal sealed class MappingAutoRunner : IDisposable
         _conduit.Update(items);
         _conduit.Enabled = true;
         RhinoDoc.ActiveDoc?.Views.Redraw();
+        if (_applied is null)
+        {
+            _tags.Show(_doc, session.Tags);
+        }
     }
 
     private void BuildOutputs(bool expire)
@@ -406,8 +453,8 @@ internal sealed class MappingAutoRunner : IDisposable
             .Select(k => $"{k} {s.Counts[k]}");
         lines.Add($"Mapping {read.DocumentKey}: {s.Total} elements ({string.Join(", ", parts)}), {s.Measures.Count} calculation outputs, {s.Parameters.Count} sliders, {s.OpenQuestions} open question(s)" + (s.LlmStatus is null ? string.Empty : $", LLM {s.LlmStatus}"));
         lines.Add(s.OpenQuestions > 0
-            ? $"Answer in DG Web UI → Projects → {_project} → Mapping (session {s.SessionId})"
-            : _applied is null ? $"Session {s.SessionId}: applying…" : $"Session {s.SessionId}: applied");
+            ? $"Answer in DG Web UI → Projects → {_project} → Mapping, or in DeGram → Модели → Mapping (session {s.SessionId})"
+            : _applied is null ? $"Session {s.SessionId}: all answered, applying in about {ApplyGrace.TotalSeconds:0} s (an answer can still be undone)" : $"Session {s.SessionId}: applied");
         if (read.Streams.Count > 0)
         {
             lines.Add("Streams: " + string.Join(", ", read.Streams));
@@ -458,7 +505,7 @@ internal sealed class MappingAutoRunner : IDisposable
             }
         }
 
-        var suffix = s.OpenQuestions > 0 ? $" · Map: {s.OpenQuestions}?" : _applied is not null ? " · Map ✓" : " · Map";
+        var suffix = s.OpenQuestions > 0 ? $" · Map: {s.OpenQuestions}?" : _applied is not null ? " · Map ✓" : " · Map …";
         _status = lines[0];
         _outputs = new MappingOutputs
         {

@@ -11,10 +11,22 @@ public sealed record MappingElementState(string State, IReadOnlyList<string> Rol
 /// <summary>Mapping state of one slider: state and the proposed or confirmed property.</summary>
 public sealed record MappingParameterState(string NativeId, string Name, string State, string? PropertyLabel, string? PropertyIri);
 
+/// <summary>
+/// One proposed canvas component and the temporary tag CONNECTOR draws around it (plan 1303-10):
+/// <see cref="ComponentId"/> is the 32-hex GH InstanceGuid of the stream source, calculation output or slider.
+/// </summary>
+public sealed record MappingCanvasTag(string ComponentId, string State, string Text);
+
 /// <summary>The parts of a mapping session CONNECTOR shows on the canvas.</summary>
 public sealed class MappingSessionState
 {
     public string SessionId { get; init; } = string.Empty;
+
+    /// <summary>The GH document key the session was read from (null for imported Revit sessions).</summary>
+    public string? Document { get; init; }
+
+    /// <summary>Tags for the components of open proposals and of given answers, proposals first.</summary>
+    public IReadOnlyList<MappingCanvasTag> Tags { get; init; } = Array.Empty<MappingCanvasTag>();
 
     public int Total { get; init; }
 
@@ -211,9 +223,17 @@ public sealed class MappingSessionClient
             llm = Text(llmBlock, "status");
         }
 
+        var tags = ParseTags(root);
+        foreach (var t in tags)
+        {
+            revision.Append(t.ComponentId).Append('#').Append(t.Text).Append(';');
+        }
+
         return new MappingSessionState
         {
             SessionId = Text(root, "sessionId") ?? string.Empty,
+            Document = Text(root, "document"),
+            Tags = tags,
             Total = total,
             OpenQuestions = open,
             Counts = counts,
@@ -223,6 +243,77 @@ public sealed class MappingSessionClient
             LlmStatus = llm,
             Revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
         };
+    }
+
+    /// <summary>The tag text: state mark, component name, proposal (and alternatives while ambiguous).</summary>
+    public static string TagText(string state, string name, string? proposal, IReadOnlyList<string> alternatives)
+    {
+        var mark = state switch
+        {
+            "ambiguous" => "DG ?",
+            "suggested" => "DG ·",
+            "confirmed" => "DG ✓",
+            "auto" => "DG ↺",
+            _ => "DG –",
+        };
+        var target = proposal is null
+            ? "—"
+            : state == "ambiguous" && alternatives.Count > 0 ? $"{proposal} | {string.Join(" | ", alternatives)}" : proposal;
+        return $"{mark} {name} → {target}";
+    }
+
+    private static List<MappingCanvasTag> ParseTags(JsonElement root)
+    {
+        var tags = new List<MappingCanvasTag>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (key, fallbackState) in new[] { ("questions", (string?)null), ("answers", "confirmed") })
+        {
+            if (!root.TryGetProperty(key, out var list) || list.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var entry in list.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var item in items.EnumerateArray())
+                {
+                    var id = Text(item, "componentId");
+                    if (string.IsNullOrEmpty(id) || !seen.Add(id + "|" + Text(item, "itemId")))
+                    {
+                        continue;
+                    }
+
+                    var state = Text(item, "state") ?? fallbackState ?? "suggested";
+                    string? proposal = null;
+                    if (item.TryGetProperty("proposal", out var prop) && prop.ValueKind == JsonValueKind.Object)
+                    {
+                        proposal = Text(prop, "label") ?? LocalName(Text(prop, "iri"));
+                    }
+
+                    var alternatives = new List<string>();
+                    if (item.TryGetProperty("alternatives", out var alts) && alts.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var alt in alts.EnumerateArray())
+                        {
+                            var label = Text(alt, "label") ?? LocalName(Text(alt, "iri"));
+                            if (!string.IsNullOrEmpty(label))
+                            {
+                                alternatives.Add(label);
+                            }
+                        }
+                    }
+
+                    tags.Add(new MappingCanvasTag(id, state, TagText(state, Text(item, "name") ?? "?", proposal, alternatives)));
+                }
+            }
+        }
+
+        return tags;
     }
 
     public static MappingApplyResult ParseApply(string json)
