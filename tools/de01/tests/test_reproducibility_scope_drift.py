@@ -135,5 +135,5 @@ class TestStreamingRelayCallSite:
     def test_spec_prose_states_the_stream_chat_rule_and_the_row_count(self):
         text = SPEC_PATH.read_text(encoding="utf-8")
         assert "`stream_chat`" in text
-        assert "exactly eight lines" in text
-        assert len(load_fenced_call_sites()) == 8
+        assert "exactly nine lines" in text
+        assert len(load_fenced_call_sites()) == 9

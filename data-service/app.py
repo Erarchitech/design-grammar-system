@@ -5609,8 +5609,10 @@ class MappingSessionCreateRequest(BaseModel):
     platform: str = Field(pattern="^(grasshopper|revit)$")
     label: str | None = Field(default=None, max_length=200)
     elements: list[dict]
-    # GH sliders (name + canvas text) proposed as DG datatype properties (owner amendment 2026-10-18).
+    # Named GH sliders, proposed as DG parameters (1303-CONTEXT D-37).
     parameters: list[dict] | None = None
+    # Outputs of calculation components, proposed as DG datatype properties (D-37).
+    measures: list[dict] | None = None
     context: dict | None = None
 
 
@@ -5669,6 +5671,7 @@ def post_mapping_session(payload: MappingSessionCreateRequest, request: Request)
         _mapping_actor(request),
         mapping_store.utc_now(),
         payload.parameters,
+        payload.measures,
     )
 
 

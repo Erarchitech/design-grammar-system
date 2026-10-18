@@ -51,12 +51,18 @@ CONFIG: dict[str, float] = {
     "profile_beta": 1,
     "max_elements": 5000,
     "representatives": 3,
-    # Parameters (GH sliders) → DG datatype properties, by name.
+    # Calculation outputs (measures) → DG datatype properties; sliders → DG parameters.
     "prior_param": -1.0,
     "w_param_own": 2.0,
     "w_param_context": 1.0,
     "w_param_cap": 4.0,
+    "w_measure_acronym": 2.0,
+    "w_measure_agree": 4.0,
+    "w_measure_agree_const": 1.5,
+    # An LLM proposal (D-37) is one vote among the deterministic evidence.
+    "w_llm": 2.5,
     "max_parameters": 500,
+    "max_measures": 500,
 }
 
 SELECTOR_FEATURES = (
@@ -684,14 +690,20 @@ def compute(
     parameters: Optional[list] = None,
     properties: Sequence[PropertyInfo] = (),
     decided_parameters: Optional[Mapping] = None,
+    measures: Optional[list] = None,
+    decided_measures: Optional[Mapping] = None,
+    llm: Optional[Mapping] = None,
 ) -> dict:
     """Map descriptors to DG classes. Returns the deterministic session body.
 
     `decided` maps nativeId → list of class IRIs confirmed by a human in this
     session ([] = explicitly none); `splits` maps nativeId → extra signature
-    features requested by a split answer. `parameters` (GH sliders) are mapped
-    to `properties` the same way; `decided_parameters` maps parameter nativeId
-    → [property IRI] or [].
+    features requested by a split answer. `parameters` (GH sliders) become DG
+    parameters, `measures` (outputs of calculation components) are mapped to
+    `properties`; `decided_parameters` / `decided_measures` hold the answers.
+    `llm` is a recorded LLM proposal (D-37): {objects: {stream: {classIri,
+    confidence, reason}}, measures: {...}, parameters: {...}}; it is input
+    data, so the result stays deterministic for the same proposal.
     """
     cfg = dict(CONFIG)
     cfg.update(config or {})
@@ -719,9 +731,20 @@ def compute(
         rule_ev, stats = ev_rules(feats, constraints, cfg)
         evidence += rule_ev
         evidence += ev_ifc(feats, classes, cfg)
+        stream = str(d["stream"]) if d.get("stream") else None
+        proposal = _llm_entry(llm, "objects", stream) if stream else None
+        if proposal and local_name(proposal.get("classIri")) in known:
+            evidence.append(
+                Evidence(
+                    local_name(proposal["classIri"]),
+                    "llm",
+                    cfg["w_llm"] * _llm_conf(proposal),
+                    "LLM: " + (str(proposal.get("reason") or "proposed")[:200]),
+                )
+            )
         sig = _base_signature(feats, splits.get(nid, ()))
         key = canonical_json({k: _norm(v) for k, v in sig.items()})
-        row = {"nid": nid, "feats": feats, "evidence": evidence, "matched": matched, "stats": stats, "sig": sig, "key": key}
+        row = {"nid": nid, "feats": feats, "evidence": evidence, "matched": matched, "stats": stats, "sig": sig, "key": key, "stream": stream}
         rows.append(row)
         base_groups.setdefault(key, []).append(row)
 
@@ -848,12 +871,17 @@ def compute(
 
     ordered_groups = sorted(groups.values(), key=lambda g: (-g["priority"], g["groupId"]))
 
-    # 5. Questions (element groups first, then parameters).
+    # 5. Questions (element groups, then calculation outputs, then sliders).
     questions = _build_questions(ordered_groups, iri_of, label_of, disjoint_pairs, cfg)
     param_rows: list = []
+    measure_rows: list = []
     decided_parameters = {str(k): sorted(v) for k, v in (decided_parameters or {}).items()}
+    decided_measures = {str(k): sorted(v) for k, v in (decided_measures or {}).items()}
+    if measures:
+        measure_rows = map_measures(measures, properties, active_profiles, decided_measures, llm, platform_default, cfg)
+        questions = questions + _measure_questions(measure_rows)
     if parameters:
-        param_rows = map_parameters(parameters, properties, active_profiles, decided_parameters, platform_default, cfg)
+        param_rows = map_parameters(parameters, active_profiles, decided_parameters, llm, platform_default, cfg)
         questions = questions + _parameter_questions(param_rows)
     qid_of = {}
     for q in questions:
@@ -885,6 +913,7 @@ def compute(
                 "nativeId": row["nid"],
                 "groupId": row["groupId"],
                 "state": row["state"],
+                **({"stream": row["stream"]} if row["stream"] else {}),
                 "roles": [
                     {
                         "classIri": iri_of[r],
@@ -915,13 +944,17 @@ def compute(
         "decided": {k: sorted(v) for k, v in sorted(decided.items())},
         "splits": {k: sorted(v) for k, v in sorted(splits.items())},
     }
-    if parameters:
-        pcounts = {s: 0 for s in STATES}
-        for r in param_rows:
-            pcounts[r["state"]] += 1
-        summary["parameters"] = {"total": len(param_rows), **pcounts}
-        body["parameters"] = param_rows
-        body["decidedParameters"] = dict(sorted(decided_parameters.items()))
+    for key, kind_rows, decided_kind, given in (
+        ("parameters", param_rows, decided_parameters, parameters),
+        ("measures", measure_rows, decided_measures, measures),
+    ):
+        if given:
+            kcounts = {s: 0 for s in STATES}
+            for r in kind_rows:
+                kcounts[r["state"]] += 1
+            summary[key] = {"total": len(kind_rows), **kcounts}
+            body[key] = kind_rows
+            body["decided" + key.capitalize()] = dict(sorted(decided_kind.items()))
     return body
 
 
@@ -1208,9 +1241,14 @@ def _src(g: Mapping) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Parameters (Grasshopper sliders) → DG datatype properties
+# Grasshopper parameters (sliders) and measures (outputs of calculation components)
 # ---------------------------------------------------------------------------
+# Owner clarification 2026-10-18 (1303-CONTEXT D-37): in the DG ontology a slider is a DG
+# Parameter (PARAMETER STATE), and a datatype property value comes from the output of a
+# calculation component (Area, a measure script). An LLM proposal is one more vote; a
+# human confirms.
 
+PARAMETER_ROLE = "dg:Parameter"
 _INDEX_TOKEN = re.compile(r"^(?:\d+|[a-zа-яё]\d+|\d+[a-zа-яё])$")
 
 
@@ -1219,6 +1257,10 @@ def name_stem(name: Any) -> str:
     toks = split_tokens(name)
     core = [t for t in toks if not _INDEX_TOKEN.match(t)]
     return " ".join(core or toks)
+
+
+def _property_core_tokens(p: PropertyInfo) -> list:
+    return [t for t in split_tokens(p.local) if t not in PROPERTY_STOP and t not in UNIT_TOKENS]
 
 
 def property_words(p: PropertyInfo) -> set:
@@ -1232,9 +1274,19 @@ def property_words(p: PropertyInfo) -> set:
     return words
 
 
+def property_acronym(p: PropertyInfo) -> str:
+    """hasAspectRatio → 'ar', hasPlanarityDeviationM → 'pd', hasWidthM → 'w'."""
+    return "".join(t[0] for t in _property_core_tokens(p) if t)
+
+
 def parameter_features(p: Mapping, platform_default: str = "grasshopper") -> dict:
     platform = p.get("platform") or platform_default
     return {"platform": str(platform).strip().lower(), "kind": "parameter", "nameStem": name_stem(p.get("name"))}
+
+
+def measure_features(m: Mapping, platform_default: str = "grasshopper") -> dict:
+    platform = m.get("platform") or platform_default
+    return {"platform": str(platform).strip().lower(), "kind": "measure", "measureName": str(m.get("name") or "").strip().lower()}
 
 
 def _texts(values: Any) -> list:
@@ -1243,64 +1295,186 @@ def _texts(values: Any) -> list:
     return [str(v).strip() for v in values if isinstance(v, (str, int, float)) and not isinstance(v, bool) and str(v).strip()]
 
 
-def _validate_parameters(parameters: Any, cfg: Mapping) -> list:
-    if parameters is None:
+def _validate_named(items: Any, cfg: Mapping, what: str, limit_key: str) -> list:
+    if items is None:
         return []
-    if not isinstance(parameters, list):
-        raise MappingInputError("MAPPING_INPUT_INVALID", "parameters must be a list")
-    if len(parameters) > int(cfg["max_parameters"]):
-        raise MappingInputError("MAPPING_INPUT_INVALID", f"at most {int(cfg['max_parameters'])} parameters per session")
+    if not isinstance(items, list):
+        raise MappingInputError("MAPPING_INPUT_INVALID", f"{what} must be a list")
+    if len(items) > int(cfg[limit_key]):
+        raise MappingInputError("MAPPING_INPUT_INVALID", f"at most {int(cfg[limit_key])} {what} per session")
     seen = set()
-    for p in parameters:
+    for p in items:
         if not isinstance(p, Mapping) or not str(p.get("nativeId") or "").strip() or not str(p.get("name") or "").strip():
-            raise MappingInputError("MAPPING_INPUT_INVALID", "every parameter needs a nativeId and a name")
+            raise MappingInputError("MAPPING_INPUT_INVALID", f"every item of {what} needs a nativeId and a name")
         nid = str(p["nativeId"])
         if nid in seen:
-            raise MappingInputError("MAPPING_INPUT_INVALID", f"duplicate parameter nativeId {nid}")
+            raise MappingInputError("MAPPING_INPUT_INVALID", f"duplicate {what} nativeId {nid}")
         seen.add(nid)
-    return sorted(parameters, key=lambda p: str(p["nativeId"]))
+    return sorted(items, key=lambda p: str(p["nativeId"]))
+
+
+def _validate_parameters(parameters: Any, cfg: Mapping) -> list:
+    return _validate_named(parameters, cfg, "parameters", "max_parameters")
+
+
+def _validate_measures(measures: Any, cfg: Mapping) -> list:
+    return _validate_named(measures, cfg, "measures", "max_measures")
 
 
 def _prop_ref(p: PropertyInfo) -> dict:
     return {"iri": p.iri, "label": p.label, "classes": list(p.classes)}
 
 
+def _llm_entry(llm: Optional[Mapping], kind: str, nid: Any) -> Optional[Mapping]:
+    block = (llm or {}).get(kind) or {}
+    entry = block.get(str(nid)) if isinstance(block, Mapping) else None
+    return entry if isinstance(entry, Mapping) else None
+
+
+def _llm_conf(entry: Mapping) -> float:
+    c = _num(entry.get("confidence"))
+    return 0.7 if c is None else max(0.0, min(1.0, c))
+
+
+def _matched_profiles(profiles: Sequence[Mapping], kind: str, feats: Mapping, cfg: Mapping) -> list:
+    out = []
+    for pr in profiles:
+        if pr.get("state", "active") == "active" and (pr.get("selector") or {}).get("kind") == kind and profile_matches(pr, feats):
+            out.append((pr, _profile_conf(pr, cfg)))
+    return sorted(out, key=lambda t: str(t[0].get("profileId")))
+
+
 def map_parameters(
     parameters: Any,
-    properties: Sequence[PropertyInfo],
     profiles: Sequence[Mapping] = (),
     decided: Optional[Mapping] = None,
+    llm: Optional[Mapping] = None,
     platform_default: str = "grasshopper",
     config: Optional[Mapping] = None,
 ) -> list:
-    """Propose a DG datatype property for every parameter by its name and canvas text.
-
-    Deterministic like `compute`: the parameter's own name counts twice as much
-    as the group names and scribbles around it; learned parameter profiles
-    (selector {kind: parameter, nameStem}) map recurring names automatically.
-    """
+    """Which named sliders are DG Parameters (PARAMETER STATE inputs, ParameterId = name)."""
     cfg = dict(CONFIG)
     cfg.update(config or {})
     items = _validate_parameters(parameters, cfg)
     decided = {str(k): list(v) for k, v in (decided or {}).items()}
-    props = sorted(properties, key=lambda p: p.local)
-    by_local = {p.local: p for p in props}
-    words_of = {p.local: property_words(p) for p in props}
-    active = sorted(
-        [p for p in profiles if p.get("state", "active") == "active" and (p.get("selector") or {}).get("kind") == "parameter"],
-        key=lambda p: str(p.get("profileId")),
-    )
     rows = []
     for item in items:
         nid = str(item["nativeId"])
         name = str(item["name"]).strip()
         feats = parameter_features(item, platform_default)
-        own = concepts(split_tokens(name))
-        ctx = concepts(t for x in _texts(item.get("names")) for t in split_tokens(x)) - own
+        matched = _matched_profiles(profiles, "parameter", feats, cfg)
+        entry = _llm_entry(llm, "parameters", nid)
+        reason = None
+        if nid in decided:
+            state, source, conf = ("confirmed" if decided[nid] else "unmapped"), "human", 1.0
+        elif any(c >= cfg["profile_auto"] for _, c in matched):
+            best = max((t for t in matched if t[1] >= cfg["profile_auto"]), key=lambda t: t[1])
+            state = "auto" if PARAMETER_ROLE in (best[0].get("roles") or []) else "unmapped"
+            source, conf, reason = "profile", best[1], f"profile {best[0]['profileId']}"
+        elif entry is not None:
+            yes = bool(entry.get("isParameter"))
+            state, source, conf = ("suggested" if yes else "unmapped"), "llm", _llm_conf(entry)
+            reason = str(entry.get("reason") or "")[:300] or None
+        else:
+            state, source, conf, reason = "suggested", "name", 0.8, "named slider"
+        rows.append(
+            {
+                "nativeId": nid,
+                "name": name,
+                "nameStem": feats["nameStem"],
+                "state": state,
+                "source": source,
+                "isParameter": state in ("confirmed", "auto", "suggested"),
+                "confidence": _r(conf),
+                "reason": reason,
+                "value": item.get("value"),
+                "questionId": None,
+            }
+        )
+    return rows
+
+
+def _natural_key(text: str) -> list:
+    return [int(x) if x.isdigit() else x.lower() for x in re.split(r"(\d+)", text)]
+
+
+def _shown_names(names: Sequence[str]) -> str:
+    names = sorted(set(names), key=_natural_key)
+    return ", ".join(names) if len(names) <= 6 else f"{', '.join(names[:4])} … {names[-1]}"
+
+
+def _parameter_questions(rows: Sequence[dict]) -> list:
+    members = [r for r in rows if r["state"] == "suggested"]
+    if not members:
+        return []
+    ids = sorted(m["nativeId"] for m in members)
+    n = len(members)
+    shown = _shown_names([m["name"] for m in members])
+    qid = "Q-" + _sha("batch-parameters|" + "|".join(ids), 8)
+    for m in members:
+        m["questionId"] = qid
+    return [
+        {
+            "questionId": qid,
+            "type": "batch-parameters",
+            "groupIds": [],
+            "parameterIds": ids,
+            "text": f"{n} {_en_plural(n, 'slider', 'sliders')} look like DG parameters of the design (PARAMETER STATE): {shown}. Accept all?",
+            "textRu": (
+                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} {'похож' if n == 1 else 'похожи'} на параметры DG "
+                f"(PARAMETER STATE): {shown}. Принять все?"
+            ),
+            "options": [
+                {"optionId": "accept-all", "label": "Accept all as DG parameters", "roles": None},
+                {"optionId": "none", "label": "None of these", "roles": []},
+            ],
+            "consequences": [],
+        }
+    ]
+
+
+def map_measures(
+    measures: Any,
+    properties: Sequence[PropertyInfo],
+    profiles: Sequence[Mapping] = (),
+    decided: Optional[Mapping] = None,
+    llm: Optional[Mapping] = None,
+    platform_default: str = "grasshopper",
+    config: Optional[Mapping] = None,
+) -> list:
+    """Propose the DG datatype property each calculation output carries, and its element stream.
+
+    Evidence: values equal to the property the plugin computed from the stream's own
+    geometry (strong; weak for a constant column), the output name as the property's
+    acronym or words, the canvas text around the component, the LLM proposal, and learned
+    measure profiles.
+    """
+    cfg = dict(CONFIG)
+    cfg.update(config or {})
+    items = _validate_measures(measures, cfg)
+    decided = {str(k): list(v) for k, v in (decided or {}).items()}
+    props = sorted(properties, key=lambda p: p.local)
+    by_local = {p.local: p for p in props}
+    words_of = {p.local: property_words(p) for p in props}
+    rows = []
+    for item in items:
+        nid = str(item["nativeId"])
+        name = str(item["name"]).strip()
+        feats = measure_features(item, platform_default)
+        name_toks = split_tokens(name)
+        own = concepts(name_toks)
+        ctx = concepts(t for x in _texts(item.get("names")) + _texts([item.get("component")]) for t in split_tokens(x)) - own
+        streams = [s for s in (item.get("streams") or []) if isinstance(s, Mapping) and s.get("stream")]
+        entry = _llm_entry(llm, "measures", nid)
         score: dict = {}
         evid: dict = {}
+        stream_of: dict = {}
         for p in props:
             s, parts = 0.0, []
+            acr = property_acronym(p)
+            if acr and any(t == acr for t in name_toks):
+                s += cfg["w_measure_acronym"]
+                parts.append(f"'{name}' is the acronym of {p.label}")
             for w in sorted(words_of[p.local]):
                 k = 0.5 if w in GENERIC_WORDS else 1.0
                 if w in own:
@@ -1309,15 +1483,26 @@ def map_parameters(
                 elif w in ctx:
                     s += cfg["w_param_context"] * k
                     parts.append(f"canvas text → {w}")
+            best_f, best_stream, constant = 0.0, None, False
+            for st in streams:
+                agreement = st.get("agreement") or {}
+                f = _num(agreement.get(p.local)) if isinstance(agreement, Mapping) else None
+                if f is not None and f > best_f:
+                    best_f, best_stream, constant = f, str(st["stream"]), bool(st.get("constant"))
+            if best_f >= 0.95:
+                s += (cfg["w_measure_agree_const"] if constant else cfg["w_measure_agree"]) * best_f
+                parts.append(f"values equal {p.label} of stream {best_stream} ({best_f:.2f}{', constant' if constant else ''})")
+                stream_of[p.local] = best_stream
+            if entry is not None and local_name(entry.get("propertyIri")) == p.local:
+                s += cfg["w_llm"] * _llm_conf(entry)
+                parts.append("LLM: " + (str(entry.get("reason") or "proposed")[:200]))
+                if entry.get("stream") and p.local not in stream_of:
+                    stream_of[p.local] = str(entry["stream"])
             if s:
-                score[p.local] = min(s, cfg["w_param_cap"])
+                score[p.local] = s
                 evid[p.local] = parts
-        matched = []
-        for pr in active:
-            if not profile_matches(pr, feats):
-                continue
-            conf = _profile_conf(pr, cfg)
-            matched.append((pr, conf))
+        matched = _matched_profiles(profiles, "measure", feats, cfg)
+        for pr, conf in matched:
             for r in pr.get("roles") or ():
                 lr = local_name(r)
                 if lr in by_local:
@@ -1327,7 +1512,6 @@ def map_parameters(
                 lr = local_name(r)
                 if lr in score:
                     score[lr] -= cfg["w_profile"] * conf
-                    evid.setdefault(lr, []).append(f"profile {pr['profileId']} excludes this property")
         conf_of = {k: _r(_logistic(cfg["prior_param"] + v)) for k, v in score.items()}
         cands = sorted((k for k in conf_of if conf_of[k] >= cfg["tau_candidate"]), key=lambda k: (-conf_of[k], k))
         prop_local, source = None, None
@@ -1351,14 +1535,27 @@ def map_parameters(
                     state, prop_local, source = "suggested", top, "evidence"
                 else:
                     state = "ambiguous"
+        path_streams = [str(s["stream"]) for s in streams if s.get("pathMatch")]
+
+        def stream_for(local: Optional[str]) -> Optional[str]:
+            if local and local in stream_of:
+                return stream_of[local]
+            if entry is not None and entry.get("stream"):
+                return str(entry["stream"])
+            return path_streams[0] if len(path_streams) == 1 else None
+
         rows.append(
             {
                 "nativeId": nid,
                 "name": name,
-                "nameStem": feats["nameStem"],
+                "component": item.get("component"),
+                "count": item.get("count"),
+                "min": item.get("min"),
+                "max": item.get("max"),
                 "state": state,
                 "source": source,
                 "property": _prop_ref(by_local[prop_local]) if prop_local else None,
+                "stream": stream_for(prop_local),
                 "candidates": [
                     {
                         "propertyIri": by_local[k].iri,
@@ -1366,6 +1563,7 @@ def map_parameters(
                         "classes": list(by_local[k].classes),
                         "confidence": conf_of[k],
                         "evidence": evid.get(k, []),
+                        "stream": stream_for(k),
                     }
                     for k in cands[:4]
                 ],
@@ -1375,66 +1573,94 @@ def map_parameters(
     return rows
 
 
-def _natural_key(text: str) -> list:
-    return [int(x) if x.isdigit() else x.lower() for x in re.split(r"(\d+)", text)]
+def _measure_label(r: Mapping) -> str:
+    comp = r.get("component")
+    return f"{r['name']} ({comp})" if comp else str(r["name"])
 
 
-def _parameter_questions(rows: Sequence[dict]) -> list:
-    groups: dict = {}
-    for r in rows:
-        if r["state"] in ("suggested", "ambiguous") and r["candidates"]:
-            key = (r["nameStem"], tuple(c["propertyIri"] for c in r["candidates"][:3]))
-            groups.setdefault(key, []).append(r)
+def _measure_questions(rows: Sequence[dict]) -> list:
     questions = []
-    for (stem, _), members in sorted(groups.items()):
-        ids = sorted(m["nativeId"] for m in members)
-        names = sorted({m["name"] for m in members}, key=_natural_key)
-        shown = ", ".join(names) if len(names) <= 3 else f"{names[0]} … {names[-1]}"
-        n = len(members)
-        cands = members[0]["candidates"][:3]
-
-        def cls(c: Mapping) -> str:
-            return f" ({', '.join(local_name(x) for x in c['classes'])})" if c["classes"] else ""
-
-        if len(cands) == 1:
-            c = cands[0]
-            text = (
-                f"{n} {_en_plural(n, 'slider', 'sliders')} «{shown}» {'looks' if n == 1 else 'look'} like the DG property "
-                f"{c['label']}{cls(c)}. Map {'it' if n == 1 else 'them'}?"
-            )
-            text_ru = (
-                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} «{shown}» {'похож' if n == 1 else 'похожи'} "
-                f"на свойство DG {c['label']}{cls(c)}. Сопоставить?"
-            )
-        else:
-            listing = "; ".join(f"{c['label']}{cls(c)} ({c['confidence']:.2f})" for c in cands)
-            text = f"{n} {_en_plural(n, 'slider', 'sliders')} «{shown}» could be one of the DG properties: {listing}. Which one?"
-            text_ru = (
-                f"{n} {_ru_plural(n, ('слайдер', 'слайдера', 'слайдеров'))} «{shown}» "
-                f"{'может' if n == 1 else 'могут'} соответствовать свойствам DG: {listing}. Какому?"
-            )
-        options = [{"optionId": f"property:{c['propertyIri']}", "label": f"{c['label']}{cls(c)}", "roles": [c["propertyIri"]]} for c in cands]
-        options.append({"optionId": "none", "label": "Not a DG property", "roles": []})
-        qid = "Q-" + _sha("map-parameter|" + stem + "|" + "|".join(ids), 8)
-        for m in members:
-            m["questionId"] = qid
+    suggested = [r for r in rows if r["state"] == "suggested" and r.get("property")]
+    if suggested:
+        ids = sorted(r["nativeId"] for r in suggested)
+        n = len(suggested)
+        pairs = "; ".join(f"{_measure_label(r)} → {r['property']['label']}" for r in sorted(suggested, key=lambda r: _natural_key(r["name"])))
+        qid = "Q-" + _sha("batch-measures|" + "|".join(ids), 8)
+        for r in suggested:
+            r["questionId"] = qid
         questions.append(
             {
                 "questionId": qid,
-                "type": "map-parameter",
+                "type": "batch-measures",
                 "groupIds": [],
-                "parameterIds": ids,
-                "nameStem": stem,
-                "text": text,
-                "textRu": text_ru,
-                "options": options,
+                "measureIds": ids,
+                "text": f"{n} calculation {_en_plural(n, 'output has', 'outputs have')} one clear DG property: {pairs}. Accept all?",
+                "textRu": (
+                    f"{n} {_ru_plural(n, ('расчётный выход', 'расчётных выхода', 'расчётных выходов'))} "
+                    f"{'имеет' if n == 1 else 'имеют'} одно очевидное свойство DG: {pairs}. Принять все?"
+                ),
+                "options": [
+                    {"optionId": "accept-all", "label": "Accept all proposed properties", "roles": None},
+                    {"optionId": "none", "label": "None of these", "roles": []},
+                ],
+                "consequences": [],
+            }
+        )
+    for r in sorted((r for r in rows if r["state"] == "ambiguous" and r["candidates"]), key=lambda r: _natural_key(r["name"])):
+        cands = r["candidates"][:3]
+        span = f"{r.get('count')} values" if r.get("min") is None else f"{r.get('count')} values, {_fmt(_num(r['min']) or 0)}…{_fmt(_num(r['max']) or 0)}"
+        span_ru = f"{r.get('count')} знач." if r.get("min") is None else f"{r.get('count')} знач., {_fmt(_num(r['min']) or 0)}…{_fmt(_num(r['max']) or 0)}"
+        listing = "; ".join(f"{c['label']} ({c['confidence']:.2f})" for c in cands)
+        qid = "Q-" + _sha("map-measure|" + r["nativeId"], 8)
+        r["questionId"] = qid
+        questions.append(
+            {
+                "questionId": qid,
+                "type": "map-measure",
+                "groupIds": [],
+                "measureIds": [r["nativeId"]],
+                "text": f"Output «{_measure_label(r)}» ({span}) could be one of the DG properties: {listing}. Which one?",
+                "textRu": f"Выход «{_measure_label(r)}» ({span_ru}) может соответствовать свойствам DG: {listing}. Какому?",
+                "options": [{"optionId": f"property:{c['propertyIri']}", "label": c["label"], "roles": [c["propertyIri"]]} for c in cands]
+                + [{"optionId": "none", "label": "Not a DG property", "roles": []}],
                 "consequences": [],
             }
         )
     return questions
 
 
-def _decide_parameters(
+def _item_profile(existing: Mapping, out: dict, pid: str, project, platform, selector, roles, excluded, actor, at, decision_id, support, cfg) -> None:
+    prof = dict(out.get(pid) or existing.get(pid) or {})
+    if prof:
+        prof["confirmations"] = int(prof.get("confirmations", 0)) + 1
+        prof["decisionIds"] = sorted(set(prof.get("decisionIds", [])) | {decision_id})
+        prof["support"] = max(int(prof.get("support", 0)), support)
+        prof["updatedAt"] = at
+    else:
+        prof = {
+            "profileId": pid,
+            "project": project,
+            "platform": platform,
+            "selector": dict(selector),
+            "roles": list(roles),
+            "excludedRoles": list(excluded),
+            "acceptsViolations": [],
+            "source": "learned",
+            "confirmations": 1,
+            "rejections": 0,
+            "support": support,
+            "createdBy": actor,
+            "createdAt": at,
+            "updatedAt": at,
+            "decisionIds": [decision_id],
+            "engineVersion": ENGINE_VERSION,
+            "state": "active",
+        }
+    prof["confidence"] = profile_confidence(prof["confirmations"], prof.get("rejections", 0), cfg)
+    out[pid] = prof
+
+
+def _decide_items(
     result: Mapping,
     question: Mapping,
     option: Mapping,
@@ -1445,77 +1671,88 @@ def _decide_parameters(
     platform_default: str,
     cfg: Mapping,
 ) -> dict:
-    by_id = {r["nativeId"]: r for r in result.get("parameters") or []}
-    members = [nid for nid in sorted(question.get("parameterIds") or []) if nid in by_id]
+    qtype = question.get("type")
+    kind = "parameters" if qtype == "batch-parameters" else "measures"
+    by_id = {r["nativeId"]: r for r in result.get(kind) or []}
+    ids = question.get("parameterIds") if kind == "parameters" else question.get("measureIds")
+    members = [nid for nid in sorted(ids or []) if nid in by_id]
     if not members:
-        raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question['questionId']} has no parameters", 404)
-    stem = str(question.get("nameStem") or "")
-    chosen = sorted(option.get("roles") or [])
-    excluded = [] if chosen else sorted({r for o in question["options"] for r in (o.get("roles") or [])})
+        raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question['questionId']} has nothing left to decide", 404)
     platform = str(result.get("platform") or platform_default).lower()
-    selector = {"kind": "parameter", "nameStem": stem}
-    feats = {"platform": platform, **selector}
-    pid = profile_id(platform, selector, chosen, excluded)
-    decision_id = "D-" + _sha(f"{question['questionId']}|parameters|{option['optionId']}|{at}", 12)
+    option_id = option["optionId"]
+    decision_id = "D-" + _sha(f"{question['questionId']}|{kind}|{option_id}|{at}", 12)
     existing = {p["profileId"]: dict(p) for p in profiles}
-    prof = existing.get(pid)
-    if prof:
-        prof["confirmations"] = int(prof.get("confirmations", 0)) + 1
-        prof["decisionIds"] = sorted(set(prof.get("decisionIds", [])) | {decision_id})
-        prof["support"] = max(int(prof.get("support", 0)), len(members))
-        prof["updatedAt"] = at
-    else:
-        prof = {
-            "profileId": pid,
-            "project": project,
-            "platform": platform,
-            "selector": selector,
-            "roles": chosen,
-            "excludedRoles": excluded,
-            "acceptsViolations": [],
-            "source": "learned",
-            "confirmations": 1,
-            "rejections": 0,
-            "support": len(members),
-            "createdBy": actor,
-            "createdAt": at,
-            "updatedAt": at,
-            "decisionIds": [decision_id],
-            "engineVersion": ENGINE_VERSION,
-            "state": "active",
-        }
-    prof["confidence"] = profile_confidence(prof["confirmations"], prof.get("rejections", 0), cfg)
-    out = {pid: prof}
-    for other in profiles:
-        if other["profileId"] != pid and profile_matches(other, feats) and sorted(other.get("roles") or []) != chosen:
-            rej = dict(other)
-            rej["rejections"] = int(rej.get("rejections", 0)) + 1
-            rej["updatedAt"] = at
-            rej["confidence"] = profile_confidence(int(rej.get("confirmations", 0)), rej["rejections"], cfg)
-            out[rej["profileId"]] = rej
+    out: dict = {}
+    decided: dict = {}
+    for nid in members:
+        row = by_id[nid]
+        if kind == "parameters":
+            chosen = [PARAMETER_ROLE] if option_id == "accept-all" else []
+            selector = {"kind": "parameter", "nameStem": row["nameStem"]}
+            excluded = [] if chosen else [PARAMETER_ROLE]
+        else:
+            if option_id == "accept-all":
+                chosen = [row["property"]["iri"]] if row.get("property") else []
+            else:
+                chosen = list(option.get("roles") or [])
+            selector = {"kind": "measure", "measureName": str(row["name"]).strip().lower()}
+            excluded = [] if chosen else sorted({c["propertyIri"] for c in row.get("candidates") or []})
+        decided[nid] = chosen
+        pid = profile_id(platform, selector, chosen, excluded)
+        _item_profile(existing, out, pid, project, platform, selector, chosen, excluded, actor, at, decision_id, 1, cfg)
     decision = {
         "decisionId": decision_id,
         "project": project,
         "questionId": question["questionId"],
-        "groupId": f"parameters:{stem}",
-        "optionId": option["optionId"],
-        "roles": chosen,
+        "groupId": f"{kind}:{question['questionId']}",
+        "optionId": option_id,
+        "roles": sorted({r for v in decided.values() for r in v}),
         "memberCount": len(members),
         "memberIds": members,
         "questionText": question["text"],
-        "evidenceShown": [{"parameterId": nid, "candidates": by_id[nid]["candidates"]} for nid in members],
+        "evidenceShown": [{"id": nid, "candidates": by_id[nid].get("candidates", [])} for nid in members],
         "consequencesShown": [],
         "decidedBy": actor,
         "decidedAt": at,
-        "profileId": pid,
+        "profileId": sorted(out)[0] if out else None,
     }
-    return {
-        "decisions": [decision],
-        "profiles": [out[k] for k in sorted(out)],
-        "decided": {},
-        "splits": {},
-        "decidedParameters": {nid: chosen for nid in members},
-    }
+    key = "decidedParameters" if kind == "parameters" else "decidedMeasures"
+    return {"decisions": [decision], "profiles": [out[k] for k in sorted(out)], "decided": {}, "splits": {}, key: decided}
+
+
+def rule_bindings(result: Mapping, constraints: Sequence[Constraint]) -> list:
+    """Rule → class → property → calculation output, for PROPERTY STATE placement.
+
+    A rule binds when its class has applied elements, its property is the confirmed (or
+    auto) property of a measure, and that measure's stream is one of the class's streams.
+    """
+    streams_of: dict = {}
+    iri_of: dict = {}
+    for el in result.get("elements") or []:
+        if el.get("state") in ("confirmed", "auto") and el.get("stream"):
+            for r in el.get("roles") or []:
+                streams_of.setdefault(local_name(r["classIri"]), set()).add(str(el["stream"]))
+                iri_of[local_name(r["classIri"])] = r["classIri"]
+    measures = [m for m in result.get("measures") or [] if m.get("state") in ("confirmed", "auto") and m.get("property")]
+    out = []
+    for (rule_id, cls), group in sorted(rule_groups(constraints).items()):
+        cls_streams = streams_of.get(cls) or set()
+        for prop in sorted({c.prop_local for c in group}):
+            match = next((m for m in measures if local_name(m["property"]["iri"]) == prop and m.get("stream") in cls_streams), None)
+            if match is None:
+                match = next((m for m in measures if local_name(m["property"]["iri"]) == prop and not m.get("stream") and len(cls_streams) == 1), None)
+            if match is not None:
+                out.append(
+                    {
+                        "ruleId": rule_id,
+                        "classLocal": cls,
+                        "classIri": iri_of.get(cls, cls),
+                        "propertyIri": match["property"]["iri"],
+                        "measureId": match["nativeId"],
+                        "stream": match.get("stream") or next(iter(cls_streams)),
+                    }
+                )
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -1631,10 +1868,10 @@ def decide(
     if question is None:
         raise MappingInputError("MAPPING_QUESTION_NOT_FOUND", f"question {question_id} not found", 404)
     option = next((o for o in question["options"] if o["optionId"] == option_id), None)
-    if question.get("type") == "map-parameter":
+    if question.get("type") in ("batch-parameters", "batch-measures", "map-measure"):
         if option is None:
             raise MappingInputError("MAPPING_OPTION_INVALID", f"option {option_id} is not offered by {question_id}")
-        return _decide_parameters(result, question, option, actor, at, profiles, project, platform_default, cfg)
+        return _decide_items(result, question, option, actor, at, profiles, project, platform_default, cfg)
     iri_of = {c.local: c.iri for c in classes}
     if option is None and not (option_id == "custom" and roles):
         raise MappingInputError("MAPPING_OPTION_INVALID", f"option {option_id} is not offered by {question_id}")
@@ -1770,13 +2007,14 @@ def merge_profiles(current: Sequence[Mapping], updates: Sequence[Mapping]) -> li
 # ---------------------------------------------------------------------------
 
 
-def partition(result: Mapping) -> dict:
+def partition(result: Mapping, constraints: Optional[Sequence[Constraint]] = None) -> dict:
+    """Applied mapping. With `constraints`, also the rule bindings CONNECTOR places as PROPERTY STATE."""
     by_class: dict[str, list] = {}
     applied, skipped, elements = 0, [], []
     for el in result["elements"]:
         if el["state"] in ("confirmed", "auto") and el["roles"]:
             roles = sorted(r["classIri"] for r in el["roles"])
-            elements.append({"nativeId": el["nativeId"], "roles": roles})
+            elements.append({"nativeId": el["nativeId"], "roles": roles, **({"stream": el["stream"]} if el.get("stream") else {})})
             for r in roles:
                 by_class.setdefault(r, []).append(el["nativeId"])
             applied += 1
@@ -1790,10 +2028,18 @@ def partition(result: Mapping) -> dict:
     }
     if result.get("parameters"):
         out["parameters"] = [
-            {"nativeId": r["nativeId"], "name": r["name"], "propertyIri": r["property"]["iri"]}
+            {"nativeId": r["nativeId"], "name": r["name"]}
             for r in result["parameters"]
+            if r["state"] in ("confirmed", "auto")
+        ]
+    if result.get("measures"):
+        out["measures"] = [
+            {"nativeId": r["nativeId"], "name": r["name"], "propertyIri": r["property"]["iri"], "stream": r.get("stream")}
+            for r in result["measures"]
             if r["state"] in ("confirmed", "auto") and r.get("property")
         ]
+    if constraints is not None:
+        out["bindings"] = rule_bindings(result, constraints)
     return out
 
 

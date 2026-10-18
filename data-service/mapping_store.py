@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 import mapping_engine as engine
+import mapping_llm
 
 GRAPH = "Computgraph"
 _COMPRESS_OVER = 8 * 1024
@@ -485,23 +486,37 @@ def public_session(meta: dict, result: dict) -> dict:
         "groups": result["groups"],
         "elements": result["elements"],
         "parameters": result.get("parameters", []),
+        "measures": result.get("measures", []),
     }
+    proposal = (meta.get("context") or {}).get("llm")
+    if isinstance(proposal, dict):
+        body["llm"] = {k: proposal.get(k) for k in ("status", "provider", "model", "error", "truncated") if proposal.get(k) is not None}
     for key in ("updatedAt", "appliedAt", "appliedBy", "appliedCount"):
         if meta.get(key) is not None:
             body[key] = meta[key]
     return body
 
 
-def create_session(session, project, platform, label, elements, context, actor, created_at, parameters=None) -> dict:
+def _llm_for_engine(ctx: dict) -> Optional[dict]:
+    proposal = ctx.get("llm")
+    return proposal if isinstance(proposal, dict) and proposal.get("status") == "ok" else None
+
+
+def create_session(session, project, platform, label, elements, context, actor, created_at, parameters=None, measures=None) -> dict:
     platform = str(platform).lower()
     if platform not in ("grasshopper", "revit"):
         raise engine.MappingInputError("MAPPING_INPUT_INVALID", "platform must be grasshopper or revit")
+    use_llm = bool((context or {}).get("llm"))
     ctx = _clean_context(context)
     classes, constraints, rule_classes, profiles = _engine_inputs(session, project, ctx.get("vocabulary"))
     properties = []
     if parameters:
         engine._validate_parameters(parameters, engine.CONFIG)
         ctx["parameters"] = parameters
+    if measures:
+        engine._validate_measures(measures, engine.CONFIG)
+        ctx["measures"] = measures
+    if parameters or measures:
         properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints)
     populations = None
     if ctx.get("populationsFromSessionId"):
@@ -510,19 +525,31 @@ def create_session(session, project, platform, label, elements, context, actor, 
             raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", "populationsFromSessionId does not name a session of this project", 404)
         populations = engine.populations_of(ref["result"])
         ctx["populations"] = populations
-    result = engine.compute(
-        elements,
-        classes,
-        constraints,
-        profiles,
-        populations=populations,
-        platform_default=platform,
-        rule_classes=rule_classes,
-        parameters=parameters or None,
-        properties=properties,
-    )
+    def run(llm=None):
+        return engine.compute(
+            elements,
+            classes,
+            constraints,
+            profiles,
+            populations=populations,
+            platform_default=platform,
+            rule_classes=rule_classes,
+            parameters=parameters or None,
+            properties=properties,
+            measures=measures or None,
+            llm=llm,
+        )
+
+    result = run()
+    # D-37: ask the LLM only when the deterministic pass leaves questions (learned variants
+    # need no paid call); its proposal is recorded and reused for every recompute.
+    if use_llm and result["summary"]["openQuestions"] > 0:
+        ctx["llm"] = mapping_llm.propose_mapping(elements, measures or [], parameters or [], classes, properties, constraints)
+        if _llm_for_engine(ctx):
+            result = run(_llm_for_engine(ctx))
     session_id = save_session(session, project, platform, label, elements, result, actor, created_at, ctx)
-    meta = {"sessionId": session_id, "project": project, "platform": platform, "label": label, "createdAt": created_at, "createdBy": actor}
+    meta = {"sessionId": session_id, "project": project, "platform": platform, "label": label, "createdAt": created_at, "createdBy": actor,
+            "context": ctx}
     return public_session(meta, result)
 
 
@@ -566,9 +593,12 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
     splits = dict(result.get("splits") or {})
     splits.update(out["splits"])
     parameters = ctx.get("parameters") or None
+    measures = ctx.get("measures") or None
     decided_parameters = dict(result.get("decidedParameters") or {})
     decided_parameters.update(out.get("decidedParameters") or {})
-    properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints) if parameters else []
+    decided_measures = dict(result.get("decidedMeasures") or {})
+    decided_measures.update(out.get("decidedMeasures") or {})
+    properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints) if (parameters or measures) else []
     result2 = engine.compute(
         s["descriptors"],
         classes,
@@ -582,6 +612,9 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
         parameters=parameters,
         properties=properties,
         decided_parameters=decided_parameters,
+        measures=measures,
+        decided_measures=decided_measures,
+        llm=_llm_for_engine(ctx),
     )
     update_session_result(session, project, session_id, result2, at)
     s["updatedAt"] = at
@@ -593,7 +626,8 @@ def apply_session(session, project: str, session_id: str, actor: str, at: str) -
     s = load_session(session, project, session_id)
     if s is None:
         raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", f"mapping session {session_id} not found", 404)
-    part = engine.partition(s["result"])
+    constraints = engine.constraints_from_rows(fetch_rule_rows(session, project))
+    part = engine.partition(s["result"], constraints)
     record_apply(session, project, session_id, actor, at, part["applied"])
     return {"project": project, "sessionId": session_id, **part}
 

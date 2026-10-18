@@ -355,37 +355,47 @@ def test_no_adapter_names_and_pure_imports():
         assert banned not in src
 
 
-# 11 Canvas text and parameters (owner amendment 2026-10-18: group names,
-# scribbles, component names and slider names take part in mapping) -------
-
-FACADE_PROPERTIES = (
-    ("hasWidthM", ("GlassPanel",)),
-    ("hasAspectRatio", ("GlassPanel",)),
-    ("hasPlanarityDeviationM", ("GlassPanel",)),
-    ("hasVertexCount", ("BottomTriangularPanel", "GroundFloorUnit", "HexagonalUnit")),
-    ("hasOutlineGapCount", ("GroundFloorUnit", "HexagonalUnit")),
-    ("hasLevelOffsetM", ("HexagonalUnit",)),
-    ("hasHeightM", ("Facade",)),
-)
+# 11 Canvas text, DG parameters and calculation outputs (owner clarifications 2026-10-18:
+# group names, scribbles and component names take part; sliders are DG Parameters; datatype
+# property values come from the outputs of calculation components) -----------------------
 
 
 def _properties():
-    return [m.PropertyInfo(f"ex:{name}", name, tuple(f"ex:{c}" for c in classes)) for name, classes in FACADE_PROPERTIES]
+    """The fixture's rule properties, with the classes whose rules use them."""
+    classes_of = {}
+    for _rid, cls, prop, _b, _v in fx.FACADE_RULES:
+        classes_of.setdefault(prop, set()).add(cls)
+    return [m.PropertyInfo(f"ex:{p}", p, tuple(sorted(f"ex:{c}" for c in cs))) for p, cs in sorted(classes_of.items())]
 
 
 def _sliders():
-    out = [
-        {"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}", "names": ["Ширина соты"], "value": 7600, "min": 2800, "max": 12000}
-        for i in range(1, 6)
-    ]
+    out = [{"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}", "names": ["Ширина соты"], "value": 7600} for i in range(1, 6)]
     out.append({"nativeId": "gh:doc:slider:tilt-even", "name": "Наклон чет сот", "names": ["Наклон сот"], "value": -1})
     out.append({"nativeId": "gh:doc:slider:ribs", "name": "КолВо ребер", "value": 5})
-    out.append({"nativeId": "gh:doc:slider:ratio", "name": "Ratio", "names": ["Group B Panel Ratio"], "value": 2.5})
     return out
 
 
-def _param_compute(params, profiles=(), decided_parameters=None):
-    return _compute(fx.facade_v1_descriptors(), profiles, parameters=params, properties=_properties(), decided_parameters=decided_parameters)
+def _measures():
+    return [
+        {"nativeId": "gh:doc:measure:ar", "name": "AR", "component": "measure", "count": 125, "min": 1.4, "max": 5.5,
+         "streams": [{"stream": "PB", "pathMatch": True, "agreement": {"hasAspectRatio": 1.0}}, {"stream": "PA", "pathMatch": True}]},
+        {"nativeId": "gh:doc:measure:vc", "name": "VC", "component": "measure", "count": 125, "min": 3, "max": 3,
+         "streams": [{"stream": "PA", "pathMatch": True, "agreement": {"hasVertexCount": 1.0}}]},
+        {"nativeId": "gh:doc:measure:hg", "name": "HG", "component": "measure", "count": 100, "min": 0, "max": 0,
+         "streams": [{"stream": "HU", "pathMatch": True, "constant": True, "agreement": {"hasGapCount": 1.0, "hasLevelOffsetM": 1.0}}]},
+        {"nativeId": "gh:doc:measure:sum", "name": "Summary", "component": "measure", "count": 1, "streams": []},
+    ]
+
+
+def _stream_descriptors():
+    d = fx.facade_v1_descriptors()
+    for el in d:
+        el["stream"] = el["nativeId"].split(":")[2]
+    return d
+
+
+def _full(params=None, measures=None, profiles=(), llm=None, **kw):
+    return _compute(_stream_descriptors(), profiles, parameters=params, measures=measures, properties=_properties(), llm=llm, **kw)
 
 
 def test_canvas_text_is_word_evidence_without_acronyms():
@@ -399,67 +409,96 @@ def test_canvas_text_is_word_evidence_without_acronyms():
     assert m.CONTEXT_FIELD not in m.SELECTOR_FEATURES
 
 
-def test_sliders_are_proposed_as_dg_properties():
-    r = _param_compute(_sliders())
-    by_name = {p["name"]: p for p in r["parameters"]}
-    width = by_name["Module Width F3"]
-    assert width["candidates"][0]["propertyIri"] == "ex:hasWidthM"
-    assert width["nameStem"] == "module width"
-    assert by_name["Ratio"]["candidates"][0]["propertyIri"] == "ex:hasAspectRatio"
-    # "count" alone is generic; tilt has no DG property in this project.
-    assert by_name["КолВо ребер"]["state"] == "unmapped"
-    assert by_name["Наклон чет сот"]["state"] == "unmapped"
-    qs = [q for q in r["questions"] if q["type"] == "map-parameter"]
-    width_q = next(q for q in qs if q["nameStem"] == "module width")
-    assert len(width_q["parameterIds"]) == 5
-    assert width_q["options"][0]["optionId"] == "property:ex:hasWidthM"
-    assert width_q["options"][-1]["optionId"] == "none"
-    assert "Module Width F1 … Module Width F5" in width_q["text"]
-    assert "слайдеров" in width_q["textRu"]
-    assert r["summary"]["parameters"]["total"] == 8
-    assert r["summary"]["openQuestions"] == len(r["questions"])
-    # Element questions keep their place before parameter questions.
-    assert r["questions"][0]["type"] != "map-parameter"
+def test_named_sliders_are_proposed_as_dg_parameters():
+    r = _full(params=_sliders())
+    assert {p["state"] for p in r["parameters"]} == {"suggested"}
+    q = next(q for q in r["questions"] if q["type"] == "batch-parameters")
+    assert len(q["parameterIds"]) == 7 and q["options"][0]["optionId"] == "accept-all"
+    assert "PARAMETER STATE" in q["textRu"]
+    # With an LLM proposal a slider that is not a design parameter stays out, with its reason.
+    llm = {"parameters": {"gh:doc:slider:ribs": {"isParameter": False, "confidence": 0.9, "reason": "profile detail"}}}
+    r2 = _full(params=_sliders(), llm=llm)
+    ribs = next(p for p in r2["parameters"] if p["name"] == "КолВо ребер")
+    assert ribs["state"] == "unmapped" and ribs["source"] == "llm" and ribs["reason"] == "profile detail"
+    assert len(next(q for q in r2["questions"] if q["type"] == "batch-parameters")["parameterIds"]) == 6
 
 
-def test_parameter_answer_learns_a_profile_for_the_next_variant():
-    params = _sliders()
-    r = _param_compute(params)
-    q = next(q for q in r["questions"] if q["type"] == "map-parameter" and q["nameStem"] == "module width")
-    out = _decide(r, fx.facade_v1_descriptors(), q, "property:ex:hasWidthM")
-    assert out["decidedParameters"] == {nid: ["ex:hasWidthM"] for nid in q["parameterIds"]}
-    assert out["profiles"][0]["selector"] == {"kind": "parameter", "nameStem": "module width"}
-    assert out["decisions"][0]["groupId"] == "parameters:module width"
-    r2 = _param_compute(params, out["profiles"], out["decidedParameters"])
-    assert {p["state"] for p in r2["parameters"] if p["nameStem"] == "module width"} == {"confirmed"}
-    assert not any(q["type"] == "map-parameter" and q["nameStem"] == "module width" for q in r2["questions"])
-    # A new definition with a sixth width slider is mapped by the learned profile.
-    r3 = _param_compute([{"nativeId": "gh:other:slider:mw6", "name": "Module Width F6"}], out["profiles"])
+def test_parameter_answers_are_learned():
+    r = _full(params=_sliders())
+    q = next(q for q in r["questions"] if q["type"] == "batch-parameters")
+    out = _decide(r, _stream_descriptors(), q, "accept-all")
+    assert len(out["decidedParameters"]) == 7
+    assert all(v == [m.PARAMETER_ROLE] for v in out["decidedParameters"].values())
+    r2 = _full(params=_sliders(), profiles=out["profiles"], decided_parameters=out["decidedParameters"])
+    assert {p["state"] for p in r2["parameters"]} == {"confirmed"}
+    r3 = _full(params=[{"nativeId": "gh:other:slider:mw6", "name": "Module Width F6"}], profiles=out["profiles"])
     assert r3["parameters"][0]["state"] == "auto"
-    assert r3["parameters"][0]["property"]["iri"] == "ex:hasWidthM"
-    # Parameter profiles never match elements.
-    assert all(e["state"] != "auto" for e in r3["elements"])
-    part = m.partition(r2)
-    assert {p["propertyIri"] for p in part["parameters"]} == {"ex:hasWidthM"}
+    none = _decide(r, _stream_descriptors(), q, "none")
+    r4 = _full(params=[{"nativeId": "gh:other:slider:mw7", "name": "Module Width F7"}], profiles=none["profiles"])
+    assert r4["parameters"][0]["state"] == "unmapped"
+    assert m.partition(r2)["parameters"][0]["name"].startswith(("Module Width", "Наклон", "КолВо"))
 
 
-def test_parameter_none_answer_is_remembered():
-    params = [p for p in _sliders() if p["name"] == "Ratio"]
-    r = _param_compute(params)
-    q = next(q for q in r["questions"] if q["type"] == "map-parameter")
-    out = _decide(r, fx.facade_v1_descriptors(), q, "none")
-    assert out["decidedParameters"] == {"gh:doc:slider:ratio": []}
-    r2 = _param_compute(params, out["profiles"])
-    assert r2["parameters"][0]["state"] == "unmapped"
-    assert not any(q["type"] == "map-parameter" for q in r2["questions"])
+def test_calculation_outputs_map_to_properties_by_values_and_names():
+    r = _full(measures=_measures())
+    by = {x["name"]: x for x in r["measures"]}
+    assert by["AR"]["state"] == "suggested" and by["AR"]["property"]["label"] == "hasAspectRatio" and by["AR"]["stream"] == "PB"
+    assert by["VC"]["state"] == "suggested" and by["VC"]["stream"] == "PA"
+    # A constant column agrees with every all-zero property: asked, not guessed.
+    assert by["HG"]["state"] == "ambiguous"
+    assert by["Summary"]["state"] == "unmapped"
+    batch = next(q for q in r["questions"] if q["type"] == "batch-measures")
+    assert set(batch["measureIds"]) == {"gh:doc:measure:ar", "gh:doc:measure:vc"}
+    single = next(q for q in r["questions"] if q["type"] == "map-measure")
+    assert single["measureIds"] == ["gh:doc:measure:hg"] and single["options"][-1]["optionId"] == "none"
+    # The LLM vote breaks the tie for HG.
+    llm = {"measures": {"gh:doc:measure:hg": {"propertyIri": "ex:hasGapCount", "stream": "HU", "confidence": 0.9, "reason": "HG = hexagon gaps"}}}
+    r2 = _full(measures=_measures(), llm=llm)
+    hg = next(x for x in r2["measures"] if x["name"] == "HG")
+    assert hg["state"] == "suggested" and hg["property"]["label"] == "hasGapCount"
+    assert any("LLM" in e for e in hg["candidates"][0]["evidence"])
 
 
-def test_parameters_are_validated_and_deterministic():
+def test_llm_votes_for_element_classes():
+    d = [{"nativeId": "s1", "stream": "S1", "source": "Result", "geometry": {"kind": "surface"}}]
+    llm = {"objects": {"S1": {"classIri": "ex:GlassPanel", "confidence": 0.9, "reason": "glass panels of facade B"}}}
+    r = _compute(d, llm=llm)
+    group = r["groups"][0]
+    top = group["candidates"][0]
+    assert top["label"] == "GlassPanel" and any(e["kind"] == "llm" for e in top["evidence"])
+    assert r["elements"][0]["stream"] == "S1"
+
+
+def test_rule_bindings_link_rule_class_property_and_output():
+    d = _stream_descriptors()
+    r = _full(measures=_measures())
+    decided = {}
+    profiles = []
+    for qtype, opt in (("batch-assign", "accept-all"), ("mapping-or-design", "class:ex:GroundFloorUnit")):
+        q = next(x for x in r["questions"] if x["type"] == qtype)
+        out = _decide(r, d, q, opt, profiles)
+        decided.update(out["decided"])
+        profiles = m.merge_profiles(profiles, out["profiles"])
+    q = next(x for x in r["questions"] if x["type"] == "batch-measures")
+    out = _decide(r, d, q, "accept-all", profiles)
+    r2 = _full(measures=_measures(), profiles=m.merge_profiles(profiles, out["profiles"]), decided=decided, decided_measures=out["decidedMeasures"])
+    _, constraints = _setup()
+    part = m.partition(r2, constraints)
+    bound = {(b["ruleId"], b["measureId"], b["stream"]) for b in part["bindings"]}
+    assert ("R_GLASS_ASPECTRATIO_MIN_1.3_V", "gh:doc:measure:ar", "PB") in bound
+    assert ("R_GLASS_ASPECTRATIO_MAX_6_V", "gh:doc:measure:ar", "PB") in bound
+    assert ("R_BTP_HASVERTEXCOUNT_REQ_3_V", "gh:doc:measure:vc", "PA") in bound
+    assert all(b["classIri"].startswith("ex:") for b in part["bindings"])
+    assert {x["name"] for x in part["measures"]} == {"AR", "VC"}
+
+
+def test_parameters_and_measures_are_validated_and_deterministic():
     with pytest.raises(m.MappingInputError):
-        _param_compute([{"nativeId": "a"}])
+        _full(params=[{"nativeId": "a"}])
     with pytest.raises(m.MappingInputError):
-        _param_compute([{"nativeId": "a", "name": "x"}, {"nativeId": "a", "name": "y"}])
-    a = _param_compute(_sliders())
-    b = _param_compute(list(reversed(_sliders())))
+        _full(measures=[{"nativeId": "a", "name": "x"}, {"nativeId": "a", "name": "y"}])
+    a = _full(params=_sliders(), measures=_measures())
+    b = _full(params=list(reversed(_sliders())), measures=list(reversed(_measures())))
     assert json.dumps(a, sort_keys=True, ensure_ascii=False) == json.dumps(b, sort_keys=True, ensure_ascii=False)
     assert m.name_stem("1 оффсет") == "оффсет" and m.name_stem("T4_Offset") == "offset"
+    assert m.property_acronym(m.PropertyInfo("ex:hasPlanarityDeviationM", "hasPlanarityDeviationM")) == "pd"

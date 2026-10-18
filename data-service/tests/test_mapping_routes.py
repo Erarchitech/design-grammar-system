@@ -171,24 +171,49 @@ def test_decisions_confirm_everything_and_store_profiles(fake_store):
     assert all("memberIds" not in d for d in out["decisions"])
 
 
-def test_parameters_are_proposed_answered_and_learned(fake_store):
-    params = [{"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}", "names": ["Ширина соты"]} for i in range(1, 4)]
-    r = _create(fx.facade_v1_descriptors(), parameters=params)
+def test_sliders_measures_llm_and_bindings(fake_store, monkeypatch):
+    calls = []
+
+    def fake_propose(elements, measures, parameters, classes, properties, constraints):
+        calls.append(len(elements))
+        return {"status": "ok", "provider": "fake", "model": "fake-1",
+                "objects": {}, "parameters": {"gh:doc:slider:ribs": {"isParameter": False, "confidence": 0.9, "reason": "helper"}},
+                "measures": {"gh:doc:measure:ar": {"propertyIri": "ex:hasAspectRatio", "stream": "PB", "confidence": 0.9, "reason": "AR"}}}
+
+    monkeypatch.setattr(mapping_store.mapping_llm, "propose_mapping", fake_propose)
+    d = fx.facade_v1_descriptors()
+    for el in d:
+        el["stream"] = el["nativeId"].split(":")[2]
+    params = [{"nativeId": f"gh:doc:slider:mw{i}", "name": f"Module Width F{i}"} for i in range(1, 4)]
+    params.append({"nativeId": "gh:doc:slider:ribs", "name": "КолВо ребер"})
+    measures = [{"nativeId": "gh:doc:measure:ar", "name": "AR", "component": "measure", "count": 125,
+                 "streams": [{"stream": "PB", "pathMatch": True, "agreement": {"hasAspectRatio": 1.0}}]}]
+    r = _create(d, parameters=params, measures=measures, context={"llm": True})
     assert r.status_code == 200, r.text
     s = r.json()
-    assert s["summary"]["parameters"]["total"] == 3
-    q = next(q for q in s["questions"] if q["type"] == "map-parameter")
-    assert q["options"][0]["optionId"] == "property:ex:hasWidthM" and q["parameterIds"]
-    r1 = _decide(s["sessionId"], q["questionId"], "property:ex:hasWidthM")
-    assert r1.status_code == 200, r1.text
-    assert {p["state"] for p in r1.json()["session"]["parameters"]} == {"confirmed"}
-    assert fake_store.decisions[-1][2]["groupId"] == "parameters:module width"
-    r2 = _create(fx.facade_v2_descriptors(), parameters=[{"nativeId": "gh:doc2:slider:mw", "name": "Module Width F4"}])
-    assert r2.json()["parameters"][0]["state"] == "auto"
-    applied = client.post(f"/mapping/sessions/{s['sessionId']}/apply", json={"project": PROJECT}, headers=CSRF)
-    assert applied.status_code == 200, applied.text
-    assert {p["propertyIri"] for p in applied.json()["parameters"]} == {"ex:hasWidthM"}
-    bad = _create(fx.facade_v1_descriptors(), parameters=[{"nativeId": "x"}])
+    assert calls == [376] and s["llm"]["status"] == "ok" and s["llm"]["model"] == "fake-1"
+    ribs = next(p for p in s["parameters"] if p["name"] == "КолВо ребер")
+    assert ribs["state"] == "unmapped" and ribs["reason"] == "helper"
+    qp = next(q for q in s["questions"] if q["type"] == "batch-parameters")
+    qm = next(q for q in s["questions"] if q["type"] == "batch-measures")
+    sid = s["sessionId"]
+    for q in (next(q for q in s["questions"] if q["type"] == "batch-assign"),):
+        assert _decide(sid, q["questionId"], "accept-all").status_code == 200
+    mod = next(q for q in _decide(sid, qp["questionId"], "accept-all").json()["session"]["questions"] if q["type"] == "mapping-or-design")
+    assert _decide(sid, qm["questionId"], "accept-all").status_code == 200
+    final = _decide(sid, mod["questionId"], "class:ex:GroundFloorUnit").json()["session"]
+    assert final["summary"]["openQuestions"] == 0
+    assert {p["state"] for p in final["parameters"] if p["name"] != "КолВо ребер"} == {"confirmed"}
+    assert final["measures"][0]["state"] == "confirmed"
+    assert calls == [376], "the recorded proposal is reused, not asked again"
+    applied = client.post(f"/mapping/sessions/{sid}/apply", json={"project": PROJECT}, headers=CSRF).json()
+    assert {p["name"] for p in applied["parameters"]} == {"Module Width F1", "Module Width F2", "Module Width F3"}
+    assert {b["ruleId"] for b in applied["bindings"]} == {"R_GLASS_ASPECTRATIO_MIN_1.3_V", "R_GLASS_ASPECTRATIO_MAX_6_V"}
+    # A later variant is fully learned: no open question, so no LLM call.
+    r2 = _create(fx.facade_v2_descriptors(), parameters=[{"nativeId": "gh:doc2:slider:mw", "name": "Module Width F4"}], context={"llm": True})
+    assert r2.json()["parameters"][0]["state"] == "auto" and r2.json()["summary"]["openQuestions"] == 0
+    assert calls == [376]
+    bad = _create(fx.facade_v1_descriptors(), measures=[{"nativeId": "x"}])
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "MAPPING_INPUT_INVALID"
 
 
