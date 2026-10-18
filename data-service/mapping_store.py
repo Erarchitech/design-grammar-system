@@ -386,9 +386,53 @@ def list_sessions(session, project: str, limit: int) -> list:
     for r in rows:
         item = {k: v for k, v in r.items() if k != "summaryJson" and v is not None}
         item["project"] = project
+        item["document"] = document_of(r.get("platform"), r.get("label"))
         item["summary"] = json.loads(r.get("summaryJson") or "{}")
         out.append(item)
     return out
+
+
+DECISION_LIST_QUERY = """
+// op=mapping_decision_list
+MATCH (d:MappingDecision {project: $project, sessionId: $sessionId})
+RETURN properties(d) AS d
+ORDER BY d.decidedAt DESC, d.decisionId DESC
+"""
+
+DECISION_UNDO_QUERY = """
+// op=mapping_decision_undo
+MATCH (d:MappingDecision {project: $project, sessionId: $sessionId})
+WHERE d.decisionId IN $decisionIds AND d.undoneAt IS NULL
+SET d.undoneAt = $at, d.undoneBy = $actor
+RETURN count(d) AS undone
+"""
+
+
+def fetch_decisions(session, project: str, session_id: str) -> list:
+    """The session's decisions, newest first (undone ones included, marked by `undoneAt`)."""
+    out = []
+    for r in _run(session, DECISION_LIST_QUERY, {"project": project, "sessionId": session_id}):
+        props = r["d"]
+        out.append(
+            {
+                "decisionId": props.get("decisionId"),
+                "answerId": props.get("answerId"),
+                "questionId": props.get("questionId"),
+                "groupId": props.get("groupId"),
+                "optionId": props.get("optionId"),
+                "questionText": props.get("questionText"),
+                "memberIds": _get_json(props, "memberIds", []) or [],
+                "answer": _get_json(props, "answer"),
+                "decidedBy": props.get("decidedBy"),
+                "decidedAt": props.get("decidedAt"),
+                "undoneAt": props.get("undoneAt"),
+            }
+        )
+    return out
+
+
+def mark_decisions_undone(session, project: str, session_id: str, decision_ids: list, actor: str, at: str) -> None:
+    _run(session, DECISION_UNDO_QUERY, {"project": project, "sessionId": session_id, "decisionIds": list(decision_ids), "actor": actor, "at": at})
 
 
 def save_decision(session, project: str, session_id: str, decision: dict) -> None:
@@ -405,6 +449,9 @@ def save_decision(session, project: str, session_id: str, decision: dict) -> Non
         "decidedAt": decision["decidedAt"],
         "profileId": decision.get("profileId"),
     }
+    if decision.get("answerId"):
+        props["answerId"] = decision["answerId"]
+        _put_json(props, "answer", decision.get("answer") or {})
     _put_json(props, "memberIds", decision.get("memberIds", []))
     _put_json(props, "evidence", decision.get("evidenceShown", []))
     _put_json(props, "consequences", decision.get("consequencesShown", []))
@@ -473,10 +520,52 @@ def _engine_properties(session, project: str, vocabulary: Optional[dict], constr
     return _apply_property_vocabulary(fetch_properties(session, project, constraints), vocabulary)
 
 
-def public_session(meta: dict, result: dict) -> dict:
+def document_of(platform: Optional[str], label: Optional[str], descriptors: Optional[list] = None) -> Optional[str]:
+    """The GH document a session was read from: the label before « · », else the `gh:<key>:` prefix."""
+    if str(platform or "").lower() != "grasshopper":
+        return None
+    text = str(label or "")
+    if " · " in text:
+        return text.split(" · ", 1)[0] or None
+    first = str((descriptors or [{}])[0].get("nativeId") or "") if descriptors else ""
+    parts = first.split(":")
+    return parts[1] if len(parts) > 2 and parts[0] == "gh" else None
+
+
+def answers_of(decisions: list, applied: bool) -> list:
+    """Given answers, newest first, undone ones left out; one answer = one POST …/decisions."""
+    seen: dict = {}
+    for d in decisions:
+        if d.get("undoneAt"):
+            continue
+        aid = d.get("answerId") or d["decisionId"]
+        if aid in seen:
+            continue
+        a = d.get("answer") or {}
+        text = str(d.get("questionText") or "")
+        short = text if len(text) <= 90 else text[:89] + "…"
+        seen[aid] = {
+            "answerId": aid,
+            "questionId": d.get("questionId"),
+            "type": a.get("type"),
+            "title": a.get("title") or short,
+            "titleRu": a.get("titleRu") or a.get("title") or short,
+            "optionId": d.get("optionId"),
+            "items": a.get("items") or [],
+            "decidedAt": d.get("decidedAt"),
+            "decidedBy": d.get("decidedBy"),
+            # Answers recorded before plan 1303-10 carry no profile effects to reverse.
+            "undoable": bool(d.get("answerId")) and not applied,
+        }
+    return list(seen.values())
+
+
+def public_session(meta: dict, result: dict, answers: Optional[list] = None) -> dict:
     body = {
         "sessionId": meta["sessionId"],
         "project": meta["project"],
+        "document": document_of(meta.get("platform") or result.get("platform"), meta.get("label"), meta.get("descriptors")),
+        "answers": answers or [],
         "platform": meta.get("platform") or result.get("platform"),
         "label": meta.get("label"),
         "engineVersion": result.get("engineVersion", engine.ENGINE_VERSION),
@@ -610,7 +699,65 @@ def get_session(session, project: str, session_id: str) -> dict:
     s = load_session(session, project, session_id)
     if s is None:
         raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", f"mapping session {session_id} not found", 404)
-    return public_session(s, s["result"])
+    return public_session(s, s["result"], answers_of(fetch_decisions(session, project, session_id), bool(s.get("appliedAt"))))
+
+
+def _recompute(session, project: str, s: dict, ctx: dict, profiles: list, decided: dict, splits: dict,
+               decided_parameters: dict, decided_measures: dict) -> dict:
+    classes, constraints, rule_classes, _ = _engine_inputs(session, project, ctx.get("vocabulary"))
+    parameters = ctx.get("parameters") or None
+    measures = ctx.get("measures") or None
+    properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints) if (parameters or measures) else []
+    return engine.compute(
+        s["descriptors"],
+        classes,
+        constraints,
+        profiles,
+        populations=ctx.get("populations"),
+        platform_default=s.get("platform") or "grasshopper",
+        decided=decided,
+        splits=splits,
+        rule_classes=rule_classes,
+        parameters=parameters,
+        properties=properties,
+        decided_parameters=decided_parameters,
+        measures=measures,
+        decided_measures=decided_measures,
+        llm=_llm_for_engine(ctx),
+    )
+
+
+def _answer_items(question: dict, out: dict) -> list:
+    """The question's rows as decided by this answer (plan 1303-10)."""
+    by_group = {d["groupId"]: d["roles"] for d in out["decisions"]}
+    decided_items = {**(out.get("decidedMeasures") or {}), **(out.get("decidedParameters") or {})}
+    items = []
+    for it in question.get("items") or []:
+        roles = by_group.get(it["itemId"]) if it["kind"] == "stream" else decided_items.get(it["itemId"])
+        if roles is None:
+            continue  # a group left out of a batch answer
+        labels = {x["iri"]: x["label"] for x in ([it["proposal"]] if it.get("proposal") else []) + list(it.get("alternatives") or [])}
+        refs = [{"iri": r, "label": labels.get(r) or engine.local_name(r)} for r in roles]
+        items.append({**it, "proposal": refs[0] if refs else None, "alternatives": refs[1:], "state": "confirmed" if refs else "unmapped"})
+    return items
+
+
+def _profile_effects(before: list, after: list) -> list:
+    """What an answer did to each profile, so an undo can take exactly that back."""
+    by_id = {p["profileId"]: p for p in before}
+    effects = []
+    for p in after:
+        b = by_id.get(p["profileId"])
+        effects.append(
+            {
+                "profileId": p["profileId"],
+                "created": b is None,
+                "confirmations": int(p.get("confirmations", 0)) - int((b or {}).get("confirmations", 0)),
+                "rejections": int(p.get("rejections", 0)) - int((b or {}).get("rejections", 0)),
+                "stateBefore": (b or {}).get("state", "active") if b else None,
+            }
+        )
+    return effects
 
 
 def post_decision(session, project, session_id, question_id, option_id, group_ids, roles, actor, at) -> dict:
@@ -634,9 +781,21 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
         project=project,
         platform_default=s.get("platform") or "grasshopper",
     )
+    question = next((q for q in result.get("questions", []) if q["questionId"] == question_id), {})
+    answer = {
+        "answerId": "A-" + engine._sha(f"{session_id}|{question_id}|{option_id}|{at}", 12),
+        "questionId": question_id,
+        "type": question.get("type"),
+        "title": question.get("title"),
+        "titleRu": question.get("titleRu"),
+        "items": _answer_items(question, out),
+        "effects": _profile_effects(profiles, out["profiles"]),
+    }
     created = {d["profileId"]: d["decisionId"] for d in out["decisions"]}
     for d in out["decisions"]:
         d["sessionId"] = session_id
+        d["answerId"] = answer["answerId"]
+        d["answer"] = answer
         save_decision(session, project, session_id, d)
     for p in out["profiles"]:
         save_profile(session, project, p, created.get(p["profileId"]))
@@ -645,34 +804,63 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
     decided.update(out["decided"])
     splits = dict(result.get("splits") or {})
     splits.update(out["splits"])
-    parameters = ctx.get("parameters") or None
-    measures = ctx.get("measures") or None
     decided_parameters = dict(result.get("decidedParameters") or {})
     decided_parameters.update(out.get("decidedParameters") or {})
     decided_measures = dict(result.get("decidedMeasures") or {})
     decided_measures.update(out.get("decidedMeasures") or {})
-    properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints) if (parameters or measures) else []
-    result2 = engine.compute(
-        s["descriptors"],
-        classes,
-        constraints,
-        merged,
-        populations=ctx.get("populations"),
-        platform_default=s.get("platform") or "grasshopper",
-        decided=decided,
-        splits=splits,
-        rule_classes=rule_classes,
-        parameters=parameters,
-        properties=properties,
-        decided_parameters=decided_parameters,
-        measures=measures,
-        decided_measures=decided_measures,
-        llm=_llm_for_engine(ctx),
-    )
+    result2 = _recompute(session, project, s, ctx, merged, decided, splits, decided_parameters, decided_measures)
     update_session_result(session, project, session_id, result2, at)
     s["updatedAt"] = at
-    decisions = [{k: v for k, v in d.items() if k != "memberIds"} for d in out["decisions"]]
-    return {"decisions": decisions, "profiles": out["profiles"], "session": public_session(s, result2)}
+    decisions = [{k: v for k, v in d.items() if k not in ("memberIds", "answer")} for d in out["decisions"]]
+    answers = answers_of(fetch_decisions(session, project, session_id), bool(s.get("appliedAt")))
+    return {"decisions": decisions, "profiles": out["profiles"], "session": public_session(s, result2, answers)}
+
+
+def undo_answer(session, project: str, session_id: str, answer_id: str, actor: str, at: str) -> dict:
+    """Take one answer back (plan 1303-10): its decisions, the profile effects it had, a recompute."""
+    s = load_session(session, project, session_id)
+    if s is None:
+        raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", f"mapping session {session_id} not found", 404)
+    if s.get("appliedAt"):
+        raise engine.MappingInputError(
+            "MAPPING_SESSION_APPLIED", "the session is applied; close the definition without saving and start again", 409
+        )
+    decisions = [d for d in fetch_decisions(session, project, session_id) if d.get("answerId") == answer_id and not d.get("undoneAt")]
+    if not decisions or not decisions[0].get("answer"):
+        raise engine.MappingInputError("MAPPING_ANSWER_NOT_FOUND", f"answer {answer_id} not found or already undone", 404)
+    answer = decisions[0]["answer"]
+    result = s["result"]
+    decided = dict(result.get("decided") or {})
+    decided_parameters = dict(result.get("decidedParameters") or {})
+    decided_measures = dict(result.get("decidedMeasures") or {})
+    for d in decisions:
+        gid = str(d.get("groupId") or "")
+        target = decided_parameters if gid.startswith("parameters:") else decided_measures if gid.startswith("measures:") else decided
+        for nid in d.get("memberIds") or []:
+            target.pop(nid, None)
+    current = {p["profileId"]: p for p in fetch_profiles(session, project)}
+    for e in answer.get("effects") or []:
+        p = current.get(e["profileId"])
+        if p is None:
+            continue
+        p = dict(p)
+        p["confirmations"] = max(0, int(p.get("confirmations", 0)) - int(e.get("confirmations", 0)))
+        p["rejections"] = max(0, int(p.get("rejections", 0)) - int(e.get("rejections", 0)))
+        if e.get("created"):
+            p["state"] = "retired"
+        elif e.get("stateBefore"):
+            p["state"] = e["stateBefore"]
+        p["confidence"] = engine.profile_confidence(p["confirmations"], p["rejections"], engine.CONFIG)
+        p["updatedAt"] = at
+        save_profile(session, project, p)
+        current[p["profileId"]] = p
+    mark_decisions_undone(session, project, session_id, [d["decisionId"] for d in decisions], actor, at)
+    ctx = s.get("context") or {}
+    profiles = [current[k] for k in sorted(current)]
+    result2 = _recompute(session, project, s, ctx, profiles, decided, dict(result.get("splits") or {}), decided_parameters, decided_measures)
+    update_session_result(session, project, session_id, result2, at)
+    s["updatedAt"] = at
+    return public_session(s, result2, answers_of(fetch_decisions(session, project, session_id), False))
 
 
 def apply_session(session, project: str, session_id: str, actor: str, at: str) -> dict:

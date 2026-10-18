@@ -593,9 +593,10 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 
 **MappingDecision** — one human answer to one question for one group.
 ```
-(:MappingDecision {graph: "Computgraph", project: "1", decisionId: "D-<12 hex>", sessionId: "ms-...", questionId: "Q-...", groupId: "G-...", optionId: "class:ex:GroundFloorUnit", rolesJson: "[...]", memberCount: 25, memberIdsJson|memberIdsZ, questionText: "...", evidenceJson|evidenceZ, consequencesJson|consequencesZ, decidedBy: "owner", decidedAt: "...", profileId: "P-..."})
+(:MappingDecision {graph: "Computgraph", project: "1", decisionId: "D-<12 hex>", sessionId: "ms-...", questionId: "Q-...", groupId: "G-...", optionId: "class:ex:GroundFloorUnit", rolesJson: "[...]", memberCount: 25, memberIdsJson|memberIdsZ, questionText: "...", evidenceJson|evidenceZ, consequencesJson|consequencesZ, decidedBy: "owner", decidedAt: "...", profileId: "P-...", answerId?: "A-<12 hex>", answerJson|answerZ?, undoneAt?: "...", undoneBy?: "..."})
 ```
-- Merge key: `(decisionId, project)`; never updated after creation
+- Merge key: `(decisionId, project)`; never updated after creation, except `undoneAt` / `undoneBy` when the answer is taken back (plan 1303-10)
+- `answerId` groups the decisions of one answer (a batch answer covers several groups); `answerJson` holds the answer's title, rows (`items`) and its profile effects (`{profileId, created, confirmations, rejections, stateBefore}`), which an undo reverses. Decisions written before plan 1303-10 have neither and cannot be undone
 
 **MappingProfile** — a reusable selector learned from a decision (`source: "learned"`) or authored by hand (`source: "authored"`), mapping matching elements to one or more class roles.
 ```
@@ -603,6 +604,7 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 ```
 - Merge key: `(profileId, project)`; `profileId` is a deterministic hash of platform, normalised selector, roles and excluded roles
 - Confidence (computed, not stored) = `(confirmations + 4) / (confirmations + rejections + 5)`; a profile applies automatically at ≥ 0.8
+- `state`: `active` profiles map; `retired` ones stay in the graph and do not map (an undone answer retires the profiles it created; the same answer given again switches its profile back on). `GET /mapping/profiles` lists active profiles only
 
 ## Relationships
 

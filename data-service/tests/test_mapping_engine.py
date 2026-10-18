@@ -490,6 +490,42 @@ def test_answer_reactivates_a_retired_profile():
     assert {p["state"] for p in on} == {"active"} and {p["profileId"] for p in on} == {p["profileId"] for p in off}
 
 
+def test_questions_carry_short_titles_and_one_item_per_component():
+    # Owner 2026-10-18 (plan 1303-10): a proposal is a short line plus one row per proposed
+    # canvas component (stream, calculation output, slider) with its GH InstanceGuid.
+    hexes = {"HU": "a" * 32, "GU": "b" * 32, "PB": "c" * 32, "PA": "d" * 32, "F": "e" * 32}
+    d = _stream_descriptors()
+    for el in d:
+        el["stream"] = hexes.get(el["stream"], el["stream"])
+    measures = [dict(x, nativeId=f"gh:doc:measure:{i + 100:032x}") for i, x in enumerate(_measures())]
+    for x in measures:
+        for s in x["streams"]:
+            s["stream"] = hexes.get(s["stream"], s["stream"])
+    sliders = [dict(s, nativeId="gh:doc:slider:" + f"{i:032x}") for i, s in enumerate(_sliders())]
+    r = _compute(d, parameters=sliders, measures=measures, properties=_properties())
+    by_type = {q["type"]: q for q in r["questions"]}
+    mod = by_type["mapping-or-design"]
+    assert mod["titleRu"] == "HU · 25 элементов: GroundFloorUnit или HexagonalUnit?"
+    assert mod["title"] == "HU · 25 elements: GroundFloorUnit or HexagonalUnit?"
+    [item] = mod["items"]
+    assert item["kind"] == "stream" and item["name"] == "HU" and item["componentId"] == "a" * 32 and item["count"] == 25
+    assert item["proposal"]["label"] in ("GroundFloorUnit", "HexagonalUnit") and item["alternatives"]
+    batch = by_type["batch-assign"]
+    assert batch["titleRu"].startswith("4 группы, 351 элемент: принять предложенные классы")
+    assert sorted(i["name"] for i in batch["items"]) == ["F", "HU", "PA", "PB"]
+    assert {i["proposal"]["label"] for i in batch["items"]} == {"BottomTriangularPanel", "Facade", "GlassPanel", "HexagonalUnit"}
+    bm = by_type["batch-measures"]
+    assert all(i["kind"] == "measure" and len(i["componentId"]) == 32 for i in bm["items"])
+    assert {i["name"] for i in bm["items"]} >= {"AR (measure)", "VC (measure)"}
+    bp = by_type["batch-parameters"]
+    assert bp["titleRu"] == "7 слайдеров → параметры DG"
+    assert [i["kind"] for i in bp["items"]] == ["parameter"] * 7 and bp["items"][0]["count"] is None
+    assert bp["items"][0]["componentId"] == "0" * 32 or len(bp["items"][0]["componentId"]) == 32
+    # Element streams without a GH guid (Revit, synthetic) have no componentId.
+    plain = _compute(fx.facade_v1_descriptors())
+    assert all(i["componentId"] is None for q in plain["questions"] for i in q["items"])
+
+
 def test_calculation_outputs_map_to_properties_by_values_and_names():
     r = _full(measures=_measures())
     by = {x["name"]: x for x in r["measures"]}

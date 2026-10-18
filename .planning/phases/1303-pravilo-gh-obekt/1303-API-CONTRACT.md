@@ -169,3 +169,56 @@ Apply records `appliedAt` / `appliedBy` / `appliedCount` on the `MappingSession`
 ```
 
 Merge keys: `MappingSession(sessionId, project)`, `MappingDecision(decisionId, project)`, `MappingProfile(profileId, project)`. All three labels are added to `LOCKED_NODE_LABELS`.
+
+## 7. Proposal cards, answers, undo, DeGram (plan 1303-10, owner request 2026-10-18)
+
+Shared by the Web UI Mapping panel and the DeGram «Модели → Mapping» sub-tab. Additive: every earlier field stays.
+
+### 7.1 Session additions
+
+```json
+{ "document": "v12-hexagonal-facade-01-auto-mapping",
+  "questions": [ { "questionId": "Q-…", "type": "mapping-or-design", "text": "…", "textRu": "…",
+                   "title": "Panels A · 120 elements: BottomTriangularPanel or GlassPanel?",
+                   "titleRu": "Panels A · 120 элементов: BottomTriangularPanel или GlassPanel?",
+                   "items": [ { "itemId": "G-…", "kind": "stream", "name": "Panels A",
+                                "componentId": "24549b0264794f1bb333b7768ab72820", "count": 120,
+                                "proposal": { "iri": "ex:GlassPanel", "label": "GlassPanel" },
+                                "alternatives": [ { "iri": "ex:BottomTriangularPanel", "label": "BottomTriangularPanel" } ],
+                                "state": "ambiguous" } ],
+                   "options": [ … ], "consequences": [ … ] } ],
+  "answers": [ { "answerId": "A-…", "questionId": "Q-…", "type": "batch-assign",
+                 "title": "…", "titleRu": "…", "optionId": "accept-all",
+                 "items": [ { "itemId": "G-…", "kind": "stream", "name": "Panels B", "componentId": "…", "count": 125,
+                              "proposal": { "iri": "ex:GlassPanel", "label": "GlassPanel" }, "alternatives": [], "state": "confirmed" } ],
+                 "decidedAt": "…", "decidedBy": "…", "undoable": true } ] }
+```
+
+- `document`: the GH document key (label before « · », else the `gh:<key>:` prefix of the first element), `null` for imported Revit sessions. Also on every row of `GET /mapping/sessions`.
+- `items`: one row per proposed canvas component, never free text. `kind`: `stream` (an element group: its source parameter), `measure` (a calculation output), `parameter` (a slider). `componentId`: the 32-hex GH `InstanceGuid` (stream = source parameter, measure = output parameter, parameter = slider), `null` when unknown (Revit). `count`: elements of the group, values of the output, `null` for a slider. `proposal`: the class or property the system proposes (for a batch question the accepted one), `null` when none. `alternatives`: other candidates (up to 3). `state`: the row's mapping state.
+- `title` / `titleRu`: one short line; `text` / `textRu` stay as the full explanation.
+- `answers`: the given answers of this session, newest first, undone ones left out. One answer = one `POST …/decisions` (a batch answer covers all its groups). `items` show what was decided. `undoable` = the session is not applied.
+
+### 7.2 Undo
+
+`POST /mapping/sessions/{session_id}/undo` body `{ "project": "…", "answerId": "A-…" }` → the recomputed session (same shape as `GET`).
+- Removes the answer's decisions from the session (`decided`, `decidedMeasures`, `decidedParameters`), marks its `MappingDecision` nodes `undoneAt` / `undoneBy`, and reverses its profile effects: a profile the answer created is retired (`state = retired`, `retiredReason = "undone"`), a confirmation or rejection it added is taken back.
+- 409 `MAPPING_SESSION_APPLIED` when the session is applied; 404 `MAPPING_ANSWER_NOT_FOUND` for an unknown or already undone answer.
+- Policy: `delegated+member`, body, `editor` (same as decisions).
+
+### 7.3 Principals
+
+`GET /mapping/sessions`, `GET /mapping/sessions/{id}`, `GET /mapping/profiles` add `delegated` (viewer); `POST …/decisions` and `POST …/undo` are `delegated+member` (editor). The connector keeps its scope (create, read, apply).
+
+### 7.4 Grasshopper canvas bridge (LISTENER, 127.0.0.1:8720)
+
+New commands, reachable by DeGram (owner 2026-10-18: DeGram has full access to the GH canvas):
+- `focus_component` `{ "componentId": "<32 hex>" }` → `{ "found": true, "name": "…" }`: Grasshopper editor to the front, the component's top-level object selected and centred, zoom to fit it.
+- `start_mapping` `{}` → `{ "started": true | false, "message": "…" }`: CONNECTOR reads the canvas and creates a session now (needs CONNECTOR signed in).
+- `get_mapping_status` `{}` → `{ "document": "…", "sessionId": "ms-…" | null, "message": "<CONNECTOR message>", "signedIn": true }`.
+
+The DeGram client allowlist becomes every command of `CanvasBridgeCommands.All`.
+
+### 7.5 Canvas tags (DG.gha, no wire change)
+
+While a session has open questions or waits for apply, CONNECTOR draws on the canvas (overlay, not document objects, never saved) a coloured frame around each item's component with a tag: `DG ? GlassPanel | BottomTriangularPanel` (ambiguous, orange), `DG · GlassPanel` (suggested, yellow), `DG ✓ GlassPanel` (confirmed, green), `DG ↺ GlassPanel` (auto by profile, blue). Removed once the session is applied. After the last answer CONNECTOR waits 10 s before apply, so the last answer can still be undone.

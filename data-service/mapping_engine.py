@@ -897,6 +897,7 @@ def compute(
     for q in questions:
         for gid in q["groupIds"]:
             qid_of[gid] = q["questionId"]
+    _decorate_questions(questions, ordered_groups, measure_rows if measures else [], param_rows if parameters else [])
 
     # 6. Output.
     out_groups = []
@@ -1135,6 +1136,112 @@ def _split_feature(g: Mapping) -> Optional[str]:
         if gain > best_gain + 1e-12:
             best, best_gain = k, gain
     return best
+
+
+# ---------------------------------------------------------------------------
+# Proposal cards (plan 1303-10): a short title and one row per proposed canvas component
+# ---------------------------------------------------------------------------
+
+_GH_GUID = re.compile(r"^[0-9a-f]{32}$")
+
+
+def _guid_or_none(value: Any) -> Optional[str]:
+    text = str(value or "").lower()
+    return text if _GH_GUID.match(text) else None
+
+
+def _ref(iri: Any, label: Any) -> dict:
+    return {"iri": str(iri), "label": str(label or local_name(iri))}
+
+
+def _group_item(g: Mapping) -> dict:
+    streams = [r.get("stream") for r in g["rows"] if r.get("stream")]
+    stream = max(sorted(set(streams)), key=streams.count) if streams else None
+    cands = g.get("candidates") or []
+    return {
+        "itemId": g["groupId"],
+        "kind": "stream",
+        "name": _src(g),
+        "componentId": _guid_or_none(stream),
+        "count": len(g["rows"]),
+        "proposal": _ref(cands[0]["classIri"], cands[0]["label"]) if cands else None,
+        "alternatives": [_ref(c["classIri"], c["label"]) for c in cands[1:4]],
+        "state": g["state"],
+    }
+
+
+def _measure_item(r: Mapping) -> dict:
+    nid = str(r["nativeId"])
+    prop = r.get("property")
+    cands = r.get("candidates") or []
+    proposal = _ref(prop["iri"], prop["label"]) if prop else (_ref(cands[0]["propertyIri"], cands[0]["label"]) if cands else None)
+    return {
+        "itemId": nid,
+        "kind": "measure",
+        "name": _measure_label(r),
+        "componentId": _guid_or_none(nid.rsplit(":measure:", 1)[-1]) if ":measure:" in nid else None,
+        "count": r.get("count"),
+        "proposal": proposal,
+        "alternatives": [_ref(c["propertyIri"], c["label"]) for c in cands if not proposal or c["propertyIri"] != proposal["iri"]][:3],
+        "state": r["state"],
+    }
+
+
+def _parameter_item(r: Mapping) -> dict:
+    nid = str(r["nativeId"])
+    return {
+        "itemId": nid,
+        "kind": "parameter",
+        "name": str(r["name"]),
+        "componentId": _guid_or_none(nid.rsplit(":slider:", 1)[-1]) if ":slider:" in nid else None,
+        "count": None,
+        "proposal": _ref(PARAMETER_ROLE, "DG parameter"),
+        "alternatives": [],
+        "state": r["state"],
+    }
+
+
+def _decorate_questions(questions: list, groups: Sequence[dict], measure_rows: Sequence[dict], param_rows: Sequence[dict]) -> None:
+    """Add `title` / `titleRu` (one short line) and `items` (one row per proposed component)."""
+    by_group = {g["groupId"]: g for g in groups}
+    by_measure = {str(r["nativeId"]): r for r in measure_rows}
+    by_param = {str(r["nativeId"]): r for r in param_rows}
+    for q in questions:
+        qtype = q["type"]
+        if qtype in ("batch-measures", "map-measure"):
+            items = [_measure_item(by_measure[i]) for i in q.get("measureIds") or [] if i in by_measure]
+        elif qtype == "batch-parameters":
+            items = [_parameter_item(by_param[i]) for i in q.get("parameterIds") or [] if i in by_param]
+        else:
+            items = [_group_item(by_group[i]) for i in q.get("groupIds") or [] if i in by_group]
+        q["items"] = items
+        k = len(items)
+        n = sum(int(i["count"] or 0) for i in items)
+        if qtype == "batch-assign":
+            q["title"] = f"{k} {_en_plural(k, 'group', 'groups')}, {n} {_en_plural(n, 'element', 'elements')}: accept the proposed classes"
+            q["titleRu"] = (
+                f"{k} {_ru_plural(k, ('группа', 'группы', 'групп'))}, {n} {_ru_plural(n, ('элемент', 'элемента', 'элементов'))}: "
+                "принять предложенные классы"
+            )
+        elif qtype == "batch-measures":
+            q["title"] = f"{k} calculation {_en_plural(k, 'output', 'outputs')} → DG properties"
+            q["titleRu"] = f"{k} {_ru_plural(k, ('расчётный выход', 'расчётных выхода', 'расчётных выходов'))} → свойства DG"
+        elif qtype == "map-measure":
+            name = items[0]["name"] if items else "?"
+            q["title"] = f"Output «{name}»: which DG property?"
+            q["titleRu"] = f"Выход «{name}»: какое свойство DG?"
+        elif qtype == "batch-parameters":
+            q["title"] = f"{k} {_en_plural(k, 'slider', 'sliders')} → DG parameters"
+            q["titleRu"] = f"{k} {_ru_plural(k, ('слайдер', 'слайдера', 'слайдеров'))} → параметры DG"
+        else:
+            src = items[0]["name"] if items else "?"
+            labels = [o["label"] for o in q.get("options") or [] if o.get("roles") and len(o["roles"]) == 1 and str(o["optionId"]).startswith("class:")]
+            labels += [local_name(o["roles"][0]) for o in q.get("options") or [] if str(o["optionId"]).startswith("design-error:")]
+            labels = list(dict.fromkeys(labels))[:3]
+            choice_en = " or ".join(labels) if labels else "which class"
+            choice_ru = " или ".join(labels) if labels else "какой класс"
+            q["title"] = f"{src} · {n} {_en_plural(n, 'element', 'elements')}: {choice_en}?"
+            q["titleRu"] = f"{src} · {n} {_ru_plural(n, ('элемент', 'элемента', 'элементов'))}: {choice_ru}?"
 
 
 # Evidence kinds named in the mapping-or-design text (rule evidence is the conflict itself).

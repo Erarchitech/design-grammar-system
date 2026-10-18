@@ -88,13 +88,27 @@ class FakeStore:
 
     def record_apply(self, session, project, session_id, actor, at, count):
         self.applies.append((project, session_id, actor, count))
+        self.sessions[(project, session_id)]["appliedAt"] = at
 
     def list_sessions(self, session, project, limit):
         rows = [s for (p, _), s in sorted(self.sessions.items()) if p == project]
-        return [{"sessionId": s["sessionId"], "project": project, "summary": s["result"]["summary"]} for s in rows[::-1][:limit]]
+        return [
+            {"sessionId": s["sessionId"], "project": project, "summary": s["result"]["summary"],
+             "document": mapping_store.document_of(s["platform"], s["label"])}
+            for s in rows[::-1][:limit]
+        ]
 
     def save_decision(self, session, project, session_id, decision):
         self.decisions.append((project, session_id, decision))
+
+    def fetch_decisions(self, session, project, session_id):
+        rows = [dict(d) for p, sid, d in self.decisions if p == project and sid == session_id]
+        return sorted(rows, key=lambda d: (d["decidedAt"], d["decisionId"]), reverse=True)
+
+    def mark_decisions_undone(self, session, project, session_id, decision_ids, actor, at):
+        for p, sid, d in self.decisions:
+            if p == project and sid == session_id and d["decisionId"] in decision_ids:
+                d["undoneAt"], d["undoneBy"] = at, actor
 
 
 @pytest.fixture(autouse=True)
@@ -113,6 +127,8 @@ def fake_store(monkeypatch):
         "record_apply",
         "list_sessions",
         "save_decision",
+        "fetch_decisions",
+        "mark_decisions_undone",
     ):
         monkeypatch.setattr(mapping_store, name, getattr(store, name))
 
@@ -333,6 +349,64 @@ def test_profiles_list_leaves_out_retired_profiles(fake_store):
     fake_store.profiles[key]["state"] = "retired"
     listed = client.get("/mapping/profiles", params={"project": PROJECT}).json()["profiles"]
     assert len(listed) == 4 and key[1] not in {p["profileId"] for p in listed}
+
+
+def test_answers_are_listed_and_undo_restores_the_question(fake_store):
+    # Plan 1303-10: every answer is listed with its rows and has its own undo.
+    r = _create(fx.facade_v1_descriptors(), label="facade-copy · 10:54:09")
+    sid = r.json()["sessionId"]
+    assert r.json()["document"] == "facade-copy" and r.json()["answers"] == []
+    batch = next(q for q in r.json()["questions"] if q["type"] == "batch-assign")
+    assert batch["titleRu"] and len(batch["items"]) == 4
+    s1 = _decide(sid, batch["questionId"], "accept-all").json()["session"]
+    [answer] = s1["answers"]
+    assert answer["questionId"] == batch["questionId"] and answer["type"] == "batch-assign" and answer["undoable"] is True
+    assert sorted(i["name"] for i in answer["items"]) == sorted(i["name"] for i in batch["items"])
+    assert all(i["state"] == "confirmed" and i["proposal"] for i in answer["items"])
+    assert s1["summary"]["openQuestions"] == 1 and len(fake_store.profiles) == 4
+    listed = client.get("/mapping/sessions", params={"project": PROJECT}).json()["sessions"]
+    assert listed[0]["document"] == "facade-copy"
+    undone = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answer["answerId"]}, headers=CSRF)
+    assert undone.status_code == 200, undone.text
+    s2 = undone.json()
+    assert s2["answers"] == [] and s2["summary"]["openQuestions"] == 2
+    assert any(q["type"] == "batch-assign" for q in s2["questions"]) and s2["summary"]["confirmed"] == 0
+    # The profiles the answer created are retired, not deleted; an undone answer cannot be undone twice.
+    assert {p["state"] for p in fake_store.profiles.values()} == {"retired"}
+    assert all(d.get("undoneAt") for _, _, d in fake_store.decisions)
+    again = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answer["answerId"]}, headers=CSRF)
+    assert again.status_code == 404 and again.json()["detail"]["code"] == "MAPPING_ANSWER_NOT_FOUND"
+    # The same answer again switches the retired profiles back on.
+    s3 = _decide(sid, batch["questionId"], "accept-all").json()["session"]
+    assert len(s3["answers"]) == 1 and {p["state"] for p in fake_store.profiles.values()} == {"active"}
+
+
+def test_undo_is_refused_once_the_session_is_applied(fake_store):
+    sid, out = _learn(fake_store)
+    answers = out["session"]["answers"]
+    assert len(answers) == 2 and all(a["undoable"] for a in answers)
+    assert client.post(f"/mapping/sessions/{sid}/apply", json={"project": PROJECT}, headers=CSRF).status_code == 200
+    s = client.get(f"/mapping/sessions/{sid}", params={"project": PROJECT}).json()
+    assert [a["undoable"] for a in s["answers"]] == [False, False]
+    r = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answers[0]["answerId"]}, headers=CSRF)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "MAPPING_SESSION_APPLIED"
+
+
+def test_undo_reverses_a_rejection_on_another_profile(fake_store):
+    sid, _ = _learn(fake_store)
+    # A second session where the pentagons are answered against the learned GroundFloorUnit profile.
+    gfu = next(p for p in fake_store.profiles.values() if p["roles"] == ["ex:GroundFloorUnit"])
+    gfu["confirmations"], gfu["rejections"] = 0, 1  # below auto-apply, so the pentagons are asked again
+    r = _create(fx.facade_v1_descriptors())
+    sid2 = r.json()["sessionId"]
+    q = next(q for q in r.json()["questions"] if any(i["count"] == 25 for i in q["items"]))
+    pent = next(i["itemId"] for i in q["items"] if i["count"] == 25)
+    out = _decide(sid2, q["questionId"], "none", groupIds=[pent]).json()
+    assert fake_store.profiles[(PROJECT, gfu["profileId"])]["rejections"] == 2
+    aid = out["session"]["answers"][0]["answerId"]
+    assert client.post(f"/mapping/sessions/{sid2}/undo", json={"project": PROJECT, "answerId": aid}, headers=CSRF).status_code == 200
+    assert fake_store.profiles[(PROJECT, gfu["profileId"])]["rejections"] == 1
+    assert fake_store.profiles[(PROJECT, gfu["profileId"])]["state"] == "active"
 
 
 def test_error_codes():

@@ -5629,6 +5629,11 @@ class MappingApplyRequest(BaseModel):
     project: str
 
 
+class MappingUndoRequest(BaseModel):
+    project: str
+    answerId: str = Field(min_length=3, max_length=64)
+
+
 class MappingProfileCreateRequest(BaseModel):
     project: str
     platform: str = Field(pattern="^(grasshopper|revit|\\*)$")
@@ -5698,6 +5703,19 @@ def post_mapping_decision(session_id: str, payload: MappingDecisionRequest, requ
         payload.optionId,
         payload.groupIds,
         payload.roles,
+        _mapping_actor(request),
+        mapping_store.utc_now(),
+    )
+
+
+@router.post("/mapping/sessions/{session_id}/undo")
+def post_mapping_undo(session_id: str, payload: MappingUndoRequest, request: Request):
+    """Take one answer back while the session is not applied (plan 1303-10); returns the recomputed session."""
+    return _mapping_call(
+        mapping_store.undo_answer,
+        payload.project,
+        session_id,
+        payload.answerId,
         _mapping_actor(request),
         mapping_store.utc_now(),
     )

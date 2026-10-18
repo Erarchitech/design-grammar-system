@@ -440,14 +440,15 @@ Group questions, decisions and learned profiles that map element descriptors fro
 | Method | Path | Body / Params | Principals | Description |
 |--------|------|---------------|------------|-------------|
 | POST | `/mapping/sessions` | `{project, platform: grasshopper\|revit, label?, elements: [ElementDescriptor], context?: {vocabulary?: {synonyms, ifcHints}, populationsFromSessionId?}}` | member editor, connector | Map the elements; returns the session with summary, questions (`batch-assign`, `assign`, `disambiguate`, `mapping-or-design`), groups and element results. |
-| GET | `/mapping/sessions` | Query: `project, limit=20` | member viewer, connector | Newest sessions (summaries). |
-| GET | `/mapping/sessions/{session_id}` | Query: `project` | member viewer, connector | One session. |
-| POST | `/mapping/sessions/{session_id}/decisions` | `{project, questionId, optionId, groupIds?, roles?, comment?}` | member editor | Answer one question: stores decisions and learned profiles, returns `{decisions, profiles, session}` with the recomputed session. |
+| GET | `/mapping/sessions` | Query: `project, limit=20` | member viewer, connector, delegated (DeGram) | Newest sessions (summaries, with `document`). |
+| GET | `/mapping/sessions/{session_id}` | Query: `project` | member viewer, connector, delegated (DeGram) | One session: questions with `title`/`titleRu` and one `items` row per proposed component, `answers` (each undoable while not applied), `document`. |
+| POST | `/mapping/sessions/{session_id}/decisions` | `{project, questionId, optionId, groupIds?, roles?, comment?}` | member editor, delegated (DeGram, editor) | Answer one question: stores decisions and learned profiles, returns `{decisions, profiles, session}` with the recomputed session. |
+| POST | `/mapping/sessions/{session_id}/undo` | `{project, answerId}` | member editor, delegated (DeGram, editor) | Take one answer back while the session is not applied: removes its decisions, retires the profiles it created, takes back the confirmations and rejections it added; returns the recomputed session. |
 | POST | `/mapping/sessions/{session_id}/apply` | `{project}` | member editor, connector | Partition of confirmed and auto-mapped elements by class (`byClass`) for the OBJECT STATE components; records `appliedAt`. Writes no element edges. |
-| GET | `/mapping/profiles` | Query: `project` | member viewer, connector | Learned and authored profiles with computed confidence. |
+| GET | `/mapping/profiles` | Query: `project` | member viewer, connector, delegated (DeGram) | Active learned and authored profiles with computed confidence (retired ones are left out). |
 | POST | `/mapping/profiles` | `{project, platform: grasshopper\|revit\|*, selector, roles, comment?}` | member editor | Author a profile (e.g. Revit category + parameters → classes); repeating it adds a confirmation. |
 
-Errors use the structured `{error, hint, code}` detail: `MAPPING_SESSION_NOT_FOUND` (404), `MAPPING_QUESTION_NOT_FOUND` (404), `MAPPING_OPTION_INVALID` (400), `MAPPING_INPUT_INVALID` (400), `MAPPING_TOO_MANY_ELEMENTS` (400, more than 5000 elements), `MAPPING_FAILED` (502, correlation id only).
+Errors use the structured `{error, hint, code}` detail: `MAPPING_SESSION_NOT_FOUND` (404), `MAPPING_QUESTION_NOT_FOUND` (404), `MAPPING_OPTION_INVALID` (400), `MAPPING_INPUT_INVALID` (400), `MAPPING_TOO_MANY_ELEMENTS` (400, more than 5000 elements), `MAPPING_ANSWER_NOT_FOUND` (404, unknown or already undone answer), `MAPPING_SESSION_APPLIED` (409, undo on an applied session), `MAPPING_FAILED` (502, correlation id only).
 
 ### Identity (`/identity/*`, Phase 32.1/1203)
 
