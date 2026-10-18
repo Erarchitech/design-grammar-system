@@ -38,3 +38,14 @@ commits: [268958e, 71ff4a0]
 ## Notes
 
 - The worker left empty sandbox directories with a restrictive ACL in `data-service/sandbox_probe/`. They are untracked, git ignores them, and they are to be removed once the DSH hub releases them.
+
+## Addendum 2026-10-19 — Revit groups without evidence get one question (`85cf1b6`)
+
+- **Found in the offline transfer probe.** Synthetic Revit families on the live project rules (100×6, 25×5, 125×4, 125×3 adaptive points) were mapped with the cold start in place. The 4-point family had no candidate: GlassPanel has no vertex-count signature rule, and the population 125 is ambiguous. It stayed `unmapped` with no question, so D-52 «≤ 1 question per family group» and full recall were impossible on a cold Revit read.
+- **Change.** For Revit only, a group with no candidate and no matched profile or «none» answer gets one `assign` question (`unmatched: true`). It offers every project class and «None of these», with the title «… : which class?». Grasshopper keeps its LLM proposal, and the demo cold start is unchanged: the recompute of `ms-56907a90d11f` with the new engine still gives 6.
+- **Probe results:**
+  - cold Revit read: 2 questions (one batch for the three suggested families + one for the glass family);
+  - the same descriptors with the 18.10 profiles active in memory: 0 questions, 375/375 auto. This is the GH → Revit transfer through `geometry.vertexCount`.
+- **Tests:** mapping 63 passed.
+- **Deployment.** Image `82378ca11829…` from `git archive` of `85cf1b6`; rollback tag `pre-1303-11` (`8c8c04a8f79d`) unchanged. Probes: `GET /` 200, mapping without a credential 401, GH recompute 6.
+- **Note for the protocol script.** The engine's profile dicts do not carry `retiredReason`, so `dgmap_revit_transfer.py` selects the cold-start profiles by a direct graph query.
