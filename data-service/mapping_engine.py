@@ -164,8 +164,9 @@ EN_ALIASES = {
 # Property label words that carry no meaning of their own.
 PROPERTY_STOP = {"has", "is", "of", "the", "value", "values"}
 UNIT_TOKENS = {"m", "mm", "cm", "m2", "m3", "deg", "rad", "pct"}
-# Generic words count half: "КолВо ребер" must not become hasVertexCount by "count" alone.
-GENERIC_WORDS = {"count", "number", "size", "value"}
+# Generic words count half: "КолВо ребер" must not become hasVertexCount by "count" alone,
+# nor "1 оффсет" (a Grasshopper offset distance) hasLevelOffsetM by "offset" alone.
+GENERIC_WORDS = {"count", "number", "size", "value", "offset"}
 
 
 class MappingInputError(ValueError):
@@ -518,7 +519,9 @@ def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[
         words = set(class_tokens(c.label))
         for syn in c.synonyms:
             words.update(split_tokens(syn))
-        total, parts = 0.0, []
+        # Each distinct class word counts once: "Panels" and "panel" are one hit, and a full
+        # match (bottom + triangular + panel) outweighs a shared word (panel).
+        total, parts, hits = 0.0, [], set()
         for t in sorted(toks):
             if acr and t == acr:
                 total += cfg["w_name_acronym"]
@@ -527,12 +530,14 @@ def ev_name(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[
                 total += cfg["w_name_subsequence"]
                 parts.append(f"'{t}' abbreviates {c.label}")
             hit = _word_hit(t, words) if len(t) >= 3 else None
-            if hit:
+            if hit and hit not in hits:
+                hits.add(hit)
                 total += cfg["w_name_token"]
                 parts.append(f"word '{t}' matches {c.label}" + (f" ({hit})" if hit != t else ""))
         for t in sorted(ctx):
             hit = _word_hit(t, words) if len(t) >= 3 else None
-            if hit:
+            if hit and hit not in hits:
+                hits.add(hit)
                 total += cfg["w_name_token"]
                 parts.append(f"canvas text '{t}' matches {c.label}" + (f" ({hit})" if hit != t else ""))
         if total:
@@ -567,11 +572,13 @@ def ev_rules(feats: Mapping, constraints: Sequence[Constraint], cfg: Mapping) ->
         values = [(c, property_value(feats, c.prop_local)) for c in group]
         if any(v is None for _, v in values):
             continue
-        s = stats.setdefault(cls, {"sat": [], "vio": []})
+        s = stats.setdefault(cls, {"sat": [], "vio": [], "eq_sat": 0})
         w = weights.setdefault(cls, {"sat": 0.0, "vio": 0.0})
         equality = all(_is_equality(c) for c in group)
         if any(check_constraint(c, v) for c, v in values):
             s["sat"].append(rule_id)
+            if equality:
+                s["eq_sat"] += 1
             w["sat"] += cfg["w_rule_eq_satisfied"] if equality else cfg["w_rule_range_satisfied"]
         else:
             measured = sorted({f"{c.prop_local} = {_fmt(v)}" for c, v in values})
@@ -782,6 +789,28 @@ def compute(
         top = cands[0]
         second = cands[1] if len(cands) > 1 else None
         margin = conf[top] - conf[second] if second else 1.0
+        if second and margin < cfg["margin_delta"]:
+            # Signature tie-break: within the margin, the one class whose equality rule
+            # (its signature, e.g. hasVertexCount == 3) holds wins over classes supported
+            # only by ranges and a single shared word. A close class that violates rules or
+            # is named explicitly (two words, e.g. the class an OBJECT STATE names) keeps the
+            # question.
+            name_w: dict = {}
+            for e in row["evidence"]:
+                if e.kind == "name":
+                    name_w[e.class_local] = name_w.get(e.class_local, 0.0) + e.weight
+            close = [c for c in cands if conf[top] - conf[c] < cfg["margin_delta"]]
+            signed = [c for c in close if (stats.get(c) or {}).get("eq_sat") and not (stats.get(c) or {}).get("vio")]
+            weak = all(
+                not (stats.get(c) or {}).get("vio") and name_w.get(c, 0.0) <= cfg["w_name_token"]
+                for c in close
+                if c not in signed
+            )
+            if len(signed) == 1 and weak:
+                top = signed[0]
+                cands = [top] + [c for c in cands if c != top]
+                row["cands"] = cands
+                second, margin = None, 1.0
         # Mapping error or design error: one of the two leading classes violates
         # its rules while the other is rule-consistent (in either order).
         pair_conflict = bool(second) and margin < cfg["margin_delta"] and any(
@@ -937,6 +966,11 @@ def _finish_group(g: dict, iri_of: Mapping, label_of: Mapping, rmap: Mapping, co
             }
         )
     cand_out.sort(key=lambda x: (-x["confidence"], x["label"]))
+    # A suggested group leads with the class its elements are suggested as (the signature
+    # tie-break can pick a class that is not the most confident one); questions use it.
+    if g["state"] == "suggested" and rows[0]["roles"]:
+        chosen = iri_of[rows[0]["roles"][0][0]]
+        cand_out.sort(key=lambda x: 0 if x["classIri"] == chosen else 1)
     g["candidates"] = cand_out
     impact = []
     by_class = {}

@@ -77,7 +77,7 @@ def test_rule_body_is_a_conjunction():
     assert len(cons) == 2
     _, closed = m.ev_rules({"properties.hasGapCount": 0}, cons, m.CONFIG)
     _, open_ = m.ev_rules({"properties.hasGapCount": 1}, cons, m.CONFIG)
-    assert closed["HexagonalUnit"] == {"sat": ["R_HEX_HASGAPCOUNT_MAX_0_V"], "vio": []}
+    assert {k: closed["HexagonalUnit"][k] for k in ("sat", "vio")} == {"sat": ["R_HEX_HASGAPCOUNT_MAX_0_V"], "vio": []}
     assert open_["HexagonalUnit"]["sat"] == [] and open_["HexagonalUnit"]["vio"][0][0] == "R_HEX_HASGAPCOUNT_MAX_0_V"
 
 
@@ -257,19 +257,32 @@ def test_revit_like_population_and_names():
 
 
 def test_range_rules_do_not_outvote_a_signature():
-    """A triangle that also satisfies all four GlassPanel range rules is asked about, not
-    silently mapped to GlassPanel; with a violated range rule it stays BottomTriangularPanel."""
+    """A triangle that also satisfies all four GlassPanel range rules is not mapped to
+    GlassPanel: the satisfied signature (hasVertexCount == 3) decides, GlassPanel stays a
+    visible candidate (2026-10-18 tie-break); with a violated range rule it is
+    BottomTriangularPanel as well."""
     base = {"source": "PA", "geometry": {"kind": "surface", "vertexCount": 3, "closed": True}}
     contested = dict(base, nativeId="t1", properties={"hasVertexCount": 3, "hasAspectRatio": 2.0, "hasPlanarityDeviationM": 0.0, "hasWidthM": 5.0})
     narrow = dict(base, nativeId="t2", properties={"hasVertexCount": 3, "hasAspectRatio": 2.0, "hasPlanarityDeviationM": 0.0, "hasWidthM": 4.2})
     r = _compute([contested, narrow])
     by_id = {e["nativeId"]: e for e in r["elements"]}
     groups = {g["groupId"]: g for g in r["groups"]}
-    assert by_id["t1"]["state"] == "ambiguous"
+    assert by_id["t1"]["state"] == "suggested"
+    assert by_id["t1"]["roles"][0]["classIri"] == "ex:BottomTriangularPanel"
     labels = [c["label"] for c in groups[by_id["t1"]["groupId"]]["candidates"]]
-    assert "BottomTriangularPanel" in labels and "GlassPanel" in labels
+    assert labels[0] == "BottomTriangularPanel" and "GlassPanel" in labels
     assert by_id["t2"]["state"] == "suggested"
     assert by_id["t2"]["roles"][0]["classIri"] == "ex:BottomTriangularPanel"
+
+
+def test_named_class_keeps_the_question_against_a_signature():
+    """The class an OBJECT STATE names (two words) is not overridden silently by the signature."""
+    d = {"nativeId": "g1", "source": "join GU", "names": ["OS GroundFloorUnit: GlassPanel"],
+         "geometry": {"kind": "curve", "vertexCount": 5, "closed": True},
+         "properties": {"hasVertexCount": 5, "hasGapCount": 0}}
+    r = _compute([d])
+    assert r["elements"][0]["state"] == "ambiguous"
+    assert [q["type"] for q in r["questions"]] == ["disambiguate"]
 
 
 # 8 -------------------------------------------------------------------------
