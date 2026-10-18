@@ -23,13 +23,16 @@ def _inputs():
 def test_digest_is_compact_and_complete():
     digest = llm.build_digest(*_inputs())
     canvas = digest["canvas"]
-    assert canvas["streams"][0]["id"] == "S1" and canvas["streams"][0]["count"] == 3
-    assert canvas["measures"][0]["streamsWithSameBranches"] == ["S1"]
-    assert canvas["sliders"][0]["name"] == "Module Width F1"
+    # The model sees short aliases; the native ids stay out of the prompt.
+    assert canvas["streams"][0]["id"] == "s1" and canvas["streams"][0]["count"] == 3
+    assert canvas["measures"][0]["id"] == "m1" and canvas["measures"][0]["streamsWithSameBranches"] == ["s1"]
+    assert canvas["sliders"][0]["id"] == "p1" and canvas["sliders"][0]["name"] == "Module Width F1"
+    assert digest["_ids"] == {"s1": "S1", "m1": "M1", "p1": "P1"}
     assert {c["label"] for c in digest["ontology"]["classes"]} >= {"GlassPanel", "HexagonalUnit"}
     assert digest["ontology"]["rules"] and "required" in digest["ontology"]["rules"][0]
     prompt = llm.build_prompt(digest)
-    assert "isParameter" in prompt and json.loads(prompt.split("(JSON):\n", 1)[1].split("\n\nReturn", 1)[0])
+    shown = json.loads(prompt.split("(JSON):\n", 1)[1].split("\n\nReturn", 1)[0])
+    assert "isParameter" in prompt and "EVERY measure" in prompt and "_ids" not in shown
 
 
 def test_proposal_is_validated_against_the_digest():
@@ -47,6 +50,14 @@ def test_proposal_is_validated_against_the_digest():
     assert out["measures"]["M1"]["confidence"] == 1.0 and out["measures"]["M1"]["stream"] == "S1"
     assert out["parameters"]["P1"]["isParameter"] is True
     assert llm.parse_proposal("no json here", digest) == {"objects": {}, "measures": {}, "parameters": {}}
+    # Answers in aliases come back keyed by native ids.
+    aliased = llm.parse_proposal(json.dumps({
+        "objects": [{"stream": "s1", "classIri": "ex:GlassPanel"}],
+        "measures": [{"measure": "M1 ", "propertyIri": "ex:hasAspectRatio", "stream": "s1"}, {"measure": "m9", "propertyIri": "ex:hasAspectRatio"}],
+        "parameters": [{"slider": "p1", "isParameter": False}],
+    }), digest)
+    assert set(aliased["objects"]) == {"S1"} and aliased["measures"]["M1"]["stream"] == "S1" and len(aliased["measures"]) == 1
+    assert aliased["parameters"]["P1"]["isParameter"] is False
 
 
 def test_provider_failure_is_reported_not_raised(monkeypatch):

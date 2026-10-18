@@ -69,25 +69,37 @@ def build_digest(elements: Sequence[Mapping], measures: Sequence[Mapping], param
         if s["sample"] is None:
             props = d.get("properties") if isinstance(d.get("properties"), Mapping) else {}
             s["sample"] = {k: v for k, v in list({**geo, **props}.items())[:12]}
+    # The model sees short aliases (s1, m1, p1): long native ids ("gh:<doc>:measure:<guid>") were
+    # copied unreliably and the proposal lost its measures and sliders (live run 2026-10-18).
+    ids: dict = {}
+    alias_of: dict = {}
+
+    def alias(prefix: str, real: str, n: int) -> str:
+        a = f"{prefix}{n}"
+        ids[a] = real
+        alias_of[(prefix, real)] = a
+        return a
+
     stream_list = []
-    for s in sorted(streams.values(), key=lambda s: s["id"])[:MAX_STREAMS]:
-        stream_list.append({**s, "kinds": dict(s["kinds"]), "vertexCounts": dict(s["vertexCounts"].most_common(4))})
+    for i, s in enumerate(sorted(streams.values(), key=lambda s: s["id"])[:MAX_STREAMS], 1):
+        stream_list.append({**s, "id": alias("s", s["id"], i), "kinds": dict(s["kinds"]), "vertexCounts": dict(s["vertexCounts"].most_common(4))})
     measure_list = []
-    for m in sorted(measures or [], key=lambda m: str(m.get("nativeId")))[:MAX_MEASURES]:
+    for i, m in enumerate(sorted(measures or [], key=lambda m: str(m.get("nativeId")))[:MAX_MEASURES], 1):
+        branch_streams = [str(s.get("stream")) for s in m.get("streams") or [] if isinstance(s, Mapping) and s.get("pathMatch")]
         measure_list.append({
-            "id": str(m.get("nativeId")),
+            "id": alias("m", str(m.get("nativeId")), i),
             "name": m.get("name"),
             "component": m.get("component"),
             "names": _short(engine._texts(m.get("names")), 4),
             "count": m.get("count"),
             "min": m.get("min"),
             "max": m.get("max"),
-            "streamsWithSameBranches": [str(s.get("stream")) for s in m.get("streams") or [] if isinstance(s, Mapping) and s.get("pathMatch")],
+            "streamsWithSameBranches": [alias_of[("s", s)] for s in branch_streams if ("s", s) in alias_of],
         })
     slider_list = [
-        {"id": str(p.get("nativeId")), "name": p.get("name"), "names": _short(engine._texts(p.get("names")), 3), "value": p.get("value"),
+        {"id": alias("p", str(p.get("nativeId")), i), "name": p.get("name"), "names": _short(engine._texts(p.get("names")), 3), "value": p.get("value"),
          "min": p.get("min"), "max": p.get("max")}
-        for p in sorted(parameters or [], key=lambda p: str(p.get("nativeId")))[:MAX_SLIDERS]
+        for i, p in enumerate(sorted(parameters or [], key=lambda p: str(p.get("nativeId")))[:MAX_SLIDERS], 1)
     ]
     rules = [
         {"ruleId": c.rule_id, "class": c.class_local, "property": c.prop_local, "required": f"{c.op} {engine._fmt(c.value)}"}
@@ -100,17 +112,21 @@ def build_digest(elements: Sequence[Mapping], measures: Sequence[Mapping], param
             "rules": rules[:120],
         },
         "canvas": {"streams": stream_list, "measures": measure_list, "sliders": slider_list},
+        # alias → native id; never sent to the model.
+        "_ids": ids,
     }
 
 
 def build_prompt(digest: Mapping) -> str:
+    shown = {k: v for k, v in digest.items() if not str(k).startswith("_")}
     return (
         "Ontology and canvas digest (JSON):\n"
-        + json.dumps(digest, ensure_ascii=False, separators=(",", ":"))
-        + "\n\nReturn JSON of exactly this shape (one entry per stream, measure and slider you can judge):\n"
+        + json.dumps(shown, ensure_ascii=False, separators=(",", ":"))
+        + "\n\nReturn JSON of exactly this shape, with one entry for EVERY stream, EVERY measure and EVERY slider "
+          "(classIri / propertyIri null, isParameter false, when nothing fits):\n"
         + json.dumps(SCHEMA_HINT, ensure_ascii=False)
         + "\nRules: classIri and propertyIri must be IRIs from the ontology or null; stream/measure/slider ids must be "
-          "ids from the canvas; a measure's stream is the element stream whose elements it measures (usually one of "
+          "the short ids from the canvas (s1, m1, p1 …), copied exactly; a measure's stream is the element stream whose elements it measures (usually one of "
           "streamsWithSameBranches); isParameter is true for sliders that are design parameters (they change the "
           "design or its variants), false for drawing or tolerance helpers; confidence is 0..1."
     )
@@ -137,9 +153,15 @@ def _extract_json(text: str) -> Optional[dict]:
 def parse_proposal(text: str, digest: Mapping) -> dict:
     obj = _extract_json(text) or {}
     canvas = digest.get("canvas") or {}
-    stream_ids = {s["id"] for s in canvas.get("streams") or []}
-    measure_ids = {m["id"] for m in canvas.get("measures") or []}
-    slider_ids = {s["id"] for s in canvas.get("sliders") or []}
+    ids = digest.get("_ids") or {}
+
+    def real(v: Any) -> str:
+        key = str(v).strip()
+        return ids.get(key) or ids.get(key.lower()) or key
+
+    stream_ids = {real(s["id"]) for s in canvas.get("streams") or []}
+    measure_ids = {real(m["id"]) for m in canvas.get("measures") or []}
+    slider_ids = {real(s["id"]) for s in canvas.get("sliders") or []}
     onto = digest.get("ontology") or {}
     class_iris = {c["iri"] for c in onto.get("classes") or []}
     prop_iris = {p["iri"] for p in onto.get("properties") or []}
@@ -150,16 +172,16 @@ def parse_proposal(text: str, digest: Mapping) -> dict:
 
     out = {"objects": {}, "measures": {}, "parameters": {}}
     for e in obj.get("objects") or []:
-        if isinstance(e, Mapping) and str(e.get("stream")) in stream_ids and e.get("classIri") in class_iris:
-            out["objects"][str(e["stream"])] = {"classIri": e["classIri"], "confidence": conf(e.get("confidence")), "reason": str(e.get("reason") or "")[:300]}
+        if isinstance(e, Mapping) and real(e.get("stream")) in stream_ids and e.get("classIri") in class_iris:
+            out["objects"][real(e["stream"])] = {"classIri": e["classIri"], "confidence": conf(e.get("confidence")), "reason": str(e.get("reason") or "")[:300]}
     for e in obj.get("measures") or []:
-        if isinstance(e, Mapping) and str(e.get("measure")) in measure_ids and e.get("propertyIri") in prop_iris:
-            stream = str(e["stream"]) if str(e.get("stream")) in stream_ids else None
-            out["measures"][str(e["measure"])] = {"propertyIri": e["propertyIri"], "stream": stream, "confidence": conf(e.get("confidence")),
-                                                   "reason": str(e.get("reason") or "")[:300]}
+        if isinstance(e, Mapping) and real(e.get("measure")) in measure_ids and e.get("propertyIri") in prop_iris:
+            stream = real(e["stream"]) if e.get("stream") is not None and real(e["stream"]) in stream_ids else None
+            out["measures"][real(e["measure"])] = {"propertyIri": e["propertyIri"], "stream": stream, "confidence": conf(e.get("confidence")),
+                                                    "reason": str(e.get("reason") or "")[:300]}
     for e in obj.get("parameters") or []:
-        if isinstance(e, Mapping) and str(e.get("slider")) in slider_ids and isinstance(e.get("isParameter"), bool):
-            out["parameters"][str(e["slider"])] = {"isParameter": e["isParameter"], "confidence": conf(e.get("confidence")), "reason": str(e.get("reason") or "")[:300]}
+        if isinstance(e, Mapping) and real(e.get("slider")) in slider_ids and isinstance(e.get("isParameter"), bool):
+            out["parameters"][real(e["slider"])] = {"isParameter": e["isParameter"], "confidence": conf(e.get("confidence")), "reason": str(e.get("reason") or "")[:300]}
     return out
 
 
