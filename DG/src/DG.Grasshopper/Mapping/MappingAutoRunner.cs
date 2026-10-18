@@ -57,6 +57,8 @@ internal sealed class MappingAutoRunner : IDisposable
     private CanvasMappingRead? _read;
     private MappingSessionState? _session;
     private MappingApplyResult? _applied;
+    private bool _placed;
+    private string? _placement;
     private string _status = "Mapping: sign in to map automatically";
     private volatile MappingOutputs _outputs = new() { Summary = "Mapping: sign in to map automatically" };
 
@@ -329,7 +331,40 @@ internal sealed class MappingAutoRunner : IDisposable
 
             _applied = applied.Value;
             BuildOutputs(expire: true);
+            TryPlace();
         }));
+    }
+
+    /// <summary>
+    /// D-38: on a definition without DG states, place and wire the DG components once the
+    /// mapping is agreed. Runs once per document; a definition that already has OBJECT STATE /
+    /// PROPERTY STATE / VALIDATOR is never changed.
+    /// </summary>
+    private void TryPlace()
+    {
+        var doc = _doc;
+        var read = _read;
+        var applied = _applied;
+        if (_placed || doc is null || read is null || applied is null || read.HasDgWiring || MappingPlacer.HasStates(doc))
+        {
+            return;
+        }
+
+        _placed = true;
+        var plan = MappingPlacementPlan.From(applied);
+        doc.ScheduleSolution(5, d =>
+        {
+            try
+            {
+                _placement = MappingPlacer.Place(d, _owner, read, plan);
+            }
+            catch (Exception ex)
+            {
+                _placement = $"placement failed: {ex.GetType().Name}: {ex.Message}";
+            }
+
+            _owner.ExpireSolution(false);
+        });
     }
 
     private void UpdateConduit()
@@ -369,7 +404,7 @@ internal sealed class MappingAutoRunner : IDisposable
         var parts = new[] { "confirmed", "auto", "suggested", "ambiguous", "unmapped" }
             .Where(k => s.Counts.TryGetValue(k, out var n) && n > 0)
             .Select(k => $"{k} {s.Counts[k]}");
-        lines.Add($"Mapping {read.DocumentKey}: {s.Total} elements ({string.Join(", ", parts)}), {s.Parameters.Count} sliders, {s.OpenQuestions} open question(s)");
+        lines.Add($"Mapping {read.DocumentKey}: {s.Total} elements ({string.Join(", ", parts)}), {s.Measures.Count} calculation outputs, {s.Parameters.Count} sliders, {s.OpenQuestions} open question(s)" + (s.LlmStatus is null ? string.Empty : $", LLM {s.LlmStatus}"));
         lines.Add(s.OpenQuestions > 0
             ? $"Answer in DG Web UI → Projects → {_project} → Mapping (session {s.SessionId})"
             : _applied is null ? $"Session {s.SessionId}: applying…" : $"Session {s.SessionId}: applied");
@@ -378,10 +413,21 @@ internal sealed class MappingAutoRunner : IDisposable
             lines.Add("Streams: " + string.Join(", ", read.Streams));
         }
 
+        var mapped = s.Measures.Where(m => m.PropertyLabel is not null && m.State != "unmapped").Select(m => $"{m.Name} → {m.PropertyLabel} ({m.State})").ToList();
+        if (mapped.Count > 0)
+        {
+            lines.Add("Outputs: " + string.Join("; ", mapped));
+        }
+
+        if (_placement is not null)
+        {
+            lines.Add("Placement: " + _placement);
+        }
+
         lines.AddRange(read.Notes.Take(5).Select(n => "Note: " + n));
 
         var sliders = s.Parameters
-            .Select(p => $"{p.Name} → {p.PropertyLabel ?? "—"} ({p.State})")
+            .Select(p => $"{p.Name} → {(p.State == "unmapped" ? "not a DG parameter" : "DG parameter")} ({p.State})")
             .ToList();
 
         var byClass = new DataTree<object>();

@@ -135,8 +135,12 @@ function questionTypeLabel(t, type) {
       return t("Choose roles");
     case "mapping-or-design":
       return t("Mapping or design error");
-    case "map-parameter":
-      return t("Map sliders to a property");
+    case "batch-parameters":
+      return t("Sliders as DG parameters");
+    case "batch-measures":
+      return t("Accept proposed properties");
+    case "map-measure":
+      return t("Map an output to a property");
     default:
       return type || "";
   }
@@ -154,6 +158,8 @@ function evidenceKindLabel(t, kind) {
       return t("IFC");
     case "population":
       return t("Population");
+    case "llm":
+      return "LLM";
     default:
       return kind || "";
   }
@@ -429,11 +435,12 @@ function QuestionCard({ question, groupsById, labelOf, excluded, busy, posting, 
   const included = includedGroupIds(question, excluded);
   const skip = new Set(list(excluded));
   const options = list(question.options);
-  const isParameter = question.type === "map-parameter";
-  const optionText = (optionId) =>
-    isParameter && optionId === "none"
-      ? t("Not a DG property")
-      : optionLabel(t, options.find((option) => option.optionId === optionId) || { optionId }, labelOf);
+  const optionText = (optionId) => {
+    if (question.type === "map-measure" && optionId === "none") return t("Not a DG property");
+    if (question.type === "batch-parameters" && optionId === "accept-all") return t("Accept all as DG parameters");
+    if (question.type === "batch-measures" && optionId === "accept-all") return t("Accept all proposed properties");
+    return optionLabel(t, options.find((option) => option.optionId === optionId) || { optionId }, labelOf);
+  };
   const noneSelected = isBatch && included.length === 0;
   return (
     <div style={CARD}>
@@ -551,35 +558,75 @@ function ProfilesTable({ profiles, labelOf }) {
   );
 }
 
-// Named Grasshopper sliders and the DG property proposed or confirmed for each (owner amendment 2026-10-18).
+function StateCell({ state }) {
+  const { t } = useT();
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <StateDot state={state} />
+      {stateLabel(t, state)}
+    </span>
+  );
+}
+
+// Named Grasshopper sliders proposed as DG parameters (PARAMETER STATE), 1303-CONTEXT D-37.
 function ParametersTable({ parameters }) {
   const { t } = useT();
   if (parameters.length === 0) return null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <h5 style={CAPTION}>{t("Sliders")}</h5>
+      <h5 style={CAPTION}>{t("DG parameters")}</h5>
       <div style={{ overflowX: "auto" }}>
         <table style={TABLE}>
           <thead>
             <tr>
               <th style={TH}>{t("Slider")}</th>
               <th style={TH}>{t("State")}</th>
+              <th style={TH}>{t("Reason")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parameters.map((p) => (
+              <tr key={p.nativeId}>
+                <td style={TD}>{p.name}</td>
+                <td style={TD}>
+                  <StateCell state={p.state} />
+                </td>
+                <td style={{ ...TD, ...MUTED }}>{p.reason || (p.isParameter ? t("DG parameter") : "—")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Outputs of calculation components and the DG property each carries (D-37).
+function MeasuresTable({ measures }) {
+  const { t } = useT();
+  if (measures.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <h5 style={CAPTION}>{t("Calculation outputs")}</h5>
+      <div style={{ overflowX: "auto" }}>
+        <table style={TABLE}>
+          <thead>
+            <tr>
+              <th style={TH}>{t("Output")}</th>
+              <th style={TH}>{t("State")}</th>
               <th style={TH}>{t("Property")}</th>
             </tr>
           </thead>
           <tbody>
-            {parameters.map((p) => {
-              const shown = p.property || list(p.candidates)[0];
+            {measures.map((m) => {
+              const shown = m.property || list(m.candidates)[0];
               const label = shown ? shown.label || classLocalName(shown.iri || shown.propertyIri) : "—";
               const classes = list(shown?.classes).map((iri) => classLocalName(iri)).join(", ");
               return (
-                <tr key={p.nativeId}>
-                  <td style={TD}>{p.name}</td>
+                <tr key={m.nativeId}>
+                  <td style={TD}>{m.component ? `${m.name} · ${m.component}` : m.name}</td>
                   <td style={TD}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <StateDot state={p.state} />
-                      {stateLabel(t, p.state)}
-                    </span>
+                    <StateCell state={m.state} />
                   </td>
                   <td style={TD}>
                     {label}
@@ -993,7 +1040,13 @@ export default function MappingPanel({ project, active }) {
           </div>
         )}
 
+        {session && <MeasuresTable measures={list(session.measures)} />}
+
         {session && <ParametersTable parameters={list(session.parameters)} />}
+
+        {session?.llm?.status && (
+          <div style={MUTED}>{t("LLM proposal: {status}", { status: session.llm.model ? `${session.llm.status} · ${session.llm.model}` : session.llm.status })}</div>
+        )}
 
         {notice?.kind === "arrived" && <div style={MUTED}>{noticeText}</div>}
 

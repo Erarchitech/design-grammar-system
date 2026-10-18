@@ -4,6 +4,7 @@ using DG.Core.Models;
 using DG.Grasshopper.Components;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Types;
 using Rhino;
 
 namespace DG.Grasshopper.Mapping;
@@ -18,25 +19,40 @@ internal sealed class CanvasMappingRead
 
     public Dictionary<string, Rhino.Geometry.GeometryBase> Previews { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Stream id (param instance guid "N") → the output parameter, for placement.</summary>
+    public Dictionary<string, IGH_Param> StreamParams { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Measure param guid "N" → the numeric output parameter, for placement.</summary>
+    public Dictionary<string, IGH_Param> MeasureParams { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Slider guid "N" → the slider, for placement.</summary>
+    public Dictionary<string, GH_NumberSlider> Sliders { get; } = new(StringComparer.Ordinal);
+
     /// <summary>"source (n)" per stream, for the Mapping summary.</summary>
     public List<string> Streams { get; } = new();
 
     public List<string> Notes { get; } = new();
 
     public string DocumentKey { get; set; } = string.Empty;
+
+    /// <summary>True when the definition already wires geometry into DG components (OBJECT STATE …).</summary>
+    public bool HasDgWiring { get; set; }
 }
 
 /// <summary>
-/// Reads the open definition for automatic mapping (Phase 1303, owner amendment 2026-10-18).
-/// No mapping component and no wiring: the element streams are the geometry sources the
-/// definition already connects to DG components (OBJECT STATE and the like); a definition
-/// without DG wiring falls back to its visible terminal geometry. Every stream carries the
-/// canvas text around it (group names, scribbles, component names and nicknames, the class an
-/// OBJECT STATE already names). Named number sliders become parameters. Read-only.
+/// Reads the open definition for automatic mapping (Phase 1303, D-33..D-37). Read-only.
+/// Element streams: the geometry the definition wires into DG components; a definition without
+/// DG wiring (the case automatic placement is for) gives its terminal geometry and the geometry
+/// its calculation components read, minus streams that only feed another candidate. Every
+/// stream carries the canvas text around it. Measures: numeric outputs of calculation
+/// components, matched to streams by branch paths and by agreement with the stream's own
+/// geometry features. Named number sliders are DG parameter candidates.
 /// </summary>
 internal static class MappingCanvasReader
 {
     public const int MaxElements = 5000;
+    public const int MaxMeasures = 80;
+    private const int AncestorDepth = 6;
 
     public static CanvasMappingRead Read(GH_Document doc)
     {
@@ -64,7 +80,7 @@ internal static class MappingCanvasReader
         var levels = FindLevels(doc);
         var geometry = new MappingGeometry(tol, k, levels);
 
-        // 1. Streams: geometry wired into DG components, else visible terminal geometry.
+        // 1. Streams.
         var streams = new List<(IGH_Param Param, List<string> Hints)>();
         var seen = new Dictionary<Guid, int>();
         foreach (var dg in doc.Objects.OfType<IGH_Component>().Where(IsDg))
@@ -96,29 +112,30 @@ internal static class MappingCanvasReader
             }
         }
 
-        if (streams.Count == 0)
+        read.HasDgWiring = streams.Count > 0;
+        if (!read.HasDgWiring)
         {
-            read.Notes.Add("no geometry is wired into DG components; reading visible terminal geometry");
-            foreach (var param in AllOutputParams(doc))
+            foreach (var param in CandidateStreams(doc))
             {
-                if (param.Recipients.Count == 0 && IsVisible(param) && !IsDg(Top(param)) && HasGeometry(param))
-                {
-                    streams.Add((param, new List<string>()));
-                }
+                streams.Add((param, new List<string>()));
             }
+
+            read.Notes.Add($"no geometry is wired into DG components; {streams.Count} candidate streams from terminal geometry and calculation inputs");
         }
 
-        // 2. Elements.
+        // 2. Elements, with per-stream keyed properties for measure matching.
         var elements = new List<MappingElement>();
+        var keyed = new Dictionary<string, Dictionary<string, IReadOnlyDictionary<string, object>>>(StringComparer.Ordinal);
         foreach (var (param, hints) in streams)
         {
             var top = Top(param);
             var source = SourceLabel(param, top);
             var names = MappingCanvasText.Merge(hints, CanvasText(top), ComponentNames(param, top));
-            var key = param.InstanceGuid.ToString("N")[..8];
+            var streamId = param.InstanceGuid.ToString("N");
             var data = param.VolatileData;
             var count = 0;
             var perBranch = data.PathCount > 1;
+            var byKey = new Dictionary<string, IReadOnlyDictionary<string, object>>(StringComparer.Ordinal);
             for (var b = 0; b < data.PathCount && elements.Count < MaxElements; b++)
             {
                 var path = data.get_Path(b);
@@ -149,15 +166,17 @@ internal static class MappingCanvasReader
                         continue;
                     }
 
-                    var nativeId = $"gh:{read.DocumentKey}:{key}:{path}:{index}";
+                    var nativeId = $"gh:{read.DocumentKey}:{streamId[..8]}:{path}:{index}";
                     elements.Add(new MappingElement
                     {
                         NativeId = nativeId,
                         Source = source,
+                        Stream = streamId,
                         Names = names,
                         Geometry = described.Geometry,
                         Properties = described.Properties,
                     });
+                    byKey[MappingMeasureMatcher.Key(path.ToString(), index)] = described.Properties;
                     read.Order.Add(nativeId);
                     if (described.Preview is not null)
                     {
@@ -171,10 +190,54 @@ internal static class MappingCanvasReader
             if (count > 0)
             {
                 read.Streams.Add($"{source} ({count})");
+                read.StreamParams[streamId] = param;
+                keyed[streamId] = byKey;
             }
         }
 
-        // 3. Parameters: named number sliders with the canvas text around them.
+        // 3. Measures: numeric outputs of calculation components.
+        var measures = new List<MappingMeasure>();
+        foreach (var component in doc.Objects.OfType<IGH_Component>())
+        {
+            if (IsDg(component) || !component.Params.Input.Any(i => i.Sources.Any(HasGeometry)))
+            {
+                continue;
+            }
+
+            foreach (var output in component.Params.Output)
+            {
+                if (measures.Count >= MaxMeasures)
+                {
+                    break;
+                }
+
+                var values = NumericValues(output);
+                if (values.Count == 0)
+                {
+                    continue;
+                }
+
+                var matches = keyed
+                    .Select(kv => MappingMeasureMatcher.Match(kv.Key, values, kv.Value))
+                    .Where(m => m.PathMatch || m.Agreement.Count > 0)
+                    .ToList();
+                var guid = output.InstanceGuid.ToString("N");
+                measures.Add(new MappingMeasure
+                {
+                    NativeId = $"gh:{read.DocumentKey}:measure:{guid}",
+                    Name = MappingCanvasText.Clean(string.IsNullOrWhiteSpace(output.NickName) ? output.Name : output.NickName),
+                    Component = MappingCanvasText.Clean(string.IsNullOrWhiteSpace(component.NickName) ? component.Name : component.NickName),
+                    Names = MappingCanvasText.Merge(CanvasText(component), new[] { component.Name, output.Name, output.Description }),
+                    Count = values.Count,
+                    Min = values.Values.Min(),
+                    Max = values.Values.Max(),
+                    Streams = matches,
+                });
+                read.MeasureParams[guid] = output;
+            }
+        }
+
+        // 4. Parameters: named number sliders with the canvas text around them.
         var parameters = new List<MappingParameter>();
         foreach (var slider in doc.Objects.OfType<GH_NumberSlider>())
         {
@@ -184,25 +247,150 @@ internal static class MappingCanvasReader
                 continue;
             }
 
+            var guid = slider.InstanceGuid.ToString("N");
             parameters.Add(new MappingParameter
             {
-                NativeId = $"gh:{read.DocumentKey}:slider:{slider.InstanceGuid:N}",
+                NativeId = $"gh:{read.DocumentKey}:slider:{guid}",
                 Name = name,
                 Names = CanvasText(slider),
                 Value = (double)slider.CurrentValue,
                 Min = (double)slider.Slider.Minimum,
                 Max = (double)slider.Slider.Maximum,
             });
+            read.Sliders[guid] = slider;
         }
 
-        read.Snapshot = new MappingSnapshot { Elements = elements, Parameters = parameters };
+        read.Snapshot = new MappingSnapshot { Elements = elements, Parameters = parameters, Measures = measures };
         return read;
     }
 
     public static bool IsDg(IGH_DocumentObject? obj) =>
         obj?.GetType().Namespace?.StartsWith("DG.Grasshopper", StringComparison.Ordinal) == true;
 
-    private static IGH_DocumentObject Top(IGH_Param param) => param.Attributes?.GetTopLevel?.DocObject ?? param;
+    public static IGH_DocumentObject Top(IGH_Param param) => param.Attributes?.GetTopLevel?.DocObject ?? param;
+
+    /// <summary>Terminal geometry (named or visible) plus geometry read by calculation components, minus pure ancestors of other candidates.</summary>
+    private static List<IGH_Param> CandidateStreams(GH_Document doc)
+    {
+        var candidates = new Dictionary<Guid, IGH_Param>();
+        foreach (var param in AllOutputParams(doc))
+        {
+            var top = Top(param);
+            if (IsDg(top) || top is GH_NumberSlider || !HasGeometry(param) || (top is IGH_ActiveObject active && active.Locked))
+            {
+                continue;
+            }
+
+            // Geometry outputs of calculation components (a measure script's violator preview) are diagnostics, not elements.
+            if (top is IGH_Component owner && owner.Params.Output.Any(o => !ReferenceEquals(o, param) && NumericValues(o).Count > 0))
+            {
+                continue;
+            }
+
+            var named = !MappingCanvasText.IsDefaultNickname(top.NickName, top.Name)
+                || (!ReferenceEquals(top, param) && !MappingCanvasText.IsDefaultNickname(param.NickName, param.Name));
+            if (param.Recipients.Count == 0 && (named || IsVisible(param)))
+            {
+                candidates[param.InstanceGuid] = param;
+            }
+        }
+
+        foreach (var component in doc.Objects.OfType<IGH_Component>())
+        {
+            if (IsDg(component) || !component.Params.Output.Any(o => NumericValues(o).Count > 0))
+            {
+                continue;
+            }
+
+            foreach (var input in component.Params.Input)
+            {
+                foreach (var source in input.Sources)
+                {
+                    if (!IsDg(Top(source)) && HasGeometry(source))
+                    {
+                        candidates[source.InstanceGuid] = source;
+                    }
+                }
+            }
+        }
+
+        // A candidate that only feeds another candidate (raw HU → Join Curves → join HU) is dropped.
+        var ancestors = new HashSet<Guid>();
+        foreach (var param in candidates.Values)
+        {
+            foreach (var up in Upstream(param, AncestorDepth))
+            {
+                ancestors.Add(up);
+            }
+        }
+
+        return candidates.Values
+            .Where(p => !ancestors.Contains(p.InstanceGuid))
+            .OrderBy(p => Top(p).Attributes.Pivot.Y)
+            .ThenBy(p => Top(p).Attributes.Pivot.X)
+            .ToList();
+    }
+
+    private static HashSet<Guid> Upstream(IGH_Param param, int depth)
+    {
+        var result = new HashSet<Guid>();
+        var frontier = new List<IGH_Param> { param };
+        for (var d = 0; d < depth && frontier.Count > 0; d++)
+        {
+            var next = new List<IGH_Param>();
+            foreach (var p in frontier)
+            {
+                var sources = Top(p) is IGH_Component owner && !ReferenceEquals(owner, p) && owner.Params.Output.Contains(p)
+                    ? owner.Params.Input.SelectMany(i => i.Sources)
+                    : p.Sources;
+                foreach (var s in sources)
+                {
+                    if (result.Add(s.InstanceGuid))
+                    {
+                        next.Add(s);
+                    }
+                }
+            }
+
+            frontier = next;
+        }
+
+        return result;
+    }
+
+    private static Dictionary<string, double> NumericValues(IGH_Param param)
+    {
+        var values = new Dictionary<string, double>(StringComparer.Ordinal);
+        var data = param.VolatileData;
+        for (var b = 0; b < data.PathCount; b++)
+        {
+            var path = data.get_Path(b);
+            var branch = data.get_Branch(path);
+            if (branch is null)
+            {
+                continue;
+            }
+
+            for (var i = 0; i < branch.Count; i++)
+            {
+                var raw = branch[i] switch
+                {
+                    GH_Number n => (double?)n.Value,
+                    GH_Integer n => n.Value,
+                    _ => null,
+                };
+                if (raw is null)
+                {
+                    return new Dictionary<string, double>(); // mixed or non-numeric output: not a measure
+                }
+
+                var index = data.PathCount > 1 && branch.Count == 1 ? 0 : i;
+                values[MappingMeasureMatcher.Key(path.ToString(), index)] = raw.Value;
+            }
+        }
+
+        return values;
+    }
 
     private static bool HasGeometry(IGH_Param param)
     {
@@ -295,9 +483,15 @@ internal static class MappingCanvasReader
 
         foreach (var goo in input.VolatileData.AllData(true))
         {
-            if (MappingGeometry.Unwrap(goo) is OntologyClass cls)
+            var value = MappingGeometry.Unwrap(goo);
+            if (value is OntologyClass cls)
             {
                 return string.IsNullOrWhiteSpace(cls.Label) ? MappingSessionClient.LocalName(cls.Iri) : cls.Label;
+            }
+
+            if (MappingClassText.Parse(value as string) is { } iri)
+            {
+                return MappingSessionClient.LocalName(iri);
             }
         }
 

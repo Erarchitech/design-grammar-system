@@ -172,6 +172,10 @@ public sealed class ObjectStateComponent : GH_Component
         if (GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input) is not null)
             return null;
 
+        // "class:<IRI>" names a class as well (placed by CONNECTOR's automatic mapping).
+        if (ClassIriFromText(input) is not null)
+            return null;
+
         var elementRef = GhCastingHelpers.TryElementRef(input);
         if (elementRef is not null && !string.IsNullOrWhiteSpace(elementRef.DgEntityId))
             return elementRef.DgEntityId;
@@ -207,7 +211,29 @@ public sealed class ObjectStateComponent : GH_Component
         if (ontClass is not null && !string.IsNullOrWhiteSpace(ontClass.Iri))
             return ontClass.Iri;
 
-        return null;
+        return ClassIriFromText(input);
+    }
+
+    /// <summary>
+    /// Phase 1303 (1303-CONTEXT D-38): a class given as text "class:&lt;IRI&gt;" — stored in the
+    /// .gh by the automatic mapping — binds the class by identity, so adding classes to the
+    /// ontology can never shift it (the index-picker failure of METAGRAPH Objects + List Item).
+    /// </summary>
+    internal static string? ClassIriFromText(object? input)
+    {
+        var text = input switch
+        {
+            string s => s,
+            global::Grasshopper.Kernel.Types.GH_String gs => gs.Value,
+            _ => null,
+        };
+        if (text is null)
+            return null;
+
+        text = text.Trim();
+        return text.StartsWith(DG.Core.Mapping.MappingClassText.Prefix, StringComparison.Ordinal) && text.Length > DG.Core.Mapping.MappingClassText.Prefix.Length
+            ? text[DG.Core.Mapping.MappingClassText.Prefix.Length..].Trim()
+            : null;
     }
 
 }

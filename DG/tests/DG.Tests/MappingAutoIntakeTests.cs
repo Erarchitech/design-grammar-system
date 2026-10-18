@@ -152,7 +152,8 @@ public sealed class MappingAutoIntakeTests
         const string applied = """
         {"project":"v12","sessionId":"s","applied":2,"byClass":{},
          "elements":[{"nativeId":"a","roles":["ex:HexagonalUnit"]},{"nativeId":"b","roles":["ex:GlassPanel","ex:FacadeModule"]}],
-         "skipped":[],"parameters":[{"nativeId":"gh:doc:slider:1","name":"Module Width F1","propertyIri":"ex:hasWidthM"}]}
+         "skipped":[],"parameters":[{"nativeId":"gh:doc:slider:1","name":"Module Width F1"}],
+         "measures":[{"nativeId":"gh:doc:measure:m1","name":"W","propertyIri":"ex:hasWidthM","stream":"PB"}]}
         """;
         var handler = new RecordingHandler((_, _) => Json(HttpStatusCode.OK, applied));
         var result = await new MappingSessionClient(handler).ApplyAsync(Url, Token, "v12", "s");
@@ -160,7 +161,8 @@ public sealed class MappingAutoIntakeTests
         Assert.True(result.Ok);
         Assert.Equal("{\"project\":\"v12\"}", handler.Requests[0].Body);
         Assert.Equal(new[] { "ex:GlassPanel", "ex:FacadeModule" }, result.Value!.RolesByElement["b"]);
-        Assert.Equal("hasWidthM", Assert.Single(result.Value.Parameters).PropertyLabel);
+        Assert.Equal("Module Width F1", Assert.Single(result.Value.Parameters).Name);
+        Assert.Equal("hasWidthM", Assert.Single(result.Value.Measures).PropertyLabel);
     }
 
     [Fact]

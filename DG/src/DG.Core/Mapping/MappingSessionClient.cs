@@ -26,16 +26,33 @@ public sealed class MappingSessionState
 
     public IReadOnlyList<MappingParameterState> Parameters { get; init; } = Array.Empty<MappingParameterState>();
 
+    public IReadOnlyList<MappingMeasureState> Measures { get; init; } = Array.Empty<MappingMeasureState>();
+
+    /// <summary>LLM proposal status of the session (ok / empty / unavailable), when one was asked for.</summary>
+    public string? LlmStatus { get; init; }
+
     /// <summary>Changes whenever an answer in the Web UI changes something visible on the canvas.</summary>
     public string Revision { get; init; } = string.Empty;
 }
 
-/// <summary>Applied mapping: class IRIs per element and the property of each mapped slider.</summary>
+/// <summary>A rule bound to a class, a property and the calculation output that carries it (D-37).</summary>
+public sealed record MappingRuleBinding(string RuleId, string ClassIri, string PropertyIri, string MeasureId, string Stream);
+
+/// <summary>A calculation output and the DG property it carries.</summary>
+public sealed record MappingMeasureState(string NativeId, string Name, string State, string? PropertyLabel, string? PropertyIri, string? Stream);
+
+/// <summary>Applied mapping: classes per element, streams, DG parameters, measures and rule bindings.</summary>
 public sealed class MappingApplyResult
 {
     public IReadOnlyDictionary<string, IReadOnlyList<string>> RolesByElement { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
+    public IReadOnlyDictionary<string, string> ElementStreams { get; init; } = new Dictionary<string, string>();
+
     public IReadOnlyList<MappingParameterState> Parameters { get; init; } = Array.Empty<MappingParameterState>();
+
+    public IReadOnlyList<MappingMeasureState> Measures { get; init; } = Array.Empty<MappingMeasureState>();
+
+    public IReadOnlyList<MappingRuleBinding> Bindings { get; init; } = Array.Empty<MappingRuleBinding>();
 }
 
 /// <summary>Outcome of one call: the parsed value, or the HTTP status and DG error code.</summary>
@@ -53,7 +70,8 @@ public sealed record MappingCallResult<T>(T? Value, int Status, string? ErrorCod
 /// </summary>
 public sealed class MappingSessionClient
 {
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
+    // Creating a session can include one LLM proposal (D-37), which takes longer than a read.
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(150);
     private readonly HttpClient _httpClient;
 
     public MappingSessionClient(HttpMessageHandler? handler = null)
@@ -181,6 +199,18 @@ public sealed class MappingSessionClient
             revision.Append(p.NativeId).Append('=').Append(p.State).Append(':').Append(p.PropertyIri).Append(';');
         }
 
+        var measures = ParseMeasures(root, "measures");
+        foreach (var m in measures)
+        {
+            revision.Append(m.NativeId).Append('=').Append(m.State).Append(':').Append(m.PropertyIri).Append(';');
+        }
+
+        string? llm = null;
+        if (root.TryGetProperty("llm", out var llmBlock) && llmBlock.ValueKind == JsonValueKind.Object)
+        {
+            llm = Text(llmBlock, "status");
+        }
+
         return new MappingSessionState
         {
             SessionId = Text(root, "sessionId") ?? string.Empty,
@@ -189,6 +219,8 @@ public sealed class MappingSessionClient
             Counts = counts,
             Elements = elements,
             Parameters = parameters,
+            Measures = measures,
+            LlmStatus = llm,
             Revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
         };
     }
@@ -198,6 +230,7 @@ public sealed class MappingSessionClient
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         var roles = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        var streams = new Dictionary<string, string>(StringComparer.Ordinal);
         if (root.TryGetProperty("elements", out var els) && els.ValueKind == JsonValueKind.Array)
         {
             foreach (var el in els.EnumerateArray())
@@ -212,6 +245,10 @@ public sealed class MappingSessionClient
                     .Where(r => r.ValueKind == JsonValueKind.String)
                     .Select(r => r.GetString()!)
                     .ToList();
+                if (Text(el, "stream") is { } stream)
+                {
+                    streams[id] = stream;
+                }
             }
         }
 
@@ -220,12 +257,63 @@ public sealed class MappingSessionClient
         {
             foreach (var p in ps.EnumerateArray())
             {
-                var iri = Text(p, "propertyIri");
-                parameters.Add(new MappingParameterState(Text(p, "nativeId") ?? string.Empty, Text(p, "name") ?? string.Empty, "applied", LocalName(iri), iri));
+                parameters.Add(new MappingParameterState(Text(p, "nativeId") ?? string.Empty, Text(p, "name") ?? string.Empty, "applied", "DG parameter", null));
             }
         }
 
-        return new MappingApplyResult { RolesByElement = roles, Parameters = parameters };
+        var bindings = new List<MappingRuleBinding>();
+        if (root.TryGetProperty("bindings", out var bs) && bs.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var b in bs.EnumerateArray())
+            {
+                var rule = Text(b, "ruleId");
+                var cls = Text(b, "classIri");
+                var prop = Text(b, "propertyIri");
+                var measure = Text(b, "measureId");
+                if (rule is not null && cls is not null && prop is not null && measure is not null)
+                {
+                    bindings.Add(new MappingRuleBinding(rule, cls, prop, measure, Text(b, "stream") ?? string.Empty));
+                }
+            }
+        }
+
+        return new MappingApplyResult
+        {
+            RolesByElement = roles,
+            ElementStreams = streams,
+            Parameters = parameters,
+            Measures = ParseMeasures(root, "measures"),
+            Bindings = bindings,
+        };
+    }
+
+    private static List<MappingMeasureState> ParseMeasures(JsonElement root, string key)
+    {
+        var list = new List<MappingMeasureState>();
+        if (!root.TryGetProperty(key, out var ms) || ms.ValueKind != JsonValueKind.Array)
+        {
+            return list;
+        }
+
+        foreach (var m in ms.EnumerateArray())
+        {
+            string? iri = Text(m, "propertyIri");
+            string? label = null;
+            if (m.TryGetProperty("property", out var prop) && prop.ValueKind == JsonValueKind.Object)
+            {
+                iri = Text(prop, "iri");
+                label = Text(prop, "label");
+            }
+            else if (iri is null && m.TryGetProperty("candidates", out var cands) && cands.ValueKind == JsonValueKind.Array && cands.GetArrayLength() > 0)
+            {
+                iri = Text(cands[0], "propertyIri");
+                label = Text(cands[0], "label");
+            }
+
+            list.Add(new MappingMeasureState(Text(m, "nativeId") ?? string.Empty, Text(m, "name") ?? string.Empty, Text(m, "state") ?? "applied", label ?? LocalName(iri), iri, Text(m, "stream")));
+        }
+
+        return list;
     }
 
     private static List<MappingParameterState> ParseParameters(JsonElement root)
