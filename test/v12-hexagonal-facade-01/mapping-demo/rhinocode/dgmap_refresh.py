@@ -1,5 +1,5 @@
 #! python3
-"""Re-read the current mapping session after answering in the Web UI.
+"""Write what CONNECTOR shows (Mapping, ClassNames, Sliders) to the log.
 
 Run: "C:\\Program Files\\Rhino 8\\System\\RhinoCode.exe" script <full path to this file>
 RhinoCode passes no script arguments, so the act is fixed here. Log: %TEMP%\\dgmap-rhinocode.log

@@ -1,5 +1,5 @@
 #! python3
-"""Act 4 - V1 again (label act4-validate-v1), then run dgmap_apply.py.
+"""Act 4 - V1 again before wiring ByClass / ClassObjects into OBJECT STATE.
 
 Run: "C:\\Program Files\\Rhino 8\\System\\RhinoCode.exe" script <full path to this file>
 RhinoCode passes no script arguments, so the act is fixed here. Log: %TEMP%\\dgmap-rhinocode.log

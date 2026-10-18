@@ -1,5 +1,5 @@
 #! python3
-"""Apply the current mapping session: ByClass / ClassNames / ClassObjects for OBJECT STATE.
+"""Same as dgmap_refresh.py: CONNECTOR applies the session itself when no question is left.
 
 Run: "C:\\Program Files\\Rhino 8\\System\\RhinoCode.exe" script <full path to this file>
 RhinoCode passes no script arguments, so the act is fixed here. Log: %TEMP%\\dgmap-rhinocode.log

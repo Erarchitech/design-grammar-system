@@ -1,61 +1,51 @@
-# DG MAPPING в Grasshopper — runbook (Phase 1303, MVP-срез)
+# Автоматический меппинг в Grasshopper — runbook (Phase 1303, план 1303-08)
 
-Компонент-прототип `DG MAPPING` (C# Script Rhino 8) отправляет в DG дескрипторы элементов фасада, показывает состояние меппинга цветом в Rhino и отдаёт геометрию по классам для OBJECT STATE. Пересборка DG.gha и перезапуск Rhino не нужны. Код: [`../gh-mapping-intake.cs`](../gh-mapping-intake.cs); контракт: `.planning/phases/1303-pravilo-gh-obekt/1303-API-CONTRACT.md`.
+С 18.10 меппинг встроен в **CONNECTOR** (DG.gha). Компонент для меппинга, проводка и Custom Preview не нужны (решения D-33…D-36 в `.planning/phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`).
 
-## 0. Подготовка (один раз)
+## Как это работает
 
-1. Скопировать определение и модель, оригиналы не трогать:
-   - `C:\Users\Admin\source\repos\design-grammar-system\test\v12-hexagonal-facade-01\v12-hexagonal-facade-01.gh` → `C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\v12-hexagonal-facade-01-mapping.gh`
-   - то же для `.3dm` → `v12-hexagonal-facade-01-mapping.3dm`.
-   Файлы `*.gh`/`*.3dm` в `.gitignore`, в коммит не попадут.
-2. Открыть копию `.3dm` в Rhino 8, затем копию `.gh` в Grasshopper. Скрипты RhinoCode работают только с файлом, имя которого кончается на `-mapping.gh`.
-3. **CONNECTOR.** В этом `.gh` стоит CONNECTOR до 1308 со старым токеном `dgc_` (выведен из обращения) — после 1308 он показывается как placeholder. Поставить текущий CONNECTOR, ввести Username / Password (не сохраняются в файле), Project = `v12-hexagonal-facade-01`, Connect. Выход `Session` даёт `dgk_…`. **Не выводить его в Panel.**
-4. **Компонент.** Добавить C# Script (Rhino 8), никнейм `DG MAPPING`, создать параметры:
+1. **Вход.** Username / Password / Project, Connect = True. Вход `AutoMap` (по умолчанию True) включает автоматический меппинг.
+2. **Чтение холста** после каждого изменения, когда холст полторы секунды в покое:
+   - элементы — геометрия, подключённая к входам компонентов DG (OBJECT STATE и др.); если такой нет — видимая конечная геометрия;
+   - один элемент — одна ветка, а при одном списке — один объект;
+   - контекст каждого потока: названия групп (с вложенными), scribble в той же группе или рядом, имя и никнейм компонента, класс, уже выбранный в OBJECT STATE;
+   - именованные слайдеры: имя, тексты вокруг, значение, диапазон.
+3. **Сессия.** Если содержимое холста изменилось (отпечаток), CONNECTOR создаёт сессию в DG (`POST /mapping/sessions`, токен только в заголовке). Вопросы — в Web UI → Проекты → проект → Меппинг.
+4. **Цвета в Rhino** по состоянию: подтверждено `#2E7D32`, авто по профилю `#1565C0`, предложено `#F9A825`, неоднозначно `#E65100`, без меппинга `#9E9E9E`. CONNECTOR проверяет сессию каждые 3 с.
+5. **Применение.** Когда вопросов не осталось, CONNECTOR применяет сессию.
 
-| Вход | Доступ | Тип | | Выход |
-|---|---|---|---|---|
-| `HU`, `GU`, `PB`, `PA`, `F`, `LZ` | Tree | без подсказки | | `SessionIdOut`, `Summary`, `Questions` |
-| `OntoClasses` | List | без подсказки | | `Geometry`, `Colour`, `State`, `Roles`, `NativeId` |
-| `Classes` | List | string | | `ByClass`, `ClassNames`, `ClassObjects` |
-| `GuAsHu`, `Run`, `Refresh`, `Apply`, `DryRun` | Item | bool | | `Log` |
-| `DefinitionKey`, `Project`, `Url`, `Token`, `Label`, `SessionId` | Item | string | | |
+## Выходы CONNECTOR
 
-   Вставить тело из `gh-mapping-intake.cs` (сигнатура `RunScript` должна совпасть с параметрами).
-5. **Проводка.** В PowerShell задать `$rc = "C:\Program Files\Rhino 8\System\RhinoCode.exe"` и `$dg = "C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mapping-demo\rhinocode"`, затем `& $rc script "$dg\dgmap_wire.py"` — скрипт подключит к `DG MAPPING` те же источники, что у скрипта замеров (`PB, HU, GU, PA, F, LZ`), `CONNECTOR.Session → Token`, `METAGRAPH.Objects → OntoClasses`, и задаст Project / Url / DefinitionKey / порядок `Classes`. Лог: `%TEMP%\dgmap-rhinocode.log`.
-6. Добавить стандартный **Custom Preview**: Geometry ← `DG MAPPING.Geometry`, Material ← `DG MAPPING.Colour`.
+| Выход | Что даёт |
+|---|---|
+| `Mapping` | сводка: элементы по состояниям, слайдеры, открытые вопросы, потоки, id сессии |
+| `ByClass` | ветка `{k}` — геометрия класса `ClassNames[k]` в порядке холста |
+| `ClassNames` | классы применённого меппинга (по алфавиту) |
+| `ClassObjects` | классы DG для входа `Object` у OBJECT STATE |
+| `Sliders` | «слайдер → свойство (состояние)» |
 
-Цвета: подтверждено `#2E7D32`, авто по профилю `#1565C0`, предложено `#F9A825`, неоднозначно `#E65100`, без меппинга `#9E9E9E` (как в Web UI).
+Для OBJECT STATE: Object ← `List Item(ClassObjects, k)`, Geometry ← `Tree Branch(ByClass, {k})`. Это заменяет индексные List Item по METAGRAPH, которые ломаются при добавлении классов.
 
-## 1. Проверка без сети
+## Демо-скрипты RhinoCode
 
-`DryRun = True` → `Log` показывает JSON дескрипторов первых 50 элементов, `Summary` — счёт по потокам (V1: HU 100, GU 25, PB 125, PA 125, F 1). Классы в дескрипторы не попадают — только геометрия и имя потока (`source`).
+`$rc = "C:\Program Files\Rhino 8\System\RhinoCode.exe"`, `$dg = "C:\Users\Admin\source\repos\dg-mapping\test\v12-hexagonal-facade-01\mapping-demo\rhinocode"`, запуск: `& $rc script "$dg\<файл>"`.
 
-## 2. Акты
+| Файл | Действие |
+|---|---|
+| `dgmap_act_v1.py` … `dgmap_act_v4.py`, `dgmap_act_validate_v1.py` | ставят оба слайдера варианта (`Module Width F1`, `Наклон нечет сот`); дальше CONNECTOR меппит сам |
+| `dgmap_refresh.py` (`dgmap_apply.py` — то же) | записывают сводку CONNECTOR в `%TEMP%\dgmap-rhinocode.log` (строки `EVIDENCE`) |
+| `dgmap_reset_v1.py` | слайдеры варианта снова V1 |
 
-`RhinoCode.exe script` не передаёт скрипту аргументы, поэтому у каждого действия свой файл; запуск — `& $rc script "$dg\<файл>"`.
-
-| Акт | Файл | Ожидание |
-|---|---|---|
-| 1 холодный старт | `dgmap_act_v1.py` | 2 вопроса: пакетное подтверждение 4 групп и «ошибка меппинга или проекта?» для 25 пятиугольников (GU отправлены как HU, F5) |
-| — ответы | Web UI → Проекты → проект → Меппинг | ответить на вопросы |
-| — обновление | `dgmap_refresh.py` | цвета зелёные, `Questions = 0` |
-| 2 обучение | `dgmap_act_v2.py`, затем `dgmap_act_v3.py` (и `dgmap_act_v4.py`) | 0 вопросов, всё «авто по профилю»; нарушения R2/R7 (V2), R1 (V3), R6 (V4) — сигналы проекта, не вопросы |
-| 4 валидация | `dgmap_act_validate_v1.py`, затем `dgmap_apply.py` | холст снова V1, новая сессия `act4-validate-v1` без вопросов; `ByClass` + `ClassObjects` подаются в 5 OBJECT STATE вместо индексных List Item; VALIDATOR даёт V1 11/11 PASS |
-| — сброс | `dgmap_reset_v1.py` | слайдеры варианта снова V1, запроса в DG нет |
-
-Каждый акт выставляет оба слайдера варианта (`Module Width F1`, `Наклон нечет сот`) и оставляет вариант на холсте, чтобы были видны цвета; при ошибке слайдеры возвращаются к прежним значениям. Строки `EVIDENCE` в логе — материал протокола.
-
-## 3. Подключение к OBJECT STATE (акт 4)
-
-`ByClass` — ветка `{k}` = геометрия элементов класса `ClassNames[k]`, **в исходном порядке веток потока**, поэтому пары с PROPERTY STATE (по позиции) сохраняются. `ClassObjects[k]` — объект OntologyClass из METAGRAPH, найденный по имени/IRI (а не по индексу — индексные выборщики ломались после добавления классов A1). Каждому OBJECT STATE: Object ← `List Item(ClassObjects, k)`, Geometry ← `Tree Branch(ByClass, {k})`, порядок `k` задан входом `Classes`.
+При ошибке акт возвращает прежние значения слайдеров. Скрипты работают только с файлом `…-mapping.gh`.
 
 ## Неполадки
 
 | Симптом | Причина / действие |
 |---|---|
-| `Log`: `401 …` | CONNECTOR не вошёл или сессия истекла (8 ч) — Connect заново |
-| `Log`: `403 PRINCIPAL_NOT_PERMITTED` | старый data-service без маршрутов `/mapping` — пересобрать (план 1303-06) |
-| `Log`: `403 PROJECT_FORBIDDEN` / `PROJECT_MISMATCH` | CONNECTOR привязан к другому проекту |
-| пустой `Summary`, ошибки веток | ветка с неподдерживаемой геометрией — см. `Log` |
-| компоненты-placeholder | старые GUID (CONNECTOR до 1308) — заменить компонент |
-| Rhino «подвисает» при Run | запрос синхронный, до 30 с; не держать Run включённым |
+| `Mapping`: «sign in to map automatically» | CONNECTOR не вошёл |
+| `Mapping`: «DG refused the session (401 …)» | сессия входа истекла — Connect заново |
+| `Mapping`: «… 403 PROJECT_FORBIDDEN» | CONNECTOR привязан к другому проекту |
+| `Mapping`: «nothing to map» | к компонентам DG не подключена геометрия, видимой геометрии и именованных слайдеров нет |
+| много сессий при перетаскивании слайдера | сессия создаётся после 1,5 с покоя; при необходимости `AutoMap` = False |
+
+Запасной путь — прототип `../gh-mapping-intake.cs` (C# Script, план 1303-03).

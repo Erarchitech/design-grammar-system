@@ -1,5 +1,5 @@
 #! python3
-"""Act 2 - learned profiles on V3 (Module Width F1 = 10000).
+"""Act 2 - V3 on the canvas (Module Width F1 = 10000); learned profiles map it.
 
 Run: "C:\\Program Files\\Rhino 8\\System\\RhinoCode.exe" script <full path to this file>
 RhinoCode passes no script arguments, so the act is fixed here. Log: %TEMP%\\dgmap-rhinocode.log

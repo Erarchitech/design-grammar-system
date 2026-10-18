@@ -1,5 +1,5 @@
 #! python3
-"""Act 1 - cold start on V1 (Module Width F1 = 6000, odd tilt +1, GU sent as HU).
+"""Act 1 - V1 on the canvas (Module Width F1 = 6000, odd tilt +1); CONNECTOR maps it automatically.
 
 Run: "C:\\Program Files\\Rhino 8\\System\\RhinoCode.exe" script <full path to this file>
 RhinoCode passes no script arguments, so the act is fixed here. Log: %TEMP%\\dgmap-rhinocode.log
